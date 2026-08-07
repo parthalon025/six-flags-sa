@@ -11,6 +11,7 @@
  */
 
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 // lib/**.js is ESM in a package with no "type" field, so Node warns once about
 // reparsing it. Not actionable from a test and it buries the tally, so the
@@ -57,6 +58,16 @@ const { createElection, scoreCandidate } = await import('../lib/party/election.j
 const { CADENCE, MOTION, cadenceFor, classifyMotion, createBroadcastGate } = await import(
   '../lib/gps/adaptive.js'
 );
+const {
+  MAX_SNAP_M,
+  OFF_ROUTE_M,
+  buildRouteGraph,
+  findRoute,
+  navKeyOf,
+  routeProgress,
+  snapToGraph,
+} = await import('../lib/routing.js');
+const { distance } = await import('../lib/geo.js');
 
 /* ------------------------------------------------------------- harness --- */
 
@@ -905,7 +916,252 @@ await check('reset makes the gate treat the next fix as the first', () => {
   return true;
 });
 
+/* -------------------------------------------------------------- routing -- */
+
+/* The router is only as good as the geometry under it, so these run against
+   the real park file rather than a hand-made toy graph: a fixture that routes
+   perfectly and a park that does not is the failure mode worth catching. */
+
+const PARK = JSON.parse(
+  fs.readFileSync(new URL('../public/parkmap.json', import.meta.url), 'utf8'),
+);
+const RIDES = JSON.parse(fs.readFileSync(new URL('../lib/rides.json', import.meta.url), 'utf8'));
+const poi = (name) => {
+  const hit = RIDES.find((p) => p.n === name);
+  if (!hit) throw new Error(`no POI named ${name}`);
+  return hit;
+};
+
+section('routing/graph');
+
+const graph = buildRouteGraph(PARK);
+
+await check('the park file builds a graph with paths in it', () => {
+  assert.ok(graph.nodes.length > 1000, `${graph.nodes.length} nodes`);
+  assert.ok(graph.segments.length > 1000, `${graph.segments.length} segments`);
+  return true;
+});
+
+await check('a file with no paths builds nothing rather than throwing', () => {
+  assert.equal(buildRouteGraph({ path: [], service: [] }), null);
+  assert.equal(buildRouteGraph(null), null);
+  return true;
+});
+
+await check('the repair passes leave one dominant piece of network', () => {
+  const label = new Map();
+  let biggest = 0;
+  graph.nodes.forEach((_, i) => {
+    if (label.has(i)) return;
+    const id = label.size;
+    let size = 0;
+    const stack = [i];
+    label.set(i, id);
+    while (stack.length) {
+      const v = stack.pop();
+      size += 1;
+      graph.nodes[v].edges.forEach((e) => {
+        if (!label.has(e.to)) {
+          label.set(e.to, id);
+          stack.push(e.to);
+        }
+      });
+    }
+    biggest = Math.max(biggest, size);
+  });
+  // Before the crossing, stitching and mending passes this was 60%.
+  assert.ok(biggest / graph.nodes.length > 0.85, `largest piece ${biggest}/${graph.nodes.length}`);
+  return true;
+});
+
+await check('every ride snaps onto the network, close by', () => {
+  const rides = RIDES.filter((p) => p.c === 'coaster' || p.c === 'ride');
+  const misses = rides.filter((p) => !snapToGraph(graph, p.lat, p.lng));
+  assert.deepEqual(misses.map((p) => p.n), []);
+  const worst = Math.max(...rides.map((p) => snapToGraph(graph, p.lat, p.lng).offset));
+  assert.ok(worst < MAX_SNAP_M, `worst snap ${worst.toFixed(0)} m`);
+  return true;
+});
+
+await check('snapping lands on the path, not on the query point', () => {
+  const beast = poi('The Beast');
+  const snap = snapToGraph(graph, beast.lat, beast.lng);
+  const drift = distance(beast.lat, beast.lng, snap.lat, snap.lng);
+  assert.ok(Math.abs(drift - snap.offset) < 2, `${drift} vs ${snap.offset}`);
+  return true;
+});
+
+section('routing/routes');
+
+await check('a route follows the paths and is longer than the crow flies', () => {
+  const from = poi('The Beast');
+  const to = poi('Orion');
+  const r = findRoute(graph, from, to, { landmarks: RIDES, destination: to.n });
+  const crow = distance(from.lat, from.lng, to.lat, to.lng);
+  assert.equal(r.mode, 'path');
+  assert.ok(r.metres > crow, 'a walk is never shorter than the straight line');
+  assert.ok(r.points.length > 10, `${r.points.length} points`);
+  assert.ok(r.seconds > 0);
+  return true;
+});
+
+await check('neighbouring rides do not route the long way round', () => {
+  // Both of these used to come back as 1.3 km walks between points 250 m
+  // apart, because the paths beside them were drawn without being joined.
+  [['The Beast', 'Diamondback'], ['Mystic Timbers', 'The Beast']].forEach(([a, b]) => {
+    const r = findRoute(graph, poi(a), poi(b), { landmarks: RIDES, destination: b });
+    const crow = distance(poi(a).lat, poi(a).lng, poi(b).lat, poi(b).lng);
+    assert.equal(r.mode, 'path', `${a} -> ${b} fell back to a straight line`);
+    assert.ok(r.metres < crow * 2.5, `${a} -> ${b} is ${Math.round(r.metres)} m for ${Math.round(crow)} m`);
+  });
+  return true;
+});
+
+await check('every pair of rides routes, and none absurdly', () => {
+  const rides = RIDES.filter((p) => p.c === 'coaster');
+  let worst = 0;
+  rides.forEach((a) =>
+    rides.forEach((b) => {
+      if (a === b) return;
+      const r = findRoute(graph, a, b, { landmarks: RIDES, destination: b.n });
+      assert.ok(r, `${a.n} -> ${b.n} returned nothing`);
+      const crow = distance(a.lat, a.lng, b.lat, b.lng);
+      if (crow > 100) worst = Math.max(worst, r.metres / crow);
+    }),
+  );
+  assert.ok(worst < 3.5, `worst detour ${worst.toFixed(2)}x`);
+  return true;
+});
+
+await check('with no graph the route is the straight line, not a crash', () => {
+  const r = findRoute(null, poi('The Beast'), poi('Orion'), { destination: 'Orion' });
+  assert.equal(r.mode, 'direct');
+  assert.equal(r.points.length, 2);
+  assert.ok(r.metres > 0);
+  return true;
+});
+
+await check('a destination outside the park falls back to the straight line', () => {
+  const r = findRoute(graph, poi('The Beast'), { lat: 39.29, lng: -84.31 }, { destination: 'home' });
+  assert.equal(r.mode, 'direct');
+  return true;
+});
+
+await check('missing or half-given ends route to nothing', () => {
+  assert.equal(findRoute(graph, null, poi('Orion')), null);
+  assert.equal(findRoute(graph, poi('Orion'), { lat: null, lng: null }), null);
+  return true;
+});
+
+section('routing/directions');
+
+await check('directions start with a heading and end at the destination', () => {
+  const to = poi('Orion');
+  const r = findRoute(graph, poi('The Beast'), to, { landmarks: RIDES, destination: to.n });
+  assert.equal(r.steps[0].turn, 'depart');
+  assert.match(r.steps[0].text, /^Head /);
+  assert.equal(r.steps[r.steps.length - 1].turn, 'arrive');
+  assert.equal(r.steps[r.steps.length - 1].text, 'Arrive at Orion');
+  return true;
+});
+
+await check('a mile of park does not become forty instructions', () => {
+  const r = findRoute(graph, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
+  // Reading turns off raw survey geometry gave one per bend. They are read off
+  // a smoothed copy instead, and short hops fold into the step before them.
+  assert.ok(r.steps.length < 16, `${r.steps.length} steps for ${Math.round(r.metres)} m`);
+  r.steps.slice(1, -1).forEach((s, i) => {
+    assert.ok(
+      s.fromStart - r.steps[i].fromStart > 20,
+      `steps ${i} and ${i + 1} are ${Math.round(s.fromStart - r.steps[i].fromStart)} m apart`,
+    );
+  });
+  return true;
+});
+
+await check('turns are named after what you can see from them', () => {
+  const r = findRoute(graph, poi('The Racer'), poi('Diamondback'), {
+    landmarks: RIDES,
+    destination: 'Diamondback',
+  });
+  const marked = r.steps.filter((s) => s.landmark);
+  assert.ok(marked.length > 0, 'no step picked up a landmark');
+  marked.forEach((s) => assert.ok(s.text.includes(s.landmark)));
+  return true;
+});
+
+section('routing/progress');
+
+const legRoute = findRoute(graph, poi('The Beast'), poi('Orion'), {
+  landmarks: RIDES,
+  destination: 'Orion',
+});
+
+await check('standing at the start leaves the whole walk to go', () => {
+  const p = routeProgress(legRoute, legRoute.points[0][0], legRoute.points[0][1]);
+  assert.ok(Math.abs(p.remaining - legRoute.metres) < 5, `${p.remaining} vs ${legRoute.metres}`);
+  assert.equal(p.arrived, false);
+  assert.ok(p.offset < 1);
+  return true;
+});
+
+await check('walking the line eats the distance and never goes backwards', () => {
+  let last = Infinity;
+  legRoute.points.forEach(([lat, lng]) => {
+    const p = routeProgress(legRoute, lat, lng);
+    assert.ok(p.remaining <= last + 1, `remaining rose from ${last} to ${p.remaining}`);
+    assert.ok(p.offset < 1.5, `offset ${p.offset} standing on the route`);
+    last = p.remaining;
+  });
+  assert.ok(last < 5, `${last} m left at the far end`);
+  return true;
+});
+
+await check('reaching the end reads as arrived', () => {
+  const end = legRoute.points[legRoute.points.length - 1];
+  assert.equal(routeProgress(legRoute, end[0], end[1]).arrived, true);
+  return true;
+});
+
+await check('wandering off the line is measured, not ignored', () => {
+  const mid = legRoute.points[Math.floor(legRoute.points.length / 2)];
+  const p = routeProgress(legRoute, mid[0] + 0.0009, mid[1]);
+  assert.ok(p.offset > OFF_ROUTE_M, `${p.offset} m off, threshold ${OFF_ROUTE_M}`);
+  return true;
+});
+
+await check('the next instruction is the one still ahead of you', () => {
+  const start = routeProgress(legRoute, legRoute.points[0][0], legRoute.points[0][1]);
+  assert.notEqual(start.step.turn, 'depart', 'the depart step is behind you the moment you set off');
+  const end = legRoute.points[legRoute.points.length - 1];
+  assert.equal(routeProgress(legRoute, end[0], end[1]).step.turn, 'arrive');
+  assert.ok(start.toStep <= start.remaining + 1);
+  return true;
+});
+
+await check('progress on nothing is nothing', () => {
+  assert.equal(routeProgress(null, 39.34, -84.26), null);
+  assert.equal(routeProgress(legRoute, null, null), null);
+  return true;
+});
+
+section('routing/targets');
+
+await check('a destination is identified by what it is, not where it was', () => {
+  assert.equal(navKeyOf({ kind: 'member', id: 'abc', label: 'Ava' }), 'member:abc');
+  assert.equal(navKeyOf({ kind: 'meet', label: 'Fountain' }), 'meet');
+  assert.equal(navKeyOf({ kind: 'poi', label: 'Orion' }), 'poi:Orion');
+  assert.equal(navKeyOf(null), null);
+  // A member who has walked on is still the same destination.
+  assert.equal(
+    navKeyOf({ kind: 'member', id: 'abc', lat: 1, lng: 2 }),
+    navKeyOf({ kind: 'member', id: 'abc', lat: 9, lng: 9 }),
+  );
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
+
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {

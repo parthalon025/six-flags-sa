@@ -563,3 +563,102 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   padding: 0 10px 4px; overflow-wrap: anywhere;
 }
 .diagFine.bad { color: var(--crimson); }
+
+/* ============================================================
+   Walking directions — the route on the map, the banner over it
+   ============================================================ */
+.routeCase {
+  fill: none; stroke: var(--markerEdge); stroke-width: 9;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .5;
+}
+.routeLine {
+  fill: none; stroke: var(--beacon); stroke-width: 5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+/* Nothing in the path data joins these two points, so the line is a bearing
+   rather than a walk — and it says so by not looking like a walk. */
+.routeLine.direct { stroke-dasharray: 8 7; stroke-width: 3.5; opacity: .8; }
+.routeTurn { fill: var(--beacon); stroke: var(--markerEdge); stroke-width: 2.4; }
+
+.navBanner {
+  position: absolute; left: 10px; right: 10px; top: calc(var(--top) + 58px); z-index: 39;
+  background: var(--chrome); border: 1px solid var(--beacon); border-radius: 3px;
+  backdrop-filter: blur(12px); overflow: hidden;
+  box-shadow: 0 6px 22px rgba(0,0,0,.35);
+}
+.navMain { display: flex; align-items: center; gap: 10px; padding: 9px 10px 6px; }
+.navTurn {
+  width: 34px; height: 34px; flex: none; border-radius: 3px; display: grid; place-items: center;
+  background: var(--beacon); color: #fff;
+}
+.navTurn.arrive { background: var(--crimson); }
+.navIcon { width: 22px; height: 22px; display: block; }
+.navText { flex: 1; min-width: 0; }
+.navText b {
+  display: block; font-size: 15px; font-weight: 600; line-height: 1.15;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.navText em {
+  display: block; font-style: normal; font-family: var(--mono); font-size: 9.5px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-top: 3px;
+}
+.navEta { flex: none; text-align: right; line-height: 1; }
+.navEta b { display: block; font-size: 19px; font-weight: 700; color: var(--beacon); }
+.navEta em {
+  display: block; font-style: normal; font-family: var(--mono); font-size: 9px;
+  color: var(--dimmer); margin-top: 4px;
+}
+.navFoot {
+  display: flex; align-items: center; gap: 10px; padding: 0 10px 8px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+}
+.navWhere {
+  flex: 1; min-width: 0; color: var(--dimmer);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.navLink { color: var(--dim); text-decoration: underline; text-underline-offset: 3px;
+  font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+.navStop {
+  flex: none; color: var(--crimson); border: 1px solid var(--line); border-radius: 3px;
+  padding: 5px 9px; font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.navProgress { height: 3px; background: var(--line); }
+.navProgress i { display: block; height: 100%; background: var(--beacon); transition: width .4s linear; }
+
+/* The tape and the height badge share the banner's slot, so they drop below it. */
+.tape.lowered { top: calc(var(--top) + 146px); }
+.app:has(.navBanner) .filterBadge { top: calc(var(--top) + 146px); }
+
+/* ---- the Go button on a glance card ---- */
+.glanceCard { position: relative; }
+.glanceHit {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  padding: 0; background: none; border: none; color: inherit;
+}
+.glanceCard.walking { border-left-color: var(--beacon); background: color-mix(in srgb, var(--beacon) 9%, var(--panel2)); }
+.glanceGo {
+  position: absolute; right: 6px; top: 6px; min-width: 36px; padding: 4px 8px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--dim);
+}
+.glanceGo.on { background: var(--beacon); border-color: var(--beacon); color: #fff; }
+
+/* ---- the full step list in the sheet ---- */
+.stepList { list-style: none; margin: 0; padding: 0; }
+.stepRow { border-bottom: 1px solid var(--line); }
+.stepRow.done { opacity: .4; }
+.stepRow.now { background: color-mix(in srgb, var(--beacon) 8%, transparent); }
+.stepMain { display: flex; gap: 10px; align-items: center; width: 100%; padding: 10px 6px; text-align: left; }
+.stepGlyph {
+  width: 26px; height: 26px; flex: none; border-radius: 3px; display: grid; place-items: center;
+  background: var(--panel2); color: var(--dim); font-size: 14px; line-height: 1;
+}
+.stepRow.now .stepGlyph { background: var(--beacon); color: #fff; }
+.stepGlyph.arrive { color: var(--crimson); }
+.stepText { flex: 1; min-width: 0; }
+.stepText b { display: block; font-size: 13.5px; font-weight: 600; }
+.stepText span {
+  display: block; font-family: var(--mono); font-size: 9.5px; color: var(--dimmer); margin-top: 2px;
+}

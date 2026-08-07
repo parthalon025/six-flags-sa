@@ -190,6 +190,88 @@ await check('clear removes the height filter', async () => {
   return (await a.locator('.filterBadge').count()) === 0;
 });
 
+console.log('\n--- walking directions ---');
+
+await check('"walk me there" starts a route to a ride', async () => {
+  await tab(a, 'Rides');
+  await a.locator('.field[aria-label="Search the park"]').fill('beast');
+  await a.waitForTimeout(400);
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.waitForTimeout(800);
+  if (!(await a.locator('.navBanner').count())) throw new Error('no banner');
+  const instruction = (await a.locator('.navText b').innerText()).trim();
+  if (!instruction) throw new Error('no instruction');
+  const eta = (await a.locator('.navEta b').innerText()).trim();
+  if (!/min/.test(eta)) throw new Error(`eta reads "${eta}"`);
+  return true;
+});
+
+await check('the route is drawn along the paths, not as one straight hop', async () => {
+  const d = await a.locator('.routeLine').getAttribute('d');
+  if (!d) throw new Error('no route line');
+  const corners = d.split('L').length - 1;
+  // A straight-line fallback has exactly one segment; a walk has dozens.
+  if (corners < 5) throw new Error(`${corners} segments — that is a bearing, not a walk`);
+  if (await a.locator('.routeLine.direct').count()) throw new Error('fell back to a straight line');
+  return true;
+});
+
+await check('the directions tab lists steps that end at the destination', async () => {
+  await a.locator('.navLink').click();
+  await a.waitForTimeout(500);
+  const steps = await a.locator('.stepRow .stepText b').allInnerTexts();
+  if (steps.length < 3) throw new Error(`${steps.length} steps`);
+  if (!/^Head /.test(steps[0])) throw new Error(`starts with "${steps[0]}"`);
+  if (!/^Arrive at /.test(steps[steps.length - 1])) throw new Error(`ends with "${steps.at(-1)}"`);
+  return true;
+});
+
+await check('walking towards it shortens what is left', async () => {
+  // The banner switches units on its own — "905 ft" becomes "0.35 mi" — so
+  // compare feet, not the number printed next to whichever unit won.
+  const left = async () => {
+    const t = (await a.locator('.navEta em').innerText()).trim();
+    const n = Number(t.replace(/[^\d.]/g, ''));
+    return /mi/.test(t) ? n * 5280 : n;
+  };
+  const before = await left();
+  // Halfway down International Street, on the way to Rivertown.
+  await A.context.setGeolocation({ latitude: 39.3419, longitude: -84.2667 });
+  await a.waitForTimeout(2500);
+  const after = await left();
+  if (!(after < before)) throw new Error(`${before} then ${after}`);
+  return true;
+});
+
+await check('arriving ends the route on its own', async () => {
+  await A.context.setGeolocation({ latitude: 39.340154, longitude: -84.266027 });
+  await until(async () => (await a.locator('.navBanner').count()) === 0, {
+    timeout: 20000,
+    label: 'the banner to clear on arrival',
+  });
+  if (await a.locator('.routeLine').count()) throw new Error('route still drawn');
+  return true;
+});
+
+await check('a glance card walks you to a place and stops again', async () => {
+  await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
+  await a.waitForTimeout(1200);
+  await tab(a, 'Party');
+  const go = a.locator('.glanceGo').first();
+  if (!(await go.count())) throw new Error('no Go button on the rail');
+  await go.click();
+  await a.waitForTimeout(900);
+  if (!(await a.locator('.navBanner').count())) throw new Error('Go did not start a route');
+  if (!(await a.locator('.glanceCard.walking').count())) throw new Error('card not marked as live');
+  await a.locator('.navStop').click();
+  await a.waitForTimeout(500);
+  if (await a.locator('.navBanner').count()) throw new Error('Stop left the banner up');
+  if (await a.locator('.routeLine').count()) throw new Error('Stop left the line drawn');
+  return true;
+});
+
 console.log('\n--- party: create and invite ---');
 await tab(a, 'Party');
 await a.waitForTimeout(300);

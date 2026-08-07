@@ -5,7 +5,7 @@ import { bearing, cardinal, distance, formatDistance } from '@/lib/geo';
 
 const SPAN = 140;
 
-export default function CompassTape({ me, members, meet, selected, heading }) {
+export default function CompassTape({ me, members, meet, selected, heading, lowered }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function CompassTape({ me, members, meet, selected, heading }) {
   }, [me, members, meet, selected, heading]);
 
   return (
-    <div className="tape">
+    <div className={`tape ${lowered ? 'lowered' : ''}`}>
       <canvas ref={ref} />
       <span className="tapeMode">{heading == null ? 'north-up' : 'compass'}</span>
     </div>

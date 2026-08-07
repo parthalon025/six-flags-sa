@@ -20,6 +20,11 @@ Next.js 15 (App Router) and React 19.
   showing walking time as the headline, distance underneath, and an arrow aimed
   relative to the way you're facing when the compass is on. With no party running it
   falls back to the nearest restroom, food and first aid. Tap a card to fly to it.
+- **Walking directions to anything on the map.** Tap Go on a card, or "Walk me there" on
+  a ride, and the route is drawn along the park's actual footpaths — with the next turn,
+  the distance to it and the time left in a strip under the header. Turns are named after
+  what you can see from them ("bear right at Juke Box Diner") because almost none of the
+  park's paths have names. Walk off the route and it works out a new one.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
 - **Daylight and night maps.** Daylight is a printed-park-map palette — white midways on
@@ -56,6 +61,47 @@ npm run dev          # http://localhost:3000
 ```
 
 `localhost` counts as a secure context, so GPS works there without a tunnel.
+
+## Walking directions
+
+Routes are worked out on the phone, from the same `public/parkmap.json` the map is drawn
+from. There is no routing service, no API key and no network call: the file already
+carries every midway, queue and service road as an OpenStreetMap polyline, and
+`lib/routing.js` welds those polylines into a graph and runs A* across it.
+
+The welding is the whole job. Raw OSM geometry looks connected on screen and is full of
+holes as a graph, so the build runs four repair passes and says so in one place:
+
+| Pass | What it fixes |
+|---|---|
+| weld | vertices within 6 m are one junction, whatever the source says |
+| split | two ways that cross without sharing a node get one |
+| stitch | a path that stops 15 m short of the midway it obviously joins |
+| mend | two paths a few paces apart that need a quarter mile of walking between them |
+
+Straight from the file the network is 221 disconnected pieces and half of all routes
+between two rides have no path at all; after the passes it is two, and the second one is
+the car parks and the north gate, which genuinely have no footpath drawn to them. Every
+ride in the park lands on the main one. The mend pass will not cut through a building or
+across water — where the gap is the mapper being right, it leaves it alone.
+
+Costs are metres, weighted: a queue is priced at four and a half times its length because
+it is a dead end with a ride at the bottom, not a through-route, and a service road at
+two and a half because it is legal to draw and rude to walk down. Walking time uses the
+same crowded-park pace as everything else in the app.
+
+Instructions are read off a *smoothed* copy of the route rather than the drawn one — a
+midway surveyed from aerial imagery bends every few metres, and reading turns off that
+gives "bear left, bear right, bear left" for one gentle curve. Steps closer together than
+35 m fold into the one before them.
+
+When either end is nowhere near a path, when the network genuinely does not join them, or
+when the walk it finds is more than three and a half times the straight line, the route
+falls back to a dashed straight line and the banner says so rather than inventing a walk.
+That last case is almost always two rides a few paces apart with a building between them,
+where "it is right there" beats a 270 m lap of the block. A straight line is also what you
+get for the second or two before the graph finishes building, which happens when the
+browser is idle rather than during the first paint of the map.
 
 ## How the party works
 
@@ -186,7 +232,9 @@ npm run test:ux                     # glance rail with a live party
 
 `test/unit.mjs` exercises the pure layers directly: version arithmetic, duplicate
 suppression, seal/open against wrong keys and tampered ciphertext, the election ordering,
-and every GPS cadence band and broadcast-gate reason.
+every GPS cadence band and broadcast-gate reason, and the router — the last of those
+against the real park file rather than a fixture, because a graph that routes perfectly
+over a toy and badly over Kings Island is the failure worth catching.
 
 `test/functional.mjs` is the one that matters. Three phones in one browser: A hosts, B
 joins by typing the code, C joins from the invite link, then A is taken away and the
@@ -251,6 +299,7 @@ lib/party/                    the halves of the protocol
 lib/gps/adaptive.js           motion classification, cadence, broadcast gating
 lib/partyRuntime.js           the seam: session, transports, host service or client
 lib/geo.js                    distance, bearing, Mercator projection
+lib/routing.js                path graph, repair passes, A*, turn-by-turn
 lib/park.js  lib/theme.js     POIs and height eligibility; day/night palettes
 lib/rides.json                152 places, 65 with height rules
 lib/serverStore.js            memory / Upstash backend for the cloud fallback
@@ -269,6 +318,8 @@ components/
   GpsGate.jsx                 permission dialog with per-failure guidance
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
+  NavBanner.jsx               the next turn, the distance to it, the time left
+  DirectionsPanel.jsx         the whole step list, greying out behind you
   useGeolocation.js           adaptive watchPosition, compass, battery
 server/index.mjs              zero-dependency host: mailbox, REST, SSE, metrics
 scripts/

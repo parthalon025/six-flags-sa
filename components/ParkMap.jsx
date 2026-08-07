@@ -19,6 +19,19 @@ function pathFromRing(ring, toX, toY) {
   return d;
 }
 
+/* Map geometry is [lng, lat] because that is how the file stores it; a route
+   comes back from the router as [lat, lng] because that is how every position
+   in the app is written. Hence the second one. */
+function pathFromLatLngs(points, toX, toY) {
+  if (!Array.isArray(points) || points.length < 2) return '';
+  let d = '';
+  for (let i = 0; i < points.length; i += 1) {
+    const [x, y] = project(points[i][0], points[i][1]);
+    d += `${i === 0 ? 'M' : 'L'}${toX(x).toFixed(1)} ${toY(y).toFixed(1)}`;
+  }
+  return d;
+}
+
 export default function ParkMap({
   data,
   pois,
@@ -36,6 +49,8 @@ export default function ParkMap({
   visibleCategories,
   focusPoint,
   theme,
+  route,
+  routeStep,
 }) {
   const palette = paletteFor(theme);
   const wrapRef = useRef(null);
@@ -252,6 +267,26 @@ export default function ParkMap({
             );
           })}
 
+        {/* the walking route, under the markers it runs between */}
+        {route?.points?.length > 1 &&
+          (() => {
+            const d = pathFromLatLngs(route.points, toX, toY);
+            return (
+              <g className="routeLayer">
+                <path className="routeCase" d={d} />
+                <path className={`routeLine ${route.mode === 'direct' ? 'direct' : ''}`} d={d} />
+                {routeStep?.at && routeStep.turn !== 'arrive' && (
+                  <circle
+                    cx={toX(project(routeStep.at[0], routeStep.at[1])[0])}
+                    cy={toY(project(routeStep.at[0], routeStep.at[1])[1])}
+                    r={6}
+                    className="routeTurn"
+                  />
+                )}
+              </g>
+            );
+          })()}
+
         {/* POIs */}
         {visiblePois.map((p) => {
           const [x, y] = project(p.lat, p.lng);
@@ -361,8 +396,9 @@ export default function ParkMap({
             );
           })()}
 
-        {/* range line to the selected place */}
-        {me && selected && (
+        {/* range line to the selected place — the route replaces it when one
+            is running, since two lines to the same pin is one too many */}
+        {me && selected && !route && (
           <line
             x1={toX(project(me.lat, me.lng)[0])}
             y1={toY(project(me.lat, me.lng)[1])}
