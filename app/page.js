@@ -151,7 +151,6 @@ export default function Page() {
     };
   }, [showToast]);
 
-  if (typeof window !== 'undefined') window.__party = party;
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
 
@@ -190,12 +189,13 @@ export default function Page() {
     const tick = () => {
       const fix = positionRef.current;
       if (!fix) return;
-      const decision = shouldBroadcast({ heading });
-      // eslint-disable-next-line no-console
-      console.log('GATE', JSON.stringify(decision), JSON.stringify(fix));
+      // `now` is passed explicitly because the gate falls back to the fix's own
+      // timestamp as its clock, and a phone that is standing still keeps being
+      // handed the same cached fix — so that clock stops, every later tick is
+      // rate-limited against it, and the heartbeat that exists to re-offer a
+      // position which never landed can never come round.
+      const decision = shouldBroadcast({ heading, now: Date.now() });
       if (!decision.send) return;
-      // eslint-disable-next-line no-console
-      console.log('PUSH');
       runtime.current?.pushLocation({
         lat: fix.lat,
         lng: fix.lng,
