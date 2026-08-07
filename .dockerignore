@@ -1,0 +1,31 @@
+# build artefacts and anything the image rebuilds for itself
+node_modules
+.next
+out
+build
+
+# vcs and tooling
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# tests and their output — the image runs the app, not the suite
+test/shots
+test/**/*.png
+
+# local config and secrets. .env.example is kept as documentation.
+.env
+.env.local
+.env*.local
+*.log
+.party-data.json
+parties.json
+
+# container definitions themselves
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+.DS_Store
