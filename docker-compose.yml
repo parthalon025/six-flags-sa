@@ -1,0 +1,36 @@
+# Self-hosting, whole thing:
+#
+#   docker compose up -d
+#
+# 3000 is the web app, 8787 is the party host (mailbox + REST + SSE). Point the
+# app at the host with NEXT_PUBLIC_SYNC_URL when they are not on the same origin.
+
+services:
+  party:
+    build: .
+    image: six-flags-sa:latest
+    container_name: six-flags-sa
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+      - '${SYNC_PORT:-8787}:8787'
+    environment:
+      NODE_ENV: production
+      # in-container ports; the mapping above is what changes on the host
+      WEB_PORT: 3000
+      PORT: 8787
+      # persistence lives on the named volume, so a redeploy keeps live parties
+      DATA_FILE: /data/parties.json
+      # comma-separated allowlist, or * for anything
+      ORIGIN: ${ORIGIN:-*}
+    volumes:
+      - party-data:/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8787/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  party-data:

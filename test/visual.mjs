@@ -1,0 +1,183 @@
+#!/usr/bin/env node
+/**
+ * Visual inspection harness.
+ *
+ * Boots a real Chromium against a running app, fakes a GPS position inside the
+ * park, walks the main flows and writes a PNG per step to test/shots/.
+ * These are for a human to look at — the assertions here only catch hard
+ * failures (console errors, missing map geometry).
+ *
+ *   npm run dev &            # or npm start after a build
+ *   npm run test:visual
+ */
+
+import { launch, until } from './browser.mjs';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const BASE = process.env.BASE_URL || 'http://127.0.0.1:3000';
+const OUT = path.join(process.cwd(), 'test', 'shots');
+// The Beast's station, so the shots land somewhere recognisable.
+const HOME = { latitude: 39.340154, longitude: -84.266027 };
+
+fs.mkdirSync(OUT, { recursive: true });
+
+const problems = [];
+let step = 0;
+
+async function shot(page, name) {
+  step += 1;
+  const file = path.join(OUT, `${String(step).padStart(2, '0')}-${name}.png`);
+  await page.screenshot({ path: file });
+  console.log(`  shot  ${path.relative(process.cwd(), file)}`);
+}
+
+async function openSheet(page, stop = 'full') {
+  for (let i = 0; i < 3; i += 1) {
+    if (await page.locator(`.sheet.${stop}`).count()) return;
+    await page.getByRole('button', { name: /Resize panel/ }).click();
+    await page.waitForTimeout(400);
+  }
+}
+
+const check = (ok, label) => {
+  console.log(`  ${ok ? 'pass' : 'FAIL'}  ${label}`);
+  if (!ok) problems.push(label);
+};
+
+async function main() {
+  const browser = await launch();
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 }, // iPhone 15 class
+    deviceScaleFactor: 2,
+    permissions: ['geolocation'],
+    geolocation: HOME,
+    locale: 'en-US',
+  });
+
+  const errors = [];
+  const page = await context.newPage();
+  const ignorable = /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)/;
+  page.on('console', (m) => {
+    // A blocked resource logs "Failed to load resource: …" with no URL in the
+    // text — the URL is on the message location, so test both.
+    const where = `${m.text()} ${m.location()?.url ?? ''}`;
+    if (m.type() === 'error' && !ignorable.test(where)) errors.push(m.text());
+  });
+  page.on('pageerror', (e) => errors.push(String(e)));
+
+  console.log(`\nvisual inspection against ${BASE}\n`);
+
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1200);
+  await shot(page, 'gps-gate');
+  check(
+    await page.getByRole('heading', { name: 'Turn on location' }).isVisible(),
+    'GPS gate is the first thing shown',
+  );
+
+  await page.getByRole('button', { name: 'Allow location' }).click();
+  await page.waitForTimeout(1500);
+  await page.getByRole('button', { name: /Just show me the park map/ }).click().catch(() => {});
+  await page.waitForTimeout(1800);
+  await shot(page, 'map-located');
+
+  const paths = await page.locator('.mapSvg path').count();
+  check(paths > 800, `park geometry drawn (${paths} vector paths)`);
+  const meDot = await page.locator('.mePulse').count();
+  check(meDot > 0, 'own position marker rendered from mocked GPS');
+
+  // Rides + height filter
+  await page.getByRole('tab', { name: /Rides & heights/ }).click();
+  await openSheet(page, 'full');
+  await page.waitForTimeout(700);
+  await shot(page, 'rides-panel');
+
+  const slider = page.locator('input[type=range]');
+  await slider.fill('46');
+  await page.waitForTimeout(500);
+  await shot(page, 'height-46in');
+  const tally = await page.locator('.ratioKey').innerText();
+  // The key is uppercased in CSS, so innerText comes back as "34 OPEN".
+  check(/\d+ open/i.test(tally), `height tally computed: ${tally.replace(/\n/g, ' ')}`);
+
+  await slider.fill('54');
+  await page.waitForTimeout(500);
+  await shot(page, 'height-54in');
+  const tally54 = await page.locator('.ratioKey').innerText();
+  check(tally54 !== tally, 'tally changes between 46in and 54in');
+
+  await page.getByRole('button', { name: /Only what they can ride/ }).click();
+  await page.waitForTimeout(500);
+  await shot(page, 'height-filtered-list');
+
+  // Party flow
+  await page.getByRole('tab', { name: /^Party/ }).click();
+  await page.waitForTimeout(400);
+  await page.getByRole('button', { name: 'Start a party' }).click();
+  await page.waitForTimeout(1800);
+  await shot(page, 'party-created');
+  const code = (await page.locator('.codeText').innerText().catch(() => '')).trim();
+  check(/^[A-HJ-NP-Z2-9]{6}$/.test(code), `party code issued: ${code || 'none'}`);
+
+  // A second phone joins the same party from across the park
+  if (code) {
+    const other = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      permissions: ['geolocation'],
+      geolocation: { latitude: 39.343328, longitude: -84.266981 }, // Eiffel Tower
+    });
+    const page2 = await other.newPage();
+    await page2.goto(BASE, { waitUntil: 'networkidle' });
+    await page2.getByRole('button', { name: 'Allow location' }).click();
+    await page2.waitForTimeout(1200);
+    await page2.getByRole('button', { name: /Just show me the park map/ }).click().catch(() => {});
+    await page2.waitForTimeout(1200);
+    await page2.getByRole('tab', { name: /^Party/ }).click();
+    await openSheet(page2, 'full');
+    await page2.locator('input.code').fill(code);
+    await page2.getByRole('button', { name: 'Join' }).click();
+    await page2.waitForTimeout(2000);
+    await page2.getByRole('button', { name: 'NEED HELP' }).click();
+    await page2.waitForTimeout(1500);
+    await shot(page2, 'second-phone-joined');
+
+    // Back to phone one: the other member should appear on the roster and map.
+    // Poll rather than sleeping a fixed interval — a party carried by the
+    // mailbox converges on its polling cadence, not on a number picked here,
+    // and a fixed wait turns a slow round trip into a failed assertion.
+    await until(() => page.locator('.memberRow').count().then((n) => n >= 2), {
+      timeout: 45000,
+      label: 'both phones on the roster',
+    }).catch(() => {});
+    await shot(page, 'roster-two-members');
+    const rows = await page.locator('.memberRow').count();
+    check(rows >= 2, `roster shows both phones (${rows} rows)`);
+    const range = await page.locator('.memberRange b').nth(1).innerText().catch(() => '');
+    check(/ft|mi/.test(range), `range to the other phone computed: ${range}`);
+    const helpTag = await until(() => page.locator('.chipTag.hot').count(), {
+      timeout: 45000,
+      label: 'the help tag',
+    }).catch(() => 0);
+    check(helpTag > 0, 'NEED HELP status propagated between devices');
+
+    await page.locator('.grab').click();
+    await page.waitForTimeout(600);
+    await shot(page, 'map-with-party');
+    await other.close();
+  }
+
+  check(errors.length === 0, `no console errors (${errors.length})`);
+  errors.slice(0, 5).forEach((e) => console.log(`        ! ${e.slice(0, 160)}`));
+
+  await browser.close();
+
+  console.log(`\n${problems.length ? `${problems.length} FAILED` : 'all checks passed'}`);
+  console.log(`shots in ${path.relative(process.cwd(), OUT)}\n`);
+  process.exit(problems.length ? 1 : 0);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

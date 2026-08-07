@@ -1,0 +1,34 @@
+{
+  "name": "kings-island-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18.18"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "phone": "node scripts/phone.mjs",
+    "setup": "bash scripts/setup.sh",
+    "sync": "node server/index.mjs",
+    "test": "node test/functional.mjs",
+    "test:functional": "node test/functional.mjs",
+    "test:visual": "node test/visual.mjs",
+    "test:theme": "node test/theme.mjs",
+    "test:ux": "node test/ux.mjs",
+    "dev:all": "node server/index.mjs & next dev"
+  },
+  "dependencies": {
+    "next": "^15.5.23",
+    "qrcode": "^1.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.23",
+    "playwright": "^1.62.1"
+  }
+}
