@@ -346,7 +346,10 @@ export default function Page() {
   const sheetClass = `sheet ${sheet}`;
 
   return (
-    <main className="app">
+    // data-sheet publishes the sheet's stop as a CSS custom property, so the
+    // FABs, the toast, the zoom pad and the scale bar all ride up and down with
+    // it on one shared easing instead of each keeping its own copy of the stops.
+    <main className="app" data-sheet={sheet}>
       <ParkMap
         data={mapData}
         pois={POIS}
