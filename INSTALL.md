@@ -189,7 +189,7 @@ cannot read where anyone is.
 
 Typing the code is the one exception. A code cannot carry a 256-bit key, so that
 phone asks the host for it over a single exchange protected by the code alone, and
-the host stops answering ten minutes after the party starts. Nothing else in the
+the host stops answering ten minutes after it starts hosting. Nothing else in the
 party is ever protected by the code.
 
 Party codes are short enough to read aloud in a queue, which means they're also
