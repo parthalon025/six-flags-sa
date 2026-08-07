@@ -20,11 +20,16 @@ Next.js 15 (App Router) and React 19.
   showing walking time as the headline, distance underneath, and an arrow aimed
   relative to the way you're facing when the compass is on. With no party running it
   falls back to the nearest restroom, food and first aid. Tap a card to fly to it.
-- **Walking directions to anything on the map.** Tap Go on a card, or "Walk me there" on
-  a ride, and the route is drawn along the park's actual footpaths — with the next turn,
-  the distance to it and the time left in a strip under the header. Turns are named after
-  what you can see from them ("bear right at Juke Box Diner") because almost none of the
-  park's paths have names. Walk off the route and it works out a new one.
+- **Turn-by-turn walking directions, the way a phone map does them.** Tap Go on a card or
+  "Walk me there" on a ride and you get the trip first — how long, when you arrive, and
+  two or three genuinely different ways to go, drawn on the map and named after where they
+  differ ("via Coney Mall"). Press Start and the screen hands itself over: the map turns
+  course-up and zooms in, your marker snaps onto the path, the next maneuver and the
+  distance to it sit across the top with the one after it underneath, and the bottom bar
+  carries the arrival time. Turns are named after what you can see from them ("bear right
+  at Juke Box Diner") because almost none of the park's paths have names. It can speak the
+  directions, the part behind you greys out as you walk, walking off the route works out a
+  new one, and arriving ends it.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
 - **Daylight and night maps.** Daylight is a printed-park-map palette — white midways on
@@ -84,6 +89,35 @@ between two rides have no path at all; after the passes it is two, and the secon
 the car parks and the north gate, which genuinely have no footpath drawn to them. Every
 ride in the park lands on the main one. The mend pass will not cut through a building or
 across water — where the gap is the mapper being right, it leaves it alone.
+
+### What it looks like to use
+
+The shape is the one both phone maps settled on, for reasons that hold up in a theme park
+as well as on a motorway:
+
+- **Choose, then go.** Asking for directions does not start anything. You get the route
+  framed on screen, the time, the arrival clock and the alternatives — press Start and
+  only then does the interface change. Cancel leaves you exactly where you were.
+- **Alternatives are generated, not looked up.** The penalty method: take the best route,
+  make its segments expensive, search again. A candidate is offered only if it shares less
+  than 70% of the best route and is under 45% longer, and it is named after the land it
+  passes through at the point where it most differs — so two routes are never both "via
+  International Street". Choose one and a reroute later replays the same weights, rather
+  than quietly putting you back on the line you turned down.
+- **Course-up, snapped, lifted.** While walking, the map turns so the way ahead is up, the
+  marker rides the *snapped* point on the route rather than the raw fix, and the centre of
+  the map sits below the centre of the screen so you see where you are going rather than
+  where you have been. The bearing comes from the compass when there is one and from the
+  route otherwise, taken from a point 22 m up the line — the leg underfoot swings with
+  every surveyed bend, and a camera that follows it is unusable.
+- **Rotation lives in the projection**, not in a transform over the map. Turning the whole
+  SVG would take every ride label round with it; doing it in the two lines that convert
+  metres to pixels keeps the type upright for free.
+- **It can talk.** The browser's own speech synthesiser names the maneuver once while
+  there is still time to move across the midway, again as you reach it, and says when you
+  have arrived — each at most once, because a phone that repeats itself gets muted.
+
+### Under it
 
 Costs are metres, weighted: a queue is priced at four and a half times its length because
 it is a dead end with a ride at the bottom, not a through-route, and a service road at
@@ -238,7 +272,9 @@ over a toy and badly over Kings Island is the failure worth catching.
 
 `test/functional.mjs` is the one that matters. Three phones in one browser: A hosts, B
 joins by typing the code, C joins from the invite link, then A is taken away and the
-other two have to keep the party alive between them. It asserts on behaviour, not
+other two have to keep the party alive between them. Phone A also walks to The Beast on
+the way through — offered the route, picks a different one, starts, checks the map has
+turned course-up, walks until the distance drops, opens the steps and arrives. It asserts on behaviour, not
 appearance — that the key never leaves the URL fragment, that a party id is not its code,
 that NEED HELP reaches the other phone, that the roster never collapses while the host is
 replaced, and that the map and ride heights still work with the network cut.
@@ -318,8 +354,11 @@ components/
   GpsGate.jsx                 permission dialog with per-failure guidance
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
-  NavBanner.jsx               the next turn, the distance to it, the time left
+  NavBanner.jsx               the maneuver strip: this turn, and the one after
+  NavBar.jsx                  arrival time, distance left, mute, compass, End
+  RoutePreview.jsx            the trip and its alternatives, before you set off
   DirectionsPanel.jsx         the whole step list, greying out behind you
+  useVoiceGuidance.js         spoken maneuvers, once each
   useGeolocation.js           adaptive watchPosition, compass, battery
 server/index.mjs              zero-dependency host: mailbox, REST, SSE, metrics
 scripts/

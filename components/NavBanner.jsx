@@ -1,12 +1,14 @@
 'use client';
 
-import { formatDistance, formatWalk } from '@/lib/geo';
+import { formatDistance } from '@/lib/geo';
 
-/* The strip that runs while you are walking somewhere. One instruction, the
-   distance to it, and how much is left — the three things worth reading with a
-   phone held at waist height in a crowd. Everything else stays on the map. */
+/* The strip that runs while you are walking somewhere: one maneuver, the
+   distance to it, and a glance at the one after. Everything else — how long is
+   left, when you get there, how to stop — lives on the bar at the bottom, the
+   way both phone maps do it, because the top of a phone is where your eyes go
+   and the bottom is where your thumb goes. */
 
-function TurnIcon({ turn }) {
+export function TurnIcon({ turn }) {
   // One arrow, rotated. A left turn is the right turn's mirror, and an arrival
   // is the only shape that isn't an arrow at all.
   if (turn === 'arrive') {
@@ -45,62 +47,41 @@ function TurnIcon({ turn }) {
   );
 }
 
-export default function NavBanner({ target, route, progress, offRoute, onStop, onShowSteps, steps }) {
+export default function NavBanner({ target, route, progress, offRoute, rerouted }) {
   if (!target) return null;
 
   const step = progress?.step ?? route?.steps?.[0] ?? null;
-  const remaining = progress?.remaining ?? route?.metres ?? null;
+  const then = progress?.next ?? route?.steps?.[1] ?? null;
   const toStep = progress?.toStep ?? null;
+  const arriving = step?.turn === 'arrive';
 
   return (
-    <section className="navBanner" aria-live="polite">
+    <section className={`navBanner ${offRoute ? 'off' : ''}`} aria-live="polite">
       <div className="navMain">
         <span className={`navTurn ${step?.turn || 'depart'}`}>
           <TurnIcon turn={step?.turn || 'depart'} />
         </span>
         <span className="navText">
-          <b>{step?.text || `Walking to ${target.label}`}</b>
-          <em>
-            {toStep != null && step?.turn !== 'arrive'
-              ? `in ${formatDistance(toStep)}`
-              : `to ${target.label}`}
-          </em>
-        </span>
-        <span className="navEta">
-          <b>{formatWalk(remaining)}</b>
-          <em>{formatDistance(remaining)}</em>
+          {!arriving && toStep != null && <b className="navDist">{formatDistance(toStep)}</b>}
+          <span className="navStep">{step?.text || `Walking to ${target.label}`}</span>
         </span>
       </div>
 
-      <div className="navFoot">
-        <span className="navWhere">
-          {offRoute
-            ? 'Off the route — finding a new one'
-            : route?.mode === 'direct'
-              ? 'No mapped path — straight line'
-              : `To ${target.label}`}
-        </span>
-        {steps > 1 && (
-          <button type="button" className="navLink" onClick={onShowSteps}>
-            All {steps} steps
-          </button>
-        )}
-        <button type="button" className="navStop" onClick={onStop}>
-          Stop
-        </button>
-      </div>
-
-      <div className="navProgress">
-        <i
-          style={{
-            width: `${
-              route?.metres > 0
-                ? Math.min(100, Math.max(0, ((route.metres - (remaining ?? 0)) / route.metres) * 100))
-                : 0
-            }%`,
-          }}
-        />
-      </div>
+      {offRoute || rerouted ? (
+        <div className="navThen rerouting">
+          <span className="navSpinner" aria-hidden="true" />
+          {offRoute ? 'Off the route — finding a new one' : 'New route from where you are'}
+        </div>
+      ) : (
+        then && (
+          <div className="navThen">
+            <span className={`navThenIcon ${then.turn}`}>
+              <TurnIcon turn={then.turn} />
+            </span>
+            then {then.text.toLowerCase()}
+          </div>
+        )
+      )}
     </section>
   );
 }

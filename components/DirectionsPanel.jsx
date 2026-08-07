@@ -1,44 +1,67 @@
 'use client';
 
 import { formatDistance, formatWalk } from '@/lib/geo';
+import { TurnIcon } from '@/components/NavBanner';
 
 /* The whole route, for the moment before you set off — or the moment you stop
    trusting the one-line banner. Steps already walked grey out as you go. */
 
-const GLYPH = {
-  depart: '↑',
-  straight: '↑',
-  left: '←',
-  right: '→',
-  arrive: '⚑',
-};
-
-export default function DirectionsPanel({ target, route, progress, onStop, onFocus }) {
+export default function DirectionsPanel({
+  target,
+  route,
+  progress,
+  walking,
+  onStart,
+  onStop,
+  onFocus,
+  onClose,
+}) {
   if (!target || !route) {
     return <p className="fine">Pick somewhere to walk to and the directions land here.</p>;
   }
 
-  const current = progress?.stepIndex ?? 0;
+  const current = progress?.stepIndex ?? -1;
+  const left = progress?.remaining ?? route.metres;
 
   return (
     <div>
       <div className="label">
         Walking to
-        <span className="labelRight">{route.mode === 'direct' ? 'straight line' : 'on the paths'}</span>
+        <span className="labelRight">
+          {route.mode === 'direct' ? 'straight line' : route.via ? `via ${route.via}` : 'on the paths'}
+        </span>
       </div>
       <div className="codeBox column">
         <div>
           <b>{target.label}</b>
           <span className="fine block">
-            {formatWalk(progress?.remaining ?? route.metres)} · {formatDistance(progress?.remaining ?? route.metres)} to go
-            {progress?.remaining != null && route.metres > 0
-              ? ` · ${Math.round(((route.metres - progress.remaining) / route.metres) * 100)}% walked`
+            {formatWalk(left)} · {formatDistance(left)}
+            {walking && route.metres > 0
+              ? ` · ${Math.round(((route.metres - left) / route.metres) * 100)}% walked`
               : ''}
           </span>
         </div>
-        <button type="button" className="btn small" onClick={onStop}>
-          Stop walking there
-        </button>
+        <div className="joinRow">
+          {walking ? (
+            <>
+              <button type="button" className="btn small" onClick={onClose}>
+                Back to the map
+              </button>
+              <button type="button" className="btn small" onClick={onStop}>
+                End
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn small primary" onClick={onStart}>
+                Start walking
+              </button>
+              <button type="button" className="btn small" onClick={onStop}>
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {route.mode === 'direct' && (
@@ -52,10 +75,17 @@ export default function DirectionsPanel({ target, route, progress, onStop, onFoc
       <div className="label">Directions</div>
       <ol className="stepList">
         {route.steps.map((s, i) => (
-          <li key={`${s.turn}-${s.atIndex}`} className={`stepRow ${i < current ? 'done' : ''} ${i === current ? 'now' : ''}`}>
-            <button type="button" className="stepMain" onClick={() => onFocus({ lat: s.at[0], lng: s.at[1] })}>
-              <span className={`stepGlyph ${s.turn}`} aria-hidden="true">
-                {GLYPH[s.turn] || '↑'}
+          <li
+            key={`${s.turn}-${s.atIndex}`}
+            className={`stepRow ${i < current ? 'done' : ''} ${i === current ? 'now' : ''}`}
+          >
+            <button
+              type="button"
+              className="stepMain"
+              onClick={() => onFocus({ lat: s.at[0], lng: s.at[1] })}
+            >
+              <span className={`stepGlyph ${s.turn}`}>
+                <TurnIcon turn={s.turn} />
               </span>
               <span className="stepText">
                 <b>{s.text}</b>

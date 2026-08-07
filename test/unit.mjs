@@ -63,11 +63,13 @@ const {
   OFF_ROUTE_M,
   buildRouteGraph,
   findRoute,
+  findRoutes,
   navKeyOf,
   routeProgress,
   snapToGraph,
+  splitRouteAt,
 } = await import('../lib/routing.js');
-const { distance } = await import('../lib/geo.js');
+const { bearing, distance } = await import('../lib/geo.js');
 
 /* ------------------------------------------------------------- harness --- */
 
@@ -1160,7 +1162,151 @@ await check('a destination is identified by what it is, not where it was', () =>
   return true;
 });
 
+section('routing/alternatives');
+
+await check('a long walk comes with other ways to make it', () => {
+  const rs = findRoutes(graph, poi('The Beast'), poi('Orion'), {
+    landmarks: RIDES,
+    destination: 'Orion',
+    areas: PARK.landAnchors,
+  });
+  assert.ok(rs.length > 1, 'only one route offered');
+  assert.equal(rs[0].mode, 'path');
+  // Offered in order, and none of them a silly detour.
+  rs.slice(1).forEach((r) => {
+    assert.ok(r.metres >= rs[0].metres, 'the fastest route is not first');
+    assert.ok(r.metres < rs[0].metres * 1.5, `${Math.round(r.metres)} m against ${Math.round(rs[0].metres)} m`);
+  });
+  return true;
+});
+
+await check('the alternatives are actually different roads', () => {
+  const rs = findRoutes(graph, poi('The Beast'), poi('Orion'), {
+    landmarks: RIDES,
+    destination: 'Orion',
+    areas: PARK.landAnchors,
+  });
+  const shared = (a, b) => {
+    let n = 0;
+    a.segments.forEach((s) => {
+      if (b.segments.has(s)) n += 1;
+    });
+    return n / Math.min(a.segments.size, b.segments.size);
+  };
+  for (let i = 0; i < rs.length; i += 1) {
+    for (let j = i + 1; j < rs.length; j += 1) {
+      assert.ok(shared(rs[i], rs[j]) <= 0.7, `routes ${i} and ${j} are the same walk`);
+    }
+  }
+  return true;
+});
+
+await check('each route is named after somewhere, and no two the same', () => {
+  const rs = findRoutes(graph, poi('Banshee'), poi('Mystic Timbers'), {
+    landmarks: RIDES,
+    destination: 'Mystic Timbers',
+    areas: PARK.landAnchors,
+  });
+  const vias = rs.map((r) => r.via);
+  vias.forEach((v) => assert.ok(v, 'a route with no name to pick it out by'));
+  assert.equal(new Set(vias).size, vias.length, `duplicate names: ${vias.join(', ')}`);
+  return true;
+});
+
+await check('an alternative remembers what made it different', () => {
+  const rs = findRoutes(graph, poi('The Beast'), poi('Orion'), {
+    landmarks: RIDES,
+    destination: 'Orion',
+    areas: PARK.landAnchors,
+  });
+  assert.equal(rs[0].avoid, null, 'the fastest route avoids nothing');
+  if (rs.length < 2) return true;
+  assert.ok(rs[1].avoid?.size > 0, 'no weights kept for the alternative');
+  // Rerouting with them replays the choice rather than reverting to the best.
+  const again = findRoute(graph, poi('The Beast'), poi('Orion'), {
+    landmarks: RIDES,
+    destination: 'Orion',
+    penalty: rs[1].avoid,
+  });
+  assert.ok(again.metres > rs[0].metres, 'the reroute snapped back to the fastest line');
+  return true;
+});
+
+await check('one route is offered when only one is asked for', () => {
+  const rs = findRoutes(graph, poi('The Beast'), poi('Orion'), { limit: 1 });
+  assert.equal(rs.length, 1);
+  return true;
+});
+
+section('routing/camera');
+
+const camRoute = findRoute(graph, poi('The Beast'), poi('Orion'), {
+  landmarks: RIDES,
+  destination: 'Orion',
+});
+
+await check('the course looks up the route, not at the leg underfoot', () => {
+  // Standing on the ride marker, the first leg is the little connector onto
+  // the path — which points wherever the marker happens to sit. The camera
+  // must not take its bearing from that.
+  const from = poi('The Beast');
+  const p = routeProgress(camRoute, from.lat, from.lng);
+  const ahead = camRoute.points[6];
+  const wanted = bearing(p.snapped[0], p.snapped[1], ahead[0], ahead[1]);
+  const gap = Math.abs(((p.course - wanted + 540) % 360) - 180);
+  assert.ok(gap < 70, `course ${Math.round(p.course)}° against ${Math.round(wanted)}° up the route`);
+  return true;
+});
+
+await check('the course holds steady along a straight stretch', () => {
+  const seen = [];
+  camRoute.points.slice(1, 8).forEach(([lat, lng]) => {
+    seen.push(routeProgress(camRoute, lat, lng).course);
+  });
+  const swings = seen.slice(1).map((c, i) => Math.abs(((c - seen[i] + 540) % 360) - 180));
+  assert.ok(Math.max(...swings) < 120, `camera swung ${Math.round(Math.max(...swings))}° in one step`);
+  return true;
+});
+
+await check('the line splits into walked and still to walk', () => {
+  const mid = camRoute.points[Math.floor(camRoute.points.length / 2)];
+  const p = routeProgress(camRoute, mid[0], mid[1]);
+  const { done, ahead } = splitRouteAt(camRoute, p);
+  assert.ok(done.length > 1 && ahead.length > 1);
+  // The two halves meet exactly where the walker is, and between them they
+  // are the whole route.
+  assert.deepEqual(done[done.length - 1], ahead[0]);
+  assert.equal(done.length + ahead.length, camRoute.points.length + 2);
+  return true;
+});
+
+await check('with nowhere to be, none of the line is behind you', () => {
+  assert.deepEqual(splitRouteAt(camRoute, null).done, []);
+  assert.equal(splitRouteAt(camRoute, null).ahead.length, camRoute.points.length);
+  assert.deepEqual(splitRouteAt(null, null), { done: [], ahead: [] });
+  return true;
+});
+
+section('routing/instructions');
+
+await check('two turns in a row do not name the same building', () => {
+  const pairs = [
+    ['The Beast', 'Orion'],
+    ['Banshee', 'Mystic Timbers'],
+    ['The Racer', 'Diamondback'],
+  ];
+  pairs.forEach(([a, b]) => {
+    const r = findRoute(graph, poi(a), poi(b), { landmarks: RIDES, destination: b });
+    r.steps.forEach((s, i) => {
+      if (i === 0 || !s.landmark) return;
+      assert.notEqual(s.landmark, r.steps[i - 1].landmark, `${a} -> ${b} says ${s.landmark} twice running`);
+    });
+  });
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
+
 
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

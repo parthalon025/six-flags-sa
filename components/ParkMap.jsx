@@ -6,15 +6,19 @@ import { paletteFor } from '@/lib/theme';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
    geometry for Kings Island, projected to Web Mercator metres and painted as
-   SVG. Pan with one finger, pinch or wheel to zoom. */
+   SVG. Pan with one finger, pinch or wheel to zoom.
 
+   `to(x, y)` is the one place world metres become screen pixels — pan, zoom,
+   rotation and the lifted centre all live in it, and everything drawn below
+   goes through it. */
 
-function pathFromRing(ring, toX, toY) {
+function pathFromRing(ring, to) {
   if (!Array.isArray(ring) || ring.length < 2) return '';
   let d = '';
   for (let i = 0; i < ring.length; i += 1) {
     const [x, y] = project(ring[i][1], ring[i][0]);
-    d += `${i === 0 ? 'M' : 'L'}${toX(x).toFixed(1)} ${toY(y).toFixed(1)}`;
+    const [sx, sy] = to(x, y);
+    d += `${i === 0 ? 'M' : 'L'}${sx.toFixed(1)} ${sy.toFixed(1)}`;
   }
   return d;
 }
@@ -22,12 +26,13 @@ function pathFromRing(ring, toX, toY) {
 /* Map geometry is [lng, lat] because that is how the file stores it; a route
    comes back from the router as [lat, lng] because that is how every position
    in the app is written. Hence the second one. */
-function pathFromLatLngs(points, toX, toY) {
+function pathFromLatLngs(points, to) {
   if (!Array.isArray(points) || points.length < 2) return '';
   let d = '';
   for (let i = 0; i < points.length; i += 1) {
     const [x, y] = project(points[i][0], points[i][1]);
-    d += `${i === 0 ? 'M' : 'L'}${toX(x).toFixed(1)} ${toY(y).toFixed(1)}`;
+    const [sx, sy] = to(x, y);
+    d += `${i === 0 ? 'M' : 'L'}${sx.toFixed(1)} ${sy.toFixed(1)}`;
   }
   return d;
 }
@@ -51,6 +56,16 @@ export default function ParkMap({
   theme,
   route,
   routeStep,
+  routeAhead,
+  routeDone,
+  alternatives,
+  onPickAlternative,
+  puck,
+  rotation = 0,
+  liftCentre = 0,
+  navZoom = null,
+  fitPoints,
+  fitKey = null,
 }) {
   const palette = paletteFor(theme);
   const wrapRef = useRef(null);
@@ -75,12 +90,16 @@ export default function ParkMap({
     return () => ro.disconnect();
   }, []);
 
-  // Follow mode keeps the marker centred without fighting manual pans.
+  // Follow mode keeps the marker centred without fighting manual pans. While a
+  // route is running it follows the snapped point rather than the raw fix, so
+  // the camera stops sliding sideways every time GPS changes its mind.
+  const anchorLat = puck?.lat ?? me?.lat ?? null;
+  const anchorLng = puck?.lng ?? me?.lng ?? null;
   useEffect(() => {
-    if (!follow || !me) return;
-    const [x, y] = project(me.lat, me.lng);
+    if (!follow || anchorLat == null) return;
+    const [x, y] = project(anchorLat, anchorLng);
     setView((v) => ({ ...v, x, y }));
-  }, [follow, me]);
+  }, [follow, anchorLat, anchorLng]);
 
   // An explicit focus request (tapping a roster row, a ride, the meet-up)
   // recentres and zooms in a little if we are far out.
@@ -90,16 +109,71 @@ export default function ParkMap({
     setView((v) => ({ x, y, scale: Math.max(v.scale, 1.6) }));
   }, [focusPoint]);
 
-  const toX = useCallback((x) => (x - view.x) * view.scale + size.w / 2, [view, size.w]);
-  const toY = useCallback((y) => (view.y - y) * view.scale + size.h / 2, [view, size.h]);
+  // Setting off pulls the camera in to walking zoom; ending a route leaves it
+  // where the walk finished rather than yanking it back out.
+  useEffect(() => {
+    if (navZoom == null) return;
+    setView((v) => ({ ...v, scale: navZoom }));
+  }, [navZoom]);
+
+  /* Frame a whole route on screen — what you want while deciding, as against
+     the nose-down camera you want while walking. Keyed rather than watching the
+     points array, so panning around a preview does not keep snapping back. */
+  useEffect(() => {
+    if (!fitKey || !fitPoints?.length || !size.w || !size.h) return;
+    let west = Infinity;
+    let east = -Infinity;
+    let south = Infinity;
+    let north = -Infinity;
+    fitPoints.forEach(([lat, lng]) => {
+      const [x, y] = project(lat, lng);
+      west = Math.min(west, x);
+      east = Math.max(east, x);
+      south = Math.min(south, y);
+      north = Math.max(north, y);
+    });
+    const usableW = size.w * 0.82;
+    const usableH = size.h * 0.46;
+    const scale = Math.min(
+      6,
+      Math.max(0.18, Math.min(usableW / Math.max(east - west, 1), usableH / Math.max(north - south, 1))),
+    );
+    setView({ x: (west + east) / 2, y: (south + north) / 2, scale });
+  }, [fitKey, fitPoints, size.w, size.h]);
+
+  /* Rotation lives in the projection rather than in an SVG transform over the
+     whole map. A transform would take every label and marker round with it —
+     upside-down ride names the moment you walk south — and undoing that per
+     element costs more than the two extra multiplications here. */
+  const spin = useMemo(() => {
+    const t = (-rotation * Math.PI) / 180;
+    return { cos: Math.cos(t), sin: Math.sin(t) };
+  }, [rotation]);
+  // Course-up puts you near the bottom of the screen looking up the route, so
+  // the centre of the map sits below the centre of the viewport.
+  const cx = size.w / 2;
+  const cy = size.h / 2 + liftCentre * size.h;
+
+  const to = useCallback(
+    (x, y) => {
+      const u = (x - view.x) * view.scale;
+      const v = (view.y - y) * view.scale;
+      return [u * spin.cos - v * spin.sin + cx, u * spin.sin + v * spin.cos + cy];
+    },
+    [view, spin, cx, cy],
+  );
+
+  const at = useCallback((lat, lng) => to(...project(lat, lng)), [to]);
 
   const screenToLatLng = useCallback(
     (px, py) => {
-      const x = (px - size.w / 2) / view.scale + view.x;
-      const y = view.y - (py - size.h / 2) / view.scale;
-      return unproject(x, y);
+      const dx = px - cx;
+      const dy = py - cy;
+      const u = dx * spin.cos + dy * spin.sin;
+      const v = -dx * spin.sin + dy * spin.cos;
+      return unproject(u / view.scale + view.x, view.y - v / view.scale);
     },
-    [view, size],
+    [view, spin, cx, cy],
   );
 
   /* ---------- gestures ---------- */
@@ -138,7 +212,11 @@ export default function ParkMap({
       moved.current = true;
       onUserPan?.();
     }
-    setView((v) => ({ ...v, x: v.x - dx / v.scale, y: v.y + dy / v.scale }));
+    // A drag is in screen pixels; with the map turned, the world moves along a
+    // different axis than the finger does.
+    const u = dx * spin.cos + dy * spin.sin;
+    const v = -dx * spin.sin + dy * spin.cos;
+    setView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
   };
 
   const onPointerUp = (e) => {
@@ -181,7 +259,7 @@ export default function ParkMap({
       (list || []).map((f, i) => {
         const r = ringOf(f);
         if (!r?.length) return null;
-        const d = pathFromRing(r, toX, toY);
+        const d = pathFromRing(r, to);
         if (!d) return null;
         return <path key={`${key}${i}`} d={`${d}Z`} />;
       });
@@ -189,10 +267,10 @@ export default function ParkMap({
       (list || []).map((f, i) => {
         const r = ringOf(f);
         if (!r?.length) return null;
-        return <path key={`${key}${i}`} d={pathFromRing(r, toX, toY)} />;
+        return <path key={`${key}${i}`} d={pathFromRing(r, to)} />;
       });
     return { poly, line };
-  }, [data, toX, toY]);
+  }, [data, to]);
 
   if (!data) {
     return (
@@ -225,7 +303,7 @@ export default function ParkMap({
           return (
             <path
               key={`ld${i}`}
-              d={`${pathFromRing(land.r, toX, toY)}Z`}
+              d={`${pathFromRing(land.r, to)}Z`}
               fill={tint.fill}
               stroke={tint.stroke}
               strokeWidth="1"
@@ -252,33 +330,50 @@ export default function ParkMap({
         {/* land names */}
         {showLabels &&
           Object.entries(data.landAnchors || {}).map(([name, [lat, lng]]) => {
-            const [x, y] = project(lat, lng);
+            const [sx, sy] = at(lat, lng);
             const tint = palette.lands[name] || palette.lands['Front Gate'];
             return (
-              <text
-                key={name}
-                x={toX(x)}
-                y={toY(y)}
-                className="landLabel"
-                fill={tint.label}
-              >
+              <text key={name} x={sx} y={sy} className="landLabel" fill={tint.label}>
                 {name.toUpperCase()}
               </text>
             );
           })}
 
+        {/* the routes not taken, offered while you are still deciding */}
+        {alternatives?.map((alt, i) => {
+          const d = pathFromLatLngs(alt.points, to);
+          if (!d) return null;
+          return (
+            <g
+              key={`alt${i}`}
+              className="altRoute"
+              onPointerUp={(e) => {
+                e.stopPropagation();
+                pointers.current.clear();
+                if (!moved.current) onPickAlternative?.(alt.index);
+              }}
+            >
+              <path className="altHit" d={d} />
+              <path className="altLine" d={d} />
+            </g>
+          );
+        })}
+
         {/* the walking route, under the markers it runs between */}
         {route?.points?.length > 1 &&
           (() => {
-            const d = pathFromLatLngs(route.points, toX, toY);
+            // Split at the walker: what is behind fades, what is ahead leads.
+            const ahead = pathFromLatLngs(routeAhead?.length > 1 ? routeAhead : route.points, to);
+            const done = routeDone?.length > 1 ? pathFromLatLngs(routeDone, to) : '';
             return (
               <g className="routeLayer">
-                <path className="routeCase" d={d} />
-                <path className={`routeLine ${route.mode === 'direct' ? 'direct' : ''}`} d={d} />
+                {done && <path className="routeDone" d={done} />}
+                <path className="routeCase" d={ahead} />
+                <path className={`routeLine ${route.mode === 'direct' ? 'direct' : ''}`} d={ahead} />
                 {routeStep?.at && routeStep.turn !== 'arrive' && (
                   <circle
-                    cx={toX(project(routeStep.at[0], routeStep.at[1])[0])}
-                    cy={toY(project(routeStep.at[0], routeStep.at[1])[1])}
+                    cx={at(routeStep.at[0], routeStep.at[1])[0]}
+                    cy={at(routeStep.at[0], routeStep.at[1])[1]}
                     r={6}
                     className="routeTurn"
                   />
@@ -289,9 +384,7 @@ export default function ParkMap({
 
         {/* POIs */}
         {visiblePois.map((p) => {
-          const [x, y] = project(p.lat, p.lng);
-          const sx = toX(x);
-          const sy = toY(y);
+          const [sx, sy] = at(p.lat, p.lng);
           if (sx < -40 || sy < -40 || sx > size.w + 40 || sy > size.h + 40) return null;
           const isSel = selected && selected.n === p.n;
           const dim = dimmedNames?.has(p.n);
@@ -330,25 +423,23 @@ export default function ParkMap({
         {/* meet-up */}
         {meet &&
           (() => {
-            const [x, y] = project(meet.lat, meet.lng);
+            const [sx, sy] = at(meet.lat, meet.lng);
             return (
               <g key="meet" className="meetPin">
                 <path
-                  d={`M${toX(x)} ${toY(y)} l-9 -13 a11 11 0 1 1 18 0 Z`}
+                  d={`M${sx} ${sy} l-9 -13 a11 11 0 1 1 18 0 Z`}
                   fill="var(--crimson)"
                   stroke="var(--markerEdge)"
                   strokeWidth="1.6"
                 />
-                <circle cx={toX(x)} cy={toY(y) - 16} r={4} fill="#fff" />
+                <circle cx={sx} cy={sy - 16} r={4} fill="#fff" />
               </g>
             );
           })()}
 
         {/* party members */}
         {members.map((m) => {
-          const [x, y] = project(m.lat, m.lng);
-          const sx = toX(x);
-          const sy = toY(y);
+          const [sx, sy] = at(m.lat, m.lng);
           const stale = Date.now() - m.ts > 300000;
           const help = m.status === 'NEED HELP';
           return (
@@ -372,26 +463,43 @@ export default function ParkMap({
           );
         })}
 
-        {/* me */}
+        {/* me — as a puck on the route while one is running, as a dot otherwise */}
         {me &&
           (() => {
-            const [x, y] = project(me.lat, me.lng);
-            const sx = toX(x);
-            const sy = toY(y);
+            const [fx, fy] = at(me.lat, me.lng);
+            const [sx, sy] = puck ? at(puck.lat, puck.lng) : [fx, fy];
             const accR = me.acc ? me.acc * view.scale : 0;
+            // A bearing lands on screen at `bearing - rotation`, because that
+            // is what turning the map under it does. The cone is drawn pointing
+            // up, so it needs the same subtraction — with the map course-up the
+            // two cancel and it points straight ahead, which is the point.
+            const facing = puck?.course ?? heading;
             return (
               <g key="me">
-                {accR > 6 && <circle cx={sx} cy={sy} r={accR} className="accCircle" />}
-                {heading != null && (
+                {accR > 6 && <circle cx={fx} cy={fy} r={accR} className="accCircle" />}
+                {puck && <circle cx={fx} cy={fy} r={3} className="rawFix" />}
+                {facing != null && (
                   <path
-                    d={`M${sx} ${sy - 26} l7 12 l-7 -4 l-7 4 Z`}
+                    d={
+                      puck
+                        ? `M${sx} ${sy - 30} l11 20 a24 24 0 0 0 -22 0 Z`
+                        : `M${sx} ${sy - 26} l7 12 l-7 -4 l-7 4 Z`
+                    }
+                    className={puck ? 'puckCone' : ''}
                     fill="var(--beacon)"
-                    opacity="0.85"
-                    transform={`rotate(${heading} ${sx} ${sy})`}
+                    opacity={puck ? 0.32 : 0.85}
+                    transform={`rotate(${facing - rotation} ${sx} ${sy})`}
                   />
                 )}
                 <circle cx={sx} cy={sy} r={9} className="mePulse" />
-                <circle cx={sx} cy={sy} r={7} fill="#FFC24A" stroke="var(--markerEdge)" strokeWidth="3" />
+                <circle
+                  cx={sx}
+                  cy={sy}
+                  r={7}
+                  fill="#FFC24A"
+                  stroke="var(--markerEdge)"
+                  strokeWidth="3"
+                />
               </g>
             );
           })()}
@@ -400,10 +508,10 @@ export default function ParkMap({
             is running, since two lines to the same pin is one too many */}
         {me && selected && !route && (
           <line
-            x1={toX(project(me.lat, me.lng)[0])}
-            y1={toY(project(me.lat, me.lng)[1])}
-            x2={toX(project(selected.lat, selected.lng)[0])}
-            y2={toY(project(selected.lat, selected.lng)[1])}
+            x1={at(me.lat, me.lng)[0]}
+            y1={at(me.lat, me.lng)[1]}
+            x2={at(selected.lat, selected.lng)[0]}
+            y2={at(selected.lat, selected.lng)[1]}
             className="rangeLine"
           />
         )}
