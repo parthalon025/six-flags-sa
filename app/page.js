@@ -109,6 +109,16 @@ export default function Page() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  // Close the gate when the fix actually lands. Checking this inside the
+  // "Allow location" handler cannot work: the permission prompt and the first
+  // fix are both async, so status is still 'asking' when the click returns and
+  // nothing looks again. The gate then sits over the whole UI intercepting
+  // taps, and the only way out reads "Just show me the park map" — which is the
+  // opposite of what someone who just granted location wants.
+  useEffect(() => {
+    if (geo.status === 'live') setGateOpen(false);
+  }, [geo.status]);
+
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
@@ -618,7 +628,6 @@ export default function Page() {
           onRequest={() => {
             geo.request();
             geo.enableCompass();
-            if (geo.status === 'live') setGateOpen(false);
           }}
           onManual={() => {
             setGateOpen(false);

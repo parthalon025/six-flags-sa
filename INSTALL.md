@@ -180,11 +180,17 @@ Nobody has to do anything, and the party code stays the same.
 
 ### What's private, and what isn't
 
-Your party's location data is encrypted with a key that only the phones in the
-party ever hold. It travels in the QR code and in the fragment of the invite link
-— the part after the `#`, which browsers never send to a server. If your phones
-end up relaying through the cloud, the relay can see *that* a party is active but
+Your party's location data is encrypted with a 256-bit key that only the phones in
+the party ever hold. It is random — nothing about it can be worked out from the
+party code — and it travels in the QR code and in the fragment of the invite link,
+the part after the `#`, which browsers never send to a server. If your phones end
+up relaying through the cloud, the relay can see *that* a party is active but
 cannot read where anyone is.
+
+Typing the code is the one exception. A code cannot carry a 256-bit key, so that
+phone asks the host for it over a single exchange protected by the code alone, and
+the host stops answering ten minutes after the party starts. Nothing else in the
+party is ever protected by the code.
 
 Party codes are short enough to read aloud in a queue, which means they're also
 short enough to guess. Treat a party as semi-public: use first names, and leave

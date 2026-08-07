@@ -47,8 +47,9 @@ export default function GpsGate({ status, error, onRequest, onManual, onDismiss 
           Just show me the park map
         </button>
         <p className="gateFine">
-          Position stays on your device unless you join a party. Then it goes to this
-          app&apos;s own server so the people holding your 5-character code can see it.
+          Position stays on your device unless you join a party. Then it is encrypted
+          and sent to the phone hosting that party — anything relaying it in between
+          carries it without being able to read it.
         </p>
       </div>
     </div>

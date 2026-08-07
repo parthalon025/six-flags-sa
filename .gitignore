@@ -3,3 +3,7 @@ node_modules
 out
 .env*.local
 .DS_Store
+
+# scratch harnesses agents drop at the root while verifying
+.drive-tmp.mjs
+*.tmp.mjs
