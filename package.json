@@ -10,6 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "phone": "node scripts/phone.mjs",
+    "setup": "bash scripts/setup.sh",
     "sync": "node server/index.mjs",
     "test": "node test/functional.mjs",
     "test:functional": "node test/functional.mjs",

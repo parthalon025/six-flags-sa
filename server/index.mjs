@@ -295,16 +295,20 @@ function readBody(req) {
     const chunks = [];
     let over = false;
     req.on('data', (chunk) => {
+      if (over) return;
       size += chunk.length;
       if (size > BODY_LIMIT) {
+        // Answer now rather than destroying the socket: the caller gets a real
+        // status instead of a reset, and node drops the unread body for us.
         over = true;
-        req.destroy();
+        req.pause();
+        resolve(null);
         return;
       }
       chunks.push(chunk);
     });
     req.on('end', () => {
-      if (over) return resolve(null);
+      if (over) return;
       try {
         const text = Buffer.concat(chunks).toString('utf8');
         const parsed = JSON.parse(text || '{}');

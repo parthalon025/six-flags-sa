@@ -1,10 +1,30 @@
 # Installing Kings Island Tracker
 
-Three ways to get this running, from least to most technical. **Most families want
-the first one.**
+The app ends up as an icon on everyone's phone, and one phone runs the party.
+There are no accounts and nobody has to sign up for anything.
 
-Whichever you pick, the app ends up as an icon on everyone's phone and one phone
-runs the party. There are no accounts, and nobody has to sign up for anything.
+## The two fast ways
+
+**Already have the code checked out?** One command, then scan:
+
+```bash
+npm run phone
+```
+
+It builds if it needs to, starts the app, opens an HTTPS tunnel and prints a QR
+code in your terminal. Point the phone's camera at it and you're running — with
+GPS working, because the tunnel gives you the `https://` phones insist on.
+
+**Want a permanent link instead?** One click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fparthalon025%2Fsix-flags-sa)
+
+That forks the repo to your GitHub account and deploys it. There is nothing to
+configure — no database, no environment variables — because parties run on the
+phones themselves. A minute later you get a link like
+`https://six-flags-sa.vercel.app` to open on every phone.
+
+Everything below is detail for when one of those doesn't suit.
 
 ---
 
@@ -26,22 +46,26 @@ development instructions work without any of this.
 ## Option 1 — Put it online once, use it forever
 
 Best for: a family that wants a permanent link and never wants to think about it
-again. Takes about ten minutes, once. Free, no card.
+again. Free, no card.
 
-1. Make a free account at **[github.com](https://github.com)** and at
-   **[vercel.com](https://vercel.com)** — sign in to Vercel *with* GitHub so the
-   two are already connected.
-2. Put this project in a GitHub repository. On github.com: **New repository** →
+Use the **Deploy** button at the top of this page — it does the whole thing. You
+will need a free [github.com](https://github.com) account and a free
+[vercel.com](https://vercel.com) account; sign in to Vercel *with* GitHub so the
+two are already connected.
+
+Doing it by hand instead:
+
+1. Put this project in a GitHub repository. On github.com: **New repository** →
    name it `kings-island-tracker` → **Create** → **uploading an existing file** →
    drag in everything from this folder *except* `node_modules` and `.next` →
    **Commit**.
-3. On vercel.com: **Add New → Project** → pick that repository → **Deploy**.
-   Change nothing; the defaults are right. A minute later you get a link like
-   `https://kings-island-tracker.vercel.app`.
-4. Open that link on each phone and follow **[Put it on the home screen](#put-it-on-the-home-screen)** below.
+2. On vercel.com: **Add New → Project** → pick that repository → **Deploy**.
+   Change nothing; the defaults are right.
+3. Open the link it gives you on each phone and follow
+   **[Put it on the home screen](#put-it-on-the-home-screen)** below.
 
-That's the whole install. Party hosting runs on the phones themselves, so there
-is **no database to set up** and nothing else to configure.
+Either way that's the whole install. Party hosting runs on the phones
+themselves, so there is **no database to set up** and nothing else to configure.
 
 > **A note on what Vercel is doing here.** It serves the app and acts as a relay
 > when two phones can't reach each other directly. It is not the source of truth
@@ -90,19 +114,25 @@ afterwards. Your laptop has to stay awake and online at home while you're at the
 park.
 
 ```bash
-./scripts/setup.sh
-npm start
+npm run phone
 ```
 
-Then in a second terminal:
+That is the whole thing: it builds, starts, tunnels and prints a QR code to
+scan. The address changes each time you restart it, so this is a
+day-of-the-trip tool rather than a permanent setup.
+
+It looks for [`cloudflared`](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/)
+first and falls back to `localtunnel`, which needs nothing installed but asks the
+phone for a password the first time — the answer is your laptop's public IP,
+which the page itself shows you. Installing `cloudflared` skips that prompt.
+
+Useful flags:
 
 ```bash
-npx localtunnel --port 3000
+npm run phone -- --dev          # dev server instead of a production build
+npm run phone -- --lan          # skip the tunnel (no GPS — see the warning it prints)
+npm run phone -- --port 3001    # if something already owns 3000
 ```
-
-It prints an `https://….loca.lt` address that works on any phone, GPS included.
-The address changes every time you restart the tunnel, so this is a
-day-of-the-trip tool rather than a permanent setup.
 
 If you don't have Node yet, install the **LTS** build from
 [nodejs.org](https://nodejs.org) and reopen your terminal. `./scripts/setup.sh`
@@ -180,8 +210,10 @@ party and reload the page.
 ## For developers
 
 ```bash
-./scripts/setup.sh --dev          # install and start the dev server
-./scripts/setup.sh --with-tests   # also fetch the browser the suites need
+npm run setup                     # check Node, install, build
+npm run setup -- --dev            # …then start the dev server
+npm run setup -- --with-tests     # also fetch the browser the suites need
+npm run phone                     # run it on a real phone, via QR
 npm test                          # the full functional audit
 ```
 
