@@ -522,3 +522,44 @@ body { touch-action: manipulation; user-select: none; -webkit-user-select: none;
 input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px; }
 .sheetBody, .glanceRail, .chips { -webkit-overflow-scrolling: touch; }
 @supports (-webkit-touch-callout: none) { .sheet { padding-bottom: env(safe-area-inset-bottom, 0px); } }
+
+/* ---- invite QR + camera join ---- */
+.qrBox {
+  display: grid; place-items: center; padding: 12px; border-radius: 10px;
+  background: #fff; border: 1px solid var(--line); min-height: 200px;
+}
+.qrImg { display: block; width: 100%; max-width: 232px; height: auto; image-rendering: pixelated; }
+.scanner {
+  margin-top: 10px; padding: 12px; border-radius: 10px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.scannerView {
+  display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+  border-radius: 8px; background: #000;
+}
+.scanner .btn { margin: 0; }
+
+/* ---- diagnostics ---- */
+.diagTable { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.diagRow {
+  display: flex; gap: 10px; align-items: baseline; justify-content: space-between;
+  padding: 7px 10px; border-bottom: 1px solid var(--line);
+}
+.diagRow:last-child { border-bottom: none; }
+.diagKey { font-size: 12px; color: var(--dim); }
+.diagKey em { font-style: normal; font-size: 9px; color: var(--dimmer); letter-spacing: .08em; }
+.diagVal {
+  font-family: var(--mono); font-size: 12px; color: var(--paper);
+  text-align: right; overflow-wrap: anywhere;
+}
+.diagVal.ok { color: var(--mint); }
+.diagVal.warn { color: var(--beacon); }
+.diagVal.bad { color: var(--crimson); }
+.diagCard { border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.diagCard:last-child { border-bottom: none; }
+.diagCard .diagRow { border-bottom: none; padding-bottom: 2px; }
+.diagFine {
+  font-family: var(--mono); font-size: 10.5px; line-height: 1.6; color: var(--dimmer);
+  padding: 0 10px 4px; overflow-wrap: anywhere;
+}
+.diagFine.bad { color: var(--crimson); }

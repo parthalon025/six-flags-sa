@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import QrScanner from '@/components/QrScanner';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { POIS } from '@/lib/park';
 
@@ -24,12 +25,62 @@ function nearestPlace(lat, lng) {
   return best;
 }
 
+/**
+ * The invite QR.
+ *
+ * `qrcode` is imported dynamically for one reason: it is a CommonJS package
+ * whose browser build is selected by the bundler's browser field, and pulling
+ * it in statically drags it into the server bundle of a page that is
+ * prerendered. Rendering is a no-op until there is an invite to encode, so the
+ * module is never fetched by a phone that has not started a party.
+ */
+function InviteQr({ invite }) {
+  const [src, setSrc] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!invite) return undefined;
+    let cancelled = false;
+    setFailed(false);
+    import('qrcode')
+      .then((mod) => (mod.default || mod).toDataURL(invite, {
+        margin: 1,
+        width: 232,
+        errorCorrectionLevel: 'M',
+        // Fixed black-on-white whatever the app theme is: a themed QR in
+        // daylight mode is a QR that phones refuse to read.
+        color: { dark: '#000000', light: '#ffffff' },
+      }))
+      .then((url) => {
+        if (!cancelled) setSrc(url);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [invite]);
+
+  if (failed) return <p className="fine">Could not draw the QR. Read out the code instead.</p>;
+  if (!src) return <div className="qrBox" aria-hidden="true" />;
+  return (
+    <div className="qrBox">
+      {/* eslint-disable-next-line @next/next/no-img-element -- a data: URL has nothing for next/image to optimise */}
+      <img className="qrImg" src={src} alt="Scan to join this party" width={232} height={232} />
+    </div>
+  );
+}
+
 export default function PartyPanel({
   code,
+  invite,
   members,
   meet,
   me,
   myId,
+  hostId,
+  hosting,
   status,
   onStatus,
   onCreate,
@@ -38,19 +89,23 @@ export default function PartyPanel({
   onClearMeet,
   onFocus,
   busy,
-  durable,
   transport,
-  lastSync,
+  version,
+  queued,
 }) {
   const [entry, setEntry] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [showQr, setShowQr] = useState(true);
 
   if (!code) {
     return (
       <div>
         <div className="label">Group tracking</div>
         <p className="fine" style={{ marginTop: 0 }}>
-          One person starts a party and reads out the code. Everyone else types it in.
-          After that you see each other live — range, bearing, nearest ride and status.
+          One phone starts the party and hosts it. Everyone else joins by scanning the QR,
+          opening the link, or typing the six-character code. Positions are sealed with a key
+          that never reaches a server, and if the host walks off another phone takes over on
+          its own.
         </p>
         <button type="button" className="btn primary" onClick={onCreate} disabled={busy}>
           {busy ? 'Starting…' : 'Start a party'}
@@ -59,20 +114,33 @@ export default function PartyPanel({
         <div className="joinRow">
           <input
             className="field code"
-            maxLength={5}
-            placeholder="ABC12"
+            maxLength={6}
+            placeholder="ABC234"
+            aria-label="Party code"
             value={entry}
-            onChange={(e) => setEntry(e.target.value.toUpperCase())}
+            onChange={(e) => setEntry(e.target.value.toUpperCase().replace(/[^A-HJ-NP-Z2-9]/g, ''))}
           />
           <button
             type="button"
             className="btn"
             onClick={() => onJoin(entry)}
-            disabled={entry.length < 4 || busy}
+            disabled={entry.length < 6 || busy}
           >
             Join
           </button>
         </div>
+        <button type="button" className="btn" onClick={() => setScanning((v) => !v)}>
+          {scanning ? 'Stop the camera' : 'Scan a party QR'}
+        </button>
+        {scanning && (
+          <QrScanner
+            onResult={(text) => {
+              setScanning(false);
+              onJoin(text);
+            }}
+            onCancel={() => setScanning(false)}
+          />
+        )}
       </div>
     );
   }
@@ -81,39 +149,58 @@ export default function PartyPanel({
     if (a.id === myId) return -1;
     if (b.id === myId) return 1;
     if (!me) return 0;
-    return (
-      distance(me.lat, me.lng, a.lat, a.lng) - distance(me.lat, me.lng, b.lat, b.lng)
-    );
+    return distance(me.lat, me.lng, a.lat, a.lng) - distance(me.lat, me.lng, b.lat, b.lng);
   });
+
+  const hostName = members.find((m) => m.id === hostId)?.name;
 
   return (
     <div>
       <div className="label">
         Party code
-        {lastSync ? (
-          <span className="labelRight">
-            {transport === 'stream' ? 'live' : 'polling'} · synced {formatAge(Date.now() - lastSync)}
-          </span>
-        ) : null}
+        <span className="labelRight">
+          {transport || 'connecting'} · v{version}
+          {queued ? ` · ${queued} queued` : ''}
+        </span>
       </div>
       <div className="codeBox">
         <span className="codeText">{code}</span>
         <button
           type="button"
-          onClick={() => navigator.clipboard?.writeText(code).catch(() => {})}
+          onClick={() => navigator.clipboard?.writeText(invite || code).catch(() => {})}
         >
-          Copy
+          Copy link
         </button>
         <button type="button" onClick={onLeave}>
           Leave
         </button>
       </div>
-      {transport !== 'stream' && (
-        <p className="fine warnText">
-          Polling every 8s. Point NEXT_PUBLIC_SYNC_URL at the standalone sync server for
-          push updates instead.
-        </p>
-      )}
+
+      <div className="label">
+        Invite
+        <button type="button" className="labelAction" onClick={() => setShowQr((v) => !v)}>
+          {showQr ? 'Hide' : 'Show'}
+        </button>
+      </div>
+      {showQr ? (
+        <>
+          <InviteQr invite={invite} />
+          <p className="fine">
+            The other phone points its camera at this. The key that decrypts the party rides in
+            the link&apos;s fragment, which browsers never send to a server.
+          </p>
+        </>
+      ) : null}
+
+      <div className="label">
+        Hosting
+        <span className="labelRight">{hosting ? 'this phone' : hostName || 'another phone'}</span>
+      </div>
+      <p className="fine" style={{ marginTop: 0 }}>
+        {hosting
+          ? 'This phone holds the roster and answers everyone else. If it drops off, the best-placed phone takes over by itself.'
+          : `${hostName || 'Another phone'} holds the roster. If it drops off, this one may take over automatically.`}
+      </p>
 
       <div className="label">Roster</div>
       {sorted.length === 0 ? (
@@ -122,16 +209,17 @@ export default function PartyPanel({
         <div className="roster">
           {sorted.map((m) => {
             const isMe = m.id === myId;
-            const d = me && !isMe ? distance(me.lat, me.lng, m.lat, m.lng) : null;
+            const located = Number.isFinite(m.lat) && Number.isFinite(m.lng);
+            const d = me && located && !isMe ? distance(me.lat, me.lng, m.lat, m.lng) : null;
             const b = d != null ? bearing(me.lat, me.lng, m.lat, m.lng) : null;
-            const near = nearestPlace(m.lat, m.lng);
+            const near = located ? nearestPlace(m.lat, m.lng) : null;
             const stale = Date.now() - m.ts > 300000;
             return (
               <button
                 type="button"
                 key={m.id}
                 className={`memberRow ${stale ? 'stale' : ''}`}
-                onClick={() => !isMe && onFocus(m)}
+                onClick={() => !isMe && located && onFocus(m)}
               >
                 <span className="pip" style={{ background: isMe ? '#FFC24A' : m.colour }}>
                   {m.initials}
@@ -140,10 +228,12 @@ export default function PartyPanel({
                   <b>
                     {m.name}
                     {isMe && <em className="chipTag">you</em>}
+                    {m.id === hostId && <em className="chipTag">host</em>}
                     {m.status === 'NEED HELP' && <em className="chipTag hot">help</em>}
                   </b>
                   <span>
-                    {near ? near.p.n.toUpperCase() : '—'} · {m.status} · {formatAge(Date.now() - m.ts)}
+                    {near ? near.p.n.toUpperCase() : 'NO FIX YET'} · {m.status} ·{' '}
+                    {formatAge(Date.now() - m.ts)}
                   </span>
                 </span>
                 <span className="memberRange">
@@ -206,8 +296,8 @@ export default function PartyPanel({
         </div>
       ) : (
         <p className="fine">
-          None set. Tap the pin button on the map then tap a spot, or open a place in
-          Rides and make it the meet-up.
+          None set. Tap the pin button on the map then tap a spot, or open a place in Rides and
+          make it the meet-up.
         </p>
       )}
     </div>

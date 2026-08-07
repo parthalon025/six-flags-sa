@@ -10,9 +10,11 @@ Next.js 15 (App Router) and React 19.
 - **Height requirements on all 65 rides.** Drag one slider to a rider's height and the
   map dims everything they can't get on, with a running tally of what's open, what needs
   an adult along, and what's closed.
-- **Live party tracking.** One person starts a party, everyone else joins with a
-  5-character code. Range in feet, compass bearing, nearest ride, status and staleness
-  for each person.
+- **Live party tracking.** One person starts a party and hosts it on their own phone;
+  everyone else joins by scanning the QR, opening the invite link, or typing the
+  6-character code. Range in feet, compass bearing, nearest ride, status and staleness
+  for each person. If the host walks off, the best-placed remaining phone takes over the
+  roster on its own, keeping the same party code.
 - **A glance rail instead of a menu.** The collapsed sheet is a live dashboard, not
   boilerplate: one card per party member plus the meet-up and your destination, each
   showing walking time as the headline, distance underneath, and an arrow aimed
@@ -140,7 +142,9 @@ falling back to polling by itself if a proxy eats the connection:
 NEXT_PUBLIC_SYNC_URL=https://your-sync-server.example.com
 ```
 
-`lib/sync.js` is the only file that knows which backend is in play.
+`lib/partyRuntime.js` is the only file that knows which transports are in play; point
+`NEXT_PUBLIC_SYNC_URL` at the standalone server and it goes into the transport list ahead
+of the cloud relay, and into the invite so joiners try it first.
 
 ## API
 
@@ -194,8 +198,10 @@ threshold, and that the map still draws with the network switched off.
 
 ## A word on privacy
 
-Party codes are five characters from a 32-symbol alphabet — short enough to read aloud in
-a queue, and short enough to guess. Treat a party as a semi-public channel: use first
+Party codes are six characters from a 32-symbol alphabet — short enough to read aloud in
+a queue, and short enough to guess. The party key is derived from the code, so knowing the
+code is knowing the party: positions are sealed end-to-end and no relay can read them, but
+a guessed code can. Treat a party as a semi-public channel: use first
 names, and leave when you're done, which deletes your record from the server. Nothing is
 sent anywhere until you actually join a party; before that your position stays in the
 browser.
@@ -240,7 +246,7 @@ test/visual.mjs               headless browser walkthrough -> test/shots/
 test/browser.mjs              shared Chromium launcher, honours CHROMIUM_PATH
 eslint.config.mjs             flat config, next/core-web-vitals
 lib/
-  sync.js                     one client, polling or SSE depending on config
+  partyRuntime.js             the seam: session, transports, host service or client
   theme.js                    daylight + night palettes (lands, category colours)
   park.js                     POIs, height eligibility
   rides.json                  152 places, 65 with height rules

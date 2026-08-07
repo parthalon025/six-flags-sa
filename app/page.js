@@ -8,10 +8,10 @@ import PartyPanel from '@/components/PartyPanel';
 import GlanceRail from '@/components/GlanceRail';
 import InstallCard from '@/components/InstallCard';
 import RidesPanel from '@/components/RidesPanel';
+import Diagnostics from '@/components/Diagnostics';
 import useGeolocation from '@/components/useGeolocation';
 import { POIS, CATEGORIES, eligibility } from '@/lib/park';
-import { paletteFor } from '@/lib/theme';
-import * as sync from '@/lib/sync';
+import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
 import {
   bearing,
   cardinal,
@@ -31,20 +31,20 @@ const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
 
 const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
 
+/** How often the broadcast gate is asked whether the current fix is worth sending. */
+const GATE_TICK_MS = 4000;
+
 export default function Page() {
   const geo = useGeolocation();
+  const { position, heading, shouldBroadcast } = geo;
   const [mapData, setMapData] = useState(null);
   const [gateOpen, setGateOpen] = useState(true);
 
   const [identity, setIdentity] = useState(null); // {id, name}
-  const [code, setCode] = useState(null);
-  const [durable, setDurable] = useState(false);
-  const [members, setMembers] = useState([]);
-  const [meet, setMeet] = useState(null);
+  const [party, setParty] = useState(null); // the runtime's snapshot
+  const [localMeet, setLocalMeet] = useState(null); // a meet-up marked before joining anything
   const [status, setStatus] = useState('On the move');
-  const [lastSync, setLastSync] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [transport, setTransport] = useState('polling');
 
   const [selected, setSelected] = useState(null);
   const [tab, setTab] = useState('party');
@@ -59,7 +59,12 @@ export default function Page() {
   const [focusPoint, setFocusPoint] = useState(null);
   const [theme, setTheme] = useState('night');
 
-  const lastPush = useRef(0);
+  const runtime = useRef(null);
+  // Also in state, because the diagnostics panel is a render-time consumer and
+  // a ref assigned inside an effect never triggers the render that reads it.
+  const [runtimeApi, setRuntimeApi] = useState(null);
+  const identityRef = useRef(null);
+  const positionRef = useRef(null);
   const helpSeen = useRef(new Set());
 
   /* ---------- boot ---------- */
@@ -86,188 +91,174 @@ export default function Page() {
     const next = saved?.id
       ? saved
       : { id: Math.random().toString(36).slice(2, 10), name: 'Guest' };
+    identityRef.current = next;
     setIdentity(next);
     if (saved?.height != null) setHeight(saved.height);
     // Follow the phone's own appearance setting until the visitor overrides it.
     if (saved?.theme) setTheme(saved.theme);
     else if (window.matchMedia?.('(prefers-color-scheme: light)').matches) setTheme('day');
-    if (saved?.code) setCode(saved.code);
   }, []);
 
   useEffect(() => {
     if (!identity) return;
-    localStorage.setItem(
-      'ki-identity',
-      JSON.stringify({ ...identity, height, code, theme }),
-    );
-  }, [identity, height, code, theme]);
+    identityRef.current = identity;
+    localStorage.setItem('ki-identity', JSON.stringify({ ...identity, height, theme }));
+  }, [identity, height, theme]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200);
   }, []);
 
-  /* ---------- party sync ---------- */
-  const decorate = useCallback(
-    (list) =>
-      list.map((m) => ({
+  /* ---------- the party runtime ---------- */
+
+  // One runtime for the life of the page. It owns the session, the transports
+  // and whichever half of the protocol this device is running; everything below
+  // reads its snapshot and calls its verbs.
+  useEffect(() => {
+    const rt = createPartyRuntime({ onState: setParty, onToast: showToast });
+    runtime.current = rt;
+    setRuntimeApi(rt);
+    const memberName = identityRef.current?.name || 'Guest';
+    // A link opened at /join parks its invite here rather than connecting on a
+    // route it is about to navigate away from.
+    const invite = takePendingInvite();
+    Promise.resolve(invite ? rt.joinParty(invite, { memberName }) : rt.resume({ memberName })).catch(
+      (err) => showToast(err?.message || 'Could not open that invite.'),
+    );
+    return () => {
+      runtime.current = null;
+      setRuntimeApi(null);
+      rt.destroy();
+    };
+  }, [showToast]);
+
+  const active = Boolean(party?.active);
+  const code = party?.code ?? null;
+
+  /**
+   * The roster, flattened for the map, the rail and the tape — all of which
+   * predate the party layer and read a member as a point with a name on it.
+   */
+  const roster = useMemo(
+    () =>
+      (party?.members || []).map((m) => ({
         ...m,
+        lat: m.location?.lat,
+        lng: m.location?.lng,
+        acc: m.location?.acc ?? null,
+        ts: m.location?.ts ?? m.lastSeen,
         colour: colourFor(m.id),
         initials: initialsFor(m.name),
       })),
-    [],
+    [party],
   );
 
-  const pushPosition = useCallback(
-    async (force = false, override = {}) => {
-      if (!code || !identity || !geo.position) return;
-      if (!force && Date.now() - lastPush.current < 12000) return;
-      lastPush.current = Date.now();
-      try {
-        // `override` exists because a click that changes status and then pushes
-        // in the same tick would otherwise send the previous render's value.
-        const data = await sync.putMember(code, {
-          id: identity.id,
-          name: override.name ?? identity.name,
-          lat: geo.position.lat,
-          lng: geo.position.lng,
-          acc: geo.position.acc,
-          status: override.status ?? status,
-          height: override.height ?? height,
-        });
-        if (data && !data.notFound) {
-          setMembers(decorate(data.members));
-          setMeet(data.meet);
-          setLastSync(Date.now());
-        }
-      } catch {
-        /* offline - the next tick retries */
-      }
-    },
-    [code, identity, geo.position, status, height, decorate],
+  const others = useMemo(
+    () => roster.filter((m) => m.id !== party?.selfId && Number.isFinite(m.lat)),
+    [roster, party?.selfId],
   );
 
-  const applySnapshot = useCallback(
-    (data) => {
-      if (data?.gone) {
-        setCode(null);
-        showToast('That party has expired.');
-        return;
-      }
-      const next = decorate(data.members || []);
-      next.forEach((m) => {
-        if (m.id === identity?.id) return;
-        if (m.status === 'NEED HELP' && !helpSeen.current.has(m.id)) {
-          helpSeen.current.add(m.id);
-          const d = geo.position
-            ? distance(geo.position.lat, geo.position.lng, m.lat, m.lng)
-            : null;
-          showToast(`${m.name} needs help - ${formatDistance(d)}`);
-          navigator.vibrate?.([120, 70, 120]);
-        }
-        if (m.status !== 'NEED HELP') helpSeen.current.delete(m.id);
+  const meet = party?.meet ?? localMeet;
+
+  /**
+   * The battery lever. Every fix goes through the adaptive gate before it goes
+   * anywhere near a radio, and the gate — not this component — decides whether
+   * it moved far enough, turned far enough, or has simply been quiet too long.
+   */
+  useEffect(() => {
+    if (!active || !position) return undefined;
+    const tick = () => {
+      const fix = positionRef.current;
+      if (!fix) return;
+      const decision = shouldBroadcast({ heading });
+      if (!decision.send) return;
+      runtime.current?.pushLocation({
+        lat: fix.lat,
+        lng: fix.lng,
+        acc: fix.acc ?? null,
+        heading: Number.isFinite(fix.heading) ? fix.heading : heading ?? null,
+        speed: Number.isFinite(fix.speed) ? fix.speed : null,
+        ts: fix.ts,
       });
-      setMembers(next);
-      setMeet(data.meet ?? null);
-      setLastSync(Date.now());
-    },
-    [decorate, identity, geo.position, showToast],
-  );
-
-  const snapshotRef = useRef(applySnapshot);
-  useEffect(() => {
-    snapshotRef.current = applySnapshot;
-  }, [applySnapshot]);
-
-  useEffect(() => {
-    if (!code) return undefined;
-    const unsubscribe = sync.subscribe(
-      code,
-      (data) => snapshotRef.current(data),
-      (mode) => setTransport(mode),
-    );
-    const push = setInterval(() => pushPosition(), 15000);
-    return () => {
-      unsubscribe();
-      clearInterval(push);
     };
-  }, [code, pushPosition]);
+    tick();
+    const id = setInterval(tick, GATE_TICK_MS);
+    return () => clearInterval(id);
+  }, [active, position, heading, shouldBroadcast]);
 
+  // NEED HELP has to interrupt, once per person per episode.
   useEffect(() => {
-    if (geo.position) pushPosition();
-  }, [geo.position, pushPosition]);
+    roster.forEach((m) => {
+      if (m.id === party?.selfId) return;
+      if (m.status === 'NEED HELP' && !helpSeen.current.has(m.id)) {
+        helpSeen.current.add(m.id);
+        const me = positionRef.current;
+        const d = me && Number.isFinite(m.lat) ? distance(me.lat, me.lng, m.lat, m.lng) : null;
+        showToast(`${m.name} needs help - ${formatDistance(d)}`);
+        navigator.vibrate?.([120, 70, 120]);
+      }
+      if (m.status !== 'NEED HELP') helpSeen.current.delete(m.id);
+    });
+  }, [roster, party?.selfId, showToast]);
 
   /* ---------- party actions ---------- */
   const createParty = async () => {
     setBusy(true);
     try {
-      const data = await sync.createParty();
-      if (data.code) {
-        setCode(data.code);
-        setDurable(Boolean(data.durable));
-        showToast(`Party ${data.code} started`);
-        setTimeout(() => pushPosition(true), 50);
-      } else showToast('Could not start a party.');
-    } catch {
-      showToast('Could not reach the server.');
+      const snap = await runtime.current.createParty({
+        memberName: identity?.name || 'Guest',
+        name: 'Party',
+      });
+      showToast(`Party ${snap.code} started`);
+    } catch (err) {
+      showToast(err?.message || 'Could not start a party.');
     }
     setBusy(false);
   };
 
   const joinParty = async (raw) => {
-    const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5);
     setBusy(true);
     try {
-      const data = await sync.fetchParty(clean);
-      if (!data || data.notFound) showToast(`No party with code ${clean}`);
-      else {
-        setCode(clean);
-        setMembers(decorate(data.members));
-        setMeet(data.meet);
-        showToast(`Joined ${clean}`);
-        setTimeout(() => pushPosition(true), 50);
-      }
-    } catch {
-      showToast('Could not reach the server.');
+      const snap = await runtime.current.joinParty(raw, { memberName: identity?.name || 'Guest' });
+      showToast(`Joined ${snap.code}`);
+    } catch (err) {
+      showToast(err?.message || 'Could not join that party.');
     }
     setBusy(false);
   };
 
   const leaveParty = async () => {
-    if (!code || !identity) return;
-    const gone = code;
-    setCode(null);
-    setMembers([]);
-    setMeet(null);
-    await sync.removeMember(gone, identity.id).catch(() => {});
-    showToast(`Left party ${gone}`);
+    helpSeen.current.clear();
+    await runtime.current?.leave();
   };
 
-  const setMeetPoint = async (lat, lng, label) => {
-    const record = { lat, lng, label: label || 'Meet-up', by: identity?.name || 'Someone', ts: Date.now() };
-    setMeet(record);
+  const setMeetPoint = (lat, lng, label) => {
     setArmMeet(false);
-    if (code) {
-      await sync.putMeet(code, record).catch(() => {});
+    const record = { lat, lng, label: label || 'Meet-up' };
+    if (active) {
+      runtime.current?.setMeet(record);
       showToast('Meet-up shared with your party');
-    } else showToast('Meet-up marked (join a party to share it)');
+    } else {
+      setLocalMeet({ ...record, by: identity?.name || 'Someone', ts: Date.now() });
+      showToast('Meet-up marked (join a party to share it)');
+    }
   };
 
-  const clearMeet = async () => {
-    setMeet(null);
-    if (code) await sync.clearMeet(code).catch(() => {});
+  const clearMeet = () => {
+    setLocalMeet(null);
+    if (active) runtime.current?.setMeet(null);
   };
 
   /* ---------- derived ---------- */
-  const others = useMemo(
-    () => members.filter((m) => m.id !== identity?.id),
-    [members, identity],
-  );
-
   const dimmedNames = useMemo(() => {
     if (height == null) return null;
     const out = new Set();
@@ -294,14 +285,14 @@ export default function Page() {
   }, [height, withAdult]);
 
   const nearest = useMemo(() => {
-    if (!geo.position) return null;
+    if (!position) return null;
     let best = null;
     POIS.forEach((p) => {
-      const d = distance(geo.position.lat, geo.position.lng, p.lat, p.lng);
+      const d = distance(position.lat, position.lng, p.lat, p.lng);
       if (!best || d < best.d) best = { p, d };
     });
     return best;
-  }, [geo.position]);
+  }, [position]);
 
   const focusOn = (target) => {
     setFollow(false);
@@ -321,21 +312,19 @@ export default function Page() {
     setSelected(poi);
     setFollow(false);
     setFocusPoint({ lat: poi.lat, lng: poi.lng });
-    if (geo.position) {
-      const d = distance(geo.position.lat, geo.position.lng, poi.lat, poi.lng);
-      const b = bearing(geo.position.lat, geo.position.lng, poi.lat, poi.lng);
+    if (position) {
+      const d = distance(position.lat, position.lng, poi.lat, poi.lng);
+      const b = bearing(position.lat, position.lng, poi.lat, poi.lng);
       showToast(`${poi.n} · ${formatDistance(d)} ${cardinal(b)} · ${formatWalk(d)} walk`);
     }
   };
 
   const headerLine = () => {
-    if (!geo.position) return 'Mason, Ohio · no fix yet';
-    const where = inPark(geo.position.lat, geo.position.lng)
-      ? nearest?.p.a || 'in park'
-      : 'off property';
-    const acc = geo.position.manual
+    if (!position) return 'Mason, Ohio · no fix yet';
+    const where = inPark(position.lat, position.lng) ? nearest?.p.a || 'in park' : 'off property';
+    const acc = position.manual
       ? 'placed by hand'
-      : `±${Math.round((geo.position.acc || 0) * 3.28084)} ft`;
+      : `±${Math.round((position.acc || 0) * 3.28084)} ft`;
     return `${where.toUpperCase()} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
   };
 
@@ -346,7 +335,7 @@ export default function Page() {
       <ParkMap
         data={mapData}
         pois={POIS}
-        me={geo.position}
+        me={position}
         members={others}
         meet={meet}
         selected={selected}
@@ -355,7 +344,7 @@ export default function Page() {
         armMeet={armMeet}
         follow={follow}
         onUserPan={() => setFollow(false)}
-        heading={geo.heading}
+        heading={heading}
         dimmedNames={dimmedNames}
         visibleCategories={categories}
         focusPoint={focusPoint}
@@ -373,7 +362,7 @@ export default function Page() {
           onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
           aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
         >
-          {theme === 'day' ? '\u25D1' : '\u25D0'}
+          {theme === 'day' ? '◑' : '◐'}
         </button>
         <button
           type="button"
@@ -404,11 +393,11 @@ export default function Page() {
 
       {tapeOn && (
         <CompassTape
-          me={geo.position}
+          me={position}
           members={others}
           meet={meet}
           selected={selected}
-          heading={geo.heading}
+          heading={heading}
         />
       )}
 
@@ -431,9 +420,9 @@ export default function Page() {
           type="button"
           className={`fab ${follow ? 'active' : ''}`}
           onClick={() => {
-            if (geo.position) {
+            if (position) {
               setFollow(true);
-              setFocusPoint({ lat: geo.position.lat, lng: geo.position.lng });
+              setFocusPoint({ lat: position.lat, lng: position.lng });
             } else {
               setGateOpen(true);
             }
@@ -454,11 +443,11 @@ export default function Page() {
           <i />
         </button>
         <GlanceRail
-          me={geo.position}
+          me={position}
           members={others}
           meet={meet}
           selected={selected}
-          heading={geo.heading}
+          heading={heading}
           theme={theme}
           onFocus={focusOn}
           onOpenParty={() => {
@@ -468,7 +457,7 @@ export default function Page() {
         />
         <nav className="tabs" role="tablist">
           {[
-            ['party', `Party${others.length ? ` · ${members.length}` : ''}`],
+            ['party', `Party${others.length ? ` · ${roster.length}` : ''}`],
             ['rides', 'Rides & heights'],
             ['me', 'Me'],
           ].map(([key, labelText]) => (
@@ -491,14 +480,17 @@ export default function Page() {
           {tab === 'party' && (
             <PartyPanel
               code={code}
-              members={members}
+              invite={party?.invite ?? null}
+              members={roster}
               meet={meet}
-              me={geo.position}
-              myId={identity?.id}
+              me={position}
+              myId={party?.selfId ?? null}
+              hostId={party?.hostId ?? null}
+              hosting={Boolean(party?.hosting)}
               status={status}
               onStatus={(s) => {
                 setStatus(s);
-                pushPosition(true, { status: s });
+                runtime.current?.setStatus(s);
                 showToast(`Status: ${s}`);
               }}
               onCreate={createParty}
@@ -510,15 +502,15 @@ export default function Page() {
                 setFocusPoint({ lat: m.lat, lng: m.lng });
                 setSheet('peek');
               }}
-              busy={busy}
-              durable={durable}
-              transport={transport}
-              lastSync={lastSync}
+              busy={busy || party?.phase === 'connecting'}
+              transport={party?.transport ?? null}
+              version={party?.version ?? 0}
+              queued={party?.queued ?? 0}
             />
           )}
           {tab === 'rides' && (
             <RidesPanel
-              me={geo.position}
+              me={position}
               height={height}
               withAdult={withAdult}
               onHeight={setHeight}
@@ -540,14 +532,12 @@ export default function Page() {
                 onChange={(e) =>
                   setIdentity((i) => ({ ...i, name: e.target.value.trim() || 'Guest' }))
                 }
-                onBlur={(e) =>
-                  pushPosition(true, { name: e.target.value.trim() || 'Guest' })
-                }
+                onBlur={(e) => runtime.current?.setMemberName(e.target.value.trim() || 'Guest')}
               />
               <div className="label">Location</div>
               <p className="fine">
-                {geo.position
-                  ? `${geo.position.manual ? 'Placed by hand' : 'Phone GPS'} · ${geo.position.lat.toFixed(5)}, ${geo.position.lng.toFixed(5)}`
+                {position
+                  ? `${position.manual ? 'Placed by hand' : 'Phone GPS'} · ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`
                   : 'No fix yet.'}
               </p>
               <button type="button" className="btn" onClick={() => setGateOpen(true)}>
@@ -598,6 +588,10 @@ export default function Page() {
                   </button>
                 ))}
               </div>
+
+              <div className="label">Advanced diagnostics</div>
+              <Diagnostics runtime={runtimeApi} geo={geo} />
+
               <div className="label">Where the data comes from</div>
               <p className="fine">
                 The map itself is drawn from OpenStreetMap geometry for Kings Island —
