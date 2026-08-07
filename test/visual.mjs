@@ -11,7 +11,7 @@
  *   npm run test:visual
  */
 
-import { launch } from './browser.mjs';
+import { launch, until } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -118,7 +118,7 @@ async function main() {
   await page.waitForTimeout(1800);
   await shot(page, 'party-created');
   const code = (await page.locator('.codeText').innerText().catch(() => '')).trim();
-  check(/^[A-Z0-9]{5}$/.test(code), `party code issued: ${code || 'none'}`);
+  check(/^[A-HJ-NP-Z2-9]{6}$/.test(code), `party code issued: ${code || 'none'}`);
 
   // A second phone joins the same party from across the park
   if (code) {
@@ -142,14 +142,23 @@ async function main() {
     await page2.waitForTimeout(1500);
     await shot(page2, 'second-phone-joined');
 
-    // back to phone one: the other member should appear on the roster and map
-    await page.waitForTimeout(11000);
+    // Back to phone one: the other member should appear on the roster and map.
+    // Poll rather than sleeping a fixed interval — a party carried by the
+    // mailbox converges on its polling cadence, not on a number picked here,
+    // and a fixed wait turns a slow round trip into a failed assertion.
+    await until(() => page.locator('.memberRow').count().then((n) => n >= 2), {
+      timeout: 45000,
+      label: 'both phones on the roster',
+    }).catch(() => {});
     await shot(page, 'roster-two-members');
     const rows = await page.locator('.memberRow').count();
     check(rows >= 2, `roster shows both phones (${rows} rows)`);
     const range = await page.locator('.memberRange b').nth(1).innerText().catch(() => '');
     check(/ft|mi/.test(range), `range to the other phone computed: ${range}`);
-    const helpTag = await page.locator('.chipTag.hot').count();
+    const helpTag = await until(() => page.locator('.chipTag.hot').count(), {
+      timeout: 45000,
+      label: 'the help tag',
+    }).catch(() => 0);
     check(helpTag > 0, 'NEED HELP status propagated between devices');
 
     await page.locator('.grab').click();

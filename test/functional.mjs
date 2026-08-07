@@ -84,14 +84,32 @@ await check('bearing tape toggles on', async () => {
   return n === 1;
 });
 
-await check('sheet expands to half then full', async () => {
-  await a.locator('.grab').click();
-  await a.waitForTimeout(400);
-  const h1 = await a.locator('.sheet').evaluate((e) => e.getBoundingClientRect().height);
-  await a.locator('.grab').click();
-  await a.waitForTimeout(400);
-  const h2 = await a.locator('.sheet').evaluate((e) => e.getBoundingClientRect().height);
-  if (!(h2 > h1)) throw new Error(`heights ${h1} -> ${h2}`);
+await check('the sheet cycles peek -> half -> full', async () => {
+  // The grab handle cycles peek -> half -> full -> peek, so measuring two
+  // clicks from wherever the sheet happens to be proves nothing: opening the
+  // Me tab to set a name already moved it off peek, and the pair being
+  // measured was full -> peek. Drive it to a known stop first, then walk the
+  // whole cycle and assert the order.
+  const stop = () =>
+    a.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full'].find((s) => e.classList.contains(s)) || null,
+    );
+  const height = () => a.locator('.sheet').evaluate((e) => e.getBoundingClientRect().height);
+  const step = async () => {
+    await a.locator('.grab').click();
+    await a.waitForTimeout(400);
+  };
+
+  for (let i = 0; i < 3 && (await stop()) !== 'peek'; i += 1) await step();
+  if ((await stop()) !== 'peek') throw new Error(`could not reach peek, at ${await stop()}`);
+
+  const peek = await height();
+  await step();
+  const half = await height();
+  await step();
+  const full = await height();
+
+  if (!(peek < half && half < full)) throw new Error(`peek ${peek}, half ${half}, full ${full}`);
   return true;
 });
 

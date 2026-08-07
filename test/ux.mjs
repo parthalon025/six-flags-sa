@@ -1,5 +1,5 @@
-import { launch } from './browser.mjs';
-const B='http://127.0.0.1:3000';
+import { BASE, launch } from './browser.mjs';
+const B = BASE;
 const b = await launch();
 const c = await b.newContext({ viewport:{width:390,height:844}, deviceScaleFactor:2,
   permissions:['geolocation'], geolocation:{latitude:39.34395,longitude:-84.26730} });

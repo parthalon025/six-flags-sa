@@ -1,10 +1,10 @@
-import { launch } from './browser.mjs';
+import { BASE, launch } from './browser.mjs';
 const b = await launch();
 const c = await b.newContext({ viewport:{width:390,height:844}, deviceScaleFactor:2,
   permissions:['geolocation'], geolocation:{latitude:39.34395,longitude:-84.26730} });
 const p = await c.newPage();
 p.on('pageerror', e => console.log('PAGEERROR:', e.message));
-await p.goto('http://127.0.0.1:3000', {waitUntil:'networkidle'});
+await p.goto(BASE, {waitUntil:'domcontentloaded'});
 await p.waitForTimeout(1500);
 // dismiss the gps gate by granting
 const allow = p.locator('button:has-text("Allow location")');
