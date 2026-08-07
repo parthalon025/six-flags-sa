@@ -151,6 +151,7 @@ export default function Page() {
     };
   }, [showToast]);
 
+  if (typeof window !== 'undefined') window.__party = party;
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
 
@@ -190,7 +191,11 @@ export default function Page() {
       const fix = positionRef.current;
       if (!fix) return;
       const decision = shouldBroadcast({ heading });
+      // eslint-disable-next-line no-console
+      console.log('GATE', JSON.stringify(decision), JSON.stringify(fix));
       if (!decision.send) return;
+      // eslint-disable-next-line no-console
+      console.log('PUSH');
       runtime.current?.pushLocation({
         lat: fix.lat,
         lng: fix.lng,
