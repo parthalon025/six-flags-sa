@@ -2,12 +2,18 @@
 
 import { useMemo, useState } from 'react';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { POIS, eligibility, heightLabel } from '@/lib/park';
+import { eligibility, hasHeights, heightLabel } from '@/lib/park';
+import { usePois } from '@/lib/venue/useVenue';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
 
 /* The height requirement is the thing a family checks twenty times a day, so it
    gets the top of the panel: tap a tier, read the bar, scan the list. The
-   slider stays for a precise number but is no longer the only way in. */
+   slider stays for a precise number but is no longer the only way in.
+
+   Height rules are an amusement-park thing, and this panel is also the place
+   list for venues that have none. When the loaded venue carries no heights the
+   whole filter half disappears and what is left is a searchable list of
+   everywhere you could walk to. */
 
 const TIERS = [36, 40, 42, 46, 48, 52, 54];
 
@@ -29,8 +35,11 @@ export default function RidesPanel({
   onSelect,
   onSetMeet,
   theme,
+  venue,
 }) {
   const palette = paletteFor(theme);
+  const POIS = usePois();
+  const heights = hasHeights(POIS);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('coaster');
   const [onlyRideable, setOnlyRideable] = useState(false);
@@ -46,7 +55,7 @@ export default function RidesPanel({
       else tally.no += 1;
     });
     return tally;
-  }, [height, withAdult]);
+  }, [POIS, height, withAdult]);
 
   // What the next tier would buy — the question behind "is it worth waiting
   // until next summer".
@@ -64,13 +73,13 @@ export default function RidesPanel({
       }
     });
     return gained > 0 ? { at: next, gained } : null;
-  }, [height, withAdult]);
+  }, [POIS, height, withAdult]);
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = POIS.filter((p) => {
       if (filter !== 'all' && p.c !== filter) return false;
-      if (q && !p.n.toLowerCase().includes(q) && !p.a.toLowerCase().includes(q)) return false;
+      if (q && !p.n.toLowerCase().includes(q) && !(p.a || '').toLowerCase().includes(q)) return false;
       if (onlyRideable && height != null && (p.c === 'coaster' || p.c === 'ride')) {
         const v = eligibility(p, height, withAdult);
         if (v === 'no' || v === 'toobig') return false;
@@ -84,112 +93,116 @@ export default function RidesPanel({
         )
       : [...out].sort((a, b) => a.n.localeCompare(b.n));
     return out.slice(0, 120);
-  }, [query, filter, onlyRideable, height, withAdult, me]);
+  }, [POIS, query, filter, onlyRideable, height, withAdult, me]);
 
   return (
     <div>
-      <div className="label">
-        Rider height
-        {height != null && (
-          <button type="button" className="labelAction" onClick={() => onHeight(null)}>
-            Clear
-          </button>
-        )}
-      </div>
-
-      <div className="tierRow" role="group" aria-label="Common height requirements">
-        {TIERS.map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={`tier ${height === t ? 'on' : ''}`}
-            onClick={() => onHeight(t)}
-            aria-pressed={height === t}
-          >
-            {t}
-            <em>&quot;</em>
-          </button>
-        ))}
-      </div>
-
-      <div className="heightRow">
-        <input
-          type="range"
-          min="30"
-          max="76"
-          step="1"
-          style={{ '--pct': `${(((height ?? 48) - 30) / 46) * 100}%` }}
-          value={height ?? 48}
-          onChange={(e) => onHeight(Number(e.target.value))}
-          aria-label="Rider height in inches"
-        />
-        <div className="heightVal">
-          <b>{height ?? '\u2013'}</b>
-          <span>in</span>
-        </div>
-      </div>
-
-      {counts ? (
+      {heights && (
         <>
-          <div
-            className="ratioBar"
-            role="img"
-            aria-label={`${counts.yes} rides open, ${counts.companion} with an adult, ${counts.no} closed`}
-          >
-            <span className="seg ok" style={{ flexGrow: counts.yes || 0.001 }} />
-            <span className="seg warn" style={{ flexGrow: counts.companion || 0.001 }} />
-            <span className="seg bad" style={{ flexGrow: counts.no || 0.001 }} />
-          </div>
-          <div className="ratioKey">
-            <span className="ok">
-              <b>{counts.yes}</b> open
-            </span>
-            <span className="warn">
-              <b>{counts.companion}</b> with adult
-            </span>
-            <span className="bad">
-              <b>{counts.no}</b> closed
-            </span>
-          </div>
-          {nextUnlock && (
-            <p className="unlock">
-              <b>{nextUnlock.gained} more</b> open up at {nextUnlock.at}&quot;
-            </p>
+        <div className="label">
+          Rider height
+          {height != null && (
+            <button type="button" className="labelAction" onClick={() => onHeight(null)}>
+              Clear
+            </button>
           )}
-        </>
-      ) : (
-        <p className="fine" style={{ marginTop: 0 }}>
-          Pick a height to see what a rider can get on. Anything they can&apos;t ride
-          fades out on the map too.
-        </p>
-      )}
+        </div>
 
-      <div className="chips">
-        <button
-          type="button"
-          className={`chip ${withAdult ? 'on' : ''}`}
-          onClick={() => onWithAdult(!withAdult)}
-          aria-pressed={withAdult}
-        >
-          Adult along
-        </button>
-        <button
-          type="button"
-          className={`chip ${onlyRideable ? 'on' : ''}`}
-          onClick={() => setOnlyRideable(!onlyRideable)}
-          aria-pressed={onlyRideable}
-        >
-          Only what they can ride
-        </button>
-      </div>
+        <div className="tierRow" role="group" aria-label="Common height requirements">
+          {TIERS.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`tier ${height === t ? 'on' : ''}`}
+              onClick={() => onHeight(t)}
+              aria-pressed={height === t}
+            >
+              {t}
+              <em>&quot;</em>
+            </button>
+          ))}
+        </div>
+
+        <div className="heightRow">
+          <input
+            type="range"
+            min="30"
+            max="76"
+            step="1"
+            style={{ '--pct': `${(((height ?? 48) - 30) / 46) * 100}%` }}
+            value={height ?? 48}
+            onChange={(e) => onHeight(Number(e.target.value))}
+            aria-label="Rider height in inches"
+          />
+          <div className="heightVal">
+            <b>{height ?? '\u2013'}</b>
+            <span>in</span>
+          </div>
+        </div>
+
+        {counts ? (
+          <>
+            <div
+              className="ratioBar"
+              role="img"
+              aria-label={`${counts.yes} rides open, ${counts.companion} with an adult, ${counts.no} closed`}
+            >
+              <span className="seg ok" style={{ flexGrow: counts.yes || 0.001 }} />
+              <span className="seg warn" style={{ flexGrow: counts.companion || 0.001 }} />
+              <span className="seg bad" style={{ flexGrow: counts.no || 0.001 }} />
+            </div>
+            <div className="ratioKey">
+              <span className="ok">
+                <b>{counts.yes}</b> open
+              </span>
+              <span className="warn">
+                <b>{counts.companion}</b> with adult
+              </span>
+              <span className="bad">
+                <b>{counts.no}</b> closed
+              </span>
+            </div>
+            {nextUnlock && (
+              <p className="unlock">
+                <b>{nextUnlock.gained} more</b> open up at {nextUnlock.at}&quot;
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="fine" style={{ marginTop: 0 }}>
+            Pick a height to see what a rider can get on. Anything they can&apos;t ride
+            fades out on the map too.
+          </p>
+        )}
+
+        <div className="chips">
+          <button
+            type="button"
+            className={`chip ${withAdult ? 'on' : ''}`}
+            onClick={() => onWithAdult(!withAdult)}
+            aria-pressed={withAdult}
+          >
+            Adult along
+          </button>
+          <button
+            type="button"
+            className={`chip ${onlyRideable ? 'on' : ''}`}
+            onClick={() => setOnlyRideable(!onlyRideable)}
+            aria-pressed={onlyRideable}
+          >
+            Only what they can ride
+          </button>
+        </div>
+        </>
+      )}
 
       <div className="label">Find a place</div>
       <input
         className="field"
-        placeholder="Search the park"
+        placeholder={`Search ${venue?.name || 'the map'}`}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        aria-label="Search the park"
+        aria-label="Search places"
       />
 
       <div className="chips">
@@ -267,10 +280,12 @@ export default function RidesPanel({
         })}
       </div>
 
-      <p className="fine">
-        Heights were compiled from Kings Island Central and Theme Park Insider for the
-        2026 season. The ride operator measures at the gate and has the final say.
-      </p>
+      {heights && (
+        <p className="fine">
+          {venue?.credits ? `${venue.credits} ` : 'Height requirements come with this venue\u2019s own file, not from OpenStreetMap. '}
+          The ride operator measures at the gate and has the final say.
+        </p>
+      )}
     </div>
   );
 }

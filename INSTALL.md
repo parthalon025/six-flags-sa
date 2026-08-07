@@ -1,7 +1,12 @@
-# Installing Kings Island Tracker
+# Installing Party Tracker
 
 The app ends up as an icon on everyone's phone, and one phone runs the party.
 There are no accounts and nobody has to sign up for anything.
+
+It opens on Kings Island, and Six Flags Fiesta Texas is in the **Me** tab under
+**Which map** — if your first GPS fix lands inside one of them it switches on its
+own. To add anywhere else, see *Building a map of somewhere else* in
+[README.md](README.md).
 
 ## The two fast ways
 
@@ -144,7 +149,7 @@ will tell you if the version is too old.
 
 Do this on **every** phone in the group. It takes about fifteen seconds each and
 it genuinely matters: installed, the app opens full screen with no browser bars,
-and the entire park map is stored on the phone, so it draws instantly and keeps
+and the whole map is stored on the phone, so it draws instantly and keeps
 working when the signal dies in a queue line.
 
 Open the site, go to the **Me** tab, and follow the **Install on this phone**

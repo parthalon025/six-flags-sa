@@ -67,16 +67,29 @@ const pkg = readJson(here('../package.json')) || {};
 const VERSION = pkg.version || '0.0.0';
 
 /**
- * rides.json has no ids — the app keys off the ride name. Slugs are stable as
- * long as the name is, and the name is what people say out loud, so both work
- * as a lookup key here.
+ * A venue's POI list has no ids — the app keys off the name. Slugs are stable
+ * as long as the name is, and the name is what people say out loud, so both
+ * work as a lookup key here.
+ *
+ * Every venue in public/venues is loaded, because this server has no idea which
+ * one the phones talking to it are looking at; `?venue=<id>` picks, and the
+ * manifest's default answers when nobody says.
  */
-const RIDES = (readJson(here('../lib/rides.json')) || []).map((r) => ({ id: slug(r.n), ...r }));
-const RIDE_BY_ID = new Map();
-for (const r of RIDES) {
-  RIDE_BY_ID.set(r.id, r);
-  RIDE_BY_ID.set(r.n.toLowerCase(), r);
+const MANIFEST = readJson(here('../public/venues/manifest.json')) || { venues: [] };
+const CATALOGUES = new Map();
+for (const v of MANIFEST.venues || []) {
+  const pois = readJson(here(`../public/venues/${v.id}.pois.json`)) || [];
+  const rides = pois.map((r) => ({ id: slug(r.n), ...r }));
+  const byId = new Map();
+  for (const r of rides) {
+    byId.set(r.id, r);
+    byId.set(r.n.toLowerCase(), r);
+  }
+  CATALOGUES.set(v.id, { rides, byId });
 }
+const DEFAULT_VENUE = MANIFEST.default || MANIFEST.venues?.[0]?.id || null;
+const catalogueFor = (id) =>
+  CATALOGUES.get(id) || CATALOGUES.get(DEFAULT_VENUE) || { rides: [], byId: new Map() };
 
 /* ------------------------------------------------------------------ state */
 
@@ -543,9 +556,12 @@ async function route(req, res, url, parts) {
   /* -- rides ------------------------------------------------------------- */
 
   if (section === 'rides' && req.method === 'GET') {
-    if (!a) return json(req, res, 200, { ok: true, count: RIDES.length, rides: RIDES });
-    const ride = RIDE_BY_ID.get(decodeURIComponent(a).toLowerCase());
-    return ride ? json(req, res, 200, { ok: true, ride }) : fail(req, res, 404, 'no such ride');
+    const asked = url.searchParams.get('venue');
+    const venue = CATALOGUES.has(asked) ? asked : DEFAULT_VENUE;
+    const { rides, byId } = catalogueFor(venue);
+    if (!a) return json(req, res, 200, { ok: true, venue, count: rides.length, rides });
+    const ride = byId.get(decodeURIComponent(a).toLowerCase());
+    return ride ? json(req, res, 200, { ok: true, venue, ride }) : fail(req, res, 404, 'no such ride');
   }
 
   /* -- operational ------------------------------------------------------- */
@@ -677,7 +693,7 @@ server.listen(PORT, () => {
     'sse',
     DATA_FILE ? `persist=${DATA_FILE}` : 'persist=off',
     `origin=${ORIGINS.join(',')}`,
-    `rides=${RIDES.length}`,
+    `venues=${CATALOGUES.size}`,
     `protocol=v${PROTOCOL_VERSION}`,
   ];
   log(`v${VERSION} listening on :${PORT} — ${features.join(' ')}`);

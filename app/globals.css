@@ -256,6 +256,23 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .chip.danger { color: var(--crimson); border-color: #4a2a27; }
 .chip.danger.on { background: var(--crimson); color: #fff; border-color: var(--crimson); }
 
+/* The venue list: one row per map this build ships, the loaded one marked.
+   Reads as a list rather than chips because the second line — where it is and
+   how far away — is the thing that tells you which one you want. */
+.venueList { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.venueRow {
+  display: flex; flex-direction: column; gap: 3px; text-align: left; width: 100%;
+  padding: 11px 12px; border-radius: 3px; background: var(--panel2);
+  border: 1px solid var(--line);
+}
+.venueRow b { font-size: 14px; font-weight: 600; }
+.venueRow span {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--dim);
+}
+.venueRow.on { border-color: var(--beacon); }
+.venueRow.on b { color: var(--beacon); }
+
 .heightRow { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
 .heightRow input[type='range'] {
   flex: 1; -webkit-appearance: none; appearance: none; height: 28px; background: none;

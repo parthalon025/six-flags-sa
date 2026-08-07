@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
-import { POIS } from '@/lib/park';
+import { usePois } from '@/lib/venue/useVenue';
 
 const STATUSES = [
   'On the move',
@@ -15,9 +15,9 @@ const STATUSES = [
   'NEED HELP',
 ];
 
-function nearestPlace(lat, lng) {
+function nearestPlace(pois, lat, lng) {
   let best = null;
-  POIS.forEach((p) => {
+  pois.forEach((p) => {
     if (p.c === 'parking') return;
     const d = distance(lat, lng, p.lat, p.lng);
     if (!best || d < best.d) best = { p, d };
@@ -96,6 +96,7 @@ export default function PartyPanel({
   const [entry, setEntry] = useState('');
   const [scanning, setScanning] = useState(false);
   const [showQr, setShowQr] = useState(true);
+  const pois = usePois();
 
   if (!code) {
     return (
@@ -212,7 +213,7 @@ export default function PartyPanel({
             const located = Number.isFinite(m.lat) && Number.isFinite(m.lng);
             const d = me && located && !isMe ? distance(me.lat, me.lng, m.lat, m.lng) : null;
             const b = d != null ? bearing(me.lat, me.lng, m.lat, m.lng) : null;
-            const near = located ? nearestPlace(m.lat, m.lng) : null;
+            const near = located ? nearestPlace(pois, m.lat, m.lng) : null;
             const stale = Date.now() - m.ts > 300000;
             return (
               <button
@@ -275,7 +276,7 @@ export default function PartyPanel({
           <div>
             <b>{meet.label}</b>
             <span className="fine block">
-              {nearestPlace(meet.lat, meet.lng)?.p.n.toUpperCase()} · set by {meet.by}
+              {nearestPlace(pois, meet.lat, meet.lng)?.p.n.toUpperCase()} · set by {meet.by}
             </span>
             {me && (
               <span className="meetRange">

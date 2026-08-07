@@ -57,6 +57,12 @@ const { createElection, scoreCandidate } = await import('../lib/party/election.j
 const { CADENCE, MOTION, cadenceFor, classifyMotion, createBroadcastGate } = await import(
   '../lib/gps/adaptive.js'
 );
+const { venueForPosition, withinBounds } = await import('../lib/venue/store.js');
+const { landTint } = await import('../lib/theme.js');
+const { areaOf, centroidOf, pointInRing, round, simplify } = await import(
+  '../scripts/lib/geometry.mjs'
+);
+const { LAYER_RULES, POI_RULES, classify, isLand } = await import('../scripts/lib/osm-tags.mjs');
 
 /* ------------------------------------------------------------- harness --- */
 
@@ -902,6 +908,162 @@ await check('reset makes the gate treat the next fix as the first', () => {
   assert.equal(gate.shouldSend({ ...base, ts: 100 }, { now: 100 }).send, false);
   gate.reset();
   assert.deepEqual(gate.shouldSend({ ...base, ts: 200 }, { now: 200 }), { send: true, reason: 'first' });
+  return true;
+});
+
+/* ------------------------------------------------------- venue picking --- */
+
+section('venue selection');
+
+const KI = {
+  id: 'kings-island',
+  name: 'Kings Island',
+  center: { lat: 39.3434, lng: -84.267 },
+  bounds: { north: 39.348, south: 39.3365, east: -84.2595, west: -84.2775 },
+};
+const SFFT = {
+  id: 'six-flags-fiesta-texas',
+  name: 'Six Flags Fiesta Texas',
+  center: { lat: 29.5992, lng: -98.61455 },
+  bounds: { north: 29.60898, south: 29.58942, east: -98.60346, west: -98.62564 },
+};
+const MANIFEST = { venues: [KI, SFFT] };
+
+await check('a fix inside a venue picks that venue', () => {
+  const hit = venueForPosition(MANIFEST, 39.34395, -84.2673);
+  assert.equal(hit.venue.id, 'kings-island');
+  assert.equal(hit.inside, true);
+  return true;
+});
+
+await check('a fix inside the other venue picks the other venue', () => {
+  const hit = venueForPosition(MANIFEST, 29.5992, -98.6145);
+  assert.equal(hit.venue.id, 'six-flags-fiesta-texas');
+  assert.equal(hit.inside, true);
+  return true;
+});
+
+// Containment has to beat proximity, or standing at the far edge of one venue
+// hands you the map of a nearer venue's centre.
+await check('a fix in neither venue falls back to the nearest centre', () => {
+  const hit = venueForPosition(MANIFEST, 39.1, -84.5);
+  assert.equal(hit.venue.id, 'kings-island');
+  assert.equal(hit.inside, false);
+  return true;
+});
+
+await check('withinBounds refuses a missing box or a missing fix', () => {
+  assert.equal(withinBounds(null, 39.34, -84.26), false);
+  assert.equal(withinBounds(KI.bounds, NaN, -84.26), false);
+  return true;
+});
+
+await check('an unknown district still gets a legible, stable tint', () => {
+  const curated = landTint('Coney Mall', 'day');
+  assert.equal(curated.fill, '#F4CBA9');
+  const made = landTint('Los Festivales', 'day');
+  assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
+  assert.notEqual(made.fill, landTint('Rockville', 'day').fill); // distinct
+  assert.notEqual(made.fill, landTint('Los Festivales', 'night').fill); // themed
+  return true;
+});
+
+/* --------------------------------------------------- venue build geometry - */
+
+section('venue geometry');
+
+const SQUARE = [
+  [-84.267, 39.343],
+  [-84.267, 39.344],
+  [-84.266, 39.344],
+  [-84.266, 39.343],
+  [-84.267, 39.343],
+];
+
+// The bug this exists for: Douglas-Peucker measures every vertex against the
+// line from the first point to the last, and on a closed ring those are the
+// same point — so the whole polygon collapsed to a dot and every filled layer
+// came out empty while the open polylines looked fine.
+await check('simplifying a closed ring keeps a polygon', () => {
+  const dense = [];
+  for (let i = 0; i <= 40; i += 1) {
+    const t = (i / 40) * Math.PI * 2;
+    dense.push([-84.267 + 0.0004 * Math.cos(t), 39.3435 + 0.0004 * Math.sin(t)]);
+  }
+  dense.push(dense[0]);
+  const out = simplify(dense, 1.2);
+  assert.ok(out.length >= 4, `ring collapsed to ${out.length} points`);
+  assert.ok(out.length < dense.length);
+  assert.deepEqual(out[0], out[out.length - 1]);
+  return true;
+});
+
+await check('simplifying an open line drops only redundant points', () => {
+  const straight = [
+    [-84.268, 39.343],
+    [-84.267, 39.343],
+    [-84.266, 39.343],
+  ];
+  assert.deepEqual(simplify(straight, 1.2), [straight[0], straight[2]]);
+  return true;
+});
+
+await check('area, centroid and containment agree on a square', () => {
+  const area = areaOf(SQUARE);
+  assert.ok(area > 8000 && area < 12000, `${area} m2`);
+  const [lng, lat] = centroidOf(SQUARE);
+  assert.ok(Math.abs(lat - 39.3435) < 1e-6 && Math.abs(lng + 84.2665) < 1e-6);
+  assert.equal(pointInRing([-84.2665, 39.3435], SQUARE), true);
+  assert.equal(pointInRing([-84.2, 39.3435], SQUARE), false);
+  return true;
+});
+
+await check('rounding collapses duplicate points at metre precision', () => {
+  const out = round([
+    [-84.2670001, 39.3430001],
+    [-84.2670002, 39.3430002],
+    [-84.266, 39.343],
+  ]);
+  assert.deepEqual(out, [
+    [-84.267, 39.343],
+    [-84.266, 39.343],
+  ]);
+  return true;
+});
+
+/* ------------------------------------------------------- venue tag rules - */
+
+section('venue tag rules');
+
+await check('coaster track is track and its station is a building', () => {
+  assert.equal(classify(LAYER_RULES, { roller_coaster: 'track', name: 'Banshee' }), 'coaster');
+  assert.equal(
+    classify(LAYER_RULES, { attraction: 'roller_coaster', roller_coaster: 'station', building: 'yes' }),
+    'building',
+  );
+  return true;
+});
+
+await check('ordinary map furniture lands in the right layer', () => {
+  assert.equal(classify(LAYER_RULES, { highway: 'footway' }), 'path');
+  assert.equal(classify(LAYER_RULES, { highway: 'service' }), 'service');
+  assert.equal(classify(LAYER_RULES, { natural: 'water' }), 'water');
+  assert.equal(classify(LAYER_RULES, { amenity: 'parking' }), 'parking');
+  assert.equal(classify(LAYER_RULES, { building: 'yes' }), 'building');
+  assert.equal(classify(LAYER_RULES, { name: 'Nothing in particular' }), null);
+  return true;
+});
+
+// The rules have to hold up somewhere that is not an amusement park, which is
+// the whole claim the venue builder makes.
+await check('a campus and a town centre classify without coasters', () => {
+  assert.equal(classify(POI_RULES, { amenity: 'cafe', name: 'Refectory' }), 'food');
+  assert.equal(classify(POI_RULES, { amenity: 'toilets' }), 'restroom');
+  assert.equal(classify(POI_RULES, { shop: 'books', name: 'Campus Books' }), 'shop');
+  assert.equal(classify(POI_RULES, { historic: 'memorial', name: 'War Memorial' }), 'landmark');
+  assert.equal(isLand({ place: 'neighbourhood', name: 'Old Town' }), true);
+  assert.equal(isLand({ amenity: 'university', name: 'The University' }), true);
+  assert.equal(isLand({ building: 'yes', name: 'Hall' }), false);
   return true;
 });
 

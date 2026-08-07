@@ -166,10 +166,10 @@ await check('"only what they can ride" filters the list', async () => {
 });
 
 await check('search narrows results', async () => {
-  await a.locator('.field[aria-label="Search the park"]').fill('beast');
+  await a.locator('.field[aria-label="Search places"]').fill('beast');
   await a.waitForTimeout(500);
   const n = await a.locator('.poiRow').count();
-  await a.locator('.field[aria-label="Search the park"]').fill('');
+  await a.locator('.field[aria-label="Search places"]').fill('');
   await a.waitForTimeout(400);
   if (n !== 1) throw new Error(`got ${n} rows`);
   return true;

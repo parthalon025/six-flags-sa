@@ -10,16 +10,11 @@ import InstallCard from '@/components/InstallCard';
 import RidesPanel from '@/components/RidesPanel';
 import Diagnostics from '@/components/Diagnostics';
 import useGeolocation from '@/components/useGeolocation';
-import { POIS, CATEGORIES, eligibility } from '@/lib/park';
+import { CATEGORIES, eligibility, hasHeights } from '@/lib/park';
 import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
-import {
-  bearing,
-  cardinal,
-  distance,
-  formatDistance,
-  formatWalk,
-  inPark,
-} from '@/lib/geo';
+import { bootVenue, retargetForPosition, selectVenue, withinBounds } from '@/lib/venue/store';
+import { useVenue } from '@/lib/venue/useVenue';
+import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 
 const PALETTE = ['#4FD1A5', '#5AA9E6', '#B487E8', '#F09AC0', '#7FD4E8', '#C9A87C', '#8ED96B', '#FF9E6B'];
 const colourFor = (id) => {
@@ -31,13 +26,18 @@ const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
 
 const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
 
+/* Identity used to be filed under a key named after the one park this ran at.
+   Read the old key once so nobody who already typed their name has to again. */
+const IDENTITY_KEY = 'tracker-identity';
+const LEGACY_IDENTITY_KEY = 'ki-identity';
+
 /** How often the broadcast gate is asked whether the current fix is worth sending. */
 const GATE_TICK_MS = 4000;
 
 export default function Page() {
   const geo = useGeolocation();
   const { position, heading, shouldBroadcast } = geo;
-  const [mapData, setMapData] = useState(null);
+  const { venue, map: mapData, pois: POIS, manifest, status: venueStatus } = useVenue();
   const [gateOpen, setGateOpen] = useState(true);
 
   const [identity, setIdentity] = useState(null); // {id, name}
@@ -74,17 +74,31 @@ export default function Page() {
     }
   }, []);
 
+  // The venue is the map, the places and the bounds. Which one loads is the
+  // visitor's last choice, or the deployment's default; the first GPS fix gets
+  // to correct that if it lands inside a different one.
   useEffect(() => {
-    fetch('/parkmap.json')
-      .then((r) => r.json())
-      .then(setMapData)
-      .catch(() => setToast('Could not load the park map file.'));
+    bootVenue().catch((err) => setToast(err?.message || 'Could not load the map.'));
   }, []);
+
+  useEffect(() => {
+    if (!position || position.manual) return;
+    retargetForPosition(position.lat, position.lng)
+      .then((moved) => {
+        if (moved) showToast(`Switched to ${moved.name}`);
+      })
+      .catch(() => {});
+    // Only the first fix matters here: after that the visitor is inside a venue
+    // and re-checking on every GPS tick would fight a deliberate choice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(position)]);
 
   useEffect(() => {
     let saved = null;
     try {
-      saved = JSON.parse(localStorage.getItem('ki-identity') || 'null');
+      saved = JSON.parse(
+        localStorage.getItem(IDENTITY_KEY) || localStorage.getItem(LEGACY_IDENTITY_KEY) || 'null',
+      );
     } catch {
       saved = null;
     }
@@ -102,7 +116,7 @@ export default function Page() {
   useEffect(() => {
     if (!identity) return;
     identityRef.current = identity;
-    localStorage.setItem('ki-identity', JSON.stringify({ ...identity, height, theme }));
+    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height, theme }));
   }, [identity, height, theme]);
 
   useEffect(() => {
@@ -283,12 +297,17 @@ export default function Page() {
       if (v === 'no' || v === 'toobig') out.add(p.n);
     });
     return out;
-  }, [height, withAdult]);
+  }, [POIS, height, withAdult]);
 
   const totalRides = useMemo(
     () => POIS.filter((p) => p.c === 'coaster' || p.c === 'ride').length,
-    [],
+    [POIS],
   );
+
+  /* Height rules only exist at amusement parks, and only where somebody has
+     filled them in. Everywhere else the filter, its badge and the tab that
+     leads to it are simply not part of the app. */
+  const heights = useMemo(() => hasHeights(POIS), [POIS]);
 
   const rideableCount = useMemo(() => {
     if (height == null) return null;
@@ -297,7 +316,7 @@ export default function Page() {
       const v = eligibility(p, height, withAdult);
       return v === 'yes' || v === 'companion';
     }).length;
-  }, [height, withAdult]);
+  }, [POIS, height, withAdult]);
 
   const nearest = useMemo(() => {
     if (!position) return null;
@@ -307,7 +326,7 @@ export default function Page() {
       if (!best || d < best.d) best = { p, d };
     });
     return best;
-  }, [position]);
+  }, [POIS, position]);
 
   const focusOn = (target) => {
     setFollow(false);
@@ -335,8 +354,10 @@ export default function Page() {
   };
 
   const headerLine = () => {
-    if (!position) return 'Mason, Ohio · no fix yet';
-    const where = inPark(position.lat, position.lng) ? nearest?.p.a || 'in park' : 'off property';
+    if (venueStatus === 'loading') return 'Loading the map…';
+    if (!position) return `${venue?.locality || 'Waiting'} · no fix yet`;
+    const inside = withinBounds(venue?.bounds, position.lat, position.lng);
+    const where = inside ? nearest?.p.a || 'on site' : 'off site';
     const acc = position.manual
       ? 'placed by hand'
       : `±${Math.round((position.acc || 0) * 3.28084)} ft`;
@@ -349,6 +370,7 @@ export default function Page() {
     <main className="app">
       <ParkMap
         data={mapData}
+        center={venue?.center}
         pois={POIS}
         me={position}
         members={others}
@@ -368,7 +390,7 @@ export default function Page() {
 
       <header className="topbar">
         <div className="brand">
-          <b>Kings Island</b>
+          <b>{venue?.name || 'Party tracker'}</b>
           <span>{headerLine()}</span>
         </div>
         <button
@@ -392,7 +414,7 @@ export default function Page() {
         </button>
       </header>
 
-      {height != null && (
+      {heights && height != null && (
         <button
           type="button"
           className="filterBadge"
@@ -473,7 +495,7 @@ export default function Page() {
         <nav className="tabs" role="tablist">
           {[
             ['party', `Party${others.length ? ` · ${roster.length}` : ''}`],
-            ['rides', 'Rides & heights'],
+            ['rides', heights ? 'Rides & heights' : 'Places'],
             ['me', 'Me'],
           ].map(([key, labelText]) => (
             <button
@@ -534,6 +556,7 @@ export default function Page() {
               onSelect={handleSelect}
               onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
               theme={theme}
+              venue={venue}
             />
           )}
           {tab === 'me' && (
@@ -607,13 +630,51 @@ export default function Page() {
               <div className="label">Advanced diagnostics</div>
               <Diagnostics runtime={runtimeApi} geo={geo} />
 
+              <div className="label">Which map</div>
+              <div className="venueList">
+                {(manifest?.venues || []).map((v) => {
+                  const away =
+                    position && !withinBounds(v.bounds, position.lat, position.lng)
+                      ? distance(position.lat, position.lng, v.center.lat, v.center.lng)
+                      : null;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      className={`venueRow ${v.id === venue?.id ? 'on' : ''}`}
+                      onClick={() => {
+                        selectVenue(v.id, { pin: true })
+                          .then(() => {
+                            setSelected(null);
+                            setFollow(false);
+                            showToast(`Showing ${v.name}`);
+                          })
+                          .catch((err) => showToast(err?.message || 'Could not load that map.'));
+                      }}
+                      aria-pressed={v.id === venue?.id}
+                    >
+                      <b>{v.name}</b>
+                      <span>
+                        {[v.locality, away == null ? 'you are here' : `${formatDistance(away)} away`]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="fine">
+                Picking one here keeps it. Left alone, the app opens the map you used last
+                and moves to another one on its own only if your first fix lands inside it.
+              </p>
+
               <div className="label">Where the data comes from</div>
               <p className="fine">
-                The map itself is drawn from OpenStreetMap geometry for Kings Island —
-                real paths, buildings, water and coaster track, painted as vectors rather
-                than copied from the park&apos;s own printed map. Height requirements were
-                compiled from Kings Island Central and Theme Park Insider in 2026; confirm
-                at the ride entrance.
+                The map is drawn from OpenStreetMap geometry — real paths, buildings, water
+                and ride track, painted as vectors rather than copied from anyone&apos;s
+                printed map. {venue?.credits || ''} Every map here was built by
+                <code> npm run venues:build</code>, so anywhere OpenStreetMap covers can
+                become one.
               </p>
             </div>
           )}
@@ -628,6 +689,7 @@ export default function Page() {
 
       {gateOpen && (
         <GpsGate
+          venueName={venue?.name}
           status={geo.status}
           error={geo.error}
           onRequest={() => {

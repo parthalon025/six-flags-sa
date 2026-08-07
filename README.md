@@ -1,15 +1,22 @@
-# Kings Island — Party Tracker
+# Party Tracker
 
-A live situational-awareness map for a group at Kings Island (Mason, Ohio). Built with
-Next.js 15 (App Router) and React 19.
+A live situational-awareness map for a group at a big, crowded place. It ships with
+Kings Island (Mason, Ohio) and Six Flags Fiesta Texas (San Antonio), and one command
+builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15 (App Router)
+and React 19.
 
-- **Drawn park map.** Not tiles and not the park's printed map — the whole thing is
-  real OpenStreetMap geometry for Kings Island, projected to Web Mercator and painted
-  as SVG: midways, buildings, water, Soak City slides, and every coaster's actual track
+- **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
+  painted as SVG: midways, buildings, water, slides, and every coaster's actual track
   centreline. Pan with one finger, pinch or scroll to zoom.
-- **Height requirements on all 65 rides.** Drag one slider to a rider's height and the
-  map dims everything they can't get on, with a running tally of what's open, what needs
-  an adult along, and what's closed.
+- **Any location.** `npm run venues:build -- --place "Somewhere"` pulls the geometry and
+  the places, and the app offers the new map next time it boots — see
+  [Building a map of somewhere else](#building-a-map-of-somewhere-else). Nothing in the
+  renderer is amusement-park specific; a zoo, a campus, a festival ground or a town
+  centre all draw through the same code.
+- **Height requirements where a venue has them.** Drag one slider to a rider's height and
+  the map dims everything they can't get on, with a running tally of what's open, what
+  needs an adult along, and what's closed. Kings Island ships with all 65. At a venue with
+  no height rules the filter isn't there at all.
 - **Live party tracking.** One person starts a party and hosts it on their own phone;
   everyone else joins by scanning the QR, opening the invite link, or typing the
   6-character code. Range in feet, compass bearing, nearest ride, status and staleness
@@ -28,6 +35,8 @@ Next.js 15 (App Router) and React 19.
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
   with the half-circle button in the header, or from the Me tab.
 - **Meet-up pin** shared to the whole party, with distance and walk time.
+- **Switches maps on its own.** If your first GPS fix lands inside a venue the app ships,
+  it loads that one. Pick one by hand in the Me tab and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
@@ -198,6 +207,48 @@ replaced, and that the map and ride heights still work with the network cut.
 Both suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
 machine instead of Playwright's own copy.
 
+## Building a map of somewhere else
+
+`scripts/build-venue.mjs` turns a place into the two files the app loads. It asks
+OpenStreetMap for the geometry over a bounding box, sorts it into the layers the renderer
+draws, and writes a POI list beside it.
+
+```bash
+npm run venues:build -- --place "Six Flags Fiesta Texas"
+npm run venues:build -- --bbox 39.3365,-84.2775,39.348,-84.2595 --name "Kings Island"
+npm run venues:build -- --around 39.3434,-84.267,900 --name "Kings Island"
+npm run venues:build -- --help
+```
+
+Each build writes `public/venues/<id>.map.json` and `public/venues/<id>.pois.json`, then
+rebuilds `public/venues/manifest.json` and the generated `lib/venueIndex.js`. The client
+*fetches* those files rather than importing them, which is the point: a venue added to the
+manifest reaches a phone that already has the app installed, and the service worker caches
+whichever one gets opened.
+
+What the tag rules produce, in short: `path` and `service` from highways, `building`,
+`water`, `wood`, `grass`, `parking`, `pool`, `coaster` from `roller_coaster=track`, `slide`
+from `attraction=water_slide`, and `lands` — named districts, tinted and labelled — from
+named park sections, neighbourhoods and campuses. A venue with no coasters just has an
+empty coaster layer. Districts the day/night palettes have never heard of get a colour
+derived from their own name, so an unfamiliar venue is still legible.
+
+**Height requirements are not in OpenStreetMap and never will be.** They live in
+`data/venues/<id>.overrides.json`, keyed by name, and are re-applied on every rebuild —
+along with any name corrections, aliases and hand-added places. The build prints the
+overrides it could not match so a rename doesn't go quietly missing.
+
+Two flags worth knowing: `--dump <file>` saves the raw Overpass response and `--from-dump
+<file>` rebuilds from it, so tuning the tag rules doesn't hammer a public mirror. Builds
+try three Overpass endpoints in turn, because the busy ones answer 429 and 504 more often
+than they answer.
+
+One caveat on Kings Island specifically: its bundle is the hand-pulled one this app was
+built around, and it is what ships. `--place "Kings Island"` reproduces it closely from
+today's OpenStreetMap — the same 121 coaster track segments and 1 park outline — but OSM
+names fewer of the water slides and flat rides than the shipped list does, so a rebuild
+would match about three quarters of the height overrides. The build tells you which ones.
+
 ## A word on privacy
 
 Party codes are six characters from a 32-symbol alphabet — short enough to read aloud in
@@ -216,8 +267,10 @@ browser.
 
 - **Map geometry and ride positions** — OpenStreetMap contributors, pulled via the
   Overpass API and licensed ODbL. Positions are building footprints, not queue entrances.
-- **Height requirements** — compiled from Kings Island Central and Theme Park Insider,
-  reflecting the 2026 season. They change between seasons and the ride operator measures
+- **Height requirements** — for Kings Island, compiled from Kings Island Central and
+  Theme Park Insider, reflecting the 2026 season. They live in
+  `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
+  none until somebody writes them. They change between seasons and the ride operator measures
   at the gate and has the final say, so the app says as much on the Rides tab.
 - Flight of Fear is not mapped in OpenStreetMap; it's placed on its show building and
   flagged as approximate in the app.
@@ -251,8 +304,10 @@ lib/party/                    the halves of the protocol
 lib/gps/adaptive.js           motion classification, cadence, broadcast gating
 lib/partyRuntime.js           the seam: session, transports, host service or client
 lib/geo.js                    distance, bearing, Mercator projection
-lib/park.js  lib/theme.js     POIs and height eligibility; day/night palettes
-lib/rides.json                152 places, 65 with height rules
+lib/park.js  lib/theme.js     POI helpers and height eligibility; day/night palettes
+lib/venue/store.js            which venue is loaded; manifest, geometry, places
+lib/venue/useVenue.js         the hook components read it through
+lib/venueIndex.js             generated: static POI imports for the API routes
 lib/serverStore.js            memory / Upstash backend for the cloud fallback
 app/
   page.js                     client state and the sheet
@@ -265,13 +320,17 @@ components/
   PartyPanel.jsx              roster, QR, join, status, meet-up
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
-  RidesPanel.jsx              height filter and park search
+  RidesPanel.jsx              height filter and place search
   GpsGate.jsx                 permission dialog with per-failure guidance
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
   useGeolocation.js           adaptive watchPosition, compass, battery
 server/index.mjs              zero-dependency host: mailbox, REST, SSE, metrics
 scripts/
+  build-venue.mjs             OpenStreetMap → a venue the app can load
+  lib/osm-tags.mjs            the tag → layer and tag → category rules
+  lib/geometry.mjs            simplification, area, centroid, point-in-polygon
+  lib/venue-io.mjs            where venues live; manifest and index generation
   phone.mjs                   one command to a QR you can scan
   setup.sh                    toolchain check, install, build
 test/
@@ -280,8 +339,11 @@ test/
   browser.mjs                 shared plumbing; honours CHROMIUM_PATH and BASE_URL
   visual.mjs  theme.mjs  ux.mjs
 public/
-  sw.js                       offline cache: shell, map and rides; never the roster
-  parkmap.json                drawn map layers (~260 KB)
+  sw.js                       offline cache: shell, map and places; never the roster
+  venues/manifest.json        every venue this build ships
+  venues/<id>.map.json        drawn map layers (~260-300 KB each)
+  venues/<id>.pois.json       the places, with heights where a venue has them
   manifest.webmanifest        home-screen install
+data/venues/<id>.overrides.json  heights and corrections, re-applied on rebuild
 Dockerfile  docker-compose.yml
 ```
