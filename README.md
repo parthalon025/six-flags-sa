@@ -33,168 +33,170 @@ Next.js 15 (App Router) and React 19.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
   reports their range and bearing.
 
-## Get it running, free, in about ten minutes
+## Get it running
 
-You need an HTTPS address for GPS to work at all, so "just open the file" is not an
-option. Two free routes — pick the first one.
+**[INSTALL.md](INSTALL.md) is the guide for the people who will actually use this** — it
+assumes no terminal and leads with why a plain link cannot work.
 
-### The easy way: Vercel (free, permanent link)
-
-1. Make a free account at **github.com** and at **vercel.com** (sign in to Vercel with
-   GitHub — no card, no trial).
-2. Upload this folder to a new GitHub repository. On github.com: **New repository** →
-   name it `kings-island-tracker` → **Create** → **uploading an existing file** → drag
-   in everything from this folder except `node_modules` and `.next` → **Commit**.
-3. On vercel.com: **Add New → Project** → pick that repository → **Deploy**. Nothing to
-   configure; leave every setting alone. About a minute later you get a link like
-   `https://kings-island-tracker.vercel.app`.
-4. Open that link on your phone, allow location, and add it to your home screen.
-
-That gets you the map, your own position, every ride height, search and the meet-up pin.
-**Party sharing needs one more step**, because Vercel runs each request on a different
-machine and there's nowhere to keep the roster between them:
-
-5. In your Vercel project: **Storage** → **Upstash Redis** (labelled Marketplace) →
-   **Create** → accept the free plan. Vercel writes the two environment variables in for
-   you.
-6. **Deployments** → the three dots on the newest one → **Redeploy**. Party codes now
-   work across everybody's phones.
-
-Free-tier limits are far beyond what a family trip uses — Upstash gives 10,000 commands
-a day, and six phones polling all day is a few thousand.
-
-### The no-account way: your own laptop plus a tunnel
-
-Good for a single trip, and nothing to sign up for. The laptop has to stay awake and
-online at home while you're at the park.
+The two short versions:
 
 ```bash
-npm install
-npm run build
-npm start                      # now serving on http://localhost:3000
+npm run phone        # builds, starts, tunnels, prints a QR — scan it
 ```
 
-In a second terminal:
+or click Deploy in [INSTALL.md](INSTALL.md) for a permanent link. There is nothing to
+configure either way: no database, no environment variables, no accounts. A party is
+hosted by one of the phones in it.
+
+For development:
 
 ```bash
-npx localtunnel --port 3000
-```
-
-It prints an `https://…loca.lt` address. That address works on any phone, GPS included,
-and party sharing works with no database because it's all one Node process. The address
-changes each time you restart the tunnel.
-
-If you don't have Node yet, install it from **nodejs.org** (the LTS button) and reopen
-your terminal.
-
-### Put it on the home screen
-
-Open the site on the phone, go to the **Me** tab, and follow the **Install on this
-phone** card. On Android there's a button. On iPhone it's Share → Add to Home Screen —
-iOS gives no automatic prompt, so the app just tells you the taps.
-
-Once installed it opens full screen with no browser bars, and the entire park map is
-cached on the phone: it draws instantly and keeps working when the signal dies in a
-queue line. Location and party sync still need a connection.
-
-## Run it locally for development
-
-```bash
-npm install
+npm run setup        # checks Node, installs, builds
 npm run dev          # http://localhost:3000
 ```
 
-`localhost` counts as a secure context, so GPS works there without any tunnel.
+`localhost` counts as a secure context, so GPS works there without a tunnel.
 
-## Deploying
+## How the party works
 
-Push to GitHub and import into Vercel — no configuration needed for the app itself.
-
-**One thing to set up:** party state defaults to an in-memory store on the server. That's
-fine for `npm run dev` or a single long-running Node process, but Vercel runs serverless
-functions across instances, so parties won't be shared. Create a free Redis database at
-[upstash.com](https://upstash.com) and set:
+One device is the **host**: it holds the authoritative roster and decides what is true.
+Everyone else runs a thin client that submits commands and applies the patches that come
+back. The host is normally a phone. It can also be a long-running Node process if you
+want parties that outlive every phone leaving.
 
 ```
-UPSTASH_REDIS_REST_URL=...
-UPSTASH_REDIS_REST_TOKEN=...
+lib/core/state.js     the rules — pure, no I/O, identical on phone and server
+lib/core/protocol.js  the wire — sealed envelopes, versioned frames, dedupe
+lib/transport/types.js  the pipe — moves opaque blobs, holds no key
 ```
 
-`lib/store.js` picks these up automatically and switches backends. Parties expire after
-8 hours; a member's position drops off the roster after 45 minutes of silence.
+Every accepted command bumps `version` by exactly one. A replica holding N that receives
+N+2 knows it missed a patch and asks for a resync, so gaps repair themselves rather than
+silently diverging.
 
-### Or run the standalone sync server
+### Transports
 
-`server/index.mjs` is a zero-dependency `node:http` server speaking the same wire
-protocol, plus a server-sent-event stream so the roster pushes instead of polling. It
-runs anywhere you get a long-lived Node process (Render, Fly.io, Railway, a laptop behind
-a Cloudflare Tunnel):
+Chosen automatically, in this order, with failover and replay:
+
+| Rank | Transport | When it wins |
+|---|---|---|
+| 1 | `local-http` | a self-hosted Node host is reachable on the LAN |
+| 2 | `webrtc` | phones can reach each other directly — the intended path |
+| 3 | `bluetooth-le` | never, in a browser (see below) |
+| 4 | `cloud-relay` | phones are on different networks |
+| 5 | `offline` | nothing is reachable; frames queue and replay on reconnect |
+
+Nothing above the transport layer knows which is active, and no transport can read what
+it carries — the key never leaves the phones.
+
+**Bluetooth is deliberately a stub that reports the truth.** Web Bluetooth exposes only
+the GATT *central* role, so a page can connect outward to something already advertising
+but can never advertise, never run a GATT server, and never scan raw advertisements. Two
+phones running this app are both centrals and cannot see each other. `probe()` returns
+`no-peripheral-mode` and the manager skips it. Making it real needs a native shell, not
+more JavaScript; the file header says exactly what.
+
+### If the host walks off
+
+The remaining phones elect a new one on battery, then signal, then network, then device
+performance, then join order, with ties broken so every peer independently reaches the
+same winner. The new host takes leadership through the reducer, so the change lands on
+every replica as an ordinary patch at `version + 1` — no resync, no empty roster, same
+party code. Nobody is asked anything.
+
+### Or run the standalone host
+
+`server/index.mjs` is a zero-dependency `node:http` server running the *same*
+`lib/core/state.js`, plus a server-sent-event stream so the roster pushes instead of
+polling. It runs anywhere you get a long-lived Node process:
 
 ```bash
 node server/index.mjs                                  # :8787
 PORT=8080 DATA_FILE=./parties.json node server/index.mjs
 ```
 
-Point the app at it and the client switches from 8-second polling to the live stream,
-falling back to polling by itself if a proxy eats the connection:
-
-```
-NEXT_PUBLIC_SYNC_URL=https://your-sync-server.example.com
+```bash
+docker compose up -d          # app on :3000, host on :8787
 ```
 
-`lib/partyRuntime.js` is the only file that knows which transports are in play; point
-`NEXT_PUBLIC_SYNC_URL` at the standalone server and it goes into the transport list ahead
-of the cloud relay, and into the invite so joiners try it first.
+Point the app at it and it goes into the transport list ahead of the cloud relay, and
+into the invite so joiners try it first:
+
+```
+NEXT_PUBLIC_SYNC_URL=https://your-host.example.com
+```
+
+Self-hosting buys long-lived parties and `/api/metrics`. It is not required.
 
 ## API
 
+The mailbox is the only thing the networking needs. It moves opaque sealed blobs between
+peers and cannot read them:
+
 | Method | Route | Does |
 |---|---|---|
-| `POST` | `/api/party` | Allocate a party, returns `{ code }` |
-| `GET` | `/api/party/[code]` | Roster and meet-up point |
-| `PUT` | `/api/party/[code]` | Upsert your position and status |
-| `DELETE` | `/api/party/[code]?id=` | Leave, deleting your record |
-| `PUT` / `DELETE` | `/api/party/[code]/meet` | Set or clear the meet-up |
+| `POST` | `/api/mailbox/[partyId]` | Post `{ from, to, kind, data }`; `to` is a peer id or `*` |
+| `GET` | `/api/mailbox/[partyId]?for=&since=` | Drain what is addressed to you |
+| `GET` | `/api/mailbox/[partyId]/stream?for=` | The same, pushed (standalone host only) |
 
-Clients push their own position every 15 seconds, and either poll every 8 seconds or
-hold open `GET /api/party/[code]/stream` when the standalone server is configured.
+A REST surface exists for self-hosted deployments and for clients that would rather not
+speak the protocol:
+
+| Method | Route |
+|---|---|
+| `POST` | `/api/party/create`, `/api/party/join`, `/api/party/leave` |
+| `GET` / `DELETE` | `/api/party/[partyId]` |
+| `GET` | `/api/members/[partyId]` |
+| `POST` | `/api/location/[partyId]`, `/api/heartbeat/[partyId]` |
+| `PATCH` | `/api/member/[partyId]`, `/api/favorites/[partyId]` |
+| `GET` | `/api/rides`, `/api/rides/[id]` |
+| `GET` | `/api/health`, `/api/ready`, `/api/metrics`, `/api/version` |
+
+Parties expire after 8 hours; a member drops off the roster after 45 minutes of silence
+and is dimmed as stale after 5.
+
+Vercel's routes deliberately implement no SSE — serverless cannot hold a stream open — so
+clients there fall back to polling. Upstash is optional and only makes a *cloud-hosted*
+party durable across instances; it is not needed for phone-hosted parties, which is the
+normal case.
+
+## What a browser cannot do
+
+Stated plainly rather than stubbed to look finished:
+
+- **Background location.** There is no web API for it. When the screen locks, the page is
+  suspended and positions stop updating — a phone in a pocket goes stale rather than
+  reporting a stale position as live. The map dims that person after 5 minutes. Fixing
+  this needs a native wrapper with the OS background-location permission.
+- **BLE advertising and discovery**, as above.
+- **A phone acting as an HTTP listener**, and `party.local` mDNS resolution. The host
+  phone runs the party *service*; peers reach it over WebRTC, not a socket it opened.
 
 ## Tests
 
-`test/visual.mjs` drives the app in headless Chromium at 390x844 with a mocked GPS fix,
-walks the height filter and a two-phone party, and writes screenshots to `test/shots/`.
-Those checked-in shots are what the map and the height filter actually render.
-
-The suites drive a real browser, so Playwright needs one downloaded the first time:
-
 ```bash
-npx playwright install chromium
+npx playwright install chromium     # once
+npm run test:unit                   # pure layers, no browser, seconds
+npm run build && npm start &
+npm test                            # unit, then the three-phone behavioural suite
+npm run test:visual                 # screenshots to test/shots/
+npm run test:theme                  # daylight and night, via the real toggle
+npm run test:ux                     # glance rail with a live party
 ```
 
-Then start the app and point the suites at it:
+`test/unit.mjs` exercises the pure layers directly: version arithmetic, duplicate
+suppression, seal/open against wrong keys and tampered ciphertext, the election ordering,
+and every GPS cadence band and broadcast-gate reason.
 
-```bash
-npm run build && npm start      # leave this running in one terminal
-npm run test                    # 25-check audit: every control, two phones, offline
-npm run test:visual             # GPS gate, height filter, two-phone party
-npm run test:theme              # daylight and night map, via the real toggle
-npm run test:ux                 # glance rail with a live party, height panel
-```
+`test/functional.mjs` is the one that matters. Three phones in one browser: A hosts, B
+joins by typing the code, C joins from the invite link, then A is taken away and the
+other two have to keep the party alive between them. It asserts on behaviour, not
+appearance — that the key never leaves the URL fragment, that a party id is not its code,
+that NEED HELP reaches the other phone, that the roster never collapses while the host is
+replaced, and that the map and ride heights still work with the network cut.
 
-All four expect the app on `http://127.0.0.1:3000`; `test:visual` takes a `BASE_URL` if
-yours is elsewhere. If the machine already has a Chromium you'd rather use — a CI image,
-a sandbox, a distro package — point `CHROMIUM_PATH` at it and the suites skip
-Playwright's own copy:
-
-```bash
-CHROMIUM_PATH=/usr/bin/chromium npm run test
-```
-
-`test/functional.mjs` is the one that matters. It drives two independent browser
-contexts as two phones, exercises every control, and asserts on behaviour rather than
-appearance: that a party code round-trips, that NEED HELP reaches the other phone, that
-leaving actually deletes the record server-side, that height verdicts flip at the right
-threshold, and that the map still draws with the network switched off.
+Both suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
+machine instead of Playwright's own copy.
 
 ## A word on privacy
 
@@ -229,32 +231,57 @@ The park's own printed map artwork is copyrighted and is deliberately not used h
 ## Layout
 
 ```
+lib/core/                     the domain — pure, no I/O, runs anywhere
+  state.js                    party/member/ride model, op reducer, versioning
+  protocol.js                 message kinds, frames, duplicate suppression
+  crypto.js                   AES-GCM sealing; party id bound as additionalData
+  session.js                  the join credential; invites, key in the fragment
+  ids.js                      party codes, member ids, tokens
+lib/transport/                the pipe — moves sealed blobs, holds no key
+  types.js                    the contract every transport is built with
+  registry.js                 probing, rank order, failover, replay
+  webrtc.js  signaling.js     star topology, host at the centre
+  localHttp.js  cloudRelay.js  mailboxClient.js
+  bluetooth.js                honest capability probe; see its header
+  offlineQueue.js             durable outbox, replayed on reconnect
+lib/party/                    the halves of the protocol
+  hostService.js              authoritative state, broadcasts patches
+  client.js                   thin replica, submits commands, requests resyncs
+  election.js                 scoring, leader election, host migration
+lib/gps/adaptive.js           motion classification, cadence, broadcast gating
+lib/partyRuntime.js           the seam: session, transports, host service or client
+lib/geo.js                    distance, bearing, Mercator projection
+lib/park.js  lib/theme.js     POIs and height eligibility; day/night palettes
+lib/rides.json                152 places, 65 with height rules
+lib/serverStore.js            memory / Upstash backend for the cloud fallback
 app/
-  page.js                     all client state, party polling, sheet
-  layout.js  globals.css
-  api/party/…                 party create / roster / position / meet-up
-public/
-  sw.js                       offline cache: shell + map, never the roster
-  manifest.webmanifest        home-screen install
+  page.js                     client state and the sheet
+  join/page.js                invite landing; reads the fragment, never the query
+  api/mailbox/…               the relay
+  api/…                       party, members, location, rides, health, metrics
 components/
   ParkMap.jsx                 SVG renderer, pan + pinch zoom
   GlanceRail.jsx              the live card rail in the collapsed sheet
-  InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
-  GpsGate.jsx                 permission dialog with per-failure guidance
-  CompassTape.jsx             bearing HUD
-  PartyPanel.jsx              roster, status, meet-up
+  PartyPanel.jsx              roster, QR, join, status, meet-up
+  QrScanner.jsx               camera join; says so plainly where unsupported
+  Diagnostics.jsx             active transport, probe results, queue depth
   RidesPanel.jsx              height filter and park search
-  useGeolocation.js           watchPosition + compass, manual fallback
-server/index.mjs              optional zero-dependency SSE sync server
-test/visual.mjs               headless browser walkthrough -> test/shots/
-test/browser.mjs              shared Chromium launcher, honours CHROMIUM_PATH
-eslint.config.mjs             flat config, next/core-web-vitals
-lib/
-  partyRuntime.js             the seam: session, transports, host service or client
-  theme.js                    daylight + night palettes (lands, category colours)
-  park.js                     POIs, height eligibility
-  rides.json                  152 places, 65 with height rules
-  geo.js                      distance, bearing, Mercator projection
-  store.js                    memory / Upstash backend
-public/parkmap.json           drawn map layers (~260 KB)
+  GpsGate.jsx                 permission dialog with per-failure guidance
+  InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
+  CompassTape.jsx             bearing HUD
+  useGeolocation.js           adaptive watchPosition, compass, battery
+server/index.mjs              zero-dependency host: mailbox, REST, SSE, metrics
+scripts/
+  phone.mjs                   one command to a QR you can scan
+  setup.sh                    toolchain check, install, build
+test/
+  unit.mjs                    the pure layers, no browser
+  functional.mjs              three phones, one browser, real behaviour
+  browser.mjs                 shared plumbing; honours CHROMIUM_PATH and BASE_URL
+  visual.mjs  theme.mjs  ux.mjs
+public/
+  sw.js                       offline cache: shell, map and rides; never the roster
+  parkmap.json                drawn map layers (~260 KB)
+  manifest.webmanifest        home-screen install
+Dockerfile  docker-compose.yml
 ```
