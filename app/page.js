@@ -194,6 +194,35 @@ export default function Page() {
   const meet = party?.meet ?? localMeet;
 
   /**
+   * Where the party is, according to the phone hosting it.
+   *
+   * This is the better answer to "which map" than this phone's own fix. Someone
+   * joining from the car park, from the hotel the night before, or from a phone
+   * that has not got a fix yet still wants the map everyone else is looking at
+   * — and a meet-up pin means nothing if two phones are drawing different
+   * places. The host is the phone that decides what is true about the party, so
+   * it decides this too.
+   */
+  const hostLocation = useMemo(() => {
+    const host = roster.find((m) => m.id === party?.hostId);
+    if (!host || !Number.isFinite(host.lat) || !Number.isFinite(host.lng)) return null;
+    return { lat: host.lat, lng: host.lng, name: host.name };
+  }, [roster, party?.hostId]);
+
+  // The host's position outranks this phone's own, and keeps outranking it: if
+  // the host turns out to be somewhere else, follow. Picking a venue by hand
+  // still wins over both — the store stops retargeting once a choice is pinned.
+  useEffect(() => {
+    if (!hostLocation) return;
+    retargetForPosition(hostLocation.lat, hostLocation.lng)
+      .then((moved) => {
+        if (moved) showToast(`Switched to ${moved.name} — where your party is`);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostLocation?.lat, hostLocation?.lng]);
+
+  /**
    * The battery lever. Every fix goes through the adaptive gate before it goes
    * anywhere near a radio, and the gate — not this component — decides whether
    * it moved far enough, turned far enough, or has simply been quiet too long.
@@ -633,10 +662,14 @@ export default function Page() {
               <div className="label">Which map</div>
               <div className="venueList">
                 {(manifest?.venues || []).map((v) => {
+                  // Measured from whatever is deciding the map: the host's
+                  // position while a party is running, this phone's otherwise.
+                  const from = hostLocation || position;
+                  const inside = from && withinBounds(v.bounds, from.lat, from.lng);
                   const away =
-                    position && !withinBounds(v.bounds, position.lat, position.lng)
-                      ? distance(position.lat, position.lng, v.center.lat, v.center.lng)
-                      : null;
+                    from && !inside ? distance(from.lat, from.lng, v.center.lat, v.center.lng) : null;
+                  const here = hostLocation ? 'your party is here' : 'you are here';
+                  const off = hostLocation ? 'from your party' : 'away';
                   return (
                     <button
                       key={v.id}
@@ -655,7 +688,14 @@ export default function Page() {
                     >
                       <b>{v.name}</b>
                       <span>
-                        {[v.locality, away == null ? 'you are here' : `${formatDistance(away)} away`]
+                        {[
+                          v.locality,
+                          from == null
+                            ? null
+                            : inside
+                              ? here
+                              : `${formatDistance(away)} ${off}`,
+                        ]
                           .filter(Boolean)
                           .join(' · ')}
                       </span>
@@ -664,8 +704,9 @@ export default function Page() {
                 })}
               </div>
               <p className="fine">
-                Picking one here keeps it. Left alone, the app opens the map you used last
-                and moves to another one on its own only if your first fix lands inside it.
+                Picking one here keeps it, and stops the app moving you again. Left alone,
+                it opens the map you used last, then follows the phone hosting your party —
+                or your own first fix, if there is no party running.
               </p>
 
               <div className="label">Where the data comes from</div>
