@@ -93,6 +93,11 @@
   --r3: 12px;
   --r4: 14px;
   --r5: 22px;
+  /* A floating sheet's corners follow the curve of the display it nests into,
+     so they are far rounder than a docked panel's. The gap tightens and the
+     radius comes down as it is pulled up. */
+  --rFloat: 28px;
+  --rFloatHalf: 22px;
   --rCapsule: 999px;
 
   /* ---- Liquid Glass ----
@@ -111,6 +116,7 @@
   --glassRim: rgba(255, 255, 255, .34);
   --glassRimLo: rgba(255, 255, 255, .10);
   --glassRing: rgba(255, 255, 255, .14);
+  --onGlass: rgba(255, 255, 255, .10);
   --lens: blur(20px) saturate(180%) brightness(1.14);
   --lensLite: blur(14px) saturate(170%) brightness(1.10);
   --lensDeep: blur(44px) saturate(180%) brightness(1.10);
@@ -198,6 +204,7 @@
   --glassRim: rgba(255, 255, 255, .92);
   --glassRimLo: rgba(255, 255, 255, .42);
   --glassRing: rgba(255, 255, 255, .58);
+  --onGlass: rgba(255, 255, 255, .62);
   --lens: blur(20px) saturate(190%) brightness(1.06);
   --lensLite: blur(14px) saturate(175%) brightness(1.04);
   --lensDeep: blur(44px) saturate(190%) brightness(1.03);
@@ -517,7 +524,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* ---- a grouped list of rows that lead somewhere ---- */
 .rowList {
-  background: var(--grouped2); border-radius: var(--r2);
+  background: transparent; border-radius: var(--r2);
   overflow: hidden; margin-bottom: 10px;
 }
 .row {
@@ -605,30 +612,37 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* Height, not transform. A translated fixed-height sheet pushes the bottom of
    its own scroll container off-screen, which makes the lower controls
    unreachable at the half stop. */
+/* At a partial height the sheet is a floating card: inset from the edges, all
+   four corners rounded so they nest into the curve of the display, and glass
+   the whole way through. Pulled to the top it stops floating — the gap closes,
+   it anchors to the edges and the background goes opaque, because a surface
+   you are reading a list on is content, not chrome. */
 .sheet {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 45;
+  position: absolute; left: 8px; right: 8px; bottom: calc(8px + var(--bot)); z-index: 45;
   background: var(--glassTintDeep);
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
   border-top: none;
-  border-radius: var(--r4) var(--r4) 0 0;
+  border-radius: var(--rFloat);
   display: flex; flex-direction: column;
   height: var(--peek); max-height: 88vh;
-  transition: height var(--t3) var(--ease);
+  overflow: hidden;
+  transition: height var(--t3) var(--ease), inset var(--t3) var(--ease),
+              border-radius var(--t3) var(--ease), background var(--t3) var(--ease);
   box-shadow: var(--lensEdge), var(--shadow3);
   animation: sheetUp var(--t4) var(--ease) both;
 }
-.sheet::before {
-  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--glassRim) 22%,
-              var(--glassRim) 78%, transparent);
-  pointer-events: none;
+.sheet.half {
+  height: 52vh;
+  left: 5px; right: 5px; bottom: calc(5px + var(--bot));
+  border-radius: var(--rFloatHalf);
 }
-.sheet.half::before, .sheet.full::before { content: none; }
-.sheet.half { height: 52vh; }
-.sheet.full { height: 88vh; }
-.sheet.half, .sheet.full {
+.sheet.full {
+  height: 88vh;
+  left: 0; right: 0; bottom: 0;
+  border-radius: var(--r5) var(--r5) 0 0;
   background: var(--grouped);
   -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: var(--shadow3);
 }
 .grab { width: 100%; padding: 6px 0 4px; display: grid; place-items: center; }
 .grab i {
@@ -657,6 +671,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sheetBody {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
   padding: 4px 16px calc(26px + var(--bot));
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
 }
 .sheetBody > * { animation: fadeIn var(--t2) var(--easeOut) both; }
 
@@ -735,9 +751,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    pure CSS: the container carries the card, the rows carry hairlines inset to
    line up with the text rather than running the full width. */
 .poiList, .roster, .venueList, .diagTable, .stepList {
-  background: var(--grouped2); border-radius: var(--r2);
+  background: transparent; border-radius: var(--r2);
   overflow: hidden; margin-bottom: 10px;
 }
+.sheet.full .poiList, .sheet.full .roster, .sheet.full .venueList,
+.sheet.full .diagTable, .sheet.full .stepList,
+.sheet.full .rowList { background: var(--grouped2); }
+.sheet.full .glanceCard { background: var(--grouped2); }
 .poiList > *, .roster > *, .venueList > *, .diagTable > *, .stepList > * {
   border-radius: 0;
 }
@@ -935,7 +955,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .glanceRail::-webkit-scrollbar { display: none; }
 .glanceCard {
   flex: none; width: 158px; scroll-snap-align: start; text-align: left;
-  background: var(--grouped2);
+  background: var(--glassTint);
   border: none;
   border-radius: var(--r3); padding: 11px 13px 12px;
   display: flex; flex-direction: column; gap: 1px;
@@ -1159,6 +1179,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
     --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --onGlass: var(--bg3);
   }
 }
 
