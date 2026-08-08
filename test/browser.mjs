@@ -100,7 +100,7 @@ export const hydrated = (page) =>
  */
 export async function closeGate(page) {
   const allow = page.locator('button:has-text("Allow location")');
-  const yes = page.locator('.gate .btn.primary:has-text("Yes — build")');
+  const yes = page.locator('.gate .btn.primary:has-text("Yes — set up")');
   if (await allow.count()) await allow.click();
   for (let i = 0; i < 3; i += 1) {
     if (!(await page.locator('.gate').count())) return;

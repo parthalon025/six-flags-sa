@@ -2443,6 +2443,57 @@ await check('a place is addressable by id and by name', () => {
   return true;
 });
 
+section('push');
+
+/* The notification path carries the most revealing frame the app has — a name,
+   and often where that name is — through two parties that must not read it: our
+   own relay and the phone vendor's push service. These assert that. */
+
+const { default: webpush } = await import('web-push');
+
+await check('a sealed note round-trips, and a phone from another party cannot open it', async () => {
+  const pid = 'push-party-0001';
+  const note = { kind: 'help', title: 'Ava needs help', body: 'Tap to see where they are.' };
+  const sealed = await seal(key, pid, note);
+  assert.deepEqual(await open(key, sealed), note);
+  assert.equal(await open(other, sealed), null, 'a foreign key opened it');
+  // The party id is authenticated, not encrypted: relabelling breaks the tag.
+  assert.equal(await open(key, { ...sealed, pid: 'push-party-0002' }), null, 'relabelling worked');
+  return true;
+});
+
+await check('nothing readable reaches the push service', async () => {
+  const pid = 'push-party-0003';
+  const vapid = webpush.generateVAPIDKeys();
+  webpush.setVapidDetails('mailto:test@example.com', vapid.publicKey, vapid.privateKey);
+
+  const { subtle } = globalThis.crypto;
+  const pair = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const raw = new Uint8Array(await subtle.exportKey('raw', pair.publicKey));
+  const b64 = (u8) => Buffer.from(u8).toString('base64url');
+  const auth = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(auth);
+  const sub = {
+    endpoint: 'https://push.example.com/send/fake',
+    keys: { p256dh: b64(raw), auth: b64(auth) },
+  };
+
+  const sealed = await seal(key, pid, { kind: 'help', title: 'Ava needs help', body: 'By Iron Rattler' });
+  const req = webpush.generateRequestDetails(sub, JSON.stringify({ pid, sealed }), {
+    TTL: 300,
+    urgency: 'high',
+  });
+
+  assert.equal(req.headers.TTL, 300);
+  assert.match(req.headers.Authorization || '', /^vapid /i, 'not VAPID-signed');
+  assert.equal(req.headers['Content-Encoding'], 'aes128gcm');
+
+  const wire = Buffer.from(req.body).toString('latin1');
+  assert.equal(/Ava|Iron Rattler|help/i.test(wire), false, 'the words reached the wire');
+  assert.equal(wire.includes(pid), false, 'the party id reached the wire');
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
 
 

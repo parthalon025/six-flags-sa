@@ -88,7 +88,7 @@ async function main() {
   const asked = await page.locator('.gate h2').innerText().catch(() => '');
   check(/kings island/i.test(asked), `intake asks which park: "${asked.replace(/\n/g, ' ')}"`);
 
-  await page.getByRole('button', { name: /Yes — build/ }).click();
+  await page.getByRole('button', { name: /Yes — set up/ }).click();
   await page.waitForTimeout(1800);
   await shot(page, 'map-located');
 
@@ -145,7 +145,7 @@ async function main() {
     await page2.goto(BASE, { waitUntil: 'networkidle' });
     await page2.getByRole('button', { name: 'Allow location' }).click();
     await page2.waitForTimeout(1600);
-    await page2.getByRole('button', { name: /Yes — build/ }).click().catch(() => {});
+    await page2.getByRole('button', { name: /Yes — set up/ }).click().catch(() => {});
     await page2.waitForTimeout(1200);
     await go(page2, 'Party');
     await openSheet(page2, 'full');
@@ -160,7 +160,8 @@ async function main() {
       timeout: 30000,
       label: 'phone two joined and linked',
     }).catch(() => {});
-    await page2.getByRole('button', { name: 'NEED HELP' }).click();
+    await page2.getByRole('button', { name: 'I need help' }).click();
+    await page2.getByRole('button', { name: 'Tap again to alert everyone' }).click();
     await page2.waitForTimeout(1500);
     await shot(page2, 'second-phone-joined');
 

@@ -317,6 +317,38 @@ clients there fall back to polling. Upstash is optional and only makes a *cloud-
 party durable across instances; it is not needed for phone-hosted parties, which is the
 normal case.
 
+## Notifications
+
+Everything the app has to say used to be said in a toast that lasts a few seconds and a
+vibration nobody feels through a bag, which is no use at all for the one message the party
+feature exists to carry. Web Push fixes that, and it is off unless you give it keys:
+
+```bash
+node -e "console.log(require('web-push').generateVAPIDKeys())"
+# put the pair in .env.local as VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY,
+# plus VAPID_SUBJECT=mailto:you@example.com
+```
+
+Without them `/api/push/key` says so once, nothing asks again, and the app behaves exactly
+as it did before.
+
+A notification is the most revealing frame this app has — it says a name, and usually where
+that name is — so it is sealed with the party key before it goes anywhere and opened again
+by the service worker on the receiving phone. Our relay sees an endpoint and a blob; the
+push service sees the same plus whose phone it is going to; only the phone sees the words.
+The worker wakes with no page attached, so the key is kept in IndexedDB beside the party
+id, written as the party changes and cleared on leaving — which is what makes a push from a
+party you have left unreadable rather than merely unwelcome.
+
+Four things are worth waking a phone for: somebody needing help, somebody joining or
+leaving, the meet-up moving, and somebody going quiet. The last one can cry wolf — a queue
+building eats signal for five minutes routinely — so it waits twelve and is off by default.
+The first three are sent by whoever does them; going quiet is nobody's action, so the host
+notices it alone.
+
+On an iPhone this only works once the app is on the Home Screen. The button says so rather
+than failing quietly.
+
 ## What a browser cannot do
 
 Stated plainly rather than stubbed to look finished:
@@ -341,6 +373,7 @@ npm test                            # unit, then the three-phone behavioural sui
 npm run test:visual                 # screenshots to test/shots/
 npm run test:theme                  # daylight and night, via the real toggle
 npm run test:ux                     # glance rail with a live party
+npm run test:grandma                # can a stranger actually use it
 ```
 
 `test/unit.mjs` exercises the pure layers directly: version arithmetic, duplicate
@@ -365,7 +398,21 @@ replaced, and that the map and ride heights still work with the network cut. A f
 sits in Austin, at neither park, to check that the intake asks about the nearer one, that
 saying yes brings that park's places with it, and that it is not asked again.
 
-Both suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
+`test/grandma.mjs` asks a different question from the other two. They ask whether the app
+still does what it did; this asks whether somebody who has never seen it can get anything
+out of it. Two people are scored separately — one on her own who needs a toilet, then food,
+then to walk there, and one who has been handed a link and has to appear on her family's
+map, find a grandchild and be able to call for help. Tasks score 0, 1 or 2, because "she
+got there after opening the panel" is a different result from "she got there first try",
+and a suite that cannot tell those apart cannot tell you whether the app improved.
+
+The rule that keeps it honest: **its persona tasks may not use the `go()` helper**. That
+helper knows where the tab bar is and pulls the sheet open by its handle, which are exactly
+the two things she does not know. She taps things whose words she can read, and if nothing
+on screen says it, that is the finding rather than a broken test. A single task scoring
+zero fails the run.
+
+All the suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
 machine instead of Playwright's own copy.
 
 ## Building a map of somewhere else

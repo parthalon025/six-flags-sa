@@ -5,6 +5,10 @@ import QrScanner from '@/components/QrScanner';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { usePois } from '@/lib/venue/useVenue';
 
+/* What you are doing. NEED HELP is deliberately not in this list: it was the
+   same size and shape as "Eating", one row below it, and it buzzes every other
+   phone in the party. It gets its own button, its own confirmation and its own
+   way back. */
 const STATUSES = [
   'On the move',
   'In line',
@@ -12,8 +16,9 @@ const STATUSES = [
   'Restroom',
   'Heading to meet-up',
   'Waiting here',
-  'NEED HELP',
 ];
+const HELP = 'NEED HELP';
+const CALM = 'On the move';
 
 function nearestPlace(pois, lat, lng) {
   let best = null;
@@ -90,14 +95,37 @@ export default function PartyPanel({
   onNavigateMeet,
   onFocus,
   busy,
-  transport,
-  version,
-  queued,
+  myName = '',
+  onName = null,
+  onCopied = null,
+  pushState = 'idle',
+  onEnablePush = null,
+  pushNeedsInstall = false,
+  joinsOpenUntil = 0,
+  onAllowJoins = null,
 }) {
   const [entry, setEntry] = useState('');
+  const [name, setName] = useState(myName === 'Guest' ? '' : myName || '');
+  /* Which destructive button is one tap in. Only ever one at a time, and it
+     clears itself, so a thumb resting on the screen cannot leave the party. */
+  const [arming, setArming] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [showQr, setShowQr] = useState(true);
   const pois = usePois();
+  /* The join window counts down while the screen is being looked at, so the
+     number has to move on its own rather than only when a position lands. */
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+  // An armed button forgets after a few seconds rather than waiting to be
+  // pressed by accident later.
+  useEffect(() => {
+    if (!arming) return undefined;
+    const t = setTimeout(() => setArming(null), 5000);
+    return () => clearTimeout(t);
+  }, [arming]);
 
   if (!code) {
     return (
@@ -109,9 +137,31 @@ export default function PartyPanel({
           that never reaches a server, and if the host walks off another phone takes over on
           its own.
         </p>
-        <button type="button" className="btn primary" onClick={onCreate} disabled={busy}>
+        <button
+          type="button"
+          className="btn primary"
+          onClick={() => {
+            onName?.(name);
+            onCreate();
+          }}
+          disabled={busy}
+        >
           {busy ? 'Starting…' : 'Start a party'}
         </button>
+        <div className="label">Your Name</div>
+        <input
+          className="field"
+          maxLength={14}
+          placeholder="Name"
+          aria-label="Your name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => onName?.(name)}
+        />
+        <p className="fine" style={{ marginTop: 0 }}>
+          What the others see beside your dot. Without one everybody joins as “Guest”, and a
+          roster of Guests is no roster at all.
+        </p>
         <div className="label">Join an Existing One</div>
         <div className="joinRow">
           <input
@@ -125,12 +175,22 @@ export default function PartyPanel({
           <button
             type="button"
             className="btn"
-            onClick={() => onJoin(entry)}
+            onClick={() => {
+              onName?.(name);
+              onJoin(entry, name);
+            }}
             disabled={entry.length < 6 || busy}
           >
-            Join
+            {busy ? 'Joining…' : 'Join'}
           </button>
         </div>
+        {/* The field silently drops I, O, 0 and 1 as they are typed, which
+            looks like a broken keyboard unless somebody says why. */}
+        <p className="fine" style={{ marginTop: 0 }}>
+          {entry.length > 0 && entry.length < 6
+            ? `Six characters — ${6 - entry.length} to go.`
+            : 'Codes never use I, O, 0 or 1, so they can be read out loud without confusion.'}
+        </p>
         <button type="button" className="btn" onClick={() => setScanning((v) => !v)}>
           {scanning ? 'Stop the camera' : 'Scan a party QR'}
         </button>
@@ -138,7 +198,8 @@ export default function PartyPanel({
           <QrScanner
             onResult={(text) => {
               setScanning(false);
-              onJoin(text);
+              onName?.(name);
+              onJoin(text, name);
             }}
             onCancel={() => setScanning(false)}
           />
@@ -155,28 +216,72 @@ export default function PartyPanel({
   });
 
   const hostName = members.find((m) => m.id === hostId)?.name;
+  /* Rounded up, so the last fifty seconds read "1 min left" rather than "0". */
+  const joinsLeft = joinsOpenUntil > now ? Math.ceil((joinsOpenUntil - now) / 60000) : 0;
+
+  /* This is a phone, so the sheet every other app uses to send a link is the
+     right thing to open. Clipboard is the fallback, and either way it says so —
+     a copy that reports nothing is indistinguishable from one that failed, and
+     the failure used to be swallowed entirely. */
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const share = async () => {
+    const text = invite || code;
+    if (canShare) {
+      try {
+        await navigator.share({ title: 'Join my party', text: `Party code ${code}`, url: invite || undefined });
+        return;
+      } catch {
+        /* dismissed, or refused — fall through to the clipboard */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      onCopied?.('Invite link copied');
+    } catch {
+      onCopied?.('Could not copy — read the code out instead');
+    }
+  };
 
   return (
     <div>
       <div className="label">
         Party Code
-        <span className="labelRight">
-          {transport || 'connecting'} · v{version}
-          {queued ? ` · ${queued} queued` : ''}
-        </span>
+        {hosting && onAllowJoins ? (
+          joinsLeft > 0 ? (
+            <span className="labelRight">Open to joining · {joinsLeft} min left</span>
+          ) : (
+            <button type="button" className="labelAction" onClick={onAllowJoins}>
+              Let someone join
+            </button>
+          )
+        ) : null}
       </div>
       <div className="codeBox">
         <span className="codeText">{code}</span>
+        <button type="button" onClick={share}>
+          {canShare ? 'Send invite' : 'Copy link'}
+        </button>
         <button
           type="button"
-          onClick={() => navigator.clipboard?.writeText(invite || code).catch(() => {})}
+          className="danger"
+          onClick={() => (arming === 'leave' ? onLeave() : setArming('leave'))}
         >
-          Copy link
-        </button>
-        <button type="button" className="danger" onClick={onLeave}>
-          Leave
+          {arming === 'leave' ? 'Tap to confirm' : 'Leave'}
         </button>
       </div>
+      {arming === 'leave' ? (
+        <p className="fine warnText">
+          {hosting
+            ? 'This phone is holding the roster. Leaving hands it to another phone in the party.'
+            : 'You will drop off everyone else’s map. Re-joining needs the code or the link again.'}
+        </p>
+      ) : null}
+      {hosting && onAllowJoins && joinsLeft === 0 ? (
+        <p className="fine">
+          Typing this code in only works while this phone is expecting someone. The invite link
+          and the QR keep working either way.
+        </p>
+      ) : null}
 
       <div className="label">
         Invite
@@ -190,6 +295,23 @@ export default function PartyPanel({
           <p className="fine">
             The other phone points its camera at this. The key that decrypts the party rides in
             the link&apos;s fragment, which browsers never send to a server.
+          </p>
+        </>
+      ) : null}
+
+      {/* Asked here rather than on the way in: a permission prompt at cold open
+          is a question about nothing, and this is the first moment where the
+          answer obviously matters. */}
+      {onEnablePush && pushState !== 'granted' && pushState !== 'unsupported' ? (
+        <>
+          <div className="label">In Your Pocket</div>
+          <button type="button" className="btn" onClick={onEnablePush} disabled={pushNeedsInstall}>
+            Tell me on this phone
+          </button>
+          <p className="fine">
+            {pushNeedsInstall
+              ? 'On an iPhone this needs the app on your Home Screen first — Me → Install on this phone.'
+              : 'Right now a locked phone in a bag shows nothing at all when somebody needs you.'}
           </p>
         </>
       ) : null}
@@ -247,7 +369,8 @@ export default function PartyPanel({
                   ) : (
                     <>
                       <b>{formatDistance(d)}</b>
-                      <span>{b != null ? `${cardinal(b)} ${Math.round(b)}°` : ''}</span>
+                      <span>{/* The compass point, not the degrees. Nobody navigates a park by 328°. */}
+                    {b != null ? cardinal(b) : ''}</span>
                     </>
                   )}
                 </span>
@@ -263,13 +386,32 @@ export default function PartyPanel({
           <button
             key={s}
             type="button"
-            className={`chip ${status === s ? 'on' : ''} ${s === 'NEED HELP' ? 'danger' : ''}`}
+            className={`chip ${status === s ? 'on' : ''}`}
             onClick={() => onStatus(s)}
           >
             {s}
           </button>
         ))}
       </div>
+
+      {status === HELP ? (
+        <button type="button" className="btn primary" onClick={() => onStatus(CALM)}>
+          I&apos;m OK now
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn danger"
+          onClick={() => (arming === 'help' ? onStatus(HELP) : setArming('help'))}
+        >
+          {arming === 'help' ? 'Tap again to alert everyone' : 'I need help'}
+        </button>
+      )}
+      <p className="fine" style={{ marginTop: 0 }}>
+        {status === HELP
+          ? 'Everyone in the party has been told, and can see how far away you are.'
+          : 'Buzzes every phone in the party and puts your name at the top of their screen.'}
+      </p>
 
       <div className="label">Meet-Up Point</div>
       {meet ? (
@@ -294,14 +436,18 @@ export default function PartyPanel({
             <button type="button" className="btn small" onClick={() => onFocus(meet)}>
               Show on map
             </button>
-            <button type="button" className="btn small" onClick={onClearMeet}>
-              Clear
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => (arming === 'meet' ? onClearMeet() : setArming('meet'))}
+            >
+              {arming === 'meet' ? 'Clear for everyone?' : 'Clear'}
             </button>
           </div>
         </div>
       ) : (
         <p className="fine">
-          None set. Tap the pin button on the map then tap a spot, or open a place in Rides and
+          None set. Tap the pin button on the map then tap a spot, or open a place in Explore and
           make it the meet-up.
         </p>
       )}

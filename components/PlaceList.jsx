@@ -7,6 +7,7 @@ import { statusFor } from '@/lib/rideStatus';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import { eligibility, heightLabel } from '@/lib/park';
 import { usePois } from '@/lib/venue/useVenue';
+import { categoriesFor, matchedByName, matchesQuery } from '@/lib/search';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
 
 /* The results, the way a phone map shows them: a row of category filters and
@@ -64,11 +65,15 @@ export default function PlaceList({
     return out;
   }, [POIS, weather, rides, now]);
 
+  // Which categories the words themselves are asking for — computed once per
+  // query rather than once per place.
+  const queryCats = useMemo(() => categoriesFor(query), [query]);
+
   const list = useMemo(() => {
     const q = (query || '').trim().toLowerCase();
     let out = POIS.filter((p) => {
       if (filter !== 'all' && p.c !== filter) return false;
-      if (q && !p.n.toLowerCase().includes(q) && !(p.a || '').toLowerCase().includes(q)) return false;
+      if (!matchesQuery(p, q, queryCats)) return false;
       if (onlyRideable && height != null && (p.c === 'coaster' || p.c === 'ride')) {
         const v = eligibility(p, height, withAdult);
         if (v === 'no' || v === 'toobig') return false;
@@ -82,14 +87,26 @@ export default function PlaceList({
       }
       return true;
     });
+    /* Nearest first, but a place that answers by name comes before the
+       category it merely belongs to. Without the first term, typing "atm"
+       sorts the nearest first-aid hut above the cash machine that is actually
+       called one. */
+    const named = new Map(out.map((p) => [p, q && matchedByName(p, q) ? 0 : 1]));
+    const byName = (a, b) => named.get(a) - named.get(b);
     out = me
       ? [...out].sort(
           (a, b) =>
+            byName(a, b) ||
             distance(me.lat, me.lng, a.lat, a.lng) - distance(me.lat, me.lng, b.lat, b.lng),
         )
-      : [...out].sort((a, b) => a.n.localeCompare(b.n));
-    return out.slice(0, 120);
-  }, [POIS, query, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
+      : [...out].sort((a, b) => byName(a, b) || a.n.localeCompare(b.n));
+    /* A bound on how much markup one screen can be asked to hold, not an
+       editorial cut. It has to sit above the largest venue's whole place list
+       or the tail of the park quietly stops existing — and a category filter
+       that removes fewer places than the cap hides then looks like it did
+       nothing at all. */
+    return out.slice(0, 400);
+  }, [POIS, query, queryCats, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
 
   return (
     <div>
@@ -143,7 +160,26 @@ export default function PlaceList({
       )}
 
       <div className="poiList">
-        {list.length === 0 && <p className="fine">Nothing matches that.</p>}
+        {list.length === 0 &&
+          (filter !== 'all' ? (
+            /* The commonest way to see nothing is to be looking at one
+               category and not know it, so the way out is offered here rather
+               than left to be discovered in the chip row above. */
+            <div className="emptyNote">
+              <p className="fine">
+                Nothing in {CATEGORY_LABELS[filter]?.toLowerCase() || 'that'} matches
+                {query ? ` “${query.trim()}”` : ' that'}.
+              </p>
+              <button type="button" className="btn small" onClick={() => onFilter('all')}>
+                Search every place instead
+              </button>
+            </div>
+          ) : (
+            <p className="fine">
+              Nothing in this park is called that. Try a ride&apos;s name, or a word like
+              “toilet”, “food” or “first aid”.
+            </p>
+          ))}
         {list.map((p) => {
           const isRide = p.c === 'coaster' || p.c === 'ride';
           const verdict = isRide ? eligibility(p, height, withAdult) : 'unknown';

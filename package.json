@@ -21,13 +21,15 @@
     "test:visual": "node test/visual.mjs",
     "test:theme": "node test/theme.mjs",
     "test:ux": "node test/ux.mjs",
-    "dev:all": "node server/index.mjs & next dev"
+    "dev:all": "node server/index.mjs & next dev",
+    "test:grandma": "node test/grandma.mjs"
   },
   "dependencies": {
     "next": "^16.3.0",
     "qrcode": "^1.5.4",
     "react": "19.1.1",
-    "react-dom": "19.1.1"
+    "react-dom": "19.1.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "eslint": "^9.39.5",

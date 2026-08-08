@@ -39,11 +39,14 @@ import {
   confirmVenue,
   retargetForPosition,
   selectVenue,
+  unpinVenue,
   venueChoiceFor,
   venuesByDistance,
   withinBounds,
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
+// Namespaced: `push` on its own is already the navigation stack's push.
+import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 
 const PALETTE = ['#30D158', '#40C8E0', '#BF5AF2', '#FF375F', '#5E5CE6', '#AC8E68', '#FFD60A', '#FF9F0A'];
@@ -84,6 +87,13 @@ const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'serv
    Read the old key once so nobody who already typed their name has to again. */
 const IDENTITY_KEY = 'tracker-identity';
 const LEGACY_IDENTITY_KEY = 'ki-identity';
+const PUSH_PREFS_KEY = 'tracker-push-prefs';
+
+/* How long a phone has to say nothing before the others are told it has gone
+   quiet. Deliberately longer than the five minutes at which the roster row
+   greys out: a queue building eats signal for that long routinely, and an alert
+   that cries wolf is one that gets turned off. */
+const QUIET_AFTER_MS = 12 * 60 * 1000;
 
 /* What the sheet is standing on in each of its states, as pixels. The CSS
    already publishes this as --sheetH for the chrome that rides above it; the
@@ -95,7 +105,11 @@ const LEGACY_IDENTITY_KEY = 'ki-identity';
    standing on is the height plus that gap; at the full stop it is anchored and
    there is no gap. The peek stop is what it is because it has to stand the
    search field, the glance rail and the tab bar all at once. */
-const PEEK_PX = 286;
+/* Raised from 286 to carry the "pull up" line: the search field, where you
+   are, the rail, that one line and the tab bar. The line is 22px and this is
+   22px more. Still the first thing to break if anything in the collapsed sheet
+   grows again. */
+const PEEK_PX = 308;
 const SHEET_PEEK_PX = PEEK_PX + 8;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
 const SHEET_INSET = { half: 5, full: 0 };
@@ -130,6 +144,9 @@ export default function Page() {
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
+  // The snapshot as a ref, for callbacks that must not be rebuilt on every
+  // roster tick just to read the party they are sending to.
+  const partyRef = useRef(null);
   const [localMeet, setLocalMeet] = useState(null); // a meet-up marked before joining anything
   const [status, setStatus] = useState('On the move');
   const [busy, setBusy] = useState(false);
@@ -148,7 +165,13 @@ export default function Page() {
      at the same time is one motion too many. */
   const [motion, setMotion] = useState('');
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('coaster');
+  /* 'all', not 'coaster'. A category chip narrows the search as well as the
+     list, so booting on Coasters means the search field silently answers a
+     different question than the one that was typed: "restroom" comes back
+     "Nothing matches that." at a park with eleven of them. The list opening on
+     everything is also the honest reading of a screen whose own heading is the
+     name of the park. */
+  const [filter, setFilter] = useState('all');
   const [onlyRideable, setOnlyRideable] = useState(false);
   const [sheet, setSheet] = useState('peek');
   const [follow, setFollow] = useState(true);
@@ -371,6 +394,12 @@ export default function Page() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
+      // Tapping a notification while the app is already open means "show me
+      // this", and the worker cannot navigate the page itself.
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if (e.data?.type !== 'notification-open') return;
+        if (e.data.focus) setTab('party');
+      });
     }
   }, []);
 
@@ -454,6 +483,10 @@ export default function Page() {
   }, [identity, height, theme]);
 
   useEffect(() => {
+    partyRef.current = party;
+  }, [party]);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
@@ -482,7 +515,9 @@ export default function Page() {
 
   const showToast = useCallback((msg) => {
     setToast(msg);
-    setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200);
+    // Long messages need longer than short ones. 3.2s was measured against
+    // "Status: In line" and is not enough for a sentence.
+    setTimeout(() => setToast((t) => (t === msg ? null : t)), msg.length > 40 ? 6000 : 4000);
   }, []);
 
   /* ---------- the party runtime ---------- */
@@ -612,6 +647,110 @@ export default function Page() {
     });
   }, [roster, party?.selfId, showToast]);
 
+  /* ---------- notifications ---------- */
+
+  /* A phone in a pocket has no in-app toast and no vibration it will feel
+     through a bag. What the app knows has to reach the lock screen, which means
+     the notification has to survive the page not existing — so it is sealed
+     here with the party key and opened by the service worker.
+
+     Everything below sends; nothing below decides whether to show. That is the
+     receiving phone's call, and its preferences, which is the only place that
+     knows what its owner asked for. */
+  const [pushPrefs, setPushPrefs] = useState(notifier.defaultPrefs);
+  const [pushState, setPushState] = useState('idle');
+  const seenIds = useRef(null);
+  const quietSeen = useRef(new Set());
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PUSH_PREFS_KEY) || 'null');
+      if (saved) setPushPrefs((p) => ({ ...p, ...saved }));
+    } catch {
+      /* nothing saved */
+    }
+    setPushState(notifier.permission());
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(PUSH_PREFS_KEY, JSON.stringify(pushPrefs));
+  }, [pushPrefs]);
+
+  // The worker reads this off disk when a push wakes it, so it has to be
+  // written before one can arrive — and cleared on leaving, which is what makes
+  // a push from a party you have left unreadable on this phone.
+  useEffect(() => {
+    notifier.rememberParty(
+      party?.active && party?.partyId && party?.keyString
+        ? { partyId: party.partyId, keyString: party.keyString, selfId: party.selfId }
+        : null,
+      pushPrefs,
+    );
+  }, [party?.active, party?.partyId, party?.keyString, party?.selfId, pushPrefs]);
+
+  const pushNote = useCallback(
+    (note, urgent = false) => {
+      const p = partyRef.current;
+      if (!p?.active || !p.partyId || !p.keyString) return;
+      notifier.notify({ partyId: p.partyId, keyString: p.keyString, from: p.selfId, note, urgent });
+    },
+    [],
+  );
+
+  const enablePush = useCallback(async () => {
+    const p = partyRef.current;
+    const result = await notifier.enable({ partyId: p?.partyId, memberId: p?.selfId });
+    setPushState(result === 'granted' ? 'granted' : result);
+    showToast(
+      {
+        granted: 'This phone will tell you, even when it is locked',
+        denied: 'Notifications are blocked for this site in your phone settings',
+        unconfigured: 'This deployment has no notification keys set up',
+        unsupported: 'This browser cannot show notifications',
+        failed: 'Could not turn notifications on',
+      }[result] || 'Could not turn notifications on',
+    );
+  }, [showToast]);
+
+  /* Arrivals, departures and going quiet are all changes to the roster rather
+     than actions anyone takes, so somebody has to notice them and say so. The
+     host does, alone: every phone noticing would send the same news N times. */
+  useEffect(() => {
+    if (!party?.active || !party?.hosting) {
+      seenIds.current = null;
+      return;
+    }
+    const now = Date.now();
+    const ids = new Set(roster.map((m) => m.id));
+    const before = seenIds.current;
+    seenIds.current = ids;
+    if (!before) return; // first roster after becoming host is not news
+
+    for (const m of roster) {
+      if (m.id === party.selfId || before.has(m.id)) continue;
+      pushNote({ kind: 'join', title: `${m.name} joined your party`, body: 'They are on the map now.' });
+    }
+    for (const id of before) {
+      if (ids.has(id)) continue;
+      pushNote({ kind: 'join', title: 'Someone left your party', body: 'They are off the map now.' });
+    }
+
+    for (const m of roster) {
+      if (m.id === party.selfId) continue;
+      const silent = now - (m.ts || 0);
+      if (silent > QUIET_AFTER_MS && !quietSeen.current.has(m.id)) {
+        quietSeen.current.add(m.id);
+        pushNote({
+          kind: 'quiet',
+          title: `No word from ${m.name}`,
+          body: 'Their phone has not reported in for a while.',
+          focus: { kind: 'member', id: m.id, label: m.name },
+        });
+      }
+      if (silent < QUIET_AFTER_MS) quietSeen.current.delete(m.id);
+    }
+  }, [roster, party?.active, party?.hosting, party?.selfId, pushNote]);
+
   /* ---------- party actions ---------- */
   const createParty = async () => {
     setBusy(true);
@@ -627,16 +766,38 @@ export default function Page() {
     setBusy(false);
   };
 
-  const joinParty = async (raw) => {
+  const joinParty = async (raw, asName = null) => {
     setBusy(true);
     try {
-      const snap = await runtime.current.joinParty(raw, { memberName: identity?.name || 'Guest' });
+      // A name typed on the join screen is the freshest thing we know, and it
+      // has not necessarily been committed to identity yet.
+      const memberName = (asName || '').trim() || identity?.name || 'Guest';
+      const snap = await runtime.current.joinParty(raw, { memberName });
       showToast(`Joined ${snap.code}`);
     } catch (err) {
       showToast(err?.message || 'Could not join that party.');
     }
     setBusy(false);
   };
+
+  /* A host answers key-requests for ten minutes and then stops, which is what
+     keeps a guessed six-character code worthless. The window used to open once
+     and never reopen, so a party started in the car park could not be joined by
+     typed code by the time everyone was through the turnstiles — and nothing on
+     any screen said so, because a link or a QR carries its own key and still
+     worked. The host's code being on screen is exactly the condition the window
+     was written for, so that is what reopens it. */
+  const allowJoins = useCallback(() => runtime.current?.allowJoins(), []);
+
+  useEffect(() => {
+    if (tab !== 'party' || !party?.active || !party?.hosting) return undefined;
+    allowJoins();
+    const onVisible = () => {
+      if (!document.hidden) allowJoins();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [tab, party?.active, party?.hosting, allowJoins]);
 
   const leaveParty = async () => {
     helpSeen.current.clear();
@@ -649,6 +810,12 @@ export default function Page() {
     if (active) {
       runtime.current?.setMeet(record);
       showToast('Meet-up shared with your party');
+      pushNote({
+        kind: 'meet',
+        title: `${identity?.name || 'Someone'} set the meet-up`,
+        body: record.label,
+        focus: { kind: 'meet', label: record.label },
+      });
     } else {
       setLocalMeet({ ...record, by: identity?.name || 'Someone', ts: Date.now() });
       showToast('Meet-up marked (join a party to share it)');
@@ -657,7 +824,15 @@ export default function Page() {
 
   const clearMeet = () => {
     setLocalMeet(null);
-    if (active) runtime.current?.setMeet(null);
+    if (!active) return;
+    runtime.current?.setMeet(null);
+    // On everyone else's phone a cleared meet-up simply vanishes, which is the
+    // one change to it nobody is told about.
+    pushNote({
+      kind: 'meet',
+      title: `${identity?.name || 'Someone'} cleared the meet-up`,
+      body: 'There is no meeting point set now.',
+    });
   };
 
   /* ---------- derived ---------- */
@@ -992,11 +1167,22 @@ export default function Page() {
     if (venueStatus === 'loading') return 'Loading the map…';
     if (!position) return `${venue?.locality || 'Waiting'} · no fix yet`;
     const inside = withinBounds(venue?.bounds, position.lat, position.lng);
-    const where = inside ? nearest?.p.a || 'On site' : 'Off site';
+    /* `a` falls back to the venue's own name for a place that stands in no
+       named district, and printing that here puts the park's name twice in a
+       row — once in bold as the heading, once as the district. "On site" is
+       what that fallback actually means. */
+    const district = nearest?.p.a && nearest.p.a !== venue?.name ? nearest.p.a : null;
+    const where = inside ? district || 'On site' : 'Off site';
+    /* "±0 ft" is worse than saying nothing — it reads as a precision claim
+       nobody made. A fix is either good enough not to mention or loose enough
+       to be worth a warning, and the number only helps in the second case. */
+    const feet = Math.round((position.acc || 0) * 3.28084);
     const acc = position.manual
       ? 'placed by hand'
-      : `±${Math.round((position.acc || 0) * 3.28084)} ft`;
-    return `${where} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
+      : feet > 60
+        ? `roughly within ${feet} ft`
+        : null;
+    return [where, nearest ? `near ${nearest.p.n}` : null, acc].filter(Boolean).join(' · ');
   };
 
   /**
@@ -1314,7 +1500,15 @@ export default function Page() {
                     placeholder={`Search ${venue?.name || 'the map'}`}
                     value={query}
                     onFocus={() => setSheet((h) => (h === 'peek' ? 'half' : h))}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => {
+                      // Starting to type is a new question, so it clears a
+                      // category left on from browsing. Only on the first
+                      // keystroke: tapping a chip part-way through a query is
+                      // deliberate and has to survive the next one.
+                      const next = e.target.value;
+                      if (!query && next) setFilter('all');
+                      setQuery(next);
+                    }}
                     aria-label="Search places"
                   />
                   {query && (
@@ -1346,6 +1540,17 @@ export default function Page() {
                 navMetres={progress?.remaining ?? route?.metres ?? null}
                 onOpenParty={() => selectTab('party')}
               />
+              {/* At the peek stop the list below is not merely scrolled off,
+                  it is not rendered — which is the right call, but it leaves a
+                  36×5px grey pill as the only evidence that the sheet moves.
+                  Say what is under there, in words, and make the words the
+                  handle. */}
+              {sheet === 'peek' ? (
+                <button type="button" className="moreHint" onClick={() => setSheet('half')}>
+                  Pull up for every place — food, toilets and rides
+                  <Icon name="chevron.up" size={13} />
+                </button>
+              ) : null}
             </>
           ) : (
             /* A tab's own root: the large title a phone puts at the top of a
@@ -1423,6 +1628,20 @@ export default function Page() {
                   setStatus(s);
                   runtime.current?.setStatus(s);
                   showToast(`Status: ${s}`);
+                  if (s === 'NEED HELP') {
+                    const me = positionRef.current;
+                    pushNote(
+                      {
+                        kind: 'help',
+                        title: `${identity?.name || 'Someone'} needs help`,
+                        body: me ? 'Tap to see where they are.' : 'Tap to open the map.',
+                        focus: party?.selfId
+                          ? { kind: 'member', id: party.selfId, label: identity?.name || 'Someone' }
+                          : null,
+                      },
+                      true,
+                    );
+                  }
                 }}
                 onCreate={createParty}
                 onJoin={joinParty}
@@ -1435,9 +1654,21 @@ export default function Page() {
                   setSheet('peek');
                 }}
                 busy={busy || party?.phase === 'connecting'}
-                transport={party?.transport ?? null}
-                version={party?.version ?? 0}
-                queued={party?.queued ?? 0}
+                myName={identity?.name ?? ''}
+                onName={(v) => {
+                  const next = v.trim() || 'Guest';
+                  setIdentity((i) => ({ ...i, name: next }));
+                  runtime.current?.setMemberName(next);
+                }}
+                onCopied={showToast}
+                pushState={pushState}
+                onEnablePush={enablePush}
+                pushNeedsInstall={notifier.iosNeedsInstall()}
+                joinsOpenUntil={party?.joinsOpenUntil ?? 0}
+                onAllowJoins={() => {
+                  allowJoins();
+                  showToast('Anyone with the code can join for the next 10 minutes');
+                }}
               />
             )}
 
@@ -1464,6 +1695,12 @@ export default function Page() {
                 categoryTotal={Object.keys(CATEGORIES).length}
                 venueName={venue?.name}
                 onPush={push}
+                pushKinds={notifier.KINDS}
+                pushPrefs={pushPrefs}
+                onPushPref={(key, on) => setPushPrefs((p) => ({ ...p, [key]: on }))}
+                pushState={pushState}
+                onEnablePush={enablePush}
+                pushNeedsInstall={notifier.iosNeedsInstall()}
               />
             )}
 
@@ -1489,6 +1726,9 @@ export default function Page() {
 
             {view === 'venues' && (
               <div>
+                <p className="fine">
+                  Picking one here keeps it, and stops the app moving you off it.
+                </p>
                 <div className="venueList">
                   {(manifest?.venues || []).map((v) => {
                     // Measured from whatever is deciding the map: the host's
@@ -1533,10 +1773,23 @@ export default function Page() {
                     );
                   })}
                 </div>
+                {venuePinned ? (
+                  <button
+                    type="button"
+                    className="row"
+                    onClick={() => {
+                      unpinVenue();
+                      showToast('Following your party again');
+                    }}
+                  >
+                    <span>Follow my party again</span>
+                    <Icon name="chevron.right" size={17} className="icn rowChevron" />
+                  </button>
+                ) : null}
                 <p className="fine">
-                  Picking one here keeps it, and stops the app moving you again. Left alone, it
-                  opens the map you used last, then follows the phone hosting your party — or
-                  your own first fix, if there is no party running.
+                  {venuePinned
+                    ? 'You picked this map by hand, so the app is not moving you off it. Tap above to let it follow your party again.'
+                    : 'Left alone, this opens the map you used last, then follows the phone hosting your party — or your own first fix, if there is no party running.'}
                 </p>
                 <p className="fine">
                   The map is drawn from OpenStreetMap geometry — real paths, buildings, water and
@@ -1608,8 +1861,13 @@ export default function Page() {
             showToast('Tap the map to place yourself');
           }}
           onDismiss={() => {
+            // Waving both questions off leaves whichever park happened to boot,
+            // which is the one place the app can be showing somebody a map of
+            // somewhere they are not. Name it, so that is a fact rather than a
+            // surprise found later.
             setParkAsked(true);
             setGateOpen(false);
+            if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
           }}
         />
       )}
