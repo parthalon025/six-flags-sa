@@ -17,6 +17,11 @@
      bar at once. Tracked in page.js as PEEK_PX — the map lays its labels out
      against the same number. */
   --peek: 308px;
+  /* The stop below peek. The tab bar and the handle above it and nothing else,
+     so the map has the rest of the screen — a panel that cannot get out of the
+     way is a map you can only ever see a third of. Kept in step with SHUT_PX in
+     app/page.js, which is what the map lays its labels out against. */
+  --shut: 84px;
   /* The tint the tab bar stands on, over the sheet's own glass. */
   --tabBarFill: color-mix(in srgb, var(--bg2) 42%, transparent);
 
@@ -301,6 +306,7 @@ html, body {
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 
 .app { position: fixed; inset: 0; --sheetH: var(--peek); }
+.app[data-sheet='shut'] { --sheetH: var(--shut); }
 .app[data-sheet='half'] { --sheetH: 52vh; }
 .app[data-sheet='full'] { --sheetH: 88vh; }
 
@@ -676,6 +682,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   box-shadow: var(--lensEdge), var(--shadow3);
   animation: sheetUp var(--t4) var(--ease) both;
 }
+/* Collapsed. The height is the tab bar's, so what is left on screen is the way
+   back — the handle to pull, and the tabs, which nobody should have to reopen a
+   panel to reach. Everything else is gone rather than squashed: a sliver of a
+   search field above a sliced-off card is not a smaller screen, it is a broken
+   one. */
+.sheet.shut { height: var(--shut); }
+.sheet.shut .sheetStage,
+.sheet.shut .searchRow,
+.sheet.shut .brand,
+.sheet.shut .glanceRail,
+.sheet.shut .moreHint,
+.sheet.shut .sheetHead,
+.sheet.shut .navHead { display: none; }
+
 .sheet.half {
   height: 52vh;
   left: 5px; right: 5px; bottom: calc(5px + var(--bot));

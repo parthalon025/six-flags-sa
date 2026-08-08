@@ -110,6 +110,11 @@ const QUIET_AFTER_MS = 12 * 60 * 1000;
    22px more. Still the first thing to break if anything in the collapsed sheet
    grows again. */
 const PEEK_PX = 308;
+/* The stop below peek: the tab bar and the handle above it, and nothing else.
+   The tab bar is a 44px item in 4/6px of padding over a .5px rule — 57 — and
+   the handle's box is 27. Whatever the phone reserves for its home indicator
+   sits under both and is added in CSS, which is the only place that knows it. */
+const SHUT_PX = 84;
 const SHEET_PEEK_PX = PEEK_PX + 8;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
 const SHEET_INSET = { half: 5, full: 0 };
@@ -1257,6 +1262,7 @@ export default function Page() {
 
   const stops = useMemo(
     () => ({
+      shut: SHUT_PX,
       peek: PEEK_PX,
       half: Math.round(SHEET_OPEN.half * viewportH),
       full: Math.round(SHEET_OPEN.full * viewportH),
@@ -1274,8 +1280,10 @@ export default function Page() {
   // The same stops, as a number of pixels, for the map's own label layout.
   const floorPx = stowed
     ? STOWED_PX
-    : Math.round((SHEET_OPEN[sheet] ?? 0) * viewportH) + (SHEET_INSET[sheet] ?? 0) ||
-      SHEET_PEEK_PX;
+    : sheet === 'shut'
+      ? SHUT_PX + 8
+      : Math.round((SHEET_OPEN[sheet] ?? 0) * viewportH) + (SHEET_INSET[sheet] ?? 0) ||
+        SHEET_PEEK_PX;
 
   return (
     // data-sheet publishes the sheet's stop as a CSS custom property, so the
@@ -1463,7 +1471,13 @@ export default function Page() {
             // A drag that ended on this handle emits a click too. It has
             // already chosen a stop; cycling on top of it would undo it.
             if (drag.swallowClick()) return;
-            setSheet(sheet === 'full' ? 'peek' : sheet === 'half' ? 'full' : 'half');
+            // Round and round: shut → peek → half → full → shut. Dragging is
+            // the way most people will move the sheet, but a tap has to be
+            // able to reach every stop too, including all the way back down —
+            // somebody who has collapsed it must not need a gesture to undo it.
+            setSheet(
+              sheet === 'shut' ? 'peek' : sheet === 'peek' ? 'half' : sheet === 'half' ? 'full' : 'shut',
+            );
           }}
           aria-label="Resize panel"
           {...drag.handlers}
