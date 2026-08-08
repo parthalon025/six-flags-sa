@@ -9,9 +9,23 @@ import GlanceRail from '@/components/GlanceRail';
 import InstallCard from '@/components/InstallCard';
 import RidesPanel from '@/components/RidesPanel';
 import Diagnostics from '@/components/Diagnostics';
+import NavBanner from '@/components/NavBanner';
+import NavBar from '@/components/NavBar';
+import RoutePreview from '@/components/RoutePreview';
+import DirectionsPanel from '@/components/DirectionsPanel';
 import useGeolocation from '@/components/useGeolocation';
+import useVoiceGuidance from '@/components/useVoiceGuidance';
 import { POIS, CATEGORIES, eligibility } from '@/lib/park';
 import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
+import {
+  buildRouteGraph,
+  findRoute,
+  findRoutes,
+  navKeyOf,
+  routeProgress,
+  splitRouteAt,
+  OFF_ROUTE_M,
+} from '@/lib/routing';
 import {
   bearing,
   cardinal,
@@ -33,6 +47,13 @@ const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'serv
 
 /** How often the broadcast gate is asked whether the current fix is worth sending. */
 const GATE_TICK_MS = 4000;
+
+/**
+ * How far you, or whoever you are walking to, has to move before the route is
+ * worked out again. A route costs well under a millisecond, but recomputing on
+ * every GPS jitter makes the line twitch and the instruction flicker.
+ */
+const REROUTE_M = 12;
 
 export default function Page() {
   const geo = useGeolocation();
@@ -58,8 +79,23 @@ export default function Page() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [focusPoint, setFocusPoint] = useState(null);
   const [theme, setTheme] = useState('night');
+  const [nav, setNav] = useState(null); // where we are walking to, by reference
+  const [navPhase, setNavPhase] = useState('idle'); // idle -> preview -> go
+  const [routesList, setRoutes] = useState([]); // the choice, best first
+  const [pick, setPick] = useState(0);
+  const [graph, setGraph] = useState(null);
+  const [northUp, setNorthUp] = useState(false);
+  const [voice, setVoice] = useState(false);
+  const [rerouted, setRerouted] = useState(0);
 
   const runtime = useRef(null);
+  const lastRoute = useRef(null);
+  const arrived = useRef(null);
+  // The reroute path reads the current choice without taking a dependency on
+  // it — recomputing a route must not itself be a reason to recompute it.
+  const routesRef = useRef([]);
+  const pickRef = useRef(0);
+  const progressRef = useRef(null);
   // Also in state, because the diagnostics panel is a render-time consumer and
   // a ref assigned inside an effect never triggers the render that reads it.
   const [runtimeApi, setRuntimeApi] = useState(null);
@@ -309,6 +345,225 @@ export default function Page() {
     return best;
   }, [position]);
 
+  /* ---------- walking routes ---------- */
+
+  // Welding every polyline in the park file into a routing graph is a few
+  // hundred milliseconds of work, and nothing needs it until someone asks for
+  // directions. So it waits for the browser to be idle rather than holding up
+  // the first paint of the map, and until it lands routes fall back to a
+  // straight line — which is exactly what the app drew before any of this.
+  useEffect(() => {
+    if (!mapData) return undefined;
+    let live = true;
+    const build = () => {
+      if (live) setGraph(buildRouteGraph(mapData));
+    };
+    const idle = typeof window !== 'undefined' ? window.requestIdleCallback : null;
+    const handle = idle ? idle(build, { timeout: 3000 }) : setTimeout(build, 400);
+    return () => {
+      live = false;
+      if (idle) window.cancelIdleCallback?.(handle);
+      else clearTimeout(handle);
+    };
+  }, [mapData]);
+
+  // A destination is held by reference, not by coordinates: a party member
+  // walks around while you are walking to them, and a meet-up can be moved or
+  // cleared out from under the route.
+  const navTarget = useMemo(() => {
+    if (!nav) return null;
+    if (nav.kind === 'member') {
+      const m = roster.find((x) => x.id === nav.id);
+      if (!m || !Number.isFinite(m.lat)) return null;
+      return { ...nav, label: m.name, lat: m.lat, lng: m.lng };
+    }
+    if (nav.kind === 'meet') {
+      if (!meet) return null;
+      return { ...nav, label: meet.label || 'Meet-up', lat: meet.lat, lng: meet.lng };
+    }
+    return nav;
+  }, [nav, roster, meet]);
+
+  const stopNav = useCallback(() => {
+    setNav(null);
+    setNavPhase('idle');
+    setRoutes([]);
+    setPick(0);
+    lastRoute.current = null;
+    setTab((t) => (t === 'route' ? 'party' : t));
+    setSheet('peek');
+  }, []);
+
+  /**
+   * Asking for directions does not set you walking — it offers you the route,
+   * the way both phone maps do. You get a line on the map, the alternatives
+   * beside it and a Start button; nothing takes over the screen until you say
+   * so, and Cancel leaves you exactly where you were.
+   */
+  const startNav = useCallback(
+    (target) => {
+      if (!target) {
+        stopNav();
+        return;
+      }
+      if (!position) {
+        setGateOpen(true);
+        showToast('Turn location on to get walking directions.');
+        return;
+      }
+      arrived.current = null;
+      lastRoute.current = null;
+      setPick(0);
+      setNav(target);
+      setNavPhase('preview');
+      setFollow(false);
+      setSheet('peek');
+      setTab('route');
+    },
+    [position, showToast, stopNav],
+  );
+
+  const beginWalking = useCallback(() => {
+    setNavPhase('go');
+    setFollow(true);
+    setSheet('peek');
+    navigator.vibrate?.(30);
+  }, []);
+
+  // The person or pin we were walking to is gone. Say so once instead of
+  // leaving a banner counting down to nothing.
+  useEffect(() => {
+    if (nav && !navTarget) {
+      stopNav();
+      showToast('That destination is gone — stopped walking there.');
+    }
+  }, [nav, navTarget, stopNav, showToast]);
+
+  useEffect(() => {
+    if (!navTarget || !position || navPhase === 'idle') {
+      setRoutes([]);
+      lastRoute.current = null;
+      return;
+    }
+    const prev = lastRoute.current;
+    const key = navKeyOf(navTarget);
+    // Recompute on a new destination, on the graph finally landing, on setting
+    // off, or once either end has moved far enough that the old line is a lie.
+    const stale =
+      !prev ||
+      prev.key !== key ||
+      prev.graph !== graph ||
+      prev.phase !== navPhase ||
+      distance(prev.from.lat, prev.from.lng, position.lat, position.lng) > REROUTE_M ||
+      distance(prev.to.lat, prev.to.lng, navTarget.lat, navTarget.lng) > REROUTE_M;
+    if (!stale) return;
+    // A recompute that happens while the walker is off the line is a reroute,
+    // not a refresh — worth saying so, briefly and only when it is true.
+    if (navPhase === 'go' && prev && progressRef.current?.offset > OFF_ROUTE_M) {
+      setRerouted(Date.now());
+    }
+    lastRoute.current = {
+      key,
+      graph,
+      phase: navPhase,
+      from: { lat: position.lat, lng: position.lng },
+      to: { lat: navTarget.lat, lng: navTarget.lng },
+    };
+    const opts = {
+      landmarks: POIS,
+      destination: navTarget.label,
+      areas: mapData?.landAnchors,
+    };
+    // Alternatives are a choice you make once, before setting off. Recomputing
+    // them on every step of the walk would keep changing the answer under a
+    // person who has already decided.
+    if (navPhase === 'preview') {
+      setRoutes(findRoutes(graph, position, navTarget, opts));
+      setPick(0);
+    } else {
+      const chosen = routesRef.current[pickRef.current];
+      // Rerouting keeps you on the road you chose where it still makes sense:
+      // the penalty pass is what made the alternative different in the first
+      // place, so replaying it is what keeps a reroute from silently moving
+      // you onto the fastest line you already turned down.
+      const penalty = chosen?.avoid ?? null;
+      setRoutes([findRoute(graph, position, navTarget, { ...opts, penalty })]);
+      setPick(0);
+    }
+  }, [navTarget, position, graph, navPhase, mapData]);
+
+  const routes = routesList;
+  const route = routesList[pick] ?? routesList[0] ?? null;
+  useEffect(() => {
+    routesRef.current = routesList;
+    pickRef.current = pick;
+  }, [routesList, pick]);
+  // The notice clears itself; without this it would sit there until the next
+  // render happened to come along.
+  useEffect(() => {
+    if (!rerouted) return undefined;
+    const id = setTimeout(() => setRerouted(0), 2600);
+    return () => clearTimeout(id);
+  }, [rerouted]);
+
+  const progress = useMemo(
+    () => (route && position ? routeProgress(route, position.lat, position.lng) : null),
+    [route, position],
+  );
+
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  const walking = navPhase === 'go' && Boolean(navTarget);
+  const previewing = navPhase === 'preview' && Boolean(navTarget);
+  const offRoute = Boolean(walking && progress && progress.offset > OFF_ROUTE_M);
+
+  /* Course-up, the way a phone map turns while you walk. The compass is the
+     better source when it is there — it knows which way you are facing while
+     standing still — and the route's own bearing is the fallback, which is
+     what a phone with no magnetometer gets. Quantised, because a map that
+     redraws on every tenth of a degree burns battery to no visible end. */
+  const rotation = useMemo(() => {
+    if (!walking || northUp) return 0;
+    const source = heading ?? progress?.course ?? null;
+    if (source == null) return 0;
+    return Math.round(source / 3) * 3;
+  }, [walking, northUp, heading, progress?.course]);
+
+  const puck = useMemo(() => {
+    if (!walking || !progress?.snapped) return null;
+    return { lat: progress.snapped[0], lng: progress.snapped[1], course: progress.course };
+  }, [walking, progress]);
+
+  const { done: routeDone, ahead: routeAhead } = useMemo(
+    () => (walking ? splitRouteAt(route, progress) : { done: [], ahead: route?.points ?? [] }),
+    [walking, route, progress],
+  );
+
+  // The routes not taken, drawn behind the chosen one while you are choosing.
+  const shownAlternatives = useMemo(
+    () =>
+      previewing
+        ? routes.map((r, i) => ({ ...r, index: i })).filter((r) => r.index !== pick)
+        : null,
+    [previewing, routes, pick],
+  );
+
+  useVoiceGuidance(voice, { route, progress, target: navTarget, phase: navPhase });
+
+  // Arriving ends the walk by itself. Once per destination — a phone sitting
+  // at the meet-up point must not re-announce it on every fix.
+  useEffect(() => {
+    if (!walking || !navTarget || !progress?.arrived) return;
+    const key = navKeyOf(navTarget);
+    if (arrived.current === key) return;
+    arrived.current = key;
+    showToast(`You're at ${navTarget.label}`);
+    navigator.vibrate?.(90);
+    stopNav();
+  }, [walking, progress?.arrived, navTarget, showToast, stopNav]);
+
   const focusOn = (target) => {
     setFollow(false);
     setFocusPoint({ lat: target.lat, lng: target.lng });
@@ -343,7 +598,12 @@ export default function Page() {
     return `${where.toUpperCase()} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
   };
 
-  const sheetClass = `sheet ${sheet}`;
+  // While a route is running the sheet is out of the way unless it is asked
+  // for: the map and the two HUD strips are the whole interface, and the sheet
+  // comes back over them only when you open the steps.
+  const sheetClass = `sheet ${sheet} ${walking && sheet === 'peek' ? 'stowed' : ''} ${
+    previewing ? 'stowed' : ''
+  }`;
 
   return (
     // data-sheet publishes the sheet's stop as a CSS custom property, so the
@@ -367,6 +627,18 @@ export default function Page() {
         visibleCategories={categories}
         focusPoint={focusPoint}
         theme={theme}
+        route={navTarget ? route : null}
+        routeStep={walking ? progress?.step ?? null : null}
+        routeAhead={routeAhead}
+        routeDone={routeDone}
+        alternatives={shownAlternatives}
+        onPickAlternative={setPick}
+        puck={puck}
+        rotation={rotation}
+        liftCentre={walking ? 0.2 : previewing ? -0.12 : 0}
+        navZoom={walking ? 3 : null}
+        fitPoints={previewing ? route?.points : null}
+        fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}:${Math.round(route?.metres ?? 0)}` : null}
       />
 
       <header className="topbar">
@@ -409,6 +681,16 @@ export default function Page() {
         </button>
       )}
 
+      {walking && (
+        <NavBanner
+          target={navTarget}
+          route={route}
+          progress={progress}
+          offRoute={offRoute}
+          rerouted={Boolean(rerouted)}
+        />
+      )}
+
       {tapeOn && (
         <CompassTape
           me={position}
@@ -416,40 +698,77 @@ export default function Page() {
           meet={meet}
           selected={selected}
           heading={heading}
+          lowered={Boolean(navTarget)}
         />
       )}
 
-      <div className={`fabs ${sheet}`}>
+      <div className={`fabs ${walking ? 'go' : sheet} ${previewing ? 'preview' : ''}`}>
+        {!walking && (
+          <button
+            type="button"
+            className={`fab ${armMeet ? 'armed' : ''}`}
+            onClick={() => {
+              setArmMeet((v) => !v);
+              if (!armMeet) {
+                setSheet('peek');
+                showToast('Tap the map to drop the meet-up point');
+              }
+            }}
+            aria-label="Set meet-up"
+          >
+            ⚑
+          </button>
+        )}
+        {/* Panning away during a walk parks the camera where you left it, and
+            this is the way back — the same button, saying something else. */}
         <button
           type="button"
-          className={`fab ${armMeet ? 'armed' : ''}`}
-          onClick={() => {
-            setArmMeet((v) => !v);
-            if (!armMeet) {
-              setSheet('peek');
-              showToast('Tap the map to drop the meet-up point');
-            }
-          }}
-          aria-label="Set meet-up"
-        >
-          ⚑
-        </button>
-        <button
-          type="button"
-          className={`fab ${follow ? 'active' : ''}`}
+          className={`fab ${follow ? 'active' : ''} ${walking && !follow ? 'resume' : ''}`}
           onClick={() => {
             if (position) {
               setFollow(true);
-              setFocusPoint({ lat: position.lat, lng: position.lng });
+              setFocusPoint({ lat: puck?.lat ?? position.lat, lng: puck?.lng ?? position.lng });
             } else {
               setGateOpen(true);
             }
           }}
-          aria-label="Centre on me"
+          aria-label={walking && !follow ? 'Follow me again' : 'Centre on me'}
         >
           ◎
         </button>
       </div>
+
+      {previewing && (
+        <RoutePreview
+          target={navTarget}
+          routes={routes}
+          index={pick}
+          onPick={setPick}
+          onStart={beginWalking}
+          onCancel={stopNav}
+          onSteps={() => {
+            setTab('route');
+            setSheet('half');
+          }}
+        />
+      )}
+
+      {walking && sheet === 'peek' && (
+        <NavBar
+          target={navTarget}
+          route={route}
+          progress={progress}
+          voice={voice}
+          onVoice={() => setVoice((v) => !v)}
+          northUp={northUp}
+          onCompass={() => setNorthUp((v) => !v)}
+          onSteps={() => {
+            setTab('route');
+            setSheet('half');
+          }}
+          onStop={stopNav}
+        />
+      )}
 
       <section className={sheetClass}>
         <button
@@ -468,6 +787,9 @@ export default function Page() {
           heading={heading}
           theme={theme}
           onFocus={focusOn}
+          onNavigate={startNav}
+          navKey={navKeyOf(navTarget)}
+          navMetres={progress?.remaining ?? route?.metres ?? null}
           onOpenParty={() => {
             setTab('party');
             setSheet('half');
@@ -475,6 +797,7 @@ export default function Page() {
         />
         <nav className="tabs" role="tablist">
           {[
+            ...(navTarget ? [['route', 'Directions']] : []),
             ['party', `Party${others.length ? ` · ${roster.length}` : ''}`],
             ['rides', 'Rides & heights'],
             ['me', 'Me'],
@@ -495,6 +818,18 @@ export default function Page() {
           ))}
         </nav>
         <div className="sheetBody">
+          {tab === 'route' && (
+            <DirectionsPanel
+              target={navTarget}
+              route={route}
+              progress={walking ? progress : null}
+              walking={walking}
+              onStart={beginWalking}
+              onStop={stopNav}
+              onFocus={focusOn}
+              onClose={() => setSheet('peek')}
+            />
+          )}
           {tab === 'party' && (
             <PartyPanel
               code={code}
@@ -515,6 +850,7 @@ export default function Page() {
               onJoin={joinParty}
               onLeave={leaveParty}
               onClearMeet={clearMeet}
+              onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Meet-up' })}
               onFocus={(m) => {
                 setFollow(false);
                 setFocusPoint({ lat: m.lat, lng: m.lng });
@@ -536,6 +872,7 @@ export default function Page() {
               selected={selected}
               onSelect={handleSelect}
               onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
+              onNavigate={startNav}
               theme={theme}
             />
           )}
