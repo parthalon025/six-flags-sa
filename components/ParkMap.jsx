@@ -2,11 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { project, unproject } from '@/lib/geo';
-import { paletteFor } from '@/lib/theme';
+import { landTint, paletteFor } from '@/lib/theme';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
-   geometry for Kings Island, projected to Web Mercator metres and painted as
-   SVG. Pan with one finger, pinch or wheel to zoom, double-tap to zoom in.
+   geometry, projected to Web Mercator metres and painted as SVG. Pan with one
+   finger, pinch or wheel to zoom, double-tap to zoom in.
+
+   Nothing here knows which place it is drawing. It is handed layers of rings by
+   name — paths, buildings, water, track — and a centre to open on, so a park, a
+   campus or a state fair all render through the same code. Layers a venue has
+   no examples of arrive empty and draw nothing.
 
    `to(x, y)` is the one place world metres become screen pixels — pan, zoom,
    rotation and the lifted centre all live in it, and everything drawn below
@@ -60,6 +65,7 @@ function pathFromLatLngs(points, to) {
 
 export default function ParkMap({
   data,
+  center,
   pois,
   me,
   members,
@@ -93,7 +99,7 @@ export default function ParkMap({
   const [size, setSize] = useState({ w: 360, h: 640 });
   // view is centred on a mercator metre coordinate at `scale` px per metre
   const [view, setView] = useState(() => {
-    const [x, y] = project(39.3428, -84.2666);
+    const [x, y] = project(center?.lat ?? 0, center?.lng ?? 0);
     return { x, y, scale: 0.95 };
   });
   const pointers = useRef(new Map());
@@ -160,6 +166,19 @@ export default function ParkMap({
     },
     [stopAnim],
   );
+
+  // A new venue is a new part of the world: jump to it rather than leaving the
+  // view parked over the last one, where its geometry is thousands of miles off
+  // screen and the map looks broken. A jump, not a glide — animateTo() would
+  // sweep the camera across a continent.
+  const venueKey = `${center?.lat},${center?.lng}`;
+  useEffect(() => {
+    if (!center) return;
+    stopAnim();
+    const [x, y] = project(center.lat, center.lng);
+    setView((v) => ({ ...v, x, y }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venueKey]);
 
   // Follow mode keeps the marker centred without fighting manual pans. While a
   // route is running it follows the snapped point rather than the raw fix, so
@@ -432,7 +451,7 @@ export default function ParkMap({
     return (
       <div className="mapWrap" ref={wrapRef}>
         <div className="mapLoading">
-          <span>Drawing the park…</span>
+          <span>Drawing the map…</span>
         </div>
       </div>
     );
@@ -473,8 +492,8 @@ export default function ParkMap({
 
         {/* themed lands */}
         <g className="lyr-land">
-          {data.lands.map((land, i) => {
-            const tint = palette.lands[land.n] || palette.lands['Front Gate'];
+          {(data.lands || []).map((land, i) => {
+            const tint = landTint(land.n, theme);
             return (
               <path
                 key={`ld${i}`}
@@ -514,7 +533,7 @@ export default function ParkMap({
         {showLabels &&
           Object.entries(data.landAnchors || {}).map(([name, [lat, lng]]) => {
             const [sx, sy] = at(lat, lng);
-            const tint = palette.lands[name] || palette.lands['Front Gate'];
+            const tint = landTint(name, theme);
             return (
               <text key={name} x={sx} y={sy} className="landLabel" fill={tint.label}>
                 {name.toUpperCase()}

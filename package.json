@@ -1,5 +1,5 @@
 {
-  "name": "kings-island-tracker",
+  "name": "party-tracker",
   "version": "1.0.0",
   "private": true,
   "engines": {
@@ -12,6 +12,8 @@
     "lint": "eslint .",
     "phone": "node scripts/phone.mjs",
     "setup": "bash scripts/setup.sh",
+    "venues:build": "node scripts/build-venue.mjs",
+    "venues:reindex": "node scripts/build-venue.mjs --reindex",
     "sync": "node server/index.mjs",
     "test": "node test/functional.mjs",
     "test:unit": "node test/unit.mjs",
