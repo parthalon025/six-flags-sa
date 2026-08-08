@@ -98,6 +98,9 @@ export default function PartyPanel({
   myName = '',
   onName = null,
   onCopied = null,
+  pushState = 'idle',
+  onEnablePush = null,
+  pushNeedsInstall = false,
   joinsOpenUntil = 0,
   onAllowJoins = null,
   transport,
@@ -295,6 +298,23 @@ export default function PartyPanel({
           <p className="fine">
             The other phone points its camera at this. The key that decrypts the party rides in
             the link&apos;s fragment, which browsers never send to a server.
+          </p>
+        </>
+      ) : null}
+
+      {/* Asked here rather than on the way in: a permission prompt at cold open
+          is a question about nothing, and this is the first moment where the
+          answer obviously matters. */}
+      {onEnablePush && pushState !== 'granted' && pushState !== 'unsupported' ? (
+        <>
+          <div className="label">In Your Pocket</div>
+          <button type="button" className="btn" onClick={onEnablePush} disabled={pushNeedsInstall}>
+            Tell me on this phone
+          </button>
+          <p className="fine">
+            {pushNeedsInstall
+              ? 'On an iPhone this needs the app on your Home Screen first — Me → Install on this phone.'
+              : 'Right now a locked phone in a bag shows nothing at all when somebody needs you.'}
           </p>
         </>
       ) : null}

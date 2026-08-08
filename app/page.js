@@ -45,6 +45,8 @@ import {
   withinBounds,
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
+// Namespaced: `push` on its own is already the navigation stack's push.
+import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 
 const PALETTE = ['#30D158', '#40C8E0', '#BF5AF2', '#FF375F', '#5E5CE6', '#AC8E68', '#FFD60A', '#FF9F0A'];
@@ -85,6 +87,13 @@ const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'serv
    Read the old key once so nobody who already typed their name has to again. */
 const IDENTITY_KEY = 'tracker-identity';
 const LEGACY_IDENTITY_KEY = 'ki-identity';
+const PUSH_PREFS_KEY = 'tracker-push-prefs';
+
+/* How long a phone has to say nothing before the others are told it has gone
+   quiet. Deliberately longer than the five minutes at which the roster row
+   greys out: a queue building eats signal for that long routinely, and an alert
+   that cries wolf is one that gets turned off. */
+const QUIET_AFTER_MS = 12 * 60 * 1000;
 
 /* What the sheet is standing on in each of its states, as pixels. The CSS
    already publishes this as --sheetH for the chrome that rides above it; the
@@ -135,6 +144,9 @@ export default function Page() {
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
+  // The snapshot as a ref, for callbacks that must not be rebuilt on every
+  // roster tick just to read the party they are sending to.
+  const partyRef = useRef(null);
   const [localMeet, setLocalMeet] = useState(null); // a meet-up marked before joining anything
   const [status, setStatus] = useState('On the move');
   const [busy, setBusy] = useState(false);
@@ -382,6 +394,12 @@ export default function Page() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
+      // Tapping a notification while the app is already open means "show me
+      // this", and the worker cannot navigate the page itself.
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if (e.data?.type !== 'notification-open') return;
+        if (e.data.focus) setTab('party');
+      });
     }
   }, []);
 
@@ -463,6 +481,10 @@ export default function Page() {
     identityRef.current = identity;
     localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height, theme }));
   }, [identity, height, theme]);
+
+  useEffect(() => {
+    partyRef.current = party;
+  }, [party]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -623,6 +645,110 @@ export default function Page() {
     });
   }, [roster, party?.selfId, showToast]);
 
+  /* ---------- notifications ---------- */
+
+  /* A phone in a pocket has no in-app toast and no vibration it will feel
+     through a bag. What the app knows has to reach the lock screen, which means
+     the notification has to survive the page not existing — so it is sealed
+     here with the party key and opened by the service worker.
+
+     Everything below sends; nothing below decides whether to show. That is the
+     receiving phone's call, and its preferences, which is the only place that
+     knows what its owner asked for. */
+  const [pushPrefs, setPushPrefs] = useState(notifier.defaultPrefs);
+  const [pushState, setPushState] = useState('idle');
+  const seenIds = useRef(null);
+  const quietSeen = useRef(new Set());
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PUSH_PREFS_KEY) || 'null');
+      if (saved) setPushPrefs((p) => ({ ...p, ...saved }));
+    } catch {
+      /* nothing saved */
+    }
+    setPushState(notifier.permission());
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(PUSH_PREFS_KEY, JSON.stringify(pushPrefs));
+  }, [pushPrefs]);
+
+  // The worker reads this off disk when a push wakes it, so it has to be
+  // written before one can arrive — and cleared on leaving, which is what makes
+  // a push from a party you have left unreadable on this phone.
+  useEffect(() => {
+    notifier.rememberParty(
+      party?.active && party?.partyId && party?.keyString
+        ? { partyId: party.partyId, keyString: party.keyString, selfId: party.selfId }
+        : null,
+      pushPrefs,
+    );
+  }, [party?.active, party?.partyId, party?.keyString, party?.selfId, pushPrefs]);
+
+  const pushNote = useCallback(
+    (note, urgent = false) => {
+      const p = partyRef.current;
+      if (!p?.active || !p.partyId || !p.keyString) return;
+      notifier.notify({ partyId: p.partyId, keyString: p.keyString, from: p.selfId, note, urgent });
+    },
+    [],
+  );
+
+  const enablePush = useCallback(async () => {
+    const p = partyRef.current;
+    const result = await notifier.enable({ partyId: p?.partyId, memberId: p?.selfId });
+    setPushState(result === 'granted' ? 'granted' : result);
+    showToast(
+      {
+        granted: 'This phone will tell you, even when it is locked',
+        denied: 'Notifications are blocked for this site in your phone settings',
+        unconfigured: 'This deployment has no notification keys set up',
+        unsupported: 'This browser cannot show notifications',
+        failed: 'Could not turn notifications on',
+      }[result] || 'Could not turn notifications on',
+    );
+  }, [showToast]);
+
+  /* Arrivals, departures and going quiet are all changes to the roster rather
+     than actions anyone takes, so somebody has to notice them and say so. The
+     host does, alone: every phone noticing would send the same news N times. */
+  useEffect(() => {
+    if (!party?.active || !party?.hosting) {
+      seenIds.current = null;
+      return;
+    }
+    const now = Date.now();
+    const ids = new Set(roster.map((m) => m.id));
+    const before = seenIds.current;
+    seenIds.current = ids;
+    if (!before) return; // first roster after becoming host is not news
+
+    for (const m of roster) {
+      if (m.id === party.selfId || before.has(m.id)) continue;
+      pushNote({ kind: 'join', title: `${m.name} joined your party`, body: 'They are on the map now.' });
+    }
+    for (const id of before) {
+      if (ids.has(id)) continue;
+      pushNote({ kind: 'join', title: 'Someone left your party', body: 'They are off the map now.' });
+    }
+
+    for (const m of roster) {
+      if (m.id === party.selfId) continue;
+      const silent = now - (m.ts || 0);
+      if (silent > QUIET_AFTER_MS && !quietSeen.current.has(m.id)) {
+        quietSeen.current.add(m.id);
+        pushNote({
+          kind: 'quiet',
+          title: `No word from ${m.name}`,
+          body: 'Their phone has not reported in for a while.',
+          focus: { kind: 'member', id: m.id, label: m.name },
+        });
+      }
+      if (silent < QUIET_AFTER_MS) quietSeen.current.delete(m.id);
+    }
+  }, [roster, party?.active, party?.hosting, party?.selfId, pushNote]);
+
   /* ---------- party actions ---------- */
   const createParty = async () => {
     setBusy(true);
@@ -682,6 +808,12 @@ export default function Page() {
     if (active) {
       runtime.current?.setMeet(record);
       showToast('Meet-up shared with your party');
+      pushNote({
+        kind: 'meet',
+        title: `${identity?.name || 'Someone'} set the meet-up`,
+        body: record.label,
+        focus: { kind: 'meet', label: record.label },
+      });
     } else {
       setLocalMeet({ ...record, by: identity?.name || 'Someone', ts: Date.now() });
       showToast('Meet-up marked (join a party to share it)');
@@ -690,7 +822,15 @@ export default function Page() {
 
   const clearMeet = () => {
     setLocalMeet(null);
-    if (active) runtime.current?.setMeet(null);
+    if (!active) return;
+    runtime.current?.setMeet(null);
+    // On everyone else's phone a cleared meet-up simply vanishes, which is the
+    // one change to it nobody is told about.
+    pushNote({
+      kind: 'meet',
+      title: `${identity?.name || 'Someone'} cleared the meet-up`,
+      body: 'There is no meeting point set now.',
+    });
   };
 
   /* ---------- derived ---------- */
@@ -1475,6 +1615,20 @@ export default function Page() {
                   setStatus(s);
                   runtime.current?.setStatus(s);
                   showToast(`Status: ${s}`);
+                  if (s === 'NEED HELP') {
+                    const me = positionRef.current;
+                    pushNote(
+                      {
+                        kind: 'help',
+                        title: `${identity?.name || 'Someone'} needs help`,
+                        body: me ? 'Tap to see where they are.' : 'Tap to open the map.',
+                        focus: party?.selfId
+                          ? { kind: 'member', id: party.selfId, label: identity?.name || 'Someone' }
+                          : null,
+                      },
+                      true,
+                    );
+                  }
                 }}
                 onCreate={createParty}
                 onJoin={joinParty}
@@ -1494,6 +1648,9 @@ export default function Page() {
                   runtime.current?.setMemberName(next);
                 }}
                 onCopied={showToast}
+                pushState={pushState}
+                onEnablePush={enablePush}
+                pushNeedsInstall={notifier.iosNeedsInstall()}
                 joinsOpenUntil={party?.joinsOpenUntil ?? 0}
                 onAllowJoins={() => {
                   allowJoins();
@@ -1528,6 +1685,12 @@ export default function Page() {
                 categoryTotal={Object.keys(CATEGORIES).length}
                 venueName={venue?.name}
                 onPush={push}
+                pushKinds={notifier.KINDS}
+                pushPrefs={pushPrefs}
+                onPushPref={(key, on) => setPushPrefs((p) => ({ ...p, [key]: on }))}
+                pushState={pushState}
+                onEnablePush={enablePush}
+                pushNeedsInstall={notifier.iosNeedsInstall()}
               />
             )}
 

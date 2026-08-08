@@ -19,6 +19,12 @@ export default function SettingsPanel({
   categoryTotal,
   venueName,
   onPush,
+  pushKinds = null,
+  pushPrefs = null,
+  onPushPref = null,
+  pushState = 'idle',
+  onEnablePush = null,
+  pushNeedsInstall = false,
 }) {
   return (
     <div>
@@ -69,6 +75,51 @@ export default function SettingsPanel({
           </span>
         </button>
       </div>
+
+      {pushKinds && (
+        <>
+          <div className="label">Tell Me On This Phone</div>
+          {pushState === 'granted' ? (
+            <div className="rowList">
+              {Object.entries(pushKinds).map(([key, spec]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="row"
+                  onClick={() => onPushPref?.(key, !pushPrefs?.[key])}
+                  aria-pressed={Boolean(pushPrefs?.[key])}
+                >
+                  <span className="rowText">{spec.label}</span>
+                  <span className="rowValue">{pushPrefs?.[key] ? 'On' : 'Off'}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn"
+                onClick={onEnablePush}
+                disabled={pushNeedsInstall || pushState === 'unsupported'}
+              >
+                Turn on notifications
+              </button>
+              <p className="fine">
+                {pushNeedsInstall
+                  ? 'On an iPhone this works once the app is on your Home Screen — see “Install on this phone” below.'
+                  : pushState === 'denied'
+                    ? 'Your phone is blocking them for this site. Turn them back on in its settings, then come back here.'
+                    : 'Without these, a phone in a pocket shows nothing when somebody in your party needs you.'}
+              </p>
+            </>
+          )}
+          {pushState === 'granted' && (
+            <p className="fine">
+              {pushKinds.quiet.hint}
+            </p>
+          )}
+        </>
+      )}
 
       <div className="label">Location</div>
       <div className="rowList">
