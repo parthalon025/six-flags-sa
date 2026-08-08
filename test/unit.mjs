@@ -115,10 +115,12 @@ const { venueChoiceFor, venueForPosition, venuesByDistance, withinBounds } = awa
   '../lib/venue/store.js'
 );
 const { CATEGORY_LABELS, landTint } = await import('../lib/theme.js');
-const { areaOf, centroidOf, pointInRing, round, simplify } = await import(
+const { areaOf, centroidOf, clipToBounds, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
-const { LAYER_RULES, POI_RULES, classify, isLand } = await import('../scripts/lib/osm-tags.mjs');
+const { LAYER_RULES, POI_RULES, classify, isCivicBoundary, isLand, isVenueOutline } = await import(
+  '../scripts/lib/osm-tags.mjs'
+);
 
 /* ------------------------------------------------------------- harness --- */
 
@@ -1781,6 +1783,86 @@ const SQUARE = [
 // line from the first point to the last, and on a closed ring those are the
 // same point — so the whole polygon collapsed to a dot and every filled layer
 // came out empty while the open polylines looked fine.
+/* Clipping a fill to the venue's box. The case that forced it: Cedar Point is a
+   peninsula, so Overpass handed back the whole of Lake Erie — one ring reaching
+   into Canada, every vertex of it outside the park, two thirds of the file. */
+
+const BOX = { north: 41.49, south: 41.47, east: -82.67, west: -82.7 };
+
+await check('a shape wholly inside the box comes back untouched', () => {
+  const ring = [
+    [-82.69, 41.48],
+    [-82.68, 41.48],
+    [-82.68, 41.485],
+    [-82.69, 41.485],
+    [-82.69, 41.48],
+  ];
+  assert.deepEqual(clipToBounds(ring, BOX), ring);
+  return true;
+});
+
+await check('a lake swallowing the venue is cut down to the venue', () => {
+  // Every vertex is outside — and the box is deep inside the polygon, which is
+  // why dropping outside points cannot work: it would delete the water the
+  // venue is standing in.
+  const lake = [
+    [-83.5, 41.3],
+    [-78.8, 41.3],
+    [-78.8, 42.9],
+    [-83.5, 42.9],
+    [-83.5, 41.3],
+  ];
+  const out = clipToBounds(lake, BOX);
+  assert.equal(out.length, 5, `expected the box back, got ${out.length} points`);
+  for (const [lng, lat] of out) {
+    assert.ok(lng >= BOX.west - 1e-9 && lng <= BOX.east + 1e-9, `lng ${lng} escaped`);
+    assert.ok(lat >= BOX.south - 1e-9 && lat <= BOX.north + 1e-9, `lat ${lat} escaped`);
+  }
+  // Still a filled ring covering the whole box, not a sliver. Compared as a
+  // corner set rather than by area: areaOf anchors its longitude scale to the
+  // first vertex's latitude, so the same rectangle measures a thousandth
+  // different depending on which corner it is written from.
+  const corners = (r) =>
+    r
+      .slice(0, -1)
+      .map(([lng, lat]) => `${lng},${lat}`)
+      .sort();
+  assert.deepEqual(corners(out), [
+    `${BOX.east},${BOX.north}`,
+    `${BOX.east},${BOX.south}`,
+    `${BOX.west},${BOX.north}`,
+    `${BOX.west},${BOX.south}`,
+  ].sort());
+  return true;
+});
+
+await check('a shape straddling one edge keeps the half that is here', () => {
+  const ring = [
+    [-82.69, 41.48],
+    [-82.6, 41.48], // well east of the box
+    [-82.6, 41.485],
+    [-82.69, 41.485],
+    [-82.69, 41.48],
+  ];
+  const out = clipToBounds(ring, BOX);
+  assert.ok(out.every(([lng]) => lng <= BOX.east + 1e-9), 'kept points outside the box');
+  // Cut at the boundary, not shrunk back to the last vertex inside it.
+  assert.ok(out.some(([lng]) => Math.abs(lng - BOX.east) < 1e-9), 'no cut along the east edge');
+  assert.deepEqual(out[0], out[out.length - 1], 'clipped ring left open');
+  return true;
+});
+
+await check('a shape entirely elsewhere clips to nothing', () => {
+  const elsewhere = [
+    [-84.27, 39.34],
+    [-84.26, 39.34],
+    [-84.26, 39.35],
+    [-84.27, 39.34],
+  ];
+  assert.deepEqual(clipToBounds(elsewhere, BOX), []);
+  return true;
+});
+
 await check('simplifying a closed ring keeps a polygon', () => {
   const dense = [];
   for (let i = 0; i <= 40; i += 1) {
@@ -1831,6 +1913,43 @@ await check('rounding collapses duplicate points at metre precision', () => {
 /* ------------------------------------------------------- venue tag rules - */
 
 section('venue tag rules');
+
+/* The boundary. Kings Island shipped drawing the census area of Landen as its
+   own ground: TIGER mapped it as a named `place=locality`, which walked through
+   the district rule, and being five times the size of the park it then won the
+   biggest-ring-wins test for the venue outline. One place out of 219 was inside
+   the shape the app believed was the park. */
+
+const LANDEN = { boundary: 'census', place: 'locality', name: 'Landen' };
+const MASON = { boundary: 'administrative', admin_level: '8', place: 'city', name: 'Mason' };
+const KI_PARK = { tourism: 'theme_park', name: 'Kings Island' };
+const CONEY = { place: 'locality', name: 'Coney Mall' };
+
+await check('a census tract or a city is never part of a venue', () => {
+  assert.equal(isCivicBoundary(LANDEN), true);
+  assert.equal(isCivicBoundary(MASON), true);
+  assert.equal(isLand(LANDEN), false, 'a census tract came back as a district');
+  assert.equal(isLand(MASON), false);
+  assert.equal(isVenueOutline(LANDEN), false, 'a census tract could be taken for the park');
+  return true;
+});
+
+await check('a themed area inside the park is still a district', () => {
+  // The rule that admits Coney Mall is the same one that admitted Landen, so
+  // the fix has to leave this standing.
+  assert.equal(isCivicBoundary(CONEY), false);
+  assert.equal(isLand(CONEY), true);
+  return true;
+});
+
+await check('the park itself can be the outline, a district cannot', () => {
+  assert.equal(isVenueOutline(KI_PARK), true);
+  assert.equal(isVenueOutline(CONEY), false, 'a locality is a district, not the venue');
+  assert.equal(isVenueOutline({ leisure: 'park', name: 'Somewhere' }), true);
+  assert.equal(isVenueOutline({ amenity: 'university', name: 'A Campus' }), true);
+  assert.equal(isVenueOutline({ building: 'yes', name: 'A Shed' }), false);
+  return true;
+});
 
 await check('coaster track is track and its station is a building', () => {
   assert.equal(classify(LAYER_RULES, { roller_coaster: 'track', name: 'Banshee' }), 'coaster');

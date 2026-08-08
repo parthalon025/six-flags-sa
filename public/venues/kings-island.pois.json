@@ -68,6 +68,18 @@
     "a": "Coney Mall"
   },
   {
+    "n": "Aruba Tuba",
+    "lat": 39.338326,
+    "lng": -84.274013,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
     "n": "Auntie Anne's",
     "lat": 39.344173,
     "lng": -84.26736,
@@ -135,6 +147,19 @@
     "alias": "Boo Blasters on Boo Hill"
   },
   {
+    "n": "Breakers Bay",
+    "lat": 39.338159,
+    "lng": -84.274999,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 0,
+      "alone": 48,
+      "max": null
+    },
+    "note": "Wave pool - under 48in needs a life jacket and companion"
+  },
+  {
     "n": "Cargo Loco",
     "lat": 39.34479,
     "lng": -84.265742,
@@ -145,6 +170,19 @@
       "alone": null,
       "max": null
     }
+  },
+  {
+    "n": "Castaway Cove",
+    "lat": 39.338532,
+    "lng": -84.273955,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "Kids area"
   },
   {
     "n": "Character Carousel",
@@ -218,6 +256,19 @@
     "lng": -84.265527,
     "c": "shop",
     "a": "Adventure Port"
+  },
+  {
+    "n": "Coconut Cove",
+    "lat": 39.339527,
+    "lng": -84.273815,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "Kids area"
   },
   {
     "n": "Coconut Cove Cafe",
@@ -316,386 +367,8 @@
   },
   {
     "n": "Entrance",
-    "lat": 39.346421,
-    "lng": -84.268357,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341527,
-    "lng": -84.268969,
-    "c": "gate",
-    "a": "Camp Snoopy"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340809,
-    "lng": -84.266406,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.339853,
-    "lng": -84.26315,
-    "c": "gate",
-    "a": "Coney Mall"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.342524,
-    "lng": -84.264265,
-    "c": "gate",
-    "a": "Area 72"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.336938,
-    "lng": -84.27269,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.336559,
-    "lng": -84.27399,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.343089,
-    "lng": -84.278563,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.342769,
-    "lng": -84.263774,
-    "c": "gate",
-    "a": "Area 72"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.345718,
-    "lng": -84.268468,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.346199,
-    "lng": -84.266481,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.346191,
-    "lng": -84.267679,
-    "c": "gate",
-    "a": "Action Zone"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.344428,
-    "lng": -84.269915,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.343272,
-    "lng": -84.268614,
-    "c": "gate",
-    "a": "Planet Snoopy"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.339916,
-    "lng": -84.266021,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.345293,
-    "lng": -84.266143,
-    "c": "gate",
-    "a": "Action Zone"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.344864,
-    "lng": -84.267913,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.343607,
-    "lng": -84.268111,
-    "c": "gate",
-    "a": "International Street"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.344403,
-    "lng": -84.268888,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.342182,
-    "lng": -84.265444,
-    "c": "gate",
-    "a": "Coney Mall"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.345767,
-    "lng": -84.267898,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.345483,
-    "lng": -84.267223,
-    "c": "gate",
-    "a": "International Street"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.343881,
-    "lng": -84.266828,
-    "c": "gate",
-    "a": "Oktoberfest"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341995,
-    "lng": -84.26683,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341315,
-    "lng": -84.2677,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341019,
-    "lng": -84.267412,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340171,
-    "lng": -84.263358,
-    "c": "gate",
-    "a": "Coney Mall"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.34061,
-    "lng": -84.263356,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340423,
-    "lng": -84.26651,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341442,
-    "lng": -84.265291,
-    "c": "gate",
-    "a": "Coney Mall"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340367,
-    "lng": -84.272453,
-    "c": "gate",
-    "a": "Soak City"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.338415,
-    "lng": -84.27687,
-    "c": "gate",
-    "a": "Soak City"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.339016,
-    "lng": -84.276845,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.339795,
-    "lng": -84.275582,
-    "c": "gate",
-    "a": "Soak City"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.339243,
-    "lng": -84.274789,
-    "c": "gate",
-    "a": "Soak City"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340349,
-    "lng": -84.274209,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341762,
-    "lng": -84.273082,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.342246,
-    "lng": -84.272548,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.344243,
-    "lng": -84.270642,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341127,
-    "lng": -84.273595,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.342703,
-    "lng": -84.269784,
-    "c": "gate",
-    "a": "Planet Snoopy"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341444,
-    "lng": -84.27023,
-    "c": "gate",
-    "a": "Camp Snoopy"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341021,
-    "lng": -84.268162,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.339663,
-    "lng": -84.26912,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340488,
-    "lng": -84.267474,
-    "c": "gate",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340303,
-    "lng": -84.270782,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341042,
-    "lng": -84.271706,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.341697,
-    "lng": -84.271305,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.340889,
-    "lng": -84.273327,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.338835,
-    "lng": -84.274038,
-    "c": "gate",
-    "a": "Soak City"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.347645,
-    "lng": -84.271961,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.346746,
-    "lng": -84.272868,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.344226,
-    "lng": -84.275387,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.342355,
-    "lng": -84.270662,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Entrance",
-    "lat": 39.349735,
-    "lng": -84.261963,
+    "lat": 39.348596,
+    "lng": -84.278353,
     "c": "gate",
     "a": "Kings Island"
   },
@@ -906,22 +579,22 @@
   },
   {
     "n": "Kings Island",
-    "lat": 39.348988,
-    "lng": -84.269008,
+    "lat": 39.348403,
+    "lng": -84.268993,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "n": "Kings Island",
-    "lat": 39.34857,
-    "lng": -84.267601,
+    "lat": 39.348194,
+    "lng": -84.267908,
     "c": "parking",
     "a": "Kings Island"
   },
   {
     "n": "Kings Island",
-    "lat": 39.347625,
-    "lng": -84.270582,
+    "lat": 39.347563,
+    "lng": -84.270596,
     "c": "parking",
     "a": "Kings Island"
   },
@@ -976,8 +649,8 @@
   },
   {
     "n": "Kings Island Park & Ride",
-    "lat": 39.33983,
-    "lng": -84.277783,
+    "lat": 39.339829,
+    "lng": -84.277785,
     "c": "parking",
     "a": "Kings Island"
   },
@@ -1073,6 +746,19 @@
     "a": "Soak City"
   },
   {
+    "n": "Lookout Lagoon",
+    "lat": 39.33804,
+    "lng": -84.274003,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "Kids area"
+  },
+  {
     "n": "Matildas",
     "lat": 39.340197,
     "lng": -84.273394,
@@ -1118,6 +804,13 @@
     }
   },
   {
+    "n": "North BOH Gate",
+    "lat": 39.348732,
+    "lng": -84.273788,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
     "n": "Orion",
     "lat": 39.342993,
     "lng": -84.262729,
@@ -1154,27 +847,6 @@
       "alone": null,
       "max": null
     }
-  },
-  {
-    "n": "Parking",
-    "lat": 39.352627,
-    "lng": -84.271009,
-    "c": "parking",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Parking",
-    "lat": 39.335491,
-    "lng": -84.277048,
-    "c": "parking",
-    "a": "Kings Island"
-  },
-  {
-    "n": "Parking",
-    "lat": 39.349453,
-    "lng": -84.261415,
-    "c": "parking",
-    "a": "Kings Island"
   },
   {
     "n": "Patio",
@@ -1236,6 +908,18 @@
     },
     "alias": "Pinaple Pipeline",
     "note": "Pineapple Pipeline"
+  },
+  {
+    "n": "Pipeline Paradise",
+    "lat": 39.337451,
+    "lng": -84.274689,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Potato Works",
@@ -1566,6 +1250,13 @@
     "a": "International Street"
   },
   {
+    "n": "Tennis Pro Shop",
+    "lat": 39.348681,
+    "lng": -84.278415,
+    "c": "shop",
+    "a": "Kings Island"
+  },
+  {
     "n": "The Bat",
     "lat": 39.34759,
     "lng": -84.265238,
@@ -1695,6 +1386,19 @@
     "lng": -84.267998,
     "c": "food",
     "a": "Rivertown"
+  },
+  {
+    "n": "Total Wave Bay",
+    "lat": 39.338848,
+    "lng": -84.27622,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 0,
+      "alone": 48,
+      "max": null
+    },
+    "note": "Wave pool - under 48in needs a life jacket and companion"
   },
   {
     "n": "Tropical Plunge",

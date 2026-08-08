@@ -1,0 +1,1703 @@
+[
+  {
+    "n": "4x4's",
+    "lat": 41.48067,
+    "lng": -82.681151,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Airbrush T-Shirts",
+    "lat": 41.481701,
+    "lng": -82.682504,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Airbrush Tattoo",
+    "lat": 41.481295,
+    "lng": -82.682759,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Albert",
+    "lat": 41.482443,
+    "lng": -82.688297,
+    "c": "landmark",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "All Day Lockers",
+    "lat": 41.478782,
+    "lng": -82.678904,
+    "c": "service",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Atomic Scrambler",
+    "lat": 41.482149,
+    "lng": -82.680887,
+    "c": "ride",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Auntie Anne's and Cinnabon",
+    "lat": 41.482065,
+    "lng": -82.6884,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Auntie Annie's",
+    "lat": 41.48174,
+    "lng": -82.682644,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "BackBeatQue",
+    "lat": 41.485503,
+    "lng": -82.686797,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "BackBeatQue Stage",
+    "lat": 41.485597,
+    "lng": -82.687257,
+    "c": "show",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Balloon Race",
+    "lat": 41.485084,
+    "lng": -82.687777,
+    "c": "ride",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Bay Harbor",
+    "lat": 41.478376,
+    "lng": -82.682313,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Bayou Refreshments",
+    "lat": 41.478931,
+    "lng": -82.680202,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Beagle Bay Outfitters",
+    "lat": 41.485686,
+    "lng": -82.688892,
+    "c": "shop",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Blue Streak",
+    "lat": 41.479864,
+    "lng": -82.68261,
+    "c": "coaster",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Breakers Boutique",
+    "lat": 41.4844,
+    "lng": -82.683785,
+    "c": "shop",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "C.J.'s Provisions",
+    "lat": 41.482106,
+    "lng": -82.688456,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Cabin Parking",
+    "lat": 41.488375,
+    "lng": -82.690728,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Cadillac Cars",
+    "lat": 41.481059,
+    "lng": -82.682536,
+    "c": "ride",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Camp Snoopy Theatre",
+    "lat": 41.485456,
+    "lng": -82.688667,
+    "c": "show",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Candy Shoppe",
+    "lat": 41.48289,
+    "lng": -82.69001,
+    "c": "food",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Cedar Creek Mine Ride",
+    "lat": 41.484787,
+    "lng": -82.690393,
+    "c": "coaster",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Cedar Creek Trading Company",
+    "lat": 41.4858,
+    "lng": -82.691064,
+    "c": "shop",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Cedar Downs Racing Derby",
+    "lat": 41.480643,
+    "lng": -82.682288,
+    "c": "ride",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Cedar Point Grand Pavillion",
+    "lat": 41.481781,
+    "lng": -82.679553,
+    "c": "food",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Cedar Point Marina Pool",
+    "lat": 41.478132,
+    "lng": -82.681931,
+    "c": "ride",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Cedar Point Shores Parking Lot",
+    "lat": 41.487712,
+    "lng": -82.688728,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Charlie Brown's Wind Up",
+    "lat": 41.485281,
+    "lng": -82.687933,
+    "c": "ride",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Chick-fil-A",
+    "lat": 41.484849,
+    "lng": -82.692462,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Chickie's and Pete's",
+    "lat": 41.47987,
+    "lng": -82.681796,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Coaster Coolers",
+    "lat": 41.485873,
+    "lng": -82.689663,
+    "c": "shop",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Coasters Drive-In",
+    "lat": 41.48203,
+    "lng": -82.68396,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Coca-Cola Fountain and Floats",
+    "lat": 41.486021,
+    "lng": -82.691814,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Coca-Cola Freestyle",
+    "lat": 41.479984,
+    "lng": -82.681317,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Coca-Cola Freestyle",
+    "lat": 41.485892,
+    "lng": -82.691893,
+    "c": "shop",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Coca-Cola Freestyle",
+    "lat": 41.480627,
+    "lng": -82.679659,
+    "c": "shop",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Coca-Cola Freestyle Cafe",
+    "lat": 41.485396,
+    "lng": -82.687556,
+    "c": "shop",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Coca-Cola Marketplace",
+    "lat": 41.48235,
+    "lng": -82.68826,
+    "c": "shop",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Cold Drinks Refreshments",
+    "lat": 41.482017,
+    "lng": -82.682846,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Coral Dining Room",
+    "lat": 41.482487,
+    "lng": -82.681424,
+    "c": "food",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Corkscrew",
+    "lat": 41.48365,
+    "lng": -82.68532,
+    "c": "coaster",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Corral",
+    "lat": 41.480435,
+    "lng": -82.681934,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "CP Shop",
+    "lat": 41.479244,
+    "lng": -82.680118,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Departure Parking",
+    "lat": 41.487954,
+    "lng": -82.690254,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Derby Dogs",
+    "lat": 41.480888,
+    "lng": -82.682351,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 41.48133,
+    "lng": -82.680018,
+    "c": "food",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 41.48206,
+    "lng": -82.685395,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 41.48245,
+    "lng": -82.688375,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 41.485098,
+    "lng": -82.691186,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 41.485866,
+    "lng": -82.688678,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 41.483858,
+    "lng": -82.685551,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 41.47968,
+    "lng": -82.68098,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Disabled Parking",
+    "lat": 41.477498,
+    "lng": -82.677866,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Dive In",
+    "lat": 41.481693,
+    "lng": -82.683902,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Dodgem",
+    "lat": 41.481183,
+    "lng": -82.680402,
+    "c": "ride",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Dragon's Inn",
+    "lat": 41.482185,
+    "lng": -82.685578,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Drop Off Lot/Reserved Parking",
+    "lat": 41.477713,
+    "lng": -82.680667,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Dune Buggies",
+    "lat": 41.481118,
+    "lng": -82.680681,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Engine House Custard",
+    "lat": 41.484462,
+    "lng": -82.691634,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Entrance",
+    "lat": 41.482794,
+    "lng": -82.686754,
+    "c": "gate",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Entrance",
+    "lat": 41.482796,
+    "lng": -82.685391,
+    "c": "gate",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Entrance",
+    "lat": 41.485353,
+    "lng": -82.686702,
+    "c": "gate",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Erie County Custom Jewelers",
+    "lat": 41.482762,
+    "lng": -82.689937,
+    "c": "shop",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Famous Dave's",
+    "lat": 41.479757,
+    "lng": -82.685324,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "First Aid",
+    "lat": 41.486035,
+    "lng": -82.691501,
+    "c": "service",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "First Aid",
+    "lat": 41.481518,
+    "lng": -82.681901,
+    "c": "service",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Fort Sandusky Leather & Router Shop",
+    "lat": 41.48294,
+    "lng": -82.689632,
+    "c": "shop",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Fort Sandusky Wood Carving Shop",
+    "lat": 41.482806,
+    "lng": -82.689471,
+    "c": "shop",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Fountain Custard",
+    "lat": 41.480143,
+    "lng": -82.681154,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Frontiertown Emporium",
+    "lat": 41.486116,
+    "lng": -82.69265,
+    "c": "shop",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Gatekeeper",
+    "lat": 41.480934,
+    "lng": -82.679178,
+    "c": "coaster",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Gatekeeper Gift Shop",
+    "lat": 41.480783,
+    "lng": -82.679283,
+    "c": "shop",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Gatekeeper Lockers",
+    "lat": 41.481305,
+    "lng": -82.67961,
+    "c": "service",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Gemini",
+    "lat": 41.486382,
+    "lng": -82.689591,
+    "c": "coaster",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Giant Wheel",
+    "lat": 41.481592,
+    "lng": -82.679874,
+    "c": "ride",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Gossip Gulch Stage",
+    "lat": 41.485545,
+    "lng": -82.69189,
+    "c": "show",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Grandstand Refreshments",
+    "lat": 41.483512,
+    "lng": -82.6856,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Guest Services",
+    "lat": 41.480774,
+    "lng": -82.680676,
+    "c": "landmark",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Guest Services",
+    "lat": 41.478568,
+    "lng": -82.679012,
+    "c": "landmark",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Guests Laundry",
+    "lat": 41.478611,
+    "lng": -82.682493,
+    "c": "shop",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Happy Friar",
+    "lat": 41.485775,
+    "lng": -82.689292,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Hat Rack",
+    "lat": 41.481665,
+    "lng": -82.682563,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Helicopters",
+    "lat": 41.480726,
+    "lng": -82.680862,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Hitchin' Post Souvenirs",
+    "lat": 41.485092,
+    "lng": -82.692319,
+    "c": "shop",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Hot Potato",
+    "lat": 41.479894,
+    "lng": -82.681292,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Hot Spot Stage",
+    "lat": 41.482017,
+    "lng": -82.68722,
+    "c": "show",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Hugo's Italian Kitchen",
+    "lat": 41.479147,
+    "lng": -82.680529,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Hurricane Hannah's",
+    "lat": 41.478465,
+    "lng": -82.679724,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Iron Dragon",
+    "lat": 41.48214,
+    "lng": -82.685184,
+    "c": "coaster",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Jack Aldrich Theatre",
+    "lat": 41.478811,
+    "lng": -82.68019,
+    "c": "show",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Jewlry Cart",
+    "lat": 41.4824,
+    "lng": -82.684075,
+    "c": "shop",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Joe Cool's Corner Store",
+    "lat": 41.485386,
+    "lng": -82.687446,
+    "c": "shop",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Kiddieland Refreshments",
+    "lat": 41.480868,
+    "lng": -82.680465,
+    "c": "shop",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Kiddy Kingdom Carrousel",
+    "lat": 41.480922,
+    "lng": -82.680852,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Kite Eating Tree",
+    "lat": 41.481512,
+    "lng": -82.681588,
+    "c": "ride",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Lake Erie Eagles",
+    "lat": 41.485888,
+    "lng": -82.687924,
+    "c": "ride",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Lakeside Express",
+    "lat": 41.48059,
+    "lng": -82.679533,
+    "c": "food",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Last Chance Saloon",
+    "lat": 41.485917,
+    "lng": -82.692065,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Mac Shack",
+    "lat": 41.479799,
+    "lng": -82.67986,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Magnum XL-200",
+    "lat": 41.485405,
+    "lng": -82.686087,
+    "c": "coaster",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Magnum XL-200 Lockers",
+    "lat": 41.484996,
+    "lng": -82.686284,
+    "c": "service",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Main Arcade",
+    "lat": 41.481178,
+    "lng": -82.68136,
+    "c": "ride",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Marina Store",
+    "lat": 41.479933,
+    "lng": -82.68508,
+    "c": "shop",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Matterhorn",
+    "lat": 41.48192,
+    "lng": -82.680678,
+    "c": "ride",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Maverick",
+    "lat": 41.485281,
+    "lng": -82.692555,
+    "c": "coaster",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "maXair",
+    "lat": 41.480855,
+    "lng": -82.680144,
+    "c": "ride",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Midway Carousel",
+    "lat": 41.47878,
+    "lng": -82.679598,
+    "c": "ride",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Millennium Force",
+    "lat": 41.481656,
+    "lng": -82.688132,
+    "c": "coaster",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Millennium Force Lockers",
+    "lat": 41.481905,
+    "lng": -82.686792,
+    "c": "service",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Millennium Force Photo",
+    "lat": 41.481772,
+    "lng": -82.687057,
+    "c": "shop",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Miss Keat's Smokehouse",
+    "lat": 41.485982,
+    "lng": -82.691958,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Monster",
+    "lat": 41.485731,
+    "lng": -82.687627,
+    "c": "ride",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Motorcycles",
+    "lat": 41.480591,
+    "lng": -82.680946,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Mustangs",
+    "lat": 41.4805,
+    "lng": -82.68108,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Ocean Motion",
+    "lat": 41.479093,
+    "lng": -82.679126,
+    "c": "ride",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Pagoda Gift Shop",
+    "lat": 41.481543,
+    "lng": -82.682261,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Palace Theatre",
+    "lat": 41.486058,
+    "lng": -82.692294,
+    "c": "show",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Panda Express",
+    "lat": 41.481753,
+    "lng": -82.687579,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.489965,
+    "lng": -82.690475,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.477282,
+    "lng": -82.677669,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.481143,
+    "lng": -82.687919,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.483747,
+    "lng": -82.683026,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.477766,
+    "lng": -82.681437,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.480411,
+    "lng": -82.685299,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.47952,
+    "lng": -82.683401,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.48467,
+    "lng": -82.685074,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.48572,
+    "lng": -82.684809,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.486742,
+    "lng": -82.687129,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Parking",
+    "lat": 41.480847,
+    "lng": -82.684582,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Peanuts 500",
+    "lat": 41.485715,
+    "lng": -82.689105,
+    "c": "ride",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Perkins Restaurant and Bakery",
+    "lat": 41.484714,
+    "lng": -82.683472,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Photo Finish",
+    "lat": 41.482564,
+    "lng": -82.68497,
+    "c": "shop",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Pipe Scream",
+    "lat": 41.48554,
+    "lng": -82.688,
+    "c": "coaster",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Point Plaza",
+    "lat": 41.479164,
+    "lng": -82.679633,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Police Cars",
+    "lat": 41.480831,
+    "lng": -82.681182,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Poolside Parlor",
+    "lat": 41.484202,
+    "lng": -82.68254,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Power Tower",
+    "lat": 41.482825,
+    "lng": -82.684575,
+    "c": "ride",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Preferred Parking",
+    "lat": 41.477174,
+    "lng": -82.679578,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Pretzel Fillers",
+    "lat": 41.4851,
+    "lng": -82.686355,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Provisions",
+    "lat": 41.483823,
+    "lng": -82.6881,
+    "c": "food",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Raptor",
+    "lat": 41.479188,
+    "lng": -82.681726,
+    "c": "coaster",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Raptor Hot Shots",
+    "lat": 41.479201,
+    "lng": -82.681164,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Red Baron",
+    "lat": 41.485158,
+    "lng": -82.688533,
+    "c": "ride",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Red Garter Saloon",
+    "lat": 41.482166,
+    "lng": -82.687658,
+    "c": "show",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Registration Desk and Store",
+    "lat": 41.48832,
+    "lng": -82.689909,
+    "c": "shop",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Registration Parking",
+    "lat": 41.488589,
+    "lng": -82.690425,
+    "c": "parking",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.480646,
+    "lng": -82.679876,
+    "c": "restroom",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.478892,
+    "lng": -82.679018,
+    "c": "restroom",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.478687,
+    "lng": -82.682556,
+    "c": "restroom",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.480012,
+    "lng": -82.684946,
+    "c": "restroom",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.480816,
+    "lng": -82.681559,
+    "c": "restroom",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.481094,
+    "lng": -82.681883,
+    "c": "restroom",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.477009,
+    "lng": -82.680863,
+    "c": "restroom",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.48962,
+    "lng": -82.689932,
+    "c": "restroom",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.482365,
+    "lng": -82.682977,
+    "c": "restroom",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.484728,
+    "lng": -82.686097,
+    "c": "restroom",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.481592,
+    "lng": -82.685517,
+    "c": "restroom",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.477809,
+    "lng": -82.679318,
+    "c": "restroom",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.479186,
+    "lng": -82.681016,
+    "c": "restroom",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.486284,
+    "lng": -82.690272,
+    "c": "restroom",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.482261,
+    "lng": -82.687982,
+    "c": "restroom",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.484686,
+    "lng": -82.690712,
+    "c": "restroom",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.48614,
+    "lng": -82.691676,
+    "c": "restroom",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.483402,
+    "lng": -82.690495,
+    "c": "restroom",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.485319,
+    "lng": -82.687741,
+    "c": "restroom",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.490523,
+    "lng": -82.689638,
+    "c": "restroom",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.484381,
+    "lng": -82.688637,
+    "c": "restroom",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 41.491475,
+    "lng": -82.68811,
+    "c": "restroom",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Rock, Spin, & Turn",
+    "lat": 41.480911,
+    "lng": -82.681086,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Roto Whip",
+    "lat": 41.481077,
+    "lng": -82.680819,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Rougarou",
+    "lat": 41.482755,
+    "lng": -82.686793,
+    "c": "coaster",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Rougarou Lockers",
+    "lat": 41.48249,
+    "lng": -82.686535,
+    "c": "service",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Rougarou Photos",
+    "lat": 41.482466,
+    "lng": -82.686709,
+    "c": "shop",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Sagebrush Sue's Frontier Eats",
+    "lat": 41.485926,
+    "lng": -82.692496,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Sand Bar Stage",
+    "lat": 41.485107,
+    "lng": -82.682756,
+    "c": "show",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Sandbar",
+    "lat": 41.485192,
+    "lng": -82.682895,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Services",
+    "lat": 41.481677,
+    "lng": -82.682624,
+    "c": "service",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Services",
+    "lat": 41.480128,
+    "lng": -82.685035,
+    "c": "service",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Services",
+    "lat": 41.4783,
+    "lng": -82.678589,
+    "c": "service",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Services",
+    "lat": 41.484,
+    "lng": -82.686026,
+    "c": "service",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Services",
+    "lat": 41.482124,
+    "lng": -82.687778,
+    "c": "service",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Services",
+    "lat": 41.480178,
+    "lng": -82.680517,
+    "c": "service",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Services",
+    "lat": 41.484656,
+    "lng": -82.691353,
+    "c": "service",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Services",
+    "lat": 41.484449,
+    "lng": -82.683217,
+    "c": "service",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Services",
+    "lat": 41.486066,
+    "lng": -82.691758,
+    "c": "service",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Services",
+    "lat": 41.485729,
+    "lng": -82.686283,
+    "c": "service",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Services",
+    "lat": 41.4883,
+    "lng": -82.689868,
+    "c": "service",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Services",
+    "lat": 41.478401,
+    "lng": -82.679664,
+    "c": "service",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Siren's Curse",
+    "lat": 41.480929,
+    "lng": -82.685183,
+    "c": "coaster",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Sky Fighters",
+    "lat": 41.481011,
+    "lng": -82.680616,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Sky Ride Refreshments",
+    "lat": 41.481954,
+    "lng": -82.683156,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Skyhawk",
+    "lat": 41.484388,
+    "lng": -82.690788,
+    "c": "ride",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Skyhawk Lockers",
+    "lat": 41.484673,
+    "lng": -82.690739,
+    "c": "service",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "SlingShot",
+    "lat": 41.486255,
+    "lng": -82.689952,
+    "c": "ride",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Snake River Falls",
+    "lat": 41.484121,
+    "lng": -82.691042,
+    "c": "ride",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Snoopy Bounce",
+    "lat": 41.485817,
+    "lng": -82.688798,
+    "c": "ride",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Snoopy Boutique",
+    "lat": 41.481262,
+    "lng": -82.682006,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Snoopy's Deep Sea Divers",
+    "lat": 41.481838,
+    "lng": -82.681277,
+    "c": "ride",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Snoopy's Express Railroad",
+    "lat": 41.481655,
+    "lng": -82.681335,
+    "c": "ride",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Snoopy's Space Race",
+    "lat": 41.482053,
+    "lng": -82.681261,
+    "c": "ride",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Space Age",
+    "lat": 41.480762,
+    "lng": -82.681364,
+    "c": "ride",
+    "a": "Kiddy Kingdom"
+  },
+  {
+    "n": "Speed Freaks",
+    "lat": 41.483963,
+    "lng": -82.685541,
+    "c": "shop",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Speed Zone",
+    "lat": 41.482929,
+    "lng": -82.685011,
+    "c": "shop",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Starbucks",
+    "lat": 41.479315,
+    "lng": -82.679831,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Steel Vengeance",
+    "lat": 41.486115,
+    "lng": -82.693365,
+    "c": "coaster",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Steel Vengeance Lockers",
+    "lat": 41.48652,
+    "lng": -82.69242,
+    "c": "service",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Steel Vengeance Photo Express",
+    "lat": 41.48619,
+    "lng": -82.69304,
+    "c": "shop",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Stockade Refreshments",
+    "lat": 41.485961,
+    "lng": -82.690718,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Summer Brews",
+    "lat": 41.486009,
+    "lng": -82.689312,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Surf Lounge",
+    "lat": 41.484469,
+    "lng": -82.683365,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Sweet Shop",
+    "lat": 41.481373,
+    "lng": -82.682154,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Sweets 'n Treats",
+    "lat": 41.47875,
+    "lng": -82.679906,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "TGI Friday's",
+    "lat": 41.48515,
+    "lng": -82.683507,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "The General Store",
+    "lat": 41.485765,
+    "lng": -82.691215,
+    "c": "shop",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "The Glass Academy Glass Blowing Experience",
+    "lat": 41.483609,
+    "lng": -82.691622,
+    "c": "shop",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "The Roost",
+    "lat": 41.481987,
+    "lng": -82.681162,
+    "c": "food",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "The Roundup",
+    "lat": 41.485588,
+    "lng": -82.692023,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "The Wild Trunip",
+    "lat": 41.483689,
+    "lng": -82.69117,
+    "c": "food",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Thunder Canyon",
+    "lat": 41.483808,
+    "lng": -82.692503,
+    "c": "ride",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Thunder Canyon Dry Goods",
+    "lat": 41.483815,
+    "lng": -82.691632,
+    "c": "shop",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Thunder Canyon Lockers",
+    "lat": 41.483235,
+    "lng": -82.690859,
+    "c": "service",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "Toft's Ice Cream Parlor",
+    "lat": 41.479453,
+    "lng": -82.679932,
+    "c": "food",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Tomo Sushi and Hibachi",
+    "lat": 41.484664,
+    "lng": -82.683582,
+    "c": "food",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Toot Sweets",
+    "lat": 41.482137,
+    "lng": -82.688494,
+    "c": "food",
+    "a": "Millennium Midway"
+  },
+  {
+    "n": "Top Thrill 2",
+    "lat": 41.48283,
+    "lng": -82.685335,
+    "c": "coaster",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Top Thrill 2 Lockers",
+    "lat": 41.48414,
+    "lng": -82.68605,
+    "c": "service",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Top Thrill Dragster Grandstand",
+    "lat": 41.483493,
+    "lng": -82.685639,
+    "c": "landmark",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Town Hall Museum",
+    "lat": 41.484506,
+    "lng": -82.691384,
+    "c": "landmark",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Town Hall- Guests Services",
+    "lat": 41.484595,
+    "lng": -82.691338,
+    "c": "landmark",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Trail Tavern",
+    "lat": 41.482391,
+    "lng": -82.689361,
+    "c": "food",
+    "a": "Frontier Trail"
+  },
+  {
+    "n": "U.S. Coast Guard Station (Historical)",
+    "lat": 41.488227,
+    "lng": -82.693401,
+    "c": "landmark",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Valravn",
+    "lat": 41.480269,
+    "lng": -82.683282,
+    "c": "coaster",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Valravn Gifts",
+    "lat": 41.480052,
+    "lng": -82.683011,
+    "c": "shop",
+    "a": "Main Midway"
+  },
+  {
+    "n": "Wagon Wheel Pizza",
+    "lat": 41.484501,
+    "lng": -82.691535,
+    "c": "food",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Wave Swinger",
+    "lat": 41.484403,
+    "lng": -82.692129,
+    "c": "ride",
+    "a": "Frontier Town"
+  },
+  {
+    "n": "Wild Mouse",
+    "lat": 41.482065,
+    "lng": -82.680455,
+    "c": "coaster",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Wilderness Run",
+    "lat": 41.485632,
+    "lng": -82.688568,
+    "c": "coaster",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "WindSeeker",
+    "lat": 41.482798,
+    "lng": -82.680689,
+    "c": "ride",
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Woodstock Express",
+    "lat": 41.485339,
+    "lng": -82.689132,
+    "c": "coaster",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Woodstock's Airmail",
+    "lat": 41.485305,
+    "lng": -82.68817,
+    "c": "ride",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Woodstock's Whirlybirds",
+    "lat": 41.481691,
+    "lng": -82.681918,
+    "c": "ride",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Yogurt Plus",
+    "lat": 41.485398,
+    "lng": -82.687656,
+    "c": "food",
+    "a": "Gemini Midway"
+  },
+  {
+    "n": "Yogurt Plus",
+    "lat": 41.480648,
+    "lng": -82.679734,
+    "c": "food",
+    "a": "Lakeside Midway"
+  }
+]

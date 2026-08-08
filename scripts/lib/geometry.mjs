@@ -138,6 +138,70 @@ function simplifyOpen(ring, tolerance) {
   return out;
 }
 
+/**
+ * Sutherland–Hodgman: cut a filled ring down to the venue's own box.
+ *
+ * Overpass returns whole ways and relations that so much as touch the query
+ * box, at whatever detail they were surveyed with. Inland that costs nothing —
+ * a pond is a pond. On a waterfront it is the difference between a venue file
+ * and a geography lesson: Cedar Point sits on a peninsula, and the first build
+ * of it carried Lake Erie as one 47,937-point ring reaching from Toledo into
+ * Canada. That single ring was 984 KB of a 1.5 MB file, and not one of its
+ * vertices was inside the park.
+ *
+ * Dropping the outside points cannot work, because a venue can sit in a bay
+ * whose every vertex is elsewhere — delete them and the water the place stands
+ * in disappears. Clipping is the operation that actually means "the part of
+ * this shape that is here": the lake comes back as the handful of corners where
+ * it meets the box, still filled, still drawn, three orders of magnitude
+ * smaller.
+ *
+ * Rings only. An open line clipped this way would have its ends joined across
+ * the box, and the layers drawn as lines are small enough not to need it.
+ */
+export function clipToBounds(ring, bounds) {
+  if (!ring || ring.length < 3 || !bounds) return ring;
+  const { north, south, east, west } = bounds;
+  // Each edge in turn, keeping whatever falls on the inside of it. A rectangle
+  // is convex, so four passes leave exactly the intersection.
+  const edges = [
+    [(p) => p[0] >= west, (a, b) => lerpX(a, b, west)],
+    [(p) => p[0] <= east, (a, b) => lerpX(a, b, east)],
+    [(p) => p[1] >= south, (a, b) => lerpY(a, b, south)],
+    [(p) => p[1] <= north, (a, b) => lerpY(a, b, north)],
+  ];
+
+  // A ring arrives with its first point repeated at the end; the algorithm
+  // wants the cycle without that duplicate, and it is put back at the end.
+  let out = ring.slice();
+  if (sameSpot(out[0], out[out.length - 1])) out.pop();
+
+  for (const [inside, cross] of edges) {
+    if (!out.length) return [];
+    const next = [];
+    for (let i = 0; i < out.length; i += 1) {
+      const cur = out[i];
+      const prev = out[(i + out.length - 1) % out.length];
+      const curIn = inside(cur);
+      const prevIn = inside(prev);
+      if (curIn) {
+        if (!prevIn) next.push(cross(prev, cur));
+        next.push(cur);
+      } else if (prevIn) {
+        next.push(cross(prev, cur));
+      }
+    }
+    out = next;
+  }
+
+  if (out.length < 3) return [];
+  out.push([out[0][0], out[0][1]]);
+  return out;
+}
+
+const lerpX = (a, b, x) => [x, a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0] || 1e-12)];
+const lerpY = (a, b, y) => [a[0] + ((b[0] - a[0]) * (y - a[1])) / (b[1] - a[1] || 1e-12), y];
+
 /** Five decimal places is roughly a metre, and halves the file size. */
 export function round(ring, dp = 5) {
   const f = 10 ** dp;

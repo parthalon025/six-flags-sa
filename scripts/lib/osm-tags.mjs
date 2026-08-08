@@ -80,6 +80,10 @@ export const LINE_LAYERS = new Set(['path', 'service', 'coaster', 'slide']);
 
 /** Every layer the renderer knows how to draw, in the order it expects them. */
 export const LAYERS = [
+  // The body of water a venue stands in or beside, as opposed to a pond inside
+  // it. Kept apart from `water` because of where it has to be drawn: a pond
+  // goes over the ground, and a lake goes under it. See build-venue.mjs.
+  'sea',
   'lands',
   'water',
   'wood',
@@ -100,6 +104,40 @@ export const LAYERS = [
  * label at low zoom, which is what makes a drawn map legible before you have
  * zoomed in far enough to read anything else.
  */
+/**
+ * A civic boundary is never part of a venue.
+ *
+ * Kings Island sits inside the census area of Landen and the city of Mason, and
+ * TIGER mapped both as `place=locality` with a name — which walked straight
+ * through the district rule below, and, being far bigger than the park, was then
+ * taken for the park's own outline. The map shipped drawing a census tract as
+ * its ground. Whatever else these are, they are not a themed area inside
+ * anywhere.
+ */
+const CIVIC = ['administrative', 'census', 'statistical', 'political', 'historic', 'postal_code'];
+export const isCivicBoundary = (t) => has(t, 'boundary', CIVIC) || has(t, 'admin_level');
+
+/**
+ * What can be the venue's own outline: the shape that *is* the place, as
+ * opposed to a district within it or the ground beside it.
+ */
+export const VENUE_RULES = [
+  (t) => has(t, 'tourism', ['theme_park', 'zoo', 'attraction', 'camp_site']),
+  (t) => has(t, 'leisure', ['park', 'water_park', 'nature_reserve', 'stadium', 'golf_course']),
+  (t) => has(t, 'amenity', ['university', 'college', 'school', 'hospital']),
+  (t) => has(t, 'landuse', ['recreation_ground', 'retail', 'commercial', 'education']),
+];
+
+export const isVenueOutline = (t) =>
+  !isCivicBoundary(t) &&
+  VENUE_RULES.some((test) => {
+    try {
+      return test(t);
+    } catch {
+      return false;
+    }
+  });
+
 export const LAND_RULES = [
   (t) => has(t, 'tourism', ['theme_park', 'zoo', 'attraction']) && has(t, 'name'),
   (t) => has(t, 'leisure', ['park', 'water_park', 'nature_reserve', 'stadium']) && has(t, 'name'),
@@ -117,7 +155,15 @@ export const POI_RULES = [
   ['coaster', (t) => has(t, 'attraction', ['roller_coaster']) || has(t, 'roller_coaster')],
   [
     'ride',
-    (t) => has(t, 'attraction') || has(t, 'leisure', ['playground', 'water_park', 'amusement_arcade']),
+    (t) =>
+      has(t, 'attraction') ||
+      has(t, 'leisure', ['playground', 'water_park', 'amusement_arcade']) ||
+      // A named pool at a venue like this is a ride: a wave pool, a lazy river,
+      // the splashdown at the foot of a slide. Leaving it out meant Soak City's
+      // seven pools were drawn on the map and missing from the list — and the
+      // seven height rules somebody had compiled for them matched nothing, which
+      // the build had been reporting as "no POI named Aruba Tuba" ever since.
+      has(t, 'leisure', ['swimming_pool']),
   ],
   [
     'food',
@@ -153,11 +199,17 @@ export const POI_RULES = [
   ],
   ['show', (t) => has(t, 'amenity', ['theatre', 'cinema', 'arts_centre']) || has(t, 'leisure', ['bandstand', 'amphitheatre'])],
   [
+    // The way in, not every hinge in the fence. A park mapped thoroughly has
+    // one of these on each ride queue and each service road — Cedar Point has
+    // 158 — and an unnamed `barrier=gate` is furniture rather than somewhere
+    // anyone arranges to meet. A gate earns a pin by being the entrance, or by
+    // having a name people use: "the North Gate", "Soak City Entrance".
     'gate',
     (t) =>
-      has(t, 'barrier', ['gate', 'entrance', 'turnstile']) ||
-      has(t, 'entrance', ['main', 'yes', 'primary']) ||
-      has(t, 'amenity', ['ticket_booth']),
+      has(t, 'entrance', ['main', 'primary']) ||
+      has(t, 'amenity', ['ticket_booth']) ||
+      (has(t, 'name') &&
+        (has(t, 'barrier', ['gate', 'entrance', 'turnstile']) || has(t, 'entrance'))),
   ],
   ['shop', (t) => has(t, 'shop') || has(t, 'amenity', ['marketplace', 'vending_machine'])],
   ['parking', (t) => has(t, 'amenity', ['parking'])],
@@ -172,7 +224,6 @@ export const POI_RULES = [
   ],
 ];
 
-/** What an unnamed POI of each category is called, when it is worth keeping anyway. */
 /**
  * Categories worth keeping from a closed way that carries no name at all.
  *
@@ -182,6 +233,7 @@ export const POI_RULES = [
  */
 export const UNNAMED_AREA_CATEGORIES = new Set(['restroom', 'parking']);
 
+/** What an unnamed POI of each category is called, when it is worth keeping anyway. */
 export const UNNAMED_LABELS = {
   restroom: 'Restrooms',
   parking: 'Parking',
@@ -201,6 +253,7 @@ export function classify(rules, tags) {
 }
 
 export function isLand(tags) {
+  if (isCivicBoundary(tags)) return false;
   return LAND_RULES.some((test) => {
     try {
       return test(tags);

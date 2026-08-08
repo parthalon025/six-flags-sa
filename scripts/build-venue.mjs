@@ -25,10 +25,18 @@
 
 import process from 'node:process';
 import { readFile, writeFile } from 'node:fs/promises';
-import { areaOf, centroidOf, distanceMetres, pointInRing, round, simplify } from './lib/geometry.mjs';
+import {
+  areaOf,
+  centroidOf,
+  clipToBounds,
+  distanceMetres,
+  pointInRing,
+  round,
+  simplify,
+} from './lib/geometry.mjs';
 import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
-  classify, isLand,
+  classify, isLand, isVenueOutline,
 } from './lib/osm-tags.mjs';
 import { readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue } from './lib/venue-io.mjs';
 import path from 'node:path';
@@ -250,6 +258,7 @@ const isClosed = (ring) =>
 function buildLayers(elements, opts) {
   const layers = Object.fromEntries(LAYERS.map((k) => [k, []]));
   const lands = [];
+  const outlines = []; // rings that could be the venue's own boundary
   const areaCandidates = []; // closed rings that might also be a POI
 
   for (const el of elements) {
@@ -259,29 +268,34 @@ function buildLayers(elements, opts) {
     for (const raw of rings) {
       if (raw.length < 2) continue;
       const closed = isClosed(raw) || el.tags?.area === 'yes';
-      const ring = round(simplify(raw, opts.tolerance));
+      const layer = classify(LAYER_RULES, tags);
+      // A filled shape counts only for the part of it that is here. Lines are
+      // left whole: they are small, cutting one mid-span would break the route
+      // graph built from it, and a closed loop of footpath is still a path
+      // rather than a lake.
+      const fills = closed && !LINE_LAYERS.has(layer);
+      const bounded = fills ? clipToBounds(raw, opts.clip) : raw;
+      if (bounded.length < 2) continue;
+      const ring = round(simplify(bounded, opts.tolerance));
       if (ring.length < 2) continue;
 
       if (isLand(tags) && closed) {
         const size = areaOf(ring);
-        // The venue's own outline is the ground everything else sits on, not a
-        // district within it — and it is recognised by carrying the venue's own
-        // name, since a park mapped tightly can cover well under half its box.
-        if (tags.name && tags.name.toLowerCase() === opts.venueName.toLowerCase()) {
-          layers.park.push({ r: ring, n: tags.name });
-          continue;
+        // The venue's own outline: the shape that is the place, rather than a
+        // district inside it. Every ring that could be one is collected here
+        // and the choice is made once, after the loop — picking by size while
+        // reading is what put a census tract under Kings Island.
+        const named = tags.name && tags.name.toLowerCase() === opts.venueName.toLowerCase();
+        if (named || isVenueOutline(tags)) {
+          outlines.push({ r: ring, n: tags.name, size, named, tagged: isVenueOutline(tags) });
+          if (named) continue;
         }
         // Big enough to be a district, small enough not to be the venue itself.
         if (size > 1500 && size < opts.venueArea * 0.7) {
           lands.push({ n: tags.name, r: ring, size });
           continue;
         }
-        // Anything covering most of the box is the venue outline, and becomes
-        // the ground the rest of the map is drawn on.
-        if (size >= opts.venueArea * 0.7) {
-          layers.park.push({ r: ring, n: tags.name });
-          continue;
-        }
+        if (size >= opts.venueArea * 0.7) continue;
       }
 
       /* A closed way becomes a POI candidate if it is named, or if it is one of
@@ -294,13 +308,40 @@ function buildLayers(elements, opts) {
         areaCandidates.push({ tags, ring });
       }
 
-      const layer = classify(LAYER_RULES, tags);
       if (!layer) continue;
       if (!LINE_LAYERS.has(layer) && !closed) continue;
-      if (!LINE_LAYERS.has(layer) && areaOf(ring) < opts.minArea) continue;
-      layers[layer].push(tags.name ? { r: ring, n: tags.name } : { r: ring });
+      const size = LINE_LAYERS.has(layer) ? null : areaOf(ring);
+      if (size != null && size < opts.minArea) continue;
+      // Water that covers the whole box is not a pond, it is what the venue is
+      // standing in — and the two have to be drawn on opposite sides of the
+      // ground. The renderer paints ponds over the ground, which is right until
+      // the pond is Lake Erie: Cedar Point came out as a park at the bottom of
+      // it, every path and building submerged. The sea goes underneath instead,
+      // and the peninsula reads as a peninsula.
+      const bed = layer === 'water' && size >= opts.venueArea * 0.7 ? 'sea' : layer;
+      layers[bed].push(tags.name ? { r: ring, n: tags.name } : { r: ring });
     }
   }
+
+  /* The boundary: which of the candidate rings is the park itself.
+   *
+   * Made once, here, with the reasons written down, because deciding it by size
+   * while reading was the bug. Kings Island is mapped as a 150-point
+   * `tourism=theme_park` way carrying its name — and it sits inside the census
+   * area of Landen, which TIGER mapped as a named `place=locality` five times
+   * the size. Biggest-wins therefore chose the census tract, drew it as the
+   * park's ground, and then used it to decide which districts were "inside":
+   * one place out of two hundred and nineteen was.
+   *
+   * So: the ring that carries this venue's name and is tagged as somewhere you
+   * can visit, then the one that merely carries the name, then the largest
+   * thing tagged as a venue. Size only ever breaks a tie between candidates
+   * that already qualify.
+   */
+  const rank = (o) => (o.named && o.tagged ? 3 : o.named ? 2 : 1);
+  const boundary =
+    outlines.sort((a, b) => rank(b) - rank(a) || b.size - a.size)[0] || null;
+  layers.park = boundary ? [{ r: boundary.r, n: boundary.n }] : [];
 
   // Overlapping lands are common — a park section mapped twice, or a sub-area
   // inside a bigger one. Keep the largest ring per name for the label anchor,
@@ -323,7 +364,7 @@ function buildLayers(elements, opts) {
   }
   layers.lands = drawn.map(({ n, r }) => ({ n, r }));
 
-  return { layers, anchors, areaCandidates, allLands: lands };
+  return { layers, anchors, areaCandidates, allLands: lands, boundary };
 }
 
 function buildPois(elements, areaCandidates, opts) {
@@ -516,11 +557,14 @@ async function main() {
     distanceMetres(bounds.south, bounds.west, bounds.north, bounds.west) *
     distanceMetres(bounds.south, bounds.west, bounds.south, bounds.east);
 
-  const { layers, anchors, areaCandidates, allLands } = buildLayers(elements, {
+  const { layers, anchors, areaCandidates, allLands, boundary } = buildLayers(elements, {
     tolerance,
     minArea: 12,
     venueArea,
     venueName: name,
+    // A little wider than the box the map draws, so the cut line itself never
+    // lands anywhere a visitor can pan to.
+    clip: padBounds(bounds, 60),
   });
 
   let pois = buildPois(elements, areaCandidates, { dedupeMetres: Number(args.dedupe ?? 35) });
@@ -562,10 +606,24 @@ async function main() {
   // A rebuild must not silently drop the hand-written parts of the last one.
   const existingMeta = readJson(path.join(VENUE_DIR, `${id}.map.json`))?.meta || null;
 
-  const centre = place?.center || {
-    lat: (bounds.north + bounds.south) / 2,
-    lng: (bounds.east + bounds.west) / 2,
-  };
+  /* Where the map opens. A rebuild must not move it: the centre a venue already
+     has was chosen, and the midpoint of a bounding box is not the middle of a
+     park — Kings Island's is out over the car park, a hundred and fifty metres
+     from the fountain everyone means by "the middle". So an existing centre is
+     kept as long as it is still inside the venue, and only a genuinely new
+     venue falls back to the box. */
+  const existingCentre = existingMeta?.center;
+  const centreStillValid =
+    existingCentre &&
+    existingCentre.lat < bounds.north &&
+    existingCentre.lat > bounds.south &&
+    existingCentre.lng < bounds.east &&
+    existingCentre.lng > bounds.west;
+  const centre = (centreStillValid && existingCentre) ||
+    place?.center || {
+      lat: (bounds.north + bounds.south) / 2,
+      lng: (bounds.east + bounds.west) / 2,
+    };
 
   const drawn = Object.values(layers).reduce((n, l) => n + l.length, 0);
   if (!drawn) throw new Error('OpenStreetMap has nothing mapped in that box — check the coordinates.');
@@ -593,6 +651,28 @@ async function main() {
   console.error(`  · geometry: ${summary}`);
   console.error(`  · pois: ${pois.length} (${pois.filter((p) => p.h).length} with heights)`);
 
+  /* The boundary is the one thing here that can be confidently wrong: a plain
+     ring with a plausible name, in the right place, enclosing the wrong ground.
+     So it reports what it picked and how many places ended up outside it —
+     which is the number that gives the game away. Kings Island's census tract
+     enclosed one place out of two hundred and nineteen. */
+  if (!boundary) {
+    console.error('  · boundary: none found — nothing here is tagged as the venue itself');
+  } else {
+    const within = pois.filter((p) => pointInRing([p.lng, p.lat], boundary.r)).length;
+    const why = boundary.named && boundary.tagged
+      ? 'named and tagged as the venue'
+      : boundary.named
+        ? 'carries the venue name'
+        : 'largest thing tagged as a venue';
+    console.error(
+      `  · boundary: ${boundary.r.length} points, ${why} — ${within}/${pois.length} places inside`,
+    );
+    if (within < pois.length * 0.5) {
+      console.error('    ! most places fall outside it. That is usually the wrong ring.');
+    }
+  }
+
   if (args['dry-run']) {
     console.error('\nDry run — nothing written.');
     return;
@@ -600,7 +680,11 @@ async function main() {
 
   const written = writeVenue({
     meta,
-    map: { ...layers, landAnchors: anchors },
+    // The boundary is called out separately from the ground it fills. They are
+    // the same ring, but they answer different questions — one is "what colour
+    // is the floor here", the other is "am I still in the park" — and only the
+    // second one is worth a line on the map.
+    map: { ...layers, landAnchors: anchors, boundary: boundary?.r || null },
     pois,
   });
   const manifest = reindex({

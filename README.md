@@ -1,18 +1,20 @@
 # Party Tracker
 
 A live situational-awareness map for a group at a big, crowded place. It ships with
-Kings Island (Mason, Ohio) and Six Flags Fiesta Texas (San Antonio), and one command
-builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15 (App Router)
-and React 19.
+Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio) and Cedar Point
+(Sandusky, Ohio), and one command — or one form under Actions — builds a map of anywhere
+else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
 
 - **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
   painted as SVG: midways, buildings, water, slides, and every coaster's actual track
   centreline. Pan with one finger, pinch or scroll to zoom.
 - **Any location.** `npm run venues:build -- --place "Somewhere"` pulls the geometry and
-  the places, and the app offers the new map next time it boots — see
+  the places, and the app offers the new map next time it boots — or run it from a form
+  under Actions → Build a venue and get a pull request back. See
   [Building a map of somewhere else](#building-a-map-of-somewhere-else). Nothing in the
   renderer is amusement-park specific; a zoo, a campus, a festival ground or a town
-  centre all draw through the same code.
+  centre all draw through the same code. Three parks ship today: Kings Island, Six Flags
+  Fiesta Texas and Cedar Point.
 - **Symbols you can read, not dots you have to decode.** Every place carries three
   redundant channels — shape, colour and a glyph. A solid disc is something you came for,
   a light chip is something you need, a diamond is a landmark and a pin is a gate; inside
@@ -436,11 +438,25 @@ OpenStreetMap for the geometry over a bounding box, sorts it into the layers the
 draws, and writes a POI list beside it.
 
 ```bash
-npm run venues:build -- --place "Six Flags Fiesta Texas"
+npm run venues:build -- --place "Cedar Point, Sandusky, Ohio" --locality "Sandusky, Ohio"
 npm run venues:build -- --bbox 39.3365,-84.2775,39.348,-84.2595 --name "Kings Island"
 npm run venues:build -- --around 39.3434,-84.267,900 --name "Kings Island"
 npm run venues:build -- --help
+
+npm run venues:report cedar-point     # what a built venue actually contains
 ```
+
+**Name the place precisely.** The geocoder answers the question you asked, and plain
+`"Cedar Point"` is a village of 264 people in LaSalle County, Illinois. `--place` prints
+what it resolved to before it builds anything, and `--dry-run` stops there; when a name is
+ambiguous or the park has no boundary mapped, `--bbox` is the way to say exactly what you
+meant.
+
+Or skip the terminal entirely: **Actions → Build a venue → Run workflow** fills the same
+arguments in from a form, runs the build on a runner, checks the app still builds with the
+result, and opens a draft pull request with the new park in it. That is the intended route
+for adding a venue — the build needs nothing but node and OpenStreetMap, which is precisely
+what a runner has.
 
 Each build writes `public/venues/<id>.map.json` and `public/venues/<id>.pois.json`, then
 rebuilds `public/venues/manifest.json` and the generated `lib/venueIndex.js`. The client
@@ -466,6 +482,30 @@ from `attraction=water_slide`, and `lands` — named districts, tinted and label
 named park sections, neighbourhoods and campuses. A venue with no coasters just has an
 empty coaster layer. Districts the day/night palettes have never heard of get a colour
 derived from their own name, so an unfamiliar venue is still legible.
+
+Two rules exist because Cedar Point broke them. Overpass returns whole shapes that merely
+touch the query box, so a venue on the water gets the whole body of water at survey
+detail: the first Cedar Point build carried Lake Erie as one 47,937-point ring reaching
+into Canada, two thirds of a 1.5 MB file, without a single vertex inside the park. Filled
+shapes are now clipped to the venue's own box, which is coverage-identical inside it and
+about a third of the bytes. And water that covers the whole box is not a pond but the thing
+the venue stands in, so it goes in a `sea` layer drawn *under* the ground rather than over
+it — otherwise a park on a peninsula renders at the bottom of the lake.
+
+**The boundary is chosen, not guessed.** A venue's outline is the ring that carries its
+name and is tagged as somewhere you can visit — `tourism=theme_park`, `leisure=park`, a
+campus — and civic boundaries are excluded outright. Kings Island is mapped as a 150-point
+`tourism=theme_park` way and sits inside the census area of Landen, which TIGER mapped as a
+named `place=locality` five times the size; the old biggest-ring-wins rule therefore drew a
+census tract as the park's ground and then used it to decide which districts were "inside",
+where one place out of 219 was. The chosen ring is written to the venue file as `boundary`,
+drawn on the map as a dashed perimeter, and the build reports how many places fall inside
+it — the number that gives a wrong ring away.
+
+The other one is gates. A thoroughly mapped park has a `barrier=gate` on every ride queue
+and service road — Cedar Point has 158 — and an unnamed one is furniture, not a place
+anyone walks to. A gate earns a pin by being the entrance (`entrance=main`), by being a
+ticket booth, or by having a name people use: "the North Gate".
 
 **Height requirements are not in OpenStreetMap and never will be.** They live in
 `data/venues/<id>.overrides.json`, keyed by name, and are re-applied on every rebuild —
@@ -590,8 +630,9 @@ components/
 server/index.mjs              zero-dependency host: mailbox, REST, SSE, metrics
 scripts/
   build-venue.mjs             OpenStreetMap → a venue the app can load
+  venue-report.mjs            what a built venue contains, as markdown
   lib/osm-tags.mjs            the tag → layer and tag → category rules
-  lib/geometry.mjs            simplification, area, centroid, point-in-polygon
+  lib/geometry.mjs            simplification, clipping, area, centroid, point-in-polygon
   lib/venue-io.mjs            where venues live; manifest and index generation
   phone.mjs                   one command to a QR you can scan
   setup.sh                    toolchain check, install, build
