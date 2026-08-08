@@ -3,7 +3,7 @@
 const COPY = {
   idle: {
     title: 'Turn on location',
-    body: 'This map needs your phone\u2019s GPS to place you in the park, measure range and bearing to your party, and point you at the meet-up. Nothing is stored until you join a party.',
+    body: 'This map needs your phone\u2019s GPS to place you on it, measure range and bearing to your party, and point you at the meet-up. Nothing is stored until you join a party.',
     action: 'Allow location',
   },
   asking: {
@@ -28,12 +28,12 @@ const COPY = {
   },
 };
 
-export default function GpsGate({ status, error, onRequest, onManual, onDismiss }) {
+export default function GpsGate({ status, error, onRequest, onManual, onDismiss, venueName }) {
   const copy = COPY[status] || COPY.idle;
   return (
     <div className="gate">
       <div className="gateCard">
-        <div className="gateEyebrow">Kings Island · Party tracker</div>
+        <div className="gateEyebrow">{venueName ? `${venueName} · ` : ''}Party tracker</div>
         <h2>{copy.title}</h2>
         <p>{copy.body}</p>
         {error && <p className="gateError">{error}</p>}
@@ -44,7 +44,7 @@ export default function GpsGate({ status, error, onRequest, onManual, onDismiss 
           Place myself on the map instead
         </button>
         <button type="button" className="btnQuiet" onClick={onDismiss}>
-          Just show me the park map
+          Just show me the map
         </button>
         <p className="gateFine">
           Position stays on your device unless you join a party. Then it is encrypted

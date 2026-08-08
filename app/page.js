@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import GpsGate from '@/components/GpsGate';
+import ParkPrompt from '@/components/ParkPrompt';
 import CompassTape from '@/components/CompassTape';
 import PartyPanel from '@/components/PartyPanel';
 import GlanceRail from '@/components/GlanceRail';
@@ -15,7 +16,7 @@ import RoutePreview from '@/components/RoutePreview';
 import DirectionsPanel from '@/components/DirectionsPanel';
 import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
-import { POIS, CATEGORIES, eligibility } from '@/lib/park';
+import { CATEGORIES, eligibility, hasHeights } from '@/lib/park';
 import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
 import {
   buildRouteGraph,
@@ -27,13 +28,16 @@ import {
   OFF_ROUTE_M,
 } from '@/lib/routing';
 import {
-  bearing,
-  cardinal,
-  distance,
-  formatDistance,
-  formatWalk,
-  inPark,
-} from '@/lib/geo';
+  bootVenue,
+  confirmVenue,
+  retargetForPosition,
+  selectVenue,
+  venueChoiceFor,
+  venuesByDistance,
+  withinBounds,
+} from '@/lib/venue/store';
+import { useVenue } from '@/lib/venue/useVenue';
+import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 
 const PALETTE = ['#4FD1A5', '#5AA9E6', '#B487E8', '#F09AC0', '#7FD4E8', '#C9A87C', '#8ED96B', '#FF9E6B'];
 const colourFor = (id) => {
@@ -45,14 +49,18 @@ const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
 
 const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
 
-/* What the sheet is standing on in each of its states, so the map can lay its
-   labels out above the furniture rather than behind it. Two numbers are read
-   off the stylesheet — the peek height and the sheet's two open fractions —
-   and one is the nav bar that replaces the sheet while you are walking. */
+/* Identity used to be filed under a key named after the one park this ran at.
+   Read the old key once so nobody who already typed their name has to again. */
+const IDENTITY_KEY = 'tracker-identity';
+const LEGACY_IDENTITY_KEY = 'ki-identity';
+
+/* What the sheet is standing on in each of its states, as pixels. The CSS
+   already publishes this as --sheetH for the chrome that rides above it; the
+   map needs the number itself, to lay its labels out above the furniture
+   rather than behind it. */
 const SHEET_PEEK_PX = 182;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
-const NAV_BAR_PX = 96;
-const PREVIEW_PX = 210;
+const STOWED_PX = 96;
 
 /** How often the broadcast gate is asked whether the current fix is worth sending. */
 const GATE_TICK_MS = 4000;
@@ -67,8 +75,19 @@ const REROUTE_M = 12;
 export default function Page() {
   const geo = useGeolocation();
   const { position, heading, shouldBroadcast } = geo;
-  const [mapData, setMapData] = useState(null);
+  const {
+    venue,
+    map: mapData,
+    pois: POIS,
+    manifest,
+    status: venueStatus,
+    error: venueError,
+    confirmed: venueConfirmed,
+    pinned: venuePinned,
+  } = useVenue();
   const [gateOpen, setGateOpen] = useState(true);
+  /** Waved the park question away for this session — do not put it back up. */
+  const [parkAsked, setParkAsked] = useState(false);
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
@@ -86,17 +105,7 @@ export default function Page() {
   const [height, setHeight] = useState(null);
   const [withAdult, setWithAdult] = useState(true);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [focusPoint, setFocusPoint] = useState(null);
-  const [theme, setTheme] = useState('night');
-  const [nav, setNav] = useState(null); // where we are walking to, by reference
-  const [navPhase, setNavPhase] = useState('idle'); // idle -> preview -> go
-  const [routesList, setRoutes] = useState([]); // the choice, best first
-  const [pick, setPick] = useState(0);
-  const [graph, setGraph] = useState(null);
-  const [northUp, setNorthUp] = useState(false);
-  const [voice, setVoice] = useState(false);
-  const [rerouted, setRerouted] = useState(0);
-  // The sheet's open states are fractions of the viewport, so its height in
+  // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
 
@@ -110,6 +119,16 @@ export default function Page() {
       return next;
     });
   }, []);
+  const [focusPoint, setFocusPoint] = useState(null);
+  const [theme, setTheme] = useState('night');
+  const [nav, setNav] = useState(null); // where we are walking to, by reference
+  const [navPhase, setNavPhase] = useState('idle'); // idle -> preview -> go
+  const [routesList, setRoutes] = useState([]); // the choice, best first
+  const [pick, setPick] = useState(0);
+  const [graph, setGraph] = useState(null);
+  const [northUp, setNorthUp] = useState(false);
+  const [voice, setVoice] = useState(false);
+  const [rerouted, setRerouted] = useState(0);
 
   const runtime = useRef(null);
   const lastRoute = useRef(null);
@@ -133,17 +152,65 @@ export default function Page() {
     }
   }, []);
 
+  // The venue is the map, the places and the bounds. Which one loads is the
+  // visitor's last choice, or the deployment's default; the first GPS fix gets
+  // to correct that if it lands inside a different one.
   useEffect(() => {
-    fetch('/parkmap.json')
-      .then((r) => r.json())
-      .then(setMapData)
-      .catch(() => setToast('Could not load the park map file.'));
+    bootVenue().catch((err) => setToast(err?.message || 'Could not load the map.'));
   }, []);
+
+  /**
+   * The park the intake still has to ask about, if any. A fix is the first
+   * moment the app can say anything useful about which of the maps it ships is
+   * the one you want, so that is when it asks — and it asks once, because
+   * answering is what sets `venueConfirmed` and stops it.
+   */
+  const parkChoice = useMemo(() => {
+    if (parkAsked || !manifest || !position) return null;
+    return venueChoiceFor(manifest, position.lat, position.lng, {
+      confirmed: venueConfirmed,
+      pinned: venuePinned,
+    });
+  }, [parkAsked, manifest, position, venueConfirmed, venuePinned]);
+
+  /** The other parks, nearest first, for when the nearest one is the wrong guess. */
+  const parkOptions = useMemo(() => {
+    if (!parkChoice || !position) return [];
+    return venuesByDistance(manifest, position.lat, position.lng).filter(
+      (row) => row.venue.id !== parkChoice.venue.id,
+    );
+  }, [parkChoice, manifest, position]);
+
+  const askingPark = Boolean(parkChoice);
+  /** The question is only load-bearing while it is actually on screen. */
+  const showParkPrompt = gateOpen && askingPark;
+
+  useEffect(() => {
+    if (!position || position.manual) return;
+    // Both ends of the intake question outrank this. A fix that is about to be
+    // asked about should not be acted on first — answering is what loads a
+    // park, and switching underneath the question would download the map twice
+    // and make the question look rhetorical. A fix that has already been asked
+    // about should not reopen it: from then on the only thing allowed to move
+    // the map is the phone hosting the party.
+    if (showParkPrompt || venueConfirmed) return;
+    retargetForPosition(position.lat, position.lng)
+      .then((moved) => {
+        if (moved) showToast(`Switched to ${moved.name}`);
+      })
+      .catch(() => {});
+    // Only the first unanswered fix matters here: after that the visitor is
+    // inside a venue and re-checking on every GPS tick would fight a deliberate
+    // choice.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(position), showParkPrompt, venueConfirmed]);
 
   useEffect(() => {
     let saved = null;
     try {
-      saved = JSON.parse(localStorage.getItem('ki-identity') || 'null');
+      saved = JSON.parse(
+        localStorage.getItem(IDENTITY_KEY) || localStorage.getItem(LEGACY_IDENTITY_KEY) || 'null',
+      );
     } catch {
       saved = null;
     }
@@ -161,7 +228,7 @@ export default function Page() {
   useEffect(() => {
     if (!identity) return;
     identityRef.current = identity;
-    localStorage.setItem('ki-identity', JSON.stringify({ ...identity, height, theme }));
+    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height, theme }));
   }, [identity, height, theme]);
 
   useEffect(() => {
@@ -175,15 +242,17 @@ export default function Page() {
     return () => window.removeEventListener('resize', measure);
   }, []);
 
-  // Close the gate when the fix actually lands. Checking this inside the
-  // "Allow location" handler cannot work: the permission prompt and the first
-  // fix are both async, so status is still 'asking' when the click returns and
-  // nothing looks again. The gate then sits over the whole UI intercepting
-  // taps, and the only way out reads "Just show me the park map" — which is the
-  // opposite of what someone who just granted location wants.
+  // Close the gate when the fix actually lands — unless the fix has just earned
+  // the intake its second question, in which case the gate stays up and shows
+  // that instead. Checking this inside the "Allow location" handler cannot
+  // work: the permission prompt and the first fix are both async, so status is
+  // still 'asking' when the click returns and nothing looks again. The gate
+  // then sits over the whole UI intercepting taps, and the only way out reads
+  // "Just show me the park map" — which is the opposite of what someone who
+  // just granted location wants.
   useEffect(() => {
-    if (geo.status === 'live') setGateOpen(false);
-  }, [geo.status]);
+    if (geo.status === 'live' && !askingPark) setGateOpen(false);
+  }, [geo.status, askingPark]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -245,6 +314,35 @@ export default function Page() {
   );
 
   const meet = party?.meet ?? localMeet;
+
+  /**
+   * Where the party is, according to the phone hosting it.
+   *
+   * This is the better answer to "which map" than this phone's own fix. Someone
+   * joining from the car park, from the hotel the night before, or from a phone
+   * that has not got a fix yet still wants the map everyone else is looking at
+   * — and a meet-up pin means nothing if two phones are drawing different
+   * places. The host is the phone that decides what is true about the party, so
+   * it decides this too.
+   */
+  const hostLocation = useMemo(() => {
+    const host = roster.find((m) => m.id === party?.hostId);
+    if (!host || !Number.isFinite(host.lat) || !Number.isFinite(host.lng)) return null;
+    return { lat: host.lat, lng: host.lng, name: host.name };
+  }, [roster, party?.hostId]);
+
+  // The host's position outranks this phone's own, and keeps outranking it: if
+  // the host turns out to be somewhere else, follow. Picking a venue by hand
+  // still wins over both — the store stops retargeting once a choice is pinned.
+  useEffect(() => {
+    if (!hostLocation) return;
+    retargetForPosition(hostLocation.lat, hostLocation.lng)
+      .then((moved) => {
+        if (moved) showToast(`Switched to ${moved.name} — where your party is`);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostLocation?.lat, hostLocation?.lng]);
 
   /**
    * The battery lever. Every fix goes through the adaptive gate before it goes
@@ -353,12 +451,17 @@ export default function Page() {
       out.set(p.n, eligibility(p, height, withAdult));
     });
     return out;
-  }, [height, withAdult]);
+  }, [POIS, height, withAdult]);
 
   const totalRides = useMemo(
     () => POIS.filter((p) => p.c === 'coaster' || p.c === 'ride').length,
-    [],
+    [POIS],
   );
+
+  /* Height rules only exist at amusement parks, and only where somebody has
+     filled them in. Everywhere else the filter, its badge and the tab that
+     leads to it are simply not part of the app. */
+  const heights = useMemo(() => hasHeights(POIS), [POIS]);
 
   const rideableCount = useMemo(() => {
     if (height == null) return null;
@@ -367,7 +470,7 @@ export default function Page() {
       const v = eligibility(p, height, withAdult);
       return v === 'yes' || v === 'companion';
     }).length;
-  }, [height, withAdult]);
+  }, [POIS, height, withAdult]);
 
   const nearest = useMemo(() => {
     if (!position) return null;
@@ -377,11 +480,11 @@ export default function Page() {
       if (!best || d < best.d) best = { p, d };
     });
     return best;
-  }, [position]);
+  }, [POIS, position]);
 
   /* ---------- walking routes ---------- */
 
-  // Welding every polyline in the park file into a routing graph is a few
+  // Welding every polyline in the loaded venue's file into a routing graph is a few
   // hundred milliseconds of work, and nothing needs it until someone asks for
   // directions. So it waits for the browser to be idle rather than holding up
   // the first paint of the map, and until it lands routes fall back to a
@@ -427,6 +530,19 @@ export default function Page() {
     setTab((t) => (t === 'route' ? 'party' : t));
     setSheet('peek');
   }, []);
+
+  // A walk belongs to the map it was worked out on. When the venue changes —
+  // picked by hand, or followed to where the party is — the destination is a
+  // place on the old map and its route is a line across geometry that is no
+  // longer on screen, so the walk ends with it rather than quietly becoming a
+  // straight line to somewhere a thousand miles away.
+  useEffect(() => {
+    if (!venue?.id) return;
+    stopNav();
+    setSelected(null);
+    // Only a change of venue, not the first one to load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venue?.id]);
 
   /**
    * Asking for directions does not set you walking — it offers you the route,
@@ -524,7 +640,9 @@ export default function Page() {
       setRoutes([findRoute(graph, position, navTarget, { ...opts, penalty })]);
       setPick(0);
     }
-  }, [navTarget, position, graph, navPhase, mapData]);
+    // POIS is in here because the landmarks a turn is named after belong to the
+    // loaded venue now, not to a module constant.
+  }, [navTarget, position, graph, navPhase, mapData, POIS]);
 
   const routes = routesList;
   const route = routesList[pick] ?? routesList[0] ?? null;
@@ -624,8 +742,10 @@ export default function Page() {
   };
 
   const headerLine = () => {
-    if (!position) return 'Mason, Ohio · no fix yet';
-    const where = inPark(position.lat, position.lng) ? nearest?.p.a || 'in park' : 'off property';
+    if (venueStatus === 'loading') return 'Loading the map…';
+    if (!position) return `${venue?.locality || 'Waiting'} · no fix yet`;
+    const inside = withinBounds(venue?.bounds, position.lat, position.lng);
+    const where = inside ? nearest?.p.a || 'on site' : 'off site';
     const acc = position.manual
       ? 'placed by hand'
       : `±${Math.round((position.acc || 0) * 3.28084)} ft`;
@@ -639,16 +759,20 @@ export default function Page() {
     previewing ? 'stowed' : ''
   }`;
 
-  // The same states, as a number of pixels, for the map's own layout.
+  // The same stops, as a number of pixels, for the map's own label layout.
   const stowed = previewing || (walking && sheet === 'peek');
   const floorPx = stowed
-    ? (previewing ? PREVIEW_PX : NAV_BAR_PX)
+    ? STOWED_PX
     : Math.round((SHEET_OPEN[sheet] ?? 0) * viewportH) || SHEET_PEEK_PX;
 
   return (
-    <main className="app" data-sheet={stowed ? 'stowed' : sheet} style={{ '--floor': `${floorPx}px` }}>
+    // data-sheet publishes the sheet's stop as a CSS custom property, so the
+    // FABs, the toast, the zoom pad and the scale bar all ride up and down with
+    // it on one shared easing instead of each keeping its own copy of the stops.
+    <main className="app" data-sheet={stowed ? 'stowed' : sheet}>
       <ParkMap
         data={mapData}
+        center={venue?.center}
         pois={POIS}
         me={position}
         members={others}
@@ -683,7 +807,7 @@ export default function Page() {
 
       <header className="topbar">
         <div className="brand">
-          <b>Kings Island</b>
+          <b>{venue?.name || 'Party tracker'}</b>
           <span>{headerLine()}</span>
         </div>
         <button
@@ -707,7 +831,7 @@ export default function Page() {
         </button>
       </header>
 
-      {height != null && (
+      {heights && height != null && (
         <button
           type="button"
           className="filterBadge"
@@ -839,7 +963,7 @@ export default function Page() {
           {[
             ...(navTarget ? [['route', 'Directions']] : []),
             ['party', `Party${others.length ? ` · ${roster.length}` : ''}`],
-            ['rides', 'Rides & heights'],
+            ['rides', heights ? 'Rides & heights' : 'Places'],
             ['me', 'Me'],
           ].map(([key, labelText]) => (
             <button
@@ -914,6 +1038,7 @@ export default function Page() {
               onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
               onNavigate={startNav}
               theme={theme}
+              venue={venue}
             />
           )}
           {tab === 'me' && (
@@ -980,13 +1105,63 @@ export default function Page() {
               <div className="label">Advanced diagnostics</div>
               <Diagnostics runtime={runtimeApi} geo={geo} />
 
+              <div className="label">Which map</div>
+              <div className="venueList">
+                {(manifest?.venues || []).map((v) => {
+                  // Measured from whatever is deciding the map: the host's
+                  // position while a party is running, this phone's otherwise.
+                  const from = hostLocation || position;
+                  const inside = from && withinBounds(v.bounds, from.lat, from.lng);
+                  const away =
+                    from && !inside ? distance(from.lat, from.lng, v.center.lat, v.center.lng) : null;
+                  const here = hostLocation ? 'your party is here' : 'you are here';
+                  const off = hostLocation ? 'from your party' : 'away';
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      className={`venueRow ${v.id === venue?.id ? 'on' : ''}`}
+                      onClick={() => {
+                        selectVenue(v.id, { pin: true })
+                          .then(() => {
+                            setSelected(null);
+                            setFollow(false);
+                            showToast(`Showing ${v.name}`);
+                          })
+                          .catch((err) => showToast(err?.message || 'Could not load that map.'));
+                      }}
+                      aria-pressed={v.id === venue?.id}
+                    >
+                      <b>{v.name}</b>
+                      <span>
+                        {[
+                          v.locality,
+                          from == null
+                            ? null
+                            : inside
+                              ? here
+                              : `${formatDistance(away)} ${off}`,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="fine">
+                Picking one here keeps it, and stops the app moving you again. Left alone,
+                it opens the map you used last, then follows the phone hosting your party —
+                or your own first fix, if there is no party running.
+              </p>
+
               <div className="label">Where the data comes from</div>
               <p className="fine">
-                The map itself is drawn from OpenStreetMap geometry for Kings Island —
-                real paths, buildings, water and coaster track, painted as vectors rather
-                than copied from the park&apos;s own printed map. Height requirements were
-                compiled from Kings Island Central and Theme Park Insider in 2026; confirm
-                at the ride entrance.
+                The map is drawn from OpenStreetMap geometry — real paths, buildings, water
+                and ride track, painted as vectors rather than copied from anyone&apos;s
+                printed map. {venue?.credits || ''} Every map here was built by
+                <code> npm run venues:build</code>, so anywhere OpenStreetMap covers can
+                become one.
               </p>
             </div>
           )}
@@ -999,8 +1174,36 @@ export default function Page() {
         </div>
       )}
 
-      {gateOpen && (
+      {/* The intake, in the order the answers become possible: location first,
+          because nothing else can be decided without a fix, then which park —
+          which is the question that actually builds a map. */}
+      {showParkPrompt && (
+        <ParkPrompt
+          choice={parkChoice}
+          options={parkOptions}
+          busy={venueStatus === 'loading'}
+          error={venueStatus === 'error' ? venueError : null}
+          onConfirm={(id) => {
+            confirmVenue(id)
+              .then((v) => {
+                setSelected(null);
+                // Following your own dot only makes sense on a map you are
+                // standing on; from the road, the park itself is the view.
+                setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+                showToast(`${v.name} is ready`);
+              })
+              .catch((err) => showToast(err?.message || 'Could not build that map.'));
+          }}
+          onSkip={() => {
+            setParkAsked(true);
+            setGateOpen(false);
+          }}
+        />
+      )}
+
+      {gateOpen && !showParkPrompt && (
         <GpsGate
+          venueName={venue?.name}
           status={geo.status}
           error={geo.error}
           onRequest={() => {
@@ -1008,10 +1211,17 @@ export default function Page() {
             geo.enableCompass();
           }}
           onManual={() => {
+            // Waving the intake off waves off both of its questions: whichever
+            // one you come back for, you came back deliberately, and the one
+            // you get should be the one this button is under.
+            setParkAsked(true);
             setGateOpen(false);
             showToast('Tap the map to place yourself');
           }}
-          onDismiss={() => setGateOpen(false)}
+          onDismiss={() => {
+            setParkAsked(true);
+            setGateOpen(false);
+          }}
         />
       )}
     </main>

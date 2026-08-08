@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "default": "kings-island",
+  "venues": [
+    {
+      "id": "kings-island",
+      "name": "Kings Island",
+      "locality": "Mason, Ohio",
+      "kind": "theme-park",
+      "center": {
+        "lat": 39.3434,
+        "lng": -84.267
+      },
+      "bounds": {
+        "north": 39.348,
+        "south": 39.3365,
+        "east": -84.2595,
+        "west": -84.2775
+      },
+      "source": "OpenStreetMap contributors, ODbL",
+      "generated": "2026-08-07",
+      "credits": "Height requirements were compiled from Kings Island Central and Theme Park Insider for the 2026 season.",
+      "map": "/venues/kings-island.map.json",
+      "pois": "/venues/kings-island.pois.json",
+      "counts": {
+        "pois": 152,
+        "rides": 65,
+        "heights": 65
+      }
+    },
+    {
+      "id": "six-flags-fiesta-texas",
+      "name": "Six Flags Fiesta Texas",
+      "locality": "San Antonio, Texas",
+      "kind": "theme-park",
+      "center": {
+        "lat": 29.5992,
+        "lng": -98.61455
+      },
+      "bounds": {
+        "north": 29.60898,
+        "south": 29.58942,
+        "east": -98.60346,
+        "west": -98.62564
+      },
+      "source": "OpenStreetMap contributors, ODbL",
+      "generated": "2026-08-07",
+      "map": "/venues/six-flags-fiesta-texas.map.json",
+      "pois": "/venues/six-flags-fiesta-texas.pois.json",
+      "counts": {
+        "pois": 163,
+        "rides": 32,
+        "heights": 0
+      }
+    }
+  ]
+}

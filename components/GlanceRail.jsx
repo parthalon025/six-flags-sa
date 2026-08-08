@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { navKeyOf as keyOfNav } from '@/lib/routing';
-import { POIS } from '@/lib/park';
+import { usePois } from '@/lib/venue/useVenue';
 import { paletteFor } from '@/lib/theme';
 
 /* The card rail is what you see without opening anything. In a park the
@@ -27,9 +27,9 @@ function Arrow({ deg, colour }) {
   );
 }
 
-function nearestOf(lat, lng, predicate) {
+function nearestOf(pois, lat, lng, predicate) {
   let best = null;
-  POIS.forEach((p) => {
+  pois.forEach((p) => {
     if (!predicate(p)) return;
     const d = distance(lat, lng, p.lat, p.lng);
     if (!best || d < best.d) best = { poi: p, d };
@@ -51,6 +51,10 @@ export default function GlanceRail({
   onOpenParty,
 }) {
   const palette = paletteFor(theme);
+  // The places are the loaded venue's, so they have to be a dependency of the
+  // memo below: without it, switching venues leaves the rail pointing at the
+  // restrooms of a park a thousand miles away.
+  const pois = usePois();
 
   const cards = useMemo(() => {
     if (!me) return [];
@@ -118,7 +122,7 @@ export default function GlanceRail({
         ['First aid', (p) => p.s === 'first_aid', palette.categories.service],
       ];
       wants.forEach(([eyebrow, pred, colour], i) => {
-        const hit = nearestOf(me.lat, me.lng, pred);
+        const hit = nearestOf(pois, me.lat, me.lng, pred);
         if (hit) {
           push(`n-${i}`, eyebrow, hit.poi.n, hit.poi, colour, hit.poi.a, 'nearby', {
             kind: 'poi',
@@ -131,7 +135,7 @@ export default function GlanceRail({
     }
 
     return out;
-  }, [me, members, meet, selected, heading, palette]);
+  }, [pois, me, members, meet, selected, heading, palette]);
 
   if (!me) {
     return (

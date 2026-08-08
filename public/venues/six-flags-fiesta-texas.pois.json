@@ -1,0 +1,1143 @@
+[
+  {
+    "n": "ACME Company Store",
+    "lat": 29.598085,
+    "lng": -98.61062,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Ann Taylor",
+    "lat": 29.59401,
+    "lng": -98.615703,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Anthropologie",
+    "lat": 29.593605,
+    "lng": -98.615084,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Apple Store",
+    "lat": 29.593359,
+    "lng": -98.615567,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Athleta",
+    "lat": 29.593893,
+    "lng": -98.615628,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Aztek The Ultimate Nachos",
+    "lat": 29.596995,
+    "lng": -98.611748,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Banana Republic",
+    "lat": 29.593764,
+    "lng": -98.615597,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Bat Girl: Coaster Chase",
+    "lat": 29.596876,
+    "lng": -98.611121,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Bath & Body Works",
+    "lat": 29.593716,
+    "lng": -98.615751,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "BATMAN The Ride",
+    "lat": 29.596642,
+    "lng": -98.608983,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Beach Bum Surf Co.",
+    "lat": 29.599001,
+    "lng": -98.611556,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Bee Bop's",
+    "lat": 29.595768,
+    "lng": -98.607461,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Blue Snowman Soft Serve",
+    "lat": 29.596183,
+    "lng": -98.611024,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Boomerang Coast to Coast",
+    "lat": 29.598336,
+    "lng": -98.61081,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Boomerang Coast To Coast",
+    "lat": 29.598364,
+    "lng": -98.611143,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Bradley Dean",
+    "lat": 29.59354,
+    "lng": -98.614818,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Bucking Broncos",
+    "lat": 29.598409,
+    "lng": -98.613038,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Bugs White Water Rapids",
+    "lat": 29.597158,
+    "lng": -98.61023,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Candy Storm",
+    "lat": 29.596137,
+    "lng": -98.609463,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Canyon Smokehouse",
+    "lat": 29.598133,
+    "lng": -98.611822,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Captain Jack's Snack Shack",
+    "lat": 29.598987,
+    "lng": -98.611245,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Chico's",
+    "lat": 29.593493,
+    "lng": -98.615649,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Chop Six",
+    "lat": 29.597815,
+    "lng": -98.612583,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Chupacabra",
+    "lat": 29.598855,
+    "lng": -98.608297,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Coach",
+    "lat": 29.594292,
+    "lng": -98.615795,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Coca-Cola Ahh",
+    "lat": 29.600191,
+    "lng": -98.612388,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Coca-Cola Refresh Station",
+    "lat": 29.599313,
+    "lng": -98.609954,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Coca-Cola Refresh Station",
+    "lat": 29.596141,
+    "lng": -98.610509,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Coca-Cola VIP Lounge",
+    "lat": 29.598992,
+    "lng": -98.610171,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Cocktail's on The Corner",
+    "lat": 29.596136,
+    "lng": -98.610387,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Crackaxle Dippin' Dots",
+    "lat": 29.597917,
+    "lng": -98.610156,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Crow's Nest",
+    "lat": 29.595652,
+    "lng": -98.606119,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Daffy's Bus Stop",
+    "lat": 29.595987,
+    "lng": -98.607908,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Daily Planet Newsstand & Gifts",
+    "lat": 29.596641,
+    "lng": -98.610902,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Dare Devil Dive Flying Machines",
+    "lat": 29.598773,
+    "lng": -98.616555,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "DC Super-Villains Swing",
+    "lat": 29.596061,
+    "lng": -98.609633,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Dior",
+    "lat": 29.594877,
+    "lng": -98.614872,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Dippin' Dots",
+    "lat": 29.59949,
+    "lng": -98.60841,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Dom Julio's Beach Bar",
+    "lat": 29.600714,
+    "lng": -98.610656,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Dr. Butterskotch's Original Elixir",
+    "lat": 29.598322,
+    "lng": -98.610549,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Dr. Diabolical's Cliffhanger",
+    "lat": 29.597981,
+    "lng": -98.610949,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.602603,
+    "lng": -98.604151,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.604563,
+    "lng": -98.604923,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.596136,
+    "lng": -98.610502,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.596999,
+    "lng": -98.608485,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.598325,
+    "lng": -98.609545,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.596307,
+    "lng": -98.608141,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.599123,
+    "lng": -98.609537,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.597395,
+    "lng": -98.609142,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.600501,
+    "lng": -98.615449,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.600704,
+    "lng": -98.603031,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.601808,
+    "lng": -98.603794,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.595511,
+    "lng": -98.605465,
+    "c": "gate",
+    "a": "The Rock at La Cantera"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.599052,
+    "lng": -98.610636,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.597999,
+    "lng": -98.6097,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.597956,
+    "lng": -98.610741,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.597637,
+    "lng": -98.610697,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.597318,
+    "lng": -98.611557,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.598487,
+    "lng": -98.611295,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.597673,
+    "lng": -98.610223,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.59594,
+    "lng": -98.608053,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.595586,
+    "lng": -98.608132,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.595558,
+    "lng": -98.609218,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.595832,
+    "lng": -98.609773,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.596324,
+    "lng": -98.607632,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.596281,
+    "lng": -98.610847,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.597495,
+    "lng": -98.613148,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.59881,
+    "lng": -98.61096,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.598633,
+    "lng": -98.612761,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Entrance",
+    "lat": 29.59537,
+    "lng": -98.608856,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Everything But Water",
+    "lat": 29.594477,
+    "lng": -98.615815,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Fat Burger - Fiesta Bay Boardwalk",
+    "lat": 29.595876,
+    "lng": -98.607811,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Fireball",
+    "lat": 29.594957,
+    "lng": -98.606572,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Fireball Snacks",
+    "lat": 29.595925,
+    "lng": -98.60933,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "First Aid",
+    "lat": 29.60012,
+    "lng": -98.611385,
+    "c": "service",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "First Aid",
+    "lat": 29.597467,
+    "lng": -98.609317,
+    "c": "service",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Foghorn Leghorn's Barnyard Railway",
+    "lat": 29.598062,
+    "lng": -98.612075,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Fuel Charging Rod Station",
+    "lat": 29.599294,
+    "lng": -98.609634,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Funnel*Liscious",
+    "lat": 29.595727,
+    "lng": -98.609421,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Gucci",
+    "lat": 29.594668,
+    "lng": -98.615034,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Guest Relations",
+    "lat": 29.600387,
+    "lng": -98.612109,
+    "c": "landmark",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Guest Services",
+    "lat": 29.599308,
+    "lng": -98.610557,
+    "c": "landmark",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Gully Washer",
+    "lat": 29.598049,
+    "lng": -98.614,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Heroes",
+    "lat": 29.597978,
+    "lng": -98.606993,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Hot Roasted Corn",
+    "lat": 29.597814,
+    "lng": -98.606963,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Hugo Boss",
+    "lat": 29.594266,
+    "lng": -98.615943,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Hurricane Force 5",
+    "lat": 29.596039,
+    "lng": -98.607583,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Hustler",
+    "lat": 29.596281,
+    "lng": -98.608957,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Iron Rattler",
+    "lat": 29.598446,
+    "lng": -98.612938,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Iron Rattler Mercantile",
+    "lat": 29.597854,
+    "lng": -98.612125,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Johnny Rockets",
+    "lat": 29.596328,
+    "lng": -98.610631,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Johnny Was",
+    "lat": 29.594242,
+    "lng": -98.616017,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Kendra Scott",
+    "lat": 29.594293,
+    "lng": -98.615845,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Kid Flash Cosmic Coaster",
+    "lat": 29.597253,
+    "lng": -98.610769,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Kiehl's",
+    "lat": 29.594266,
+    "lng": -98.615583,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "La Panaderia - La Cantera",
+    "lat": 29.603099,
+    "lng": -98.603309,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Las Banderas",
+    "lat": 29.599212,
+    "lng": -98.609787,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Lee Michales Fine Jewelry",
+    "lat": 29.594653,
+    "lng": -98.615742,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Lone Star Lil's Amphitheater",
+    "lat": 29.597761,
+    "lng": -98.61155,
+    "c": "show",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Lost and Found",
+    "lat": 29.599059,
+    "lng": -98.607999,
+    "c": "landmark",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Louis Vuitton",
+    "lat": 29.59448,
+    "lng": -98.615157,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Lululemon",
+    "lat": 29.594269,
+    "lng": -98.615147,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Metro Park Pub",
+    "lat": 29.597777,
+    "lng": -98.6141,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Metropolis Transit Authority",
+    "lat": 29.596988,
+    "lng": -98.610171,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Michael Kors",
+    "lat": 29.593729,
+    "lng": -98.615135,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Michel's Perfume ShoppeMic",
+    "lat": 29.593361,
+    "lng": -98.614863,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Mockingbird Funnel Cakes",
+    "lat": 29.599293,
+    "lng": -98.610687,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "My Six Flags Photos",
+    "lat": 29.599042,
+    "lng": -98.609602,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Neiman Marcus",
+    "lat": 29.595392,
+    "lng": -98.614873,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Nordstrom",
+    "lat": 29.5945,
+    "lng": -98.616818,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Old Blues Barbeque",
+    "lat": 29.598664,
+    "lng": -98.61122,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Omega",
+    "lat": 29.594703,
+    "lng": -98.615636,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Palace Vintage Photography",
+    "lat": 29.597823,
+    "lng": -98.612658,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Pandemonium",
+    "lat": 29.595189,
+    "lng": -98.607324,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Park Row Refresh Station",
+    "lat": 29.595596,
+    "lng": -98.607896,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Pete's Eats",
+    "lat": 29.596719,
+    "lng": -98.608439,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Pirates of the Deep Sea",
+    "lat": 29.596295,
+    "lng": -98.607429,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Pit Stop",
+    "lat": 29.596785,
+    "lng": -98.608947,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Planet Krypton Cafe",
+    "lat": 29.59699,
+    "lng": -98.611543,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "PNC Bank",
+    "lat": 29.594958,
+    "lng": -98.615288,
+    "c": "service",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Poltergeist",
+    "lat": 29.597149,
+    "lng": -98.60838,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Primo's Pizzeria",
+    "lat": 29.595742,
+    "lng": -98.609235,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Redlands Grill by J. Alexander's",
+    "lat": 29.605994,
+    "lng": -98.60375,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Road Runner Express",
+    "lat": 29.598913,
+    "lng": -98.612836,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Robert Graham",
+    "lat": 29.594621,
+    "lng": -98.615901,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Roca & Martillo",
+    "lat": 29.593531,
+    "lng": -98.605073,
+    "c": "food",
+    "a": "The Rock at La Cantera"
+  },
+  {
+    "n": "Rockville High School",
+    "lat": 29.595755,
+    "lng": -98.608363,
+    "c": "show",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Rolex",
+    "lat": 29.594565,
+    "lng": -98.615821,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Sängerfest Halle",
+    "lat": 29.597741,
+    "lng": -98.609442,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Sangerfest Halle Stage",
+    "lat": 29.597665,
+    "lng": -98.609401,
+    "c": "show",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Schi-Kugel Arcade",
+    "lat": 29.597351,
+    "lng": -98.610047,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Scream",
+    "lat": 29.5962,
+    "lng": -98.607549,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Services",
+    "lat": 29.593732,
+    "lng": -98.614587,
+    "c": "service",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Soft Frozen Lemonade",
+    "lat": 29.598614,
+    "lng": -98.610933,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Soma",
+    "lat": 29.594745,
+    "lng": -98.616462,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Spinsanity",
+    "lat": 29.595792,
+    "lng": -98.607717,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Starbucks",
+    "lat": 29.594929,
+    "lng": -98.61523,
+    "c": "food",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Stroller & Wheelchair Rental",
+    "lat": 29.599266,
+    "lng": -98.609883,
+    "c": "landmark",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Studio 6F",
+    "lat": 29.597477,
+    "lng": -98.60968,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Sunglass Hut",
+    "lat": 29.59417,
+    "lng": -98.615557,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Superman: Krypton Coaster",
+    "lat": 29.596082,
+    "lng": -98.610831,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Teatro Fiesta",
+    "lat": 29.598797,
+    "lng": -98.610778,
+    "c": "show",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tempur-Pedic",
+    "lat": 29.59432,
+    "lng": -98.616017,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Texas State Square",
+    "lat": 29.598551,
+    "lng": -98.610245,
+    "c": "show",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "The Caped Crusader",
+    "lat": 29.597527,
+    "lng": -98.612142,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "The Grand Carousel",
+    "lat": 29.597533,
+    "lng": -98.609964,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Thirsty Buffalo Saloon",
+    "lat": 29.59766,
+    "lng": -98.612609,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tidal Wave Cafe",
+    "lat": 29.599755,
+    "lng": -98.609834,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tiffany & Company",
+    "lat": 29.594733,
+    "lng": -98.61555,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Tommy Bahama",
+    "lat": 29.594701,
+    "lng": -98.615673,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Trader Six",
+    "lat": 29.598665,
+    "lng": -98.611105,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tradewinds",
+    "lat": 29.599337,
+    "lng": -98.608096,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tropical Smoothie Cafe",
+    "lat": 29.60359,
+    "lng": -98.603485,
+    "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tumi",
+    "lat": 29.594394,
+    "lng": -98.615186,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Tutti Nail Bar",
+    "lat": 29.603493,
+    "lng": -98.60346,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "vinyard vines",
+    "lat": 29.593975,
+    "lng": -98.615164,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Watering Hole Refresh Station",
+    "lat": 29.598313,
+    "lng": -98.613933,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Waxing the City",
+    "lat": 29.60339,
+    "lng": -98.603429,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "White House Black Market",
+    "lat": 29.594255,
+    "lng": -98.616079,
+    "c": "shop",
+    "a": "The Shops at La Cantera"
+  },
+  {
+    "n": "Wonder Woman Gifts",
+    "lat": 29.595535,
+    "lng": -98.609523,
+    "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Wonder Woman Golden Lasso Coaster",
+    "lat": 29.595284,
+    "lng": -98.608753,
+    "c": "coaster",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Yosemite Sam's Wacky Wagons",
+    "lat": 29.598569,
+    "lng": -98.614182,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Zaragoza Theater",
+    "lat": 29.598582,
+    "lng": -98.609259,
+    "c": "show",
+    "a": "Six Flags Fiesta Texas"
+  }
+]

@@ -10,7 +10,16 @@
  *   CHROMIUM_PATH=/opt/pw-browsers/chromium node test/functional.mjs
  */
 
-import { BASE, launch, openPhone, rosterNames, tab, until } from './browser.mjs';
+import {
+  BASE,
+  closeGate,
+  hydrated,
+  launch,
+  openPhone,
+  rosterNames,
+  tab,
+  until,
+} from './browser.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -166,10 +175,10 @@ await check('"only what they can ride" filters the list', async () => {
 });
 
 await check('search narrows results', async () => {
-  await a.locator('.field[aria-label="Search the park"]').fill('beast');
+  await a.locator('.field[aria-label="Search places"]').fill('beast');
   await a.waitForTimeout(500);
   const n = await a.locator('.poiRow').count();
-  await a.locator('.field[aria-label="Search the park"]').fill('');
+  await a.locator('.field[aria-label="Search places"]').fill('');
   await a.waitForTimeout(400);
   if (n !== 1) throw new Error(`got ${n} rows`);
   return true;
@@ -194,7 +203,7 @@ console.log('\n--- walking directions ---');
 
 await check('"walk me there" offers the route before setting off', async () => {
   await tab(a, 'Rides');
-  await a.locator('.field[aria-label="Search the park"]').fill('beast');
+  await a.locator('.field[aria-label="Search places"]').fill('beast');
   await a.waitForTimeout(400);
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
@@ -594,6 +603,137 @@ await check('the roster never collapses while the host is replaced', async () =>
   return true;
 });
 
+console.log('\n--- venues ---');
+
+// A phone that is at neither park: an hour up the interstate from Fiesta Texas,
+// and most of a continent from Kings Island. Its first fix is inside nothing,
+// which is exactly the case where guessing is worst and asking is best.
+const intake = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  permissions: ['geolocation'],
+  geolocation: { latitude: 30.2672, longitude: -97.7431 }, // Austin, Texas
+});
+const e = await intake.newPage();
+await e.goto(BASE, { waitUntil: 'domcontentloaded' });
+await hydrated(e);
+
+await check('the intake asks about the nearest park, not the default one', async () => {
+  await e.locator('button:has-text("Allow location")').click();
+  // Wait for the question itself, not merely for a heading: the location card
+  // is still up while the fix lands, and reading .gate h2 the moment it says
+  // anything gets "Waiting for a fix" rather than the park.
+  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — build")').count()) > 0, {
+    timeout: 25000,
+    label: 'the park question',
+  });
+  const heading = (await e.locator('.gate h2').innerText()).trim();
+  if (!/going to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  // And the guess it did not make is one tap away, with the distance that
+  // explains why it was not the guess.
+  const other = await e.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
+  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
+  return true;
+});
+
+await check('saying yes builds that park, geometry and places', async () => {
+  await e.locator('.gate .btn.primary:has-text("Yes — build")').click();
+  await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const shown = await e.locator('.brand b').innerText();
+  if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
+  // The places have to have come with it. Fiesta Texas ships no height data, so
+  // its own tab calls itself Places where Kings Island's calls itself Rides &
+  // heights — and the list behind it holds a ride only that park has.
+  await tab(e, 'Places');
+  await until(async () => (await e.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
+    timeout: 15000,
+    label: "Fiesta Texas's place list",
+  });
+  return true;
+});
+
+await check('the park answered stays answered across a reload', async () => {
+  await e.reload({ waitUntil: 'domcontentloaded' });
+  await hydrated(e);
+  await e.locator('button:has-text("Allow location")').click();
+  // Asked once. If the question came back, the gate would still be up here —
+  // nothing else in the intake waits on a fix that has already landed.
+  await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const shown = await e.locator('.brand b').innerText();
+  if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}" after reload`);
+  return true;
+});
+
+await intake.close();
+
+// A phone that is nowhere near the party. It should open on the venue its own
+// fix falls inside, then follow the party to the venue the host is standing in
+// — everyone in a party has to be drawing the same place for a meet-up pin to
+// mean anything.
+const D = await openPhone(browser, {
+  lat: 29.5992,
+  lng: -98.6145, // Six Flags Fiesta Texas, San Antonio
+  name: 'Remote',
+  label: 'D',
+});
+const d = D.page;
+const venueName = (page) => page.locator('.brand b').innerText();
+
+await check('a phone opens on the venue its own fix is inside', async () => {
+  const shown = await until(async () => /fiesta texas/i.test(await venueName(d)) || false, {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone D to open on Fiesta Texas',
+  });
+  return shown;
+});
+
+await check('joining a party moves the map to where the host is', async () => {
+  await tab(d, 'Party');
+  await d.locator('.field.code').fill(code);
+  await d.locator('button:has-text("Join")').click();
+  await until(async () => (await d.locator('.codeText').count()) > 0, {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone D to be in the party',
+  });
+  await until(async () => /kings island/i.test(await venueName(d)) || false, {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone D to follow the host to Kings Island',
+  });
+  return true;
+});
+
+await check('the picker measures from the party, not from this phone', async () => {
+  await tab(d, 'Me');
+  await d.waitForTimeout(400);
+  const rows = await d.locator('.venueRow').allTextContents();
+  const here = rows.find((r) => /Kings Island/.test(r));
+  const far = rows.find((r) => /Fiesta Texas/.test(r));
+  if (!/your party is here/.test(here || '')) throw new Error(`Kings Island row: "${here}"`);
+  if (!/from your party/.test(far || '')) throw new Error(`Fiesta Texas row: "${far}"`);
+  return true;
+});
+
+await check('picking a venue by hand outranks the host', async () => {
+  await d.locator('.venueRow', { hasText: 'Fiesta Texas' }).click();
+  await until(async () => /fiesta texas/i.test(await venueName(d)) || false, {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone D to show the venue it picked',
+  });
+  // The host has not moved, so anything that retargets on its own would pull
+  // the map back to Kings Island within a couple of heartbeats.
+  await d.waitForTimeout(6000);
+  if (!/fiesta texas/i.test(await venueName(d))) throw new Error('the pinned choice was overridden');
+  return true;
+});
+
+// Out again, so the roster the tests below assert on is the one they set up.
+await tab(d, 'Party');
+await d.locator('.codeBox button:has-text("Leave")').click();
+await until(async () => (await d.locator('button:has-text("Start a party")').count()) > 0, {
+  timeout: JOIN_TIMEOUT,
+  label: 'phone D to leave the party',
+}).catch(() => {});
+await D.context.close();
+
 console.log('\n--- leaving ---');
 
 await check('leaving removes the member from the other phone’s roster', async () => {
@@ -634,9 +774,9 @@ await check('height, theme and party survive a reload', async () => {
   await b.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
     timeout: 40000,
   });
-  const gate = b.locator('button:has-text("Allow location")');
-  if (await gate.count()) await gate.click();
-  await b.waitForSelector('.gate', { state: 'detached', timeout: 15000 });
+  // The park question is not asked twice: this phone answered it before the
+  // reload, so granting location is the whole of the intake this time.
+  await closeGate(b);
 
   if ((await b.locator('.filterBadge').count()) !== 1) throw new Error('height filter lost');
   if ((await b.evaluate(() => document.documentElement.dataset.theme)) !== theme) {
@@ -703,9 +843,9 @@ await check('the map still draws with the network cut', async () => {
 });
 
 await check('ride heights still work with the network cut', async () => {
-  const gate = off.locator('button:has-text("Allow location")');
-  if (await gate.count()) await gate.click();
-  await off.waitForSelector('.gate', { state: 'detached', timeout: 15000 });
+  // Including the park question, which this context has never answered: saying
+  // yes to the park already on screen must not go back to the network for it.
+  await closeGate(off);
   await tab(off, 'Rides');
   await off.waitForTimeout(500);
   await off.locator('.tier:has-text("48")').click();
@@ -720,7 +860,7 @@ await check('ride heights still work with the network cut', async () => {
 await offline.close();
 
 console.log('\n--- console errors ---');
-for (const phone of [A, B, C]) {
+for (const phone of [A, B, C, D]) {
   await check(`no page errors on phone ${phone.label}`, () => {
     if (phone.errors.length) throw new Error(phone.errors.slice(0, 3).join(' | '));
     return true;
