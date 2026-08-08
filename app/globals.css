@@ -92,7 +92,33 @@
   --r2: 10px;
   --r3: 12px;
   --r4: 14px;
+  --r5: 22px;
   --rCapsule: 999px;
+
+  /* ---- Liquid Glass ----
+     Glass is a lens, not a frosted pane. It is clearer than the old materials,
+     it bends and brightens what sits behind it, and it catches light along its
+     edge — a bright rim at the top where light refracts through the curve, a
+     dimmer bounce along the bottom, and a hairline ring all the way round.
+     That rim is what sells it; without it a blurred rectangle is just a
+     blurred rectangle.
+
+     Two depths: --glassTint for controls that carry only a glyph, and
+     --glassTintDeep for anything with words on it, which needs the extra
+     opacity to stay legible over a busy patch of map. */
+  --glassTint: rgba(40, 40, 44, .42);
+  --glassTintDeep: rgba(24, 24, 26, .76);
+  --glassRim: rgba(255, 255, 255, .34);
+  --glassRimLo: rgba(255, 255, 255, .10);
+  --glassRing: rgba(255, 255, 255, .14);
+  --lens: blur(20px) saturate(180%) brightness(1.14);
+  --lensLite: blur(14px) saturate(170%) brightness(1.10);
+  --lensDeep: blur(44px) saturate(180%) brightness(1.10);
+  --lensEdge:
+    inset 0 1px .5px var(--glassRim),
+    inset 0 -1px .5px var(--glassRimLo),
+    inset 0 0 0 .5px var(--glassRing);
+  --lensDrop: 0 1px 2px rgba(0, 0, 0, .28), 0 6px 20px rgba(0, 0, 0, .30);
 
   /* ---- materials ---- */
   --matThin: rgba(28, 28, 30, .64);
@@ -166,6 +192,16 @@
   --brown: #a2845e;
 
   --helpTint: rgba(255, 59, 48, .10);
+
+  --glassTint: rgba(255, 255, 255, .42);
+  --glassTintDeep: rgba(255, 255, 255, .76);
+  --glassRim: rgba(255, 255, 255, .92);
+  --glassRimLo: rgba(255, 255, 255, .42);
+  --glassRing: rgba(255, 255, 255, .58);
+  --lens: blur(20px) saturate(190%) brightness(1.06);
+  --lensLite: blur(14px) saturate(175%) brightness(1.04);
+  --lensDeep: blur(44px) saturate(190%) brightness(1.03);
+  --lensDrop: 0 1px 2px rgba(0, 0, 0, .10), 0 6px 20px rgba(0, 0, 0, .12);
 
   --matThin: rgba(255, 255, 255, .60);
   --matRegular: rgba(255, 255, 255, .72);
@@ -379,18 +415,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 
 .scaleBar {
-  position: absolute; left: 16px; bottom: calc(var(--sheetH) + 14px); z-index: 4;
+  position: absolute; left: 12px; bottom: calc(var(--sheetH) + 14px); z-index: 4;
   display: flex; align-items: center; gap: 7px; pointer-events: none;
+  padding: 5px 10px; border-radius: var(--rCapsule);
+  background: var(--glassTint);
+  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   transition: bottom var(--t3) var(--ease);
 }
 .scaleBar span {
   height: 3px; border-radius: 2px; background: var(--label2); display: block;
   max-width: 140px; transition: width var(--t1) linear;
-  box-shadow: 0 0 2px var(--bg);
 }
 .scaleBar em {
   font-style: normal; font-size: 11px; font-weight: 500; color: var(--label2);
-  letter-spacing: 0; text-shadow: 0 0 3px var(--bg);
+  letter-spacing: 0;
 }
 
 /* ---- zoom pad ---- */
@@ -400,10 +439,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .zoomPad {
   position: absolute; right: 12px; bottom: calc(var(--sheetH) + 142px); z-index: 5;
   display: flex; flex-direction: column;
-  border-radius: var(--r2); overflow: hidden;
-  background: var(--matThick); border: .5px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow1);
+  border-radius: var(--r5); overflow: hidden;
+  background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
               transform var(--t3) var(--ease);
 }
@@ -416,8 +455,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   color: var(--blue);
   transition: background var(--t1) linear, opacity var(--t1) linear;
 }
-.zoomBtn + .zoomBtn { border-top: .5px solid var(--sep); }
-.zoomBtn:active { background: var(--fill3); opacity: .6; }
+.zoomBtn + .zoomBtn { border-top: .5px solid var(--glassRing); }
+.zoomBtn:active { background: var(--glassRim); }
 
 /* ============================================================
    chrome — the floating material over the map
@@ -447,6 +486,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   padding: 2px 16px 8px;
 }
 .searchRow .searchField { flex: 1; min-width: 0; margin-bottom: 0; }
+.searchRow .field { border-radius: var(--rCapsule); }
 .avatarBtn {
   flex: none; width: 34px; height: 34px; border-radius: 50%;
   background: var(--fill3); color: var(--label2);
@@ -504,22 +544,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .iconBtn {
   pointer-events: auto; width: 44px; height: 44px; flex: none;
   display: grid; place-items: center;
-  background: var(--matChrome); border: .5px solid var(--glassEdge); border-radius: var(--r3);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow1);
+  background: var(--glassTint); border: none; border-radius: 50%;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   color: var(--blue);
   transition: transform var(--t1) var(--easeOut), color var(--t1) var(--easeOut),
               background var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
 }
-.iconBtn:active { opacity: .5; transform: scale(.96); }
-.iconBtn.on { background: var(--blue); color: var(--onTint); border-color: transparent; }
+.iconBtn:active { transform: scale(.93); background: var(--glassTintDeep); }
+.iconBtn.on { background: var(--blue); color: var(--onTint); box-shadow: var(--lensEdge), var(--lensDrop); }
 
 .tape {
   position: absolute; left: 12px; right: 12px; top: calc(var(--top) + 66px); z-index: 38;
-  height: 48px; background: var(--matChrome); border: .5px solid var(--glassEdge);
-  border-radius: var(--r3);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow1);
+  height: 48px; background: var(--glassTintDeep); border: none;
+  border-radius: var(--r5);
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   overflow: hidden;
   animation: riseIn var(--t2) var(--easeOut) both;
 }
@@ -538,19 +578,19 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .fab {
   width: 48px; height: 48px; border-radius: var(--rCapsule);
   display: grid; place-items: center;
-  background: var(--matChrome); border: .5px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow1);
+  background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   color: var(--blue);
   animation: popIn var(--t2) var(--easeOut) both;
   transition: transform var(--t1) var(--easeOut), background var(--t1) var(--easeOut),
               color var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
 }
 .fabs .fab:nth-child(2) { animation-delay: .04s; }
-.fab:active { opacity: .5; transform: scale(.96); }
-.fab.active { background: var(--blue); color: var(--onTint); border-color: transparent; }
+.fab:active { transform: scale(.93); background: var(--glassTintDeep); }
+.fab.active { background: var(--blue); color: var(--onTint); box-shadow: var(--lensEdge), var(--lensDrop); }
 .fab.armed {
-  background: var(--red); color: var(--onTint); border-color: transparent;
+  background: var(--red); color: var(--onTint);
   animation: popIn var(--t2) var(--easeOut) both, armedRing 1.6s ease-out infinite .3s;
 }
 @keyframes armedRing {
@@ -567,16 +607,23 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    unreachable at the half stop. */
 .sheet {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 45;
-  background: var(--matChrome);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  border-top: .5px solid var(--glassEdge);
-  border-radius: var(--r2) var(--r2) 0 0;
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  border-top: none;
+  border-radius: var(--r4) var(--r4) 0 0;
   display: flex; flex-direction: column;
   height: var(--peek); max-height: 88vh;
   transition: height var(--t3) var(--ease);
-  box-shadow: var(--shadow3);
+  box-shadow: var(--lensEdge), var(--shadow3);
   animation: sheetUp var(--t4) var(--ease) both;
 }
+.sheet::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glassRim) 22%,
+              var(--glassRim) 78%, transparent);
+  pointer-events: none;
+}
+.sheet.half::before, .sheet.full::before { content: none; }
 .sheet.half { height: 52vh; }
 .sheet.full { height: 88vh; }
 .sheet.half, .sheet.full {
@@ -627,7 +674,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .labelRight { text-transform: none; letter-spacing: -.08px; }
 .btn {
   display: block; width: 100%; min-height: 50px; padding: 14px;
-  border-radius: var(--r3);
+  border-radius: var(--rCapsule);
   background: var(--fill3); border: none;
   font-size: 17px; font-weight: 600; letter-spacing: -.4px; text-align: center;
   color: var(--blue);
@@ -865,13 +912,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   position: absolute; left: 50%; z-index: 80;
   /* Clear of the scale bar, which owns the strip directly above the sheet. */
   bottom: calc(var(--sheetH) + 52px + var(--bot));
-  background: var(--matThick); color: var(--label);
-  border: .5px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  background: var(--glassTintDeep); color: var(--label);
+  border: none;
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
   padding: 11px 18px; border-radius: var(--rCapsule);
   font-size: 15px; font-weight: 500; letter-spacing: -.24px;
   max-width: 88%; text-align: center;
-  box-shadow: var(--shadow2);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   transform: translateX(-50%);
   animation: toastPop var(--t2) var(--easeOut) both;
   transition: bottom var(--t3) var(--ease);
@@ -1111,6 +1158,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThin: var(--bg2); --matRegular: var(--bg2);
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
+    --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
   }
 }
 
@@ -1232,11 +1280,11 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 /* ---- the bar at the bottom, in place of the sheet ---- */
 .navBar {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 46;
-  background: var(--matChrome);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  border-top: .5px solid var(--glassEdge);
-  border-radius: var(--r2) var(--r2) 0 0; padding: 12px 16px calc(14px + var(--bot));
-  box-shadow: var(--shadow3);
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  border-top: none;
+  border-radius: var(--r4) var(--r4) 0 0; padding: 12px 16px calc(14px + var(--bot));
+  box-shadow: var(--lensEdge), var(--shadow3);
 }
 .navBarRow { display: flex; align-items: center; gap: 12px; }
 .navEnd {
@@ -1269,11 +1317,11 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 /* ---- the choice you make before setting off ---- */
 .routePreview {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 46;
-  background: var(--matChrome);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  border-top: .5px solid var(--glassEdge);
-  border-radius: var(--r2) var(--r2) 0 0; padding: 16px 16px calc(16px + var(--bot));
-  box-shadow: var(--shadow3);
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  border-top: none;
+  border-radius: var(--r4) var(--r4) 0 0; padding: 16px 16px calc(16px + var(--bot));
+  box-shadow: var(--lensEdge), var(--shadow3);
 }
 .previewHead { display: flex; align-items: center; gap: 14px; }
 .previewMain { flex: 1; min-width: 0; }
