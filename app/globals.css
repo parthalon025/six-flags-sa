@@ -16,7 +16,9 @@
   /* The peek stop has to stand the search field, the glance rail and the tab
      bar at once. Tracked in page.js as PEEK_PX — the map lays its labels out
      against the same number. */
-  --peek: 320px;
+  --peek: 286px;
+  /* The tint the tab bar stands on, over the sheet's own glass. */
+  --tabBarFill: color-mix(in srgb, var(--bg2) 42%, transparent);
 
   /* ---- backgrounds ---- */
   --bg: #000000;
@@ -737,11 +739,15 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* ---- a tab's own root: the large title a phone puts at the top ---- */
 .sheetHead { flex: none; padding: 2px 16px 10px; }
+/* Title 1. The tracking is positive on purpose: the curve tightens to a
+   minimum around 19–20pt and opens back up above it, so the reflex of
+   "bigger means tighter" has this one backwards. See the table in :root. */
 .sheetHead h2 {
-  margin: 0; font-size: 28px; font-weight: 700; line-height: 34px; letter-spacing: -.4px;
+  margin: 0; font-size: 28px; font-weight: 700; line-height: 34px; letter-spacing: .38px;
 }
 .sheetHead span {
   display: block; margin-top: 2px;
+  /* Footnote. */
   font-size: 13px; font-weight: 400; line-height: 18px; letter-spacing: -.08px;
   color: var(--label2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -760,8 +766,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   flex: none; display: flex; align-items: stretch;
   padding: 4px 6px 6px; border-top: .5px solid var(--sep);
   /* The map scrolls past behind the glass, so the bar needs its own footing or
-     the labels sit on whatever colour happens to be under them. */
-  background: color-mix(in srgb, var(--bg2) 42%, transparent);
+     the labels sit on whatever colour happens to be under them. A token, not a
+     literal, because the reduced-transparency and increased-contrast blocks
+     have to be able to make this opaque along with every other material. */
+  background: var(--tabBarFill);
 }
 .sheet.full .tabBar {
   background: var(--grouped);
@@ -783,8 +791,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: transform var(--t2) var(--ease);
 }
 .tabItem.on .tabGlyph .icn { transform: scale(1.06); }
+/* Caption 2. Apple's own tab-bar label is 10pt and is not in the published
+   table; this is the nearest style that is, and one point larger is no loss on
+   a control this size. Its tracking is positive because the curve opens back
+   up below the minimum as well as above it. */
 .tabLabel {
-  font-size: 10px; font-weight: 500; line-height: 12px; letter-spacing: 0;
+  font-size: 11px; font-weight: 500; line-height: 13px; letter-spacing: .06px;
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tabItem.on .tabLabel { font-weight: 600; }
@@ -803,7 +815,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   min-width: 17px; height: 17px; padding: 0 5px; border-radius: var(--rCapsule);
   display: grid; place-items: center;
   background: var(--gray); color: var(--onTint);
-  font-size: 11px; font-weight: 600; line-height: 17px; letter-spacing: 0;
+  font-size: 11px; font-weight: 600; line-height: 17px; letter-spacing: .06px;
   font-variant-numeric: tabular-nums;
   animation: popIn var(--t2) var(--easeOut) both;
 }
@@ -1133,17 +1145,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* ============================================================
    glance rail — the live dashboard in the sheet's peek state
    ============================================================ */
+/* The rail's height is the collapsed sheet's height, and the collapsed sheet's
+   height is map you cannot see. So the card carries what answers "which way,
+   and how long" and nothing that merely could be shown: time and range share a
+   line, and the compass point came off the foot because the arrow beside the
+   time is the same answer, aimed relative to the way you are facing. */
 .glanceRail {
-  flex: none; min-height: 128px;
+  flex: none; min-height: 104px;
   display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 4px 16px 12px; scrollbar-width: none;
+  padding: 4px 16px 10px; scrollbar-width: none;
 }
 .glanceRail::-webkit-scrollbar { display: none; }
 .glanceCard {
   flex: none; width: 158px; scroll-snap-align: start; text-align: left;
   background: var(--glassTint);
   border: none;
-  border-radius: var(--r3); padding: 11px 13px 12px;
+  border-radius: var(--r3); padding: 10px 13px 10px;
   display: flex; flex-direction: column; gap: 1px;
   box-shadow: var(--shadow1);
   animation: railIn var(--t2) var(--easeOut) both;
@@ -1162,28 +1179,41 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .glanceCard.selected { box-shadow: var(--shadow1), 0 0 0 2px var(--blue); }
 .glanceCard.stale { opacity: .45; }
+/* Footnote. The line-height is stated rather than inherited: without it this
+   picks up the body's 22px and quietly costs the rail four pixels. */
 .glanceEyebrow {
-  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
+  font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.08px;
+  text-transform: none;
   padding-right: 40px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.glanceMain { display: flex; align-items: center; gap: 9px; margin: 4px 0 2px; }
+.glanceMain { display: flex; align-items: center; gap: 9px; margin: 3px 0 1px; }
 .glanceArrow {
   width: 22px; height: 22px; flex: none;
   transition: transform var(--t3) var(--easeOut);
 }
-.glanceWalk { display: flex; flex-direction: column; line-height: 1; }
-.glanceWalk b { font-size: 20px; font-weight: 600; letter-spacing: -.45px; font-variant-numeric: tabular-nums; }
-.glanceWalk em {
-  font-style: normal; font-size: 12px; color: var(--label2); margin-top: 4px;
+/* Title 3 beside Caption 1, on one baseline, and neither of them allowed to
+   wrap: "<1 min" breaking over two lines takes the card past the rail's height
+   and the bottom of it disappears under the tab bar. The time is never
+   shortened, so it keeps its width; the range gives way and truncates. */
+.glanceWalk { display: flex; align-items: baseline; gap: 5px; min-width: 0; flex-wrap: nowrap; }
+.glanceWalk b {
+  flex: none; white-space: nowrap;
+  font-size: 20px; font-weight: 600; line-height: 25px; letter-spacing: -.45px;
   font-variant-numeric: tabular-nums;
 }
+.glanceWalk em {
+  flex: 0 1 auto; min-width: 0;
+  font-style: normal; font-size: 12px; line-height: 16px; letter-spacing: 0;
+  color: var(--label2); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .glanceTitle {
-  font-size: 15px; font-weight: 400; letter-spacing: -.24px;
+  font-size: 15px; font-weight: 400; line-height: 20px; letter-spacing: -.23px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .glanceFoot {
-  font-size: 12px; color: var(--label3);
+  font-size: 12px; line-height: 16px; letter-spacing: 0; color: var(--label3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .glanceEmpty {
@@ -1438,6 +1468,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
     --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
     --onGlass: var(--bg3);
   }
 }
@@ -1845,6 +1876,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThin: var(--bg2); --matRegular: var(--bg2);
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
     --lens: none; --lensLite: none; --lensDeep: none;
     --blur: none; --blurLite: none;
     --lensEdge: inset 0 0 0 .5px var(--sep);
@@ -1888,6 +1920,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThin: var(--bg2); --matRegular: var(--bg2);
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
     --lens: none; --lensLite: none; --lensDeep: none;
     --blur: none; --blurLite: none;
     --lensEdge: inset 0 0 0 1px var(--sep);

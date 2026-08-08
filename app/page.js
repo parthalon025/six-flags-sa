@@ -95,7 +95,7 @@ const LEGACY_IDENTITY_KEY = 'ki-identity';
    standing on is the height plus that gap; at the full stop it is anchored and
    there is no gap. The peek stop is what it is because it has to stand the
    search field, the glance rail and the tab bar all at once. */
-const PEEK_PX = 320;
+const PEEK_PX = 286;
 const SHEET_PEEK_PX = PEEK_PX + 8;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
 const SHEET_INSET = { half: 5, full: 0 };
@@ -264,13 +264,28 @@ export default function Page() {
   );
 
   /**
-   * Back one screen — through history, so that the sheet's own back button and
-   * the phone's back gesture take exactly the same path and cannot disagree
-   * about where they are.
+   * Up one level — what the button in the sheet's navigation bar means.
+   *
+   * This is deliberately not `history.back()`, which is the *other* back and a
+   * different question. The phone's back retraces: it undoes the last move you
+   * made, wherever that was. This one climbs: it takes the top screen off the
+   * stack you are looking at. They agree almost always and part company as
+   * soon as tabs remember where they were left — leave a screen open on Me,
+   * visit Rides, come back, and retracing lands on Rides while climbing goes
+   * up to Me's root. Next to a title, in a navigation bar, "Back" can only
+   * sensibly mean the second one.
+   *
+   * The entry it is standing on is corrected on the way, so a later retrace
+   * through here shows what was actually on screen at the time.
    */
   const pop = useCallback(() => {
-    window.history.back();
-  }, []);
+    const { tab: at, stacks: cur } = navRef.current;
+    const onIt = cur[at] || EMPTY_STACK;
+    if (!onIt.length) return;
+    const next = { tab: at, stacks: { ...cur, [at]: onIt.slice(0, -1) } };
+    applyNav(next, 'fromLeft');
+    window.history.replaceState({ ...window.history.state, tracker: next }, '');
+  }, [applyNav]);
 
   /**
    * Move along the tab bar. Tapping the tab you are already on unwinds that
@@ -282,9 +297,12 @@ export default function Page() {
       const current = tabRef.current;
       const { stacks: cur } = navRef.current;
       if (id === current) {
-        // Unwinding is going back, however many screens deep it is.
-        const depth = cur[id]?.length ?? 0;
-        if (depth) window.history.go(-depth);
+        // Unwinding to the root is climbing, like the back button above, so it
+        // goes the same way: straight there, correcting the entry it is on.
+        if (!cur[id]?.length) return;
+        const next = { tab: id, stacks: { ...cur, [id]: [] } };
+        applyNav(next, 'fromLeft');
+        window.history.replaceState({ ...window.history.state, tracker: next }, '');
         return;
       }
       goForward(
@@ -296,7 +314,7 @@ export default function Page() {
       // up far enough to have something on them.
       if (id !== 'explore') setSheet((h) => (h === 'peek' ? 'half' : h));
     },
-    [goForward],
+    [goForward, applyNav],
   );
 
   // The browser handing back an earlier snapshot is the only thing that ever
@@ -755,12 +773,8 @@ export default function Page() {
     const explore = cur.explore || EMPTY_STACK;
     if (explore.includes('route')) {
       const next = { tab: at, stacks: { ...cur, explore: explore.filter((v) => v !== 'route') } };
-      if (at === 'explore' && explore[explore.length - 1] === 'route') {
-        window.history.back();
-      } else {
-        applyNav(next, 'fromLeft');
-        window.history.replaceState({ ...window.history.state, tracker: next }, '');
-      }
+      applyNav(next, 'fromLeft');
+      window.history.replaceState({ ...window.history.state, tracker: next }, '');
     }
     setSheet('peek');
   }, [applyNav]);
