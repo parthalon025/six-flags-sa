@@ -51,7 +51,7 @@ export async function POST(request, { params }) {
     // anonymous request makes the store grow. So the charge lands on the
     // request that actually brings a mailbox into being, not on the party.
     if (!(await partyExists(partyId)) && !(await mailboxExists(partyId))) {
-      const opening = await rateLimit('mailboxCreate', clientIp(request) ?? 'unknown');
+      const opening = await rateLimit('storeCreate', clientIp(request) ?? 'unknown');
       if (!opening.ok) return tooManyRequests(opening.retryAfter);
     }
 
