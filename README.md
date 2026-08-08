@@ -7,9 +7,27 @@ Next.js 15 (App Router) and React 19.
   real OpenStreetMap geometry for Kings Island, projected to Web Mercator and painted
   as SVG: midways, buildings, water, Soak City slides, and every coaster's actual track
   centreline. Pan with one finger, pinch or scroll to zoom.
-- **Height requirements on all 65 rides.** Drag one slider to a rider's height and the
-  map dims everything they can't get on, with a running tally of what's open, what needs
-  an adult along, and what's closed.
+- **Symbols you can read, not dots you have to decode.** Every place carries three
+  redundant channels — shape, colour and a glyph. A solid disc is something you came for,
+  a light chip is something you need, a diamond is a landmark and a pin is a gate; inside
+  it sits a fork and knife, a restroom pair, a shopping bag, a medical cross, an Eiffel
+  Tower. Colour alone would fail the ~8% of men with a red-green deficiency, for whom the
+  night palette's coaster red, ride purple and landmark pink are the same dot. The key
+  lives on the map itself, bottom left, and every row in it is also the switch that turns
+  that category on and off.
+- **Nothing is drawn on top of anything else.** Land names, markers and place names all
+  bid for the same pixels in importance order, and whatever will not fit is dropped
+  rather than overprinted. Land names lie along their land the way a printed park map
+  lays them out, clamped to the part of it you can actually see. A name that cannot go
+  above its marker tries below, right and left before giving up.
+- **Tap a coaster and its own track lights up.** The park's 121 red polylines each carry
+  a ride name in the source data, so Diamondback's helix stops being one squiggle among
+  many. The tap also puts a callout on the map: name, distance, height rule.
+- **Height requirements on all 65 rides.** Drag one slider to a rider's height and every
+  ride that is out today goes hollow and struck through on the map — not merely faded,
+  because fading is what a party member we have not heard from looks like — while rides
+  that need a grown-up along get a plus badge. Plus a running tally of what's open, what
+  needs an adult, and what's closed.
 - **Live party tracking.** One person starts a party and hosts it on their own phone;
   everyone else joins by scanning the QR, opening the invite link, or typing the
   6-character code. Range in feet, compass bearing, nearest ride, status and staleness
@@ -42,6 +60,9 @@ Next.js 15 (App Router) and React 19.
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
   reports their range and bearing.
+- **A scale bar that is telling the truth.** It picks a distance people round to — 100 ft,
+  250 ft, half a mile — and then measures it, rather than drawing a fixed width and naming
+  it afterwards. A compass rose beside it keeps north findable once the map turns.
 
 ## Get it running
 
@@ -246,8 +267,10 @@ Stated plainly rather than stubbed to look finished:
 
 - **Background location.** There is no web API for it. When the screen locks, the page is
   suspended and positions stop updating — a phone in a pocket goes stale rather than
-  reporting a stale position as live. The map dims that person after 5 minutes. Fixing
-  this needs a native wrapper with the OS background-location permission.
+  reporting a stale position as live. After 5 minutes the map rings that person with a
+  broken circle and prints how long ago it heard from them, and stops drawing the arrow
+  for which way they were walking. Fixing this needs a native wrapper with the OS
+  background-location permission.
 - **BLE advertising and discovery**, as above.
 - **A phone acting as an HTTP listener**, and `party.local` mDNS resolution. The host
   phone runs the party *service*; peers reach it over WebRTC, not a socket it opened.
@@ -268,7 +291,11 @@ npm run test:ux                     # glance rail with a live party
 suppression, seal/open against wrong keys and tampered ciphertext, the election ordering,
 every GPS cadence band and broadcast-gate reason, and the router — the last of those
 against the real park file rather than a fixture, because a graph that routes perfectly
-over a toy and badly over Kings Island is the failure worth catching.
+over a toy and badly over Kings Island is the failure worth catching. The map's own
+layout logic is in there too: the decluttering grid checked against brute force, glyph
+art checked to stay inside the shape drawn round it, every named piece of coaster track
+checked to belong to a ride in the catalogue, and the scale bar checked to span the
+distance it claims at every zoom the map allows.
 
 `test/functional.mjs` is the one that matters. Three phones in one browser: A hosts, B
 joins by typing the code, C joins from the invite link, then A is taken away and the
@@ -337,6 +364,8 @@ lib/partyRuntime.js           the seam: session, transports, host service or cli
 lib/geo.js                    distance, bearing, Mercator projection
 lib/routing.js                path graph, repair passes, A*, turn-by-turn
 lib/park.js  lib/theme.js     POIs and height eligibility; day/night palettes
+lib/mapSymbols.js             the symbol vocabulary: shapes, glyphs, ranks, ink
+lib/mapLabels.js              decluttering grid, land-name geometry, scale bar
 lib/rides.json                152 places, 65 with height rules
 lib/serverStore.js            memory / Upstash backend for the cloud fallback
 app/
@@ -345,7 +374,9 @@ app/
   api/mailbox/…               the relay
   api/…                       party, members, location, rides, health, metrics
 components/
-  ParkMap.jsx                 SVG renderer, pan + pinch zoom
+  ParkMap.jsx                 SVG renderer, pan + pinch zoom, label layout
+  MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
+  MapLegend.jsx               the on-map key, which is also the category filter
   GlanceRail.jsx              the live card rail in the collapsed sheet
   PartyPanel.jsx              roster, QR, join, status, meet-up
   QrScanner.jsx               camera join; says so plainly where unsupported

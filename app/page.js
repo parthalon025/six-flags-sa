@@ -45,6 +45,15 @@ const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
 
 const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
 
+/* What the sheet is standing on in each of its states, so the map can lay its
+   labels out above the furniture rather than behind it. Two numbers are read
+   off the stylesheet — the peek height and the sheet's two open fractions —
+   and one is the nav bar that replaces the sheet while you are walking. */
+const SHEET_PEEK_PX = 182;
+const SHEET_OPEN = { half: 0.52, full: 0.88 };
+const NAV_BAR_PX = 96;
+const PREVIEW_PX = 210;
+
 /** How often the broadcast gate is asked whether the current fix is worth sending. */
 const GATE_TICK_MS = 4000;
 
@@ -87,6 +96,20 @@ export default function Page() {
   const [northUp, setNorthUp] = useState(false);
   const [voice, setVoice] = useState(false);
   const [rerouted, setRerouted] = useState(0);
+  // The sheet's open states are fractions of the viewport, so its height in
+  // pixels is only knowable once there is a window to ask.
+  const [viewportH, setViewportH] = useState(844);
+
+  // Shared by the sheet's chips and the map's own key, which are two views of
+  // the same switch.
+  const toggleCategory = useCallback((key) => {
+    setCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   const runtime = useRef(null);
   const lastRoute = useRef(null);
@@ -145,6 +168,13 @@ export default function Page() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  useEffect(() => {
+    const measure = () => setViewportH(window.innerHeight);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
   // Close the gate when the fix actually lands. Checking this inside the
   // "Allow location" handler cannot work: the permission prompt and the first
   // fix are both async, so status is still 'asking' when the click returns and
@@ -201,6 +231,7 @@ export default function Page() {
         lat: m.location?.lat,
         lng: m.location?.lng,
         acc: m.location?.acc ?? null,
+        heading: Number.isFinite(m.location?.heading) ? m.location.heading : null,
         ts: m.location?.ts ?? m.lastSeen,
         colour: colourFor(m.id),
         initials: initialsFor(m.name),
@@ -310,13 +341,16 @@ export default function Page() {
   };
 
   /* ---------- derived ---------- */
-  const dimmedNames = useMemo(() => {
+  /* The map is told the verdict, not just the refusals. Fading a ride out was
+     ambiguous — it looked exactly like a party member we had not heard from —
+     so ParkMap now draws "too short" and "needs a grown-up" as symbols, and
+     that needs the whole answer rather than a set of names to dim. */
+  const rideEligibility = useMemo(() => {
     if (height == null) return null;
-    const out = new Set();
+    const out = new Map();
     POIS.forEach((p) => {
       if (p.c !== 'coaster' && p.c !== 'ride') return;
-      const v = eligibility(p, height, withAdult);
-      if (v === 'no' || v === 'toobig') out.add(p.n);
+      out.set(p.n, eligibility(p, height, withAdult));
     });
     return out;
   }, [height, withAdult]);
@@ -605,8 +639,14 @@ export default function Page() {
     previewing ? 'stowed' : ''
   }`;
 
+  // The same states, as a number of pixels, for the map's own layout.
+  const stowed = previewing || (walking && sheet === 'peek');
+  const floorPx = stowed
+    ? (previewing ? PREVIEW_PX : NAV_BAR_PX)
+    : Math.round((SHEET_OPEN[sheet] ?? 0) * viewportH) || SHEET_PEEK_PX;
+
   return (
-    <main className="app">
+    <main className="app" data-sheet={stowed ? 'stowed' : sheet} style={{ '--floor': `${floorPx}px` }}>
       <ParkMap
         data={mapData}
         pois={POIS}
@@ -620,17 +660,20 @@ export default function Page() {
         follow={follow}
         onUserPan={() => setFollow(false)}
         heading={heading}
-        dimmedNames={dimmedNames}
+        rideEligibility={rideEligibility}
         visibleCategories={categories}
+        onToggleCategory={toggleCategory}
         focusPoint={focusPoint}
         theme={theme}
         route={navTarget ? route : null}
         routeStep={walking ? progress?.step ?? null : null}
         routeAhead={routeAhead}
         routeDone={routeDone}
+        routeTargetName={navTarget?.kind === 'poi' ? navTarget.label : null}
         alternatives={shownAlternatives}
         onPickAlternative={setPick}
         puck={puck}
+        bottomInset={floorPx}
         rotation={rotation}
         liftCentre={walking ? 0.2 : previewing ? -0.12 : 0}
         navZoom={walking ? 3 : null}
@@ -927,14 +970,7 @@ export default function Page() {
                     key={key}
                     type="button"
                     className={`chip ${categories.has(key) ? 'on' : ''}`}
-                    onClick={() =>
-                      setCategories((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(key)) next.delete(key);
-                        else next.add(key);
-                        return next;
-                      })
-                    }
+                    onClick={() => toggleCategory(key)}
                   >
                     {cat.label}
                   </button>
