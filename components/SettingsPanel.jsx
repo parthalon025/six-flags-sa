@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
 
 /* Settings, arranged the way Settings is: short groups of rows, a value on the
@@ -19,9 +20,41 @@ export default function SettingsPanel({
   categoryTotal,
   venueName,
   onPush,
+  pushKinds = null,
+  pushPrefs = null,
+  onPushPref = null,
+  pushState = 'idle',
+  onEnablePush = null,
+  pushNeedsInstall = false,
 }) {
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [armDiag, setArmDiag] = useState(false);
+  useEffect(() => {
+    if (!armDiag) return undefined;
+    const t = setTimeout(() => setArmDiag(false), 5000);
+    return () => clearTimeout(t);
+  }, [armDiag]);
+
   return (
     <div>
+      <div className="rowList">
+        <button type="button" className="row" onClick={() => setHelpOpen((v) => !v)} aria-expanded={helpOpen}>
+          <span className="rowText">What all this means</span>
+          <span className="rowValue">{helpOpen ? 'Hide' : 'Read'}</span>
+        </button>
+      </div>
+      {helpOpen && (
+        <p className="fine block">
+          A <b>party</b> is your group. One phone starts one and reads out the six-character code;
+          everyone else types it in, scans the square, or opens the link. After that each phone
+          shows the others as coloured dots, with how far away they are and how long it takes to
+          walk there. A <b>meet-up</b> is one spot everybody agrees on, and anyone can set it. The
+          phone that started the party <b>hosts</b> it, which only means it keeps the list — if it
+          goes flat another phone picks the list up on its own, and nobody has to do anything.
+          Nothing you do here is visible outside your party.
+        </p>
+      )}
+
       <div className="label">Your Name in the Roster</div>
       <input
         className="field"
@@ -70,6 +103,51 @@ export default function SettingsPanel({
         </button>
       </div>
 
+      {pushKinds && (
+        <>
+          <div className="label">Tell Me On This Phone</div>
+          {pushState === 'granted' ? (
+            <div className="rowList">
+              {Object.entries(pushKinds).map(([key, spec]) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="row"
+                  onClick={() => onPushPref?.(key, !pushPrefs?.[key])}
+                  aria-pressed={Boolean(pushPrefs?.[key])}
+                >
+                  <span className="rowText">{spec.label}</span>
+                  <span className="rowValue">{pushPrefs?.[key] ? 'On' : 'Off'}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn"
+                onClick={onEnablePush}
+                disabled={pushNeedsInstall || pushState === 'unsupported'}
+              >
+                Turn on notifications
+              </button>
+              <p className="fine">
+                {pushNeedsInstall
+                  ? 'On an iPhone this works once the app is on your Home Screen — see “Install on this phone” below.'
+                  : pushState === 'denied'
+                    ? 'Your phone is blocking them for this site. Turn them back on in its settings, then come back here.'
+                    : 'Without these, a phone in a pocket shows nothing when somebody in your party needs you.'}
+              </p>
+            </>
+          )}
+          {pushState === 'granted' && (
+            <p className="fine">
+              {pushKinds.quiet.hint}
+            </p>
+          )}
+        </>
+      )}
+
       <div className="label">Location</div>
       <div className="rowList">
         <button type="button" className="row" onClick={onLocationSettings}>
@@ -90,8 +168,16 @@ export default function SettingsPanel({
 
       <div className="label">Advanced</div>
       <div className="rowList">
-        <button type="button" className="row" onClick={() => onPush('diagnostics')}>
+        {/* "Frames sent / Version gaps / Electing" one tap from the top of a
+            settings screen is somewhere to get lost. It takes a deliberate
+            press to open now, and says so. */}
+        <button
+          type="button"
+          className="row"
+          onClick={() => (armDiag ? onPush('diagnostics') : setArmDiag(true))}
+        >
           <span className="rowText">Diagnostics</span>
+          <span className="rowValue">{armDiag ? 'Tap again to open' : 'For fault-finding'}</span>
         </button>
       </div>
     </div>

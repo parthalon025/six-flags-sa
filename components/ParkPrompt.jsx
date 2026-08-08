@@ -67,7 +67,7 @@ export default function ParkPrompt({
           disabled={busy}
           onClick={() => onConfirm?.(venue.id)}
         >
-          {busy ? 'Building the map…' : `Yes — build ${venue.name}`}
+          {busy ? 'Setting it up…' : `Yes — set up ${venue.name}`}
         </button>
 
         {options.length > 0 && (
@@ -100,7 +100,7 @@ export default function ParkPrompt({
         <p className="gateFine">
           {data ? `${venue.name} is ${data}. ` : ''}
           Everything is fetched once and kept on this phone, so the map still draws
-          in a queue with no signal. Change parks any time under Settings &rarr; Which map.
+          in a queue with no signal. Change parks any time under Me &rarr; Which map.
         </p>
       </div>
     </div>

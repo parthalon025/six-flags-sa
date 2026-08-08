@@ -34,7 +34,7 @@ export default function NavBar({
     <section className="navBar">
       <div className="navBarRow">
         <button type="button" className="navEnd" onClick={onStop}>
-          End
+          Stop
         </button>
         <button type="button" className="navSummary" onClick={onSteps}>
           <b>{clockAt(seconds)}</b>

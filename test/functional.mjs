@@ -477,7 +477,10 @@ await check('roster shows a real distance to phone B', async () => {
 });
 
 await check('NEED HELP propagates to the other phone', async () => {
-  await b.locator('.chip:has-text("NEED HELP")').click();
+  // Two taps on purpose: the alert buzzes every phone in the party, so it is
+  // not a thing a resting thumb can send.
+  await b.locator('button:has-text("I need help")').click();
+  await b.locator('button:has-text("Tap again to alert everyone")').click();
   await until(
     async () => a.locator('.memberRow', { hasText: 'Ava' }).locator('.chipTag.hot').count(),
     { timeout: JOIN_TIMEOUT, label: 'the help tag on phone A' },
@@ -764,7 +767,7 @@ await check('the intake asks about the nearest park, not the default one', async
   // Wait for the question itself, not merely for a heading: the location card
   // is still up while the fix lands, and reading .gate h2 the moment it says
   // anything gets "Waiting for a fix" rather than the park.
-  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — build")').count()) > 0, {
+  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
     timeout: 25000,
     label: 'the park question',
   });
@@ -778,7 +781,7 @@ await check('the intake asks about the nearest park, not the default one', async
 });
 
 await check('saying yes builds that park, geometry and places', async () => {
-  await e.locator('.gate .btn.primary:has-text("Yes — build")').click();
+  await e.locator('.gate .btn.primary:has-text("Yes — set up")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
@@ -894,7 +897,9 @@ await check('leaving removes the member from the other phone’s roster', async 
   const leaver = bHosts ? { page: c, name: 'Sam' } : { page: b, name: 'Ava' };
   const stays = bHosts ? b : c;
 
+  // Leaving confirms too — for the host it hands the roster to another phone.
   await leaver.page.locator('.codeBox button:has-text("Leave")').click();
+  await leaver.page.locator('.codeBox button:has-text("Tap to confirm")').click();
   await until(async () => (await leaver.page.locator('button:has-text("Start a party")').count()) > 0, {
     timeout: JOIN_TIMEOUT,
     label: 'the leaver to be back on the start screen',
