@@ -1,7 +1,7 @@
 'use client';
 
 import { formatDistance } from '@/lib/geo';
-import { SpeakerIcon } from '@/components/Icons';
+import Icon from '@/components/Icon';
 
 /* The bottom bar, in place of the sheet while a route is running: when you get
    there, how long it takes, how far, and the button that stops it. Arrival
@@ -50,7 +50,7 @@ export default function NavBar({
             aria-pressed={voice}
             aria-label={voice ? 'Mute spoken directions' : 'Speak directions'}
           >
-            <SpeakerIcon muted={!voice} />
+            <Icon name={voice ? 'speaker.wave.2.fill' : 'speaker.slash.fill'} size={20} />
           </button>
           <button
             type="button"
@@ -58,9 +58,7 @@ export default function NavBar({
             onClick={onCompass}
             aria-label={northUp ? 'Turn the map with you' : 'Face the map north'}
           >
-            <svg viewBox="0 0 24 24" className="navCompass" aria-hidden="true">
-              <path d="M12 3 L16 20 L12 16 L8 20 Z" fill="currentColor" />
-            </svg>
+            <Icon name="location.north.fill" size={20} className="icn navCompass" />
           </button>
         </div>
       </div>

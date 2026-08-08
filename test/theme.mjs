@@ -8,7 +8,7 @@
  *   npm start &
  *   npm run test:theme
  */
-import { BASE, launch } from './browser.mjs';
+import { BASE, go, launch, root } from './browser.mjs';
 
 const b = await launch();
 const c = await b.newContext({
@@ -51,10 +51,10 @@ async function wear(theme) {
 
 async function capture(theme, mapShot, ridesShot) {
   await wear(theme);
-  await p.getByRole('tab', { name: /^Party/ }).click().catch(() => {});
+  await root(p);
   await p.waitForTimeout(700);
   await p.screenshot({ path: `test/shots/${mapShot}` });
-  await p.getByRole('tab', { name: /Rides & heights/ }).click().catch(() => {});
+  await go(p, 'Rider height');
   await p.waitForTimeout(700);
   await p.screenshot({ path: `test/shots/${ridesShot}` });
   console.log(`  ${theme}: ${mapShot}, ${ridesShot}`);

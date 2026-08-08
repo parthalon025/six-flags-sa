@@ -5,28 +5,13 @@ import { bearing, cardinal, distance, formatDistance } from '@/lib/geo';
 
 const SPAN = 140;
 
-/* The tape is drawn on a canvas, so it cannot inherit the stylesheet the
-   way the rest of the chrome does — it has to go and read it. These are
-   the same tokens every other surface uses, resolved once per paint, so
-   the tape changes with the day/night toggle instead of staying dark
-   over a paper map. */
-const UI = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif';
+/* A canvas cannot inherit a custom property, so the tape reads the resolved
+   tokens off the document each time it paints. `theme` is in the dependency
+   list purely as a repaint trigger — without it the tape keeps yesterday's
+   palette after the appearance is toggled. */
+const UI = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif';
 
-function inkOf(el) {
-  const css = getComputedStyle(el);
-  const read = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
-  return {
-    tick: read('--label-3', 'rgba(235,235,245,.32)'),
-    tickMajor: read('--label-2', 'rgba(235,235,245,.62)'),
-    text: read('--label-2', 'rgba(235,235,245,.62)'),
-    tint: read('--tint', '#0A84FF'),
-    danger: read('--sys-red', '#FF453A'),
-    onTint: read('--tint-ink', '#FFFFFF'),
-    quiet: read('--label-3', 'rgba(235,235,245,.32)'),
-  };
-}
-
-export default function CompassTape({ me, members, meet, selected, heading, lowered, theme }) {
+export default function CompassTape({ me, members, meet, selected, heading, theme, lowered }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -38,8 +23,16 @@ export default function CompassTape({ me, members, meet, selected, heading, lowe
     const dpr = window.devicePixelRatio || 1;
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
+    const cs = getComputedStyle(document.documentElement);
+    const token = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
+    const cTick = token('--label4', 'rgba(235,235,245,.16)');
+    const cTickMajor = token('--label3', 'rgba(235,235,245,.30)');
+    const cLabel = token('--label2', 'rgba(235,235,245,.60)');
+    const cTint = token('--blue', '#0a84ff');
+    const cRed = token('--red', '#ff453a');
+    const cOnPin = token('--bg', '#000');
+
     const g = canvas.getContext('2d');
-    const ink = inkOf(canvas);
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
 
@@ -53,20 +46,20 @@ export default function CompassTape({ me, members, meet, selected, heading, lowe
       if (Math.abs(r) > SPAN / 2) continue;
       const x = w / 2 + r * ppd;
       const major = d % 45 === 0;
-      g.strokeStyle = major ? ink.tickMajor : ink.tick;
+      g.strokeStyle = major ? cTickMajor : cTick;
       g.beginPath();
       g.moveTo(x, h - 1);
       g.lineTo(x, major ? h - 11 : h - 6);
       g.stroke();
       if (major) {
-        g.fillStyle = ink.text;
+        g.fillStyle = cLabel;
         g.font = `600 10px ${UI}`;
         g.fillText(cardinal(d), x, h - 14);
       }
     }
 
-    g.strokeStyle = ink.tint;
-    g.lineWidth = 1.5;
+    g.strokeStyle = cTint;
+    g.lineWidth = 2;
     g.beginPath();
     g.moveTo(w / 2, h);
     g.lineTo(w / 2, h - 16);
@@ -79,7 +72,7 @@ export default function CompassTape({ me, members, meet, selected, heading, lowe
       pins.push({
         b: bearing(me.lat, me.lng, m.lat, m.lng),
         d: distance(me.lat, me.lng, m.lat, m.lng),
-        c: m.status === 'NEED HELP' ? ink.danger : m.colour,
+        c: m.status === 'NEED HELP' ? cRed : m.colour,
         t: m.initials,
       });
     });
@@ -87,7 +80,7 @@ export default function CompassTape({ me, members, meet, selected, heading, lowe
       pins.push({
         b: bearing(me.lat, me.lng, meet.lat, meet.lng),
         d: distance(me.lat, me.lng, meet.lat, meet.lng),
-        c: ink.danger,
+        c: cRed,
         t: '\u2605',
       });
     }
@@ -95,7 +88,7 @@ export default function CompassTape({ me, members, meet, selected, heading, lowe
       pins.push({
         b: bearing(me.lat, me.lng, selected.lat, selected.lng),
         d: distance(me.lat, me.lng, selected.lat, selected.lng),
-        c: ink.tint,
+        c: cTint,
         t: '\u25C6',
       });
     }
@@ -112,7 +105,7 @@ export default function CompassTape({ me, members, meet, selected, heading, lowe
       g.beginPath();
       g.arc(x, 13, 9, 0, Math.PI * 2);
       g.fill();
-      g.fillStyle = ink.onTint;
+      g.fillStyle = cOnPin;
       g.font = `700 10px ${UI}`;
       if (clamped) {
         g.beginPath();
@@ -123,11 +116,10 @@ export default function CompassTape({ me, members, meet, selected, heading, lowe
       } else {
         g.fillText(p.t, x, 16);
       }
-      g.fillStyle = ink.quiet;
+      g.fillStyle = cLabel;
       g.font = `500 9px ${UI}`;
       g.fillText(formatDistance(p.d).replace(' ', ''), x, 30);
     });
-    // `theme` is not read here, but it is what changes the tokens above.
   }, [me, members, meet, selected, heading, theme]);
 
   return (

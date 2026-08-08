@@ -57,11 +57,11 @@ and React 19.
   new one, and arriving ends it.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
-- **Daylight and night maps.** Daylight is a printed-park-map palette — white midways on
-  paper, dark type, darker marker colours — meant to be readable on a phone in direct
-  July sun. Night is the low-glare version for after the lights come on. It follows the
+- **Light and dark maps.** Light is Apple Maps in daylight — white footpaths on pale
+  ground, dark type, deeper marker colours — meant to be readable on a phone in direct
+  July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the sun/moon button in the header, or from the Me tab.
+  with the moon button floating over the map, or under Settings.
 - **What's open when the weather turns.** The park publishes no live feed this app can
   read, so it builds one from the two sources it actually has. Your party reports what it
   walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
@@ -73,32 +73,6 @@ and React 19.
   as an operations feed is worse than no guess. On a clear day with nothing reported, none
   of it appears.
 - **Meet-up pin** shared to the whole party, with distance and walk time.
-- **The chrome is Apple's design language, the map is cartography.** Type is SF — the
-  platform's own UI face, so there is no web font to fetch on two bars of signal — set on
-  Apple's semantic ramp from largeTitle down to caption2, with tabular figures anywhere a
-  number ticks so a live distance cannot make the text beside it twitch. Space is a 4pt
-  grid off a 16pt screen margin. Colour is the system palette expressed as roles — label,
-  separator, fill, background — which is why daylight and night are one design at two sets
-  of values rather than two designs. Floating chrome is material: a blur that samples the
-  map behind it, a hairline, and a shadow soft enough to read as height. Controls are the
-  platform's: a segmented control for rider height, capsule filter pills, a bottom sheet
-  with a grabber and detents, a tab bar of glyphs that fill in when selected. Motion uses
-  the platform curves and nothing overshoots — the platform's own default animation is a
-  spring at critical damping, so neither is anything here. Routes draw as rows of dots,
-  which is how a walk is drawn as against a drive, and the compass is adaptive: north-up
-  it has nothing to say and is not there.
-
-  The values come from Apple's published tables rather than from memory, which matters
-  more than it sounds. The tracking curve is not monotonic, so Large Title and Title 1
-  track *open* rather than tight; the accent palette was re-specified in June 2025 and
-  most of it moved. Where Apple publishes nothing — blur radii, corner radii, any spacing
-  grid at all — the comments in `globals.css` say so rather than dressing a guess up as a
-  specification. Reduce Transparency and Increase Contrast both swap every material for an
-  opaque fill, the latter using Apple's separate increased-contrast palette.
-
-  The map underneath keeps its own palette, because a printed park map in July sun is a
-  different problem from a control — and because the guidance for map apps says as much
-  outright: don't replicate the appearance of Apple Maps, match your own app.
 - **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
   can say anything useful about which of the maps it ships you want, so that is when it
   asks: "Going to Six Flags Fiesta Texas? — 70 mi away", with every other park it carries
@@ -107,7 +81,7 @@ and React 19.
 - **Switches maps on its own, to where the party is.** Once you are in a party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  in the Me tab and it stops second-guessing you.
+  under Settings → Which map and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
@@ -452,7 +426,7 @@ browser.
   Theme Park Insider, reflecting the 2026 season. They live in
   `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
-  at the gate and has the final say, so the app says as much on the Rides tab.
+  at the gate and has the final say, so the app says as much on the rider-height screen.
 - **Weather** — Open-Meteo, at the active venue's centre from the manifest, so switching
   parks moves the forecast with the map. Which places care about which conditions is not
   data at all: `lib/weather.js` derives it from each POI's category, land and note, with
@@ -524,7 +498,6 @@ components/
   ParkPrompt.jsx              which park, asked from the first fix and built on yes
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
-  Icons.jsx                   the glyph set: one 24-unit box, currentColor
   NavBanner.jsx               the maneuver strip: this turn, and the one after
   NavBar.jsx                  arrival time, distance left, mute, compass, End
   RoutePreview.jsx            the trip and its alternatives, before you set off

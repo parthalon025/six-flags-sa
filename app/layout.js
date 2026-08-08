@@ -21,22 +21,21 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  /* The status bar follows the map, so it is stated per appearance
-     rather than frozen dark. The manual day/night toggle updates the
-     same meta tag at runtime. */
+  /* One per appearance, so the status bar and the browser chrome match the
+     palette the app is actually drawing. */
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F2F2F7' },
+    { media: '(prefers-color-scheme: light)', color: '#f2f2f7' },
     { media: '(prefers-color-scheme: dark)', color: '#000000' },
   ],
   viewportFit: 'cover',
 };
 
+/* No <head>: the type is the system font, which is already on the phone. That
+   is the point of using it — an app someone opens on park wifi should not be
+   waiting on a font server to render its first label, and the service worker
+   skips cross-origin requests anyway, so the webfonts were never cached. */
 export default function RootLayout({ children }) {
   return (
-    /* No web fonts. The type is the platform's own UI face — SF on
-       Apple hardware — which is both the right face for this design
-       and one less render-blocking request on a phone with two bars
-       of signal in the middle of a park. */
     <html lang="en">
       <body>{children}</body>
     </html>
