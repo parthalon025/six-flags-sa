@@ -549,6 +549,137 @@ await check('all three phones see all three members', async () => {
   return true;
 });
 
+console.log('\n--- ride reports ---');
+
+/**
+ * The half of live status that does not come from a forecast: one phone says a
+ * ride is down and every other phone in the party hears it. Exercised over
+ * whatever transport the party actually negotiated, which is the point — the
+ * report is an ordinary command and gets the same delivery guarantees as a
+ * location or a meet-up pin.
+ */
+
+/** Open a ride's row on the sheet's root screen and return its detail panel. */
+async function openRide(page, name) {
+  await go(page, 'Places');
+  await page.waitForTimeout(300);
+  await page.locator('.chip:has-text("All")').first().click();
+  // By aria-label, not placeholder: the placeholder names the loaded venue.
+  await page.locator('.field[aria-label="Search places"]').fill(name);
+  await page.waitForTimeout(400);
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  await row.locator('.poiMain').click();
+  await page.waitForTimeout(300);
+  return row;
+}
+
+/**
+ * The report buttons are addressed by `data-report` rather than by their label:
+ * the label is deliberately stateful ("It's down" becomes "Reported down"), so
+ * matching on text couples the test to which way the button is currently
+ * pointing — which is the thing under test.
+ */
+const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`);
+
+/**
+ * The running-status pill on a ride's row, or '' when it carries none.
+ *
+ * `.statusPill` and not `.verdict`: the height verdict is also a `.verdict` and
+ * sits in the same stack, and matching it would read "CAN RIDE" as a claim
+ * about whether the ride is operating — which is the exact confusion this
+ * feature exists to undo.
+ */
+async function pillFor(page, name) {
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  const pill = row.locator('.verdict.statusPill').first();
+  try {
+    // Short timeout and a catch rather than a count() guard: the retraction
+    // test is polling for this pill to vanish, so it can and does disappear
+    // between being counted and being read.
+    return (await pill.innerText({ timeout: 1000 })).trim();
+  } catch {
+    return '';
+  }
+}
+
+await check('a ride reported down on one phone reaches the other', async () => {
+  const row = await openRide(a, 'Diamondback');
+  await reportBtn(row, 'down').click();
+  await a.waitForTimeout(400);
+
+  // The reporting phone shows it straight away — via the host's patch, not an
+  // optimistic local write.
+  await until(async () => /reported down/i.test(await pillFor(a, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone A to show its own report',
+  });
+
+  await openRide(b, 'Diamondback');
+  await until(async () => /reported down/i.test(await pillFor(b, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: 'the report to reach phone B',
+  });
+  return true;
+});
+
+await check('the report says who saw it and when', async () => {
+  const detail = await b
+    .locator('.poiRow', { hasText: 'Diamondback' })
+    .first()
+    .locator('.poiNote.wxWhy')
+    .innerText();
+  // Justin is phone A's roster name; the party, not the forecast, is the source.
+  if (!/Justin/.test(detail)) throw new Error(detail);
+  if (!/just now|min ago/.test(detail)) throw new Error(detail);
+  return true;
+});
+
+await check('the other phone can correct it', async () => {
+  const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
+  await reportBtn(row, 'open').click();
+  await until(async () => /reported running/i.test(await pillFor(b, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone B to overwrite the report',
+  });
+  // A ride report is not owned by whoever wrote it, so A sees B's correction.
+  await until(async () => /reported running/i.test(await pillFor(a, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: "the correction to reach phone A",
+  });
+  return true;
+});
+
+await check('retracting a report clears it everywhere', async () => {
+  const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
+  // Tapping the button that is already on retracts it.
+  await reportBtn(row, 'open').click();
+  // Not asserting the pill is gone outright: this suite runs against a live
+  // forecast, and if it is genuinely storming the row keeps a weather pill.
+  // What must disappear is the party's claim.
+  const cleared = async (page) => !/reported/i.test(await pillFor(page, 'Diamondback'));
+  await until(() => cleared(b), { timeout: JOIN_TIMEOUT, label: 'phone B to drop the report' });
+  await until(() => cleared(a), { timeout: JOIN_TIMEOUT, label: 'phone A to drop the report' });
+  return true;
+});
+
+await check('the reporting buttons are absent without a party', async () => {
+  const solo = await openPhone(browser, { lat: 39.3432, lng: -84.2669, name: 'Solo', label: 'S' });
+  await openRide(solo.page, 'Diamondback');
+  const buttons = await solo.page.locator('.reportRow button').count();
+  await solo.context.close();
+  if (buttons !== 0) throw new Error(`${buttons} report buttons with no party`);
+  return true;
+});
+
+// Put both phones back the way the rest of the suite expects to find them: on
+// the Party screen, with the ride search cleared. Everything after this reads
+// the roster, and a phone left on the places list has no roster to read.
+for (const page of [a, b]) {
+  await page.locator('.field[aria-label="Search places"]').fill('');
+  await go(page, 'Party');
+  await page.waitForTimeout(300);
+}
+
 console.log('\n--- host migration ---');
 
 // The host's phone goes in a locker. No goodbye, no handover.

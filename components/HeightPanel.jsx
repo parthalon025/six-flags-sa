@@ -93,7 +93,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
           <div
             className="ratioBar"
             role="img"
-            aria-label={`${counts.yes} rides open, ${counts.companion} with an adult, ${counts.no} closed`}
+            aria-label={`${counts.yes} rides tall enough for, ${counts.companion} with an adult along, ${counts.no} too short for`}
           >
             <span className="seg ok" style={{ flexGrow: counts.yes || 0.001 }} />
             <span className="seg warn" style={{ flexGrow: counts.companion || 0.001 }} />
@@ -101,18 +101,18 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
           </div>
           <div className="ratioKey">
             <span className="ok">
-              <b>{counts.yes}</b> open
+              <b>{counts.yes}</b> can ride
             </span>
             <span className="warn">
               <b>{counts.companion}</b> with adult
             </span>
             <span className="bad">
-              <b>{counts.no}</b> closed
+              <b>{counts.no}</b> too short
             </span>
           </div>
           {nextUnlock && (
             <p className="unlock">
-              <b>{nextUnlock.gained} more</b> open up at {nextUnlock.at}&quot;
+              <b>{nextUnlock.gained} more</b> unlock at {nextUnlock.at}&quot;
             </p>
           )}
         </>
