@@ -108,8 +108,9 @@ async function main() {
   await page.waitForTimeout(500);
   await shot(page, 'height-46in');
   const tally = await page.locator('.ratioKey').innerText();
-  // The key is uppercased in CSS, so innerText comes back as "34 OPEN".
-  check(/\d+ open/i.test(tally), `height tally computed: ${tally.replace(/\n/g, ' ')}`);
+  // The key is uppercased in CSS, so innerText comes back as "34 CAN RIDE".
+  // Deliberately not "open" — that word belongs to whether a ride is running.
+  check(/\d+ can ride/i.test(tally), `height tally computed: ${tally.replace(/\n/g, ' ')}`);
 
   await slider.fill('54');
   await page.waitForTimeout(500);

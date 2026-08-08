@@ -5,6 +5,8 @@ import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import { eligibility, hasHeights, heightLabel } from '@/lib/park';
 import { usePois } from '@/lib/venue/useVenue';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
+import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
+import { statusFor } from '@/lib/rideStatus';
 
 /* The height requirement is the thing a family checks twenty times a day, so it
    gets the top of the panel: tap a tier, read the bar, scan the list. The
@@ -13,7 +15,14 @@ import { distance, formatDistance, formatWalk } from '@/lib/geo';
    Height rules are an amusement-park thing, and this panel is also the place
    list for venues that have none. When the loaded venue carries no heights the
    whole filter half disappears and what is left is a searchable list of
-   everywhere you could walk to. */
+   everywhere you could walk to.
+
+   Two different questions land on the same row and must never be confused:
+   whether a rider is *allowed* on (height) and whether the ride is *running*
+   (weather, and what the party has walked past). They get separate words and
+   separate pills — the height tally used to say "open" and "closed", which read
+   as operating status to every parent standing in the rain. Running status is
+   independent of heights, so it shows on a venue that has none. */
 
 const TIERS = [36, 40, 42, 46, 48, 52, 54];
 
@@ -37,6 +46,12 @@ export default function RidesPanel({
   onNavigate,
   theme,
   venue,
+  // Live status. All optional: with none of them this panel is exactly the
+  // place list it has always been.
+  weather = null,
+  rides = null, // the party's report map, keyed by ride id
+  onReport = null, // (rideId, 'down'|'open'|null) — null when not in a party
+  now = Date.now(),
 }) {
   const palette = paletteFor(theme);
   const POIS = usePois();
@@ -44,6 +59,7 @@ export default function RidesPanel({
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('coaster');
   const [onlyRideable, setOnlyRideable] = useState(false);
+  const [onlyRunning, setOnlyRunning] = useState(false);
 
   const counts = useMemo(() => {
     if (height == null) return null;
@@ -76,6 +92,18 @@ export default function RidesPanel({
     return gained > 0 ? { at: next, gained } : null;
   }, [POIS, height, withAdult]);
 
+  // One verdict per place, computed once. `now` is a prop rather than a call so
+  // the whole panel agrees on what "12 min ago" means within a render.
+  const statuses = useMemo(() => {
+    const out = new Map();
+    if (!weather && !rides) return out;
+    POIS.forEach((p) => {
+      if (p.c !== 'coaster' && p.c !== 'ride' && p.c !== 'show') return;
+      out.set(p.id, statusFor(p, rides?.[p.id] ?? null, weather, now));
+    });
+    return out;
+  }, [POIS, weather, rides, now]);
+
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     let out = POIS.filter((p) => {
@@ -84,6 +112,13 @@ export default function RidesPanel({
       if (onlyRideable && height != null && (p.c === 'coaster' || p.c === 'ride')) {
         const v = eligibility(p, height, withAdult);
         if (v === 'no' || v === 'toobig') return false;
+      }
+      if (onlyRunning) {
+        // Hides what is probably not running. Deliberately keeps `watch` —
+        // that is a maybe, and hiding a maybe loses a ride the family could
+        // have got on between showers.
+        const st = statuses.get(p.id);
+        if (st && (st.tone === 'bad' || st.key === 'hold')) return false;
       }
       return true;
     });
@@ -94,7 +129,7 @@ export default function RidesPanel({
         )
       : [...out].sort((a, b) => a.n.localeCompare(b.n));
     return out.slice(0, 120);
-  }, [POIS, query, filter, onlyRideable, height, withAdult, me]);
+  }, [POIS, query, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
 
   return (
     <div>
@@ -146,7 +181,7 @@ export default function RidesPanel({
             <div
               className="ratioBar"
               role="img"
-              aria-label={`${counts.yes} rides open, ${counts.companion} with an adult, ${counts.no} closed`}
+              aria-label={`${counts.yes} rides tall enough for, ${counts.companion} with an adult along, ${counts.no} too short for`}
             >
               <span className="seg ok" style={{ flexGrow: counts.yes || 0.001 }} />
               <span className="seg warn" style={{ flexGrow: counts.companion || 0.001 }} />
@@ -154,18 +189,18 @@ export default function RidesPanel({
             </div>
             <div className="ratioKey">
               <span className="ok">
-                <b>{counts.yes}</b> open
+                <b>{counts.yes}</b> can ride
               </span>
               <span className="warn">
                 <b>{counts.companion}</b> with adult
               </span>
               <span className="bad">
-                <b>{counts.no}</b> closed
+                <b>{counts.no}</b> too short
               </span>
             </div>
             {nextUnlock && (
               <p className="unlock">
-                <b>{nextUnlock.gained} more</b> open up at {nextUnlock.at}&quot;
+                <b>{nextUnlock.gained} more</b> unlock at {nextUnlock.at}&quot;
               </p>
             )}
           </>
@@ -195,6 +230,21 @@ export default function RidesPanel({
           </button>
         </div>
         </>
+      )}
+
+      {/* Outside the heights block on purpose: whether a ride is running has
+          nothing to do with whether a venue publishes height rules. */}
+      {statuses.size > 0 && (
+        <div className="chips">
+          <button
+            type="button"
+            className={`chip ${onlyRunning ? 'on' : ''}`}
+            onClick={() => setOnlyRunning(!onlyRunning)}
+            aria-pressed={onlyRunning}
+          >
+            Hide what&apos;s likely down
+          </button>
+        </div>
       )}
 
       <div className="label">Find a place</div>
@@ -235,8 +285,10 @@ export default function RidesPanel({
           const v = VERDICT[verdict];
           const d = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
           const open = selected && selected.n === p.n;
+          const st = statuses.get(p.id) || null;
+          const showStatus = Boolean(st && st.label);
           return (
-            <div key={p.n + p.lat} className={`poiRow ${open ? 'open' : ''} ${v.cls}`}>
+            <div key={p.id} className={`poiRow ${open ? 'open' : ''} ${v.cls}`}>
               <button
                 type="button"
                 className="poiMain"
@@ -257,6 +309,14 @@ export default function RidesPanel({
                       <em>{formatDistance(d)}</em>
                     </span>
                   )}
+                  {showStatus && (
+                    <span
+                      className={`verdict statusPill ${st.tone} ${st.source === 'weather' ? 'guess' : ''}`}
+                    >
+                      <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
+                      {st.label}
+                    </span>
+                  )}
                   {v.label && (
                     <span className={`verdict ${v.cls}`}>
                       <i aria-hidden="true">{v.mark}</i>
@@ -267,9 +327,39 @@ export default function RidesPanel({
               </button>
               {open && (
                 <div className="poiDetail">
+                  {showStatus && st.detail && (
+                    <p className={`poiNote wxWhy ${st.tone}`}>
+                      {st.detail}
+                      {st.source === 'weather' && ' — a guess from the forecast, not the park'}
+                    </p>
+                  )}
                   {p.note && <p className="poiNote">{p.note}</p>}
                   {p.approx && (
                     <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
+                  )}
+                  {onReport && isRide && (
+                    <div className="joinRow reportRow">
+                      {/* Reporting is one tap and instantly retractable. Anything
+                          slower and nobody does it while walking past. */}
+                      <button
+                        type="button"
+                        data-report={RIDE_DOWN}
+                        className={`btn small ${st?.report?.status === RIDE_DOWN ? 'on' : ''}`}
+                        onClick={() => onReport(p.id, st?.report?.status === RIDE_DOWN ? null : RIDE_DOWN)}
+                        aria-pressed={st?.report?.status === RIDE_DOWN}
+                      >
+                        {st?.report?.status === RIDE_DOWN ? 'Reported down' : 'It\u2019s down'}
+                      </button>
+                      <button
+                        type="button"
+                        data-report={RIDE_OPEN}
+                        className={`btn small ${st?.report?.status === RIDE_OPEN ? 'on' : ''}`}
+                        onClick={() => onReport(p.id, st?.report?.status === RIDE_OPEN ? null : RIDE_OPEN)}
+                        aria-pressed={st?.report?.status === RIDE_OPEN}
+                      >
+                        {st?.report?.status === RIDE_OPEN ? 'Reported running' : 'It\u2019s running'}
+                      </button>
+                    </div>
                   )}
                   <div className="joinRow">
                     <button
@@ -294,6 +384,15 @@ export default function RidesPanel({
         <p className="fine">
           {venue?.credits ? `${venue.credits} ` : 'Height requirements come with this venue\u2019s own file, not from OpenStreetMap. '}
           The ride operator measures at the gate and has the final say.
+        </p>
+      )}
+      {statuses.size > 0 && (
+        <p className="fine">
+          Running status is your party&apos;s own reports plus what the forecast implies
+          &mdash; not a feed from the park. Treat &ldquo;likely&rdquo; as likely.
+          {onReport
+            ? ' Tap a place and tell the party what you see.'
+            : ' Start or join a party to report what you see.'}
         </p>
       )}
     </div>

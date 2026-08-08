@@ -62,6 +62,16 @@ and React 19.
   July sun. Night is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
   with the half-circle button in the header, or from the Me tab.
+- **What's open when the weather turns.** The park publishes no live feed this app can
+  read, so it builds one from the two sources it actually has. Your party reports what it
+  walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
+  as everything else — and a forecast fills in the rest: lightning closes the outdoor
+  rides and clears the pools first, wind takes the tall rides before anything else, rain
+  is no news at all for a flume, and cold shuts the water park. A report always beats a
+  forecast until it is half an hour old, at which point it stops being evidence. Nothing
+  is ever stated as fact: the wording is "likely" and "watch" because a guess that reads
+  as an operations feed is worse than no guess. On a clear day with nothing reported, none
+  of it appears.
 - **Meet-up pin** shared to the whole party, with distance and walk time.
 - **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
   can say anything useful about which of the maps it ships you want, so that is when it
@@ -267,12 +277,22 @@ speak the protocol:
 | `GET` / `DELETE` | `/api/party/[partyId]` |
 | `GET` | `/api/members/[partyId]` |
 | `POST` | `/api/location/[partyId]`, `/api/heartbeat/[partyId]` |
-| `PATCH` | `/api/member/[partyId]`, `/api/favorites/[partyId]` |
+| `PATCH` | `/api/member/[partyId]`, `/api/favorites/[partyId]`, `/api/ride-status/[partyId]` |
 | `GET` | `/api/rides`, `/api/rides/[id]` |
+| `GET` | `/api/weather?lat=&lng=` |
 | `GET` | `/api/health`, `/api/ready`, `/api/metrics`, `/api/version` |
 
 Parties expire after 8 hours; a member drops off the roster after 45 minutes of silence
-and is dimmed as stale after 5.
+and is dimmed as stale after 5. A ride report is hedged as possibly out of date after 30
+minutes and dropped entirely after 90 — an hour-old "closed" is worse than no report,
+because it sends a family walking to a ride that reopened forty minutes ago.
+
+`/api/weather` is the one route that reaches outside this app. It proxies
+[Open-Meteo](https://open-meteo.com), which needs no key and no account, so "there is
+nothing to configure" stays true. Responses are cached for ten minutes per coordinate, and the
+route serves a stale reading rather than an error when upstream is unreachable. Phones
+keep the last good reading in `localStorage` and show it with its age, so losing signal
+degrades the feature to the app that existed before it rather than to a spinner.
 
 Vercel's routes deliberately implement no SSE — serverless cannot hold a stream open — so
 clients there fall back to polling. Upstash is optional and only makes a *cloud-hosted*
@@ -407,6 +427,13 @@ browser.
   `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
   at the gate and has the final say, so the app says as much on the Rides tab.
+- **Weather** — Open-Meteo, at the active venue's centre from the manifest, so switching
+  parks moves the forecast with the map. Which places care about which conditions is not
+  data at all: `lib/weather.js` derives it from each POI's category, land and note, with
+  no ride names anywhere in the file — so a venue built from OpenStreetMap alone, with no
+  height overrides written for it yet, still gets a full weather picture.
+- **Operating status** — nobody's but your own party's. There is no ride-status feed here
+  and the app never claims one.
 - Flight of Fear is not mapped in OpenStreetMap; it's placed on its show building and
   flagged as approximate in the app.
 - Two renames are reflected: Backlot Stunt Coaster is now Queen City Stunt Coaster, and
@@ -441,9 +468,12 @@ lib/partyRuntime.js           the seam: session, transports, host service or cli
 lib/geo.js                    distance, bearing, Mercator projection
 lib/routing.js                path graph, repair passes, A*, turn-by-turn
 lib/park.js  lib/theme.js     POI helpers and height eligibility; day/night palettes
+lib/weather.js                exposure traits and the outlook rules — no ride names
+lib/rideStatus.js             merges a party report with a forecast into one verdict
 lib/mapSymbols.js             the symbol vocabulary: shapes, glyphs, ranks, ink
 lib/mapLabels.js              decluttering grid, district-name geometry, scale bar
 lib/venue/store.js            which venue is loaded; manifest, geometry, places
+lib/venue/ids.js              the one place-id rule, shared by browser and hosts
 lib/venue/useVenue.js         the hook components read it through
 lib/venueIndex.js             generated: static POI imports for the API routes
 lib/serverStore.js            memory / Upstash backend for the cloud fallback
@@ -452,6 +482,7 @@ app/
   join/page.js                invite landing; reads the fragment, never the query
   api/mailbox/…               the relay
   api/…                       party, members, location, rides, health, metrics
+  api/weather/                the only outbound call in the app; cached, fails soft
 components/
   ParkMap.jsx                 SVG renderer, pan + pinch zoom, label layout
   MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
@@ -460,7 +491,9 @@ components/
   PartyPanel.jsx              roster, QR, join, status, meet-up
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
-  RidesPanel.jsx              height filter and place search
+  RidesPanel.jsx              height filter, place search, live status and reporting
+  WeatherBanner.jsx           the park-wide headline; renders nothing on a clear day
+  useWeather.js               polls the forecast, caches it, survives losing signal
   GpsGate.jsx                 permission dialog with per-failure guidance
   ParkPrompt.jsx              which park, asked from the first fix and built on yes
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
