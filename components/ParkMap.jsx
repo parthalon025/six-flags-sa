@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { distance, formatAge, formatDistance, project, unproject } from '@/lib/geo';
 import { landTint, paletteFor } from '@/lib/theme';
 import { heightLabel } from '@/lib/park';
+import { MinusIcon, PlusIcon } from '@/components/Icons';
 import {
   labelZoomFor,
   normaliseRideName,
@@ -1123,8 +1124,8 @@ export default function ParkMap({
                   cy={sy}
                   r={7}
                   className="meDot"
-                  fill="#FFC24A"
-                  stroke="var(--markerEdge)"
+                  fill="var(--tint)"
+                  stroke="#ffffff"
                   strokeWidth="3"
                 />
               </g>
@@ -1183,7 +1184,7 @@ export default function ParkMap({
           }}
           aria-label="Zoom in"
         >
-          +
+          <PlusIcon />
         </button>
         <button
           type="button"
@@ -1194,7 +1195,7 @@ export default function ParkMap({
           }}
           aria-label="Zoom out"
         >
-          −
+          <MinusIcon />
         </button>
       </div>
 

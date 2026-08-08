@@ -21,21 +21,23 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#10131C',
+  /* The status bar follows the map, so it is stated per appearance
+     rather than frozen dark. The manual day/night toggle updates the
+     same meta tag at runtime. */
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F2F2F7' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
   viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }) {
   return (
+    /* No web fonts. The type is the platform's own UI face — SF on
+       Apple hardware — which is both the right face for this design
+       and one less render-blocking request on a phone with two bars
+       of signal in the middle of a park. */
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body>{children}</body>
     </html>
   );

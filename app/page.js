@@ -7,6 +7,14 @@ import ParkPrompt from '@/components/ParkPrompt';
 import CompassTape from '@/components/CompassTape';
 import PartyPanel from '@/components/PartyPanel';
 import GlanceRail from '@/components/GlanceRail';
+import {
+  CompassIcon,
+  FlagIcon,
+  LocateIcon,
+  MoonIcon,
+  SunIcon,
+  TAB_ICONS,
+} from '@/components/Icons';
 import InstallCard from '@/components/InstallCard';
 import RidesPanel from '@/components/RidesPanel';
 import Diagnostics from '@/components/Diagnostics';
@@ -58,7 +66,8 @@ const LEGACY_IDENTITY_KEY = 'ki-identity';
    already publishes this as --sheetH for the chrome that rides above it; the
    map needs the number itself, to lay its labels out above the furniture
    rather than behind it. */
-const SHEET_PEEK_PX = 182;
+/* Matches --peek in globals.css: the rail, plus the tab bar. */
+const SHEET_PEEK_PX = 228;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
 const STOWED_PX = 96;
 
@@ -233,6 +242,10 @@ export default function Page() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    /* The status bar sits directly above the map and has to match it;
+       the metadata default only knows the OS setting, not this choice. */
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'day' ? '#F2F2F7' : '#000000');
   }, [theme]);
 
   useEffect(() => {
@@ -749,7 +762,7 @@ export default function Page() {
     const acc = position.manual
       ? 'placed by hand'
       : `±${Math.round((position.acc || 0) * 3.28084)} ft`;
-    return `${where.toUpperCase()} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
+    return `${where} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
   };
 
   // While a route is running the sheet is out of the way unless it is asked
@@ -769,7 +782,15 @@ export default function Page() {
     // data-sheet publishes the sheet's stop as a CSS custom property, so the
     // FABs, the toast, the zoom pad and the scale bar all ride up and down with
     // it on one shared easing instead of each keeping its own copy of the stops.
-    <main className="app" data-sheet={stowed ? 'stowed' : sheet}>
+    <main
+      className="app"
+      data-sheet={stowed ? 'stowed' : sheet}
+      /* Which surface currently owns the bottom of the screen. The sheet
+         is not the only thing that can: the route preview and the walking
+         bar both replace it and are taller than the stowed sheet, so the
+         controls that ride above it need to know which one is up. */
+      data-bottom={previewing ? 'preview' : walking ? 'go' : 'sheet'}
+    >
       <ParkMap
         data={mapData}
         center={venue?.center}
@@ -816,7 +837,7 @@ export default function Page() {
           onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
           aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
         >
-          {theme === 'day' ? '◑' : '◐'}
+          {theme === 'day' ? <MoonIcon /> : <SunIcon />}
         </button>
         <button
           type="button"
@@ -827,7 +848,7 @@ export default function Page() {
           }}
           aria-label="Bearing tape"
         >
-          ◈
+          <CompassIcon />
         </button>
       </header>
 
@@ -863,6 +884,7 @@ export default function Page() {
           selected={selected}
           heading={heading}
           lowered={Boolean(navTarget)}
+          theme={theme}
         />
       )}
 
@@ -880,7 +902,7 @@ export default function Page() {
             }}
             aria-label="Set meet-up"
           >
-            ⚑
+            <FlagIcon />
           </button>
         )}
         {/* Panning away during a walk parks the camera where you left it, and
@@ -898,7 +920,7 @@ export default function Page() {
           }}
           aria-label={walking && !follow ? 'Follow me again' : 'Centre on me'}
         >
-          ◎
+          <LocateIcon />
         </button>
       </div>
 
@@ -965,7 +987,9 @@ export default function Page() {
             ['party', `Party${others.length ? ` · ${roster.length}` : ''}`],
             ['rides', heights ? 'Rides & heights' : 'Places'],
             ['me', 'Me'],
-          ].map(([key, labelText]) => (
+          ].map(([key, labelText]) => {
+            const TabIcon = TAB_ICONS[key];
+            return (
             <button
               key={key}
               type="button"
@@ -977,9 +1001,11 @@ export default function Page() {
                 if (sheet === 'peek') setSheet('half');
               }}
             >
-              {labelText}
+              {TabIcon ? <TabIcon filled={tab === key} /> : null}
+              <em>{labelText}</em>
             </button>
-          ))}
+            );
+          })}
         </nav>
         <div className="sheetBody">
           {tab === 'route' && (

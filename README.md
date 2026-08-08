@@ -61,8 +61,20 @@ and React 19.
   paper, dark type, darker marker colours — meant to be readable on a phone in direct
   July sun. Night is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the half-circle button in the header, or from the Me tab.
+  with the sun/moon button in the header, or from the Me tab.
 - **Meet-up pin** shared to the whole party, with distance and walk time.
+- **The chrome is Apple's design language, the map is cartography.** Type is SF — the
+  platform's own UI face, so there is no web font to fetch on two bars of signal — set on
+  Apple's semantic ramp from largeTitle down to caption2, with tabular figures anywhere a
+  number ticks so a live distance cannot make the text beside it twitch. Space is a 4pt
+  grid off a 16pt screen margin. Colour is the system palette expressed as roles — label,
+  separator, fill, background — which is why daylight and night are one design at two sets
+  of values rather than two designs. Floating chrome is material: a blur that samples the
+  map behind it, a hairline, and a shadow soft enough to read as height. Controls are the
+  platform's: a segmented control for rider height, capsule filter pills, a bottom sheet
+  with a grabber and detents, a tab bar of glyphs that fill in when selected. Motion uses
+  the platform curves and nothing overshoots. The map underneath keeps its own palette,
+  because a printed park map in July sun is a different problem from a control.
 - **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
   can say anything useful about which of the maps it ships you want, so that is when it
   asks: "Going to Six Flags Fiesta Texas? — 70 mi away", with every other park it carries
@@ -465,6 +477,7 @@ components/
   ParkPrompt.jsx              which park, asked from the first fix and built on yes
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
+  Icons.jsx                   the glyph set: one 24-unit box, currentColor
   NavBanner.jsx               the maneuver strip: this turn, and the one after
   NavBar.jsx                  arrival time, distance left, mute, compass, End
   RoutePreview.jsx            the trip and its alternatives, before you set off

@@ -223,7 +223,7 @@ export default function PartyPanel({
                 className={`memberRow ${stale ? 'stale' : ''}`}
                 onClick={() => !isMe && located && onFocus(m)}
               >
-                <span className="pip" style={{ background: isMe ? '#FFC24A' : m.colour }}>
+                <span className="pip" style={{ background: isMe ? 'var(--tint)' : m.colour }}>
                   {m.initials}
                 </span>
                 <span className="memberText">
@@ -241,7 +241,7 @@ export default function PartyPanel({
                 <span className="memberRange">
                   {isMe ? (
                     <>
-                      <b style={{ color: '#FFC24A' }}>•</b>
+                      <b style={{ color: 'var(--tint)' }}>•</b>
                       <span>HERE</span>
                     </>
                   ) : (
