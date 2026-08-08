@@ -48,7 +48,7 @@ export default function DirectionsPanel({
                 Back to the map
               </button>
               <button type="button" className="btn small" onClick={onStop}>
-                End
+                Stop
               </button>
             </>
           ) : (

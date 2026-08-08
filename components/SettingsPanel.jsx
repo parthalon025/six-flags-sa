@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
 
 /* Settings, arranged the way Settings is: short groups of rows, a value on the
@@ -26,8 +27,34 @@ export default function SettingsPanel({
   onEnablePush = null,
   pushNeedsInstall = false,
 }) {
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [armDiag, setArmDiag] = useState(false);
+  useEffect(() => {
+    if (!armDiag) return undefined;
+    const t = setTimeout(() => setArmDiag(false), 5000);
+    return () => clearTimeout(t);
+  }, [armDiag]);
+
   return (
     <div>
+      <div className="rowList">
+        <button type="button" className="row" onClick={() => setHelpOpen((v) => !v)} aria-expanded={helpOpen}>
+          <span className="rowText">What all this means</span>
+          <span className="rowValue">{helpOpen ? 'Hide' : 'Read'}</span>
+        </button>
+      </div>
+      {helpOpen && (
+        <p className="fine block">
+          A <b>party</b> is your group. One phone starts one and reads out the six-character code;
+          everyone else types it in, scans the square, or opens the link. After that each phone
+          shows the others as coloured dots, with how far away they are and how long it takes to
+          walk there. A <b>meet-up</b> is one spot everybody agrees on, and anyone can set it. The
+          phone that started the party <b>hosts</b> it, which only means it keeps the list — if it
+          goes flat another phone picks the list up on its own, and nobody has to do anything.
+          Nothing you do here is visible outside your party.
+        </p>
+      )}
+
       <div className="label">Your Name in the Roster</div>
       <input
         className="field"
@@ -141,8 +168,16 @@ export default function SettingsPanel({
 
       <div className="label">Advanced</div>
       <div className="rowList">
-        <button type="button" className="row" onClick={() => onPush('diagnostics')}>
+        {/* "Frames sent / Version gaps / Electing" one tap from the top of a
+            settings screen is somewhere to get lost. It takes a deliberate
+            press to open now, and says so. */}
+        <button
+          type="button"
+          className="row"
+          onClick={() => (armDiag ? onPush('diagnostics') : setArmDiag(true))}
+        >
           <span className="rowText">Diagnostics</span>
+          <span className="rowValue">{armDiag ? 'Tap again to open' : 'For fault-finding'}</span>
         </button>
       </div>
     </div>

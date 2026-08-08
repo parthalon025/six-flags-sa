@@ -16,6 +16,7 @@
  */
 
 import { CONDITIONS } from '@/lib/weather';
+import { formatAge } from '@/lib/geo';
 
 const TONE = {
   storm: 'bad',
@@ -34,13 +35,9 @@ const HEADLINE = {
   heat: 'Extreme heat',
 };
 
-const ago = (at, now) => {
-  const mins = Math.max(0, Math.round((now - at) / 60000));
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min ago`;
-  const hours = Math.round(mins / 60);
-  return `${hours} h ago`;
-};
+// One formatter for the whole app — see lib/geo.js. This screen used to carry
+// its own, spelled differently from the roster's, on the same phone.
+const ago = (at, now) => formatAge(Math.max(0, now - at));
 
 export default function WeatherBanner({
   weather,

@@ -103,9 +103,6 @@ export default function PartyPanel({
   pushNeedsInstall = false,
   joinsOpenUntil = 0,
   onAllowJoins = null,
-  transport,
-  version,
-  queued,
 }) {
   const [entry, setEntry] = useState('');
   const [name, setName] = useState(myName === 'Guest' ? '' : myName || '');
@@ -372,7 +369,8 @@ export default function PartyPanel({
                   ) : (
                     <>
                       <b>{formatDistance(d)}</b>
-                      <span>{b != null ? `${cardinal(b)} ${Math.round(b)}°` : ''}</span>
+                      <span>{/* The compass point, not the degrees. Nobody navigates a park by 328°. */}
+                    {b != null ? cardinal(b) : ''}</span>
                     </>
                   )}
                 </span>

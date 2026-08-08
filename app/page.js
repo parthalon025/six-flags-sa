@@ -515,7 +515,9 @@ export default function Page() {
 
   const showToast = useCallback((msg) => {
     setToast(msg);
-    setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200);
+    // Long messages need longer than short ones. 3.2s was measured against
+    // "Status: In line" and is not enough for a sentence.
+    setTimeout(() => setToast((t) => (t === msg ? null : t)), msg.length > 40 ? 6000 : 4000);
   }, []);
 
   /* ---------- the party runtime ---------- */
@@ -1166,10 +1168,16 @@ export default function Page() {
     if (!position) return `${venue?.locality || 'Waiting'} · no fix yet`;
     const inside = withinBounds(venue?.bounds, position.lat, position.lng);
     const where = inside ? nearest?.p.a || 'On site' : 'Off site';
+    /* "±0 ft" is worse than saying nothing — it reads as a precision claim
+       nobody made. A fix is either good enough not to mention or loose enough
+       to be worth a warning, and the number only helps in the second case. */
+    const feet = Math.round((position.acc || 0) * 3.28084);
     const acc = position.manual
       ? 'placed by hand'
-      : `±${Math.round((position.acc || 0) * 3.28084)} ft`;
-    return `${where} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
+      : feet > 60
+        ? `roughly within ${feet} ft`
+        : null;
+    return [where, nearest ? `near ${nearest.p.n}` : null, acc].filter(Boolean).join(' · ');
   };
 
   /**
@@ -1656,9 +1664,6 @@ export default function Page() {
                   allowJoins();
                   showToast('Anyone with the code can join for the next 10 minutes');
                 }}
-                transport={party?.transport ?? null}
-                version={party?.version ?? 0}
-                queued={party?.queued ?? 0}
               />
             )}
 
