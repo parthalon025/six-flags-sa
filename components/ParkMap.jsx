@@ -6,7 +6,7 @@ import { landTint, paletteFor } from '@/lib/theme';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
    geometry, projected to Web Mercator metres and painted as SVG. Pan with one
-   finger, pinch or wheel to zoom.
+   finger, pinch or wheel to zoom, double-tap to zoom in.
 
    Nothing here knows which place it is drawing. It is handed layers of rings by
    name — paths, buildings, water, track — and a centre to open on, so a park, a
@@ -15,7 +15,28 @@ import { landTint, paletteFor } from '@/lib/theme';
 
    `to(x, y)` is the one place world metres become screen pixels — pan, zoom,
    rotation and the lifted centre all live in it, and everything drawn below
-   goes through it. */
+   goes through it.
+
+   Everything that moves the viewport goes through animateTo(), so a tap on a
+   roster row glides to the person instead of teleporting, and a flick keeps
+   coasting after your thumb leaves the glass. */
+
+const MIN_SCALE = 0.18;
+const MAX_SCALE = 6;
+const clampScale = (s) => Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
+
+/* Expo-out for travel, back-out for arrivals: the small overshoot at the end of
+   a focus jump is what makes it read as "the map moved" rather than "the map
+   was replaced". */
+const easeOut = (t) => 1 - (1 - t) ** 4;
+const easeBack = (t) => {
+  const c = 1.34;
+  return 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2;
+};
+
+const prefersStill = () =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 function pathFromRing(ring, to) {
   if (!Array.isArray(ring) || ring.length < 2) return '';
@@ -84,6 +105,12 @@ export default function ParkMap({
   const pointers = useRef(new Map());
   const gesture = useRef(null);
   const moved = useRef(false);
+  const viewRef = useRef(view);
+  const raf = useRef(0);
+  const fling = useRef({ vx: 0, vy: 0, t: 0 });
+  const lastTap = useRef({ t: 0, x: 0, y: 0 });
+
+  viewRef.current = view;
 
   useEffect(() => {
     const node = wrapRef.current;
@@ -96,12 +123,58 @@ export default function ParkMap({
     return () => ro.disconnect();
   }, []);
 
+  const stopAnim = useCallback(() => {
+    if (raf.current) cancelAnimationFrame(raf.current);
+    raf.current = 0;
+  }, []);
+
+  useEffect(() => stopAnim, [stopAnim]);
+
+  /**
+   * Tween the viewport to a target. Scale is interpolated geometrically —
+   * linear interpolation of a px-per-metre figure reads as a lurch at the start
+   * and a crawl at the end, because what the eye tracks is the ratio.
+   */
+  const animateTo = useCallback(
+    (target, { duration = 620, ease = easeOut } = {}) => {
+      stopAnim();
+      const from = { ...viewRef.current };
+      const to = {
+        x: Number.isFinite(target.x) ? target.x : from.x,
+        y: Number.isFinite(target.y) ? target.y : from.y,
+        scale: clampScale(Number.isFinite(target.scale) ? target.scale : from.scale),
+      };
+      const still = Math.abs(to.x - from.x) < 0.2 && Math.abs(to.y - from.y) < 0.2
+        && Math.abs(to.scale - from.scale) < 0.001;
+      if (still) return;
+      if (prefersStill() || duration <= 0) {
+        setView(to);
+        return;
+      }
+      const t0 = performance.now();
+      const step = (now) => {
+        const p = Math.min(1, (now - t0) / duration);
+        const k = ease(p);
+        setView({
+          x: from.x + (to.x - from.x) * k,
+          y: from.y + (to.y - from.y) * k,
+          scale: from.scale * (to.scale / from.scale) ** k,
+        });
+        raf.current = p < 1 ? requestAnimationFrame(step) : 0;
+      };
+      raf.current = requestAnimationFrame(step);
+    },
+    [stopAnim],
+  );
+
   // A new venue is a new part of the world: jump to it rather than leaving the
   // view parked over the last one, where its geometry is thousands of miles off
-  // screen and the map looks broken.
+  // screen and the map looks broken. A jump, not a glide — animateTo() would
+  // sweep the camera across a continent.
   const venueKey = `${center?.lat},${center?.lng}`;
   useEffect(() => {
     if (!center) return;
+    stopAnim();
     const [x, y] = project(center.lat, center.lng);
     setView((v) => ({ ...v, x, y }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -109,22 +182,27 @@ export default function ParkMap({
 
   // Follow mode keeps the marker centred without fighting manual pans. While a
   // route is running it follows the snapped point rather than the raw fix, so
-  // the camera stops sliding sideways every time GPS changes its mind.
+  // the camera stops sliding sideways every time GPS changes its mind. A short
+  // glide rather than a jump: fixes land every few seconds and a teleporting
+  // map is how you lose track of where you were looking.
   const anchorLat = puck?.lat ?? me?.lat ?? null;
   const anchorLng = puck?.lng ?? me?.lng ?? null;
   useEffect(() => {
     if (!follow || anchorLat == null) return;
     const [x, y] = project(anchorLat, anchorLng);
-    setView((v) => ({ ...v, x, y }));
-  }, [follow, anchorLat, anchorLng]);
+    animateTo({ x, y }, { duration: 480 });
+  }, [follow, anchorLat, anchorLng, animateTo]);
 
   // An explicit focus request (tapping a roster row, a ride, the meet-up)
   // recentres and zooms in a little if we are far out.
   useEffect(() => {
     if (!focusPoint) return;
     const [x, y] = project(focusPoint.lat, focusPoint.lng);
-    setView((v) => ({ x, y, scale: Math.max(v.scale, 1.6) }));
-  }, [focusPoint]);
+    animateTo(
+      { x, y, scale: Math.max(viewRef.current.scale, 1.6) },
+      { duration: 700, ease: easeBack },
+    );
+  }, [focusPoint, animateTo]);
 
   // Setting off pulls the camera in to walking zoom; ending a route leaves it
   // where the walk finished rather than yanking it back out.
@@ -193,8 +271,29 @@ export default function ParkMap({
     [view, spin, cx, cy],
   );
 
+  /** Zoom about a screen point, keeping whatever is under it under it. */
+  const zoomAround = useCallback(
+    (factor, px, py, duration = 320) => {
+      const v = viewRef.current;
+      const scale = clampScale(v.scale * factor);
+      const ox = px == null ? 0 : px - size.w / 2;
+      const oy = py == null ? 0 : py - size.h / 2;
+      animateTo(
+        {
+          x: v.x + ox / v.scale - ox / scale,
+          y: v.y - oy / v.scale + oy / scale,
+          scale,
+        },
+        { duration },
+      );
+    },
+    [animateTo, size.w, size.h],
+  );
+
   /* ---------- gestures ---------- */
   const onPointerDown = (e) => {
+    stopAnim();
+    fling.current = { vx: 0, vy: 0, t: 0 };
     e.currentTarget.setPointerCapture(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     moved.current = false;
@@ -202,7 +301,7 @@ export default function ParkMap({
       const [a, b] = [...pointers.current.values()];
       gesture.current = {
         dist: Math.hypot(a.x - b.x, a.y - b.y),
-        scale: view.scale,
+        scale: viewRef.current.scale,
       };
     }
   };
@@ -217,7 +316,7 @@ export default function ParkMap({
       const [a, b] = [...pointers.current.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       const ratio = dist / gesture.current.dist;
-      const scale = Math.min(6, Math.max(0.18, gesture.current.scale * ratio));
+      const scale = clampScale(gesture.current.scale * ratio);
       if (Math.abs(dist - gesture.current.dist) > 4) moved.current = true;
       setView((v) => ({ ...v, scale }));
       return;
@@ -229,6 +328,13 @@ export default function ParkMap({
       moved.current = true;
       onUserPan?.();
     }
+    // Screen-space velocity, kept for the flick. Blended rather than replaced so
+    // one stuttering frame at lift-off cannot cancel the whole throw.
+    fling.current = {
+      vx: fling.current.vx * 0.5 + dx * 0.5,
+      vy: fling.current.vy * 0.5 + dy * 0.5,
+      t: performance.now(),
+    };
     // A drag is in screen pixels; with the map turned, the world moves along a
     // different axis than the finger does.
     const u = dx * spin.cos + dy * spin.sin;
@@ -236,23 +342,75 @@ export default function ParkMap({
     setView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
   };
 
+  /** Momentum after a flick: decay the last velocity until it is under a pixel. */
+  const startFling = useCallback(() => {
+    const { vx, vy, t } = fling.current;
+    if (prefersStill()) return;
+    if (performance.now() - t > 110) return;
+    if (Math.hypot(vx, vy) < 3) return;
+    let dx = Math.max(-60, Math.min(60, vx));
+    let dy = Math.max(-60, Math.min(60, vy));
+    const step = () => {
+      dx *= 0.93;
+      dy *= 0.93;
+      if (Math.hypot(dx, dy) < 0.4) {
+        raf.current = 0;
+        return;
+      }
+      // Same screen-to-world rotation the drag uses: a flick on a turned map has
+      // to coast along the axis the thumb threw it, not along north.
+      const u = dx * spin.cos + dy * spin.sin;
+      const w = -dx * spin.sin + dy * spin.cos;
+      setView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + w / s.scale }));
+      raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+  }, [spin]);
+
   const onPointerUp = (e) => {
     pointers.current.delete(e.pointerId);
     if (pointers.current.size < 2) gesture.current = null;
-    if (!moved.current && pointers.current.size === 0) {
-      const rect = wrapRef.current.getBoundingClientRect();
-      const [lat, lng] = screenToLatLng(e.clientX - rect.left, e.clientY - rect.top);
-      onMapTap?.(lat, lng);
+    if (pointers.current.size > 0) return;
+
+    if (moved.current) {
+      startFling();
+      return;
     }
+
+    const rect = wrapRef.current.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const now = performance.now();
+    const tap = lastTap.current;
+    // Second tap of a double-tap zooms instead of repeating the first tap's
+    // action, so a meet-up pin is never dropped twice in the same spot.
+    if (now - tap.t < 300 && Math.hypot(px - tap.x, py - tap.y) < 34) {
+      lastTap.current = { t: 0, x: 0, y: 0 };
+      zoomAround(1.85, px, py, 420);
+      onUserPan?.();
+      return;
+    }
+    lastTap.current = { t: now, x: px, y: py };
+    const [lat, lng] = screenToLatLng(px, py);
+    onMapTap?.(lat, lng);
   };
 
   const onWheel = (e) => {
     e.preventDefault();
     onUserPan?.();
-    setView((v) => ({
-      ...v,
-      scale: Math.min(6, Math.max(0.18, v.scale * (e.deltaY > 0 ? 0.88 : 1.14))),
-    }));
+    stopAnim();
+    const rect = wrapRef.current.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const v = viewRef.current;
+    const scale = clampScale(v.scale * (e.deltaY > 0 ? 0.9 : 1.11));
+    const ox = px - size.w / 2;
+    const oy = py - size.h / 2;
+    setView({
+      x: v.x + ox / v.scale - ox / scale,
+      y: v.y - oy / v.scale + oy / scale,
+      scale,
+    });
   };
 
   useEffect(() => {
@@ -292,7 +450,9 @@ export default function ParkMap({
   if (!data) {
     return (
       <div className="mapWrap" ref={wrapRef}>
-        <div className="mapLoading">Drawing the map…</div>
+        <div className="mapLoading">
+          <span>Drawing the map…</span>
+        </div>
       </div>
     );
   }
@@ -311,34 +471,59 @@ export default function ParkMap({
       style={{ cursor: armMeet ? 'crosshair' : 'grab' }}
     >
       <svg width={size.w} height={size.h} className="mapSvg">
+        <defs>
+          {/* Depth without a raster tile behind it: a sheen down the water, a
+              warm bloom on the live markers, and a soft drop for the pins. */}
+          <linearGradient id="waterSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" style={{ stopColor: 'var(--poolEdge)', stopOpacity: 0.34 }} />
+            <stop offset="55%" style={{ stopColor: 'var(--waterFill)', stopOpacity: 0 }} />
+          </linearGradient>
+          <radialGradient id="meGlow">
+            <stop offset="0%" style={{ stopColor: 'var(--beacon)', stopOpacity: 0.34 }} />
+            <stop offset="100%" style={{ stopColor: 'var(--beacon)', stopOpacity: 0 }} />
+          </radialGradient>
+          <filter id="markerDrop" x="-60%" y="-60%" width="220%" height="220%">
+            <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#000" floodOpacity="0.45" />
+          </filter>
+        </defs>
+
         {/* park ground */}
         <g className="lyr-park">{layers.poly(data.park, 'pk')}</g>
 
         {/* themed lands */}
-        {(data.lands || []).map((land, i) => {
-          const tint = landTint(land.n, theme);
-          return (
-            <path
-              key={`ld${i}`}
-              d={`${pathFromRing(land.r, to)}Z`}
-              fill={tint.fill}
-              stroke={tint.stroke}
-              strokeWidth="1"
-            />
-          );
-        })}
+        <g className="lyr-land">
+          {(data.lands || []).map((land, i) => {
+            const tint = landTint(land.n, theme);
+            return (
+              <path
+                key={`ld${i}`}
+                d={`${pathFromRing(land.r, to)}Z`}
+                fill={tint.fill}
+                stroke={tint.stroke}
+                strokeWidth="1"
+              />
+            );
+          })}
+        </g>
 
         <g className="lyr-wood">{layers.poly(data.wood, 'wd')}</g>
-        {showDetail && <g className="lyr-grass">{layers.poly(data.grass, 'gr')}</g>}
+        {showDetail && (
+          <g className="lyr-grass lyr-detail">{layers.poly(data.grass, 'gr')}</g>
+        )}
         <g className="lyr-parking">{layers.poly(data.parking, 'pa')}</g>
         <g className="lyr-water">{layers.poly(data.water, 'wa')}</g>
+        <g className="lyr-watersheen">{layers.poly(data.water, 'wash')}</g>
         <g className="lyr-pool">{layers.poly(data.pool, 'po')}</g>
 
-        {showService && <g className="lyr-service">{layers.line(data.service, 'sv')}</g>}
+        {showService && (
+          <g className="lyr-service lyr-detail">{layers.line(data.service, 'sv')}</g>
+        )}
         <g className="lyr-pathcase">{layers.line(data.path, 'pc')}</g>
         <g className="lyr-path">{layers.line(data.path, 'ph')}</g>
 
-        {showDetail && <g className="lyr-building">{layers.poly(data.building, 'bd')}</g>}
+        {showDetail && (
+          <g className="lyr-building lyr-detail">{layers.poly(data.building, 'bd')}</g>
+        )}
 
         <g className="lyr-slide">{layers.line(data.slide, 'sl')}</g>
         <g className="lyr-coastershadow">{layers.line(data.coaster, 'cs')}</g>
@@ -410,6 +595,7 @@ export default function ParkMap({
           return (
             <g
               key={p.n + p.lat}
+              className="poiMarker"
               onPointerUp={(e) => {
                 e.stopPropagation();
                 pointers.current.clear();
@@ -419,14 +605,21 @@ export default function ParkMap({
               style={{ cursor: 'pointer' }}
             >
               <circle cx={sx} cy={sy} r={big ? 14 : 11} fill="transparent" />
-              {isSel && <circle cx={sx} cy={sy} r={11} className="poiHalo" />}
+              {isSel && (
+                <>
+                  <circle cx={sx} cy={sy} r={9} className="poiHaloGlow" />
+                  <circle cx={sx} cy={sy} r={12} className="poiHalo" />
+                </>
+              )}
               <circle
                 cx={sx}
                 cy={sy}
-                r={big ? 5 : 3.6}
+                r={big ? 5.4 : 3.6}
+                className="pin"
                 fill={colour}
                 stroke="var(--markerEdge)"
                 strokeWidth="1.4"
+                filter={big ? 'url(#markerDrop)' : undefined}
               />
               {(showLabels && (big || z > 1.6)) && (
                 <text x={sx} y={sy - 9} className="poiLabel">
@@ -443,6 +636,14 @@ export default function ParkMap({
             const [sx, sy] = at(meet.lat, meet.lng);
             return (
               <g key="meet" className="meetPin">
+                <ellipse
+                  cx={sx}
+                  cy={sy + 1.5}
+                  rx={7}
+                  ry={2.4}
+                  fill="#000"
+                  opacity="0.28"
+                />
                 <path
                   d={`M${sx} ${sy} l-9 -13 a11 11 0 1 1 18 0 Z`}
                   fill="var(--crimson)"
@@ -460,7 +661,7 @@ export default function ParkMap({
           const stale = Date.now() - m.ts > 300000;
           const help = m.status === 'NEED HELP';
           return (
-            <g key={m.id} opacity={stale ? 0.45 : 1}>
+            <g key={m.id} className="memMarker" opacity={stale ? 0.45 : 1}>
               {help && <circle cx={sx} cy={sy} r={20} className="helpRing" />}
               <circle
                 cx={sx}
@@ -469,6 +670,7 @@ export default function ParkMap({
                 fill={help ? 'var(--crimson)' : m.colour}
                 stroke="var(--markerEdge)"
                 strokeWidth="2"
+                filter="url(#markerDrop)"
               />
               <text x={sx} y={sy + 4} className="memInitials">
                 {m.initials}
@@ -495,6 +697,7 @@ export default function ParkMap({
               <g key="me">
                 {accR > 6 && <circle cx={fx} cy={fy} r={accR} className="accCircle" />}
                 {puck && <circle cx={fx} cy={fy} r={3} className="rawFix" />}
+                <circle cx={sx} cy={sy} r={30} fill="url(#meGlow)" pointerEvents="none" />
                 {facing != null && (
                   <path
                     d={
@@ -509,10 +712,12 @@ export default function ParkMap({
                   />
                 )}
                 <circle cx={sx} cy={sy} r={9} className="mePulse" />
+                <circle cx={sx} cy={sy} r={9} className="mePulse slow" />
                 <circle
                   cx={sx}
                   cy={sy}
                   r={7}
+                  className="meDot"
                   fill="#FFC24A"
                   stroke="var(--markerEdge)"
                   strokeWidth="3"
@@ -533,6 +738,41 @@ export default function ParkMap({
           />
         )}
       </svg>
+
+      <div className="mapVignette" aria-hidden="true" />
+      <div className="mapScrim top" aria-hidden="true" />
+      <div className="mapScrim bottom" aria-hidden="true" />
+
+      {/* The wrapper owns pointer capture for panning, so the pad has to keep its
+          own presses to itself or a tap on "+" reads as a tap on the map. */}
+      <div
+        className="zoomPad"
+        onPointerDown={(e) => e.stopPropagation()}
+        onPointerUp={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="zoomBtn"
+          onClick={() => {
+            onUserPan?.();
+            zoomAround(1.6, size.w / 2, size.h / 2);
+          }}
+          aria-label="Zoom in"
+        >
+          +
+        </button>
+        <button
+          type="button"
+          className="zoomBtn"
+          onClick={() => {
+            onUserPan?.();
+            zoomAround(1 / 1.6, size.w / 2, size.h / 2);
+          }}
+          aria-label="Zoom out"
+        >
+          −
+        </button>
+      </div>
 
       <div className="scaleBar">
         <span style={{ width: `${Math.round(100 * view.scale)}px` }} />
