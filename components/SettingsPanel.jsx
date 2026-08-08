@@ -22,7 +22,7 @@ export default function SettingsPanel({
 }) {
   return (
     <div>
-      <div className="label">Your name in the roster</div>
+      <div className="label">Your Name in the Roster</div>
       <input
         className="field"
         maxLength={14}
@@ -33,7 +33,7 @@ export default function SettingsPanel({
       />
       <p className="fine">This is what your party sees on the map and in the roster.</p>
 
-      <div className="label">Map appearance</div>
+      <div className="label">Map Appearance</div>
       <div className="segmented" role="group" aria-label="Map appearance">
         {[
           ['day', 'Light'],
@@ -56,7 +56,7 @@ export default function SettingsPanel({
         park lights come on.
       </p>
 
-      <div className="label">The map</div>
+      <div className="label">The Map</div>
       <div className="rowList">
         <button type="button" className="row" onClick={() => onPush('venues')}>
           <span className="rowText">Which map</span>
@@ -85,7 +85,7 @@ export default function SettingsPanel({
         </p>
       )}
 
-      <div className="label">Install on this phone</div>
+      <div className="label">Install on This Phone</div>
       <InstallCard />
 
       <div className="label">Advanced</div>
