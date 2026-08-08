@@ -75,6 +75,11 @@
   --trackCase: #0b0e14;   --track: #e2503f;
   --labelStroke: #0a0d13;
   --labelFill: #ffffff;
+  /* marker furniture: a solid disc for attractions, a recessed chip for
+     amenities, a hollow shape for what today's height rules out */
+  --markerChip: #212a3a;
+  --markerVoid: #141a24;
+  --trackLit: #ffc24a;
   --vignette: rgba(0, 0, 0, .55);
 }
 
@@ -119,6 +124,9 @@
   --trackCase: #ffffff;   --track: #be3226;
   --labelStroke: #ffffff;
   --labelFill: #1f232b;
+  --markerChip: #ffffff;
+  --markerVoid: #f6f1e6;
+  --trackLit: #0b6cc4;
   --vignette: rgba(88, 74, 46, .30);
 }
 
@@ -135,6 +143,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .app { position: fixed; inset: 0; --sheetH: var(--peek); }
 .app[data-sheet='half'] { --sheetH: 52vh; }
 .app[data-sheet='full'] { --sheetH: 88vh; }
+/* Walking or previewing: the sheet is gone and only the nav bar is left. */
+.app[data-sheet='stowed'] { --sheetH: 96px; }
 
 /* ============================================================
    keyframes
@@ -254,6 +264,16 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .lyr-slide path { fill: none; stroke: var(--slide); stroke-width: 2; opacity: .8; stroke-linecap: round; }
 .lyr-coastershadow path { fill: none; stroke: var(--trackCase); stroke-width: 5.5; stroke-linecap: round; }
 .lyr-coaster path { fill: none; stroke: var(--track); stroke-width: 2.4; stroke-linecap: round; }
+/* The selected coaster's own track, so a screenful of red polylines stops
+   being anonymous. */
+.lyr-trackglow path {
+  fill: none; stroke: var(--trackLit); stroke-width: 11; opacity: .28;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.lyr-trackpick path {
+  fill: none; stroke: var(--trackLit); stroke-width: 3.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
 
 /* Water reads as a surface rather than a flat fill: a sheen gradient over the
    base colour, and a whole-layer glow that only night mode really shows. */
@@ -264,7 +284,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .landLabel {
   font-family: var(--disp); font-size: 15px; font-weight: 800; letter-spacing: .16em;
-  text-anchor: middle; opacity: .78; pointer-events: none;
+  text-anchor: middle; opacity: .82; pointer-events: none;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 2.5px; stroke-linejoin: round;
   animation: fadeIn var(--t3) var(--smooth) both;
 }
 .poiLabel {
@@ -272,8 +293,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; stroke-linejoin: round;
   pointer-events: none;
 }
+.poiLabel.barred { opacity: .6; }
+/* Struck through rather than faded out: fading already means "we have not
+   heard from this person lately" over on the party markers. */
+.poiBarred { stroke: var(--crimson); stroke-width: 2; stroke-linecap: round; opacity: .95; }
 .poiMarker { transition: opacity var(--t2) var(--smooth); }
-.poiMarker circle.pin { transition: r var(--t2) var(--bounce); }
 .poiHalo {
   fill: none; stroke: var(--beacon); stroke-width: 2.4;
   stroke-dasharray: 5 6; transform-box: fill-box; transform-origin: 50% 50%;
@@ -299,6 +323,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-family: var(--mono); font-size: 9px; fill: var(--labelFill); text-anchor: middle;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; pointer-events: none;
 }
+.memAge {
+  font-family: var(--mono); font-size: 8px; fill: var(--dim); text-anchor: middle;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; pointer-events: none;
+  letter-spacing: .06em;
+}
+.staleRing {
+  fill: none; stroke: var(--dimmer); stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .9;
+}
 .meetPin {
   transform-box: fill-box; transform-origin: 50% 100%;
   animation: pinDrop var(--t4) var(--bounce) both;
@@ -309,23 +341,120 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   animation: breathe 2.6s ease-in-out infinite;
 }
 
+/* Everything the map says about itself, in one corner so the key, the compass
+   and the scale ride the sheet together instead of drifting apart. */
+.mapFurniture {
+  position: absolute; left: 14px; bottom: calc(var(--sheetH) + 14px); z-index: 6;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  pointer-events: none; max-width: min(300px, calc(100% - 28px));
+  transition: bottom var(--t3) var(--snap);
+}
+.mapMeta { display: flex; align-items: center; gap: 8px; }
+/* With the sheet open there is barely any map left to caption. */
+.app[data-sheet='half'] .mapFurniture,
+.app[data-sheet='full'] .mapFurniture {
+  opacity: 0; transform: translateY(12px); pointer-events: none;
+}
+
+.northRose {
+  width: 32px; height: 32px; flex: none; padding: 1px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--glassEdge);
+  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
+  box-shadow: var(--shadow1);
+}
+.northRose svg { width: 100%; height: 100%; display: block; }
+.roseDial { fill: none; }
+.roseNeedle { fill: var(--crimson); }
+.roseTail { fill: var(--dimmer); }
+.roseN {
+  font-family: var(--mono); font-size: 7px; font-weight: 700; fill: var(--paper);
+  text-anchor: middle; letter-spacing: 0;
+}
+
 .scaleBar {
-  position: absolute; left: 14px; bottom: calc(var(--sheetH) + 14px); z-index: 4;
-  display: flex; align-items: center; gap: 7px; pointer-events: none;
+  display: flex; align-items: center; gap: 7px;
   padding: 5px 9px; border-radius: 999px;
   background: var(--glass); border: 1px solid var(--glassEdge);
   -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
   box-shadow: var(--shadow1);
-  transition: bottom var(--t3) var(--snap);
 }
 .scaleBar span {
-  height: 3px; border-radius: 2px; background: var(--paper); opacity: .7; display: block;
-  max-width: 140px; transition: width var(--t1) linear;
+  height: 3px; border-radius: 2px; background: var(--paper); opacity: .75; display: block;
+  border-left: 2px solid var(--paper); border-right: 2px solid var(--paper);
+  box-sizing: content-box; transition: width var(--t1) linear;
 }
 .scaleBar em {
   font-style: normal; font-family: var(--mono); font-size: 9px; color: var(--dim);
-  letter-spacing: .1em;
+  letter-spacing: .1em; white-space: nowrap;
 }
+
+/* ---- the key ---- */
+.mapKey { pointer-events: auto; display: flex; flex-direction: column; gap: 7px; align-items: flex-start; }
+.mapKeyToggle {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 12px 5px 8px; border-radius: 999px; color: var(--paper);
+  background: var(--glass); border: 1px solid var(--glassEdge);
+  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
+  box-shadow: var(--shadow1);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+  transition: transform var(--t2) var(--bounce), color var(--t1) linear;
+}
+.mapKeyToggle:active { transform: scale(.94); }
+.mapKey.open .mapKeyToggle { color: var(--beacon); border-color: var(--beacon); }
+.mapKeyBody {
+  width: 268px; padding: 11px 11px 9px; border-radius: var(--r2);
+  background: var(--glassDeep); border: 1px solid var(--glassEdge);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow2), inset 0 1px 0 var(--glassHi);
+  max-height: min(52vh, 420px); overflow-y: auto;
+  /* .mapWrap turns touch gestures off so a drag pans the map; the key is a
+     list on top of it and still has to scroll. */
+  touch-action: pan-y;
+  animation: keyIn var(--t3) var(--spring) both;
+}
+@keyframes keyIn {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+.mapKeyNote, .mapKeyHead {
+  margin: 0 0 7px; font-family: var(--mono); font-size: 9px; color: var(--dimmer);
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.mapKeyHead { margin-top: 11px; padding-top: 9px; border-top: 1px solid var(--glassEdge); }
+.mapKeyList { list-style: none; margin: 0; padding: 0; }
+.mapKeyRow {
+  display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto;
+  align-items: center; gap: 0 9px; width: 100%; text-align: left;
+  padding: 5px 7px; border-radius: var(--r1); opacity: .42;
+  transition: opacity var(--t2) var(--smooth), background var(--t1) linear;
+}
+.mapKeyRow svg { grid-row: 1 / 3; }
+.mapKeyRow b { font-size: 12.5px; font-weight: 600; }
+.mapKeyRow i { font-style: normal; font-size: 10.5px; color: var(--dim); }
+.mapKeyRow.on { opacity: 1; background: var(--glassHi); }
+.mapKeyRow.static { opacity: 1; }
+
+/* ---- what you just tapped, answered where you tapped it ---- */
+.poiCallout {
+  position: absolute; transform: translate(-50%, calc(-100% - 22px));
+  z-index: 7; max-width: 220px; padding: 7px 11px; border-radius: var(--r1);
+  background: var(--glassDeep); border: 1px solid var(--glassEdge);
+  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
+  box-shadow: var(--shadow2); pointer-events: none;
+  animation: keyIn var(--t2) var(--bounce) both;
+}
+.poiCallout.below { transform: translate(-50%, 24px); }
+.poiCallout b { display: block; font-size: 13px; line-height: 1.25; }
+.poiCallout span {
+  display: block; font-family: var(--mono); font-size: 9.5px; color: var(--dim); margin-top: 3px;
+}
+.poiCallout em {
+  display: inline-block; margin-top: 5px; font-style: normal;
+  font-family: var(--mono); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px;
+}
+.calloutBar { background: var(--helpTint); color: var(--crimson); }
+.calloutAdult { background: color-mix(in srgb, var(--beacon) 16%, transparent); color: var(--beacon); }
 
 /* ---- zoom pad ---- */
 /* Stacked above the FABs so the map keeps one control column on the right and
@@ -1051,8 +1180,6 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   stroke-linecap: round; stroke-linejoin: round;
 }
 /* The ways you did not pick — visible, tappable, and clearly not the choice. */
-.altRoute { cursor: pointer; }
-.altHit { fill: none; stroke: transparent; stroke-width: 22; }
 .altLine {
   fill: none; stroke: var(--dim); stroke-width: 4.5; opacity: .55;
   stroke-linecap: round; stroke-linejoin: round;

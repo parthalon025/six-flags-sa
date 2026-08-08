@@ -54,6 +54,14 @@ const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'serv
 const IDENTITY_KEY = 'tracker-identity';
 const LEGACY_IDENTITY_KEY = 'ki-identity';
 
+/* What the sheet is standing on in each of its states, as pixels. The CSS
+   already publishes this as --sheetH for the chrome that rides above it; the
+   map needs the number itself, to lay its labels out above the furniture
+   rather than behind it. */
+const SHEET_PEEK_PX = 182;
+const SHEET_OPEN = { half: 0.52, full: 0.88 };
+const STOWED_PX = 96;
+
 /** How often the broadcast gate is asked whether the current fix is worth sending. */
 const GATE_TICK_MS = 4000;
 
@@ -97,6 +105,20 @@ export default function Page() {
   const [height, setHeight] = useState(null);
   const [withAdult, setWithAdult] = useState(true);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  // The sheet's open stops are fractions of the viewport, so their height in
+  // pixels is only knowable once there is a window to ask.
+  const [viewportH, setViewportH] = useState(844);
+
+  // Shared by the sheet's chips and the map's own key, which are two views of
+  // the same switch.
+  const toggleCategory = useCallback((key) => {
+    setCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
   const [focusPoint, setFocusPoint] = useState(null);
   const [theme, setTheme] = useState('night');
   const [nav, setNav] = useState(null); // where we are walking to, by reference
@@ -213,6 +235,13 @@ export default function Page() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  useEffect(() => {
+    const measure = () => setViewportH(window.innerHeight);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+
   // Close the gate when the fix actually lands — unless the fix has just earned
   // the intake its second question, in which case the gate stays up and shows
   // that instead. Checking this inside the "Allow location" handler cannot
@@ -271,6 +300,7 @@ export default function Page() {
         lat: m.location?.lat,
         lng: m.location?.lng,
         acc: m.location?.acc ?? null,
+        heading: Number.isFinite(m.location?.heading) ? m.location.heading : null,
         ts: m.location?.ts ?? m.lastSeen,
         colour: colourFor(m.id),
         initials: initialsFor(m.name),
@@ -409,13 +439,16 @@ export default function Page() {
   };
 
   /* ---------- derived ---------- */
-  const dimmedNames = useMemo(() => {
+  /* The map is told the verdict, not just the refusals. Fading a ride out was
+     ambiguous — it looked exactly like a party member we had not heard from —
+     so ParkMap now draws "too short" and "needs a grown-up" as symbols, and
+     that needs the whole answer rather than a set of names to dim. */
+  const rideEligibility = useMemo(() => {
     if (height == null) return null;
-    const out = new Set();
+    const out = new Map();
     POIS.forEach((p) => {
       if (p.c !== 'coaster' && p.c !== 'ride') return;
-      const v = eligibility(p, height, withAdult);
-      if (v === 'no' || v === 'toobig') out.add(p.n);
+      out.set(p.n, eligibility(p, height, withAdult));
     });
     return out;
   }, [POIS, height, withAdult]);
@@ -726,11 +759,17 @@ export default function Page() {
     previewing ? 'stowed' : ''
   }`;
 
+  // The same stops, as a number of pixels, for the map's own label layout.
+  const stowed = previewing || (walking && sheet === 'peek');
+  const floorPx = stowed
+    ? STOWED_PX
+    : Math.round((SHEET_OPEN[sheet] ?? 0) * viewportH) || SHEET_PEEK_PX;
+
   return (
     // data-sheet publishes the sheet's stop as a CSS custom property, so the
     // FABs, the toast, the zoom pad and the scale bar all ride up and down with
     // it on one shared easing instead of each keeping its own copy of the stops.
-    <main className="app" data-sheet={sheet}>
+    <main className="app" data-sheet={stowed ? 'stowed' : sheet}>
       <ParkMap
         data={mapData}
         center={venue?.center}
@@ -745,17 +784,20 @@ export default function Page() {
         follow={follow}
         onUserPan={() => setFollow(false)}
         heading={heading}
-        dimmedNames={dimmedNames}
+        rideEligibility={rideEligibility}
         visibleCategories={categories}
+        onToggleCategory={toggleCategory}
         focusPoint={focusPoint}
         theme={theme}
         route={navTarget ? route : null}
         routeStep={walking ? progress?.step ?? null : null}
         routeAhead={routeAhead}
         routeDone={routeDone}
+        routeTargetName={navTarget?.kind === 'poi' ? navTarget.label : null}
         alternatives={shownAlternatives}
         onPickAlternative={setPick}
         puck={puck}
+        bottomInset={floorPx}
         rotation={rotation}
         liftCentre={walking ? 0.2 : previewing ? -0.12 : 0}
         navZoom={walking ? 3 : null}
@@ -1053,14 +1095,7 @@ export default function Page() {
                     key={key}
                     type="button"
                     className={`chip ${categories.has(key) ? 'on' : ''}`}
-                    onClick={() =>
-                      setCategories((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(key)) next.delete(key);
-                        else next.add(key);
-                        return next;
-                      })
-                    }
+                    onClick={() => toggleCategory(key)}
                   >
                     {cat.label}
                   </button>
