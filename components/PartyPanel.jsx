@@ -87,6 +87,7 @@ export default function PartyPanel({
   onJoin,
   onLeave,
   onClearMeet,
+  onNavigateMeet,
   onFocus,
   busy,
   transport,
@@ -287,6 +288,9 @@ export default function PartyPanel({
             )}
           </div>
           <div className="joinRow">
+            <button type="button" className="btn small primary" onClick={onNavigateMeet}>
+              Walk me there
+            </button>
             <button type="button" className="btn small" onClick={() => onFocus(meet)}>
               Show on map
             </button>

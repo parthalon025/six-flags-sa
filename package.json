@@ -16,6 +16,7 @@
     "venues:reindex": "node scripts/build-venue.mjs --reindex",
     "sync": "node server/index.mjs",
     "test": "node test/functional.mjs",
+    "test:unit": "node test/unit.mjs",
     "test:functional": "node test/functional.mjs",
     "test:visual": "node test/visual.mjs",
     "test:theme": "node test/theme.mjs",

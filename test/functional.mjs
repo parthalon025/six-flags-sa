@@ -190,6 +190,162 @@ await check('clear removes the height filter', async () => {
   return (await a.locator('.filterBadge').count()) === 0;
 });
 
+console.log('\n--- walking directions ---');
+
+await check('"walk me there" offers the route before setting off', async () => {
+  await tab(a, 'Rides');
+  await a.locator('.field[aria-label="Search places"]').fill('beast');
+  await a.waitForTimeout(400);
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.waitForTimeout(900);
+  if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
+  // Nothing has taken over the screen yet: no banner, no bottom bar.
+  if (await a.locator('.navBanner').count()) throw new Error('started walking without being asked');
+  const summary = (await a.locator('.previewMain').innerText()).replace(/\s+/g, ' ');
+  if (!/\d+ min/.test(summary)) throw new Error(summary);
+  if (!/arrive \d/.test(summary)) throw new Error(`no arrival time: ${summary}`);
+  if (!/via /.test(await a.locator('.previewWhere').innerText())) throw new Error('route has no via');
+  return true;
+});
+
+await check('the whole route is drawn, with the other ways beside it', async () => {
+  const d = await a.locator('.routeLine').getAttribute('d');
+  if (!d) throw new Error('no route line');
+  const corners = d.split('L').length - 1;
+  if (corners < 5) throw new Error(`${corners} segments — that is a bearing, not a walk`);
+  if (await a.locator('.routeLine.direct').count()) throw new Error('fell back to a straight line');
+  if (!(await a.locator('.altLine').count())) throw new Error('no alternative offered');
+  return true;
+});
+
+await check('picking another way changes the trip', async () => {
+  const alts = a.locator('.previewAlt');
+  if ((await alts.count()) < 2) throw new Error('only one route to choose from');
+  const before = await a.locator('.previewWhere').innerText();
+  await alts.nth(1).click();
+  await a.waitForTimeout(600);
+  const after = await a.locator('.previewWhere').innerText();
+  if (before === after) throw new Error(`still ${after}`);
+  if (!(await alts.nth(1).getAttribute('class')).includes('on')) throw new Error('choice not marked');
+  await alts.nth(0).click();
+  await a.waitForTimeout(500);
+  return true;
+});
+
+await check('Start hands the screen over to the walk', async () => {
+  await a.locator('.previewGo').click();
+  await a.waitForTimeout(1200);
+  if (!(await a.locator('.navBanner').count())) throw new Error('no maneuver banner');
+  if (!(await a.locator('.navBar').count())) throw new Error('no bottom bar');
+  if (await a.locator('.routePreview').count()) throw new Error('preview card still up');
+  // The sheet is out of the way, the way a maps app clears the screen.
+  if (!(await a.locator('.sheet.stowed').count())) throw new Error('sheet still open');
+  const dist = (await a.locator('.navDist').innerText()).trim();
+  if (!/(ft|mi)/.test(dist)) throw new Error(`distance to the turn reads "${dist}"`);
+  const bar = (await a.locator('.navSummary').innerText()).replace(/\s+/g, ' ');
+  if (!/\d:\d\d/.test(bar)) throw new Error(`no arrival clock in "${bar}"`);
+  return true;
+});
+
+await check('the map turns so the route runs up the screen', async () => {
+  // Course-up: the marker's cone is drawn pointing up and rotated by the
+  // bearing *minus* the map's own rotation, so the two cancel out.
+  const cone = await a.locator('.puckCone').getAttribute('transform');
+  if (!cone) throw new Error('no direction cone on the marker');
+  const deg = Number(cone.match(/rotate\(([-\d.]+)/)[1]);
+  const off = Math.abs(((deg + 540) % 360) - 180);
+  if (off > 12) throw new Error(`cone points ${Math.round(off)}° off straight ahead`);
+  return true;
+});
+
+await check('walking towards it shortens what is left', async () => {
+  // The bar switches units on its own — "905 ft" becomes "0.35 mi" — so
+  // compare feet, not the number printed next to whichever unit won.
+  const left = async () => {
+    const t = (await a.locator('.navSummary span').innerText()).split('·')[1].trim();
+    const n = Number(t.replace(/[^\d.]/g, ''));
+    return /mi/.test(t) ? n * 5280 : n;
+  };
+  const before = await left();
+  await A.context.setGeolocation({ latitude: 39.3419, longitude: -84.2667 });
+  await a.waitForTimeout(2500);
+  const after = await left();
+  if (!(after < before)) throw new Error(`${before} then ${after}`);
+  if (!(await a.locator('.routeDone').count())) throw new Error('the walked part is not drawn behind');
+  return true;
+});
+
+await check('the steps list opens over the walk and closes again', async () => {
+  await a.locator('.navSummary').click();
+  await a.waitForTimeout(700);
+  const steps = await a.locator('.stepRow .stepText b').allInnerTexts();
+  if (steps.length < 3) throw new Error(`${steps.length} steps`);
+  if (!/^Head /.test(steps[0])) throw new Error(`starts with "${steps[0]}"`);
+  if (!/^Arrive at /.test(steps[steps.length - 1])) throw new Error(`ends with "${steps.at(-1)}"`);
+  if (await a.locator('.navBar').count()) throw new Error('bottom bar left under the sheet');
+  await a.locator('button:has-text("Back to the map")').click();
+  await a.waitForTimeout(600);
+  if (!(await a.locator('.navBar').count())) throw new Error('bottom bar did not come back');
+  return true;
+});
+
+await check('the compass button faces the map north and back', async () => {
+  const cone = () =>
+    a.locator('.puckCone').getAttribute('transform').then((t) => Number(t.match(/rotate\(([-\d.]+)/)[1]));
+  const courseUp = await cone();
+  await a.locator('.navTool').nth(1).click();
+  await a.waitForTimeout(600);
+  const northUp = await cone();
+  if (Math.abs(((northUp - courseUp + 540) % 360) - 180) < 15) {
+    throw new Error('north-up drew the same as course-up');
+  }
+  await a.locator('.navTool').nth(1).click();
+  await a.waitForTimeout(500);
+  return true;
+});
+
+await check('spoken directions can be switched on', async () => {
+  const speaker = a.locator('.navTool').first();
+  await speaker.click();
+  await a.waitForTimeout(400);
+  if (!(await speaker.getAttribute('class')).includes('on')) throw new Error('mute toggle did not stick');
+  await speaker.click();
+  await a.waitForTimeout(300);
+  return true;
+});
+
+await check('arriving ends the route on its own', async () => {
+  await A.context.setGeolocation({ latitude: 39.340154, longitude: -84.266027 });
+  await until(async () => (await a.locator('.navBanner').count()) === 0, {
+    timeout: 20000,
+    label: 'the banner to clear on arrival',
+  });
+  if (await a.locator('.navBar').count()) throw new Error('bottom bar left up');
+  if (await a.locator('.routeLine').count()) throw new Error('route still drawn');
+  return true;
+});
+
+await check('a glance card walks you to a place and stops again', async () => {
+  await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
+  await a.waitForTimeout(1200);
+  await tab(a, 'Party');
+  const go = a.locator('.glanceGo').first();
+  if (!(await go.count())) throw new Error('no Go button on the rail');
+  await go.click();
+  await a.waitForTimeout(900);
+  if (!(await a.locator('.routePreview').count())) throw new Error('Go did not offer a route');
+  if (!(await a.locator('.glanceCard.walking').count())) throw new Error('card not marked as live');
+  await a.locator('.previewGo').click();
+  await a.waitForTimeout(900);
+  await a.locator('.navEnd').click();
+  await a.waitForTimeout(500);
+  if (await a.locator('.navBanner').count()) throw new Error('End left the banner up');
+  if (await a.locator('.routeLine').count()) throw new Error('End left the line drawn');
+  return true;
+});
+
 console.log('\n--- party: create and invite ---');
 await tab(a, 'Party');
 await a.waitForTimeout(300);

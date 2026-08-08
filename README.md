@@ -27,6 +27,16 @@ and React 19.
   showing walking time as the headline, distance underneath, and an arrow aimed
   relative to the way you're facing when the compass is on. With no party running it
   falls back to the nearest restroom, food and first aid. Tap a card to fly to it.
+- **Turn-by-turn walking directions, the way a phone map does them.** Tap Go on a card or
+  "Walk me there" on a ride and you get the trip first — how long, when you arrive, and
+  two or three genuinely different ways to go, drawn on the map and named after where they
+  differ ("via Coney Mall"). Press Start and the screen hands itself over: the map turns
+  course-up and zooms in, your marker snaps onto the path, the next maneuver and the
+  distance to it sit across the top with the one after it underneath, and the bottom bar
+  carries the arrival time. Turns are named after what you can see from them ("bear right
+  at Juke Box Diner") because almost none of the park's paths have names. It can speak the
+  directions, the part behind you greys out as you walk, walking off the route works out a
+  new one, and arriving ends it.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
 - **Daylight and night maps.** Daylight is a printed-park-map palette — white midways on
@@ -67,6 +77,78 @@ npm run dev          # http://localhost:3000
 ```
 
 `localhost` counts as a secure context, so GPS works there without a tunnel.
+
+## Walking directions
+
+Routes are worked out on the phone, from the same venue file the map is drawn from —
+`public/venues/<id>.map.json`, whichever one is loaded. There is no routing service, no
+API key and no network call: the file already carries every midway, queue and service
+road as an OpenStreetMap polyline, and `lib/routing.js` welds those polylines into a
+graph and runs A* across it. Nothing in it is specific to one venue, so a map built by
+`npm run venues:build` gets directions for free.
+
+The welding is the whole job. Raw OSM geometry looks connected on screen and is full of
+holes as a graph, so the build runs four repair passes and says so in one place:
+
+| Pass | What it fixes |
+|---|---|
+| weld | vertices within 6 m are one junction, whatever the source says |
+| split | two ways that cross without sharing a node get one |
+| stitch | a path that stops 15 m short of the midway it obviously joins |
+| mend | two paths a few paces apart that need a quarter mile of walking between them |
+
+Straight from the file the network is 221 disconnected pieces and half of all routes
+between two rides have no path at all; after the passes it is two, and the second one is
+the car parks and the north gate, which genuinely have no footpath drawn to them. Every
+ride in the park lands on the main one. The mend pass will not cut through a building or
+across water — where the gap is the mapper being right, it leaves it alone.
+
+### What it looks like to use
+
+The shape is the one both phone maps settled on, for reasons that hold up in a theme park
+as well as on a motorway:
+
+- **Choose, then go.** Asking for directions does not start anything. You get the route
+  framed on screen, the time, the arrival clock and the alternatives — press Start and
+  only then does the interface change. Cancel leaves you exactly where you were.
+- **Alternatives are generated, not looked up.** The penalty method: take the best route,
+  make its segments expensive, search again. A candidate is offered only if it shares less
+  than 70% of the best route and is under 45% longer, and it is named after the land it
+  passes through at the point where it most differs — so two routes are never both "via
+  International Street". Choose one and a reroute later replays the same weights, rather
+  than quietly putting you back on the line you turned down.
+- **Course-up, snapped, lifted.** While walking, the map turns so the way ahead is up, the
+  marker rides the *snapped* point on the route rather than the raw fix, and the centre of
+  the map sits below the centre of the screen so you see where you are going rather than
+  where you have been. The bearing comes from the compass when there is one and from the
+  route otherwise, taken from a point 22 m up the line — the leg underfoot swings with
+  every surveyed bend, and a camera that follows it is unusable.
+- **Rotation lives in the projection**, not in a transform over the map. Turning the whole
+  SVG would take every ride label round with it; doing it in the two lines that convert
+  metres to pixels keeps the type upright for free.
+- **It can talk.** The browser's own speech synthesiser names the maneuver once while
+  there is still time to move across the midway, again as you reach it, and says when you
+  have arrived — each at most once, because a phone that repeats itself gets muted.
+
+### Under it
+
+Costs are metres, weighted: a queue is priced at four and a half times its length because
+it is a dead end with a ride at the bottom, not a through-route, and a service road at
+two and a half because it is legal to draw and rude to walk down. Walking time uses the
+same crowded-park pace as everything else in the app.
+
+Instructions are read off a *smoothed* copy of the route rather than the drawn one — a
+midway surveyed from aerial imagery bends every few metres, and reading turns off that
+gives "bear left, bear right, bear left" for one gentle curve. Steps closer together than
+35 m fold into the one before them.
+
+When either end is nowhere near a path, when the network genuinely does not join them, or
+when the walk it finds is more than three and a half times the straight line, the route
+falls back to a dashed straight line and the banner says so rather than inventing a walk.
+That last case is almost always two rides a few paces apart with a building between them,
+where "it is right there" beats a 270 m lap of the block. A straight line is also what you
+get for the second or two before the graph finishes building, which happens when the
+browser is idle rather than during the first paint of the map.
 
 ## How the party works
 
@@ -197,11 +279,15 @@ npm run test:ux                     # glance rail with a live party
 
 `test/unit.mjs` exercises the pure layers directly: version arithmetic, duplicate
 suppression, seal/open against wrong keys and tampered ciphertext, the election ordering,
-and every GPS cadence band and broadcast-gate reason.
+every GPS cadence band and broadcast-gate reason, and the router — the last of those
+against the real park file rather than a fixture, because a graph that routes perfectly
+over a toy and badly over Kings Island is the failure worth catching.
 
 `test/functional.mjs` is the one that matters. Three phones in one browser: A hosts, B
 joins by typing the code, C joins from the invite link, then A is taken away and the
-other two have to keep the party alive between them. It asserts on behaviour, not
+other two have to keep the party alive between them. Phone A also walks to The Beast on
+the way through — offered the route, picks a different one, starts, checks the map has
+turned course-up, walks until the distance drops, opens the steps and arrives. It asserts on behaviour, not
 appearance — that the key never leaves the URL fragment, that a party id is not its code,
 that NEED HELP reaches the other phone, that the roster never collapses while the host is
 replaced, and that the map and ride heights still work with the network cut.
@@ -311,6 +397,7 @@ lib/party/                    the halves of the protocol
 lib/gps/adaptive.js           motion classification, cadence, broadcast gating
 lib/partyRuntime.js           the seam: session, transports, host service or client
 lib/geo.js                    distance, bearing, Mercator projection
+lib/routing.js                path graph, repair passes, A*, turn-by-turn
 lib/park.js  lib/theme.js     POI helpers and height eligibility; day/night palettes
 lib/venue/store.js            which venue is loaded; manifest, geometry, places
 lib/venue/useVenue.js         the hook components read it through
@@ -331,6 +418,11 @@ components/
   GpsGate.jsx                 permission dialog with per-failure guidance
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
+  NavBanner.jsx               the maneuver strip: this turn, and the one after
+  NavBar.jsx                  arrival time, distance left, mute, compass, End
+  RoutePreview.jsx            the trip and its alternatives, before you set off
+  DirectionsPanel.jsx         the whole step list, greying out behind you
+  useVoiceGuidance.js         spoken maneuvers, once each
   useGeolocation.js           adaptive watchPosition, compass, battery
 server/index.mjs              zero-dependency host: mailbox, REST, SSE, metrics
 scripts/

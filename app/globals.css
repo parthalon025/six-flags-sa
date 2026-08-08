@@ -580,3 +580,181 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   padding: 0 10px 4px; overflow-wrap: anywhere;
 }
 .diagFine.bad { color: var(--crimson); }
+
+/* ============================================================
+   Walking directions — the route on the map, the banner over it
+   ============================================================ */
+.routeCase {
+  fill: none; stroke: var(--markerEdge); stroke-width: 9;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .5;
+}
+.routeLine {
+  fill: none; stroke: var(--beacon); stroke-width: 5;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+/* Nothing in the path data joins these two points, so the line is a bearing
+   rather than a walk — and it says so by not looking like a walk. */
+.routeLine.direct { stroke-dasharray: 8 7; stroke-width: 3.5; opacity: .8; }
+.routeTurn { fill: var(--beacon); stroke: var(--markerEdge); stroke-width: 2.4; }
+/* Behind you, and no longer the point. */
+.routeDone {
+  fill: none; stroke: var(--dimmer); stroke-width: 5; opacity: .45;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+/* The ways you did not pick — visible, tappable, and clearly not the choice. */
+.altRoute { cursor: pointer; }
+.altHit { fill: none; stroke: transparent; stroke-width: 22; }
+.altLine {
+  fill: none; stroke: var(--dim); stroke-width: 4.5; opacity: .55;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+/* The raw fix, kept visible but quiet, while the marker rides the route. */
+.rawFix { fill: var(--beacon); opacity: .45; }
+.puckCone { filter: blur(.3px); }
+
+/* ---- the maneuver strip at the top ---- */
+.navBanner {
+  position: absolute; left: 10px; right: 10px; top: calc(var(--top) + 58px); z-index: 41;
+  background: var(--beacon); color: #fff; border-radius: 6px; overflow: hidden;
+  box-shadow: 0 8px 26px rgba(0,0,0,.4);
+}
+.navBanner.off { background: var(--crimson); }
+.navMain { display: flex; align-items: center; gap: 12px; padding: 11px 13px; }
+.navTurn { width: 34px; height: 34px; flex: none; display: grid; place-items: center; }
+.navIcon { width: 30px; height: 30px; display: block; }
+.navText { flex: 1; min-width: 0; }
+.navDist {
+  display: block; font-family: var(--disp); font-weight: 800; font-size: 27px; line-height: .95;
+  letter-spacing: .01em;
+}
+.navStep {
+  display: block; font-size: 14px; font-weight: 600; margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95;
+}
+.navThen {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 13px 7px; background: rgba(0,0,0,.22);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.navThenIcon { width: 15px; height: 15px; flex: none; }
+.navThenIcon .navIcon { width: 15px; height: 15px; }
+.navSpinner {
+  width: 11px; height: 11px; flex: none; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+  animation: navSpin .9s linear infinite;
+}
+@keyframes navSpin { to { transform: rotate(360deg) } }
+
+/* ---- the bar at the bottom, in place of the sheet ---- */
+.navBar {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 46;
+  background: var(--panel); border-top: 1px solid var(--line);
+  border-radius: 12px 12px 0 0; padding: 10px 12px calc(12px + var(--bot));
+  box-shadow: 0 -14px 40px rgba(0,0,0,.5);
+}
+.navBarRow { display: flex; align-items: center; gap: 10px; }
+.navEnd {
+  flex: none; padding: 11px 15px; border-radius: 999px; background: var(--crimson); color: #fff;
+  font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  min-height: 44px;
+}
+.navSummary { flex: 1; min-width: 0; text-align: left; }
+.navSummary b {
+  display: block; font-family: var(--disp); font-weight: 800; font-size: 25px; line-height: 1;
+  color: var(--mint); letter-spacing: .01em;
+}
+.navSummary span {
+  display: block; font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.navTools { flex: none; display: flex; gap: 6px; }
+.navTool {
+  width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--panel2); color: var(--dim); display: grid; place-items: center; font-size: 15px;
+}
+.navTool.on { background: var(--beacon); border-color: var(--beacon); color: #fff; }
+.navCompass { width: 19px; height: 19px; }
+
+/* ---- the choice you make before setting off ---- */
+.routePreview {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 46;
+  background: var(--panel); border-top: 1px solid var(--line);
+  border-radius: 12px 12px 0 0; padding: 14px 12px calc(14px + var(--bot));
+  box-shadow: 0 -14px 40px rgba(0,0,0,.5);
+}
+.previewHead { display: flex; align-items: center; gap: 12px; }
+.previewMain { flex: 1; min-width: 0; }
+.previewMain b {
+  display: block; font-family: var(--disp); font-weight: 800; font-size: 34px; line-height: .9;
+  color: var(--mint);
+}
+.previewMain b em {
+  font-style: normal; font-family: var(--ui); font-size: 15px; font-weight: 600; margin-left: 4px;
+}
+.previewMain span {
+  display: block; font-family: var(--mono); font-size: 10.5px; color: var(--dim); margin-top: 6px;
+}
+.previewGo {
+  flex: none; padding: 13px 26px; border-radius: 999px; background: var(--beacon); color: #fff;
+  font-size: 15px; font-weight: 700; min-height: 48px;
+}
+.previewWhere { font-size: 13px; color: var(--dim); margin: 10px 0 0; }
+.previewWhere b { color: var(--paper); }
+.previewAlts { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; scrollbar-width: none; }
+.previewAlts::-webkit-scrollbar { display: none; }
+.previewAlt {
+  flex: none; min-width: 120px; text-align: left; padding: 8px 11px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--panel2);
+}
+.previewAlt.on { border-color: var(--beacon); background: color-mix(in srgb, var(--beacon) 12%, var(--panel2)); }
+.previewAlt b { display: block; font-size: 15px; font-weight: 700; }
+.previewAlt span {
+  display: block; font-family: var(--mono); font-size: 9px; color: var(--dimmer); margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.previewFoot { display: flex; gap: 16px; margin-top: 12px; }
+.previewLink {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--dim); text-decoration: underline; text-underline-offset: 3px; min-height: 40px;
+}
+
+/* The sheet steps aside for the HUD, and the FABs ride above whichever is up. */
+.sheet.stowed { height: 0; border-top: none; box-shadow: none; overflow: hidden; }
+.fabs.go { bottom: calc(92px + var(--bot)); }
+.fabs.preview { bottom: calc(210px + var(--bot)); }
+.fab.resume { background: var(--beacon); border-color: var(--beacon); color: #fff; }
+
+/* ---- the Go button on a glance card ---- */
+.glanceCard { position: relative; }
+.glanceHit {
+  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  padding: 0; background: none; border: none; color: inherit;
+}
+.glanceCard.walking { border-left-color: var(--beacon); background: color-mix(in srgb, var(--beacon) 9%, var(--panel2)); }
+.glanceGo {
+  position: absolute; right: 6px; top: 6px; min-width: 36px; padding: 4px 8px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--dim);
+}
+.glanceGo.on { background: var(--beacon); border-color: var(--beacon); color: #fff; }
+
+/* ---- the full step list in the sheet ---- */
+.stepList { list-style: none; margin: 0; padding: 0; }
+.stepRow { border-bottom: 1px solid var(--line); }
+.stepRow.done { opacity: .4; }
+.stepRow.now { background: color-mix(in srgb, var(--beacon) 8%, transparent); }
+.stepMain { display: flex; gap: 10px; align-items: center; width: 100%; padding: 10px 6px; text-align: left; }
+.stepGlyph {
+  width: 28px; height: 28px; flex: none; border-radius: 4px; display: grid; place-items: center;
+  background: var(--panel2); color: var(--dim);
+}
+.stepGlyph .navIcon { width: 17px; height: 17px; }
+.stepRow.now .stepGlyph { background: var(--beacon); color: #fff; }
+.stepGlyph.arrive { color: var(--crimson); }
+.stepText { flex: 1; min-width: 0; }
+.stepText b { display: block; font-size: 13.5px; font-weight: 600; }
+.stepText span {
+  display: block; font-family: var(--mono); font-size: 9.5px; color: var(--dimmer); margin-top: 2px;
+}

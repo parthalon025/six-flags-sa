@@ -34,6 +34,7 @@ export default function RidesPanel({
   selected,
   onSelect,
   onSetMeet,
+  onNavigate,
   theme,
   venue,
 }) {
@@ -270,9 +271,18 @@ export default function RidesPanel({
                   {p.approx && (
                     <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
                   )}
-                  <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
-                    Make this the meet-up
-                  </button>
+                  <div className="joinRow">
+                    <button
+                      type="button"
+                      className="btn small primary"
+                      onClick={() => onNavigate({ kind: 'poi', label: p.n, lat: p.lat, lng: p.lng })}
+                    >
+                      Walk me there
+                    </button>
+                    <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
+                      Make this the meet-up
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

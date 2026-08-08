@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
+import { navKeyOf as keyOfNav } from '@/lib/routing';
 import { usePois } from '@/lib/venue/useVenue';
 import { paletteFor } from '@/lib/theme';
 
@@ -44,6 +45,9 @@ export default function GlanceRail({
   heading,
   theme,
   onFocus,
+  onNavigate,
+  navKey,
+  navMetres,
   onOpenParty,
 }) {
   const palette = paletteFor(theme);
@@ -57,7 +61,7 @@ export default function GlanceRail({
     const out = [];
     const rel = (b) => (heading == null ? b : (b - heading + 360) % 360);
 
-    const push = (key, eyebrow, title, target, colour, footnote, tone) => {
+    const push = (key, eyebrow, title, target, colour, footnote, tone, nav) => {
       const d = distance(me.lat, me.lng, target.lat, target.lng);
       const b = bearing(me.lat, me.lng, target.lat, target.lng);
       out.push({
@@ -72,11 +76,15 @@ export default function GlanceRail({
         deg: rel(b),
         footnote,
         target,
+        nav,
       });
     };
 
     if (meet) {
-      push('meet', 'Meet-up', meet.label, meet, 'var(--crimson)', `set by ${meet.by}`, 'meet');
+      push('meet', 'Meet-up', meet.label, meet, 'var(--crimson)', `set by ${meet.by}`, 'meet', {
+        kind: 'meet',
+        label: meet.label || 'Meet-up',
+      });
     }
 
     [...members]
@@ -92,11 +100,17 @@ export default function GlanceRail({
           help ? 'var(--crimson)' : m.colour,
           formatAge(Date.now() - m.ts),
           help ? 'help' : stale ? 'stale' : 'member',
+          { kind: 'member', id: m.id, label: m.name },
         );
       });
 
     if (selected) {
-      push('sel', 'Heading for', selected.n, selected, 'var(--beacon)', selected.a, 'selected');
+      push('sel', 'Heading for', selected.n, selected, 'var(--beacon)', selected.a, 'selected', {
+        kind: 'poi',
+        label: selected.n,
+        lat: selected.lat,
+        lng: selected.lng,
+      });
     }
 
     // With nothing else to track, the useful answer is the nearest of the
@@ -109,7 +123,14 @@ export default function GlanceRail({
       ];
       wants.forEach(([eyebrow, pred, colour], i) => {
         const hit = nearestOf(pois, me.lat, me.lng, pred);
-        if (hit) push(`n-${i}`, eyebrow, hit.poi.n, hit.poi, colour, hit.poi.a, 'nearby');
+        if (hit) {
+          push(`n-${i}`, eyebrow, hit.poi.n, hit.poi, colour, hit.poi.a, 'nearby', {
+            kind: 'poi',
+            label: hit.poi.n,
+            lat: hit.poi.lat,
+            lng: hit.poi.lng,
+          });
+        }
       });
     }
 
@@ -136,30 +157,43 @@ export default function GlanceRail({
 
   return (
     <div className="glanceRail" role="list">
-      {cards.map((c) => (
-        <button
-          type="button"
-          key={c.key}
-          role="listitem"
-          className={`glanceCard ${c.tone}`}
-          onClick={() => onFocus(c.target)}
-        >
-          <span className="glanceEyebrow" style={{ color: c.colour }}>
-            {c.eyebrow}
-          </span>
-          <span className="glanceMain">
-            <Arrow deg={c.deg} colour={c.colour} />
-            <span className="glanceWalk">
-              <b>{c.walk}</b>
-              <em>{c.dist}</em>
-            </span>
-          </span>
-          <span className="glanceTitle">{c.title}</span>
-          <span className="glanceFoot">
-            {c.card} · {c.footnote}
-          </span>
-        </button>
-      ))}
+      {cards.map((c) => {
+        const walking = Boolean(navKey) && navKey === keyOfNav(c.nav);
+        // While a route is running, the card stops quoting the crow-flies range
+        // and quotes what is actually left of the walk — otherwise the card and
+        // the banner above it disagree about the same destination.
+        const onFoot = walking && Number.isFinite(navMetres);
+        return (
+          <div key={c.key} role="listitem" className={`glanceCard ${c.tone} ${walking ? 'walking' : ''}`}>
+            <button type="button" className="glanceHit" onClick={() => onFocus(c.target)}>
+              <span className="glanceEyebrow" style={{ color: c.colour }}>
+                {c.eyebrow}
+              </span>
+              <span className="glanceMain">
+                <Arrow deg={c.deg} colour={c.colour} />
+                <span className="glanceWalk">
+                  <b>{onFoot ? formatWalk(navMetres) : c.walk}</b>
+                  <em>{onFoot ? formatDistance(navMetres) : c.dist}</em>
+                </span>
+              </span>
+              <span className="glanceTitle">{c.title}</span>
+              <span className="glanceFoot">
+                {c.card} · {c.footnote}
+              </span>
+            </button>
+            {onNavigate && c.nav && (
+              <button
+                type="button"
+                className={`glanceGo ${walking ? 'on' : ''}`}
+                onClick={() => onNavigate(walking ? null : c.nav)}
+                aria-label={walking ? `Stop walking to ${c.title}` : `Walk me to ${c.title}`}
+              >
+                {walking ? 'Stop' : 'Go'}
+              </button>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
