@@ -1,5 +1,6 @@
 /* Park wifi is bad and cell coverage in a queue line is worse, so the shell,
-   the drawn map and the ride database are cached aggressively.
+   the drawn map of whichever venue is loaded, and its place list are cached
+   aggressively.
 
    Party state is never cached here. It is not that a stale roster is merely
    unhelpful — under the local-first model the roster is sealed ciphertext
@@ -7,15 +8,32 @@
    would feed the client a version it has already applied. Offline party state
    lives in the client's own replica and its outbox instead, which are
    versioned and know how to catch up. */
-const CACHE = 'ki-tracker-v3';
+const CACHE = 'tracker-v4';
 const SHELL = [
   '/',
   '/join',
-  '/parkmap.json',
+  '/venues/manifest.json',
   '/manifest.webmanifest',
   '/icon-192.png',
   '/icon-512.png',
 ];
+
+/**
+ * Which venue's geometry to hold is not known at build time — the manifest
+ * decides, and a deployment can ship several. Precache the default one so a
+ * phone that installs the app at home has a map before it loses signal in the
+ * car park; any other venue is cached the first time it is opened.
+ */
+async function precacheDefaultVenue(cache) {
+  try {
+    const manifest = await fetch('/venues/manifest.json').then((r) => r.json());
+    const venue = manifest.venues?.find((v) => v.id === manifest.default) || manifest.venues?.[0];
+    if (!venue) return;
+    await Promise.all([venue.map, venue.pois].map((u) => cache.add(u).catch(() => {})));
+  } catch {
+    /* offline at install time: the runtime handler will catch it later */
+  }
+}
 
 /* Cacheable read-only reference data. Everything else under /api/ is either a
    mailbox (opaque, per-peer, single-delivery) or a mutation. */
@@ -27,7 +45,10 @@ self.addEventListener('install', (e) => {
       .open(CACHE)
       // addAll is atomic: one 404 and the whole install fails, which would
       // leave the app with no offline shell at all. Add individually instead.
-      .then((c) => Promise.all(SHELL.map((u) => c.add(u).catch(() => {}))))
+      .then(async (c) => {
+        await Promise.all(SHELL.map((u) => c.add(u).catch(() => {})));
+        await precacheDefaultVenue(c);
+      })
       .then(() => self.skipWaiting()),
   );
 });
@@ -71,7 +92,9 @@ self.addEventListener('fetch', (e) => {
     return; // everything else stays live
   }
 
-  if (url.pathname === '/parkmap.json') {
+  // Venue files are big, static and the whole point of the app working with no
+  // signal, so they are held for as long as the cache lives.
+  if (url.pathname.startsWith('/venues/')) {
     e.respondWith(staleWhileRevalidate(e.request));
     return;
   }

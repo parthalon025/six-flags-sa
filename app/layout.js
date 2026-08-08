@@ -1,11 +1,14 @@
 import './globals.css';
 
+/* The document title is fixed at build time and the venue is not chosen until
+   the app boots, so this stays generic — the loaded venue's name is the first
+   thing in the header, which is where anyone actually looks. */
 export const metadata = {
-  title: 'Kings Island · Party Tracker',
+  title: 'Party Tracker · live group map',
   description:
-    'Live group tracking, ride height requirements and a drawn park map for Kings Island in Mason, Ohio.',
+    'Live group tracking, walking times and a drawn map of wherever you are, built from OpenStreetMap.',
   manifest: '/manifest.webmanifest',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'KI Tracker' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Party Tracker' },
   icons: {
     icon: [{ url: '/icon-192.png', sizes: '192x192' }, { url: '/icon-512.png', sizes: '512x512' }],
     apple: '/apple-touch-icon.png',
