@@ -50,10 +50,19 @@ and React 19.
   moves — and each tab keeps its own navigation stack, so leaving one and coming back
   finds it where you left it. Tapping the tab you are already on unwinds it to its root.
   The sheet itself follows your finger between three stops and snaps to whichever one you
-  flicked it at, screens slide in from the side they came from, and a sideways swipe goes
-  back — or steps along the tab bar when there is nothing to go back to. The collapsed
-  stop deliberately shows less: search, where you are, the rail, the tabs. Everything
-  else is one pull away.
+  flicked it at, and screens slide in from the side they came from. The collapsed stop
+  deliberately shows less: search, where you are, the rail, the tabs. Everything else is
+  one pull away.
+- **Back is the phone's back, not a button in a corner.** Every screen the app opens goes
+  onto the browser's history stack, so the Android back button and the swipe in from the
+  left edge walk back through the app one screen at a time and only leave when there is
+  nothing left to go back to. The sheet's own back button takes the identical path — it
+  is the same history move — so the two can never disagree about where they are.
+- **Sized for a thumb, not a cursor.** Nothing you can tap is smaller than the 44px a
+  fingertip actually covers. Where a control has to *look* small — a row of seven height
+  tiers, a strip of filter chips, the Go button in the corner of a card — it keeps its
+  looks and grows an invisible hit area instead, so taps that land near enough still
+  count. There is no hover state anywhere, because there is no pointer to hover with.
 - **Turn-by-turn walking directions, the way a phone map does them.** Tap Go on a card or
   "Walk me there" on a ride and you get the trip first — how long, when you arrive, and
   two or three genuinely different ways to go, drawn on the map and named after where they

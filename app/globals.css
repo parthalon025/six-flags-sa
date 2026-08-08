@@ -16,7 +16,7 @@
   /* The peek stop has to stand the search field, the glance rail and the tab
      bar at once. Tracked in page.js as PEEK_PX — the map lays its labels out
      against the same number. */
-  --peek: 312px;
+  --peek: 320px;
 
   /* ---- backgrounds ---- */
   --bg: #000000;
@@ -660,8 +660,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* touch-action: none, because a drag on the handle is the sheet's gesture and
    not the browser's — without it the first few pixels are eaten by a pull to
    refresh or a page scroll before the handler ever sees them. */
+/* The handle is the one control that cannot borrow the trick below: an
+   invisible 44px hit area would reach down over the search field and take the
+   taps meant for it. So this one is genuinely taller instead — enough to clear
+   the 24px floor, and forgiving in the way that matters, since the drag runs
+   the full width of the sheet. */
 .grab {
-  width: 100%; padding: 9px 0 7px; display: grid; place-items: center;
+  width: 100%; padding: 12px 0 10px; display: grid; place-items: center;
   flex: none; touch-action: none;
 }
 .grab i {
@@ -692,6 +697,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .sheetStage[data-motion='fromRight'] { animation: screenFromRight var(--t2) var(--ease) both; }
 .sheetStage[data-motion='fromLeft'] { animation: screenFromLeft var(--t2) var(--ease) both; }
+
 
 /* ---- a tab's own root: the large title a phone puts at the top ---- */
 .sheetHead { flex: none; padding: 2px 16px 10px; }
@@ -794,7 +800,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    pushes the tab bar off the bottom of the sheet. */
 .sheetBody {
   flex: 1; min-height: 0;
-  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* `contain` stops a scroll chaining out to the page but deliberately leaves
+     the browser its own horizontal overscroll gesture — the edge swipe that
+     means "back". The app answers that gesture through the history stack
+     rather than suppressing it, so it goes back a screen instead of back a
+     page. See the history block in page.js. */
+  overscroll-behavior: contain;
   padding: 4px 16px 12px;
   /* Content fades out at both ends of the scroller rather than being cut off
      against the handle above it and the tab bar below. */
@@ -1332,6 +1344,36 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 6px; }
 .chip, .fab, .iconBtn, .codeBox button, .labelAction, .previewLink { min-height: 34px; }
 .chip { display: inline-flex; align-items: center; }
+
+/* A fingertip covers about 44px, and several of the controls here are drawn
+   smaller than that on purpose: a row of seven height tiers, a strip of filter
+   chips and a Go button tucked into the corner of a card all stop reading as
+   what they are once they are given 44px of ink.
+
+   So they keep their looks and grow an invisible hit area instead — centred on
+   the control, 44px in both directions, and taking the taps that land near
+   enough to have been meant for it. Nothing moves, and nothing has to be aimed
+   at. */
+.chip, .tier, .glanceGo, .navBack, .searchClear, .mapKeyToggle, .segmented .tab {
+  position: relative;
+}
+.chip::after, .tier::after, .glanceGo::after, .navBack::after, .searchClear::after,
+.mapKeyToggle::after, .segmented .tab::after {
+  content: '';
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: max(100%, 44px); height: max(100%, 44px);
+}
+/* Two that may only grow upwards and downwards: the tiers sit shoulder to
+   shoulder in one track and the segments of a segmented control do the same, so
+   44px of width each would have them fighting their neighbours for the taps in
+   between. */
+.tier::after, .segmented .tab::after { width: 100%; }
+
+/* The slider is the one control a thumb drags rather than taps, and the track
+   it drags along is 4px of ink. The input itself is what receives the touch,
+   so that is what gets the height. */
+.heightRow input[type='range'] { height: 44px; }
+.heightRow input[type='range']::-webkit-slider-thumb { margin-top: -12px; }
 
 /* ---- install card ---- */
 .installCard {

@@ -75,6 +75,8 @@ const TAB_ORDER = ['explore', 'party', 'rides', 'settings'];
 const ROOT_TITLES = { party: 'Party', rides: 'Rides', settings: 'Me' };
 
 const EMPTY_STACK = [];
+/** The navigation state the app opens on, and the one back returns it to. */
+const HOME_STACKS = { explore: [], party: [], rides: [], settings: [] };
 
 const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
 
@@ -93,7 +95,7 @@ const LEGACY_IDENTITY_KEY = 'ki-identity';
    standing on is the height plus that gap; at the full stop it is anchored and
    there is no gap. The peek stop is what it is because it has to stand the
    search field, the glance rail and the tab bar all at once. */
-const PEEK_PX = 312;
+const PEEK_PX = 320;
 const SHEET_PEEK_PX = PEEK_PX + 8;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
 const SHEET_INSET = { half: 5, full: 0 };
@@ -138,7 +140,7 @@ export default function Page() {
      pushed on top of it arrives behind a back button, and leaving the tab and
      coming back finds it exactly where it was left. */
   const [tab, setTab] = useState('explore');
-  const [stacks, setStacks] = useState({ explore: [], party: [], rides: [], settings: [] });
+  const [stacks, setStacks] = useState(HOME_STACKS);
   /* Which way the next screen should come in from. Screens travel: forward is
      from the right, back is from the left, and that is true of a push, a pop
      and a move along the tab bar alike. Empty on the first paint — the sheet
@@ -184,35 +186,90 @@ export default function Page() {
   const stack = stacks[tab] ?? EMPTY_STACK;
   const view = stack[stack.length - 1] ?? null;
 
+  /* ---------- where "back" comes from ----------
+   *
+   * On a phone, back is not the button in the corner of the sheet. It is the
+   * hardware button on an Android, and the swipe in from the left edge on
+   * both — a browser gesture, decided by the browser before any handler in
+   * this page is asked, and not suppressible from a page in any reliable way.
+   * Measured: a drag from the left edge navigates the browser off the app
+   * whatever the sheet does about pointer events.
+   *
+   * So the app answers it instead of fighting it. Every forward move — a
+   * screen pushed, a tab stepped to — puts a snapshot of the whole navigation
+   * state into the history stack, and going back restores the snapshot the
+   * browser hands over. The edge swipe and the Android back button then walk
+   * back through the app one screen at a time, and only leave when there is
+   * nothing left to go back to, which is what a person expects of both.
+   *
+   * Snapshots rather than a count of entries: there is no arithmetic to get
+   * wrong, and an entry can be corrected in place when the app closes a screen
+   * on its own — a walk ending takes its directions screen with it.
+   */
+  const navRef = useRef({ tab: 'explore', stacks: null });
+  useEffect(() => {
+    navRef.current = { tab, stacks };
+  }, [tab, stacks]);
+
+  /** Put a navigation state on screen, without touching history. */
+  const applyNav = useCallback((next, dir) => {
+    if (!next) return;
+    tabRef.current = next.tab;
+    setMotion(dir);
+    setTab(next.tab);
+    setStacks(next.stacks);
+  }, []);
+
   // The handlers below are called from callbacks that must not be rebuilt every
   // time the tab changes, so they read the current tab through a ref rather
   // than closing over it.
   const tabRef = useRef('explore');
+  // The tab ids in bar order, for the gestures that step along it.
+  const tabsRef = useRef(TAB_ORDER);
   useEffect(() => {
     tabRef.current = tab;
   }, [tab]);
 
-  /** Push a screen onto a tab's stack — its own tab unless told otherwise. */
-  const push = useCallback((next, target) => {
-    const id = target || tabRef.current;
-    tabRef.current = id;
-    setTab(id);
-    setMotion('fromRight');
-    setStacks((prev) => {
-      const cur = prev[id] || EMPTY_STACK;
-      if (cur[cur.length - 1] === next) return prev;
-      return { ...prev, [id]: [...cur, next] };
-    });
-    setSheet((h) => (h === 'peek' ? 'half' : h));
-  }, []);
+  /** A forward move: on screen, and onto the history stack behind it. */
+  const goForward = useCallback(
+    (next, dir) => {
+      applyNav(next, dir);
+      // Spread whatever is already there: the router keeps its own bookkeeping
+      // in history.state, and replacing the object wholesale strands it — the
+      // symptom is a back that skips every intermediate entry and lands on the
+      // first one.
+      window.history.pushState({ ...window.history.state, tracker: next }, '');
+      // A little confirmation under the thumb. The screen has already changed
+      // by the time a phone this size has finished animating, and on a bright
+      // midway the tap is often felt before it is seen.
+      navigator.vibrate?.(8);
+    },
+    [applyNav],
+  );
 
+  /** Push a screen onto a tab's stack — its own tab unless told otherwise. */
+  const push = useCallback(
+    (next, target) => {
+      const id = target || tabRef.current;
+      const { stacks: cur } = navRef.current;
+      const onIt = cur[id] || EMPTY_STACK;
+      if (id === tabRef.current && onIt[onIt.length - 1] === next) return;
+      goForward(
+        { tab: id, stacks: { ...cur, [id]: [...onIt, next] } },
+        'fromRight',
+      );
+      setSheet((h) => (h === 'peek' ? 'half' : h));
+    },
+    [goForward],
+  );
+
+  /**
+   * Back one screen — through history, so that the sheet's own back button and
+   * the phone's back gesture take exactly the same path and cannot disagree
+   * about where they are.
+   */
   const pop = useCallback(() => {
-    setMotion('fromLeft');
-    setStacks((prev) => {
-      const id = tabRef.current;
-      const cur = prev[id] || EMPTY_STACK;
-      return cur.length ? { ...prev, [id]: cur.slice(0, -1) } : prev;
-    });
+    window.history.back();
   }, []);
 
   /**
@@ -220,21 +277,44 @@ export default function Page() {
    * tab's stack back to its root, which is what every phone tab bar does and
    * the only way back out of a screen without reaching for the back button.
    */
-  const selectTab = useCallback((id) => {
-    const current = tabRef.current;
-    if (id === current) {
-      setMotion('fromLeft');
-      setStacks((prev) => (prev[id]?.length ? { ...prev, [id]: [] } : prev));
-      return;
-    }
-    setMotion(TAB_ORDER.indexOf(id) > TAB_ORDER.indexOf(current) ? 'fromRight' : 'fromLeft');
-    tabRef.current = id;
-    setTab(id);
-    // Explore is read over the top of the map and keeps whatever stop the sheet
-    // was left at. The other three are screens you went to read, so they come
-    // up far enough to have something on them.
-    if (id !== 'explore') setSheet((h) => (h === 'peek' ? 'half' : h));
-  }, []);
+  const selectTab = useCallback(
+    (id) => {
+      const current = tabRef.current;
+      const { stacks: cur } = navRef.current;
+      if (id === current) {
+        // Unwinding is going back, however many screens deep it is.
+        const depth = cur[id]?.length ?? 0;
+        if (depth) window.history.go(-depth);
+        return;
+      }
+      goForward(
+        { tab: id, stacks: cur },
+        TAB_ORDER.indexOf(id) > TAB_ORDER.indexOf(current) ? 'fromRight' : 'fromLeft',
+      );
+      // Explore is read over the top of the map and keeps whatever stop the sheet
+      // was left at. The other three are screens you went to read, so they come
+      // up far enough to have something on them.
+      if (id !== 'explore') setSheet((h) => (h === 'peek' ? 'half' : h));
+    },
+    [goForward],
+  );
+
+  // The browser handing back an earlier snapshot is the only thing that ever
+  // moves this app backwards, whether the visitor pressed a button, swiped the
+  // edge, or held the one on the phone itself.
+  useEffect(() => {
+    // The entry the app opened on is home. Stamped on mount so that a reload
+    // does not leave a stale snapshot on the current entry.
+    window.history.replaceState(
+      { ...window.history.state, tracker: { tab: 'explore', stacks: HOME_STACKS } },
+      '',
+    );
+    const onPop = (e) => {
+      applyNav(e.state?.tracker ?? { tab: 'explore', stacks: HOME_STACKS }, 'fromLeft');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [applyNav]);
 
   const runtime = useRef(null);
   const lastRoute = useRef(null);
@@ -667,12 +747,23 @@ export default function Page() {
     setRoutes([]);
     setPick(0);
     lastRoute.current = null;
-    setStacks((prev) => {
-      const cur = prev.explore || EMPTY_STACK;
-      return cur.includes('route') ? { ...prev, explore: cur.filter((v) => v !== 'route') } : prev;
-    });
+    // A walk ending closes its own directions screen. If that screen is the one
+    // showing, going back is what closes it; if it is buried, the entry is
+    // corrected in place so that backing into it later does not resurrect a
+    // walk that is over.
+    const { tab: at, stacks: cur } = navRef.current;
+    const explore = cur.explore || EMPTY_STACK;
+    if (explore.includes('route')) {
+      const next = { tab: at, stacks: { ...cur, explore: explore.filter((v) => v !== 'route') } };
+      if (at === 'explore' && explore[explore.length - 1] === 'route') {
+        window.history.back();
+      } else {
+        applyNav(next, 'fromLeft');
+        window.history.replaceState({ ...window.history.state, tracker: next }, '');
+      }
+    }
     setSheet('peek');
-  }, []);
+  }, [applyNav]);
 
   // A walk belongs to the map it was worked out on. When the venue changes —
   // picked by hand, or followed to where the party is — the destination is a
@@ -947,6 +1038,10 @@ export default function Page() {
     return out;
   }, [helpNow, active, roster.length, heights, identity?.name]);
 
+  useEffect(() => {
+    tabsRef.current = tabs.map((t) => t.id);
+  }, [tabs]);
+
   // Switching to a venue with no height rules while standing on the Rides tab
   // would leave the sheet on a screen with no way back to it.
   useEffect(() => {
@@ -975,19 +1070,6 @@ export default function Page() {
   const sheetClass = `sheet ${sheet} ${tab === 'explore' ? 'atMap' : ''} ${
     stowed ? 'stowed' : ''
   } ${drag.dragging ? 'dragging' : ''}`;
-
-  /* A sideways swipe deliberately does nothing here.
-   *
-   * It is the obvious gesture to reach for — drag right to go back, drag along
-   * to change tab — and on the web it is not the app's to take: a horizontal
-   * drag is how a browser is told to go back a page, and a phone browser acts
-   * on it before any handler of ours is asked. Wiring it up produced exactly
-   * that: a swipe meant for the tab bar navigated the browser off the app.
-   *
-   * So the horizontal axis is left to the platform, and the sheet keeps the
-   * one gesture that is unambiguously its own — the vertical drag on its
-   * handle. Back is the back button, and tabs are the tab bar.
-   */
 
   // The same stops, as a number of pixels, for the map's own label layout.
   const floorPx = stowed
