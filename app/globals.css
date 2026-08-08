@@ -440,6 +440,39 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .filterBadge b { font-size: 13px; letter-spacing: 0; }
 
+/* ---- weather / live status ----
+   The banner is only in the tree when something is actually wrong, so the
+   badge below it moves down by sibling selector rather than by a class the
+   page would have to remember to set. */
+.wxBanner {
+  position: absolute; z-index: 39; left: 10px; right: 10px; top: calc(var(--top) + 58px);
+  display: flex; flex-direction: column; gap: 2px; text-align: left;
+  padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  backdrop-filter: blur(12px); box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.wxBanner b { font-size: 14px; }
+.wxBanner.bad b { color: var(--crimson); }
+.wxBanner.warn b { color: var(--beacon); }
+.wxBanner.ok b { color: var(--mint); }
+.wxMain { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.wxCounts {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--dim);
+}
+.wxWhy { font-size: 11.5px; color: var(--dim); line-height: 1.4; }
+p.wxWhy { margin: 0 0 8px; }
+p.wxWhy.bad { color: color-mix(in srgb, var(--crimson) 78%, var(--paper)); }
+p.wxWhy.warn { color: color-mix(in srgb, var(--beacon) 70%, var(--paper)); }
+.wxBanner + .filterBadge { top: calc(var(--top) + 116px); }
+
+/* A forecast is a guess and is drawn as one — outlined, not filled, so a row
+   never reads with the same weight as something a person actually saw. */
+.verdict.guess { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+.reportRow { margin-bottom: 8px; }
+.reportRow .btn { flex: 1; }
+.reportRow .btn.on { background: var(--beacon); border-color: var(--beacon); color: #fff; }
+
 /* ---- height tiers ---- */
 .tierRow { display: flex; gap: 6px; margin-bottom: 12px; }
 .tier {

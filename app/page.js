@@ -15,7 +15,10 @@ import RoutePreview from '@/components/RoutePreview';
 import DirectionsPanel from '@/components/DirectionsPanel';
 import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
-import { POIS, CATEGORIES, eligibility } from '@/lib/park';
+import useWeather from '@/components/useWeather';
+import WeatherBanner from '@/components/WeatherBanner';
+import { POIS, CATEGORIES, PARK_CENTER, eligibility } from '@/lib/park';
+import { statusSummary } from '@/lib/rideStatus';
 import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
 import {
   buildRouteGraph,
@@ -99,6 +102,21 @@ export default function Page() {
   // Also in state, because the diagnostics panel is a render-time consumer and
   // a ref assigned inside an effect never triggers the render that reads it.
   const [runtimeApi, setRuntimeApi] = useState(null);
+
+  /*
+   * Live status: what the sky is doing, and what the party has walked past.
+   *
+   * The clock is state rather than a Date.now() in the render, so every "12 min
+   * ago" on screen agrees with every other one, and so a report visibly ages
+   * without anything else having to change. A minute is as fine as this needs
+   * to be — nothing here is measured in seconds.
+   */
+  const weatherFeed = useWeather(PARK_CENTER);
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setClock(Date.now()), 60 * 1000);
+    return () => clearInterval(t);
+  }, []);
   const identityRef = useRef(null);
   const positionRef = useRef(null);
   const helpSeen = useRef(new Set());
@@ -334,6 +352,20 @@ export default function Page() {
       return v === 'yes' || v === 'companion';
     }).length;
   }, [height, withAdult]);
+
+  /** The party's ride reports, or an empty map when there is no party. */
+  const partyRides = party?.rides ?? null;
+
+  const liveSummary = useMemo(
+    () => statusSummary(POIS, partyRides, weatherFeed.weather, clock),
+    [partyRides, weatherFeed.weather, clock],
+  );
+
+  const reportRide = useCallback((rideId, status) => {
+    const applied = runtime.current?.reportRide(rideId, status);
+    if (applied === null) showToast('Join a party to report a ride');
+    return applied;
+  }, [showToast]);
 
   const nearest = useMemo(() => {
     if (!position) return null;
@@ -664,6 +696,19 @@ export default function Page() {
         </button>
       </header>
 
+      <WeatherBanner
+        weather={weatherFeed.weather}
+        summary={liveSummary}
+        at={weatherFeed.at}
+        stale={weatherFeed.stale}
+        offline={weatherFeed.offline}
+        now={clock}
+        onOpen={() => {
+          setTab('rides');
+          setSheet('half');
+        }}
+      />
+
       {height != null && (
         <button
           type="button"
@@ -871,6 +916,12 @@ export default function Page() {
               onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
               onNavigate={startNav}
               theme={theme}
+              weather={weatherFeed.weather}
+              rides={partyRides}
+              // Reporting needs somewhere to send it. Outside a party the panel
+              // still shows the forecast, minus the buttons.
+              onReport={party?.active ? reportRide : null}
+              now={clock}
             />
           )}
           {tab === 'me' && (

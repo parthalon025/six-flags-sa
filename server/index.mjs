@@ -32,9 +32,11 @@ import {
   reduce,
   applyOps,
   evict,
+  evictRides,
   publicSnapshot,
   OP,
   PARTY_TTL_MS,
+  RIDE_STATUSES,
 } from '../lib/core/state.js';
 import { newPartyCode, newMemberId, normalizeCode } from '../lib/core/ids.js';
 
@@ -70,12 +72,25 @@ const VERSION = pkg.version || '0.0.0';
  * rides.json has no ids — the app keys off the ride name. Slugs are stable as
  * long as the name is, and the name is what people say out loud, so both work
  * as a lookup key here.
+ *
+ * The repeat suffix has to match lib/park.js exactly. A park has ten
+ * "Restrooms", and a ride report is addressed by id: if this host numbered them
+ * differently from the phones talking to it, a report about one would land on
+ * another. Same rule, deliberately duplicated — this file cannot import
+ * lib/park.js, which is bundler-resolved.
  */
-const RIDES = (readJson(here('../lib/rides.json')) || []).map((r) => ({ id: slug(r.n), ...r }));
+const seenSlugs = new Map();
+const RIDES = (readJson(here('../lib/rides.json')) || []).map((r) => {
+  const base = slug(r.n) || 'poi';
+  const n = (seenSlugs.get(base) ?? 0) + 1;
+  seenSlugs.set(base, n);
+  return { id: n === 1 ? base : `${base}-${n}`, ...r };
+});
 const RIDE_BY_ID = new Map();
 for (const r of RIDES) {
   RIDE_BY_ID.set(r.id, r);
-  RIDE_BY_ID.set(r.n.toLowerCase(), r);
+  // Name lookups are a convenience for humans typing URLs; first one wins.
+  if (!RIDE_BY_ID.has(r.n.toLowerCase())) RIDE_BY_ID.set(r.n.toLowerCase(), r);
 }
 
 /* ------------------------------------------------------------------ state */
@@ -242,6 +257,13 @@ function sweep() {
     const { state, ops } = evict(party.state, now);
     if (ops.length) {
       party.state = state;
+      changed = true;
+    }
+    // Ride reports age out on their own clock — see evictRides on why it is not
+    // the member TTL.
+    const aged = evictRides(party.state, now);
+    if (aged.ops.length) {
+      party.state = aged.state;
       changed = true;
     }
     const empty = Object.keys(party.state.members).length === 0;
@@ -538,6 +560,31 @@ async function route(req, res, url, parts) {
     const me = out.party.state.members[memberId];
     if (!me) return fail(req, res, 404, 'not a member');
     return json(req, res, 200, { ok: true, favorites: me.favorites, version: out.party.state.version });
+  }
+
+  if (section === 'ride-status' && a && req.method === 'PATCH') {
+    const partyId = normalizeCode(a);
+    if (!parties.has(partyId)) return fail(req, res, 404, 'no such party');
+    const body = await readBody(req);
+    if (!body) return fail(req, res, 400, 'bad json');
+    const memberId = str(body.memberId, 64);
+    const rideId = str(body.rideId, 80);
+    if (!memberId || !rideId) return fail(req, res, 400, 'memberId and rideId are required');
+    // null retracts. Anything else has to be a status the reducer knows.
+    const status = body.status ?? null;
+    if (status !== null && !RIDE_STATUSES.has(status)) return fail(req, res, 400, 'bad status');
+    const out = command(partyId, memberId, 'set-ride-status', {
+      rideId,
+      status,
+      note: body.note ?? null,
+    });
+    if (!out.party.state.members[memberId]) return fail(req, res, 404, 'not a member');
+    return json(req, res, 200, {
+      ok: true,
+      applied: out.ops.length > 0,
+      rides: out.party.state.rides,
+      version: out.party.state.version,
+    });
   }
 
   /* -- rides ------------------------------------------------------------- */
