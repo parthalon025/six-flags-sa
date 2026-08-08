@@ -553,7 +553,8 @@ async function openRide(page, name) {
   await tab(page, 'Rides');
   await page.waitForTimeout(300);
   await page.locator('.chip:has-text("All")').first().click();
-  await page.locator('.field[placeholder="Search the park"]').fill(name);
+  // By aria-label, not placeholder: the placeholder names the loaded venue.
+  await page.locator('.field[aria-label="Search places"]').fill(name);
   await page.waitForTimeout(400);
   const row = page.locator('.poiRow', { hasText: name }).first();
   await row.locator('.poiMain').click();
@@ -663,7 +664,7 @@ await check('the reporting buttons are absent without a party', async () => {
 // the Party tab, with the ride search cleared. Everything after this reads the
 // roster, and a phone left on the Rides tab has no roster to read.
 for (const page of [a, b]) {
-  await page.locator('.field[placeholder="Search the park"]').fill('');
+  await page.locator('.field[aria-label="Search places"]').fill('');
   await tab(page, 'Party');
   await page.waitForTimeout(300);
 }
