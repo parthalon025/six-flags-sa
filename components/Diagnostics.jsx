@@ -108,7 +108,7 @@ export default function Diagnostics({ runtime, geo }) {
         </div>
       )}
 
-      <div className="label">Location policy</div>
+      <div className="label">Location Policy</div>
       <div className="diagTable">
         <Row label="GPS state" value={geo?.status || 'idle'} />
         <Row label="Motion" value={geo?.motion || '—'} />
@@ -134,7 +134,7 @@ export default function Diagnostics({ runtime, geo }) {
 
       {snap?.party ? (
         <>
-          <div className="label">Protocol counters</div>
+          <div className="label">Protocol Counters</div>
           <div className="diagTable">
             <Row label="Frames sent" value={snap.party.sent ?? 0} />
             <Row label="Frames received" value={snap.party.received ?? 0} />

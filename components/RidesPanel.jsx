@@ -101,7 +101,7 @@ export default function RidesPanel({
       {heights && (
         <>
         <div className="label">
-          Rider height
+          Rider Height
           {height != null && (
             <button type="button" className="labelAction" onClick={() => onHeight(null)}>
               Clear
@@ -197,7 +197,7 @@ export default function RidesPanel({
         </>
       )}
 
-      <div className="label">Find a place</div>
+      <div className="label">Find a Place</div>
       <input
         className="field"
         placeholder={`Search ${venue?.name || 'the map'}`}

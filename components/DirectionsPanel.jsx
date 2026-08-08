@@ -26,7 +26,7 @@ export default function DirectionsPanel({
   return (
     <div>
       <div className="label">
-        Walking to
+        Walking To
         <span className="labelRight">
           {route.mode === 'direct' ? 'straight line' : route.via ? `via ${route.via}` : 'on the paths'}
         </span>

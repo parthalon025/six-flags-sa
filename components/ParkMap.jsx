@@ -1209,8 +1209,14 @@ export default function ParkMap({
           heightFilterOn={!!rideEligibility}
         />
         <div className="mapMeta">
-          {/* Which way is north, without having to open the compass tape. */}
-          <div className="northRose" title={`North is ${Math.round((360 - rotation) % 360)}°`}>
+          {/* Which way is north, without having to open the compass tape.
+              Adaptive, the way a map's compass is on the platform: with the
+              map north-up it has nothing to say, so it is not there. Any
+              rotation at all and it fades back in. */}
+          <div
+            className={`northRose ${Math.abs(((rotation + 180) % 360) - 180) < 0.5 ? 'idle' : ''}`}
+            title={`North is ${Math.round((360 - rotation) % 360)}°`}
+          >
             <svg viewBox="-13 -13 26 26" aria-hidden="true">
               <circle r="11.4" className="roseDial" />
               <g transform={`rotate(${-rotation})`}>

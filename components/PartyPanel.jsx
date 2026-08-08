@@ -102,7 +102,7 @@ export default function PartyPanel({
   if (!code) {
     return (
       <div>
-        <div className="label">Group tracking</div>
+        <div className="label">Group Tracking</div>
         <p className="fine" style={{ marginTop: 0 }}>
           One phone starts the party and hosts it. Everyone else joins by scanning the QR,
           opening the link, or typing the six-character code. Positions are sealed with a key
@@ -112,7 +112,7 @@ export default function PartyPanel({
         <button type="button" className="btn primary" onClick={onCreate} disabled={busy}>
           {busy ? 'Starting…' : 'Start a party'}
         </button>
-        <div className="label">Join an existing one</div>
+        <div className="label">Join an Existing One</div>
         <div className="joinRow">
           <input
             className="field code"
@@ -159,7 +159,7 @@ export default function PartyPanel({
   return (
     <div>
       <div className="label">
-        Party code
+        Party Code
         <span className="labelRight">
           {transport || 'connecting'} · v{version}
           {queued ? ` · ${queued} queued` : ''}
@@ -257,7 +257,7 @@ export default function PartyPanel({
         </div>
       )}
 
-      <div className="label">Broadcast status</div>
+      <div className="label">Broadcast Status</div>
       <div className="chips wrap">
         {STATUSES.map((s) => (
           <button
@@ -271,7 +271,7 @@ export default function PartyPanel({
         ))}
       </div>
 
-      <div className="label">Meet-up point</div>
+      <div className="label">Meet-Up Point</div>
       {meet ? (
         <div className="codeBox column">
           <div>

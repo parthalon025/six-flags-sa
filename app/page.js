@@ -1069,7 +1069,7 @@ export default function Page() {
           )}
           {tab === 'me' && (
             <div>
-              <div className="label">Your name in the roster</div>
+              <div className="label">Your Name in the Roster</div>
               <input
                 className="field"
                 maxLength={14}
@@ -1089,10 +1089,10 @@ export default function Page() {
               <button type="button" className="btn" onClick={() => setGateOpen(true)}>
                 Location settings
               </button>
-              <div className="label">Install on this phone</div>
+              <div className="label">Install on This Phone</div>
               <InstallCard />
 
-              <div className="label">Map appearance</div>
+              <div className="label">Map Appearance</div>
               <div className="chips">
                 {[
                   ['day', 'Daylight'],
@@ -1114,7 +1114,7 @@ export default function Page() {
                 eyes after the park lights come on.
               </p>
 
-              <div className="label">Show on the map</div>
+              <div className="label">Show on the Map</div>
               <div className="chips wrap">
                 {Object.entries(CATEGORIES).map(([key, cat]) => (
                   <button
@@ -1128,10 +1128,10 @@ export default function Page() {
                 ))}
               </div>
 
-              <div className="label">Advanced diagnostics</div>
+              <div className="label">Advanced Diagnostics</div>
               <Diagnostics runtime={runtimeApi} geo={geo} />
 
-              <div className="label">Which map</div>
+              <div className="label">Which Map</div>
               <div className="venueList">
                 {(manifest?.venues || []).map((v) => {
                   // Measured from whatever is deciding the map: the host's
@@ -1181,7 +1181,7 @@ export default function Page() {
                 or your own first fix, if there is no party running.
               </p>
 
-              <div className="label">Where the data comes from</div>
+              <div className="label">Where the Data Comes From</div>
               <p className="fine">
                 The map is drawn from OpenStreetMap geometry — real paths, buildings, water
                 and ride track, painted as vectors rather than copied from anyone&apos;s

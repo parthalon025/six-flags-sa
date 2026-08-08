@@ -27,26 +27,30 @@
 :root {
   color-scheme: dark;
 
-  /* ---------- Apple system colours · dark ---------- */
-  --sys-blue: #0A84FF;
+  /* ---------- Apple system colours · dark ----------
+     These are the values Apple republished on 9 June 2025 alongside Liquid
+     Glass, not the iOS 18 set. Most of the palette moved: blue 0A84FF→0091FF,
+     red FF453A→FF4245, purple BF5AF2→DB34F2, indigo 5E5CE6→6D7CFF. Green,
+     yellow and pink came through unchanged. The old hexes now read as dated. */
+  --sys-blue: #0091FF;
   --sys-green: #30D158;
-  --sys-indigo: #5E5CE6;
-  --sys-orange: #FF9F0A;
+  --sys-indigo: #6D7CFF;
+  --sys-orange: #FF9230;
   --sys-pink: #FF375F;
-  --sys-purple: #BF5AF2;
-  --sys-red: #FF453A;
-  --sys-teal: #40C8E0;
-  --sys-yellow: #FFD60A;
+  --sys-purple: #DB34F2;
+  --sys-red: #FF4245;
+  --sys-teal: #00D2E0;
+  --sys-yellow: #FFD600;
 
   /* The app's tint. Everything interactive derives from this one
      value, so the whole app changes accent in a single line. */
   --tint: var(--sys-blue);
-  --tint-pressed: #0972DB;
+  --tint-pressed: #0072D6;
 
   /* ---------- label roles ---------- */
   --label: #FFFFFF;
-  --label-2: rgba(235, 235, 245, .62);
-  --label-3: rgba(235, 235, 245, .32);
+  --label-2: rgba(235, 235, 245, .6);
+  --label-3: rgba(235, 235, 245, .3);
   --label-4: rgba(235, 235, 245, .18);
 
   /* ---------- background roles ---------- */
@@ -56,18 +60,23 @@
   --bg-4: #3A3A3C;
 
   /* ---------- fills, for control backs on top of content ---------- */
+  /* The base RGB drifts 120→118 as the tier descends. That is Apple's,
+     not a transcription slip. */
   --fill-1: rgba(120, 120, 128, .36);
   --fill-2: rgba(120, 120, 128, .32);
-  --fill-3: rgba(120, 120, 128, .24);
-  --fill-4: rgba(120, 120, 128, .18);
+  --fill-3: rgba(118, 118, 128, .24);
+  --fill-4: rgba(118, 118, 128, .18);
 
   /* ---------- separators ---------- */
-  --separator: rgba(84, 84, 88, .65);
+  --separator: rgba(84, 84, 88, .6);
   --separator-opaque: #38383A;
 
-  /* ---------- materials ---------- */
-  /* Four thicknesses, as on the platform: the thinner the material,
-     the more of the map you can still read through it. */
+  /* ---------- materials ----------
+     iOS provides exactly four standard materials — ultra-thin, thin, regular
+     (the default) and thick — and Apple publishes no blur radius, no
+     saturation and no luminosity coefficient for any of them. The numbers
+     below are therefore a reconstruction tuned against this app's own map,
+     not a specification anyone can check. Treat them as taste. */
   --mat-ultrathin: rgba(52, 52, 56, .58);
   --mat-thin: rgba(52, 52, 56, .74);
   --mat-regular: rgba(38, 38, 41, .84);
@@ -91,51 +100,87 @@
 
   /* ---------- typography ---------- */
   /* One family. SF on Apple platforms, the host UI face elsewhere. */
-  --font-text: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
-               'Helvetica Neue', 'Segoe UI', Roboto, system-ui, sans-serif;
+  /* Deliberately does NOT name 'SF Pro Text' or 'SF Pro Display': naming a
+     discrete optical size pins it, and SF is a variable font that interpolates
+     between the two continuously from 17pt to 28pt. -apple-system gets that
+     interpolation; the named families defeat it. */
+  --font-text: -apple-system, BlinkMacSystemFont, system-ui,
+               'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  --font-rounded: ui-rounded, 'SF Pro Rounded', var(--font-text);
+  --font-rounded: ui-rounded, var(--font-text);
 
-  /* Apple's semantic text styles: size / leading / tracking.
-     Tracking goes negative as size goes up, the way SF's optical
-     sizes do, so a large number does not look loose. */
-  --fs-large-title: 34px;  --lh-large-title: 41px;  --tr-large-title: -.4px;
-  --fs-title1: 28px;       --lh-title1: 34px;       --tr-title1: -.34px;
+  /* Apple's built-in text styles at the Large (default) Dynamic Type size:
+     size / leading / tracking. Sizes and leading are straight from the HIG
+     specifications table; tracking is joined onto it from Apple's separate
+     SF Pro tracking table by point size.
+
+     The tracking curve is NOT monotonic. It tightens to its minimum around
+     19–20pt and turns positive again above that — the optical-size transition
+     showing up in the metrics — which is why Large Title and Title 1 track
+     open, not tight. A browser applies none of this on its own: -apple-system
+     gets the right glyphs and neutral tracking, so it has to be set here. */
+  --fs-large-title: 34px;  --lh-large-title: 41px;  --tr-large-title: .4px;
+  --fs-title1: 28px;       --lh-title1: 34px;       --tr-title1: .38px;
   --fs-title2: 22px;       --lh-title2: 28px;       --tr-title2: -.26px;
-  --fs-title3: 20px;       --lh-title3: 25px;       --tr-title3: -.22px;
+  --fs-title3: 20px;       --lh-title3: 25px;       --tr-title3: -.45px;
   --fs-headline: 17px;     --lh-headline: 22px;     --tr-headline: -.43px;
   --fs-body: 17px;         --lh-body: 22px;         --tr-body: -.43px;
-  --fs-callout: 16px;      --lh-callout: 21px;      --tr-callout: -.32px;
+  --fs-callout: 16px;      --lh-callout: 21px;      --tr-callout: -.31px;
   --fs-subhead: 15px;      --lh-subhead: 20px;      --tr-subhead: -.23px;
   --fs-footnote: 13px;     --lh-footnote: 18px;     --tr-footnote: -.08px;
   --fs-caption1: 12px;     --lh-caption1: 16px;     --tr-caption1: 0px;
-  --fs-caption2: 11px;     --lh-caption2: 13px;     --tr-caption2: .07px;
+  --fs-caption2: 11px;     --lh-caption2: 13px;     --tr-caption2: .06px;
 
-  /* ---------- space · 4pt grid ---------- */
+  /* ---------- space ----------
+     Apple documents no grid. What it does document is 8pt default subview
+     margins, ~12pt of padding around bezelled controls and ~24pt around
+     unbezelled ones, and 44pt as the default control size (28pt being the
+     floor, not the target). The 16pt screen margin is measured rather than
+     published. The 4pt ramp below is the usual community reading of those
+     anchors — consistent, and not something Apple states. */
   --sp-1: 2px;   --sp-2: 4px;   --sp-3: 8px;   --sp-4: 12px;
   --sp-5: 16px;  --sp-6: 20px;  --sp-7: 24px;  --sp-8: 32px;
   --sp-9: 40px;  --sp-10: 48px;
   --margin: 16px;          /* the screen's side margin */
   --tap: 44px;             /* the smallest thing worth aiming at */
 
-  /* ---------- radii ---------- */
+  /* ---------- radii ----------
+     Apple publishes no numeric radius for anything, by design: iOS 26 derives
+     them at runtime so a shape stays concentric with whatever contains it —
+     inner radius = outer radius − inset. These are fixed stand-ins for a
+     system that is not fixed, so where one shape nests inside another the
+     concentric pair is picked by hand. */
   --r-xs: 6px;
   --r-sm: 8px;
   --r-md: 10px;
   --r-lg: 12px;
   --r-xl: 16px;
   --r-2xl: 20px;
-  --r-sheet: 20px;
+  --r-sheet: 26px;
   --r-full: 999px;
 
-  /* ---------- motion ---------- */
-  /* The presentation curve is the one sheets and anything that
-     travels a distance use. Controls settle with a small, damped
-     overshoot; nothing springs back hard. */
-  --ease-present: cubic-bezier(.32, .72, 0, 1);
-  --ease-out: cubic-bezier(.25, .46, .45, .94);
+  /* ---------- motion ----------
+     The first three are Core Animation's own timing functions, by their
+     published control points — kCAMediaTimingFunctionDefault, easeOut and
+     easeInEaseOut respectively.
+
+     --ease-settle is where honesty is owed: SwiftUI's default animation is a
+     spring at dampingFraction 1.0, which is critically damped and does NOT
+     overshoot, and the .smooth preset is bounce 0.0. Only .snappy carries any
+     bounce, at 0.15. So this curve is deliberately close to flat — what was
+     here before overshot by more than anything on the platform does.
+
+     --ease-present has no Apple-published equivalent. It is the widely
+     reverse-engineered approximation of the sheet presentation curve, kept
+     because it reads right, but it is a reconstruction, not a specification.
+
+     Durations: .35s is easeInOut's documented default; .5s is the documented
+     perceptual duration of all three spring presets. */
+  --ease-default: cubic-bezier(.25, .1, .25, 1);
+  --ease-out: cubic-bezier(0, 0, .58, 1);
   --ease-in-out: cubic-bezier(.42, 0, .58, 1);
-  --ease-settle: cubic-bezier(.34, 1.16, .64, 1);
+  --ease-settle: cubic-bezier(.33, 1.04, .58, 1);
+  --ease-present: cubic-bezier(.32, .72, 0, 1);
   --dur-1: .18s;
   --dur-2: .25s;
   --dur-3: .35s;
@@ -233,16 +278,16 @@
 :root[data-theme='day'] {
   color-scheme: light;
 
-  --sys-blue: #007AFF;
+  --sys-blue: #0088FF;
   --sys-green: #34C759;
-  --sys-indigo: #5856D6;
-  --sys-orange: #FF9500;
+  --sys-indigo: #6155F5;
+  --sys-orange: #FF8D28;
   --sys-pink: #FF2D55;
-  --sys-purple: #AF52DE;
-  --sys-red: #FF3B30;
-  --sys-teal: #30B0C7;
+  --sys-purple: #CB30E0;
+  --sys-red: #FF383C;
+  --sys-teal: #00C3D0;
   --sys-yellow: #FFCC00;
-  --tint-pressed: #0062CC;
+  --tint-pressed: #0069CC;
 
   --label: #000000;
   --label-2: rgba(60, 60, 67, .60);
@@ -256,8 +301,8 @@
 
   --fill-1: rgba(120, 120, 128, .20);
   --fill-2: rgba(120, 120, 128, .16);
-  --fill-3: rgba(120, 120, 128, .12);
-  --fill-4: rgba(120, 120, 128, .08);
+  --fill-3: rgba(118, 118, 128, .12);
+  --fill-4: rgba(116, 116, 128, .08);
 
   --separator: rgba(60, 60, 67, .29);
   --separator-opaque: #C6C6C8;
@@ -556,7 +601,10 @@ button {
   background: var(--mat-thin); border: .5px solid var(--mat-edge);
   -webkit-backdrop-filter: var(--mat-blur-lite); backdrop-filter: var(--mat-blur-lite);
   box-shadow: var(--sh-1);
+  transition: opacity var(--dur-3) var(--ease-out), transform var(--dur-3) var(--ease-out);
 }
+/* North-up: the compass has nothing to tell you, so it steps out. */
+.northRose.idle { opacity: 0; transform: scale(.8); pointer-events: none; }
 .northRose svg { width: 100%; height: 100%; display: block; }
 .roseDial { fill: none; }
 .roseNeedle { fill: var(--sys-red); }
@@ -816,8 +864,12 @@ button {
 }
 .grab:active i { background: var(--label-2); }
 
-/* A tab bar: a glyph over a caption, tinted when it is the one you are on.
-   No underline — the tint and the filled glyph carry the state. */
+/* A tab bar: a glyph over a caption. Monochromatic, which is the platform
+   default for chrome and is what Apple specifically recommends when an app's
+   own content is bright and colourful — and a full-bleed park map is about as
+   colourful as content gets. So contrast carries the state, not hue: the tab
+   you are on is at full label strength with a filled glyph, the rest sit back
+   at tertiary with outlined ones. No underline either. */
 .tabs {
   display: flex; padding: 0 var(--sp-2);
   border-top: .5px solid var(--separator); border-bottom: .5px solid var(--separator);
@@ -828,7 +880,7 @@ button {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
   font-size: var(--fs-caption2); line-height: var(--lh-caption2);
   letter-spacing: var(--tr-caption2); font-weight: 500;
-  color: var(--label-2); border-radius: var(--r-sm); position: relative;
+  color: var(--label-3); border-radius: var(--r-sm); position: relative;
   transition: color var(--dur-2) var(--ease-out), background var(--dur-1) linear;
 }
 .tab svg { width: 22px; height: 22px; display: block; }
@@ -836,7 +888,7 @@ button {
   font-style: normal; white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; max-width: 100%;
 }
-.tab.on { color: var(--tint); font-weight: 600; }
+.tab.on { color: var(--label); font-weight: 600; }
 .tab:active { background: var(--fill-4); }
 .sheetBody {
   flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
@@ -971,14 +1023,21 @@ button {
   display: flex; align-items: flex-end;
   animation: fadeIn var(--dur-3) var(--ease-out) both;
 }
+/* A presented sheet, and iOS 26 insets those from the edges of the display
+   so a little of what is underneath shows around them. That rule is for
+   sheets that are put up over something — which is these two, the location
+   gate and the park question. It is deliberately NOT applied to the main
+   sheet below: that one is the persistent, non-dismissible kind a map app
+   keeps on screen, and those stay flush to the sides. */
 .gateCard {
-  width: 100%; background: var(--mat-thick);
+  width: calc(100% - var(--sp-3)); margin: 0 var(--sp-2) var(--sp-2);
+  background: var(--mat-thick);
   -webkit-backdrop-filter: var(--mat-blur); backdrop-filter: var(--mat-blur);
-  border-top: .5px solid var(--mat-edge);
-  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
-  padding: var(--sp-8) var(--margin) calc(var(--sp-7) + var(--bot));
+  border: .5px solid var(--mat-edge);
+  border-radius: var(--r-sheet);
+  padding: var(--sp-8) var(--sp-6) calc(var(--sp-7) + var(--bot));
   max-height: 92vh; max-height: 92dvh; overflow-y: auto;
-  box-shadow: var(--sh-3);
+  box-shadow: var(--sh-2);
   animation: sheetUp var(--dur-4) var(--ease-present) both;
 }
 .gateEyebrow {
@@ -1437,27 +1496,42 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 /* ============================================================
    Walking directions — the route on the map, the banner over it
    ============================================================ */
+/* Every route here is a walk, and the platform draws a walk as a row of
+   dots rather than a solid line — solid is what a drive looks like. The
+   trick is a zero-length dash with a round cap: each "dash" collapses to a
+   circle of the stroke's own width, and the gap sets the spacing.
+
+   That leaves the dashed treatment free to keep meaning what it already
+   meant here, which is the thing below: not a walk at all. */
 .routeCase {
   fill: none; stroke: var(--markerEdge); stroke-width: 9;
-  stroke-linecap: round; stroke-linejoin: round; opacity: .5;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .45;
+  stroke-dasharray: 0 13;
 }
 .routeLine {
-  fill: none; stroke: var(--tint); stroke-width: 5;
+  fill: none; stroke: var(--tint); stroke-width: 6;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0 13;
 }
 /* Nothing in the path data joins these two points, so the line is a bearing
-   rather than a walk — and it says so by not looking like a walk. */
-.routeLine.direct { stroke-dasharray: 8 7; stroke-width: 3.5; opacity: .8; }
+   rather than a walk — and it says so by not looking like one. Dashes, not
+   dots, precisely because the dots now mean "this is walkable". */
+.routeLine.direct {
+  stroke-dasharray: 9 8; stroke-width: 3.5; stroke-linecap: butt; opacity: .8;
+}
 .routeTurn { fill: var(--tint); stroke: var(--markerEdge); stroke-width: 2.4; }
 /* Behind you, and no longer the point. */
 .routeDone {
-  fill: none; stroke: var(--label-3); stroke-width: 5; opacity: .45;
+  fill: none; stroke: var(--label-3); stroke-width: 6; opacity: .4;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0 13;
 }
-/* The ways you did not pick — visible, tappable, and clearly not the choice. */
+/* The ways you did not pick — visible, tappable, and clearly not the choice.
+   Grey and thinner, under the blue one, the way alternatives are drawn. */
 .altLine {
   fill: none; stroke: var(--label-2); stroke-width: 4.5; opacity: .5;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0 10;
 }
 /* The raw fix, kept visible but quiet, while the marker rides the route. */
 .rawFix { fill: var(--tint); opacity: .45; }
@@ -1643,6 +1717,64 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .stepText span {
   display: block; font-size: var(--fs-caption1); line-height: var(--lh-caption1);
   color: var(--label-3); margin-top: 1px;
+}
+
+/* Translucency is a preference, not a constant. The platform lets people
+   dial the glass back — for legibility, for motion sensitivity, or because
+   they turned on Increase Contrast — and a hardcoded blur ignores all three.
+   Both of these swap every material for an opaque fill and drop the blur;
+   the shapes, spacing and type are unchanged, so nothing moves. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --mat-ultrathin: var(--bg-2); --mat-thin: var(--bg-2);
+    --mat-regular: var(--bg-2); --mat-thick: var(--bg-2);
+    --mat-blur: none; --mat-blur-lite: none;
+  }
+  .gate { -webkit-backdrop-filter: none; backdrop-filter: none;
+          background: color-mix(in srgb, var(--bg) 86%, transparent); }
+}
+@media (prefers-contrast: more) {
+  /* Apple publishes a whole second accent palette for Increase Contrast —
+     it is not the default palette darkened, and the two appearances get
+     different values, so they are stated separately here. The label and
+     separator steps below are not published and are judgement. */
+  :root {
+    --sys-blue: #5CB8FF;
+    --sys-green: #4AD968;
+    --sys-indigo: #A7AAFF;
+    --sys-orange: #FFA056;
+    --sys-pink: #FF8AC4;
+    --sys-purple: #EA8DFF;
+    --sys-red: #FF6165;
+    --sys-teal: #3BDDEC;
+    --sys-yellow: #FEDF43;
+    --label-2: rgba(235, 235, 245, .82);
+    --label-3: rgba(235, 235, 245, .55);
+    --separator: rgba(235, 235, 245, .42);
+    --mat-edge: rgba(255, 255, 255, .3);
+    --control-thumb: #7C7C80;
+  }
+  :root[data-theme='day'] {
+    --sys-blue: #1E6EF4;
+    --sys-green: #008932;
+    --sys-indigo: #564ADE;
+    --sys-orange: #C55300;
+    --sys-pink: #E7124D;
+    --sys-purple: #B02FC2;
+    --sys-red: #E9152D;
+    --sys-teal: #008198;
+    --sys-yellow: #A16A00;
+    --label-2: rgba(60, 60, 67, .82);
+    --label-3: rgba(60, 60, 67, .55);
+    --separator: rgba(60, 60, 67, .45);
+    --mat-edge: rgba(0, 0, 0, .28);
+  }
+  /* Glass goes opaque in both, so type never sits on moving ground. */
+  :root, :root[data-theme='day'] {
+    --mat-ultrathin: var(--bg-2); --mat-thin: var(--bg-2);
+    --mat-regular: var(--bg-2); --mat-thick: var(--bg-2);
+    --mat-blur: none; --mat-blur-lite: none;
+  }
 }
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes
