@@ -39,6 +39,7 @@ import {
   confirmVenue,
   retargetForPosition,
   selectVenue,
+  unpinVenue,
   venueChoiceFor,
   venuesByDistance,
   withinBounds,
@@ -637,10 +638,13 @@ export default function Page() {
     setBusy(false);
   };
 
-  const joinParty = async (raw) => {
+  const joinParty = async (raw, asName = null) => {
     setBusy(true);
     try {
-      const snap = await runtime.current.joinParty(raw, { memberName: identity?.name || 'Guest' });
+      // A name typed on the join screen is the freshest thing we know, and it
+      // has not necessarily been committed to identity yet.
+      const memberName = (asName || '').trim() || identity?.name || 'Guest';
+      const snap = await runtime.current.joinParty(raw, { memberName });
       showToast(`Joined ${snap.code}`);
     } catch (err) {
       showToast(err?.message || 'Could not join that party.');
@@ -1483,6 +1487,13 @@ export default function Page() {
                   setSheet('peek');
                 }}
                 busy={busy || party?.phase === 'connecting'}
+                myName={identity?.name ?? ''}
+                onName={(v) => {
+                  const next = v.trim() || 'Guest';
+                  setIdentity((i) => ({ ...i, name: next }));
+                  runtime.current?.setMemberName(next);
+                }}
+                onCopied={showToast}
                 joinsOpenUntil={party?.joinsOpenUntil ?? 0}
                 onAllowJoins={() => {
                   allowJoins();
@@ -1542,6 +1553,9 @@ export default function Page() {
 
             {view === 'venues' && (
               <div>
+                <p className="fine">
+                  Picking one here keeps it, and stops the app moving you off it.
+                </p>
                 <div className="venueList">
                   {(manifest?.venues || []).map((v) => {
                     // Measured from whatever is deciding the map: the host's
@@ -1586,10 +1600,23 @@ export default function Page() {
                     );
                   })}
                 </div>
+                {venuePinned ? (
+                  <button
+                    type="button"
+                    className="row"
+                    onClick={() => {
+                      unpinVenue();
+                      showToast('Following your party again');
+                    }}
+                  >
+                    <span>Follow my party again</span>
+                    <Icon name="chevron.right" size={17} className="icn rowChevron" />
+                  </button>
+                ) : null}
                 <p className="fine">
-                  Picking one here keeps it, and stops the app moving you again. Left alone, it
-                  opens the map you used last, then follows the phone hosting your party — or
-                  your own first fix, if there is no party running.
+                  {venuePinned
+                    ? 'You picked this map by hand, so the app is not moving you off it. Tap above to let it follow your party again.'
+                    : 'Left alone, this opens the map you used last, then follows the phone hosting your party — or your own first fix, if there is no party running.'}
                 </p>
                 <p className="fine">
                   The map is drawn from OpenStreetMap geometry — real paths, buildings, water and

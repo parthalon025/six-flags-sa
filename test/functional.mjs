@@ -477,7 +477,10 @@ await check('roster shows a real distance to phone B', async () => {
 });
 
 await check('NEED HELP propagates to the other phone', async () => {
-  await b.locator('.chip:has-text("NEED HELP")').click();
+  // Two taps on purpose: the alert buzzes every phone in the party, so it is
+  // not a thing a resting thumb can send.
+  await b.locator('button:has-text("I need help")').click();
+  await b.locator('button:has-text("Tap again to alert everyone")').click();
   await until(
     async () => a.locator('.memberRow', { hasText: 'Ava' }).locator('.chipTag.hot').count(),
     { timeout: JOIN_TIMEOUT, label: 'the help tag on phone A' },
@@ -894,7 +897,9 @@ await check('leaving removes the member from the other phone’s roster', async 
   const leaver = bHosts ? { page: c, name: 'Sam' } : { page: b, name: 'Ava' };
   const stays = bHosts ? b : c;
 
+  // Leaving confirms too — for the host it hands the roster to another phone.
   await leaver.page.locator('.codeBox button:has-text("Leave")').click();
+  await leaver.page.locator('.codeBox button:has-text("Tap to confirm")').click();
   await until(async () => (await leaver.page.locator('button:has-text("Start a party")').count()) > 0, {
     timeout: JOIN_TIMEOUT,
     label: 'the leaver to be back on the start screen',

@@ -160,7 +160,8 @@ async function main() {
       timeout: 30000,
       label: 'phone two joined and linked',
     }).catch(() => {});
-    await page2.getByRole('button', { name: 'NEED HELP' }).click();
+    await page2.getByRole('button', { name: 'I need help' }).click();
+    await page2.getByRole('button', { name: 'Tap again to alert everyone' }).click();
     await page2.waitForTimeout(1500);
     await shot(page2, 'second-phone-joined');
 
