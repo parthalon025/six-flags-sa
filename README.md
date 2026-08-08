@@ -312,10 +312,24 @@ route serves a stale reading rather than an error when upstream is unreachable. 
 keep the last good reading in `localStorage` and show it with its age, so losing signal
 degrades the feature to the app that existed before it rather than to a spinner.
 
+Because it is the one response in the app with no party in it, it is also the one the
+CDN is allowed to hold: it ships `s-maxage`, so a park full of guests is one upstream
+request per region per ten minutes rather than one per server instance. The failure case
+is deliberately excluded — a 503 is `no-store`, so an outage cannot be cached past itself.
+
 Vercel's routes deliberately implement no SSE — serverless cannot hold a stream open — so
 clients there fall back to polling. Upstash is optional and only makes a *cloud-hosted*
 party durable across instances; it is not needed for phone-hosted parties, which is the
 normal case.
+
+Polling is therefore the deployment's whole cost model, and the relay is written around
+that. A mailbox is a sorted set scored by message sequence, so a poll asks for what is
+past its cursor instead of reading the box and discarding most of it — a caught-up member
+transfers nothing. Clients back off to fifteen seconds while their screen is off and catch
+up the instant it comes back on; the messages that cannot wait for that go by push instead,
+which is the division the two features make between them. Party creation and joining are
+rate limited per address, relay traffic per party — per party rather than per address
+because a park is one enormous NAT, and metering the address would meter the venue.
 
 ## Notifications
 

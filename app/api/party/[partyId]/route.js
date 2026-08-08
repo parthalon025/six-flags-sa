@@ -4,6 +4,9 @@ import { badRequest, forbidden, isId, json, notFound, serverError } from '@/app/
 
 export const dynamic = 'force-dynamic';
 
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
+
 export async function GET(request, { params }) {
   try {
     const { partyId } = await params;

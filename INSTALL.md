@@ -78,6 +78,52 @@ themselves, so there is **no database to set up** and nothing else to configure.
 > for your party — the host phone is. If everyone is on the same wifi, the phones
 > talk to each other and Vercel carries almost nothing.
 
+### Two settings worth knowing about
+
+Neither needs changing to get started. They are here because they are the two
+knobs that matter once other people are using the link.
+
+**Where the functions run.** `vercel.json` pins them to `iad1` (Washington DC),
+which is Vercel's own default:
+
+```json
+{ "regions": ["iad1"] }
+```
+
+If you add an Upstash database (below), **create it in the same region and leave
+this alone, or change both together**. Every relayed message is a round trip to
+that database, so a relay in Virginia talking to a database in Frankfurt pays
+for the Atlantic twice on every hop. Matching them is the single largest thing
+you can do for how quick the app feels. Hobby accounts can pick any one region.
+
+**Who can read `/api/metrics`.** It reports counters — parties started, store
+errors, uptime. On a deployment only you use, that is diagnostics. On a public
+link it is a description of your traffic, so it 404s in production unless you
+set `METRICS_TOKEN` in **Settings → Environment Variables** and ask for it by
+name:
+
+```bash
+curl -H "Authorization: Bearer $METRICS_TOKEN" https://your-app.vercel.app/api/metrics
+```
+
+### If you are sharing the link publicly
+
+Everything above holds for a family. Two things change when the link is on the
+internet for strangers:
+
+1. **Add Upstash.** Without it the party store is a variable in one server
+   process, and Vercel runs many — parties will appear to vanish at random. See
+   `.env.example`; it is free and takes about two minutes.
+2. **Watch the Upstash command count for the first busy day.** Every member of
+   every party polls the relay on a timer, so cost tracks *members × hours*, not
+   visits. A party of six for a ten-hour day is on the order of tens of
+   thousands of commands. That is comfortably inside a free tier for a family
+   and worth actually checking before it is a hundred parties.
+
+The app is otherwise built to be handed out: party creation and joining are rate
+limited per address, relay traffic is capped per party, and every key in the
+store expires on its own.
+
 ---
 
 ## Option 2 — Run it on a machine you own

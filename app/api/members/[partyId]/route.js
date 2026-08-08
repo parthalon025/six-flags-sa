@@ -3,6 +3,9 @@ import { badRequest, isId, json, notFound, serverError } from '@/app/api/_lib/ht
 
 export const dynamic = 'force-dynamic';
 
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
+
 /** The roster on its own, for callers that poll it far more often than the rest. */
 export async function GET(request, { params }) {
   try {
