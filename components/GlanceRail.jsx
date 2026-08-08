@@ -133,7 +133,7 @@ export default function GlanceRail({
        subtype — the builder folds first aid into `service` and the card had
        silently never rendered at any park. */
     const wants = [
-      ['Nearest restroom', (p) => p.c === 'restroom', palette.categories.restroom],
+      ['Nearest toilet', (p) => p.c === 'restroom', palette.categories.restroom],
       ['Nearest food', (p) => p.c === 'food', palette.categories.food],
       [
         'First aid',
