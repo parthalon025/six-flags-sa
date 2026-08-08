@@ -16,8 +16,10 @@ import { useCallback, useRef, useState } from 'react';
  * actually moved turns into a drag, and that one swallows the click the browser
  * emits after it so a drag never doubles as a cycle.
  *
- * @param stops  {peek, half, full} in pixels — the detents, from the caller
- *               because only it knows the viewport
+ * @param stops  the detents in pixels, from the caller because only it knows
+ *               the viewport. Any number of them, in any order — the floor and
+ *               the ceiling are taken from the values rather than named, so a
+ *               stop added later needs no change here.
  * @param stop   the stop the sheet is resting at now
  * @param onStop called with the name of the stop to settle on
  */
@@ -62,7 +64,7 @@ export default function useSheetDrag({ stops, stop, onStop }) {
       // ends off the handle produces no click at all, and a flag left standing
       // would eat the next real tap instead of the drag's own phantom one.
       dragged.current = false;
-      from.current = { y: e.clientY, h: stops[stop] ?? stops.peek };
+      from.current = { y: e.clientY, h: stops[stop] ?? Math.min(...Object.values(stops)) };
       last.current = { y: e.clientY, t: e.timeStamp, v: 0 };
       moved.current = false;
     },
@@ -83,7 +85,10 @@ export default function useSheetDrag({ stops, stop, onStop }) {
         t: e.timeStamp,
         v: (last.current.y - e.clientY) / dt,
       };
-      const next = Math.max(stops.peek, Math.min(stops.full, from.current.h + dy));
+      const heights = Object.values(stops);
+      const floor = Math.min(...heights);
+      const ceiling = Math.max(...heights);
+      const next = Math.max(floor, Math.min(ceiling, from.current.h + dy));
       live.current = next;
       setHeight(next);
     },

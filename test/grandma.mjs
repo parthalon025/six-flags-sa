@@ -204,6 +204,74 @@ await score('B', 'B8', 'the things she must tap are big enough to tap', async ()
   return small.length ? { score: 0, note: small.slice(0, 3).join(', ') } : 2;
 });
 
+await score('B', 'B9', 'can get the panel out of the way, and get it back', async () => {
+  const stop = () => b.locator('.sheet').evaluate((e) =>
+    ['shut', 'peek', 'half', 'full'].find((s) => e.classList.contains(s)) || null);
+  const tap = async () => {
+    await b.locator('.grab').click();
+    await b.waitForTimeout(500);
+  };
+  // Round the cycle until it is out of the way, which must not take for ever.
+  let taps = 0;
+  while ((await stop()) !== 'shut' && taps < 5) {
+    await tap();
+    taps += 1;
+  }
+  if ((await stop()) !== 'shut') return { score: 0, note: 'never fully collapses' };
+  const h = await b.locator('.sheet').evaluate((e) => e.getBoundingClientRect().height);
+  if (h > 140) return { score: 1, note: `still ${Math.round(h)}px tall` };
+  // The tabs have to survive it, or she is stranded on whichever screen she left open.
+  const tabs = await b.locator('.tabItem:visible').count();
+  await tap();
+  const back = (await stop()) !== 'shut';
+  if (!tabs) return { score: 1, note: 'collapses, but takes the tabs with it' };
+  return back ? 2 : { score: 0, note: 'no way back' };
+});
+
+await score('B', 'B10', 'a place she taps can be un-tapped', async () => {
+  await typeSearch(b, 'rattler');
+  await b.locator('.poiRow .poiMain').first().click();
+  await b.waitForTimeout(1000);
+  const on = await b.locator('.glanceCard.selected').count();
+  if (!on) return { score: 0, note: 'tapping a place put nothing on the rail' };
+  const shed = b.locator('.glanceCard.selected .glanceShed');
+  if (!(await shed.count())) return { score: 0, note: 'no way to remove it' };
+  await shed.click();
+  await b.waitForTimeout(700);
+  return (await b.locator('.glanceCard.selected').count()) ? 0 : 2;
+});
+
+await score('B', 'B11', 'a card she removes stays removed, and Me can put it back', async () => {
+  await typeSearch(b, '');
+  const food = b.locator('.glanceCard', { hasText: 'Nearest food' }).first();
+  if (!(await food.count())) return { score: 0, note: 'no food card to remove' };
+  await food.locator('.glanceShed').click();
+  await b.waitForTimeout(700);
+  if (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) {
+    return { score: 0, note: 'still there after removing it' };
+  }
+  await b.reload({ waitUntil: 'domcontentloaded' });
+  await b.waitForTimeout(2500);
+  await b.locator('button:has-text("Allow location")').click().catch(() => {});
+  await b.waitForTimeout(2500);
+  await b.locator('.gate .btn.primary:has-text("Yes — set up")').click().catch(() => {});
+  await b.waitForFunction(() => !document.querySelector('.gate'), null, { timeout: 25000 }).catch(() => {});
+  await b.waitForTimeout(2000);
+  if (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) {
+    return { score: 1, note: 'came back on its own after a reload' };
+  }
+  // …and it has to be findable again, or removing it was a one-way door.
+  await b.locator('.tabItem[data-tab="settings"]').click();
+  await b.waitForTimeout(800);
+  const row = b.locator('.row', { hasText: 'Nearest food' });
+  if (!(await row.count())) return { score: 1, note: 'hidden for good — Me does not list it' };
+  await row.click();
+  await b.waitForTimeout(600);
+  await b.locator('.tabItem[data-tab="explore"]').click();
+  await b.waitForTimeout(1200);
+  return (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) ? 2 : { score: 1, note: 'listed, but would not come back' };
+});
+
 /* ============================================================
    A — Joiner, at Kings Island
    ============================================================ */
@@ -286,6 +354,16 @@ await score('A', 'A5', 'calling for help takes intent, and can be taken back', a
   await a.waitForTimeout(2500);
   const back = await a.locator("button:has-text(\"I'm OK now\")").count();
   return back ? 2 : { score: 1, note: 'no way back' };
+});
+
+await score('A', 'A9', 'a help alert cannot be swiped away', async () => {
+  // A dismissable help card is a missed help card. Checked on the phone that
+  // can see it — the host's, since A is the one who raised it.
+  await h.locator('.tabItem[data-tab="explore"]').click();
+  await h.waitForTimeout(1500);
+  const help = h.locator('.glanceCard.help');
+  if (!(await help.count())) return { score: 1, note: 'no help card on the rail to check' };
+  return (await help.locator('.glanceShed').count()) ? { score: 0, note: 'it has a remove button' } : 2;
 });
 
 await score('A', 'A6', 'the host is told the invite was copied', async () => {
