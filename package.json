@@ -21,7 +21,8 @@
     "test:visual": "node test/visual.mjs",
     "test:theme": "node test/theme.mjs",
     "test:ux": "node test/ux.mjs",
-    "dev:all": "node server/index.mjs & next dev"
+    "dev:all": "node server/index.mjs & next dev",
+    "test:grandma": "node test/grandma.mjs"
   },
   "dependencies": {
     "next": "^16.3.0",

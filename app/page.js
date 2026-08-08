@@ -1167,7 +1167,12 @@ export default function Page() {
     if (venueStatus === 'loading') return 'Loading the map…';
     if (!position) return `${venue?.locality || 'Waiting'} · no fix yet`;
     const inside = withinBounds(venue?.bounds, position.lat, position.lng);
-    const where = inside ? nearest?.p.a || 'On site' : 'Off site';
+    /* `a` falls back to the venue's own name for a place that stands in no
+       named district, and printing that here puts the park's name twice in a
+       row — once in bold as the heading, once as the district. "On site" is
+       what that fallback actually means. */
+    const district = nearest?.p.a && nearest.p.a !== venue?.name ? nearest.p.a : null;
+    const where = inside ? district || 'On site' : 'Off site';
     /* "±0 ft" is worse than saying nothing — it reads as a precision claim
        nobody made. A fix is either good enough not to mention or loose enough
        to be worth a warning, and the number only helps in the second case. */
