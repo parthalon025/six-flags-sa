@@ -795,6 +795,27 @@ button {
   overflow: hidden;
   animation: riseIn var(--dur-3) var(--ease-present) both;
 }
+/* The strip under the header is shared by four things that each appear on
+   their own schedule: the weather banner, the height badge, the maneuver
+   banner and this tape. They stack in DOM order, and each one drops below
+   however many of its predecessors are actually present — which the sibling
+   combinator can answer and the page cannot, since none of these components
+   knows what the others are doing. */
+.filterBadge ~ .tape { top: calc(var(--top) + 118px); }
+.wxBanner ~ .tape { top: calc(var(--top) + 140px); }
+.wxBanner ~ .filterBadge ~ .tape { top: calc(var(--top) + 182px); }
+/* While a route is running the maneuver banner owns the top of the strip and
+   the rest of it gets out of the way — the turn is the only thing that
+   matters at that moment. They stay in the tree so nothing has to re-mount
+   when the route ends. */
+.app[data-bottom='go'] .wxBanner, .app[data-bottom='preview'] .wxBanner,
+.app[data-bottom='go'] .filterBadge, .app[data-bottom='preview'] .filterBadge {
+  opacity: 0; pointer-events: none;
+}
+.tape.lowered,
+.app[data-bottom='go'] .tape, .app[data-bottom='preview'] .tape {
+  top: calc(var(--top) + 200px);
+}
 .tape canvas { width: 100%; height: 100%; display: block; }
 .tapeMode {
   position: absolute; right: var(--sp-3); bottom: 3px;
@@ -1297,6 +1318,53 @@ button {
 }
 .filterBadge:active { transform: scale(.95); }
 .filterBadge b { font-weight: 700; }
+
+/* ---- weather / live status ----
+   A status banner over the map, so it is material rather than a panel, and
+   it sits in the same strip the bearing tape and the height badge use. It is
+   only in the tree when something is actually wrong, so the badge below it
+   moves down by sibling selector rather than by a class the page would have
+   to remember to set. */
+.wxBanner {
+  position: absolute; z-index: var(--z-badge);
+  left: var(--margin); right: var(--margin); top: calc(var(--top) + 76px);
+  display: flex; flex-direction: column; gap: 1px; text-align: left;
+  padding: var(--sp-3) var(--sp-4); border-radius: var(--r-lg);
+  border: .5px solid var(--mat-edge); background: var(--mat-thick);
+  -webkit-backdrop-filter: var(--mat-blur); backdrop-filter: var(--mat-blur);
+  box-shadow: var(--sh-1);
+  animation: badgeIn var(--dur-3) var(--ease-out) both;
+  transition: transform var(--dur-2) var(--ease-settle);
+}
+.wxBanner:active { transform: scale(.98); }
+.wxBanner b {
+  font-size: var(--fs-subhead); line-height: var(--lh-subhead);
+  letter-spacing: var(--tr-subhead); font-weight: 600;
+}
+.wxBanner.bad b { color: var(--sys-red); }
+.wxBanner.warn b { color: var(--sys-orange); }
+.wxBanner.ok b { color: var(--sys-green); }
+.wxMain { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.wxCounts {
+  font-size: var(--fs-caption1); line-height: var(--lh-caption1);
+  color: var(--label-2); font-variant-numeric: tabular-nums;
+}
+.wxWhy {
+  font-size: var(--fs-footnote); line-height: var(--lh-footnote);
+  letter-spacing: var(--tr-footnote); color: var(--label-2);
+}
+p.wxWhy { margin: 0 0 var(--sp-3); }
+p.wxWhy.bad { color: var(--sys-red); }
+p.wxWhy.warn { color: var(--sys-orange); }
+/* Clear of the banner when there is one. */
+.wxBanner + .filterBadge { top: calc(var(--top) + 140px); }
+
+/* A forecast is a guess and is drawn as one — outlined, not filled, so a row
+   never reads with the same weight as something a person actually saw. */
+.verdict.guess { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+.reportRow { display: flex; gap: var(--sp-3); margin-bottom: var(--sp-3); }
+.reportRow .btn { flex: 1; margin: 0; }
+.reportRow .btn.on { background: var(--tint); color: var(--tint-ink); }
 
 /* ---- height: a segmented control over a slider ---- */
 .tierRow {

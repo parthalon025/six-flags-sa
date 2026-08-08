@@ -86,6 +86,11 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.startsWith('/api/')) {
     // The ride database is the one API response worth holding: it is what makes
     // height requirements work with the signal dead in a queue line.
+    //
+    // /api/weather is deliberately not on that list. A cached forecast handed
+    // back with no indication of its age is worse than none — it would say
+    // "clear" through a thunderstorm. The offline copy lives in localStorage
+    // instead, stamped with when it was taken, so the UI can show the age.
     if (CACHEABLE_API.test(url.pathname)) {
       e.respondWith(staleWhileRevalidate(e.request));
     }
