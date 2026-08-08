@@ -173,7 +173,7 @@ export default function PartyPanel({
         >
           Copy link
         </button>
-        <button type="button" onClick={onLeave}>
+        <button type="button" className="danger" onClick={onLeave}>
           Leave
         </button>
       </div>
@@ -223,7 +223,7 @@ export default function PartyPanel({
                 className={`memberRow ${stale ? 'stale' : ''}`}
                 onClick={() => !isMe && located && onFocus(m)}
               >
-                <span className="pip" style={{ background: isMe ? '#FFC24A' : m.colour }}>
+                <span className="pip" style={{ background: isMe ? 'var(--blue)' : m.colour }}>
                   {m.initials}
                 </span>
                 <span className="memberText">
@@ -234,15 +234,15 @@ export default function PartyPanel({
                     {m.status === 'NEED HELP' && <em className="chipTag hot">help</em>}
                   </b>
                   <span>
-                    {near ? near.p.n.toUpperCase() : 'NO FIX YET'} · {m.status} ·{' '}
+                    {near ? near.p.n : 'No fix yet'} · {m.status} ·{' '}
                     {formatAge(Date.now() - m.ts)}
                   </span>
                 </span>
                 <span className="memberRange">
                   {isMe ? (
                     <>
-                      <b style={{ color: '#FFC24A' }}>•</b>
-                      <span>HERE</span>
+                      <b style={{ color: 'var(--blue)' }}>•</b>
+                      <span>Here</span>
                     </>
                   ) : (
                     <>
@@ -277,7 +277,7 @@ export default function PartyPanel({
           <div>
             <b>{meet.label}</b>
             <span className="fine block">
-              {nearestPlace(pois, meet.lat, meet.lng)?.p.n.toUpperCase()} · set by {meet.by}
+              {nearestPlace(pois, meet.lat, meet.lng)?.p.n} · set by {meet.by}
             </span>
             {me && (
               <span className="meetRange">

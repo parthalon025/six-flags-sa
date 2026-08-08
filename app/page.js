@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
+import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import CompassTape from '@/components/CompassTape';
 import PartyPanel from '@/components/PartyPanel';
@@ -30,7 +31,7 @@ import { bootVenue, retargetForPosition, selectVenue, withinBounds } from '@/lib
 import { useVenue } from '@/lib/venue/useVenue';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 
-const PALETTE = ['#4FD1A5', '#5AA9E6', '#B487E8', '#F09AC0', '#7FD4E8', '#C9A87C', '#8ED96B', '#FF9E6B'];
+const PALETTE = ['#30D158', '#40C8E0', '#BF5AF2', '#FF375F', '#5E5CE6', '#AC8E68', '#FFD60A', '#FF9F0A'];
 const colourFor = (id) => {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -656,11 +657,11 @@ export default function Page() {
     if (venueStatus === 'loading') return 'Loading the map…';
     if (!position) return `${venue?.locality || 'Waiting'} · no fix yet`;
     const inside = withinBounds(venue?.bounds, position.lat, position.lng);
-    const where = inside ? nearest?.p.a || 'on site' : 'off site';
+    const where = inside ? nearest?.p.a || 'On site' : 'Off site';
     const acc = position.manual
       ? 'placed by hand'
       : `±${Math.round((position.acc || 0) * 3.28084)} ft`;
-    return `${where.toUpperCase()} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
+    return `${where} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
   };
 
   // While a route is running the sheet is out of the way unless it is asked
@@ -718,7 +719,7 @@ export default function Page() {
           onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
           aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
         >
-          {theme === 'day' ? '◑' : '◐'}
+          <Icon name={theme === 'day' ? 'moon.fill' : 'sun.max.fill'} />
         </button>
         <button
           type="button"
@@ -729,7 +730,7 @@ export default function Page() {
           }}
           aria-label="Bearing tape"
         >
-          ◈
+          <Icon name="safari" />
         </button>
       </header>
 
@@ -764,6 +765,7 @@ export default function Page() {
           meet={meet}
           selected={selected}
           heading={heading}
+          theme={theme}
           lowered={Boolean(navTarget)}
         />
       )}
@@ -782,7 +784,7 @@ export default function Page() {
             }}
             aria-label="Set meet-up"
           >
-            ⚑
+            <Icon name="mappin.and.ellipse" />
           </button>
         )}
         {/* Panning away during a walk parks the camera where you left it, and
@@ -800,7 +802,7 @@ export default function Page() {
           }}
           aria-label={walking && !follow ? 'Follow me again' : 'Centre on me'}
         >
-          ◎
+          <Icon name="location.fill" />
         </button>
       </div>
 
@@ -950,7 +952,7 @@ export default function Page() {
                 className="field"
                 maxLength={14}
                 value={identity?.name === 'Guest' ? '' : identity?.name || ''}
-                placeholder="NAME"
+                placeholder="Name"
                 onChange={(e) =>
                   setIdentity((i) => ({ ...i, name: e.target.value.trim() || 'Guest' }))
                 }
@@ -971,8 +973,8 @@ export default function Page() {
               <div className="label">Map appearance</div>
               <div className="chips">
                 {[
-                  ['day', 'Daylight'],
-                  ['night', 'Night'],
+                  ['day', 'Light'],
+                  ['night', 'Dark'],
                 ].map(([key, labelText]) => (
                   <button
                     key={key}
@@ -985,9 +987,9 @@ export default function Page() {
                 ))}
               </div>
               <p className="fine">
-                Daylight is the one to use outdoors — white midways on paper, dark type,
-                and darker marker colours that survive direct sun. Night is easier on the
-                eyes after the park lights come on.
+Light is the one to use outdoors — white midways on pale ground, dark type, and
+                deeper marker colours that survive direct sun. Dark is easier on the eyes once
+                the park lights come on.
               </p>
 
               <div className="label">Show on the map</div>
@@ -1042,6 +1044,7 @@ export default function Page() {
                       aria-pressed={v.id === venue?.id}
                     >
                       <b>{v.name}</b>
+                      {v.id === venue?.id && <Icon name="checkmark" size={17} className="icn rowCheck" />}
                       <span>
                         {[
                           v.locality,

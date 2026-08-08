@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
+import Icon from '@/components/Icon';
 import { eligibility, hasHeights, heightLabel } from '@/lib/park';
 import { usePois } from '@/lib/venue/useVenue';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -18,11 +19,11 @@ import { distance, formatDistance, formatWalk } from '@/lib/geo';
 const TIERS = [36, 40, 42, 46, 48, 52, 54];
 
 const VERDICT = {
-  yes: { label: 'Can ride', cls: 'ok', mark: '\u2713' },
-  companion: { label: 'With adult', cls: 'warn', mark: '\u2713' },
-  no: { label: 'Too short', cls: 'bad', mark: '\u2715' },
-  toobig: { label: 'Too tall', cls: 'bad', mark: '\u2715' },
-  unknown: { label: '', cls: '', mark: '' },
+  yes: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
+  companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
+  no: { label: 'Too short', cls: 'bad', icon: 'xmark' },
+  toobig: { label: 'Too tall', cls: 'bad', icon: 'xmark' },
+  unknown: { label: '', cls: '', icon: null },
 };
 
 export default function RidesPanel({
@@ -198,13 +199,26 @@ export default function RidesPanel({
       )}
 
       <div className="label">Find a place</div>
-      <input
-        className="field"
-        placeholder={`Search ${venue?.name || 'the map'}`}
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        aria-label="Search places"
-      />
+      <div className="searchField">
+        <Icon name="magnifyingglass" size={17} />
+        <input
+          className="field"
+          placeholder={`Search ${venue?.name || 'the map'}`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search places"
+        />
+        {query && (
+          <button
+            type="button"
+            className="searchClear"
+            onClick={() => setQuery('')}
+            aria-label="Clear the search"
+          >
+            <Icon name="xmark.circle.fill" size={18} />
+          </button>
+        )}
+      </div>
 
       <div className="chips">
         <button
@@ -259,7 +273,7 @@ export default function RidesPanel({
                   )}
                   {v.label && (
                     <span className={`verdict ${v.cls}`}>
-                      <i aria-hidden="true">{v.mark}</i>
+                      <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
                       {v.label}
                     </span>
                   )}

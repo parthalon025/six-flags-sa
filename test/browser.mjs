@@ -115,7 +115,7 @@ export async function closeGate(page) {
 /** Set the roster name through the Me tab, as a visitor would. */
 export async function setName(page, name) {
   await page.locator('button[role="tab"]:has-text("Me")').click();
-  const field = page.locator('.field[placeholder="NAME"]');
+  const field = page.locator('.field[placeholder="Name"]');
   await field.fill(name);
   await field.blur();
   await page.waitForTimeout(300);

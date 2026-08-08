@@ -1362,7 +1362,7 @@ await check('withinBounds refuses a missing box or a missing fix', () => {
 
 await check('an unknown district still gets a legible, stable tint', () => {
   const curated = landTint('Coney Mall', 'day');
-  assert.equal(curated.fill, '#F4CBA9');
+  assert.equal(curated.fill, '#F1EAE4');
   const made = landTint('Los Festivales', 'day');
   assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
   assert.notEqual(made.fill, landTint('Rockville', 'day').fill); // distinct

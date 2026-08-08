@@ -714,7 +714,7 @@ await check('height, theme and party survive a reload', async () => {
     throw new Error('theme reset on reload');
   }
   await tab(b, 'Me');
-  const name = await b.locator('.field[placeholder="NAME"]').inputValue();
+  const name = await b.locator('.field[placeholder="Name"]').inputValue();
   if (name !== 'Ava') throw new Error(`name came back as "${name}"`);
 
   if (before) {
