@@ -619,13 +619,14 @@ await hydrated(e);
 
 await check('the intake asks about the nearest park, not the default one', async () => {
   await e.locator('button:has-text("Allow location")').click();
-  const heading = await until(
-    async () => {
-      const h = e.locator('.gate h2');
-      return (await h.count()) ? (await h.innerText()).trim() : null;
-    },
-    { timeout: 25000, label: 'the park question' },
-  );
+  // Wait for the question itself, not merely for a heading: the location card
+  // is still up while the fix lands, and reading .gate h2 the moment it says
+  // anything gets "Waiting for a fix" rather than the park.
+  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — build")').count()) > 0, {
+    timeout: 25000,
+    label: 'the park question',
+  });
+  const heading = (await e.locator('.gate h2').innerText()).trim();
   if (!/going to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
   // And the guess it did not make is one tap away, with the distance that
   // explains why it was not the guess.
