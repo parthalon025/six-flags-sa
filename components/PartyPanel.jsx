@@ -90,6 +90,8 @@ export default function PartyPanel({
   onNavigateMeet,
   onFocus,
   busy,
+  joinsOpenUntil = 0,
+  onAllowJoins = null,
   transport,
   version,
   queued,
@@ -98,6 +100,13 @@ export default function PartyPanel({
   const [scanning, setScanning] = useState(false);
   const [showQr, setShowQr] = useState(true);
   const pois = usePois();
+  /* The join window counts down while the screen is being looked at, so the
+     number has to move on its own rather than only when a position lands. */
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   if (!code) {
     return (
@@ -155,15 +164,22 @@ export default function PartyPanel({
   });
 
   const hostName = members.find((m) => m.id === hostId)?.name;
+  /* Rounded up, so the last fifty seconds read "1 min left" rather than "0". */
+  const joinsLeft = joinsOpenUntil > now ? Math.ceil((joinsOpenUntil - now) / 60000) : 0;
 
   return (
     <div>
       <div className="label">
         Party Code
-        <span className="labelRight">
-          {transport || 'connecting'} · v{version}
-          {queued ? ` · ${queued} queued` : ''}
-        </span>
+        {hosting && onAllowJoins ? (
+          joinsLeft > 0 ? (
+            <span className="labelRight">Open to joining · {joinsLeft} min left</span>
+          ) : (
+            <button type="button" className="labelAction" onClick={onAllowJoins}>
+              Let someone join
+            </button>
+          )
+        ) : null}
       </div>
       <div className="codeBox">
         <span className="codeText">{code}</span>
@@ -177,6 +193,12 @@ export default function PartyPanel({
           Leave
         </button>
       </div>
+      {hosting && onAllowJoins && joinsLeft === 0 ? (
+        <p className="fine">
+          Typing this code in only works while this phone is expecting someone. The invite link
+          and the QR keep working either way.
+        </p>
+      ) : null}
 
       <div className="label">
         Invite
@@ -301,7 +323,7 @@ export default function PartyPanel({
         </div>
       ) : (
         <p className="fine">
-          None set. Tap the pin button on the map then tap a spot, or open a place in Rides and
+          None set. Tap the pin button on the map then tap a spot, or open a place in Explore and
           make it the meet-up.
         </p>
       )}

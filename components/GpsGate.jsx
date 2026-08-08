@@ -40,11 +40,14 @@ export default function GpsGate({ status, error, onRequest, onManual, onDismiss,
         <button type="button" className="btn primary" onClick={onRequest}>
           {status === 'asking' ? 'Ask again' : copy.action}
         </button>
+        {/* These two used to read "Place myself on the map instead" and "Just
+            show me the map", which are the same sentence to anyone not already
+            holding the model. Say what each one leaves you able to do. */}
         <button type="button" className="btn" onClick={onManual}>
-          Place myself on the map instead
+          I&apos;ll tap where I am on the map
         </button>
         <button type="button" className="btnQuiet" onClick={onDismiss}>
-          Just show me the map
+          {venueName ? `Just look around ${venueName}` : 'Just show me the map'}
         </button>
         <p className="gateFine">
           Position stays on your device unless you join a party. Then it is encrypted

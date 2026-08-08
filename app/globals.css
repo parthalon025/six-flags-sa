@@ -16,7 +16,7 @@
   /* The peek stop has to stand the search field, the glance rail and the tab
      bar at once. Tracked in page.js as PEEK_PX — the map lays its labels out
      against the same number. */
-  --peek: 286px;
+  --peek: 308px;
   /* The tint the tab bar stands on, over the sheet's own glass. */
   --tabBarFill: color-mix(in srgb, var(--bg2) 42%, transparent);
 
@@ -871,6 +871,17 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    instant the sheet is pulled, which is the invitation. */
 .sheet.peek.atMap:not(.dragging) .sheetBody { display: none; }
 
+/* What the hidden body is, said in words, because the grab pill is not an
+   affordance anyone reads. Caption 1 on a 22px box: the peek budget below was
+   raised by exactly this much and nothing else in the collapsed sheet moved. */
+.moreHint {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  width: 100%; min-height: 22px; padding: 0 16px 2px;
+  font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 400;
+  color: var(--tint); background: none; border: 0;
+}
+.moreHint svg { opacity: .8; }
+
 /* ============================================================
    controls
    ============================================================ */
@@ -1091,6 +1102,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .fine { font-size: 13px; line-height: 18px; letter-spacing: -.08px; color: var(--label2); margin: 8px 4px 0; }
 .fine.block { display: block; margin-left: 0; margin-right: 0; }
 .warnText { color: var(--orange); }
+
+/* Four controls sit under the 44pt floor, and three of them cannot simply grow:
+   the chip row and the height badge live inside the collapsed sheet's measured
+   286px, where twelve more pixels is twelve pixels of map. So the hit box grows
+   and the painted box does not — the finger gets its target, the layout does not
+   move. Vertical only: these sit in rows where widening would overlap a
+   neighbour. */
+.chip, .navBack, .filterBadge, .btn.small { position: relative; }
+.chip::before,
+.navBack::before,
+.filterBadge::before,
+.btn.small::before { content: ''; position: absolute; inset: -6px 0; }
+
+/* An empty result is a dead end unless the way out is next to it, so the note
+   and the escape hatch sit together rather than the note here and the chip that
+   caused it scrolled off the row above. */
+.emptyNote { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 0 8px; }
+.emptyNote .fine { margin: 0 4px; }
 
 /* ============================================================
    gate + toast

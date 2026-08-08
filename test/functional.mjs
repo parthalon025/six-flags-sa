@@ -764,7 +764,7 @@ await check('the intake asks about the nearest park, not the default one', async
   // Wait for the question itself, not merely for a heading: the location card
   // is still up while the fix lands, and reading .gate h2 the moment it says
   // anything gets "Waiting for a fix" rather than the park.
-  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — build")').count()) > 0, {
+  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
     timeout: 25000,
     label: 'the park question',
   });
@@ -778,7 +778,7 @@ await check('the intake asks about the nearest park, not the default one', async
 });
 
 await check('saying yes builds that park, geometry and places', async () => {
-  await e.locator('.gate .btn.primary:has-text("Yes — build")').click();
+  await e.locator('.gate .btn.primary:has-text("Yes — set up")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);

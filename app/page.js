@@ -95,7 +95,11 @@ const LEGACY_IDENTITY_KEY = 'ki-identity';
    standing on is the height plus that gap; at the full stop it is anchored and
    there is no gap. The peek stop is what it is because it has to stand the
    search field, the glance rail and the tab bar all at once. */
-const PEEK_PX = 286;
+/* Raised from 286 to carry the "pull up" line: the search field, where you
+   are, the rail, that one line and the tab bar. The line is 22px and this is
+   22px more. Still the first thing to break if anything in the collapsed sheet
+   grows again. */
+const PEEK_PX = 308;
 const SHEET_PEEK_PX = PEEK_PX + 8;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
 const SHEET_INSET = { half: 5, full: 0 };
@@ -148,7 +152,13 @@ export default function Page() {
      at the same time is one motion too many. */
   const [motion, setMotion] = useState('');
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('coaster');
+  /* 'all', not 'coaster'. A category chip narrows the search as well as the
+     list, so booting on Coasters means the search field silently answers a
+     different question than the one that was typed: "restroom" comes back
+     "Nothing matches that." at a park with eleven of them. The list opening on
+     everything is also the honest reading of a screen whose own heading is the
+     name of the park. */
+  const [filter, setFilter] = useState('all');
   const [onlyRideable, setOnlyRideable] = useState(false);
   const [sheet, setSheet] = useState('peek');
   const [follow, setFollow] = useState(true);
@@ -637,6 +647,25 @@ export default function Page() {
     }
     setBusy(false);
   };
+
+  /* A host answers key-requests for ten minutes and then stops, which is what
+     keeps a guessed six-character code worthless. The window used to open once
+     and never reopen, so a party started in the car park could not be joined by
+     typed code by the time everyone was through the turnstiles — and nothing on
+     any screen said so, because a link or a QR carries its own key and still
+     worked. The host's code being on screen is exactly the condition the window
+     was written for, so that is what reopens it. */
+  const allowJoins = useCallback(() => runtime.current?.allowJoins(), []);
+
+  useEffect(() => {
+    if (tab !== 'party' || !party?.active || !party?.hosting) return undefined;
+    allowJoins();
+    const onVisible = () => {
+      if (!document.hidden) allowJoins();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [tab, party?.active, party?.hosting, allowJoins]);
 
   const leaveParty = async () => {
     helpSeen.current.clear();
@@ -1314,7 +1343,15 @@ export default function Page() {
                     placeholder={`Search ${venue?.name || 'the map'}`}
                     value={query}
                     onFocus={() => setSheet((h) => (h === 'peek' ? 'half' : h))}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => {
+                      // Starting to type is a new question, so it clears a
+                      // category left on from browsing. Only on the first
+                      // keystroke: tapping a chip part-way through a query is
+                      // deliberate and has to survive the next one.
+                      const next = e.target.value;
+                      if (!query && next) setFilter('all');
+                      setQuery(next);
+                    }}
                     aria-label="Search places"
                   />
                   {query && (
@@ -1346,6 +1383,17 @@ export default function Page() {
                 navMetres={progress?.remaining ?? route?.metres ?? null}
                 onOpenParty={() => selectTab('party')}
               />
+              {/* At the peek stop the list below is not merely scrolled off,
+                  it is not rendered — which is the right call, but it leaves a
+                  36×5px grey pill as the only evidence that the sheet moves.
+                  Say what is under there, in words, and make the words the
+                  handle. */}
+              {sheet === 'peek' ? (
+                <button type="button" className="moreHint" onClick={() => setSheet('half')}>
+                  Pull up for every place — food, toilets and rides
+                  <Icon name="chevron.up" size={13} />
+                </button>
+              ) : null}
             </>
           ) : (
             /* A tab's own root: the large title a phone puts at the top of a
@@ -1435,6 +1483,11 @@ export default function Page() {
                   setSheet('peek');
                 }}
                 busy={busy || party?.phase === 'connecting'}
+                joinsOpenUntil={party?.joinsOpenUntil ?? 0}
+                onAllowJoins={() => {
+                  allowJoins();
+                  showToast('Anyone with the code can join for the next 10 minutes');
+                }}
                 transport={party?.transport ?? null}
                 version={party?.version ?? 0}
                 queued={party?.queued ?? 0}
@@ -1608,8 +1661,13 @@ export default function Page() {
             showToast('Tap the map to place yourself');
           }}
           onDismiss={() => {
+            // Waving both questions off leaves whichever park happened to boot,
+            // which is the one place the app can be showing somebody a map of
+            // somewhere they are not. Name it, so that is a fact rather than a
+            // surprise found later.
             setParkAsked(true);
             setGateOpen(false);
+            if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
           }}
         />
       )}

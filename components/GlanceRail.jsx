@@ -87,8 +87,18 @@ export default function GlanceRail({
       });
     }
 
-    [...members]
-      .sort((a, b) => distance(me.lat, me.lng, a.lat, a.lng) - distance(me.lat, me.lng, b.lat, b.lng))
+    /* Everyone who needs help, then the three nearest of everybody else. The
+       cap is what buys room for the standing cards below: a rail that grows
+       with the party pushes the nearest toilet off the end exactly when a
+       family big enough to lose someone is the family using it. Help is never
+       capped — that card is the reason the rail exists. */
+    const byRange = [...members].sort(
+      (a, b) => distance(me.lat, me.lng, a.lat, a.lng) - distance(me.lat, me.lng, b.lat, b.lng),
+    );
+    const helping = byRange.filter((m) => m.status === 'NEED HELP');
+    const resting = byRange.filter((m) => m.status !== 'NEED HELP').slice(0, 3);
+
+    [...helping, ...resting]
       .forEach((m) => {
         const stale = Date.now() - m.ts > 300000;
         const help = m.status === 'NEED HELP';
@@ -113,26 +123,38 @@ export default function GlanceRail({
       });
     }
 
-    // With nothing else to track, the useful answer is the nearest of the
-    // things people actually go looking for.
-    if (out.length === 0) {
-      const wants = [
-        ['Nearest restroom', (p) => p.c === 'restroom', palette.categories.restroom],
-        ['Nearest food', (p) => p.c === 'food', palette.categories.food],
-        ['First aid', (p) => p.s === 'first_aid', palette.categories.service],
-      ];
-      wants.forEach(([eyebrow, pred, colour], i) => {
-        const hit = nearestOf(pois, me.lat, me.lng, pred);
-        if (hit) {
-          push(`n-${i}`, eyebrow, hit.poi.n, hit.poi, colour, hit.poi.a, 'nearby', {
-            kind: 'poi',
-            label: hit.poi.n,
-            lat: hit.poi.lat,
-            lng: hit.poi.lng,
-          });
-        }
+    /* The nearest of the things people actually go looking for. These used to
+       appear only on an otherwise empty rail, which put them behind the exact
+       condition that hides them: join a party or tap a ride and the nearest
+       toilet disappears. They stand at the end of the rail instead, always,
+       and drop out only when they would repeat a card already on it.
+
+       `first_aid` is matched on the name because no venue file carries a
+       subtype — the builder folds first aid into `service` and the card had
+       silently never rendered at any park. */
+    const wants = [
+      ['Nearest restroom', (p) => p.c === 'restroom', palette.categories.restroom],
+      ['Nearest food', (p) => p.c === 'food', palette.categories.food],
+      [
+        'First aid',
+        (p) => p.c === 'service' && /first ?aid|medic|nurse/i.test(p.n || ''),
+        palette.categories.service,
+      ],
+    ];
+    const already = new Set(out.map((c) => `${c.target.lat},${c.target.lng}`));
+    wants.forEach(([eyebrow, pred, colour], i) => {
+      const hit = nearestOf(pois, me.lat, me.lng, pred);
+      if (!hit) return;
+      const at = `${hit.poi.lat},${hit.poi.lng}`;
+      if (already.has(at)) return;
+      already.add(at);
+      push(`n-${i}`, eyebrow, hit.poi.n, hit.poi, colour, hit.poi.a, 'nearby', {
+        kind: 'poi',
+        label: hit.poi.n,
+        lat: hit.poi.lat,
+        lng: hit.poi.lng,
       });
-    }
+    });
 
     return out;
   }, [pois, me, members, meet, selected, heading, palette]);
