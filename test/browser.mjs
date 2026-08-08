@@ -115,9 +115,8 @@ export async function closeGate(page) {
 }
 
 /**
- * The sheet is a navigation stack, so getting somewhere means popping back to
- * the root screen and then opening a destination — the same two moves a visitor
- * makes. `root` is idempotent: call it from anywhere.
+ * Pop whichever tab is showing back to its root screen. Idempotent: call it
+ * from anywhere.
  */
 export async function root(page) {
   for (let i = 0; i < 5; i += 1) {
@@ -128,43 +127,62 @@ export async function root(page) {
 }
 
 /**
- * Open one of the sheet's destinations from wherever you are.
+ * Open one of the app's destinations from wherever you are.
  *
- *   'Places'        the root screen — search, the rail and the list
- *   'Settings'      behind the avatar beside the search field
+ * The bottom tab bar carries the four top-level screens, and each of them keeps
+ * its own navigation stack, so getting somewhere is: tap the tab, unwind
+ * whatever that tab was left on, and — for the three screens that live behind a
+ * row inside Me — tap the row.
+ *
+ *   'Places'         the Explore tab: search, the rail and the list
+ *   'Party'          the Party tab
+ *   'Rider height',
+ *   'Rides'          the Rides tab, where the venue publishes height rules
+ *   'Settings', 'Me' the Me tab
  *   'Which map',
  *   'Show on the map',
- *   'Diagnostics'   a row inside Settings
- *   anything else   a row on the root screen: 'Party', 'Rider height', …
+ *   'Diagnostics'    a row inside Me
  */
+const TAB_OF = {
+  Places: 'explore',
+  Explore: 'explore',
+  Party: 'party',
+  Rides: 'rides',
+  'Rider height': 'rides',
+  Settings: 'settings',
+  Me: 'settings',
+};
 const SETTINGS_ROWS = new Set(['Which map', 'Show on the map', 'Diagnostics']);
 
 export async function go(page, dest) {
+  const tab = SETTINGS_ROWS.has(dest) ? 'settings' : TAB_OF[dest];
+  if (!tab) throw new Error(`go: nothing called "${dest}"`);
+  await page.locator(`.tabItem[data-tab="${tab}"]`).click();
+  await page.waitForTimeout(300);
+  // Tapping the tab you are already on pops it, but arriving from another tab
+  // lands on whatever that one was left showing.
   await root(page);
-  // Everything below the search field is below the peek fold, so pull the sheet
-  // up first — the way a thumb would.
+  // Everything below the fold at the peek stop needs the sheet pulled up first
+  // — the way a thumb would.
   if (await page.locator('.sheet.peek').count()) {
     await page.locator('.grab').click();
     await page.waitForTimeout(350);
   }
-  if (dest === 'Places') return;
-  if (dest === 'Settings' || SETTINGS_ROWS.has(dest)) {
-    await page.locator('.avatarBtn').click();
-    await page.waitForTimeout(350);
-    if (dest === 'Settings') return;
-  }
+  if (!SETTINGS_ROWS.has(dest)) return;
   await page.locator(`.row:has-text("${dest}")`).first().click();
   await page.waitForTimeout(350);
 }
 
-/** Set the roster name through Settings, as a visitor would. */
+/** Set the roster name through Me, as a visitor would, and come back to Explore. */
 export async function setName(page, name) {
   await go(page, 'Settings');
   const field = page.locator('.field[placeholder="Name"]');
   await field.fill(name);
   await field.blur();
   await page.waitForTimeout(300);
-  await root(page);
+  // Back to the map. The tab bar means leaving a phone on the Me tab leaves it
+  // there, and everything downstream of a fresh phone expects Explore.
+  await go(page, 'Places');
 }
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */

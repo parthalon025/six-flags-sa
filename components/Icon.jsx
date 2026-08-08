@@ -100,6 +100,45 @@ const GLYPHS = {
       <path d="M8.4 8.4h2.2v2.2H8.4zM13.4 8.4h2.2v2.2h-2.2zM8.4 13.4h2.2v2.2H8.4zM13.4 13.4h2.2v2.2h-2.2z" />
     </g>
   ),
+  /* The tab bar's glyphs. Filled rather than outlined, because a tab bar is
+     read at a glance from the bottom of the screen and an outline at 24px
+     dissolves into the glass behind it. */
+  'person.2.fill': (
+    <>
+      {/* the one standing behind, drawn first so the front one overlaps it */}
+      <circle cx="17" cy="8.6" r="3" fill="currentColor" opacity=".55" />
+      <path
+        d="M15.8 13.8c3.4 0 5.8 1.7 5.8 4.4a.9.9 0 0 1-.9.9h-3.4c.1-.4.1-.8.1-1.2 0-1.7-.6-3.1-1.6-4.1Z"
+        fill="currentColor"
+        opacity=".55"
+      />
+      <circle cx="9.4" cy="7.8" r="3.8" fill="currentColor" />
+      <path
+        d="M2.4 19.4c0-3.4 3.1-5.4 7-5.4s7 2 7 5.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1Z"
+        fill="currentColor"
+      />
+    </>
+  ),
+  /* A coaster: one hill, and a car cresting it. The height screen is about
+     what a rider can get on, so the glyph is the ride rather than a ruler. */
+  'figure.rollercoaster': (
+    <>
+      <path d="M2.4 20c3.6 0 3.6-9 9.6-9s6 9 9.6 9" {...STROKE} strokeWidth="1.9" />
+      <rect x="8.2" y="4.4" width="7.6" height="4.9" rx="1.5" fill="currentColor" />
+      <circle cx="10.2" cy="10" r="1.15" fill="currentColor" />
+      <circle cx="13.8" cy="10" r="1.15" fill="currentColor" />
+    </>
+  ),
+  'person.crop.circle.fill': (
+    <>
+      <circle cx="12" cy="12" r="9.4" fill="currentColor" />
+      <circle cx="12" cy="9.8" r="3.1" fill="var(--bg2, #fff)" />
+      <path
+        d="M5.9 18.6a9.4 9.4 0 0 0 12.2 0c-1-2.1-3.4-3.3-6.1-3.3s-5.1 1.2-6.1 3.3Z"
+        fill="var(--bg2, #fff)"
+      />
+    </>
+  ),
   'camera.fill': (
     <>
       <path

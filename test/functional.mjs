@@ -818,7 +818,11 @@ const D = await openPhone(browser, {
   label: 'D',
 });
 const d = D.page;
+/* Which map this phone is showing. The name is on the Explore screen, so read
+   it there — tapping the tab this phone is already on pops it back to its root
+   and costs nothing. */
 const venueName = async (page) => {
+  await page.locator('.tabItem[data-tab="explore"]').click();
   await root(page);
   return page.locator('.brand b').innerText();
 };
