@@ -521,7 +521,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
               opacity var(--t2) var(--smooth);
 }
 .btn:active { transform: scale(.97); }
-.btn:disabled { opacity: .5; }
+/* Only the intake disables anything: while a park is being fetched, every way
+   of asking for a different one has to stop taking taps, or a slow connection
+   turns into two half-loaded maps. */
+.btn:disabled, .venueRow:disabled { opacity: .5; }
 .btn.primary {
   background: linear-gradient(180deg,
     color-mix(in srgb, var(--beacon) 96%, #fff),

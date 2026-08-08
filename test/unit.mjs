@@ -70,7 +70,9 @@ const {
   splitRouteAt,
 } = await import('../lib/routing.js');
 const { bearing, distance } = await import('../lib/geo.js');
-const { venueForPosition, withinBounds } = await import('../lib/venue/store.js');
+const { venueChoiceFor, venueForPosition, venuesByDistance, withinBounds } = await import(
+  '../lib/venue/store.js'
+);
 const { landTint } = await import('../lib/theme.js');
 const { areaOf, centroidOf, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
@@ -1357,6 +1359,74 @@ await check('a fix in neither venue falls back to the nearest centre', () => {
 await check('withinBounds refuses a missing box or a missing fix', () => {
   assert.equal(withinBounds(null, 39.34, -84.26), false);
   assert.equal(withinBounds(KI.bounds, NaN, -84.26), false);
+  return true;
+});
+
+/* --------------------------------------------------------- intake question - */
+
+// The question the app asks on the way in, and the two facts it needs to know
+// before asking: which park is nearest, and whether it has asked already.
+
+await check('the intake asks about the park an unplaced visitor is nearest', () => {
+  // Austin: a couple of hours from Fiesta Texas, a continent from Kings Island.
+  const ask = venueChoiceFor(MANIFEST, 30.2672, -97.7431, {});
+  assert.equal(ask.venue.id, 'six-flags-fiesta-texas');
+  assert.equal(ask.inside, false);
+  return true;
+});
+
+await check('the intake does not ask twice about the same park', () => {
+  const confirmed = 'six-flags-fiesta-texas';
+  assert.equal(venueChoiceFor(MANIFEST, 30.2672, -97.7431, { confirmed }), null);
+  // Nor when the visitor has drifted nearer another one without going in: they
+  // said where they were going, and a motorway is not a park.
+  assert.equal(venueChoiceFor(MANIFEST, 39.1, -84.5, { confirmed }), null);
+  return true;
+});
+
+await check('turning up inside a different park is worth asking about', () => {
+  const ask = venueChoiceFor(MANIFEST, 39.34395, -84.2673, {
+    confirmed: 'six-flags-fiesta-texas',
+  });
+  assert.equal(ask.venue.id, 'kings-island');
+  assert.equal(ask.inside, true);
+  return true;
+});
+
+await check('a map picked by hand is never questioned', () => {
+  assert.equal(venueChoiceFor(MANIFEST, 30.2672, -97.7431, { pinned: true }), null);
+  assert.equal(venueChoiceFor(MANIFEST, 39.34395, -84.2673, { pinned: true }), null);
+  return true;
+});
+
+await check('the other parks come back nearest first, with real distances', () => {
+  const rows = venuesByDistance(MANIFEST, 30.2672, -97.7431);
+  assert.deepEqual(
+    rows.map((r) => r.venue.id),
+    ['six-flags-fiesta-texas', 'kings-island'],
+  );
+  // Austin to San Antonio is about 120 km; to Mason, Ohio, about 1,600 km.
+  // Rough equirectangular metres are wrong by hundreds of km at that spread,
+  // which is the reason this list is measured with haversine.
+  assert.ok(Math.abs(rows[0].metres - 118_000) < 12_000, `${rows[0].metres} m to Fiesta Texas`);
+  assert.ok(Math.abs(rows[1].metres - 1_600_000) < 120_000, `${rows[1].metres} m to Kings Island`);
+  return true;
+});
+
+await check('standing in a park puts it first however far its centre is', () => {
+  // The north-east corner of Kings Island: inside it, but further from its
+  // centre than a fix parked outside the fence would be.
+  const rows = venuesByDistance(MANIFEST, 39.3478, -84.2597);
+  assert.equal(rows[0].venue.id, 'kings-island');
+  assert.equal(rows[0].inside, true);
+  return true;
+});
+
+await check('with no fix the parks still list, undistanced', () => {
+  const rows = venuesByDistance(MANIFEST, null, null);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].metres, null);
+  assert.equal(rows[0].inside, false);
   return true;
 });
 
