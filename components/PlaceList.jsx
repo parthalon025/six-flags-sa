@@ -100,7 +100,12 @@ export default function PlaceList({
             distance(me.lat, me.lng, a.lat, a.lng) - distance(me.lat, me.lng, b.lat, b.lng),
         )
       : [...out].sort((a, b) => byName(a, b) || a.n.localeCompare(b.n));
-    return out.slice(0, 120);
+    /* A bound on how much markup one screen can be asked to hold, not an
+       editorial cut. It has to sit above the largest venue's whole place list
+       or the tail of the park quietly stops existing — and a category filter
+       that removes fewer places than the cap hides then looks like it did
+       nothing at all. */
+    return out.slice(0, 400);
   }, [POIS, query, queryCats, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
 
   return (
