@@ -159,6 +159,12 @@
   --trackCase: #000000;   --track: #ff453a;
   --labelStroke: #000000;
   --labelFill: #ffffff;
+  /* marker furniture: a solid disc for attractions, a recessed chip for
+     amenities, a hollow shape for what today's height rules out — and the
+     tint a coaster's track takes when it is the one you are looking at */
+  --markerChip: #2c2c2e;
+  --markerVoid: #1c1c1e;
+  --trackLit: var(--blue);
   --vignette: rgba(0, 0, 0, .28);
 }
 
@@ -237,6 +243,9 @@
   --trackCase: #ffffff;   --track: #ff3b30;
   --labelStroke: #ffffff;
   --labelFill: #3c3c43;
+  --markerChip: #ffffff;
+  --markerVoid: #f2f2f7;
+  --trackLit: var(--blue);
   --vignette: rgba(0, 0, 0, .06);
 }
 
@@ -374,6 +383,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .landLabel {
   font-family: var(--ui); font-size: 11px; font-weight: 600; letter-spacing: .12em;
   text-transform: uppercase; text-anchor: middle; opacity: .85; pointer-events: none;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 2.5px; stroke-linejoin: round;
   animation: fadeIn var(--t3) var(--easeOut) both;
 }
 .poiLabel {
@@ -382,6 +392,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; stroke-linejoin: round;
   pointer-events: none;
 }
+.poiLabel.barred { opacity: .6; }
+/* Struck through rather than faded out: fading already means "we have not
+   heard from this person lately" over on the party markers. */
+.poiBarred { stroke: var(--red); stroke-width: 2; stroke-linecap: round; opacity: .95; }
 .poiMarker { transition: opacity var(--t2) var(--easeOut); }
 .poiMarker circle.pin { transition: r var(--t2) var(--easeOut); }
 .poiHalo {
@@ -422,13 +436,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 
 .scaleBar {
-  position: absolute; left: 12px; bottom: calc(var(--sheetH) + 14px); z-index: 4;
-  display: flex; align-items: center; gap: 7px; pointer-events: none;
-  padding: 5px 10px; border-radius: var(--rCapsule);
+  flex: none; display: flex; align-items: center; gap: 7px; pointer-events: none;
+  padding: 6px 11px; border-radius: var(--rCapsule);
   background: var(--glassTint);
   -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
   box-shadow: var(--lensEdge), var(--lensDrop);
-  transition: bottom var(--t3) var(--ease);
 }
 .scaleBar span {
   height: 3px; border-radius: 2px; background: var(--label2); display: block;
@@ -436,7 +448,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .scaleBar em {
   font-style: normal; font-size: 11px; font-weight: 500; color: var(--label2);
-  letter-spacing: 0;
+  letter-spacing: 0; white-space: nowrap;
 }
 
 /* ---- zoom pad ---- */
@@ -698,7 +710,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
 }
 .btn:active { opacity: .55; }
-.btn:disabled { opacity: .35; }
+/* Only the intake disables anything: while a park is being fetched, every way
+   of asking for a different one has to stop taking taps, or a slow connection
+   turns into two half-loaded maps. */
+.btn:disabled, .venueRow:disabled { opacity: .35; }
 .btn.primary { background: var(--blue); color: var(--onTint); }
 .btn.small {
   min-height: 36px; padding: 8px 16px; font-size: 15px; width: auto; margin: 0;
@@ -930,8 +945,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .toast {
   position: absolute; left: 50%; z-index: 80;
-  /* Clear of the scale bar, which owns the strip directly above the sheet. */
-  bottom: calc(var(--sheetH) + 52px + var(--bot));
+  /* Clear of the map furniture, which owns the strip directly above the sheet. */
+  bottom: calc(var(--sheetH) + 116px + var(--bot));
   background: var(--glassTintDeep); color: var(--label);
   border: none;
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
@@ -1435,6 +1450,129 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .stepText { flex: 1; min-width: 0; }
 .stepText b { display: block; font-size: 15px; font-weight: 400; letter-spacing: -.24px; }
 .stepText span { display: block; font-size: 12px; color: var(--label3); margin-top: 2px; }
+
+/* ============================================================
+   map furniture — the key, the rose and the callout
+   ============================================================ */
+/* All of this floats over the map, so all of it is glass. It comes off the
+   screen the moment the sheet is opened over it. */
+@keyframes keyIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.lyr-trackglow path {
+  fill: none; stroke: var(--trackLit); stroke-width: 11; opacity: .28;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.lyr-trackpick path {
+  fill: none; stroke: var(--trackLit); stroke-width: 3.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.memAge {
+  font-family: var(--ui); font-size: 9px; font-weight: 500; fill: var(--label2);
+  text-anchor: middle; paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px;
+  pointer-events: none;
+}
+.staleRing {
+  fill: none; stroke: var(--label3); stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .9;
+}
+
+.mapFurniture {
+  position: absolute; left: 12px; bottom: calc(var(--sheetH) + 22px); z-index: 6;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  pointer-events: none; max-width: min(300px, calc(100% - 24px));
+  transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
+              transform var(--t3) var(--ease);
+}
+.mapMeta { display: flex; align-items: center; gap: 8px; }
+.app[data-sheet='half'] .mapFurniture,
+.app[data-sheet='full'] .mapFurniture {
+  opacity: 0; transform: translateY(10px); pointer-events: none;
+}
+.app[data-sheet='stowed'] { --sheetH: 96px; }
+
+.northRose {
+  width: 34px; height: 34px; flex: none; padding: 2px; border-radius: 50%;
+  background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+}
+.northRose svg { width: 100%; height: 100%; display: block; }
+.roseDial { fill: none; }
+.roseNeedle { fill: var(--red); }
+.roseTail { fill: var(--label3); }
+.roseN {
+  font-family: var(--ui); font-size: 8px; font-weight: 600; fill: var(--label);
+  text-anchor: middle; letter-spacing: 0;
+}
+
+.mapKey { pointer-events: auto; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.mapKeyToggle {
+  display: flex; align-items: center; gap: 7px; min-height: 34px;
+  padding: 6px 14px 6px 10px; border-radius: var(--rCapsule);
+  color: var(--blue); background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
+  transition: transform var(--t1) var(--easeOut), background var(--t1) var(--easeOut),
+              color var(--t1) var(--easeOut);
+}
+.mapKeyToggle:active { transform: scale(.93); background: var(--glassTintDeep); }
+.mapKey.open .mapKeyToggle { background: var(--blue); color: var(--onTint); }
+.mapKeyBody {
+  width: 268px; padding: 12px 12px 10px; border-radius: var(--r4);
+  background: var(--glassTintDeep); border: none;
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  max-height: min(52vh, 420px); overflow-y: auto;
+  /* .mapWrap turns touch gestures off so a drag pans the map; the key is a
+     list on top of it and still has to scroll. */
+  touch-action: pan-y;
+  animation: keyIn var(--t2) var(--easeOut) both;
+}
+.mapKeyNote, .mapKeyHead {
+  margin: 0 0 7px; font-size: 13px; color: var(--label2);
+  letter-spacing: -.08px; text-transform: none;
+}
+.mapKeyHead { margin-top: 12px; padding-top: 10px; border-top: .5px solid var(--sep); }
+.mapKeyList { list-style: none; margin: 0; padding: 0; }
+.mapKeyRow {
+  display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto;
+  align-items: center; gap: 0 10px; width: 100%; text-align: left;
+  min-height: 40px; padding: 6px 8px; border-radius: var(--r2); opacity: .42;
+  transition: opacity var(--t2) var(--easeOut), background var(--t1) var(--easeOut);
+}
+.mapKeyRow svg { grid-row: 1 / 3; }
+.mapKeyRow b { font-size: 15px; font-weight: 400; letter-spacing: -.24px; }
+.mapKeyRow i { font-style: normal; font-size: 13px; color: var(--label2); letter-spacing: -.08px; }
+.mapKeyRow.on { opacity: 1; background: var(--fill3); }
+.mapKeyRow.static { opacity: 1; }
+
+.poiCallout {
+  position: absolute; transform: translate(-50%, calc(-100% - 22px)); z-index: 7;
+  max-width: 220px; padding: 8px 12px; border-radius: var(--r3);
+  background: var(--glassTintDeep); border: none;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  pointer-events: none;
+  animation: keyIn var(--t2) var(--easeOut) both;
+}
+.poiCallout.below { transform: translate(-50%, 24px); }
+.poiCallout b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -.24px; line-height: 1.25; }
+.poiCallout span {
+  display: block; font-size: 13px; color: var(--label2); letter-spacing: -.08px; margin-top: 3px;
+}
+.poiCallout em {
+  display: inline-block; margin-top: 6px; font-style: normal;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  padding: 3px 9px; border-radius: var(--rCapsule);
+}
+.calloutBar { background: var(--helpTint); color: var(--red); }
+/* "with adult" is caution, not accent — so it takes the warning colour rather
+   than following --beacon onto the tint. */
+.calloutAdult { background: color-mix(in srgb, var(--orange) 16%, transparent); color: var(--orange); }
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes
    off in one line for anyone who asked their phone to stop moving things. This

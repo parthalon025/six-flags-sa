@@ -13,9 +13,27 @@ and React 19.
   [Building a map of somewhere else](#building-a-map-of-somewhere-else). Nothing in the
   renderer is amusement-park specific; a zoo, a campus, a festival ground or a town
   centre all draw through the same code.
+- **Symbols you can read, not dots you have to decode.** Every place carries three
+  redundant channels — shape, colour and a glyph. A solid disc is something you came for,
+  a light chip is something you need, a diamond is a landmark and a pin is a gate; inside
+  it sits a fork and knife, a restroom pair, a shopping bag, a medical cross, an Eiffel
+  Tower. Colour alone would fail the ~8% of men with a red-green deficiency, for whom the
+  night palette's coaster red, ride purple and landmark pink are the same dot. The key
+  lives on the map itself, bottom left, and every row in it is also the switch that turns
+  that category on and off.
+- **Nothing is drawn on top of anything else.** District names, markers and place names
+  all bid for the same pixels in importance order, and whatever will not fit is dropped
+  rather than overprinted. District names lie along their district the way a printed park
+  map lays them out, clamped to the part of it you can actually see. A name that cannot go
+  above its marker tries below, right and left before giving up.
+- **Tap a coaster and its own track lights up.** Kings Island's 121 red polylines each
+  carry a ride name in the source geometry, so Diamondback's helix stops being one
+  squiggle among many. The tap also puts a callout on the map: name, distance, height rule.
 - **Height requirements where a venue has them.** Drag one slider to a rider's height and
-  the map dims everything they can't get on, with a running tally of what's open, what
-  needs an adult along, and what's closed. Kings Island ships with all 65. At a venue with
+  every ride that is out today goes hollow and struck through on the map — not merely
+  faded, because fading is what a party member we have not heard from looks like — while
+  rides that need a grown-up along get a plus badge. Plus a running tally of what's open,
+  what needs an adult, and what's closed. Kings Island ships with all 65. At a venue with
   no height rules the filter isn't there at all.
 - **Live party tracking.** One person starts a party and hosts it on their own phone;
   everyone else joins by scanning the QR, opening the invite link, or typing the
@@ -39,20 +57,28 @@ and React 19.
   new one, and arriving ends it.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
-- **Daylight and night maps.** Daylight is a printed-park-map palette — white midways on
-  paper, dark type, darker marker colours — meant to be readable on a phone in direct
-  July sun. Night is the low-glare version for after the lights come on. It follows the
+- **Light and dark maps.** Light is Apple Maps in daylight — white footpaths on pale
+  ground, dark type, deeper marker colours — meant to be readable on a phone in direct
+  July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the half-circle button in the header, or from the Me tab.
+  with the moon button floating over the map, or under Settings.
 - **Meet-up pin** shared to the whole party, with distance and walk time.
-- **Switches maps on its own, to where the party is.** Your first GPS fix picks the venue
-  you are standing in; once you are in a party, the phone hosting it decides instead, so
-  joining from the car park or the hotel the night before still draws the map everyone
-  else is looking at. Pick one by hand in the Me tab and it stops second-guessing you.
+- **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
+  can say anything useful about which of the maps it ships you want, so that is when it
+  asks: "Going to Six Flags Fiesta Texas? — 70 mi away", with every other park it carries
+  one tap below. Saying yes is what builds that park on the phone — its geometry and its
+  places are fetched then, so nobody downloads a map for a park they are not going to.
+- **Switches maps on its own, to where the party is.** Once you are in a party, the phone
+  hosting it decides which map you are looking at, so joining from the car park or the
+  hotel the night before still draws the map everyone else is looking at. Pick one by hand
+  under Settings → Which map and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
   reports their range and bearing.
+- **A scale bar that is telling the truth.** It picks a distance people round to — 100 ft,
+  250 ft, half a mile — and then measures it, rather than drawing a fixed width and naming
+  it afterwards. A compass rose beside it keeps north findable once the map turns.
 
 ## Get it running
 
@@ -259,8 +285,10 @@ Stated plainly rather than stubbed to look finished:
 
 - **Background location.** There is no web API for it. When the screen locks, the page is
   suspended and positions stop updating — a phone in a pocket goes stale rather than
-  reporting a stale position as live. The map dims that person after 5 minutes. Fixing
-  this needs a native wrapper with the OS background-location permission.
+  reporting a stale position as live. After 5 minutes the map rings that person with a
+  broken circle and prints how long ago it heard from them, and stops drawing the arrow
+  for which way they were walking. Fixing this needs a native wrapper with the OS
+  background-location permission.
 - **BLE advertising and discovery**, as above.
 - **A phone acting as an HTTP listener**, and `party.local` mDNS resolution. The host
   phone runs the party *service*; peers reach it over WebRTC, not a socket it opened.
@@ -281,7 +309,12 @@ npm run test:ux                     # glance rail with a live party
 suppression, seal/open against wrong keys and tampered ciphertext, the election ordering,
 every GPS cadence band and broadcast-gate reason, and the router — the last of those
 against the real park file rather than a fixture, because a graph that routes perfectly
-over a toy and badly over Kings Island is the failure worth catching.
+over a toy and badly over Kings Island is the failure worth catching. Venue selection,
+the OpenStreetMap tag rules and the geometry helpers the builder leans on are in there
+too. So is the map's own layout logic: the decluttering grid checked against brute force,
+glyph art checked to stay inside the shape drawn round it, every named piece of coaster
+track checked to belong to a ride in that venue's catalogue, and the scale bar checked to
+span the distance it claims at every zoom the map allows.
 
 `test/functional.mjs` is the one that matters. Three phones in one browser: A hosts, B
 joins by typing the code, C joins from the invite link, then A is taken away and the
@@ -290,7 +323,9 @@ the way through — offered the route, picks a different one, starts, checks the
 turned course-up, walks until the distance drops, opens the steps and arrives. It asserts on behaviour, not
 appearance — that the key never leaves the URL fragment, that a party id is not its code,
 that NEED HELP reaches the other phone, that the roster never collapses while the host is
-replaced, and that the map and ride heights still work with the network cut.
+replaced, and that the map and ride heights still work with the network cut. A fifth phone
+sits in Austin, at neither park, to check that the intake asks about the nearer one, that
+saying yes brings that park's places with it, and that it is not asked again.
 
 Both suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
 machine instead of Playwright's own copy.
@@ -315,9 +350,16 @@ manifest reaches a phone that already has the app installed, and the service wor
 whichever one gets opened.
 
 Which one loads, in priority order: a venue picked by hand, then the venue the party's
-host phone is standing in, then the venue this phone's own first fix is inside, then the
-one used last, then the manifest's default. The host outranks your own position because a
-meet-up pin means nothing if two phones are drawing different places.
+host phone is standing in, then the venue you said yes to at intake, then the venue this
+phone's own first fix is inside, then the manifest's default. The host outranks your own
+position because a meet-up pin means nothing if two phones are drawing different places.
+
+The intake question is asked from the first fix and answered once. `venueChoiceFor()` in
+`lib/venue/store.js` decides whether there is anything to ask: nothing, if a map was picked
+by hand, or if you already said yes to this park and have not since turned up inside a
+different one. Answering calls `confirmVenue()`, which loads the park and remembers it —
+deliberately softer than the hand-picked pin, so a party hosted from another park still
+moves the map. Waving the question away falls back to the automatic behaviour above.
 
 What the tag rules produce, in short: `path` and `service` from highways, `building`,
 `water`, `wood`, `grass`, `parking`, `pool`, `coaster` from `roller_coaster=track`, `slide`
@@ -364,7 +406,7 @@ browser.
   Theme Park Insider, reflecting the 2026 season. They live in
   `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
-  at the gate and has the final say, so the app says as much on the Rides tab.
+  at the gate and has the final say, so the app says as much on the rider-height screen.
 - Flight of Fear is not mapped in OpenStreetMap; it's placed on its show building and
   flagged as approximate in the app.
 - Two renames are reflected: Backlot Stunt Coaster is now Queen City Stunt Coaster, and
@@ -399,6 +441,8 @@ lib/partyRuntime.js           the seam: session, transports, host service or cli
 lib/geo.js                    distance, bearing, Mercator projection
 lib/routing.js                path graph, repair passes, A*, turn-by-turn
 lib/park.js  lib/theme.js     POI helpers and height eligibility; day/night palettes
+lib/mapSymbols.js             the symbol vocabulary: shapes, glyphs, ranks, ink
+lib/mapLabels.js              decluttering grid, district-name geometry, scale bar
 lib/venue/store.js            which venue is loaded; manifest, geometry, places
 lib/venue/useVenue.js         the hook components read it through
 lib/venueIndex.js             generated: static POI imports for the API routes
@@ -409,13 +453,16 @@ app/
   api/mailbox/…               the relay
   api/…                       party, members, location, rides, health, metrics
 components/
-  ParkMap.jsx                 SVG renderer, pan + pinch zoom
+  ParkMap.jsx                 SVG renderer, pan + pinch zoom, label layout
+  MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
+  MapLegend.jsx               the on-map key, which is also the category filter
   GlanceRail.jsx              the live card rail in the collapsed sheet
   PartyPanel.jsx              roster, QR, join, status, meet-up
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
   RidesPanel.jsx              height filter and place search
   GpsGate.jsx                 permission dialog with per-failure guidance
+  ParkPrompt.jsx              which park, asked from the first fix and built on yes
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
   NavBanner.jsx               the maneuver strip: this turn, and the one after

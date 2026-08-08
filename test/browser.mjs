@@ -93,19 +93,21 @@ export const hydrated = (page) =>
   });
 
 /**
- * Take the location gate down the way a visitor would. Granting is enough on
- * its own once the fix lands; the fallbacks cover a phone whose mocked GPS
- * never resolves, so a gate bug fails its own assertion rather than every test
- * behind it.
+ * Take the intake down the way a visitor would: grant location, then say yes to
+ * the park the fix lands nearest — which is the one every phone in these tests
+ * is standing in. The fallbacks cover a phone whose mocked GPS never resolves,
+ * so an intake bug fails its own assertion rather than every test behind it.
  */
 export async function closeGate(page) {
   const allow = page.locator('button:has-text("Allow location")');
+  const yes = page.locator('.gate .btn.primary:has-text("Yes — build")');
   if (await allow.count()) await allow.click();
-  for (let i = 0; i < 2; i += 1) {
+  for (let i = 0; i < 3; i += 1) {
     if (!(await page.locator('.gate').count())) return;
     await page.waitForTimeout(1500);
     if (!(await page.locator('.gate').count())) return;
-    await allow.click().catch(() => {});
+    if (await yes.count()) await yes.click().catch(() => {});
+    else await allow.click().catch(() => {});
   }
   const quiet = page.locator('button:has-text("Just show me")');
   if (await quiet.count()) await quiet.click();
