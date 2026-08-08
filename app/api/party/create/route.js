@@ -1,8 +1,20 @@
 import { createParty } from '@/lib/core/state';
 import { allocateParty, usingRedis, writeParty } from '@/lib/serverStore';
-import { badRequest, isId, json, readJson, serverError, str } from '@/app/api/_lib/http';
+import { clientIp, rateLimit } from '@/lib/rateLimit';
+import {
+  badRequest,
+  isId,
+  json,
+  readJson,
+  serverError,
+  str,
+  tooManyRequests,
+} from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
+
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
 
 /**
  * Allocate a cloud-hosted party. `durable` is false when the store is a
@@ -14,6 +26,13 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request) {
   try {
+    // The only unauthenticated endpoint that mints storage from nothing, so it
+    // is the one that has to be metered by caller rather than by party. The
+    // ceiling is high on purpose: a park is one NAT, and a limit tuned to an
+    // attacker would be a limit on the crowd this app was built for.
+    const quota = await rateLimit('partyCreate', clientIp(request) ?? 'unknown');
+    if (!quota.ok) return tooManyRequests(quota.retryAfter);
+
     const body = await readJson(request);
     if (!body) return badRequest('Malformed body');
 

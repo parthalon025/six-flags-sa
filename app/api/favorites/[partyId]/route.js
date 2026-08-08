@@ -3,6 +3,9 @@ import { badRequest, isId, readJson, serverError } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
 
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
+
 export async function PATCH(request, { params }) {
   try {
     const { partyId } = await params;

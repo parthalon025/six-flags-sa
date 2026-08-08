@@ -137,7 +137,6 @@ export default function QrScanner({ onResult, onCancel }) {
 
   return (
     <div className="scanner">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption -- a live camera preview has no track to caption */}
       <video ref={videoRef} className="scannerView" muted playsInline />
       <p className="fine" style={{ marginTop: 0 }}>
         {state === 'error' ? detail : "Point the camera at the other phone's QR."}

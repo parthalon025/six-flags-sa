@@ -16,11 +16,23 @@
  * connection list, gives one shared cache instead of one per phone in the
  * party, and means a park full of guests on the same wifi makes one request a
  * few times an hour rather than hundreds.
+ *
+ * That last claim is only true because the response says so. This is the one
+ * route in the app whose body has no party in it, so it is the one route a
+ * shared cache may hold — and on a serverless host it has to be, because the
+ * in-process map below belongs to a single instance and a deployment under load
+ * is a dozen of them, each with its own empty copy. `Cache-Control` is what
+ * turns "one request per instance per ten minutes" into one request per region.
+ * The map stays as a second tier: it still absorbs the requests a cold instance
+ * serves before the edge has anything to hand back.
  */
 
-import { badRequest, json } from '@/app/api/_lib/http';
+import { badRequest, json, jsonCached } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
+
+/** The upstream call is already bounded at TIMEOUT_MS; this bounds the rest. */
+export const maxDuration = 15;
 
 const UPSTREAM = 'https://api.open-meteo.com/v1/forecast';
 
@@ -32,10 +44,23 @@ const UPSTREAM = 'https://api.open-meteo.com/v1/forecast';
 const TTL_MS = 10 * 60 * 1000;
 const TIMEOUT_MS = 6000;
 
+/**
+ * How long a shared cache may serve this, in seconds, and how long past that it
+ * may serve a stale copy while it refreshes behind the request. Kept equal to
+ * TTL_MS so the edge and the in-process map expire together rather than one
+ * quietly extending the other.
+ */
+const SHARED_MAX_AGE_S = Math.round(TTL_MS / 1000);
+const STALE_WHILE_REVALIDATE_S = 60 * 60;
+
+/** A forecast the CDN, and only the CDN, may reuse. Never a party body. */
+const cacheable = (body) =>
+  jsonCached(body, { sMaxAge: SHARED_MAX_AGE_S, swr: STALE_WHILE_REVALIDATE_S });
+
 /** Coordinates are rounded before they are used as a key: one park, one entry. */
 const KEY_PRECISION = 2;
 
-/** Process-local, which is all it needs to be — a cold start just refetches. */
+/** Process-local second tier, behind the shared cache above. */
 const cache = new Map();
 
 const FIELDS = {
@@ -63,7 +88,7 @@ export async function GET(request) {
   const key = `${lat.toFixed(KEY_PRECISION)},${lng.toFixed(KEY_PRECISION)}`;
   const hit = cache.get(key);
   const at = Date.now();
-  if (hit && at - hit.at < TTL_MS) return json({ ...hit.body, cached: true });
+  if (hit && at - hit.at < TTL_MS) return cacheable({ ...hit.body, cached: true });
 
   const url =
     `${UPSTREAM}?latitude=${lat}&longitude=${lng}` +
@@ -98,12 +123,16 @@ export async function GET(request) {
   // map fed by a query parameter is a leak with a public tap on it.
   if (cache.size > 64) cache.delete(cache.keys().next().value);
 
-  return json(body);
+  return cacheable(body);
 }
 
 /**
  * Serving a reading from an hour ago beats serving nothing: the client is told
  * how old it is and can say so. Only used when the upstream call failed.
+ *
+ * Deliberately not `cacheable`. A failure is a moment, not a forecast, and
+ * pinning one into a shared cache for ten minutes would outlast the outage that
+ * caused it and take the recovery with it.
  */
 function stale(hit) {
   if (!hit) return null;
