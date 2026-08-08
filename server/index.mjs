@@ -32,11 +32,14 @@ import {
   reduce,
   applyOps,
   evict,
+  evictRides,
   publicSnapshot,
   OP,
   PARTY_TTL_MS,
+  RIDE_STATUSES,
 } from '../lib/core/state.js';
 import { newPartyCode, newMemberId, normalizeCode } from '../lib/core/ids.js';
+import { indexById, withIds } from '../lib/venue/ids.js';
 
 /* ----------------------------------------------------------------- config */
 
@@ -57,12 +60,6 @@ const SAVE_DEBOUNCE_MS = 1500;
 
 const here = (rel) => fileURLToPath(new URL(rel, import.meta.url));
 
-const slug = (s) =>
-  String(s)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
 const pkg = readJson(here('../package.json')) || {};
 const VERSION = pkg.version || '0.0.0';
 
@@ -74,18 +71,18 @@ const VERSION = pkg.version || '0.0.0';
  * Every venue in public/venues is loaded, because this server has no idea which
  * one the phones talking to it are looking at; `?venue=<id>` picks, and the
  * manifest's default answers when nobody says.
+ *
+ * The numbering comes from lib/venue/ids.js rather than from a local slug, and
+ * that matters: a venue has ten "Restrooms", and a ride report is addressed by
+ * id. A host that numbered repeats differently from the phones reporting to it
+ * would land a "closed" on the wrong one.
  */
 const MANIFEST = readJson(here('../public/venues/manifest.json')) || { venues: [] };
 const CATALOGUES = new Map();
 for (const v of MANIFEST.venues || []) {
   const pois = readJson(here(`../public/venues/${v.id}.pois.json`)) || [];
-  const rides = pois.map((r) => ({ id: slug(r.n), ...r }));
-  const byId = new Map();
-  for (const r of rides) {
-    byId.set(r.id, r);
-    byId.set(r.n.toLowerCase(), r);
-  }
-  CATALOGUES.set(v.id, { rides, byId });
+  const rides = withIds(pois);
+  CATALOGUES.set(v.id, { rides, byId: indexById(rides) });
 }
 const DEFAULT_VENUE = MANIFEST.default || MANIFEST.venues?.[0]?.id || null;
 const catalogueFor = (id) =>
@@ -255,6 +252,13 @@ function sweep() {
     const { state, ops } = evict(party.state, now);
     if (ops.length) {
       party.state = state;
+      changed = true;
+    }
+    // Ride reports age out on their own clock — see evictRides on why it is not
+    // the member TTL.
+    const aged = evictRides(party.state, now);
+    if (aged.ops.length) {
+      party.state = aged.state;
       changed = true;
     }
     const empty = Object.keys(party.state.members).length === 0;
@@ -551,6 +555,31 @@ async function route(req, res, url, parts) {
     const me = out.party.state.members[memberId];
     if (!me) return fail(req, res, 404, 'not a member');
     return json(req, res, 200, { ok: true, favorites: me.favorites, version: out.party.state.version });
+  }
+
+  if (section === 'ride-status' && a && req.method === 'PATCH') {
+    const partyId = normalizeCode(a);
+    if (!parties.has(partyId)) return fail(req, res, 404, 'no such party');
+    const body = await readBody(req);
+    if (!body) return fail(req, res, 400, 'bad json');
+    const memberId = str(body.memberId, 64);
+    const rideId = str(body.rideId, 80);
+    if (!memberId || !rideId) return fail(req, res, 400, 'memberId and rideId are required');
+    // null retracts. Anything else has to be a status the reducer knows.
+    const status = body.status ?? null;
+    if (status !== null && !RIDE_STATUSES.has(status)) return fail(req, res, 400, 'bad status');
+    const out = command(partyId, memberId, 'set-ride-status', {
+      rideId,
+      status,
+      note: body.note ?? null,
+    });
+    if (!out.party.state.members[memberId]) return fail(req, res, 404, 'not a member');
+    return json(req, res, 200, {
+      ok: true,
+      applied: out.ops.length > 0,
+      rides: out.party.state.rides,
+      version: out.party.state.version,
+    });
   }
 
   /* -- rides ------------------------------------------------------------- */

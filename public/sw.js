@@ -8,7 +8,7 @@
    would feed the client a version it has already applied. Offline party state
    lives in the client's own replica and its outbox instead, which are
    versioned and know how to catch up. */
-const CACHE = 'tracker-v4';
+const CACHE = 'tracker-v5';
 const SHELL = [
   '/',
   '/join',
@@ -86,6 +86,11 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.startsWith('/api/')) {
     // The ride database is the one API response worth holding: it is what makes
     // height requirements work with the signal dead in a queue line.
+    //
+    // /api/weather is deliberately not on that list. A cached forecast handed
+    // back with no indication of its age is worse than none — it would say
+    // "clear" through a thunderstorm. The offline copy lives in localStorage
+    // instead, stamped with when it was taken, so the UI can show the age.
     if (CACHEABLE_API.test(url.pathname)) {
       e.respondWith(staleWhileRevalidate(e.request));
     }
@@ -113,5 +118,163 @@ self.addEventListener('fetch', (e) => {
       .catch(() =>
         caches.match(e.request).then((hit) => hit || caches.match('/join') || caches.match('/')),
       ),
+  );
+});
+
+/* ============================================================
+   notifications
+   ============================================================
+
+   A push arrives when the page is gone: no React, no party runtime, nothing
+   but this worker and whatever is on disk. So the body arrives sealed with the
+   party key, and the key is read back out of IndexedDB where the page left it.
+
+   Chrome requires `userVisibleOnly`, which means every push must put something
+   on screen. That is not a constraint to work around here — if the envelope
+   cannot be opened, the honest thing is still to say that something happened
+   and let the person open the app, rather than to stay silent about a message
+   that might have been someone asking for help. */
+
+const PUSH_DB = 'tracker-push';
+const PUSH_STORE = 'party';
+
+function readParty() {
+  return new Promise((resolve) => {
+    let req;
+    try {
+      req = indexedDB.open(PUSH_DB, 1);
+    } catch {
+      resolve(null);
+      return;
+    }
+    req.onupgradeneeded = () => req.result.createObjectStore(PUSH_STORE);
+    req.onerror = () => resolve(null);
+    req.onsuccess = () => {
+      const db = req.result;
+      try {
+        const get = db.transaction(PUSH_STORE, 'readonly').objectStore(PUSH_STORE).get('current');
+        get.onsuccess = () => {
+          resolve(get.result || null);
+          db.close();
+        };
+        get.onerror = () => {
+          resolve(null);
+          db.close();
+        };
+      } catch {
+        resolve(null);
+      }
+    };
+  });
+}
+
+function b64url(str) {
+  const padded = String(str).replace(/-/g, '+').replace(/_/g, '/');
+  const bin = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+/* The same envelope shape lib/core/crypto.js seals: the party id is
+   authenticated but not encrypted, so a frame cannot be relabelled into
+   another party without the tag failing. */
+async function unseal(keyString, partyId, sealed) {
+  const key = await crypto.subtle.importKey('raw', b64url(keyString), { name: 'AES-GCM' }, true, [
+    'decrypt',
+  ]);
+  const plain = await crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv: b64url(sealed.iv),
+      additionalData: new TextEncoder().encode(partyId),
+    },
+    key,
+    b64url(sealed.ct),
+  );
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+
+self.addEventListener('push', (e) => {
+  e.waitUntil(
+    (async () => {
+      const vague = {
+        title: 'Something happened in your party',
+        body: 'Open the map to see.',
+        data: {},
+      };
+      let payload = null;
+      try {
+        payload = e.data?.json();
+      } catch {
+        /* not ours, or truncated */
+      }
+
+      let note = null;
+      let party = null;
+      if (payload?.sealed && payload?.pid) {
+        party = await readParty();
+        // A push for a party this phone has left is not readable, and should
+        // not be: leaving cleared the key.
+        if (party?.keyString && party.partyId === payload.pid) {
+          try {
+            note = await unseal(party.keyString, payload.pid, payload.sealed);
+          } catch {
+            /* wrong key, or a tampered frame */
+          }
+        }
+      }
+
+      /* Kinds the owner has switched off are not shown. This does technically
+         spend a `userVisibleOnly` push without putting anything on screen, and
+         a browser may eventually substitute its own generic card if that
+         happens a lot — which is the right pressure, and the reason only the
+         cry-wolf one ("someone has gone quiet") is off by default. */
+      if (note && party?.prefs && party.prefs[note.kind] === false) return;
+
+      const shown = note
+        ? {
+            title: note.title || vague.title,
+            body: note.body || '',
+            data: { focus: note.focus || null },
+            tag: note.kind === 'help' ? `help-${note.focus?.id || 'x'}` : note.kind || 'party',
+            // Help re-alerts even if a card for it is already on screen; the
+            // rest replace quietly rather than stacking up a wall of cards.
+            renotify: note.kind === 'help',
+            requireInteraction: note.kind === 'help',
+            vibrate: note.kind === 'help' ? [120, 70, 120] : [60],
+          }
+        : { ...vague, tag: 'party' };
+
+      await self.registration.showNotification(shown.title, {
+        body: shown.body,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: shown.data,
+        tag: shown.tag,
+        renotify: shown.renotify,
+        requireInteraction: shown.requireInteraction,
+        vibrate: shown.vibrate,
+      });
+    })(),
+  );
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const focus = e.notification.data?.focus || null;
+  // Tapping a notification means "show me this", so it re-uses an open tab
+  // where there is one rather than stacking up copies of the app.
+  e.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const open = all.find((c) => c.url.includes(self.registration.scope));
+      if (open) {
+        await open.focus();
+        open.postMessage({ type: 'notification-open', focus });
+        return;
+      }
+      await self.clients.openWindow(focus ? `/?focus=${encodeURIComponent(JSON.stringify(focus))}` : '/');
+    })(),
   );
 });

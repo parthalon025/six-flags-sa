@@ -34,7 +34,10 @@ import {
   round,
   simplify,
 } from './lib/geometry.mjs';
-import { LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_LABELS, classify, isLand } from './lib/osm-tags.mjs';
+import {
+  LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
+  classify, isLand,
+} from './lib/osm-tags.mjs';
 import { readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue } from './lib/venue-io.mjs';
 import path from 'node:path';
 
@@ -88,6 +91,7 @@ Build a venue bundle from OpenStreetMap.
   --dry-run                 print what would be written, write nothing
   --dump <file>             save the raw Overpass response for inspection
   --from-dump <file>        build from a saved response instead of querying
+  --keep-offsite            keep places standing in named areas outside the venue
   --reindex                 only rebuild the manifest from files already on disk
 `;
 
@@ -296,6 +300,16 @@ function buildLayers(elements, opts) {
         }
       }
 
+      /* A closed way becomes a POI candidate if it is named, or if it is one of
+         the few things worth having on the list without a name. This sits above
+         the layer test on purpose: a toilet block mapped as an area that draws
+         as nothing would otherwise be dropped here, before anything downstream
+         ever saw it — which is why a park with eleven surveyed toilets shipped
+         with none. */
+      if (closed && (tags.name || UNNAMED_AREA_CATEGORIES.has(classify(POI_RULES, tags)))) {
+        areaCandidates.push({ tags, ring });
+      }
+
       if (!layer) continue;
       if (!LINE_LAYERS.has(layer) && !closed) continue;
       const size = LINE_LAYERS.has(layer) ? null : areaOf(ring);
@@ -308,23 +322,31 @@ function buildLayers(elements, opts) {
       // and the peninsula reads as a peninsula.
       const bed = layer === 'water' && size >= opts.venueArea * 0.7 ? 'sea' : layer;
       layers[bed].push(tags.name ? { r: ring, n: tags.name } : { r: ring });
-      if (closed && tags.name) areaCandidates.push({ tags, ring });
     }
   }
 
   // Overlapping lands are common — a park section mapped twice, or a sub-area
   // inside a bigger one. Keep the largest ring per name for the label anchor,
   // but draw all of them so the tint covers the whole district.
+  /* A named area outside the venue's own outline is the retail park over the
+     road, not a district of this place. It is still worth knowing about — the
+     POIs standing in it are named after it, and that is how they are told apart
+     from the ones inside — but it is not drawn, and it is never offered as the
+     landmark a route is "via". */
+  const outline = layers.park.map((p) => p.r);
+  const inside = (ring) => !outline.length || outline.some((o) => pointInRing(centroidOf(ring), o));
+  const drawn = lands.filter((l) => inside(l.r));
+
   const anchors = {};
-  for (const land of lands.sort((a, b) => b.size - a.size)) {
+  for (const land of drawn.sort((a, b) => b.size - a.size)) {
     if (!anchors[land.n]) {
       const [lng, lat] = centroidOf(land.r);
       anchors[land.n] = [Number(lat.toFixed(5)), Number(lng.toFixed(5))];
     }
   }
-  layers.lands = lands.map(({ n, r }) => ({ n, r }));
+  layers.lands = drawn.map(({ n, r }) => ({ n, r }));
 
-  return { layers, anchors, areaCandidates };
+  return { layers, anchors, areaCandidates, allLands: lands };
 }
 
 function buildPois(elements, areaCandidates, opts) {
@@ -354,22 +376,65 @@ function buildPois(elements, areaCandidates, opts) {
   const kept = [];
   for (const poi of out) {
     const dupe = kept.find(
-      (k) => k.c === poi.c && k.n === poi.n && distanceMetres(k.lat, k.lng, poi.lat, poi.lng) < opts.dedupeMetres,
+      (k) =>
+        k.c === poi.c &&
+        // Case-insensitively: one mapper's "Boomerang Coast to Coast" and
+        // another's "Boomerang Coast To Coast" are the same ride, and shipping
+        // both puts the same thing on the list twice.
+        k.n.toLowerCase() === poi.n.toLowerCase() &&
+        distanceMetres(k.lat, k.lng, poi.lat, poi.lng) < opts.dedupeMetres,
     );
     if (!dupe) kept.push(poi);
   }
   return kept;
 }
 
-/** Every POI gets the district it stands in, which is what the header line reads out. */
-function assignLands(pois, lands, venueName) {
+/**
+ * A ride whose only trace is its track.
+ *
+ * Coaster track is a line, so it never reaches the area-candidate path, and a
+ * mapper who has drawn and named the track does not always add a node for the
+ * ride. That leaves a named piece of track lit up on the map with nothing in the
+ * list to tap — so the track supplies the ride, positioned at its own midpoint.
+ * The position is surveyed geometry rather than a guess; it is simply the middle
+ * of the ride instead of its entrance.
+ */
+function poisFromTrack(pois, track) {
+  const known = new Set(pois.map((p) => p.n.toLowerCase()));
+  const added = [];
+  for (const piece of track) {
+    const name = piece.n;
+    if (!name || known.has(name.toLowerCase())) continue;
+    const ring = piece.r;
+    if (!ring?.length) continue;
+    const [lng, lat] = ring[Math.floor(ring.length / 2)];
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    known.add(name.toLowerCase());
+    added.push({ n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'coaster' });
+  }
+  return added;
+}
+
+/**
+ * Every POI gets the district it stands in, which is what the header line reads
+ * out. Matching runs against every named area found, including the ones outside
+ * the venue — that is the point. A POI that lands in one of those is standing in
+ * the shopping centre next door rather than in this park, and saying so is how
+ * it gets told apart from a POI the outline simply does not cover.
+ *
+ * Returns the ones that did, so the caller can decide what to do with them.
+ */
+function assignLands(pois, lands, venueName, drawnNames) {
   const ordered = lands
     .map((l) => ({ n: l.n, r: l.r, size: areaOf(l.r) }))
     .sort((a, b) => a.size - b.size); // smallest first: the most specific district wins
+  const offsite = [];
   for (const poi of pois) {
     const hit = ordered.find((l) => pointInRing([poi.lng, poi.lat], l.r));
     poi.a = hit?.n || venueName;
+    if (hit && drawnNames && !drawnNames.has(hit.n)) offsite.push(poi);
   }
+  return offsite;
 }
 
 /**
@@ -474,7 +539,7 @@ async function main() {
     distanceMetres(bounds.south, bounds.west, bounds.north, bounds.west) *
     distanceMetres(bounds.south, bounds.west, bounds.south, bounds.east);
 
-  const { layers, anchors, areaCandidates } = buildLayers(elements, {
+  const { layers, anchors, areaCandidates, allLands } = buildLayers(elements, {
     tolerance,
     minArea: 12,
     venueArea,
@@ -485,7 +550,26 @@ async function main() {
   });
 
   let pois = buildPois(elements, areaCandidates, { dedupeMetres: Number(args.dedupe ?? 35) });
-  assignLands(pois, layers.lands, name);
+  const fromTrack = poisFromTrack(pois, layers.coaster);
+  if (fromTrack.length) {
+    console.error(`  · ${fromTrack.length} ride(s) taken from named track with no place of their own`);
+    pois = pois.concat(fromTrack);
+  }
+  const drawnNames = new Set(layers.lands.map((l) => l.n));
+  const offsite = assignLands(pois, allLands, name, drawnNames);
+  /* A place list is a list of what is in this venue. A bounding box drawn wide
+     enough to hold a park also holds whatever is across its car park, and those
+     arrive tagged with the name of the place they are in — so they can simply be
+     let go. Keyed on the area rather than on a list of names, because the list
+     would be 39 shop names at one park and something else at the next. */
+  if (offsite.length && !args['keep-offsite']) {
+    const byArea = new Map();
+    for (const p of offsite) byArea.set(p.a, (byArea.get(p.a) || 0) + 1);
+    console.error(`  · dropped ${offsite.length} places standing outside ${name}:`);
+    for (const [area, n] of byArea) console.error(`    − ${n} in "${area}"`);
+    const cut = new Set(offsite);
+    pois = pois.filter((p) => !cut.has(p));
+  }
 
   const { file: overrideFile, data: overrides } = readOverrides(id, args.overrides ? String(args.overrides) : null);
   const merged = applyOverrides(pois, overrides);

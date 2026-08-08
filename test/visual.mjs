@@ -11,7 +11,7 @@
  *   npm run test:visual
  */
 
-import { launch, until } from './browser.mjs';
+import { go, launch, until } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -88,7 +88,7 @@ async function main() {
   const asked = await page.locator('.gate h2').innerText().catch(() => '');
   check(/kings island/i.test(asked), `intake asks which park: "${asked.replace(/\n/g, ' ')}"`);
 
-  await page.getByRole('button', { name: /Yes — build/ }).click();
+  await page.getByRole('button', { name: /Yes — set up/ }).click();
   await page.waitForTimeout(1800);
   await shot(page, 'map-located');
 
@@ -98,7 +98,7 @@ async function main() {
   check(meDot > 0, 'own position marker rendered from mocked GPS');
 
   // Rides + height filter
-  await page.getByRole('tab', { name: /Rides & heights/ }).click();
+  await go(page, 'Rider height');
   await openSheet(page, 'full');
   await page.waitForTimeout(700);
   await shot(page, 'rides-panel');
@@ -108,8 +108,9 @@ async function main() {
   await page.waitForTimeout(500);
   await shot(page, 'height-46in');
   const tally = await page.locator('.ratioKey').innerText();
-  // The key is uppercased in CSS, so innerText comes back as "34 OPEN".
-  check(/\d+ open/i.test(tally), `height tally computed: ${tally.replace(/\n/g, ' ')}`);
+  // The key is uppercased in CSS, so innerText comes back as "34 CAN RIDE".
+  // Deliberately not "open" — that word belongs to whether a ride is running.
+  check(/\d+ can ride/i.test(tally), `height tally computed: ${tally.replace(/\n/g, ' ')}`);
 
   await slider.fill('54');
   await page.waitForTimeout(500);
@@ -117,12 +118,15 @@ async function main() {
   const tally54 = await page.locator('.ratioKey').innerText();
   check(tally54 !== tally, 'tally changes between 46in and 54in');
 
+  // The list, and the filter that lives with it, are the root screen.
+  await go(page, 'Places');
+  await openSheet(page, 'full');
   await page.getByRole('button', { name: /Only what they can ride/ }).click();
   await page.waitForTimeout(500);
   await shot(page, 'height-filtered-list');
 
   // Party flow
-  await page.getByRole('tab', { name: /^Party/ }).click();
+  await go(page, 'Party');
   await page.waitForTimeout(400);
   await page.getByRole('button', { name: 'Start a party' }).click();
   await page.waitForTimeout(1800);
@@ -141,14 +145,23 @@ async function main() {
     await page2.goto(BASE, { waitUntil: 'networkidle' });
     await page2.getByRole('button', { name: 'Allow location' }).click();
     await page2.waitForTimeout(1600);
-    await page2.getByRole('button', { name: /Yes — build/ }).click().catch(() => {});
+    await page2.getByRole('button', { name: /Yes — set up/ }).click().catch(() => {});
     await page2.waitForTimeout(1200);
-    await page2.getByRole('tab', { name: /^Party/ }).click();
+    await go(page2, 'Party');
     await openSheet(page2, 'full');
     await page2.locator('input.code').fill(code);
     await page2.getByRole('button', { name: 'Join' }).click();
-    await page2.waitForTimeout(2000);
-    await page2.getByRole('button', { name: 'NEED HELP' }).click();
+    // Poll for the roster rather than sleeping on a number picked here. A
+    // status set before the transport is actually up is applied locally and
+    // never sent, and nothing re-sends it — so a fixed wait that lands short
+    // leaves this phone shouting NEED HELP at a party that cannot hear it.
+    // The other phone appearing in the roster is the proof the link is live.
+    await until(() => page2.locator('.memberRow').count().then((n) => n >= 2), {
+      timeout: 30000,
+      label: 'phone two joined and linked',
+    }).catch(() => {});
+    await page2.getByRole('button', { name: 'I need help' }).click();
+    await page2.getByRole('button', { name: 'Tap again to alert everyone' }).click();
     await page2.waitForTimeout(1500);
     await shot(page2, 'second-phone-joined');
 

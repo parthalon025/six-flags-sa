@@ -15,9 +15,27 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   renderer is amusement-park specific; a zoo, a campus, a festival ground or a town
   centre all draw through the same code. Three parks ship today: Kings Island, Six Flags
   Fiesta Texas and Cedar Point.
+- **Symbols you can read, not dots you have to decode.** Every place carries three
+  redundant channels — shape, colour and a glyph. A solid disc is something you came for,
+  a light chip is something you need, a diamond is a landmark and a pin is a gate; inside
+  it sits a fork and knife, a restroom pair, a shopping bag, a medical cross, an Eiffel
+  Tower. Colour alone would fail the ~8% of men with a red-green deficiency, for whom the
+  night palette's coaster red, ride purple and landmark pink are the same dot. The key
+  lives on the map itself, bottom left, and every row in it is also the switch that turns
+  that category on and off.
+- **Nothing is drawn on top of anything else.** District names, markers and place names
+  all bid for the same pixels in importance order, and whatever will not fit is dropped
+  rather than overprinted. District names lie along their district the way a printed park
+  map lays them out, clamped to the part of it you can actually see. A name that cannot go
+  above its marker tries below, right and left before giving up.
+- **Tap a coaster and its own track lights up.** Kings Island's 121 red polylines each
+  carry a ride name in the source geometry, so Diamondback's helix stops being one
+  squiggle among many. The tap also puts a callout on the map: name, distance, height rule.
 - **Height requirements where a venue has them.** Drag one slider to a rider's height and
-  the map dims everything they can't get on, with a running tally of what's open, what
-  needs an adult along, and what's closed. Kings Island ships with all 65. At a venue with
+  every ride that is out today goes hollow and struck through on the map — not merely
+  faded, because fading is what a party member we have not heard from looks like — while
+  rides that need a grown-up along get a plus badge. Plus a running tally of what's open,
+  what needs an adult, and what's closed. Kings Island ships with all 65. At a venue with
   no height rules the filter isn't there at all.
 - **Live party tracking.** One person starts a party and hosts it on their own phone;
   everyone else joins by scanning the QR, opening the invite link, or typing the
@@ -29,6 +47,24 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   showing walking time as the headline, distance underneath, and an arrow aimed
   relative to the way you're facing when the compass is on. With no party running it
   falls back to the nearest restroom, food and first aid. Tap a card to fly to it.
+- **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Rides and Me sit in
+  a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
+  moves — and each tab keeps its own navigation stack, so leaving one and coming back
+  finds it where you left it. Tapping the tab you are already on unwinds it to its root.
+  The sheet itself follows your finger between three stops and snaps to whichever one you
+  flicked it at, and screens slide in from the side they came from. The collapsed stop
+  deliberately shows less: search, where you are, the rail, the tabs. Everything else is
+  one pull away.
+- **Back is the phone's back, not a button in a corner.** Every screen the app opens goes
+  onto the browser's history stack, so the Android back button and the swipe in from the
+  left edge walk back through the app one screen at a time and only leave when there is
+  nothing left to go back to. The sheet's own back button takes the identical path — it
+  is the same history move — so the two can never disagree about where they are.
+- **Sized for a thumb, not a cursor.** Nothing you can tap is smaller than the 44px a
+  fingertip actually covers. Where a control has to *look* small — a row of seven height
+  tiers, a strip of filter chips, the Go button in the corner of a card — it keeps its
+  looks and grows an invisible hit area instead, so taps that land near enough still
+  count. There is no hover state anywhere, because there is no pointer to hover with.
 - **Turn-by-turn walking directions, the way a phone map does them.** Tap Go on a card or
   "Walk me there" on a ride and you get the trip first — how long, when you arrive, and
   two or three genuinely different ways to go, drawn on the map and named after where they
@@ -41,11 +77,21 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   new one, and arriving ends it.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
-- **Daylight and night maps.** Daylight is a printed-park-map palette — white midways on
-  paper, dark type, darker marker colours — meant to be readable on a phone in direct
-  July sun. Night is the low-glare version for after the lights come on. It follows the
+- **Light and dark maps.** Light is Apple Maps in daylight — white footpaths on pale
+  ground, dark type, deeper marker colours — meant to be readable on a phone in direct
+  July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the half-circle button in the header, or from the Me tab.
+  with the moon button floating over the map, or on the Me tab.
+- **What's open when the weather turns.** The park publishes no live feed this app can
+  read, so it builds one from the two sources it actually has. Your party reports what it
+  walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
+  as everything else — and a forecast fills in the rest: lightning closes the outdoor
+  rides and clears the pools first, wind takes the tall rides before anything else, rain
+  is no news at all for a flume, and cold shuts the water park. A report always beats a
+  forecast until it is half an hour old, at which point it stops being evidence. Nothing
+  is ever stated as fact: the wording is "likely" and "watch" because a guess that reads
+  as an operations feed is worse than no guess. On a clear day with nothing reported, none
+  of it appears.
 - **Meet-up pin** shared to the whole party, with distance and walk time.
 - **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
   can say anything useful about which of the maps it ships you want, so that is when it
@@ -55,11 +101,14 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
 - **Switches maps on its own, to where the party is.** Once you are in a party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  in the Me tab and it stops second-guessing you.
+  under Me → Which map and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
   reports their range and bearing.
+- **A scale bar that is telling the truth.** It picks a distance people round to — 100 ft,
+  250 ft, half a mile — and then measures it, rather than drawing a fixed width and naming
+  it afterwards. A compass rose beside it keeps north findable once the map turns.
 
 ## Get it running
 
@@ -248,17 +297,73 @@ speak the protocol:
 | `GET` / `DELETE` | `/api/party/[partyId]` |
 | `GET` | `/api/members/[partyId]` |
 | `POST` | `/api/location/[partyId]`, `/api/heartbeat/[partyId]` |
-| `PATCH` | `/api/member/[partyId]`, `/api/favorites/[partyId]` |
+| `PATCH` | `/api/member/[partyId]`, `/api/favorites/[partyId]`, `/api/ride-status/[partyId]` |
 | `GET` | `/api/rides`, `/api/rides/[id]` |
+| `GET` | `/api/weather?lat=&lng=` |
 | `GET` | `/api/health`, `/api/ready`, `/api/metrics`, `/api/version` |
 
 Parties expire after 8 hours; a member drops off the roster after 45 minutes of silence
-and is dimmed as stale after 5.
+and is dimmed as stale after 5. A ride report is hedged as possibly out of date after 30
+minutes and dropped entirely after 90 — an hour-old "closed" is worse than no report,
+because it sends a family walking to a ride that reopened forty minutes ago.
+
+`/api/weather` is the one route that reaches outside this app. It proxies
+[Open-Meteo](https://open-meteo.com), which needs no key and no account, so "there is
+nothing to configure" stays true. Responses are cached for ten minutes per coordinate, and the
+route serves a stale reading rather than an error when upstream is unreachable. Phones
+keep the last good reading in `localStorage` and show it with its age, so losing signal
+degrades the feature to the app that existed before it rather than to a spinner.
+
+Because it is the one response in the app with no party in it, it is also the one the
+CDN is allowed to hold: it ships `s-maxage`, so a park full of guests is one upstream
+request per region per ten minutes rather than one per server instance. The failure case
+is deliberately excluded — a 503 is `no-store`, so an outage cannot be cached past itself.
 
 Vercel's routes deliberately implement no SSE — serverless cannot hold a stream open — so
 clients there fall back to polling. Upstash is optional and only makes a *cloud-hosted*
 party durable across instances; it is not needed for phone-hosted parties, which is the
 normal case.
+
+Polling is therefore the deployment's whole cost model, and the relay is written around
+that. A mailbox is a sorted set scored by message sequence, so a poll asks for what is
+past its cursor instead of reading the box and discarding most of it — a caught-up member
+transfers nothing. Clients back off to fifteen seconds while their screen is off and catch
+up the instant it comes back on; the messages that cannot wait for that go by push instead,
+which is the division the two features make between them. Party creation and joining are
+rate limited per address, relay traffic per party — per party rather than per address
+because a park is one enormous NAT, and metering the address would meter the venue.
+
+## Notifications
+
+Everything the app has to say used to be said in a toast that lasts a few seconds and a
+vibration nobody feels through a bag, which is no use at all for the one message the party
+feature exists to carry. Web Push fixes that, and it is off unless you give it keys:
+
+```bash
+node -e "console.log(require('web-push').generateVAPIDKeys())"
+# put the pair in .env.local as VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY,
+# plus VAPID_SUBJECT=mailto:you@example.com
+```
+
+Without them `/api/push/key` says so once, nothing asks again, and the app behaves exactly
+as it did before.
+
+A notification is the most revealing frame this app has — it says a name, and usually where
+that name is — so it is sealed with the party key before it goes anywhere and opened again
+by the service worker on the receiving phone. Our relay sees an endpoint and a blob; the
+push service sees the same plus whose phone it is going to; only the phone sees the words.
+The worker wakes with no page attached, so the key is kept in IndexedDB beside the party
+id, written as the party changes and cleared on leaving — which is what makes a push from a
+party you have left unreadable rather than merely unwelcome.
+
+Four things are worth waking a phone for: somebody needing help, somebody joining or
+leaving, the meet-up moving, and somebody going quiet. The last one can cry wolf — a queue
+building eats signal for five minutes routinely — so it waits twelve and is off by default.
+The first three are sent by whoever does them; going quiet is nobody's action, so the host
+notices it alone.
+
+On an iPhone this only works once the app is on the Home Screen. The button says so rather
+than failing quietly.
 
 ## What a browser cannot do
 
@@ -266,8 +371,10 @@ Stated plainly rather than stubbed to look finished:
 
 - **Background location.** There is no web API for it. When the screen locks, the page is
   suspended and positions stop updating — a phone in a pocket goes stale rather than
-  reporting a stale position as live. The map dims that person after 5 minutes. Fixing
-  this needs a native wrapper with the OS background-location permission.
+  reporting a stale position as live. After 5 minutes the map rings that person with a
+  broken circle and prints how long ago it heard from them, and stops drawing the arrow
+  for which way they were walking. Fixing this needs a native wrapper with the OS
+  background-location permission.
 - **BLE advertising and discovery**, as above.
 - **A phone acting as an HTTP listener**, and `party.local` mDNS resolution. The host
   phone runs the party *service*; peers reach it over WebRTC, not a socket it opened.
@@ -282,13 +389,19 @@ npm test                            # unit, then the three-phone behavioural sui
 npm run test:visual                 # screenshots to test/shots/
 npm run test:theme                  # daylight and night, via the real toggle
 npm run test:ux                     # glance rail with a live party
+npm run test:grandma                # can a stranger actually use it
 ```
 
 `test/unit.mjs` exercises the pure layers directly: version arithmetic, duplicate
 suppression, seal/open against wrong keys and tampered ciphertext, the election ordering,
 every GPS cadence band and broadcast-gate reason, and the router — the last of those
 against the real park file rather than a fixture, because a graph that routes perfectly
-over a toy and badly over Kings Island is the failure worth catching.
+over a toy and badly over Kings Island is the failure worth catching. Venue selection,
+the OpenStreetMap tag rules and the geometry helpers the builder leans on are in there
+too. So is the map's own layout logic: the decluttering grid checked against brute force,
+glyph art checked to stay inside the shape drawn round it, every named piece of coaster
+track checked to belong to a ride in that venue's catalogue, and the scale bar checked to
+span the distance it claims at every zoom the map allows.
 
 `test/functional.mjs` is the one that matters. Three phones in one browser: A hosts, B
 joins by typing the code, C joins from the invite link, then A is taken away and the
@@ -301,7 +414,21 @@ replaced, and that the map and ride heights still work with the network cut. A f
 sits in Austin, at neither park, to check that the intake asks about the nearer one, that
 saying yes brings that park's places with it, and that it is not asked again.
 
-Both suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
+`test/grandma.mjs` asks a different question from the other two. They ask whether the app
+still does what it did; this asks whether somebody who has never seen it can get anything
+out of it. Two people are scored separately — one on her own who needs a toilet, then food,
+then to walk there, and one who has been handed a link and has to appear on her family's
+map, find a grandchild and be able to call for help. Tasks score 0, 1 or 2, because "she
+got there after opening the panel" is a different result from "she got there first try",
+and a suite that cannot tell those apart cannot tell you whether the app improved.
+
+The rule that keeps it honest: **its persona tasks may not use the `go()` helper**. That
+helper knows where the tab bar is and pulls the sheet open by its handle, which are exactly
+the two things she does not know. She taps things whose words she can read, and if nothing
+on screen says it, that is the finding rather than a broken test. A single task scoring
+zero fails the run.
+
+All the suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
 machine instead of Playwright's own copy.
 
 ## Building a map of somewhere else
@@ -408,7 +535,14 @@ browser.
   Theme Park Insider, reflecting the 2026 season. They live in
   `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
-  at the gate and has the final say, so the app says as much on the Rides tab.
+  at the gate and has the final say, so the app says as much on the rider-height screen.
+- **Weather** — Open-Meteo, at the active venue's centre from the manifest, so switching
+  parks moves the forecast with the map. Which places care about which conditions is not
+  data at all: `lib/weather.js` derives it from each POI's category, land and note, with
+  no ride names anywhere in the file — so a venue built from OpenStreetMap alone, with no
+  height overrides written for it yet, still gets a full weather picture.
+- **Operating status** — nobody's but your own party's. There is no ride-status feed here
+  and the app never claims one.
 - Flight of Fear is not mapped in OpenStreetMap; it's placed on its show building and
   flagged as approximate in the app.
 - Two renames are reflected: Backlot Stunt Coaster is now Queen City Stunt Coaster, and
@@ -443,22 +577,36 @@ lib/partyRuntime.js           the seam: session, transports, host service or cli
 lib/geo.js                    distance, bearing, Mercator projection
 lib/routing.js                path graph, repair passes, A*, turn-by-turn
 lib/park.js  lib/theme.js     POI helpers and height eligibility; day/night palettes
+lib/weather.js                exposure traits and the outlook rules — no ride names
+lib/rideStatus.js             merges a party report with a forecast into one verdict
+lib/mapSymbols.js             the symbol vocabulary: shapes, glyphs, ranks, ink
+lib/mapLabels.js              decluttering grid, district-name geometry, scale bar
 lib/venue/store.js            which venue is loaded; manifest, geometry, places
+lib/venue/ids.js              the one place-id rule, shared by browser and hosts
 lib/venue/useVenue.js         the hook components read it through
 lib/venueIndex.js             generated: static POI imports for the API routes
 lib/serverStore.js            memory / Upstash backend for the cloud fallback
 app/
-  page.js                     client state and the sheet
+  page.js                     client state, the tabs and the sheet
   join/page.js                invite landing; reads the fragment, never the query
   api/mailbox/…               the relay
   api/…                       party, members, location, rides, health, metrics
+  api/weather/                the only outbound call in the app; cached, fails soft
 components/
-  ParkMap.jsx                 SVG renderer, pan + pinch zoom
+  ParkMap.jsx                 SVG renderer, pan + pinch zoom, label layout
+  MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
+  MapLegend.jsx               the on-map key, which is also the category filter
   GlanceRail.jsx              the live card rail in the collapsed sheet
+  TabBar.jsx                  the four bottom tabs, badges and all
+  useSheetDrag.js             the sheet under a finger: follow, then snap
   PartyPanel.jsx              roster, QR, join, status, meet-up
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
-  RidesPanel.jsx              height filter and place search
+  PlaceList.jsx               place search, live status and reporting
+  HeightPanel.jsx             the rider-height filter and what it unlocks
+  SettingsPanel.jsx           name, appearance, which map, and the long tail
+  WeatherBanner.jsx           the park-wide headline; renders nothing on a clear day
+  useWeather.js               polls the forecast, caches it, survives losing signal
   GpsGate.jsx                 permission dialog with per-failure guidance
   ParkPrompt.jsx              which park, asked from the first fix and built on yes
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps

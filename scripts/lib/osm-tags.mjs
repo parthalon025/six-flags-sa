@@ -108,7 +108,11 @@ export const LAND_RULES = [
   (t) => has(t, 'tourism', ['theme_park', 'zoo', 'attraction']) && has(t, 'name'),
   (t) => has(t, 'leisure', ['park', 'water_park', 'nature_reserve', 'stadium']) && has(t, 'name'),
   (t) => has(t, 'landuse', ['recreation_ground', 'retail', 'commercial', 'education', 'religious']) && has(t, 'name'),
-  (t) => has(t, 'place', ['neighbourhood', 'suburb', 'quarter', 'city_block']) && has(t, 'name'),
+  // `locality` belongs here as much as the rest: it is how a themed area inside
+  // a park is routinely tagged, and leaving it out is the difference between a
+  // park whose districts are Rockville and Spassburg and one whose only named
+  // areas are the retail park over the road.
+  (t) => has(t, 'place', ['neighbourhood', 'suburb', 'quarter', 'city_block', 'locality']) && has(t, 'name'),
   (t) => has(t, 'amenity', ['university', 'college', 'school', 'hospital', 'marketplace']) && has(t, 'name'),
 ];
 
@@ -177,6 +181,15 @@ export const POI_RULES = [
       has(t, 'memorial'),
   ],
 ];
+
+/**
+ * Categories worth keeping from a closed way that carries no name at all.
+ *
+ * Deliberately two. An unnamed gate or service area is noise on a map read at a
+ * glance, but an unnamed toilet block is the thing people are looking for, and
+ * mappers almost never name one — which is what `UNNAMED_LABELS` below is for.
+ */
+export const UNNAMED_AREA_CATEGORIES = new Set(['restroom', 'parking']);
 
 /** What an unnamed POI of each category is called, when it is worth keeping anyway. */
 export const UNNAMED_LABELS = {

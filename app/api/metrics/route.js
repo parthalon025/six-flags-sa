@@ -1,6 +1,10 @@
 import { metrics, usingRedis } from '@/lib/serverStore';
+import { notFound } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
+
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
 
 // Counters are per process. On serverless that means each instance reports its
 // own slice and nothing sums them, so treat these as a sampled signal rather
@@ -20,7 +24,33 @@ const HELP = {
   uptime_seconds: ['gauge', 'Process uptime'],
 };
 
-export function GET() {
+/**
+ * Who may read this.
+ *
+ * The counters carry no party in them, but on a public deployment they still
+ * narrate the thing: how many parties were started this hour, whether the store
+ * is erroring, whether anyone is using it at all. That is operator business.
+ *
+ * So: a token gates it wherever one is set, and where none is set the route
+ * simply does not exist in production. Failing closed costs a self-hoster one
+ * environment variable, documented in .env.example; failing open would cost
+ * every deployment that never thought about it. 404 rather than 401 because an
+ * endpoint that answers "you guessed right, now authenticate" is still an
+ * endpoint that confirmed it is there.
+ */
+const TOKEN = process.env.METRICS_TOKEN;
+
+function permitted(request) {
+  if (!TOKEN) return process.env.NODE_ENV !== 'production';
+  const header = request.headers.get('authorization') || '';
+  const bearer = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const query = new URL(request.url).searchParams.get('token') || '';
+  return bearer === TOKEN || query === TOKEN;
+}
+
+export function GET(request) {
+  if (!permitted(request)) return notFound();
+
   const values = metrics();
   const lines = [`# backend ${usingRedis ? 'upstash' : 'memory'}`];
 

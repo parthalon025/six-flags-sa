@@ -13,11 +13,12 @@
 import {
   BASE,
   closeGate,
+  go,
   hydrated,
   launch,
   openPhone,
+  root,
   rosterNames,
-  tab,
   until,
 } from './browser.mjs';
 
@@ -70,7 +71,7 @@ await check('park geometry is drawn', async () => {
 });
 
 await check('glance rail renders nearby fallback cards', async () => {
-  await tab(a, 'Party');
+  await go(a, 'Places');
   return (await a.locator('.glanceCard').count()) >= 2;
 });
 
@@ -123,7 +124,7 @@ await check('the sheet cycles peek -> half -> full', async () => {
 });
 
 console.log('\n--- rides + heights ---');
-await tab(a, 'Rides');
+await go(a, 'Rider height');
 await a.waitForTimeout(400);
 
 await check('tier button sets height and ratio bar appears', async () => {
@@ -142,15 +143,19 @@ await check('filter badge shows a live count', async () => {
 });
 
 await check('verdicts respond to height', async () => {
+  await go(a, 'Places');
   const at48 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(400);
+  await go(a, 'Places');
   const at36 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
   if (!/CAN RIDE/i.test(at48) || !/TOO SHORT/i.test(at36)) throw new Error(`${at48} / ${at36}`);
   return true;
 });
 
 await check('"adult along" changes the companion tally', async () => {
+  await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(300);
   const withAdult = await a.locator('.ratioKey .warn b').innerText();
@@ -164,6 +169,7 @@ await check('"adult along" changes the companion tally', async () => {
 });
 
 await check('"only what they can ride" filters the list', async () => {
+  await go(a, 'Places');
   const before = await a.locator('.poiRow').count();
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(500);
@@ -175,6 +181,7 @@ await check('"only what they can ride" filters the list', async () => {
 });
 
 await check('search narrows results', async () => {
+  await go(a, 'Places');
   await a.locator('.field[aria-label="Search places"]').fill('beast');
   await a.waitForTimeout(500);
   const n = await a.locator('.poiRow').count();
@@ -185,6 +192,7 @@ await check('search narrows results', async () => {
 });
 
 await check('category chip switches the list', async () => {
+  await go(a, 'Places');
   await a.locator('.chip.withDot:has-text("Restrooms")').click();
   await a.waitForTimeout(500);
   const txt = await a.locator('.poiRow').first().innerText();
@@ -194,6 +202,7 @@ await check('category chip switches the list', async () => {
 });
 
 await check('clear removes the height filter', async () => {
+  await go(a, 'Rider height');
   await a.locator('.labelAction:has-text("Clear")').click();
   await a.waitForTimeout(400);
   return (await a.locator('.filterBadge').count()) === 0;
@@ -202,7 +211,7 @@ await check('clear removes the height filter', async () => {
 console.log('\n--- walking directions ---');
 
 await check('"walk me there" offers the route before setting off', async () => {
-  await tab(a, 'Rides');
+  await go(a, 'Places');
   await a.locator('.field[aria-label="Search places"]').fill('beast');
   await a.waitForTimeout(400);
   await a.locator('.poiRow .poiMain').first().click();
@@ -339,10 +348,10 @@ await check('arriving ends the route on its own', async () => {
 await check('a glance card walks you to a place and stops again', async () => {
   await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await a.waitForTimeout(1200);
-  await tab(a, 'Party');
-  const go = a.locator('.glanceGo').first();
-  if (!(await go.count())) throw new Error('no Go button on the rail');
-  await go.click();
+  await go(a, 'Places');
+  const goBtn = a.locator('.glanceGo').first();
+  if (!(await goBtn.count())) throw new Error('no Go button on the rail');
+  await goBtn.click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('Go did not offer a route');
   if (!(await a.locator('.glanceCard.walking').count())) throw new Error('card not marked as live');
@@ -356,7 +365,7 @@ await check('a glance card walks you to a place and stops again', async () => {
 });
 
 console.log('\n--- party: create and invite ---');
-await tab(a, 'Party');
+await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
 await a.waitForSelector('.codeText', { timeout: 20000 });
@@ -415,7 +424,7 @@ console.log('\n--- party: joining ---');
 // Phone B, down in Coney Mall, types the code in.
 const B = await openPhone(browser, { lat: 39.3412, lng: -84.2652, name: 'Ava', label: 'B' });
 const b = B.page;
-await tab(b, 'Party');
+await go(b, 'Party');
 await b.locator('.field.code').fill(code);
 await b.locator('button:has-text("Join")').click();
 
@@ -468,7 +477,10 @@ await check('roster shows a real distance to phone B', async () => {
 });
 
 await check('NEED HELP propagates to the other phone', async () => {
-  await b.locator('.chip:has-text("NEED HELP")').click();
+  // Two taps on purpose: the alert buzzes every phone in the party, so it is
+  // not a thing a resting thumb can send.
+  await b.locator('button:has-text("I need help")').click();
+  await b.locator('button:has-text("Tap again to alert everyone")').click();
   await until(
     async () => a.locator('.memberRow', { hasText: 'Ava' }).locator('.chipTag.hot').count(),
     { timeout: JOIN_TIMEOUT, label: 'the help tag on phone A' },
@@ -477,12 +489,13 @@ await check('NEED HELP propagates to the other phone', async () => {
 });
 
 await check('meet-up set from a ride reaches the other phone', async () => {
-  await tab(a, 'Rides');
+  await go(a, 'Places');
+  await a.locator('.field[aria-label="Search places"]').fill('');
   await a.waitForTimeout(400);
   await a.locator('.poiMain', { hasText: 'The Racer' }).first().click();
   await a.waitForTimeout(500);
   await a.locator('button:has-text("Make this the meet-up")').click();
-  await tab(a, 'Party');
+  await go(a, 'Party');
   await until(async () => /Racer/i.test(await b.locator('.sheetBody').innerText()), {
     timeout: JOIN_TIMEOUT,
     label: 'the meet-up on phone B',
@@ -501,7 +514,7 @@ const C = await openPhone(browser, {
 const c = C.page;
 
 await check('the invite link joins the party with nothing typed', async () => {
-  await tab(c, 'Party');
+  await go(c, 'Party');
   await until(async () => (await c.locator('.codeText').count()) > 0, {
     timeout: JOIN_TIMEOUT,
     label: 'phone C to be in a party',
@@ -524,6 +537,7 @@ await check('the key never leaves the fragment on the way in', () => {
 
 await check('all three phones see all three members', async () => {
   for (const [label, page] of [['A', a], ['B', b], ['C', c]]) {
+    await go(page, 'Party');
     const names = await until(
       async () => {
         const n = await rosterNames(page);
@@ -537,6 +551,137 @@ await check('all three phones see all three members', async () => {
   }
   return true;
 });
+
+console.log('\n--- ride reports ---');
+
+/**
+ * The half of live status that does not come from a forecast: one phone says a
+ * ride is down and every other phone in the party hears it. Exercised over
+ * whatever transport the party actually negotiated, which is the point — the
+ * report is an ordinary command and gets the same delivery guarantees as a
+ * location or a meet-up pin.
+ */
+
+/** Open a ride's row on the sheet's root screen and return its detail panel. */
+async function openRide(page, name) {
+  await go(page, 'Places');
+  await page.waitForTimeout(300);
+  await page.locator('.chip:has-text("All")').first().click();
+  // By aria-label, not placeholder: the placeholder names the loaded venue.
+  await page.locator('.field[aria-label="Search places"]').fill(name);
+  await page.waitForTimeout(400);
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  await row.locator('.poiMain').click();
+  await page.waitForTimeout(300);
+  return row;
+}
+
+/**
+ * The report buttons are addressed by `data-report` rather than by their label:
+ * the label is deliberately stateful ("It's down" becomes "Reported down"), so
+ * matching on text couples the test to which way the button is currently
+ * pointing — which is the thing under test.
+ */
+const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`);
+
+/**
+ * The running-status pill on a ride's row, or '' when it carries none.
+ *
+ * `.statusPill` and not `.verdict`: the height verdict is also a `.verdict` and
+ * sits in the same stack, and matching it would read "CAN RIDE" as a claim
+ * about whether the ride is operating — which is the exact confusion this
+ * feature exists to undo.
+ */
+async function pillFor(page, name) {
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  const pill = row.locator('.verdict.statusPill').first();
+  try {
+    // Short timeout and a catch rather than a count() guard: the retraction
+    // test is polling for this pill to vanish, so it can and does disappear
+    // between being counted and being read.
+    return (await pill.innerText({ timeout: 1000 })).trim();
+  } catch {
+    return '';
+  }
+}
+
+await check('a ride reported down on one phone reaches the other', async () => {
+  const row = await openRide(a, 'Diamondback');
+  await reportBtn(row, 'down').click();
+  await a.waitForTimeout(400);
+
+  // The reporting phone shows it straight away — via the host's patch, not an
+  // optimistic local write.
+  await until(async () => /reported down/i.test(await pillFor(a, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone A to show its own report',
+  });
+
+  await openRide(b, 'Diamondback');
+  await until(async () => /reported down/i.test(await pillFor(b, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: 'the report to reach phone B',
+  });
+  return true;
+});
+
+await check('the report says who saw it and when', async () => {
+  const detail = await b
+    .locator('.poiRow', { hasText: 'Diamondback' })
+    .first()
+    .locator('.poiNote.wxWhy')
+    .innerText();
+  // Justin is phone A's roster name; the party, not the forecast, is the source.
+  if (!/Justin/.test(detail)) throw new Error(detail);
+  if (!/just now|min ago/.test(detail)) throw new Error(detail);
+  return true;
+});
+
+await check('the other phone can correct it', async () => {
+  const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
+  await reportBtn(row, 'open').click();
+  await until(async () => /reported running/i.test(await pillFor(b, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: 'phone B to overwrite the report',
+  });
+  // A ride report is not owned by whoever wrote it, so A sees B's correction.
+  await until(async () => /reported running/i.test(await pillFor(a, 'Diamondback')), {
+    timeout: JOIN_TIMEOUT,
+    label: "the correction to reach phone A",
+  });
+  return true;
+});
+
+await check('retracting a report clears it everywhere', async () => {
+  const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
+  // Tapping the button that is already on retracts it.
+  await reportBtn(row, 'open').click();
+  // Not asserting the pill is gone outright: this suite runs against a live
+  // forecast, and if it is genuinely storming the row keeps a weather pill.
+  // What must disappear is the party's claim.
+  const cleared = async (page) => !/reported/i.test(await pillFor(page, 'Diamondback'));
+  await until(() => cleared(b), { timeout: JOIN_TIMEOUT, label: 'phone B to drop the report' });
+  await until(() => cleared(a), { timeout: JOIN_TIMEOUT, label: 'phone A to drop the report' });
+  return true;
+});
+
+await check('the reporting buttons are absent without a party', async () => {
+  const solo = await openPhone(browser, { lat: 39.3432, lng: -84.2669, name: 'Solo', label: 'S' });
+  await openRide(solo.page, 'Diamondback');
+  const buttons = await solo.page.locator('.reportRow button').count();
+  await solo.context.close();
+  if (buttons !== 0) throw new Error(`${buttons} report buttons with no party`);
+  return true;
+});
+
+// Put both phones back the way the rest of the suite expects to find them: on
+// the Party screen, with the ride search cleared. Everything after this reads
+// the roster, and a phone left on the places list has no roster to read.
+for (const page of [a, b]) {
+  await page.locator('.field[aria-label="Search places"]').fill('');
+  await go(page, 'Party');
+  await page.waitForTimeout(300);
+}
 
 console.log('\n--- host migration ---');
 
@@ -622,7 +767,7 @@ await check('the intake asks about the nearest park, not the default one', async
   // Wait for the question itself, not merely for a heading: the location card
   // is still up while the fix lands, and reading .gate h2 the moment it says
   // anything gets "Waiting for a fix" rather than the park.
-  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — build")').count()) > 0, {
+  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
     timeout: 25000,
     label: 'the park question',
   });
@@ -636,14 +781,14 @@ await check('the intake asks about the nearest park, not the default one', async
 });
 
 await check('saying yes builds that park, geometry and places', async () => {
-  await e.locator('.gate .btn.primary:has-text("Yes — build")').click();
+  await e.locator('.gate .btn.primary:has-text("Yes — set up")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
   // The places have to have come with it. Fiesta Texas ships no height data, so
-  // its own tab calls itself Places where Kings Island's calls itself Rides &
-  // heights — and the list behind it holds a ride only that park has.
-  await tab(e, 'Places');
+  // the sheet's root screen carries no rider-height row — and the list on it
+  // holds a ride only that park has.
+  await go(e, 'Places');
   await until(async () => (await e.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
     timeout: 15000,
     label: "Fiesta Texas's place list",
@@ -676,7 +821,14 @@ const D = await openPhone(browser, {
   label: 'D',
 });
 const d = D.page;
-const venueName = (page) => page.locator('.brand b').innerText();
+/* Which map this phone is showing. The name is on the Explore screen, so read
+   it there — tapping the tab this phone is already on pops it back to its root
+   and costs nothing. */
+const venueName = async (page) => {
+  await page.locator('.tabItem[data-tab="explore"]').click();
+  await root(page);
+  return page.locator('.brand b').innerText();
+};
 
 await check('a phone opens on the venue its own fix is inside', async () => {
   const shown = await until(async () => /fiesta texas/i.test(await venueName(d)) || false, {
@@ -687,7 +839,7 @@ await check('a phone opens on the venue its own fix is inside', async () => {
 });
 
 await check('joining a party moves the map to where the host is', async () => {
-  await tab(d, 'Party');
+  await go(d, 'Party');
   await d.locator('.field.code').fill(code);
   await d.locator('button:has-text("Join")').click();
   await until(async () => (await d.locator('.codeText').count()) > 0, {
@@ -702,7 +854,7 @@ await check('joining a party moves the map to where the host is', async () => {
 });
 
 await check('the picker measures from the party, not from this phone', async () => {
-  await tab(d, 'Me');
+  await go(d, 'Which map');
   await d.waitForTimeout(400);
   const rows = await d.locator('.venueRow').allTextContents();
   const here = rows.find((r) => /Kings Island/.test(r));
@@ -713,6 +865,7 @@ await check('the picker measures from the party, not from this phone', async () 
 });
 
 await check('picking a venue by hand outranks the host', async () => {
+  await go(d, 'Which map');
   await d.locator('.venueRow', { hasText: 'Fiesta Texas' }).click();
   await until(async () => /fiesta texas/i.test(await venueName(d)) || false, {
     timeout: JOIN_TIMEOUT,
@@ -726,7 +879,7 @@ await check('picking a venue by hand outranks the host', async () => {
 });
 
 // Out again, so the roster the tests below assert on is the one they set up.
-await tab(d, 'Party');
+await go(d, 'Party');
 await d.locator('.codeBox button:has-text("Leave")').click();
 await until(async () => (await d.locator('button:has-text("Start a party")').count()) > 0, {
   timeout: JOIN_TIMEOUT,
@@ -744,7 +897,9 @@ await check('leaving removes the member from the other phone’s roster', async 
   const leaver = bHosts ? { page: c, name: 'Sam' } : { page: b, name: 'Ava' };
   const stays = bHosts ? b : c;
 
+  // Leaving confirms too — for the host it hands the roster to another phone.
   await leaver.page.locator('.codeBox button:has-text("Leave")').click();
+  await leaver.page.locator('.codeBox button:has-text("Tap to confirm")').click();
   await until(async () => (await leaver.page.locator('button:has-text("Start a party")').count()) > 0, {
     timeout: JOIN_TIMEOUT,
     label: 'the leaver to be back on the start screen',
@@ -759,7 +914,7 @@ await check('leaving removes the member from the other phone’s roster', async 
 console.log('\n--- persistence ---');
 
 await check('height, theme and party survive a reload', async () => {
-  await tab(b, 'Rides');
+  await go(b, 'Rider height');
   await b.waitForTimeout(300);
   await b.locator('.tier:has-text("52")').click();
   await b.waitForTimeout(600);
@@ -782,12 +937,12 @@ await check('height, theme and party survive a reload', async () => {
   if ((await b.evaluate(() => document.documentElement.dataset.theme)) !== theme) {
     throw new Error('theme reset on reload');
   }
-  await tab(b, 'Me');
-  const name = await b.locator('.field[placeholder="NAME"]').inputValue();
+  await go(b, 'Settings');
+  const name = await b.locator('.field[placeholder="Name"]').inputValue();
   if (name !== 'Ava') throw new Error(`name came back as "${name}"`);
 
   if (before) {
-    await tab(b, 'Party');
+    await go(b, 'Party');
     const after = await until(
       async () => {
         const n = await b.locator('.codeText').count();
@@ -846,11 +1001,12 @@ await check('ride heights still work with the network cut', async () => {
   // Including the park question, which this context has never answered: saying
   // yes to the park already on screen must not go back to the network for it.
   await closeGate(off);
-  await tab(off, 'Rides');
+  await go(off, 'Rider height');
   await off.waitForTimeout(500);
   await off.locator('.tier:has-text("48")').click();
   await off.waitForTimeout(500);
   if (!(await off.locator('.ratioBar').count())) throw new Error('no ratio bar offline');
+  await go(off, 'Places');
   const verdict = await off.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
   if (!/CAN RIDE/i.test(verdict)) throw new Error(`verdict offline: ${verdict}`);
   const badge = await off.locator('.filterBadge').textContent();

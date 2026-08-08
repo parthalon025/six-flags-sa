@@ -1,8 +1,22 @@
 [
   {
+    "n": "3 Point Challange",
+    "lat": 39.341395,
+    "lng": -84.265345,
+    "c": "ride",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Action Theater",
+    "lat": 39.339875,
+    "lng": -84.262888,
+    "c": "show",
+    "a": "Coney Mall"
+  },
+  {
     "n": "Adventure Express",
-    "lat": 39.344468,
-    "lng": -84.264863,
+    "lat": 39.344465,
+    "lng": -84.264865,
     "c": "coaster",
     "a": "Adventure Port",
     "h": {
@@ -12,176 +26,46 @@
     }
   },
   {
-    "n": "Queen City Stunt Coaster",
-    "lat": 39.341937,
-    "lng": -84.265945,
-    "c": "coaster",
-    "a": "Coney Mall",
-    "alias": "Backlot Stunt Coaster",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
-    "note": "Formerly Backlot Stunt Coaster"
+    "n": "Age or Weight",
+    "lat": 39.344759,
+    "lng": -84.266532,
+    "c": "ride",
+    "a": "Action Zone"
   },
   {
-    "n": "Banshee",
-    "lat": 39.345661,
-    "lng": -84.265478,
-    "c": "coaster",
-    "a": "Action Zone",
-    "h": {
-      "min": 52,
-      "alone": null,
-      "max": null
-    }
+    "n": "Age or Weight",
+    "lat": 39.342417,
+    "lng": -84.264783,
+    "c": "ride",
+    "a": "Coney Mall"
   },
   {
-    "n": "Diamondback",
-    "lat": 39.342107,
-    "lng": -84.26749,
-    "c": "coaster",
-    "a": "Rivertown",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    }
+    "n": "Antique Photos",
+    "lat": 39.341072,
+    "lng": -84.267249,
+    "c": "shop",
+    "a": "Rivertown"
   },
   {
-    "n": "Invertigo",
-    "lat": 39.345831,
-    "lng": -84.268008,
-    "c": "coaster",
-    "a": "Action Zone",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    }
+    "n": "Arcade",
+    "lat": 39.341998,
+    "lng": -84.264502,
+    "c": "ride",
+    "a": "Coney Mall"
   },
   {
-    "n": "Mystic Timbers",
-    "lat": 39.341215,
-    "lng": -84.268534,
-    "c": "coaster",
-    "a": "Rivertown",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
+    "n": "Arcade",
+    "lat": 39.340962,
+    "lng": -84.266469,
+    "c": "ride",
+    "a": "Rivertown"
   },
   {
-    "n": "Orion",
-    "lat": 39.342987,
-    "lng": -84.262729,
-    "c": "coaster",
-    "a": "Area 72",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Soap Box Racers",
-    "lat": 39.341563,
-    "lng": -84.269372,
-    "c": "coaster",
-    "a": "Camp Snoopy",
-    "h": {
-      "min": 38,
-      "alone": null,
-      "max": 80
-    },
-    "note": "Snoopy's Soap Box Racers"
-  },
-  {
-    "n": "Surf Dog",
-    "lat": 39.34236,
-    "lng": -84.269795,
-    "c": "coaster",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "The Bat",
-    "lat": 39.34759,
-    "lng": -84.265238,
-    "c": "coaster",
-    "a": "Action Zone",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
-    "note": "Sources differ (42-54) - confirm at the gate"
-  },
-  {
-    "n": "The Beast",
-    "lat": 39.340154,
-    "lng": -84.266027,
-    "c": "coaster",
-    "a": "Rivertown",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "The Great Pumpkin Coaster",
-    "lat": 39.342951,
-    "lng": -84.268406,
-    "c": "coaster",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 36,
-      "alone": 46,
-      "max": null
-    }
-  },
-  {
-    "n": "The Racer",
-    "lat": 39.343415,
-    "lng": -84.264573,
-    "c": "coaster",
-    "a": "Coney Mall",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Woodstock Express",
-    "lat": 39.343057,
-    "lng": -84.269591,
-    "c": "coaster",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 40,
-      "alone": 46,
-      "max": null
-    }
-  },
-  {
-    "n": "Woodstock's Air Rail",
-    "lat": 39.341575,
-    "lng": -84.269035,
-    "c": "coaster",
-    "a": "Camp Snoopy",
-    "h": {
-      "min": 44,
-      "alone": null,
-      "max": 76
-    }
+    "n": "Arcade Games",
+    "lat": 39.342906,
+    "lng": -84.264725,
+    "c": "ride",
+    "a": "Coney Mall"
   },
   {
     "n": "Auntie Anne's",
@@ -192,10 +76,113 @@
   },
   {
     "n": "Auntie Anne's",
-    "lat": 39.341058,
-    "lng": -84.267105,
+    "lat": 39.341059,
+    "lng": -84.267108,
     "c": "food",
-    "a": "International Street"
+    "a": "Rivertown"
+  },
+  {
+    "n": "Backlot Stunt Coaster",
+    "lat": 39.341937,
+    "lng": -84.265944,
+    "c": "coaster",
+    "a": "Coney Mall",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "alias": "Backlot Stunt Coaster",
+    "note": "Formerly Backlot Stunt Coaster"
+  },
+  {
+    "n": "Bank Ball",
+    "lat": 39.3437,
+    "lng": -84.26524,
+    "c": "ride",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Banshee",
+    "lat": 39.345666,
+    "lng": -84.265478,
+    "c": "coaster",
+    "a": "Action Zone",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Beagle Scout Acres",
+    "lat": 39.341811,
+    "lng": -84.269915,
+    "c": "ride",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Boo Blasters on Boo Hill",
+    "lat": 39.34325,
+    "lng": -84.268169,
+    "c": "ride",
+    "a": "International Street",
+    "h": {
+      "min": 46,
+      "alone": null,
+      "max": null
+    },
+    "alias": "Boo Blasters on Boo Hill"
+  },
+  {
+    "n": "Cargo Loco",
+    "lat": 39.34479,
+    "lng": -84.265742,
+    "c": "ride",
+    "a": "Adventure Port",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Character Carousel",
+    "lat": 39.342709,
+    "lng": -84.268748,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 46,
+      "alone": null,
+      "max": null
+    },
+    "note": "Under 46in with a supervising companion"
+  },
+  {
+    "n": "Charlie Brown's Rushing River Log Ride",
+    "lat": 39.34154,
+    "lng": -84.268513,
+    "c": "ride",
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 0,
+      "alone": 46,
+      "max": null
+    },
+    "note": "No minimum with a supervising companion"
+  },
+  {
+    "n": "Charlie Brown's Wind Up",
+    "lat": 39.343314,
+    "lng": -84.268918,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": 46,
+      "max": 54
+    }
   },
   {
     "n": "Chick-fil-A",
@@ -219,6 +206,20 @@
     "a": "International Street"
   },
   {
+    "n": "Coaster Connection",
+    "lat": 39.345745,
+    "lng": -84.266209,
+    "c": "shop",
+    "a": "Action Zone"
+  },
+  {
+    "n": "Coca-Cola Marketplace",
+    "lat": 39.344176,
+    "lng": -84.265527,
+    "c": "shop",
+    "a": "Adventure Port"
+  },
+  {
     "n": "Coconut Cove Cafe",
     "lat": 39.338973,
     "lng": -84.274749,
@@ -227,17 +228,84 @@
   },
   {
     "n": "Coney Bar B Que",
-    "lat": 39.343494,
-    "lng": -84.265564,
+    "lat": 39.343514,
+    "lng": -84.26556,
     "c": "food",
     "a": "Coney Mall"
   },
   {
     "n": "Coney Confections",
-    "lat": 39.343851,
-    "lng": -84.265538,
+    "lat": 39.343854,
+    "lng": -84.265537,
     "c": "food",
     "a": "Coney Mall"
+  },
+  {
+    "n": "Congo Falls",
+    "lat": 39.346122,
+    "lng": -84.266964,
+    "c": "ride",
+    "a": "Action Zone",
+    "h": {
+      "min": 46,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Delirium",
+    "lat": 39.345157,
+    "lng": -84.266324,
+    "c": "ride",
+    "a": "Action Zone",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Diamondback",
+    "lat": 39.342102,
+    "lng": -84.267493,
+    "c": "coaster",
+    "a": "Rivertown",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Dodgem",
+    "lat": 39.342642,
+    "lng": -84.26539,
+    "c": "ride",
+    "a": "Coney Mall",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Drop Tower: Scream Zone",
+    "lat": 39.346038,
+    "lng": -84.266381,
+    "c": "ride",
+    "a": "Action Zone",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Eiffel Tower",
+    "lat": 39.343323,
+    "lng": -84.266984,
+    "c": "landmark",
+    "a": "International Street"
   },
   {
     "n": "Enrique's",
@@ -245,6 +313,451 @@
     "lng": -84.265813,
     "c": "food",
     "a": "Adventure Port"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.346421,
+    "lng": -84.268357,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341527,
+    "lng": -84.268969,
+    "c": "gate",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340809,
+    "lng": -84.266406,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.339853,
+    "lng": -84.26315,
+    "c": "gate",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.342524,
+    "lng": -84.264265,
+    "c": "gate",
+    "a": "Area 72"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.336938,
+    "lng": -84.27269,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.336559,
+    "lng": -84.27399,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.343089,
+    "lng": -84.278563,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.342769,
+    "lng": -84.263774,
+    "c": "gate",
+    "a": "Area 72"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.345718,
+    "lng": -84.268468,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.346199,
+    "lng": -84.266481,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.346191,
+    "lng": -84.267679,
+    "c": "gate",
+    "a": "Action Zone"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.344428,
+    "lng": -84.269915,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.343272,
+    "lng": -84.268614,
+    "c": "gate",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.339916,
+    "lng": -84.266021,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.345293,
+    "lng": -84.266143,
+    "c": "gate",
+    "a": "Action Zone"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.344864,
+    "lng": -84.267913,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.343607,
+    "lng": -84.268111,
+    "c": "gate",
+    "a": "International Street"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.344403,
+    "lng": -84.268888,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.342182,
+    "lng": -84.265444,
+    "c": "gate",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.345767,
+    "lng": -84.267898,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.345483,
+    "lng": -84.267223,
+    "c": "gate",
+    "a": "International Street"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.343881,
+    "lng": -84.266828,
+    "c": "gate",
+    "a": "Oktoberfest"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341995,
+    "lng": -84.26683,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341315,
+    "lng": -84.2677,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341019,
+    "lng": -84.267412,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340171,
+    "lng": -84.263358,
+    "c": "gate",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.34061,
+    "lng": -84.263356,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340423,
+    "lng": -84.26651,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341442,
+    "lng": -84.265291,
+    "c": "gate",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340367,
+    "lng": -84.272453,
+    "c": "gate",
+    "a": "Soak City"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.338415,
+    "lng": -84.27687,
+    "c": "gate",
+    "a": "Soak City"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.339016,
+    "lng": -84.276845,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.339795,
+    "lng": -84.275582,
+    "c": "gate",
+    "a": "Soak City"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.339243,
+    "lng": -84.274789,
+    "c": "gate",
+    "a": "Soak City"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340349,
+    "lng": -84.274209,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341762,
+    "lng": -84.273082,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.342246,
+    "lng": -84.272548,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.344243,
+    "lng": -84.270642,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341127,
+    "lng": -84.273595,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.342703,
+    "lng": -84.269784,
+    "c": "gate",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341444,
+    "lng": -84.27023,
+    "c": "gate",
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341021,
+    "lng": -84.268162,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.339663,
+    "lng": -84.26912,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340488,
+    "lng": -84.267474,
+    "c": "gate",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340303,
+    "lng": -84.270782,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341042,
+    "lng": -84.271706,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.341697,
+    "lng": -84.271305,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.340889,
+    "lng": -84.273327,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.338835,
+    "lng": -84.274038,
+    "c": "gate",
+    "a": "Soak City"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.347645,
+    "lng": -84.271961,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.346746,
+    "lng": -84.272868,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.344226,
+    "lng": -84.275387,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.342355,
+    "lng": -84.270662,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Entrance",
+    "lat": 39.349735,
+    "lng": -84.261963,
+    "c": "gate",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Festhaus Theater",
+    "lat": 39.344794,
+    "lng": -84.267376,
+    "c": "show",
+    "a": "Oktoberfest"
+  },
+  {
+    "n": "Firehawk",
+    "lat": 39.340709,
+    "lng": -84.27121,
+    "c": "landmark",
+    "a": "Kings Island"
+  },
+  {
+    "n": "First Aid",
+    "lat": 39.343446,
+    "lng": -84.26876,
+    "c": "service",
+    "a": "Kings Island"
+  },
+  {
+    "n": "First Aid",
+    "lat": 39.34018,
+    "lng": -84.273204,
+    "c": "service",
+    "a": "Soak City"
+  },
+  {
+    "n": "Flight of Fear",
+    "lat": 39.342858,
+    "lng": -84.263426,
+    "c": "coaster",
+    "a": "Area 72",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    },
+    "note": "Indoor launch coaster"
+  },
+  {
+    "n": "Fort Washington/Fort Coney",
+    "lat": 39.340981,
+    "lng": -84.273259,
+    "c": "landmark",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Franklin's Flyers",
+    "lat": 39.342136,
+    "lng": -84.26944,
+    "c": "ride",
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": 44,
+      "max": null
+    }
   },
   {
     "n": "French Corner",
@@ -261,7 +774,14 @@
     "a": "International Street"
   },
   {
-    "n": "Graeter\u2019s",
+    "n": "Goblet Toss",
+    "lat": 39.341727,
+    "lng": -84.264693,
+    "c": "ride",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Graeter’s",
     "lat": 39.343978,
     "lng": -84.268217,
     "c": "food",
@@ -275,9 +795,30 @@
     "a": "International Street"
   },
   {
+    "n": "Handicapped Parking",
+    "lat": 39.345256,
+    "lng": -84.270664,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Hang Time",
+    "lat": 39.344051,
+    "lng": -84.265356,
+    "c": "ride",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "High Striker",
+    "lat": 39.342234,
+    "lng": -84.264963,
+    "c": "ride",
+    "a": "Coney Mall"
+  },
+  {
     "n": "Ice Cream",
-    "lat": 39.342621,
-    "lng": -84.268394,
+    "lat": 39.34262,
+    "lng": -84.268395,
     "c": "food",
     "a": "Planet Snoopy"
   },
@@ -289,11 +830,44 @@
     "a": "Action Zone"
   },
   {
+    "n": "International Showplace",
+    "lat": 39.342756,
+    "lng": -84.267422,
+    "c": "show",
+    "a": "International Street"
+  },
+  {
+    "n": "International Street Bandstand",
+    "lat": 39.343772,
+    "lng": -84.267468,
+    "c": "show",
+    "a": "International Street"
+  },
+  {
     "n": "International Street Treats",
     "lat": 39.343289,
     "lng": -84.267629,
     "c": "food",
     "a": "International Street"
+  },
+  {
+    "n": "Invertigo",
+    "lat": 39.345832,
+    "lng": -84.268009,
+    "c": "coaster",
+    "a": "Action Zone",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Invertigo Restrooms",
+    "lat": 39.345735,
+    "lng": -84.267272,
+    "c": "restroom",
+    "a": "Action Zone"
   },
   {
     "n": "Island Smokehouse",
@@ -303,9 +877,23 @@
     "a": "Soak City"
   },
   {
+    "n": "Joe Cool's Dodgen School",
+    "lat": 39.3432,
+    "lng": -84.269092,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": 54
+    },
+    "alias": "Joe Cool's Dodgen School",
+    "note": "Joe Cool's Dodgem School - no minimum"
+  },
+  {
     "n": "Juke Box Diner",
-    "lat": 39.34148,
-    "lng": -84.264953,
+    "lat": 39.341483,
+    "lng": -84.264947,
     "c": "food",
     "a": "Coney Mall"
   },
@@ -315,6 +903,121 @@
     "lng": -84.274215,
     "c": "food",
     "a": "Soak City"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.348988,
+    "lng": -84.269008,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.34857,
+    "lng": -84.267601,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.347625,
+    "lng": -84.270582,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.345493,
+    "lng": -84.272689,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.345603,
+    "lng": -84.274,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.340836,
+    "lng": -84.275401,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.342434,
+    "lng": -84.275556,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.344332,
+    "lng": -84.269305,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island",
+    "lat": 39.342261,
+    "lng": -84.271104,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island Drop Off Lot",
+    "lat": 39.347347,
+    "lng": -84.272339,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island Park & Ride",
+    "lat": 39.33983,
+    "lng": -84.277783,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Kings Island Theater",
+    "lat": 39.345472,
+    "lng": -84.267967,
+    "c": "show",
+    "a": "International Street"
+  },
+  {
+    "n": "Kings island Trading Company",
+    "lat": 39.344319,
+    "lng": -84.26862,
+    "c": "shop",
+    "a": "International Street"
+  },
+  {
+    "n": "Kings Mills Antique Autos",
+    "lat": 39.341392,
+    "lng": -84.264386,
+    "c": "ride",
+    "a": "Coney Mall",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Kite Eating Tree",
+    "lat": 39.342219,
+    "lng": -84.26923,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "LaRosa's Pizzeria",
@@ -328,63 +1031,506 @@
     "lat": 39.344876,
     "lng": -84.266877,
     "c": "food",
-    "a": "International Street"
+    "a": "Oktoberfest"
   },
   {
     "n": "LaRosa's Pizzeria",
-    "lat": 39.341159,
-    "lng": -84.266309,
+    "lat": 39.341158,
+    "lng": -84.266312,
     "c": "food",
-    "a": "International Street"
+    "a": "Rivertown"
+  },
+  {
+    "n": "Linus' Beetle Bugs",
+    "lat": 39.342188,
+    "lng": -84.269945,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Linus' Launcher",
+    "lat": 39.341974,
+    "lng": -84.268548,
+    "c": "ride",
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    },
+    "alias": "Linus' Launcher"
+  },
+  {
+    "n": "Lockers",
+    "lat": 39.340348,
+    "lng": -84.273877,
+    "c": "shop",
+    "a": "Soak City"
+  },
+  {
+    "n": "Matildas",
+    "lat": 39.340197,
+    "lng": -84.273394,
+    "c": "shop",
+    "a": "Soak City"
   },
   {
     "n": "Miami River Brewhouse",
-    "lat": 39.341533,
-    "lng": -84.267775,
+    "lat": 39.341539,
+    "lng": -84.267776,
     "c": "food",
     "a": "Rivertown"
+  },
+  {
+    "n": "Mic's Seaside Supplies",
+    "lat": 39.339925,
+    "lng": -84.274018,
+    "c": "shop",
+    "a": "Soak City"
+  },
+  {
+    "n": "Mondo Monsoon",
+    "lat": 39.337398,
+    "lng": -84.274029,
+    "c": "landmark",
+    "a": "Soak City",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Mystic Timbers",
+    "lat": 39.341217,
+    "lng": -84.268528,
+    "c": "coaster",
+    "a": "Rivertown",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Orion",
+    "lat": 39.342993,
+    "lng": -84.262729,
+    "c": "coaster",
+    "a": "Area 72",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Panda Express",
     "lat": 39.344704,
     "lng": -84.266871,
     "c": "food",
-    "a": "International Street"
+    "a": "Oktoberfest"
   },
   {
     "n": "Paradise Island",
     "lat": 39.342139,
     "lng": -84.26684,
     "c": "food",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Paradise Plunge",
+    "lat": 39.33939,
+    "lng": -84.272765,
+    "c": "landmark",
+    "a": "Soak City",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Parking",
+    "lat": 39.352627,
+    "lng": -84.271009,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Parking",
+    "lat": 39.335491,
+    "lng": -84.277048,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Parking",
+    "lat": 39.349453,
+    "lng": -84.261415,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Patio",
+    "lat": 39.342903,
+    "lng": -84.265745,
+    "c": "landmark",
     "a": "International Street"
   },
   {
+    "n": "Peanuts 500",
+    "lat": 39.342772,
+    "lng": -84.26969,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": 54
+    },
+    "note": "No minimum"
+  },
+  {
+    "n": "PEANUTS Off-Road Rally",
+    "lat": 39.342581,
+    "lng": -84.270141,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": 54
+    },
+    "note": "No minimum"
+  },
+  {
+    "n": "Picnic Grove",
+    "lat": 39.340878,
+    "lng": -84.270638,
+    "c": "landmark",
+    "a": "Kings Island"
+  },
+  {
     "n": "Pigpen's Mess Hall",
-    "lat": 39.341988,
-    "lng": -84.270144,
+    "lat": 39.34199,
+    "lng": -84.270145,
     "c": "food",
-    "a": "Planet Snoopy"
+    "a": "Camp Snoopy"
+  },
+  {
+    "n": "Pinaple Pipeline",
+    "lat": 39.340063,
+    "lng": -84.272205,
+    "c": "landmark",
+    "a": "Soak City",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "alias": "Pinaple Pipeline",
+    "note": "Pineapple Pipeline"
   },
   {
     "n": "Potato Works",
-    "lat": 39.340801,
-    "lng": -84.267543,
+    "lat": 39.340805,
+    "lng": -84.267533,
     "c": "food",
     "a": "Rivertown"
   },
   {
+    "n": "Preferred Parking",
+    "lat": 39.346469,
+    "lng": -84.269674,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Racer (Blue)",
+    "lat": 39.3401,
+    "lng": -84.26239,
+    "c": "coaster",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Racer (Red)",
+    "lat": 39.34341,
+    "lng": -84.26456,
+    "c": "coaster",
+    "a": "Kings Island"
+  },
+  {
     "n": "Ralph's Ice Cream",
-    "lat": 39.341408,
-    "lng": -84.265007,
+    "lat": 39.341405,
+    "lng": -84.265005,
     "c": "food",
     "a": "Coney Mall"
   },
   {
+    "n": "Rendezveous Run",
+    "lat": 39.34034,
+    "lng": -84.274072,
+    "c": "landmark",
+    "a": "Soak City",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "alias": "Rendezveous Run",
+    "note": "Rendezvous Run"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.340316,
+    "lng": -84.273693,
+    "c": "restroom",
+    "a": "Soak City"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.344507,
+    "lng": -84.268925,
+    "c": "restroom",
+    "a": "International Street"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.344931,
+    "lng": -84.268589,
+    "c": "restroom",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.33766,
+    "lng": -84.275047,
+    "c": "restroom",
+    "a": "Soak City"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.340938,
+    "lng": -84.263792,
+    "c": "restroom",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.341087,
+    "lng": -84.270714,
+    "c": "restroom",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.345928,
+    "lng": -84.265419,
+    "c": "restroom",
+    "a": "Action Zone"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.34153,
+    "lng": -84.266125,
+    "c": "restroom",
+    "a": "Rivertown"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.342153,
+    "lng": -84.268484,
+    "c": "restroom",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.34384,
+    "lng": -84.265715,
+    "c": "restroom",
+    "a": "Adventure Port"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.340105,
+    "lng": -84.27402,
+    "c": "restroom",
+    "a": "Soak City"
+  },
+  {
+    "n": "Restrooms",
+    "lat": 39.33931,
+    "lng": -84.274617,
+    "c": "restroom",
+    "a": "Soak City"
+  },
+  {
+    "n": "Ring Toss",
+    "lat": 39.342429,
+    "lng": -84.264992,
+    "c": "ride",
+    "a": "Coney Mall"
+  },
+  {
+    "n": "Rope Ladder",
+    "lat": 39.344269,
+    "lng": -84.265321,
+    "c": "ride",
+    "a": "Adventure Port"
+  },
+  {
+    "n": "RV Parking",
+    "lat": 39.347487,
+    "lng": -84.268827,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Sally's Sea Plane",
+    "lat": 39.342197,
+    "lng": -84.268896,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Shake, Rattle & Roll",
+    "lat": 39.341172,
+    "lng": -84.264765,
+    "c": "ride",
+    "a": "Coney Mall",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Shoot Down",
+    "lat": 39.342135,
+    "lng": -84.265136,
+    "c": "ride",
+    "a": "Coney Mall"
+  },
+  {
     "n": "Skyline Chili",
-    "lat": 39.342925,
-    "lng": -84.265345,
+    "lat": 39.342926,
+    "lng": -84.265347,
     "c": "food",
     "a": "Coney Mall"
+  },
+  {
+    "n": "Snoopy's Boutique",
+    "lat": 39.342526,
+    "lng": -84.269021,
+    "c": "shop",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Snoopy's Junction",
+    "lat": 39.342299,
+    "lng": -84.270058,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "No minimum"
+  },
+  {
+    "n": "Snoopy's Red Baron",
+    "lat": 39.342816,
+    "lng": -84.269154,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    },
+    "alias": "Snoopy's Red Baron"
+  },
+  {
+    "n": "Snoopy's Space Buggies",
+    "lat": 39.342306,
+    "lng": -84.269415,
+    "c": "ride",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Soap Box Racers",
+    "lat": 39.341562,
+    "lng": -84.269372,
+    "c": "coaster",
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 38,
+      "alone": null,
+      "max": 80
+    },
+    "note": "Snoopy's Soap Box Racers"
+  },
+  {
+    "n": "Sol Spin",
+    "lat": 39.344557,
+    "lng": -84.265555,
+    "c": "ride",
+    "a": "Adventure Port",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
+    "n": "Splash Landing",
+    "lat": 39.339278,
+    "lng": -84.273512,
+    "c": "landmark",
+    "a": "Soak City",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "Play structure - slides have their own posted minimums"
+  },
+  {
+    "n": "Splash River",
+    "lat": 39.33956,
+    "lng": -84.272662,
+    "c": "ride",
+    "a": "Soak City",
+    "h": {
+      "min": 0,
+      "alone": 42,
+      "max": null
+    },
+    "note": "Under 42in needs a supervising companion"
+  },
+  {
+    "n": "Staff Parking",
+    "lat": 39.343418,
+    "lng": -84.272722,
+    "c": "parking",
+    "a": "Kings Island"
   },
   {
     "n": "Starbucks",
@@ -401,6 +1547,18 @@
     "a": "Soak City"
   },
   {
+    "n": "Surf Dog",
+    "lat": 39.342361,
+    "lng": -84.269793,
+    "c": "coaster",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
     "n": "Sweet Spot",
     "lat": 39.34371,
     "lng": -84.26793,
@@ -408,717 +1566,29 @@
     "a": "International Street"
   },
   {
-    "n": "Tom & Chee",
-    "lat": 39.342024,
-    "lng": -84.268003,
-    "c": "food",
-    "a": "International Street"
-  },
-  {
-    "n": "Wishbone Grill",
-    "lat": 39.344319,
-    "lng": -84.267596,
-    "c": "food",
-    "a": "International Street"
-  },
-  {
-    "n": "Main Entrance",
-    "lat": 39.344794,
-    "lng": -84.268636,
-    "c": "gate",
-    "a": "Front Gate"
-  },
-  {
-    "n": "North Entrance",
-    "lat": 39.350533,
-    "lng": -84.275078,
-    "c": "gate",
-    "a": "Front Gate"
-  },
-  {
-    "n": "Season Pass Entrance",
-    "lat": 39.345317,
-    "lng": -84.268577,
-    "c": "gate",
-    "a": "Front Gate"
-  },
-  {
-    "n": "Soak City Entrance",
-    "lat": 39.340029,
-    "lng": -84.274333,
-    "c": "gate",
-    "a": "Soak City"
-  },
-  {
-    "n": "Ticketing office",
-    "lat": 39.350539,
-    "lng": -84.275237,
-    "c": "gate",
-    "a": "Front Gate"
-  },
-  {
-    "n": "Eiffel Tower",
-    "lat": 39.343328,
-    "lng": -84.266981,
-    "c": "landmark",
-    "a": "International Street"
-  },
-  {
-    "n": "Miami Valley Railroad",
-    "lat": 39.340299,
-    "lng": -84.267687,
-    "c": "landmark",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Picnic Grove",
-    "lat": 39.340908,
-    "lng": -84.270611,
-    "c": "landmark",
-    "a": "Planet Snoopy"
-  },
-  {
-    "n": "Rivertown Station",
-    "lat": 39.340889,
-    "lng": -84.267962,
-    "c": "landmark",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Royal Fountain",
-    "lat": 39.34414,
-    "lng": -84.267883,
-    "c": "landmark",
-    "a": "International Street"
-  },
-  {
-    "n": "Soak City Station",
-    "lat": 39.340362,
-    "lng": -84.273279,
-    "c": "landmark",
-    "a": "Soak City"
-  },
-  {
-    "n": "Swan Lake",
-    "lat": 39.3414,
-    "lng": -84.26699,
-    "c": "landmark",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Tower Gardens",
-    "lat": 39.343569,
-    "lng": -84.266144,
-    "c": "landmark",
-    "a": "International Street"
-  },
-  {
-    "n": "Handicapped Parking",
-    "lat": 39.345286,
-    "lng": -84.270682,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "Kings Island Drop Off Lot",
-    "lat": 39.347408,
-    "lng": -84.272337,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "Kings Island Park & Ride",
-    "lat": 39.339853,
-    "lng": -84.277775,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "Lot V",
-    "lat": 39.344706,
-    "lng": -84.27798,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "North Lot",
-    "lat": 39.3502,
-    "lng": -84.272814,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "North Lot",
-    "lat": 39.351454,
-    "lng": -84.273441,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "Preferred Parking",
-    "lat": 39.346455,
-    "lng": -84.269689,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "Public Parking",
-    "lat": 39.352819,
-    "lng": -84.272764,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "RV Parking",
-    "lat": 39.347487,
-    "lng": -84.268873,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "South Lot",
-    "lat": 39.34742,
-    "lng": -84.278891,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "South Lot",
-    "lat": 39.346042,
-    "lng": -84.277704,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "Staff Parking",
-    "lat": 39.343379,
-    "lng": -84.272716,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "VIP Parking",
-    "lat": 39.344758,
-    "lng": -84.271312,
-    "c": "parking",
-    "a": "Parking"
-  },
-  {
-    "n": "Invertigo Restrooms",
-    "lat": 39.345731,
-    "lng": -84.267268,
-    "c": "restroom",
-    "a": "Action Zone"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.340316,
-    "lng": -84.273693,
-    "c": "restroom",
-    "a": "Soak City"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.344507,
-    "lng": -84.268925,
-    "c": "restroom",
-    "a": "Front Gate"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.337658,
-    "lng": -84.275046,
-    "c": "restroom",
-    "a": "Soak City"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.340937,
-    "lng": -84.263797,
-    "c": "restroom",
-    "a": "Area 72"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.341089,
-    "lng": -84.270714,
-    "c": "restroom",
-    "a": "Planet Snoopy"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.345924,
-    "lng": -84.265419,
-    "c": "restroom",
-    "a": "Action Zone"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.341529,
-    "lng": -84.266124,
-    "c": "restroom",
-    "a": "Coney Mall"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.342154,
-    "lng": -84.268489,
-    "c": "restroom",
-    "a": "Planet Snoopy"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.343835,
-    "lng": -84.265718,
-    "c": "restroom",
-    "a": "Adventure Port"
-  },
-  {
-    "n": "Restrooms",
-    "lat": 39.339309,
-    "lng": -84.274616,
-    "c": "restroom",
-    "a": "Soak City"
-  },
-  {
-    "n": "Aruba Tuba",
-    "lat": 39.338329,
-    "lng": -84.274005,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Phantom Theater: Opening Nightmare",
-    "lat": 39.34325,
-    "lng": -84.268177,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "alias": "Boo Blasters on Boo Hill",
-    "h": {
-      "min": 46,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Breakers Bay",
-    "lat": 39.338153,
-    "lng": -84.275054,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 0,
-      "alone": 48,
-      "max": null
-    },
-    "note": "Wave pool - under 48in needs a life jacket and companion"
-  },
-  {
-    "n": "Cargo Loco",
-    "lat": 39.344784,
-    "lng": -84.265754,
-    "c": "ride",
-    "a": "Adventure Port",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Castaway Cove",
-    "lat": 39.338532,
-    "lng": -84.273953,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": null
-    },
-    "note": "Kids area"
-  },
-  {
-    "n": "Character Carousel",
-    "lat": 39.342706,
-    "lng": -84.268747,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 46,
-      "alone": null,
-      "max": null
-    },
-    "note": "Under 46in with a supervising companion"
-  },
-  {
-    "n": "Charlie Brown's Rushing River Log Ride",
-    "lat": 39.341542,
-    "lng": -84.268512,
-    "c": "ride",
-    "a": "Camp Snoopy",
-    "h": {
-      "min": 0,
-      "alone": 46,
-      "max": null
-    },
-    "note": "No minimum with a supervising companion"
-  },
-  {
-    "n": "Charlie Brown's Wind Up",
-    "lat": 39.343316,
-    "lng": -84.268918,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 36,
-      "alone": 46,
-      "max": 54
-    }
-  },
-  {
-    "n": "Coconut Cove",
-    "lat": 39.339521,
-    "lng": -84.273807,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": null
-    },
-    "note": "Kids area"
-  },
-  {
-    "n": "Congo Falls",
-    "lat": 39.346124,
-    "lng": -84.266965,
-    "c": "ride",
-    "a": "Action Zone",
-    "h": {
-      "min": 46,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Delirium",
-    "lat": 39.345155,
-    "lng": -84.266321,
-    "c": "ride",
-    "a": "Action Zone",
-    "h": {
-      "min": 52,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Dodgem",
-    "lat": 39.342638,
-    "lng": -84.26539,
-    "c": "ride",
-    "a": "Coney Mall",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Drop Tower: Scream Zone",
-    "lat": 39.346039,
-    "lng": -84.26638,
-    "c": "ride",
+    "n": "The Bat",
+    "lat": 39.34759,
+    "lng": -84.265238,
+    "c": "coaster",
     "a": "Action Zone",
     "h": {
       "min": 48,
       "alone": null,
       "max": null
-    }
-  },
-  {
-    "n": "Franklin's Flyers",
-    "lat": 39.342136,
-    "lng": -84.269441,
-    "c": "ride",
-    "a": "Camp Snoopy",
-    "h": {
-      "min": 36,
-      "alone": 44,
-      "max": null
-    }
-  },
-  {
-    "n": "Joe Cool's Dodgem School",
-    "lat": 39.343199,
-    "lng": -84.269092,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "alias": "Joe Cool's Dodgen School",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": 54
     },
-    "note": "Joe Cool's Dodgem School - no minimum"
+    "note": "Sources differ (42-54) - confirm at the gate"
   },
   {
-    "n": "Kings Mills Antique Autos",
-    "lat": 39.341405,
-    "lng": -84.264381,
-    "c": "ride",
-    "a": "Coney Mall",
+    "n": "The Beast",
+    "lat": 39.340142,
+    "lng": -84.266032,
+    "c": "coaster",
+    "a": "Rivertown",
     "h": {
       "min": 48,
       "alone": null,
       "max": null
     }
-  },
-  {
-    "n": "Kite Eating Tree",
-    "lat": 39.342217,
-    "lng": -84.269228,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Linus' Beetle Bugs",
-    "lat": 39.342191,
-    "lng": -84.269945,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Linus Launcher",
-    "lat": 39.341976,
-    "lng": -84.26855,
-    "c": "ride",
-    "a": "Camp Snoopy",
-    "alias": "Linus' Launcher",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Lookout Lagoon",
-    "lat": 39.338047,
-    "lng": -84.27401,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": null
-    },
-    "note": "Kids area"
-  },
-  {
-    "n": "Mondo Monsoon",
-    "lat": 39.337399,
-    "lng": -84.274027,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "PEANUTS Off-Road Rally",
-    "lat": 39.342583,
-    "lng": -84.270139,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": 54
-    },
-    "note": "No minimum"
-  },
-  {
-    "n": "Paradise Plunge",
-    "lat": 39.33939,
-    "lng": -84.272766,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Peanuts 500",
-    "lat": 39.342771,
-    "lng": -84.269687,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": 54
-    },
-    "note": "No minimum"
-  },
-  {
-    "n": "Pineapple Pipeline",
-    "lat": 39.340061,
-    "lng": -84.272202,
-    "c": "ride",
-    "a": "Soak City",
-    "alias": "Pinaple Pipeline",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
-    "note": "Pineapple Pipeline"
-  },
-  {
-    "n": "Pipeline Paradise",
-    "lat": 39.337446,
-    "lng": -84.274682,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Rendezvous Run",
-    "lat": 39.340339,
-    "lng": -84.274072,
-    "c": "ride",
-    "a": "Soak City",
-    "alias": "Rendezveous Run",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    },
-    "note": "Rendezvous Run"
-  },
-  {
-    "n": "Sally's Sea Plane",
-    "lat": 39.342196,
-    "lng": -84.268899,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 42,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Shake, Rattle & Roll",
-    "lat": 39.341172,
-    "lng": -84.264764,
-    "c": "ride",
-    "a": "Coney Mall",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Snoopy's Junction",
-    "lat": 39.342299,
-    "lng": -84.270054,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": null
-    },
-    "note": "No minimum"
-  },
-  {
-    "n": "Snoopy vs. Red Baron",
-    "lat": 39.342815,
-    "lng": -84.269154,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "alias": "Snoopy's Red Baron",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Snoopy's Space Buggies",
-    "lat": 39.342309,
-    "lng": -84.269411,
-    "c": "ride",
-    "a": "Planet Snoopy",
-    "h": {
-      "min": 36,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Sol Spin",
-    "lat": 39.344561,
-    "lng": -84.265563,
-    "c": "ride",
-    "a": "Adventure Port",
-    "h": {
-      "min": 48,
-      "alone": null,
-      "max": null
-    }
-  },
-  {
-    "n": "Splash Landing",
-    "lat": 39.339286,
-    "lng": -84.27351,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 0,
-      "alone": null,
-      "max": null
-    },
-    "note": "Play structure - slides have their own posted minimums"
-  },
-  {
-    "n": "Splash River",
-    "lat": 39.339589,
-    "lng": -84.272687,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 0,
-      "alone": 42,
-      "max": null
-    },
-    "note": "Under 42in needs a supervising companion"
   },
   {
     "n": "The Grand Carousel",
@@ -1134,9 +1604,28 @@
     "note": "Under 46in with a supervising companion"
   },
   {
+    "n": "The Great Pumpkin Coaster",
+    "lat": 39.342949,
+    "lng": -84.268412,
+    "c": "coaster",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": 46,
+      "max": null
+    }
+  },
+  {
+    "n": "The Mercado",
+    "lat": 39.344431,
+    "lng": -84.26601,
+    "c": "landmark",
+    "a": "Adventure Port"
+  },
+  {
     "n": "The Monster",
-    "lat": 39.343368,
-    "lng": -84.264821,
+    "lat": 39.343369,
+    "lng": -84.264819,
     "c": "ride",
     "a": "Coney Mall",
     "h": {
@@ -1146,9 +1635,21 @@
     }
   },
   {
+    "n": "The Racer",
+    "lat": 39.343496,
+    "lng": -84.264597,
+    "c": "coaster",
+    "a": "Coney Mall",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
+  },
+  {
     "n": "The Scrambler",
-    "lat": 39.343119,
-    "lng": -84.265434,
+    "lat": 39.34312,
+    "lng": -84.26543,
     "c": "ride",
     "a": "Coney Mall",
     "h": {
@@ -1160,7 +1661,7 @@
   {
     "n": "The Zephyr",
     "lat": 39.342364,
-    "lng": -84.264608,
+    "lng": -84.264606,
     "c": "ride",
     "a": "Coney Mall",
     "h": {
@@ -1171,9 +1672,9 @@
   },
   {
     "n": "Thunder Falls",
-    "lat": 39.339778,
-    "lng": -84.272611,
-    "c": "ride",
+    "lat": 39.339779,
+    "lng": -84.272614,
+    "c": "landmark",
     "a": "Soak City",
     "h": {
       "min": 40,
@@ -1182,23 +1683,24 @@
     }
   },
   {
-    "n": "Total Wave Bay",
-    "lat": 39.338873,
-    "lng": -84.276279,
-    "c": "ride",
-    "a": "Soak City",
-    "h": {
-      "min": 0,
-      "alone": 48,
-      "max": null
-    },
-    "note": "Wave pool - under 48in needs a life jacket and companion"
+    "n": "Timberwolf Amphitheatre",
+    "lat": 39.346759,
+    "lng": -84.266629,
+    "c": "show",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Tom & Chee",
+    "lat": 39.342025,
+    "lng": -84.267998,
+    "c": "food",
+    "a": "Rivertown"
   },
   {
     "n": "Tropical Plunge",
-    "lat": 39.339779,
-    "lng": -84.275232,
-    "c": "ride",
+    "lat": 39.339786,
+    "lng": -84.275235,
+    "c": "landmark",
     "a": "Soak City",
     "h": {
       "min": 48,
@@ -1208,9 +1710,9 @@
   },
   {
     "n": "Tropical Twister",
-    "lat": 39.340403,
+    "lat": 39.340405,
     "lng": -84.27254,
-    "c": "ride",
+    "c": "landmark",
     "a": "Soak City",
     "h": {
       "min": 48,
@@ -1220,10 +1722,10 @@
   },
   {
     "n": "Viking Fury",
-    "lat": 39.344125,
+    "lat": 39.344126,
     "lng": -84.266612,
     "c": "ride",
-    "a": "International Street",
+    "a": "Oktoberfest",
     "h": {
       "min": 48,
       "alone": null,
@@ -1231,9 +1733,23 @@
     }
   },
   {
+    "n": "VIP Parking",
+    "lat": 39.344759,
+    "lng": -84.271314,
+    "c": "parking",
+    "a": "Kings Island"
+  },
+  {
+    "n": "Vortex",
+    "lat": 39.340097,
+    "lng": -84.270125,
+    "c": "landmark",
+    "a": "Kings Island"
+  },
+  {
     "n": "White Water Canyon",
-    "lat": 39.339895,
-    "lng": -84.269512,
+    "lat": 39.339892,
+    "lng": -84.269493,
     "c": "ride",
     "a": "Rivertown",
     "h": {
@@ -1244,7 +1760,7 @@
   },
   {
     "n": "WindSeeker",
-    "lat": 39.340721,
+    "lat": 39.340723,
     "lng": -84.263798,
     "c": "ride",
     "a": "Coney Mall",
@@ -1255,10 +1771,36 @@
     }
   },
   {
+    "n": "Wishbone Grill",
+    "lat": 39.344319,
+    "lng": -84.267596,
+    "c": "food",
+    "a": "International Street"
+  },
+  {
+    "n": "Woodstock Express",
+    "lat": 39.343048,
+    "lng": -84.269602,
+    "c": "coaster",
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 40,
+      "alone": 46,
+      "max": null
+    }
+  },
+  {
     "n": "Woodstock Whirlybirds",
-    "lat": 39.342646,
-    "lng": -84.269215,
+    "lat": 39.34265,
+    "lng": -84.269217,
     "c": "ride",
+    "a": "Planet Snoopy"
+  },
+  {
+    "n": "Woodstock Whirlybirds",
+    "lat": 39.342733,
+    "lng": -84.26896,
+    "c": "coaster",
     "a": "Planet Snoopy",
     "h": {
       "min": 42,
@@ -1267,9 +1809,21 @@
     }
   },
   {
+    "n": "Woodstock's Air Rail",
+    "lat": 39.341575,
+    "lng": -84.269035,
+    "c": "coaster",
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 44,
+      "alone": null,
+      "max": 76
+    }
+  },
+  {
     "n": "Xtreme Skyflyer",
-    "lat": 39.345871,
-    "lng": -84.265858,
+    "lat": 39.345873,
+    "lng": -84.265853,
     "c": "ride",
     "a": "Action Zone",
     "h": {
@@ -1281,140 +1835,14 @@
   },
   {
     "n": "Zoom Flume",
-    "lat": 39.338552,
-    "lng": -84.271909,
-    "c": "ride",
+    "lat": 39.338551,
+    "lng": -84.271917,
+    "c": "landmark",
     "a": "Soak City",
     "h": {
       "min": 48,
       "alone": null,
       "max": null
     }
-  },
-  {
-    "n": "First Aid",
-    "lat": 39.343446,
-    "lng": -84.26876,
-    "c": "service",
-    "a": "International Street"
-  },
-  {
-    "n": "First Aid",
-    "lat": 39.34018,
-    "lng": -84.273204,
-    "c": "service",
-    "a": "Soak City"
-  },
-  {
-    "n": "Lockers",
-    "lat": 39.344978,
-    "lng": -84.268207,
-    "c": "service",
-    "a": "Front Gate"
-  },
-  {
-    "n": "Lockers",
-    "lat": 39.340348,
-    "lng": -84.273877,
-    "c": "service",
-    "a": "Soak City"
-  },
-  {
-    "n": "Antique Photos",
-    "lat": 39.341071,
-    "lng": -84.267247,
-    "c": "shop",
-    "a": "Rivertown"
-  },
-  {
-    "n": "Coaster Connection",
-    "lat": 39.345749,
-    "lng": -84.266219,
-    "c": "shop",
-    "a": "Action Zone"
-  },
-  {
-    "n": "Kings island Trading Company",
-    "lat": 39.344319,
-    "lng": -84.26862,
-    "c": "shop",
-    "a": "International Street"
-  },
-  {
-    "n": "Matildas",
-    "lat": 39.340197,
-    "lng": -84.273394,
-    "c": "shop",
-    "a": "Soak City"
-  },
-  {
-    "n": "Mic's Seaside Supplies",
-    "lat": 39.339925,
-    "lng": -84.274018,
-    "c": "shop",
-    "a": "Soak City"
-  },
-  {
-    "n": "Snoopy's Boutique",
-    "lat": 39.342523,
-    "lng": -84.269018,
-    "c": "shop",
-    "a": "Planet Snoopy"
-  },
-  {
-    "n": "Action Theater",
-    "lat": 39.339875,
-    "lng": -84.262866,
-    "c": "show",
-    "a": "Area 72"
-  },
-  {
-    "n": "Festhaus Theater",
-    "lat": 39.344792,
-    "lng": -84.26738,
-    "c": "show",
-    "a": "International Street"
-  },
-  {
-    "n": "International Showplace",
-    "lat": 39.342746,
-    "lng": -84.26742,
-    "c": "show",
-    "a": "International Street"
-  },
-  {
-    "n": "International Street Bandstand",
-    "lat": 39.34377,
-    "lng": -84.267467,
-    "c": "show",
-    "a": "International Street"
-  },
-  {
-    "n": "Kings Island Theater",
-    "lat": 39.345467,
-    "lng": -84.267992,
-    "c": "show",
-    "a": "Front Gate"
-  },
-  {
-    "n": "Timberwolf Amphitheatre",
-    "lat": 39.346785,
-    "lng": -84.266625,
-    "c": "show",
-    "a": "Action Zone"
-  },
-  {
-    "n": "Flight of Fear",
-    "lat": 39.34319,
-    "lng": -84.26354,
-    "c": "coaster",
-    "a": "Area 72",
-    "h": {
-      "min": 54,
-      "alone": null,
-      "max": null
-    },
-    "note": "Indoor launch coaster",
-    "approx": true
   }
 ]

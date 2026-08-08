@@ -4,6 +4,9 @@ import { badRequest, isId, json, readJson, serverError } from '@/app/api/_lib/ht
 
 export const dynamic = 'force-dynamic';
 
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
+
 /**
  * Leaving is idempotent and never fails: a party or member that is already gone
  * is the outcome the caller asked for. Clients fire this from a pagehide

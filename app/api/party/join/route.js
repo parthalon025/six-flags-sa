@@ -1,8 +1,21 @@
 import { publicSnapshot, reduce } from '@/lib/core/state';
 import { readParty, resolveCode, writeParty } from '@/lib/serverStore';
-import { badRequest, isId, json, notFound, readJson, serverError, str } from '@/app/api/_lib/http';
+import { clientIp, rateLimit } from '@/lib/rateLimit';
+import {
+  badRequest,
+  isId,
+  json,
+  notFound,
+  readJson,
+  serverError,
+  str,
+  tooManyRequests,
+} from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
+
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
 
 /**
  * Join by code. The caller brings its own member id — it is the same id the
@@ -11,6 +24,13 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request) {
   try {
+    // This is also the endpoint a code is guessed at. Six characters from a
+    // 32-symbol alphabet is a billion codes and codes expire in hours, so the
+    // search was never going to land — but a ceiling turns "would not work" into
+    // "cannot be attempted", and costs an honest joiner nothing.
+    const quota = await rateLimit('partyJoin', clientIp(request) ?? 'unknown');
+    if (!quota.ok) return tooManyRequests(quota.retryAfter);
+
     const body = await readJson(request);
     if (!body) return badRequest('Malformed body');
 

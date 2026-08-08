@@ -27,12 +27,19 @@ process.emitWarning = (warning, ...rest) => {
 const {
   MEMBER_TTL_MS,
   OP,
+  RIDE_CONFIRM_MS,
+  RIDE_DOWN,
+  RIDE_OPEN,
+  RIDE_REPORT_TTL_MS,
+  RIDE_STALE_AFTER_MS,
   ROLE_HOST,
   ROLE_MEMBER,
   applyOps,
   createMember,
   createParty,
   evict,
+  evictRides,
+  isReportStale,
   isValidLocation,
   publicSnapshot,
   reduce,
@@ -70,10 +77,44 @@ const {
   splitRouteAt,
 } = await import('../lib/routing.js');
 const { bearing, distance } = await import('../lib/geo.js');
+const {
+  CONDITIONS,
+  COLD_WATER_F,
+  OUTLOOK,
+  WIND_HARD_MPH,
+  WIND_HOLD_MPH,
+  classifyWeather,
+  exposureFor,
+  outlookFor,
+  parkOutlook,
+} = await import('../lib/weather.js');
+const { STATUS, statusFor, statusSummary } = await import('../lib/rideStatus.js');
+const { indexById, slug, withIds } = await import('../lib/venue/ids.js');
+const {
+  Declutter,
+  boxAround,
+  clampInto,
+  intersect,
+  labelArc,
+  principalAxis,
+  scaleBar,
+  textWidth,
+} = await import('../lib/mapLabels.js');
+const {
+  inkOn,
+  labelZoomFor,
+  normaliseRideName,
+  partyMarkerState,
+  sizeAtZoom,
+  symbolFor,
+  STALE_AFTER_MS,
+  GLYPHS,
+  SYMBOLS,
+} = await import('../lib/mapSymbols.js');
 const { venueChoiceFor, venueForPosition, venuesByDistance, withinBounds } = await import(
   '../lib/venue/store.js'
 );
-const { landTint } = await import('../lib/theme.js');
+const { CATEGORY_LABELS, landTint } = await import('../lib/theme.js');
 const { areaOf, centroidOf, clipToBounds, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
@@ -1315,6 +1356,290 @@ await check('two turns in a row do not name the same building', () => {
   return true;
 });
 
+
+section('map/symbols');
+
+await check('every category has a symbol, a glyph and a name', () => {
+  Object.keys(CATEGORY_LABELS).forEach((key) => {
+    assert.ok(SYMBOLS[key], `${key} has no symbol`);
+    assert.ok(GLYPHS[key]?.length, `${key} has no glyph art`);
+    assert.ok(SYMBOLS[key].hint, `${key} has nothing to say in the key`);
+  });
+  return true;
+});
+
+/* Walks a path and returns every point the pen lands on. Only on-curve points
+   are collected — control points may legitimately sit outside the artwork —
+   which is enough to catch a glyph that has drifted out of its box. */
+const PARAMS = { m: 2, l: 2, h: 1, v: 1, c: 6, s: 4, q: 4, t: 2, a: 7, z: 0 };
+function penPoints(d) {
+  const tokens = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || [];
+  const out = [];
+  let x = 0;
+  let y = 0;
+  let startX = 0;
+  let startY = 0;
+  let i = 0;
+  let cmd = 'M';
+  while (i < tokens.length) {
+    if (/[a-zA-Z]/.test(tokens[i])) cmd = tokens[i++];
+    const key = cmd.toLowerCase();
+    const rel = cmd === key && key !== 'z';
+    const n = PARAMS[key];
+    if (n == null) throw new Error(`unhandled path command ${cmd}`);
+    const args = tokens.slice(i, i + n).map(Number);
+    i += n;
+    if (key === 'z') {
+      x = startX;
+      y = startY;
+    } else if (key === 'h') {
+      x = rel ? x + args[0] : args[0];
+    } else if (key === 'v') {
+      y = rel ? y + args[0] : args[0];
+    } else {
+      const [ex, ey] = args.slice(-2);
+      x = rel ? x + ex : ex;
+      y = rel ? y + ey : ey;
+      if (key === 'm') {
+        startX = x;
+        startY = y;
+      }
+    }
+    out.push([x, y]);
+  }
+  return out;
+}
+
+await check('glyph art stays inside its 24-unit box', () => {
+  // A glyph that strays outside 0..24 collides with the disc or chip drawn
+  // round it, which is how the coaster hill used to bleed into its own rim.
+  Object.entries(GLYPHS).forEach(([name, parts]) => {
+    parts.forEach((part) => {
+      assert.ok(part.d, `${name} has an empty path`);
+      assert.ok(part.mode === 'fill' || part.w > 0, `${name} strokes with no width`);
+      penPoints(part.d).forEach(([x, y]) => {
+        assert.ok(x >= 0 && x <= 24, `${name} strays to x=${x}`);
+        assert.ok(y >= 0 && y <= 24, `${name} strays to y=${y}`);
+      });
+    });
+  });
+  return true;
+});
+
+await check('shape and rank separate what you came for from what you need', () => {
+  assert.equal(symbolFor('coaster').shape, 'disc');
+  assert.equal(symbolFor('food').shape, 'chip');
+  assert.equal(symbolFor('gate').shape, 'pin');
+  assert.equal(symbolFor('landmark').shape, 'diamond');
+  // A coaster outranks a shop, so it wins the pixels and gets named first.
+  assert.ok(symbolFor('coaster').rank < symbolFor('shop').rank);
+  assert.ok(labelZoomFor(symbolFor('coaster').rank) < labelZoomFor(symbolFor('shop').rank));
+  // An unknown category still gets drawn rather than throwing.
+  assert.ok(symbolFor('nonsense').r > 0);
+  return true;
+});
+
+await check('glyph ink is chosen against the fill, not assumed', () => {
+  // A pale marker needs dark ink and a saturated one needs white. The dark ink
+  // is plain black now that the palette is Apple's rather than the old void.
+  assert.equal(inkOn('#FFFFFF'), '#000000');
+  assert.equal(inkOn('#FFD60A'), '#000000');
+  assert.equal(inkOn('#FF453A'), '#ffffff');
+  assert.equal(inkOn('#2C2C2E'), '#ffffff');
+  assert.equal(inkOn(null), '#ffffff');
+  return true;
+});
+
+await check('markers grow with the map but nothing like as fast', () => {
+  const wide = sizeAtZoom(9, 0.18);
+  const close = sizeAtZoom(9, 6);
+  assert.ok(wide > 6, 'still visible at the park-wide view');
+  assert.ok(close < 12, 'not covering a midway at walking zoom');
+  assert.ok(close > wide);
+  return true;
+});
+
+await check('track names and catalogue names meet in the middle', () => {
+  assert.equal(normaliseRideName('Racer (Red)'), normaliseRideName('The Racer'));
+  assert.equal(normaliseRideName('Racer (Blue)'), normaliseRideName('The Racer'));
+  assert.equal(normaliseRideName('Backlot Stunt Coaster'), 'backlot stunt coaster');
+  assert.notEqual(normaliseRideName('The Beast'), normaliseRideName('Banshee'));
+  assert.equal(normaliseRideName(null), '');
+  return true;
+});
+
+/* Track that names a ride nobody has heard of can never be lit up. These are
+   the ones OpenStreetMap still carries but the park no longer runs — a gap in
+   the data, not in the matcher, and small enough to name. */
+const RETIRED_TRACK = new Set(['goliath']);
+
+await check('every named piece of track belongs to a ride we know', () => {
+  const venues = JSON.parse(
+    fs.readFileSync(new URL('../public/venues/manifest.json', import.meta.url)),
+  ).venues;
+  assert.ok(venues.length, 'no venues to check');
+  venues.forEach((v) => {
+    const read = (rel) =>
+      JSON.parse(fs.readFileSync(new URL(`../public${rel}`, import.meta.url)));
+    const catalogue = new Set();
+    read(v.pois).forEach((p) => {
+      catalogue.add(normaliseRideName(p.n));
+      if (p.alias) catalogue.add(normaliseRideName(p.alias));
+    });
+    const orphans = [
+      ...new Set(
+        (read(v.map).coaster || [])
+          .map((f) => normaliseRideName(f.n))
+          .filter((n) => n && !catalogue.has(n) && !RETIRED_TRACK.has(n)),
+      ),
+    ];
+    assert.deepEqual(orphans, [], `${v.id}: track with no ride to light up: ${orphans.join(', ')}`);
+  });
+  return true;
+});
+
+await check('a party marker says its age in its own ink', () => {
+  const now = 1_000_000;
+  const fresh = partyMarkerState({ ts: now - 1000, heading: 90 }, now);
+  assert.equal(fresh.stale, false);
+  assert.equal(fresh.facing, 90);
+
+  // Past the threshold the heading is no longer worth drawing: it would point
+  // confidently in whatever direction they were walking five minutes ago.
+  const old = partyMarkerState({ ts: now - STALE_AFTER_MS - 1, heading: 90 }, now);
+  assert.equal(old.stale, true);
+  assert.equal(old.facing, null);
+
+  // A member we have never had a fix for is stale, not NaN.
+  const never = partyMarkerState({ status: 'NEED HELP' }, now);
+  assert.equal(never.stale, true);
+  assert.equal(never.help, true);
+  assert.equal(never.facing, null);
+  assert.equal(partyMarkerState(null, now).stale, true);
+
+  // No heading is not a heading of zero.
+  assert.equal(partyMarkerState({ ts: now, heading: null }, now).facing, null);
+  assert.equal(partyMarkerState({ ts: now, heading: 0 }, now).facing, 0);
+  return true;
+});
+
+section('map/declutter');
+
+await check('the space goes to whoever asks first', () => {
+  const grid = new Declutter();
+  assert.equal(grid.claim(boxAround(50, 50, 20, 8)), true);
+  assert.equal(grid.claim(boxAround(60, 52, 20, 8)), false, 'overlapping claim let through');
+  assert.equal(grid.claim(boxAround(200, 50, 20, 8)), true, 'clear space refused');
+  return true;
+});
+
+await check('a pinned claim takes the space anyway, and keeps it', () => {
+  const grid = new Declutter();
+  grid.claim(boxAround(50, 50, 20, 8));
+  assert.equal(grid.claim(boxAround(52, 50, 20, 8), true), true);
+  // ...and having taken it, it blocks the next comer.
+  assert.equal(grid.claim(boxAround(52, 50, 20, 8)), false);
+  return true;
+});
+
+await check('boxes that only touch are not overlapping', () => {
+  const grid = new Declutter();
+  grid.claim(boxAround(0, 0, 10, 10));
+  assert.equal(grid.claim(boxAround(20, 0, 10, 10)), true, 'edge-to-edge should fit');
+  return true;
+});
+
+await check('the grid agrees with brute force', () => {
+  // The bucketing is an optimisation; it must not change the answer.
+  const grid = new Declutter();
+  const taken = [];
+  let mismatch = 0;
+  for (let i = 0; i < 400; i += 1) {
+    const box = boxAround((i * 37) % 380, (i * 53) % 700, 12, 7);
+    const bruteFree = !taken.some(
+      (o) => box.x0 < o.x1 && o.x0 < box.x1 && box.y0 < o.y1 && o.y0 < box.y1,
+    );
+    const got = grid.claim(box);
+    if (got !== bruteFree) mismatch += 1;
+    if (bruteFree) taken.push(box);
+  }
+  assert.equal(mismatch, 0);
+  return true;
+});
+
+section('map/labels');
+
+await check('a land name lies along its land', () => {
+  const wide = principalAxis([[0, 0], [100, 0], [100, 10], [0, 10]]);
+  assert.ok(Math.abs(wide.uy) < 0.01, 'east-west land should read east-west');
+  assert.equal(Math.round(wide.extent), 100);
+  const tall = principalAxis([[0, 0], [10, 0], [10, 100], [0, 100]]);
+  assert.ok(Math.abs(tall.ux) < 0.01, 'north-south land should read north-south');
+  assert.equal(principalAxis([]), null);
+  return true;
+});
+
+await check('a name never runs right to left', () => {
+  // Walking south turns the map; the words must not turn with it.
+  const arc = labelArc(100, 100, -1, 0, 80);
+  const [, sx] = /^M([-\d.]+) /.exec(arc);
+  const [, ex] = / ([-\d.]+) [-\d.]+$/.exec(arc);
+  assert.ok(Number(ex) > Number(sx), 'baseline runs backwards');
+  return true;
+});
+
+await check('a clamped anchor stays inside the rectangle it was given', () => {
+  const rect = { x0: 10, x1: 100, y0: 20, y1: 60 };
+  assert.deepEqual(clampInto(-40, 900, rect), [10, 60]);
+  assert.deepEqual(clampInto(55, 40, rect), [55, 40]);
+  assert.equal(intersect({ x0: 0, x1: 5, y0: 0, y1: 5 }, { x0: 6, x1: 9, y0: 0, y1: 5 }), null);
+  assert.deepEqual(intersect({ x0: 0, x1: 10, y0: 0, y1: 10 }, { x0: 5, x1: 20, y0: 5, y1: 20 }), {
+    x0: 5,
+    x1: 10,
+    y0: 5,
+    y1: 10,
+  });
+  return true;
+});
+
+await check('label width grows with the label', () => {
+  assert.ok(textWidth('Diamondback', 9.5) > textWidth('Orion', 9.5));
+  assert.ok(textWidth('AREA 72', 15, 2.4) > textWidth('AREA 72', 15));
+  return true;
+});
+
+section('map/scale');
+
+await check('the scale bar states a distance it actually spans', () => {
+  // The old bar set its width to 100·scale px against a CSS cap of 140px, so
+  // from zoom 1.4 up it was clamped while still claiming to be 100 m.
+  for (const z of [0.18, 0.3, 0.5, 0.95, 1.4, 2, 3, 4.5, 6]) {
+    const bar = scaleBar(z);
+    assert.ok(bar.px >= 40 && bar.px <= 140, `bar is ${Math.round(bar.px)}px at zoom ${z}`);
+    // The stated length and the drawn length are the same measurement.
+    assert.ok(Math.abs(bar.metres * z - bar.px) / bar.px < 0.02, `bar lies at zoom ${z}`);
+  }
+  return true;
+});
+
+await check('the scale bar rounds to numbers people use', () => {
+  const allowed = new Set(['25 ft', '50 ft', '100 ft', '250 ft', '500 ft', '1000 ft', '2000 ft', '1 mi']);
+  for (let z = 0.18; z <= 6; z += 0.07) {
+    assert.ok(allowed.has(scaleBar(z).label), `odd label ${scaleBar(z).label}`);
+  }
+  return true;
+});
+
+await check('zooming in never makes the bar cover more ground', () => {
+  let last = Infinity;
+  for (let z = 0.18; z <= 6; z += 0.05) {
+    const { metres } = scaleBar(z);
+    assert.ok(metres <= last + 1e-9, `bar grew from ${last} m to ${metres} m on zooming in`);
+    last = metres;
+  }
+  return true;
+});
+
 /* ------------------------------------------------------- venue picking --- */
 
 section('venue selection');
@@ -1432,7 +1757,7 @@ await check('with no fix the parks still list, undistanced', () => {
 
 await check('an unknown district still gets a legible, stable tint', () => {
   const curated = landTint('Coney Mall', 'day');
-  assert.equal(curated.fill, '#F4CBA9');
+  assert.equal(curated.fill, '#F1EAE4');
   const made = landTint('Los Festivales', 'day');
   assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
   assert.notEqual(made.fill, landTint('Rockville', 'day').fill); // distinct
@@ -1616,6 +1941,636 @@ await check('a campus and a town centre classify without coasters', () => {
   assert.equal(isLand({ place: 'neighbourhood', name: 'Old Town' }), true);
   assert.equal(isLand({ amenity: 'university', name: 'The University' }), true);
   assert.equal(isLand({ building: 'yes', name: 'Hall' }), false);
+  return true;
+});
+
+/* -------------------------------------------------------- ride reports --- */
+
+section('state/ride-reports');
+
+await check('a member can report a ride down', () => {
+  const now = 2_000_000;
+  const state = seeded(now);
+  const out = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'the-beast', status: RIDE_DOWN } },
+    now,
+  );
+  assert.equal(out.state.version, state.version + 1);
+  assert.deepEqual(out.state.rides['the-beast'], {
+    id: 'the-beast',
+    status: RIDE_DOWN,
+    by: PEER,
+    byName: 'Ava',
+    ts: now,
+    note: null,
+  });
+  return true;
+});
+
+await check('a ride report is not owned by whoever wrote it', () => {
+  const now = 2_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'orion', status: RIDE_DOWN } },
+    now,
+  ).state;
+  // Unlike a member record, the next person past the gate may correct it.
+  const out = reduce(
+    state,
+    { kind: 'set-ride-status', from: HOST, body: { rideId: 'orion', status: RIDE_OPEN } },
+    now + 60_000,
+  );
+  assert.equal(out.state.rides.orion.status, RIDE_OPEN);
+  assert.equal(out.state.rides.orion.by, HOST);
+  return true;
+});
+
+await check('re-reporting the same thing straight away is silent', () => {
+  const now = 2_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'banshee', status: RIDE_DOWN } },
+    now,
+  ).state;
+  const before = state.version;
+  const out = reduce(
+    state,
+    { kind: 'set-ride-status', from: HOST, body: { rideId: 'banshee', status: RIDE_DOWN } },
+    now + 1000,
+  );
+  assert.equal(out.ops.length, 0);
+  assert.equal(out.state.version, before);
+  return true;
+});
+
+await check('re-reporting later refreshes the clock', () => {
+  const now = 2_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'banshee', status: RIDE_DOWN } },
+    now,
+  ).state;
+  const later = now + RIDE_CONFIRM_MS + 1;
+  const out = reduce(
+    state,
+    { kind: 'set-ride-status', from: HOST, body: { rideId: 'banshee', status: RIDE_DOWN } },
+    later,
+  );
+  assert.equal(out.ops.length, 1);
+  assert.equal(out.state.rides.banshee.ts, later);
+  return true;
+});
+
+await check('a retraction removes the record rather than writing open over it', () => {
+  const now = 2_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'diamondback', status: RIDE_DOWN } },
+    now,
+  ).state;
+  const out = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'diamondback', status: null } },
+    now + 1,
+  );
+  assert.equal(out.state.rides.diamondback, undefined);
+  // An unreported ride and a retracted one must be indistinguishable.
+  assert.deepEqual(Object.keys(out.state.rides), []);
+  return true;
+});
+
+await check('a nonsense status never reaches the party', () => {
+  const now = 2_000_000;
+  const state = seeded(now);
+  for (const body of [
+    { rideId: 'orion', status: 'exploded' },
+    { rideId: '', status: RIDE_DOWN },
+    { rideId: 42, status: RIDE_DOWN },
+  ]) {
+    const out = reduce(state, { kind: 'set-ride-status', from: PEER, body }, now);
+    assert.equal(out.ops.length, 0, JSON.stringify(body));
+  }
+  return true;
+});
+
+await check('a stranger cannot report anything', () => {
+  const now = 2_000_000;
+  const state = seeded(now);
+  const out = reduce(
+    state,
+    { kind: 'set-ride-status', from: 'nobody', body: { rideId: 'orion', status: RIDE_DOWN } },
+    now,
+  );
+  assert.equal(out.ops.length, 0);
+  return true;
+});
+
+await check('a note rides along but is clipped', () => {
+  const now = 2_000_000;
+  const state = seeded(now);
+  const out = reduce(
+    state,
+    {
+      kind: 'set-ride-status',
+      from: PEER,
+      body: { rideId: 'orion', status: RIDE_DOWN, note: 'x'.repeat(200) },
+    },
+    now,
+  );
+  assert.equal(out.state.rides.orion.note.length, 60);
+  return true;
+});
+
+await check('evictRides drops reports past the TTL and leaves the rest', () => {
+  const now = 2_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'old', status: RIDE_DOWN } },
+    now,
+  ).state;
+  state = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'fresh', status: RIDE_DOWN } },
+    now + RIDE_REPORT_TTL_MS,
+  ).state;
+  const out = evictRides(state, now + RIDE_REPORT_TTL_MS + 1);
+  assert.equal(out.state.rides.old, undefined);
+  assert.ok(out.state.rides.fresh);
+  assert.equal(out.state.version, state.version + 1);
+  return true;
+});
+
+await check('evictRides with nothing to do bumps no version', () => {
+  const state = seeded(2_000_000);
+  const out = evictRides(state, 2_000_000);
+  assert.equal(out.ops.length, 0);
+  assert.equal(out.state, state);
+  return true;
+});
+
+await check('a report replicates onto a replica through ops alone', () => {
+  const now = 2_000_000;
+  const state = seeded(now);
+  const out = reduce(
+    state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'orion', status: RIDE_DOWN } },
+    now,
+  );
+  const replica = applyOps(state, out.ops);
+  assert.deepEqual(replica.rides, out.state.rides);
+  // And the deletion op replicates too.
+  const gone = reduce(
+    out.state,
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'orion', status: null } },
+    now + 1,
+  );
+  assert.deepEqual(applyOps(replica, gone.ops).rides, {});
+  return true;
+});
+
+await check('publicSnapshot carries the ride reports', () => {
+  const now = 2_000_000;
+  const state = reduce(
+    seeded(now),
+    { kind: 'set-ride-status', from: PEER, body: { rideId: 'orion', status: RIDE_DOWN } },
+    now,
+  ).state;
+  assert.equal(publicSnapshot(state).rides.orion.status, RIDE_DOWN);
+  return true;
+});
+
+await check('isReportStale hedges an old report', () => {
+  const now = 2_000_000;
+  assert.equal(isReportStale({ ts: now }, now), false);
+  assert.equal(isReportStale({ ts: now - RIDE_STALE_AFTER_MS - 1 }, now), true);
+  assert.equal(isReportStale(null, now), true);
+  return true;
+});
+
+/* ------------------------------------------------------------- weather --- */
+
+section('weather/exposure');
+
+const wxPoi = (n, c, a, note) => ({ id: n.toLowerCase().replace(/\W+/g, '-'), n, c, a, note });
+
+await check('a food stand is sheltered and never carries ride status', () => {
+  const e = exposureFor(wxPoi('Skyline Chili', 'food', 'Coney Mall'));
+  assert.equal(e.kind, 'sheltered');
+  assert.equal(e.shelter, 'indoor');
+  return true;
+});
+
+await check('parking and gates are inert', () => {
+  assert.equal(exposureFor(wxPoi('North Lot', 'parking', 'Parking')).kind, 'inert');
+  assert.equal(exposureFor(wxPoi('Main Entrance', 'gate', 'Front Gate')).kind, 'inert');
+  return true;
+});
+
+await check('a water-park area marks its rides as the water park', () => {
+  const e = exposureFor(wxPoi('Tropical Plunge', 'ride', 'Soak City'));
+  assert.equal(e.waterpark, true);
+  assert.equal(e.wet, true);
+  return true;
+});
+
+await check('a flume outside the water park is wet but not the water park', () => {
+  const e = exposureFor(wxPoi('White Water Canyon', 'ride', 'Rivertown'));
+  assert.equal(e.wet, true);
+  assert.equal(e.waterpark, false);
+  return true;
+});
+
+await check('a note saying indoor is believed over the name', () => {
+  const e = exposureFor(wxPoi('Flight of Fear', 'coaster', 'Area 72', 'Indoor launch coaster'));
+  assert.equal(e.shelter, 'indoor');
+  // And an enclosed ride is never counted as wind-exposed, whatever it is called.
+  assert.equal(e.tall, false);
+  return true;
+});
+
+await check('drop towers and skyflyers read as tall', () => {
+  assert.equal(exposureFor(wxPoi('Drop Tower: Scream Zone', 'ride', 'Action Zone')).tall, true);
+  assert.equal(exposureFor(wxPoi('WindSeeker', 'ride', 'Coney Mall')).tall, true);
+  assert.equal(exposureFor(wxPoi('Xtreme Skyflyer', 'ride', 'Action Zone')).tall, true);
+  assert.equal(exposureFor(wxPoi('Dodgem', 'ride', 'Coney Mall')).tall, false);
+  return true;
+});
+
+await check('an amphitheatre is open air, a theater is not', () => {
+  assert.equal(exposureFor(wxPoi('Timberwolf Amphitheatre', 'show', 'Action Zone')).shelter, 'open');
+  assert.equal(exposureFor(wxPoi('Festhaus Theater', 'show', 'International Street')).shelter, 'indoor');
+  return true;
+});
+
+await check('exposure reads a park it has never seen', () => {
+  // Nothing in weather.js knows a ride name, so another park's vocabulary
+  // classifies on the same rules.
+  assert.equal(exposureFor(wxPoi('Typhoon Tower', 'ride', 'Hurricane Harbor')).waterpark, true);
+  assert.equal(exposureFor(wxPoi('Superman: Tower of Power', 'ride', 'Goliath Plaza')).tall, true);
+  return true;
+});
+
+section('weather/classify');
+
+await check('a missing reading is clear, not an alarm', () => {
+  assert.equal(classifyWeather(null).key, CONDITIONS.clear.key);
+  assert.equal(classifyWeather({}).key, CONDITIONS.clear.key);
+  return true;
+});
+
+await check('a thunderstorm code is a storm', () => {
+  const w = classifyWeather({ code: 95, tempF: 78 });
+  assert.equal(w.key, CONDITIONS.storm.key);
+  assert.ok(w.reasons.some((r) => /lightning/i.test(r)));
+  return true;
+});
+
+await check('lightning outranks everything below it', () => {
+  const w = classifyWeather({ code: 96, gustMph: 50, tempF: 50 });
+  assert.equal(w.key, CONDITIONS.storm.key);
+  // The flattened ladder still keeps the facts the outlook rules need.
+  assert.equal(w.obs.windy, true);
+  assert.equal(w.obs.cold, true);
+  return true;
+});
+
+await check('high CAPE alone is not a storm without rain behind it', () => {
+  // Convective energy with a dry forecast is just a warm afternoon.
+  assert.equal(classifyWeather({ cape: 3000, precipChance: 10, tempF: 90 }).key, CONDITIONS.clear.key);
+  assert.equal(classifyWeather({ cape: 3000, precipChance: 70, tempF: 80 }).key, CONDITIONS.storm.key);
+  return true;
+});
+
+await check('extreme heat is called out but closes nothing', () => {
+  const w = classifyWeather({ tempF: 102 });
+  assert.equal(w.key, CONDITIONS.heat.key);
+  assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), w).key, OUTLOOK.running.key);
+  return true;
+});
+
+await check('gusts at the hold threshold are wind', () => {
+  assert.equal(classifyWeather({ gustMph: WIND_HOLD_MPH, tempF: 80 }).key, CONDITIONS.wind.key);
+  assert.equal(classifyWeather({ gustMph: WIND_HOLD_MPH - 1, tempF: 80 }).key, CONDITIONS.clear.key);
+  return true;
+});
+
+await check('a cold day reads as cold for the water park', () => {
+  assert.equal(classifyWeather({ tempF: COLD_WATER_F - 1 }).key, CONDITIONS.cold.key);
+  assert.equal(classifyWeather({ tempF: COLD_WATER_F }).key, CONDITIONS.clear.key);
+  return true;
+});
+
+await check('a high chance of rain counts even with nothing falling yet', () => {
+  assert.equal(classifyWeather({ precipChance: 80, tempF: 80 }).key, CONDITIONS.rain.key);
+  assert.equal(classifyWeather({ precipChance: 30, tempF: 80 }).key, CONDITIONS.clear.key);
+  return true;
+});
+
+section('weather/outlook');
+
+const STORM = classifyWeather({ code: 95, tempF: 75, precipChance: 90 });
+const GALE = classifyWeather({ gustMph: 38, tempF: 75 });
+const HARD_GALE = classifyWeather({ gustMph: WIND_HARD_MPH + 5, tempF: 75 });
+const SHOWER = classifyWeather({ code: 63, tempF: 75 });
+const CHILLY = classifyWeather({ tempF: 55 });
+const FINE = classifyWeather({ tempF: 78, gustMph: 6, code: 0 });
+
+await check('lightning closes the outdoor rides and empties the pools', () => {
+  assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), STORM).key, OUTLOOK.closed.key);
+  assert.equal(outlookFor(wxPoi('Breakers Bay', 'ride', 'Soak City'), STORM).key, OUTLOOK.closed.key);
+  return true;
+});
+
+await check('an indoor ride keeps going through a storm', () => {
+  const o = outlookFor(wxPoi('Flight of Fear', 'coaster', 'Area 72', 'Indoor launch coaster'), STORM);
+  assert.equal(o.key, OUTLOOK.watch.key);
+  const food = outlookFor(wxPoi('Skyline Chili', 'food', 'Coney Mall'), STORM);
+  assert.equal(food.key, OUTLOOK.running.key);
+  return true;
+});
+
+await check('wind takes the tall rides before anything else', () => {
+  assert.equal(outlookFor(wxPoi('WindSeeker', 'ride', 'Coney Mall'), GALE).key, OUTLOOK.hold.key);
+  assert.equal(outlookFor(wxPoi('Dodgem', 'ride', 'Coney Mall'), GALE).key, OUTLOOK.running.key);
+  return true;
+});
+
+await check('a hard gale takes the tall rides down and holds the rest', () => {
+  assert.equal(outlookFor(wxPoi('WindSeeker', 'ride', 'Coney Mall'), HARD_GALE).key, OUTLOOK.closed.key);
+  assert.equal(outlookFor(wxPoi('The Racer', 'coaster', 'Coney Mall'), HARD_GALE).key, OUTLOOK.hold.key);
+  return true;
+});
+
+await check('a dry gale does not put the whole park on a rain watch', () => {
+  // Regression: the catch-all keyed on the severity ladder, and wind outranks
+  // rain on it, so every outdoor ride read "Rain in the forecast" in a gale.
+  const dry = classifyWeather({ gustMph: 38, tempF: 75, precipChance: 5 });
+  const racer = outlookFor(wxPoi('The Racer', 'coaster', 'Coney Mall'), dry);
+  assert.equal(racer.key, OUTLOOK.running.key);
+  // The tall rides are still held — that is the part a gale is supposed to do.
+  assert.equal(outlookFor(wxPoi('WindSeeker', 'ride', 'Coney Mall'), dry).key, OUTLOOK.hold.key);
+  return true;
+});
+
+await check('rain coming but not yet is a watch, and only for what stays dry', () => {
+  const soon = classifyWeather({ precipChance: 80, tempF: 75 });
+  assert.equal(outlookFor(wxPoi('The Racer', 'coaster', 'Coney Mall'), soon).key, OUTLOOK.watch.key);
+  assert.equal(outlookFor(wxPoi('White Water Canyon', 'ride', 'Rivertown'), soon).key, OUTLOOK.running.key);
+  return true;
+});
+
+await check('rain is not news for a ride that soaks you', () => {
+  assert.equal(outlookFor(wxPoi('White Water Canyon', 'ride', 'Rivertown'), SHOWER).key, OUTLOOK.running.key);
+  assert.equal(outlookFor(wxPoi('The Racer', 'coaster', 'Coney Mall'), SHOWER).key, OUTLOOK.watch.key);
+  return true;
+});
+
+await check('rain empties an amphitheatre but not a theater', () => {
+  assert.equal(outlookFor(wxPoi('Timberwolf Amphitheatre', 'show', 'Action Zone'), SHOWER).key, OUTLOOK.hold.key);
+  assert.equal(outlookFor(wxPoi('Festhaus Theater', 'show', 'International Street'), SHOWER).key, OUTLOOK.running.key);
+  return true;
+});
+
+await check('a cold day shuts the water park and nothing else', () => {
+  assert.equal(outlookFor(wxPoi('Tropical Plunge', 'ride', 'Soak City'), CHILLY).key, OUTLOOK.closed.key);
+  assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), CHILLY).key, OUTLOOK.running.key);
+  return true;
+});
+
+await check('a fine day says nothing about anything', () => {
+  for (const p of [
+    wxPoi('The Beast', 'coaster', 'Rivertown'),
+    wxPoi('Tropical Plunge', 'ride', 'Soak City'),
+    wxPoi('WindSeeker', 'ride', 'Coney Mall'),
+  ]) {
+    assert.equal(outlookFor(p, FINE).key, OUTLOOK.running.key, p.n);
+  }
+  return true;
+});
+
+await check('no forecast at all is never a warning', () => {
+  assert.equal(outlookFor(wxPoi('The Beast', 'coaster', 'Rivertown'), null).key, OUTLOOK.running.key);
+  return true;
+});
+
+await check('parkOutlook counts rides and ignores the gift shops', () => {
+  const pois = [
+    wxPoi('The Beast', 'coaster', 'Rivertown'),
+    wxPoi('Tropical Plunge', 'ride', 'Soak City'),
+    wxPoi('Skyline Chili', 'food', 'Coney Mall'),
+    wxPoi('North Lot', 'parking', 'Parking'),
+  ];
+  const out = parkOutlook(pois, STORM);
+  assert.equal(out.total, 2);
+  assert.equal(out.tally.closed, 2);
+  assert.equal(out.worst.key, OUTLOOK.closed.key);
+  return true;
+});
+
+/* -------------------------------------------------- reports vs forecast -- */
+
+section('status/merge');
+
+const BEAST = wxPoi('The Beast', 'coaster', 'Rivertown');
+
+await check('a fresh report beats the forecast in both directions', () => {
+  const now = 5_000_000;
+  const down = statusFor(BEAST, { status: RIDE_DOWN, byName: 'Ava', ts: now - 60_000 }, FINE, now);
+  assert.equal(down.key, STATUS.down.key);
+  assert.equal(down.source, 'party');
+  assert.match(down.detail, /Ava, 1 min ago/);
+
+  // And a person saying it is running outranks a forecast saying it should not be.
+  const up = statusFor(BEAST, { status: RIDE_OPEN, byName: 'Ava', ts: now }, STORM, now);
+  assert.equal(up.key, STATUS.open.key);
+  assert.equal(up.source, 'party');
+  return true;
+});
+
+await check('with no report the forecast speaks', () => {
+  const now = 5_000_000;
+  const s = statusFor(BEAST, null, STORM, now);
+  assert.equal(s.key, STATUS.closed.key);
+  assert.equal(s.source, 'weather');
+  assert.ok(s.detail);
+  return true;
+});
+
+await check('a stale down still counts against a clear sky', () => {
+  const now = 5_000_000;
+  const s = statusFor(BEAST, { status: RIDE_DOWN, byName: 'Ava', ts: now - RIDE_STALE_AFTER_MS - 1 }, FINE, now);
+  assert.equal(s.tone, 'bad');
+  assert.equal(s.stale, true);
+  assert.equal(s.label, 'Was down');
+  return true;
+});
+
+await check('but weather that has since turned takes the headline back', () => {
+  const now = 5_000_000;
+  const old = { status: RIDE_DOWN, byName: 'Ava', ts: now - RIDE_STALE_AFTER_MS - 1 };
+  const s = statusFor(BEAST, old, STORM, now);
+  assert.equal(s.source, 'weather');
+  assert.equal(s.key, STATUS.closed.key);
+  assert.equal(s.stale, true);
+  // The report is still handed over, so the UI can show both if it wants to.
+  assert.equal(s.report, old);
+  return true;
+});
+
+await check('a stale open does not outrank a storm', () => {
+  const now = 5_000_000;
+  const s = statusFor(BEAST, { status: RIDE_OPEN, byName: 'Ava', ts: now - RIDE_STALE_AFTER_MS - 1 }, STORM, now);
+  assert.equal(s.source, 'weather');
+  assert.equal(s.key, STATUS.closed.key);
+  return true;
+});
+
+await check('a garbage report is ignored rather than rendered', () => {
+  const now = 5_000_000;
+  const s = statusFor(BEAST, { status: 'melted', ts: now }, FINE, now);
+  assert.equal(s.source, 'none');
+  assert.equal(s.report, null);
+  return true;
+});
+
+await check('a clear sky with nothing reported says nothing at all', () => {
+  const s = statusFor(BEAST, null, FINE, 5_000_000);
+  assert.equal(s.key, STATUS.running.key);
+  assert.equal(s.label, '');
+  return true;
+});
+
+await check('the summary keeps reports and guesses apart', () => {
+  const now = 5_000_000;
+  const pois = [
+    BEAST,
+    wxPoi('WindSeeker', 'ride', 'Coney Mall'),
+    wxPoi('Skyline Chili', 'food', 'Coney Mall'),
+  ];
+  const reports = { [BEAST.id]: { status: RIDE_DOWN, byName: 'Ava', ts: now } };
+  const sum = statusSummary(pois, reports, GALE, now);
+  // One person saw one ride down; the forecast doubts one more. Never merged
+  // into a single number, which would claim two rides are known to be out.
+  assert.equal(sum.reportedDown, 1);
+  assert.equal(sum.atRisk, 1);
+  return true;
+});
+
+await check('the summary survives no weather and no party', () => {
+  const sum = statusSummary([BEAST], null, null, 5_000_000);
+  assert.deepEqual(sum, { reportedDown: 0, atRisk: 0 });
+  return true;
+});
+
+/* ------------------------------------------------------------ venue ids -- */
+
+section('venue/ids');
+
+await check('every place in every shipped venue gets a unique id', () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(new URL('../public/venues/manifest.json', import.meta.url), 'utf8'),
+  );
+  assert.ok(manifest.venues.length > 0);
+  for (const v of manifest.venues) {
+    const pois = JSON.parse(
+      fs.readFileSync(new URL(`../public/venues/${v.id}.pois.json`, import.meta.url), 'utf8'),
+    );
+    const ids = withIds(pois).map((p) => p.id);
+    assert.equal(new Set(ids).size, ids.length, `${v.id} has colliding ids`);
+    assert.equal(ids.length, pois.length, `${v.id} lost places`);
+    assert.ok(ids.every(Boolean), `${v.id} has a blank id`);
+  }
+  return true;
+});
+
+await check('a repeated name is suffixed in file order', () => {
+  // The case that matters: a park has ten "Restrooms", and a ride report is
+  // addressed by id. Every reader has to number them the same way.
+  const ids = withIds([
+    { n: 'Restrooms' },
+    { n: 'The Beast' },
+    { n: 'Restrooms' },
+    { n: 'Restrooms' },
+  ]).map((p) => p.id);
+  assert.deepEqual(ids, ['restrooms', 'the-beast', 'restrooms-2', 'restrooms-3']);
+  return true;
+});
+
+await check('a nameless place still gets an id rather than an empty one', () => {
+  assert.deepEqual(withIds([{ n: '' }, { n: '!!!' }]).map((p) => p.id), ['poi', 'poi-2']);
+  return true;
+});
+
+await check('withIds does not mutate what it is given', () => {
+  const input = [{ n: 'Orion' }];
+  withIds(input);
+  assert.equal(input[0].id, undefined);
+  return true;
+});
+
+await check('a place is addressable by id and by name', () => {
+  const index = indexById(withIds([{ n: 'Orion' }, { n: 'Restrooms' }, { n: 'Restrooms' }]));
+  assert.equal(index.get('orion').n, 'Orion');
+  // The first of a repeated name wins the bare-name key; the rest need the id.
+  assert.equal(index.get('restrooms').n, 'Restrooms');
+  assert.ok(index.get('restrooms-2'));
+  return true;
+});
+
+section('push');
+
+/* The notification path carries the most revealing frame the app has — a name,
+   and often where that name is — through two parties that must not read it: our
+   own relay and the phone vendor's push service. These assert that. */
+
+const { default: webpush } = await import('web-push');
+
+await check('a sealed note round-trips, and a phone from another party cannot open it', async () => {
+  const pid = 'push-party-0001';
+  const note = { kind: 'help', title: 'Ava needs help', body: 'Tap to see where they are.' };
+  const sealed = await seal(key, pid, note);
+  assert.deepEqual(await open(key, sealed), note);
+  assert.equal(await open(other, sealed), null, 'a foreign key opened it');
+  // The party id is authenticated, not encrypted: relabelling breaks the tag.
+  assert.equal(await open(key, { ...sealed, pid: 'push-party-0002' }), null, 'relabelling worked');
+  return true;
+});
+
+await check('nothing readable reaches the push service', async () => {
+  const pid = 'push-party-0003';
+  const vapid = webpush.generateVAPIDKeys();
+  webpush.setVapidDetails('mailto:test@example.com', vapid.publicKey, vapid.privateKey);
+
+  const { subtle } = globalThis.crypto;
+  const pair = await subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const raw = new Uint8Array(await subtle.exportKey('raw', pair.publicKey));
+  const b64 = (u8) => Buffer.from(u8).toString('base64url');
+  const auth = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(auth);
+  const sub = {
+    endpoint: 'https://push.example.com/send/fake',
+    keys: { p256dh: b64(raw), auth: b64(auth) },
+  };
+
+  const sealed = await seal(key, pid, { kind: 'help', title: 'Ava needs help', body: 'By Iron Rattler' });
+  const req = webpush.generateRequestDetails(sub, JSON.stringify({ pid, sealed }), {
+    TTL: 300,
+    urgency: 'high',
+  });
+
+  assert.equal(req.headers.TTL, 300);
+  assert.match(req.headers.Authorization || '', /^vapid /i, 'not VAPID-signed');
+  assert.equal(req.headers['Content-Encoding'], 'aes128gcm');
+
+  const wire = Buffer.from(req.body).toString('latin1');
+  assert.equal(/Ava|Iron Rattler|help/i.test(wire), false, 'the words reached the wire');
+  assert.equal(wire.includes(pid), false, 'the party id reached the wire');
   return true;
 });
 

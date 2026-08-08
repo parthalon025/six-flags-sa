@@ -67,12 +67,12 @@ export default function ParkPrompt({
           disabled={busy}
           onClick={() => onConfirm?.(venue.id)}
         >
-          {busy ? 'Building the map…' : `Yes — build ${venue.name}`}
+          {busy ? 'Setting it up…' : `Yes — set up ${venue.name}`}
         </button>
 
         {options.length > 0 && (
           <>
-            <div className="label">Somewhere else</div>
+            <div className="label">Somewhere Else</div>
             <div className="venueList">
               {options.map(({ venue: other, metres, inside: within }) => (
                 <button

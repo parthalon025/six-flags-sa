@@ -1,177 +1,347 @@
 /* ============================================================
-   Kings Island party tracker — surface layer.
+   Party tracker — surface layer.
 
-   Two palettes (night / day) and one material: translucent glass
-   floating over a drawn map. Everything that moves moves on the
-   shared easing tokens below, so the whole app feels like one
-   object rather than a pile of independently-timed widgets.
+   The visual language here is iOS: Apple's semantic colour set, the SF text
+   ramp on the system font stack, blur materials, the 44pt touch floor, and
+   the sheet easing a phone actually uses. Nothing here is invented — the point
+   is that someone who has used Maps already knows what every control does.
+
+   Two palettes, light and dark, keyed off `data-theme` on <html>. The theme
+   keys stay 'day' and 'night' because they are what the app has always
+   written to localStorage.
    ============================================================ */
 
 :root {
   color-scheme: dark;
-  --peek: 198px;
-  --void: #0c1017;
-  --panel: #181d2b;
-  --panel2: #212837;
-  --line: #2e3648;
-  --beacon: #ffc24a;
-  --crimson: #e2503f;
-  --mint: #4fd1a5;
-  --paper: #edeff4;
-  --dim: #8892a6;
-  --dimmer: #5e6779;
-  --disp: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
-  --ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* The peek stop has to stand the search field, the glance rail and the tab
+     bar at once. Tracked in page.js as PEEK_PX — the map lays its labels out
+     against the same number. */
+  --peek: 308px;
+  /* The stop below peek. The tab bar and the handle above it and nothing else,
+     so the map has the rest of the screen — a panel that cannot get out of the
+     way is a map you can only ever see a third of. Kept in step with SHUT_PX in
+     app/page.js, which is what the map lays its labels out against. */
+  --shut: 84px;
+  /* The tint the tab bar stands on, over the sheet's own glass. */
+  --tabBarFill: color-mix(in srgb, var(--bg2) 42%, transparent);
+
+  /* ---- backgrounds ---- */
+  --bg: #000000;
+  --bg2: #1c1c1e;
+  --bg3: #2c2c2e;
+  --grouped: #000000;
+  --grouped2: #1c1c1e;
+
+  /* ---- labels ---- */
+  --label: #ffffff;
+  --label2: rgba(235, 235, 245, .60);
+  --label3: rgba(235, 235, 245, .30);
+  --label4: rgba(235, 235, 245, .16);
+
+  /* ---- separators + fills ---- */
+  --sep: rgba(84, 84, 88, .60);
+  --sepOpaque: #38383a;
+  --fill: rgba(120, 120, 128, .36);
+  --fill2: rgba(120, 120, 128, .32);
+  --fill3: rgba(118, 118, 128, .24);
+
+  /* ---- system colours ---- */
+  /* Re-specified by Apple on 9 June 2025, alongside Liquid Glass. Most of the
+     set moved — blue, red, orange, teal, indigo and purple all shifted, some
+     of them a long way — while green, yellow and pink came through unchanged.
+     The iOS 18 values these replace now read as dated next to system chrome. */
+  --blue: #0091ff;
+  --green: #30d158;
+  --red: #ff4245;
+  --orange: #ff9230;
+  --yellow: #ffd600;
+  --teal: #00d2e0;
+  --indigo: #6d7cff;
+  --purple: #db34f2;
+  --pink: #ff375f;
+  --gray: #8e8e93;
+  --brown: #b78a66;
+  --onTint: #ffffff;
+
+  /* ---- legacy aliases ----
+     Three components hand CSS variables to SVG fill/stroke props from JS.
+     Aliasing rather than renaming means those call sites keep working and
+     cannot silently paint black. */
+  --paper: var(--label);
+  --dim: var(--label2);
+  --dimmer: var(--label3);
+  --panel: var(--bg2);
+  --panel2: var(--bg3);
+  --line: var(--sep);
+  --void: var(--bg);
+  --beacon: var(--blue);
+  --crimson: var(--red);
+  --mint: var(--green);
+  --helpTint: rgba(255, 69, 58, .16);
+
+  /* ---- type ---- */
+  /* Deliberately does not name 'SF Pro Text' or 'SF Pro Display'. SF is a
+     variable font that interpolates between those two optical sizes
+     continuously from 17pt to 28pt; naming either one pins it and throws that
+     interpolation away, which is the whole reason to ask for -apple-system. */
+  --ui: -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
+  --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+
+  /* Apple's built-in text styles at the Large (default) Dynamic Type size,
+     as size / leading / tracking. Sizes and leading come from the HIG
+     specifications table; tracking is joined onto it from the separate SF Pro
+     tracking table by point size.
+
+     Note the tracking column changes sign. It tightens to a minimum around
+     19–20pt, then opens back up above that — the optical-size transition
+     showing up in the metrics — so Large Title and Title 1 track *open*.
+     Reading the curve as "tighter as it gets bigger" gets both of them
+     backwards. A browser applies none of this on its own: -apple-system gets
+     the right glyphs and neutral tracking, so it has to be set by hand.
+
+     The rules below are written with literal values rather than these tokens,
+     which is how they arrived; the tokens are here as the reference to check
+     a value against before adding one. */
+  --fs-large-title: 34px;  --lh-large-title: 41px;  --tr-large-title: .4px;
+  --fs-title1: 28px;       --lh-title1: 34px;       --tr-title1: .38px;
+  --fs-title2: 22px;       --lh-title2: 28px;       --tr-title2: -.26px;
+  --fs-title3: 20px;       --lh-title3: 25px;       --tr-title3: -.45px;
+  --fs-headline: 17px;     --lh-headline: 22px;     --tr-headline: -.43px;
+  --fs-body: 17px;         --lh-body: 22px;         --tr-body: -.43px;
+  --fs-callout: 16px;      --lh-callout: 21px;      --tr-callout: -.31px;
+  --fs-subhead: 15px;      --lh-subhead: 20px;      --tr-subhead: -.23px;
+  --fs-footnote: 13px;     --lh-footnote: 18px;     --tr-footnote: -.08px;
+  --fs-caption1: 12px;     --lh-caption1: 16px;     --tr-caption1: 0px;
+  --fs-caption2: 11px;     --lh-caption2: 13px;     --tr-caption2: .06px;
   --top: env(safe-area-inset-top, 0px);
   --bot: env(safe-area-inset-bottom, 0px);
-  --helpTint: rgba(226,80,63,.14);
 
-  /* ---- motion ---- */
-  /* smooth: expo-out, for anything that travels a distance.
-     bounce: back-out with overshoot, for anything that appears or toggles.
-     spring: a softer overshoot, for surfaces big enough that a hard
-     overshoot would read as a glitch rather than as weight. */
-  --smooth: cubic-bezier(.22, 1, .36, 1);
-  --bounce: cubic-bezier(.34, 1.56, .64, 1);
-  --spring: cubic-bezier(.2, 1.24, .32, 1);
-  --snap: cubic-bezier(.32, .72, 0, 1);
-  --t1: .14s;
-  --t2: .26s;
-  --t3: .42s;
-  --t4: .6s;
+  /* ---- motion ----
+     ease: the curve a phone uses to move a sheet — a long decelerating tail
+     with no overshoot. easeOut: everything small. Overshoot is deliberately
+     absent; a control that springs past its mark reads as a toy. */
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --easeOut: cubic-bezier(.25, .46, .45, .94);
+  --t1: .2s;
+  --t2: .3s;
+  --t3: .35s;
+  --t4: .45s;
+  /* the names the rest of the file was written against */
+  --smooth: var(--easeOut);
+  --bounce: var(--ease);
+  --spring: var(--ease);
+  --snap: var(--ease);
 
   /* ---- radii ---- */
-  --r1: 10px;
-  --r2: 14px;
-  --r3: 20px;
-  --r4: 28px;
+  --r1: 6px;
+  --r2: 10px;
+  --r3: 12px;
+  --r4: 14px;
+  --r5: 22px;
+  /* A floating sheet's corners follow the curve of the display it nests into,
+     so they are far rounder than a docked panel's. The gap tightens and the
+     radius comes down as it is pulled up. */
+  --rFloat: 28px;
+  --rFloatHalf: 22px;
+  --rCapsule: 999px;
 
-  /* ---- glass ---- */
-  --glass: rgba(24, 29, 43, .58);
-  --glassDeep: rgba(20, 25, 37, .82);
-  --glassEdge: rgba(255, 255, 255, .10);
-  --glassHi: rgba(255, 255, 255, .085);
-  --glassLo: rgba(0, 0, 0, .22);
-  --blur: blur(22px) saturate(175%);
-  --blurLite: blur(14px) saturate(150%);
-  --shadow1: 0 4px 16px rgba(0, 0, 0, .32);
-  --shadow2: 0 12px 36px rgba(0, 0, 0, .46);
-  --shadow3: 0 -18px 54px rgba(0, 0, 0, .52);
-  --sheen: linear-gradient(180deg, var(--glassHi), rgba(255, 255, 255, 0) 58%);
+  /* ---- Liquid Glass ----
+     Glass is a lens, not a frosted pane. It is clearer than the old materials,
+     it bends and brightens what sits behind it, and it catches light along its
+     edge — a bright rim at the top where light refracts through the curve, a
+     dimmer bounce along the bottom, and a hairline ring all the way round.
+     That rim is what sells it; without it a blurred rectangle is just a
+     blurred rectangle.
 
-  /* map layers */
-  --markerEdge: #0c1017;
-  --mapBg: #080b11;
-  --ground: #141a24;      --groundEdge: #2a3546;
-  --wood: #16251c;        --grass: #1b2a20;
-  --lot: #171b24;         --lotEdge: #232b39;
-  --waterFill: #16354d;   --waterEdge: #235071;
-  --poolFill: #1c5878;    --poolEdge: #2e7ca3;
-  --backOfHouse: #232a38;
-  --midwayCase: #2a3244;  --midway: #4a566f;
-  --structure: #2b3345;   --structureEdge: #3a4459;
-  --slide: #4fd1a5;
-  --trackCase: #0b0e14;   --track: #e2503f;
-  --labelStroke: #0a0d13;
+     Two depths: --glassTint for controls that carry only a glyph, and
+     --glassTintDeep for anything with words on it, which needs the extra
+     opacity to stay legible over a busy patch of map. */
+  --glassTint: rgba(40, 40, 44, .42);
+  --glassTintDeep: rgba(24, 24, 26, .76);
+  --glassRim: rgba(255, 255, 255, .34);
+  --glassRimLo: rgba(255, 255, 255, .10);
+  --glassRing: rgba(255, 255, 255, .14);
+  --onGlass: rgba(255, 255, 255, .10);
+  --lens: blur(20px) saturate(180%) brightness(1.14);
+  --lensLite: blur(14px) saturate(170%) brightness(1.10);
+  --lensDeep: blur(44px) saturate(180%) brightness(1.10);
+  --lensEdge:
+    inset 0 1px .5px var(--glassRim),
+    inset 0 -1px .5px var(--glassRimLo),
+    inset 0 0 0 .5px var(--glassRing);
+  --lensDrop: 0 1px 2px rgba(0, 0, 0, .28), 0 6px 20px rgba(0, 0, 0, .30);
+
+  /* ---- materials ---- */
+  --matThin: rgba(28, 28, 30, .64);
+  --matRegular: rgba(24, 24, 26, .76);
+  --matThick: rgba(20, 20, 22, .86);
+  --matChrome: rgba(18, 18, 20, .92);
+  --glass: var(--matRegular);
+  --glassDeep: var(--matThick);
+  --glassEdge: rgba(255, 255, 255, .08);
+  --glassHi: rgba(255, 255, 255, .06);
+  --glassLo: rgba(0, 0, 0, .30);
+  --blur: blur(20px) saturate(180%);
+  --blurLite: blur(14px) saturate(180%);
+  --shadow1: 0 1px 3px rgba(0, 0, 0, .30), 0 4px 14px rgba(0, 0, 0, .28);
+  --shadow2: 0 2px 6px rgba(0, 0, 0, .34), 0 10px 30px rgba(0, 0, 0, .40);
+  --shadow3: 0 -1px 0 rgba(255, 255, 255, .06), 0 -12px 40px rgba(0, 0, 0, .44);
+  --thumbShadow: 0 3px 8px rgba(0, 0, 0, .18), 0 3px 1px rgba(0, 0, 0, .06);
+
+  /* ---- map layers: Apple Maps at night ---- */
+  --markerEdge: #000000;
+  --puckRing: #ffffff;
+  --mapBg: #121214;
+  --ground: #1c1c1e;      --groundEdge: #2c2c2e;
+  --wood: #15241a;        --grass: #182c1e;
+  --lot: #232326;         --lotEdge: #2e2e31;
+  --waterFill: #0e3a5c;   --waterEdge: #17547f;
+  --poolFill: #12496e;    --poolEdge: #1d6a99;
+  --backOfHouse: #2a2a2d;
+  --midwayCase: #2c2c2e;  --midway: #5a5a5e;
+  --structure: #2a2a2d;   --structureEdge: #38383a;
+  --slide: #63e6e2;
+  --trackCase: #000000;   --track: #ff453a;
+  --labelStroke: #000000;
   --labelFill: #ffffff;
-  --vignette: rgba(0, 0, 0, .55);
+  /* marker furniture: a solid disc for attractions, a recessed chip for
+     amenities, a hollow shape for what today's height rules out — and the
+     tint a coaster's track takes when it is the one you are looking at */
+  --markerChip: #2c2c2e;
+  --markerVoid: #1c1c1e;
+  --trackLit: var(--blue);
+  --vignette: rgba(0, 0, 0, .28);
 }
 
-/* Daylight: a printed-park-map palette, for reading a phone in direct sun.
-   The glass goes frosted-white here — a dark scrim over paper is unreadable
-   at noon, and a white one keeps the midways showing through. */
+/* Light. Apple Maps in daylight: near-white land, white roads over a warm grey
+   casing, pale blue water. Chrome goes to white materials — a dark scrim over
+   pale land is the one thing that never reads outdoors. */
 :root[data-theme='day'] {
   color-scheme: light;
-  --void: #e8e3d8;
-  --panel: #ffffff;
-  --panel2: #f3f0e9;
-  --line: #d9d3c6;
-  --beacon: #d1760a;
-  --crimson: #be3226;
-  --mint: #0f7355;
-  --paper: #1a1d24;
-  --dim: #62697a;
-  --dimmer: #8d94a1;
-  --helpTint: rgba(190,50,38,.10);
 
-  --glass: rgba(255, 255, 255, .62);
-  --glassDeep: rgba(255, 255, 255, .86);
-  --glassEdge: rgba(255, 255, 255, .8);
-  --glassHi: rgba(255, 255, 255, .75);
-  --glassLo: rgba(120, 106, 78, .10);
-  --shadow1: 0 4px 14px rgba(74, 63, 40, .14);
-  --shadow2: 0 12px 32px rgba(74, 63, 40, .20);
-  --shadow3: 0 -16px 46px rgba(74, 63, 40, .22);
-  --sheen: linear-gradient(180deg, rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 62%);
+  --bg: #ffffff;
+  --bg2: #f2f2f7;
+  --bg3: #ffffff;
+  --grouped: #f2f2f7;
+  --grouped2: #ffffff;
+
+  --label: #000000;
+  --label2: rgba(60, 60, 67, .60);
+  --label3: rgba(60, 60, 67, .30);
+  --label4: rgba(60, 60, 67, .18);
+
+  --sep: rgba(60, 60, 67, .29);
+  --sepOpaque: #c6c6c8;
+  --fill: rgba(120, 120, 128, .20);
+  --fill2: rgba(120, 120, 128, .16);
+  --fill3: rgba(118, 118, 128, .12);
+
+  --blue: #0088ff;
+  --green: #34c759;
+  --red: #ff383c;
+  --orange: #ff8d28;
+  --yellow: #ffcc00;
+  --teal: #00c3d0;
+  --indigo: #6155f5;
+  --purple: #cb30e0;
+  --pink: #ff2d55;
+  --gray: #8e8e93;
+  --brown: #ac7f5e;
+
+  --helpTint: rgba(255, 59, 48, .10);
+
+  --glassTint: rgba(255, 255, 255, .42);
+  --glassTintDeep: rgba(255, 255, 255, .76);
+  --glassRim: rgba(255, 255, 255, .92);
+  --glassRimLo: rgba(255, 255, 255, .42);
+  --glassRing: rgba(255, 255, 255, .58);
+  --onGlass: rgba(255, 255, 255, .62);
+  --lens: blur(20px) saturate(190%) brightness(1.06);
+  --lensLite: blur(14px) saturate(175%) brightness(1.04);
+  --lensDeep: blur(44px) saturate(190%) brightness(1.03);
+  --lensDrop: 0 1px 2px rgba(0, 0, 0, .10), 0 6px 20px rgba(0, 0, 0, .12);
+
+  --matThin: rgba(255, 255, 255, .60);
+  --matRegular: rgba(255, 255, 255, .72);
+  --matThick: rgba(255, 255, 255, .84);
+  --matChrome: rgba(255, 255, 255, .90);
+  --glassEdge: rgba(0, 0, 0, .06);
+  --glassHi: rgba(255, 255, 255, .50);
+  --glassLo: rgba(0, 0, 0, .10);
+  --shadow1: 0 1px 2px rgba(0, 0, 0, .10), 0 4px 14px rgba(0, 0, 0, .10);
+  --shadow2: 0 2px 6px rgba(0, 0, 0, .10), 0 10px 30px rgba(0, 0, 0, .14);
+  --shadow3: 0 -1px 0 rgba(0, 0, 0, .05), 0 -12px 40px rgba(0, 0, 0, .12);
+  --thumbShadow: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04);
 
   --markerEdge: #ffffff;
-  --mapBg: #ddd6c7;
-  --ground: #f1ece1;      --groundEdge: #c9c0ae;
-  --wood: #cadfba;        --grass: #dfebd2;
-  --lot: #e6e3db;         --lotEdge: #cec9bd;
-  --waterFill: #aed6ea;   --waterEdge: #7cb2d1;
-  --poolFill: #93cde5;    --poolEdge: #6aacc9;
-  --backOfHouse: #dbd6ca;
-  --midwayCase: #b9ad96;  --midway: #ffffff;
-  --structure: #d5cec0;   --structureEdge: #b3ab9a;
-  --slide: #128069;
-  --trackCase: #ffffff;   --track: #be3226;
+  --puckRing: #ffffff;
+  --mapBg: #f2efe9;
+  --ground: #faf8f5;      --groundEdge: #e4e0d8;
+  --wood: #c6e1ac;        --grass: #d8edc0;
+  --lot: #edeae4;         --lotEdge: #dcd8d0;
+  --waterFill: #a8d8f0;   --waterEdge: #8fc6e4;
+  --poolFill: #9fd4ee;    --poolEdge: #7cbcdb;
+  --backOfHouse: #e2ded6;
+  --midwayCase: #d8d2c8;  --midway: #ffffff;
+  --structure: #e6e1d8;   --structureEdge: #d5cfc4;
+  --slide: #00c7be;
+  --trackCase: #ffffff;   --track: #ff3b30;
   --labelStroke: #ffffff;
-  --labelFill: #1f232b;
-  --vignette: rgba(88, 74, 46, .30);
+  --labelFill: #3c3c43;
+  --markerChip: #ffffff;
+  --markerVoid: #f2f2f7;
+  --trackLit: var(--blue);
+  --vignette: rgba(0, 0, 0, .06);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   margin: 0; height: 100%; overflow: hidden;
-  background: var(--void); color: var(--paper);
-  font-family: var(--ui); font-size: 15px;
+  background: var(--bg); color: var(--label);
+  font-family: var(--ui); font-size: 17px; line-height: 22px; letter-spacing: -.4px;
   overscroll-behavior: none;
 }
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 
 .app { position: fixed; inset: 0; --sheetH: var(--peek); }
+.app[data-sheet='shut'] { --sheetH: var(--shut); }
 .app[data-sheet='half'] { --sheetH: 52vh; }
 .app[data-sheet='full'] { --sheetH: 88vh; }
 
 /* ============================================================
    keyframes
    ============================================================ */
-@keyframes ping { 0% { r: 8; opacity: .55 } 100% { r: 26; opacity: 0 } }
+@keyframes ping { 0% { r: 8; opacity: .45 } 100% { r: 26; opacity: 0 } }
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
 @keyframes popIn {
-  0% { opacity: 0; transform: scale(.82) }
-  100% { opacity: 1; transform: scale(1) }
+  0% { opacity: 0; transform: scale(.96) }
+  100% { opacity: 1; transform: none }
 }
 @keyframes riseIn {
-  0% { opacity: 0; transform: translateY(16px) scale(.98) }
+  0% { opacity: 0; transform: translateY(8px) }
   100% { opacity: 1; transform: none }
 }
 @keyframes railIn {
-  0% { opacity: 0; transform: translateY(18px) scale(.94) }
+  0% { opacity: 0; transform: translateY(10px) }
   100% { opacity: 1; transform: none }
 }
 @keyframes sheetUp {
-  0% { opacity: 0; transform: translateY(64px) }
-  100% { opacity: 1; transform: none }
+  0% { transform: translateY(100%) }
+  100% { transform: none }
 }
 @keyframes toastPop {
-  0% { opacity: 0; transform: translateX(-50%) translateY(22px) scale(.9) }
-  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) }
+  0% { opacity: 0; transform: translateX(-50%) translateY(12px) }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) }
 }
 @keyframes badgeIn {
-  0% { opacity: 0; transform: translateY(-12px) scale(.8) }
+  0% { opacity: 0; transform: translateY(-6px) }
   100% { opacity: 1; transform: none }
 }
 @keyframes mapIn {
-  0% { opacity: 0; transform: scale(1.035) }
-  100% { opacity: 1; transform: none }
-}
-@keyframes shimmer {
-  0% { background-position: -220% 0 }
-  100% { background-position: 220% 0 }
+  0% { opacity: 0 }
+  100% { opacity: 1 }
 }
 @keyframes breathe {
   0%, 100% { opacity: .55 }
@@ -180,14 +350,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* An expanding ring rather than a fading card: NEED HELP has to keep pulling
    the eye back without making its own text unreadable half the time. */
 @keyframes alertRing {
-  0% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--crimson) 52%, transparent) }
-  70% { box-shadow: var(--shadow1), 0 0 0 9px color-mix(in srgb, var(--crimson) 0%, transparent) }
-  100% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--crimson) 0%, transparent) }
+  0% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--red) 46%, transparent) }
+  70% { box-shadow: var(--shadow1), 0 0 0 9px color-mix(in srgb, var(--red) 0%, transparent) }
+  100% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--red) 0%, transparent) }
 }
 @keyframes pinDrop {
-  0% { opacity: 0; transform: translateY(-26px) scale(.7) }
-  62% { opacity: 1; transform: translateY(3px) scale(1.04) }
+  0% { opacity: 0; transform: translateY(-20px) }
   100% { opacity: 1; transform: none }
+}
+@keyframes shimmer {
+  0% { opacity: .35 }
+  50% { opacity: 1 }
+  100% { opacity: .35 }
 }
 @keyframes haloSpin { to { transform: rotate(360deg) } }
 
@@ -196,23 +370,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    ============================================================ */
 .mapWrap {
   position: absolute; inset: 0; touch-action: none;
-  background:
-    radial-gradient(120% 90% at 50% 12%, color-mix(in srgb, var(--mapBg) 70%, var(--panel)) 0%, var(--mapBg) 62%);
+  background: var(--mapBg);
   overflow: hidden;
 }
 .mapSvg {
   display: block;
-  animation: mapIn var(--t4) var(--smooth) both;
+  animation: mapIn var(--t4) var(--easeOut) both;
   transform-origin: 50% 50%;
 }
 
-/* A soft darkening at the edges pushes the eye to the centre of the frame and
-   gives the floating glass something to sit against at the corners. */
+/* Apple Maps does not vignette its map, so this is barely there — just enough
+   at night to stop the corners competing with the floating chrome. */
 .mapVignette {
   position: absolute; inset: 0; pointer-events: none; z-index: 2;
-  background:
-    radial-gradient(130% 100% at 50% 45%, transparent 52%, var(--vignette) 100%);
-  mix-blend-mode: multiply;
+  background: radial-gradient(130% 100% at 50% 45%, transparent 58%, var(--vignette) 100%);
 }
 /* Scrims under the top and bottom chrome so translucent panels never sit on
    top of a bright patch of midway and lose their type. */
@@ -221,25 +392,19 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .mapScrim.top {
   top: 0; height: calc(var(--top) + 132px);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--void) 62%, transparent), transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 42%, transparent), transparent);
 }
 .mapScrim.bottom {
   bottom: 0; height: calc(var(--sheetH) + 90px);
-  background: linear-gradient(0deg, color-mix(in srgb, var(--void) 55%, transparent), transparent);
-  transition: height var(--t3) var(--snap);
+  background: linear-gradient(0deg, color-mix(in srgb, var(--bg) 38%, transparent), transparent);
+  transition: height var(--t3) var(--ease);
 }
 
 .mapLoading {
   position: absolute; inset: 0; display: grid; place-items: center;
-  color: var(--dimmer); font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
-  text-transform: uppercase;
+  color: var(--label2); font-size: 15px; letter-spacing: -.2px;
 }
-.mapLoading span {
-  background: linear-gradient(90deg, var(--dimmer) 20%, var(--paper) 50%, var(--dimmer) 80%);
-  background-size: 220% 100%;
-  -webkit-background-clip: text; background-clip: text; color: transparent;
-  animation: shimmer 1.9s linear infinite;
-}
+.mapLoading span { animation: shimmer 1.6s ease-in-out infinite; }
 
 .lyr-park path { fill: var(--ground); stroke: var(--groundEdge); stroke-width: 1.5; }
 .lyr-wood path { fill: var(--wood); stroke: none; }
@@ -258,76 +423,82 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .lyr-coastershadow path { fill: none; stroke: var(--trackCase); stroke-width: 5.5; stroke-linecap: round; }
 .lyr-coaster path { fill: none; stroke: var(--track); stroke-width: 2.4; stroke-linecap: round; }
 
-/* Water reads as a surface rather than a flat fill: a sheen gradient over the
-   base colour, and a whole-layer glow that only night mode really shows. */
-.lyr-water path, .lyr-pool path { opacity: .96; }
+.lyr-water path, .lyr-pool path { opacity: 1; }
 .lyr-watersheen path { fill: url(#waterSheen); stroke: none; pointer-events: none; }
-.lyr-land { transition: opacity var(--t3) var(--smooth); }
-.lyr-detail { animation: fadeIn var(--t3) var(--smooth) both; }
+.lyr-land { transition: opacity var(--t3) var(--easeOut); }
+.lyr-detail { animation: fadeIn var(--t3) var(--easeOut) both; }
 
+/* Apple Maps sets district names in wide-tracked caps and POI names in plain
+   SF with a halo, which is what these two do. */
 .landLabel {
-  font-family: var(--disp); font-size: 15px; font-weight: 800; letter-spacing: .16em;
-  text-anchor: middle; opacity: .78; pointer-events: none;
-  animation: fadeIn var(--t3) var(--smooth) both;
+  font-family: var(--ui); font-size: 11px; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; text-anchor: middle; opacity: .85; pointer-events: none;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 2.5px; stroke-linejoin: round;
+  animation: fadeIn var(--t3) var(--easeOut) both;
 }
 .poiLabel {
-  font-family: var(--mono); font-size: 9.5px; fill: var(--labelFill); text-anchor: middle;
+  font-family: var(--ui); font-size: 10.5px; font-weight: 500; letter-spacing: -.1px;
+  fill: var(--labelFill); text-anchor: middle;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; stroke-linejoin: round;
   pointer-events: none;
 }
-.poiMarker { transition: opacity var(--t2) var(--smooth); }
-.poiMarker circle.pin { transition: r var(--t2) var(--bounce); }
+.poiLabel.barred { opacity: .6; }
+/* Struck through rather than faded out: fading already means "we have not
+   heard from this person lately" over on the party markers. */
+.poiBarred { stroke: var(--red); stroke-width: 2; stroke-linecap: round; opacity: .95; }
+.poiMarker { transition: opacity var(--t2) var(--easeOut); }
+.poiMarker circle.pin { transition: r var(--t2) var(--easeOut); }
 .poiHalo {
-  fill: none; stroke: var(--beacon); stroke-width: 2.4;
-  stroke-dasharray: 5 6; transform-box: fill-box; transform-origin: 50% 50%;
+  fill: none; stroke: var(--blue); stroke-width: 2.5;
+  transform-box: fill-box; transform-origin: 50% 50%;
   paint-order: stroke;
-  filter: drop-shadow(0 0 3px var(--markerEdge));
-  animation: haloSpin 7s linear infinite;
 }
-.poiHaloGlow { fill: color-mix(in srgb, var(--beacon) 18%, transparent); animation: ping 2.4s ease-out infinite; }
+.poiHaloGlow { fill: color-mix(in srgb, var(--blue) 20%, transparent); animation: ping 2.4s ease-out infinite; }
+
+/* The Apple blue dot: a solid tint disc in a white ring, over a soft halo of
+   the same blue for accuracy. */
 .accCircle {
-  fill: color-mix(in srgb, var(--beacon) 10%, transparent);
-  stroke: color-mix(in srgb, var(--beacon) 40%, transparent); stroke-width: 1;
+  fill: color-mix(in srgb, var(--blue) 12%, transparent);
+  stroke: color-mix(in srgb, var(--blue) 38%, transparent); stroke-width: 1;
 }
-.mePulse { fill: color-mix(in srgb, var(--beacon) 28%, transparent); animation: ping 2.2s ease-out infinite; }
+.mePulse { fill: color-mix(in srgb, var(--blue) 22%, transparent); animation: ping 2.2s ease-out infinite; }
 .mePulse.slow { animation-duration: 3.3s; animation-delay: 1.1s; }
-.meDot { filter: drop-shadow(0 0 7px color-mix(in srgb, var(--beacon) 70%, transparent)); }
-.helpRing { fill: none; stroke: var(--crimson); stroke-width: 2; animation: ping 1.1s ease-out infinite; }
-.memMarker { transition: opacity var(--t2) var(--smooth); }
+.meDot { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .35)); }
+.helpRing { fill: none; stroke: var(--red); stroke-width: 2; animation: ping 1.1s ease-out infinite; }
+.memMarker { transition: opacity var(--t2) var(--easeOut); }
 .memInitials {
-  font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--markerEdge);
+  font-family: var(--ui); font-size: 11px; font-weight: 600; fill: #fff;
   text-anchor: middle; pointer-events: none;
 }
 .memName {
-  font-family: var(--mono); font-size: 9px; fill: var(--labelFill); text-anchor: middle;
+  font-family: var(--ui); font-size: 10px; font-weight: 500; fill: var(--labelFill);
+  text-anchor: middle;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; pointer-events: none;
 }
 .meetPin {
   transform-box: fill-box; transform-origin: 50% 100%;
-  animation: pinDrop var(--t4) var(--bounce) both;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .45));
+  animation: pinDrop var(--t3) var(--ease) both;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .35));
 }
 .rangeLine {
-  stroke: var(--beacon); stroke-width: 1.4; stroke-dasharray: 5 7; opacity: .7;
+  stroke: var(--blue); stroke-width: 1.5; stroke-dasharray: 5 7; opacity: .7;
   animation: breathe 2.6s ease-in-out infinite;
 }
 
 .scaleBar {
-  position: absolute; left: 14px; bottom: calc(var(--sheetH) + 14px); z-index: 4;
-  display: flex; align-items: center; gap: 7px; pointer-events: none;
-  padding: 5px 9px; border-radius: 999px;
-  background: var(--glass); border: 1px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
-  box-shadow: var(--shadow1);
-  transition: bottom var(--t3) var(--snap);
+  flex: none; display: flex; align-items: center; gap: 7px; pointer-events: none;
+  padding: 6px 11px; border-radius: var(--rCapsule);
+  background: var(--glassTint);
+  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
+  box-shadow: var(--lensEdge), var(--lensDrop);
 }
 .scaleBar span {
-  height: 3px; border-radius: 2px; background: var(--paper); opacity: .7; display: block;
+  height: 3px; border-radius: 2px; background: var(--label2); display: block;
   max-width: 140px; transition: width var(--t1) linear;
 }
 .scaleBar em {
-  font-style: normal; font-family: var(--mono); font-size: 9px; color: var(--dim);
-  letter-spacing: .1em;
+  font-style: normal; font-size: 11px; font-weight: 500; color: var(--label2);
+  letter-spacing: 0; white-space: nowrap;
 }
 
 /* ---- zoom pad ---- */
@@ -337,115 +508,156 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .zoomPad {
   position: absolute; right: 12px; bottom: calc(var(--sheetH) + 142px); z-index: 5;
   display: flex; flex-direction: column;
-  border-radius: var(--r3); overflow: hidden;
-  background: var(--glass); border: 1px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow2), inset 0 1px 0 var(--glassHi);
-  transition: bottom var(--t3) var(--snap), opacity var(--t2) var(--smooth),
-              transform var(--t3) var(--spring);
+  border-radius: var(--r5); overflow: hidden;
+  background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
+              transform var(--t3) var(--ease);
 }
-.app[data-sheet='full'] .zoomPad {
-  opacity: 0; transform: translateY(14px) scale(.9); pointer-events: none;
+.app[data-sheet='full'] .zoomPad,
+.app[data-sheet='full'] .fabs {
+  opacity: 0; transform: translateY(10px); pointer-events: none;
 }
 .zoomBtn {
-  width: 42px; height: 40px; display: grid; place-items: center;
-  font-size: 19px; font-weight: 600; line-height: 1; color: var(--paper);
-  transition: background var(--t1) linear, transform var(--t2) var(--bounce);
+  width: 44px; height: 44px; display: grid; place-items: center;
+  color: var(--blue);
+  transition: background var(--t1) linear, opacity var(--t1) linear;
 }
-.zoomBtn + .zoomBtn { border-top: 1px solid var(--glassEdge); }
-.zoomBtn:active { transform: scale(.88); background: var(--glassHi); }
+.zoomBtn + .zoomBtn { border-top: .5px solid var(--glassRing); }
+.zoomBtn:active { background: var(--glassRim); }
 
 /* ============================================================
-   chrome — the floating glass over the map
+   chrome — the floating material over the map
    ============================================================ */
 .topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 40;
-  padding: calc(var(--top) + 10px) 12px 0; display: flex; gap: 9px; pointer-events: none;
-  animation: riseIn var(--t4) var(--spring) both;
+  padding: calc(var(--top) + 10px) 12px 0;
+  display: flex; justify-content: flex-end; gap: 9px; pointer-events: none;
+  animation: riseIn var(--t3) var(--easeOut) both;
 }
 .brand {
-  pointer-events: auto; flex: 1; min-width: 0;
-  background: var(--glass); border: 1px solid var(--glassEdge); border-radius: var(--r2);
-  padding: 8px 13px 7px;
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow1), inset 0 1px 0 var(--glassHi);
-  position: relative; overflow: hidden;
-}
-.brand::before {
-  content: ''; position: absolute; inset: 0; background: var(--sheen); pointer-events: none;
+  flex: none; display: flex; align-items: baseline; gap: 6px;
+  padding: 0 16px 8px; min-width: 0;
 }
 .brand b {
-  display: block; font-family: var(--disp); font-weight: 800; font-size: 22px;
-  line-height: .94; letter-spacing: .02em; text-transform: uppercase;
+  flex: none; font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.08px;
 }
 .brand span {
-  display: block; font-family: var(--mono); font-size: 9px; letter-spacing: .13em;
-  color: var(--dim); text-transform: uppercase; margin-top: 4px;
+  flex: 1; min-width: 0; font-size: 13px; font-weight: 400; line-height: 18px;
+  letter-spacing: -.08px; color: var(--label2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---- the search row: the first thing in the sheet, and it never scrolls ---- */
+.searchRow {
+  flex: none; display: flex; align-items: center; gap: 10px;
+  padding: 2px 16px 8px;
+}
+.searchRow .searchField { flex: 1; min-width: 0; margin-bottom: 0; }
+.searchRow .field { border-radius: var(--rCapsule); }
+
+/* ---- a pushed screen's nav bar: back on the left, title centred ---- */
+.navHead {
+  flex: none; display: flex; align-items: center; gap: 4px;
+  padding: 2px 12px 10px; border-bottom: .5px solid var(--sep); margin-bottom: 8px;
+}
+.navBack {
+  flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 1px;
+  min-height: 34px; color: var(--blue);
+  font-size: 17px; letter-spacing: -.4px;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.navBack:active { opacity: .5; }
+.navHead h2 {
+  flex: 0 1 auto; margin: 0; text-align: center;
+  font-size: 17px; font-weight: 600; letter-spacing: -.4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.navHeadPad { flex: 1 1 0; }
+
+/* ---- a grouped list of rows that lead somewhere ---- */
+.rowList {
+  background: transparent; border-radius: var(--r2);
+  overflow: hidden; margin-bottom: 10px;
+}
+.row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  min-height: 46px; padding: 11px 16px; position: relative;
+  transition: background var(--t1) var(--easeOut);
+}
+.row:active { background: var(--fill3); }
+.row::before {
+  content: ''; position: absolute; left: 16px; right: 0; bottom: 0; height: .5px;
+  background: var(--sep);
+}
+.row:last-child::before { content: none; }
+.row::after {
+  content: ''; flex: none; width: 7px; height: 7px; margin-left: 2px;
+  border-right: 2px solid var(--label3); border-top: 2px solid var(--label3);
+  border-radius: 1px; transform: rotate(45deg);
+}
+.rowText { flex: 1; min-width: 0; font-size: 17px; letter-spacing: -.4px; }
+.rowValue {
+  flex: none; max-width: 55%; font-size: 17px; letter-spacing: -.4px; color: var(--label2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .iconBtn {
-  pointer-events: auto; width: 46px; height: 46px; flex: none;
-  background: var(--glass); border: 1px solid var(--glassEdge); border-radius: var(--r2);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow1), inset 0 1px 0 var(--glassHi);
-  font-size: 18px; color: var(--paper);
-  transition: transform var(--t2) var(--bounce), border-color var(--t2) var(--smooth),
-              color var(--t2) var(--smooth), background var(--t2) var(--smooth);
+  pointer-events: auto; width: 44px; height: 44px; flex: none;
+  display: grid; place-items: center;
+  background: var(--glassTint); border: none; border-radius: 50%;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  color: var(--blue);
+  transition: transform var(--t1) var(--easeOut), color var(--t1) var(--easeOut),
+              background var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
 }
-.iconBtn:active { transform: scale(.9); }
-.iconBtn.on {
-  border-color: color-mix(in srgb, var(--beacon) 70%, transparent);
-  color: var(--beacon);
-  background: color-mix(in srgb, var(--beacon) 16%, var(--glass));
-  box-shadow: var(--shadow1), 0 0 0 3px color-mix(in srgb, var(--beacon) 16%, transparent);
-}
+.iconBtn:active { transform: scale(.93); background: var(--glassTintDeep); }
+.iconBtn.on { background: var(--blue); color: var(--onTint); box-shadow: var(--lensEdge), var(--lensDrop); }
 
 .tape {
   position: absolute; left: 12px; right: 12px; top: calc(var(--top) + 66px); z-index: 38;
-  height: 50px; background: var(--glass); border: 1px solid var(--glassEdge);
-  border-radius: var(--r2);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow1), inset 0 1px 0 var(--glassHi);
+  height: 48px; background: var(--glassTintDeep); border: none;
+  border-radius: var(--r5);
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   overflow: hidden;
-  animation: riseIn var(--t3) var(--spring) both;
+  animation: riseIn var(--t2) var(--easeOut) both;
 }
 .tape canvas { width: 100%; height: 100%; display: block; }
 .tapeMode {
-  position: absolute; right: 8px; bottom: 4px; font-family: var(--mono); font-size: 8px;
-  letter-spacing: .1em; color: var(--dimmer); text-transform: uppercase;
+  position: absolute; right: 9px; bottom: 4px; font-size: 11px; font-weight: 400;
+  color: var(--label3);
 }
 
 .fabs {
   position: absolute; right: 12px; z-index: 38; display: flex; flex-direction: column; gap: 10px;
   bottom: calc(var(--sheetH) + 16px);
-  transition: bottom var(--t3) var(--snap);
+  transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
+              transform var(--t3) var(--ease);
 }
 .fab {
-  width: 52px; height: 52px; border-radius: var(--r3); background: var(--glass);
-  border: 1px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  box-shadow: var(--shadow2), inset 0 1px 0 var(--glassHi);
-  font-size: 20px; color: var(--paper);
-  animation: popIn var(--t3) var(--bounce) both;
-  transition: transform var(--t2) var(--bounce), background var(--t2) var(--smooth),
-              border-color var(--t2) var(--smooth), box-shadow var(--t2) var(--smooth);
+  width: 48px; height: 48px; border-radius: var(--rCapsule);
+  display: grid; place-items: center;
+  background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  color: var(--blue);
+  animation: popIn var(--t2) var(--easeOut) both;
+  transition: transform var(--t1) var(--easeOut), background var(--t1) var(--easeOut),
+              color var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
 }
-.fabs .fab:nth-child(2) { animation-delay: .06s; }
-.fab:active { transform: scale(.88); }
-.fab.active {
-  background: color-mix(in srgb, var(--beacon) 88%, transparent);
-  border-color: var(--beacon); color: #fff;
-  box-shadow: var(--shadow2), 0 0 0 4px color-mix(in srgb, var(--beacon) 22%, transparent);
-}
+.fabs .fab:nth-child(2) { animation-delay: .04s; }
+.fab:active { transform: scale(.93); background: var(--glassTintDeep); }
+.fab.active { background: var(--blue); color: var(--onTint); box-shadow: var(--lensEdge), var(--lensDrop); }
 .fab.armed {
-  background: color-mix(in srgb, var(--crimson) 90%, transparent);
-  border-color: var(--crimson); color: #fff;
-  animation: popIn var(--t3) var(--bounce) both, armedRing 1.5s ease-out infinite .3s;
+  background: var(--red); color: var(--onTint);
+  animation: popIn var(--t2) var(--easeOut) both, armedRing 1.6s ease-out infinite .3s;
 }
 @keyframes armedRing {
-  0% { box-shadow: var(--shadow2), 0 0 0 0 color-mix(in srgb, var(--crimson) 55%, transparent) }
-  70% { box-shadow: var(--shadow2), 0 0 0 14px color-mix(in srgb, var(--crimson) 0%, transparent) }
-  100% { box-shadow: var(--shadow2), 0 0 0 0 color-mix(in srgb, var(--crimson) 0%, transparent) }
+  0% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--red) 50%, transparent) }
+  70% { box-shadow: var(--shadow1), 0 0 0 12px color-mix(in srgb, var(--red) 0%, transparent) }
+  100% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--red) 0%, transparent) }
 }
 
 /* ============================================================
@@ -454,646 +666,1011 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* Height, not transform. A translated fixed-height sheet pushes the bottom of
    its own scroll container off-screen, which makes the lower controls
    unreachable at the half stop. */
+/* At a partial height the sheet is a floating card: inset from the edges, all
+   four corners rounded so they nest into the curve of the display, and glass
+   the whole way through. Pulled to the top it stops floating — the gap closes,
+   it anchors to the edges and the background goes opaque, because a surface
+   you are reading a list on is content, not chrome. */
 .sheet {
-  position: absolute; left: 0; right: 0; bottom: 0; z-index: 45;
-  background: var(--glassDeep);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  border-top: 1px solid var(--glassEdge);
-  border-radius: var(--r4) var(--r4) 0 0;
+  position: absolute; left: 8px; right: 8px; bottom: calc(8px + var(--bot)); z-index: 45;
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  border-top: none;
+  border-radius: var(--rFloat);
   display: flex; flex-direction: column;
   height: var(--peek); max-height: 88vh;
-  transition: height var(--t3) var(--snap);
-  box-shadow: var(--shadow3), inset 0 1px 0 var(--glassHi);
-  animation: sheetUp var(--t4) var(--spring) both;
+  overflow: hidden;
+  transition: height var(--t3) var(--ease), inset var(--t3) var(--ease),
+              border-radius var(--t3) var(--ease), background var(--t3) var(--ease);
+  box-shadow: var(--lensEdge), var(--shadow3);
+  animation: sheetUp var(--t4) var(--ease) both;
 }
-/* A hairline of light along the very top edge, the way a real pane of glass
-   catches the sky. */
-.sheet::before {
-  content: ''; position: absolute; left: 12%; right: 12%; top: -1px; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--glassHi), transparent);
-  pointer-events: none;
+/* Collapsed. The height is the tab bar's, so what is left on screen is the way
+   back — the handle to pull, and the tabs, which nobody should have to reopen a
+   panel to reach. Everything else is gone rather than squashed: a sliver of a
+   search field above a sliced-off card is not a smaller screen, it is a broken
+   one. */
+.sheet.shut { height: var(--shut); }
+.sheet.shut .sheetStage,
+.sheet.shut .searchRow,
+.sheet.shut .brand,
+.sheet.shut .glanceRail,
+.sheet.shut .moreHint,
+.sheet.shut .sheetHead,
+.sheet.shut .navHead { display: none; }
+
+.sheet.half {
+  height: 52vh;
+  left: 5px; right: 5px; bottom: calc(5px + var(--bot));
+  border-radius: var(--rFloatHalf);
 }
-.sheet.half { height: 52vh; }
-.sheet.full { height: 88vh; }
-.grab { width: 100%; padding: 12px 0 6px; display: grid; place-items: center; }
+.sheet.full {
+  height: 88vh;
+  left: 0; right: 0; bottom: 0;
+  border-radius: var(--r5) var(--r5) 0 0;
+  background: var(--grouped);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: var(--shadow3);
+}
+/* A sheet under the finger stops easing: the height is the finger's, and any
+   transition on it would lag behind the thing it is meant to be attached to.
+   The easing comes back the moment it is let go, which is what makes the snap
+   to the nearest stop feel like a snap. */
+.sheet.dragging { transition: none; }
+
+/* touch-action: none, because a drag on the handle is the sheet's gesture and
+   not the browser's — without it the first few pixels are eaten by a pull to
+   refresh or a page scroll before the handler ever sees them. */
+/* The handle is the one control that cannot borrow the trick below: an
+   invisible 44px hit area would reach down over the search field and take the
+   taps meant for it. So this one is genuinely taller instead — enough to clear
+   the 24px floor, and forgiving in the way that matters, since the drag runs
+   the full width of the sheet. */
+.grab {
+  width: 100%; padding: 12px 0 10px; display: grid; place-items: center;
+  flex: none; touch-action: none;
+}
 .grab i {
-  width: 42px; height: 4px; border-radius: 2px; background: var(--line); display: block;
-  transition: width var(--t2) var(--bounce), background var(--t2) var(--smooth);
+  width: 36px; height: 5px; border-radius: 2.5px; background: var(--label3); display: block;
+  transition: background var(--t1) var(--easeOut), width var(--t2) var(--easeOut);
 }
-.grab:active i { width: 56px; background: var(--beacon); }
-.tabs { display: flex; padding: 0 12px; border-bottom: 1px solid var(--line); gap: 2px; }
+.grab:active i { background: var(--label2); width: 44px; }
+
+/* ---- the screen: one piece of paper, header and body together ---- */
+/* Everything between the handle and the tab bar. It is keyed on the screen it
+   is showing, so React rebuilds it on every move and the animation below
+   replays — a push, a pop and a step along the tab bar all arrive as one
+   sliding sheet of paper rather than two halves landing separately. */
+.sheetStage {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  /* Clipped, so that a peek stop too short for everything above it loses the
+     bottom of the rail rather than painting it through the tab bar. */
+  overflow: hidden;
+  will-change: transform;
+}
+@keyframes screenFromRight {
+  from { opacity: 0; transform: translate3d(26%, 0, 0) }
+  to { opacity: 1; transform: none }
+}
+@keyframes screenFromLeft {
+  from { opacity: 0; transform: translate3d(-26%, 0, 0) }
+  to { opacity: 1; transform: none }
+}
+.sheetStage[data-motion='fromRight'] { animation: screenFromRight var(--t2) var(--ease) both; }
+.sheetStage[data-motion='fromLeft'] { animation: screenFromLeft var(--t2) var(--ease) both; }
+
+
+/* ---- a tab's own root: the large title a phone puts at the top ---- */
+.sheetHead { flex: none; padding: 2px 16px 10px; }
+/* Title 1. The tracking is positive on purpose: the curve tightens to a
+   minimum around 19–20pt and opens back up above it, so the reflex of
+   "bigger means tighter" has this one backwards. See the table in :root. */
+.sheetHead h2 {
+  margin: 0; font-size: 28px; font-weight: 700; line-height: 34px; letter-spacing: .38px;
+}
+.sheetHead span {
+  display: block; margin-top: 2px;
+  /* Footnote. */
+  font-size: 13px; font-weight: 400; line-height: 18px; letter-spacing: -.08px;
+  color: var(--label2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ============================================================
+   the tab bar
+   ============================================================ */
+/* The app's top-level navigation, and the only thing on screen that never
+   moves. It sits at the foot of the sheet rather than under it: the sheet is
+   already anchored to the bottom edge, and two stacked bottom chromes would
+   take the map twice over. Riding inside it, the bar holds the same place at
+   every stop the sheet takes — and goes away with it when a walk takes the
+   screen, which is exactly when a tab bar is in the way. */
+.tabBar {
+  flex: none; display: flex; align-items: stretch;
+  padding: 4px 6px 6px; border-top: .5px solid var(--sep);
+  /* The map scrolls past behind the glass, so the bar needs its own footing or
+     the labels sit on whatever colour happens to be under them. A token, not a
+     literal, because the reduced-transparency and increased-contrast blocks
+     have to be able to make this opaque along with every other material. */
+  background: var(--tabBarFill);
+}
+.sheet.full .tabBar {
+  background: var(--grouped);
+  padding-bottom: calc(6px + var(--bot));
+}
+.tabItem {
+  flex: 1; min-width: 0; min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 3px 2px 2px; border-radius: var(--r2);
+  color: var(--label3);
+  transition: color var(--t1) var(--easeOut), transform var(--t1) var(--easeOut);
+}
+.tabItem.on { color: var(--blue); }
+.tabItem:active { transform: scale(.92); }
+.tabGlyph { position: relative; display: grid; place-items: center; height: 26px; }
+/* The selected tab's glyph is fractionally larger. It is barely perceptible on
+   its own and completely obvious next to its neighbours, which is the point. */
+.tabGlyph .icn {
+  transition: transform var(--t2) var(--ease);
+}
+.tabItem.on .tabGlyph .icn { transform: scale(1.06); }
+/* Caption 2. Apple's own tab-bar label is 10pt and is not in the published
+   table; this is the nearest style that is, and one point larger is no loss on
+   a control this size. Its tracking is positive because the curve opens back
+   up below the minimum as well as above it. */
+.tabLabel {
+  font-size: 11px; font-weight: 500; line-height: 13px; letter-spacing: .06px;
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tabItem.on .tabLabel { font-weight: 600; }
+/* The Me tab wears the visitor's own initials rather than a glyph — it is the
+   screen with their name on it. */
+.tabAvatar {
+  width: 25px; height: 25px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--fill3); color: var(--label2);
+  font-size: 11px; font-weight: 600; letter-spacing: -.08px;
+  transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut);
+}
+.tabItem.on .tabAvatar { background: var(--blue); color: var(--onTint); }
+.tabBadge {
+  position: absolute; left: 62%; bottom: 58%;
+  min-width: 17px; height: 17px; padding: 0 5px; border-radius: var(--rCapsule);
+  display: grid; place-items: center;
+  background: var(--gray); color: var(--onTint);
+  font-size: 11px; font-weight: 600; line-height: 17px; letter-spacing: .06px;
+  font-variant-numeric: tabular-nums;
+  animation: popIn var(--t2) var(--easeOut) both;
+}
+.tabItem.on .tabBadge { background: var(--blue); }
+/* NEED HELP outranks whatever tab you are on, so this one ignores selection. */
+.tabItem .tabBadge.alert,
+.tabItem.on .tabBadge.alert {
+  background: var(--red);
+  animation: popIn var(--t2) var(--easeOut) both, hotTag 1.4s ease-in-out infinite .3s;
+}
+
+/* The tab strip is an iOS segmented control: a filled track, and the selected
+   segment carries a raised thumb. No sliding indicator to measure — the thumb
+   is the selected button's own background. */
+.tabs, .segmented {
+  display: flex; gap: 2px; margin: 0 0 4px; padding: 2px;
+  background: var(--fill3); border-radius: 9px;
+}
 .tab {
-  flex: 1; padding: 11px 4px 12px; font-family: var(--mono); font-size: 9.5px;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--dim);
-  border-radius: var(--r1) var(--r1) 0 0; position: relative;
-  transition: color var(--t2) var(--smooth), background var(--t2) var(--smooth);
+  flex: 1; min-width: 0; min-height: 32px; padding: 6px 8px;
+  font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.08px;
+  color: var(--label); text-transform: none;
+  border-radius: 7px; position: relative;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
 }
-.tab::after {
-  content: ''; position: absolute; left: 50%; right: 50%; bottom: -1px; height: 2px;
-  border-radius: 2px; background: var(--beacon); opacity: 0;
-  transition: left var(--t3) var(--spring), right var(--t3) var(--spring),
-              opacity var(--t2) var(--smooth);
-}
-.tab.on { color: var(--paper); }
-.tab.on::after { left: 12%; right: 12%; opacity: 1; }
-.tab:active { background: var(--glassHi); }
+.tab.on { background: var(--bg3); box-shadow: var(--thumbShadow); }
+.tab:active { opacity: .5; }
+/* min-height: 0, or a flex child with a long list inside refuses to shrink and
+   pushes the tab bar off the bottom of the sheet. */
 .sheetBody {
-  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 14px 14px calc(26px + var(--bot));
+  flex: 1; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* `contain` stops a scroll chaining out to the page but deliberately leaves
+     the browser its own horizontal overscroll gesture — the edge swipe that
+     means "back". The app answers that gesture through the history stack
+     rather than suppressing it, so it goes back a screen instead of back a
+     page. See the history block in page.js. */
+  overscroll-behavior: contain;
+  padding: 4px 16px 12px;
+  /* Content fades out at both ends of the scroller rather than being cut off
+     against the handle above it and the tab bar below. */
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 12px), transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 12px), transparent 100%);
 }
-.sheetBody > * { animation: riseIn var(--t3) var(--smooth) both; }
+.sheetBody > * { animation: fadeIn var(--t2) var(--easeOut) both; }
+/* At the peek stop the Explore screen is a glance, not a list: the search
+   field, where you are and the rail, and then the tab bar. The list below them
+   is not "nearly visible" — it is not there, because five pixels of a chip
+   sliced off above the tab bar is noise, not an invitation. It comes back the
+   instant the sheet is pulled, which is the invitation. */
+.sheet.peek.atMap:not(.dragging) .sheetBody { display: none; }
+
+/* What the hidden body is, said in words, because the grab pill is not an
+   affordance anyone reads. Caption 1 on a 22px box: the peek budget below was
+   raised by exactly this much and nothing else in the collapsed sheet moved. */
+.moreHint {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  width: 100%; min-height: 22px; padding: 0 16px 2px;
+  font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 400;
+  color: var(--tint); background: none; border: 0;
+}
+.moreHint svg { opacity: .8; }
 
 /* ============================================================
    controls
    ============================================================ */
+/* A grouped-list section header, the way Settings sets one. */
 .label {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--dimmer); margin: 18px 0 8px; display: flex; justify-content: space-between;
+  font-size: 13px; font-weight: 400; line-height: 18px; letter-spacing: -.08px;
+  text-transform: none; color: var(--label2);
+  margin: 24px 0 7px; padding: 0 4px;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
 }
-.label:first-child { margin-top: 0; }
-.labelRight { text-transform: none; letter-spacing: 0; }
+.label:first-child { margin-top: 8px; }
+.labelRight { text-transform: none; letter-spacing: -.08px; }
 .btn {
-  display: block; width: 100%; padding: 13px; border-radius: var(--r2);
-  background: color-mix(in srgb, var(--panel2) 80%, transparent);
-  border: 1px solid var(--line); font-weight: 600; font-size: 14px; text-align: center;
-  margin-bottom: 9px; position: relative; overflow: hidden;
-  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
-  box-shadow: inset 0 1px 0 var(--glassHi);
-  transition: transform var(--t2) var(--bounce), background var(--t2) var(--smooth),
-              border-color var(--t2) var(--smooth), box-shadow var(--t2) var(--smooth),
-              opacity var(--t2) var(--smooth);
+  display: block; width: 100%; min-height: 50px; padding: 14px;
+  border-radius: var(--rCapsule);
+  background: var(--fill3); border: none;
+  font-size: 17px; font-weight: 600; letter-spacing: -.4px; text-align: center;
+  color: var(--blue);
+  margin-bottom: 10px; position: relative;
+  transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
 }
-.btn:active { transform: scale(.97); }
+.btn:active { opacity: .55; }
 /* Only the intake disables anything: while a park is being fetched, every way
    of asking for a different one has to stop taking taps, or a slow connection
    turns into two half-loaded maps. */
-.btn:disabled, .venueRow:disabled { opacity: .5; }
-.btn.primary {
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--beacon) 96%, #fff),
-    color-mix(in srgb, var(--beacon) 88%, #000));
-  border-color: color-mix(in srgb, var(--beacon) 70%, #000); color: #fff;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--beacon) 34%, transparent),
-              inset 0 1px 0 rgba(255, 255, 255, .34);
+.btn:disabled, .venueRow:disabled { opacity: .35; }
+.btn.primary { background: var(--blue); color: var(--onTint); }
+.btn.small {
+  min-height: 36px; padding: 8px 16px; font-size: 15px; width: auto; margin: 0;
+  border-radius: var(--rCapsule);
 }
-.btn.primary:active { box-shadow: 0 2px 8px color-mix(in srgb, var(--beacon) 30%, transparent); }
-.btn.small { padding: 9px 14px; font-size: 12.5px; width: auto; margin: 0; }
 .btnQuiet {
-  display: block; width: 100%; padding: 11px; color: var(--dim); font-size: 13px;
-  text-decoration: underline; text-underline-offset: 3px;
-  transition: color var(--t2) var(--smooth), transform var(--t2) var(--bounce);
+  display: block; width: 100%; min-height: 44px; padding: 11px;
+  color: var(--blue); font-size: 17px; letter-spacing: -.4px;
+  text-decoration: none;
+  transition: opacity var(--t1) var(--easeOut);
 }
-.btnQuiet:active { transform: scale(.97); color: var(--paper); }
+.btnQuiet:active { opacity: .5; }
 .field {
-  width: 100%; padding: 13px; border-radius: var(--r2);
-  background: color-mix(in srgb, var(--void) 70%, transparent);
-  border: 1px solid var(--line); color: var(--paper); outline: none;
-  font-family: var(--mono); letter-spacing: .06em; margin-bottom: 11px;
-  transition: border-color var(--t2) var(--smooth), box-shadow var(--t2) var(--smooth),
-              background var(--t2) var(--smooth);
+  width: 100%; min-height: 44px; padding: 11px 14px; border-radius: var(--r2);
+  background: var(--fill3);
+  border: none; color: var(--label); outline: none;
+  font-family: var(--ui); font-size: 17px; letter-spacing: -.4px;
+  margin-bottom: 12px;
+  transition: box-shadow var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
 }
-.field:focus {
-  border-color: var(--beacon);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--beacon) 16%, transparent);
+.field::placeholder { color: var(--label3); }
+.field:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 18%, transparent); }
+.field.code {
+  font-family: var(--mono); font-size: 22px; font-weight: 600; text-align: center;
+  letter-spacing: .22em; text-indent: .22em; margin: 0; font-variant-numeric: tabular-nums;
 }
-.field.code { font-size: 24px; text-align: center; letter-spacing: .3em; margin: 0; }
-.joinRow { display: flex; gap: 9px; align-items: stretch; }
+.joinRow { display: flex; gap: 10px; align-items: stretch; }
 .joinRow .btn { width: auto; margin: 0; padding: 13px 18px; }
 
-.chips { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
 .chip {
-  flex: none; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel2) 78%, transparent);
-  font-family: var(--mono); font-size: 10px;
-  letter-spacing: .06em; text-transform: uppercase; color: var(--dim);
-  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
-  transition: transform var(--t2) var(--bounce), background var(--t2) var(--smooth),
-              color var(--t2) var(--smooth), border-color var(--t2) var(--smooth),
-              box-shadow var(--t2) var(--smooth);
+  flex: none; min-height: 32px; padding: 7px 13px; border-radius: var(--rCapsule);
+  border: none; background: var(--fill3);
+  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
+  color: var(--label);
+  transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut),
+              opacity var(--t1) var(--easeOut);
 }
-.chip:active { transform: scale(.92); }
-.chip.on {
-  background: var(--paper); color: var(--panel); border-color: var(--paper);
-  box-shadow: 0 3px 12px var(--glassLo);
-}
-.chip.danger { color: var(--crimson); border-color: color-mix(in srgb, var(--crimson) 45%, transparent); }
-.chip.danger.on {
-  background: var(--crimson); color: #fff; border-color: var(--crimson);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--crimson) 20%, transparent);
-}
-
-/* The venue list: one row per map this build ships, the loaded one marked.
-   Reads as a list rather than chips because the second line — where it is and
-   how far away — is the thing that tells you which one you want. */
-.venueList { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
-.venueRow {
-  display: flex; flex-direction: column; gap: 3px; text-align: left; width: 100%;
-  padding: 11px 12px; border-radius: 3px; background: var(--panel2);
-  border: 1px solid var(--line);
-}
-.venueRow b { font-size: 14px; font-weight: 600; }
-.venueRow span {
-  font-family: var(--mono); font-size: 10px; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--dim);
-}
-.venueRow.on { border-color: var(--beacon); }
-.venueRow.on b { color: var(--beacon); }
-
-.heightRow { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
-.heightRow input[type='range'] {
-  flex: 1; -webkit-appearance: none; appearance: none; height: 30px; background: none;
-}
-.heightRow input[type='range']::-webkit-slider-runnable-track {
-  height: 7px; border-radius: 4px;
-  background: linear-gradient(to right, var(--beacon) var(--pct), var(--line) var(--pct));
-}
-.heightRow input[type='range']::-moz-range-track {
-  height: 7px; border-radius: 4px;
-  background: linear-gradient(to right, var(--beacon) var(--pct), var(--line) var(--pct));
-}
-.heightRow input[type='range']::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%; margin-top: -10px;
-  background: var(--beacon); border: 3px solid var(--panel);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--beacon) 45%, transparent);
-  transition: transform var(--t2) var(--bounce);
-}
-.heightRow input[type='range']:active::-webkit-slider-thumb { transform: scale(1.18); }
-.heightRow input[type='range']::-moz-range-thumb {
-  width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--panel);
-  background: var(--beacon); box-shadow: 0 2px 10px color-mix(in srgb, var(--beacon) 45%, transparent);
-}
-.heightVal { text-align: right; font-family: var(--mono); }
-.heightVal b { display: block; font-size: 27px; line-height: 1; color: var(--beacon); }
-.heightVal span { font-size: 9px; letter-spacing: .12em; color: var(--dimmer); text-transform: uppercase; }
-
-.tally { display: flex; gap: 14px; margin-bottom: 12px; font-family: var(--mono); font-size: 11px; }
-.tally .ok { color: var(--mint); }
-.tally .warn { color: var(--beacon); }
-.tally .bad { color: var(--crimson); }
+.chip:active { opacity: .55; }
+.chip.on { background: var(--blue); color: var(--onTint); }
+.chip.danger { color: var(--red); }
+.chip.danger.on { background: var(--red); color: var(--onTint); }
 
 /* ============================================================
-   lists
+   lists — iOS inset-grouped rows
    ============================================================ */
-.poiRow {
-  border-bottom: 1px solid var(--line); border-radius: var(--r2);
-  transition: background var(--t2) var(--smooth);
+/* Every list in the app already had a wrapper element, so the grouping is
+   pure CSS: the container carries the card, the rows carry hairlines inset to
+   line up with the text rather than running the full width. */
+.poiList, .roster, .venueList, .diagTable, .stepList {
+  background: transparent; border-radius: var(--r2);
+  overflow: hidden; margin-bottom: 10px;
 }
-.poiRow.open { background: color-mix(in srgb, var(--panel2) 55%, transparent); }
-.poiMain {
-  display: flex; gap: 11px; align-items: center; width: 100%; padding: 11px 10px;
-  text-align: left; border-radius: var(--r2);
-  transition: transform var(--t2) var(--bounce), background var(--t2) var(--smooth);
+.sheet.full .poiList, .sheet.full .roster, .sheet.full .venueList,
+.sheet.full .diagTable, .sheet.full .stepList,
+.sheet.full .rowList { background: var(--grouped2); }
+.sheet.full .glanceCard { background: var(--grouped2); }
+.poiList > *, .roster > *, .venueList > *, .diagTable > *, .stepList > * {
+  border-radius: 0;
 }
-.poiMain:active { transform: scale(.985); background: var(--glassHi); }
-.poiMain .dot {
-  width: 9px; height: 9px; border-radius: 50%; flex: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--panel2) 60%, transparent);
-  transition: box-shadow var(--t2) var(--smooth), transform var(--t2) var(--bounce);
-}
-.poiRow.open .dot { transform: scale(1.25); }
-.poiText { flex: 1; min-width: 0; }
-.poiText b { display: block; font-size: 14px; font-weight: 600; }
-.poiText span {
-  display: block; font-family: var(--mono); font-size: 9.5px; color: var(--dimmer);
-  margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.poiDist { font-family: var(--mono); font-size: 12px; color: var(--dim); }
-.poiDetail { padding: 0 10px 13px 30px; animation: riseIn var(--t2) var(--smooth) both; }
-.poiNote { font-size: 12px; color: var(--dim); margin: 0 0 9px; line-height: 1.55; }
 
-.roster { margin-bottom: 4px; }
-.memberRow {
-  display: flex; gap: 11px; align-items: center; width: 100%; text-align: left;
-  padding: 11px 10px; border-bottom: 1px solid var(--line); border-radius: var(--r2);
-  transition: transform var(--t2) var(--bounce), background var(--t2) var(--smooth),
-              opacity var(--t3) var(--smooth);
-  animation: riseIn var(--t3) var(--smooth) both;
+/* The disclosure chevron, drawn rather than imported. */
+.venueRow::after {
+  content: ''; width: 7px; height: 7px;
+  grid-column: 2; grid-row: 1 / span 2; align-self: center;
+  border-right: 2px solid var(--label3); border-top: 2px solid var(--label3);
+  border-radius: 1px;
+  transform: rotate(45deg);
 }
-.memberRow:active { transform: scale(.985); background: var(--glassHi); }
-.memberRow.stale { opacity: .45; }
+
+.poiRow { position: relative; transition: background var(--t1) var(--easeOut); }
+.poiRow::after, .memberRow::after, .venueRow::before, .diagRow::after, .stepRow::after {
+  content: ''; position: absolute; right: 0; bottom: 0; height: .5px;
+  background: var(--sep); pointer-events: none;
+}
+.poiRow::after { left: 38px; }
+.poiRow:last-child::after { content: none; }
+.poiRow.open { background: var(--fill3); }
+.poiMain {
+  display: flex; gap: 12px; align-items: center; width: 100%; min-height: 44px;
+  padding: 11px 16px; text-align: left;
+  transition: background var(--t1) var(--easeOut);
+}
+.poiMain:active { background: var(--fill3); }
+.poiMain .dot {
+  width: 10px; height: 10px; border-radius: 50%; flex: none;
+  transition: transform var(--t2) var(--easeOut);
+}
+.poiRow.open .dot { transform: scale(1.2); }
+.poiText { flex: 1; min-width: 0; }
+.poiText b { display: block; font-size: 17px; font-weight: 400; letter-spacing: -.4px; }
+.poiText span {
+  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2);
+  margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.poiDist { font-size: 15px; color: var(--label2); font-variant-numeric: tabular-nums; }
+.poiDetail { padding: 0 16px 14px 38px; animation: fadeIn var(--t2) var(--easeOut) both; }
+.poiNote { font-size: 15px; color: var(--label2); margin: 0 0 10px; line-height: 20px; }
+
+.roster { margin-bottom: 8px; }
+.memberRow {
+  display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
+  min-height: 56px; padding: 10px 16px; position: relative;
+  transition: background var(--t1) var(--easeOut), opacity var(--t2) var(--easeOut);
+}
+.memberRow::after { left: 64px; }
+.memberRow:last-child::after { content: none; }
+.memberRow:active { background: var(--fill3); }
+.memberRow.stale { opacity: .4; }
 .pip {
   width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
-  font-family: var(--mono); font-weight: 700; font-size: 13px; color: #fff; flex: none;
-  box-shadow: inset 0 2px 4px rgba(255, 255, 255, .22), 0 3px 10px var(--glassLo);
+  font-size: 15px; font-weight: 600; letter-spacing: -.2px; color: #fff; flex: none;
 }
 .memberText { flex: 1; min-width: 0; }
-.memberText b { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+.memberText b {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 17px; font-weight: 400; letter-spacing: -.4px;
+}
 .memberText > span {
-  display: block; font-family: var(--mono); font-size: 10.5px; color: var(--dim);
-  margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2);
+  margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .chipTag {
-  font-style: normal; font-family: var(--mono); font-size: 8.5px; letter-spacing: .1em;
-  text-transform: uppercase; padding: 2px 6px; border-radius: 999px;
-  background: color-mix(in srgb, var(--panel2) 90%, transparent); color: var(--dim);
+  font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: 0;
+  text-transform: uppercase; padding: 2px 7px; border-radius: var(--rCapsule);
+  background: var(--fill3); color: var(--label2);
 }
 .chipTag.hot {
-  background: var(--crimson); color: #fff;
-  animation: hotTag 1.5s ease-in-out infinite;
+  background: var(--red); color: var(--onTint);
+  animation: hotTag 1.6s ease-in-out infinite;
 }
 @keyframes hotTag {
-  0%, 100% { opacity: .74 }
+  0%, 100% { opacity: .72 }
   50% { opacity: 1 }
 }
-.memberRange { flex: none; text-align: right; font-family: var(--mono); }
-.memberRange b { display: block; font-size: 16px; font-weight: 600; line-height: 1; }
-.memberRange span { display: block; font-size: 9px; color: var(--dimmer); letter-spacing: .08em; margin-top: 3px; }
+.memberRange { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+.memberRange b { display: block; font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
+.memberRange span { display: block; font-size: 11px; color: var(--label3); margin-top: 2px; }
+
+.venueList { display: block; }
+.venueRow {
+  display: grid; grid-template-columns: 1fr auto; column-gap: 10px;
+  align-items: center; text-align: left; width: 100%;
+  min-height: 56px; padding: 10px 16px; position: relative;
+  background: none;
+  transition: background var(--t1) var(--easeOut);
+}
+.venueRow::before { left: 16px; }
+.venueRow:last-child::before { content: none; }
+.venueRow:active { background: var(--fill3); }
+.venueRow b {
+  display: block; font-size: 17px; font-weight: 400; letter-spacing: -.4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.venueRow span {
+  display: block; font-size: 13px; letter-spacing: -.08px;
+  text-transform: none; color: var(--label2); margin-top: 1px;
+}
+.venueRow > b, .venueRow > span { grid-column: 1; min-width: 0; }
+.rowCheck { grid-column: 2; grid-row: 1 / span 2; align-self: center; color: var(--blue); }
+.venueRow.on b { color: var(--blue); font-weight: 600; }
 
 .codeBox {
-  display: flex; align-items: center; gap: 10px;
-  background: color-mix(in srgb, var(--void) 62%, transparent);
-  border: 1px solid var(--line); border-radius: var(--r2); padding: 12px 13px;
-  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
-  box-shadow: inset 0 1px 0 var(--glassHi);
+  display: flex; align-items: center; gap: 12px;
+  background: var(--grouped2);
+  border: none; border-radius: var(--r2); padding: 14px 16px;
+  margin-bottom: 10px;
 }
-.codeBox.column { flex-direction: column; align-items: stretch; gap: 12px; }
+.codeBox.column { flex-direction: column; align-items: stretch; gap: 14px; }
+.codeBox b { font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
 .codeText {
   flex: 1; font-family: var(--mono); font-size: 26px; font-weight: 600;
-  letter-spacing: .22em; color: var(--beacon); line-height: 1;
-  text-shadow: 0 0 22px color-mix(in srgb, var(--beacon) 40%, transparent);
+  letter-spacing: .18em; color: var(--label); line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 .codeBox button {
-  font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--dim); border: 1px solid var(--line); border-radius: var(--r1); padding: 7px 9px;
-  transition: transform var(--t2) var(--bounce), color var(--t2) var(--smooth),
-              border-color var(--t2) var(--smooth);
+  font-size: 15px; font-weight: 500; letter-spacing: -.24px; text-transform: none;
+  color: var(--blue); border: none; border-radius: var(--rCapsule);
+  background: var(--fill3); padding: 8px 14px;
+  transition: opacity var(--t1) var(--easeOut);
 }
-.codeBox button:active { transform: scale(.92); color: var(--paper); border-color: var(--beacon); }
-.codeBox .btn { border: 1px solid var(--line); }
-.meetRange { display: block; font-family: var(--mono); font-size: 11px; color: var(--beacon); margin-top: 4px; }
+.codeBox button:active { opacity: .55; }
+.codeBox button.danger { color: var(--red); }
+.codeBox .btn { border: none; }
+.meetRange {
+  display: block; font-size: 15px; color: var(--blue); margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
 
-.fine { font-size: 12px; line-height: 1.55; color: var(--dim); margin: 8px 0 0; }
-.fine.block { display: block; }
-.warnText { color: var(--beacon); }
+.fine { font-size: 13px; line-height: 18px; letter-spacing: -.08px; color: var(--label2); margin: 8px 4px 0; }
+.fine.block { display: block; margin-left: 0; margin-right: 0; }
+.warnText { color: var(--orange); }
+
+/* Four controls sit under the 44pt floor, and three of them cannot simply grow:
+   the chip row and the height badge live inside the collapsed sheet's measured
+   286px, where twelve more pixels is twelve pixels of map. So the hit box grows
+   and the painted box does not — the finger gets its target, the layout does not
+   move. Vertical only: these sit in rows where widening would overlap a
+   neighbour. */
+.chip, .navBack, .filterBadge, .btn.small { position: relative; }
+.chip::before,
+.navBack::before,
+.filterBadge::before,
+.btn.small::before { content: ''; position: absolute; inset: -6px 0; }
+
+/* An empty result is a dead end unless the way out is next to it, so the note
+   and the escape hatch sit together rather than the note here and the chip that
+   caused it scrolled off the row above. */
+.emptyNote { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 0 8px; }
+.emptyNote .fine { margin: 0 4px; }
 
 /* ============================================================
    gate + toast
    ============================================================ */
 .gate {
   position: fixed; inset: 0; z-index: 90;
-  background: color-mix(in srgb, var(--void) 68%, transparent);
-  -webkit-backdrop-filter: blur(10px) saturate(120%); backdrop-filter: blur(10px) saturate(120%);
+  background: rgba(0, 0, 0, .40);
   display: flex; align-items: flex-end;
-  animation: fadeIn var(--t3) var(--smooth) both;
+  animation: fadeIn var(--t2) var(--easeOut) both;
 }
 .gateCard {
-  width: 100%; background: var(--glassDeep);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  border-top: 1px solid var(--glassEdge);
-  border-radius: var(--r4) var(--r4) 0 0; padding: 26px 20px calc(24px + var(--bot));
+  width: 100%; background: var(--bg2);
+  border-radius: var(--r2) var(--r2) 0 0; padding: 22px 20px calc(24px + var(--bot));
   max-height: 92vh; overflow-y: auto;
-  box-shadow: var(--shadow3), inset 0 1px 0 var(--glassHi);
-  animation: sheetUp var(--t4) var(--spring) both;
+  box-shadow: var(--shadow3);
+  animation: sheetUp var(--t4) var(--ease) both;
+  position: relative;
+}
+/* The grabber every iOS sheet wears. */
+.gateCard::before {
+  content: ''; position: absolute; left: 50%; top: 6px; margin-left: -18px;
+  width: 36px; height: 5px; border-radius: 2.5px; background: var(--label3);
 }
 .gateEyebrow {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--beacon); margin-bottom: 9px;
+  font-size: 13px; font-weight: 400; letter-spacing: -.08px; text-transform: none;
+  color: var(--label2); margin-bottom: 6px;
 }
 .gateCard h2 {
-  font-family: var(--disp); font-weight: 800; font-size: 33px; margin: 0 0 9px;
-  text-transform: uppercase; letter-spacing: .02em; line-height: .95;
+  font-size: 34px; font-weight: 700; letter-spacing: .4px; line-height: 41px;
+  margin: 0 0 8px; text-transform: none;
 }
-.gateCard p { margin: 0 0 17px; font-size: 13.5px; line-height: 1.6; color: var(--dim); }
-.gateError { color: var(--crimson); }
-.gateFine { font-size: 11.5px; color: var(--dimmer); margin-top: 15px; }
+.gateCard p { margin: 0 0 18px; font-size: 17px; line-height: 22px; letter-spacing: -.4px; color: var(--label2); }
+.gateError { color: var(--red); }
+.gateFine { font-size: 13px; line-height: 18px; color: var(--label3); margin-top: 16px; }
 
 .toast {
   position: absolute; left: 50%; z-index: 80;
-  /* Clear of the scale bar, which owns the strip directly above the sheet. */
-  bottom: calc(var(--sheetH) + 52px + var(--bot));
-  background: var(--glassDeep); color: var(--paper);
-  border: 1px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
-  padding: 11px 17px; border-radius: 999px; font-size: 13px; font-weight: 600;
+  /* Clear of the map furniture, which owns the strip directly above the sheet. */
+  bottom: calc(var(--sheetH) + 116px + var(--bot));
+  background: var(--glassTintDeep); color: var(--label);
+  border: none;
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  padding: 11px 18px; border-radius: var(--rCapsule);
+  font-size: 15px; font-weight: 500; letter-spacing: -.24px;
   max-width: 88%; text-align: center;
-  box-shadow: var(--shadow2), inset 0 1px 0 var(--glassHi);
+  box-shadow: var(--lensEdge), var(--lensDrop);
   transform: translateX(-50%);
-  animation: toastPop var(--t3) var(--bounce) both;
-  transition: bottom var(--t3) var(--snap);
+  animation: toastPop var(--t2) var(--easeOut) both;
+  transition: bottom var(--t3) var(--ease);
 }
 
 /* ============================================================
    glance rail — the live dashboard in the sheet's peek state
    ============================================================ */
+/* The rail's height is the collapsed sheet's height, and the collapsed sheet's
+   height is map you cannot see. So the card carries what answers "which way,
+   and how long" and nothing that merely could be shown: time and range share a
+   line, and the compass point came off the foot because the arrow beside the
+   time is the same answer, aimed relative to the way you are facing. */
 .glanceRail {
-  flex: none; min-height: 132px;
-  display: flex; gap: 9px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 11px 14px 14px; scrollbar-width: none;
-  border-bottom: 1px solid var(--line);
+  flex: none; min-height: 104px;
+  display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory;
+  padding: 4px 16px 10px; scrollbar-width: none;
 }
 .glanceRail::-webkit-scrollbar { display: none; }
 .glanceCard {
-  flex: none; width: 146px; scroll-snap-align: start; text-align: left;
-  background: color-mix(in srgb, var(--panel2) 76%, transparent);
-  border: 1px solid var(--glassEdge); border-left: 3px solid var(--line);
-  border-radius: var(--r2); padding: 10px 11px 11px;
-  display: flex; flex-direction: column; gap: 2px;
-  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
-  box-shadow: var(--shadow1), inset 0 1px 0 var(--glassHi);
-  animation: railIn var(--t3) var(--bounce) both;
-  transition: transform var(--t2) var(--bounce), box-shadow var(--t2) var(--smooth),
-              border-color var(--t2) var(--smooth), opacity var(--t3) var(--smooth);
+  /* 180, not 158. Two things did not fit at the old width. The standing cards'
+     labels: "Nearest toilet" arrived as "Nearest re…", which to the person that
+     card exists for is indistinguishable from a restaurant. And the range beside
+     the walking time, which truncated — measured, the row is 111px of which the
+     time takes 77 and the range needs 35, so it lost its last character and
+     "195 ft" became "19…". A number that has been shortened is not a shorter
+     number, it is a wrong one. The rail scrolls sideways, so the extra width
+     costs nothing in the collapsed sheet's measured budget. */
+  flex: none; width: 180px; scroll-snap-align: start; text-align: left;
+  background: var(--glassTint);
+  border: none;
+  border-radius: var(--r3); padding: 10px 13px 10px;
+  display: flex; flex-direction: column; gap: 1px;
+  box-shadow: var(--shadow1);
+  animation: railIn var(--t2) var(--easeOut) both;
+  transition: opacity var(--t1) var(--easeOut), box-shadow var(--t2) var(--easeOut);
 }
 .glanceCard:nth-child(1) { animation-delay: 0s; }
-.glanceCard:nth-child(2) { animation-delay: .05s; }
-.glanceCard:nth-child(3) { animation-delay: .1s; }
-.glanceCard:nth-child(4) { animation-delay: .15s; }
-.glanceCard:nth-child(5) { animation-delay: .2s; }
-.glanceCard:nth-child(n+6) { animation-delay: .25s; }
-.glanceCard:active { transform: scale(.94); }
-.glanceCard.meet { border-left-color: var(--crimson); }
+.glanceCard:nth-child(2) { animation-delay: .04s; }
+.glanceCard:nth-child(3) { animation-delay: .08s; }
+.glanceCard:nth-child(4) { animation-delay: .12s; }
+.glanceCard:nth-child(5) { animation-delay: .16s; }
+.glanceCard:nth-child(n+6) { animation-delay: .2s; }
+.glanceCard:active { opacity: .6; }
 .glanceCard.help {
-  border-left-color: var(--crimson); background: var(--helpTint);
-  border-color: color-mix(in srgb, var(--crimson) 40%, transparent);
-  animation: railIn var(--t3) var(--bounce) both, alertRing 1.8s ease-out infinite .4s;
+  background: var(--helpTint);
+  animation: railIn var(--t2) var(--easeOut) both, alertRing 1.8s ease-out infinite .4s;
 }
-.glanceCard.selected {
-  border-left-color: var(--beacon);
-  box-shadow: var(--shadow1), 0 0 0 1px color-mix(in srgb, var(--beacon) 32%, transparent);
-}
-.glanceCard.stale { opacity: .5; }
+.glanceCard.selected { box-shadow: var(--shadow1), 0 0 0 2px var(--blue); }
+.glanceCard.stale { opacity: .45; }
+/* Footnote. The line-height is stated rather than inherited: without it this
+   picks up the body's 22px and quietly costs the rail four pixels. */
 .glanceEyebrow {
-  font-family: var(--mono); font-size: 8.5px; letter-spacing: .13em; text-transform: uppercase;
+  font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.08px;
+  text-transform: none;
+  padding-right: 38px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.glanceMain { display: flex; align-items: center; gap: 8px; margin: 3px 0 1px; }
+.glanceMain { display: flex; align-items: center; gap: 9px; margin: 3px 0 1px; }
 .glanceArrow {
-  width: 23px; height: 23px; flex: none;
-  transition: transform var(--t3) var(--smooth);
-  filter: drop-shadow(0 1px 3px var(--glassLo));
+  width: 22px; height: 22px; flex: none;
+  transition: transform var(--t3) var(--easeOut);
 }
-.glanceWalk { display: flex; flex-direction: column; line-height: 1; }
-.glanceWalk b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+/* Title 3 beside Caption 1, on one baseline, and neither of them allowed to
+   wrap: "<1 min" breaking over two lines takes the card past the rail's height
+   and the bottom of it disappears under the tab bar. The time is never
+   shortened, so it keeps its width; the range gives way and truncates. */
+.glanceWalk { display: flex; align-items: baseline; gap: 5px; min-width: 0; flex-wrap: nowrap; }
+.glanceWalk b {
+  flex: none; white-space: nowrap;
+  font-size: 20px; font-weight: 600; line-height: 25px; letter-spacing: -.45px;
+  font-variant-numeric: tabular-nums;
+}
 .glanceWalk em {
-  font-style: normal; font-family: var(--mono); font-size: 9.5px; color: var(--dim);
-  margin-top: 3px;
+  flex: 0 1 auto; min-width: 0;
+  font-style: normal; font-size: 12px; line-height: 16px; letter-spacing: 0;
+  color: var(--label2); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Sits opposite the Go button, in the room the eyebrow's padding already keeps
+   clear. Small, because it is not the thing to reach for by accident — the hit
+   box below is what a finger actually gets. */
+.glanceShed {
+  /* Bottom corner, not top: the top-right belongs to Go, and putting the thing
+     that removes a card next to the thing that acts on it is how people remove
+     cards they meant to walk to. */
+  position: absolute; bottom: 8px; right: 9px;
+  display: grid; place-items: center;
+  color: var(--label3); opacity: .85;
+}
+.glanceShed::before { content: ''; position: absolute; inset: -12px; }
+.glanceShed:active { opacity: .5; }
+.glanceCard { position: relative; }
+
 .glanceTitle {
-  font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 15px; font-weight: 400; line-height: 20px; letter-spacing: -.23px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.glanceFoot {
-  font-family: var(--mono); font-size: 9px; color: var(--dimmer);
+.glanceFoot { padding-right: 26px;
+  font-size: 12px; line-height: 16px; letter-spacing: 0; color: var(--label3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .glanceEmpty {
-  flex: none; padding: 16px 14px; border-bottom: 1px solid var(--line); font-size: 12.5px;
-  color: var(--dim); display: flex; align-items: center; min-height: 66px;
-  animation: fadeIn var(--t3) var(--smooth) both;
+  flex: none; padding: 8px 16px 16px; font-size: 15px; letter-spacing: -.24px;
+  color: var(--label2); display: flex; align-items: center; min-height: 64px;
+  animation: fadeIn var(--t2) var(--easeOut) both;
 }
 .glanceEmpty .btn { margin: 0; }
 
 /* ---- active height filter badge over the map ---- */
 .filterBadge {
   position: absolute; z-index: 39; left: 12px; top: calc(var(--top) + 66px);
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--beacon) 96%, #fff),
-    color-mix(in srgb, var(--beacon) 86%, #000));
-  color: #fff; border-radius: 999px; padding: 8px 14px;
-  font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
-  display: flex; align-items: center; gap: 7px;
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--beacon) 38%, transparent),
-              inset 0 1px 0 rgba(255, 255, 255, .35);
-  animation: badgeIn var(--t3) var(--bounce) both;
-  transition: transform var(--t2) var(--bounce);
+  background: var(--blue); color: var(--onTint);
+  border-radius: var(--rCapsule); padding: 8px 15px; min-height: 34px;
+  font-size: 13px; font-weight: 500; letter-spacing: -.08px; text-transform: none;
+  display: flex; align-items: center; gap: 6px;
+  box-shadow: var(--shadow1);
+  animation: badgeIn var(--t2) var(--easeOut) both;
+  transition: opacity var(--t1) var(--easeOut);
 }
-.filterBadge:active { transform: scale(.92); }
-.filterBadge b { font-size: 13px; letter-spacing: 0; }
+.filterBadge:active { opacity: .6; }
+.filterBadge b { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ---- rider height ---- */
+.heightRow { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.heightRow input[type='range'] {
+  flex: 1; min-width: 0; -webkit-appearance: none; appearance: none;
+  height: 30px; background: none; margin: 0;
+}
+/* The iOS slider: a 4px track that fills with the tint behind the thumb, and a
+   28px white knob that carries a real shadow rather than a border. `--pct` is
+   set inline by the panel so the fill follows the value. */
+.heightRow input[type='range']::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--blue) var(--pct), var(--fill3) var(--pct));
+}
+.heightRow input[type='range']::-moz-range-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--blue) var(--pct), var(--fill3) var(--pct));
+}
+.heightRow input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 28px; height: 28px; border-radius: 50%; margin-top: -12px;
+  background: #fff; border: none; box-shadow: var(--thumbShadow);
+}
+.heightRow input[type='range']::-moz-range-thumb {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: #fff; box-shadow: var(--thumbShadow);
+}
+
+.heightVal { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
+.heightVal b {
+  display: block; font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: .38px;
+  color: var(--label);
+}
+.heightVal span {
+  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2);
+  text-transform: none; margin-top: 4px;
+}
+
+/* ---- weather / live status ----
+   The banner is only in the tree when something is actually wrong, so the
+   badge below it moves down by sibling selector rather than by a class the
+   page would have to remember to set. It floats over the map, so it is glass
+   like the rest of the chrome up there. */
+.wxBanner {
+  position: absolute; z-index: 39; left: 10px; right: 10px; top: calc(var(--top) + 58px);
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 10px 14px; border-radius: var(--r4); border: none;
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  animation: riseIn var(--t2) var(--easeOut) both;
+}
+.wxBanner b { font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
+.wxBanner.bad b { color: var(--red); }
+/* Caution, not accent — so it takes the warning colour rather than following
+   --beacon onto the tint. */
+.wxBanner.warn b { color: var(--orange); }
+.wxBanner.ok b { color: var(--green); }
+.wxMain { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.wxCounts {
+  font-size: 13px; letter-spacing: -.08px; text-transform: none; color: var(--label2);
+  font-variant-numeric: tabular-nums;
+}
+.wxWhy { font-size: 13px; color: var(--label2); line-height: 18px; letter-spacing: -.08px; }
+p.wxWhy { margin: 0 0 8px; }
+p.wxWhy.bad { color: color-mix(in srgb, var(--red) 78%, var(--label)); }
+p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
+.wxBanner + .filterBadge { top: calc(var(--top) + 128px); }
+
+/* A forecast is a guess and is drawn as one — outlined, not filled, so a row
+   never reads with the same weight as something a person actually saw. */
+.verdict.guess { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+.statusPill i { font-size: 10px; }
+.reportRow { margin-bottom: 8px; }
+.reportRow .btn { flex: 1; }
+/* Selected, not caution — this one does follow the tint. */
+.reportRow .btn.on { background: var(--blue); color: var(--onTint); }
 
 /* ---- height tiers ---- */
-.tierRow { display: flex; gap: 6px; margin-bottom: 13px; }
+.tierRow {
+  display: flex; gap: 2px; margin-bottom: 14px; padding: 2px;
+  background: var(--fill3); border-radius: 9px;
+}
 .tier {
-  flex: 1; min-height: 46px; border-radius: var(--r1); border: 1px solid var(--line);
-  background: color-mix(in srgb, var(--panel2) 78%, transparent);
-  font-family: var(--mono); font-size: 14px; font-weight: 600;
+  flex: 1; min-height: 32px; border-radius: 7px; border: none; background: none;
+  font-size: 15px; font-weight: 500; letter-spacing: -.24px; color: var(--label);
   display: flex; align-items: center; justify-content: center;
-  transition: transform var(--t2) var(--bounce), background var(--t2) var(--smooth),
-              border-color var(--t2) var(--smooth), box-shadow var(--t2) var(--smooth),
-              color var(--t2) var(--smooth);
+  font-variant-numeric: tabular-nums;
+  transition: background var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
 }
-.tier:active { transform: scale(.9); }
-.tier em { font-style: normal; font-size: 9px; color: var(--dimmer); margin-left: 1px; }
-.tier.on {
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--beacon) 96%, #fff),
-    color-mix(in srgb, var(--beacon) 86%, #000));
-  border-color: var(--beacon); color: #fff; transform: translateY(-2px);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--beacon) 34%, transparent),
-              inset 0 1px 0 rgba(255, 255, 255, .3);
-}
-.tier.on em { color: rgba(255,255,255,.8); }
+.tier:active { opacity: .5; }
+.tier em { font-style: normal; font-size: 11px; color: var(--label3); margin-left: 1px; }
+.tier.on { background: var(--bg3); box-shadow: var(--thumbShadow); font-weight: 600; }
+.tier.on em { color: var(--label2); }
 
 /* ---- proportion bar ---- */
 .ratioBar {
-  display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px;
-  margin: 6px 0 9px; background: var(--line);
-  box-shadow: inset 0 1px 3px var(--glassLo);
+  display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px;
+  margin: 6px 0 10px; background: var(--fill3);
 }
-.ratioBar .seg { display: block; transition: flex-grow var(--t3) var(--smooth); }
-.ratioBar .seg.ok { background: linear-gradient(180deg, color-mix(in srgb, var(--mint) 92%, #fff), var(--mint)); }
-.ratioBar .seg.warn { background: linear-gradient(180deg, color-mix(in srgb, var(--beacon) 92%, #fff), var(--beacon)); }
-.ratioBar .seg.bad { background: var(--crimson); opacity: .55; }
+.ratioBar .seg { display: block; transition: flex-grow var(--t3) var(--easeOut); }
+.ratioBar .seg.ok { background: var(--green); }
+.ratioBar .seg.warn { background: var(--orange); }
+.ratioBar .seg.bad { background: var(--label4); }
 .ratioKey {
-  display: flex; gap: 14px; font-family: var(--mono); font-size: 10px;
-  letter-spacing: .06em; text-transform: uppercase; margin-bottom: 9px;
+  display: flex; gap: 16px; font-size: 13px; letter-spacing: -.08px;
+  text-transform: none; margin-bottom: 10px;
 }
-.ratioKey b { font-size: 13px; letter-spacing: 0; margin-right: 3px; }
-.ratioKey .ok { color: var(--mint); }
-.ratioKey .warn { color: var(--beacon); }
-.ratioKey .bad { color: var(--crimson); }
+.ratioKey b { font-size: 15px; font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.ratioKey .ok { color: var(--green); }
+.ratioKey .warn { color: var(--orange); }
+.ratioKey .bad { color: var(--label2); }
+.tally { display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; }
+.tally .ok { color: var(--green); }
+.tally .warn { color: var(--orange); }
+.tally .bad { color: var(--red); }
 .unlock {
-  font-size: 12px; color: var(--dim); margin: 0 0 13px;
-  padding: 10px 12px; border-radius: var(--r1);
-  background: color-mix(in srgb, var(--panel2) 70%, transparent);
-  border-left: 3px solid var(--beacon);
-  animation: riseIn var(--t3) var(--bounce) both;
+  font-size: 15px; letter-spacing: -.24px; color: var(--label2); margin: 0 0 14px;
+  padding: 12px 14px; border-radius: var(--r2);
+  background: var(--grouped2);
+  animation: fadeIn var(--t2) var(--easeOut) both;
 }
-.unlock b { color: var(--paper); }
+.unlock b { color: var(--label); }
 
 /* ---- verdict + walk time in the list ---- */
 .poiRight { display: flex; align-items: center; gap: 10px; flex: none; text-align: right; }
-.poiWalk { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; }
-.poiWalk b { font-family: var(--mono); font-size: 14px; font-weight: 600; }
-.poiWalk em {
-  font-style: normal; font-family: var(--mono); font-size: 9px; color: var(--dimmer);
-  margin-top: 3px;
-}
+.poiWalk { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; font-variant-numeric: tabular-nums; }
+.poiWalk b { font-size: 15px; font-weight: 600; letter-spacing: -.24px; }
+.poiWalk em { font-style: normal; font-size: 12px; color: var(--label3); margin-top: 4px; }
 .verdict {
   display: inline-flex; align-items: center; gap: 4px; font-style: normal;
-  font-family: var(--mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
-  padding: 5px 8px; border-radius: 999px; white-space: nowrap; min-width: 76px;
-  justify-content: center;
-  border: 1px solid transparent;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  padding: 4px 9px; border-radius: var(--rCapsule); white-space: nowrap; min-width: 74px;
+  justify-content: center; border: none;
 }
-.verdict i { font-style: normal; font-size: 10px; }
-.verdict.ok {
-  color: var(--mint); background: color-mix(in srgb, var(--mint) 14%, transparent);
-  border-color: color-mix(in srgb, var(--mint) 26%, transparent);
-}
-.verdict.warn {
-  color: var(--beacon); background: color-mix(in srgb, var(--beacon) 16%, transparent);
-  border-color: color-mix(in srgb, var(--beacon) 28%, transparent);
-}
-.verdict.bad {
-  color: var(--crimson); background: color-mix(in srgb, var(--crimson) 13%, transparent);
-  border-color: color-mix(in srgb, var(--crimson) 24%, transparent);
-}
-.poiRow.bad .poiText b { opacity: .6; }
+.verdict i { font-style: normal; font-size: 11px; display: grid; place-items: center; }
+.verdict.ok { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.verdict.warn { color: var(--orange); background: color-mix(in srgb, var(--orange) 14%, transparent); }
+.verdict.bad { color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
+.poiRow.bad .poiText b { color: var(--label2); }
 .poiRow.bad .dot { opacity: .45; }
 
 /* ---- chips with a colour key ---- */
-.chip.withDot { display: inline-flex; align-items: center; gap: 6px; }
-.chip.withDot i { width: 8px; height: 8px; border-radius: 50%; display: block; flex: none; }
+.chip.withDot { display: inline-flex; align-items: center; gap: 7px; }
+.chip.withDot i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
 
 .labelAction {
-  font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--beacon);
-  transition: opacity var(--t2) var(--smooth);
+  font-size: 15px; font-weight: 400; letter-spacing: -.24px; text-transform: none;
+  color: var(--blue);
+  transition: opacity var(--t1) var(--easeOut);
 }
-.labelAction:active { opacity: .6; }
+.labelAction:active { opacity: .5; }
+
+/* ---- icons ---- */
+.icn { display: block; flex: none; }
+
+/* An iOS search field: the glass sits inside the fill, not beside it. */
+.searchField {
+  position: relative; display: flex; align-items: center;
+  margin-bottom: 12px;
+}
+.searchField .icn { position: absolute; left: 11px; color: var(--label3); pointer-events: none; }
+.searchField .field { padding-left: 36px; padding-right: 38px; margin-bottom: 0; }
+.searchClear {
+  position: absolute; right: 8px; display: grid; place-items: center;
+  width: 28px; height: 28px; color: var(--label3);
+  transition: opacity var(--t1) var(--easeOut);
+}
+.searchClear:active { opacity: .5; }
 
 /* ---- accessibility + touch targets ---- */
-:focus-visible { outline: 2px solid var(--beacon); outline-offset: 2px; border-radius: 6px; }
-.tab, .chip, .fab, .iconBtn, .codeBox button { min-height: 40px; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 6px; }
+.chip, .fab, .iconBtn, .codeBox button, .labelAction, .previewLink { min-height: 34px; }
 .chip { display: inline-flex; align-items: center; }
+
+/* A fingertip covers about 44px, and several of the controls here are drawn
+   smaller than that on purpose: a row of seven height tiers, a strip of filter
+   chips and a Go button tucked into the corner of a card all stop reading as
+   what they are once they are given 44px of ink.
+
+   So they keep their looks and grow an invisible hit area instead — centred on
+   the control, 44px in both directions, and taking the taps that land near
+   enough to have been meant for it. Nothing moves, and nothing has to be aimed
+   at. */
+.chip, .tier, .glanceGo, .navBack, .searchClear, .mapKeyToggle, .segmented .tab {
+  position: relative;
+}
+.chip::after, .tier::after, .glanceGo::after, .navBack::after, .searchClear::after,
+.mapKeyToggle::after, .segmented .tab::after {
+  content: '';
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: max(100%, 44px); height: max(100%, 44px);
+}
+/* Two that may only grow upwards and downwards: the tiers sit shoulder to
+   shoulder in one track and the segments of a segmented control do the same, so
+   44px of width each would have them fighting their neighbours for the taps in
+   between. */
+.tier::after, .segmented .tab::after { width: 100%; }
+
+/* The slider is the one control a thumb drags rather than taps, and the track
+   it drags along is 4px of ink. The input itself is what receives the touch,
+   so that is what gets the height. */
+.heightRow input[type='range'] { height: 44px; }
+.heightRow input[type='range']::-webkit-slider-thumb { margin-top: -12px; }
 
 /* ---- install card ---- */
 .installCard {
-  background: color-mix(in srgb, var(--panel2) 74%, transparent);
-  border: 1px solid var(--glassEdge); border-radius: var(--r2); padding: 13px;
-  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
-  box-shadow: var(--shadow1), inset 0 1px 0 var(--glassHi);
+  background: var(--grouped2);
+  border: none; border-radius: var(--r2); padding: 14px 16px;
 }
 .installCard .btn { margin: 0; }
-.steps { margin: 0 0 4px; padding-left: 18px; font-size: 13px; line-height: 1.85; color: var(--dim); }
-.steps b { color: var(--paper); }
+.steps { margin: 0 0 4px; padding-left: 20px; font-size: 15px; line-height: 24px; color: var(--label2); }
+.steps b { color: var(--label); font-weight: 600; }
 
 /* ---- mobile-only hardening ---- */
 html { -webkit-text-size-adjust: 100%; }
 body { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px; }
 .sheetBody, .glanceRail, .chips { -webkit-overflow-scrolling: touch; }
-@supports (-webkit-touch-callout: none) { .sheet { padding-bottom: env(safe-area-inset-bottom, 0px); } }
+/* The home indicator is cleared by the sheet's own `bottom` at the floating
+   stops and by the tab bar's padding at the full stop, so there is deliberately
+   no padding on the sheet itself: adding it here would count the inset twice
+   and float the tab bar off the bottom edge. */
 
 /* Without backdrop-filter, translucent chrome over a busy map is unreadable —
    so those browsers get the same shapes with opaque fills. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root { --glass: var(--panel); --glassDeep: var(--panel); }
-  .btn, .chip, .field, .codeBox, .glanceCard, .installCard, .tier { backdrop-filter: none; }
+  :root {
+    --matThin: var(--bg2); --matRegular: var(--bg2);
+    --matThick: var(--bg2); --matChrome: var(--bg2);
+    --glass: var(--bg2); --glassDeep: var(--bg2);
+    --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
+    --onGlass: var(--bg3);
+  }
 }
 
 /* ---- invite QR + camera join ---- */
 .qrBox {
-  display: grid; place-items: center; padding: 14px; border-radius: var(--r2);
-  background: #fff; border: 1px solid var(--line); min-height: 200px;
+  display: grid; place-items: center; padding: 16px; border-radius: var(--r2);
+  background: #fff; border: none; min-height: 200px;
   box-shadow: var(--shadow1);
-  animation: popIn var(--t3) var(--bounce) both;
+  animation: popIn var(--t2) var(--easeOut) both;
 }
 .qrImg { display: block; width: 100%; max-width: 232px; height: auto; image-rendering: pixelated; }
 .scanner {
-  margin-top: 10px; padding: 13px; border-radius: var(--r2);
-  background: color-mix(in srgb, var(--panel2) 76%, transparent);
-  border: 1px solid var(--glassEdge);
-  -webkit-backdrop-filter: var(--blurLite); backdrop-filter: var(--blurLite);
-  animation: riseIn var(--t3) var(--bounce) both;
+  margin-top: 10px; padding: 14px 16px; border-radius: var(--r2);
+  background: var(--grouped2);
+  border: none;
+  animation: fadeIn var(--t2) var(--easeOut) both;
 }
 .scannerView {
   display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
-  border-radius: var(--r1); background: #000;
+  border-radius: var(--r2); background: #000;
 }
 .scanner .btn { margin: 0; }
 
 /* ---- diagnostics ---- */
-.diagTable {
-  border: 1px solid var(--line); border-radius: var(--r2); overflow: hidden;
-  background: color-mix(in srgb, var(--panel2) 50%, transparent);
-}
+.diagTable { border: none; }
 .diagRow {
-  display: flex; gap: 10px; align-items: baseline; justify-content: space-between;
-  padding: 8px 11px; border-bottom: 1px solid var(--line);
+  display: flex; gap: 12px; align-items: baseline; justify-content: space-between;
+  min-height: 44px; padding: 11px 16px; position: relative;
 }
-.diagRow:last-child { border-bottom: none; }
-.diagKey { font-size: 12px; color: var(--dim); }
-.diagKey em { font-style: normal; font-size: 9px; color: var(--dimmer); letter-spacing: .08em; }
+.diagRow::after { left: 16px; }
+.diagRow:last-child::after { content: none; }
+.diagKey { font-size: 15px; letter-spacing: -.24px; color: var(--label2); }
+.diagKey em { font-style: normal; font-size: 12px; color: var(--label3); letter-spacing: 0; }
 .diagVal {
-  font-family: var(--mono); font-size: 12px; color: var(--paper);
+  font-family: var(--mono); font-size: 13px; color: var(--label);
   text-align: right; overflow-wrap: anywhere;
 }
-.diagVal.ok { color: var(--mint); }
-.diagVal.warn { color: var(--beacon); }
-.diagVal.bad { color: var(--crimson); }
-.diagCard { border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.diagVal.ok { color: var(--green); }
+.diagVal.warn { color: var(--orange); }
+.diagVal.bad { color: var(--red); }
+.diagCard { border-bottom: .5px solid var(--sep); padding-bottom: 6px; }
 .diagCard:last-child { border-bottom: none; }
-.diagCard .diagRow { border-bottom: none; padding-bottom: 2px; }
+.diagCard .diagRow { padding-bottom: 2px; }
+.diagCard .diagRow::after { content: none; }
 .diagFine {
-  font-family: var(--mono); font-size: 10.5px; line-height: 1.6; color: var(--dimmer);
-  padding: 0 11px 4px; overflow-wrap: anywhere;
+  font-family: var(--mono); font-size: 12px; line-height: 17px; color: var(--label3);
+  padding: 0 16px 8px; overflow-wrap: anywhere;
 }
-.diagFine.bad { color: var(--crimson); }
+.diagFine.bad { color: var(--red); }
 
 /* ============================================================
-   Walking directions — the route on the map, the banner over it
+   Walking directions — the route on the map, the HUD over it
    ============================================================ */
+/* Apple Maps draws its route as a tint-coloured line inside a light casing,
+   so it stays legible whether it crosses water, grass or a car park — but a
+   solid line is how it draws a *drive*. A walk is a row of round dots, and
+   every route in this app is a walk. Zero-length dashes with round caps get
+   there: each dash collapses to a circle of the stroke's own width, and the
+   gap sets the spacing.
+
+   Which frees the dashed treatment to keep meaning the thing below. */
 .routeCase {
-  fill: none; stroke: var(--markerEdge); stroke-width: 9;
-  stroke-linecap: round; stroke-linejoin: round; opacity: .5;
+  fill: none; stroke: var(--markerEdge); stroke-width: 10;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .9;
+  stroke-dasharray: 0 14;
 }
 .routeLine {
-  fill: none; stroke: var(--beacon); stroke-width: 5;
+  fill: none; stroke: var(--blue); stroke-width: 6;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0 14;
 }
 /* Nothing in the path data joins these two points, so the line is a bearing
-   rather than a walk — and it says so by not looking like a walk. */
-.routeLine.direct { stroke-dasharray: 8 7; stroke-width: 3.5; opacity: .8; }
-.routeTurn { fill: var(--beacon); stroke: var(--markerEdge); stroke-width: 2.4; }
+   rather than a walk — and it says so by not looking like one. Dashes, not
+   dots, now that the dots mean "this is walkable". */
+.routeLine.direct {
+  stroke-dasharray: 9 8; stroke-width: 4; stroke-linecap: butt; opacity: .85;
+}
+.routeTurn { fill: var(--onTint); stroke: var(--blue); stroke-width: 3; }
 /* Behind you, and no longer the point. */
 .routeDone {
-  fill: none; stroke: var(--dimmer); stroke-width: 5; opacity: .45;
+  fill: none; stroke: var(--label3); stroke-width: 6; opacity: .5;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0 14;
 }
 /* The ways you did not pick — visible, tappable, and clearly not the choice. */
 .altRoute { cursor: pointer; }
 .altHit { fill: none; stroke: transparent; stroke-width: 22; }
 .altLine {
-  fill: none; stroke: var(--dim); stroke-width: 4.5; opacity: .55;
+  fill: none; stroke: var(--gray); stroke-width: 5; opacity: .55;
   stroke-linecap: round; stroke-linejoin: round;
 }
 /* The raw fix, kept visible but quiet, while the marker rides the route. */
-.rawFix { fill: var(--beacon); opacity: .45; }
+.rawFix { fill: var(--blue); opacity: .4; }
 .puckCone { filter: blur(.3px); }
 
 /* ---- the maneuver strip at the top ---- */
 .navBanner {
   position: absolute; left: 10px; right: 10px; top: calc(var(--top) + 58px); z-index: 41;
-  background: var(--beacon); color: #fff; border-radius: 6px; overflow: hidden;
-  box-shadow: 0 8px 26px rgba(0,0,0,.4);
+  background: var(--blue); color: var(--onTint); border-radius: var(--r3); overflow: hidden;
+  box-shadow: var(--shadow2);
+  animation: riseIn var(--t2) var(--easeOut) both;
 }
-.navBanner.off { background: var(--crimson); }
-.navMain { display: flex; align-items: center; gap: 12px; padding: 11px 13px; }
-.navTurn { width: 34px; height: 34px; flex: none; display: grid; place-items: center; }
-.navIcon { width: 30px; height: 30px; display: block; }
+.navBanner.off { background: var(--red); }
+.navMain { display: flex; align-items: center; gap: 14px; padding: 12px 15px; }
+.navTurn { width: 36px; height: 36px; flex: none; display: grid; place-items: center; }
+.navIcon { width: 32px; height: 32px; display: block; }
 .navText { flex: 1; min-width: 0; }
 .navDist {
-  display: block; font-family: var(--disp); font-weight: 800; font-size: 27px; line-height: .95;
-  letter-spacing: .01em;
+  display: block; font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: .4px;
+  font-variant-numeric: tabular-nums;
 }
 .navStep {
-  display: block; font-size: 14px; font-weight: 600; margin-top: 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .95;
+  display: block; font-size: 17px; font-weight: 400; letter-spacing: -.4px; margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .92;
 }
 .navThen {
-  display: flex; align-items: center; gap: 7px;
-  padding: 6px 13px 7px; background: rgba(0,0,0,.22);
-  font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 15px 9px; background: rgba(0, 0, 0, .18);
+  font-size: 13px; font-weight: 500; letter-spacing: -.08px; text-transform: none;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.navThenIcon { width: 15px; height: 15px; flex: none; }
-.navThenIcon .navIcon { width: 15px; height: 15px; }
+.navThenIcon { width: 16px; height: 16px; flex: none; }
+.navThenIcon .navIcon { width: 16px; height: 16px; }
 .navSpinner {
-  width: 11px; height: 11px; flex: none; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+  width: 12px; height: 12px; flex: none; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .35); border-top-color: #fff;
   animation: navSpin .9s linear infinite;
 }
 @keyframes navSpin { to { transform: rotate(360deg) } }
@@ -1101,114 +1678,328 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 /* ---- the bar at the bottom, in place of the sheet ---- */
 .navBar {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 46;
-  background: var(--panel); border-top: 1px solid var(--line);
-  border-radius: 12px 12px 0 0; padding: 10px 12px calc(12px + var(--bot));
-  box-shadow: 0 -14px 40px rgba(0,0,0,.5);
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  border-top: none;
+  border-radius: var(--r4) var(--r4) 0 0; padding: 12px 16px calc(14px + var(--bot));
+  box-shadow: var(--lensEdge), var(--shadow3);
 }
-.navBarRow { display: flex; align-items: center; gap: 10px; }
+.navBarRow { display: flex; align-items: center; gap: 12px; }
 .navEnd {
-  flex: none; padding: 11px 15px; border-radius: 999px; background: var(--crimson); color: #fff;
-  font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  flex: none; padding: 12px 20px; border-radius: var(--rCapsule);
+  background: var(--red); color: var(--onTint);
+  font-size: 17px; font-weight: 600; letter-spacing: -.4px; text-transform: none;
   min-height: 44px;
+  transition: opacity var(--t1) var(--easeOut);
 }
+.navEnd:active { opacity: .55; }
 .navSummary { flex: 1; min-width: 0; text-align: left; }
 .navSummary b {
-  display: block; font-family: var(--disp); font-weight: 800; font-size: 25px; line-height: 1;
-  color: var(--mint); letter-spacing: .01em;
+  display: block; font-size: 22px; font-weight: 700; line-height: 26px; letter-spacing: -.26px;
+  color: var(--green); font-variant-numeric: tabular-nums;
 }
 .navSummary span {
-  display: block; font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 4px;
+  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2); margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.navTools { flex: none; display: flex; gap: 6px; }
+.navTools { flex: none; display: flex; gap: 8px; }
 .navTool {
-  width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--line);
-  background: var(--panel2); color: var(--dim); display: grid; place-items: center; font-size: 15px;
+  width: 44px; height: 44px; border-radius: var(--rCapsule); border: none;
+  background: var(--fill3); color: var(--blue); display: grid; place-items: center;
+  transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
 }
-.navTool.on { background: var(--beacon); border-color: var(--beacon); color: #fff; }
-.navCompass { width: 19px; height: 19px; }
+.navTool:active { opacity: .55; }
+.navTool.on { background: var(--blue); color: var(--onTint); }
+.navCompass { width: 20px; height: 20px; }
 
 /* ---- the choice you make before setting off ---- */
 .routePreview {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 46;
-  background: var(--panel); border-top: 1px solid var(--line);
-  border-radius: 12px 12px 0 0; padding: 14px 12px calc(14px + var(--bot));
-  box-shadow: 0 -14px 40px rgba(0,0,0,.5);
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  border-top: none;
+  border-radius: var(--r4) var(--r4) 0 0; padding: 16px 16px calc(16px + var(--bot));
+  box-shadow: var(--lensEdge), var(--shadow3);
 }
-.previewHead { display: flex; align-items: center; gap: 12px; }
+.previewHead { display: flex; align-items: center; gap: 14px; }
 .previewMain { flex: 1; min-width: 0; }
 .previewMain b {
-  display: block; font-family: var(--disp); font-weight: 800; font-size: 34px; line-height: .9;
-  color: var(--mint);
+  display: block; font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: .4px;
+  color: var(--green); font-variant-numeric: tabular-nums;
 }
 .previewMain b em {
-  font-style: normal; font-family: var(--ui); font-size: 15px; font-weight: 600; margin-left: 4px;
+  font-style: normal; font-size: 17px; font-weight: 600; letter-spacing: -.4px;
+  margin-left: 5px; color: var(--label2);
 }
 .previewMain span {
-  display: block; font-family: var(--mono); font-size: 10.5px; color: var(--dim); margin-top: 6px;
+  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2); margin-top: 5px;
 }
 .previewGo {
-  flex: none; padding: 13px 26px; border-radius: 999px; background: var(--beacon); color: #fff;
-  font-size: 15px; font-weight: 700; min-height: 48px;
+  flex: none; padding: 13px 28px; border-radius: var(--rCapsule);
+  background: var(--blue); color: var(--onTint);
+  font-size: 17px; font-weight: 600; letter-spacing: -.4px; min-height: 48px;
+  transition: opacity var(--t1) var(--easeOut);
 }
-.previewWhere { font-size: 13px; color: var(--dim); margin: 10px 0 0; }
-.previewWhere b { color: var(--paper); }
+.previewGo:active { opacity: .55; }
+.previewWhere { font-size: 15px; letter-spacing: -.24px; color: var(--label2); margin: 12px 0 0; }
+.previewWhere b { color: var(--label); font-weight: 600; }
 .previewAlts { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; scrollbar-width: none; }
 .previewAlts::-webkit-scrollbar { display: none; }
 .previewAlt {
-  flex: none; min-width: 120px; text-align: left; padding: 8px 11px; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--panel2);
+  flex: none; min-width: 124px; text-align: left; padding: 9px 13px; border-radius: var(--r2);
+  border: none; background: var(--fill3);
+  transition: background var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
 }
-.previewAlt.on { border-color: var(--beacon); background: color-mix(in srgb, var(--beacon) 12%, var(--panel2)); }
-.previewAlt b { display: block; font-size: 15px; font-weight: 700; }
+.previewAlt:active { opacity: .6; }
+.previewAlt.on { background: color-mix(in srgb, var(--blue) 16%, transparent); box-shadow: inset 0 0 0 2px var(--blue); }
+.previewAlt b { display: block; font-size: 17px; font-weight: 600; letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
 .previewAlt span {
-  display: block; font-family: var(--mono); font-size: 9px; color: var(--dimmer); margin-top: 3px;
+  display: block; font-size: 12px; color: var(--label2); margin-top: 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.previewFoot { display: flex; gap: 16px; margin-top: 12px; }
+.previewFoot { display: flex; gap: 20px; margin-top: 14px; }
 .previewLink {
-  font-family: var(--mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--dim); text-decoration: underline; text-underline-offset: 3px; min-height: 40px;
+  font-size: 15px; font-weight: 400; letter-spacing: -.24px; text-transform: none;
+  color: var(--blue); text-decoration: none;
+  transition: opacity var(--t1) var(--easeOut);
 }
+.previewLink:active { opacity: .5; }
 
 /* The sheet steps aside for the HUD, and the FABs ride above whichever is up. */
 .sheet.stowed { height: 0; border-top: none; box-shadow: none; overflow: hidden; }
-.fabs.go { bottom: calc(92px + var(--bot)); }
-.fabs.preview { bottom: calc(210px + var(--bot)); }
-.fab.resume { background: var(--beacon); border-color: var(--beacon); color: #fff; }
+.fabs.go { bottom: calc(96px + var(--bot)); }
+.fabs.preview { bottom: calc(214px + var(--bot)); }
+.fab.resume { background: var(--blue); color: var(--onTint); border-color: transparent; }
 
 /* ---- the Go button on a glance card ---- */
 .glanceCard { position: relative; }
 .glanceHit {
-  display: flex; flex-direction: column; gap: 2px; width: 100%; text-align: left;
+  display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left;
   padding: 0; background: none; border: none; color: inherit;
 }
-.glanceCard.walking { border-left-color: var(--beacon); background: color-mix(in srgb, var(--beacon) 9%, var(--panel2)); }
+.glanceCard.walking { background: color-mix(in srgb, var(--blue) 12%, var(--grouped2)); }
 .glanceGo {
-  position: absolute; right: 6px; top: 6px; min-width: 36px; padding: 4px 8px;
-  border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
-  font-family: var(--mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--dim);
+  position: absolute; right: 8px; top: 8px; min-width: 40px; min-height: 26px;
+  padding: 4px 10px;
+  border-radius: var(--rCapsule); border: none; background: var(--fill3);
+  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
+  color: var(--blue);
+  transition: opacity var(--t1) var(--easeOut);
 }
-.glanceGo.on { background: var(--beacon); border-color: var(--beacon); color: #fff; }
+.glanceGo:active { opacity: .55; }
+.glanceGo.on { background: var(--blue); color: var(--onTint); }
 
 /* ---- the full step list in the sheet ---- */
-.stepList { list-style: none; margin: 0; padding: 0; }
-.stepRow { border-bottom: 1px solid var(--line); }
+.stepList { list-style: none; margin: 0 0 10px; padding: 0; }
+.stepRow { position: relative; }
+.stepRow::after { left: 58px; }
+.stepRow:last-child::after { content: none; }
 .stepRow.done { opacity: .4; }
-.stepRow.now { background: color-mix(in srgb, var(--beacon) 8%, transparent); }
-.stepMain { display: flex; gap: 10px; align-items: center; width: 100%; padding: 10px 6px; text-align: left; }
-.stepGlyph {
-  width: 28px; height: 28px; flex: none; border-radius: 4px; display: grid; place-items: center;
-  background: var(--panel2); color: var(--dim);
+.stepRow.now { background: color-mix(in srgb, var(--blue) 10%, transparent); }
+.stepMain {
+  display: flex; gap: 12px; align-items: center; width: 100%; min-height: 44px;
+  padding: 10px 16px; text-align: left;
+  transition: background var(--t1) var(--easeOut);
 }
-.stepGlyph .navIcon { width: 17px; height: 17px; }
-.stepRow.now .stepGlyph { background: var(--beacon); color: #fff; }
-.stepGlyph.arrive { color: var(--crimson); }
+.stepMain:active { background: var(--fill3); }
+.stepGlyph {
+  width: 30px; height: 30px; flex: none; border-radius: var(--r1); display: grid; place-items: center;
+  background: var(--fill3); color: var(--label2);
+}
+.stepGlyph .navIcon { width: 18px; height: 18px; }
+.stepRow.now .stepGlyph { background: var(--blue); color: var(--onTint); }
+.stepGlyph.arrive { color: var(--red); }
 .stepText { flex: 1; min-width: 0; }
-.stepText b { display: block; font-size: 13.5px; font-weight: 600; }
-.stepText span {
-  display: block; font-family: var(--mono); font-size: 9.5px; color: var(--dimmer); margin-top: 2px;
+.stepText b { display: block; font-size: 15px; font-weight: 400; letter-spacing: -.24px; }
+.stepText span { display: block; font-size: 12px; color: var(--label3); margin-top: 2px; }
+
+/* ============================================================
+   map furniture — the key, the rose and the callout
+   ============================================================ */
+/* All of this floats over the map, so all of it is glass. It comes off the
+   screen the moment the sheet is opened over it. */
+@keyframes keyIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.lyr-trackglow path {
+  fill: none; stroke: var(--trackLit); stroke-width: 11; opacity: .28;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.lyr-trackpick path {
+  fill: none; stroke: var(--trackLit); stroke-width: 3.4;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.memAge {
+  font-family: var(--ui); font-size: 9px; font-weight: 500; fill: var(--label2);
+  text-anchor: middle; paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px;
+  pointer-events: none;
+}
+.staleRing {
+  fill: none; stroke: var(--label3); stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .9;
+}
+
+.mapFurniture {
+  position: absolute; left: 12px; bottom: calc(var(--sheetH) + 22px); z-index: 6;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  pointer-events: none; max-width: min(300px, calc(100% - 24px));
+  transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
+              transform var(--t3) var(--ease);
+}
+.mapMeta { display: flex; align-items: center; gap: 8px; }
+.app[data-sheet='half'] .mapFurniture,
+.app[data-sheet='full'] .mapFurniture {
+  opacity: 0; transform: translateY(10px); pointer-events: none;
+}
+.app[data-sheet='stowed'] { --sheetH: 96px; }
+
+.northRose {
+  width: 34px; height: 34px; flex: none; padding: 2px; border-radius: 50%;
+  background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  transition: opacity var(--t3) var(--easeOut), transform var(--t3) var(--easeOut);
+}
+/* North-up: nothing to say, so it steps out. */
+.northRose.idle { opacity: 0; transform: scale(.8); pointer-events: none; }
+.northRose svg { width: 100%; height: 100%; display: block; }
+.roseDial { fill: none; }
+.roseNeedle { fill: var(--red); }
+.roseTail { fill: var(--label3); }
+.roseN {
+  font-family: var(--ui); font-size: 8px; font-weight: 600; fill: var(--label);
+  text-anchor: middle; letter-spacing: 0;
+}
+
+.mapKey { pointer-events: auto; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.mapKeyToggle {
+  display: flex; align-items: center; gap: 7px; min-height: 34px;
+  padding: 6px 14px 6px 10px; border-radius: var(--rCapsule);
+  color: var(--blue); background: var(--glassTint); border: none;
+  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
+  transition: transform var(--t1) var(--easeOut), background var(--t1) var(--easeOut),
+              color var(--t1) var(--easeOut);
+}
+.mapKeyToggle:active { transform: scale(.93); background: var(--glassTintDeep); }
+.mapKey.open .mapKeyToggle { background: var(--blue); color: var(--onTint); }
+.mapKeyBody {
+  width: 268px; padding: 12px 12px 10px; border-radius: var(--r4);
+  background: var(--glassTintDeep); border: none;
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  max-height: min(52vh, 420px); overflow-y: auto;
+  /* .mapWrap turns touch gestures off so a drag pans the map; the key is a
+     list on top of it and still has to scroll. */
+  touch-action: pan-y;
+  animation: keyIn var(--t2) var(--easeOut) both;
+}
+.mapKeyNote, .mapKeyHead {
+  margin: 0 0 7px; font-size: 13px; color: var(--label2);
+  letter-spacing: -.08px; text-transform: none;
+}
+.mapKeyHead { margin-top: 12px; padding-top: 10px; border-top: .5px solid var(--sep); }
+.mapKeyList { list-style: none; margin: 0; padding: 0; }
+.mapKeyRow {
+  display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto;
+  align-items: center; gap: 0 10px; width: 100%; text-align: left;
+  min-height: 40px; padding: 6px 8px; border-radius: var(--r2); opacity: .42;
+  transition: opacity var(--t2) var(--easeOut), background var(--t1) var(--easeOut);
+}
+.mapKeyRow svg { grid-row: 1 / 3; }
+.mapKeyRow b { font-size: 15px; font-weight: 400; letter-spacing: -.24px; }
+.mapKeyRow i { font-style: normal; font-size: 13px; color: var(--label2); letter-spacing: -.08px; }
+.mapKeyRow.on { opacity: 1; background: var(--fill3); }
+.mapKeyRow.static { opacity: 1; }
+
+.poiCallout {
+  position: absolute; transform: translate(-50%, calc(-100% - 22px)); z-index: 7;
+  max-width: 220px; padding: 8px 12px; border-radius: var(--r3);
+  background: var(--glassTintDeep); border: none;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  pointer-events: none;
+  animation: keyIn var(--t2) var(--easeOut) both;
+}
+.poiCallout.below { transform: translate(-50%, 24px); }
+.poiCallout b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -.24px; line-height: 1.25; }
+.poiCallout span {
+  display: block; font-size: 13px; color: var(--label2); letter-spacing: -.08px; margin-top: 3px;
+}
+.poiCallout em {
+  display: inline-block; margin-top: 6px; font-style: normal;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
+  padding: 3px 9px; border-radius: var(--rCapsule);
+}
+.calloutBar { background: var(--helpTint); color: var(--red); }
+/* "with adult" is caution, not accent — so it takes the warning colour rather
+   than following --beacon onto the tint. */
+.calloutAdult { background: color-mix(in srgb, var(--orange) 16%, transparent); color: var(--orange); }
+
+/* Glass is a preference, not a constant. The platform lets people dial the
+   translucency back — for legibility, or because they turned on Increase
+   Contrast — and a lens that ignores both settings is a lens some people
+   cannot read through. Each of these swaps every material for an opaque fill
+   and drops the blur; shapes, spacing and type are untouched, so nothing
+   moves and nothing reflows. */
+@media (prefers-reduced-transparency: reduce) {
+  :root, :root[data-theme='day'] {
+    --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --matThin: var(--bg2); --matRegular: var(--bg2);
+    --matThick: var(--bg2); --matChrome: var(--bg2);
+    --glass: var(--bg2); --glassDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
+    --lens: none; --lensLite: none; --lensDeep: none;
+    --blur: none; --blurLite: none;
+    --lensEdge: inset 0 0 0 .5px var(--sep);
+  }
+}
+@media (prefers-contrast: more) {
+  /* Apple ships a whole second accent palette for Increase Contrast. It is
+     not the default one darkened, and the two appearances get different
+     values, so they are stated separately. The label and separator steps are
+     not published and are a judgement call. */
+  :root {
+    --blue: #5cb8ff;
+    --green: #4ad968;
+    --red: #ff6165;
+    --orange: #ffa056;
+    --yellow: #fedf43;
+    --teal: #3bddec;
+    --indigo: #a7aaff;
+    --purple: #ea8dff;
+    --pink: #ff8ac4;
+    --label2: rgba(235, 235, 245, .82);
+    --label3: rgba(235, 235, 245, .55);
+    --sep: rgba(235, 235, 245, .42);
+  }
+  :root[data-theme='day'] {
+    --blue: #1e6ef4;
+    --green: #008932;
+    --red: #e9152d;
+    --orange: #c55300;
+    --yellow: #a16a00;
+    --teal: #008198;
+    --indigo: #564ade;
+    --purple: #b02fc2;
+    --pink: #e7124d;
+    --label2: rgba(60, 60, 67, .82);
+    --label3: rgba(60, 60, 67, .55);
+    --sep: rgba(60, 60, 67, .45);
+  }
+  :root, :root[data-theme='day'] {
+    --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --matThin: var(--bg2); --matRegular: var(--bg2);
+    --matThick: var(--bg2); --matChrome: var(--bg2);
+    --glass: var(--bg2); --glassDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
+    --lens: none; --lensLite: none; --lensDeep: none;
+    --blur: none; --blurLite: none;
+    --lensEdge: inset 0 0 0 1px var(--sep);
+  }
 }
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes

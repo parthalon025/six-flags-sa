@@ -3,6 +3,9 @@ import { json } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
 
+/** See app/api/mailbox/[partyId]/route.js — one hop to the store, no more. */
+export const maxDuration = 10;
+
 /**
  * Readiness: can this instance actually serve a party right now. The memory
  * backend is always ready by definition; a configured Upstash that will not
