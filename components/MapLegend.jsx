@@ -1,0 +1,125 @@
+'use client';
+
+import { useState } from 'react';
+import { CATEGORY_LABELS } from '@/lib/theme';
+import { SYMBOLS } from '@/lib/mapSymbols';
+import { LegendLine, LegendMark, PoiMarker } from './MapSymbols';
+
+/* The key.
+ *
+ * A symbol nobody can name is a coloured dot with extra steps, and the place
+ * you want to be told what a symbol means is the moment you are staring at it —
+ * not three taps away in a settings sheet. So the key lives on the map, and
+ * because every row is already a statement about what is drawn, each row is
+ * also the switch that draws it.
+ *
+ * The category order is the order of the eye: what you came for, then what you
+ * need, then what is merely there.
+ */
+const ORDER = ['coaster', 'ride', 'landmark', 'gate', 'food', 'restroom', 'show', 'service', 'shop', 'parking'];
+
+export default function MapLegend({ palette, visibleCategories, onToggleCategory, heightFilterOn }) {
+  const [open, setOpen] = useState(false);
+  // The map's own gesture handlers sit on the wrapper; a tap meant for the key
+  // must not also pan the park or drop a meet-up pin.
+  const swallow = (e) => e.stopPropagation();
+
+  return (
+    <div
+      className={`mapKey ${open ? 'open' : ''}`}
+      onPointerDown={swallow}
+      onPointerMove={swallow}
+      onPointerUp={swallow}
+      onWheel={swallow}
+    >
+      <button
+        type="button"
+        className="mapKeyToggle"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <svg width="34" height="16" viewBox="-17 -8 34 16" aria-hidden="true">
+          <g transform="translate(-9 0)">
+            <PoiMarker category="coaster" colour={palette.categories.coaster} r={5.6} state="unknown" />
+          </g>
+          <g transform="translate(1 0)">
+            <PoiMarker category="food" colour={palette.categories.food} r={5.4} state="unknown" />
+          </g>
+          <g transform="translate(10 0)">
+            <PoiMarker category="restroom" colour={palette.categories.restroom} r={5.4} state="unknown" />
+          </g>
+        </svg>
+        <span>{open ? 'Hide key' : 'Key'}</span>
+      </button>
+
+      {open && (
+        <div className="mapKeyBody">
+          <p className="mapKeyNote">Tap a row to show or hide it on the map.</p>
+          <ul className="mapKeyList">
+            {ORDER.filter((key) => SYMBOLS[key]).map((key) => {
+              const on = visibleCategories.has(key);
+              return (
+                <li key={key}>
+                  <button
+                    type="button"
+                    className={`mapKeyRow ${on ? 'on' : ''}`}
+                    onClick={() => onToggleCategory?.(key)}
+                    aria-pressed={on}
+                  >
+                    <LegendMark category={key} colour={palette.categories[key]} size={22} />
+                    <b>{CATEGORY_LABELS[key]}</b>
+                    <i>{SYMBOLS[key].hint}</i>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+
+          <p className="mapKeyHead">Drawn on the ground</p>
+          <ul className="mapKeyList plain">
+            <li>
+              <span className="mapKeyRow static">
+                <LegendLine glyph="track" colour="var(--track)" size={22} />
+                <b>Coaster track</b>
+                <i>Tap a coaster to light up its own</i>
+              </span>
+            </li>
+            <li>
+              <span className="mapKeyRow static">
+                <LegendLine glyph="water" colour="var(--slide)" size={22} />
+                <b>Water rides</b>
+                <i>Flumes and slides</i>
+              </span>
+            </li>
+          </ul>
+
+          {heightFilterOn && (
+            <>
+              <p className="mapKeyHead">With a height set</p>
+              <ul className="mapKeyList plain">
+                <li>
+                  <span className="mapKeyRow static">
+                    <svg width="22" height="22" viewBox="-11 -11 22 22" aria-hidden="true">
+                      <PoiMarker category="coaster" colour={palette.categories.coaster} r={8.8} state="no" />
+                    </svg>
+                    <b>Too short today</b>
+                    <i>Hollow and struck through</i>
+                  </span>
+                </li>
+                <li>
+                  <span className="mapKeyRow static">
+                    <svg width="22" height="22" viewBox="-11 -11 22 22" aria-hidden="true">
+                      <PoiMarker category="ride" colour={palette.categories.ride} r={8} state="companion" />
+                    </svg>
+                    <b>Rides with a grown-up</b>
+                    <i>Marked with a plus</i>
+                  </span>
+                </li>
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

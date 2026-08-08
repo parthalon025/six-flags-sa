@@ -90,10 +90,31 @@ const {
 } = await import('../lib/weather.js');
 const { STATUS, statusFor, statusSummary } = await import('../lib/rideStatus.js');
 const { indexById, slug, withIds } = await import('../lib/venue/ids.js');
+const {
+  Declutter,
+  boxAround,
+  clampInto,
+  intersect,
+  labelArc,
+  principalAxis,
+  scaleBar,
+  textWidth,
+} = await import('../lib/mapLabels.js');
+const {
+  inkOn,
+  labelZoomFor,
+  normaliseRideName,
+  partyMarkerState,
+  sizeAtZoom,
+  symbolFor,
+  STALE_AFTER_MS,
+  GLYPHS,
+  SYMBOLS,
+} = await import('../lib/mapSymbols.js');
 const { venueChoiceFor, venueForPosition, venuesByDistance, withinBounds } = await import(
   '../lib/venue/store.js'
 );
-const { landTint } = await import('../lib/theme.js');
+const { CATEGORY_LABELS, landTint } = await import('../lib/theme.js');
 const { areaOf, centroidOf, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
@@ -1336,6 +1357,512 @@ await check('two turns in a row do not name the same building', () => {
 });
 
 
+section('map/symbols');
+
+await check('every category has a symbol, a glyph and a name', () => {
+  Object.keys(CATEGORY_LABELS).forEach((key) => {
+    assert.ok(SYMBOLS[key], `${key} has no symbol`);
+    assert.ok(GLYPHS[key]?.length, `${key} has no glyph art`);
+    assert.ok(SYMBOLS[key].hint, `${key} has nothing to say in the key`);
+  });
+  return true;
+});
+
+/* Walks a path and returns every point the pen lands on. Only on-curve points
+   are collected — control points may legitimately sit outside the artwork —
+   which is enough to catch a glyph that has drifted out of its box. */
+const PARAMS = { m: 2, l: 2, h: 1, v: 1, c: 6, s: 4, q: 4, t: 2, a: 7, z: 0 };
+function penPoints(d) {
+  const tokens = d.match(/[a-zA-Z]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || [];
+  const out = [];
+  let x = 0;
+  let y = 0;
+  let startX = 0;
+  let startY = 0;
+  let i = 0;
+  let cmd = 'M';
+  while (i < tokens.length) {
+    if (/[a-zA-Z]/.test(tokens[i])) cmd = tokens[i++];
+    const key = cmd.toLowerCase();
+    const rel = cmd === key && key !== 'z';
+    const n = PARAMS[key];
+    if (n == null) throw new Error(`unhandled path command ${cmd}`);
+    const args = tokens.slice(i, i + n).map(Number);
+    i += n;
+    if (key === 'z') {
+      x = startX;
+      y = startY;
+    } else if (key === 'h') {
+      x = rel ? x + args[0] : args[0];
+    } else if (key === 'v') {
+      y = rel ? y + args[0] : args[0];
+    } else {
+      const [ex, ey] = args.slice(-2);
+      x = rel ? x + ex : ex;
+      y = rel ? y + ey : ey;
+      if (key === 'm') {
+        startX = x;
+        startY = y;
+      }
+    }
+    out.push([x, y]);
+  }
+  return out;
+}
+
+await check('glyph art stays inside its 24-unit box', () => {
+  // A glyph that strays outside 0..24 collides with the disc or chip drawn
+  // round it, which is how the coaster hill used to bleed into its own rim.
+  Object.entries(GLYPHS).forEach(([name, parts]) => {
+    parts.forEach((part) => {
+      assert.ok(part.d, `${name} has an empty path`);
+      assert.ok(part.mode === 'fill' || part.w > 0, `${name} strokes with no width`);
+      penPoints(part.d).forEach(([x, y]) => {
+        assert.ok(x >= 0 && x <= 24, `${name} strays to x=${x}`);
+        assert.ok(y >= 0 && y <= 24, `${name} strays to y=${y}`);
+      });
+    });
+  });
+  return true;
+});
+
+await check('shape and rank separate what you came for from what you need', () => {
+  assert.equal(symbolFor('coaster').shape, 'disc');
+  assert.equal(symbolFor('food').shape, 'chip');
+  assert.equal(symbolFor('gate').shape, 'pin');
+  assert.equal(symbolFor('landmark').shape, 'diamond');
+  // A coaster outranks a shop, so it wins the pixels and gets named first.
+  assert.ok(symbolFor('coaster').rank < symbolFor('shop').rank);
+  assert.ok(labelZoomFor(symbolFor('coaster').rank) < labelZoomFor(symbolFor('shop').rank));
+  // An unknown category still gets drawn rather than throwing.
+  assert.ok(symbolFor('nonsense').r > 0);
+  return true;
+});
+
+await check('glyph ink is chosen against the fill, not assumed', () => {
+  // The night palette paints gates pure white; a white glyph on it is nothing.
+  assert.equal(inkOn('#FFFFFF'), '#0c1017');
+  assert.equal(inkOn('#FFC24A'), '#0c1017');
+  assert.equal(inkOn('#E2503F'), '#ffffff');
+  assert.equal(inkOn('#2C313A'), '#ffffff');
+  assert.equal(inkOn(null), '#ffffff');
+  return true;
+});
+
+await check('markers grow with the map but nothing like as fast', () => {
+  const wide = sizeAtZoom(9, 0.18);
+  const close = sizeAtZoom(9, 6);
+  assert.ok(wide > 6, 'still visible at the park-wide view');
+  assert.ok(close < 12, 'not covering a midway at walking zoom');
+  assert.ok(close > wide);
+  return true;
+});
+
+await check('track names and catalogue names meet in the middle', () => {
+  assert.equal(normaliseRideName('Racer (Red)'), normaliseRideName('The Racer'));
+  assert.equal(normaliseRideName('Racer (Blue)'), normaliseRideName('The Racer'));
+  assert.equal(normaliseRideName('Backlot Stunt Coaster'), 'backlot stunt coaster');
+  assert.notEqual(normaliseRideName('The Beast'), normaliseRideName('Banshee'));
+  assert.equal(normaliseRideName(null), '');
+  return true;
+});
+
+/* Track that names a ride nobody has heard of can never be lit up. These are
+   the ones OpenStreetMap still carries but the park no longer runs — a gap in
+   the data, not in the matcher, and small enough to name. */
+const RETIRED_TRACK = new Set(['goliath']);
+
+await check('every named piece of track belongs to a ride we know', () => {
+  const venues = JSON.parse(
+    fs.readFileSync(new URL('../public/venues/manifest.json', import.meta.url)),
+  ).venues;
+  assert.ok(venues.length, 'no venues to check');
+  venues.forEach((v) => {
+    const read = (rel) =>
+      JSON.parse(fs.readFileSync(new URL(`../public${rel}`, import.meta.url)));
+    const catalogue = new Set();
+    read(v.pois).forEach((p) => {
+      catalogue.add(normaliseRideName(p.n));
+      if (p.alias) catalogue.add(normaliseRideName(p.alias));
+    });
+    const orphans = [
+      ...new Set(
+        (read(v.map).coaster || [])
+          .map((f) => normaliseRideName(f.n))
+          .filter((n) => n && !catalogue.has(n) && !RETIRED_TRACK.has(n)),
+      ),
+    ];
+    assert.deepEqual(orphans, [], `${v.id}: track with no ride to light up: ${orphans.join(', ')}`);
+  });
+  return true;
+});
+
+await check('a party marker says its age in its own ink', () => {
+  const now = 1_000_000;
+  const fresh = partyMarkerState({ ts: now - 1000, heading: 90 }, now);
+  assert.equal(fresh.stale, false);
+  assert.equal(fresh.facing, 90);
+
+  // Past the threshold the heading is no longer worth drawing: it would point
+  // confidently in whatever direction they were walking five minutes ago.
+  const old = partyMarkerState({ ts: now - STALE_AFTER_MS - 1, heading: 90 }, now);
+  assert.equal(old.stale, true);
+  assert.equal(old.facing, null);
+
+  // A member we have never had a fix for is stale, not NaN.
+  const never = partyMarkerState({ status: 'NEED HELP' }, now);
+  assert.equal(never.stale, true);
+  assert.equal(never.help, true);
+  assert.equal(never.facing, null);
+  assert.equal(partyMarkerState(null, now).stale, true);
+
+  // No heading is not a heading of zero.
+  assert.equal(partyMarkerState({ ts: now, heading: null }, now).facing, null);
+  assert.equal(partyMarkerState({ ts: now, heading: 0 }, now).facing, 0);
+  return true;
+});
+
+section('map/declutter');
+
+await check('the space goes to whoever asks first', () => {
+  const grid = new Declutter();
+  assert.equal(grid.claim(boxAround(50, 50, 20, 8)), true);
+  assert.equal(grid.claim(boxAround(60, 52, 20, 8)), false, 'overlapping claim let through');
+  assert.equal(grid.claim(boxAround(200, 50, 20, 8)), true, 'clear space refused');
+  return true;
+});
+
+await check('a pinned claim takes the space anyway, and keeps it', () => {
+  const grid = new Declutter();
+  grid.claim(boxAround(50, 50, 20, 8));
+  assert.equal(grid.claim(boxAround(52, 50, 20, 8), true), true);
+  // ...and having taken it, it blocks the next comer.
+  assert.equal(grid.claim(boxAround(52, 50, 20, 8)), false);
+  return true;
+});
+
+await check('boxes that only touch are not overlapping', () => {
+  const grid = new Declutter();
+  grid.claim(boxAround(0, 0, 10, 10));
+  assert.equal(grid.claim(boxAround(20, 0, 10, 10)), true, 'edge-to-edge should fit');
+  return true;
+});
+
+await check('the grid agrees with brute force', () => {
+  // The bucketing is an optimisation; it must not change the answer.
+  const grid = new Declutter();
+  const taken = [];
+  let mismatch = 0;
+  for (let i = 0; i < 400; i += 1) {
+    const box = boxAround((i * 37) % 380, (i * 53) % 700, 12, 7);
+    const bruteFree = !taken.some(
+      (o) => box.x0 < o.x1 && o.x0 < box.x1 && box.y0 < o.y1 && o.y0 < box.y1,
+    );
+    const got = grid.claim(box);
+    if (got !== bruteFree) mismatch += 1;
+    if (bruteFree) taken.push(box);
+  }
+  assert.equal(mismatch, 0);
+  return true;
+});
+
+section('map/labels');
+
+await check('a land name lies along its land', () => {
+  const wide = principalAxis([[0, 0], [100, 0], [100, 10], [0, 10]]);
+  assert.ok(Math.abs(wide.uy) < 0.01, 'east-west land should read east-west');
+  assert.equal(Math.round(wide.extent), 100);
+  const tall = principalAxis([[0, 0], [10, 0], [10, 100], [0, 100]]);
+  assert.ok(Math.abs(tall.ux) < 0.01, 'north-south land should read north-south');
+  assert.equal(principalAxis([]), null);
+  return true;
+});
+
+await check('a name never runs right to left', () => {
+  // Walking south turns the map; the words must not turn with it.
+  const arc = labelArc(100, 100, -1, 0, 80);
+  const [, sx] = /^M([-\d.]+) /.exec(arc);
+  const [, ex] = / ([-\d.]+) [-\d.]+$/.exec(arc);
+  assert.ok(Number(ex) > Number(sx), 'baseline runs backwards');
+  return true;
+});
+
+await check('a clamped anchor stays inside the rectangle it was given', () => {
+  const rect = { x0: 10, x1: 100, y0: 20, y1: 60 };
+  assert.deepEqual(clampInto(-40, 900, rect), [10, 60]);
+  assert.deepEqual(clampInto(55, 40, rect), [55, 40]);
+  assert.equal(intersect({ x0: 0, x1: 5, y0: 0, y1: 5 }, { x0: 6, x1: 9, y0: 0, y1: 5 }), null);
+  assert.deepEqual(intersect({ x0: 0, x1: 10, y0: 0, y1: 10 }, { x0: 5, x1: 20, y0: 5, y1: 20 }), {
+    x0: 5,
+    x1: 10,
+    y0: 5,
+    y1: 10,
+  });
+  return true;
+});
+
+await check('label width grows with the label', () => {
+  assert.ok(textWidth('Diamondback', 9.5) > textWidth('Orion', 9.5));
+  assert.ok(textWidth('AREA 72', 15, 2.4) > textWidth('AREA 72', 15));
+  return true;
+});
+
+section('map/scale');
+
+await check('the scale bar states a distance it actually spans', () => {
+  // The old bar set its width to 100·scale px against a CSS cap of 140px, so
+  // from zoom 1.4 up it was clamped while still claiming to be 100 m.
+  for (const z of [0.18, 0.3, 0.5, 0.95, 1.4, 2, 3, 4.5, 6]) {
+    const bar = scaleBar(z);
+    assert.ok(bar.px >= 40 && bar.px <= 140, `bar is ${Math.round(bar.px)}px at zoom ${z}`);
+    // The stated length and the drawn length are the same measurement.
+    assert.ok(Math.abs(bar.metres * z - bar.px) / bar.px < 0.02, `bar lies at zoom ${z}`);
+  }
+  return true;
+});
+
+await check('the scale bar rounds to numbers people use', () => {
+  const allowed = new Set(['25 ft', '50 ft', '100 ft', '250 ft', '500 ft', '1000 ft', '2000 ft', '1 mi']);
+  for (let z = 0.18; z <= 6; z += 0.07) {
+    assert.ok(allowed.has(scaleBar(z).label), `odd label ${scaleBar(z).label}`);
+  }
+  return true;
+});
+
+await check('zooming in never makes the bar cover more ground', () => {
+  let last = Infinity;
+  for (let z = 0.18; z <= 6; z += 0.05) {
+    const { metres } = scaleBar(z);
+    assert.ok(metres <= last + 1e-9, `bar grew from ${last} m to ${metres} m on zooming in`);
+    last = metres;
+  }
+  return true;
+});
+
+/* ------------------------------------------------------- venue picking --- */
+
+section('venue selection');
+
+const KI = {
+  id: 'kings-island',
+  name: 'Kings Island',
+  center: { lat: 39.3434, lng: -84.267 },
+  bounds: { north: 39.348, south: 39.3365, east: -84.2595, west: -84.2775 },
+};
+const SFFT = {
+  id: 'six-flags-fiesta-texas',
+  name: 'Six Flags Fiesta Texas',
+  center: { lat: 29.5992, lng: -98.61455 },
+  bounds: { north: 29.60898, south: 29.58942, east: -98.60346, west: -98.62564 },
+};
+const MANIFEST = { venues: [KI, SFFT] };
+
+await check('a fix inside a venue picks that venue', () => {
+  const hit = venueForPosition(MANIFEST, 39.34395, -84.2673);
+  assert.equal(hit.venue.id, 'kings-island');
+  assert.equal(hit.inside, true);
+  return true;
+});
+
+await check('a fix inside the other venue picks the other venue', () => {
+  const hit = venueForPosition(MANIFEST, 29.5992, -98.6145);
+  assert.equal(hit.venue.id, 'six-flags-fiesta-texas');
+  assert.equal(hit.inside, true);
+  return true;
+});
+
+// Containment has to beat proximity, or standing at the far edge of one venue
+// hands you the map of a nearer venue's centre.
+await check('a fix in neither venue falls back to the nearest centre', () => {
+  const hit = venueForPosition(MANIFEST, 39.1, -84.5);
+  assert.equal(hit.venue.id, 'kings-island');
+  assert.equal(hit.inside, false);
+  return true;
+});
+
+await check('withinBounds refuses a missing box or a missing fix', () => {
+  assert.equal(withinBounds(null, 39.34, -84.26), false);
+  assert.equal(withinBounds(KI.bounds, NaN, -84.26), false);
+  return true;
+});
+
+/* --------------------------------------------------------- intake question - */
+
+// The question the app asks on the way in, and the two facts it needs to know
+// before asking: which park is nearest, and whether it has asked already.
+
+await check('the intake asks about the park an unplaced visitor is nearest', () => {
+  // Austin: a couple of hours from Fiesta Texas, a continent from Kings Island.
+  const ask = venueChoiceFor(MANIFEST, 30.2672, -97.7431, {});
+  assert.equal(ask.venue.id, 'six-flags-fiesta-texas');
+  assert.equal(ask.inside, false);
+  return true;
+});
+
+await check('the intake does not ask twice about the same park', () => {
+  const confirmed = 'six-flags-fiesta-texas';
+  assert.equal(venueChoiceFor(MANIFEST, 30.2672, -97.7431, { confirmed }), null);
+  // Nor when the visitor has drifted nearer another one without going in: they
+  // said where they were going, and a motorway is not a park.
+  assert.equal(venueChoiceFor(MANIFEST, 39.1, -84.5, { confirmed }), null);
+  return true;
+});
+
+await check('turning up inside a different park is worth asking about', () => {
+  const ask = venueChoiceFor(MANIFEST, 39.34395, -84.2673, {
+    confirmed: 'six-flags-fiesta-texas',
+  });
+  assert.equal(ask.venue.id, 'kings-island');
+  assert.equal(ask.inside, true);
+  return true;
+});
+
+await check('a map picked by hand is never questioned', () => {
+  assert.equal(venueChoiceFor(MANIFEST, 30.2672, -97.7431, { pinned: true }), null);
+  assert.equal(venueChoiceFor(MANIFEST, 39.34395, -84.2673, { pinned: true }), null);
+  return true;
+});
+
+await check('the other parks come back nearest first, with real distances', () => {
+  const rows = venuesByDistance(MANIFEST, 30.2672, -97.7431);
+  assert.deepEqual(
+    rows.map((r) => r.venue.id),
+    ['six-flags-fiesta-texas', 'kings-island'],
+  );
+  // Austin to San Antonio is about 120 km; to Mason, Ohio, about 1,600 km.
+  // Rough equirectangular metres are wrong by hundreds of km at that spread,
+  // which is the reason this list is measured with haversine.
+  assert.ok(Math.abs(rows[0].metres - 118_000) < 12_000, `${rows[0].metres} m to Fiesta Texas`);
+  assert.ok(Math.abs(rows[1].metres - 1_600_000) < 120_000, `${rows[1].metres} m to Kings Island`);
+  return true;
+});
+
+await check('standing in a park puts it first however far its centre is', () => {
+  // The north-east corner of Kings Island: inside it, but further from its
+  // centre than a fix parked outside the fence would be.
+  const rows = venuesByDistance(MANIFEST, 39.3478, -84.2597);
+  assert.equal(rows[0].venue.id, 'kings-island');
+  assert.equal(rows[0].inside, true);
+  return true;
+});
+
+await check('with no fix the parks still list, undistanced', () => {
+  const rows = venuesByDistance(MANIFEST, null, null);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].metres, null);
+  assert.equal(rows[0].inside, false);
+  return true;
+});
+
+await check('an unknown district still gets a legible, stable tint', () => {
+  const curated = landTint('Coney Mall', 'day');
+  assert.equal(curated.fill, '#F4CBA9');
+  const made = landTint('Los Festivales', 'day');
+  assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
+  assert.notEqual(made.fill, landTint('Rockville', 'day').fill); // distinct
+  assert.notEqual(made.fill, landTint('Los Festivales', 'night').fill); // themed
+  return true;
+});
+
+/* --------------------------------------------------- venue build geometry - */
+
+section('venue geometry');
+
+const SQUARE = [
+  [-84.267, 39.343],
+  [-84.267, 39.344],
+  [-84.266, 39.344],
+  [-84.266, 39.343],
+  [-84.267, 39.343],
+];
+
+// The bug this exists for: Douglas-Peucker measures every vertex against the
+// line from the first point to the last, and on a closed ring those are the
+// same point — so the whole polygon collapsed to a dot and every filled layer
+// came out empty while the open polylines looked fine.
+await check('simplifying a closed ring keeps a polygon', () => {
+  const dense = [];
+  for (let i = 0; i <= 40; i += 1) {
+    const t = (i / 40) * Math.PI * 2;
+    dense.push([-84.267 + 0.0004 * Math.cos(t), 39.3435 + 0.0004 * Math.sin(t)]);
+  }
+  dense.push(dense[0]);
+  const out = simplify(dense, 1.2);
+  assert.ok(out.length >= 4, `ring collapsed to ${out.length} points`);
+  assert.ok(out.length < dense.length);
+  assert.deepEqual(out[0], out[out.length - 1]);
+  return true;
+});
+
+await check('simplifying an open line drops only redundant points', () => {
+  const straight = [
+    [-84.268, 39.343],
+    [-84.267, 39.343],
+    [-84.266, 39.343],
+  ];
+  assert.deepEqual(simplify(straight, 1.2), [straight[0], straight[2]]);
+  return true;
+});
+
+await check('area, centroid and containment agree on a square', () => {
+  const area = areaOf(SQUARE);
+  assert.ok(area > 8000 && area < 12000, `${area} m2`);
+  const [lng, lat] = centroidOf(SQUARE);
+  assert.ok(Math.abs(lat - 39.3435) < 1e-6 && Math.abs(lng + 84.2665) < 1e-6);
+  assert.equal(pointInRing([-84.2665, 39.3435], SQUARE), true);
+  assert.equal(pointInRing([-84.2, 39.3435], SQUARE), false);
+  return true;
+});
+
+await check('rounding collapses duplicate points at metre precision', () => {
+  const out = round([
+    [-84.2670001, 39.3430001],
+    [-84.2670002, 39.3430002],
+    [-84.266, 39.343],
+  ]);
+  assert.deepEqual(out, [
+    [-84.267, 39.343],
+    [-84.266, 39.343],
+  ]);
+  return true;
+});
+
+/* ------------------------------------------------------- venue tag rules - */
+
+section('venue tag rules');
+
+await check('coaster track is track and its station is a building', () => {
+  assert.equal(classify(LAYER_RULES, { roller_coaster: 'track', name: 'Banshee' }), 'coaster');
+  assert.equal(
+    classify(LAYER_RULES, { attraction: 'roller_coaster', roller_coaster: 'station', building: 'yes' }),
+    'building',
+  );
+  return true;
+});
+
+await check('ordinary map furniture lands in the right layer', () => {
+  assert.equal(classify(LAYER_RULES, { highway: 'footway' }), 'path');
+  assert.equal(classify(LAYER_RULES, { highway: 'service' }), 'service');
+  assert.equal(classify(LAYER_RULES, { natural: 'water' }), 'water');
+  assert.equal(classify(LAYER_RULES, { amenity: 'parking' }), 'parking');
+  assert.equal(classify(LAYER_RULES, { building: 'yes' }), 'building');
+  assert.equal(classify(LAYER_RULES, { name: 'Nothing in particular' }), null);
+  return true;
+});
+
+// The rules have to hold up somewhere that is not an amusement park, which is
+// the whole claim the venue builder makes.
+await check('a campus and a town centre classify without coasters', () => {
+  assert.equal(classify(POI_RULES, { amenity: 'cafe', name: 'Refectory' }), 'food');
+  assert.equal(classify(POI_RULES, { amenity: 'toilets' }), 'restroom');
+  assert.equal(classify(POI_RULES, { shop: 'books', name: 'Campus Books' }), 'shop');
+  assert.equal(classify(POI_RULES, { historic: 'memorial', name: 'War Memorial' }), 'landmark');
+  assert.equal(isLand({ place: 'neighbourhood', name: 'Old Town' }), true);
+  assert.equal(isLand({ amenity: 'university', name: 'The University' }), true);
+  assert.equal(isLand({ building: 'yes', name: 'Hall' }), false);
+  return true;
+});
+
 /* -------------------------------------------------------- ride reports --- */
 
 section('state/ride-reports');
@@ -1912,230 +2439,6 @@ await check('a place is addressable by id and by name', () => {
   // The first of a repeated name wins the bare-name key; the rest need the id.
   assert.equal(index.get('restrooms').n, 'Restrooms');
   assert.ok(index.get('restrooms-2'));
-  return true;
-});
-
-/* ------------------------------------------------------- venue picking --- */
-
-section('venue selection');
-
-const KI = {
-  id: 'kings-island',
-  name: 'Kings Island',
-  center: { lat: 39.3434, lng: -84.267 },
-  bounds: { north: 39.348, south: 39.3365, east: -84.2595, west: -84.2775 },
-};
-const SFFT = {
-  id: 'six-flags-fiesta-texas',
-  name: 'Six Flags Fiesta Texas',
-  center: { lat: 29.5992, lng: -98.61455 },
-  bounds: { north: 29.60898, south: 29.58942, east: -98.60346, west: -98.62564 },
-};
-const MANIFEST = { venues: [KI, SFFT] };
-
-await check('a fix inside a venue picks that venue', () => {
-  const hit = venueForPosition(MANIFEST, 39.34395, -84.2673);
-  assert.equal(hit.venue.id, 'kings-island');
-  assert.equal(hit.inside, true);
-  return true;
-});
-
-await check('a fix inside the other venue picks the other venue', () => {
-  const hit = venueForPosition(MANIFEST, 29.5992, -98.6145);
-  assert.equal(hit.venue.id, 'six-flags-fiesta-texas');
-  assert.equal(hit.inside, true);
-  return true;
-});
-
-// Containment has to beat proximity, or standing at the far edge of one venue
-// hands you the map of a nearer venue's centre.
-await check('a fix in neither venue falls back to the nearest centre', () => {
-  const hit = venueForPosition(MANIFEST, 39.1, -84.5);
-  assert.equal(hit.venue.id, 'kings-island');
-  assert.equal(hit.inside, false);
-  return true;
-});
-
-await check('withinBounds refuses a missing box or a missing fix', () => {
-  assert.equal(withinBounds(null, 39.34, -84.26), false);
-  assert.equal(withinBounds(KI.bounds, NaN, -84.26), false);
-  return true;
-});
-
-/* --------------------------------------------------------- intake question - */
-
-// The question the app asks on the way in, and the two facts it needs to know
-// before asking: which park is nearest, and whether it has asked already.
-
-await check('the intake asks about the park an unplaced visitor is nearest', () => {
-  // Austin: a couple of hours from Fiesta Texas, a continent from Kings Island.
-  const ask = venueChoiceFor(MANIFEST, 30.2672, -97.7431, {});
-  assert.equal(ask.venue.id, 'six-flags-fiesta-texas');
-  assert.equal(ask.inside, false);
-  return true;
-});
-
-await check('the intake does not ask twice about the same park', () => {
-  const confirmed = 'six-flags-fiesta-texas';
-  assert.equal(venueChoiceFor(MANIFEST, 30.2672, -97.7431, { confirmed }), null);
-  // Nor when the visitor has drifted nearer another one without going in: they
-  // said where they were going, and a motorway is not a park.
-  assert.equal(venueChoiceFor(MANIFEST, 39.1, -84.5, { confirmed }), null);
-  return true;
-});
-
-await check('turning up inside a different park is worth asking about', () => {
-  const ask = venueChoiceFor(MANIFEST, 39.34395, -84.2673, {
-    confirmed: 'six-flags-fiesta-texas',
-  });
-  assert.equal(ask.venue.id, 'kings-island');
-  assert.equal(ask.inside, true);
-  return true;
-});
-
-await check('a map picked by hand is never questioned', () => {
-  assert.equal(venueChoiceFor(MANIFEST, 30.2672, -97.7431, { pinned: true }), null);
-  assert.equal(venueChoiceFor(MANIFEST, 39.34395, -84.2673, { pinned: true }), null);
-  return true;
-});
-
-await check('the other parks come back nearest first, with real distances', () => {
-  const rows = venuesByDistance(MANIFEST, 30.2672, -97.7431);
-  assert.deepEqual(
-    rows.map((r) => r.venue.id),
-    ['six-flags-fiesta-texas', 'kings-island'],
-  );
-  // Austin to San Antonio is about 120 km; to Mason, Ohio, about 1,600 km.
-  // Rough equirectangular metres are wrong by hundreds of km at that spread,
-  // which is the reason this list is measured with haversine.
-  assert.ok(Math.abs(rows[0].metres - 118_000) < 12_000, `${rows[0].metres} m to Fiesta Texas`);
-  assert.ok(Math.abs(rows[1].metres - 1_600_000) < 120_000, `${rows[1].metres} m to Kings Island`);
-  return true;
-});
-
-await check('standing in a park puts it first however far its centre is', () => {
-  // The north-east corner of Kings Island: inside it, but further from its
-  // centre than a fix parked outside the fence would be.
-  const rows = venuesByDistance(MANIFEST, 39.3478, -84.2597);
-  assert.equal(rows[0].venue.id, 'kings-island');
-  assert.equal(rows[0].inside, true);
-  return true;
-});
-
-await check('with no fix the parks still list, undistanced', () => {
-  const rows = venuesByDistance(MANIFEST, null, null);
-  assert.equal(rows.length, 2);
-  assert.equal(rows[0].metres, null);
-  assert.equal(rows[0].inside, false);
-  return true;
-});
-
-await check('an unknown district still gets a legible, stable tint', () => {
-  const curated = landTint('Coney Mall', 'day');
-  assert.equal(curated.fill, '#F4CBA9');
-  const made = landTint('Los Festivales', 'day');
-  assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
-  assert.notEqual(made.fill, landTint('Rockville', 'day').fill); // distinct
-  assert.notEqual(made.fill, landTint('Los Festivales', 'night').fill); // themed
-  return true;
-});
-
-/* --------------------------------------------------- venue build geometry - */
-
-section('venue geometry');
-
-const SQUARE = [
-  [-84.267, 39.343],
-  [-84.267, 39.344],
-  [-84.266, 39.344],
-  [-84.266, 39.343],
-  [-84.267, 39.343],
-];
-
-// The bug this exists for: Douglas-Peucker measures every vertex against the
-// line from the first point to the last, and on a closed ring those are the
-// same point — so the whole polygon collapsed to a dot and every filled layer
-// came out empty while the open polylines looked fine.
-await check('simplifying a closed ring keeps a polygon', () => {
-  const dense = [];
-  for (let i = 0; i <= 40; i += 1) {
-    const t = (i / 40) * Math.PI * 2;
-    dense.push([-84.267 + 0.0004 * Math.cos(t), 39.3435 + 0.0004 * Math.sin(t)]);
-  }
-  dense.push(dense[0]);
-  const out = simplify(dense, 1.2);
-  assert.ok(out.length >= 4, `ring collapsed to ${out.length} points`);
-  assert.ok(out.length < dense.length);
-  assert.deepEqual(out[0], out[out.length - 1]);
-  return true;
-});
-
-await check('simplifying an open line drops only redundant points', () => {
-  const straight = [
-    [-84.268, 39.343],
-    [-84.267, 39.343],
-    [-84.266, 39.343],
-  ];
-  assert.deepEqual(simplify(straight, 1.2), [straight[0], straight[2]]);
-  return true;
-});
-
-await check('area, centroid and containment agree on a square', () => {
-  const area = areaOf(SQUARE);
-  assert.ok(area > 8000 && area < 12000, `${area} m2`);
-  const [lng, lat] = centroidOf(SQUARE);
-  assert.ok(Math.abs(lat - 39.3435) < 1e-6 && Math.abs(lng + 84.2665) < 1e-6);
-  assert.equal(pointInRing([-84.2665, 39.3435], SQUARE), true);
-  assert.equal(pointInRing([-84.2, 39.3435], SQUARE), false);
-  return true;
-});
-
-await check('rounding collapses duplicate points at metre precision', () => {
-  const out = round([
-    [-84.2670001, 39.3430001],
-    [-84.2670002, 39.3430002],
-    [-84.266, 39.343],
-  ]);
-  assert.deepEqual(out, [
-    [-84.267, 39.343],
-    [-84.266, 39.343],
-  ]);
-  return true;
-});
-
-/* ------------------------------------------------------- venue tag rules - */
-
-section('venue tag rules');
-
-await check('coaster track is track and its station is a building', () => {
-  assert.equal(classify(LAYER_RULES, { roller_coaster: 'track', name: 'Banshee' }), 'coaster');
-  assert.equal(
-    classify(LAYER_RULES, { attraction: 'roller_coaster', roller_coaster: 'station', building: 'yes' }),
-    'building',
-  );
-  return true;
-});
-
-await check('ordinary map furniture lands in the right layer', () => {
-  assert.equal(classify(LAYER_RULES, { highway: 'footway' }), 'path');
-  assert.equal(classify(LAYER_RULES, { highway: 'service' }), 'service');
-  assert.equal(classify(LAYER_RULES, { natural: 'water' }), 'water');
-  assert.equal(classify(LAYER_RULES, { amenity: 'parking' }), 'parking');
-  assert.equal(classify(LAYER_RULES, { building: 'yes' }), 'building');
-  assert.equal(classify(LAYER_RULES, { name: 'Nothing in particular' }), null);
-  return true;
-});
-
-// The rules have to hold up somewhere that is not an amusement park, which is
-// the whole claim the venue builder makes.
-await check('a campus and a town centre classify without coasters', () => {
-  assert.equal(classify(POI_RULES, { amenity: 'cafe', name: 'Refectory' }), 'food');
-  assert.equal(classify(POI_RULES, { amenity: 'toilets' }), 'restroom');
-  assert.equal(classify(POI_RULES, { shop: 'books', name: 'Campus Books' }), 'shop');
-  assert.equal(classify(POI_RULES, { historic: 'memorial', name: 'War Memorial' }), 'landmark');
-  assert.equal(isLand({ place: 'neighbourhood', name: 'Old Town' }), true);
-  assert.equal(isLand({ amenity: 'university', name: 'The University' }), true);
-  assert.equal(isLand({ building: 'yes', name: 'Hall' }), false);
   return true;
 });
 
