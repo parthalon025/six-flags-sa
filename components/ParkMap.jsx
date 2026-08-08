@@ -906,6 +906,12 @@ export default function ParkMap({
         <g className="lyr-watersheen">{layers.poly(data.water, 'wash')}</g>
         <g className="lyr-pool">{layers.poly(data.pool, 'po')}</g>
 
+        {/* Where the park stops. Drawn over the ground and under everything you
+            walk on, so it reads as the edge of the place rather than another
+            thing in it — the answer to "is the car park still inside?", which
+            is otherwise a guess from the colour of the fill. */}
+        <g className="lyr-boundary">{layers.poly(data.boundary ? [data.boundary] : null, 'bd')}</g>
+
         {showService && (
           <g className="lyr-service lyr-detail">{layers.line(data.service, 'sv')}</g>
         )}

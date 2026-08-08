@@ -414,6 +414,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* The same water, drawn under the ground instead of over it. No edge: its
    outline is the venue's own shoreline, which the ground draws on top of. */
 .lyr-sea path { fill: var(--waterFill); stroke: none; }
+/* The park's edge. Dashed, unfilled and a little transparent: it has to be
+   findable when you go looking for it and ignorable when you are not, the way a
+   boundary is drawn on a printed map rather than the way a wall is. */
+.lyr-boundary path {
+  fill: none;
+  stroke: var(--dim);
+  stroke-width: 2.5;
+  stroke-dasharray: 9 7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  opacity: .75;
+}
 .lyr-pool path { fill: var(--poolFill); stroke: var(--poolEdge); stroke-width: 1; }
 .lyr-service path { fill: none; stroke: var(--backOfHouse); stroke-width: 2.5; stroke-linecap: round; }
 .lyr-pathcase path { fill: none; stroke: var(--midwayCase); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }

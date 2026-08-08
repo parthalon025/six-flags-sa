@@ -492,6 +492,16 @@ about a third of the bytes. And water that covers the whole box is not a pond bu
 the venue stands in, so it goes in a `sea` layer drawn *under* the ground rather than over
 it — otherwise a park on a peninsula renders at the bottom of the lake.
 
+**The boundary is chosen, not guessed.** A venue's outline is the ring that carries its
+name and is tagged as somewhere you can visit — `tourism=theme_park`, `leisure=park`, a
+campus — and civic boundaries are excluded outright. Kings Island is mapped as a 150-point
+`tourism=theme_park` way and sits inside the census area of Landen, which TIGER mapped as a
+named `place=locality` five times the size; the old biggest-ring-wins rule therefore drew a
+census tract as the park's ground and then used it to decide which districts were "inside",
+where one place out of 219 was. The chosen ring is written to the venue file as `boundary`,
+drawn on the map as a dashed perimeter, and the build reports how many places fall inside
+it — the number that gives a wrong ring away.
+
 The other one is gates. A thoroughly mapped park has a `barrier=gate` on every ride queue
 and service road — Cedar Point has 158 — and an unnamed one is furniture, not a place
 anyone walks to. A gate earns a pin by being the entrance (`entrance=main`), by being a

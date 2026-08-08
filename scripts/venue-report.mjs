@@ -14,6 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { pointInRing } from './lib/geometry.mjs';
 
 const VENUE_DIR = path.join(process.cwd(), 'public', 'venues');
 
@@ -54,6 +55,12 @@ say();
 say(`* **${pois.length}** places, **${venue.counts.rides}** of them rides, **${venue.counts.heights}** with height rules`);
 say(`* **${drawn}** drawn shapes across ${layers.length} layers — map **${kb(mapFile)} KB**, places **${kb(poisFile)} KB**`);
 say(`* centre \`${venue.center.lat}, ${venue.center.lng}\`${venue.locality ? ` — ${venue.locality}` : ''}`);
+if (map.boundary) {
+  const within = pois.filter((p) => pointInRing([p.lng, p.lat], map.boundary)).length;
+  say(`* boundary of **${map.boundary.length}** points, with **${within}/${pois.length}** places inside it`);
+} else {
+  say('* **no boundary** — nothing in the box is tagged as the venue itself');
+}
 say();
 say('| Layer | Shapes |');
 say('| --- | ---: |');

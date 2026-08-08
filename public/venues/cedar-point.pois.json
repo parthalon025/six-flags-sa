@@ -175,6 +175,13 @@
     "a": "Lakeside Midway"
   },
   {
+    "n": "Cedar Point Marina Pool",
+    "lat": 41.478132,
+    "lng": -82.681931,
+    "c": "ride",
+    "a": "Cedar Point"
+  },
+  {
     "n": "Cedar Point Shores Parking Lot",
     "lat": 41.487712,
     "lng": -82.688728,

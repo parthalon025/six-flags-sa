@@ -23,8 +23,8 @@
       "map": "/venues/cedar-point.map.json",
       "pois": "/venues/cedar-point.pois.json",
       "counts": {
-        "pois": 242,
-        "rides": 60,
+        "pois": 243,
+        "rides": 61,
         "heights": 0
       }
     },
@@ -38,10 +38,10 @@
         "lng": -84.265811
       },
       "bounds": {
-        "north": 39.354,
-        "south": 39.33366,
-        "east": -84.25257,
-        "west": -84.28023
+        "north": 39.348,
+        "south": 39.3365,
+        "east": -84.2595,
+        "west": -84.2775
       },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from Kings Island Central and Theme Park Insider for the 2026 season.",
@@ -49,9 +49,9 @@
       "map": "/venues/kings-island.map.json",
       "pois": "/venues/kings-island.pois.json",
       "counts": {
-        "pois": 219,
-        "rides": 66,
-        "heights": 58
+        "pois": 171,
+        "rides": 73,
+        "heights": 65
       }
     },
     {
@@ -75,8 +75,8 @@
       "map": "/venues/six-flags-fiesta-texas.map.json",
       "pois": "/venues/six-flags-fiesta-texas.pois.json",
       "counts": {
-        "pois": 156,
-        "rides": 45,
+        "pois": 136,
+        "rides": 53,
         "heights": 0
       }
     }

@@ -118,7 +118,9 @@ const { CATEGORY_LABELS, landTint } = await import('../lib/theme.js');
 const { areaOf, centroidOf, clipToBounds, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
-const { LAYER_RULES, POI_RULES, classify, isLand } = await import('../scripts/lib/osm-tags.mjs');
+const { LAYER_RULES, POI_RULES, classify, isCivicBoundary, isLand, isVenueOutline } = await import(
+  '../scripts/lib/osm-tags.mjs'
+);
 
 /* ------------------------------------------------------------- harness --- */
 
@@ -1911,6 +1913,43 @@ await check('rounding collapses duplicate points at metre precision', () => {
 /* ------------------------------------------------------- venue tag rules - */
 
 section('venue tag rules');
+
+/* The boundary. Kings Island shipped drawing the census area of Landen as its
+   own ground: TIGER mapped it as a named `place=locality`, which walked through
+   the district rule, and being five times the size of the park it then won the
+   biggest-ring-wins test for the venue outline. One place out of 219 was inside
+   the shape the app believed was the park. */
+
+const LANDEN = { boundary: 'census', place: 'locality', name: 'Landen' };
+const MASON = { boundary: 'administrative', admin_level: '8', place: 'city', name: 'Mason' };
+const KI_PARK = { tourism: 'theme_park', name: 'Kings Island' };
+const CONEY = { place: 'locality', name: 'Coney Mall' };
+
+await check('a census tract or a city is never part of a venue', () => {
+  assert.equal(isCivicBoundary(LANDEN), true);
+  assert.equal(isCivicBoundary(MASON), true);
+  assert.equal(isLand(LANDEN), false, 'a census tract came back as a district');
+  assert.equal(isLand(MASON), false);
+  assert.equal(isVenueOutline(LANDEN), false, 'a census tract could be taken for the park');
+  return true;
+});
+
+await check('a themed area inside the park is still a district', () => {
+  // The rule that admits Coney Mall is the same one that admitted Landen, so
+  // the fix has to leave this standing.
+  assert.equal(isCivicBoundary(CONEY), false);
+  assert.equal(isLand(CONEY), true);
+  return true;
+});
+
+await check('the park itself can be the outline, a district cannot', () => {
+  assert.equal(isVenueOutline(KI_PARK), true);
+  assert.equal(isVenueOutline(CONEY), false, 'a locality is a district, not the venue');
+  assert.equal(isVenueOutline({ leisure: 'park', name: 'Somewhere' }), true);
+  assert.equal(isVenueOutline({ amenity: 'university', name: 'A Campus' }), true);
+  assert.equal(isVenueOutline({ building: 'yes', name: 'A Shed' }), false);
+  return true;
+});
 
 await check('coaster track is track and its station is a building', () => {
   assert.equal(classify(LAYER_RULES, { roller_coaster: 'track', name: 'Banshee' }), 'coaster');

@@ -49,6 +49,13 @@
     "a": "Rockville"
   },
   {
+    "n": "Bermuda Triangle, Riptide Runner Slide Pool",
+    "lat": 29.599801,
+    "lng": -98.610599,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Blue Snowman Soft Serve",
     "lat": 29.59551,
     "lng": -98.608782,
@@ -147,6 +154,13 @@
     "a": "Rockville"
   },
   {
+    "n": "Coral Cove",
+    "lat": 29.60035,
+    "lng": -98.611448,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Crackaxle Dippin' Dots",
     "lat": 29.59856,
     "lng": -98.6123,
@@ -243,202 +257,6 @@
     "lng": -98.611345,
     "c": "coaster",
     "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.602603,
-    "lng": -98.604151,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.604563,
-    "lng": -98.604923,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.596136,
-    "lng": -98.610502,
-    "c": "gate",
-    "a": "DC Universe"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.596999,
-    "lng": -98.608485,
-    "c": "gate",
-    "a": "Rockville"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.598325,
-    "lng": -98.609545,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.596307,
-    "lng": -98.608141,
-    "c": "gate",
-    "a": "Rockville"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.599123,
-    "lng": -98.609537,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.597395,
-    "lng": -98.609142,
-    "c": "gate",
-    "a": "Spassburg"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.600501,
-    "lng": -98.615449,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.600704,
-    "lng": -98.603031,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.601808,
-    "lng": -98.603794,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.599052,
-    "lng": -98.610636,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.597999,
-    "lng": -98.6097,
-    "c": "gate",
-    "a": "Spassburg"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.597956,
-    "lng": -98.610741,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.597637,
-    "lng": -98.610697,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.597318,
-    "lng": -98.611557,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.598487,
-    "lng": -98.611295,
-    "c": "gate",
-    "a": "Texas State Square"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.597673,
-    "lng": -98.610223,
-    "c": "gate",
-    "a": "Spassburg"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.59594,
-    "lng": -98.608053,
-    "c": "gate",
-    "a": "Rockville"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.595586,
-    "lng": -98.608132,
-    "c": "gate",
-    "a": "Fiesta Bay Boardwalk"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.595558,
-    "lng": -98.609218,
-    "c": "gate",
-    "a": "Rockville"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.595832,
-    "lng": -98.609773,
-    "c": "gate",
-    "a": "Rockville"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.596324,
-    "lng": -98.607632,
-    "c": "gate",
-    "a": "Fiesta Bay Boardwalk"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.596281,
-    "lng": -98.610847,
-    "c": "gate",
-    "a": "DC Universe"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.597495,
-    "lng": -98.613148,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.59881,
-    "lng": -98.61096,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.598633,
-    "lng": -98.612761,
-    "c": "gate",
-    "a": "Six Flags Fiesta Texas"
-  },
-  {
-    "n": "Entrance",
-    "lat": 29.59537,
-    "lng": -98.608856,
-    "c": "gate",
-    "a": "Rockville"
   },
   {
     "n": "Fat Burger - Fiesta Bay Boardwalk",
@@ -630,6 +448,13 @@
     "a": "Los Festivales"
   },
   {
+    "n": "Lone Star Lagoon",
+    "lat": 29.600562,
+    "lng": -98.609784,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Lone Star Lil's Amphitheater",
     "lat": 29.597779,
     "lng": -98.611609,
@@ -652,8 +477,8 @@
   },
   {
     "n": "Metropolis Transit Authority",
-    "lat": 29.596933,
-    "lng": -98.609988,
+    "lat": 29.596935,
+    "lng": -98.609872,
     "c": "ride",
     "a": "DC Universe"
   },
@@ -691,6 +516,13 @@
     "lng": -98.607268,
     "c": "coaster",
     "a": "Fiesta Bay Boardwalk"
+  },
+  {
+    "n": "Paradise Cove",
+    "lat": 29.600718,
+    "lng": -98.610443,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
   },
   {
     "n": "Park Row Refresh Station",
@@ -924,6 +756,13 @@
     "a": "Fiesta Bay Boardwalk"
   },
   {
+    "n": "Splash Water Springs",
+    "lat": 29.600314,
+    "lng": -98.611847,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Stroller & Wheelchair Rental",
     "lat": 29.599117,
     "lng": -98.609384,
@@ -980,6 +819,13 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "n": "Texas Treehouse Slide Pool",
+    "lat": 29.600426,
+    "lng": -98.612168,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "The Caped Crusader",
     "lat": 29.597015,
     "lng": -98.610435,
@@ -1012,6 +858,13 @@
     "lat": 29.599811,
     "lng": -98.61002,
     "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tornado Slide Pool",
+    "lat": 29.600442,
+    "lng": -98.610433,
+    "c": "ride",
     "a": "Six Flags Fiesta Texas"
   },
   {
@@ -1061,6 +914,13 @@
     "lat": 29.60339,
     "lng": -98.603429,
     "c": "shop",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "White Water Canyon",
+    "lat": 29.599386,
+    "lng": -98.610985,
+    "c": "ride",
     "a": "Six Flags Fiesta Texas"
   },
   {
