@@ -48,7 +48,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
   return (
     <div>
       <div className="label">
-        Rider height
+        Rider Height
         {height != null && (
           <button type="button" className="labelAction" onClick={() => onHeight(null)}>
             Clear
@@ -123,7 +123,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
         </p>
       )}
 
-      <div className="label">Assume there is</div>
+      <div className="label">Assume There Is</div>
       <div className="chips">
         <button
           type="button"

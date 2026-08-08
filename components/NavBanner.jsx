@@ -78,7 +78,7 @@ export default function NavBanner({ target, route, progress, offRoute, rerouted 
             <span className={`navThenIcon ${then.turn}`}>
               <TurnIcon turn={then.turn} />
             </span>
-            then {then.text.toLowerCase()}
+            then {then.text.charAt(0).toLowerCase() + then.text.slice(1)}
           </div>
         )
       )}

@@ -39,17 +39,21 @@
   --fill3: rgba(118, 118, 128, .24);
 
   /* ---- system colours ---- */
-  --blue: #0a84ff;
+  /* Re-specified by Apple on 9 June 2025, alongside Liquid Glass. Most of the
+     set moved — blue, red, orange, teal, indigo and purple all shifted, some
+     of them a long way — while green, yellow and pink came through unchanged.
+     The iOS 18 values these replace now read as dated next to system chrome. */
+  --blue: #0091ff;
   --green: #30d158;
-  --red: #ff453a;
-  --orange: #ff9f0a;
-  --yellow: #ffd60a;
-  --teal: #40c8e0;
-  --indigo: #5e5ce6;
-  --purple: #bf5af2;
+  --red: #ff4245;
+  --orange: #ff9230;
+  --yellow: #ffd600;
+  --teal: #00d2e0;
+  --indigo: #6d7cff;
+  --purple: #db34f2;
   --pink: #ff375f;
   --gray: #8e8e93;
-  --brown: #ac8e68;
+  --brown: #b78a66;
   --onTint: #ffffff;
 
   /* ---- legacy aliases ----
@@ -69,8 +73,40 @@
   --helpTint: rgba(255, 69, 58, .16);
 
   /* ---- type ---- */
-  --ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  /* Deliberately does not name 'SF Pro Text' or 'SF Pro Display'. SF is a
+     variable font that interpolates between those two optical sizes
+     continuously from 17pt to 28pt; naming either one pins it and throws that
+     interpolation away, which is the whole reason to ask for -apple-system. */
+  --ui: -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto,
+        'Helvetica Neue', Arial, sans-serif;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+
+  /* Apple's built-in text styles at the Large (default) Dynamic Type size,
+     as size / leading / tracking. Sizes and leading come from the HIG
+     specifications table; tracking is joined onto it from the separate SF Pro
+     tracking table by point size.
+
+     Note the tracking column changes sign. It tightens to a minimum around
+     19–20pt, then opens back up above that — the optical-size transition
+     showing up in the metrics — so Large Title and Title 1 track *open*.
+     Reading the curve as "tighter as it gets bigger" gets both of them
+     backwards. A browser applies none of this on its own: -apple-system gets
+     the right glyphs and neutral tracking, so it has to be set by hand.
+
+     The rules below are written with literal values rather than these tokens,
+     which is how they arrived; the tokens are here as the reference to check
+     a value against before adding one. */
+  --fs-large-title: 34px;  --lh-large-title: 41px;  --tr-large-title: .4px;
+  --fs-title1: 28px;       --lh-title1: 34px;       --tr-title1: .38px;
+  --fs-title2: 22px;       --lh-title2: 28px;       --tr-title2: -.26px;
+  --fs-title3: 20px;       --lh-title3: 25px;       --tr-title3: -.45px;
+  --fs-headline: 17px;     --lh-headline: 22px;     --tr-headline: -.43px;
+  --fs-body: 17px;         --lh-body: 22px;         --tr-body: -.43px;
+  --fs-callout: 16px;      --lh-callout: 21px;      --tr-callout: -.31px;
+  --fs-subhead: 15px;      --lh-subhead: 20px;      --tr-subhead: -.23px;
+  --fs-footnote: 13px;     --lh-footnote: 18px;     --tr-footnote: -.08px;
+  --fs-caption1: 12px;     --lh-caption1: 16px;     --tr-caption1: 0px;
+  --fs-caption2: 11px;     --lh-caption2: 13px;     --tr-caption2: .06px;
   --top: env(safe-area-inset-top, 0px);
   --bot: env(safe-area-inset-bottom, 0px);
 
@@ -194,17 +230,17 @@
   --fill2: rgba(120, 120, 128, .16);
   --fill3: rgba(118, 118, 128, .12);
 
-  --blue: #007aff;
+  --blue: #0088ff;
   --green: #34c759;
-  --red: #ff3b30;
-  --orange: #ff9500;
+  --red: #ff383c;
+  --orange: #ff8d28;
   --yellow: #ffcc00;
-  --teal: #30b0c7;
-  --indigo: #5856d6;
-  --purple: #af52de;
+  --teal: #00c3d0;
+  --indigo: #6155f5;
+  --purple: #cb30e0;
   --pink: #ff2d55;
   --gray: #8e8e93;
-  --brown: #a2845e;
+  --brown: #ac7f5e;
 
   --helpTint: rgba(255, 59, 48, .10);
 
@@ -1071,7 +1107,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   color: var(--label2); margin-bottom: 6px;
 }
 .gateCard h2 {
-  font-size: 34px; font-weight: 700; letter-spacing: -.4px; line-height: 41px;
+  font-size: 34px; font-weight: 700; letter-spacing: .4px; line-height: 41px;
   margin: 0 0 8px; text-transform: none;
 }
 .gateCard p { margin: 0 0 18px; font-size: 17px; line-height: 22px; letter-spacing: -.4px; color: var(--label2); }
@@ -1137,7 +1173,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: transform var(--t3) var(--easeOut);
 }
 .glanceWalk { display: flex; flex-direction: column; line-height: 1; }
-.glanceWalk b { font-size: 20px; font-weight: 600; letter-spacing: -.3px; font-variant-numeric: tabular-nums; }
+.glanceWalk b { font-size: 20px; font-weight: 600; letter-spacing: -.45px; font-variant-numeric: tabular-nums; }
 .glanceWalk em {
   font-style: normal; font-size: 12px; color: var(--label2); margin-top: 4px;
   font-variant-numeric: tabular-nums;
@@ -1200,7 +1236,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .heightVal { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
 .heightVal b {
-  display: block; font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.4px;
+  display: block; font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: .38px;
   color: var(--label);
 }
 .heightVal span {
@@ -1457,23 +1493,35 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
    Walking directions — the route on the map, the HUD over it
    ============================================================ */
 /* Apple Maps draws its route as a tint-coloured line inside a light casing,
-   so it stays legible whether it crosses water, grass or a car park. */
+   so it stays legible whether it crosses water, grass or a car park — but a
+   solid line is how it draws a *drive*. A walk is a row of round dots, and
+   every route in this app is a walk. Zero-length dashes with round caps get
+   there: each dash collapses to a circle of the stroke's own width, and the
+   gap sets the spacing.
+
+   Which frees the dashed treatment to keep meaning the thing below. */
 .routeCase {
   fill: none; stroke: var(--markerEdge); stroke-width: 10;
   stroke-linecap: round; stroke-linejoin: round; opacity: .9;
+  stroke-dasharray: 0 14;
 }
 .routeLine {
   fill: none; stroke: var(--blue); stroke-width: 6;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0 14;
 }
 /* Nothing in the path data joins these two points, so the line is a bearing
-   rather than a walk — and it says so by not looking like a walk. */
-.routeLine.direct { stroke-dasharray: 2 10; stroke-width: 6; stroke-linecap: round; }
+   rather than a walk — and it says so by not looking like one. Dashes, not
+   dots, now that the dots mean "this is walkable". */
+.routeLine.direct {
+  stroke-dasharray: 9 8; stroke-width: 4; stroke-linecap: butt; opacity: .85;
+}
 .routeTurn { fill: var(--onTint); stroke: var(--blue); stroke-width: 3; }
 /* Behind you, and no longer the point. */
 .routeDone {
   fill: none; stroke: var(--label3); stroke-width: 6; opacity: .5;
   stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0 14;
 }
 /* The ways you did not pick — visible, tappable, and clearly not the choice. */
 .altRoute { cursor: pointer; }
@@ -1499,7 +1547,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .navIcon { width: 32px; height: 32px; display: block; }
 .navText { flex: 1; min-width: 0; }
 .navDist {
-  display: block; font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: -.4px;
+  display: block; font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: .4px;
   font-variant-numeric: tabular-nums;
 }
 .navStep {
@@ -1541,7 +1589,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .navEnd:active { opacity: .55; }
 .navSummary { flex: 1; min-width: 0; text-align: left; }
 .navSummary b {
-  display: block; font-size: 22px; font-weight: 700; line-height: 26px; letter-spacing: -.3px;
+  display: block; font-size: 22px; font-weight: 700; line-height: 26px; letter-spacing: -.26px;
   color: var(--green); font-variant-numeric: tabular-nums;
 }
 .navSummary span {
@@ -1570,7 +1618,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .previewHead { display: flex; align-items: center; gap: 14px; }
 .previewMain { flex: 1; min-width: 0; }
 .previewMain b {
-  display: block; font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: -.4px;
+  display: block; font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: .4px;
   color: var(--green); font-variant-numeric: tabular-nums;
 }
 .previewMain b em {
@@ -1706,7 +1754,10 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   background: var(--glassTint); border: none;
   -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
   box-shadow: var(--lensEdge), var(--lensDrop);
+  transition: opacity var(--t3) var(--easeOut), transform var(--t3) var(--easeOut);
 }
+/* North-up: nothing to say, so it steps out. */
+.northRose.idle { opacity: 0; transform: scale(.8); pointer-events: none; }
 .northRose svg { width: 100%; height: 100%; display: block; }
 .roseDial { fill: none; }
 .roseNeedle { fill: var(--red); }
@@ -1781,6 +1832,67 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 /* "with adult" is caution, not accent — so it takes the warning colour rather
    than following --beacon onto the tint. */
 .calloutAdult { background: color-mix(in srgb, var(--orange) 16%, transparent); color: var(--orange); }
+
+/* Glass is a preference, not a constant. The platform lets people dial the
+   translucency back — for legibility, or because they turned on Increase
+   Contrast — and a lens that ignores both settings is a lens some people
+   cannot read through. Each of these swaps every material for an opaque fill
+   and drops the blur; shapes, spacing and type are untouched, so nothing
+   moves and nothing reflows. */
+@media (prefers-reduced-transparency: reduce) {
+  :root, :root[data-theme='day'] {
+    --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --matThin: var(--bg2); --matRegular: var(--bg2);
+    --matThick: var(--bg2); --matChrome: var(--bg2);
+    --glass: var(--bg2); --glassDeep: var(--bg2);
+    --lens: none; --lensLite: none; --lensDeep: none;
+    --blur: none; --blurLite: none;
+    --lensEdge: inset 0 0 0 .5px var(--sep);
+  }
+}
+@media (prefers-contrast: more) {
+  /* Apple ships a whole second accent palette for Increase Contrast. It is
+     not the default one darkened, and the two appearances get different
+     values, so they are stated separately. The label and separator steps are
+     not published and are a judgement call. */
+  :root {
+    --blue: #5cb8ff;
+    --green: #4ad968;
+    --red: #ff6165;
+    --orange: #ffa056;
+    --yellow: #fedf43;
+    --teal: #3bddec;
+    --indigo: #a7aaff;
+    --purple: #ea8dff;
+    --pink: #ff8ac4;
+    --label2: rgba(235, 235, 245, .82);
+    --label3: rgba(235, 235, 245, .55);
+    --sep: rgba(235, 235, 245, .42);
+  }
+  :root[data-theme='day'] {
+    --blue: #1e6ef4;
+    --green: #008932;
+    --red: #e9152d;
+    --orange: #c55300;
+    --yellow: #a16a00;
+    --teal: #008198;
+    --indigo: #564ade;
+    --purple: #b02fc2;
+    --pink: #e7124d;
+    --label2: rgba(60, 60, 67, .82);
+    --label3: rgba(60, 60, 67, .55);
+    --sep: rgba(60, 60, 67, .45);
+  }
+  :root, :root[data-theme='day'] {
+    --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --matThin: var(--bg2); --matRegular: var(--bg2);
+    --matThick: var(--bg2); --matChrome: var(--bg2);
+    --glass: var(--bg2); --glassDeep: var(--bg2);
+    --lens: none; --lensLite: none; --lensDeep: none;
+    --blur: none; --blurLite: none;
+    --lensEdge: inset 0 0 0 1px var(--sep);
+  }
+}
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes
    off in one line for anyone who asked their phone to stop moving things. This

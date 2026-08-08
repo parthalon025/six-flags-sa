@@ -72,7 +72,7 @@ export default function ParkPrompt({
 
         {options.length > 0 && (
           <>
-            <div className="label">Somewhere else</div>
+            <div className="label">Somewhere Else</div>
             <div className="venueList">
               {options.map(({ venue: other, metres, inside: within }) => (
                 <button
