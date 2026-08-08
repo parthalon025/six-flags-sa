@@ -1,0 +1,133 @@
+/* SF Symbols are Apple's, and not licensed for the web — so these are drawn to
+   match rather than imported: the same 24-unit box, the same rounded stroke
+   ends, the same optical weight. Names match the symbols they stand in for, so
+   swapping any one of them for the real thing later is a one-line change.
+
+   Everything paints in `currentColor`, which is what lets a button tint its
+   glyph by setting `color` and nothing else. */
+
+const STROKE = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const GLYPHS = {
+  'moon.fill': (
+    <path
+      d="M20.4 14.6A8.9 8.9 0 0 1 9.4 3.6 9 9 0 1 0 20.4 14.6Z"
+      fill="currentColor"
+    />
+  ),
+  'sun.max.fill': (
+    <>
+      <circle cx="12" cy="12" r="4.4" fill="currentColor" />
+      <g {...STROKE} strokeWidth="2.1">
+        <path d="M12 2.4v2.2M12 19.4v2.2M21.6 12h-2.2M4.6 12H2.4" />
+        <path d="M18.8 5.2 17.2 6.8M6.8 17.2 5.2 18.8M18.8 18.8 17.2 17.2M6.8 6.8 5.2 5.2" />
+      </g>
+    </>
+  ),
+  safari: (
+    <>
+      <circle cx="12" cy="12" r="9.1" {...STROKE} strokeWidth="1.9" />
+      <path d="M16.4 7.6 10.9 10.9 7.6 16.4 13.1 13.1Z" fill="currentColor" />
+    </>
+  ),
+  'mappin.and.ellipse': (
+    <>
+      <path
+        d="M12 2.6a5.6 5.6 0 0 0-5.6 5.6c0 4 5.6 9.4 5.6 9.4s5.6-5.4 5.6-9.4A5.6 5.6 0 0 0 12 2.6Z"
+        fill="currentColor"
+      />
+      <circle cx="12" cy="8.2" r="2.1" fill="var(--bg3, #fff)" />
+      <ellipse cx="12" cy="19.6" rx="6.4" ry="2.1" {...STROKE} strokeWidth="1.7" />
+    </>
+  ),
+  'location.fill': (
+    <path
+      d="M20.8 3.9 4.3 10.6c-1.2.5-1 2.2.2 2.5l6.1 1.4 1.4 6.1c.3 1.2 2 1.4 2.5.2l6.7-16.5c.4-1-.5-1.8-1.4-1.4Z"
+      fill="currentColor"
+    />
+  ),
+  'location.north.fill': <path d="M12 2.8 19 20.4 12 16.6 5 20.4Z" fill="currentColor" />,
+  'speaker.wave.2.fill': (
+    <>
+      <path
+        d="M11.4 3.6 6.6 7.6H3.4a1 1 0 0 0-1 1v6.8a1 1 0 0 0 1 1h3.2l4.8 4a.9.9 0 0 0 1.5-.7V4.3a.9.9 0 0 0-1.5-.7Z"
+        fill="currentColor"
+      />
+      <g {...STROKE} strokeWidth="1.9">
+        <path d="M16.4 9.2a4 4 0 0 1 0 5.6" />
+        <path d="M19.2 6.4a8 8 0 0 1 0 11.2" />
+      </g>
+    </>
+  ),
+  'speaker.slash.fill': (
+    <>
+      <path
+        d="M11.4 3.6 6.6 7.6H3.4a1 1 0 0 0-1 1v6.8a1 1 0 0 0 1 1h3.2l4.8 4a.9.9 0 0 0 1.5-.7V4.3a.9.9 0 0 0-1.5-.7Z"
+        fill="currentColor"
+      />
+      <g {...STROKE} strokeWidth="1.9">
+        <path d="M16.6 9.6 21.4 14.4M21.4 9.6 16.6 14.4" />
+      </g>
+    </>
+  ),
+  plus: <path d="M12 5.4v13.2M5.4 12h13.2" {...STROKE} strokeWidth="2.2" />,
+  minus: <path d="M5.4 12h13.2" {...STROKE} strokeWidth="2.2" />,
+  magnifyingglass: (
+    <g {...STROKE} strokeWidth="2.1">
+      <circle cx="10.6" cy="10.6" r="6.4" />
+      <path d="M15.4 15.4 20.6 20.6" />
+    </g>
+  ),
+  'xmark.circle.fill': (
+    <>
+      <circle cx="12" cy="12" r="9.4" fill="currentColor" />
+      <path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="var(--bg2, #fff)" strokeWidth="2" strokeLinecap="round" />
+    </>
+  ),
+  checkmark: <path d="M4.8 12.6 9.6 17.4 19.2 6.6" {...STROKE} strokeWidth="2.4" />,
+  'chevron.left': <path d="M15 4.5 7.5 12 15 19.5" {...STROKE} strokeWidth="2.6" />,
+  'chevron.right': <path d="M9 4.5 16.5 12 9 19.5" {...STROKE} strokeWidth="2.6" />,
+  xmark: <path d="M6 6l12 12M18 6 6 18" {...STROKE} strokeWidth="2.4" />,
+  'qrcode.viewfinder': (
+    <g {...STROKE} strokeWidth="2">
+      <path d="M3.4 8.2V5.4a2 2 0 0 1 2-2h2.8M15.8 3.4h2.8a2 2 0 0 1 2 2v2.8M20.6 15.8v2.8a2 2 0 0 1-2 2h-2.8M8.2 20.6H5.4a2 2 0 0 1-2-2v-2.8" />
+      <path d="M8.4 8.4h2.2v2.2H8.4zM13.4 8.4h2.2v2.2h-2.2zM8.4 13.4h2.2v2.2H8.4zM13.4 13.4h2.2v2.2h-2.2z" />
+    </g>
+  ),
+  'camera.fill': (
+    <>
+      <path
+        d="M9.4 4.4a1.4 1.4 0 0 0-1.2.7l-.9 1.5H4.6a2.2 2.2 0 0 0-2.2 2.2v8.6a2.2 2.2 0 0 0 2.2 2.2h14.8a2.2 2.2 0 0 0 2.2-2.2V8.8a2.2 2.2 0 0 0-2.2-2.2h-2.7l-.9-1.5a1.4 1.4 0 0 0-1.2-.7Z"
+        fill="currentColor"
+      />
+      <circle cx="12" cy="13.2" r="3.4" fill="var(--bg2, #fff)" />
+    </>
+  ),
+};
+
+/**
+ * @param name  an SF Symbol name from GLYPHS
+ * @param size  edge length in px; the box is always 24 units
+ */
+export default function Icon({ name, size = 22, className = 'icn' }) {
+  const glyph = GLYPHS[name];
+  if (!glyph) return null;
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {glyph}
+    </svg>
+  );
+}

@@ -1440,11 +1440,12 @@ await check('shape and rank separate what you came for from what you need', () =
 });
 
 await check('glyph ink is chosen against the fill, not assumed', () => {
-  // The night palette paints gates pure white; a white glyph on it is nothing.
-  assert.equal(inkOn('#FFFFFF'), '#0c1017');
-  assert.equal(inkOn('#FFC24A'), '#0c1017');
-  assert.equal(inkOn('#E2503F'), '#ffffff');
-  assert.equal(inkOn('#2C313A'), '#ffffff');
+  // A pale marker needs dark ink and a saturated one needs white. The dark ink
+  // is plain black now that the palette is Apple's rather than the old void.
+  assert.equal(inkOn('#FFFFFF'), '#000000');
+  assert.equal(inkOn('#FFD60A'), '#000000');
+  assert.equal(inkOn('#FF453A'), '#ffffff');
+  assert.equal(inkOn('#2C2C2E'), '#ffffff');
   assert.equal(inkOn(null), '#ffffff');
   return true;
 });
@@ -1756,7 +1757,7 @@ await check('with no fix the parks still list, undistanced', () => {
 
 await check('an unknown district still gets a legible, stable tint', () => {
   const curated = landTint('Coney Mall', 'day');
-  assert.equal(curated.fill, '#F4CBA9');
+  assert.equal(curated.fill, '#F1EAE4');
   const made = landTint('Los Festivales', 'day');
   assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
   assert.notEqual(made.fill, landTint('Rockville', 'day').fill); // distinct

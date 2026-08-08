@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { distance, formatAge, formatDistance, project, unproject } from '@/lib/geo';
 import { landTint, paletteFor } from '@/lib/theme';
+import Icon from '@/components/Icon';
 import { heightLabel } from '@/lib/park';
 import {
   labelZoomFor,
@@ -863,8 +864,8 @@ export default function ParkMap({
             <stop offset="55%" style={{ stopColor: 'var(--waterFill)', stopOpacity: 0 }} />
           </linearGradient>
           <radialGradient id="meGlow">
-            <stop offset="0%" style={{ stopColor: 'var(--beacon)', stopOpacity: 0.34 }} />
-            <stop offset="100%" style={{ stopColor: 'var(--beacon)', stopOpacity: 0 }} />
+            <stop offset="0%" style={{ stopColor: 'var(--blue)', stopOpacity: 0.28 }} />
+            <stop offset="100%" style={{ stopColor: 'var(--blue)', stopOpacity: 0 }} />
           </radialGradient>
           <filter id="markerDrop" x="-60%" y="-60%" width="220%" height="220%">
             <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="#000" floodOpacity="0.45" />
@@ -1111,7 +1112,7 @@ export default function ParkMap({
                         : `M${sx} ${sy - 26} l7 12 l-7 -4 l-7 4 Z`
                     }
                     className={puck ? 'puckCone' : ''}
-                    fill="var(--beacon)"
+                    fill="var(--blue)"
                     opacity={puck ? 0.32 : 0.85}
                     transform={`rotate(${facing - rotation} ${sx} ${sy})`}
                   />
@@ -1123,8 +1124,8 @@ export default function ParkMap({
                   cy={sy}
                   r={7}
                   className="meDot"
-                  fill="#FFC24A"
-                  stroke="var(--markerEdge)"
+                  fill="var(--blue)"
+                  stroke="var(--puckRing)"
                   strokeWidth="3"
                 />
               </g>
@@ -1183,7 +1184,7 @@ export default function ParkMap({
           }}
           aria-label="Zoom in"
         >
-          +
+          <Icon name="plus" size={19} />
         </button>
         <button
           type="button"
@@ -1194,7 +1195,7 @@ export default function ParkMap({
           }}
           aria-label="Zoom out"
         >
-          −
+          <Icon name="minus" size={19} />
         </button>
       </div>
 

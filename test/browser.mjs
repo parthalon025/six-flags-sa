@@ -114,16 +114,58 @@ export async function closeGate(page) {
   await page.waitForSelector('.gate', { state: 'detached', timeout: 10000 });
 }
 
-/** Set the roster name through the Me tab, as a visitor would. */
+/**
+ * The sheet is a navigation stack, so getting somewhere means popping back to
+ * the root screen and then opening a destination — the same two moves a visitor
+ * makes. `root` is idempotent: call it from anywhere.
+ */
+export async function root(page) {
+  for (let i = 0; i < 5; i += 1) {
+    if (!(await page.locator('.navHead').count())) return;
+    await page.locator('.navBack').click();
+    await page.waitForTimeout(250);
+  }
+}
+
+/**
+ * Open one of the sheet's destinations from wherever you are.
+ *
+ *   'Places'        the root screen — search, the rail and the list
+ *   'Settings'      behind the avatar beside the search field
+ *   'Which map',
+ *   'Show on the map',
+ *   'Diagnostics'   a row inside Settings
+ *   anything else   a row on the root screen: 'Party', 'Rider height', …
+ */
+const SETTINGS_ROWS = new Set(['Which map', 'Show on the map', 'Diagnostics']);
+
+export async function go(page, dest) {
+  await root(page);
+  // Everything below the search field is below the peek fold, so pull the sheet
+  // up first — the way a thumb would.
+  if (await page.locator('.sheet.peek').count()) {
+    await page.locator('.grab').click();
+    await page.waitForTimeout(350);
+  }
+  if (dest === 'Places') return;
+  if (dest === 'Settings' || SETTINGS_ROWS.has(dest)) {
+    await page.locator('.avatarBtn').click();
+    await page.waitForTimeout(350);
+    if (dest === 'Settings') return;
+  }
+  await page.locator(`.row:has-text("${dest}")`).first().click();
+  await page.waitForTimeout(350);
+}
+
+/** Set the roster name through Settings, as a visitor would. */
 export async function setName(page, name) {
-  await page.locator('button[role="tab"]:has-text("Me")').click();
-  const field = page.locator('.field[placeholder="NAME"]');
+  await go(page, 'Settings');
+  const field = page.locator('.field[placeholder="Name"]');
   await field.fill(name);
   await field.blur();
   await page.waitForTimeout(300);
+  await root(page);
 }
-
-export const tab = (page, label) => page.locator(`button[role="tab"]:has-text("${label}")`).click();
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */
 export async function rosterNames(page) {

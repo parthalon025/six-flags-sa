@@ -57,11 +57,11 @@ and React 19.
   new one, and arriving ends it.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
-- **Daylight and night maps.** Daylight is a printed-park-map palette — white midways on
-  paper, dark type, darker marker colours — meant to be readable on a phone in direct
-  July sun. Night is the low-glare version for after the lights come on. It follows the
+- **Light and dark maps.** Light is Apple Maps in daylight — white footpaths on pale
+  ground, dark type, deeper marker colours — meant to be readable on a phone in direct
+  July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the half-circle button in the header, or from the Me tab.
+  with the moon button floating over the map, or under Settings.
 - **What's open when the weather turns.** The park publishes no live feed this app can
   read, so it builds one from the two sources it actually has. Your party reports what it
   walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
@@ -81,7 +81,7 @@ and React 19.
 - **Switches maps on its own, to where the party is.** Once you are in a party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  in the Me tab and it stops second-guessing you.
+  under Settings → Which map and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
@@ -426,7 +426,7 @@ browser.
   Theme Park Insider, reflecting the 2026 season. They live in
   `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
-  at the gate and has the final say, so the app says as much on the Rides tab.
+  at the gate and has the final say, so the app says as much on the rider-height screen.
 - **Weather** — Open-Meteo, at the active venue's centre from the manifest, so switching
   parks moves the forecast with the map. Which places care about which conditions is not
   data at all: `lib/weather.js` derives it from each POI's category, land and note, with
