@@ -897,7 +897,32 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* ---- rider height ---- */
 .heightRow { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
-.heightVal { text-align: right; font-variant-numeric: tabular-nums; }
+.heightRow input[type='range'] {
+  flex: 1; min-width: 0; -webkit-appearance: none; appearance: none;
+  height: 30px; background: none; margin: 0;
+}
+/* The iOS slider: a 4px track that fills with the tint behind the thumb, and a
+   28px white knob that carries a real shadow rather than a border. `--pct` is
+   set inline by the panel so the fill follows the value. */
+.heightRow input[type='range']::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--blue) var(--pct), var(--fill3) var(--pct));
+}
+.heightRow input[type='range']::-moz-range-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--blue) var(--pct), var(--fill3) var(--pct));
+}
+.heightRow input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 28px; height: 28px; border-radius: 50%; margin-top: -12px;
+  background: #fff; border: none; box-shadow: var(--thumbShadow);
+}
+.heightRow input[type='range']::-moz-range-thumb {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: #fff; box-shadow: var(--thumbShadow);
+}
+
+.heightVal { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
 .heightVal b {
   display: block; font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -.4px;
   color: var(--label);

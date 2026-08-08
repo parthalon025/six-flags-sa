@@ -137,7 +137,15 @@ async function main() {
     await openSheet(page2, 'full');
     await page2.locator('input.code').fill(code);
     await page2.getByRole('button', { name: 'Join' }).click();
-    await page2.waitForTimeout(2000);
+    // Poll for the roster rather than sleeping on a number picked here. A
+    // status set before the transport is actually up is applied locally and
+    // never sent, and nothing re-sends it — so a fixed wait that lands short
+    // leaves this phone shouting NEED HELP at a party that cannot hear it.
+    // The other phone appearing in the roster is the proof the link is live.
+    await until(() => page2.locator('.memberRow').count().then((n) => n >= 2), {
+      timeout: 30000,
+      label: 'phone two joined and linked',
+    }).catch(() => {});
     await page2.getByRole('button', { name: 'NEED HELP' }).click();
     await page2.waitForTimeout(1500);
     await shot(page2, 'second-phone-joined');
