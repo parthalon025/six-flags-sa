@@ -45,10 +45,15 @@ and React 19.
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
   with the half-circle button in the header, or from the Me tab.
 - **Meet-up pin** shared to the whole party, with distance and walk time.
-- **Switches maps on its own, to where the party is.** Your first GPS fix picks the venue
-  you are standing in; once you are in a party, the phone hosting it decides instead, so
-  joining from the car park or the hotel the night before still draws the map everyone
-  else is looking at. Pick one by hand in the Me tab and it stops second-guessing you.
+- **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
+  can say anything useful about which of the maps it ships you want, so that is when it
+  asks: "Going to Six Flags Fiesta Texas? — 70 mi away", with every other park it carries
+  one tap below. Saying yes is what builds that park on the phone — its geometry and its
+  places are fetched then, so nobody downloads a map for a park they are not going to.
+- **Switches maps on its own, to where the party is.** Once you are in a party, the phone
+  hosting it decides which map you are looking at, so joining from the car park or the
+  hotel the night before still draws the map everyone else is looking at. Pick one by hand
+  in the Me tab and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
@@ -290,7 +295,9 @@ the way through — offered the route, picks a different one, starts, checks the
 turned course-up, walks until the distance drops, opens the steps and arrives. It asserts on behaviour, not
 appearance — that the key never leaves the URL fragment, that a party id is not its code,
 that NEED HELP reaches the other phone, that the roster never collapses while the host is
-replaced, and that the map and ride heights still work with the network cut.
+replaced, and that the map and ride heights still work with the network cut. A fifth phone
+sits in Austin, at neither park, to check that the intake asks about the nearer one, that
+saying yes brings that park's places with it, and that it is not asked again.
 
 Both suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
 machine instead of Playwright's own copy.
@@ -315,9 +322,16 @@ manifest reaches a phone that already has the app installed, and the service wor
 whichever one gets opened.
 
 Which one loads, in priority order: a venue picked by hand, then the venue the party's
-host phone is standing in, then the venue this phone's own first fix is inside, then the
-one used last, then the manifest's default. The host outranks your own position because a
-meet-up pin means nothing if two phones are drawing different places.
+host phone is standing in, then the venue you said yes to at intake, then the venue this
+phone's own first fix is inside, then the manifest's default. The host outranks your own
+position because a meet-up pin means nothing if two phones are drawing different places.
+
+The intake question is asked from the first fix and answered once. `venueChoiceFor()` in
+`lib/venue/store.js` decides whether there is anything to ask: nothing, if a map was picked
+by hand, or if you already said yes to this park and have not since turned up inside a
+different one. Answering calls `confirmVenue()`, which loads the park and remembers it —
+deliberately softer than the hand-picked pin, so a party hosted from another park still
+moves the map. Waving the question away falls back to the automatic behaviour above.
 
 What the tag rules produce, in short: `path` and `service` from highways, `building`,
 `water`, `wood`, `grass`, `parking`, `pool`, `coaster` from `roller_coaster=track`, `slide`
@@ -416,6 +430,7 @@ components/
   Diagnostics.jsx             active transport, probe results, queue depth
   RidesPanel.jsx              height filter and place search
   GpsGate.jsx                 permission dialog with per-failure guidance
+  ParkPrompt.jsx              which park, asked from the first fix and built on yes
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
   CompassTape.jsx             bearing HUD
   NavBanner.jsx               the maneuver strip: this turn, and the one after

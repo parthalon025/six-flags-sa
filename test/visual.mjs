@@ -77,8 +77,18 @@ async function main() {
   );
 
   await page.getByRole('button', { name: 'Allow location' }).click();
-  await page.waitForTimeout(1500);
-  await page.getByRole('button', { name: /Just show me the park map/ }).click().catch(() => {});
+  await page.waitForTimeout(2000);
+
+  // The second half of the intake. Numbered off the step it belongs to rather
+  // than taking a step of its own, so adding it does not renumber every shot
+  // taken after it.
+  const intakeShot = path.join(OUT, '01b-park-intake.png');
+  await page.screenshot({ path: intakeShot });
+  console.log(`  shot  ${path.relative(process.cwd(), intakeShot)}`);
+  const asked = await page.locator('.gate h2').innerText().catch(() => '');
+  check(/kings island/i.test(asked), `intake asks which park: "${asked.replace(/\n/g, ' ')}"`);
+
+  await page.getByRole('button', { name: /Yes — build/ }).click();
   await page.waitForTimeout(1800);
   await shot(page, 'map-located');
 
@@ -130,8 +140,8 @@ async function main() {
     const page2 = await other.newPage();
     await page2.goto(BASE, { waitUntil: 'networkidle' });
     await page2.getByRole('button', { name: 'Allow location' }).click();
-    await page2.waitForTimeout(1200);
-    await page2.getByRole('button', { name: /Just show me the park map/ }).click().catch(() => {});
+    await page2.waitForTimeout(1600);
+    await page2.getByRole('button', { name: /Yes — build/ }).click().catch(() => {});
     await page2.waitForTimeout(1200);
     await page2.getByRole('tab', { name: /^Party/ }).click();
     await openSheet(page2, 'full');

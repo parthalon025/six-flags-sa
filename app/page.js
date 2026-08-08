@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import GpsGate from '@/components/GpsGate';
+import ParkPrompt from '@/components/ParkPrompt';
 import CompassTape from '@/components/CompassTape';
 import PartyPanel from '@/components/PartyPanel';
 import GlanceRail from '@/components/GlanceRail';
@@ -26,7 +27,15 @@ import {
   splitRouteAt,
   OFF_ROUTE_M,
 } from '@/lib/routing';
-import { bootVenue, retargetForPosition, selectVenue, withinBounds } from '@/lib/venue/store';
+import {
+  bootVenue,
+  confirmVenue,
+  retargetForPosition,
+  selectVenue,
+  venueChoiceFor,
+  venuesByDistance,
+  withinBounds,
+} from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 
@@ -58,8 +67,19 @@ const REROUTE_M = 12;
 export default function Page() {
   const geo = useGeolocation();
   const { position, heading, shouldBroadcast } = geo;
-  const { venue, map: mapData, pois: POIS, manifest, status: venueStatus } = useVenue();
+  const {
+    venue,
+    map: mapData,
+    pois: POIS,
+    manifest,
+    status: venueStatus,
+    error: venueError,
+    confirmed: venueConfirmed,
+    pinned: venuePinned,
+  } = useVenue();
   const [gateOpen, setGateOpen] = useState(true);
+  /** Waved the park question away for this session — do not put it back up. */
+  const [parkAsked, setParkAsked] = useState(false);
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
@@ -117,17 +137,51 @@ export default function Page() {
     bootVenue().catch((err) => setToast(err?.message || 'Could not load the map.'));
   }, []);
 
+  /**
+   * The park the intake still has to ask about, if any. A fix is the first
+   * moment the app can say anything useful about which of the maps it ships is
+   * the one you want, so that is when it asks — and it asks once, because
+   * answering is what sets `venueConfirmed` and stops it.
+   */
+  const parkChoice = useMemo(() => {
+    if (parkAsked || !manifest || !position) return null;
+    return venueChoiceFor(manifest, position.lat, position.lng, {
+      confirmed: venueConfirmed,
+      pinned: venuePinned,
+    });
+  }, [parkAsked, manifest, position, venueConfirmed, venuePinned]);
+
+  /** The other parks, nearest first, for when the nearest one is the wrong guess. */
+  const parkOptions = useMemo(() => {
+    if (!parkChoice || !position) return [];
+    return venuesByDistance(manifest, position.lat, position.lng).filter(
+      (row) => row.venue.id !== parkChoice.venue.id,
+    );
+  }, [parkChoice, manifest, position]);
+
+  const askingPark = Boolean(parkChoice);
+  /** The question is only load-bearing while it is actually on screen. */
+  const showParkPrompt = gateOpen && askingPark;
+
   useEffect(() => {
     if (!position || position.manual) return;
+    // Both ends of the intake question outrank this. A fix that is about to be
+    // asked about should not be acted on first — answering is what loads a
+    // park, and switching underneath the question would download the map twice
+    // and make the question look rhetorical. A fix that has already been asked
+    // about should not reopen it: from then on the only thing allowed to move
+    // the map is the phone hosting the party.
+    if (showParkPrompt || venueConfirmed) return;
     retargetForPosition(position.lat, position.lng)
       .then((moved) => {
         if (moved) showToast(`Switched to ${moved.name}`);
       })
       .catch(() => {});
-    // Only the first fix matters here: after that the visitor is inside a venue
-    // and re-checking on every GPS tick would fight a deliberate choice.
+    // Only the first unanswered fix matters here: after that the visitor is
+    // inside a venue and re-checking on every GPS tick would fight a deliberate
+    // choice.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [Boolean(position)]);
+  }, [Boolean(position), showParkPrompt, venueConfirmed]);
 
   useEffect(() => {
     let saved = null;
@@ -159,15 +213,17 @@ export default function Page() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
-  // Close the gate when the fix actually lands. Checking this inside the
-  // "Allow location" handler cannot work: the permission prompt and the first
-  // fix are both async, so status is still 'asking' when the click returns and
-  // nothing looks again. The gate then sits over the whole UI intercepting
-  // taps, and the only way out reads "Just show me the park map" — which is the
-  // opposite of what someone who just granted location wants.
+  // Close the gate when the fix actually lands — unless the fix has just earned
+  // the intake its second question, in which case the gate stays up and shows
+  // that instead. Checking this inside the "Allow location" handler cannot
+  // work: the permission prompt and the first fix are both async, so status is
+  // still 'asking' when the click returns and nothing looks again. The gate
+  // then sits over the whole UI intercepting taps, and the only way out reads
+  // "Just show me the park map" — which is the opposite of what someone who
+  // just granted location wants.
   useEffect(() => {
-    if (geo.status === 'live') setGateOpen(false);
-  }, [geo.status]);
+    if (geo.status === 'live' && !askingPark) setGateOpen(false);
+  }, [geo.status, askingPark]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -1080,7 +1136,34 @@ export default function Page() {
         </div>
       )}
 
-      {gateOpen && (
+      {/* The intake, in the order the answers become possible: location first,
+          because nothing else can be decided without a fix, then which park —
+          which is the question that actually builds a map. */}
+      {showParkPrompt && (
+        <ParkPrompt
+          choice={parkChoice}
+          options={parkOptions}
+          busy={venueStatus === 'loading'}
+          error={venueStatus === 'error' ? venueError : null}
+          onConfirm={(id) => {
+            confirmVenue(id)
+              .then((v) => {
+                setSelected(null);
+                // Following your own dot only makes sense on a map you are
+                // standing on; from the road, the park itself is the view.
+                setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+                showToast(`${v.name} is ready`);
+              })
+              .catch((err) => showToast(err?.message || 'Could not build that map.'));
+          }}
+          onSkip={() => {
+            setParkAsked(true);
+            setGateOpen(false);
+          }}
+        />
+      )}
+
+      {gateOpen && !showParkPrompt && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
@@ -1090,10 +1173,17 @@ export default function Page() {
             geo.enableCompass();
           }}
           onManual={() => {
+            // Waving the intake off waves off both of its questions: whichever
+            // one you come back for, you came back deliberately, and the one
+            // you get should be the one this button is under.
+            setParkAsked(true);
             setGateOpen(false);
             showToast('Tap the map to place yourself');
           }}
-          onDismiss={() => setGateOpen(false)}
+          onDismiss={() => {
+            setParkAsked(true);
+            setGateOpen(false);
+          }}
         />
       )}
     </main>
