@@ -1,0 +1,171 @@
+# Add a park to the app without a laptop.
+#
+# Everything a venue is made of comes out of scripts/build-venue.mjs: two JSON
+# files, a manifest row and a regenerated index. Running that needs node, a
+# checkout and a few minutes of talking to OpenStreetMap — which is exactly the
+# kind of errand a runner should do. Fill the form in, and the job opens a pull
+# request with the built park in it for someone to look at before it ships.
+#
+# Actions → Build a venue → Run workflow.
+
+name: Build a venue
+
+on:
+  workflow_dispatch:
+    inputs:
+      place:
+        description: 'Place to resolve, e.g. "Cedar Point, Sandusky, Ohio". Be specific — plain "Cedar Point" is a village in Illinois.'
+        required: false
+        type: string
+      bbox:
+        description: 'Bounding box s,w,n,e instead of a place name. Wins over "place" when both are given.'
+        required: false
+        type: string
+      name:
+        description: 'Display name, e.g. "Cedar Point". Defaults to whatever the geocoder called the place.'
+        required: false
+        type: string
+      locality:
+        description: 'The line under the name, e.g. "Sandusky, Ohio".'
+        required: false
+        type: string
+      kind:
+        description: 'What sort of place this is. Cosmetic — the pipeline treats them all the same.'
+        required: false
+        default: theme-park
+        type: choice
+        options: [theme-park, park, campus, fair, place]
+      credits:
+        description: 'Credit for anything not from OpenStreetMap — where ride heights were compiled from, most often.'
+        required: false
+        type: string
+      make_default:
+        description: 'Open the app on this venue by default.'
+        required: false
+        default: false
+        type: boolean
+
+# The job pushes a branch and opens a pull request. It never writes to the
+# branch it was started from.
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: build-venue-${{ inputs.bbox || inputs.place }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Refuse a run with nothing to build
+        if: ${{ !inputs.place && !inputs.bbox }}
+        run: |
+          echo "::error::Give the workflow a place name or a bounding box."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The builder itself has no dependencies — it is node and fetch. The
+      # install is for the lint, unit and build steps that check what it made.
+      - run: npm ci
+
+      - name: Build the venue
+        id: build
+        env:
+          PLACE: ${{ inputs.place }}
+          BBOX: ${{ inputs.bbox }}
+          NAME: ${{ inputs.name }}
+          LOCALITY: ${{ inputs.locality }}
+          KIND: ${{ inputs.kind }}
+          CREDITS: ${{ inputs.credits }}
+          MAKE_DEFAULT: ${{ inputs.make_default }}
+        run: |
+          set -uo pipefail
+          args=()
+          if [ -n "$BBOX" ]; then args+=(--bbox "$BBOX"); else args+=(--place "$PLACE"); fi
+          if [ -n "$NAME" ]; then args+=(--name "$NAME"); fi
+          if [ -n "$LOCALITY" ]; then args+=(--locality "$LOCALITY"); fi
+          if [ -n "$KIND" ]; then args+=(--kind "$KIND"); fi
+          if [ -n "$CREDITS" ]; then args+=(--credits "$CREDITS"); fi
+          if [ "$MAKE_DEFAULT" = "true" ]; then args+=(--default); fi
+
+          # The public Overpass mirrors rate-limit and time out under load. The
+          # builder already rotates between three of them; this covers all three
+          # being busy at once, which does happen.
+          built=no
+          for attempt in 1 2 3; do
+            if node scripts/build-venue.mjs "${args[@]}" 2>&1 | tee -a build.log; then
+              built=yes
+              break
+            fi
+            echo "attempt $attempt failed — waiting before the next one"
+            sleep $((attempt * 60))
+          done
+          if [ "$built" != yes ]; then
+            echo "::error::OpenStreetMap would not answer after three attempts. Try again later."
+            exit 1
+          fi
+
+          # The builder says exactly what it wrote, so take the id from that
+          # rather than guessing at how the name was slugified.
+          id=$(sed -n 's|^Wrote public/venues/\(.*\)\.map\.json$|\1|p' build.log | tail -1)
+          if [ -z "$id" ]; then
+            echo "::error::The build wrote no map file. See the log above."
+            exit 1
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "Built $id"
+
+      - name: Say what came out
+        env:
+          VENUE_ID: ${{ steps.build.outputs.id }}
+        run: |
+          set -euo pipefail
+          node scripts/venue-report.mjs "$VENUE_ID" > venue-report.md
+          cat venue-report.md >> "$GITHUB_STEP_SUMMARY"
+          cat venue-report.md
+
+      - name: Make sure the app still builds with it
+        run: |
+          npm run lint
+          npm run test:unit
+          npm run build
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VENUE_ID: ${{ steps.build.outputs.id }}
+        run: |
+          set -euo pipefail
+          branch="venue/${VENUE_ID}-${GITHUB_RUN_ID}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add public/venues lib/venueIndex.js data/venues
+          if git diff --cached --quiet; then
+            echo "::notice::Nothing changed — this venue is already in the repo and up to date."
+            exit 0
+          fi
+          git commit -m "Add ${VENUE_ID}, built from OpenStreetMap" \
+                     -m "Generated by the Build a venue workflow, run ${GITHUB_RUN_ID}."
+          git push -u origin "$branch"
+
+          {
+            echo "Built by [Build a venue](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) from OpenStreetMap."
+            echo
+            cat venue-report.md
+            echo
+            echo "Map geometry is © OpenStreetMap contributors, ODbL."
+          } > pr-body.md
+
+          gh pr create --draft --base "${GITHUB_REF_NAME}" --head "$branch" \
+            --title "Add ${VENUE_ID}, built from OpenStreetMap" \
+            --body-file pr-body.md

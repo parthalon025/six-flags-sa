@@ -3,6 +3,32 @@
   "default": "kings-island",
   "venues": [
     {
+      "id": "cedar-point",
+      "name": "Cedar Point",
+      "locality": "Sandusky, Ohio",
+      "kind": "theme-park",
+      "center": {
+        "lat": 41.482602,
+        "lng": -82.686185
+      },
+      "bounds": {
+        "north": 41.49152,
+        "south": 41.47638,
+        "east": -82.67665,
+        "west": -82.69517
+      },
+      "source": "OpenStreetMap contributors, ODbL",
+      "credits": null,
+      "generated": "2026-08-08",
+      "map": "/venues/cedar-point.map.json",
+      "pois": "/venues/cedar-point.pois.json",
+      "counts": {
+        "pois": 200,
+        "rides": 42,
+        "heights": 0
+      }
+    },
+    {
       "id": "kings-island",
       "name": "Kings Island",
       "locality": "Mason, Ohio",

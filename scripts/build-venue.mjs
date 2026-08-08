@@ -25,7 +25,15 @@
 
 import process from 'node:process';
 import { readFile, writeFile } from 'node:fs/promises';
-import { areaOf, centroidOf, distanceMetres, pointInRing, round, simplify } from './lib/geometry.mjs';
+import {
+  areaOf,
+  centroidOf,
+  clipToBounds,
+  distanceMetres,
+  pointInRing,
+  round,
+  simplify,
+} from './lib/geometry.mjs';
 import { LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_LABELS, classify, isLand } from './lib/osm-tags.mjs';
 import { readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue } from './lib/venue-io.mjs';
 import path from 'node:path';
@@ -255,7 +263,15 @@ function buildLayers(elements, opts) {
     for (const raw of rings) {
       if (raw.length < 2) continue;
       const closed = isClosed(raw) || el.tags?.area === 'yes';
-      const ring = round(simplify(raw, opts.tolerance));
+      const layer = classify(LAYER_RULES, tags);
+      // A filled shape counts only for the part of it that is here. Lines are
+      // left whole: they are small, cutting one mid-span would break the route
+      // graph built from it, and a closed loop of footpath is still a path
+      // rather than a lake.
+      const fills = closed && !LINE_LAYERS.has(layer);
+      const bounded = fills ? clipToBounds(raw, opts.clip) : raw;
+      if (bounded.length < 2) continue;
+      const ring = round(simplify(bounded, opts.tolerance));
       if (ring.length < 2) continue;
 
       if (isLand(tags) && closed) {
@@ -280,11 +296,18 @@ function buildLayers(elements, opts) {
         }
       }
 
-      const layer = classify(LAYER_RULES, tags);
       if (!layer) continue;
       if (!LINE_LAYERS.has(layer) && !closed) continue;
-      if (!LINE_LAYERS.has(layer) && areaOf(ring) < opts.minArea) continue;
-      layers[layer].push(tags.name ? { r: ring, n: tags.name } : { r: ring });
+      const size = LINE_LAYERS.has(layer) ? null : areaOf(ring);
+      if (size != null && size < opts.minArea) continue;
+      // Water that covers the whole box is not a pond, it is what the venue is
+      // standing in — and the two have to be drawn on opposite sides of the
+      // ground. The renderer paints ponds over the ground, which is right until
+      // the pond is Lake Erie: Cedar Point came out as a park at the bottom of
+      // it, every path and building submerged. The sea goes underneath instead,
+      // and the peninsula reads as a peninsula.
+      const bed = layer === 'water' && size >= opts.venueArea * 0.7 ? 'sea' : layer;
+      layers[bed].push(tags.name ? { r: ring, n: tags.name } : { r: ring });
       if (closed && tags.name) areaCandidates.push({ tags, ring });
     }
   }
@@ -456,6 +479,9 @@ async function main() {
     minArea: 12,
     venueArea,
     venueName: name,
+    // A little wider than the box the map draws, so the cut line itself never
+    // lands anywhere a visitor can pan to.
+    clip: padBounds(bounds, 60),
   });
 
   let pois = buildPois(elements, areaCandidates, { dedupeMetres: Number(args.dedupe ?? 35) });

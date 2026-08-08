@@ -246,6 +246,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .lyr-grass path { fill: var(--grass); stroke: none; }
 .lyr-parking path { fill: var(--lot); stroke: var(--lotEdge); stroke-width: .8; }
 .lyr-water path { fill: var(--waterFill); stroke: var(--waterEdge); stroke-width: 1; }
+/* The same water, drawn under the ground instead of over it. No edge: its
+   outline is the venue's own shoreline, which the ground draws on top of. */
+.lyr-sea path { fill: var(--waterFill); stroke: none; }
 .lyr-pool path { fill: var(--poolFill); stroke: var(--poolEdge); stroke-width: 1; }
 .lyr-service path { fill: none; stroke: var(--backOfHouse); stroke-width: 2.5; stroke-linecap: round; }
 .lyr-pathcase path { fill: none; stroke: var(--midwayCase); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }

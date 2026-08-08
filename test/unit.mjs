@@ -74,7 +74,7 @@ const { venueChoiceFor, venueForPosition, venuesByDistance, withinBounds } = awa
   '../lib/venue/store.js'
 );
 const { landTint } = await import('../lib/theme.js');
-const { areaOf, centroidOf, pointInRing, round, simplify } = await import(
+const { areaOf, centroidOf, clipToBounds, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
 const { LAYER_RULES, POI_RULES, classify, isLand } = await import('../scripts/lib/osm-tags.mjs');
@@ -1456,6 +1456,86 @@ const SQUARE = [
 // line from the first point to the last, and on a closed ring those are the
 // same point — so the whole polygon collapsed to a dot and every filled layer
 // came out empty while the open polylines looked fine.
+/* Clipping a fill to the venue's box. The case that forced it: Cedar Point is a
+   peninsula, so Overpass handed back the whole of Lake Erie — one ring reaching
+   into Canada, every vertex of it outside the park, two thirds of the file. */
+
+const BOX = { north: 41.49, south: 41.47, east: -82.67, west: -82.7 };
+
+await check('a shape wholly inside the box comes back untouched', () => {
+  const ring = [
+    [-82.69, 41.48],
+    [-82.68, 41.48],
+    [-82.68, 41.485],
+    [-82.69, 41.485],
+    [-82.69, 41.48],
+  ];
+  assert.deepEqual(clipToBounds(ring, BOX), ring);
+  return true;
+});
+
+await check('a lake swallowing the venue is cut down to the venue', () => {
+  // Every vertex is outside — and the box is deep inside the polygon, which is
+  // why dropping outside points cannot work: it would delete the water the
+  // venue is standing in.
+  const lake = [
+    [-83.5, 41.3],
+    [-78.8, 41.3],
+    [-78.8, 42.9],
+    [-83.5, 42.9],
+    [-83.5, 41.3],
+  ];
+  const out = clipToBounds(lake, BOX);
+  assert.equal(out.length, 5, `expected the box back, got ${out.length} points`);
+  for (const [lng, lat] of out) {
+    assert.ok(lng >= BOX.west - 1e-9 && lng <= BOX.east + 1e-9, `lng ${lng} escaped`);
+    assert.ok(lat >= BOX.south - 1e-9 && lat <= BOX.north + 1e-9, `lat ${lat} escaped`);
+  }
+  // Still a filled ring covering the whole box, not a sliver. Compared as a
+  // corner set rather than by area: areaOf anchors its longitude scale to the
+  // first vertex's latitude, so the same rectangle measures a thousandth
+  // different depending on which corner it is written from.
+  const corners = (r) =>
+    r
+      .slice(0, -1)
+      .map(([lng, lat]) => `${lng},${lat}`)
+      .sort();
+  assert.deepEqual(corners(out), [
+    `${BOX.east},${BOX.north}`,
+    `${BOX.east},${BOX.south}`,
+    `${BOX.west},${BOX.north}`,
+    `${BOX.west},${BOX.south}`,
+  ].sort());
+  return true;
+});
+
+await check('a shape straddling one edge keeps the half that is here', () => {
+  const ring = [
+    [-82.69, 41.48],
+    [-82.6, 41.48], // well east of the box
+    [-82.6, 41.485],
+    [-82.69, 41.485],
+    [-82.69, 41.48],
+  ];
+  const out = clipToBounds(ring, BOX);
+  assert.ok(out.every(([lng]) => lng <= BOX.east + 1e-9), 'kept points outside the box');
+  // Cut at the boundary, not shrunk back to the last vertex inside it.
+  assert.ok(out.some(([lng]) => Math.abs(lng - BOX.east) < 1e-9), 'no cut along the east edge');
+  assert.deepEqual(out[0], out[out.length - 1], 'clipped ring left open');
+  return true;
+});
+
+await check('a shape entirely elsewhere clips to nothing', () => {
+  const elsewhere = [
+    [-84.27, 39.34],
+    [-84.26, 39.34],
+    [-84.26, 39.35],
+    [-84.27, 39.34],
+  ];
+  assert.deepEqual(clipToBounds(elsewhere, BOX), []);
+  return true;
+});
+
 await check('simplifying a closed ring keeps a polygon', () => {
   const dense = [];
   for (let i = 0; i <= 40; i += 1) {

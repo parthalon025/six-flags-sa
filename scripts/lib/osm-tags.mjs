@@ -80,6 +80,10 @@ export const LINE_LAYERS = new Set(['path', 'service', 'coaster', 'slide']);
 
 /** Every layer the renderer knows how to draw, in the order it expects them. */
 export const LAYERS = [
+  // The body of water a venue stands in or beside, as opposed to a pond inside
+  // it. Kept apart from `water` because of where it has to be drawn: a pond
+  // goes over the ground, and a lake goes under it. See build-venue.mjs.
+  'sea',
   'lands',
   'water',
   'wood',
@@ -149,11 +153,17 @@ export const POI_RULES = [
   ],
   ['show', (t) => has(t, 'amenity', ['theatre', 'cinema', 'arts_centre']) || has(t, 'leisure', ['bandstand', 'amphitheatre'])],
   [
+    // The way in, not every hinge in the fence. A park mapped thoroughly has
+    // one of these on each ride queue and each service road — Cedar Point has
+    // 158 — and an unnamed `barrier=gate` is furniture rather than somewhere
+    // anyone arranges to meet. A gate earns a pin by being the entrance, or by
+    // having a name people use: "the North Gate", "Soak City Entrance".
     'gate',
     (t) =>
-      has(t, 'barrier', ['gate', 'entrance', 'turnstile']) ||
-      has(t, 'entrance', ['main', 'yes', 'primary']) ||
-      has(t, 'amenity', ['ticket_booth']),
+      has(t, 'entrance', ['main', 'primary']) ||
+      has(t, 'amenity', ['ticket_booth']) ||
+      (has(t, 'name') &&
+        (has(t, 'barrier', ['gate', 'entrance', 'turnstile']) || has(t, 'entrance'))),
   ],
   ['shop', (t) => has(t, 'shop') || has(t, 'amenity', ['marketplace', 'vending_machine'])],
   ['parking', (t) => has(t, 'amenity', ['parking'])],

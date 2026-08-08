@@ -487,6 +487,12 @@ export default function ParkMap({
           </filter>
         </defs>
 
+        {/* The lake or sea the venue stands in, under the ground rather than
+            over it — a venue on a peninsula is drawn on its land, not beneath
+            the water around it. Venues built before this layer existed simply
+            have nothing here. */}
+        <g className="lyr-sea">{layers.poly(data.sea, 'se')}</g>
+
         {/* park ground */}
         <g className="lyr-park">{layers.poly(data.park, 'pk')}</g>
 
