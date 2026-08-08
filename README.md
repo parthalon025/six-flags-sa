@@ -73,8 +73,22 @@ and React 19.
   map behind it, a hairline, and a shadow soft enough to read as height. Controls are the
   platform's: a segmented control for rider height, capsule filter pills, a bottom sheet
   with a grabber and detents, a tab bar of glyphs that fill in when selected. Motion uses
-  the platform curves and nothing overshoots. The map underneath keeps its own palette,
-  because a printed park map in July sun is a different problem from a control.
+  the platform curves and nothing overshoots — the platform's own default animation is a
+  spring at critical damping, so neither is anything here. Routes draw as rows of dots,
+  which is how a walk is drawn as against a drive, and the compass is adaptive: north-up
+  it has nothing to say and is not there.
+
+  The values come from Apple's published tables rather than from memory, which matters
+  more than it sounds. The tracking curve is not monotonic, so Large Title and Title 1
+  track *open* rather than tight; the accent palette was re-specified in June 2025 and
+  most of it moved. Where Apple publishes nothing — blur radii, corner radii, any spacing
+  grid at all — the comments in `globals.css` say so rather than dressing a guess up as a
+  specification. Reduce Transparency and Increase Contrast both swap every material for an
+  opaque fill, the latter using Apple's separate increased-contrast palette.
+
+  The map underneath keeps its own palette, because a printed park map in July sun is a
+  different problem from a control — and because the guidance for map apps says as much
+  outright: don't replicate the appearance of Apple Maps, match your own app.
 - **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
   can say anything useful about which of the maps it ships you want, so that is when it
   asks: "Going to Six Flags Fiesta Texas? — 70 mi away", with every other park it carries
