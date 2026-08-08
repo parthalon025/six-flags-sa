@@ -11,7 +11,7 @@
  *   npm run test:visual
  */
 
-import { launch, until } from './browser.mjs';
+import { go, launch, until } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -88,7 +88,7 @@ async function main() {
   check(meDot > 0, 'own position marker rendered from mocked GPS');
 
   // Rides + height filter
-  await page.getByRole('tab', { name: /Rides & heights/ }).click();
+  await go(page, 'Rider height');
   await openSheet(page, 'full');
   await page.waitForTimeout(700);
   await shot(page, 'rides-panel');
@@ -107,12 +107,15 @@ async function main() {
   const tally54 = await page.locator('.ratioKey').innerText();
   check(tally54 !== tally, 'tally changes between 46in and 54in');
 
+  // The list, and the filter that lives with it, are the root screen.
+  await go(page, 'Places');
+  await openSheet(page, 'full');
   await page.getByRole('button', { name: /Only what they can ride/ }).click();
   await page.waitForTimeout(500);
   await shot(page, 'height-filtered-list');
 
   // Party flow
-  await page.getByRole('tab', { name: /^Party/ }).click();
+  await go(page, 'Party');
   await page.waitForTimeout(400);
   await page.getByRole('button', { name: 'Start a party' }).click();
   await page.waitForTimeout(1800);
@@ -133,7 +136,7 @@ async function main() {
     await page2.waitForTimeout(1200);
     await page2.getByRole('button', { name: /Just show me the park map/ }).click().catch(() => {});
     await page2.waitForTimeout(1200);
-    await page2.getByRole('tab', { name: /^Party/ }).click();
+    await go(page2, 'Party');
     await openSheet(page2, 'full');
     await page2.locator('input.code').fill(code);
     await page2.getByRole('button', { name: 'Join' }).click();

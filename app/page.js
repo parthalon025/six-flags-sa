@@ -7,8 +7,9 @@ import GpsGate from '@/components/GpsGate';
 import CompassTape from '@/components/CompassTape';
 import PartyPanel from '@/components/PartyPanel';
 import GlanceRail from '@/components/GlanceRail';
-import InstallCard from '@/components/InstallCard';
-import RidesPanel from '@/components/RidesPanel';
+import HeightPanel from '@/components/HeightPanel';
+import PlaceList from '@/components/PlaceList';
+import SettingsPanel from '@/components/SettingsPanel';
 import Diagnostics from '@/components/Diagnostics';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
@@ -38,6 +39,16 @@ const colourFor = (id) => {
   return PALETTE[h % PALETTE.length];
 };
 const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
+
+const VIEW_TITLES = {
+  route: 'Directions',
+  party: 'Party',
+  height: 'Rider height',
+  settings: 'Settings',
+  categories: 'Show on the map',
+  venues: 'Which map',
+  diagnostics: 'Diagnostics',
+};
 
 const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
 
@@ -69,7 +80,13 @@ export default function Page() {
   const [busy, setBusy] = useState(false);
 
   const [selected, setSelected] = useState(null);
-  const [tab, setTab] = useState('party');
+  /* The sheet is a navigation stack, the way a phone map's is. An empty stack
+     is the root — search, the glance rail and the places list — and everything
+     else is pushed on top of it behind a back button. */
+  const [stack, setStack] = useState([]);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState('coaster');
+  const [onlyRideable, setOnlyRideable] = useState(false);
   const [sheet, setSheet] = useState('peek');
   const [follow, setFollow] = useState(true);
   const [armMeet, setArmMeet] = useState(false);
@@ -88,6 +105,13 @@ export default function Page() {
   const [northUp, setNorthUp] = useState(false);
   const [voice, setVoice] = useState(false);
   const [rerouted, setRerouted] = useState(0);
+
+  const view = stack[stack.length - 1] ?? null;
+  const push = useCallback((next) => {
+    setStack((prev) => (prev[prev.length - 1] === next ? prev : [...prev, next]));
+    setSheet((h) => (h === 'peek' ? 'half' : h));
+  }, []);
+  const pop = useCallback(() => setStack((prev) => prev.slice(0, -1)), []);
 
   const runtime = useRef(null);
   const lastRoute = useRef(null);
@@ -439,7 +463,7 @@ export default function Page() {
     setRoutes([]);
     setPick(0);
     lastRoute.current = null;
-    setTab((t) => (t === 'route' ? 'party' : t));
+    setStack((prev) => prev.filter((v) => v !== 'route'));
     setSheet('peek');
   }, []);
 
@@ -480,7 +504,6 @@ export default function Page() {
       setNavPhase('preview');
       setFollow(false);
       setSheet('peek');
-      setTab('route');
     },
     [position, showToast, stopNav],
   );
@@ -708,11 +731,9 @@ export default function Page() {
         fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}:${Math.round(route?.metres ?? 0)}` : null}
       />
 
+      {/* Nothing runs across the top of a phone map. The two controls float in
+          the corner and the rest of the frame is map. */}
       <header className="topbar">
-        <div className="brand">
-          <b>{venue?.name || 'Party tracker'}</b>
-          <span>{headerLine()}</span>
-        </div>
         <button
           type="button"
           className="iconBtn"
@@ -739,8 +760,7 @@ export default function Page() {
           type="button"
           className="filterBadge"
           onClick={() => {
-            setTab('rides');
-            setSheet('half');
+            push('height');
           }}
         >
           <b>{height}&quot;</b>
@@ -814,10 +834,7 @@ export default function Page() {
           onPick={setPick}
           onStart={beginWalking}
           onCancel={stopNav}
-          onSteps={() => {
-            setTab('route');
-            setSheet('half');
-          }}
+          onSteps={() => push('route')}
         />
       )}
 
@@ -830,10 +847,7 @@ export default function Page() {
           onVoice={() => setVoice((v) => !v)}
           northUp={northUp}
           onCompass={() => setNorthUp((v) => !v)}
-          onSteps={() => {
-            setTab('route');
-            setSheet('half');
-          }}
+          onSteps={() => push('route')}
           onStop={stopNav}
         />
       )}
@@ -847,46 +861,113 @@ export default function Page() {
         >
           <i />
         </button>
-        <GlanceRail
-          me={position}
-          members={others}
-          meet={meet}
-          selected={selected}
-          heading={heading}
-          theme={theme}
-          onFocus={focusOn}
-          onNavigate={startNav}
-          navKey={navKeyOf(navTarget)}
-          navMetres={progress?.remaining ?? route?.metres ?? null}
-          onOpenParty={() => {
-            setTab('party');
-            setSheet('half');
-          }}
-        />
-        <nav className="tabs" role="tablist">
-          {[
-            ...(navTarget ? [['route', 'Directions']] : []),
-            ['party', `Party${others.length ? ` · ${roster.length}` : ''}`],
-            ['rides', heights ? 'Rides & heights' : 'Places'],
-            ['me', 'Me'],
-          ].map(([key, labelText]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={tab === key}
-              className={`tab ${tab === key ? 'on' : ''}`}
-              onClick={() => {
-                setTab(key);
-                if (sheet === 'peek') setSheet('half');
-              }}
-            >
-              {labelText}
+
+        {view ? (
+          <header className="navHead">
+            <button type="button" className="navBack" onClick={pop}>
+              <Icon name="chevron.left" size={19} />
+              Back
             </button>
-          ))}
-        </nav>
+            <h2>{VIEW_TITLES[view] || ''}</h2>
+            <span className="navHeadPad" aria-hidden="true" />
+          </header>
+        ) : (
+          <>
+            {/* Search is the way into a map, so it is the first thing in the
+                sheet and it never scrolls away. */}
+            <div className="searchRow">
+              <div className="searchField">
+                <Icon name="magnifyingglass" size={17} />
+                <input
+                  className="field"
+                  placeholder={`Search ${venue?.name || 'the map'}`}
+                  value={query}
+                  onFocus={() => setSheet((h) => (h === 'peek' ? 'half' : h))}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label="Search places"
+                />
+                {query && (
+                  <button
+                    type="button"
+                    className="searchClear"
+                    onClick={() => setQuery('')}
+                    aria-label="Clear the search"
+                  >
+                    <Icon name="xmark.circle.fill" size={18} />
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                className="avatarBtn"
+                onClick={() => push('settings')}
+                aria-label="Settings"
+              >
+                {initialsFor(identity?.name)}
+              </button>
+            </div>
+            <div className="brand">
+              <b>{venue?.name || 'Party tracker'}</b>
+              <span>{headerLine()}</span>
+            </div>
+            <GlanceRail
+              me={position}
+              members={others}
+              meet={meet}
+              selected={selected}
+              heading={heading}
+              theme={theme}
+              onFocus={focusOn}
+              onNavigate={startNav}
+              navKey={navKeyOf(navTarget)}
+              navMetres={progress?.remaining ?? route?.metres ?? null}
+              onOpenParty={() => push('party')}
+            />
+          </>
+        )}
+
         <div className="sheetBody">
-          {tab === 'route' && (
+          {view === null && (
+            <>
+              <div className="rowList">
+                {navTarget && (
+                  <button type="button" className="row" onClick={() => push('route')}>
+                    <span className="rowText">Directions</span>
+                    <span className="rowValue">{navTarget.label}</span>
+                  </button>
+                )}
+                <button type="button" className="row" onClick={() => push('party')}>
+                  <span className="rowText">Party</span>
+                  <span className="rowValue">
+                    {active ? `${roster.length} on the map` : 'Not started'}
+                  </span>
+                </button>
+                {heights && (
+                  <button type="button" className="row" onClick={() => push('height')}>
+                    <span className="rowText">Rider height</span>
+                    <span className="rowValue">{height != null ? `${height}"` : 'Off'}</span>
+                  </button>
+                )}
+              </div>
+              <PlaceList
+                me={position}
+                height={height}
+                withAdult={withAdult}
+                query={query}
+                filter={filter}
+                onFilter={setFilter}
+                onlyRideable={onlyRideable}
+                onOnlyRideable={setOnlyRideable}
+                selected={selected}
+                onSelect={handleSelect}
+                onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
+                onNavigate={startNav}
+                theme={theme}
+              />
+            </>
+          )}
+
+          {view === 'route' && (
             <DirectionsPanel
               target={navTarget}
               route={route}
@@ -898,7 +979,8 @@ export default function Page() {
               onClose={() => setSheet('peek')}
             />
           )}
-          {tab === 'party' && (
+
+          {view === 'party' && (
             <PartyPanel
               code={code}
               invite={party?.invite ?? null}
@@ -930,69 +1012,35 @@ export default function Page() {
               queued={party?.queued ?? 0}
             />
           )}
-          {tab === 'rides' && (
-            <RidesPanel
-              me={position}
+
+          {view === 'height' && (
+            <HeightPanel
               height={height}
               withAdult={withAdult}
               onHeight={setHeight}
               onWithAdult={setWithAdult}
-              selected={selected}
-              onSelect={handleSelect}
-              onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
-              onNavigate={startNav}
-              theme={theme}
               venue={venue}
             />
           )}
-          {tab === 'me' && (
+
+          {view === 'settings' && (
+            <SettingsPanel
+              identity={identity}
+              onName={(v) => setIdentity((i) => ({ ...i, name: v.trim() || 'Guest' }))}
+              onNameCommit={(v) => runtime.current?.setMemberName(v.trim() || 'Guest')}
+              position={position}
+              onLocationSettings={() => setGateOpen(true)}
+              theme={theme}
+              onTheme={setTheme}
+              categoryCount={categories.size}
+              categoryTotal={Object.keys(CATEGORIES).length}
+              venueName={venue?.name}
+              onPush={push}
+            />
+          )}
+
+          {view === 'categories' && (
             <div>
-              <div className="label">Your name in the roster</div>
-              <input
-                className="field"
-                maxLength={14}
-                value={identity?.name === 'Guest' ? '' : identity?.name || ''}
-                placeholder="Name"
-                onChange={(e) =>
-                  setIdentity((i) => ({ ...i, name: e.target.value.trim() || 'Guest' }))
-                }
-                onBlur={(e) => runtime.current?.setMemberName(e.target.value.trim() || 'Guest')}
-              />
-              <div className="label">Location</div>
-              <p className="fine">
-                {position
-                  ? `${position.manual ? 'Placed by hand' : 'Phone GPS'} · ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`
-                  : 'No fix yet.'}
-              </p>
-              <button type="button" className="btn" onClick={() => setGateOpen(true)}>
-                Location settings
-              </button>
-              <div className="label">Install on this phone</div>
-              <InstallCard />
-
-              <div className="label">Map appearance</div>
-              <div className="chips">
-                {[
-                  ['day', 'Light'],
-                  ['night', 'Dark'],
-                ].map(([key, labelText]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`chip ${theme === key ? 'on' : ''}`}
-                    onClick={() => setTheme(key)}
-                  >
-                    {labelText}
-                  </button>
-                ))}
-              </div>
-              <p className="fine">
-Light is the one to use outdoors — white midways on pale ground, dark type, and
-                deeper marker colours that survive direct sun. Dark is easier on the eyes once
-                the park lights come on.
-              </p>
-
-              <div className="label">Show on the map</div>
               <div className="chips wrap">
                 {Object.entries(CATEGORIES).map(([key, cat]) => (
                   <button
@@ -1012,11 +1060,14 @@ Light is the one to use outdoors — white midways on pale ground, dark type, an
                   </button>
                 ))}
               </div>
+              <p className="fine">
+                Anything switched off here stops drawing on the map. It stays in search.
+              </p>
+            </div>
+          )}
 
-              <div className="label">Advanced diagnostics</div>
-              <Diagnostics runtime={runtimeApi} geo={geo} />
-
-              <div className="label">Which map</div>
+          {view === 'venues' && (
+            <div>
               <div className="venueList">
                 {(manifest?.venues || []).map((v) => {
                   // Measured from whatever is deciding the map: the host's
@@ -1044,15 +1095,13 @@ Light is the one to use outdoors — white midways on pale ground, dark type, an
                       aria-pressed={v.id === venue?.id}
                     >
                       <b>{v.name}</b>
-                      {v.id === venue?.id && <Icon name="checkmark" size={17} className="icn rowCheck" />}
+                      {v.id === venue?.id && (
+                        <Icon name="checkmark" size={17} className="icn rowCheck" />
+                      )}
                       <span>
                         {[
                           v.locality,
-                          from == null
-                            ? null
-                            : inside
-                              ? here
-                              : `${formatDistance(away)} ${off}`,
+                          from == null ? null : inside ? here : `${formatDistance(away)} ${off}`,
                         ]
                           .filter(Boolean)
                           .join(' · ')}
@@ -1062,21 +1111,21 @@ Light is the one to use outdoors — white midways on pale ground, dark type, an
                 })}
               </div>
               <p className="fine">
-                Picking one here keeps it, and stops the app moving you again. Left alone,
-                it opens the map you used last, then follows the phone hosting your party —
-                or your own first fix, if there is no party running.
+                Picking one here keeps it, and stops the app moving you again. Left alone, it
+                opens the map you used last, then follows the phone hosting your party — or
+                your own first fix, if there is no party running.
               </p>
-
-              <div className="label">Where the data comes from</div>
               <p className="fine">
-                The map is drawn from OpenStreetMap geometry — real paths, buildings, water
-                and ride track, painted as vectors rather than copied from anyone&apos;s
-                printed map. {venue?.credits || ''} Every map here was built by
-                <code> npm run venues:build</code>, so anywhere OpenStreetMap covers can
-                become one.
+                The map is drawn from OpenStreetMap geometry — real paths, buildings, water and
+                ride track, painted as vectors rather than copied from anyone&apos;s printed
+                map. {venue?.credits || ''} Every map here was built by
+                <code> npm run venues:build</code>, so anywhere OpenStreetMap covers can become
+                one.
               </p>
             </div>
           )}
+
+          {view === 'diagnostics' && <Diagnostics runtime={runtimeApi} geo={geo} />}
         </div>
       </section>
 

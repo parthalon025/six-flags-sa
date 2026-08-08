@@ -18,8 +18,8 @@ const toggle = p.locator('button[aria-label*="night map"]');
 if (await toggle.count()) { await toggle.click(); await p.waitForTimeout(500); }
 console.log('theme attr =', await p.evaluate(() => document.documentElement.dataset.theme));
 await p.screenshot({ path:'test/shots/13-night-recheck.png' });
-// open rides tab in daylight
-await p.locator('button:has-text("RIDES & HEIGHTS")').first().click().catch(()=>{});
+// open the rider-height screen in daylight
+await p.locator('.row:has-text("Rider height")').first().click().catch(()=>{});
 await p.waitForTimeout(600);
 await p.screenshot({ path:'test/shots/14-night-rides-recheck.png' });
 await b.close();
