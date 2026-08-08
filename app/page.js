@@ -14,8 +14,10 @@ import SettingsPanel from '@/components/SettingsPanel';
 import Diagnostics from '@/components/Diagnostics';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
+import TabBar from '@/components/TabBar';
 import RoutePreview from '@/components/RoutePreview';
 import DirectionsPanel from '@/components/DirectionsPanel';
+import useSheetDrag from '@/components/useSheetDrag';
 import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
@@ -52,15 +54,29 @@ const colourFor = (id) => {
 };
 const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
 
+/* The titles a pushed screen wears in its nav bar. Party, Rides and Me are not
+   in here: they are tabs now, and a tab's root screen carries a large title
+   rather than a back button. */
 const VIEW_TITLES = {
   route: 'Directions',
-  party: 'Party',
-  height: 'Rider height',
-  settings: 'Settings',
   categories: 'Show on the map',
   venues: 'Which map',
   diagnostics: 'Diagnostics',
 };
+
+/* The tab bar, left to right. The order is the whole of the animation's
+   direction logic: moving right along the bar slides the next screen in from
+   the right, and moving left slides it back. */
+const TAB_ORDER = ['explore', 'party', 'rides', 'settings'];
+
+/* A tab root gets a large title instead of the search field. Explore is the
+   exception — its title is the search field, because searching a map is the
+   thing you came to that screen to do. */
+const ROOT_TITLES = { party: 'Party', rides: 'Rides', settings: 'Me' };
+
+const EMPTY_STACK = [];
+/** The navigation state the app opens on, and the one back returns it to. */
+const HOME_STACKS = { explore: [], party: [], rides: [], settings: [] };
 
 const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
 
@@ -77,8 +93,10 @@ const LEGACY_IDENTITY_KEY = 'ki-identity';
    These have to track --peek and the sheet's insets in globals.css. The sheet
    floats clear of the bottom edge at its partial stops, so what the map is
    standing on is the height plus that gap; at the full stop it is anchored and
-   there is no gap. */
-const SHEET_PEEK_PX = 248 + 8;
+   there is no gap. The peek stop is what it is because it has to stand the
+   search field, the glance rail and the tab bar all at once. */
+const PEEK_PX = 286;
+const SHEET_PEEK_PX = PEEK_PX + 8;
 const SHEET_OPEN = { half: 0.52, full: 0.88 };
 const SHEET_INSET = { half: 5, full: 0 };
 const STOWED_PX = 96;
@@ -117,10 +135,18 @@ export default function Page() {
   const [busy, setBusy] = useState(false);
 
   const [selected, setSelected] = useState(null);
-  /* The sheet is a navigation stack, the way a phone map's is. An empty stack
-     is the root — search, the glance rail and the places list — and everything
-     else is pushed on top of it behind a back button. */
-  const [stack, setStack] = useState([]);
+  /* Four tabs, and a navigation stack per tab — the shape a phone app has had
+     since tab bars existed. A tab's empty stack is its root screen; anything
+     pushed on top of it arrives behind a back button, and leaving the tab and
+     coming back finds it exactly where it was left. */
+  const [tab, setTab] = useState('explore');
+  const [stacks, setStacks] = useState(HOME_STACKS);
+  /* Which way the next screen should come in from. Screens travel: forward is
+     from the right, back is from the left, and that is true of a push, a pop
+     and a move along the tab bar alike. Empty on the first paint — the sheet
+     is already sliding up from the bottom, and its contents arriving sideways
+     at the same time is one motion too many. */
+  const [motion, setMotion] = useState('');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('coaster');
   const [onlyRideable, setOnlyRideable] = useState(false);
@@ -157,12 +183,156 @@ export default function Page() {
   const [voice, setVoice] = useState(false);
   const [rerouted, setRerouted] = useState(0);
 
+  const stack = stacks[tab] ?? EMPTY_STACK;
   const view = stack[stack.length - 1] ?? null;
-  const push = useCallback((next) => {
-    setStack((prev) => (prev[prev.length - 1] === next ? prev : [...prev, next]));
-    setSheet((h) => (h === 'peek' ? 'half' : h));
+
+  /* ---------- where "back" comes from ----------
+   *
+   * On a phone, back is not the button in the corner of the sheet. It is the
+   * hardware button on an Android, and the swipe in from the left edge on
+   * both — a browser gesture, decided by the browser before any handler in
+   * this page is asked, and not suppressible from a page in any reliable way.
+   * Measured: a drag from the left edge navigates the browser off the app
+   * whatever the sheet does about pointer events.
+   *
+   * So the app answers it instead of fighting it. Every forward move — a
+   * screen pushed, a tab stepped to — puts a snapshot of the whole navigation
+   * state into the history stack, and going back restores the snapshot the
+   * browser hands over. The edge swipe and the Android back button then walk
+   * back through the app one screen at a time, and only leave when there is
+   * nothing left to go back to, which is what a person expects of both.
+   *
+   * Snapshots rather than a count of entries: there is no arithmetic to get
+   * wrong, and an entry can be corrected in place when the app closes a screen
+   * on its own — a walk ending takes its directions screen with it.
+   */
+  const navRef = useRef({ tab: 'explore', stacks: null });
+  useEffect(() => {
+    navRef.current = { tab, stacks };
+  }, [tab, stacks]);
+
+  /** Put a navigation state on screen, without touching history. */
+  const applyNav = useCallback((next, dir) => {
+    if (!next) return;
+    tabRef.current = next.tab;
+    setMotion(dir);
+    setTab(next.tab);
+    setStacks(next.stacks);
   }, []);
-  const pop = useCallback(() => setStack((prev) => prev.slice(0, -1)), []);
+
+  // The handlers below are called from callbacks that must not be rebuilt every
+  // time the tab changes, so they read the current tab through a ref rather
+  // than closing over it.
+  const tabRef = useRef('explore');
+  // The tab ids in bar order, for the gestures that step along it.
+  const tabsRef = useRef(TAB_ORDER);
+  useEffect(() => {
+    tabRef.current = tab;
+  }, [tab]);
+
+  /** A forward move: on screen, and onto the history stack behind it. */
+  const goForward = useCallback(
+    (next, dir) => {
+      applyNav(next, dir);
+      // Spread whatever is already there: the router keeps its own bookkeeping
+      // in history.state, and replacing the object wholesale strands it — the
+      // symptom is a back that skips every intermediate entry and lands on the
+      // first one.
+      window.history.pushState({ ...window.history.state, tracker: next }, '');
+      // A little confirmation under the thumb. The screen has already changed
+      // by the time a phone this size has finished animating, and on a bright
+      // midway the tap is often felt before it is seen.
+      navigator.vibrate?.(8);
+    },
+    [applyNav],
+  );
+
+  /** Push a screen onto a tab's stack — its own tab unless told otherwise. */
+  const push = useCallback(
+    (next, target) => {
+      const id = target || tabRef.current;
+      const { stacks: cur } = navRef.current;
+      const onIt = cur[id] || EMPTY_STACK;
+      if (id === tabRef.current && onIt[onIt.length - 1] === next) return;
+      goForward(
+        { tab: id, stacks: { ...cur, [id]: [...onIt, next] } },
+        'fromRight',
+      );
+      setSheet((h) => (h === 'peek' ? 'half' : h));
+    },
+    [goForward],
+  );
+
+  /**
+   * Up one level — what the button in the sheet's navigation bar means.
+   *
+   * This is deliberately not `history.back()`, which is the *other* back and a
+   * different question. The phone's back retraces: it undoes the last move you
+   * made, wherever that was. This one climbs: it takes the top screen off the
+   * stack you are looking at. They agree almost always and part company as
+   * soon as tabs remember where they were left — leave a screen open on Me,
+   * visit Rides, come back, and retracing lands on Rides while climbing goes
+   * up to Me's root. Next to a title, in a navigation bar, "Back" can only
+   * sensibly mean the second one.
+   *
+   * The entry it is standing on is corrected on the way, so a later retrace
+   * through here shows what was actually on screen at the time.
+   */
+  const pop = useCallback(() => {
+    const { tab: at, stacks: cur } = navRef.current;
+    const onIt = cur[at] || EMPTY_STACK;
+    if (!onIt.length) return;
+    const next = { tab: at, stacks: { ...cur, [at]: onIt.slice(0, -1) } };
+    applyNav(next, 'fromLeft');
+    window.history.replaceState({ ...window.history.state, tracker: next }, '');
+  }, [applyNav]);
+
+  /**
+   * Move along the tab bar. Tapping the tab you are already on unwinds that
+   * tab's stack back to its root, which is what every phone tab bar does and
+   * the only way back out of a screen without reaching for the back button.
+   */
+  const selectTab = useCallback(
+    (id) => {
+      const current = tabRef.current;
+      const { stacks: cur } = navRef.current;
+      if (id === current) {
+        // Unwinding to the root is climbing, like the back button above, so it
+        // goes the same way: straight there, correcting the entry it is on.
+        if (!cur[id]?.length) return;
+        const next = { tab: id, stacks: { ...cur, [id]: [] } };
+        applyNav(next, 'fromLeft');
+        window.history.replaceState({ ...window.history.state, tracker: next }, '');
+        return;
+      }
+      goForward(
+        { tab: id, stacks: cur },
+        TAB_ORDER.indexOf(id) > TAB_ORDER.indexOf(current) ? 'fromRight' : 'fromLeft',
+      );
+      // Explore is read over the top of the map and keeps whatever stop the sheet
+      // was left at. The other three are screens you went to read, so they come
+      // up far enough to have something on them.
+      if (id !== 'explore') setSheet((h) => (h === 'peek' ? 'half' : h));
+    },
+    [goForward, applyNav],
+  );
+
+  // The browser handing back an earlier snapshot is the only thing that ever
+  // moves this app backwards, whether the visitor pressed a button, swiped the
+  // edge, or held the one on the phone itself.
+  useEffect(() => {
+    // The entry the app opened on is home. Stamped on mount so that a reload
+    // does not leave a stale snapshot on the current entry.
+    window.history.replaceState(
+      { ...window.history.state, tracker: { tab: 'explore', stacks: HOME_STACKS } },
+      '',
+    );
+    const onPop = (e) => {
+      applyNav(e.state?.tracker ?? { tab: 'explore', stacks: HOME_STACKS }, 'fromLeft');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [applyNav]);
 
   const runtime = useRef(null);
   const lastRoute = useRef(null);
@@ -595,9 +765,19 @@ export default function Page() {
     setRoutes([]);
     setPick(0);
     lastRoute.current = null;
-    setStack((prev) => prev.filter((v) => v !== 'route'));
+    // A walk ending closes its own directions screen. If that screen is the one
+    // showing, going back is what closes it; if it is buried, the entry is
+    // corrected in place so that backing into it later does not resurrect a
+    // walk that is over.
+    const { tab: at, stacks: cur } = navRef.current;
+    const explore = cur.explore || EMPTY_STACK;
+    if (explore.includes('route')) {
+      const next = { tab: at, stacks: { ...cur, explore: explore.filter((v) => v !== 'route') } };
+      applyNav(next, 'fromLeft');
+      window.history.replaceState({ ...window.history.state, tracker: next }, '');
+    }
     setSheet('peek');
-  }, []);
+  }, [applyNav]);
 
   // A walk belongs to the map it was worked out on. When the venue changes —
   // picked by hand, or followed to where the party is — the destination is a
@@ -819,15 +999,93 @@ export default function Page() {
     return `${where} · ${nearest ? `near ${nearest.p.n}` : ''} · ${acc}`;
   };
 
+  /**
+   * One line under a tab's large title, saying where that tab stands right now.
+   * It is the value that used to sit on the right of the row this tab replaced
+   * — the same answer, in the place it now belongs.
+   */
+  const rootSubtitle = useMemo(() => {
+    if (tab === 'party') return active ? `${roster.length} on the map` : 'Not started';
+    if (tab === 'rides') {
+      if (height == null) return 'No rider height set';
+      return rideableCount != null
+        ? `${height}" · ${rideableCount} of ${totalRides} rides`
+        : `${height}"`;
+    }
+    if (tab === 'settings') return identity?.name || 'Guest';
+    return '';
+  }, [tab, active, roster.length, height, rideableCount, totalRides, identity?.name]);
+
+  /* ---------- the tab bar ---------- */
+
+  /** Somebody in the party is in trouble — the Party tab has to say so. */
+  const helpNow = useMemo(() => others.some((m) => m.status === 'NEED HELP'), [others]);
+
+  const tabs = useMemo(() => {
+    const out = [
+      { id: 'explore', label: 'Explore', icon: 'magnifyingglass' },
+      {
+        id: 'party',
+        label: 'Party',
+        icon: 'person.2.fill',
+        // A count while a party is running, and red the moment one of them
+        // needs help — a tab bar is the only chrome always on screen, so it is
+        // the right place for the one thing that must never be missed.
+        badge: helpNow ? '!' : active ? roster.length : null,
+        badgeLabel: helpNow ? 'someone needs help' : active ? `${roster.length} on the map` : null,
+        alert: helpNow,
+      },
+    ];
+    // Height rules only exist where a venue publishes them, so neither does the
+    // tab that reads them.
+    if (heights) out.push({ id: 'rides', label: 'Rides', icon: 'figure.rollercoaster' });
+    // Once there is a name, the tab wears it. "Guest" is the placeholder
+    // nobody typed, and "GU" on a tab is not a person — so that one keeps the
+    // generic glyph until the visitor says who they are.
+    const named = identity?.name && identity.name !== 'Guest';
+    out.push({
+      id: 'settings',
+      label: 'Me',
+      icon: 'person.crop.circle.fill',
+      initials: named ? initialsFor(identity.name) : null,
+    });
+    return out;
+  }, [helpNow, active, roster.length, heights, identity?.name]);
+
+  useEffect(() => {
+    tabsRef.current = tabs.map((t) => t.id);
+  }, [tabs]);
+
+  // Switching to a venue with no height rules while standing on the Rides tab
+  // would leave the sheet on a screen with no way back to it.
+  useEffect(() => {
+    if (!heights && tab === 'rides') selectTab('explore');
+  }, [heights, tab, selectTab]);
+
+  /* ---------- the sheet's own gestures ---------- */
+
   // While a route is running the sheet is out of the way unless it is asked
   // for: the map and the two HUD strips are the whole interface, and the sheet
   // comes back over them only when you open the steps.
-  const sheetClass = `sheet ${sheet} ${walking && sheet === 'peek' ? 'stowed' : ''} ${
-    previewing ? 'stowed' : ''
-  }`;
+  const stowed = previewing || (walking && sheet === 'peek');
+
+  const stops = useMemo(
+    () => ({
+      peek: PEEK_PX,
+      half: Math.round(SHEET_OPEN.half * viewportH),
+      full: Math.round(SHEET_OPEN.full * viewportH),
+    }),
+    [viewportH],
+  );
+  const drag = useSheetDrag({ stops, stop: sheet, onStop: setSheet });
+
+  // `atMap` marks the screen that is read over the top of the map rather than
+  // instead of it — the one the peek stop is designed around.
+  const sheetClass = `sheet ${sheet} ${tab === 'explore' ? 'atMap' : ''} ${
+    stowed ? 'stowed' : ''
+  } ${drag.dragging ? 'dragging' : ''}`;
 
   // The same stops, as a number of pixels, for the map's own label layout.
-  const stowed = previewing || (walking && sheet === 'peek');
   const floorPx = stowed
     ? STOWED_PX
     : Math.round((SHEET_OPEN[sheet] ?? 0) * viewportH) + (SHEET_INSET[sheet] ?? 0) ||
@@ -905,7 +1163,10 @@ export default function Page() {
         offline={weatherFeed.offline}
         now={clock}
         onOpen={() => {
-          setTab('rides');
+          // It says "open the rides list", so it opens the list — the places
+          // screen, filtered to the rides the headline is about.
+          selectTab('explore');
+          setFilter('coaster');
           setSheet('half');
         }}
       />
@@ -914,9 +1175,7 @@ export default function Page() {
         <button
           type="button"
           className="filterBadge"
-          onClick={() => {
-            push('height');
-          }}
+          onClick={() => selectTab('rides')}
         >
           <b>{height}&quot;</b>
           {rideableCount != null ? `${rideableCount} of ${totalRides} rides` : 'filter on'}
@@ -989,7 +1248,7 @@ export default function Page() {
           onPick={setPick}
           onStart={beginWalking}
           onCancel={stopNav}
-          onSteps={() => push('route')}
+          onSteps={() => push('route', 'explore')}
         />
       )}
 
@@ -1002,285 +1261,300 @@ export default function Page() {
           onVoice={() => setVoice((v) => !v)}
           northUp={northUp}
           onCompass={() => setNorthUp((v) => !v)}
-          onSteps={() => push('route')}
+          onSteps={() => push('route', 'explore')}
           onStop={stopNav}
         />
       )}
 
-      <section className={sheetClass}>
+      <section
+        className={sheetClass}
+        style={drag.height != null ? { height: `${drag.height}px` } : undefined}
+      >
         <button
           type="button"
           className="grab"
-          onClick={() => setSheet(sheet === 'full' ? 'peek' : sheet === 'half' ? 'full' : 'half')}
+          onClick={() => {
+            // A drag that ended on this handle emits a click too. It has
+            // already chosen a stop; cycling on top of it would undo it.
+            if (drag.swallowClick()) return;
+            setSheet(sheet === 'full' ? 'peek' : sheet === 'half' ? 'full' : 'half');
+          }}
           aria-label="Resize panel"
+          {...drag.handlers}
         >
           <i />
         </button>
 
-        {view ? (
-          <header className="navHead">
-            <button type="button" className="navBack" onClick={pop}>
-              <Icon name="chevron.left" size={19} />
-              Back
-            </button>
-            <h2>{VIEW_TITLES[view] || ''}</h2>
-            <span className="navHeadPad" aria-hidden="true" />
-          </header>
-        ) : (
-          <>
-            {/* Search is the way into a map, so it is the first thing in the
-                sheet and it never scrolls away. */}
-            <div className="searchRow">
-              <div className="searchField">
-                <Icon name="magnifyingglass" size={17} />
-                <input
-                  className="field"
-                  placeholder={`Search ${venue?.name || 'the map'}`}
-                  value={query}
-                  onFocus={() => setSheet((h) => (h === 'peek' ? 'half' : h))}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label="Search places"
-                />
-                {query && (
-                  <button
-                    type="button"
-                    className="searchClear"
-                    onClick={() => setQuery('')}
-                    aria-label="Clear the search"
-                  >
-                    <Icon name="xmark.circle.fill" size={18} />
-                  </button>
-                )}
-              </div>
-              <button
-                type="button"
-                className="avatarBtn"
-                onClick={() => push('settings')}
-                aria-label="Settings"
-              >
-                {initialsFor(identity?.name)}
+        {/* One key for the whole screen — header and body together — so a push,
+            a pop or a move along the tab bar replays the slide as a single
+            piece of paper rather than two halves arriving separately. */}
+        <div
+          className="sheetStage"
+          key={`${tab}:${stack.length}:${view || 'root'}`}
+          data-motion={motion}
+        >
+          {view ? (
+            <header className="navHead">
+              <button type="button" className="navBack" onClick={pop}>
+                <Icon name="chevron.left" size={19} />
+                Back
               </button>
-            </div>
-            <div className="brand">
-              <b>{venue?.name || 'Party tracker'}</b>
-              <span>{headerLine()}</span>
-            </div>
-            <GlanceRail
-              me={position}
-              members={others}
-              meet={meet}
-              selected={selected}
-              heading={heading}
-              theme={theme}
-              onFocus={focusOn}
-              onNavigate={startNav}
-              navKey={navKeyOf(navTarget)}
-              navMetres={progress?.remaining ?? route?.metres ?? null}
-              onOpenParty={() => push('party')}
-            />
-          </>
-        )}
-
-        <div className="sheetBody">
-          {view === null && (
+              <h2>{VIEW_TITLES[view] || ''}</h2>
+              <span className="navHeadPad" aria-hidden="true" />
+            </header>
+          ) : tab === 'explore' ? (
             <>
-              <div className="rowList">
-                {navTarget && (
-                  <button type="button" className="row" onClick={() => push('route')}>
-                    <span className="rowText">Directions</span>
-                    <span className="rowValue">{navTarget.label}</span>
-                  </button>
-                )}
-                <button type="button" className="row" onClick={() => push('party')}>
-                  <span className="rowText">Party</span>
-                  <span className="rowValue">
-                    {active ? `${roster.length} on the map` : 'Not started'}
-                  </span>
-                </button>
-                {heights && (
-                  <button type="button" className="row" onClick={() => push('height')}>
-                    <span className="rowText">Rider height</span>
-                    <span className="rowValue">{height != null ? `${height}"` : 'Off'}</span>
-                  </button>
-                )}
+              {/* Search is the way into a map, so it is the first thing in the
+                  sheet and it never scrolls away. */}
+              <div className="searchRow">
+                <div className="searchField">
+                  <Icon name="magnifyingglass" size={17} />
+                  <input
+                    className="field"
+                    placeholder={`Search ${venue?.name || 'the map'}`}
+                    value={query}
+                    onFocus={() => setSheet((h) => (h === 'peek' ? 'half' : h))}
+                    onChange={(e) => setQuery(e.target.value)}
+                    aria-label="Search places"
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      className="searchClear"
+                      onClick={() => setQuery('')}
+                      aria-label="Clear the search"
+                    >
+                      <Icon name="xmark.circle.fill" size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
-              <PlaceList
+              <div className="brand">
+                <b>{venue?.name || 'Party tracker'}</b>
+                <span>{headerLine()}</span>
+              </div>
+              <GlanceRail
                 me={position}
-                height={height}
-                withAdult={withAdult}
-                query={query}
-                filter={filter}
-                onFilter={setFilter}
-                onlyRideable={onlyRideable}
-                onOnlyRideable={setOnlyRideable}
+                members={others}
+                meet={meet}
                 selected={selected}
-                onSelect={handleSelect}
-                onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
-                onNavigate={startNav}
+                heading={heading}
                 theme={theme}
-                weather={weatherFeed.weather}
-                rides={partyRides}
-                // Reporting needs somewhere to send it. Outside a party the list
-                // still shows the forecast, minus the buttons.
-                onReport={party?.active ? reportRide : null}
-                now={clock}
+                onFocus={focusOn}
+                onNavigate={startNav}
+                navKey={navKeyOf(navTarget)}
+                navMetres={progress?.remaining ?? route?.metres ?? null}
+                onOpenParty={() => selectTab('party')}
               />
             </>
+          ) : (
+            /* A tab's own root: the large title a phone puts at the top of a
+               screen you arrived at rather than drilled into, and one line
+               underneath saying where that tab currently stands. */
+            <header className="sheetHead">
+              <h2>{ROOT_TITLES[tab]}</h2>
+              <span>{rootSubtitle}</span>
+            </header>
           )}
 
-          {view === 'route' && (
-            <DirectionsPanel
-              target={navTarget}
-              route={route}
-              progress={walking ? progress : null}
-              walking={walking}
-              onStart={beginWalking}
-              onStop={stopNav}
-              onFocus={focusOn}
-              onClose={() => setSheet('peek')}
-            />
-          )}
-
-          {view === 'party' && (
-            <PartyPanel
-              code={code}
-              invite={party?.invite ?? null}
-              members={roster}
-              meet={meet}
-              me={position}
-              myId={party?.selfId ?? null}
-              hostId={party?.hostId ?? null}
-              hosting={Boolean(party?.hosting)}
-              status={status}
-              onStatus={(s) => {
-                setStatus(s);
-                runtime.current?.setStatus(s);
-                showToast(`Status: ${s}`);
-              }}
-              onCreate={createParty}
-              onJoin={joinParty}
-              onLeave={leaveParty}
-              onClearMeet={clearMeet}
-              onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Meet-up' })}
-              onFocus={(m) => {
-                setFollow(false);
-                setFocusPoint({ lat: m.lat, lng: m.lng });
-                setSheet('peek');
-              }}
-              busy={busy || party?.phase === 'connecting'}
-              transport={party?.transport ?? null}
-              version={party?.version ?? 0}
-              queued={party?.queued ?? 0}
-            />
-          )}
-
-          {view === 'height' && (
-            <HeightPanel
-              height={height}
-              withAdult={withAdult}
-              onHeight={setHeight}
-              onWithAdult={setWithAdult}
-              venue={venue}
-            />
-          )}
-
-          {view === 'settings' && (
-            <SettingsPanel
-              identity={identity}
-              onName={(v) => setIdentity((i) => ({ ...i, name: v.trim() || 'Guest' }))}
-              onNameCommit={(v) => runtime.current?.setMemberName(v.trim() || 'Guest')}
-              position={position}
-              onLocationSettings={() => setGateOpen(true)}
-              theme={theme}
-              onTheme={setTheme}
-              categoryCount={categories.size}
-              categoryTotal={Object.keys(CATEGORIES).length}
-              venueName={venue?.name}
-              onPush={push}
-            />
-          )}
-
-          {view === 'categories' && (
-            <div>
-              <div className="chips wrap">
-                {Object.entries(CATEGORIES).map(([key, cat]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`chip ${categories.has(key) ? 'on' : ''}`}
-                    onClick={() => toggleCategory(key)}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-              <p className="fine">
-                Anything switched off here stops drawing on the map. It stays in search.
-              </p>
-            </div>
-          )}
-
-          {view === 'venues' && (
-            <div>
-              <div className="venueList">
-                {(manifest?.venues || []).map((v) => {
-                  // Measured from whatever is deciding the map: the host's
-                  // position while a party is running, this phone's otherwise.
-                  const from = hostLocation || position;
-                  const inside = from && withinBounds(v.bounds, from.lat, from.lng);
-                  const away =
-                    from && !inside ? distance(from.lat, from.lng, v.center.lat, v.center.lng) : null;
-                  const here = hostLocation ? 'your party is here' : 'you are here';
-                  const off = hostLocation ? 'from your party' : 'away';
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      className={`venueRow ${v.id === venue?.id ? 'on' : ''}`}
-                      onClick={() => {
-                        selectVenue(v.id, { pin: true })
-                          .then(() => {
-                            setSelected(null);
-                            setFollow(false);
-                            showToast(`Showing ${v.name}`);
-                          })
-                          .catch((err) => showToast(err?.message || 'Could not load that map.'));
-                      }}
-                      aria-pressed={v.id === venue?.id}
-                    >
-                      <b>{v.name}</b>
-                      {v.id === venue?.id && (
-                        <Icon name="checkmark" size={17} className="icn rowCheck" />
-                      )}
-                      <span>
-                        {[
-                          v.locality,
-                          from == null ? null : inside ? here : `${formatDistance(away)} ${off}`,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
+          <div className="sheetBody">
+            {view === null && tab === 'explore' && (
+              <>
+                {/* The one row left on this screen. Everywhere else it used to
+                    lead is a tab now; a walk in progress is not a place, so it
+                    stays here, and only while there is one. */}
+                {navTarget && (
+                  <div className="rowList">
+                    <button type="button" className="row" onClick={() => push('route')}>
+                      <span className="rowText">Directions</span>
+                      <span className="rowValue">{navTarget.label}</span>
                     </button>
-                  );
-                })}
-              </div>
-              <p className="fine">
-                Picking one here keeps it, and stops the app moving you again. Left alone, it
-                opens the map you used last, then follows the phone hosting your party — or
-                your own first fix, if there is no party running.
-              </p>
-              <p className="fine">
-                The map is drawn from OpenStreetMap geometry — real paths, buildings, water and
-                ride track, painted as vectors rather than copied from anyone&apos;s printed
-                map. {venue?.credits || ''} Every map here was built by
-                <code> npm run venues:build</code>, so anywhere OpenStreetMap covers can become
-                one.
-              </p>
-            </div>
-          )}
+                  </div>
+                )}
+                <PlaceList
+                  me={position}
+                  height={height}
+                  withAdult={withAdult}
+                  query={query}
+                  filter={filter}
+                  onFilter={setFilter}
+                  onlyRideable={onlyRideable}
+                  onOnlyRideable={setOnlyRideable}
+                  selected={selected}
+                  onSelect={handleSelect}
+                  onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
+                  onNavigate={startNav}
+                  theme={theme}
+                  weather={weatherFeed.weather}
+                  rides={partyRides}
+                  // Reporting needs somewhere to send it. Outside a party the list
+                  // still shows the forecast, minus the buttons.
+                  onReport={party?.active ? reportRide : null}
+                  now={clock}
+                />
+              </>
+            )}
 
-          {view === 'diagnostics' && <Diagnostics runtime={runtimeApi} geo={geo} />}
+            {view === 'route' && (
+              <DirectionsPanel
+                target={navTarget}
+                route={route}
+                progress={walking ? progress : null}
+                walking={walking}
+                onStart={beginWalking}
+                onStop={stopNav}
+                onFocus={focusOn}
+                onClose={() => setSheet('peek')}
+              />
+            )}
+
+            {view === null && tab === 'party' && (
+              <PartyPanel
+                code={code}
+                invite={party?.invite ?? null}
+                members={roster}
+                meet={meet}
+                me={position}
+                myId={party?.selfId ?? null}
+                hostId={party?.hostId ?? null}
+                hosting={Boolean(party?.hosting)}
+                status={status}
+                onStatus={(s) => {
+                  setStatus(s);
+                  runtime.current?.setStatus(s);
+                  showToast(`Status: ${s}`);
+                }}
+                onCreate={createParty}
+                onJoin={joinParty}
+                onLeave={leaveParty}
+                onClearMeet={clearMeet}
+                onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Meet-up' })}
+                onFocus={(m) => {
+                  setFollow(false);
+                  setFocusPoint({ lat: m.lat, lng: m.lng });
+                  setSheet('peek');
+                }}
+                busy={busy || party?.phase === 'connecting'}
+                transport={party?.transport ?? null}
+                version={party?.version ?? 0}
+                queued={party?.queued ?? 0}
+              />
+            )}
+
+            {view === null && tab === 'rides' && (
+              <HeightPanel
+                height={height}
+                withAdult={withAdult}
+                onHeight={setHeight}
+                onWithAdult={setWithAdult}
+                venue={venue}
+              />
+            )}
+
+            {view === null && tab === 'settings' && (
+              <SettingsPanel
+                identity={identity}
+                onName={(v) => setIdentity((i) => ({ ...i, name: v.trim() || 'Guest' }))}
+                onNameCommit={(v) => runtime.current?.setMemberName(v.trim() || 'Guest')}
+                position={position}
+                onLocationSettings={() => setGateOpen(true)}
+                theme={theme}
+                onTheme={setTheme}
+                categoryCount={categories.size}
+                categoryTotal={Object.keys(CATEGORIES).length}
+                venueName={venue?.name}
+                onPush={push}
+              />
+            )}
+
+            {view === 'categories' && (
+              <div>
+                <div className="chips wrap">
+                  {Object.entries(CATEGORIES).map(([key, cat]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`chip ${categories.has(key) ? 'on' : ''}`}
+                      onClick={() => toggleCategory(key)}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="fine">
+                  Anything switched off here stops drawing on the map. It stays in search.
+                </p>
+              </div>
+            )}
+
+            {view === 'venues' && (
+              <div>
+                <div className="venueList">
+                  {(manifest?.venues || []).map((v) => {
+                    // Measured from whatever is deciding the map: the host's
+                    // position while a party is running, this phone's otherwise.
+                    const from = hostLocation || position;
+                    const inside = from && withinBounds(v.bounds, from.lat, from.lng);
+                    const away =
+                      from && !inside
+                        ? distance(from.lat, from.lng, v.center.lat, v.center.lng)
+                        : null;
+                    const here = hostLocation ? 'your party is here' : 'you are here';
+                    const off = hostLocation ? 'from your party' : 'away';
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        className={`venueRow ${v.id === venue?.id ? 'on' : ''}`}
+                        onClick={() => {
+                          selectVenue(v.id, { pin: true })
+                            .then(() => {
+                              setSelected(null);
+                              setFollow(false);
+                              showToast(`Showing ${v.name}`);
+                            })
+                            .catch((err) => showToast(err?.message || 'Could not load that map.'));
+                        }}
+                        aria-pressed={v.id === venue?.id}
+                      >
+                        <b>{v.name}</b>
+                        {v.id === venue?.id && (
+                          <Icon name="checkmark" size={17} className="icn rowCheck" />
+                        )}
+                        <span>
+                          {[
+                            v.locality,
+                            from == null ? null : inside ? here : `${formatDistance(away)} ${off}`,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="fine">
+                  Picking one here keeps it, and stops the app moving you again. Left alone, it
+                  opens the map you used last, then follows the phone hosting your party — or
+                  your own first fix, if there is no party running.
+                </p>
+                <p className="fine">
+                  The map is drawn from OpenStreetMap geometry — real paths, buildings, water and
+                  ride track, painted as vectors rather than copied from anyone&apos;s printed
+                  map. {venue?.credits || ''} Every map here was built by
+                  <code> npm run venues:build</code>, so anywhere OpenStreetMap covers can become
+                  one.
+                </p>
+              </div>
+            )}
+
+            {view === 'diagnostics' && <Diagnostics runtime={runtimeApi} geo={geo} />}
+          </div>
         </div>
+
+        {/* Last in the sheet and last on screen: the one control that is always
+            in the same place, whatever else is happening above it. */}
+        <TabBar tabs={tabs} active={tab} onSelect={selectTab} />
       </section>
 
       {toast && (

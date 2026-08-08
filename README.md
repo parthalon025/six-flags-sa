@@ -45,6 +45,24 @@ and React 19.
   showing walking time as the headline, distance underneath, and an arrow aimed
   relative to the way you're facing when the compass is on. With no party running it
   falls back to the nearest restroom, food and first aid. Tap a card to fly to it.
+- **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Rides and Me sit in
+  a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
+  moves — and each tab keeps its own navigation stack, so leaving one and coming back
+  finds it where you left it. Tapping the tab you are already on unwinds it to its root.
+  The sheet itself follows your finger between three stops and snaps to whichever one you
+  flicked it at, and screens slide in from the side they came from. The collapsed stop
+  deliberately shows less: search, where you are, the rail, the tabs. Everything else is
+  one pull away.
+- **Back is the phone's back, not a button in a corner.** Every screen the app opens goes
+  onto the browser's history stack, so the Android back button and the swipe in from the
+  left edge walk back through the app one screen at a time and only leave when there is
+  nothing left to go back to. The sheet's own back button takes the identical path — it
+  is the same history move — so the two can never disagree about where they are.
+- **Sized for a thumb, not a cursor.** Nothing you can tap is smaller than the 44px a
+  fingertip actually covers. Where a control has to *look* small — a row of seven height
+  tiers, a strip of filter chips, the Go button in the corner of a card — it keeps its
+  looks and grows an invisible hit area instead, so taps that land near enough still
+  count. There is no hover state anywhere, because there is no pointer to hover with.
 - **Turn-by-turn walking directions, the way a phone map does them.** Tap Go on a card or
   "Walk me there" on a ride and you get the trip first — how long, when you arrive, and
   two or three genuinely different ways to go, drawn on the map and named after where they
@@ -61,7 +79,7 @@ and React 19.
   ground, dark type, deeper marker colours — meant to be readable on a phone in direct
   July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the moon button floating over the map, or under Settings.
+  with the moon button floating over the map, or on the Me tab.
 - **What's open when the weather turns.** The park publishes no live feed this app can
   read, so it builds one from the two sources it actually has. Your party reports what it
   walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
@@ -81,7 +99,7 @@ and React 19.
 - **Switches maps on its own, to where the party is.** Once you are in a party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  under Settings → Which map and it stops second-guessing you.
+  under Me → Which map and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
@@ -478,7 +496,7 @@ lib/venue/useVenue.js         the hook components read it through
 lib/venueIndex.js             generated: static POI imports for the API routes
 lib/serverStore.js            memory / Upstash backend for the cloud fallback
 app/
-  page.js                     client state and the sheet
+  page.js                     client state, the tabs and the sheet
   join/page.js                invite landing; reads the fragment, never the query
   api/mailbox/…               the relay
   api/…                       party, members, location, rides, health, metrics
@@ -488,10 +506,14 @@ components/
   MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
   MapLegend.jsx               the on-map key, which is also the category filter
   GlanceRail.jsx              the live card rail in the collapsed sheet
+  TabBar.jsx                  the four bottom tabs, badges and all
+  useSheetDrag.js             the sheet under a finger: follow, then snap
   PartyPanel.jsx              roster, QR, join, status, meet-up
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
-  RidesPanel.jsx              height filter, place search, live status and reporting
+  PlaceList.jsx               place search, live status and reporting
+  HeightPanel.jsx             the rider-height filter and what it unlocks
+  SettingsPanel.jsx           name, appearance, which map, and the long tail
   WeatherBanner.jsx           the park-wide headline; renders nothing on a clear day
   useWeather.js               polls the forecast, caches it, survives losing signal
   GpsGate.jsx                 permission dialog with per-failure guidance

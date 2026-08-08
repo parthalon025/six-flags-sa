@@ -1,4 +1,4 @@
-import { BASE, go, launch, root } from './browser.mjs';
+import { BASE, go, launch } from './browser.mjs';
 const B = BASE;
 const b = await launch();
 const c = await b.newContext({ viewport:{width:390,height:844}, deviceScaleFactor:2,
@@ -32,7 +32,7 @@ await fetch(`${B}/api/party/${code}`, {method:'PUT', headers:{'Content-Type':'ap
 await fetch(`${B}/api/party/${code}/meet`, {method:'PUT', headers:{'Content-Type':'application/json'},
   body: JSON.stringify({lat:39.34395,lng:-84.26730,label:'Royal Fountain',by:'Justin'})});
 await p.waitForTimeout(9000);
-await root(p);                     // back to the screen the rail lives on
+await go(p, 'Places');             // the Explore tab, where the rail lives
 await p.locator('.grab').click();  // collapse toward peek
 await p.waitForTimeout(500);
 await p.locator('.grab').click();

@@ -13,7 +13,12 @@
 
 :root {
   color-scheme: dark;
-  --peek: 248px;
+  /* The peek stop has to stand the search field, the glance rail and the tab
+     bar at once. Tracked in page.js as PEEK_PX — the map lays its labels out
+     against the same number. */
+  --peek: 286px;
+  /* The tint the tab bar stands on, over the sheet's own glass. */
+  --tabBarFill: color-mix(in srgb, var(--bg2) 42%, transparent);
 
   /* ---- backgrounds ---- */
   --bg: #000000;
@@ -542,14 +547,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .searchRow .searchField { flex: 1; min-width: 0; margin-bottom: 0; }
 .searchRow .field { border-radius: var(--rCapsule); }
-.avatarBtn {
-  flex: none; width: 34px; height: 34px; border-radius: 50%;
-  background: var(--fill3); color: var(--label2);
-  display: grid; place-items: center;
-  font-size: 13px; font-weight: 600; letter-spacing: -.08px;
-  transition: opacity var(--t1) var(--easeOut);
-}
-.avatarBtn:active { opacity: .55; }
 
 /* ---- a pushed screen's nav bar: back on the left, title centred ---- */
 .navHead {
@@ -692,12 +689,143 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   -webkit-backdrop-filter: none; backdrop-filter: none;
   box-shadow: var(--shadow3);
 }
-.grab { width: 100%; padding: 6px 0 4px; display: grid; place-items: center; }
+/* A sheet under the finger stops easing: the height is the finger's, and any
+   transition on it would lag behind the thing it is meant to be attached to.
+   The easing comes back the moment it is let go, which is what makes the snap
+   to the nearest stop feel like a snap. */
+.sheet.dragging { transition: none; }
+
+/* touch-action: none, because a drag on the handle is the sheet's gesture and
+   not the browser's — without it the first few pixels are eaten by a pull to
+   refresh or a page scroll before the handler ever sees them. */
+/* The handle is the one control that cannot borrow the trick below: an
+   invisible 44px hit area would reach down over the search field and take the
+   taps meant for it. So this one is genuinely taller instead — enough to clear
+   the 24px floor, and forgiving in the way that matters, since the drag runs
+   the full width of the sheet. */
+.grab {
+  width: 100%; padding: 12px 0 10px; display: grid; place-items: center;
+  flex: none; touch-action: none;
+}
 .grab i {
   width: 36px; height: 5px; border-radius: 2.5px; background: var(--label3); display: block;
-  transition: background var(--t1) var(--easeOut);
+  transition: background var(--t1) var(--easeOut), width var(--t2) var(--easeOut);
 }
-.grab:active i { background: var(--label2); }
+.grab:active i { background: var(--label2); width: 44px; }
+
+/* ---- the screen: one piece of paper, header and body together ---- */
+/* Everything between the handle and the tab bar. It is keyed on the screen it
+   is showing, so React rebuilds it on every move and the animation below
+   replays — a push, a pop and a step along the tab bar all arrive as one
+   sliding sheet of paper rather than two halves landing separately. */
+.sheetStage {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  /* Clipped, so that a peek stop too short for everything above it loses the
+     bottom of the rail rather than painting it through the tab bar. */
+  overflow: hidden;
+  will-change: transform;
+}
+@keyframes screenFromRight {
+  from { opacity: 0; transform: translate3d(26%, 0, 0) }
+  to { opacity: 1; transform: none }
+}
+@keyframes screenFromLeft {
+  from { opacity: 0; transform: translate3d(-26%, 0, 0) }
+  to { opacity: 1; transform: none }
+}
+.sheetStage[data-motion='fromRight'] { animation: screenFromRight var(--t2) var(--ease) both; }
+.sheetStage[data-motion='fromLeft'] { animation: screenFromLeft var(--t2) var(--ease) both; }
+
+
+/* ---- a tab's own root: the large title a phone puts at the top ---- */
+.sheetHead { flex: none; padding: 2px 16px 10px; }
+/* Title 1. The tracking is positive on purpose: the curve tightens to a
+   minimum around 19–20pt and opens back up above it, so the reflex of
+   "bigger means tighter" has this one backwards. See the table in :root. */
+.sheetHead h2 {
+  margin: 0; font-size: 28px; font-weight: 700; line-height: 34px; letter-spacing: .38px;
+}
+.sheetHead span {
+  display: block; margin-top: 2px;
+  /* Footnote. */
+  font-size: 13px; font-weight: 400; line-height: 18px; letter-spacing: -.08px;
+  color: var(--label2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ============================================================
+   the tab bar
+   ============================================================ */
+/* The app's top-level navigation, and the only thing on screen that never
+   moves. It sits at the foot of the sheet rather than under it: the sheet is
+   already anchored to the bottom edge, and two stacked bottom chromes would
+   take the map twice over. Riding inside it, the bar holds the same place at
+   every stop the sheet takes — and goes away with it when a walk takes the
+   screen, which is exactly when a tab bar is in the way. */
+.tabBar {
+  flex: none; display: flex; align-items: stretch;
+  padding: 4px 6px 6px; border-top: .5px solid var(--sep);
+  /* The map scrolls past behind the glass, so the bar needs its own footing or
+     the labels sit on whatever colour happens to be under them. A token, not a
+     literal, because the reduced-transparency and increased-contrast blocks
+     have to be able to make this opaque along with every other material. */
+  background: var(--tabBarFill);
+}
+.sheet.full .tabBar {
+  background: var(--grouped);
+  padding-bottom: calc(6px + var(--bot));
+}
+.tabItem {
+  flex: 1; min-width: 0; min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 3px 2px 2px; border-radius: var(--r2);
+  color: var(--label3);
+  transition: color var(--t1) var(--easeOut), transform var(--t1) var(--easeOut);
+}
+.tabItem.on { color: var(--blue); }
+.tabItem:active { transform: scale(.92); }
+.tabGlyph { position: relative; display: grid; place-items: center; height: 26px; }
+/* The selected tab's glyph is fractionally larger. It is barely perceptible on
+   its own and completely obvious next to its neighbours, which is the point. */
+.tabGlyph .icn {
+  transition: transform var(--t2) var(--ease);
+}
+.tabItem.on .tabGlyph .icn { transform: scale(1.06); }
+/* Caption 2. Apple's own tab-bar label is 10pt and is not in the published
+   table; this is the nearest style that is, and one point larger is no loss on
+   a control this size. Its tracking is positive because the curve opens back
+   up below the minimum as well as above it. */
+.tabLabel {
+  font-size: 11px; font-weight: 500; line-height: 13px; letter-spacing: .06px;
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tabItem.on .tabLabel { font-weight: 600; }
+/* The Me tab wears the visitor's own initials rather than a glyph — it is the
+   screen with their name on it. */
+.tabAvatar {
+  width: 25px; height: 25px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--fill3); color: var(--label2);
+  font-size: 11px; font-weight: 600; letter-spacing: -.08px;
+  transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut);
+}
+.tabItem.on .tabAvatar { background: var(--blue); color: var(--onTint); }
+.tabBadge {
+  position: absolute; left: 62%; bottom: 58%;
+  min-width: 17px; height: 17px; padding: 0 5px; border-radius: var(--rCapsule);
+  display: grid; place-items: center;
+  background: var(--gray); color: var(--onTint);
+  font-size: 11px; font-weight: 600; line-height: 17px; letter-spacing: .06px;
+  font-variant-numeric: tabular-nums;
+  animation: popIn var(--t2) var(--easeOut) both;
+}
+.tabItem.on .tabBadge { background: var(--blue); }
+/* NEED HELP outranks whatever tab you are on, so this one ignores selection. */
+.tabItem .tabBadge.alert,
+.tabItem.on .tabBadge.alert {
+  background: var(--red);
+  animation: popIn var(--t2) var(--easeOut) both, hotTag 1.4s ease-in-out infinite .3s;
+}
 
 /* The tab strip is an iOS segmented control: a filled track, and the selected
    segment carries a raised thumb. No sliding indicator to measure — the thumb
@@ -716,13 +844,32 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .tab.on { background: var(--bg3); box-shadow: var(--thumbShadow); }
 .tab:active { opacity: .5; }
+/* min-height: 0, or a flex child with a long list inside refuses to shrink and
+   pushes the tab bar off the bottom of the sheet. */
 .sheetBody {
-  flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 4px 16px calc(26px + var(--bot));
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
+  flex: 1; min-height: 0;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* `contain` stops a scroll chaining out to the page but deliberately leaves
+     the browser its own horizontal overscroll gesture — the edge swipe that
+     means "back". The app answers that gesture through the history stack
+     rather than suppressing it, so it goes back a screen instead of back a
+     page. See the history block in page.js. */
+  overscroll-behavior: contain;
+  padding: 4px 16px 12px;
+  /* Content fades out at both ends of the scroller rather than being cut off
+     against the handle above it and the tab bar below. */
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 12px), transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 12px), transparent 100%);
 }
 .sheetBody > * { animation: fadeIn var(--t2) var(--easeOut) both; }
+/* At the peek stop the Explore screen is a glance, not a list: the search
+   field, where you are and the rail, and then the tab bar. The list below them
+   is not "nearly visible" — it is not there, because five pixels of a chip
+   sliced off above the tab bar is noise, not an invitation. It comes back the
+   instant the sheet is pulled, which is the invitation. */
+.sheet.peek.atMap:not(.dragging) .sheetBody { display: none; }
 
 /* ============================================================
    controls
@@ -998,17 +1145,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* ============================================================
    glance rail — the live dashboard in the sheet's peek state
    ============================================================ */
+/* The rail's height is the collapsed sheet's height, and the collapsed sheet's
+   height is map you cannot see. So the card carries what answers "which way,
+   and how long" and nothing that merely could be shown: time and range share a
+   line, and the compass point came off the foot because the arrow beside the
+   time is the same answer, aimed relative to the way you are facing. */
 .glanceRail {
-  flex: none; min-height: 128px;
+  flex: none; min-height: 104px;
   display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 4px 16px 12px; scrollbar-width: none;
+  padding: 4px 16px 10px; scrollbar-width: none;
 }
 .glanceRail::-webkit-scrollbar { display: none; }
 .glanceCard {
   flex: none; width: 158px; scroll-snap-align: start; text-align: left;
   background: var(--glassTint);
   border: none;
-  border-radius: var(--r3); padding: 11px 13px 12px;
+  border-radius: var(--r3); padding: 10px 13px 10px;
   display: flex; flex-direction: column; gap: 1px;
   box-shadow: var(--shadow1);
   animation: railIn var(--t2) var(--easeOut) both;
@@ -1027,28 +1179,41 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .glanceCard.selected { box-shadow: var(--shadow1), 0 0 0 2px var(--blue); }
 .glanceCard.stale { opacity: .45; }
+/* Footnote. The line-height is stated rather than inherited: without it this
+   picks up the body's 22px and quietly costs the rail four pixels. */
 .glanceEyebrow {
-  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
+  font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.08px;
+  text-transform: none;
   padding-right: 40px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.glanceMain { display: flex; align-items: center; gap: 9px; margin: 4px 0 2px; }
+.glanceMain { display: flex; align-items: center; gap: 9px; margin: 3px 0 1px; }
 .glanceArrow {
   width: 22px; height: 22px; flex: none;
   transition: transform var(--t3) var(--easeOut);
 }
-.glanceWalk { display: flex; flex-direction: column; line-height: 1; }
-.glanceWalk b { font-size: 20px; font-weight: 600; letter-spacing: -.45px; font-variant-numeric: tabular-nums; }
-.glanceWalk em {
-  font-style: normal; font-size: 12px; color: var(--label2); margin-top: 4px;
+/* Title 3 beside Caption 1, on one baseline, and neither of them allowed to
+   wrap: "<1 min" breaking over two lines takes the card past the rail's height
+   and the bottom of it disappears under the tab bar. The time is never
+   shortened, so it keeps its width; the range gives way and truncates. */
+.glanceWalk { display: flex; align-items: baseline; gap: 5px; min-width: 0; flex-wrap: nowrap; }
+.glanceWalk b {
+  flex: none; white-space: nowrap;
+  font-size: 20px; font-weight: 600; line-height: 25px; letter-spacing: -.45px;
   font-variant-numeric: tabular-nums;
 }
+.glanceWalk em {
+  flex: 0 1 auto; min-width: 0;
+  font-style: normal; font-size: 12px; line-height: 16px; letter-spacing: 0;
+  color: var(--label2); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .glanceTitle {
-  font-size: 15px; font-weight: 400; letter-spacing: -.24px;
+  font-size: 15px; font-weight: 400; line-height: 20px; letter-spacing: -.23px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .glanceFoot {
-  font-size: 12px; color: var(--label3);
+  font-size: 12px; line-height: 16px; letter-spacing: 0; color: var(--label3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .glanceEmpty {
@@ -1246,6 +1411,36 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .chip, .fab, .iconBtn, .codeBox button, .labelAction, .previewLink { min-height: 34px; }
 .chip { display: inline-flex; align-items: center; }
 
+/* A fingertip covers about 44px, and several of the controls here are drawn
+   smaller than that on purpose: a row of seven height tiers, a strip of filter
+   chips and a Go button tucked into the corner of a card all stop reading as
+   what they are once they are given 44px of ink.
+
+   So they keep their looks and grow an invisible hit area instead — centred on
+   the control, 44px in both directions, and taking the taps that land near
+   enough to have been meant for it. Nothing moves, and nothing has to be aimed
+   at. */
+.chip, .tier, .glanceGo, .navBack, .searchClear, .mapKeyToggle, .segmented .tab {
+  position: relative;
+}
+.chip::after, .tier::after, .glanceGo::after, .navBack::after, .searchClear::after,
+.mapKeyToggle::after, .segmented .tab::after {
+  content: '';
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: max(100%, 44px); height: max(100%, 44px);
+}
+/* Two that may only grow upwards and downwards: the tiers sit shoulder to
+   shoulder in one track and the segments of a segmented control do the same, so
+   44px of width each would have them fighting their neighbours for the taps in
+   between. */
+.tier::after, .segmented .tab::after { width: 100%; }
+
+/* The slider is the one control a thumb drags rather than taps, and the track
+   it drags along is 4px of ink. The input itself is what receives the touch,
+   so that is what gets the height. */
+.heightRow input[type='range'] { height: 44px; }
+.heightRow input[type='range']::-webkit-slider-thumb { margin-top: -12px; }
+
 /* ---- install card ---- */
 .installCard {
   background: var(--grouped2);
@@ -1260,7 +1455,10 @@ html { -webkit-text-size-adjust: 100%; }
 body { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
 input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px; }
 .sheetBody, .glanceRail, .chips { -webkit-overflow-scrolling: touch; }
-@supports (-webkit-touch-callout: none) { .sheet { padding-bottom: env(safe-area-inset-bottom, 0px); } }
+/* The home indicator is cleared by the sheet's own `bottom` at the floating
+   stops and by the tab bar's padding at the full stop, so there is deliberately
+   no padding on the sheet itself: adding it here would count the inset twice
+   and float the tab bar off the bottom edge. */
 
 /* Without backdrop-filter, translucent chrome over a busy map is unreadable —
    so those browsers get the same shapes with opaque fills. */
@@ -1270,6 +1468,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
     --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
     --onGlass: var(--bg3);
   }
 }
@@ -1677,6 +1876,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThin: var(--bg2); --matRegular: var(--bg2);
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
     --lens: none; --lensLite: none; --lensDeep: none;
     --blur: none; --blurLite: none;
     --lensEdge: inset 0 0 0 .5px var(--sep);
@@ -1720,6 +1920,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --matThin: var(--bg2); --matRegular: var(--bg2);
     --matThick: var(--bg2); --matChrome: var(--bg2);
     --glass: var(--bg2); --glassDeep: var(--bg2);
+    --tabBarFill: var(--bg2);
     --lens: none; --lensLite: none; --lensDeep: none;
     --blur: none; --blurLite: none;
     --lensEdge: inset 0 0 0 1px var(--sep);

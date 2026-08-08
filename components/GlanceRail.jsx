@@ -169,6 +169,9 @@ export default function GlanceRail({
               <span className="glanceEyebrow" style={{ color: c.colour }}>
                 {c.eyebrow}
               </span>
+              {/* Time and range on one line rather than stacked. Stacked, they
+                  cost the rail sixteen pixels of height — and the rail's height
+                  is the collapsed sheet's height, which is map. */}
               <span className="glanceMain">
                 <Arrow deg={c.deg} colour={c.colour} />
                 <span className="glanceWalk">
@@ -177,9 +180,11 @@ export default function GlanceRail({
                 </span>
               </span>
               <span className="glanceTitle">{c.title}</span>
-              <span className="glanceFoot">
-                {c.card} · {c.footnote}
-              </span>
+              {/* The compass point used to lead this line. The arrow above is
+                  the same answer and a better one — it is aimed relative to the
+                  way you are facing, where "NE" leaves you to work that out — so
+                  the line is down to the thing the arrow cannot say. */}
+              <span className="glanceFoot">{c.footnote}</span>
             </button>
             {onNavigate && c.nav && (
               <button
