@@ -39,6 +39,7 @@ import {
   RIDE_STATUSES,
 } from '../lib/core/state.js';
 import { newPartyCode, newMemberId, normalizeCode } from '../lib/core/ids.js';
+import { indexById, withIds } from '../lib/venue/ids.js';
 
 /* ----------------------------------------------------------------- config */
 
@@ -59,39 +60,33 @@ const SAVE_DEBOUNCE_MS = 1500;
 
 const here = (rel) => fileURLToPath(new URL(rel, import.meta.url));
 
-const slug = (s) =>
-  String(s)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
 const pkg = readJson(here('../package.json')) || {};
 const VERSION = pkg.version || '0.0.0';
 
 /**
- * rides.json has no ids — the app keys off the ride name. Slugs are stable as
- * long as the name is, and the name is what people say out loud, so both work
- * as a lookup key here.
+ * A venue's POI list has no ids — the app keys off the name. Slugs are stable
+ * as long as the name is, and the name is what people say out loud, so both
+ * work as a lookup key here.
  *
- * The repeat suffix has to match lib/park.js exactly. A park has ten
- * "Restrooms", and a ride report is addressed by id: if this host numbered them
- * differently from the phones talking to it, a report about one would land on
- * another. Same rule, deliberately duplicated — this file cannot import
- * lib/park.js, which is bundler-resolved.
+ * Every venue in public/venues is loaded, because this server has no idea which
+ * one the phones talking to it are looking at; `?venue=<id>` picks, and the
+ * manifest's default answers when nobody says.
+ *
+ * The numbering comes from lib/venue/ids.js rather than from a local slug, and
+ * that matters: a venue has ten "Restrooms", and a ride report is addressed by
+ * id. A host that numbered repeats differently from the phones reporting to it
+ * would land a "closed" on the wrong one.
  */
-const seenSlugs = new Map();
-const RIDES = (readJson(here('../lib/rides.json')) || []).map((r) => {
-  const base = slug(r.n) || 'poi';
-  const n = (seenSlugs.get(base) ?? 0) + 1;
-  seenSlugs.set(base, n);
-  return { id: n === 1 ? base : `${base}-${n}`, ...r };
-});
-const RIDE_BY_ID = new Map();
-for (const r of RIDES) {
-  RIDE_BY_ID.set(r.id, r);
-  // Name lookups are a convenience for humans typing URLs; first one wins.
-  if (!RIDE_BY_ID.has(r.n.toLowerCase())) RIDE_BY_ID.set(r.n.toLowerCase(), r);
+const MANIFEST = readJson(here('../public/venues/manifest.json')) || { venues: [] };
+const CATALOGUES = new Map();
+for (const v of MANIFEST.venues || []) {
+  const pois = readJson(here(`../public/venues/${v.id}.pois.json`)) || [];
+  const rides = withIds(pois);
+  CATALOGUES.set(v.id, { rides, byId: indexById(rides) });
 }
+const DEFAULT_VENUE = MANIFEST.default || MANIFEST.venues?.[0]?.id || null;
+const catalogueFor = (id) =>
+  CATALOGUES.get(id) || CATALOGUES.get(DEFAULT_VENUE) || { rides: [], byId: new Map() };
 
 /* ------------------------------------------------------------------ state */
 
@@ -590,9 +585,12 @@ async function route(req, res, url, parts) {
   /* -- rides ------------------------------------------------------------- */
 
   if (section === 'rides' && req.method === 'GET') {
-    if (!a) return json(req, res, 200, { ok: true, count: RIDES.length, rides: RIDES });
-    const ride = RIDE_BY_ID.get(decodeURIComponent(a).toLowerCase());
-    return ride ? json(req, res, 200, { ok: true, ride }) : fail(req, res, 404, 'no such ride');
+    const asked = url.searchParams.get('venue');
+    const venue = CATALOGUES.has(asked) ? asked : DEFAULT_VENUE;
+    const { rides, byId } = catalogueFor(venue);
+    if (!a) return json(req, res, 200, { ok: true, venue, count: rides.length, rides });
+    const ride = byId.get(decodeURIComponent(a).toLowerCase());
+    return ride ? json(req, res, 200, { ok: true, venue, ride }) : fail(req, res, 404, 'no such ride');
   }
 
   /* -- operational ------------------------------------------------------- */
@@ -724,7 +722,7 @@ server.listen(PORT, () => {
     'sse',
     DATA_FILE ? `persist=${DATA_FILE}` : 'persist=off',
     `origin=${ORIGINS.join(',')}`,
-    `rides=${RIDES.length}`,
+    `venues=${CATALOGUES.size}`,
     `protocol=v${PROTOCOL_VERSION}`,
   ];
   log(`v${VERSION} listening on :${PORT} — ${features.join(' ')}`);
