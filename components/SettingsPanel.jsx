@@ -26,6 +26,9 @@ export default function SettingsPanel({
   pushState = 'idle',
   onEnablePush = null,
   pushNeedsInstall = false,
+  hiddenCards = null,
+  cardLabels = null,
+  onUnhideCard = null,
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
@@ -145,6 +148,39 @@ export default function SettingsPanel({
               {pushKinds.quiet.hint}
             </p>
           )}
+        </>
+      )}
+
+      {onUnhideCard && (
+        <>
+          <div className="label">What the Panel Shows</div>
+          <div className="rowList">
+            {hiddenCards?.length ? (
+              hiddenCards.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="row"
+                  onClick={() => onUnhideCard(key)}
+                >
+                  <span className="rowText">{cardLabels?.[key] || key}</span>
+                  <span className="rowValue">Hidden · tap to show</span>
+                </button>
+              ))
+            ) : (
+              /* Shown even with nothing in it. A row that only exists once you
+                 have already hidden something is a row nobody knows is there,
+                 which makes hiding something feel one-way. */
+              <div className="row">
+                <span className="rowText">Nothing hidden</span>
+                <span className="rowValue">All cards showing</span>
+              </div>
+            )}
+          </div>
+          <p className="fine">
+            Swipe a card up on the Explore panel, or tap its ✕, to get rid of it. Anything you
+            remove is listed here for this park.
+          </p>
         </>
       )}
 

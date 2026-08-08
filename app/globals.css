@@ -1265,11 +1265,26 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   color: var(--label2); font-variant-numeric: tabular-nums;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* Sits opposite the Go button, in the room the eyebrow's padding already keeps
+   clear. Small, because it is not the thing to reach for by accident — the hit
+   box below is what a finger actually gets. */
+.glanceShed {
+  /* Bottom corner, not top: the top-right belongs to Go, and putting the thing
+     that removes a card next to the thing that acts on it is how people remove
+     cards they meant to walk to. */
+  position: absolute; bottom: 8px; right: 9px;
+  display: grid; place-items: center;
+  color: var(--label3); opacity: .85;
+}
+.glanceShed::before { content: ''; position: absolute; inset: -12px; }
+.glanceShed:active { opacity: .5; }
+.glanceCard { position: relative; }
+
 .glanceTitle {
   font-size: 15px; font-weight: 400; line-height: 20px; letter-spacing: -.23px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.glanceFoot {
+.glanceFoot { padding-right: 26px;
   font-size: 12px; line-height: 16px; letter-spacing: 0; color: var(--label3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }

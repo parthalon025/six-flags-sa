@@ -88,6 +88,12 @@ const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'serv
 const IDENTITY_KEY = 'tracker-identity';
 const LEGACY_IDENTITY_KEY = 'ki-identity';
 const PUSH_PREFS_KEY = 'tracker-push-prefs';
+/* Standing rail cards this visitor has got rid of, per venue — the parks do
+   not have the same places, and hiding food at one should not hide it at the
+   other. */
+const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
+/** The standing cards, by the name the visitor saw on them. */
+const CARD_LABELS = { restroom: 'Nearest toilet', food: 'Nearest food', firstaid: 'First aid' };
 
 /* How long a phone has to say nothing before the others are told it has gone
    quiet. Deliberately longer than the five minutes at which the roster row
@@ -662,6 +668,51 @@ export default function Page() {
      Everything below sends; nothing below decides whether to show. That is the
      receiving phone's call, and its preferences, which is the only place that
      knows what its owner asked for. */
+  /* Which standing cards have been dismissed, keyed by venue. Same shape as the
+     push preferences below: one load on mount, one save on change. */
+  const [hiddenCards, setHiddenCards] = useState({});
+  const hiddenHere = hiddenCards[venue?.id] || [];
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(HIDDEN_CARDS_KEY) || 'null');
+      if (saved && typeof saved === 'object') setHiddenCards(saved);
+    } catch {
+      /* nothing saved */
+    }
+  }, []);
+
+  const shedCard = useCallback(
+    (what) => {
+      if (what?.kind === 'selected') {
+        setSelected(null);
+        return;
+      }
+      if (what?.kind !== 'category' || !venue?.id) return;
+      setHiddenCards((prev) => {
+        const here = prev[venue.id] || [];
+        if (here.includes(what.category)) return prev;
+        const next = { ...prev, [venue.id]: [...here, what.category] };
+        localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
+        return next;
+      });
+      showToast('Hidden. Put it back under Me → What the panel shows.');
+    },
+    [venue?.id, showToast],
+  );
+
+  const unhideCard = useCallback(
+    (category) => {
+      if (!venue?.id) return;
+      setHiddenCards((prev) => {
+        const next = { ...prev, [venue.id]: (prev[venue.id] || []).filter((c) => c !== category) };
+        localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    [venue?.id],
+  );
+
   const [pushPrefs, setPushPrefs] = useState(notifier.defaultPrefs);
   const [pushState, setPushState] = useState('idle');
   const seenIds = useRef(null);
@@ -1154,10 +1205,23 @@ export default function Page() {
       setMeetPoint(lat, lng);
       return;
     }
-    if (geo.status === 'manual' || geo.status === 'idle') geo.setManual(lat, lng);
+    if (geo.status === 'manual' || geo.status === 'idle') {
+      geo.setManual(lat, lng);
+      return;
+    }
+    /* Tapping the map away from anything is how every map on a phone says
+       "never mind" — and until now this one had no way of saying it at all, so
+       a place you tapped once stayed on the rail until you tapped another. */
+    if (selected) setSelected(null);
   };
 
   const handleSelect = (poi) => {
+    // The same pin twice is a toggle. Nobody taps the thing that is already
+    // open expecting it to open harder.
+    if (selected && selected.lat === poi.lat && selected.lng === poi.lng) {
+      setSelected(null);
+      return;
+    }
     setSelected(poi);
     setFollow(false);
     setFocusPoint({ lat: poi.lat, lng: poi.lng });
@@ -1553,6 +1617,8 @@ export default function Page() {
                 navKey={navKeyOf(navTarget)}
                 navMetres={progress?.remaining ?? route?.metres ?? null}
                 onOpenParty={() => selectTab('party')}
+                onDismiss={shedCard}
+                hidden={hiddenHere}
               />
               {/* At the peek stop the list below is not merely scrolled off,
                   it is not rendered — which is the right call, but it leaves a
@@ -1715,6 +1781,9 @@ export default function Page() {
                 pushState={pushState}
                 onEnablePush={enablePush}
                 pushNeedsInstall={notifier.iosNeedsInstall()}
+                hiddenCards={hiddenHere}
+                cardLabels={CARD_LABELS}
+                onUnhideCard={unhideCard}
               />
             )}
 
