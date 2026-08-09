@@ -28,6 +28,9 @@
  */
 
 import { BASE, launch, until } from './browser.mjs';
+import { readFileSync } from 'node:fs';
+
+const APP_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version;
 
 const FIESTA = { latitude: 29.5985, longitude: -98.6107 }; // inside the park
 const KI = { latitude: 39.34395, longitude: -84.2673 }; // The Beast's station
@@ -80,6 +83,9 @@ async function arrive(geo, { venue = null } = {}) {
   await ctx.addInitScript(() => {
     window.__PARTY_KEY_WINDOW_MS = 8000;
   });
+  await ctx.addInitScript((version) => {
+    localStorage.setItem('tracker-release-notes-seen', version);
+  }, APP_VERSION);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -90,6 +96,8 @@ async function arrive(geo, { venue = null } = {}) {
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2000);
+  await page.locator('.gate .btn.primary:has-text("Continue")').click().catch(() => {});
+  await page.waitForTimeout(500);
   await page.locator('button:has-text("Allow location")').click().catch(() => {});
   await page.waitForTimeout(2500);
   await page.locator('.gate .btn.primary:has-text("Yes — set up")').click().catch(() => {});
