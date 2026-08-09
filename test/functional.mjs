@@ -762,6 +762,20 @@ const e = await intake.newPage();
 await e.goto(BASE, { waitUntil: 'domcontentloaded' });
 await hydrated(e);
 
+await check('the first screen says what the app is, above the location ask', async () => {
+  const card = await e.locator('.gate').innerText();
+  const heading = (await e.locator('.gate h2').innerText()).trim();
+  if (heading !== 'Park Party') throw new Error(`opened on: "${heading}"`);
+  // One screen, in the order that earns the answer: what you get, then what it
+  // needs, then the button. A permission asked cold is a permission refused.
+  const said = card.indexOf('See where everyone is');
+  const asked = card.indexOf('needs to use your location');
+  const button = card.indexOf('Allow location');
+  if (said < 0 || asked < 0 || button < 0) throw new Error('the introduction and the ask are not on one card');
+  if (!(said < asked && asked < button)) throw new Error('the ask comes before what it is for');
+  return true;
+});
+
 await check('the intake asks about the nearest park, not the default one', async () => {
   await e.locator('button:has-text("Allow location")').click();
   // Wait for the question itself, not merely for a heading: the location card
@@ -799,6 +813,11 @@ await check('saying yes builds that park, geometry and places', async () => {
 await check('the park answered stays answered across a reload', async () => {
   await e.reload({ waitUntil: 'domcontentloaded' });
   await hydrated(e);
+  // Introduced once per phone, not once per launch: coming back gets the plain
+  // question, not the sales pitch again.
+  if (await e.locator('.gate h2:has-text("Park Party")').count()) {
+    throw new Error('the introduction came back on a reload');
+  }
   await e.locator('button:has-text("Allow location")').click();
   // Asked once. If the question came back, the gate would still be up here —
   // nothing else in the intake waits on a fix that has already landed.
