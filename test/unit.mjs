@@ -2340,6 +2340,253 @@ await check('one ride with four mapped lanes yields one way in', () => {
   return true;
 });
 
+/* ------------------------------------------------------ who says so ------- */
+
+/* A coordinate already sitting on a place is evidence only if it says where it
+   came from. Three writers hang points on `e` and `out` — the builder's
+   `entrancesFromQueues`, the tracer's `applyTrace`, and this pipeline's own
+   publish step — and for a long time the readers could not tell them apart: a
+   traced entrance was invisible, anything else fell through to a default, and
+   the app's own output came back round as the heaviest source in the table. */
+
+const { fromTrace, inventory } = await import('../scripts/attractions.mjs');
+const { OVERRIDE_DIR, VENUE_DIR } = await import('../scripts/lib/venue-io.mjs');
+
+const tracedSrc = { by: SRC_BY.TRACED, image: 'the 2026 park map', error_m: 4 };
+
+await check('a traced entrance reaches the inventory', () => {
+  /* The reader looked for `p.in`, which no writer in this repository has ever
+     produced, so every traced entrance was invisible here while exits worked
+     and nothing said otherwise. `e` is a list and `out` is one point, and both
+     shapes have to be read. */
+  const claims = fromTrace([{
+    n: 'Orion',
+    e: [{ ...near, n: 'Orion entrance', src: tracedSrc }],
+    out: { ...farOff, src: tracedSrc },
+  }]);
+  assert.deepEqual(claims.map((c) => [c.ride, c.type, c.source]), [
+    ['Orion', 'queue_entrance', 'traced'],
+    ['Orion', 'ride_exit', 'traced'],
+  ]);
+  assert.equal(claims[0].at.lat, near.lat);
+  assert.equal(claims[1].at.lng, farOff.lng);
+  // What the point is worth, and how far out it was, both come off the point.
+  assert.match(claims[0].why, /traced off the 2026 park map at ±4 m/);
+
+  // A ride with two ways in traced says both, and the field nothing writes
+  // says nothing.
+  const two = fromTrace([{ n: 'Orion', e: [{ ...near, src: tracedSrc }, { ...farOff, src: tracedSrc }] }]);
+  assert.equal(two.length, 2);
+  assert.deepEqual(fromTrace([{ n: 'Orion', in: { ...near, src: tracedSrc } }]), []);
+  return true;
+});
+
+await check('the pipeline does not cite itself', () => {
+  /* The loop that let one fact reach the publish floor alone. `publish()`
+     stamped `src.by` with the *feature* name, so a published exit carried
+     `ride_exit`, both readers fell through to a default, and this app's own
+     output came back in as `official_map` at 5 — annotated as though a park
+     had printed it. `fuse()` dedupes by source precisely to stop one fact
+     counting twice, and this went round it by the field instead. */
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  for (const feature of ['queue_entrance', 'ride_exit']) {
+    addEvidence(record, feature, { source: 'osm_named_queue', at: near }, { asOf: '2026-08-09' });
+    addEvidence(record, feature, { source: 'traced', at: alsoNear }, { asOf: '2026-08-09' });
+  }
+  const published = publishable(record);
+  assert.equal(published.e.src.by, SRC_BY.FUSED, 'what this pipeline writes is stamped as its own');
+  assert.equal(published.out.src.by, SRC_BY.FUSED);
+
+  // Straight back in through the bundle, which is the way it went round: the
+  // entrance on `e`, the exit on `out`.
+  const place = { n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26, e: [published.e], out: published.out };
+  assert.equal(claimFromSrc(published.e), null, 'a conclusion is not evidence for itself');
+  assert.deepEqual(fromTrace([place]), [], 'nothing off the out path');
+  assert.deepEqual(candidates({}, [place]), [], 'and nothing off the e path');
+  // `fused` is deliberately absent from the weight table, so there is nothing
+  // downstream to score it with either.
+  assert.equal(fuse([{ source: SRC_BY.FUSED, at: near }]).score, 0);
+  return true;
+});
+
+await check('an unsigned or unrecognised coordinate is worth nothing rather than a default', () => {
+  /* There is no fallback and there must never be one. The one that was here
+     read anything not stamped `trace` as `official_map` — a weight of 5 on a
+     coordinate of unknown standing. */
+  assert.equal(claimFromSrc({ ...near }), null, 'nobody signed it');
+  assert.equal(claimFromSrc({ ...near, src: {} }), null);
+  assert.equal(claimFromSrc({ ...near, src: { by: '' } }), null);
+  assert.equal(claimFromSrc(null), null);
+  // A word no scoring rule covers cannot be scored — `trace` included, which is
+  // the tracer's word for its tool and not the one `WEIGHTS` uses for the kind
+  // of source.
+  assert.equal(claimFromSrc({ ...near, src: { by: 'trace' } }), null);
+  assert.equal(claimFromSrc({ ...near, src: { by: 'official_map_2026' } }), null);
+
+  const place = {
+    n: 'Orion',
+    c: 'coaster',
+    lat: 39.34,
+    lng: -84.26,
+    e: [{ ...near }, { ...alsoNear, src: { by: 'trace' } }],
+    out: { ...farOff, src: { by: 'official_map_2026' } },
+  };
+  assert.deepEqual(fromTrace([place]), []);
+  assert.deepEqual(candidates({}, [place]), []);
+
+  // A word it does know reads as that word, with a note taken off the entry
+  // rather than asserted by the reader.
+  const known = claimFromSrc({ ...near, n: 'Orion Gate', src: { by: 'osm_entrance' } });
+  assert.equal(known.source, 'osm_entrance');
+  assert.match(known.why, /"Orion Gate", already on the place, from osm_entrance/);
+  return true;
+});
+
+await check('a traced pin does not stand the name-only detector down, and a named queue does', () => {
+  /* Two readings of the same queue name are one fact and counting them twice is
+     the repetition the evidence model refuses to reward. A traced pin is a
+     different fact about the same ride, so it is heard beside the name. */
+  const at = { n: 'Maverick', c: 'coaster', lat: 41.4800, lng: -82.6860 };
+  const map = {
+    path: [
+      { n: 'Midway', r: [[-82.6870, 41.4805], [-82.6850, 41.4805]] },
+      { n: 'Maverick Standby Queue', r: [[-82.6862, 41.48048], [-82.6860, 41.4800]] },
+    ],
+  };
+  // The walkable network always has something to say and it is not what this
+  // is about.
+  const waysIn = (poi) => candidates(map, [poi])
+    .filter((c) => c.type === 'queue_entrance' && c.source !== 'geometry')
+    .map((c) => c.source)
+    .sort();
+
+  assert.deepEqual(waysIn({ ...at, e: [{ lat: 41.48047, lng: -82.68615, src: tracedSrc }] }),
+    ['osm_queue_name', 'traced']);
+  assert.deepEqual(waysIn({
+    ...at,
+    e: [{ lat: 41.48048, lng: -82.6862, n: 'Maverick Standby Queue', src: { by: SRC_BY.NAMED_QUEUE } }],
+  }), ['osm_named_queue'], 'the mapper said which end you join, so the guess stands down');
+  // And with nothing on the ride at all, the name-only reading is all there is.
+  assert.deepEqual(waysIn(at), ['osm_queue_name']);
+  return true;
+});
+
+await check('a rebuild on a later day rewrites no dates', () => {
+  /* Every record used to read the day the script last ran, so `staleness()`
+     could never fire and every rebuild rewrote all 230 records — no diff could
+     answer "does OpenStreetMap still say what we shipped?". */
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  const slot = () => record.features.queue_entrance;
+  const seen = () => slot().evidence.find((e) => e.source === 'osm_named_queue');
+
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: near }, { asOf: '2026-03-01' });
+  assert.equal(seen().date, '2026-03-01');
+
+  // The same source, the same point, five months on. Re-deriving a point
+  // nobody has moved is not a fresh sighting of anything.
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: { ...near } }, { asOf: '2026-08-09' });
+  assert.equal(seen().date, '2026-03-01');
+  assert.equal(slot().newest_evidence, '2026-03-01');
+
+  // Which is the whole of what makes staleness able to fire at all.
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: near }, { asOf: '2027-04-01' });
+  assert.equal(slot().stale, true);
+
+  // Then the mapper moves it. Not a tolerance: a source that has moved its
+  // point by any amount it bothered to write down has said something new.
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: alsoNear }, { asOf: '2027-04-02' });
+  assert.equal(seen().date, '2027-04-02');
+  assert.equal(slot().stale, false);
+  return true;
+});
+
+await check('an explicit date on a claim beats both the retained one and the run', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  const dateOf = (source) =>
+    record.features.queue_entrance.evidence.find((e) => e.source === source)?.date;
+
+  addEvidence(record, 'queue_entrance', { source: 'traced', at: near }, { asOf: '2026-08-09' });
+  assert.equal(dateOf('traced'), '2026-08-09');
+  // Somebody stating when they saw it, on a point this source has not moved.
+  // The retained prior does not get to answer over them.
+  addEvidence(record, 'queue_entrance', { source: 'traced', at: near, date: '2025-06-01' }, { asOf: '2026-08-09' });
+  assert.equal(dateOf('traced'), '2025-06-01');
+  // Nor does the day the run happens to be on, for a source nobody had heard
+  // from before.
+  addEvidence(record, 'queue_entrance', { source: 'guest_photo', at: near, date: '2024-07-04' }, { asOf: '2026-08-09' });
+  assert.equal(dateOf('guest_photo'), '2024-07-04');
+  assert.equal(record.features.queue_entrance.newest_evidence, '2025-06-01', 'the file dates observations, not runs');
+  return true;
+});
+
+/* `inventory` joins its three files by venue id off disk, so a test of that
+   join needs a venue on disk. Written under an id no park will ever have and
+   taken away again whatever happens, so a failure here cannot leave one. */
+const FIXTURE_ID = 'unit-test-venue';
+
+function inventoryOf(pois, attractions) {
+  const files = [
+    path.join(VENUE_DIR, `${FIXTURE_ID}.map.json`),
+    path.join(VENUE_DIR, `${FIXTURE_ID}.pois.json`),
+    path.join(OVERRIDE_DIR, `${FIXTURE_ID}.attractions.json`),
+  ];
+  try {
+    fs.writeFileSync(files[0], JSON.stringify({ meta: { id: FIXTURE_ID }, path: [] }));
+    fs.writeFileSync(files[1], JSON.stringify(pois));
+    fs.writeFileSync(files[2], JSON.stringify({ version: 1, venue: FIXTURE_ID, attractions }));
+    return inventory(FIXTURE_ID);
+  } finally {
+    for (const file of files) fs.rmSync(file, { force: true });
+  }
+}
+
+const withSurvey = (name) => {
+  const record = attractionFor({ n: name, c: 'coaster', lat: 39.3441, lng: -84.2680 }, FIXTURE_ID);
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: near, date: '2025-04-01' });
+  return record;
+};
+
+await check('a ride the park has recapitalised keeps the evidence it has gathered', () => {
+  /* The join used to be an exact, case-sensitive `Map.get`, the strictest in a
+     pipeline whose every key is a display string that OpenStreetMap edits. A
+     mapper shouting a ride's name would have orphaned every scrap of evidence
+     against the old spelling and started the ride again from nothing, on the
+     next run, without saying so. */
+  const prior = withSurvey('The Beast');
+  const state = inventoryOf([{ n: 'The BEAST', c: 'coaster', lat: 39.3441, lng: -84.2680 }], [prior]);
+  assert.equal(state.records.length, 1);
+  const [record] = state.records;
+  assert.equal(record.id, prior.id, 'the same record, not a new one');
+  assert.equal(record.name, 'The BEAST', 'reading the spelling the park uses now');
+  assert.deepEqual(state.orphans, []);
+  const survey = record.features.queue_entrance.evidence.find((e) => e.source === 'official_map');
+  assert.equal(survey?.date, '2025-04-01', 'March evidence is still on the record in August');
+  return true;
+});
+
+await check('a normalised name finds its record, unless it could be any of three', () => {
+  /* Dropping a leading "The" and gaining a bracketed suffix is past what the
+     lowercased exact index can see, and `normaliseRideName` — the reading the
+     builder joins on when it attaches an entrance — sees it. */
+  const found = inventoryOf(
+    [{ n: 'Beast (Coaster)', c: 'coaster', lat: 39.3441, lng: -84.2680 }],
+    [withSurvey('The Beast')],
+  );
+  assert.equal(found.records[0].features.queue_entrance.evidence.length, 1);
+
+  /* Kings Island ships "The Racer", "Racer (Red)" and "Racer (Blue)" as three
+     separate rides that all normalise to "racer". Keying on the normalised name
+     alone would have merged three records into one and thrown two rides'
+     evidence away, so a reading that identifies three things identifies
+     nothing and the ride starts clean. */
+  const racers = ['The Racer', 'Racer (Red)', 'Racer (Blue)'].map(withSurvey);
+  const merged = inventoryOf([{ n: 'Racer', c: 'coaster', lat: 39.34, lng: -84.26 }], racers);
+  assert.equal(merged.records.length, 1);
+  assert.deepEqual(merged.records[0].features.queue_entrance.evidence, [],
+    'a fresh record beats one of three guesses');
+  return true;
+});
+
 /* ------------------------------------------------------ heights from OSM -- */
 
 const { heightFromTags, poisFromTrack, entrancesFromQueues } = await import('../scripts/build-venue.mjs');
