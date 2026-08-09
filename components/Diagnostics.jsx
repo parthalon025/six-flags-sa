@@ -33,7 +33,7 @@ const toneFor = (status) => {
   return '';
 };
 
-export default function Diagnostics({ runtime, geo }) {
+export default function Diagnostics({ runtime, geo, appVersion, remoteVersion, updateStatus }) {
   const [snap, setSnap] = useState(null);
 
   // Polled rather than pushed: most of this changes without any state change
@@ -52,6 +52,29 @@ export default function Diagnostics({ runtime, geo }) {
 
   return (
     <div className="diag">
+      <div className="label">App</div>
+      <div className="diagTable">
+        <Row label="Installed version" value={appVersion || '—'} />
+        <Row label="Server version" value={remoteVersion || '—'} />
+        <Row
+          label="Update status"
+          value={
+            updateStatus === 'offline'
+              ? 'offline — cached build'
+              : updateStatus === 'update-available' || updateStatus === 'updating'
+                ? 'updating'
+                : updateStatus || '—'
+          }
+          tone={
+            updateStatus === 'offline'
+              ? 'warn'
+              : updateStatus === 'current'
+                ? 'ok'
+                : ''
+          }
+        />
+      </div>
+
       <div className="label">Connection</div>
       <div className="diagTable">
         <Row

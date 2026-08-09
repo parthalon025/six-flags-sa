@@ -8,7 +8,8 @@
    would feed the client a version it has already applied. Offline party state
    lives in the client's own replica and its outbox instead, which are
    versioned and know how to catch up. */
-const CACHE = 'tracker-v5';
+/* Replaced by scripts/inject-version.mjs from package.json on prebuild/predev. */
+const CACHE = 'tracker-1.1.0';
 const SHELL = [
   '/',
   '/join',
@@ -38,6 +39,11 @@ async function precacheDefaultVenue(cache) {
 /* Cacheable read-only reference data. Everything else under /api/ is either a
    mailbox (opaque, per-peer, single-delivery) or a mutation. */
 const CACHEABLE_API = /^\/api\/(rides|version)(\/|$)/;
+
+/* The page asks a waiting worker to skip the queue once it has shown the toast. */
+self.addEventListener('message', (e) => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
 self.addEventListener('install', (e) => {
   e.waitUntil(

@@ -23,6 +23,9 @@ import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import WeatherBanner from '@/components/WeatherBanner';
+import useAppUpdate from '@/components/useAppUpdate';
+import UpdateSplash from '@/components/UpdateSplash';
+import { markReleaseNotesSeen, pendingReleaseNotes } from '@/lib/releaseNotes';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -178,6 +181,9 @@ export default function Page() {
      and a returning one the introduction. Nothing in the intake draws until
      this is a boolean. */
   const [introSeen, setIntroSeen] = useState(null);
+  /** Release-note blocks for the installed build, or [] once dismissed / none. */
+  const [updateNotes, setUpdateNotes] = useState(null);
+  const showUpdateSplash = updateNotes !== null && updateNotes.length > 0;
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
@@ -454,9 +460,7 @@ export default function Page() {
   /* ---------- boot ---------- */
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-      // Tapping a notification while the app is already open means "show me
-      // this", and the worker cannot navigate the page itself.
+      // Registration and update checks live in useAppUpdate / lib/appUpdate.js.
       navigator.serviceWorker.addEventListener('message', (e) => {
         if (e.data?.type !== 'notification-open') return;
         if (e.data.focus) setTab('party');
@@ -494,6 +498,10 @@ export default function Page() {
   }, [parkChoice, manifest, position]);
 
   useEffect(() => {
+    setUpdateNotes(pendingReleaseNotes());
+  }, []);
+
+  useEffect(() => {
     let seen = false;
     try {
       seen = localStorage.getItem(INTRO_KEY) === '1';
@@ -516,7 +524,7 @@ export default function Page() {
 
   const askingPark = Boolean(parkChoice);
   /** The question is only load-bearing while it is actually on screen. */
-  const showParkPrompt = gateOpen && askingPark;
+  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark;
 
   useEffect(() => {
     if (!position || position.manual) return;
@@ -623,6 +631,8 @@ export default function Page() {
     // "Status: In line" and is not enough for a sentence.
     setTimeout(() => setToast((t) => (t === msg ? null : t)), msg.length > 40 ? 6000 : 4000);
   }, []);
+
+  const appUpdate = useAppUpdate();
 
   /* ---------- the party runtime ---------- */
 
@@ -2137,6 +2147,8 @@ export default function Page() {
                   clearCar();
                   showToast('Forgotten where you parked');
                 }}
+                appVersion={appUpdate.version}
+                updateStatus={appUpdate.status}
               />
             )}
 
@@ -2243,7 +2255,15 @@ export default function Page() {
               </div>
             )}
 
-            {view === 'diagnostics' && <Diagnostics runtime={runtimeApi} geo={geo} />}
+            {view === 'diagnostics' && (
+              <Diagnostics
+                runtime={runtimeApi}
+                geo={geo}
+                appVersion={appUpdate.version}
+                remoteVersion={appUpdate.remoteVersion}
+                updateStatus={appUpdate.status}
+              />
+            )}
           </div>
         </div>
 
@@ -2256,6 +2276,16 @@ export default function Page() {
         <div className="toast" role="status" aria-live="polite">
           {toast}
         </div>
+      )}
+
+      {showUpdateSplash && (
+        <UpdateSplash
+          notes={updateNotes}
+          onContinue={() => {
+            markReleaseNotesSeen(appUpdate.version);
+            setUpdateNotes([]);
+          }}
+        />
       )}
 
       {/* The intake, in the order the answers become possible: location first,
@@ -2287,7 +2317,7 @@ export default function Page() {
         />
       )}
 
-      {gateOpen && introSeen !== null && !showParkPrompt && (
+      {gateOpen && introSeen !== null && !showParkPrompt && !showUpdateSplash && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
