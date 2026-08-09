@@ -29,6 +29,8 @@ export default function SettingsPanel({
   hiddenCards = null,
   cardLabels = null,
   onUnhideCard = null,
+  car = null,
+  onClearCar = null,
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
@@ -180,6 +182,33 @@ export default function SettingsPanel({
           <p className="fine">
             Swipe a card up on the Explore panel, or tap its ✕, to get rid of it. Anything you
             remove is listed here for this park.
+          </p>
+        </>
+      )}
+
+      {onClearCar && (
+        <>
+          <div className="label">Where I Parked</div>
+          <div className="rowList">
+            {car ? (
+              <button type="button" className="row" onClick={onClearCar}>
+                <span className="rowText">Forget where I parked</span>
+                <span className="rowValue">Saved</span>
+              </button>
+            ) : (
+              /* Shown with nothing saved as well, because this is where the
+                 feature is explained. The car button on the map says nothing
+                 about itself until it has been pressed once. */
+              <div className="row">
+                <span className="rowText">Nothing saved</span>
+                <span className="rowValue">Tap the car on the map</span>
+              </div>
+            )}
+          </div>
+          <p className="fine">
+            The car button over the map saves where you are standing, and takes you back to it
+            afterwards. It stays on this phone — nobody in your party is told where you parked —
+            and each park remembers its own.
           </p>
         </>
       )}

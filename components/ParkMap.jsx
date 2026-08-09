@@ -22,7 +22,8 @@ import {
   scaleBar,
   textWidth,
 } from '@/lib/mapLabels';
-import { PoiMarker } from './MapSymbols';
+import { Glyph, PoiMarker } from './MapSymbols';
+import { useVenue } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
@@ -105,6 +106,7 @@ export default function ParkMap({
   me,
   members,
   meet,
+  car,
   selected,
   onSelectPoi,
   onMapTap,
@@ -133,6 +135,11 @@ export default function ParkMap({
   fitKey = null,
 }) {
   const palette = paletteFor(theme);
+  // The venue's own district tints, where it has hand-picked any.
+  const { venue } = useVenue();
+  // What this venue has any of at all, so the key can offer switches for those
+  // and only those. Cheap: it is one pass over a list of a few hundred.
+  const presentCategories = useMemo(() => new Set((pois || []).map((p) => p.c)), [pois]);
   const wrapRef = useRef(null);
   const [size, setSize] = useState({ w: 360, h: 640 });
   // view is centred on a mercator metre coordinate at `scale` px per metre
@@ -736,9 +743,15 @@ export default function ParkMap({
       const barred = state === 'no' || state === 'toobig';
       const isSel = selectedName === p.n;
       const isNav = routeTargetName === p.n;
-      // A ride the party cannot ride today loses ties to one it can, so a
-      // height filter clears space for what is actually on the table.
-      const rank = sym.rank + (barred ? 1.4 : 0);
+      /* A ride the party cannot ride today loses ties to one it can, so a
+         height filter clears space for what is actually on the table. A tie,
+         though — not a demotion. At 1.4 this pushed a ruled-out coaster below
+         every flat ride and landmark on the map, so in a crowded midway the
+         one thing a parent most needs to see is out was the first thing
+         dropped, which is the opposite of what setting a height is for. A
+         quarter of a rank keeps it behind the coaster next to it and ahead of
+         the snack bar. */
+      const rank = sym.rank + (barred ? 0.25 : 0);
       const priority = isSel ? -1000 : isNav ? -900 : rank * 1000 + i;
       ranked.push({ p, sx, sy, sym, state, isSel, isNav, priority });
     });
@@ -884,7 +897,7 @@ export default function ParkMap({
         {/* themed lands */}
         <g className="lyr-land">
           {(data.lands || []).map((land, i) => {
-            const tint = landTint(land.n, theme);
+            const tint = landTint(land.n, theme, venue);
             return (
               <path
                 key={`ld${i}`}
@@ -952,7 +965,7 @@ export default function ParkMap({
         {plan.lands.map((l) => {
           const id = `landline-${l.name.replace(/\W+/g, '-')}`;
           return (
-            <text key={`lt${l.name}`} className="landLabel" fill={landTint(l.name, theme).label}>
+            <text key={`lt${l.name}`} className="landLabel" fill={landTint(l.name, theme, venue).label}>
               <textPath href={`#${id}`} xlinkHref={`#${id}`} startOffset="50%">
                 {l.name.toUpperCase()}
               </textPath>
@@ -1012,6 +1025,7 @@ export default function ParkMap({
               <PoiMarker
                 category={m.p.c}
                 colour={palette.categories[m.p.c] || '#888'}
+                barredInk={palette.barred}
                 r={m.r}
                 state={m.state}
               />
@@ -1023,7 +1037,7 @@ export default function ParkMap({
             key={l.key}
             x={l.x}
             y={l.y}
-            style={{ textAnchor: l.anchor }}
+            style={{ textAnchor: l.anchor, ...(l.faded ? { fill: palette.barred } : null) }}
             className={`poiLabel ${l.faded ? 'barred' : ''}`}
           >
             {l.text}
@@ -1051,6 +1065,29 @@ export default function ParkMap({
                   strokeWidth="1.6"
                 />
                 <circle cx={sx} cy={sy - 16} r={4} fill="#fff" />
+              </g>
+            );
+          })()}
+
+        {/* where the car is — a pin, like the meet-up, because both are a spot
+            somebody chose rather than a place the park has. Violet and carrying
+            a car, so it is never mistaken for the crimson meet-up pin at a
+            glance across a car park in the dark. */}
+        {car &&
+          (() => {
+            const [sx, sy] = at(car.lat, car.lng);
+            return (
+              <g key="car" className="carPin">
+                <ellipse cx={sx} cy={sy + 1.5} rx={7} ry={2.4} fill="#000" opacity="0.28" />
+                <path
+                  d={`M${sx} ${sy} l-9 -13 a11 11 0 1 1 18 0 Z`}
+                  fill="var(--indigo)"
+                  stroke="var(--markerEdge)"
+                  strokeWidth="1.6"
+                />
+                <g transform={`translate(${sx} ${sy - 16})`}>
+                  <Glyph name="car" size={13} colour="#fff" />
+                </g>
               </g>
             );
           })()}
@@ -1219,6 +1256,7 @@ export default function ParkMap({
           visibleCategories={visibleCategories}
           onToggleCategory={onToggleCategory}
           heightFilterOn={!!rideEligibility}
+          presentCategories={presentCategories}
         />
         <div className="mapMeta">
           {/* Which way is north, without having to open the compass tape. */}

@@ -25,6 +25,8 @@
 
 import process from 'node:process';
 import { readFile, writeFile } from 'node:fs/promises';
+import { readFileSync, readdirSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import {
   areaOf,
   centroidOf,
@@ -36,9 +38,11 @@ import {
 } from './lib/geometry.mjs';
 import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
-  classify, isLand, isVenueOutline,
+  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline,
 } from './lib/osm-tags.mjs';
-import { readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue } from './lib/venue-io.mjs';
+import {
+  OVERRIDE_DIR, readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue,
+} from './lib/venue-io.mjs';
 import path from 'node:path';
 
 const OVERPASS = [
@@ -63,11 +67,17 @@ function parseArgs(argv) {
     const key = eq === -1 ? a.slice(2) : a.slice(2, eq);
     const inline = eq === -1 ? null : a.slice(eq + 1);
     const next = argv[i + 1];
-    if (inline != null) out[key] = inline;
+    let value;
+    if (inline != null) value = inline;
     else if (next && !next.startsWith('--')) {
-      out[key] = next;
+      value = next;
       i += 1;
-    } else out[key] = true;
+    } else value = true;
+    /* A flag given twice collects rather than overwrites, so `--merge a
+       --merge b` folds in both datasets instead of quietly using the last one.
+       Only on repeat: a flag given once stays the scalar every reader expects. */
+    if (key in out) out[key] = [].concat(out[key], value);
+    else out[key] = value;
   }
   return out;
 }
@@ -93,6 +103,12 @@ Build a venue bundle from OpenStreetMap.
   --from-dump <file>        build from a saved response instead of querying
   --keep-offsite            keep places standing in named areas outside the venue
   --reindex                 only rebuild the manifest from files already on disk
+  --reapply [<id>]          re-apply the overrides file to venues already on disk,
+                            without going near the network. No id: every venue.
+  --allow-no-heights        build a rides venue that publishes no height rules
+  --merge <file>            fold a GeoJSON or CSV dataset onto the places, matched
+                            by name and then by position. Repeatable.
+  --merge-metres <n>        how near a merge point has to land (default: 25)
 `;
 
 /* ------------------------------------------------------------- resolving - */
@@ -260,6 +276,7 @@ function buildLayers(elements, opts) {
   const lands = [];
   const outlines = []; // rings that could be the venue's own boundary
   const areaCandidates = []; // closed rings that might also be a POI
+  const campRings = []; // campgrounds, so the sites inside them can be found
 
   for (const el of elements) {
     if (el.type === 'node') continue;
@@ -281,6 +298,7 @@ function buildLayers(elements, opts) {
 
       if (isLand(tags) && closed) {
         const size = areaOf(ring);
+        if (isCampground(tags)) campRings.push(ring);
         // The venue's own outline: the shape that is the place, rather than a
         // district inside it. Every ring that could be one is collected here
         // and the choice is made once, after the loop — picking by size while
@@ -293,6 +311,12 @@ function buildLayers(elements, opts) {
         // Big enough to be a district, small enough not to be the venue itself.
         if (size > 1500 && size < opts.venueArea * 0.7) {
           lands.push({ n: tags.name, r: ring, size });
+          /* A district is a tint and a label, not a row you can tap — which is
+             right for a themed area and wrong for a campground. Lighthouse
+             Point has an office, opening hours and a telephone number, and a
+             visitor who wants any of those wants a place in the list rather
+             than a word lying across the ground. So a campground is both. */
+          if (isCampground(tags)) areaCandidates.push({ tags, ring });
           continue;
         }
         if (size >= opts.venueArea * 0.7) continue;
@@ -353,7 +377,22 @@ function buildLayers(elements, opts) {
      landmark a route is "via". */
   const outline = layers.park.map((p) => p.r);
   const inside = (ring) => !outline.length || outline.some((o) => pointInRing(centroidOf(ring), o));
-  const drawn = lands.filter((l) => inside(l.r));
+  /* Except for the ones this venue owns but its own polygon does not cover.
+   *
+   * A park is routinely more than one polygon. Cedar Point's `tourism=theme_park`
+   * relation is the amusement park; its water park and its campground are
+   * separate rings beside it on the same peninsula, and the test above — written
+   * to drop the retail park over the road — could not tell the difference. It
+   * dropped Cedar Point Shores' thirty-one places, and would have dropped all
+   * hundred and fifty-seven of Lighthouse Point's.
+   *
+   * The fix is a list rather than a cleverer test, because no test distinguishes
+   * "the water park that belongs to this venue" from "the water park across the
+   * road that does not". The build prints every area it dropped and how many
+   * places went with it, so the list is written from what it says.
+   */
+  const annexed = opts.annexed || new Set();
+  const drawn = lands.filter((l) => inside(l.r) || annexed.has(String(l.n).toLowerCase()));
 
   const anchors = {};
   for (const land of drawn.sort((a, b) => b.size - a.size)) {
@@ -364,7 +403,51 @@ function buildLayers(elements, opts) {
   }
   layers.lands = drawn.map(({ n, r }) => ({ n, r }));
 
-  return { layers, anchors, areaCandidates, allLands: lands, boundary };
+  return { layers, anchors, areaCandidates, allLands: lands, boundary, campRings };
+}
+
+/**
+ * A height rule OpenStreetMap already knows.
+ *
+ * "Height requirements are not in OpenStreetMap and never will be" is what the
+ * overrides file was written to be the answer to, and it turns out to be only
+ * three quarters true: `minimum_height_requirement` is a real tag and Cedar
+ * Point carries it on fifty-two attractions, surveyed off the sign at the ride
+ * entrance. Where it exists it is the best source there is — better than any
+ * compilation, because somebody stood in front of the ride and read it — and it
+ * costs nothing to take.
+ *
+ * So it is read here, and the overrides file is applied on top afterwards.
+ * That ordering is the point: a park that tags its signs gets its Rides tab for
+ * free the day it is added, and a hand-written correction still wins over a
+ * stale tag.
+ *
+ * Formats in the wild, all of which appear at Cedar Point:
+ *   "48in (122cm)"          a floor
+ *   "36in  (91cm)"          the same, with a mapper's double space
+ *   "36in-54in (91cm-137cm)" a floor and a ceiling
+ * Only the inches are read. The centimetres in brackets are a restatement, and
+ * a couple of them disagree with their own inches by a rounding error.
+ */
+export function heightFromTags(tags) {
+  const read = (raw) => {
+    if (!raw) return null;
+    // Inches only, and only before the bracket: "(122cm)" contains digits too.
+    const head = String(raw).split('(')[0];
+    const found = [...head.matchAll(/(\d{2,3})\s*(?:in|")/gi)].map((m) => Number(m[1]));
+    return found.length ? found : null;
+  };
+  const lo = read(tags.minimum_height_requirement);
+  const hi = read(tags.maximum_height_requirement);
+  if (!lo && !hi) return null;
+  // A single tag written as a range — "36in-54in" — is a floor and a ceiling,
+  // not two floors.
+  const min = lo ? lo[0] : null;
+  const max = (lo && lo.length > 1 ? lo[1] : null) ?? (hi ? hi[0] : null);
+  const sane = (n) => (Number.isFinite(n) && n >= 24 && n <= 96 ? n : null);
+  const h = { min: sane(min), alone: null, max: sane(max) };
+  if (h.min == null && h.max == null) return null;
+  return h;
 }
 
 function buildPois(elements, areaCandidates, opts) {
@@ -375,7 +458,20 @@ function buildPois(elements, areaCandidates, opts) {
     const name = tags.name || tags.operator || UNNAMED_LABELS[c];
     if (!name) return; // an unnamed bench is noise on a map you read at a glance
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    out.push({ n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c });
+    const poi = { n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c };
+    const h = heightFromTags(tags);
+    if (h) poi.h = h;
+    /* A phone number, where the place has one. Kept and nothing else from the
+       contact tags: a campground office, a first-aid post and a ticket line are
+       worth being one tap from dialling at eleven at night, and a website is
+       worth nothing at all to somebody standing in a park with one bar. */
+    const tel = tags.phone || tags['contact:phone'];
+    if (tel) poi.tel = String(tel).split(';')[0].trim();
+    // Hookups, pad surface, pull-through. Only where the tags say so; a venue
+    // whose mapper recorded none gets them from the overrides file instead.
+    const camp = c === 'campsite' ? campDetailsFromTags(tags) : null;
+    if (camp) poi.camp = camp;
+    out.push(poi);
   };
 
   for (const el of elements) {
@@ -403,8 +499,54 @@ function buildPois(elements, areaCandidates, opts) {
         distanceMetres(k.lat, k.lng, poi.lat, poi.lng) < opts.dedupeMetres,
     );
     if (!dupe) kept.push(poi);
+    // The ride is mapped twice and only one of the pair carries the sign. Keep
+    // the survey rather than whichever node happened to be read first.
+    else if (poi.h && !dupe.h) dupe.h = poi.h;
   }
   return kept;
+}
+
+/**
+ * The individual sites inside a campground.
+ *
+ * They cannot come through the ordinary POI path, and that is a fact about how
+ * campgrounds get mapped rather than an oversight. A pitch is a place you park
+ * a caravan on, so a mapper draws it as the driveway it is: an *open* way, which
+ * never reaches the closed-ring candidate list, tagged `service=parking_aisle`,
+ * which the layer rules quite correctly draw as tarmac. Lighthouse Point has
+ * roughly two hundred of them, each named "Site 247" — the single most useful
+ * string in the whole bundle to somebody who has just come off Steel Vengeance
+ * in the dark, and none of it was in the app.
+ *
+ * The geometric test is what keeps this honest. A named parking aisle is only
+ * read as a pitch when it lies inside a ring already known to be a campground,
+ * so the two hundred unnamed aisles of the main car park stay tarmac and the
+ * rule cannot misfire at a venue that has no campground at all.
+ *
+ * Position is the middle of the pitch, which is where the caravan is.
+ */
+function campPitches(elements, campRings, known) {
+  if (!campRings.length) return [];
+  const seen = new Set(known.map((p) => p.n.toLowerCase()));
+  const out = [];
+  for (const el of elements) {
+    const tags = el.tags || {};
+    if (!tags.name || !isCampPitch(tags)) continue;
+    if (isCampground(tags)) continue; // the ground itself, already a district
+    const ring = el.type === 'relation' ? ringsOfRelation(el)[0] : ringOf(el);
+    if (!ring?.length) continue;
+    const [lng, lat] = ring.length > 2 ? centroidOf(ring) : ring[Math.floor(ring.length / 2)];
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    if (!campRings.some((r) => pointInRing([lng, lat], r))) continue;
+    const key = tags.name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const pitch = { n: tags.name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'campsite' };
+    const camp = campDetailsFromTags(tags);
+    if (camp) pitch.camp = camp;
+    out.push(pitch);
+  }
+  return out;
 }
 
 /**
@@ -464,7 +606,20 @@ function assignLands(pois, lands, venueName, drawnNames) {
  */
 function applyOverrides(pois, overrides) {
   if (!overrides) return { pois, applied: 0, unmatched: [] };
-  const byName = new Map(pois.map((p) => [p.n.toLowerCase(), p]));
+  /* Every POI under a name, not the last one wearing it. OpenStreetMap
+     routinely carries a ride as two nodes — a way and a point, an entrance and
+     the ride itself — and Fiesta Texas ships two Poltergeists and two Gully
+     Washers for exactly that reason. Patching one of each put a height rule on
+     one marker and left its twin saying "check at the ride", which reads as the
+     app disagreeing with itself about the same ride. */
+  const byName = new Map();
+  for (const p of pois) {
+    const key = p.n.toLowerCase();
+    const at = byName.get(key);
+    if (at) at.push(p);
+    else byName.set(key, [p]);
+  }
+  const lookup = (name) => byName.get(String(name).toLowerCase()) || null;
   let applied = 0;
   const unmatched = [];
 
@@ -472,12 +627,12 @@ function applyOverrides(pois, overrides) {
     // Parks rename rides faster than OSM follows, so an override may be filed
     // under the name on the sign while the map still carries the old one. The
     // alias is what bridges the two, in whichever direction the drift went.
-    const target = byName.get(name.toLowerCase()) || (patch.alias ? byName.get(String(patch.alias).toLowerCase()) : null);
-    if (!target) {
+    const targets = lookup(name) || (patch.alias ? lookup(patch.alias) : null);
+    if (!targets) {
       unmatched.push(name);
       continue;
     }
-    Object.assign(target, patch);
+    for (const target of targets) Object.assign(target, patch);
     applied += 1;
   }
 
@@ -485,12 +640,282 @@ function applyOverrides(pois, overrides) {
   let next = pois.filter((p) => !dropped.has(p.n.toLowerCase()));
 
   for (const extra of overrides.add || []) {
-    const existing = byName.get(String(extra.n).toLowerCase());
-    if (existing) Object.assign(existing, extra);
+    const existing = lookup(extra.n);
+    if (existing) existing.forEach((p) => Object.assign(p, extra));
     else next.push({ ...extra });
   }
 
   return { pois: next, applied, unmatched };
+}
+
+/**
+ * Whether this venue owes the app height rules, and whether it has any.
+ *
+ * A venue with rides and no heights is not a venue without height rules — it is
+ * a venue whose overrides file nobody wrote. The difference matters because the
+ * app cannot tell them apart: `hasHeights` comes back false either way, and the
+ * whole Rides tab, the slider, the running tally, the filter badge over the map
+ * and the struck-through markers all quietly do not exist. Two of the three
+ * parks shipped that way for a while, which is how we learned to check.
+ */
+export function heightAudit(pois) {
+  const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
+  const withHeights = rides.filter((p) => p.h);
+  return {
+    rides: rides.length,
+    heights: withHeights.length,
+    missing: rides.filter((p) => !p.h).map((p) => p.n),
+    owed: rides.length > 0,
+  };
+}
+
+/**
+ * Re-apply the overrides files to venues already on disk.
+ *
+ * A full build wants Overpass, Nominatim and a couple of minutes, which is a
+ * silly price for "somebody corrected a height". The geometry is not what
+ * changed — the hand-written half is — so this reads the venue bundle back,
+ * runs it through {@link applyOverrides} again and writes it out. The rebuild
+ * path and this one share that function, so a height fixed here survives the
+ * next real rebuild and vice versa.
+ *
+ * @param only    a single venue id, or null for every venue on disk
+ * @param strict  refuse to leave a venue with rides and no height rules
+ */
+function reapply(only, { strict = true } = {}) {
+  const ids = readdirSync(VENUE_DIR)
+    .filter((f) => f.endsWith('.pois.json'))
+    .map((f) => f.slice(0, -'.pois.json'.length))
+    .filter((id) => !only || id === only)
+    .sort();
+  if (!ids.length) throw new Error(only ? `No venue called "${only}" on disk.` : 'No venues on disk.');
+
+  const shortfalls = [];
+  for (const id of ids) {
+    const poisFile = path.join(VENUE_DIR, `${id}.pois.json`);
+    const mapFile = path.join(VENUE_DIR, `${id}.map.json`);
+    const built = readJson(mapFile);
+    const { file: overrideFile, data: overrides } = readOverrides(id, null);
+    if (!overrides) {
+      console.error(`· ${id}: no overrides file — left alone`);
+      continue;
+    }
+
+    const merged = applyOverrides(readJson(poisFile, []), overrides);
+    const pois = merged.pois.sort((a, b) => a.n.localeCompare(b.n));
+    const narrowed = applyCamping(pois, overrides.camping);
+    const { meta, ...map } = built || {};
+    // The credit line belongs with the data it credits, so the overrides file
+    // is allowed to carry it rather than it living only in a build flag
+    // somebody typed once.
+    let next = overrides.credits ? { ...meta, credits: overrides.credits } : meta;
+    // The camping block is data about the venue, so re-applying the overrides
+    // has to move it too — otherwise correcting a hookup would need a full
+    // rebuild, which is the thing this mode exists to avoid.
+    if (overrides.camping?.defaults) next = { ...next, camping: overrides.camping.defaults };
+    const tints = landTints(overrides);
+    if (tints) next = { ...next, lands: tints };
+    writeVenue({ meta: next, map, pois });
+
+    const audit = heightAudit(pois);
+    console.error(
+      `· ${id}: ${merged.applied} override(s) applied, ${audit.heights} of ${audit.rides} rides carry a height rule` +
+        (narrowed ? `, ${narrowed} pitch(es) narrowed` : '') +
+        (merged.unmatched.length ? `, ${merged.unmatched.length} unmatched` : ''),
+    );
+    for (const miss of merged.unmatched) console.error(`    ? no POI named "${miss}"`);
+    if (audit.owed && !audit.heights) shortfalls.push(id);
+  }
+
+  const manifest = reindex();
+  console.log(`Manifest rebuilt: ${manifest.venues.length} venue(s), default "${manifest.default}".`);
+  if (strict && shortfalls.length) {
+    throw new Error(
+      `${shortfalls.join(', ')} still publish no height rules. Write data/venues/<id>.overrides.json, ` +
+        'or pass --allow-no-heights if the venue genuinely has none.',
+    );
+  }
+}
+
+/**
+ * Facts that are true of a whole campground, and rules that narrow them.
+ *
+ * A campground publishes "every site is full hookup, 30/50 amp, concrete pad".
+ * That is one fact about the place, not a hundred and forty-five facts about
+ * pitches, and writing it out per pitch would be both a lie about where it came
+ * from and forty kilobytes. So it lives on the venue — `meta.camping` — and the
+ * app reads a pitch's own details *over* it. A pitch that OpenStreetMap has
+ * tagged, or that an imported dataset knows something specific about, overrules
+ * the venue for exactly the fields it knows and inherits the rest.
+ *
+ * `rules` narrows by name, for the case a campground does publish per-row
+ * detail: `{ "match": "^Site 5", "set": { "drive": "pull-through" } }`.
+ * Nothing venue-specific here — this reads whatever the overrides file says.
+ */
+export function applyCamping(pois, camping) {
+  if (!camping) return 0;
+  const rules = (camping.rules || [])
+    .map((r) => {
+      try {
+        return { re: new RegExp(r.match, 'i'), set: r.set || {} };
+      } catch {
+        console.error(`    ? "${r.match}" is not a pattern — rule skipped`);
+        return null;
+      }
+    })
+    .filter(Boolean);
+  if (!rules.length) return 0;
+  let touched = 0;
+  for (const p of pois) {
+    if (p.c !== 'campsite') continue;
+    for (const rule of rules) {
+      if (!rule.re.test(p.n)) continue;
+      p.camp = { ...(p.camp || {}), ...rule.set };
+      touched += 1;
+    }
+  }
+  return touched;
+}
+
+/**
+ * Merge an outside dataset onto the places, by position.
+ *
+ * The reusable answer to "OpenStreetMap does not know this and the park does".
+ * Hand it a GeoJSON FeatureCollection or a CSV with lat/lng columns and every
+ * feature is matched to the nearest existing place within `--merge-metres`,
+ * then has its properties folded in. Nothing about it is campground-specific:
+ * it is how any surveyed layer — pitch hookups, locker banks, a fresh set of
+ * height signs — reaches a venue that was built from OSM alone.
+ *
+ * Matching is by name first and position second, because a name is exact and a
+ * centroid is not: a feature carrying `name` or `ref` that matches a place is
+ * merged onto it wherever it sits, and everything else falls back to the
+ * nearest place inside the radius. Anything that matches nothing is reported
+ * rather than added, because a point that landed nowhere near a place is far
+ * more likely to be the wrong projection than a new place.
+ */
+export function mergeDataset(pois, features, { metres = 25 } = {}) {
+  const byName = new Map();
+  for (const p of pois) {
+    for (const key of [p.n, p.ref].filter(Boolean)) {
+      const k = String(key).toLowerCase();
+      if (!byName.has(k)) byName.set(k, []);
+      byName.get(k).push(p);
+    }
+  }
+  let merged = 0;
+  const unmatched = [];
+  for (const f of features) {
+    const props = { ...(f.properties || {}) };
+    const name = props.name ?? props.ref ?? props.site ?? null;
+    let targets = name ? byName.get(String(name).toLowerCase()) : null;
+    if (!targets && Number.isFinite(f.lat) && Number.isFinite(f.lng)) {
+      let best = null;
+      for (const p of pois) {
+        const d = distanceMetres(f.lat, f.lng, p.lat, p.lng);
+        if (!best || d < best.d) best = { p, d };
+      }
+      if (best && best.d <= metres) targets = [best.p];
+    }
+    if (!targets?.length) {
+      unmatched.push(name || `${f.lat},${f.lng}`);
+      continue;
+    }
+    // `name` is the key, not payload — merging it back would rename a place to
+    // the string it was found by, which is at best a no-op and at worst a typo.
+    delete props.name;
+    delete props.site;
+    for (const t of targets) {
+      const { camp, ...rest } = props;
+      Object.assign(t, rest);
+      if (camp && typeof camp === 'object') t.camp = { ...(t.camp || {}), ...camp };
+    }
+    merged += 1;
+  }
+  return { merged, unmatched };
+}
+
+/**
+ * Read a merge file. GeoJSON or CSV, because those are the two things a park's
+ * own data actually turns up as.
+ *
+ * CSV wants a header row and a pair of coordinate columns under any of the
+ * usual names; every other column becomes a property, and a `camp.` prefix
+ * nests one — `camp.hookup` sets `camp: { hookup }`, which is what makes a
+ * spreadsheet of pitch hookups a one-line import.
+ */
+export function readDataset(file) {
+  const raw = readFileSync(file, 'utf8');
+  if (raw.trim().startsWith('{')) {
+    const gj = JSON.parse(raw);
+    const feats = gj.type === 'FeatureCollection' ? gj.features || [] : [gj];
+    return feats.map((f) => {
+      const g = f.geometry || {};
+      const c = g.type === 'Point' ? g.coordinates : null;
+      return { lat: c ? Number(c[1]) : NaN, lng: c ? Number(c[0]) : NaN, properties: f.properties || {} };
+    });
+  }
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim());
+  if (!lines.length) return [];
+  const head = splitCsv(lines[0]).map((h) => h.trim());
+  const latAt = head.findIndex((h) => /^(lat|latitude|y)$/i.test(h));
+  const lngAt = head.findIndex((h) => /^(lng|lon|long|longitude|x)$/i.test(h));
+  return lines.slice(1).map((line) => {
+    const cells = splitCsv(line);
+    const properties = {};
+    head.forEach((key, i) => {
+      if (i === latAt || i === lngAt) return;
+      const value = (cells[i] ?? '').trim();
+      if (value === '') return;
+      const typed = value === 'true' ? true : value === 'false' ? false
+        : /^-?\d+(\.\d+)?$/.test(value) ? Number(value) : value;
+      if (key.includes('.')) {
+        const [outer, inner] = key.split('.');
+        properties[outer] = { ...(properties[outer] || {}), [inner]: typed };
+      } else {
+        properties[key] = typed;
+      }
+    });
+    return {
+      lat: latAt === -1 ? NaN : Number(cells[latAt]),
+      lng: lngAt === -1 ? NaN : Number(cells[lngAt]),
+      properties,
+    };
+  });
+}
+
+/** Enough CSV to read a file somebody exported from a spreadsheet. */
+function splitCsv(line) {
+  const out = [];
+  let cur = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"' && line[i + 1] === '"') {
+        cur += '"';
+        i += 1;
+      } else if (ch === '"') quoted = false;
+      else cur += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') {
+      out.push(cur);
+      cur = '';
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+/** The hand-picked district tints out of an overrides file, minus its notes. */
+function landTints(overrides) {
+  const lands = overrides?.lands;
+  if (!lands) return null;
+  const out = {};
+  for (const theme of ['night', 'day']) {
+    if (lands[theme] && Object.keys(lands[theme]).length) out[theme] = lands[theme];
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 /* ------------------------------------------------------------------ main - */
@@ -505,6 +930,11 @@ async function main() {
   if (args.reindex) {
     const manifest = reindex({ preferredDefault: typeof args.default === 'string' ? args.default : undefined });
     console.log(`Manifest rebuilt: ${manifest.venues.length} venue(s), default "${manifest.default}".`);
+    return;
+  }
+
+  if (args.reapply) {
+    reapply(typeof args.reapply === 'string' ? args.reapply : null, { strict: !args['allow-no-heights'] });
     return;
   }
 
@@ -557,17 +987,27 @@ async function main() {
     distanceMetres(bounds.south, bounds.west, bounds.north, bounds.west) *
     distanceMetres(bounds.south, bounds.west, bounds.south, bounds.east);
 
-  const { layers, anchors, areaCandidates, allLands, boundary } = buildLayers(elements, {
+  /* Read before the geometry, because one thing in it changes how the geometry
+     is read: which named areas count as part of this venue. See `annexed`. */
+  const { file: overrideFile, data: overrides } = readOverrides(id, args.overrides ? String(args.overrides) : null);
+
+  const { layers, anchors, areaCandidates, allLands, boundary, campRings } = buildLayers(elements, {
     tolerance,
     minArea: 12,
     venueArea,
     venueName: name,
+    annexed: new Set((overrides?.areas || []).map((n) => String(n).toLowerCase())),
     // A little wider than the box the map draws, so the cut line itself never
     // lands anywhere a visitor can pan to.
     clip: padBounds(bounds, 60),
   });
 
   let pois = buildPois(elements, areaCandidates, { dedupeMetres: Number(args.dedupe ?? 35) });
+  const pitches = campPitches(elements, campRings, pois);
+  if (pitches.length) {
+    pois = pois.concat(pitches);
+    console.error(`  · campground: ${pitches.length} pitch(es) picked up from inside ${campRings.length} ring(s)`);
+  }
   const fromTrack = poisFromTrack(pois, layers.coaster);
   if (fromTrack.length) {
     console.error(`  · ${fromTrack.length} ride(s) taken from named track with no place of their own`);
@@ -589,7 +1029,6 @@ async function main() {
     pois = pois.filter((p) => !cut.has(p));
   }
 
-  const { file: overrideFile, data: overrides } = readOverrides(id, args.overrides ? String(args.overrides) : null);
   const merged = applyOverrides(pois, overrides);
   pois = merged.pois;
   if (overrideFile) {
@@ -599,6 +1038,36 @@ async function main() {
     );
     for (const miss of merged.unmatched.slice(0, 8)) console.error(`    ? no POI named "${miss}"`);
     if (merged.unmatched.length > 8) console.error(`    … and ${merged.unmatched.length - 8} more`);
+  }
+
+  /* The venue's own camping facts, and the rules that narrow them. Read from
+     the overrides file so nothing about any one campground is in this script. */
+  const camping = overrides?.camping || null;
+  const narrowed = applyCamping(pois, camping);
+  if (camping) {
+    const fields = Object.keys(camping.defaults || {}).length;
+    console.error(
+      `  · camping: ${fields} venue-wide field(s)` +
+        (narrowed ? `, ${narrowed} pitch(es) narrowed by rule` : ''),
+    );
+  }
+
+  /* An outside dataset, georeferenced onto what is already here. This is the
+     door for anything OpenStreetMap does not know and a park does. */
+  if (args.merge) {
+    const files = Array.isArray(args.merge) ? args.merge : [String(args.merge)];
+    for (const file of files) {
+      const feats = readDataset(file);
+      const { merged, unmatched } = mergeDataset(pois, feats, {
+        metres: Number(args['merge-metres'] ?? 25),
+      });
+      console.error(
+        `  · merged ${merged} of ${feats.length} from ${file.replace(process.cwd() + '/', '')}` +
+          (unmatched.length ? `, ${unmatched.length} matched nothing` : ''),
+      );
+      for (const miss of unmatched.slice(0, 8)) console.error(`    ? nothing near "${miss}"`);
+      if (unmatched.length > 8) console.error(`    … and ${unmatched.length - 8} more`);
+    }
   }
 
   pois.sort((a, b) => a.n.localeCompare(b.n));
@@ -644,12 +1113,41 @@ async function main() {
     // Anything the venue's data owes to a source that is not OSM — height
     // requirements, most often — is credited in the app from here.
     credits: args.credits ? String(args.credits) : existingMeta?.credits || null,
+    /* What is true of this venue's campground as a whole. On the venue rather
+       than repeated onto every pitch, because that is where the fact lives: a
+       campground is full hookup, a pitch is not individually full hookup. The
+       app reads a pitch's own details over this. */
+    ...(camping?.defaults ? { camping: camping.defaults } : existingMeta?.camping ? { camping: existingMeta.camping } : {}),
+    /* This venue's own district tints, where somebody has hand-picked any. The
+       renderer generates a colour for every district that is not named here, so
+       a venue built from OpenStreetMap alone needs none of it. */
+    ...(landTints(overrides) ? { lands: landTints(overrides) } : existingMeta?.lands ? { lands: existingMeta.lands } : {}),
     generated: new Date().toISOString().slice(0, 10),
   };
 
   const summary = LAYERS.map((k) => `${k}=${layers[k].length}`).join(' ');
   console.error(`  · geometry: ${summary}`);
   console.error(`  · pois: ${pois.length} (${pois.filter((p) => p.h).length} with heights)`);
+
+  /* Height rules are the one part of a venue OpenStreetMap will never supply,
+     so a park that has them and a park whose overrides file nobody wrote look
+     identical here — and identical to the app, which answers by removing the
+     Rides tab, the slider, the tally, the badge over the map and the
+     struck-through markers without saying why. That is too much of the app to
+     lose to an omission, so an omission has to be said out loud. */
+  const audit = heightAudit(pois);
+  if (audit.owed && !audit.heights && !args['allow-no-heights']) {
+    throw new Error(
+      `${name} has ${audit.rides} rides and no height rules, so the app would ship without its ` +
+        `Rides tab. Write ${path.relative(process.cwd(), path.join(OVERRIDE_DIR, `${id}.overrides.json`))} ` +
+        'and build again — or pass --allow-no-heights if this venue genuinely has none.',
+    );
+  }
+  if (audit.owed && audit.missing.length) {
+    console.error(`  · ${audit.missing.length} ride(s) still without a height rule:`);
+    for (const miss of audit.missing.slice(0, 8)) console.error(`    − ${miss}`);
+    if (audit.missing.length > 8) console.error(`    … and ${audit.missing.length - 8} more`);
+  }
 
   /* The boundary is the one thing here that can be confidently wrong: a plain
      ring with a plausible name, in the right place, enclosing the wrong ground.
@@ -659,7 +1157,13 @@ async function main() {
   if (!boundary) {
     console.error('  · boundary: none found — nothing here is tagged as the venue itself');
   } else {
-    const within = pois.filter((p) => pointInRing([p.lng, p.lat], boundary.r)).length;
+    /* Counted against the annexed areas too, or the check cries wolf at exactly
+       the venues that needed the list: Cedar Point's own water park and
+       campground are both outside its theme-park ring on purpose. */
+    const annexedHere = new Set((overrides?.areas || []).map((n) => String(n).toLowerCase()));
+    const within = pois.filter(
+      (p) => pointInRing([p.lng, p.lat], boundary.r) || annexedHere.has(String(p.a || '').toLowerCase()),
+    ).length;
     const why = boundary.named && boundary.tagged
       ? 'named and tagged as the venue'
       : boundary.named
@@ -697,7 +1201,15 @@ async function main() {
   console.error(`Default venue: ${manifest.default}`);
 }
 
-main().catch((err) => {
-  console.error(`\n${err.message}`);
-  process.exit(1);
-});
+/* Only when it is the thing being run. The tag rules and the height parser are
+   worth holding a test to, and a test that imports this file must not build a
+   venue as a side effect of doing so. */
+const runDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (runDirectly) {
+  main().catch((err) => {
+    console.error(`\n${err.message}`);
+    process.exit(1);
+  });
+}
