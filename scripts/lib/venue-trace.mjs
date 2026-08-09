@@ -4,7 +4,7 @@
  * Four kinds of thing come out of a park's own map, and each of them lands
  * somewhere different:
  *
- *   entrance / exit  onto the ride they belong to, as `in` and `out`. A place
+ *   entrance / exit  onto the ride they belong to, as `e` and `out`. A place
  *                    here has always been one point, and for a ride taken from
  *                    its track that point is the middle of the track — so
  *                    "walk me to Diamondback" walks you to the top of the lift
@@ -18,11 +18,15 @@
  *   place            a new POI, for the things OpenStreetMap has not got at all.
  *
  * Everything traced keeps the `src` block the tracer stamped on it — the image,
- * the model, and how far out the fit was. That block is the difference between
- * data and decoration: a pin surveyed off a sign and a pin read off a drawing at
- * nine metres of error are different claims, and once they are in the same file
- * with no way to tell them apart, the second one has quietly become the first.
+ * the model, and how far out the fit was — with `by` set to the one word the
+ * rest of the pipeline weighs a trace under. That block is the difference
+ * between data and decoration: a pin surveyed off a sign and a pin read off a
+ * drawing at nine metres of error are different claims, and once they are in
+ * the same file with no way to tell them apart, the second one has quietly
+ * become the first.
  */
+
+import { SRC_BY } from './attractions.mjs';
 
 /** Metres between two lat/lngs, near enough at the scale of one venue. */
 const metresBetween = (a, b) => {
@@ -99,9 +103,15 @@ export function applyTrace(pois, layers, traced) {
         out.skipped.push(`${props.of}: its ${kind} traced ${Math.round(metresBetween(at, targets[0]))} m away`);
         continue;
       }
+      /* The tracer's own block — image, model, error — kept whole, with `by`
+         set to the word `WEIGHTS` scores a trace under. The tracer says
+         "trace" because that is the tool; the pipeline says "traced" because
+         that is the kind of source, and one of them has to give so that a
+         reader never has to know which writer it is talking to. */
+      const src = { ...(props.src || {}), by: SRC_BY.TRACED };
       for (const t of targets) {
         if (kind === 'exit') {
-          t.out = { ...at, src: props.src || null };
+          t.out = { ...at, src };
           continue;
         }
         /* Into `e`, beside whatever the builder derived from a named one-way
@@ -109,8 +119,8 @@ export function applyTrace(pois, layers, traced) {
            place to read it — the app takes the first entrance and does not want
            to learn that a traced one lives somewhere else. Replaces a traced
            entry rather than stacking, so re-running a trace corrects. */
-        const kept = (t.e || []).filter((x) => x.src?.by !== 'trace');
-        t.e = [{ ...at, n: props.n || `${props.of} entrance`, src: props.src || null }, ...kept];
+        const kept = (t.e || []).filter((x) => x.src?.by !== SRC_BY.TRACED);
+        t.e = [{ ...at, n: props.n || `${props.of} entrance`, src }, ...kept];
       }
       out[kind === 'entrance' ? 'entrances' : 'exits'] += 1;
       continue;

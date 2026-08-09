@@ -47,6 +47,7 @@ import {
   argsFromRecipe, listRecipes, readRecipe, recipeFile, recipeFrom, writeRecipe,
 } from './lib/venue-recipe.mjs';
 import { briefJson, renderBrief, requests } from './lib/venue-requests.mjs';
+import { SRC_BY } from './lib/attractions.mjs';
 import { applyTrace } from './lib/venue-trace.mjs';
 // The app's own reading of "these two strings are the same ride", reused so the
 // builder and the renderer cannot disagree about it.
@@ -724,7 +725,16 @@ export function entrancesFromQueues(pois, elements) {
         if (!near.n.includes(s.n)) near.n = `${near.n} / ${s.n}`;
         continue;
       }
-      kept.push({ lat: Number(s.p.lat.toFixed(6)), lng: Number(s.p.lon.toFixed(6)), n: s.n });
+      /* Signed with the kind of source it is, in the one vocabulary every
+         writer of a coordinate on a place uses. Three writers hang points on
+         `e` — this, the tracer, and the inventory's own publish step — and a
+         reader that cannot tell them apart weighs a guess as a survey. */
+      kept.push({
+        lat: Number(s.p.lat.toFixed(6)),
+        lng: Number(s.p.lon.toFixed(6)),
+        n: s.n,
+        src: { by: SRC_BY.NAMED_QUEUE },
+      });
     }
     poi.e = kept;
     out.attached += kept.length;

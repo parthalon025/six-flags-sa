@@ -742,7 +742,8 @@ Two rules that took a wrong turn first:
 
 The evidence lives in `data/venues/<id>.attractions.json`, beside the bundle rather than in
 it: the bundle is overwritten by every rebuild and the evidence is the expensive part. Only
-what clears the bar is copied in, as `in` and `out` on the place.
+what clears the bar is copied in, as `e` and `out` on the place, stamped `fused` so that the
+next run can tell the pipeline's own conclusion apart from the evidence behind it.
 
 **What this does not do**, and does not pretend to: it does not look at aerial imagery, run
 computer vision over it, watch a ride walkthrough or fetch a park's PDF. Each of those is a
@@ -782,7 +783,7 @@ of it, both in pixels.
 ```
 
 Each kind lands somewhere different. An **entrance** and an **exit** go onto the ride they
-belong to as `in` and `out` — a place here has always been one point, and for a ride the
+belong to as `e` and `out` — a place here has always been one point, and for a ride the
 builder took from its track that point is the middle of the track, so "walk me to Diamondback"
 aimed at the top of the lift hill, over a fence. The ride keeps its own position for the
 marker; only the destination moves. A **route** goes into the drawn paths, which is also the

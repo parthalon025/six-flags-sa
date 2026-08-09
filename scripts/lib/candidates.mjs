@@ -40,6 +40,7 @@
  * park, against 53 rides, which is why nothing here leans on it.
  */
 
+import { claimFromSrc, SRC_BY } from './attractions.mjs';
 import { metresBetween } from './evidence.mjs';
 
 /** How far from a ride a candidate may stand before it is somebody else's. */
@@ -109,18 +110,29 @@ export function candidates(map = {}, pois = []) {
      which end of the way faces the park. So it is read as evidence rather than
      recomputed, and where it exists the name-only detector below stands down —
      two readings of the same queue name are one fact, and counting them twice
-     would be exactly the repetition the evidence model refuses to reward. */
+     would be exactly the repetition the evidence model refuses to reward.
+
+     `e` is not the builder's field alone, though, and reading it as if it were
+     is how this file used to launder provenance: a traced pin worth 3 and a
+     coordinate this pipeline published itself both came back as a
+     mapper-surveyed `osm_named_queue` worth 4, with a note asserting a `oneway`
+     tag nobody had looked at. So the entry says what it is, or it says nothing:
+     `claimFromSrc` returns a source and a justification taken off the entry, or
+     null for anything unsigned, unweighted, or written by us. */
   const derived = new Set();
   for (const ride of rides) {
     for (const e of ride.e || []) {
       if (!Number.isFinite(e?.lat)) continue;
-      derived.add(String(ride.n).toLowerCase());
+      const claim = claimFromSrc(e);
+      if (!claim) continue;
+      /* Only a reading of the queue *name* stands the name-only detector down.
+         A traced pin is a different fact about the same ride and does not. */
+      if (claim.source === SRC_BY.NAMED_QUEUE) derived.add(String(ride.n).toLowerCase());
       out.push({
         ride: ride.n,
         type: 'queue_entrance',
         at: { lat: e.lat, lng: e.lng },
-        source: 'osm_named_queue',
-        why: `where "${e.n || 'the queue'}" begins — a named queue tagged one-way towards the ride`,
+        ...claim,
       });
     }
   }

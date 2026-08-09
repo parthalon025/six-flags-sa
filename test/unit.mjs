@@ -2174,7 +2174,7 @@ await check('a claim has a shelf life, and it is flagged rather than decayed', (
 
 /* --------------------------------------------------- the ride inventory -- */
 
-const { addEvidence, attractionFor, publishable, unresolved } =
+const { addEvidence, attractionFor, claimFromSrc, publishable, SRC_BY, unresolved } =
   await import('../scripts/lib/attractions.mjs');
 const { candidates, rideNameOf } = await import('../scripts/lib/candidates.mjs');
 
@@ -2341,7 +2341,15 @@ await check('a named one-way queue says where you join it', () => {
   // The vertex that is never any way's end — the back of the line, not the
   // join between the two halves and not the boarding platform.
   assert.deepEqual(pois[0].e, [
-    { lat: 41.4819, lng: -82.6865, n: 'Millennium Force Standby Queue' },
+    {
+      lat: 41.4819,
+      lng: -82.6865,
+      n: 'Millennium Force Standby Queue',
+      // Signed with the kind of source it is. Three writers hang points on
+      // `e`, and a reader that cannot tell them apart weighs a guess as a
+      // survey — which is exactly what used to happen.
+      src: { by: SRC_BY.NAMED_QUEUE },
+    },
   ]);
   return true;
 });
@@ -2351,7 +2359,9 @@ await check('a queue drawn backwards still points the right way', () => {
   entrancesFromQueues(pois, [
     queueWay('Gemini Standby Queue', [[41.4860, -82.6890], [41.4866, -82.6897]], '-1'),
   ]);
-  assert.deepEqual(pois[0].e, [{ lat: 41.4866, lng: -82.6897, n: 'Gemini Standby Queue' }]);
+  assert.deepEqual(pois[0].e, [
+    { lat: 41.4866, lng: -82.6897, n: 'Gemini Standby Queue', src: { by: SRC_BY.NAMED_QUEUE } },
+  ]);
   return true;
 });
 
