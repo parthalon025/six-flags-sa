@@ -27,6 +27,7 @@ process.emitWarning = (warning, ...rest) => {
 };
 
 const {
+  FAVORITES_MAX,
   MEMBER_TTL_MS,
   OP,
   RIDE_CONFIRM_MS,
@@ -54,6 +55,7 @@ const {
   LOCATION,
   PATCH,
   PING,
+  SET_FAVORITE,
   VICTORY,
   addressedTo,
   createDedupe,
@@ -399,6 +401,98 @@ await check('createMember shapes a record the UI can read straight away', () => 
   assert.deepEqual(m.favorites, []);
   assert.equal(m.lastSeen, 7);
   assert.equal(m.role, ROLE_MEMBER);
+  // The UI draws a member as a colour and two initials, both derived from the
+  // id and the name, so there is nothing for an avatar to be.
+  assert.equal('avatar' in m, false);
+  // A caller that still passes one gets a record without it: the field is gone
+  // from the shape, not merely defaulted to null.
+  assert.equal('avatar' in createMember({ id: 'x', avatar: 'data:image/png;base64,AAAA' }), false);
+  return true;
+});
+
+await check('a snapshot carries no avatar', () => {
+  const now = 1_000_000;
+  let state = createParty({ id: 'p1', leader: HOST, now });
+  // An older build puts its whole member record on the wire, avatar and all.
+  // Nothing rejects the join — the field simply never reaches the roster, and
+  // so never reaches WELCOME, a resync SNAPSHOT or a VICTORY frame.
+  state = reduce(
+    state,
+    { kind: 'join', from: PEER, body: { name: 'Ava', avatar: 'data:image/png;base64,AAAA' } },
+    now,
+  ).state;
+  assert.ok(state.members[PEER], 'the join was rejected outright');
+
+  const snap = publicSnapshot(state);
+  assert.equal(snap.members[PEER].avatar, undefined);
+  assert.equal(JSON.stringify(snap).includes('data:image'), false);
+
+  // And patch-member cannot smuggle one back in past the allowlist.
+  const r = reduce(
+    state,
+    { kind: 'patch-member', from: PEER, body: { patch: { avatar: 'data:image/png;base64,BBBB' } } },
+    now + 1,
+  );
+  assert.equal(r.ops.length, 0, 'an avatar patch was accepted');
+  assert.equal(publicSnapshot(r.state).members[PEER].avatar, undefined);
+  return true;
+});
+
+await check('a settings merge for a setting nobody defined is ignored rather than fatal', () => {
+  const state = seeded();
+  // `settings` is deliberately empty: no command emits SETTINGS_MERGE yet, and
+  // the op is kept because it is the mechanism the first party-wide setting
+  // will use. Until then an unknown key must cost nothing.
+  assert.deepEqual(state.settings, {});
+  assert.equal(state.settings.shareLocationHistory, undefined);
+
+  const next = applyOps(state, [
+    { type: OP.SETTINGS_MERGE, patch: { somethingFromTheFuture: true } },
+  ]);
+  // It lands where nothing reads it, and nothing else moves — no throw, the
+  // roster and the version are untouched, and the base state is not mutated.
+  assert.equal(next.settings.somethingFromTheFuture, true);
+  assert.deepEqual(Object.keys(next.members).sort(), [HOST, PEER].sort());
+  assert.equal(next.version, state.version);
+  assert.deepEqual(state.settings, {}, 'the merge mutated the state it was given');
+  return true;
+});
+
+await check('a favourites list cannot grow past its cap', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  for (let i = 0; i < FAVORITES_MAX + 5; i += 1) {
+    state = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: `ride-${i}`, favorite: true } }, now).state;
+  }
+  assert.equal(state.members[PEER].favorites.length, FAVORITES_MAX);
+
+  // Past the cap the command is a no-op, not an error: no version bump, no ops,
+  // and the list it already had is left exactly as it was.
+  const before = state.version;
+  const r = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: 'one-too-many', favorite: true } }, now);
+  assert.equal(r.state.version, before);
+  assert.equal(r.ops.length, 0);
+  assert.equal(r.state.members[PEER].favorites.includes('one-too-many'), false);
+
+  // A full list still un-stars, so a member can always make room.
+  state = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: 'ride-0', favorite: false } }, now).state;
+  assert.equal(state.members[PEER].favorites.length, FAVORITES_MAX - 1);
+  state = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: 'one-too-many', favorite: true } }, now).state;
+  assert.equal(state.members[PEER].favorites.includes('one-too-many'), true);
+  return true;
+});
+
+await check('a set-favorite from an older build is still accepted', () => {
+  const now = 1_000_000;
+  const state = seeded(now);
+  // The op, the protocol kind and the REST route all stay: capping the list is
+  // not the same as withdrawing the command, and a phone on the previous build
+  // knows nothing about a cap.
+  assert.equal(SET_FAVORITE, 'set-favorite');
+  const r = reduce(state, { kind: SET_FAVORITE, from: PEER, body: { rideId: 'beast', favorite: true } }, now);
+  assert.equal(r.state.version, state.version + 1);
+  assert.deepEqual(r.ops, [{ type: OP.MEMBER_MERGE, id: PEER, patch: { favorites: ['beast'] } }]);
+  assert.deepEqual(r.state.members[PEER].favorites, ['beast']);
   return true;
 });
 

@@ -424,10 +424,7 @@ async function route(req, res, url, parts) {
           }),
           emptySince: Date.now(),
         });
-        command(id, memberId, 'join', {
-          name: str(body.memberName, 24),
-          avatar: body.avatar ?? null,
-        });
+        command(id, memberId, 'join', { name: str(body.memberName, 24) });
         save();
         return json(req, res, 200, {
           ok: true,
@@ -442,10 +439,7 @@ async function route(req, res, url, parts) {
 
       if (a === 'join') {
         const memberId = str(body.memberId, 64) || newMemberId();
-        const out = command(partyId, memberId, 'join', {
-          name: str(body.name, 24),
-          avatar: body.avatar ?? null,
-        });
+        const out = command(partyId, memberId, 'join', { name: str(body.name, 24) });
         return json(req, res, 200, {
           ok: true,
           partyId,
