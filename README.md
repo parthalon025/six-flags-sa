@@ -1,9 +1,10 @@
 # Party Tracker
 
 A live situational-awareness map for a group at a big, crowded place. It ships with
-Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio) and Cedar Point
-(Sandusky, Ohio), and one command — or one form under Actions — builds a map of anywhere
-else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
+Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio), Cedar Point
+(Sandusky, Ohio) and Big Kahuna's (Destin, Florida), and one command — or one form under
+Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15
+(App Router) and React 19.
 
 - **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
   painted as SVG: midways, buildings, water, slides, and every coaster's actual track
@@ -13,8 +14,9 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   under Actions → Build a venue and get a pull request back. See
   [Building a map of somewhere else](#building-a-map-of-somewhere-else). Nothing in the
   renderer is amusement-park specific; a zoo, a campus, a festival ground or a town
-  centre all draw through the same code. Three parks ship today: Kings Island, Six Flags
-  Fiesta Texas and Cedar Point.
+  centre all draw through the same code. Four parks ship today: Kings Island, Six Flags
+  Fiesta Texas, Cedar Point and Big Kahuna's — the last of which is a water park, and
+  came through the same pipeline with nothing added to it but a tag rule for mini golf.
 - **Symbols you can read, not dots you have to decode.** Every place carries three
   redundant channels — shape, colour and a glyph. A solid disc is something you came for,
   a light chip is something you need, a diamond is a landmark and a pin is a gate; inside
@@ -36,9 +38,11 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   through — not faded, because fading is what a party member we have not heard from looks
   like, and not its category colour either, because the whole reason to set a height is to
   see at a glance what is out. Rides that need a grown-up along get a plus badge. Plus a
-  running tally of what's open, what needs an adult, and what's closed. All three parks
+  running tally of what's open, what needs an adult, and what's closed. All four parks
   ship with theirs: 65 rules at Kings Island, 57 at Cedar Point, 47 at Six Flags Fiesta
-  Texas. A venue built from OpenStreetMap alone has none until somebody writes them, and
+  Texas, 10 at Big Kahuna's — which is every ride OpenStreetMap has named there, at a park
+  where the rule is as likely to be "no minimum" as a number, and the app says which.
+  A venue built from OpenStreetMap alone has none until somebody writes them, and
   the builder says so rather than quietly shipping a park without its Rides tab — see
   [Height rules](#height-rules-and-other-corrections).
 - **Every location is the same data about a different place.** Nothing in the renderer, the
@@ -491,6 +495,8 @@ draws, and writes a POI list beside it.
 npm run venues:build -- --place "Cedar Point, Sandusky, Ohio" --locality "Sandusky, Ohio"
 npm run venues:build -- --bbox 39.3365,-84.2775,39.348,-84.2595 --name "Kings Island"
 npm run venues:build -- --around 39.3434,-84.267,900 --name "Kings Island"
+npm run venues:build -- --bbox 30.38729,-86.4742,30.39112,-86.47061 --name "Big Kahuna's" \
+    --id big-kahunas --locality "Destin, Florida" --center 30.3883,-86.4730
 npm run venues:build -- --help
 
 npm run venues:report cedar-point     # what a built venue actually contains
@@ -507,6 +513,13 @@ arguments in from a form, runs the build on a runner, checks the app still build
 result, and opens a draft pull request with the new park in it. That is the intended route
 for adding a venue — the build needs nothing but node and OpenStreetMap, which is precisely
 what a runner has.
+
+**`--center` is worth setting once.** Where the map opens defaults to the middle of the
+bounding box, and a box has to be drawn wide enough to hold the car park — so at a venue
+that owns a lot of tarmac the map opens on the tarmac. Big Kahuna's own polygon runs north
+over its parking, far enough that the box midpoint and the boundary centroid agree to
+within two metres and both of them miss the water park. A rebuild never moves a centre the
+venue already has, so this is a decision made once rather than a flag to remember.
 
 Each build writes `public/venues/<id>.map.json` and `public/venues/<id>.pois.json`, then
 rebuilds `public/venues/manifest.json` and the generated `lib/venueIndex.js`. The client
@@ -532,6 +545,14 @@ from `attraction=water_slide`, and `lands` — named districts, tinted and label
 named park sections, neighbourhoods and campuses. A venue with no coasters just has an
 empty coaster layer. Districts the day/night palettes have never heard of get a colour
 derived from their own name, so an unfamiliar venue is still legible.
+
+A ride whose only trace is its track becomes a place anyway, positioned at the middle of
+its own geometry. Track is a line, so it never reaches the closed-ring path that produces
+POIs, and a mapper who has drawn and named a flume or a coaster does not always add a node
+for the ride — which leaves it lit up on the map with nothing in the list to tap. That has
+always been true of coasters; it was not true of water slides until Big Kahuna's, which is
+mapped as twenty-five slides, fourteen of them named, and produced a bundle containing one
+ride. Fiesta Texas gains eighteen water rides from the same fix on its next rebuild.
 
 Two rules exist because Cedar Point broke them. Overpass returns whole shapes that merely
 touch the query box, so a venue on the water gets the whole body of water at survey
@@ -690,8 +711,10 @@ browser.
 - **Map geometry and ride positions** — OpenStreetMap contributors, pulled via the
   Overpass API and licensed ODbL. Positions are building footprints, not queue entrances.
 - **Height requirements** — for Kings Island, compiled from Kings Island Central and
-  Theme Park Insider, reflecting the 2026 season. They live in
-  `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
+  Theme Park Insider, reflecting the 2026 season. For Big Kahuna's, from the park's own
+  2026 attraction pages, which state a minimum in prose for the thrill rides and file
+  every attraction under the park's own Over 42"/44"/48" headings. They live in
+  `data/venues/<id>.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
   at the gate and has the final say, so the app says as much on the rider-height screen.
 - **Weather** — Open-Meteo, at the active venue's centre from the manifest, so switching

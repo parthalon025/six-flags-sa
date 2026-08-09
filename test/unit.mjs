@@ -1639,7 +1639,7 @@ await check('every override is filed under a name the venue actually has', () =>
 
 /* ------------------------------------------------------ heights from OSM -- */
 
-const { heightFromTags } = await import('../scripts/build-venue.mjs');
+const { heightFromTags, poisFromTrack } = await import('../scripts/build-venue.mjs');
 
 await check('a height sign on an OpenStreetMap object is read as a rule', () => {
   assert.deepEqual(heightFromTags({ minimum_height_requirement: '48in (122cm)' }), {
@@ -1667,6 +1667,48 @@ await check('a tag that is not a height is not read as one', () => {
   // nonsense height in inches, so it is refused rather than guessed at.
   assert.equal(heightFromTags({ minimum_height_requirement: '122cm' }), null);
   assert.equal(heightFromTags({ minimum_height_requirement: 'ask at the ride' }), null);
+  return true;
+});
+
+/* ------------------------------------------------------- rides from track -- */
+
+const TRACK = (n) => ({ n, r: [[-86.4, 30.3], [-86.41, 30.31], [-86.42, 30.32]] });
+
+await check('a named flume with no place of its own becomes a ride', () => {
+  // The whole of Big Kahuna's arrived this way: twenty-five water slides drawn
+  // as lines, fourteen of them named, and not one of them on the list.
+  const added = poisFromTrack([], [
+    { track: [TRACK('The Beast')], category: 'coaster' },
+    { track: [TRACK('Maui Pipeline')], category: 'ride' },
+  ]);
+  assert.deepEqual(added.map((p) => [p.n, p.c]), [
+    ['The Beast', 'coaster'],
+    ['Maui Pipeline', 'ride'],
+  ]);
+  // Positioned at the middle of its own geometry, not at a guess.
+  assert.deepEqual([added[0].lat, added[0].lng], [30.31, -86.41]);
+  return true;
+});
+
+await check('track never duplicates a place the venue already has', () => {
+  // Both within one source and across them: a ride mapped as coaster track and
+  // as a flume is one ride, filed as the first thing it matched.
+  assert.deepEqual(poisFromTrack([{ n: 'maui pipeline', lat: 1, lng: 2, c: 'ride' }], [
+    { track: [TRACK('Maui Pipeline')], category: 'ride' },
+  ]), []);
+  assert.deepEqual(
+    poisFromTrack([], [
+      { track: [TRACK('Hybrid')], category: 'coaster' },
+      { track: [TRACK('Hybrid'), TRACK('Hybrid')], category: 'ride' },
+    ]).map((p) => [p.n, p.c]),
+    [['Hybrid', 'coaster']],
+  );
+  return true;
+});
+
+await check('an unnamed or empty piece of track supplies nothing', () => {
+  assert.deepEqual(poisFromTrack([], [{ track: [{ r: TRACK('x').r }], category: 'ride' }]), []);
+  assert.deepEqual(poisFromTrack([], [{ track: [{ n: 'Nowhere', r: [] }], category: 'ride' }]), []);
   return true;
 });
 
@@ -2365,6 +2407,15 @@ await check('coaster track is track and its station is a building', () => {
     classify(LAYER_RULES, { attraction: 'roller_coaster', roller_coaster: 'station', building: 'yes' }),
     'building',
   );
+  return true;
+});
+
+await check('a mini golf course is a place to meet and a green to draw', () => {
+  // Half of Big Kahuna's Adventure Park is three 18-hole courses. Without this
+  // they were neither on the list nor on the map — a couple of acres of bare
+  // ground where the golf is.
+  assert.equal(classify(POI_RULES, { leisure: 'miniature_golf', name: 'Tropical Mini Golf' }), 'ride');
+  assert.equal(classify(LAYER_RULES, { leisure: 'miniature_golf' }), 'grass');
   return true;
 });
 

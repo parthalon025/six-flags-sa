@@ -89,6 +89,9 @@ Build a venue bundle from OpenStreetMap.
   --bbox s,w,n,e            explicit bounding box in degrees
   --around lat,lng,metres   a centre point and a radius
 
+  --center lat,lng          where the map opens (default: kept from the last
+                            build, else the middle of the bounding box)
+
   --name "<name>"           display name       (default: the resolved place)
   --id <slug>               venue id           (default: slugified name)
   --locality "<where>"      the line under the name, e.g. "Mason, Ohio"
@@ -128,6 +131,13 @@ async function resolvePlace(query) {
     bbox: { south, west, north, east },
     center: { lat: Number(hit.lat), lng: Number(hit.lon) },
   };
+}
+
+function parseLatLng(raw, flag) {
+  const [lat, lng] = String(raw).split(',').map(Number);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error(`${flag} wants lat,lng`);
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error(`${flag} is not a place on Earth`);
+  return { lat, lng };
 }
 
 function padBounds(b, metres) {
@@ -558,19 +568,34 @@ function campPitches(elements, campRings, known) {
  * list to tap — so the track supplies the ride, positioned at its own midpoint.
  * The position is surveyed geometry rather than a guess; it is simply the middle
  * of the ride instead of its entrance.
+ *
+ * Water slides are the same shape of problem and were not covered, which only
+ * showed up at a park that is nothing but slides: Big Kahuna's is mapped as
+ * twenty-five `attraction=water_slide` flumes, fourteen of them named, and the
+ * bundle came out with one ride in it — the wave pool, which is a pool and
+ * therefore an area. Every named slide was drawn on the map and absent from the
+ * list, so the Rides tab, the height slider and the whole reason the app exists
+ * at a water park had nothing to work with.
+ *
+ * @param sources  `{ track, category }` pairs, most specific first. One shared
+ *                 set of names across all of them, so a ride mapped as both a
+ *                 coaster and a flume is added once, as the first thing it
+ *                 matched, rather than twice.
  */
-function poisFromTrack(pois, track) {
+export function poisFromTrack(pois, sources) {
   const known = new Set(pois.map((p) => p.n.toLowerCase()));
   const added = [];
-  for (const piece of track) {
-    const name = piece.n;
-    if (!name || known.has(name.toLowerCase())) continue;
-    const ring = piece.r;
-    if (!ring?.length) continue;
-    const [lng, lat] = ring[Math.floor(ring.length / 2)];
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-    known.add(name.toLowerCase());
-    added.push({ n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'coaster' });
+  for (const { track, category } of sources) {
+    for (const piece of track) {
+      const name = piece.n;
+      if (!name || known.has(name.toLowerCase())) continue;
+      const ring = piece.r;
+      if (!ring?.length) continue;
+      const [lng, lat] = ring[Math.floor(ring.length / 2)];
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      known.add(name.toLowerCase());
+      added.push({ n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: category });
+    }
   }
   return added;
 }
@@ -1008,7 +1033,10 @@ async function main() {
     pois = pois.concat(pitches);
     console.error(`  · campground: ${pitches.length} pitch(es) picked up from inside ${campRings.length} ring(s)`);
   }
-  const fromTrack = poisFromTrack(pois, layers.coaster);
+  const fromTrack = poisFromTrack(pois, [
+    { track: layers.coaster, category: 'coaster' },
+    { track: layers.slide, category: 'ride' },
+  ]);
   if (fromTrack.length) {
     console.error(`  · ${fromTrack.length} ride(s) taken from named track with no place of their own`);
     pois = pois.concat(fromTrack);
@@ -1039,6 +1067,14 @@ async function main() {
     for (const miss of merged.unmatched.slice(0, 8)) console.error(`    ? no POI named "${miss}"`);
     if (merged.unmatched.length > 8) console.error(`    … and ${merged.unmatched.length - 8} more`);
   }
+
+  /* A hand-added place gets its district too. The pass above ran before the
+     overrides did, so anything `add` introduced still carries no `a` — and `a`
+     is the line the app reads out under a name and the second thing search
+     matches on. No `drawnNames`, because a place somebody wrote down by hand is
+     not the build guessing at what fell outside the venue. */
+  const introduced = pois.filter((p) => !p.a);
+  if (introduced.length) assignLands(introduced, allLands, name, null);
 
   /* The venue's own camping facts, and the rules that narrow them. Read from
      the overrides file so nothing about any one campground is in this script. */
@@ -1080,7 +1116,16 @@ async function main() {
      park — Kings Island's is out over the car park, a hundred and fifty metres
      from the fountain everyone means by "the middle". So an existing centre is
      kept as long as it is still inside the venue, and only a genuinely new
-     venue falls back to the box. */
+     venue falls back to the box.
+
+     "The centre a venue already has was chosen" needed somewhere to be chosen
+     from, and had none: the first build of a venue took the box and every build
+     after it took that. --center is that somewhere. It is worth having because
+     neither automatic answer is the middle of anywhere in particular — Big
+     Kahuna's own polygon runs north over its car park, so the box midpoint and
+     the boundary centroid agree to within two metres and both of them open the
+     map on the parked cars rather than on the wave pool. */
+  const chosenCentre = args.center ? parseLatLng(String(args.center), '--center') : null;
   const existingCentre = existingMeta?.center;
   const centreStillValid =
     existingCentre &&
@@ -1088,7 +1133,8 @@ async function main() {
     existingCentre.lat > bounds.south &&
     existingCentre.lng < bounds.east &&
     existingCentre.lng > bounds.west;
-  const centre = (centreStillValid && existingCentre) ||
+  const centre = chosenCentre ||
+    (centreStillValid && existingCentre) ||
     place?.center || {
       lat: (bounds.north + bounds.south) / 2,
       lng: (bounds.east + bounds.west) / 2,
@@ -1110,9 +1156,14 @@ async function main() {
       west: Number(bounds.west.toFixed(5)),
     },
     source: 'OpenStreetMap contributors, ODbL',
-    // Anything the venue's data owes to a source that is not OSM — height
-    // requirements, most often — is credited in the app from here.
-    credits: args.credits ? String(args.credits) : existingMeta?.credits || null,
+    /* Anything the venue's data owes to a source that is not OSM — height
+       requirements, most often — is credited in the app from here. The
+       overrides file is allowed to carry the line, and is the better place for
+       it: it is where the data being credited lives, and --reapply has always
+       read it from there. Only the build did not, so a venue whose heights and
+       whose credit were written in the same file shipped the heights
+       uncredited. */
+    credits: args.credits ? String(args.credits) : overrides?.credits || existingMeta?.credits || null,
     /* What is true of this venue's campground as a whole. On the venue rather
        than repeated onto every pitch, because that is where the fact lives: a
        campground is full hookup, a pitch is not individually full hookup. The

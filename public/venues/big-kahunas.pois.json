@@ -1,0 +1,141 @@
+[
+  {
+    "n": "Big Kahuna's Tropical Mini Golf",
+    "lat": 30.388012,
+    "lng": -86.472376,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "Three 18-hole courses over in the Adventure Park."
+  },
+  {
+    "n": "Cobra Twister",
+    "lat": 30.38775,
+    "lng": -86.47326,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    },
+    "note": "300 lb maximum."
+  },
+  {
+    "n": "Hammerhead",
+    "lat": 30.38803,
+    "lng": -86.47381,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    },
+    "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
+  },
+  {
+    "n": "Jumanji",
+    "lat": 30.38825,
+    "lng": -86.47357,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "note": "Five storeys. 300 lb maximum."
+  },
+  {
+    "n": "Kowabunga Racer",
+    "lat": 30.38923,
+    "lng": -86.47273,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    },
+    "note": "Head-first mat racer. The park files it under Over 42\"."
+  },
+  {
+    "n": "Main Entrance",
+    "lat": 30.388757,
+    "lng": -86.472518,
+    "c": "gate",
+    "note": "Ticket windows and the turnstiles, off the main car park.",
+    "a": "Big Kahuna's"
+  },
+  {
+    "n": "Maui Pipeline",
+    "lat": 30.38765,
+    "lng": -86.47308,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "note": "300 lb maximum."
+  },
+  {
+    "n": "Monkey River",
+    "lat": 30.38766,
+    "lng": -86.47318,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    },
+    "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
+  },
+  {
+    "n": "Thunder River",
+    "lat": 30.38902,
+    "lng": -86.47305,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": 44,
+      "alone": null,
+      "max": null
+    },
+    "note": "250 lb maximum."
+  },
+  {
+    "n": "Tiki River Run",
+    "lat": 30.38795,
+    "lng": -86.47286,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "alias": "Tiki River Run (Right Slide)",
+    "h": {
+      "min": 44,
+      "alone": null,
+      "max": null
+    },
+    "note": "250 lb in a single tube, 400 lb in a double."
+  },
+  {
+    "n": "Wave Pool",
+    "lat": 30.387829,
+    "lng": -86.473478,
+    "c": "ride",
+    "a": "Big Kahuna's",
+    "h": {
+      "min": null,
+      "alone": 48,
+      "max": null
+    },
+    "note": "Under 42\" must wear a flotation device."
+  }
+]

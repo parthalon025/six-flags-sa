@@ -46,7 +46,10 @@ export const LAYER_RULES = [
       has(t, 'landuse', ['grass', 'meadow', 'village_green', 'recreation_ground', 'greenfield', 'flowerbed']) ||
       // An unnamed leisure=park is ordinary green ground; a named one has
       // already been taken as a district by the land rules above.
-      has(t, 'leisure', ['garden', 'pitch', 'golf_course', 'common', 'park']),
+      // Mini golf is a landscaped green the size of a small field. Left out, the
+      // three courses that are half of Big Kahuna's Adventure Park drew as bare
+      // ground with a pin in the middle of them.
+      has(t, 'leisure', ['garden', 'pitch', 'golf_course', 'miniature_golf', 'common', 'park']),
   ],
   ['parking', (t) => has(t, 'amenity', ['parking']) || has(t, 'parking')],
   ['building', (t) => has(t, 'building') || has(t, 'building:part')],
@@ -190,7 +193,10 @@ export const POI_RULES = [
     'ride',
     (t) =>
       has(t, 'attraction') ||
-      has(t, 'leisure', ['playground', 'water_park', 'amusement_arcade']) ||
+      // Mini golf is a paid attraction people queue for and arrange to meet at,
+      // which is the test everything on this list has to pass. It is also the
+      // only thing in an adventure park that OpenStreetMap gives its own tag.
+      has(t, 'leisure', ['playground', 'water_park', 'amusement_arcade', 'miniature_golf']) ||
       // A named pool at a venue like this is a ride: a wave pool, a lazy river,
       // the splashdown at the foot of a slide. Leaving it out meant Soak City's
       // seven pools were drawn on the map and missing from the list — and the
