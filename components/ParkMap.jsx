@@ -736,9 +736,15 @@ export default function ParkMap({
       const barred = state === 'no' || state === 'toobig';
       const isSel = selectedName === p.n;
       const isNav = routeTargetName === p.n;
-      // A ride the party cannot ride today loses ties to one it can, so a
-      // height filter clears space for what is actually on the table.
-      const rank = sym.rank + (barred ? 1.4 : 0);
+      /* A ride the party cannot ride today loses ties to one it can, so a
+         height filter clears space for what is actually on the table. A tie,
+         though — not a demotion. At 1.4 this pushed a ruled-out coaster below
+         every flat ride and landmark on the map, so in a crowded midway the
+         one thing a parent most needs to see is out was the first thing
+         dropped, which is the opposite of what setting a height is for. A
+         quarter of a rank keeps it behind the coaster next to it and ahead of
+         the snack bar. */
+      const rank = sym.rank + (barred ? 0.25 : 0);
       const priority = isSel ? -1000 : isNav ? -900 : rank * 1000 + i;
       ranked.push({ p, sx, sy, sym, state, isSel, isNav, priority });
     });
@@ -1012,6 +1018,7 @@ export default function ParkMap({
               <PoiMarker
                 category={m.p.c}
                 colour={palette.categories[m.p.c] || '#888'}
+                barredInk={palette.barred}
                 r={m.r}
                 state={m.state}
               />
@@ -1023,7 +1030,7 @@ export default function ParkMap({
             key={l.key}
             x={l.x}
             y={l.y}
-            style={{ textAnchor: l.anchor }}
+            style={{ textAnchor: l.anchor, ...(l.faded ? { fill: palette.barred } : null) }}
             className={`poiLabel ${l.faded ? 'barred' : ''}`}
           >
             {l.text}

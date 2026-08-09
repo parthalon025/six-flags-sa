@@ -67,19 +67,27 @@ function shapeOf(shape, r) {
  * `state` is height eligibility, and it is drawn rather than dimmed: opacity
  * already means "we have not heard from this person lately" over on the party
  * markers, and one channel cannot carry two meanings on the same map.
- *   'no' | 'toobig' — hollow, struck through. Not today.
+ *   'no' | 'toobig' — solid alarm red, ringed, struck through. Not today.
  *   'companion'     — a plus badge. Rideable with a grown-up.
+ *
+ * The barred marker used to be the hollow one: category ink on a near-background
+ * fill, its glyph at half opacity. It was the quietest thing on the map, which
+ * is backwards — a visitor sets a height precisely so that what is out jumps
+ * out. So it is now the loudest: filled rather than voided, in one shared red
+ * rather than its category's, ringed in that red so it gains mass among the
+ * dots, and struck edge to edge in ink that contrasts with the fill. `barredInk`
+ * is that red; it comes from the palette so the legend and the map cannot drift.
  */
-export function PoiMarker({ category, colour, r, state, selected }) {
+export function PoiMarker({ category, colour, r, state, selected, barredInk = '#FF5E54' }) {
   const sym = symbolFor(category);
   const { d, gx, gy, gs } = shapeOf(sym.shape, r);
   const barred = state === 'no' || state === 'toobig';
   const solid = sym.shape !== 'chip';
 
-  const fill = barred ? 'var(--markerVoid)' : solid ? colour : 'var(--markerChip)';
-  const stroke = barred || !solid ? colour : 'var(--markerEdge)';
-  const strokeWidth = barred ? 1.9 : solid ? 1.5 : 1.6;
-  const glyphColour = barred || !solid ? colour : inkOn(colour);
+  const fill = barred ? barredInk : solid ? colour : 'var(--markerChip)';
+  const stroke = barred ? 'var(--markerEdge)' : solid ? 'var(--markerEdge)' : colour;
+  const strokeWidth = barred ? 1.5 : solid ? 1.5 : 1.6;
+  const glyphColour = barred ? inkOn(barredInk) : solid ? inkOn(colour) : colour;
 
   return (
     <g>
@@ -88,21 +96,34 @@ export function PoiMarker({ category, colour, r, state, selected }) {
           {d ? <path d={d} transform={`scale(${(1 + 5.5 / r).toFixed(3)})`} /> : <circle r={r + 5.5} />}
         </g>
       )}
+      {/* The ring is the channel a normal marker never uses, so it is what
+          separates a ruled-out coaster from an ordinary one at arm's length —
+          before the strike is resolvable and whatever the category colour. */}
+      {barred && (
+        <g className="poiBarredRing" style={{ stroke: barredInk }}>
+          {d ? (
+            <path d={d} transform={`scale(${(1 + 3.4 / r).toFixed(3)})`} />
+          ) : (
+            <circle r={r + 3.4} />
+          )}
+        </g>
+      )}
       {d ? (
         <path d={d} fill={fill} stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" />
       ) : (
         <circle r={r} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
       )}
       <g transform={`translate(${gx.toFixed(2)} ${gy.toFixed(2)})`}>
-        <Glyph name={category} size={gs} colour={glyphColour} opacity={barred ? 0.55 : 1} />
+        <Glyph name={category} size={gs} colour={glyphColour} opacity={barred ? 0.9 : 1} />
       </g>
       {barred && (
         <line
-          x1={-r * 0.95}
-          y1={r * 0.95}
-          x2={r * 0.95}
-          y2={-r * 0.95}
+          x1={-r * 1.02}
+          y1={r * 1.02}
+          x2={r * 1.02}
+          y2={-r * 1.02}
           className="poiBarred"
+          style={{ stroke: inkOn(barredInk) }}
         />
       )}
       {state === 'companion' && (
@@ -121,10 +142,17 @@ export function PoiMarker({ category, colour, r, state, selected }) {
 }
 
 /** The same marker, standalone, for the legend. */
-export function LegendMark({ category, colour, size = 22 }) {
+export function LegendMark({ category, colour, size = 22, state = 'unknown', barredInk }) {
   return (
     <svg width={size} height={size} viewBox={`${-size / 2} ${-size / 2} ${size} ${size}`} aria-hidden="true">
-      <PoiMarker category={category} colour={colour} r={size * 0.4} state="unknown" selected={false} />
+      <PoiMarker
+        category={category}
+        colour={colour}
+        r={size * 0.4}
+        state={state}
+        barredInk={barredInk}
+        selected={false}
+      />
     </svg>
   );
 }

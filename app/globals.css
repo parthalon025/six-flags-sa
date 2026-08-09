@@ -210,6 +210,11 @@
      tint a coaster's track takes when it is the one you are looking at */
   --markerChip: #2c2c2e;
   --markerVoid: #1c1c1e;
+  /* The one ink everything today's height rules out wears, whatever its
+     category. Held in step with NIGHT_BARRED / DAY_BARRED in lib/theme.js,
+     which is what the markers themselves are painted from — this token is for
+     the chrome that talks about them. */
+  --barred: #ff5e54;
   --trackLit: var(--blue);
   --vignette: rgba(0, 0, 0, .28);
 }
@@ -291,6 +296,7 @@
   --labelFill: #3c3c43;
   --markerChip: #ffffff;
   --markerVoid: #f2f2f7;
+  --barred: #d70015;
   --trackLit: var(--blue);
   --vignette: rgba(0, 0, 0, .06);
 }
@@ -455,10 +461,17 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; stroke-linejoin: round;
   pointer-events: none;
 }
-.poiLabel.barred { opacity: .6; }
-/* Struck through rather than faded out: fading already means "we have not
-   heard from this person lately" over on the party markers. */
-.poiBarred { stroke: var(--red); stroke-width: 2; stroke-linecap: round; opacity: .95; }
+/* Ruled out by today's height, said in ink rather than in opacity — fading
+   already means "we have not heard from this person lately" over on the party
+   markers, and a name that has gone quiet is the opposite of what a height
+   filter is for. The fill comes from the palette on the element itself; the
+   heavier casing is here so the red still reads over a pale midway. */
+.poiLabel.barred { font-weight: 600; stroke-width: 3.4px; }
+.poiBarred { stroke-width: 2.4; stroke-linecap: round; }
+/* Mass, in the one channel an ordinary marker never uses. Wide and soft rather
+   than a hairline: at a glance it is the halo that says "not this one", well
+   before the strike across the middle is resolvable. */
+.poiBarredRing { fill: none; stroke-width: 2.2; opacity: .45; }
 .poiMarker { transition: opacity var(--t2) var(--easeOut); }
 .poiMarker circle.pin { transition: r var(--t2) var(--easeOut); }
 .poiHalo {
@@ -1470,7 +1483,10 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .ratioBar .seg { display: block; transition: flex-grow var(--t3) var(--easeOut); }
 .ratioBar .seg.ok { background: var(--green); }
 .ratioBar .seg.warn { background: var(--orange); }
-.ratioBar .seg.bad { background: var(--label4); }
+/* The share that is out is the number the whole screen exists to answer, and
+   it wears the same red the map now uses for it. Grey was the tally quietly
+   agreeing with the old hollow marker that being ruled out is a minor key. */
+.ratioBar .seg.bad { background: var(--barred); }
 .ratioKey {
   display: flex; gap: 16px; font-size: 13px; letter-spacing: -.08px;
   text-transform: none; margin-bottom: 10px;
@@ -1478,11 +1494,11 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .ratioKey b { font-size: 15px; font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
 .ratioKey .ok { color: var(--green); }
 .ratioKey .warn { color: var(--orange); }
-.ratioKey .bad { color: var(--label2); }
+.ratioKey .bad { color: var(--barred); }
 .tally { display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; }
 .tally .ok { color: var(--green); }
 .tally .warn { color: var(--orange); }
-.tally .bad { color: var(--red); }
+.tally .bad { color: var(--barred); }
 .unlock {
   font-size: 15px; letter-spacing: -.24px; color: var(--label2); margin: 0 0 14px;
   padding: 12px 14px; border-radius: var(--r2);
@@ -1505,9 +1521,13 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .verdict i { font-style: normal; font-size: 11px; display: grid; place-items: center; }
 .verdict.ok { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
 .verdict.warn { color: var(--orange); background: color-mix(in srgb, var(--orange) 14%, transparent); }
-.verdict.bad { color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); }
-.poiRow.bad .poiText b { color: var(--label2); }
-.poiRow.bad .dot { opacity: .45; }
+/* The list's half of the same answer the map now gives in red. A ruled-out ride
+   is not a quiet row — the name keeps its ink and the pill is filled, because a
+   greyed-out line is what the app already uses for a place it knows nothing
+   about. */
+.verdict.bad { color: var(--onTint); background: var(--barred); }
+.poiRow.bad .poiText b { color: var(--label); }
+.poiRow.bad .dot { opacity: 1; }
 
 /* ---- chips with a colour key ---- */
 .chip.withDot { display: inline-flex; align-items: center; gap: 7px; }
@@ -1990,7 +2010,10 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
   padding: 3px 9px; border-radius: var(--rCapsule);
 }
-.calloutBar { background: var(--helpTint); color: var(--red); }
+/* Filled rather than tinted. This chip is the written-out version of the
+   marker you just tapped, and the marker is now solid — a pale tint under it
+   would read as the milder of the two answers when it is the same one. */
+.calloutBar { background: var(--barred); color: #ffffff; font-weight: 600; }
 /* "with adult" is caution, not accent — so it takes the warning colour rather
    than following --beacon onto the tint. */
 .calloutAdult { background: color-mix(in srgb, var(--orange) 16%, transparent); color: var(--orange); }
@@ -2028,6 +2051,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --indigo: #a7aaff;
     --purple: #ea8dff;
     --pink: #ff8ac4;
+    --barred: #ff7a70;
     --label2: rgba(235, 235, 245, .82);
     --label3: rgba(235, 235, 245, .55);
     --sep: rgba(235, 235, 245, .42);
@@ -2042,6 +2066,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --indigo: #564ade;
     --purple: #b02fc2;
     --pink: #e7124d;
+    --barred: #b3000f;
     --label2: rgba(60, 60, 67, .82);
     --label3: rgba(60, 60, 67, .55);
     --sep: rgba(60, 60, 67, .45);

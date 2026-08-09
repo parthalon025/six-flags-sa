@@ -196,7 +196,15 @@ export default function PlaceList({
                 onClick={() => onSelect(p)}
                 aria-expanded={Boolean(open)}
               >
-                <span className="dot" style={{ background: palette.categories[p.c] }} />
+                {/* A ruled-out ride takes the same red here as it does on the
+                    map, rather than its category colour dimmed — the list and
+                    the map are two views of one answer, and a visitor who has
+                    learnt the red on one should not have to learn a fade on
+                    the other. */}
+                <span
+                  className="dot"
+                  style={{ background: v.cls === 'bad' ? palette.barred : palette.categories[p.c] }}
+                />
                 <span className="poiText">
                   <b>{p.n}</b>
                   <span>

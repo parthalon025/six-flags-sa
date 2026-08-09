@@ -18,14 +18,14 @@
         "west": -82.69517
       },
       "source": "OpenStreetMap contributors, ODbL",
-      "credits": null,
+      "credits": "Height requirements were compiled from published 2026 Cedar Point height charts.",
       "generated": "2026-08-08",
       "map": "/venues/cedar-point.map.json",
       "pois": "/venues/cedar-point.pois.json",
       "counts": {
         "pois": 243,
         "rides": 61,
-        "heights": 0
+        "heights": 57
       }
     },
     {
@@ -70,14 +70,14 @@
         "west": -98.61665
       },
       "source": "OpenStreetMap contributors, ODbL",
-      "credits": null,
+      "credits": "Height requirements were compiled from the park's own Guest Safety and Accessibility Guide and from published 2026 height charts.",
       "generated": "2026-08-08",
       "map": "/venues/six-flags-fiesta-texas.map.json",
       "pois": "/venues/six-flags-fiesta-texas.pois.json",
       "counts": {
         "pois": 136,
         "rides": 53,
-        "heights": 0
+        "heights": 47
       }
     }
   ]

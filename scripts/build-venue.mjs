@@ -25,6 +25,7 @@
 
 import process from 'node:process';
 import { readFile, writeFile } from 'node:fs/promises';
+import { readdirSync } from 'node:fs';
 import {
   areaOf,
   centroidOf,
@@ -38,7 +39,9 @@ import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
   classify, isLand, isVenueOutline,
 } from './lib/osm-tags.mjs';
-import { readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue } from './lib/venue-io.mjs';
+import {
+  OVERRIDE_DIR, readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue,
+} from './lib/venue-io.mjs';
 import path from 'node:path';
 
 const OVERPASS = [
@@ -93,6 +96,9 @@ Build a venue bundle from OpenStreetMap.
   --from-dump <file>        build from a saved response instead of querying
   --keep-offsite            keep places standing in named areas outside the venue
   --reindex                 only rebuild the manifest from files already on disk
+  --reapply [<id>]          re-apply the overrides file to venues already on disk,
+                            without going near the network. No id: every venue.
+  --allow-no-heights        build a rides venue that publishes no height rules
 `;
 
 /* ------------------------------------------------------------- resolving - */
@@ -464,7 +470,20 @@ function assignLands(pois, lands, venueName, drawnNames) {
  */
 function applyOverrides(pois, overrides) {
   if (!overrides) return { pois, applied: 0, unmatched: [] };
-  const byName = new Map(pois.map((p) => [p.n.toLowerCase(), p]));
+  /* Every POI under a name, not the last one wearing it. OpenStreetMap
+     routinely carries a ride as two nodes — a way and a point, an entrance and
+     the ride itself — and Fiesta Texas ships two Poltergeists and two Gully
+     Washers for exactly that reason. Patching one of each put a height rule on
+     one marker and left its twin saying "check at the ride", which reads as the
+     app disagreeing with itself about the same ride. */
+  const byName = new Map();
+  for (const p of pois) {
+    const key = p.n.toLowerCase();
+    const at = byName.get(key);
+    if (at) at.push(p);
+    else byName.set(key, [p]);
+  }
+  const lookup = (name) => byName.get(String(name).toLowerCase()) || null;
   let applied = 0;
   const unmatched = [];
 
@@ -472,12 +491,12 @@ function applyOverrides(pois, overrides) {
     // Parks rename rides faster than OSM follows, so an override may be filed
     // under the name on the sign while the map still carries the old one. The
     // alias is what bridges the two, in whichever direction the drift went.
-    const target = byName.get(name.toLowerCase()) || (patch.alias ? byName.get(String(patch.alias).toLowerCase()) : null);
-    if (!target) {
+    const targets = lookup(name) || (patch.alias ? lookup(patch.alias) : null);
+    if (!targets) {
       unmatched.push(name);
       continue;
     }
-    Object.assign(target, patch);
+    for (const target of targets) Object.assign(target, patch);
     applied += 1;
   }
 
@@ -485,12 +504,93 @@ function applyOverrides(pois, overrides) {
   let next = pois.filter((p) => !dropped.has(p.n.toLowerCase()));
 
   for (const extra of overrides.add || []) {
-    const existing = byName.get(String(extra.n).toLowerCase());
-    if (existing) Object.assign(existing, extra);
+    const existing = lookup(extra.n);
+    if (existing) existing.forEach((p) => Object.assign(p, extra));
     else next.push({ ...extra });
   }
 
   return { pois: next, applied, unmatched };
+}
+
+/**
+ * Whether this venue owes the app height rules, and whether it has any.
+ *
+ * A venue with rides and no heights is not a venue without height rules — it is
+ * a venue whose overrides file nobody wrote. The difference matters because the
+ * app cannot tell them apart: `hasHeights` comes back false either way, and the
+ * whole Rides tab, the slider, the running tally, the filter badge over the map
+ * and the struck-through markers all quietly do not exist. Two of the three
+ * parks shipped that way for a while, which is how we learned to check.
+ */
+export function heightAudit(pois) {
+  const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
+  const withHeights = rides.filter((p) => p.h);
+  return {
+    rides: rides.length,
+    heights: withHeights.length,
+    missing: rides.filter((p) => !p.h).map((p) => p.n),
+    owed: rides.length > 0,
+  };
+}
+
+/**
+ * Re-apply the overrides files to venues already on disk.
+ *
+ * A full build wants Overpass, Nominatim and a couple of minutes, which is a
+ * silly price for "somebody corrected a height". The geometry is not what
+ * changed — the hand-written half is — so this reads the venue bundle back,
+ * runs it through {@link applyOverrides} again and writes it out. The rebuild
+ * path and this one share that function, so a height fixed here survives the
+ * next real rebuild and vice versa.
+ *
+ * @param only    a single venue id, or null for every venue on disk
+ * @param strict  refuse to leave a venue with rides and no height rules
+ */
+function reapply(only, { strict = true } = {}) {
+  const ids = readdirSync(VENUE_DIR)
+    .filter((f) => f.endsWith('.pois.json'))
+    .map((f) => f.slice(0, -'.pois.json'.length))
+    .filter((id) => !only || id === only)
+    .sort();
+  if (!ids.length) throw new Error(only ? `No venue called "${only}" on disk.` : 'No venues on disk.');
+
+  const shortfalls = [];
+  for (const id of ids) {
+    const poisFile = path.join(VENUE_DIR, `${id}.pois.json`);
+    const mapFile = path.join(VENUE_DIR, `${id}.map.json`);
+    const built = readJson(mapFile);
+    const { file: overrideFile, data: overrides } = readOverrides(id, null);
+    if (!overrides) {
+      console.error(`· ${id}: no overrides file — left alone`);
+      continue;
+    }
+
+    const merged = applyOverrides(readJson(poisFile, []), overrides);
+    const pois = merged.pois.sort((a, b) => a.n.localeCompare(b.n));
+    const { meta, ...map } = built || {};
+    // The credit line belongs with the data it credits, so the overrides file
+    // is allowed to carry it rather than it living only in a build flag
+    // somebody typed once.
+    const next = overrides.credits ? { ...meta, credits: overrides.credits } : meta;
+    writeVenue({ meta: next, map, pois });
+
+    const audit = heightAudit(pois);
+    console.error(
+      `· ${id}: ${merged.applied} override(s) applied, ${audit.heights} of ${audit.rides} rides carry a height rule` +
+        (merged.unmatched.length ? `, ${merged.unmatched.length} unmatched` : ''),
+    );
+    for (const miss of merged.unmatched) console.error(`    ? no POI named "${miss}"`);
+    if (audit.owed && !audit.heights) shortfalls.push(id);
+  }
+
+  const manifest = reindex();
+  console.log(`Manifest rebuilt: ${manifest.venues.length} venue(s), default "${manifest.default}".`);
+  if (strict && shortfalls.length) {
+    throw new Error(
+      `${shortfalls.join(', ')} still publish no height rules. Write data/venues/<id>.overrides.json, ` +
+        'or pass --allow-no-heights if the venue genuinely has none.',
+    );
+  }
 }
 
 /* ------------------------------------------------------------------ main - */
@@ -505,6 +605,11 @@ async function main() {
   if (args.reindex) {
     const manifest = reindex({ preferredDefault: typeof args.default === 'string' ? args.default : undefined });
     console.log(`Manifest rebuilt: ${manifest.venues.length} venue(s), default "${manifest.default}".`);
+    return;
+  }
+
+  if (args.reapply) {
+    reapply(typeof args.reapply === 'string' ? args.reapply : null, { strict: !args['allow-no-heights'] });
     return;
   }
 
@@ -650,6 +755,26 @@ async function main() {
   const summary = LAYERS.map((k) => `${k}=${layers[k].length}`).join(' ');
   console.error(`  · geometry: ${summary}`);
   console.error(`  · pois: ${pois.length} (${pois.filter((p) => p.h).length} with heights)`);
+
+  /* Height rules are the one part of a venue OpenStreetMap will never supply,
+     so a park that has them and a park whose overrides file nobody wrote look
+     identical here — and identical to the app, which answers by removing the
+     Rides tab, the slider, the tally, the badge over the map and the
+     struck-through markers without saying why. That is too much of the app to
+     lose to an omission, so an omission has to be said out loud. */
+  const audit = heightAudit(pois);
+  if (audit.owed && !audit.heights && !args['allow-no-heights']) {
+    throw new Error(
+      `${name} has ${audit.rides} rides and no height rules, so the app would ship without its ` +
+        `Rides tab. Write ${path.relative(process.cwd(), path.join(OVERRIDE_DIR, `${id}.overrides.json`))} ` +
+        'and build again — or pass --allow-no-heights if this venue genuinely has none.',
+    );
+  }
+  if (audit.owed && audit.missing.length) {
+    console.error(`  · ${audit.missing.length} ride(s) still without a height rule:`);
+    for (const miss of audit.missing.slice(0, 8)) console.error(`    − ${miss}`);
+    if (audit.missing.length > 8) console.error(`    … and ${audit.missing.length - 8} more`);
+  }
 
   /* The boundary is the one thing here that can be confidently wrong: a plain
      ring with a plausible name, in the right place, enclosing the wrong ground.

@@ -1498,7 +1498,12 @@
     "lat": 39.34265,
     "lng": -84.269217,
     "c": "ride",
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Woodstock Whirlybirds",
@@ -1530,11 +1535,6 @@
     "lng": -84.265853,
     "c": "ride",
     "a": "Action Zone",
-    "h": {
-      "min": null,
-      "alone": null,
-      "max": null
-    },
     "note": "Upcharge attraction - height and weight checked at the ride"
   },
   {

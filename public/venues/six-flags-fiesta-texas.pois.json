@@ -18,14 +18,24 @@
     "lat": 29.596535,
     "lng": -98.609987,
     "c": "coaster",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "BATMAN The Ride",
     "lat": 29.596759,
     "lng": -98.609373,
     "c": "coaster",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": 77
+    }
   },
   {
     "n": "Batmobile",
@@ -53,7 +63,12 @@
     "lat": 29.599801,
     "lng": -98.610599,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Blue Snowman Soft Serve",
@@ -67,21 +82,39 @@
     "lat": 29.598332,
     "lng": -98.610796,
     "c": "coaster",
-    "a": "Texas State Square"
+    "a": "Texas State Square",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "alias": "Boomerang"
   },
   {
     "n": "Bucking Broncos",
     "lat": 29.598305,
     "lng": -98.61269,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    },
+    "alias": "Buckarooz",
+    "note": "Formerly Buckarooz"
   },
   {
     "n": "Bugs White Water Rapids",
     "lat": 29.597136,
     "lng": -98.610157,
     "c": "ride",
-    "a": "Spassburg"
+    "a": "Spassburg",
+    "h": {
+      "min": 36,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Candy Storm",
@@ -116,7 +149,12 @@
     "lat": 29.598875,
     "lng": -98.608365,
     "c": "coaster",
-    "a": "Los Festivales"
+    "a": "Los Festivales",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Coca-Cola Ahh",
@@ -172,21 +210,38 @@
     "lat": 29.596075,
     "lng": -98.60753,
     "c": "ride",
-    "a": "Fiesta Bay Boardwalk"
+    "a": "Fiesta Bay Boardwalk",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    },
+    "note": "Walking age and up with a grown-up. No single riders."
   },
   {
     "n": "Cyborg: Cyber Revolution",
     "lat": 29.59687,
     "lng": -98.610253,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Daffy's Bus Stop",
     "lat": 29.596055,
     "lng": -98.608135,
     "c": "ride",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    },
+    "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
     "n": "Daily Planet Newsstand & Gifts",
@@ -200,14 +255,24 @@
     "lat": 29.597771,
     "lng": -98.613217,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "DC Super-Villains Swing",
     "lat": 29.59617,
     "lng": -98.609998,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 36,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Dippin' Dots",
@@ -256,7 +321,12 @@
     "lat": 29.5981,
     "lng": -98.611345,
     "c": "coaster",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": 78
+    }
   },
   {
     "n": "Fat Burger - Fiesta Bay Boardwalk",
@@ -270,7 +340,12 @@
     "lat": 29.595398,
     "lng": -98.608042,
     "c": "ride",
-    "a": "Fiesta Bay Boardwalk"
+    "a": "Fiesta Bay Boardwalk",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Fireball Snacks",
@@ -298,7 +373,13 @@
     "lat": 29.59829,
     "lng": -98.612835,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": null,
+      "alone": 36,
+      "max": null
+    },
+    "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
     "n": "Fuel Charging Rod Station",
@@ -319,14 +400,25 @@
     "lat": 29.5987,
     "lng": -98.60767,
     "c": "coaster",
-    "a": "Los Festivales"
+    "a": "Los Festivales",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    },
+    "note": "Runs as Chupacabra since the 2024 rename — the map still carries both names."
   },
   {
     "n": "Green Lantern Emerald Flight",
     "lat": 29.596843,
     "lng": -98.61051,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Guest Relations",
@@ -347,14 +439,24 @@
     "lat": 29.597382,
     "lng": -98.613361,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 36,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Gully Washer",
     "lat": 29.597926,
     "lng": -98.613589,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 36,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Heroes",
@@ -375,21 +477,36 @@
     "lat": 29.595935,
     "lng": -98.607235,
     "c": "ride",
-    "a": "Fiesta Bay Boardwalk"
+    "a": "Fiesta Bay Boardwalk",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Hustler",
     "lat": 29.59629,
     "lng": -98.608987,
     "c": "ride",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Iron Rattler",
     "lat": 29.598478,
     "lng": -98.613044,
     "c": "coaster",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Iron Rattler Mercantile",
@@ -410,21 +527,37 @@
     "lat": 29.597293,
     "lng": -98.610903,
     "c": "coaster",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Kiddee Koaster",
     "lat": 29.5964,
     "lng": -98.61003,
     "c": "coaster",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Kinderstein",
     "lat": 29.597215,
     "lng": -98.609772,
     "c": "ride",
-    "a": "Spassburg"
+    "a": "Spassburg",
+    "h": {
+      "min": null,
+      "alone": 36,
+      "max": null
+    },
+    "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
     "n": "La Cantina",
@@ -452,7 +585,12 @@
     "lat": 29.600562,
     "lng": -98.609784,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Lone Star Lil's Amphitheater",
@@ -480,7 +618,12 @@
     "lat": 29.596935,
     "lng": -98.609872,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Mockingbird Funnel Cakes",
@@ -515,7 +658,12 @@
     "lat": 29.595172,
     "lng": -98.607268,
     "c": "coaster",
-    "a": "Fiesta Bay Boardwalk"
+    "a": "Fiesta Bay Boardwalk",
+    "h": {
+      "min": 42,
+      "alone": 47,
+      "max": null
+    }
   },
   {
     "n": "Paradise Cove",
@@ -564,7 +712,12 @@
     "lat": 29.596266,
     "lng": -98.607333,
     "c": "ride",
-    "a": "Fiesta Bay Boardwalk"
+    "a": "Fiesta Bay Boardwalk",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Pit Stop",
@@ -585,21 +738,36 @@
     "lat": 29.596723,
     "lng": -98.610073,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Poltergeist",
     "lat": 29.597207,
     "lng": -98.608572,
     "c": "coaster",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Poltergeist",
     "lat": 29.596975,
     "lng": -98.608317,
     "c": "coaster",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Primo's Pizzeria",
@@ -697,7 +865,12 @@
     "lat": 29.598774,
     "lng": -98.612372,
     "c": "coaster",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Rockville High School",
@@ -732,14 +905,24 @@
     "lat": 29.596441,
     "lng": -98.608351,
     "c": "ride",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Shazam! Tower of Eternity",
     "lat": 29.59681,
     "lng": -98.609923,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Soft Frozen Lemonade",
@@ -753,7 +936,12 @@
     "lat": 29.59585,
     "lng": -98.60791,
     "c": "ride",
-    "a": "Fiesta Bay Boardwalk"
+    "a": "Fiesta Bay Boardwalk",
+    "h": {
+      "min": 36,
+      "alone": 46,
+      "max": null
+    }
   },
   {
     "n": "Splash Water Springs",
@@ -781,21 +969,38 @@
     "lat": 29.596694,
     "lng": -98.610949,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 44,
+      "alone": 48,
+      "max": null
+    },
+    "alias": "SkyScreamer",
+    "note": "Formerly SkyScreamer"
   },
   {
     "n": "Superman: Krypton Coaster",
     "lat": 29.59606,
     "lng": -98.610758,
     "c": "coaster",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Taz's Tornado",
     "lat": 29.596251,
     "lng": -98.608037,
     "c": "ride",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Teatro Fiesta",
@@ -816,7 +1021,12 @@
     "lat": 29.600197,
     "lng": -98.61219,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Texas Treehouse Slide Pool",
@@ -837,14 +1047,25 @@
     "lat": 29.597368,
     "lng": -98.609414,
     "c": "ride",
-    "a": "Spassburg"
+    "a": "Spassburg",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    },
+    "note": "Lap children and infants on the chariots only."
   },
   {
     "n": "The Joker: Carnival of Chaos",
     "lat": 29.595938,
     "lng": -98.610247,
     "c": "ride",
-    "a": "DC Universe"
+    "a": "DC Universe",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": 84
+    }
   },
   {
     "n": "Thirsty Buffalo Saloon",
@@ -865,7 +1086,12 @@
     "lat": 29.600442,
     "lng": -98.610433,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Trader Six",
@@ -907,7 +1133,13 @@
     "lat": 29.596238,
     "lng": -98.607672,
     "c": "ride",
-    "a": "Fiesta Bay Boardwalk"
+    "a": "Fiesta Bay Boardwalk",
+    "h": {
+      "min": 36,
+      "alone": 48,
+      "max": null
+    },
+    "alias": "Waverunner"
   },
   {
     "n": "Waxing the City",
@@ -921,7 +1153,12 @@
     "lat": 29.599386,
     "lng": -98.610985,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": null,
+      "alone": 42,
+      "max": null
+    }
   },
   {
     "n": "Wonder Woman Gifts",
@@ -935,14 +1172,25 @@
     "lat": 29.595194,
     "lng": -98.608454,
     "c": "coaster",
-    "a": "Rockville"
+    "a": "Rockville",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Yosemite Sam's Wacky Wagons",
     "lat": 29.598178,
     "lng": -98.61288,
     "c": "ride",
-    "a": "Six Flags Fiesta Texas"
+    "a": "Six Flags Fiesta Texas",
+    "h": {
+      "min": null,
+      "alone": 36,
+      "max": null
+    },
+    "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
     "n": "Zaragoza Theater",

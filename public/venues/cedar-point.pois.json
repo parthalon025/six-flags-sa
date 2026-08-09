@@ -4,7 +4,12 @@
     "lat": 41.48067,
     "lng": -82.681151,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Airbrush T-Shirts",
@@ -39,7 +44,12 @@
     "lat": 41.482149,
     "lng": -82.680887,
     "c": "ride",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 36,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Auntie Anne's and Cinnabon",
@@ -74,7 +84,12 @@
     "lat": 41.485084,
     "lng": -82.687777,
     "c": "ride",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Bay Harbor",
@@ -102,7 +117,12 @@
     "lat": 41.479864,
     "lng": -82.68261,
     "c": "coaster",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Breakers Boutique",
@@ -130,7 +150,12 @@
     "lat": 41.481059,
     "lng": -82.682536,
     "c": "ride",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "h": {
+      "min": null,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Camp Snoopy Theatre",
@@ -151,7 +176,12 @@
     "lat": 41.484787,
     "lng": -82.690393,
     "c": "coaster",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Cedar Creek Trading Company",
@@ -165,7 +195,12 @@
     "lat": 41.480643,
     "lng": -82.682288,
     "c": "ride",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Cedar Point Grand Pavillion",
@@ -193,7 +228,12 @@
     "lat": 41.485281,
     "lng": -82.687933,
     "c": "ride",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Chick-fil-A",
@@ -284,7 +324,12 @@
     "lat": 41.48365,
     "lng": -82.68532,
     "c": "coaster",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Corral",
@@ -382,7 +427,12 @@
     "lat": 41.481183,
     "lng": -82.680402,
     "c": "ride",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Dragon's Inn",
@@ -403,7 +453,12 @@
     "lat": 41.481118,
     "lng": -82.680681,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Engine House Custard",
@@ -494,7 +549,12 @@
     "lat": 41.480934,
     "lng": -82.679178,
     "c": "coaster",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": 78
+    }
   },
   {
     "n": "Gatekeeper Gift Shop",
@@ -515,14 +575,24 @@
     "lat": 41.486382,
     "lng": -82.689591,
     "c": "coaster",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Giant Wheel",
     "lat": 41.481592,
     "lng": -82.679874,
     "c": "ride",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": null,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Gossip Gulch Stage",
@@ -578,7 +648,12 @@
     "lat": 41.480726,
     "lng": -82.680862,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Hitchin' Post Souvenirs",
@@ -620,7 +695,12 @@
     "lat": 41.48214,
     "lng": -82.685184,
     "c": "coaster",
-    "a": "Millennium Midway"
+    "a": "Millennium Midway",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Jack Aldrich Theatre",
@@ -655,21 +735,36 @@
     "lat": 41.480922,
     "lng": -82.680852,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": 46,
+      "max": null
+    }
   },
   {
     "n": "Kite Eating Tree",
     "lat": 41.481512,
     "lng": -82.681588,
     "c": "ride",
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Lake Erie Eagles",
     "lat": 41.485888,
     "lng": -82.687924,
     "c": "ride",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 36,
+      "alone": 44,
+      "max": null
+    }
   },
   {
     "n": "Lakeside Express",
@@ -697,7 +792,12 @@
     "lat": 41.485405,
     "lng": -82.686087,
     "c": "coaster",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Magnum XL-200 Lockers",
@@ -725,35 +825,60 @@
     "lat": 41.48192,
     "lng": -82.680678,
     "c": "ride",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 42,
+      "alone": 46,
+      "max": null
+    }
   },
   {
     "n": "Maverick",
     "lat": 41.485281,
     "lng": -82.692555,
     "c": "coaster",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": 78
+    }
   },
   {
     "n": "maXair",
     "lat": 41.480855,
     "lng": -82.680144,
     "c": "ride",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Midway Carousel",
     "lat": 41.47878,
     "lng": -82.679598,
     "c": "ride",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "h": {
+      "min": null,
+      "alone": 46,
+      "max": null
+    }
   },
   {
     "n": "Millennium Force",
     "lat": 41.481656,
     "lng": -82.688132,
     "c": "coaster",
-    "a": "Millennium Midway"
+    "a": "Millennium Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": 78
+    }
   },
   {
     "n": "Millennium Force Lockers",
@@ -788,21 +913,36 @@
     "lat": 41.480591,
     "lng": -82.680946,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": 39,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Mustangs",
     "lat": 41.4805,
     "lng": -82.68108,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Ocean Motion",
     "lat": 41.479093,
     "lng": -82.679126,
     "c": "ride",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "h": {
+      "min": 39,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Pagoda Gift Shop",
@@ -907,7 +1047,12 @@
     "lat": 41.485715,
     "lng": -82.689105,
     "c": "ride",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Perkins Restaurant and Bakery",
@@ -928,7 +1073,12 @@
     "lat": 41.48554,
     "lng": -82.688,
     "c": "coaster",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Point Plaza",
@@ -942,7 +1092,12 @@
     "lat": 41.480831,
     "lng": -82.681182,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Poolside Parlor",
@@ -956,7 +1111,12 @@
     "lat": 41.482825,
     "lng": -82.684575,
     "c": "ride",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Preferred Parking",
@@ -984,7 +1144,12 @@
     "lat": 41.479188,
     "lng": -82.681726,
     "c": "coaster",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Raptor Hot Shots",
@@ -998,7 +1163,12 @@
     "lat": 41.485158,
     "lng": -82.688533,
     "c": "ride",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Red Garter Saloon",
@@ -1180,21 +1350,36 @@
     "lat": 41.480911,
     "lng": -82.681086,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Roto Whip",
     "lat": 41.481077,
     "lng": -82.680819,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Rougarou",
     "lat": 41.482755,
     "lng": -82.686793,
     "c": "coaster",
-    "a": "Millennium Midway"
+    "a": "Millennium Midway",
+    "h": {
+      "min": 54,
+      "alone": null,
+      "max": 78
+    }
   },
   {
     "n": "Rougarou Lockers",
@@ -1320,14 +1505,24 @@
     "lat": 41.480929,
     "lng": -82.685183,
     "c": "coaster",
-    "a": "Millennium Midway"
+    "a": "Millennium Midway",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Sky Fighters",
     "lat": 41.481011,
     "lng": -82.680616,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Sky Ride Refreshments",
@@ -1341,7 +1536,12 @@
     "lat": 41.484388,
     "lng": -82.690788,
     "c": "ride",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Skyhawk Lockers",
@@ -1355,14 +1555,25 @@
     "lat": 41.486255,
     "lng": -82.689952,
     "c": "ride",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 44,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Snake River Falls",
     "lat": 41.484121,
     "lng": -82.691042,
     "c": "ride",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "note": "Closed for good at the end of the 2024 season — still on the OpenStreetMap drawing."
   },
   {
     "n": "Snoopy Bounce",
@@ -1383,28 +1594,48 @@
     "lat": 41.481838,
     "lng": -82.681277,
     "c": "ride",
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Snoopy's Express Railroad",
     "lat": 41.481655,
     "lng": -82.681335,
     "c": "ride",
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Snoopy's Space Race",
     "lat": 41.482053,
     "lng": -82.681261,
     "c": "ride",
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Space Age",
     "lat": 41.480762,
     "lng": -82.681364,
     "c": "ride",
-    "a": "Kiddy Kingdom"
+    "a": "Kiddy Kingdom",
+    "h": {
+      "min": null,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Speed Freaks",
@@ -1432,7 +1663,12 @@
     "lat": 41.486115,
     "lng": -82.693365,
     "c": "coaster",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Steel Vengeance Lockers",
@@ -1530,7 +1766,12 @@
     "lat": 41.483808,
     "lng": -82.692503,
     "c": "ride",
-    "a": "Frontier Trail"
+    "a": "Frontier Trail",
+    "h": {
+      "min": 46,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Thunder Canyon Dry Goods",
@@ -1572,7 +1813,12 @@
     "lat": 41.48283,
     "lng": -82.685335,
     "c": "coaster",
-    "a": "Gemini Midway"
+    "a": "Gemini Midway",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Top Thrill 2 Lockers",
@@ -1621,7 +1867,12 @@
     "lat": 41.480269,
     "lng": -82.683282,
     "c": "coaster",
-    "a": "Main Midway"
+    "a": "Main Midway",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Valravn Gifts",
@@ -1642,49 +1893,84 @@
     "lat": 41.484403,
     "lng": -82.692129,
     "c": "ride",
-    "a": "Frontier Town"
+    "a": "Frontier Town",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Wild Mouse",
     "lat": 41.482065,
     "lng": -82.680455,
     "c": "coaster",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 42,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Wilderness Run",
     "lat": 41.485632,
     "lng": -82.688568,
     "c": "coaster",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": 45,
+      "max": null
+    }
   },
   {
     "n": "WindSeeker",
     "lat": 41.482798,
     "lng": -82.680689,
     "c": "ride",
-    "a": "Lakeside Midway"
+    "a": "Lakeside Midway",
+    "h": {
+      "min": 52,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Woodstock Express",
     "lat": 41.485339,
     "lng": -82.689132,
     "c": "coaster",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": 48,
+      "max": null
+    }
   },
   {
     "n": "Woodstock's Airmail",
     "lat": 41.485305,
     "lng": -82.68817,
     "c": "ride",
-    "a": "Camp Snoopy"
+    "a": "Camp Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": 54
+    }
   },
   {
     "n": "Woodstock's Whirlybirds",
     "lat": 41.481691,
     "lng": -82.681918,
     "c": "ride",
-    "a": "Planet Snoopy"
+    "a": "Planet Snoopy",
+    "h": {
+      "min": 36,
+      "alone": null,
+      "max": null
+    }
   },
   {
     "n": "Yogurt Plus",

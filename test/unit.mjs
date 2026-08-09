@@ -1513,6 +1513,103 @@ await check('every named piece of track belongs to a ride we know', () => {
   return true;
 });
 
+/* ------------------------------------------------------- height rules ---- */
+
+/* Height rules are the one part of a venue OpenStreetMap will never carry, so
+   they arrive from a hand-written overrides file or they do not arrive at all.
+   A venue that has rides and no rules does not degrade gracefully — `hasHeights`
+   comes back false and the app removes the Rides tab, the slider, the running
+   tally, the badge over the map and the struck-through markers, silently and
+   all at once. Two of the three parks shipped that way, so the rule that every
+   park with rides publishes heights is worth holding a test to. */
+
+const readVenues = () =>
+  JSON.parse(fs.readFileSync(new URL('../public/venues/manifest.json', import.meta.url))).venues;
+const readPois = (rel) => JSON.parse(fs.readFileSync(new URL(`../public${rel}`, import.meta.url)));
+
+await check('every park with rides publishes height rules', () => {
+  const venues = readVenues();
+  assert.ok(venues.length, 'no venues to check');
+  venues.forEach((v) => {
+    const pois = readPois(v.pois);
+    const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
+    if (!rides.length) return;
+    const withHeights = rides.filter((p) => p.h);
+    assert.ok(
+      withHeights.length,
+      `${v.id}: ${rides.length} rides and not one height rule — the Rides tab would not exist`,
+    );
+    // The manifest is what the venue list reads, so it has to agree with the
+    // file rather than being a number written down once.
+    assert.equal(v.counts.heights, pois.filter((p) => p.h).length, `${v.id}: manifest miscounts heights`);
+  });
+  return true;
+});
+
+await check('a height rule reads low to high, in inches a person could be', () => {
+  readVenues().forEach((v) => {
+    readPois(v.pois).forEach((p) => {
+      if (!p.h) return;
+      const { min, alone, max } = p.h;
+      const where = `${v.id}/${p.n}`;
+      [['min', min], ['alone', alone], ['max', max]].forEach(([key, n]) => {
+        if (n == null) return;
+        assert.equal(typeof n, 'number', `${where}: ${key} is not a number`);
+        // A min of 0 is how "posts a rule, but no floor" is written — heightLabel
+        // reads it back as "No minimum". Anything else has to be a height a
+        // person could stand up and be measured at.
+        if (key === 'min' && n === 0) return;
+        assert.ok(n >= 24 && n <= 96, `${where}: ${key}=${n}" is not a height a visitor has`);
+      });
+      // A floor above the height you may ride alone at, or above the ceiling,
+      // makes eligibility() answer 'no' for everybody — a rule nobody meets is
+      // indistinguishable from a ride that is shut.
+      if (min != null && alone != null) assert.ok(min <= alone, `${where}: min above alone`);
+      if (min != null && max != null) assert.ok(min < max, `${where}: min at or above max`);
+      assert.ok(min != null || alone != null || max != null, `${where}: an empty height rule`);
+    });
+  });
+  return true;
+});
+
+await check('every override is filed under a name the venue actually has', () => {
+  const dir = new URL('../data/venues/', import.meta.url);
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.overrides.json'));
+  assert.ok(files.length, 'no overrides files to check');
+  files.forEach((file) => {
+    const id = file.slice(0, -'.overrides.json'.length);
+    const overrides = JSON.parse(fs.readFileSync(new URL(file, dir)));
+    const names = new Set(readPois(`/venues/${id}.pois.json`).map((p) => p.n.toLowerCase()));
+    const orphans = Object.entries(overrides.pois || {})
+      .filter(([n, patch]) => !names.has(n.toLowerCase()) && !names.has(String(patch.alias || '').toLowerCase()))
+      .map(([n]) => n);
+    // An override that matches nothing is a correction that silently did not
+    // happen — usually the park renamed the ride and the alias was not moved.
+    assert.deepEqual(orphans, [], `${id}: overrides with no POI to land on: ${orphans.join(', ')}`);
+  });
+  return true;
+});
+
+await check('both of a duplicated ride carry the same height rule', () => {
+  readVenues().forEach((v) => {
+    const byName = new Map();
+    readPois(v.pois).forEach((p) => {
+      const at = byName.get(p.n);
+      if (at) at.push(p);
+      else byName.set(p.n, [p]);
+    });
+    byName.forEach((twins, name) => {
+      if (twins.length < 2) return;
+      const rules = new Set(twins.map((p) => JSON.stringify(p.h ?? null)));
+      // OSM carries a ride as two nodes often enough that this is routine.
+      // One of them answering "48 inches" and the other "check at the ride" is
+      // the app disagreeing with itself about the same ride.
+      assert.equal(rules.size, 1, `${v.id}/${name}: twins with different height rules`);
+    });
+  });
+  return true;
+});
+
 await check('a party marker says its age in its own ink', () => {
   const now = 1_000_000;
   const fresh = partyMarkerState({ ts: now - 1000, heading: 90 }, now);

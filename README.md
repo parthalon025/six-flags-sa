@@ -31,12 +31,16 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
 - **Tap a coaster and its own track lights up.** Kings Island's 121 red polylines each
   carry a ride name in the source geometry, so Diamondback's helix stops being one
   squiggle among many. The tap also puts a callout on the map: name, distance, height rule.
-- **Height requirements where a venue has them.** Drag one slider to a rider's height and
-  every ride that is out today goes hollow and struck through on the map — not merely
-  faded, because fading is what a party member we have not heard from looks like — while
-  rides that need a grown-up along get a plus badge. Plus a running tally of what's open,
-  what needs an adult, and what's closed. Kings Island ships with all 65. At a venue with
-  no height rules the filter isn't there at all.
+- **Height requirements, at every park here.** Drag one slider to a rider's height and
+  every ride that is out today turns solid alarm red on the map, ringed and struck
+  through — not faded, because fading is what a party member we have not heard from looks
+  like, and not its category colour either, because the whole reason to set a height is to
+  see at a glance what is out. Rides that need a grown-up along get a plus badge. Plus a
+  running tally of what's open, what needs an adult, and what's closed. All three parks
+  ship with theirs: 65 rules at Kings Island, 57 at Cedar Point, 47 at Six Flags Fiesta
+  Texas. A venue built from OpenStreetMap alone has none until somebody writes them, and
+  the builder says so rather than quietly shipping a park without its Rides tab — see
+  [Height rules](#height-rules-and-other-corrections).
 - **Live party tracking.** One person starts a party and hosts it on their own phone;
   everyone else joins by scanning the QR, opening the invite link, or typing the
   6-character code. Range in feet, compass bearing, nearest ride, status and staleness
@@ -514,10 +518,38 @@ and service road — Cedar Point has 158 — and an unnamed one is furniture, no
 anyone walks to. A gate earns a pin by being the entrance (`entrance=main`), by being a
 ticket booth, or by having a name people use: "the North Gate".
 
+<a id="height-rules-and-other-corrections"></a>
+
 **Height requirements are not in OpenStreetMap and never will be.** They live in
 `data/venues/<id>.overrides.json`, keyed by name, and are re-applied on every rebuild —
 along with any name corrections, aliases and hand-added places. The build prints the
 overrides it could not match so a rename doesn't go quietly missing.
+
+Which makes them the one part of a venue that can be silently missing, and the app has no
+way to tell "this place has no height rules" from "nobody wrote them down": either way
+`hasHeights` is false and the Rides tab, the slider, the tally, the badge over the map and
+the struck-through markers all cease to exist at once. Two of the three parks shipped that
+way for a while. So the build now **refuses** to write a venue that has rides and no height
+rules, names the file to write, and takes `--allow-no-heights` for a venue that genuinely
+has none — a zoo, a campus, a festival ground. It also lists the rides still missing one,
+which is how you find the ride the park renamed last winter.
+
+Correcting a height does not need a rebuild — the geometry is not what changed:
+
+```
+npm run venues:overrides              # re-apply every overrides file, no network
+npm run venues:overrides -- cedar-point              # just the one
+```
+
+It reads the venue bundles back off disk, runs them through the same `applyOverrides` the
+build uses, refreshes the manifest and reports the tally per park. An override is applied
+to **every** POI carrying that name: OpenStreetMap routinely holds one ride as two nodes,
+and Fiesta Texas ships two Poltergeists for exactly that reason — patching one of them
+left its twin saying "check at the ride", which reads as the app disagreeing with itself.
+
+The `credits` line in an overrides file is where the height data came from, and the app
+prints it under the slider. Say it: these are somebody's compilation, and the ride operator
+measures at the gate.
 
 Two flags worth knowing: `--dump <file>` saves the raw Overpass response and `--from-dump
 <file>` rebuilds from it, so tuning the tag rules doesn't hammer a public mirror. Builds

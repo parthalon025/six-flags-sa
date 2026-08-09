@@ -100,10 +100,16 @@ export default function MapLegend({ palette, visibleCategories, onToggleCategory
                 <li>
                   <span className="mapKeyRow static">
                     <svg width="22" height="22" viewBox="-11 -11 22 22" aria-hidden="true">
-                      <PoiMarker category="coaster" colour={palette.categories.coaster} r={8.8} state="no" />
+                      <PoiMarker
+                        category="coaster"
+                        colour={palette.categories.coaster}
+                        barredInk={palette.barred}
+                        r={7.4}
+                        state="no"
+                      />
                     </svg>
                     <b>Too short today</b>
-                    <i>Hollow and struck through</i>
+                    <i>Ringed in red and struck through</i>
                   </span>
                 </li>
                 <li>
