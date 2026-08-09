@@ -69,6 +69,9 @@ export default function PlaceList({
   // query rather than once per place.
   const queryCats = useMemo(() => categoriesFor(query), [query]);
 
+  /** Which categories this venue has any of, for the chip row. */
+  const present = useMemo(() => new Set(POIS.map((p) => p.c)), [POIS]);
+
   const list = useMemo(() => {
     const q = (query || '').trim().toLowerCase();
     let out = POIS.filter((p) => {
@@ -118,7 +121,12 @@ export default function PlaceList({
         >
           All
         </button>
-        {Object.entries(CATEGORY_LABELS).map(([key, labelText]) => (
+        {/* Only the categories this venue has any of — a "Camping" chip that
+            filters a park with no campground down to nothing is a dead end
+            dressed as a feature. */}
+        {Object.entries(CATEGORY_LABELS)
+          .filter(([key]) => present.has(key))
+          .map(([key, labelText]) => (
           <button
             key={key}
             type="button"
@@ -128,7 +136,7 @@ export default function PlaceList({
             <i style={{ background: palette.categories[key] }} />
             {labelText}
           </button>
-        ))}
+          ))}
       </div>
 
       {(height != null || statuses.size > 0) && (
@@ -245,6 +253,16 @@ export default function PlaceList({
                   {p.note && <p className="poiNote">{p.note}</p>}
                   {p.approx && (
                     <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
+                  )}
+                  {/* A campground office, a first-aid post, a ticket line. One
+                      tap to dial, because the moment you want this number is
+                      the moment reading it off a screen and typing it in is
+                      exactly what you cannot manage. */}
+                  {p.tel && (
+                    <a className="poiTel" href={`tel:${p.tel.replace(/[^\d+]/g, '')}`}>
+                      <Icon name="phone.fill" size={15} />
+                      {p.tel}
+                    </a>
                   )}
                   {onReport && isRide && (
                     <div className="joinRow reportRow">

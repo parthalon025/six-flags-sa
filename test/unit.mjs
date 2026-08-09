@@ -1590,6 +1590,81 @@ await check('every override is filed under a name the venue actually has', () =>
   return true;
 });
 
+/* ------------------------------------------------------ heights from OSM -- */
+
+const { heightFromTags } = await import('../scripts/build-venue.mjs');
+
+await check('a height sign on an OpenStreetMap object is read as a rule', () => {
+  assert.deepEqual(heightFromTags({ minimum_height_requirement: '48in (122cm)' }), {
+    min: 48, alone: null, max: null,
+  });
+  // A mapper's double space, and a centimetre figure that must not be read as
+  // a second inch value.
+  assert.deepEqual(heightFromTags({ minimum_height_requirement: '36in  (91cm)' }), {
+    min: 36, alone: null, max: null,
+  });
+  // One tag written as a range is a floor and a ceiling, not two floors.
+  assert.deepEqual(heightFromTags({ minimum_height_requirement: '36in-54in (91cm-137cm)' }), {
+    min: 36, alone: null, max: 54,
+  });
+  assert.deepEqual(heightFromTags({ maximum_height_requirement: '52in (132cm)' }), {
+    min: null, alone: null, max: 52,
+  });
+  return true;
+});
+
+await check('a tag that is not a height is not read as one', () => {
+  assert.equal(heightFromTags({}), null);
+  assert.equal(heightFromTags({ name: 'Blue Streak' }), null);
+  // Metric-only, which this app has nowhere to put — and 122 would be a
+  // nonsense height in inches, so it is refused rather than guessed at.
+  assert.equal(heightFromTags({ minimum_height_requirement: '122cm' }), null);
+  assert.equal(heightFromTags({ minimum_height_requirement: 'ask at the ride' }), null);
+  return true;
+});
+
+/* --------------------------------------------------------- the campground -- */
+
+await check('the campground is drawn, and its sites are places you can find', () => {
+  const venues = readVenues();
+  const camping = venues.filter((v) => readPois(v.pois).some((p) => p.c === 'campsite'));
+  // Not every venue has one. The one that does has to have all of it.
+  if (!camping.length) return true;
+  camping.forEach((v) => {
+    const pois = readPois(v.pois);
+    const sites = pois.filter((p) => p.c === 'campsite');
+    assert.ok(sites.length > 1, `${v.id}: a campground with no sites in it`);
+    // The pitches are the point: a name you can type when you cannot remember
+    // which row you are on.
+    assert.ok(
+      sites.some((p) => /\d/.test(p.n)),
+      `${v.id}: not one numbered pitch — the sites did not come through`,
+    );
+    // And the ground itself is a district, or its name is nowhere on the map.
+    const districts = new Set(pois.map((p) => p.a));
+    assert.ok(
+      sites.every((p) => districts.has(p.a)),
+      `${v.id}: a campsite standing in no district`,
+    );
+  });
+  return true;
+});
+
+await check('every place still lands in a district this venue draws', () => {
+  readVenues().forEach((v) => {
+    const map = JSON.parse(fs.readFileSync(new URL(`../public${v.map}`, import.meta.url)));
+    const drawn = new Set((map.lands || []).map((l) => l.n));
+    const pois = readPois(v.pois);
+    /* A place whose district is neither the venue nor anything drawn is a place
+       standing in the retail park over the road — the thing the offsite filter
+       exists to drop. After the annexed-areas list this is the check that it
+       still drops them. */
+    const strays = [...new Set(pois.map((p) => p.a).filter((a) => a && a !== v.name && !drawn.has(a)))];
+    assert.deepEqual(strays, [], `${v.id}: places filed under undrawn areas: ${strays.join(', ')}`);
+  });
+  return true;
+});
+
 await check('both of a duplicated ride carry the same height rule', () => {
   readVenues().forEach((v) => {
     const byName = new Map();

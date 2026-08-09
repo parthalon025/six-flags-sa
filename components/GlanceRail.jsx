@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Icon from '@/components/Icon';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { navKeyOf as keyOfNav } from '@/lib/routing';
@@ -42,6 +42,7 @@ export default function GlanceRail({
   me,
   members,
   meet,
+  car,
   selected,
   heading,
   theme,
@@ -72,6 +73,16 @@ export default function GlanceRail({
      is held in a ref rather than a closure because this rail re-renders on
      every position tick — a closure would be replaced mid-gesture, and the
      release would find nothing to compare against. */
+  /* The rail is a scroll-snap container, and a snap container that gains a card
+     at the front keeps the card it was snapped to — so the new one lands off
+     the left edge, unseen. Which is exactly backwards: a card appears at the
+     head of this rail because something just happened that the visitor should
+     look at. Saving where the car is, somebody setting the meet-up, somebody
+     needing help. So when the leading card changes, the rail goes back to the
+     start; scroll it yourself afterwards and it stays where you put it. */
+  const railRef = useRef(null);
+  const lead = useRef(null);
+
   const press = useRef(null);
   const swipeAway = (onShed) => ({
     onPointerDown: (e) => {
@@ -133,6 +144,23 @@ export default function GlanceRail({
         kind: 'meet',
         label: meet.label || 'Meet-up',
       });
+    }
+
+    /* The car, next to the meet-up because they are the same kind of thing: a
+       spot somebody put there rather than a place the park has. It ranks above
+       the party on purpose — the roster is what you look at all day, and this
+       is what you look at once, at the end, when it is dark and every row of a
+       car park looks like every other row. */
+    if (car) {
+      push('car', 'Where I parked', 'Your car', car, 'var(--indigo)', formatAge(Date.now() - car.at), 'car', {
+        kind: 'car',
+        label: 'Where I parked',
+      });
+      // The ✕ on this card forgets the spot rather than hiding the card, which
+      // is what the ✕ means everywhere else on the rail. Nothing else would be
+      // honest: a card that pointed at a car you had driven home is worse than
+      // no card, and there is no other place to say so.
+      out[out.length - 1].shed = { kind: 'car' };
     }
 
     /* Everyone who needs help, then the three nearest of everybody else. The
@@ -213,7 +241,19 @@ export default function GlanceRail({
     });
 
     return out;
-  }, [pois, me, members, meet, selected, heading, palette, hidden]);
+  }, [pois, me, members, meet, car, selected, heading, palette, hidden]);
+
+  const leadKey = cards[0]?.key ?? null;
+  useEffect(() => {
+    if (lead.current === leadKey) return;
+    const was = lead.current;
+    lead.current = leadKey;
+    // Not on first render: the rail arriving is not the same as a card
+    // arriving, and there is nothing to scroll back from.
+    if (was === null || !railRef.current || !railRef.current.scrollLeft) return;
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    railRef.current.scrollTo({ left: 0, behavior: still ? 'auto' : 'smooth' });
+  }, [leadKey]);
 
   /* One line, for a sheet with room for one line.
      Whoever needs help leads it whatever their range, and otherwise it is the
@@ -266,7 +306,7 @@ export default function GlanceRail({
   }
 
   return (
-    <div className="glanceRail" role="list">
+    <div className="glanceRail" role="list" ref={railRef}>
       {cards.map((c) => {
         const walking = Boolean(navKey) && navKey === keyOfNav(c.nav);
         // While a route is running, the card stops quoting the crow-flies range

@@ -122,7 +122,7 @@ export const isCivicBoundary = (t) => has(t, 'boundary', CIVIC) || has(t, 'admin
  * opposed to a district within it or the ground beside it.
  */
 export const VENUE_RULES = [
-  (t) => has(t, 'tourism', ['theme_park', 'zoo', 'attraction', 'camp_site']),
+  (t) => has(t, 'tourism', ['theme_park', 'zoo', 'attraction', 'camp_site', 'caravan_site']),
   (t) => has(t, 'leisure', ['park', 'water_park', 'nature_reserve', 'stadium', 'golf_course']),
   (t) => has(t, 'amenity', ['university', 'college', 'school', 'hospital']),
   (t) => has(t, 'landuse', ['recreation_ground', 'retail', 'commercial', 'education']),
@@ -148,7 +148,40 @@ export const LAND_RULES = [
   // areas are the retail park over the road.
   (t) => has(t, 'place', ['neighbourhood', 'suburb', 'quarter', 'city_block', 'locality']) && has(t, 'name'),
   (t) => has(t, 'amenity', ['university', 'college', 'school', 'hospital', 'marketplace']) && has(t, 'name'),
+  // A campground inside a venue is a district of it in every sense that
+  // matters here: it has a name people say out loud ("we're at Lighthouse
+  // Point"), it covers ground, and its own places are named after it. Drawing
+  // it as a tinted area with its name lying along it is how a camper finds the
+  // way back at eleven at night.
+  (t) => isCampground(t) && has(t, 'name'),
 ];
+
+/**
+ * A campground: the area, not the pitches inside it.
+ *
+ * `caravan_site` matters as much as `camp_site` and is the commoner tag for the
+ * ones attached to parks — Cedar Point's Lighthouse Point carries it, which is
+ * why the campground was being dropped from the bundle entirely: no land rule,
+ * no layer rule and no POI rule matched it, so two hundred sites, the
+ * registration desk and the shuttle stop simply were not in the app.
+ */
+export const isCampground = (t) => has(t, 'tourism', ['camp_site', 'caravan_site']);
+
+/**
+ * A single pitch inside a campground.
+ *
+ * `tourism=camp_pitch` is what the tag documentation asks for and what a
+ * well-mapped site uses. What a park actually gets mapped as is a named
+ * driveway per site — Lighthouse Point's 200 pitches are `service=parking_aisle`
+ * ways called "Site 247", because that is what they physically are — so the
+ * second half of this rule reads that shape too. It is only ever applied to
+ * ways already known to lie inside a campground ring, which is what keeps it
+ * from turning a supermarket car park into a hundred pitches.
+ */
+export const isCampPitch = (t) =>
+  has(t, 'tourism', ['camp_pitch']) ||
+  has(t, 'service', ['parking_aisle']) ||
+  has(t, 'amenity', ['parking']);
 
 /** Ordered POI category rules. The vocabulary matches lib/theme.js. */
 export const POI_RULES = [
@@ -172,6 +205,20 @@ export const POI_RULES = [
       has(t, 'shop', ['bakery', 'confectionery', 'deli', 'pastry', 'coffee', 'ice_cream']),
   ],
   ['restroom', (t) => has(t, 'amenity', ['toilets'])],
+  [
+    /* Camping, above the general rules because almost every part of a
+       campground answers to something else first: a cabin is a building, the
+       dump station is an amenity, a pitch is a driveway. Sitting here, the
+       whole thing stays one category a visitor can switch on and off, and one
+       thing a search for "camp" can find. */
+    'campsite',
+    (t) =>
+      isCampground(t) ||
+      has(t, 'tourism', ['camp_pitch', 'chalet', 'wilderness_hut']) ||
+      has(t, 'amenity', ['sanitary_dump_station']) ||
+      has(t, 'building', ['cabin', 'static_caravan', 'bungalow']) ||
+      has(t, 'leisure', ['firepit']),
+  ],
   [
     'service',
     (t) =>
@@ -208,6 +255,11 @@ export const POI_RULES = [
     (t) =>
       has(t, 'entrance', ['main', 'primary']) ||
       has(t, 'amenity', ['ticket_booth']) ||
+      // A named shuttle stop is a way in and out of the venue in the only sense
+      // that matters to somebody standing at one: it is where you catch the
+      // thing that takes you to the gate. Cedar Point's campground has two of
+      // them and a mile of peninsula between it and the turnstiles.
+      (has(t, 'name') && (has(t, 'highway', ['bus_stop']) || has(t, 'public_transport', ['platform', 'stop_position']))) ||
       (has(t, 'name') &&
         (has(t, 'barrier', ['gate', 'entrance', 'turnstile']) || has(t, 'entrance'))),
   ],
@@ -239,6 +291,7 @@ export const UNNAMED_LABELS = {
   parking: 'Parking',
   gate: 'Entrance',
   service: 'Services',
+  campsite: 'Campsite',
 };
 
 export function classify(rules, tags) {

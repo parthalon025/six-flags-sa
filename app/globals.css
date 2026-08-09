@@ -1068,6 +1068,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .poiDist { font-size: 15px; color: var(--label2); font-variant-numeric: tabular-nums; }
 .poiDetail { padding: 0 16px 14px 38px; animation: fadeIn var(--t2) var(--easeOut) both; }
 .poiNote { font-size: 15px; color: var(--label2); margin: 0 0 10px; line-height: 20px; }
+/* The parked-car pin. Same drop-in as the meet-up's, so the two read as the
+   same kind of thing — a spot somebody chose — in two different colours. */
+.carPin { animation: popIn var(--t2) var(--easeOut) both; }
+
+/* A number you dial rather than read. Sized to the 44px thumb like everything
+   else that is tappable, and coloured like the link it is. */
+.poiTel {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; margin: 0 0 6px;
+  font-size: 17px; font-weight: 500; letter-spacing: -.43px;
+  color: var(--blue); text-decoration: none;
+}
 
 .roster { margin-bottom: 8px; }
 .memberRow {

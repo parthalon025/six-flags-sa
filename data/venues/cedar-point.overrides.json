@@ -1,178 +1,459 @@
 {
   "_comment": "Ride height requirements are not in OpenStreetMap. This file is re-applied on every rebuild of the venue, keyed by POI name. Compiled from published 2026 Cedar Point height charts, reconciled across three of them: the absolute floor is `min`, the height a rider needs to go without a grown-up is `alone`, and `max` is a genuine rider maximum. Where the charts disagreed the lower floor was taken, so the filter errs towards letting a child queue rather than ruling them out.",
+  "areas": [
+    "Cedar Point Shores",
+    "Lighthouse Point"
+  ],
+  "_areas_comment": "Named areas this venue owns that its own OpenStreetMap polygon does not cover. Cedar Point is mapped as three rings on one peninsula — the amusement park, the water park and the campground — and without this the build reads the latter two as the retail park over the road and drops everything standing in them.",
   "credits": "Height requirements were compiled from published 2026 Cedar Point height charts.",
   "pois": {
     "4x4's": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Atomic Scrambler": {
-      "h": { "min": 36, "alone": 48, "max": null }
+      "h": {
+        "min": 36,
+        "alone": 48,
+        "max": null
+      }
     },
     "Balloon Race": {
-      "h": { "min": 36, "alone": null, "max": null }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": null
+      }
     },
     "Blue Streak": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
+    },
+    "Breakwater Bay": {
+      "h": {
+        "min": 42,
+        "alone": 52,
+        "max": null
+      }
     },
     "Cadillac Cars": {
-      "h": { "min": null, "alone": 48, "max": null }
+      "h": {
+        "min": null,
+        "alone": 48,
+        "max": null
+      }
     },
     "Cedar Creek Mine Ride": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Cedar Downs Racing Derby": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Charlie Brown's Wind Up": {
-      "h": { "min": 36, "alone": null, "max": null }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": null
+      }
     },
     "Corkscrew": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Dodgem": {
-      "h": { "min": 42, "alone": 48, "max": null }
+      "h": {
+        "min": 42,
+        "alone": 48,
+        "max": null
+      }
     },
     "Dune Buggies": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Gatekeeper": {
-      "h": { "min": 52, "alone": null, "max": 78 }
+      "h": {
+        "min": 52,
+        "alone": null,
+        "max": 78
+      }
     },
     "Gemini": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Giant Wheel": {
-      "h": { "min": null, "alone": 48, "max": null }
+      "h": {
+        "min": null,
+        "alone": 48,
+        "max": null
+      }
+    },
+    "Great Lakes Cove": {
+      "h": {
+        "min": 46,
+        "alone": 52,
+        "max": null
+      }
     },
     "Helicopters": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Iron Dragon": {
-      "h": { "min": 42, "alone": null, "max": null }
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      }
     },
     "Kiddy Kingdom Carrousel": {
-      "h": { "min": null, "alone": 46, "max": null }
+      "h": {
+        "min": null,
+        "alone": 46,
+        "max": null
+      }
     },
     "Kite Eating Tree": {
-      "h": { "min": 36, "alone": null, "max": 54 }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": 54
+      }
     },
     "Lake Erie Eagles": {
-      "h": { "min": 36, "alone": 44, "max": null }
+      "h": {
+        "min": 36,
+        "alone": 44,
+        "max": null
+      }
+    },
+    "Lake Erie Nor'easter": {
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      },
+      "n": "Lake Erie Nor'easter",
+      "alias": "Lake Eerie Nor'easter",
+      "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
+    },
+    "Lily Pad Walk": {
+      "h": {
+        "min": 46,
+        "alone": 52,
+        "max": null
+      }
     },
     "Magnum XL-200": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Matterhorn": {
-      "h": { "min": 42, "alone": 46, "max": null }
+      "h": {
+        "min": 42,
+        "alone": 46,
+        "max": null
+      }
     },
     "Maverick": {
-      "h": { "min": 52, "alone": null, "max": 78 }
+      "h": {
+        "min": 52,
+        "alone": null,
+        "max": 78
+      }
     },
     "maXair": {
-      "h": { "min": 52, "alone": null, "max": null }
+      "h": {
+        "min": 52,
+        "alone": null,
+        "max": null
+      }
     },
     "Midway Carousel": {
-      "h": { "min": null, "alone": 46, "max": null }
+      "h": {
+        "min": null,
+        "alone": 46,
+        "max": null
+      }
     },
     "Millennium Force": {
-      "h": { "min": 48, "alone": null, "max": 78 }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": 78
+      }
     },
     "Motorcycles": {
-      "h": { "min": 39, "alone": null, "max": 54 }
+      "h": {
+        "min": 39,
+        "alone": null,
+        "max": 54
+      }
     },
     "Mustangs": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Ocean Motion": {
-      "h": { "min": 39, "alone": 48, "max": null }
+      "h": {
+        "min": 39,
+        "alone": 48,
+        "max": null
+      }
     },
     "Peanuts 500": {
-      "h": { "min": 36, "alone": null, "max": null }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": null
+      }
     },
     "Pipe Scream": {
-      "h": { "min": 42, "alone": 48, "max": null }
+      "h": {
+        "min": 42,
+        "alone": 48,
+        "max": null
+      }
     },
     "Police Cars": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Power Tower": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Raptor": {
-      "h": { "min": 54, "alone": null, "max": null }
+      "h": {
+        "min": 54,
+        "alone": null,
+        "max": null
+      }
     },
     "Red Baron": {
-      "h": { "min": 36, "alone": null, "max": 54 }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": 54
+      }
     },
     "Rock, Spin, & Turn": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Roto Whip": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Rougarou": {
-      "h": { "min": 54, "alone": null, "max": 78 }
+      "h": {
+        "min": 54,
+        "alone": null,
+        "max": 78
+      }
+    },
+    "Runaway Rapids": {
+      "h": {
+        "min": 42,
+        "alone": 48,
+        "max": null
+      }
     },
     "Siren's Curse": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Sky Fighters": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Skyhawk": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "SlingShot": {
-      "h": { "min": 44, "alone": null, "max": null }
+      "h": {
+        "min": 44,
+        "alone": null,
+        "max": null
+      }
     },
     "Snake River Falls": {
-      "h": { "min": 48, "alone": null, "max": null },
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      },
       "note": "Closed for good at the end of the 2024 season — still on the OpenStreetMap drawing."
     },
     "Snoopy's Deep Sea Divers": {
-      "h": { "min": 36, "alone": null, "max": null }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": null
+      }
     },
     "Snoopy's Express Railroad": {
-      "h": { "min": 36, "alone": null, "max": null }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": null
+      }
     },
     "Snoopy's Space Race": {
-      "h": { "min": 36, "alone": null, "max": 54 }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": 54
+      }
     },
     "Space Age": {
-      "h": { "min": null, "alone": null, "max": 54 }
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 54
+      }
     },
     "Steel Vengeance": {
-      "h": { "min": 52, "alone": null, "max": null }
+      "h": {
+        "min": 52,
+        "alone": null,
+        "max": null
+      }
     },
     "Thunder Canyon": {
-      "h": { "min": 46, "alone": null, "max": null }
+      "h": {
+        "min": 46,
+        "alone": null,
+        "max": null
+      }
     },
     "Top Thrill 2": {
-      "h": { "min": 52, "alone": null, "max": null }
+      "h": {
+        "min": 52,
+        "alone": null,
+        "max": null
+      }
     },
     "Valravn": {
-      "h": { "min": 52, "alone": null, "max": null }
+      "h": {
+        "min": 52,
+        "alone": null,
+        "max": null
+      }
+    },
+    "Waterin' Hole": {
+      "h": {
+        "min": null,
+        "alone": null,
+        "max": 52
+      },
+      "n": "Waterin' Hole",
+      "alias": "Watterin' Hole",
+      "note": "OpenStreetMap doubles the t; the sign does not."
     },
     "Wave Swinger": {
-      "h": { "min": 48, "alone": null, "max": null }
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      }
     },
     "Wild Mouse": {
-      "h": { "min": 42, "alone": 48, "max": null }
+      "h": {
+        "min": 42,
+        "alone": 48,
+        "max": null
+      }
     },
     "Wilderness Run": {
-      "h": { "min": 36, "alone": 45, "max": null }
+      "h": {
+        "min": 36,
+        "alone": 45,
+        "max": null
+      }
     },
     "WindSeeker": {
-      "h": { "min": 52, "alone": null, "max": null }
+      "h": {
+        "min": 52,
+        "alone": null,
+        "max": null
+      }
     },
     "Woodstock Express": {
-      "h": { "min": 36, "alone": 48, "max": null }
+      "h": {
+        "min": 36,
+        "alone": 48,
+        "max": null
+      }
     },
     "Woodstock's Airmail": {
-      "h": { "min": 36, "alone": null, "max": 54 }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": 54
+      }
     },
     "Woodstock's Whirlybirds": {
-      "h": { "min": 36, "alone": null, "max": null }
+      "h": {
+        "min": 36,
+        "alone": null,
+        "max": null
+      }
     }
   }
 }

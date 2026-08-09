@@ -41,6 +41,19 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   Texas. A venue built from OpenStreetMap alone has none until somebody writes them, and
   the builder says so rather than quietly shipping a park without its Rides tab — see
   [Height rules](#height-rules-and-other-corrections).
+- **The campground, where a park has one.** Cedar Point's Lighthouse Point is drawn as a
+  district of the park with its name lying along it, and everything in it is on the map and
+  in search: all 145 numbered pitches, so "site 247" is a thing you type at eleven at night
+  and get a walking time to; the registration desk and store; the shower and toilet blocks;
+  cabin, registration and departure parking; the shuttle stops back to the gate; and the
+  campground's own telephone number, one tap from dialling. Campgrounds are tagged
+  `caravan_site` as often as `camp_site` and their pitches are usually drawn as named
+  driveways rather than as pitches, which is why none of it used to be in the app at all.
+- **Where you parked.** One tap on the car button over the map saves the spot; after that
+  the same button takes you back to it, and a card on the glance rail carries the walking
+  time and an arrow the whole way. Violet pin, its own icon, nothing like the crimson
+  meet-up pin. It stays on this phone — nobody in your party is told where you parked — and
+  each park remembers its own car park.
 - **Live party tracking.** One person starts a party and hosts it on their own phone;
   everyone else joins by scanning the QR, opening the invite link, or typing the
   6-character code. Range in feet, compass bearing, nearest ride, status and staleness
@@ -50,7 +63,8 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   boilerplate: one card per party member plus the meet-up and your destination, each
   showing walking time as the headline, distance underneath, and an arrow aimed
   relative to the way you're facing when the compass is on. With no party running it
-  falls back to the nearest restroom, food and first aid. Tap a card to fly to it.
+  falls back to the nearest restroom, food and first aid, and it carries the car once you
+  have told it where the car is. Tap a card to fly to it.
 - **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Rides and Me sit in
   a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
   moves — and each tab keeps its own navigation stack, so leaving one and coming back
@@ -520,10 +534,18 @@ ticket booth, or by having a name people use: "the North Gate".
 
 <a id="height-rules-and-other-corrections"></a>
 
-**Height requirements are not in OpenStreetMap and never will be.** They live in
-`data/venues/<id>.overrides.json`, keyed by name, and are re-applied on every rebuild —
-along with any name corrections, aliases and hand-added places. The build prints the
-overrides it could not match so a rename doesn't go quietly missing.
+**Height requirements are mostly not in OpenStreetMap.** Mostly, not entirely: the
+`minimum_height_requirement` tag is real, and Cedar Point carries it on fifty-two
+attractions, surveyed off the sign at the ride entrance. Where it exists it is the best
+source there is — somebody stood in front of the ride and read it — so the build takes it,
+and a park that tags its signs gets its Rides tab for free the day it is added. It agreed
+with the hand-compiled figures on all fifty rides where both existed, and filled two gaps
+the charts had left.
+
+The rest live in `data/venues/<id>.overrides.json`, keyed by name, applied *after* the
+tags so a hand-written correction still beats a stale one — along with any name
+corrections, aliases and hand-added places. The build prints the overrides it could not
+match so a rename doesn't go quietly missing.
 
 Which makes them the one part of a venue that can be silently missing, and the app has no
 way to tell "this place has no height rules" from "nobody wrote them down": either way
@@ -533,6 +555,16 @@ way for a while. So the build now **refuses** to write a venue that has rides an
 rules, names the file to write, and takes `--allow-no-heights` for a venue that genuinely
 has none — a zoo, a campus, a festival ground. It also lists the rides still missing one,
 which is how you find the ride the park renamed last winter.
+
+The same file carries `areas`: the named areas this venue owns that its own OpenStreetMap
+polygon does not cover. A park is routinely more than one ring — Cedar Point is three on
+one peninsula, the amusement park, the water park and the campground — and the rule that
+drops "the retail park over the road" could not tell the difference. It had been dropping
+Cedar Point Shores' thirty-one places since the venue was added, and would have dropped all
+hundred and fifty-seven of Lighthouse Point's. It is a list rather than a cleverer test
+because no test tells a water park that belongs to this venue from one that does not; the
+build prints every area it dropped and how many places went with it, so the list is written
+from what it says.
 
 Correcting a height does not need a rebuild — the geometry is not what changed:
 
@@ -687,6 +719,6 @@ public/
   venues/<id>.map.json        drawn map layers (~260-300 KB each)
   venues/<id>.pois.json       the places, with heights where a venue has them
   manifest.webmanifest        home-screen install
-data/venues/<id>.overrides.json  heights and corrections, re-applied on rebuild
+data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
 Dockerfile  docker-compose.yml
 ```

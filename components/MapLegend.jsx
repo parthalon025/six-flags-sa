@@ -16,9 +16,27 @@ import { LegendLine, LegendMark, PoiMarker } from './MapSymbols';
  * The category order is the order of the eye: what you came for, then what you
  * need, then what is merely there.
  */
-const ORDER = ['coaster', 'ride', 'landmark', 'gate', 'food', 'restroom', 'show', 'service', 'shop', 'parking'];
+const ORDER = [
+  'coaster', 'ride', 'landmark', 'gate', 'food', 'restroom', 'show', 'service', 'shop',
+  // Late, because most visitors are not staying the night — and absent
+  // entirely at a venue with no campground, which is most of them.
+  'campsite',
+  'parking',
+];
 
-export default function MapLegend({ palette, visibleCategories, onToggleCategory, heightFilterOn }) {
+/**
+ * `presentCategories` is what this venue actually has. A key is a promise that
+ * the thing it names is out there on the map, and a row for a category with
+ * nothing in it breaks that promise twice: it offers a switch that changes
+ * nothing, and it says this place has campsites when it does not.
+ */
+export default function MapLegend({
+  palette,
+  visibleCategories,
+  onToggleCategory,
+  heightFilterOn,
+  presentCategories = null,
+}) {
   const [open, setOpen] = useState(false);
   // The map's own gesture handlers sit on the wrapper; a tap meant for the key
   // must not also pan the park or drop a meet-up pin.
@@ -56,7 +74,7 @@ export default function MapLegend({ palette, visibleCategories, onToggleCategory
         <div className="mapKeyBody">
           <p className="mapKeyNote">Tap a row to show or hide it on the map.</p>
           <ul className="mapKeyList">
-            {ORDER.filter((key) => SYMBOLS[key]).map((key) => {
+            {ORDER.filter((key) => SYMBOLS[key] && (!presentCategories || presentCategories.has(key))).map((key) => {
               const on = visibleCategories.has(key);
               return (
                 <li key={key}>

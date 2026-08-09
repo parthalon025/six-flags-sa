@@ -26,6 +26,7 @@
 import process from 'node:process';
 import { readFile, writeFile } from 'node:fs/promises';
 import { readdirSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 import {
   areaOf,
   centroidOf,
@@ -37,7 +38,7 @@ import {
 } from './lib/geometry.mjs';
 import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
-  classify, isLand, isVenueOutline,
+  classify, isCampground, isCampPitch, isLand, isVenueOutline,
 } from './lib/osm-tags.mjs';
 import {
   OVERRIDE_DIR, readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue,
@@ -266,6 +267,7 @@ function buildLayers(elements, opts) {
   const lands = [];
   const outlines = []; // rings that could be the venue's own boundary
   const areaCandidates = []; // closed rings that might also be a POI
+  const campRings = []; // campgrounds, so the sites inside them can be found
 
   for (const el of elements) {
     if (el.type === 'node') continue;
@@ -287,6 +289,7 @@ function buildLayers(elements, opts) {
 
       if (isLand(tags) && closed) {
         const size = areaOf(ring);
+        if (isCampground(tags)) campRings.push(ring);
         // The venue's own outline: the shape that is the place, rather than a
         // district inside it. Every ring that could be one is collected here
         // and the choice is made once, after the loop — picking by size while
@@ -299,6 +302,12 @@ function buildLayers(elements, opts) {
         // Big enough to be a district, small enough not to be the venue itself.
         if (size > 1500 && size < opts.venueArea * 0.7) {
           lands.push({ n: tags.name, r: ring, size });
+          /* A district is a tint and a label, not a row you can tap — which is
+             right for a themed area and wrong for a campground. Lighthouse
+             Point has an office, opening hours and a telephone number, and a
+             visitor who wants any of those wants a place in the list rather
+             than a word lying across the ground. So a campground is both. */
+          if (isCampground(tags)) areaCandidates.push({ tags, ring });
           continue;
         }
         if (size >= opts.venueArea * 0.7) continue;
@@ -359,7 +368,22 @@ function buildLayers(elements, opts) {
      landmark a route is "via". */
   const outline = layers.park.map((p) => p.r);
   const inside = (ring) => !outline.length || outline.some((o) => pointInRing(centroidOf(ring), o));
-  const drawn = lands.filter((l) => inside(l.r));
+  /* Except for the ones this venue owns but its own polygon does not cover.
+   *
+   * A park is routinely more than one polygon. Cedar Point's `tourism=theme_park`
+   * relation is the amusement park; its water park and its campground are
+   * separate rings beside it on the same peninsula, and the test above — written
+   * to drop the retail park over the road — could not tell the difference. It
+   * dropped Cedar Point Shores' thirty-one places, and would have dropped all
+   * hundred and fifty-seven of Lighthouse Point's.
+   *
+   * The fix is a list rather than a cleverer test, because no test distinguishes
+   * "the water park that belongs to this venue" from "the water park across the
+   * road that does not". The build prints every area it dropped and how many
+   * places went with it, so the list is written from what it says.
+   */
+  const annexed = opts.annexed || new Set();
+  const drawn = lands.filter((l) => inside(l.r) || annexed.has(String(l.n).toLowerCase()));
 
   const anchors = {};
   for (const land of drawn.sort((a, b) => b.size - a.size)) {
@@ -370,7 +394,51 @@ function buildLayers(elements, opts) {
   }
   layers.lands = drawn.map(({ n, r }) => ({ n, r }));
 
-  return { layers, anchors, areaCandidates, allLands: lands, boundary };
+  return { layers, anchors, areaCandidates, allLands: lands, boundary, campRings };
+}
+
+/**
+ * A height rule OpenStreetMap already knows.
+ *
+ * "Height requirements are not in OpenStreetMap and never will be" is what the
+ * overrides file was written to be the answer to, and it turns out to be only
+ * three quarters true: `minimum_height_requirement` is a real tag and Cedar
+ * Point carries it on fifty-two attractions, surveyed off the sign at the ride
+ * entrance. Where it exists it is the best source there is — better than any
+ * compilation, because somebody stood in front of the ride and read it — and it
+ * costs nothing to take.
+ *
+ * So it is read here, and the overrides file is applied on top afterwards.
+ * That ordering is the point: a park that tags its signs gets its Rides tab for
+ * free the day it is added, and a hand-written correction still wins over a
+ * stale tag.
+ *
+ * Formats in the wild, all of which appear at Cedar Point:
+ *   "48in (122cm)"          a floor
+ *   "36in  (91cm)"          the same, with a mapper's double space
+ *   "36in-54in (91cm-137cm)" a floor and a ceiling
+ * Only the inches are read. The centimetres in brackets are a restatement, and
+ * a couple of them disagree with their own inches by a rounding error.
+ */
+export function heightFromTags(tags) {
+  const read = (raw) => {
+    if (!raw) return null;
+    // Inches only, and only before the bracket: "(122cm)" contains digits too.
+    const head = String(raw).split('(')[0];
+    const found = [...head.matchAll(/(\d{2,3})\s*(?:in|")/gi)].map((m) => Number(m[1]));
+    return found.length ? found : null;
+  };
+  const lo = read(tags.minimum_height_requirement);
+  const hi = read(tags.maximum_height_requirement);
+  if (!lo && !hi) return null;
+  // A single tag written as a range — "36in-54in" — is a floor and a ceiling,
+  // not two floors.
+  const min = lo ? lo[0] : null;
+  const max = (lo && lo.length > 1 ? lo[1] : null) ?? (hi ? hi[0] : null);
+  const sane = (n) => (Number.isFinite(n) && n >= 24 && n <= 96 ? n : null);
+  const h = { min: sane(min), alone: null, max: sane(max) };
+  if (h.min == null && h.max == null) return null;
+  return h;
 }
 
 function buildPois(elements, areaCandidates, opts) {
@@ -381,7 +449,16 @@ function buildPois(elements, areaCandidates, opts) {
     const name = tags.name || tags.operator || UNNAMED_LABELS[c];
     if (!name) return; // an unnamed bench is noise on a map you read at a glance
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    out.push({ n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c });
+    const poi = { n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c };
+    const h = heightFromTags(tags);
+    if (h) poi.h = h;
+    /* A phone number, where the place has one. Kept and nothing else from the
+       contact tags: a campground office, a first-aid post and a ticket line are
+       worth being one tap from dialling at eleven at night, and a website is
+       worth nothing at all to somebody standing in a park with one bar. */
+    const tel = tags.phone || tags['contact:phone'];
+    if (tel) poi.tel = String(tel).split(';')[0].trim();
+    out.push(poi);
   };
 
   for (const el of elements) {
@@ -409,8 +486,51 @@ function buildPois(elements, areaCandidates, opts) {
         distanceMetres(k.lat, k.lng, poi.lat, poi.lng) < opts.dedupeMetres,
     );
     if (!dupe) kept.push(poi);
+    // The ride is mapped twice and only one of the pair carries the sign. Keep
+    // the survey rather than whichever node happened to be read first.
+    else if (poi.h && !dupe.h) dupe.h = poi.h;
   }
   return kept;
+}
+
+/**
+ * The individual sites inside a campground.
+ *
+ * They cannot come through the ordinary POI path, and that is a fact about how
+ * campgrounds get mapped rather than an oversight. A pitch is a place you park
+ * a caravan on, so a mapper draws it as the driveway it is: an *open* way, which
+ * never reaches the closed-ring candidate list, tagged `service=parking_aisle`,
+ * which the layer rules quite correctly draw as tarmac. Lighthouse Point has
+ * roughly two hundred of them, each named "Site 247" — the single most useful
+ * string in the whole bundle to somebody who has just come off Steel Vengeance
+ * in the dark, and none of it was in the app.
+ *
+ * The geometric test is what keeps this honest. A named parking aisle is only
+ * read as a pitch when it lies inside a ring already known to be a campground,
+ * so the two hundred unnamed aisles of the main car park stay tarmac and the
+ * rule cannot misfire at a venue that has no campground at all.
+ *
+ * Position is the middle of the pitch, which is where the caravan is.
+ */
+function campPitches(elements, campRings, known) {
+  if (!campRings.length) return [];
+  const seen = new Set(known.map((p) => p.n.toLowerCase()));
+  const out = [];
+  for (const el of elements) {
+    const tags = el.tags || {};
+    if (!tags.name || !isCampPitch(tags)) continue;
+    if (isCampground(tags)) continue; // the ground itself, already a district
+    const ring = el.type === 'relation' ? ringsOfRelation(el)[0] : ringOf(el);
+    if (!ring?.length) continue;
+    const [lng, lat] = ring.length > 2 ? centroidOf(ring) : ring[Math.floor(ring.length / 2)];
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    if (!campRings.some((r) => pointInRing([lng, lat], r))) continue;
+    const key = tags.name.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ n: tags.name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'campsite' });
+  }
+  return out;
 }
 
 /**
@@ -662,17 +782,27 @@ async function main() {
     distanceMetres(bounds.south, bounds.west, bounds.north, bounds.west) *
     distanceMetres(bounds.south, bounds.west, bounds.south, bounds.east);
 
-  const { layers, anchors, areaCandidates, allLands, boundary } = buildLayers(elements, {
+  /* Read before the geometry, because one thing in it changes how the geometry
+     is read: which named areas count as part of this venue. See `annexed`. */
+  const { file: overrideFile, data: overrides } = readOverrides(id, args.overrides ? String(args.overrides) : null);
+
+  const { layers, anchors, areaCandidates, allLands, boundary, campRings } = buildLayers(elements, {
     tolerance,
     minArea: 12,
     venueArea,
     venueName: name,
+    annexed: new Set((overrides?.areas || []).map((n) => String(n).toLowerCase())),
     // A little wider than the box the map draws, so the cut line itself never
     // lands anywhere a visitor can pan to.
     clip: padBounds(bounds, 60),
   });
 
   let pois = buildPois(elements, areaCandidates, { dedupeMetres: Number(args.dedupe ?? 35) });
+  const pitches = campPitches(elements, campRings, pois);
+  if (pitches.length) {
+    pois = pois.concat(pitches);
+    console.error(`  · campground: ${pitches.length} pitch(es) picked up from inside ${campRings.length} ring(s)`);
+  }
   const fromTrack = poisFromTrack(pois, layers.coaster);
   if (fromTrack.length) {
     console.error(`  · ${fromTrack.length} ride(s) taken from named track with no place of their own`);
@@ -694,7 +824,6 @@ async function main() {
     pois = pois.filter((p) => !cut.has(p));
   }
 
-  const { file: overrideFile, data: overrides } = readOverrides(id, args.overrides ? String(args.overrides) : null);
   const merged = applyOverrides(pois, overrides);
   pois = merged.pois;
   if (overrideFile) {
@@ -784,7 +913,13 @@ async function main() {
   if (!boundary) {
     console.error('  · boundary: none found — nothing here is tagged as the venue itself');
   } else {
-    const within = pois.filter((p) => pointInRing([p.lng, p.lat], boundary.r)).length;
+    /* Counted against the annexed areas too, or the check cries wolf at exactly
+       the venues that needed the list: Cedar Point's own water park and
+       campground are both outside its theme-park ring on purpose. */
+    const annexedHere = new Set((overrides?.areas || []).map((n) => String(n).toLowerCase()));
+    const within = pois.filter(
+      (p) => pointInRing([p.lng, p.lat], boundary.r) || annexedHere.has(String(p.a || '').toLowerCase()),
+    ).length;
     const why = boundary.named && boundary.tagged
       ? 'named and tagged as the venue'
       : boundary.named
@@ -822,7 +957,15 @@ async function main() {
   console.error(`Default venue: ${manifest.default}`);
 }
 
-main().catch((err) => {
-  console.error(`\n${err.message}`);
-  process.exit(1);
-});
+/* Only when it is the thing being run. The tag rules and the height parser are
+   worth holding a test to, and a test that imports this file must not build a
+   venue as a side effect of doing so. */
+const runDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (runDirectly) {
+  main().catch((err) => {
+    console.error(`\n${err.message}`);
+    process.exit(1);
+  });
+}

@@ -22,7 +22,7 @@ import {
   scaleBar,
   textWidth,
 } from '@/lib/mapLabels';
-import { PoiMarker } from './MapSymbols';
+import { Glyph, PoiMarker } from './MapSymbols';
 import MapLegend from './MapLegend';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
@@ -105,6 +105,7 @@ export default function ParkMap({
   me,
   members,
   meet,
+  car,
   selected,
   onSelectPoi,
   onMapTap,
@@ -133,6 +134,9 @@ export default function ParkMap({
   fitKey = null,
 }) {
   const palette = paletteFor(theme);
+  // What this venue has any of at all, so the key can offer switches for those
+  // and only those. Cheap: it is one pass over a list of a few hundred.
+  const presentCategories = useMemo(() => new Set((pois || []).map((p) => p.c)), [pois]);
   const wrapRef = useRef(null);
   const [size, setSize] = useState({ w: 360, h: 640 });
   // view is centred on a mercator metre coordinate at `scale` px per metre
@@ -1062,6 +1066,29 @@ export default function ParkMap({
             );
           })()}
 
+        {/* where the car is — a pin, like the meet-up, because both are a spot
+            somebody chose rather than a place the park has. Violet and carrying
+            a car, so it is never mistaken for the crimson meet-up pin at a
+            glance across a car park in the dark. */}
+        {car &&
+          (() => {
+            const [sx, sy] = at(car.lat, car.lng);
+            return (
+              <g key="car" className="carPin">
+                <ellipse cx={sx} cy={sy + 1.5} rx={7} ry={2.4} fill="#000" opacity="0.28" />
+                <path
+                  d={`M${sx} ${sy} l-9 -13 a11 11 0 1 1 18 0 Z`}
+                  fill="var(--indigo)"
+                  stroke="var(--markerEdge)"
+                  strokeWidth="1.6"
+                />
+                <g transform={`translate(${sx} ${sy - 16})`}>
+                  <Glyph name="car" size={13} colour="#fff" />
+                </g>
+              </g>
+            );
+          })()}
+
         {/* party members */}
         {members.map((m) => {
           const [sx, sy] = at(m.lat, m.lng);
@@ -1226,6 +1253,7 @@ export default function ParkMap({
           visibleCategories={visibleCategories}
           onToggleCategory={onToggleCategory}
           heightFilterOn={!!rideEligibility}
+          presentCategories={presentCategories}
         />
         <div className="mapMeta">
           {/* Which way is north, without having to open the compass tape. */}
