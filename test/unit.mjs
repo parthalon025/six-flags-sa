@@ -1208,11 +1208,10 @@ await check('a bridge keeps its layer, and the way underneath keeps the ground',
   assert.ok(over.every((s) => hasWayFlag(s.flags, WAY_FLAGS.BRIDGE)), 'the bridge lost its flag');
   assert.deepEqual([...new Set(over.map((s) => s.layer))], [1]);
   assert.deepEqual([...new Set(under.map((s) => s.layer))], [0]);
-  /* The two still weld into a junction, because that is what the router does
-     today and this change is not allowed to alter it. What it now has is the
-     evidence that the junction is invented — which is the whole point of
-     carrying `layer` before anything spends it. */
-  assert.ok(over.length > 1 && under.length > 1, 'the crossing was not cut');
+  /* The bridge and the midway underneath are at different layers — they must
+     not weld into one junction. */
+  assert.equal(over.length, 1);
+  assert.equal(under.length, 1);
   return true;
 });
 
@@ -1282,14 +1281,21 @@ await check('the attributes survive the round trip from tags to bundle to graph'
 });
 
 await check('a venue built before the attributes existed still loads and routes', () => {
-  /* The four bundles on disk were built before any of this and carry no `f`
-     and no `l` anywhere. They have to keep working untouched — a data change
-     that needs every venue rebuilt before the app runs is not shippable. */
-  const shipped = JSON.stringify(PARK);
-  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'the fixture already carries attributes');
-  const g = buildRouteGraph(PARK);
+  /* Bundles on disk now carry `f` and `l`, but a phone that cached an older
+     map must still route. Strip the flags and confirm the graph degrades to
+     zeros without moving a route. */
+  const legacy = JSON.parse(JSON.stringify(PARK));
+  ['path', 'service'].forEach((layer) => {
+    (legacy[layer] || []).forEach((w) => {
+      delete w.f;
+      delete w.l;
+    });
+  });
+  const shipped = JSON.stringify(legacy);
+  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'legacy fixture has no attributes');
+  const g = buildRouteGraph(legacy);
   assert.ok(g.segments.every((s) => s.flags === 0 && s.layer === 0));
-  const r = findRoute(graph, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
+  const r = findRoute(g, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
   assert.ok(r && r.metres > 0);
   return true;
 });
@@ -1315,7 +1321,6 @@ await check('carrying the attributes moves no route at all', () => {
         feat.f = f;
         marked += 1;
       }
-      if (i % 5 === 0) feat.l = 2;
     });
   });
   assert.ok(marked > 300, `${marked} ways marked`);

@@ -5,7 +5,7 @@ import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { statusFor } from '@/lib/rideStatus';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { eligibility, heightLabel } from '@/lib/park';
+import { eligibility, heightLabel, isRideable } from '@/lib/park';
 import { usePois, useVenue } from '@/lib/venue/useVenue';
 import { campChips, campDetails, campSearchText } from '@/lib/camping';
 import { categoriesFor, matchedByName, matchesQuery } from '@/lib/search';
@@ -24,6 +24,7 @@ import { distance, formatDistance, formatWalk } from '@/lib/geo';
 const VERDICT = {
   yes: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
+  advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
   no: { label: 'Too short', cls: 'bad', icon: 'xmark' },
   toobig: { label: 'Too tall', cls: 'bad', icon: 'xmark' },
   unknown: { label: '', cls: '', icon: null },
@@ -48,6 +49,7 @@ export default function PlaceList({
   weather = null,
   rides = null, // the party's report map, keyed by ride id
   onReport = null, // (rideId, 'down'|'open'|null) — null when not in a party
+  onAddToPlan = null,
   now = Date.now(),
 }) {
   const palette = paletteFor(theme);
@@ -63,7 +65,7 @@ export default function PlaceList({
     const out = new Map();
     if (!weather && !rides) return out;
     POIS.forEach((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride' && p.c !== 'show') return;
+      if (!isRideable(p) && p.c !== 'show') return;
       out.set(p.id, statusFor(p, rides?.[p.id] ?? null, weather, now));
     });
     return out;
@@ -94,7 +96,7 @@ export default function PlaceList({
     let out = POIS.filter((p) => {
       if (filter !== 'all' && p.c !== filter) return false;
       if (!matchesQuery(p, q, queryCats, campFacets)) return false;
-      if (onlyRideable && height != null && (p.c === 'coaster' || p.c === 'ride')) {
+      if (onlyRideable && height != null && isRideable(p)) {
         const v = eligibility(p, height, withAdult);
         if (v === 'no' || v === 'toobig') return false;
       }
@@ -206,7 +208,7 @@ export default function PlaceList({
             </p>
           ))}
         {list.map((p) => {
-          const isRide = p.c === 'coaster' || p.c === 'ride';
+          const isRide = isRideable(p);
           const verdict = isRide ? eligibility(p, height, withAdult) : 'unknown';
           const v = VERDICT[verdict];
           const d = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
@@ -327,6 +329,11 @@ export default function PlaceList({
                     <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
                       Make this the meet-up
                     </button>
+                    {onAddToPlan && (
+                      <button type="button" className="btn small" onClick={() => onAddToPlan(p)}>
+                        Add to plan
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

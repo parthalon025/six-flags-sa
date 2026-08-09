@@ -16,6 +16,7 @@ import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
 import RoutePreview from '@/components/RoutePreview';
+import IntelligencePanel, { addPlaceToPlan } from '@/components/IntelligencePanel';
 import DirectionsPanel from '@/components/DirectionsPanel';
 import useSheetDrag from '@/components/useSheetDrag';
 import useGeolocation from '@/components/useGeolocation';
@@ -32,7 +33,7 @@ import {
   sheetPlan,
   sheetStops,
 } from '@/lib/sheet';
-import { CATEGORIES, eligibility, hasHeights } from '@/lib/park';
+import { CATEGORIES, eligibility, hasHeights, isRideable } from '@/lib/park';
 import { statusSummary } from '@/lib/rideStatus';
 import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
 import {
@@ -44,6 +45,8 @@ import {
   splitRouteAt,
   OFF_ROUTE_M,
 } from '@/lib/routing';
+import { profilesForCoverage, profileOpts } from '@/lib/routingProfiles';
+import { pickReunification } from '@/lib/reunification';
 import {
   bootVenue,
   confirmVenue,
@@ -255,6 +258,8 @@ export default function Page() {
   const [northUp, setNorthUp] = useState(false);
   const [voice, setVoice] = useState(false);
   const [rerouted, setRerouted] = useState(0);
+  const [routeProfile, setRouteProfile] = useState('default');
+  const [reunifyBusy, setReunifyBusy] = useState(false);
 
   const stack = stacks[tab] ?? EMPTY_STACK;
   const view = stack[stack.length - 1] ?? null;
@@ -664,6 +669,23 @@ export default function Page() {
     [party],
   );
 
+  const selfMember = useMemo(
+    () => roster.find((m) => m.id === party?.selfId),
+    [roster, party?.selfId],
+  );
+
+  const routeProfiles = useMemo(
+    () => profilesForCoverage(mapData?.meta?.coverage || {}),
+    [mapData?.meta?.coverage],
+  );
+
+  const profileNote = useMemo(() => {
+    const cov = mapData?.meta?.coverage;
+    if (!cov) return 'Path tags not measured for this venue yet.';
+    if (routeProfile === 'no_steps' && !cov.steps) return 'No stairs recorded in OpenStreetMap here.';
+    return null;
+  }, [mapData?.meta?.coverage, routeProfile]);
+
   const others = useMemo(
     () => roster.filter((m) => m.id !== party?.selfId && Number.isFinite(m.lat)),
     [roster, party?.selfId],
@@ -717,6 +739,7 @@ export default function Page() {
       // position which never landed can never come round.
       const decision = shouldBroadcast({ heading, now: Date.now() });
       if (!decision.send) return;
+      if (selfMember?.sharingPaused) return;
       runtime.current?.pushLocation({
         lat: fix.lat,
         lng: fix.lng,
@@ -729,7 +752,7 @@ export default function Page() {
     tick();
     const id = setInterval(tick, GATE_TICK_MS);
     return () => clearInterval(id);
-  }, [active, position, heading, shouldBroadcast]);
+  }, [active, position, heading, shouldBroadcast, selfMember?.sharingPaused]);
 
   // NEED HELP has to interrupt, once per person per episode.
   useEffect(() => {
@@ -997,11 +1020,12 @@ export default function Page() {
     await runtime.current?.leave();
   };
 
-  const setMeetPoint = (lat, lng, label) => {
+  const setMeetPoint = useCallback((lat, lng, label) => {
     setArmMeet(false);
     const record = { lat, lng, label: label || 'Meet-up' };
     if (active) {
       runtime.current?.setMeet(record);
+      runtime.current?.logAction?.('meet-set', { label: record.label });
       showToast('Meet-up shared with your party');
       pushNote({
         kind: 'meet',
@@ -1013,12 +1037,38 @@ export default function Page() {
       setLocalMeet({ ...record, by: identity?.name || 'Someone', ts: Date.now() });
       showToast('Meet-up marked (join a party to share it)');
     }
-  };
+  }, [active, identity?.name, showToast, pushNote]);
+
+  const suggestReunification = useCallback(() => {
+    if (!graph || !position) {
+      showToast('Need a map and your position first');
+      return;
+    }
+    setReunifyBusy(true);
+    try {
+      const located = roster.filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
+      const candidate = pickReunification(
+        graph,
+        located.map((m) => ({ location: { lat: m.lat, lng: m.lng } })),
+        POIS,
+      );
+      if (!candidate) {
+        showToast('No fair meet point on the walkable network');
+        return;
+      }
+      setMeetPoint(candidate.lat, candidate.lng, candidate.n);
+      setFocusPoint({ lat: candidate.lat, lng: candidate.lng });
+      shrinkSheet(stops.peek);
+    } finally {
+      setReunifyBusy(false);
+    }
+  }, [graph, position, roster, POIS, showToast, shrinkSheet, stops.peek, setMeetPoint]);
 
   const clearMeet = () => {
     setLocalMeet(null);
     if (!active) return;
     runtime.current?.setMeet(null);
+    runtime.current?.logAction?.('meet-clear', {});
     // On everyone else's phone a cleared meet-up simply vanishes, which is the
     // one change to it nobody is told about.
     pushNote({
@@ -1037,14 +1087,14 @@ export default function Page() {
     if (height == null) return null;
     const out = new Map();
     POIS.forEach((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride') return;
+      if (!isRideable(p)) return;
       out.set(p.n, eligibility(p, height, withAdult));
     });
     return out;
   }, [POIS, height, withAdult]);
 
   const totalRides = useMemo(
-    () => POIS.filter((p) => p.c === 'coaster' || p.c === 'ride').length,
+    () => POIS.filter(isRideable).length,
     [POIS],
   );
 
@@ -1062,7 +1112,7 @@ export default function Page() {
   const rideableCount = useMemo(() => {
     if (height == null) return null;
     return POIS.filter((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride') return false;
+      if (!isRideable(p)) return false;
       const v = eligibility(p, height, withAdult);
       return v === 'yes' || v === 'companion';
     }).length;
@@ -1281,6 +1331,9 @@ export default function Page() {
       landmarks: POIS,
       destination: navTarget.label,
       areas: mapData?.landAnchors,
+      ...(graph && routeProfile !== 'default'
+        ? profileOpts(routeProfile, graph)
+        : {}),
     };
     // Alternatives are a choice you make once, before setting off. Recomputing
     // them on every step of the walk would keep changing the answer under a
@@ -1300,7 +1353,7 @@ export default function Page() {
     }
     // POIS is in here because the landmarks a turn is named after belong to the
     // loaded venue now, not to a module constant.
-  }, [navTarget, position, graph, navPhase, mapData, POIS]);
+  }, [navTarget, position, graph, navPhase, mapData, POIS, routeProfile, pick]);
 
   const routes = routesList;
   const route = routesList[pick] ?? routesList[0] ?? null;
@@ -1730,6 +1783,10 @@ export default function Page() {
           onStart={beginWalking}
           onCancel={stopNav}
           onSteps={() => push('route', 'explore')}
+          profiles={routeProfiles}
+          profileId={routeProfile}
+          onProfile={setRouteProfile}
+          profileNote={profileNote}
         />
       )}
 
@@ -1940,6 +1997,7 @@ export default function Page() {
                   // Reporting needs somewhere to send it. Outside a party the list
                   // still shows the forecast, minus the buttons.
                   onReport={party?.active ? reportRide : null}
+                  onAddToPlan={party?.active ? (p) => { addPlaceToPlan(p); showToast(`Added ${p.n} to plan`); } : null}
                   now={clock}
                 />
               </>
@@ -1959,6 +2017,7 @@ export default function Page() {
             )}
 
             {view === null && tab === 'party' && (
+              <>
               <PartyPanel
                 code={code}
                 invite={party?.invite ?? null}
@@ -2014,7 +2073,31 @@ export default function Page() {
                   allowJoins();
                   showToast('Anyone with the code can join for the next 10 minutes');
                 }}
+                onSuggestReunification={suggestReunification}
+                reunifyBusy={reunifyBusy}
               />
+              {active && (
+                <IntelligencePanel
+                  rides={partyRides || {}}
+                  myGroupId={selfMember?.groupId}
+                  sharingPaused={selfMember?.sharingPaused}
+                  onGroupId={(g) => runtime.current?.setGroupId?.(g)}
+                  onSharingPaused={(v) => runtime.current?.setSharingPaused?.(v)}
+                  onApplyPlan={(ops) => {
+                    for (const op of ops) {
+                      if (op.kind === 'set-meet' && op.body?.meet) {
+                        setMeetPoint(op.body.meet.lat, op.body.meet.lng, op.body.meet.label);
+                      }
+                      if (op.kind === 'set-target' && op.body?.rideId) {
+                        runtime.current?.setTarget(op.body.rideId);
+                      }
+                    }
+                    showToast('Plan applied to the party');
+                  }}
+                  onUndoMeet={clearMeet}
+                />
+              )}
+              </>
             )}
 
             {view === null && tab === 'rides' && (

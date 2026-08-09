@@ -95,7 +95,7 @@ const PATH_FLAGS = new Set(['overrides', 'merge', 'trace']);
  * @param place   the resolved geocoder hit, when `--place` was how it was asked for
  * @param counts  what the build produced, for a human reading the file
  */
-export function recipeFrom({ args, id, name, box, place = null, counts = null, built = null }) {
+export function recipeFrom({ args, id, name, box, place = null, counts = null, built = null, expect = null }) {
   const options = {};
   for (const flag of SHAPING_FLAGS) {
     if (!(flag in args)) continue;
@@ -135,6 +135,7 @@ export function recipeFrom({ args, id, name, box, place = null, counts = null, b
       : null,
     options,
     built: built || (counts ? { at: new Date().toISOString().slice(0, 10), counts } : null),
+    ...(expect ? { expect } : {}),
   };
 }
 

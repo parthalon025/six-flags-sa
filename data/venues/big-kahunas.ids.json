@@ -16,7 +16,8 @@
     "pleasure-island": {"n":"Pleasure Island","c":"ride","at":"30.388936,-86.472939"},
     "skycoaster": {"n":"Skycoaster","c":"ride","at":"30.388721,-86.471682"},
     "thunder-river": {"n":"Thunder River","c":"ride","at":"30.38902,-86.47305"},
-    "tiki-river-run": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286"},
+    "tiki-river-run": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286","retired":true},
+    "tiki-river-run-right-slide": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286"},
     "wave-pool": {"n":"Wave Pool","c":"ride","at":"30.387829,-86.473478"}
   }
 }
