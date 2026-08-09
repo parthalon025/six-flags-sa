@@ -138,29 +138,84 @@ sources at the ontology layer — one property, one source, reconcile upstream.
 publishing. For OpenStreetMap plus park sources that is the better call, and Foundry
 has no equivalent.
 
-## Three defects found while auditing
+## Eight defects found while auditing
 
-These were not on anyone's list. They are described here and tracked as work items.
+None of these were on anyone's list. Three were found in the first pass; the rest
+turned up when the fixes were planned in detail, and two of them are worse than what
+they were found alongside.
 
-**1. Two writers, one scheduled.** `public/venues/<id>.pois.json` is produced by both
-`scripts/build-venue.mjs`, which regenerates it wholesale from OpenStreetMap, and
-`scripts/attractions.mjs` `publish()`, which writes fused entrances into `e` and
-`out`. Only the first runs in `.github/workflows/build-venue.yml`. Published derived
-entrances therefore regress silently on every rebuild: the evidence sidecar survives,
-the published fields do not.
+**1. Three writers, one scheduled.** `public/venues/<id>.pois.json` is produced by
+`scripts/build-venue.mjs` via `writeVenue` (`:1645`), by `scripts/attractions.mjs`
+`publish()` (`:350`), and — the one missed on the first pass — by `reapply`
+(`:876`), which reads the generated bundle back off disk, re-applies overrides and
+writes it out again. That last one is a read–modify–write on a generated artifact,
+which makes whatever is sitting in the bundle self-perpetuating. The consequence is
+that `npm run venues:overrides` **preserves** published entrances while
+`npm run venues:rebuild` **destroys** them: two maintenance paths that disagree about
+whether a field exists. Only the builder runs in `.github/workflows/build-venue.yml`,
+so the sidecar is the one artifact on the graph with no schedule at all.
 
-**2. Provenance laundering.** `scripts/lib/candidates.mjs:114-126` reads any `poi.e`
-entry and emits it as `source: 'osm_named_queue'` at weight 4 with the note *"a named
-queue tagged one-way towards the ride"*, without checking `e[i].src`. But `e` is also
-written by `applyTrace` and by `publish()`. A traced pin, weight 3, re-enters as a
-weight-4 mapper-surveyed claim with a false justification; 3 + 4 = 7 reaches the
-`moderate` publish floor, and a single fact publishes itself. This is the exact
-repetition `fuse()`'s dedupe-by-source-kind rule exists to prevent, routed around by
-the field rather than the source.
+**2. Provenance laundering, on two fields.** `scripts/lib/candidates.mjs:114-126`
+reads any `poi.e` entry and emits it as `source: 'osm_named_queue'` at weight 4 with
+the note *"a named queue tagged one-way towards the ride"*, without checking
+`e[i].src`. A traced pin, weight 3, re-enters as a weight-4 mapper-surveyed claim
+with a false justification; 3 + 4 = 7 reaches the `moderate` publish floor and a
+single fact publishes itself.
+
+The heavier path is on `out`. `publish()` stamps `src.by` with the feature name, so a
+published exit carries `'ride_exit'`. On the next run `fromTrace` tests
+`at.src?.by === 'trace' ? 'traced' : 'official_map'` (`attractions.mjs:144`), and
+`'ride_exit' !== 'trace'`, so the app's own output re-enters as **`official_map` at
+weight 5** — the top of the table — annotated "traced off the park's own map".
+5 + 5 = 10 = `high`. Any fix has to cover both fields.
 
 **3. Dead read.** `scripts/attractions.mjs:134` looks for `p.in`; `applyTrace` writes
 `p.e`. Nothing in the repository writes `p.in`. Traced entrances are invisible to the
-inventory. Exits still work.
+inventory. Exits still work. The README repeats the stale claim in two places, at
+`:745` and `:785`, and `venue-trace.mjs:7` says it a third time.
+
+**4. Stale source kinds double-count, and it is live on disk.** `addEvidence`
+supersedes only same-source entries. Commit `9a4d647` labelled the queue-name
+detector `osm_named_queue`; `a318e6c` renamed it `osm_queue_name` and gave the old
+label to a different detector. The rename orphaned evidence nothing will ever clear.
+Cedar Point's Maverick carries both labels for **the same OpenStreetMap way**, counted
+as two independent sources — the exact repetition `fuse()`'s dedupe-by-kind rule
+refuses, routed around by a source rename rather than by a field. Score 6 against a
+floor of 7: one more claim and a double-counted fact publishes. All seven Cedar Point
+`station` slots carry the same stale label.
+
+**5. Staleness is inert by construction.** `addEvidence` stamps `date: claim.date ||
+asOf`, where `asOf` is the run date. Every evidence entry in all four sidecars reads
+`2026-08-09` — when the script last ran, not when anything was observed. So
+`staleness()`, which exists precisely to flag evidence older than twelve months
+without decaying it, can never fire: the pipeline re-dates its own derived claims on
+every run. 230 records, `last_verified: null` on all of them, `stale: false`
+everywhere. This also means wiring the inventory into the build naively would rewrite
+all 230 records every run and produce a non-empty pull request on every rebuild,
+destroying the byte-identical-rebuild property that makes "does OpenStreetMap still
+say what we shipped?" a question a diff can answer.
+
+**6. Two keep-predicates that disagree about who owns `e`.** `publish()` keeps
+entries matching `!x.src?.by && metresBetween(x, value) > 20`, so a traced entry —
+which has `src.by` — fails the test and **publishing silently deletes every traced
+entrance from the bundle**. `applyTrace` keeps `x.src?.by !== 'trace'`, which
+preserves published entries. Whichever ran last wins.
+
+**7. A height-chart column header is shipped as a ride.**
+`public/venues/kings-island.pois.json` carries two places literally named **"Age or
+Weight"**, categorised `c: "ride"`, in Action Zone and Coney Mall. It is a column
+header from the park's height chart that has been ingested as an attraction. Two
+"Arcade" entries are filed as rides too. Neither has a rule, so both currently render
+"Check at the ride" as though they were things you could queue for. They belong on the
+`drop` list.
+
+**8. The routing graph invents shortcuts over and under bridges.**
+`splitAtCrossings` (`lib/routing.js:229-279`) welds a junction wherever two ways cross
+in plan view. Two ways at different `layer` do not meet in reality. Kings Island has
+30 ways tagged `bridge` and 33 carrying a `layer`, so this is not theoretical — the
+router will happily walk you off a bridge onto the path beneath it. This is a
+correctness bug of the same kind as the stairs one and probably a larger one in
+practice.
 
 ## The work, in order
 
@@ -181,6 +236,309 @@ Sequencing is driven by what unblocks what, not by what is most visible.
 7. **Party gaps** — subgroups, reunification on the real graph, sharing controls.
 
 Detailed per-workstream implementation plans follow as they are completed.
+
+### Workstream: pipeline integrity
+
+The fix for defect 1 has two candidate shapes and they are not equivalent.
+
+**Make the inventory a stage of the build.** `inventory()` reads both its inputs off
+disk today; refactor it to take `{ map, pois }` in memory and call it inside
+`buildOne` after the trace block and before `pois.sort()` and `driftFrom`. `publish()`
+then mutates the in-memory places and the single `writeVenue` emits them. `e` becomes
+fully derived on every build, so there is nothing left to regress.
+
+**Or have `publish()` write into `overrides.json`.** Rejected, for four reasons. The
+overrides file is hand-authored and every comment in the repo says so, and a machine
+appending to it makes "who wrote this line" unanswerable. `applyOverrides` does
+`Object.assign`, so a published `e` would clobber `entrancesFromQueues` rather than
+merge with it — the same fight in the other direction. It is the wrong layer: an
+override is raw hand input and a fused coordinate is derived output, so this is
+upstream-writeback, the same violation moved one file left. And it does not fix the
+read side at all.
+
+Take the first. It is the only option that satisfies both single-writer discipline and
+"derived values flow downstream as ordinary properties" at once.
+
+**Ordering is load-bearing here, not stylistic.** Defect 5 must be fixed before the
+inventory joins the build, or every rebuild produces a non-empty pull request and the
+property the whole design protects is gone. Three groups:
+
+1. *Independent, no bundle regeneration.* Defect 3 and the three documentation fixes;
+   the case-sensitivity join in `inventory()`, which is a no-op on today's data and
+   expensive the first time OpenStreetMap recapitalises a ride; and the Kings Island
+   walkable-network lock.
+2. *One pull request, one bundle regeneration.* A single `src.by` vocabulary across
+   all three writers, both readers refusing unsourced entries, the retired-source
+   purge, a rebuild to stamp Cedar Point's six entrances, and the test that every
+   entrance says where it came from. Landing any of these without the others either
+   costs Cedar Point its claims or fails CI.
+3. *After both.* Defect 5, then the inventory stage, then promoting the checklist's
+   required items to build-aborting expectations.
+
+**The Kings Island lock should be data, not prose.** The bundle measures 105.9 km of
+walkable network today; a fresh Overpass query returns 95.9 km. That is 10 km of
+service road the routing depends on, and it cannot be got back. Add an `expect` block
+to the recipe carrying `walkable_km_min`, enforced in three places — a throw in the
+build before `writeVenue`, carried through `recipeFrom` so a rebuild cannot delete the
+lock it was built under, and a test asserting every venue clears its own floor. It
+generalises: `expect` is the venue-scoped expectations block and the recipe already
+records `pois`, `rides` and `heights` counts that nothing reads.
+
+**On the primary-key expectation:** it cannot simply assert that ride names are
+unique, because Fiesta Texas legitimately ships two Poltergeists and two Gully
+Washers as separate OpenStreetMap objects. The assertion is that duplicates agree on
+the fields the pipeline joins on.
+
+### Workstream: path attributes and routing profiles
+
+A live Overpass probe over the Kings Island box changes the shape of this work. Of 732
+`highway` ways: `oneway` on 142, `surface` on 42, `access` and `foot` on 35 each,
+`layer` on 33, `bridge` on 30 — and **`highway=steps` on exactly two.** `wheelchair`,
+`incline`, `covered`, `indoor`, `width` and `conveying` are on **zero**.
+
+So the framing "the blocker is the data, not the algorithm" is right but off by one
+level. The blocker is not that `build-venue.mjs:387` discards the tags. It is that at
+this park the tags mostly do not exist. Carrying them is still correct and nearly
+free, and it is the only way data can ever arrive as OpenStreetMap improves — but the
+honest deliverable is not "unlock routing profiles". It is three things: carry the
+tags; ship a per-venue **coverage counter** in `meta`; and make every profile's copy a
+function of that counter, so a profile with zero coverage is not offered at all and a
+profile with thin coverage says so on the route card. Without the counter this ships a
+wheelchair button that draws a confident line from no data, which is worse than
+shipping nothing.
+
+That also reorders the value. The stairs bug is real but it is two ways at one park.
+**Grade separation is the bigger win** — 30 bridges and 33 layered ways at Kings
+Island alone, every one of them a potential invented junction.
+
+**Encoding: a bitfield integer, `f`, emitted only when non-zero.** Note that
+`map.json` is written minified by `serializeVenue`, so it has no diffability to
+protect — the reviewable file is `pois.json`. Measured cost: **+1.4 KB at Kings
+Island, +1.8 KB at Cedar Point**, the constrained venue at 628 KB against a 1200 KB
+ceiling. Named keys would cost 5–6× that and grow without bound; the bitfield is flat
+to thirteen bits. This is not a bundle-size decision.
+
+**`FACTOR` should not become a parameter.** `index()` bakes cost into the graph, so
+per-profile factors mean re-indexing or duplicating it. Unnecessary — `opts.penalty`
+is already a per-segment multiplier, so a profile is a pure function over
+`graph.segments`, memoised per graph. One graph, one index.
+
+**A fourth penalty-hook defect, and it is the one that breaks exclusion.**
+`snapToGraph` knows nothing about `penalty`, so with a segment set to `Infinity` the
+search will still snap you *onto* it and charge a finite cost to walk along it — a
+wheelchair route that begins by going up the stairs it excluded. Snapping needs an
+exclusion predicate, and "the only reachable snap is excluded" is a legitimate
+`blocked` result.
+
+Relatedly, `continue` alone does not fix the alternates bug. Penalty accumulates only
+from accepted routes, so a rejected candidate would be re-derived identically next
+round and the loop would spin to its limit producing nothing. The rejected candidate's
+segments have to be penalised too.
+
+**Synthetic segments must mean unknown, not step-free.** `bridgeIslands` is how the
+graph is connected at all — 221 pieces down to two. A profile that hard-excluded
+unknown segments would disconnect the park. Synthetic links stay traversable under
+every profile and their presence on a route is reported rather than excluded.
+
+**Shade: ship the cheap version, defer the real one.** Solar geometry is
+straightforward to write and the obstacle grid already exists, but shadow length needs
+building heights and OpenStreetMap has essentially none at these parks — every shadow
+would be a guess dressed as geometry. Tree cover is the shade you can actually trust:
+"within about 15 m of a `wood` ring" is one cheap pass over 34 rings at Kings Island
+and 114 at Cedar Point, needs no clock, and honestly labelled captures most of the
+real shade. When solar does arrive it belongs in its own module taking the sun vector
+as an argument, so `lib/routing.js` keeps its no-clock promise.
+
+**Precomputing the graph is declined.** It would add roughly 150 KB to Kings Island
+and 250 KB to Cedar Point, and it is pure duplication — the renderer still needs the
+same geometry, so you would ship it twice. Caching the built graph in IndexedDB keyed
+on a hash of the map file gets the same result for zero bytes, and only if a real
+phone measurement shows the idle-time build actually hurts.
+
+**Still open:** tag coverage at the other three venues was not measured. Fiesta Texas
+is quarry-built and plausibly has more steps than Kings Island. One Overpass query per
+park settles which profiles are worth offering, and should happen before any of this
+is committed to.
+
+### Workstream: stable identity
+
+Two things assumed at the top of this document turned out to be wrong, and the plan is
+better for it.
+
+**The OpenStreetMap element id is the wrong primary key.** `buildPois` has no 1:1
+relationship with OSM elements to begin with — the dedupe deliberately collapses a
+track way, a station building and a name node into one place, and which element "wins"
+depends on iteration order. `poisFromTrack`, `campPitches`, `overrides.add` and traced
+features have no element at all. An OSM-keyed scheme covers perhaps 60% of rows and
+needs a second scheme for the rest, which means two schemes, which means none. It is
+also not as stable as it sounds: a mapper who deletes and redraws a way produces a new
+`way/id` for the same physical coaster — exactly the edits-lost failure the guidance
+warns about. Keep OSM ids as **provenance and as a matching tiebreaker**, not as
+identity.
+
+**The id rule is not duplicated across three files.** `lib/venue/store.js`,
+`app/api/rides/catalog.js` and `server/index.mjs` all *import* `withIds` from
+`lib/venue/ids.js`; the relative-import-with-extension style is deliberate and the
+module header says why. That requirement is already met, and the job is to avoid
+regressing it rather than to build it.
+
+**The duplicate-name problem is far larger than "two Poltergeists."** Measured on the
+shipped bundles: Cedar Point has 26 places called "Restrooms", 12 "Services", 11
+"Parking", 8 "Dippin' Dots" — **78 rows in a name collision, 18% of the venue**, every
+one of them currently addressed by a positionally-assigned suffix, and every one a
+live address for a ride report, a favourite and a nav target.
+
+**The scheme:** keep `slug(name)` when the name is unique, and `slug(name)-N` when it
+is not — but make `N` *data* rather than a computation over array order. Write the key
+into the bundle as `i`, and keep a committed, diffable
+`data/venues/<id>.ids.json` ledger so the next rebuild has a memory. A rebuild then
+matches in three passes: unique names take their slug outright, which settles 85–100%
+of every venue with no possibility of drift; collision groups match against the ledger
+by nearest-position with an OSM-id tiebreaker; anything unmatched takes the next number
+never yet issued, and anything unclaimed is retired with a tombstone so its number is
+never reissued.
+
+**The migration costs nothing and touches no network.** Seeding the ledger from the
+*current* `withIds` output reproduces, by definition, exactly the ids that are on
+phones today — so the ledger is born agreeing with production and no live ride report
+moves. `npm run venues:overrides` already re-applies overrides from disk without
+Overpass, which is what makes this affordable.
+
+**Name-keyed overrides stay.** Converting 196 hand-written entries to slugs would be a
+downgrade: those files are read and edited against a park's published height chart,
+where `"BATMAN The Ride"` is checkable and `batman-the-ride` is not. Id keys become an
+*escape hatch* for the ambiguous cases. This is the title-separate-from-key rule doing
+its job — the overrides file is the title side, the bundle is where the key lives.
+
+**Two latent bugs this exposes.** `applyOverrides` uses a shallow `Object.assign`, so
+an override supplying `h: { min: 48 }` would set `alone` and `max` to undefined; every
+override on disk happens to write all three keys, so it has never bitten.
+`overrides.drop` filters by name, so `drop: ["Entrance"]` at Cedar Point would silently
+remove all five — the same duplicate-name bug as `rideEligibility`, in the build.
+
+**And one piece of the brief to reject.** Entity-level tombstones are right; property-
+level ones are not. A "deliberately absent" height rule would create a third state
+alongside absent and zero that no UI can render, in an app whose whole discipline is
+keeping those two distinguishable. If a height rule is wrong, the edit is `h: null`,
+which already reads as "check at the ride."
+
+### Workstream: eligibility
+
+**Both encoding holes share one root cause.** `min: 0` is a magic number meaning "the
+park states there is no floor", but that distinction exists for `min` alone — `alone`
+and `max` have no way to say "the park states there is no ceiling". That is why Cedar
+Point spells "no floor" a second way as `{min: null, alone: null, max: 54}`, and why
+Buccaneer Cove's stated 48" ceiling is unrepresentable. So v2's central move is not
+adding fields; it is one uniform three-state on every dimension: absent means nobody
+recorded it, `"none"` means the park states there is no such limit, a number is the
+threshold. `"none"` as an explicit string rather than by inverting `null`, because a
+reader that does not understand it cannot silently read it as zero.
+
+**Big Kahuna's Wave Pool is not a contradiction after all.** `alone: 48` with a note
+saying 42 looked like one source disagreeing with another. It is two rules at two
+thresholds — a companion at 48", a flotation device at 42" — and the flat triple could
+hold only one, so the other went to prose. v2 holds both. Genuine source disagreement
+is a different thing and lives in the sidecar.
+
+**`advisory` is the honesty discipline made mechanical.** Buccaneer Cove's "built for
+children under 48\"" is a stated intent, not an enforced rule, so it must never
+produce `toobig`. A 52" teenager gets a pass with a caveat, because the park did not
+say they may not ride — it said who it was built for.
+
+**A correction to what this document said earlier.** The name-keyed `rideEligibility`
+map is a latent hazard, not a live bug. `applyOverrides` deliberately patches *every*
+POI sharing a name, with a comment saying so, added for exactly this reason — so
+Fiesta Texas's two Poltergeists both carry `{min: 54}` and both get the same verdict.
+Verified in the bundle. The live duplicate-name bug is next door: `PlaceList.jsx:218`
+opens **both** rows and `ParkMap.jsx:744` pins **both** markers, including the wrong
+one of Cedar Point's 26 "Restrooms".
+
+**Heights must not go on the wire.** `publicSnapshot` returns the members map
+wholesale and there is no field-level redaction anywhere in the model, so anything
+added to `createMember` reaches every peer — and the host is whichever phone won an
+election, in a party joinable by a six-character code. `patch-member` already
+allowlists name, avatar and status; adding height means widening a list that exists to
+stop exactly this. Nothing needs it: every consumer of a height is local, and the one
+genuinely shared question — can all five of us ride this together — is answerable from
+verdicts alone. Profiles live in `localStorage` beside the identity blob, and
+`createMember` gains nothing.
+
+**Per-rule provenance goes in a sidecar**, `data/venues/<id>.heights.json`, parallel
+to the attractions sidecar and for the same reason its header already gives. Of
+`evidence.mjs`, `staleness()` transfers verbatim and is the best fit — rules change
+between seasons, and flagging without decaying is exactly right for "the 2026 chart is
+old, not wrong". The bands and publish floor transfer. `fuse()` does not, because half
+of it is distance arithmetic, but its reasoning copies into a scalar equivalent.
+
+**One thing inverts and must be handled.** A coordinate that fails the publish floor is
+dropped, which loses a pin. A *height rule* that is dropped makes the app say "no
+rule", which is the permissive answer — the safety bug. So a below-floor height rule
+publishes at low confidence marked "reported, not confirmed", never dropped.
+
+**And a tension needing a human call, not a script's.** Cedar Point's overrides state
+the tie-break policy out loud: where charts disagreed, the lower floor was taken, so
+the filter errs towards letting a child queue. That is deliberate and guest-friendly,
+and it is the opposite of safety-conservative. Under `evidence.mjs`'s own anchor rule
+The Bat's 54" from the park's own page outranks the 48" the app publishes. That should
+be changed or explicitly justified, not carried through the migration unexamined.
+
+### Workstream: scenarios, undo and the action log
+
+**Scenarios should be local to one phone.** Replicating them is the wrong call for
+four reasons, strongest first. Payload: `publicSnapshot` rides on **every VICTORY
+frame**, and a contested election re-asserts roughly every 1.5 s — so a shared plan is
+several hundred bytes on the wire precisely when the party is least healthy, on a
+phone whose radio is already failing. Authorization: the reducer's rule is that a patch
+applies to `from`, with two exceptions justified as "crowd data about a shared object,
+not a claim about a person". A shared plan is neither — it is a claim about the
+party's future, owned by nobody. Conflict: two phones reordering one list is
+collaborative editing, and last-write-wins on an ordered list eats an insert silently.
+And Foundry's own scenario is a per-user sandbox; replicating it is the thing Foundry
+specifically does not do.
+
+Most of the value survives, because **the merge is party-wide even when the plan is
+not.** Merging emits ordinary commands, so the party sees the meet-up move and targets
+set — real, shared, at one version bump.
+
+**Atomicity is free.** `withOps` already bumps the version by exactly one per call and
+clients hard-require `version + 1`, so a merge that produces one call with N ops is
+already atomic on the wire and already replicates correctly.
+
+**Broken steps are shown, never dropped.** A step whose ride has been reported down
+stays in place, struck through with the reason, excluded from the overlay and the
+merge, and offering *Keep it anyway* — because the app's own status vocabulary is
+hedged, and a family who can see the ride running from where they stand is better
+informed than the forecast.
+
+**Undo is not the scenario.** A scenario holds actions that have not happened; undo
+concerns actions that have. If undo were "pop the scenario" then merging a plan would
+clear your undo, and undoing something done by hand outside a plan would be
+impossible. Undo instead reads the log and emits a *new forward command* that inverts
+the effect — the reducer has no reverse, and building one would mean keeping every
+prior state. Its limits are real and should be stated in the UI: a party-wide action
+someone else has since touched cannot be undone, a report past its TTL cannot, and
+side effects never are. You cannot un-buzz a phone.
+
+**The log belongs in IndexedDB, not localStorage.** The offline outbox already owns
+that quota and degrades silently on overflow, so a second writer there could start
+dropping *outbound party traffic* — a correctness bug, not a storage inconvenience.
+IndexedDB is already in the codebase for push keys. Append-only is enforced
+structurally: the module exports no update, and `add()` throws on a duplicate key.
+
+**What context capture can and cannot support.** It yields genuinely new information —
+how long the party's belief survived before someone corrected it — and its first and
+best customer is the app's own constants, because `RIDE_STALE_AFTER_MS` is currently
+30 minutes chosen by hand. What it cannot support is any rate. One family produces
+maybe 20–40 observations a day across 60 rides, so most rides sit at n = 0 or 1
+forever; the sample is a walk, not a random draw; and reporting is negatively biased
+because people tap when something is surprising. **Show counts, never rates, always
+show n, and below n = 5 show the raw observations instead of a summary.**
+
+**Delete `avatar` from the wire before adding anything.** It is populated by nothing,
+and an avatar is a data URL — precisely the payload that must never land in a snapshot
+during a VICTORY storm. Initials already exist in the tab bar. Similarly delete
+`shareLocationHistory`, which is worse than dead: it implies location history could be
+shared, and the code says flatly that it is never kept.
 
 ## Deliberately not planned
 
