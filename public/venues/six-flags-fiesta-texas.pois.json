@@ -1,5 +1,6 @@
 [
   {
+    "i": "acme-company-store",
     "n": "ACME Company Store",
     "lat": 29.598641,
     "lng": -98.612473,
@@ -7,6 +8,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "aztek-the-ultimate-nachos",
     "n": "Aztek The Ultimate Nachos",
     "lat": 29.596613,
     "lng": -98.610475,
@@ -14,6 +16,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "bahama-blaster",
     "n": "Bahama Blaster",
     "lat": 29.60098,
     "lng": -98.61002,
@@ -26,6 +29,7 @@
     }
   },
   {
+    "i": "bamboo-chutes",
     "n": "Bamboo Chutes",
     "lat": 29.6008,
     "lng": -98.61048,
@@ -39,6 +43,7 @@
     "note": "Children's slide — the park posts a maximum, not a minimum."
   },
   {
+    "i": "bat-girl-coaster-chase",
     "n": "Bat Girl: Coaster Chase",
     "lat": 29.596535,
     "lng": -98.609987,
@@ -51,6 +56,7 @@
     }
   },
   {
+    "i": "batman-the-ride",
     "n": "BATMAN The Ride",
     "lat": 29.596759,
     "lng": -98.609373,
@@ -63,6 +69,7 @@
     }
   },
   {
+    "i": "batmobile",
     "n": "Batmobile",
     "lat": 29.596248,
     "lng": -98.609502,
@@ -70,6 +77,7 @@
     "a": "Rockville"
   },
   {
+    "i": "beach-bum-surf-co",
     "n": "Beach Bum Surf Co.",
     "lat": 29.598859,
     "lng": -98.611083,
@@ -77,6 +85,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "bee-bop-s",
     "n": "Bee Bop's",
     "lat": 29.596132,
     "lng": -98.608675,
@@ -84,6 +93,7 @@
     "a": "Rockville"
   },
   {
+    "i": "bermuda-triagle",
     "n": "Bermuda Triagle",
     "lat": 29.60013,
     "lng": -98.61076,
@@ -98,6 +108,7 @@
     "note": "OpenStreetMap spells it \"Triagle\"; the park spells it Triangle."
   },
   {
+    "i": "bermuda-triangle-riptide-runner-slide-pool",
     "n": "Bermuda Triangle, Riptide Runner Slide Pool",
     "lat": 29.599801,
     "lng": -98.610599,
@@ -110,6 +121,7 @@
     }
   },
   {
+    "i": "blue-snowman-soft-serve",
     "n": "Blue Snowman Soft Serve",
     "lat": 29.59551,
     "lng": -98.608782,
@@ -117,6 +129,7 @@
     "a": "Rockville"
   },
   {
+    "i": "bonzai-pipelines",
     "n": "Bonzai Pipelines",
     "lat": 29.60032,
     "lng": -98.61158,
@@ -131,6 +144,7 @@
     "note": "Children's racer."
   },
   {
+    "i": "boomerang-coast-to-coast",
     "n": "Boomerang Coast to Coast",
     "lat": 29.598332,
     "lng": -98.610796,
@@ -144,6 +158,7 @@
     "alias": "Boomerang"
   },
   {
+    "i": "bucking-broncos",
     "n": "Bucking Broncos",
     "lat": 29.598305,
     "lng": -98.61269,
@@ -158,6 +173,7 @@
     "note": "Formerly Buckarooz"
   },
   {
+    "i": "bugs-white-water-rapids",
     "n": "Bugs White Water Rapids",
     "lat": 29.597136,
     "lng": -98.610157,
@@ -170,6 +186,7 @@
     }
   },
   {
+    "i": "candy-storm",
     "n": "Candy Storm",
     "lat": 29.596004,
     "lng": -98.60902,
@@ -177,6 +194,7 @@
     "a": "Rockville"
   },
   {
+    "i": "canyon-smokehouse",
     "n": "Canyon Smokehouse",
     "lat": 29.598395,
     "lng": -98.612695,
@@ -184,6 +202,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "captain-jack-s-snack-shack",
     "n": "Captain Jack's Snack Shack",
     "lat": 29.59898,
     "lng": -98.611223,
@@ -191,6 +210,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "chop-six",
     "n": "Chop Six",
     "lat": 29.597914,
     "lng": -98.612915,
@@ -198,6 +218,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "chupacabra",
     "n": "Chupacabra",
     "lat": 29.598875,
     "lng": -98.608365,
@@ -210,6 +231,7 @@
     }
   },
   {
+    "i": "coca-cola-ahh",
     "n": "Coca-Cola Ahh",
     "lat": 29.599995,
     "lng": -98.611735,
@@ -217,6 +239,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "coca-cola-refresh-station",
     "n": "Coca-Cola Refresh Station",
     "lat": 29.599163,
     "lng": -98.609456,
@@ -224,6 +247,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "coca-cola-refresh-station-2",
     "n": "Coca-Cola Refresh Station",
     "lat": 29.59585,
     "lng": -98.609538,
@@ -231,6 +255,7 @@
     "a": "Rockville"
   },
   {
+    "i": "coca-cola-vip-lounge",
     "n": "Coca-Cola VIP Lounge",
     "lat": 29.599031,
     "lng": -98.610301,
@@ -238,6 +263,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "cocktail-s-on-the-corner",
     "n": "Cocktail's on The Corner",
     "lat": 29.595711,
     "lng": -98.608972,
@@ -245,6 +271,7 @@
     "a": "Rockville"
   },
   {
+    "i": "coral-cove",
     "n": "Coral Cove",
     "lat": 29.60035,
     "lng": -98.611448,
@@ -252,6 +279,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "cowabunga",
     "n": "Cowabunga",
     "lat": 29.60042,
     "lng": -98.61157,
@@ -259,6 +287,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "crackaxle-dippin-dots",
     "n": "Crackaxle Dippin' Dots",
     "lat": 29.59856,
     "lng": -98.6123,
@@ -266,6 +295,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "crow-s-nest",
     "n": "Crow's Nest",
     "lat": 29.596075,
     "lng": -98.60753,
@@ -279,6 +309,7 @@
     "note": "Walking age and up with a grown-up. No single riders."
   },
   {
+    "i": "cyborg-cyber-revolution",
     "n": "Cyborg: Cyber Revolution",
     "lat": 29.59687,
     "lng": -98.610253,
@@ -291,6 +322,7 @@
     }
   },
   {
+    "i": "daffy-s-bus-stop",
     "n": "Daffy's Bus Stop",
     "lat": 29.596055,
     "lng": -98.608135,
@@ -304,6 +336,7 @@
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "i": "daily-planet-newsstand-gifts",
     "n": "Daily Planet Newsstand & Gifts",
     "lat": 29.596569,
     "lng": -98.61066,
@@ -311,6 +344,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "dare-devil-dive-flying-machines",
     "n": "Dare Devil Dive Flying Machines",
     "lat": 29.597771,
     "lng": -98.613217,
@@ -323,6 +357,7 @@
     }
   },
   {
+    "i": "dc-super-villains-swing",
     "n": "DC Super-Villains Swing",
     "lat": 29.59617,
     "lng": -98.609998,
@@ -335,6 +370,7 @@
     }
   },
   {
+    "i": "dippin-dots",
     "n": "Dippin' Dots",
     "lat": 29.599913,
     "lng": -98.609821,
@@ -342,6 +378,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "dippin-dots-2",
     "n": "Dippin' Dots",
     "lat": 29.596225,
     "lng": -98.608298,
@@ -349,6 +386,7 @@
     "a": "Rockville"
   },
   {
+    "i": "dippin-dots-3",
     "n": "Dippin' Dots",
     "lat": 29.596992,
     "lng": -98.610649,
@@ -356,6 +394,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "dippin-dots-4",
     "n": "Dippin' Dots",
     "lat": 29.597425,
     "lng": -98.612655,
@@ -363,6 +402,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "dom-julio-s-beach-bar",
     "n": "Dom Julio's Beach Bar",
     "lat": 29.600629,
     "lng": -98.610373,
@@ -370,6 +410,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "dr-butterskotch-s-original-elixir",
     "n": "Dr. Butterskotch's Original Elixir",
     "lat": 29.598745,
     "lng": -98.61196,
@@ -377,6 +418,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "dr-diabolical-s-cliffhanger",
     "n": "Dr. Diabolical's Cliffhanger",
     "lat": 29.5981,
     "lng": -98.611345,
@@ -389,6 +431,7 @@
     }
   },
   {
+    "i": "entrance",
     "n": "Entrance",
     "lat": 29.604356,
     "lng": -98.608722,
@@ -396,6 +439,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "fat-burger-fiesta-bay-boardwalk",
     "n": "Fat Burger - Fiesta Bay Boardwalk",
     "lat": 29.595826,
     "lng": -98.607644,
@@ -403,6 +447,7 @@
     "a": "Fiesta Bay Boardwalk"
   },
   {
+    "i": "fireball",
     "n": "Fireball",
     "lat": 29.595398,
     "lng": -98.608042,
@@ -415,6 +460,7 @@
     }
   },
   {
+    "i": "fireball-snacks",
     "n": "Fireball Snacks",
     "lat": 29.5955,
     "lng": -98.607915,
@@ -422,6 +468,7 @@
     "a": "Fiesta Bay Boardwalk"
   },
   {
+    "i": "first-aid",
     "n": "First Aid",
     "lat": 29.599751,
     "lng": -98.610158,
@@ -429,6 +476,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "first-aid-2",
     "n": "First Aid",
     "lat": 29.597447,
     "lng": -98.609248,
@@ -436,6 +484,7 @@
     "a": "Spassburg"
   },
   {
+    "i": "foghorn-leghorn-s-barnyard-railway",
     "n": "Foghorn Leghorn's Barnyard Railway",
     "lat": 29.59829,
     "lng": -98.612835,
@@ -449,6 +498,7 @@
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "i": "fuel-charging-rod-station",
     "n": "Fuel Charging Rod Station",
     "lat": 29.599335,
     "lng": -98.609768,
@@ -456,6 +506,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "funnel-liscious",
     "n": "Funnel*Liscious",
     "lat": 29.595803,
     "lng": -98.609674,
@@ -463,6 +514,7 @@
     "a": "Rockville"
   },
   {
+    "i": "goliath",
     "n": "Goliath",
     "lat": 29.5987,
     "lng": -98.60767,
@@ -476,6 +528,7 @@
     "note": "Runs as Chupacabra since the 2024 rename — the map still carries both names."
   },
   {
+    "i": "green-lantern-emerald-flight",
     "n": "Green Lantern Emerald Flight",
     "lat": 29.596843,
     "lng": -98.61051,
@@ -488,6 +541,7 @@
     }
   },
   {
+    "i": "guest-relations",
     "n": "Guest Relations",
     "lat": 29.599612,
     "lng": -98.609527,
@@ -495,6 +549,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "guest-services",
     "n": "Guest Services",
     "lat": 29.599158,
     "lng": -98.610059,
@@ -502,6 +557,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "gully-washer",
     "n": "Gully Washer",
     "lat": 29.597382,
     "lng": -98.613361,
@@ -514,6 +570,7 @@
     }
   },
   {
+    "i": "gully-washer-2",
     "n": "Gully Washer",
     "lat": 29.597926,
     "lng": -98.613589,
@@ -526,6 +583,7 @@
     }
   },
   {
+    "i": "heroes",
     "n": "Heroes",
     "lat": 29.598855,
     "lng": -98.609915,
@@ -533,6 +591,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "hot-roasted-corn",
     "n": "Hot Roasted Corn",
     "lat": 29.598745,
     "lng": -98.610065,
@@ -540,6 +599,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "hurricane-force-5",
     "n": "Hurricane Force 5",
     "lat": 29.595935,
     "lng": -98.607235,
@@ -552,6 +612,7 @@
     }
   },
   {
+    "i": "hustler",
     "n": "Hustler",
     "lat": 29.59629,
     "lng": -98.608987,
@@ -564,6 +625,7 @@
     }
   },
   {
+    "i": "iron-rattler",
     "n": "Iron Rattler",
     "lat": 29.598478,
     "lng": -98.613044,
@@ -576,6 +638,7 @@
     }
   },
   {
+    "i": "iron-rattler-mercantile",
     "n": "Iron Rattler Mercantile",
     "lat": 29.59807,
     "lng": -98.612845,
@@ -583,6 +646,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "johnny-rockets",
     "n": "Johnny Rockets",
     "lat": 29.596312,
     "lng": -98.610577,
@@ -590,6 +654,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "kid-flash-cosmic-coaster",
     "n": "Kid Flash Cosmic Coaster",
     "lat": 29.597293,
     "lng": -98.610903,
@@ -602,6 +667,7 @@
     }
   },
   {
+    "i": "kiddee-koaster",
     "n": "Kiddee Koaster",
     "lat": 29.5964,
     "lng": -98.61003,
@@ -614,6 +680,7 @@
     }
   },
   {
+    "i": "kinderstein",
     "n": "Kinderstein",
     "lat": 29.597215,
     "lng": -98.609772,
@@ -627,6 +694,7 @@
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "i": "la-cantina",
     "n": "La Cantina",
     "lat": 29.5985,
     "lng": -98.610895,
@@ -634,6 +702,7 @@
     "a": "Texas State Square"
   },
   {
+    "i": "la-panaderia-la-cantera",
     "n": "La Panaderia - La Cantera",
     "lat": 29.603099,
     "lng": -98.603309,
@@ -642,6 +711,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "las-banderas",
     "n": "Las Banderas",
     "lat": 29.599145,
     "lng": -98.609563,
@@ -649,6 +719,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "lone-star-lagoon",
     "n": "Lone Star Lagoon",
     "lat": 29.600562,
     "lng": -98.609784,
@@ -661,6 +732,7 @@
     }
   },
   {
+    "i": "lone-star-lil-s-amphitheater",
     "n": "Lone Star Lil's Amphitheater",
     "lat": 29.597779,
     "lng": -98.611609,
@@ -668,6 +740,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "lost-and-found",
     "n": "Lost and Found",
     "lat": 29.599521,
     "lng": -98.609538,
@@ -675,6 +748,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "metro-park-pub",
     "n": "Metro Park Pub",
     "lat": 29.596776,
     "lng": -98.610762,
@@ -682,6 +756,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "metropolis-transit-authority",
     "n": "Metropolis Transit Authority",
     "lat": 29.596935,
     "lng": -98.609872,
@@ -694,6 +769,7 @@
     }
   },
   {
+    "i": "mockingbird-funnel-cakes",
     "n": "Mockingbird Funnel Cakes",
     "lat": 29.598997,
     "lng": -98.609702,
@@ -701,6 +777,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "my-six-flags-photos",
     "n": "My Six Flags Photos",
     "lat": 29.599127,
     "lng": -98.609885,
@@ -708,6 +785,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "old-blues-barbeque",
     "n": "Old Blues Barbeque",
     "lat": 29.598735,
     "lng": -98.611458,
@@ -715,6 +793,7 @@
     "a": "Texas State Square"
   },
   {
+    "i": "palace-vintage-photography",
     "n": "Palace Vintage Photography",
     "lat": 29.597828,
     "lng": -98.612675,
@@ -722,6 +801,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "pandemonium",
     "n": "Pandemonium",
     "lat": 29.595172,
     "lng": -98.607268,
@@ -734,6 +814,7 @@
     }
   },
   {
+    "i": "paradise-cove",
     "n": "Paradise Cove",
     "lat": 29.600718,
     "lng": -98.610443,
@@ -741,6 +822,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "park-row-refresh-station",
     "n": "Park Row Refresh Station",
     "lat": 29.596042,
     "lng": -98.609384,
@@ -748,6 +830,7 @@
     "a": "Rockville"
   },
   {
+    "i": "parking",
     "n": "Parking",
     "lat": 29.602036,
     "lng": -98.608036,
@@ -755,6 +838,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-2",
     "n": "Parking",
     "lat": 29.607774,
     "lng": -98.607896,
@@ -762,6 +846,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-3",
     "n": "Parking",
     "lat": 29.600973,
     "lng": -98.604817,
@@ -769,6 +854,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-4",
     "n": "Parking",
     "lat": 29.605832,
     "lng": -98.614615,
@@ -776,6 +862,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-5",
     "n": "Parking",
     "lat": 29.592812,
     "lng": -98.609656,
@@ -783,6 +870,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-6",
     "n": "Parking",
     "lat": 29.592274,
     "lng": -98.608429,
@@ -790,6 +878,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-7",
     "n": "Parking",
     "lat": 29.597455,
     "lng": -98.617809,
@@ -797,6 +886,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-8",
     "n": "Parking",
     "lat": 29.597649,
     "lng": -98.617245,
@@ -804,6 +894,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "parking-9",
     "n": "Parking",
     "lat": 29.596914,
     "lng": -98.617819,
@@ -811,6 +902,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "pete-s-eats",
     "n": "Pete's Eats",
     "lat": 29.596776,
     "lng": -98.608629,
@@ -818,6 +910,7 @@
     "a": "Rockville"
   },
   {
+    "i": "pirates-of-the-deep-sea",
     "n": "Pirates of the Deep Sea",
     "lat": 29.596266,
     "lng": -98.607333,
@@ -830,6 +923,7 @@
     }
   },
   {
+    "i": "pit-stop",
     "n": "Pit Stop",
     "lat": 29.596825,
     "lng": -98.609082,
@@ -837,6 +931,7 @@
     "a": "Rockville"
   },
   {
+    "i": "planet-krypton-cafe",
     "n": "Planet Krypton Cafe",
     "lat": 29.596613,
     "lng": -98.61029,
@@ -844,6 +939,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "poison-ivy-toxic-spin",
     "n": "Poison Ivy Toxic Spin",
     "lat": 29.596723,
     "lng": -98.610073,
@@ -856,6 +952,7 @@
     }
   },
   {
+    "i": "poltergeist",
     "n": "Poltergeist",
     "lat": 29.597207,
     "lng": -98.608572,
@@ -868,6 +965,7 @@
     }
   },
   {
+    "i": "poltergeist-2",
     "n": "Poltergeist",
     "lat": 29.596975,
     "lng": -98.608317,
@@ -880,6 +978,7 @@
     }
   },
   {
+    "i": "primo-s-pizzeria",
     "n": "Primo's Pizzeria",
     "lat": 29.595707,
     "lng": -98.609121,
@@ -887,6 +986,7 @@
     "a": "Rockville"
   },
   {
+    "i": "redlands-grill-by-j-alexander-s",
     "n": "Redlands Grill by J. Alexander's",
     "lat": 29.605994,
     "lng": -98.60375,
@@ -895,6 +995,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "restrooms",
     "n": "Restrooms",
     "lat": 29.596185,
     "lng": -98.60933,
@@ -902,6 +1003,7 @@
     "a": "Rockville"
   },
   {
+    "i": "restrooms-2",
     "n": "Restrooms",
     "lat": 29.597304,
     "lng": -98.609085,
@@ -909,6 +1011,7 @@
     "a": "Spassburg"
   },
   {
+    "i": "restrooms-3",
     "n": "Restrooms",
     "lat": 29.598183,
     "lng": -98.613004,
@@ -916,6 +1019,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "restrooms-4",
     "n": "Restrooms",
     "lat": 29.59748,
     "lng": -98.612015,
@@ -923,6 +1027,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "restrooms-5",
     "n": "Restrooms",
     "lat": 29.60011,
     "lng": -98.610201,
@@ -930,6 +1035,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "restrooms-6",
     "n": "Restrooms",
     "lat": 29.599279,
     "lng": -98.609218,
@@ -937,6 +1043,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "restrooms-7",
     "n": "Restrooms",
     "lat": 29.598627,
     "lng": -98.609711,
@@ -944,6 +1051,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "restrooms-8",
     "n": "Restrooms",
     "lat": 29.596181,
     "lng": -98.607385,
@@ -951,6 +1059,7 @@
     "a": "Fiesta Bay Boardwalk"
   },
   {
+    "i": "restrooms-9",
     "n": "Restrooms",
     "lat": 29.59649,
     "lng": -98.610195,
@@ -958,6 +1067,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "restrooms-10",
     "n": "Restrooms",
     "lat": 29.598968,
     "lng": -98.610991,
@@ -965,6 +1075,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "restrooms-11",
     "n": "Restrooms",
     "lat": 29.600608,
     "lng": -98.611525,
@@ -972,6 +1083,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "ripqurl",
     "n": "RipQurl",
     "lat": 29.60017,
     "lng": -98.6115,
@@ -979,6 +1091,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "riptide-runner",
     "n": "Riptide Runner",
     "lat": 29.60025,
     "lng": -98.61062,
@@ -991,6 +1104,7 @@
     }
   },
   {
+    "i": "road-runner-express",
     "n": "Road Runner Express",
     "lat": 29.598774,
     "lng": -98.612372,
@@ -1003,6 +1117,7 @@
     }
   },
   {
+    "i": "rockville-high-school",
     "n": "Rockville High School",
     "lat": 29.595758,
     "lng": -98.608372,
@@ -1010,6 +1125,7 @@
     "a": "Rockville"
   },
   {
+    "i": "s-ngerfest-halle",
     "n": "Sängerfest Halle",
     "lat": 29.597748,
     "lng": -98.609465,
@@ -1017,6 +1133,7 @@
     "a": "Spassburg"
   },
   {
+    "i": "sangerfest-halle-stage",
     "n": "Sangerfest Halle Stage",
     "lat": 29.597665,
     "lng": -98.609401,
@@ -1024,6 +1141,7 @@
     "a": "Spassburg"
   },
   {
+    "i": "schi-kugel-arcade",
     "n": "Schi-Kugel Arcade",
     "lat": 29.597317,
     "lng": -98.609934,
@@ -1031,6 +1149,7 @@
     "a": "Spassburg"
   },
   {
+    "i": "scream",
     "n": "Scream",
     "lat": 29.596441,
     "lng": -98.608351,
@@ -1043,6 +1162,7 @@
     }
   },
   {
+    "i": "shazam-tower-of-eternity",
     "n": "Shazam! Tower of Eternity",
     "lat": 29.59681,
     "lng": -98.609923,
@@ -1055,6 +1175,7 @@
     }
   },
   {
+    "i": "soft-frozen-lemonade",
     "n": "Soft Frozen Lemonade",
     "lat": 29.59851,
     "lng": -98.610585,
@@ -1062,6 +1183,7 @@
     "a": "Texas State Square"
   },
   {
+    "i": "spinsanity",
     "n": "Spinsanity",
     "lat": 29.59585,
     "lng": -98.60791,
@@ -1074,6 +1196,7 @@
     }
   },
   {
+    "i": "splash-water-springs",
     "n": "Splash Water Springs",
     "lat": 29.600314,
     "lng": -98.611847,
@@ -1081,6 +1204,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "stingray-racer",
     "n": "Stingray Racer",
     "lat": 29.60032,
     "lng": -98.61151,
@@ -1088,6 +1212,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "stroller-wheelchair-rental",
     "n": "Stroller & Wheelchair Rental",
     "lat": 29.599117,
     "lng": -98.609384,
@@ -1095,6 +1220,7 @@
     "a": "Los Festivales"
   },
   {
+    "i": "studio-6f",
     "n": "Studio 6F",
     "lat": 29.597574,
     "lng": -98.610004,
@@ -1102,6 +1228,7 @@
     "a": "Spassburg"
   },
   {
+    "i": "supergirl-sky-flight",
     "n": "Supergirl Sky Flight",
     "lat": 29.596694,
     "lng": -98.610949,
@@ -1116,6 +1243,7 @@
     "note": "Formerly SkyScreamer"
   },
   {
+    "i": "superman-krypton-coaster",
     "n": "Superman: Krypton Coaster",
     "lat": 29.59606,
     "lng": -98.610758,
@@ -1128,6 +1256,7 @@
     }
   },
   {
+    "i": "taz-s-tornado",
     "n": "Taz's Tornado",
     "lat": 29.596251,
     "lng": -98.608037,
@@ -1140,6 +1269,7 @@
     }
   },
   {
+    "i": "teatro-fiesta",
     "n": "Teatro Fiesta",
     "lat": 29.598796,
     "lng": -98.610777,
@@ -1147,6 +1277,7 @@
     "a": "Texas State Square"
   },
   {
+    "i": "texas-state-square",
     "n": "Texas State Square",
     "lat": 29.598583,
     "lng": -98.610354,
@@ -1154,6 +1285,7 @@
     "a": "Texas State Square"
   },
   {
+    "i": "texas-treehouse",
     "n": "Texas Treehouse",
     "lat": 29.600197,
     "lng": -98.61219,
@@ -1166,6 +1298,7 @@
     }
   },
   {
+    "i": "texas-treehouse-slide-pool",
     "n": "Texas Treehouse Slide Pool",
     "lat": 29.600426,
     "lng": -98.612168,
@@ -1180,6 +1313,7 @@
     "note": "Rule is the Texas Treehouse's, which the slides and the splash pool share."
   },
   {
+    "i": "texas-tumble-tube-shoot",
     "n": "Texas Tumble Tube Shoot",
     "lat": 29.59967,
     "lng": -98.61192,
@@ -1194,6 +1328,7 @@
     "note": "The park lists it as Texas Tumble."
   },
   {
+    "i": "the-caped-crusader",
     "n": "The Caped Crusader",
     "lat": 29.597015,
     "lng": -98.610435,
@@ -1201,6 +1336,7 @@
     "a": "DC Universe"
   },
   {
+    "i": "the-grand-carousel",
     "n": "The Grand Carousel",
     "lat": 29.597368,
     "lng": -98.609414,
@@ -1214,6 +1350,7 @@
     "note": "Lap children and infants on the chariots only."
   },
   {
+    "i": "the-joker-carnival-of-chaos",
     "n": "The Joker: Carnival of Chaos",
     "lat": 29.595938,
     "lng": -98.610247,
@@ -1226,6 +1363,7 @@
     }
   },
   {
+    "i": "thirsty-buffalo-saloon",
     "n": "Thirsty Buffalo Saloon",
     "lat": 29.597688,
     "lng": -98.612702,
@@ -1233,6 +1371,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "thunder-rapids-water-coaster",
     "n": "Thunder Rapids Water Coaster",
     "lat": 29.60121,
     "lng": -98.60973,
@@ -1247,6 +1386,7 @@
     "note": "The park lists it as Thunder Rapids."
   },
   {
+    "i": "tidal-wave-cafe",
     "n": "Tidal Wave Cafe",
     "lat": 29.599811,
     "lng": -98.61002,
@@ -1254,6 +1394,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "tornado",
     "n": "Tornado",
     "lat": 29.60022,
     "lng": -98.61024,
@@ -1266,6 +1407,7 @@
     }
   },
   {
+    "i": "tornado-slide-pool",
     "n": "Tornado Slide Pool",
     "lat": 29.600442,
     "lng": -98.610433,
@@ -1278,6 +1420,7 @@
     }
   },
   {
+    "i": "trader-six",
     "n": "Trader Six",
     "lat": 29.598705,
     "lng": -98.61124,
@@ -1285,6 +1428,7 @@
     "a": "Texas State Square"
   },
   {
+    "i": "tradewinds",
     "n": "Tradewinds",
     "lat": 29.59998,
     "lng": -98.61024,
@@ -1292,6 +1436,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "tropical-smoothie-cafe",
     "n": "Tropical Smoothie Cafe",
     "lat": 29.60359,
     "lng": -98.603485,
@@ -1300,6 +1445,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "tube-shoot",
     "n": "Tube Shoot",
     "lat": 29.60026,
     "lng": -98.61072,
@@ -1307,6 +1453,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "tutti-nail-bar",
     "n": "Tutti Nail Bar",
     "lat": 29.603493,
     "lng": -98.60346,
@@ -1315,6 +1462,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "tx-treehouse-green-slide",
     "n": "Tx Treehouse Green Slide",
     "lat": 29.60027,
     "lng": -98.6123,
@@ -1328,6 +1476,7 @@
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "i": "tx-treehouse-red-slide",
     "n": "Tx Treehouse Red Slide",
     "lat": 29.60035,
     "lng": -98.61225,
@@ -1341,6 +1490,7 @@
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "i": "tx-treehouse-teal-slide",
     "n": "Tx Treehouse Teal Slide",
     "lat": 29.60035,
     "lng": -98.61219,
@@ -1354,6 +1504,7 @@
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "i": "tx-treehouse-yellow-slide",
     "n": "Tx Treehouse Yellow Slide",
     "lat": 29.60023,
     "lng": -98.61226,
@@ -1367,6 +1518,7 @@
     "note": "One of the Texas Treehouse slides; the rule is the treehouse's."
   },
   {
+    "i": "vortex",
     "n": "Vortex",
     "lat": 29.60022,
     "lng": -98.6116,
@@ -1374,6 +1526,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "watering-hole-refresh-station",
     "n": "Watering Hole Refresh Station",
     "lat": 29.598,
     "lng": -98.61289,
@@ -1381,6 +1534,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "wave-runner",
     "n": "Wave Runner",
     "lat": 29.596238,
     "lng": -98.607672,
@@ -1394,6 +1548,7 @@
     "alias": "Waverunner"
   },
   {
+    "i": "waxing-the-city",
     "n": "Waxing the City",
     "lat": 29.60339,
     "lng": -98.603429,
@@ -1402,6 +1557,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "white-water-canyon",
     "n": "White Water Canyon",
     "lat": 29.599386,
     "lng": -98.610985,
@@ -1414,6 +1570,7 @@
     }
   },
   {
+    "i": "wipeout",
     "n": "Wipeout",
     "lat": 29.60044,
     "lng": -98.61157,
@@ -1421,6 +1578,7 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "i": "wonder-woman-gifts",
     "n": "Wonder Woman Gifts",
     "lat": 29.595387,
     "lng": -98.609032,
@@ -1428,6 +1586,7 @@
     "a": "Rockville"
   },
   {
+    "i": "wonder-woman-golden-lasso-coaster",
     "n": "Wonder Woman Golden Lasso Coaster",
     "lat": 29.595194,
     "lng": -98.608454,
@@ -1440,6 +1599,7 @@
     }
   },
   {
+    "i": "yosemite-sam-s-wacky-wagons",
     "n": "Yosemite Sam's Wacky Wagons",
     "lat": 29.598178,
     "lng": -98.61288,
@@ -1453,6 +1613,7 @@
     "note": "Anyone over 54\" has to be riding with a child under 54\"."
   },
   {
+    "i": "zaragoza-theater",
     "n": "Zaragoza Theater",
     "lat": 29.598599,
     "lng": -98.609317,
