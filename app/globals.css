@@ -1104,6 +1104,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .memberRow:last-child::after { content: none; }
 .memberRow:active { background: var(--fill3); }
 .memberRow.stale { opacity: .4; }
+.memberRow.paused { opacity: .65; }
+.memberRow.paused .pip { filter: grayscale(1); }
+.planList { margin: 0 0 12px; padding-left: 20px; font-size: 14px; color: var(--label2); }
+.planList .struck { text-decoration: line-through; opacity: .55; }
+.intelPanel { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--separator); }
 .pip {
   width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
   font-size: 15px; font-weight: 600; letter-spacing: -.2px; color: #fff; flex: none;
@@ -1246,6 +1251,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .introList p { font-size: 15px; line-height: 20px; letter-spacing: -.24px; margin: 0 0 12px; }
 .introList p:last-child { margin-bottom: 0; }
 .introList b { color: var(--label); font-weight: 600; }
+.updateNotesBlock { margin: 0 0 16px; }
+.updateNotesBlock:last-of-type { margin-bottom: 20px; }
+.updateNotesVersion { margin: 0 0 8px; }
 
 .toast {
   position: absolute; left: 50%; z-index: 80;

@@ -235,9 +235,15 @@ Sequencing is driven by what unblocks what, not by what is most visible.
    series.
 7. **Party gaps** — subgroups, reunification on the real graph, sharing controls.
 
-Detailed per-workstream implementation plans follow as they are completed.
+Detailed per-workstream implementation plans follow. Seven workstreams, in the order
+above; the first six are written against the code as it stood when each was planned,
+and the seventh closes the one gap the ordered list named without a section.
 
 ### Workstream: pipeline integrity
+
+*Partially implemented. Provenance vocabulary (`SRC_BY`), trace signing, staleness
+dating, and the `p.in` → `p.e` read are landed; the inventory build stage and the
+Kings Island `expect` lock are not.*
 
 The fix for defect 1 has two candidate shapes and they are not equivalent.
 
@@ -290,6 +296,11 @@ Washers as separate OpenStreetMap objects. The assertion is that duplicates agre
 the fields the pipeline joins on.
 
 ### Workstream: path attributes and routing profiles
+
+*Partially implemented. Tags ship as `f`/`l` on path and service ways via
+`scripts/lib/osm-tags.mjs` and `lib/wayFlags.js`; coverage is measured across all
+four venues (see below). Routing profiles, the `meta` coverage counter, layer-aware
+crossing splits, and the snap exclusion predicate are not.*
 
 A live Overpass probe over the Kings Island box changes the shape of this work. Of 732
 `highway` ways: `oneway` on 142, `surface` on 42, `access` and `foot` on 35 each,
@@ -355,12 +366,36 @@ same geometry, so you would ship it twice. Caching the built graph in IndexedDB 
 on a hash of the map file gets the same result for zero bytes, and only if a real
 phone measurement shows the idle-time build actually hurts.
 
-**Still open:** tag coverage at the other three venues was not measured. Fiesta Texas
-is quarry-built and plausibly has more steps than Kings Island. One Overpass query per
-park settles which profiles are worth offering, and should happen before any of this
-is committed to.
+**Coverage is now measured across all four venues.** `scripts/lib/osm-tags.mjs` carries
+the counts from 3,037 path and service ways between them — not from the Kings Island
+probe alone. The headline numbers settle the profile question:
+
+| Tag / flag | All four | Notes |
+|---|---:|---|
+| `highway=steps` | 112 | 110 at Fiesta Texas; Kings Island's two were the first sighting |
+| `bridge` | 135 | with `layer` on 124 |
+| `tunnel` | 36 | |
+| `oneway` | 567 | read for queue detection, not yet carried on the graph |
+| `access=no/private` | 220 | |
+| `wheelchair` | 77 | all at Cedar Point; 76 of them `yes`, one `no` |
+| `incline`, `indoor`, `conveying` | 0 | |
+| `covered` | 28 | 0.9% — too thin for a shade profile |
+| `surface` | 218 | 15.7% at Fiesta Texas, 0.3% at Cedar Point — wants a vocabulary, not a bit |
+
+So the honest deliverable stands: carry the tags, ship a per-venue coverage counter in
+`meta`, and make every profile's copy a function of that counter. **Wheelchair is not
+offered at three of four parks** — not because the code refuses, but because 76 of 77
+`wheelchair` tags are at Cedar Point and the single `no` is the whole signal against
+112 flights of steps. Fiesta Texas is the steps park; Kings Island is the grade-
+separation park. Profiles should be gated per venue from these counts, not from hope.
+
+**Still open in this workstream:** `splitAtCrossings` does not yet read `l`, so the
+grade-separation bug remains; routing profiles and the coverage counter in `meta` are
+not built; and the snap exclusion predicate for `Infinity` penalties is not wired.
 
 ### Workstream: stable identity
+
+*Implemented. Keys ship in all four bundles; ledgers live under `data/venues/<id>.ids.json`.*
 
 Two things assumed at the top of this document turned out to be wrong, and the plan is
 better for it.
@@ -421,6 +456,123 @@ level ones are not. A "deliberately absent" height rule would create a third sta
 alongside absent and zero that no UI can render, in an app whose whole discipline is
 keeping those two distinguishable. If a height rule is wrong, the edit is `h: null`,
 which already reads as "check at the ride."
+
+### Workstream: links and the ontology manifest
+
+Stable keys made the join *possible*; this workstream makes every other file use them
+and declares, once, what each category *means*.
+
+**The join is still a display string everywhere that matters.** `inventory()` matches
+a claim to a record with `recordFor(claim.ride)`, which lowercases a name
+(`attractions.mjs:307`). `publish()` looks up targets with
+`byName.get(String(record.name).toLowerCase())` (`:341`). The sidecar's own `id` is
+`{venue}-{slug(name)}` (`attractions.mjs:176`) — not the `i` that now ships on the
+place. Evidence accumulates under a name; a mapper who recapitalises Maverick orphans
+the record while the place keeps its key; and when two Poltergeists share a name the
+pipeline patches both, which is what `applyOverrides` does on purpose but what a
+*link* should not have to guess at.
+
+Measured on disk today: **230 ride records, 246 evidence entries**, every one joined
+to its place by `n` and nothing else. The attractions file header already says it sits
+beside the bundle because the bundle is overwritten every rebuild — which is exactly
+why the link cannot live in the bundle. It belongs in the sidecar, as a `place` field
+holding the place's `i`, written on first match and kept across renames by the same
+ledger pass that keeps `i` itself.
+
+**Migrate in one direction, with a name fallback for one release.** On inventory,
+resolve `claim.ride` → `poi.i` through the address book (`resolveOverride` already
+knows how). Write `record.place = poi.i` and change `record.id` to equal `place` — the
+venue prefix bought nothing once keys are unique inside a venue. On publish, look up
+`byId.get(record.place)` first; keep the name path only while a sidecar row still
+lacks `place`, then delete it. A test that every record's `place` resolves and that
+no two records share one is the gate.
+
+**Do not put evidence on the wire.** The sidecar stays in `data/venues/` and never
+enters `public/venues/`. The phone reads fused coordinates and confidence bands that
+cleared the publish floor — `e`, `out`, and eventually `h` from the heights sidecar —
+not the 246 rows behind them. That is the same separation this file already enforces
+for entrances, and extending it to rules does not change the rule.
+
+**Entrances are not entities and must not get links.** `venue-ids.mjs` already says
+why: an entrance is a claim *about* a ride, keyed by the ride's `i` plus `src.by`.
+Giving `e[0]` its own `i` would invent a second thing the app never addresses and
+would need tombstones for a coordinate that legitimately appears and disappears.
+What an entrance carries is provenance on the parent — which is what `src.osm` is for
+once two detectors read the same queue way.
+
+**The ontology manifest is not a platform.** Foundry's value here is vocabulary:
+interfaces over concrete types, and a single place that says what a category *is* so
+the renderer, the router, the weather engine and the build pipeline stop each carrying
+their own half-overlapping copy.
+
+Today, `p.c === 'coaster' || p.c === 'ride'` is written independently in **ten**
+files — `build-venue.mjs`, both attractions modules, `candidates.mjs`,
+`venue-checklist.mjs`, `venue-io.mjs`, `venue-requests.mjs`, `PlaceList.jsx`,
+`ParkMap.jsx`, `app/page.js`, and `test/unit.mjs`. `lib/weather.js` already has
+three partial sets (`RIDE_CATEGORIES`, `SHELTERED_CATEGORIES`, `INERT_CATEGORIES`)
+that disagree in edge cases with the ride test — a `show` is inert to heights but
+not to weather. `scripts/lib/osm-tags.mjs` ends its header with *"The vocabulary
+matches lib/theme.js"* while `POI_RULES` and `CATEGORY_LABELS` are separate tables
+that a new category must be edited in twice. The proposal's §11 verdict — *adding one
+category touches five files* — was an undercount.
+
+**One committed manifest, one runtime module.** Shape:
+
+```json
+{
+  "categories": {
+    "coaster": { "label": "Coasters", "interfaces": ["Locatable", "Rideable", "Queueable", "HeightChecked", "Reportable"] },
+    "ride":    { "label": "Rides",    "interfaces": ["Locatable", "Rideable", "Queueable", "HeightChecked", "Reportable"] },
+    "food":    { "label": "Food",     "interfaces": ["Locatable", "Sheltered"] },
+    "show":    { "label": "Shows",    "interfaces": ["Locatable", "Schedulable"] },
+    "gate":    { "label": "Gates",    "interfaces": ["Locatable", "Inert"] }
+  },
+  "interfaces": {
+    "Locatable":     "has a coordinate the map can draw and the router can snap to",
+    "Rideable":      "a height rule may apply; the filter and the report button care",
+    "Queueable":     "may carry `e` — a queue entrance is a claim, not a row",
+    "HeightChecked": "may carry `h`",
+    "Reportable":    "ride status can be set and replicated",
+    "Sheltered":     "weather treats as under cover by default",
+    "Schedulable":   "opening hours would matter if they were ever read",
+    "Inert":         "weather and status ignore it"
+  }
+}
+```
+
+`lib/ontology.js` imports the manifest and exports `implements(poi, 'Queueable')`,
+`categoriesWith('Reportable')`, and the label/colour lookup that `lib/theme.js` keeps
+today. The builder imports the same file for `POI_RULES` ordering — category first,
+tag rules second — so adding `first_aid` as its own category is one manifest row and
+one rule block, not five grep targets. The manifest is committed JSON; the module is
+the only reader; the bundle carries only `c` on each place, as now.
+
+**`Queueable` is not `Rideable`.** Kings Island ships **0 of 171** queue entrances;
+Cedar Point ships dozens. Entrance-aware routing is already a Cedar Point feature, and
+the interface split makes that a coverage fact rather than a silent assumption — a
+venue checklist item: *N of M rideables carry `e`*.
+
+**Base ⊕ edits gets written down here, not invented.** The overrides file is base
+input; the bundle is base plus derived properties; the sidecars are base plus
+accumulated claims. The rule the plan needs stated: **a tombstoned `i` survives a
+rebuild; a derived property is recomputed and wins over base; a hand override wins over
+derived on the fields it touches.** That is what `applyOverrides` already does
+informally and what made the three-writer entrance fight painful when it was not
+written anywhere. Put it in the manifest header so the next pipeline stage cannot
+re-litigate it.
+
+**Ordering.** After stable identity — done. Before the inventory joins the build,
+because the inventory is the first consumer that must stop joining on names. Before
+eligibility v2's heights sidecar, which will link rules to places the same way. Before
+scenarios, because ride reports and favourites already address `i` and a plan step that
+says "Orion" should say `orion`.
+
+**Reject.** Shipping the evidence table to the phone "for transparency" — it cannot be
+service-worker precached at this size and it exposes source weights a guest did not
+ask for. Generating the manifest from `POI_RULES` at build time — the manifest is the
+contract, the rules are one implementation of it, and generated contracts are not
+contracts. Entity-level links for features inside a ride (`queue_entrance` as its own
+row) — features stay inside the attraction record, keyed by the parent's `place`.
 
 ### Workstream: eligibility
 

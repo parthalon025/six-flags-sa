@@ -1251,11 +1251,10 @@ await check('a bridge keeps its layer, and the way underneath keeps the ground',
   assert.ok(over.every((s) => hasWayFlag(s.flags, WAY_FLAGS.BRIDGE)), 'the bridge lost its flag');
   assert.deepEqual([...new Set(over.map((s) => s.layer))], [1]);
   assert.deepEqual([...new Set(under.map((s) => s.layer))], [0]);
-  /* The two still weld into a junction, because that is what the router does
-     today and this change is not allowed to alter it. What it now has is the
-     evidence that the junction is invented — which is the whole point of
-     carrying `layer` before anything spends it. */
-  assert.ok(over.length > 1 && under.length > 1, 'the crossing was not cut');
+  /* The bridge and the midway underneath are at different layers — they must
+     not weld into one junction. */
+  assert.equal(over.length, 1);
+  assert.equal(under.length, 1);
   return true;
 });
 
@@ -1325,14 +1324,21 @@ await check('the attributes survive the round trip from tags to bundle to graph'
 });
 
 await check('a venue built before the attributes existed still loads and routes', () => {
-  /* The four bundles on disk were built before any of this and carry no `f`
-     and no `l` anywhere. They have to keep working untouched — a data change
-     that needs every venue rebuilt before the app runs is not shippable. */
-  const shipped = JSON.stringify(PARK);
-  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'the fixture already carries attributes');
-  const g = buildRouteGraph(PARK);
+  /* Bundles on disk now carry `f` and `l`, but a phone that cached an older
+     map must still route. Strip the flags and confirm the graph degrades to
+     zeros without moving a route. */
+  const legacy = JSON.parse(JSON.stringify(PARK));
+  ['path', 'service'].forEach((layer) => {
+    (legacy[layer] || []).forEach((w) => {
+      delete w.f;
+      delete w.l;
+    });
+  });
+  const shipped = JSON.stringify(legacy);
+  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'legacy fixture has no attributes');
+  const g = buildRouteGraph(legacy);
   assert.ok(g.segments.every((s) => s.flags === 0 && s.layer === 0));
-  const r = findRoute(graph, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
+  const r = findRoute(g, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
   assert.ok(r && r.metres > 0);
   return true;
 });
@@ -1358,7 +1364,6 @@ await check('carrying the attributes moves no route at all', () => {
         feat.f = f;
         marked += 1;
       }
-      if (i % 5 === 0) feat.l = 2;
     });
   });
   assert.ok(marked > 300, `${marked} ways marked`);
@@ -5003,6 +5008,85 @@ await check('a short phone still reaches the list', () => {
   assert.ok(small.half < SHEET_LIST_AT_PX);
   assert.ok(small.full >= SHEET_LIST_AT_PX, 'no height on this phone shows the list');
   assert.equal(sheetPlan(SHEET_LIST_AT_PX).list, true);
+  return true;
+});
+
+/* ------------------------------------------------------------- app version */
+
+const { APP_VERSION, compareVersions, isNewerVersion, parseVersion } = await import('../lib/version.js');
+
+await check('APP_VERSION is a semver string', () => {
+  assert.ok(parseVersion(APP_VERSION), `not semver: ${APP_VERSION}`);
+  return true;
+});
+
+await check('compareVersions orders releases correctly', () => {
+  assert.equal(compareVersions('1.0.0', '1.0.0'), 0);
+  assert.equal(compareVersions('1.1.0', '1.0.9'), 1);
+  assert.equal(compareVersions('1.0.0', '2.0.0'), -1);
+  assert.equal(compareVersions('1.0.0-rc1', '1.0.0'), -1);
+  assert.equal(compareVersions('1.0.0', '1.0.0-rc1'), 1);
+  return true;
+});
+
+await check('isNewerVersion is strict', () => {
+  assert.equal(isNewerVersion('1.1.0', '1.0.0'), true);
+  assert.equal(isNewerVersion('1.0.0', '1.0.0'), false);
+  assert.equal(isNewerVersion('1.0.0', '1.1.0'), false);
+  return true;
+});
+
+await check('inject-version stamps public/app-version.json from package.json', () => {
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const stamped = JSON.parse(
+    fs.readFileSync(new URL('../public/app-version.json', import.meta.url), 'utf8'),
+  );
+  assert.equal(stamped.version, pkg.version);
+  assert.equal(typeof stamped.protocol, 'number');
+  assert.ok(stamped.built);
+  const sw = fs.readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
+  assert.match(sw, new RegExp(`const CACHE = 'tracker-${pkg.version.replace(/\./g, '\\.')}'`));
+  return true;
+});
+
+/* ---------------------------------------------------------- release notes */
+
+const {
+  normalizeCatalog,
+  releaseNotesSince,
+} = await import('../lib/releaseNotes.js');
+
+await check('release notes catalog normalises and sorts by version', () => {
+  const blocks = normalizeCatalog({
+    '1.2.0': { title: 'Two', items: ['b'] },
+    '1.1.0': { title: 'One', items: ['a'] },
+    '1.0.0': { items: [] },
+  });
+  assert.equal(blocks.length, 2);
+  assert.equal(blocks[0].version, '1.1.0');
+  assert.equal(blocks[1].version, '1.2.0');
+  return true;
+});
+
+await check('releaseNotesSince returns every unseen version up to the installed build', () => {
+  const catalog = {
+    '1.1.0': { items: ['Auto-update'] },
+    '1.2.0': { items: ['Splash notes'] },
+  };
+  const jumped = releaseNotesSince('1.0.0', '1.2.0', catalog);
+  assert.deepEqual(jumped.map((b) => b.version), ['1.1.0', '1.2.0']);
+  const currentOnly = releaseNotesSince('1.1.0', '1.2.0', catalog);
+  assert.deepEqual(currentOnly.map((b) => b.version), ['1.2.0']);
+  assert.equal(releaseNotesSince('1.2.0', '1.2.0', catalog).length, 0);
+  return true;
+});
+
+await check('the shipped release-notes file has an entry for the current version', () => {
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const shipped = JSON.parse(
+    fs.readFileSync(new URL('../data/release-notes.json', import.meta.url), 'utf8'),
+  );
+  assert.ok(Array.isArray(shipped[pkg.version]?.items) && shipped[pkg.version].items.length > 0);
   return true;
 });
 

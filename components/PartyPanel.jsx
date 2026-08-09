@@ -103,6 +103,8 @@ export default function PartyPanel({
   pushNeedsInstall = false,
   joinsOpenUntil = 0,
   onAllowJoins = null,
+  onSuggestReunification = null,
+  reunifyBusy = false,
 }) {
   const [entry, setEntry] = useState('');
   const [name, setName] = useState(myName === 'Guest' ? '' : myName || '');
@@ -340,11 +342,12 @@ export default function PartyPanel({
             const b = d != null ? bearing(me.lat, me.lng, m.lat, m.lng) : null;
             const near = located ? nearestPlace(pois, m.lat, m.lng) : null;
             const stale = Date.now() - m.ts > 300000;
+            const paused = m.sharingPaused;
             return (
               <button
                 type="button"
                 key={m.id}
-                className={`memberRow ${stale ? 'stale' : ''}`}
+                className={`memberRow ${stale && !paused ? 'stale' : ''} ${paused ? 'paused' : ''}`}
                 onClick={() => !isMe && located && onFocus(m)}
               >
                 <span className="pip" style={{ background: isMe ? 'var(--blue)' : m.colour }}>
@@ -355,6 +358,8 @@ export default function PartyPanel({
                     {m.name}
                     {isMe && <em className="chipTag">you</em>}
                     {m.id === hostId && <em className="chipTag">host</em>}
+                    {m.groupId && <em className="chipTag">grp {m.groupId}</em>}
+                    {paused && <em className="chipTag">paused</em>}
                     {m.status === 'NEED HELP' && <em className="chipTag hot">help</em>}
                   </b>
                   <span>
@@ -420,6 +425,17 @@ export default function PartyPanel({
       </p>
 
       <div className="label">Meet-Up Point</div>
+      {onSuggestReunification ? (
+        <button
+          type="button"
+          className="btn small"
+          style={{ marginBottom: 8 }}
+          disabled={reunifyBusy || sorted.length < 2}
+          onClick={onSuggestReunification}
+        >
+          {reunifyBusy ? 'Finding fair point…' : 'Suggest reunification point'}
+        </button>
+      ) : null}
       {meet ? (
         <div className="codeBox column">
           <div>

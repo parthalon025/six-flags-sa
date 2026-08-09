@@ -15,7 +15,19 @@ function clockAt(seconds) {
   });
 }
 
-export default function RoutePreview({ target, routes, index, onPick, onStart, onCancel, onSteps }) {
+export default function RoutePreview({
+  target,
+  routes,
+  index,
+  onPick,
+  onStart,
+  onCancel,
+  onSteps,
+  profiles = [],
+  profileId = 'default',
+  onProfile,
+  profileNote = null,
+}) {
   if (!target || !routes?.length) return null;
   const route = routes[index] ?? routes[0];
   const best = routes[0];
@@ -42,6 +54,25 @@ export default function RoutePreview({ target, routes, index, onPick, onStart, o
         {route.via ? ` · via ${route.via}` : ''}
         {route.mode === 'direct' ? ' · no mapped path, straight line' : ''}
       </p>
+
+      {profiles.length > 1 && (
+        <div className="previewAlts" role="radiogroup" aria-label="Route profile">
+          {profiles.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              role="radio"
+              aria-checked={p.id === profileId}
+              className={`previewAlt ${p.id === profileId ? 'on' : ''}`}
+              onClick={() => onProfile?.(p.id)}
+            >
+              <b>{p.label}</b>
+              <span>{p.description}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {profileNote ? <p className="fine">{profileNote}</p> : null}
 
       {routes.length > 1 && (
         <div className="previewAlts" role="radiogroup" aria-label="Route choices">

@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "_comment": "What each POI category is and which interfaces it implements. One contract for the builder, the renderer, the weather engine and the party layer.",
+  "interfaces": {
+    "Locatable": "has a coordinate the map can draw and the router can snap to",
+    "Rideable": "a height rule may apply; the filter and the report button care",
+    "Queueable": "may carry e — a queue entrance is a claim on the ride, not a row",
+    "HeightChecked": "may carry h",
+    "Reportable": "ride status can be set and replicated",
+    "Sheltered": "weather treats as under cover by default",
+    "Schedulable": "opening hours would matter if they were ever read",
+    "Inert": "weather and status ignore it",
+    "MeetCandidate": "a named standing-room place suitable as a reunification point"
+  },
+  "categories": {
+    "coaster": {
+      "label": "Coasters",
+      "interfaces": ["Locatable", "Rideable", "Queueable", "HeightChecked", "Reportable"]
+    },
+    "ride": {
+      "label": "Rides",
+      "interfaces": ["Locatable", "Rideable", "Queueable", "HeightChecked", "Reportable"]
+    },
+    "food": {
+      "label": "Food",
+      "interfaces": ["Locatable", "Sheltered", "MeetCandidate"]
+    },
+    "restroom": {
+      "label": "Restrooms",
+      "interfaces": ["Locatable", "Sheltered", "MeetCandidate"]
+    },
+    "service": {
+      "label": "Services",
+      "interfaces": ["Locatable", "Sheltered", "MeetCandidate"]
+    },
+    "shop": {
+      "label": "Shops",
+      "interfaces": ["Locatable", "Sheltered", "MeetCandidate"]
+    },
+    "show": {
+      "label": "Shows",
+      "interfaces": ["Locatable", "Schedulable", "MeetCandidate"]
+    },
+    "gate": {
+      "label": "Gates",
+      "interfaces": ["Locatable", "Inert"]
+    },
+    "landmark": {
+      "label": "Landmarks",
+      "interfaces": ["Locatable", "Inert", "MeetCandidate"]
+    },
+    "campsite": {
+      "label": "Camping",
+      "interfaces": ["Locatable", "Sheltered"]
+    },
+    "parking": {
+      "label": "Parking",
+      "interfaces": ["Locatable", "Inert"]
+    }
+  }
+}

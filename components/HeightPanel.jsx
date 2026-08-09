@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { eligibility } from '@/lib/park';
+import { eligibility, isRideable } from '@/lib/park';
 import { usePois } from '@/lib/venue/useVenue';
 
 /* The height requirement is the thing a family checks twenty times a day, so it
@@ -18,7 +18,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
     if (height == null) return null;
     const tally = { yes: 0, companion: 0, no: 0 };
     POIS.forEach((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride') return;
+      if (!isRideable(p)) return;
       const v = eligibility(p, height, withAdult);
       if (v === 'yes') tally.yes += 1;
       else if (v === 'companion') tally.companion += 1;
@@ -35,7 +35,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
     if (!next) return null;
     let gained = 0;
     POIS.forEach((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride') return;
+      if (!isRideable(p)) return;
       const now = eligibility(p, height, withAdult);
       const then = eligibility(p, next, withAdult);
       if ((now === 'no' || now === 'toobig') && (then === 'yes' || then === 'companion')) {

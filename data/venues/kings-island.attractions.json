@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- kings-island",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
   "venue": "kings-island",
   "generated": "2026-08-09",
   "publish_at": "moderate",
   "attractions": [
     {
-      "id": "kings-island-3-point-challange",
+      "id": "3-point-challange",
       "name": "3 Point Challange",
       "venue": "kings-island",
       "type": "attraction",
@@ -44,10 +44,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "3-point-challange"
     },
     {
-      "id": "kings-island-adventure-express",
+      "id": "adventure-express",
       "name": "Adventure Express",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -85,92 +86,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "adventure-express"
     },
     {
-      "id": "kings-island-age-or-weight",
-      "name": "Age or Weight",
-      "venue": "kings-island",
-      "type": "attraction",
-      "at": {
-        "lat": 39.342417,
-        "lng": -84.264783
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 39.3424,
-            "lng": -84.26478
-          },
-          "confidence": "unknown",
-          "score": 1,
-          "sources": [
-            "geometry"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 39.3424,
-                "lng": -84.26478
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 2 m from the ride"
-            }
-          ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null
-    },
-    {
-      "id": "kings-island-arcade",
-      "name": "Arcade",
-      "venue": "kings-island",
-      "type": "attraction",
-      "at": {
-        "lat": 39.340962,
-        "lng": -84.266469
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 39.34101,
-            "lng": -84.26638
-          },
-          "confidence": "unknown",
-          "score": 1,
-          "sources": [
-            "geometry"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 39.34101,
-                "lng": -84.26638
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 9 m from the ride"
-            }
-          ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null
-    },
-    {
-      "id": "kings-island-arcade-games",
+      "id": "arcade-games",
       "name": "Arcade Games",
       "venue": "kings-island",
       "type": "attraction",
@@ -208,10 +128,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "arcade-games"
     },
     {
-      "id": "kings-island-aruba-tuba",
+      "id": "aruba-tuba",
       "name": "Aruba Tuba",
       "venue": "kings-island",
       "type": "attraction",
@@ -249,10 +170,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "aruba-tuba"
     },
     {
-      "id": "kings-island-backlot-stunt-coaster",
+      "id": "backlot-stunt-coaster",
       "name": "Backlot Stunt Coaster",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -290,10 +212,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "backlot-stunt-coaster"
     },
     {
-      "id": "kings-island-bank-ball",
+      "id": "bank-ball",
       "name": "Bank Ball",
       "venue": "kings-island",
       "type": "attraction",
@@ -331,10 +254,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bank-ball"
     },
     {
-      "id": "kings-island-banshee",
+      "id": "banshee",
       "name": "Banshee",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -372,10 +296,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "banshee"
     },
     {
-      "id": "kings-island-beagle-scout-acres",
+      "id": "beagle-scout-acres",
       "name": "Beagle Scout Acres",
       "venue": "kings-island",
       "type": "attraction",
@@ -413,10 +338,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "beagle-scout-acres"
     },
     {
-      "id": "kings-island-boo-blasters-on-boo-hill",
+      "id": "boo-blasters-on-boo-hill",
       "name": "Boo Blasters on Boo Hill",
       "venue": "kings-island",
       "type": "attraction",
@@ -454,10 +380,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "boo-blasters-on-boo-hill"
     },
     {
-      "id": "kings-island-breakers-bay",
+      "id": "breakers-bay",
       "name": "Breakers Bay",
       "venue": "kings-island",
       "type": "attraction",
@@ -495,10 +422,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "breakers-bay"
     },
     {
-      "id": "kings-island-cargo-loco",
+      "id": "cargo-loco",
       "name": "Cargo Loco",
       "venue": "kings-island",
       "type": "attraction",
@@ -536,10 +464,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "cargo-loco"
     },
     {
-      "id": "kings-island-castaway-cove",
+      "id": "castaway-cove",
       "name": "Castaway Cove",
       "venue": "kings-island",
       "type": "attraction",
@@ -577,10 +506,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "castaway-cove"
     },
     {
-      "id": "kings-island-character-carousel",
+      "id": "character-carousel",
       "name": "Character Carousel",
       "venue": "kings-island",
       "type": "attraction",
@@ -618,10 +548,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "character-carousel"
     },
     {
-      "id": "kings-island-charlie-brown-s-rushing-river-log-ride",
+      "id": "charlie-brown-s-rushing-river-log-ride",
       "name": "Charlie Brown's Rushing River Log Ride",
       "venue": "kings-island",
       "type": "attraction",
@@ -659,10 +590,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "charlie-brown-s-rushing-river-log-ride"
     },
     {
-      "id": "kings-island-charlie-brown-s-wind-up",
+      "id": "charlie-brown-s-wind-up",
       "name": "Charlie Brown's Wind Up",
       "venue": "kings-island",
       "type": "attraction",
@@ -700,10 +632,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "charlie-brown-s-wind-up"
     },
     {
-      "id": "kings-island-coconut-cove",
+      "id": "coconut-cove",
       "name": "Coconut Cove",
       "venue": "kings-island",
       "type": "attraction",
@@ -741,10 +674,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "coconut-cove"
     },
     {
-      "id": "kings-island-congo-falls",
+      "id": "congo-falls",
       "name": "Congo Falls",
       "venue": "kings-island",
       "type": "attraction",
@@ -782,10 +716,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "congo-falls"
     },
     {
-      "id": "kings-island-delirium",
+      "id": "delirium",
       "name": "Delirium",
       "venue": "kings-island",
       "type": "attraction",
@@ -823,10 +758,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "delirium"
     },
     {
-      "id": "kings-island-diamondback",
+      "id": "diamondback",
       "name": "Diamondback",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -864,10 +800,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "diamondback"
     },
     {
-      "id": "kings-island-dodgem",
+      "id": "dodgem",
       "name": "Dodgem",
       "venue": "kings-island",
       "type": "attraction",
@@ -905,10 +842,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "dodgem"
     },
     {
-      "id": "kings-island-drop-tower-scream-zone",
+      "id": "drop-tower-scream-zone",
       "name": "Drop Tower: Scream Zone",
       "venue": "kings-island",
       "type": "attraction",
@@ -946,10 +884,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "drop-tower-scream-zone"
     },
     {
-      "id": "kings-island-flight-of-fear",
+      "id": "flight-of-fear",
       "name": "Flight of Fear",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -987,10 +926,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "flight-of-fear"
     },
     {
-      "id": "kings-island-franklin-s-flyers",
+      "id": "franklin-s-flyers",
       "name": "Franklin's Flyers",
       "venue": "kings-island",
       "type": "attraction",
@@ -1028,10 +968,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "franklin-s-flyers"
     },
     {
-      "id": "kings-island-goblet-toss",
+      "id": "goblet-toss",
       "name": "Goblet Toss",
       "venue": "kings-island",
       "type": "attraction",
@@ -1069,10 +1010,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "goblet-toss"
     },
     {
-      "id": "kings-island-hang-time",
+      "id": "hang-time",
       "name": "Hang Time",
       "venue": "kings-island",
       "type": "attraction",
@@ -1110,10 +1052,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "hang-time"
     },
     {
-      "id": "kings-island-high-striker",
+      "id": "high-striker",
       "name": "High Striker",
       "venue": "kings-island",
       "type": "attraction",
@@ -1151,10 +1094,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "high-striker"
     },
     {
-      "id": "kings-island-invertigo",
+      "id": "invertigo",
       "name": "Invertigo",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -1192,10 +1136,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "invertigo"
     },
     {
-      "id": "kings-island-joe-cool-s-dodgen-school",
+      "id": "joe-cool-s-dodgen-school",
       "name": "Joe Cool's Dodgen School",
       "venue": "kings-island",
       "type": "attraction",
@@ -1233,10 +1178,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "joe-cool-s-dodgen-school"
     },
     {
-      "id": "kings-island-kings-mills-antique-autos",
+      "id": "kings-mills-antique-autos",
       "name": "Kings Mills Antique Autos",
       "venue": "kings-island",
       "type": "attraction",
@@ -1274,10 +1220,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "kings-mills-antique-autos"
     },
     {
-      "id": "kings-island-kite-eating-tree",
+      "id": "kite-eating-tree",
       "name": "Kite Eating Tree",
       "venue": "kings-island",
       "type": "attraction",
@@ -1315,10 +1262,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "kite-eating-tree"
     },
     {
-      "id": "kings-island-linus-beetle-bugs",
+      "id": "linus-beetle-bugs",
       "name": "Linus' Beetle Bugs",
       "venue": "kings-island",
       "type": "attraction",
@@ -1356,10 +1304,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "linus-beetle-bugs"
     },
     {
-      "id": "kings-island-linus-launcher",
+      "id": "linus-launcher",
       "name": "Linus' Launcher",
       "venue": "kings-island",
       "type": "attraction",
@@ -1397,10 +1346,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "linus-launcher"
     },
     {
-      "id": "kings-island-lookout-lagoon",
+      "id": "lookout-lagoon",
       "name": "Lookout Lagoon",
       "venue": "kings-island",
       "type": "attraction",
@@ -1438,10 +1388,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "lookout-lagoon"
     },
     {
-      "id": "kings-island-mystic-timbers",
+      "id": "mystic-timbers",
       "name": "Mystic Timbers",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -1479,10 +1430,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "mystic-timbers"
     },
     {
-      "id": "kings-island-orion",
+      "id": "orion",
       "name": "Orion",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -1520,10 +1472,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "orion"
     },
     {
-      "id": "kings-island-peanuts-500",
+      "id": "peanuts-500",
       "name": "Peanuts 500",
       "venue": "kings-island",
       "type": "attraction",
@@ -1561,10 +1514,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "peanuts-500"
     },
     {
-      "id": "kings-island-peanuts-off-road-rally",
+      "id": "peanuts-off-road-rally",
       "name": "PEANUTS Off-Road Rally",
       "venue": "kings-island",
       "type": "attraction",
@@ -1602,10 +1556,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "peanuts-off-road-rally"
     },
     {
-      "id": "kings-island-pipeline-paradise",
+      "id": "pipeline-paradise",
       "name": "Pipeline Paradise",
       "venue": "kings-island",
       "type": "attraction",
@@ -1643,10 +1598,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "pipeline-paradise"
     },
     {
-      "id": "kings-island-racer-blue",
+      "id": "racer-blue",
       "name": "Racer (Blue)",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -1657,8 +1613,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.33999,
-            "lng": -84.26251
+            "lat": 39.34343,
+            "lng": -84.26467
           },
           "confidence": "unknown",
           "score": 1,
@@ -1669,11 +1625,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 39.33999,
-                "lng": -84.26251
+                "lat": 39.34343,
+                "lng": -84.26467
               },
               "date": "2026-08-09",
-              "note": "the walkable network at its closest, 16 m from the ride"
+              "note": "the walkable network at its closest, 10 m from the ride"
             }
           ],
           "from": "geometry",
@@ -1684,10 +1640,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "racer-blue"
     },
     {
-      "id": "kings-island-racer-red",
+      "id": "racer-red",
       "name": "Racer (Red)",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -1725,10 +1682,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "racer-red"
     },
     {
-      "id": "kings-island-ring-toss",
+      "id": "ring-toss",
       "name": "Ring Toss",
       "venue": "kings-island",
       "type": "attraction",
@@ -1766,10 +1724,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "ring-toss"
     },
     {
-      "id": "kings-island-rope-ladder",
+      "id": "rope-ladder",
       "name": "Rope Ladder",
       "venue": "kings-island",
       "type": "attraction",
@@ -1807,10 +1766,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "rope-ladder"
     },
     {
-      "id": "kings-island-sally-s-sea-plane",
+      "id": "sally-s-sea-plane",
       "name": "Sally's Sea Plane",
       "venue": "kings-island",
       "type": "attraction",
@@ -1848,10 +1808,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "sally-s-sea-plane"
     },
     {
-      "id": "kings-island-shake-rattle-roll",
+      "id": "shake-rattle-roll",
       "name": "Shake, Rattle & Roll",
       "venue": "kings-island",
       "type": "attraction",
@@ -1889,10 +1850,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "shake-rattle-roll"
     },
     {
-      "id": "kings-island-shoot-down",
+      "id": "shoot-down",
       "name": "Shoot Down",
       "venue": "kings-island",
       "type": "attraction",
@@ -1930,10 +1892,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "shoot-down"
     },
     {
-      "id": "kings-island-snoopy-s-junction",
+      "id": "snoopy-s-junction",
       "name": "Snoopy's Junction",
       "venue": "kings-island",
       "type": "attraction",
@@ -1971,10 +1934,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snoopy-s-junction"
     },
     {
-      "id": "kings-island-snoopy-s-red-baron",
+      "id": "snoopy-s-red-baron",
       "name": "Snoopy's Red Baron",
       "venue": "kings-island",
       "type": "attraction",
@@ -2012,10 +1976,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snoopy-s-red-baron"
     },
     {
-      "id": "kings-island-snoopy-s-space-buggies",
+      "id": "snoopy-s-space-buggies",
       "name": "Snoopy's Space Buggies",
       "venue": "kings-island",
       "type": "attraction",
@@ -2053,10 +2018,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snoopy-s-space-buggies"
     },
     {
-      "id": "kings-island-soap-box-racers",
+      "id": "soap-box-racers",
       "name": "Soap Box Racers",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2094,10 +2060,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "soap-box-racers"
     },
     {
-      "id": "kings-island-sol-spin",
+      "id": "sol-spin",
       "name": "Sol Spin",
       "venue": "kings-island",
       "type": "attraction",
@@ -2135,10 +2102,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "sol-spin"
     },
     {
-      "id": "kings-island-splash-river",
+      "id": "splash-river",
       "name": "Splash River",
       "venue": "kings-island",
       "type": "attraction",
@@ -2176,10 +2144,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "splash-river"
     },
     {
-      "id": "kings-island-surf-dog",
+      "id": "surf-dog",
       "name": "Surf Dog",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2217,10 +2186,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "surf-dog"
     },
     {
-      "id": "kings-island-the-bat",
+      "id": "the-bat",
       "name": "The Bat",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2258,10 +2228,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-bat"
     },
     {
-      "id": "kings-island-the-beast",
+      "id": "the-beast",
       "name": "The Beast",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2299,10 +2270,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-beast"
     },
     {
-      "id": "kings-island-the-grand-carousel",
+      "id": "the-grand-carousel",
       "name": "The Grand Carousel",
       "venue": "kings-island",
       "type": "attraction",
@@ -2340,10 +2312,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-grand-carousel"
     },
     {
-      "id": "kings-island-the-great-pumpkin-coaster",
+      "id": "the-great-pumpkin-coaster",
       "name": "The Great Pumpkin Coaster",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2381,10 +2354,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-great-pumpkin-coaster"
     },
     {
-      "id": "kings-island-the-monster",
+      "id": "the-monster",
       "name": "The Monster",
       "venue": "kings-island",
       "type": "attraction",
@@ -2422,10 +2396,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-monster"
     },
     {
-      "id": "kings-island-the-racer",
+      "id": "the-racer",
       "name": "The Racer",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2463,10 +2438,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-racer"
     },
     {
-      "id": "kings-island-the-scrambler",
+      "id": "the-scrambler",
       "name": "The Scrambler",
       "venue": "kings-island",
       "type": "attraction",
@@ -2504,10 +2480,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-scrambler"
     },
     {
-      "id": "kings-island-the-zephyr",
+      "id": "the-zephyr",
       "name": "The Zephyr",
       "venue": "kings-island",
       "type": "attraction",
@@ -2545,10 +2522,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-zephyr"
     },
     {
-      "id": "kings-island-total-wave-bay",
+      "id": "total-wave-bay",
       "name": "Total Wave Bay",
       "venue": "kings-island",
       "type": "attraction",
@@ -2586,10 +2564,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "total-wave-bay"
     },
     {
-      "id": "kings-island-viking-fury",
+      "id": "viking-fury",
       "name": "Viking Fury",
       "venue": "kings-island",
       "type": "attraction",
@@ -2627,10 +2606,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "viking-fury"
     },
     {
-      "id": "kings-island-white-water-canyon",
+      "id": "white-water-canyon",
       "name": "White Water Canyon",
       "venue": "kings-island",
       "type": "attraction",
@@ -2641,8 +2621,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.33986,
-            "lng": -84.2694
+            "lat": 39.33983,
+            "lng": -84.26943
           },
           "confidence": "unknown",
           "score": 1,
@@ -2653,11 +2633,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 39.33986,
-                "lng": -84.2694
+                "lat": 39.33983,
+                "lng": -84.26943
               },
               "date": "2026-08-09",
-              "note": "the walkable network at its closest, 9 m from the ride"
+              "note": "the walkable network at its closest, 9 m from the ride (White Water Canyon)"
             }
           ],
           "from": "geometry",
@@ -2668,10 +2648,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "white-water-canyon"
     },
     {
-      "id": "kings-island-windseeker",
+      "id": "windseeker",
       "name": "WindSeeker",
       "venue": "kings-island",
       "type": "attraction",
@@ -2709,10 +2690,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "windseeker"
     },
     {
-      "id": "kings-island-woodstock-express",
+      "id": "woodstock-express",
       "name": "Woodstock Express",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2750,10 +2732,53 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "woodstock-express"
     },
     {
-      "id": "kings-island-woodstock-whirlybirds",
+      "id": "woodstock-whirlybirds",
+      "name": "Woodstock Whirlybirds",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.34265,
+        "lng": -84.269217
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34275,
+            "lng": -84.26899
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34275,
+                "lng": -84.26899
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 3 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "woodstock-whirlybirds"
+    },
+    {
+      "id": "woodstock-whirlybirds-2",
       "name": "Woodstock Whirlybirds",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2791,10 +2816,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "woodstock-whirlybirds-2"
     },
     {
-      "id": "kings-island-woodstock-s-air-rail",
+      "id": "woodstock-s-air-rail",
       "name": "Woodstock's Air Rail",
       "venue": "kings-island",
       "type": "roller_coaster",
@@ -2832,10 +2858,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "woodstock-s-air-rail"
     },
     {
-      "id": "kings-island-xtreme-skyflyer",
+      "id": "xtreme-skyflyer",
       "name": "Xtreme Skyflyer",
       "venue": "kings-island",
       "type": "attraction",
@@ -2873,7 +2900,8 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "xtreme-skyflyer"
     }
   ]
 }

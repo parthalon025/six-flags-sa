@@ -239,7 +239,7 @@ await check('the whole route is drawn, with the other ways beside it', async () 
 });
 
 await check('picking another way changes the trip', async () => {
-  const alts = a.locator('.previewAlt');
+  const alts = a.locator('[aria-label="Route choices"] .previewAlt');
   if ((await alts.count()) < 2) throw new Error('only one route to choose from');
   const before = await a.locator('.previewWhere').innerText();
   await alts.nth(1).click();

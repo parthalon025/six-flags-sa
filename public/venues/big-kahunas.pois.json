@@ -190,13 +190,12 @@
     "note": "250 lb maximum."
   },
   {
-    "i": "tiki-river-run",
+    "i": "tiki-river-run-right-slide",
     "n": "Tiki River Run",
     "lat": 30.38795,
     "lng": -86.47286,
     "c": "ride",
     "a": "Big Kahuna's",
-    "alias": "Tiki River Run (Right Slide)",
     "h": {
       "min": 44,
       "alone": null,

@@ -51,7 +51,12 @@ import {
   addressBook, assignKeys, keyAudit, osmRef, readLedger, resolveOverride, seedLedger,
   serializeLedger, writeLedger,
 } from './lib/venue-ids.mjs';
-import { SRC_BY } from './lib/attractions.mjs';
+import { SRC_BY, SCHEMA_VERSION, trim } from './lib/attractions.mjs';
+import { inventory, publish, listFile, writeSettled } from './attractions.mjs';
+import { PUBLISH_AT } from './lib/evidence.mjs';
+import { applyHeightsSidecar } from './lib/heights-sidecar.mjs';
+import { tagCoverageFromMap } from './lib/tag-coverage.mjs';
+import { isRideable } from '../lib/ontology.js';
 import { applyTrace } from './lib/venue-trace.mjs';
 // The app's own reading of "these two strings are the same ride", reused so the
 // builder and the renderer cannot disagree about it.
@@ -693,7 +698,7 @@ const QUEUE_SUFFIX = /\s*\b(fastlane|fast lane|standby|stand by|extended|single 
  * which attraction.
  */
 export function entrancesFromQueues(pois, elements) {
-  const rides = pois.filter((p) => p.c === 'ride' || p.c === 'coaster');
+  const rides = pois.filter(isRideable);
   const byName = new Map();
   for (const r of rides) {
     for (const key of [r.n, r.alias].filter(Boolean)) {
@@ -865,7 +870,7 @@ function applyOverrides(pois, overrides) {
  * parks shipped that way for a while, which is how we learned to check.
  */
 export function heightAudit(pois) {
-  const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
+  const rides = pois.filter(isRideable);
   const withHeights = rides.filter((p) => p.h);
   return {
     rides: rides.length,
@@ -1500,6 +1505,10 @@ async function buildOne(args, { previous = null } = {}) {
 
   const merged = applyOverrides(pois, overrides);
   pois = merged.pois;
+  const heightsApplied = applyHeightsSidecar(pois, id);
+  if (heightsApplied.applied) {
+    console.error(`  · heights sidecar: ${heightsApplied.applied} rule(s) from data/venues/${id}.heights.json`);
+  }
   if (overrideFile) {
     console.error(
       `  · overrides from ${overrideFile.replace(process.cwd() + '/', '')}: ${merged.applied} applied` +
@@ -1679,7 +1688,19 @@ async function buildOne(args, { previous = null } = {}) {
      every run. So the date is kept when the rest of the bundle comes out
      identical: it is the date the venue was generated, and a run that produced
      the same venue did not generate a new one. */
-  const drift = driftFrom({ id, meta, map: mapOf(layers, anchors, boundary), pois, existingMeta });
+  const builtMap = mapOf(layers, anchors, boundary);
+  const coverage = tagCoverageFromMap(builtMap);
+  meta.coverage = coverage;
+
+  const expectLock = overrides?.expect || previous?.expect || existingMeta?.expect;
+  if (expectLock?.walkable_km_min != null && coverage.walkable_km < expectLock.walkable_km_min) {
+    throw new Error(
+      `${id}: walkable network is ${coverage.walkable_km} km, below the locked floor of `
+        + `${expectLock.walkable_km_min} km — a rebuild would shrink routing coverage.`,
+    );
+  }
+
+  const drift = driftFrom({ id, meta, map: builtMap, pois, existingMeta });
   if (!drift.changed && existingMeta?.generated) meta.generated = existingMeta.generated;
 
   const summary = LAYERS.map((k) => `${k}=${layers[k].length}`).join(' ');
@@ -1751,7 +1772,24 @@ async function buildOne(args, { previous = null } = {}) {
     return;
   }
 
-  const written = writeVenue({ meta, map: mapOf(layers, anchors, boundary), pois });
+  const inv = inventory(id, args, { map: builtMap, pois, existing: readJson(listFile(id)) });
+  const published = publish(id, pois, inv.records, PUBLISH_AT);
+  const sidecar = {
+    version: SCHEMA_VERSION,
+    _comment:
+      'Every ride at this venue, every feature of it, and the evidence behind each coordinate. '
+      + 'Beside the venue bundle rather than in it.',
+    venue: id,
+    generated: inv.asOf,
+    publish_at: PUBLISH_AT,
+    attractions: inv.records.map(trim),
+  };
+  if (writeSettled(listFile(id), sidecar)) {
+    console.error(`  · inventory: wrote ${path.relative(process.cwd(), listFile(id))}`);
+  }
+  if (published) console.error(`  · inventory: published ${published} field(s) onto places`);
+
+  const written = writeVenue({ meta, map: builtMap, pois });
   /* The ledger, beside the overrides file rather than under public/, because it
      is not a download and because the numbers in it are the thing a human
      reviews when a rebuild moves something. Written only when its bytes change,
@@ -1777,6 +1815,7 @@ async function buildOne(args, { previous = null } = {}) {
       name,
       box,
       place,
+      expect: overrides?.expect || previous?.expect || null,
       counts: {
         pois: pois.length,
         rides: audit.rides,

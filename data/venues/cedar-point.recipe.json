@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_comment": "How this venue was built, so it can be built again. Written by scripts/build-venue.mjs on every build; replayed with \"npm run venues:rebuild -- cedar-point\". \"box\" is the bounding box before \"pad\" was applied to it, which is why a venue asked for by place name, by box or by a point and a radius all record the same field. Edit it by hand if you like — a rebuild reads whatever is here. This one was written from the manifest rather than by the build that made it: these three parks were built before recipes existed, and the bounds a manifest keeps are the padded ones, so the box here is the padded box and the pad is 0. It rebuilds the venue that shipped. The next build overwrites this with what it actually did.",
+  "_comment": "How this venue was built, so it can be built again. Written by scripts/build-venue.mjs on every build; replayed with \"npm run venues:rebuild -- cedar-point\". \"box\" is the bounding box before \"pad\" was applied to it, which is why a venue asked for by place name, by box or by a point and a radius all record the same field. Edit it by hand if you like — a rebuild reads whatever is here.",
   "id": "cedar-point",
   "name": "Cedar Point",
   "place": null,
@@ -19,9 +19,10 @@
   "built": {
     "at": "2026-08-09",
     "counts": {
-      "pois": 423,
+      "pois": 429,
       "rides": 76,
-      "heights": 74
+      "heights": 74,
+      "shapes": 3275
     }
   }
 }

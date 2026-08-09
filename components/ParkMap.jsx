@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { distance, formatAge, formatDistance, project, unproject } from '@/lib/geo';
 import { landTint, paletteFor } from '@/lib/theme';
 import Icon from '@/components/Icon';
-import { heightLabel } from '@/lib/park';
+import { heightLabel, isRideable } from '@/lib/park';
 import {
   labelZoomFor,
   normaliseRideName,
@@ -831,7 +831,7 @@ export default function ParkMap({
     const [sx, sy] = at(selected.lat, selected.lng);
     if (sx < 0 || sy < 0 || sx > size.w || sy > size.h) return null;
     const away = me ? distance(me.lat, me.lng, selected.lat, selected.lng) : null;
-    const rideish = selected.c === 'coaster' || selected.c === 'ride';
+    const rideish = isRideable(selected);
     return {
       // Kept clear of the edges, and flipped under the marker when there is no
       // room for it above.

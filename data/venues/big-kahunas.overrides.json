@@ -1,88 +1,9 @@
 {
-  "_comment": "Ride height requirements are not in OpenStreetMap. This file is re-applied on every rebuild of the venue, keyed by POI name. Source: Big Kahuna's own attraction pages for the 2026 season (bigkahunas.com/destin/attractions), which state a minimum height in prose for the thrill rides and file every attraction under the park's own Fun for All / Kid Friendly / Over 42\" / Over 44\" / Over 48\" headings. `min` is the floor nobody rides under, and a `min` of 0 is the park saying out loud that there is no floor — the app reads that back as \"No minimum\" rather than \"check at the ride\", which is the honest answer for a lazy river. `alone` is the height below which a supervising companion is required. Weight limits and life-jacket exceptions are real rules this app has nowhere to put, so they are written into `note`.",
+  "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/big-kahunas.heights.json.",
   "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages.",
   "pois": {
-    "Big Kahuna's Tropical Mini Golf": {
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      },
-      "note": "Three 18-hole courses over in the Adventure Park."
-    },
-    "Cobra Twister": {
-      "h": {
-        "min": 42,
-        "alone": null,
-        "max": null
-      },
-      "note": "300 lb maximum."
-    },
-    "Hammerhead": {
-      "h": {
-        "min": 42,
-        "alone": null,
-        "max": null
-      },
-      "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
-    },
-    "Jumanji": {
-      "h": {
-        "min": 48,
-        "alone": null,
-        "max": null
-      },
-      "note": "Five storeys. 300 lb maximum."
-    },
-    "Kowabunga Racer": {
-      "h": {
-        "min": 42,
-        "alone": null,
-        "max": null
-      },
-      "note": "Head-first mat racer. The park files it under Over 42\"."
-    },
-    "Maui Pipeline": {
-      "h": {
-        "min": 48,
-        "alone": null,
-        "max": null
-      },
-      "note": "300 lb maximum."
-    },
-    "Monkey River": {
-      "h": {
-        "min": 42,
-        "alone": null,
-        "max": null
-      },
-      "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
-    },
-    "Thunder River": {
-      "h": {
-        "min": 44,
-        "alone": null,
-        "max": null
-      },
-      "note": "250 lb maximum."
-    },
-    "Tiki River Run": {
-      "alias": "Tiki River Run (Right Slide)",
-      "n": "Tiki River Run",
-      "h": {
-        "min": 44,
-        "alone": null,
-        "max": null
-      },
-      "note": "250 lb in a single tube, 400 lb in a double."
-    },
-    "Wave Pool": {
-      "h": {
-        "min": null,
-        "alone": 48,
-        "max": null
-      },
-      "note": "Under 42\" must wear a flotation device."
+    "tiki-river-run-right-slide": {
+      "n": "Tiki River Run"
     }
   },
   "drop": [
