@@ -34,6 +34,7 @@ export const WEIGHTS = {
   official_site: 5,
   osm_entrance: 4,
   osm_named_queue: 4,
+  osm_queue_name: 2,
   aerial: 4,
   guest_photo: 3,
   video: 3,

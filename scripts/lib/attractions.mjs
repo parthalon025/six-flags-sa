@@ -45,8 +45,15 @@ export const FEATURES = [
   'queue_exit',
 ];
 
-/** The two the app actually walks people to, and what they become in the bundle. */
-export const PUBLISHED = { queue_entrance: 'in', ride_exit: 'out' };
+/**
+ * The two the app actually walks people to, and what they become in the bundle.
+ *
+ * `e` rather than a field of this pipeline's own. The builder already derives
+ * entrances from named one-way queues and hangs them there, and the app reads
+ * the first of them — one concept wants one place to read it, or the next person
+ * has to know that a traced entrance lives somewhere else from a derived one.
+ */
+export const PUBLISHED = { queue_entrance: 'e', ride_exit: 'out' };
 
 const blank = () => ({ at: null, confidence: 'unknown', score: 0, sources: [], evidence: [] });
 
@@ -133,6 +140,7 @@ export function publishable(record, floor = PUBLISH_AT) {
     out[key] = {
       lat: slot.at.lat,
       lng: slot.at.lng,
+      n: `${record.name} entrance`,
       src: { by: feature, confidence: slot.confidence, sources: slot.sources },
     };
   }

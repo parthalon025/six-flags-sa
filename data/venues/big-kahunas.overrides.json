@@ -1,0 +1,228 @@
+{
+  "_comment": "Ride height requirements are not in OpenStreetMap. This file is re-applied on every rebuild of the venue, keyed by POI name. Source: Big Kahuna's own attraction pages for the 2026 season (bigkahunas.com/destin/attractions), which state a minimum height in prose for the thrill rides and file every attraction under the park's own Fun for All / Kid Friendly / Over 42\" / Over 44\" / Over 48\" headings. `min` is the floor nobody rides under, and a `min` of 0 is the park saying out loud that there is no floor — the app reads that back as \"No minimum\" rather than \"check at the ride\", which is the honest answer for a lazy river. `alone` is the height below which a supervising companion is required. Weight limits and life-jacket exceptions are real rules this app has nowhere to put, so they are written into `note`.",
+  "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages.",
+  "pois": {
+    "Big Kahuna's Tropical Mini Golf": {
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      },
+      "note": "Three 18-hole courses over in the Adventure Park."
+    },
+    "Cobra Twister": {
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      },
+      "note": "300 lb maximum."
+    },
+    "Hammerhead": {
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      },
+      "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
+    },
+    "Jumanji": {
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      },
+      "note": "Five storeys. 300 lb maximum."
+    },
+    "Kowabunga Racer": {
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      },
+      "note": "Head-first mat racer. The park files it under Over 42\"."
+    },
+    "Maui Pipeline": {
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      },
+      "note": "300 lb maximum."
+    },
+    "Monkey River": {
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      },
+      "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
+    },
+    "Thunder River": {
+      "h": {
+        "min": 44,
+        "alone": null,
+        "max": null
+      },
+      "note": "250 lb maximum."
+    },
+    "Tiki River Run": {
+      "alias": "Tiki River Run (Right Slide)",
+      "n": "Tiki River Run",
+      "h": {
+        "min": 44,
+        "alone": null,
+        "max": null
+      },
+      "note": "250 lb in a single tube, 400 lb in a double."
+    },
+    "Wave Pool": {
+      "h": {
+        "min": null,
+        "alone": 48,
+        "max": null
+      },
+      "note": "Under 42\" must wear a flotation device."
+    }
+  },
+  "drop": [
+    "Tiki River Run (Left Slide)",
+    "Pizza Hut",
+    "Bank of America",
+    "Dunkin' Donuts"
+  ],
+  "_drop_comment": "Tiki River Run is drawn in OpenStreetMap as two flumes, \"(Left Slide)\" and \"(Right Slide)\". The park sells it as one ride and puts one height on the sign, so the right-hand flume carries the name and the rule and the left one is dropped from the list — both are still drawn on the map. The three below it are real places that are simply not in this park: the bounding box has to be drawn wide enough to hold the car park, and that reaches across US-98 to the shops on the far side. They stand in no named area, so the build's own offsite test cannot see them.",
+  "add": [
+    {
+      "n": "Main Entrance",
+      "lat": 30.388757,
+      "lng": -86.472518,
+      "c": "gate",
+      "note": "Ticket windows and the turnstiles, off the main car park."
+    },
+    {
+      "n": "Skycoaster",
+      "lat": 30.388721,
+      "lng": -86.471682,
+      "c": "ride",
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      },
+      "note": "Adventure Park, and a separate ticket. 800 lb combined for a flight of three."
+    },
+    {
+      "n": "Honolulu Half Pipe",
+      "lat": 30.38907,
+      "lng": -86.472604,
+      "c": "ride",
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      },
+      "note": "Surf simulator. 300 lb maximum."
+    },
+    {
+      "n": "Pleasure Island",
+      "lat": 30.388936,
+      "lng": -86.472939,
+      "c": "ride",
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      },
+      "note": "Shallow children's pool with small slides and a spraying umbrella."
+    },
+    {
+      "n": "Buccaneer Cove",
+      "lat": 30.387893,
+      "lng": -86.473961,
+      "c": "ride",
+      "h": {
+        "min": null,
+        "alone": 42,
+        "max": null
+      },
+      "note": "Built for children under 48\". Under 42\" needs a grown-up and a life jacket."
+    },
+    {
+      "n": "Lazy River",
+      "lat": 30.387849,
+      "lng": -86.473322,
+      "c": "ride",
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      }
+    }
+  ],
+  "_add_comment": "Places OpenStreetMap has not named, positioned by measuring them off aerial photography rather than by guessing.\n\nThe Main Entrance is the easy one: OSM has it as a named `amenity=shelter` building, which no POI rule reaches, so the park would ship with no gate at all. The position is that building's own surveyed centroid (way 679972968).\n\nThe five below it were read off the Okaloosa County orthophotos of 1 March 2025, served through Esri World Imagery — 7.6 cm a pixel, 0.19 m stated horizontal accuracy, and registered against this venue's own OSM geometry to check (the surveyed line for Kowabunga Racer lands down the middle of the racer's lanes). Positions are therefore good to a couple of metres, and what is uncertain about them is not where the thing is but whether it is the thing the park calls by this name. So the rule applied was: only a structure whose *type* is unique in this park, whose identity does not depend on picking one of several lookalikes, and whose position agrees with where the park's own map puts the name.\n\n  Skycoaster          the twin A-frame arch, its cable span and its launch tower. Nothing\n                      else in the park looks remotely like it, and the park has one.\n  Honolulu Half Pipe  the wedge-shaped inclined sheet-flow basin — a flowrider, and the\n                      only one here. Sits north-west of the gate, as the map has it.\n  Pleasure Island     shallow pool with a mushroom-umbrella fountain, immediately west of\n                      the flowrider. The park's own description is the tell: it is the one\n                      attraction it describes as having \"a spraying water umbrella\".\n  Buccaneer Cove      the children's play fort standing in a shallow lagoon in the far\n                      south-west, beside Temple Fountain. The only such structure here.\n  Lazy River          the wide continuous channel wrapping the wave pool, which is where\n                      the park map's Lazy River label points. The least certain of the\n                      five: this park has several river channels, so while the position is\n                      measured, the name rests on the map's placement rather than on\n                      anything the channel itself proves.\n\nWhat was deliberately not placed, and why: Bombay Blasters, Pirate's Escape, Humunga River, Raging Rhino River, Crocodile Flats, Tadpole Pond, Fun Fountains and Bombs Away Bay. Every one of them would have meant choosing between two or more lookalikes — one of three parallel flumes, one of several rivers, one of three shallow children's pools — on nothing better than a cartoon's idea of where things sit. A pin measured to two metres and hung on the wrong object is worse than no pin, because it looks exactly as authoritative as the ones above. Their height rules are kept in `_unmapped` below.\n\nAn earlier attempt georeferenced the park's own illustrated map by fitting an affine transform to eleven surveyed control points. It came out at 33 m RMS with residuals to 55 m across a park 400 m wide, which is why none of this comes from that.",
+  "_unmapped": {
+    "_comment": "The rest of the park's published height chart, held here rather than in `pois` because nothing in the bundle answers to these names yet and an override that lands on nothing is a correction that silently did not happen — there is a test that says so. Each of these is a real attraction that either OpenStreetMap has not named or aerial photography cannot tell apart from its neighbours: three parallel flumes, several river channels, three shallow children's pools. See `_add_comment` for why they were not placed. When one gains a name in OSM, move its entry up into `pois`; when one can be identified in imagery beyond doubt, move it into `add` with a measured position. Same source and same reading as everything above, so the research does not have to be done twice.",
+    "Bombay Blasters": {
+      "h": {
+        "min": 48,
+        "alone": null,
+        "max": null
+      },
+      "note": "Twin speed slides. 300 lb maximum."
+    },
+    "Bombs Away Bay": {
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      }
+    },
+    "Crocodile Flats": {
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      },
+      "note": "Shallow children's pool with three small slides."
+    },
+    "Fun Fountains": {
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      }
+    },
+    "Humunga River": {
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      }
+    },
+    "Pirate's Escape": {
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      },
+      "note": "300 lb maximum."
+    },
+    "Raging Rhino River": {
+      "h": {
+        "min": 42,
+        "alone": null,
+        "max": null
+      },
+      "note": "250 lb maximum."
+    },
+    "Tadpole Pond": {
+      "h": {
+        "min": 0,
+        "alone": null,
+        "max": null
+      },
+      "note": "Toddler area. The park asks that a parent is in the water with them."
+    }
+  }
+}

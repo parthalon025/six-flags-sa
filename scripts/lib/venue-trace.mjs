@@ -100,7 +100,17 @@ export function applyTrace(pois, layers, traced) {
         continue;
       }
       for (const t of targets) {
-        t[kind === 'entrance' ? 'in' : 'out'] = { ...at, src: props.src || null };
+        if (kind === 'exit') {
+          t.out = { ...at, src: props.src || null };
+          continue;
+        }
+        /* Into `e`, beside whatever the builder derived from a named one-way
+           queue, rather than into a second field of its own. One concept, one
+           place to read it — the app takes the first entrance and does not want
+           to learn that a traced one lives somewhere else. Replaces a traced
+           entry rather than stacking, so re-running a trace corrects. */
+        const kept = (t.e || []).filter((x) => x.src?.by !== 'trace');
+        t.e = [{ ...at, n: props.n || `${props.of} entrance`, src: props.src || null }, ...kept];
       }
       out[kind === 'entrance' ? 'entrances' : 'exits'] += 1;
       continue;

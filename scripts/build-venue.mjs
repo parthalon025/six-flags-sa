@@ -48,6 +48,9 @@ import {
 } from './lib/venue-recipe.mjs';
 import { briefJson, renderBrief, requests } from './lib/venue-requests.mjs';
 import { applyTrace } from './lib/venue-trace.mjs';
+// The app's own reading of "these two strings are the same ride", reused so the
+// builder and the renderer cannot disagree about it.
+import { normaliseRideName } from '../lib/mapSymbols.js';
 import path from 'node:path';
 
 const OVERPASS = [
@@ -93,6 +96,9 @@ Build a venue bundle from OpenStreetMap.
   --place "<name>"          resolve the place and its extent with Nominatim
   --bbox s,w,n,e            explicit bounding box in degrees
   --around lat,lng,metres   a centre point and a radius
+
+  --center lat,lng          where the map opens (default: kept from the last
+                            build, else the middle of the bounding box)
 
   --name "<name>"           display name       (default: the resolved place)
   --id <slug>               venue id           (default: slugified name)
@@ -156,6 +162,13 @@ async function resolvePlace(query) {
     bbox: { south, west, north, east },
     center: { lat: Number(hit.lat), lng: Number(hit.lon) },
   };
+}
+
+function parseLatLng(raw, flag) {
+  const [lat, lng] = String(raw).split(',').map(Number);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw new Error(`${flag} wants lat,lng`);
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new Error(`${flag} is not a place on Earth`);
+  return { lat, lng };
 }
 
 function padBounds(b, metres) {
@@ -586,21 +599,138 @@ function campPitches(elements, campRings, known) {
  * list to tap — so the track supplies the ride, positioned at its own midpoint.
  * The position is surveyed geometry rather than a guess; it is simply the middle
  * of the ride instead of its entrance.
+ *
+ * Water slides are the same shape of problem and were not covered, which only
+ * showed up at a park that is nothing but slides: Big Kahuna's is mapped as
+ * twenty-five `attraction=water_slide` flumes, fourteen of them named, and the
+ * bundle came out with one ride in it — the wave pool, which is a pool and
+ * therefore an area. Every named slide was drawn on the map and absent from the
+ * list, so the Rides tab, the height slider and the whole reason the app exists
+ * at a water park had nothing to work with.
+ *
+ * @param sources  `{ track, category }` pairs, most specific first. One shared
+ *                 set of names across all of them, so a ride mapped as both a
+ *                 coaster and a flume is added once, as the first thing it
+ *                 matched, rather than twice.
  */
-function poisFromTrack(pois, track) {
+export function poisFromTrack(pois, sources) {
   const known = new Set(pois.map((p) => p.n.toLowerCase()));
   const added = [];
-  for (const piece of track) {
-    const name = piece.n;
-    if (!name || known.has(name.toLowerCase())) continue;
-    const ring = piece.r;
-    if (!ring?.length) continue;
-    const [lng, lat] = ring[Math.floor(ring.length / 2)];
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-    known.add(name.toLowerCase());
-    added.push({ n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'coaster' });
+  for (const { track, category } of sources) {
+    for (const piece of track) {
+      const name = piece.n;
+      if (!name || known.has(name.toLowerCase())) continue;
+      const ring = piece.r;
+      if (!ring?.length) continue;
+      const [lng, lat] = ring[Math.floor(ring.length / 2)];
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      known.add(name.toLowerCase());
+      added.push({ n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: category });
+    }
   }
   return added;
+}
+
+/* A queue's name, minus the words that make it a queue. "Millennium Force
+   Standby Queue" is a fact about Millennium Force. */
+const QUEUE_SUFFIX = /\s*\b(fastlane|fast lane|standby|stand by|extended|single rider)?\s*\b(queue|line)\b\s*$/i;
+
+/**
+ * Where you join the queue.
+ *
+ * A ride's marker is where the ride is — a footprint, a track midpoint, the
+ * centroid of an area — and at a big coaster that is not within sight of where
+ * you start queuing. Cedar Point's markers sit 96 to 148 metres from the back
+ * of the line at Millennium Force, Top Thrill 2 and Steel Vengeance, which is
+ * the wrong side of the ride to be sent to.
+ *
+ * OpenStreetMap has no ride-entrance tag and its gates cannot supply one: they
+ * are unnamed, a queue gate and a fence gate are both `barrier=gate`, and
+ * picking the nearest ride to a gate lands on the wrong ride about one time in
+ * five. So none of that is used here. What is used is the two things a mapper
+ * did write down:
+ *
+ *   the name   "Millennium Force Standby Queue" says whose queue it is. That is
+ *              attribution, not inference — nothing is being guessed at.
+ *   `oneway`   a queue runs one way, towards the ride. Chain the ways of one
+ *              queue together and the vertex that is never any way's end is
+ *              where the queue begins. That is the entrance.
+ *
+ * Nothing is derived without both. A queue with no `oneway` (Cedar Point's
+ * Maverick) and a queue naming a ride this bundle does not have are both
+ * reported and skipped rather than approximated.
+ *
+ * Exits are not attempted, and cannot be: four parks between them contain two
+ * objects naming an exit, both of them called "Attraction Exit", neither saying
+ * which attraction.
+ */
+export function entrancesFromQueues(pois, elements) {
+  const rides = pois.filter((p) => p.c === 'ride' || p.c === 'coaster');
+  const byName = new Map();
+  for (const r of rides) {
+    for (const key of [r.n, r.alias].filter(Boolean)) {
+      const k = normaliseRideName(key);
+      if (k && !byName.has(k)) byName.set(k, r);
+    }
+  }
+
+  const groups = new Map();
+  for (const el of elements) {
+    if (el.type !== 'way') continue;
+    const name = el.tags?.name;
+    if (!name || !QUEUE_SUFFIX.test(name)) continue;
+    const ride = name.replace(QUEUE_SUFFIX, '').trim();
+    if (!ride) continue;
+    if (!groups.has(ride)) groups.set(ride, []);
+    groups.get(ride).push(el);
+  }
+
+  const at = (p) => `${p.lat.toFixed(7)},${p.lon.toFixed(7)}`;
+  const out = { attached: 0, rides: 0, unmatched: [], noDirection: [] };
+
+  for (const [ride, ways] of groups) {
+    const poi = byName.get(normaliseRideName(ride));
+    if (!poi) {
+      out.unmatched.push(ride);
+      continue;
+    }
+    /* Only the ways that say which way they run. `oneway=-1` is drawn the other
+       way round, so its last vertex is its first. */
+    const starts = new Map();
+    const ends = new Set();
+    for (const w of ways) {
+      const dir = w.tags.oneway;
+      if (dir !== 'yes' && dir !== '-1') continue;
+      const g = (w.geometry || []).filter(Boolean);
+      if (g.length < 2) continue;
+      const [head, tail] = dir === '-1' ? [g[g.length - 1], g[0]] : [g[0], g[g.length - 1]];
+      starts.set(at(head), { p: head, n: w.tags.name });
+      ends.add(at(tail));
+    }
+    const sources = [...starts.entries()].filter(([k]) => !ends.has(k)).map(([, v]) => v);
+    if (!sources.length) {
+      out.noDirection.push(ride);
+      continue;
+    }
+
+    /* A ride with a standby queue and a Fastlane queue has two ways in, and
+       they are worth keeping apart — unless they start side by side, which at
+       Top Thrill 2 and Snake River Falls they do, a metre and a half apart. One
+       pin then, carrying both names. */
+    const kept = [];
+    for (const s of sources) {
+      const near = kept.find((k) => distanceMetres(k.lat, k.lng, s.p.lat, s.p.lon) < 8);
+      if (near) {
+        if (!near.n.includes(s.n)) near.n = `${near.n} / ${s.n}`;
+        continue;
+      }
+      kept.push({ lat: Number(s.p.lat.toFixed(6)), lng: Number(s.p.lon.toFixed(6)), n: s.n });
+    }
+    poi.e = kept;
+    out.attached += kept.length;
+    out.rides += 1;
+  }
+  return out;
 }
 
 /**
@@ -1205,8 +1335,12 @@ async function buildOne(args, { previous = null } = {}) {
 
   const name = String(args.name || place?.name || 'Venue');
   const id = slugify(String(args.id || name));
-  const kind = String(args.kind || place?.kind || 'place');
   const tolerance = Number(args.tolerance ?? 1.2);
+
+  /* Read before the meta is assembled, because a rebuild has to be able to fall
+     back to what the last one decided. */
+  const previousMeta = readJson(path.join(VENUE_DIR, `${id}.map.json`))?.meta || null;
+  const kind = String(args.kind || place?.kind || previousMeta?.kind || 'place');
 
   console.error(`\nBuilding "${name}" (${id}) over ${km2.toFixed(2)} km²`);
 
@@ -1244,7 +1378,10 @@ async function buildOne(args, { previous = null } = {}) {
     pois = pois.concat(pitches);
     console.error(`  · campground: ${pitches.length} pitch(es) picked up from inside ${campRings.length} ring(s)`);
   }
-  const fromTrack = poisFromTrack(pois, layers.coaster);
+  const fromTrack = poisFromTrack(pois, [
+    { track: layers.coaster, category: 'coaster' },
+    { track: layers.slide, category: 'ride' },
+  ]);
   if (fromTrack.length) {
     console.error(`  · ${fromTrack.length} ride(s) taken from named track with no place of their own`);
     pois = pois.concat(fromTrack);
@@ -1265,6 +1402,19 @@ async function buildOne(args, { previous = null } = {}) {
     pois = pois.filter((p) => !cut.has(p));
   }
 
+  /* Where you join the queue, for the rides whose queue somebody named and
+     pointed. Before the overrides, so a hand-written `e` still wins. */
+  const ways = entrancesFromQueues(pois, elements);
+  if (ways.rides || ways.unmatched.length || ways.noDirection.length) {
+    console.error(
+      `  · queue entrances: ${ways.attached} on ${ways.rides} ride(s)` +
+        (ways.noDirection.length ? `, ${ways.noDirection.length} queue(s) with no oneway` : '') +
+        (ways.unmatched.length ? `, ${ways.unmatched.length} naming no ride here` : ''),
+    );
+    for (const miss of ways.noDirection) console.error(`    ? "${miss}" queue is not tagged oneway`);
+    for (const miss of ways.unmatched) console.error(`    ? "${miss}" has a queue but no ride by that name`);
+  }
+
   const merged = applyOverrides(pois, overrides);
   pois = merged.pois;
   if (overrideFile) {
@@ -1275,6 +1425,14 @@ async function buildOne(args, { previous = null } = {}) {
     for (const miss of merged.unmatched.slice(0, 8)) console.error(`    ? no POI named "${miss}"`);
     if (merged.unmatched.length > 8) console.error(`    … and ${merged.unmatched.length - 8} more`);
   }
+
+  /* A hand-added place gets its district too. The pass above ran before the
+     overrides did, so anything `add` introduced still carries no `a` — and `a`
+     is the line the app reads out under a name and the second thing search
+     matches on. No `drawnNames`, because a place somebody wrote down by hand is
+     not the build guessing at what fell outside the venue. */
+  const introduced = pois.filter((p) => !p.a);
+  if (introduced.length) assignLands(introduced, allLands, name, null);
 
   /* The venue's own camping facts, and the rules that narrow them. Read from
      the overrides file so nothing about any one campground is in this script. */
@@ -1329,14 +1487,23 @@ async function buildOne(args, { previous = null } = {}) {
   pois.sort((a, b) => a.n.localeCompare(b.n));
 
   // A rebuild must not silently drop the hand-written parts of the last one.
-  const existingMeta = readJson(path.join(VENUE_DIR, `${id}.map.json`))?.meta || null;
+  const existingMeta = previousMeta;
 
   /* Where the map opens. A rebuild must not move it: the centre a venue already
      has was chosen, and the midpoint of a bounding box is not the middle of a
      park — Kings Island's is out over the car park, a hundred and fifty metres
      from the fountain everyone means by "the middle". So an existing centre is
      kept as long as it is still inside the venue, and only a genuinely new
-     venue falls back to the box. */
+     venue falls back to the box.
+
+     "The centre a venue already has was chosen" needed somewhere to be chosen
+     from, and had none: the first build of a venue took the box and every build
+     after it took that. --center is that somewhere. It is worth having because
+     neither automatic answer is the middle of anywhere in particular — Big
+     Kahuna's own polygon runs north over its car park, so the box midpoint and
+     the boundary centroid agree to within two metres and both of them open the
+     map on the parked cars rather than on the wave pool. */
+  const chosenCentre = args.center ? parseLatLng(String(args.center), '--center') : null;
   const existingCentre = existingMeta?.center;
   const centreStillValid =
     existingCentre &&
@@ -1344,7 +1511,8 @@ async function buildOne(args, { previous = null } = {}) {
     existingCentre.lat > bounds.south &&
     existingCentre.lng < bounds.east &&
     existingCentre.lng > bounds.west;
-  const centre = (centreStillValid && existingCentre) ||
+  const centre = chosenCentre ||
+    (centreStillValid && existingCentre) ||
     place?.center || {
       lat: (bounds.north + bounds.south) / 2,
       lng: (bounds.east + bounds.west) / 2,
@@ -1356,7 +1524,16 @@ async function buildOne(args, { previous = null } = {}) {
   const meta = {
     id,
     name,
-    locality: args.locality ? String(args.locality) : place?.display?.split(', ').slice(-3).join(', ') || null,
+    /* The line under the name. Falls back to the last build's, because a
+       rebuild from a bounding box resolves no place and would otherwise blank
+       it — the same way `credits` and `kind` used to be lost. A venue is
+       routinely rebuilt from `--bbox` precisely because `--place` picked the
+       wrong thing, so this is the common path, not the odd one. */
+    locality:
+      (args.locality ? String(args.locality) : null) ||
+      place?.display?.split(', ').slice(-3).join(', ') ||
+      existingMeta?.locality ||
+      null,
     kind,
     center: { lat: Number(centre.lat.toFixed(6)), lng: Number(centre.lng.toFixed(6)) },
     bounds: {
@@ -1366,9 +1543,14 @@ async function buildOne(args, { previous = null } = {}) {
       west: Number(bounds.west.toFixed(5)),
     },
     source: 'OpenStreetMap contributors, ODbL',
-    // Anything the venue's data owes to a source that is not OSM — height
-    // requirements, most often — is credited in the app from here.
-    credits: args.credits ? String(args.credits) : existingMeta?.credits || null,
+    /* Anything the venue's data owes to a source that is not OSM — height
+       requirements, most often — is credited in the app from here. The
+       overrides file is allowed to carry the line, and is the better place for
+       it: it is where the data being credited lives, and --reapply has always
+       read it from there. Only the build did not, so a venue whose heights and
+       whose credit were written in the same file shipped the heights
+       uncredited. */
+    credits: args.credits ? String(args.credits) : overrides?.credits || existingMeta?.credits || null,
     /* What is true of this venue's campground as a whole. On the venue rather
        than repeated onto every pitch, because that is where the fact lives: a
        campground is full hookup, a pitch is not individually full hookup. The

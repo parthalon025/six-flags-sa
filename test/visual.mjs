@@ -74,8 +74,15 @@ async function main() {
   await page.waitForTimeout(1200);
   await shot(page, 'gps-gate');
   check(
-    await page.getByRole('heading', { name: 'Turn on location' }).isVisible(),
-    'GPS gate is the first thing shown',
+    await page.getByRole('heading', { name: 'Park Party' }).isVisible(),
+    'the first screen introduces the app',
+  );
+  // The introduction and the ask are one screen, not two: the point of saying
+  // what the app is here is that the permission button is right under it.
+  const first = await page.locator('.gate').innerText();
+  check(
+    /see where everyone is/i.test(first) && /Allow location/i.test(first),
+    'the first screen asks for location on the same card',
   );
 
   await page.getByRole('button', { name: 'Allow location' }).click();

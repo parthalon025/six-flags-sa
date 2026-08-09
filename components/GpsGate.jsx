@@ -3,17 +3,17 @@
 const COPY = {
   idle: {
     title: 'Turn on location',
-    body: 'This map needs your phone\u2019s GPS to place you on it, measure range and bearing to your party, and point you at the meet-up. Nothing is stored until you join a party.',
+    body: 'This map needs your phone’s GPS to place you on it, measure range and bearing to your party, and point you at the meet-up. Nothing is stored until you join a party.',
     action: 'Allow location',
   },
   asking: {
     title: 'Waiting for a fix',
-    body: 'Your phone should be asking for permission now. Say yes, then give it a few seconds \u2014 first fix under tree cover or inside a queue building can take a while.',
+    body: 'Your phone should be asking for permission now. Say yes, then give it a few seconds — first fix under tree cover or inside a queue building can take a while.',
     action: 'Ask again',
   },
   denied: {
     title: 'Location is blocked',
-    body: 'Your browser is refusing the request. On iPhone: Settings \u2192 Safari \u2192 Location \u2192 Ask, then reload. On Android Chrome: tap the padlock in the address bar \u2192 Permissions \u2192 Location \u2192 Allow.',
+    body: 'Your browser is refusing the request. On iPhone: Settings → Safari → Location → Ask, then reload. On Android Chrome: tap the padlock in the address bar → Permissions → Location → Allow.',
     action: 'Try again',
   },
   insecure: {
@@ -28,14 +28,68 @@ const COPY = {
   },
 };
 
-export default function GpsGate({ status, error, onRequest, onManual, onDismiss, venueName }) {
+/*
+ * The first screen says what Park Party is and asks for location, in that
+ * order, on the one screen — rather than asking on a screen of its own.
+ *
+ * That order is the whole point. Someone handed the phone's own permission box
+ * before anything has said what the app does says no, and on a phone "no" is
+ * close to permanent: getting it back means a trip into browser settings that
+ * most people never make. Saying what they get first, in three lines they can
+ * read standing in a car park, is what makes the box worth saying yes to — and
+ * the ways out below are ours rather than the phone's, so turning it down here
+ * costs nothing and the same button works later.
+ */
+function Welcome() {
+  return (
+    <>
+      <p>Keep your group together at a big, busy park.</p>
+      <div className="introList">
+        <p>
+          <b>See where everyone is.</b> Everyone is a dot on the map, with how far away
+          they are and how long the walk is.
+        </p>
+        <p>
+          <b>Meet up without ringing round.</b> Anyone can drop a pin on a spot, and
+          everyone else gets directions to it.
+        </p>
+        <p>
+          <b>Everything in the park.</b> Every ride and who is tall enough for it, and the
+          nearest toilet, food or first aid.
+        </p>
+        <p>
+          <b>An eye on the sky.</b> The forecast for the park, and which rides tend to shut
+          when the weather turns.
+        </p>
+        <p>
+          <b>No bars, no problem.</b> The map, the rides and the walking directions are
+          saved on your phone, so they work in a queue with no signal. Only watching your
+          group move needs a connection, and everyone catches up when it comes back.
+        </p>
+      </div>
+      <p>To put you on the map, Park Party needs to use your location.</p>
+    </>
+  );
+}
+
+export default function GpsGate({
+  status,
+  error,
+  onRequest,
+  onManual,
+  onDismiss,
+  venueName,
+  welcome = false,
+}) {
   const copy = COPY[status] || COPY.idle;
   return (
     <div className="gate">
       <div className="gateCard">
-        <div className="gateEyebrow">{venueName ? `${venueName} · ` : ''}Party tracker</div>
-        <h2>{copy.title}</h2>
-        <p>{copy.body}</p>
+        <div className="gateEyebrow">
+          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}Park Party`}
+        </div>
+        <h2>{welcome ? 'Park Party' : copy.title}</h2>
+        {welcome ? <Welcome /> : <p>{copy.body}</p>}
         {error && <p className="gateError">{error}</p>}
         <button type="button" className="btn primary" onClick={onRequest}>
           {status === 'asking' ? 'Ask again' : copy.action}
@@ -50,9 +104,8 @@ export default function GpsGate({ status, error, onRequest, onManual, onDismiss,
           {venueName ? `Just look around ${venueName}` : 'Just show me the map'}
         </button>
         <p className="gateFine">
-          Position stays on your device unless you join a party. Then it is encrypted
-          and sent to the phone hosting that party — anything relaying it in between
-          carries it without being able to read it.
+          Where you are stays on your phone. Join a party and it goes only to those
+          people, encrypted on the way, so nobody in between can read it.
         </p>
       </div>
     </div>

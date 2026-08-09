@@ -112,6 +112,10 @@ const PUSH_PREFS_KEY = 'tracker-push-prefs';
    not have the same places, and hiding food at one should not hide it at the
    other. */
 const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
+/* Whether this phone has been told what the app is. Its own key rather than a
+   field on the identity record, because it is answered before anyone has typed
+   a name and has to survive the identity being rewritten. */
+const INTRO_KEY = 'tracker-intro-seen';
 /* Where the car is, per venue. Per venue because the car parks are not the
    same one and a stale pin two states away is worse than no pin: it would put
    a card on the rail confidently pointing at Ohio. */
@@ -165,6 +169,12 @@ export default function Page() {
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
+  /* Has this phone been told what the app is? null until localStorage has been
+     read, which cannot happen on the server: rendering a card before the answer
+     is known would show a first-time visitor the location question for a frame
+     and a returning one the introduction. Nothing in the intake draws until
+     this is a boolean. */
+  const [introSeen, setIntroSeen] = useState(null);
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
@@ -477,6 +487,27 @@ export default function Page() {
       (row) => row.venue.id !== parkChoice.venue.id,
     );
   }, [parkChoice, manifest, position]);
+
+  useEffect(() => {
+    let seen = false;
+    try {
+      seen = localStorage.getItem(INTRO_KEY) === '1';
+    } catch {
+      // A phone with storage walled off gets the introduction every time, which
+      // is the harmless way round: the alternative is never showing it at all.
+      seen = false;
+    }
+    setIntroSeen(seen);
+  }, []);
+
+  const markIntroSeen = useCallback(() => {
+    setIntroSeen(true);
+    try {
+      localStorage.setItem(INTRO_KEY, '1');
+    } catch {
+      /* private mode; the session still gets it once */
+    }
+  }, []);
 
   const askingPark = Boolean(parkChoice);
   /** The question is only load-bearing while it is actually on screen. */
@@ -1108,13 +1139,22 @@ export default function Page() {
     /* Walking to a ride means walking to its queue. A place here is one point,
        and for a ride the builder took from its track that point is the middle
        of the track — so "walk me to Diamondback" aimed at the top of the lift
-       hill, over a fence, and told you it was forty seconds away. Where an
-       entrance has been traced off the park's own map, that is what a route is
-       for. The ride keeps its own position for the marker and the callout;
-       only the destination moves. Resolved here rather than at each call site,
-       so no future way of setting off can forget it. */
+       hill, over a fence, and told you it was forty seconds away.
+
+       The builder already works these out, from a queue way that carries its
+       ride's name and says which way it runs, and hangs them on the ride as
+       `e`. Nothing read them until now: six rides at Cedar Point had a surveyed
+       queue entrance sitting in the bundle and every route still aimed at the
+       middle of the track.
+
+       The first entrance rather than the nearest one. A ride with a standby and
+       a Fastlane queue has two, they are kept apart only when they start more
+       than eight metres apart, and picking by live position would move the
+       destination under somebody already walking to it — which is the one thing
+       the reroute logic below exists to avoid. The ride keeps its own position
+       for the marker and the callout; only the destination moves. */
     if (nav.kind === 'poi') {
-      const gate = POIS.find((p) => p.n === nav.label)?.in;
+      const gate = POIS.find((p) => p.n === nav.label)?.e?.[0];
       if (gate && Number.isFinite(gate.lat)) return { ...nav, lat: gate.lat, lng: gate.lng };
     }
     return nav;
@@ -2136,8 +2176,10 @@ export default function Page() {
       )}
 
       {/* The intake, in the order the answers become possible: location first,
-          because nothing else can be decided without a fix, then which park —
-          which is the question that actually builds a map. */}
+          because nothing else can be decided without a fix — carrying, the
+          first time this phone opens the app, the introduction that makes that
+          question worth saying yes to — then which park, which is the question
+          that actually builds a map. */}
       {showParkPrompt && (
         <ParkPrompt
           choice={parkChoice}
@@ -2162,16 +2204,23 @@ export default function Page() {
         />
       )}
 
-      {gateOpen && !showParkPrompt && (
+      {gateOpen && introSeen !== null && !showParkPrompt && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
+          // Said once per phone, and only in front of the ask itself: by the
+          // time the phone is waiting on a fix or reporting a refusal, the
+          // introduction is behind us and the card has something more urgent to
+          // say.
+          welcome={introSeen === false && geo.status === 'idle'}
           onRequest={() => {
+            markIntroSeen();
             geo.request();
             geo.enableCompass();
           }}
           onManual={() => {
+            markIntroSeen();
             // Waving the intake off waves off both of its questions: whichever
             // one you come back for, you came back deliberately, and the one
             // you get should be the one this button is under.
@@ -2180,6 +2229,7 @@ export default function Page() {
             showToast('Tap the map to place yourself');
           }}
           onDismiss={() => {
+            markIntroSeen();
             // Waving both questions off leaves whichever park happened to boot,
             // which is the one place the app can be showing somebody a map of
             // somewhere they are not. Name it, so that is a fact rather than a

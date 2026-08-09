@@ -6,6 +6,88 @@
   "publish_at": "moderate",
   "attractions": [
     {
+      "id": "six-flags-fiesta-texas-bahama-blaster",
+      "name": "Bahama Blaster",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60098,
+        "lng": -98.61002
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60095,
+            "lng": -98.60999
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60095,
+                "lng": -98.60999
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-bamboo-chutes",
+      "name": "Bamboo Chutes",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.6008,
+        "lng": -98.61048
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.6008,
+            "lng": -98.61043
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.6008,
+                "lng": -98.61043
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
       "id": "six-flags-fiesta-texas-bat-girl-coaster-chase",
       "name": "Bat Girl: Coaster Chase",
       "venue": "six-flags-fiesta-texas",
@@ -88,6 +170,47 @@
       "last_verified": null
     },
     {
+      "id": "six-flags-fiesta-texas-bermuda-triagle",
+      "name": "Bermuda Triagle",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60013,
+        "lng": -98.61076
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60015,
+            "lng": -98.61087
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60015,
+                "lng": -98.61087
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
       "id": "six-flags-fiesta-texas-bermuda-triangle-riptide-runner-slide-pool",
       "name": "Bermuda Triangle, Riptide Runner Slide Pool",
       "venue": "six-flags-fiesta-texas",
@@ -116,6 +239,47 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-bonzai-pipelines",
+      "name": "Bonzai Pipelines",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60032,
+        "lng": -98.61158
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60027,
+            "lng": -98.61158
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60027,
+                "lng": -98.61158
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
             }
           ],
           "from": "geometry",
@@ -362,6 +526,47 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-cowabunga",
+      "name": "Cowabunga",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60042,
+        "lng": -98.61157
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60043,
+            "lng": -98.61164
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60043,
+                "lng": -98.61164
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
             }
           ],
           "from": "geometry",
@@ -1359,6 +1564,88 @@
       "last_verified": null
     },
     {
+      "id": "six-flags-fiesta-texas-ripqurl",
+      "name": "RipQurl",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60017,
+        "lng": -98.6115
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60015,
+            "lng": -98.61154
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60015,
+                "lng": -98.61154
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-riptide-runner",
+      "name": "Riptide Runner",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60025,
+        "lng": -98.61062
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60032,
+            "lng": -98.61059
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60032,
+                "lng": -98.61059
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
       "id": "six-flags-fiesta-texas-road-runner-express",
       "name": "Road Runner Express",
       "venue": "six-flags-fiesta-texas",
@@ -1605,6 +1892,47 @@
       "last_verified": null
     },
     {
+      "id": "six-flags-fiesta-texas-stingray-racer",
+      "name": "Stingray Racer",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60032,
+        "lng": -98.61151
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.6003,
+            "lng": -98.61151
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.6003,
+                "lng": -98.61151
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
       "id": "six-flags-fiesta-texas-supergirl-sky-flight",
       "name": "Supergirl Sky Flight",
       "venue": "six-flags-fiesta-texas",
@@ -1810,6 +2138,47 @@
       "last_verified": null
     },
     {
+      "id": "six-flags-fiesta-texas-texas-tumble-tube-shoot",
+      "name": "Texas Tumble Tube Shoot",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.59967,
+        "lng": -98.61192
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.59983,
+            "lng": -98.61175
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.59983,
+                "lng": -98.61175
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 24 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
       "id": "six-flags-fiesta-texas-the-grand-carousel",
       "name": "The Grand Carousel",
       "venue": "six-flags-fiesta-texas",
@@ -1892,6 +2261,88 @@
       "last_verified": null
     },
     {
+      "id": "six-flags-fiesta-texas-thunder-rapids-water-coaster",
+      "name": "Thunder Rapids Water Coaster",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60121,
+        "lng": -98.60973
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60108,
+            "lng": -98.60948
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60108,
+                "lng": -98.60948
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 28 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-tornado",
+      "name": "Tornado",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60022,
+        "lng": -98.61024
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60019,
+            "lng": -98.61024
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60019,
+                "lng": -98.61024
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 3 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
       "id": "six-flags-fiesta-texas-tornado-slide-pool",
       "name": "Tornado Slide Pool",
       "venue": "six-flags-fiesta-texas",
@@ -1920,6 +2371,252 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 5 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-tube-shoot",
+      "name": "Tube Shoot",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60026,
+        "lng": -98.61072
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60025,
+            "lng": -98.61082
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60025,
+                "lng": -98.61082
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-tx-treehouse-green-slide",
+      "name": "Tx Treehouse Green Slide",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60027,
+        "lng": -98.6123
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60019,
+            "lng": -98.61232
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60019,
+                "lng": -98.61232
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-tx-treehouse-red-slide",
+      "name": "Tx Treehouse Red Slide",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60035,
+        "lng": -98.61225
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60032,
+            "lng": -98.61217
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60032,
+                "lng": -98.61217
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-tx-treehouse-teal-slide",
+      "name": "Tx Treehouse Teal Slide",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60035,
+        "lng": -98.61219
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60032,
+            "lng": -98.61217
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60032,
+                "lng": -98.61217
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-tx-treehouse-yellow-slide",
+      "name": "Tx Treehouse Yellow Slide",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60023,
+        "lng": -98.61226
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60019,
+            "lng": -98.61232
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60019,
+                "lng": -98.61232
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-vortex",
+      "name": "Vortex",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60022,
+        "lng": -98.6116
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60025,
+            "lng": -98.61158
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60025,
+                "lng": -98.61158
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
             }
           ],
           "from": "geometry",
@@ -2002,6 +2699,47 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 2 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "six-flags-fiesta-texas-wipeout",
+      "name": "Wipeout",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.60044,
+        "lng": -98.61157
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.60046,
+            "lng": -98.61151
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.60046,
+                "lng": -98.61151
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
             }
           ],
           "from": "geometry",

@@ -46,14 +46,45 @@ export const LAYER_RULES = [
       has(t, 'landuse', ['grass', 'meadow', 'village_green', 'recreation_ground', 'greenfield', 'flowerbed']) ||
       // An unnamed leisure=park is ordinary green ground; a named one has
       // already been taken as a district by the land rules above.
-      has(t, 'leisure', ['garden', 'pitch', 'golf_course', 'common', 'park']),
+      // Mini golf is a landscaped green the size of a small field. Left out, the
+      // three courses that are half of Big Kahuna's Adventure Park drew as bare
+      // ground with a pin in the middle of them.
+      has(t, 'leisure', ['garden', 'pitch', 'golf_course', 'miniature_golf', 'common', 'park']),
   ],
   ['parking', (t) => has(t, 'amenity', ['parking']) || has(t, 'parking')],
   ['building', (t) => has(t, 'building') || has(t, 'building:part')],
   [
+    /* Everything a visitor can walk along. This layer is not only drawn — it is
+       welded into the route graph in lib/routing.js, so a walkable way that is
+       missing here is not a faint line on a map, it is a route the app will not
+       send anybody down. That is what makes the three additions below worth
+       having rather than pedantic. */
     'path',
     (t) =>
-      has(t, 'highway', ['footway', 'path', 'pedestrian', 'steps', 'corridor', 'living_street', 'cycleway', 'track']),
+      has(t, 'highway', [
+        'footway', 'path', 'pedestrian', 'steps', 'corridor', 'living_street', 'cycleway', 'track',
+        'bridleway',
+        // A marked crossing drawn as a way, which is how a path gets from one
+        // side of a service road to the other. Rare, and exactly the kind of
+        // link whose absence leaves the network in two pieces.
+        'crossing',
+      ]) ||
+      /* A boardwalk, a jetty, the deck along a beach: walkable ground that
+         carries no highway tag at all. Cedar Point has 21 of them — Boggy
+         Bridge, two 200-metre decks, the boardwalks around Lighthouse Point —
+         and 830 metres of walking that the bundle simply did not have.
+
+         `floating` is what keeps the marina out, and it has to: the same tag is
+         on 228 finger docks in the boat basin, six and a half kilometres of
+         them. They are walkable in the sense that a person standing on one is
+         not in the water, and useless in the sense that no route through a park
+         goes down a boat slip. */
+      (has(t, 'man_made', ['pier']) && t.floating !== 'yes') ||
+      // Where you stand for the train. Station platforms are routinely mapped
+      // as areas with no highway tag, so the graph stopped at the platform edge
+      // and the ride everyone queues for was reachable only by guessing.
+      has(t, 'public_transport', ['platform']) ||
+      has(t, 'railway', ['platform']),
   ],
   [
     'service',
@@ -190,7 +221,10 @@ export const POI_RULES = [
     'ride',
     (t) =>
       has(t, 'attraction') ||
-      has(t, 'leisure', ['playground', 'water_park', 'amusement_arcade']) ||
+      // Mini golf is a paid attraction people queue for and arrange to meet at,
+      // which is the test everything on this list has to pass. It is also the
+      // only thing in an adventure park that OpenStreetMap gives its own tag.
+      has(t, 'leisure', ['playground', 'water_park', 'amusement_arcade', 'miniature_golf']) ||
       // A named pool at a venue like this is a ride: a wave pool, a lazy river,
       // the splashdown at the foot of a slide. Leaving it out meant Soak City's
       // seven pools were drawn on the map and missing from the list — and the

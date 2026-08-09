@@ -1239,6 +1239,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .gateCard p { margin: 0 0 18px; font-size: 17px; line-height: 22px; letter-spacing: -.4px; color: var(--label2); }
 .gateError { color: var(--red); }
 .gateFine { font-size: 13px; line-height: 18px; color: var(--label3); margin-top: 16px; }
+/* The three things the app is, on the card that opens the intake. Tighter than
+   the card's own paragraph because it is a list being read down, not a
+   sentence being read once, and the bold lead-in is what the eye lands on. */
+.introList { margin: 0 0 20px; }
+.introList p { font-size: 15px; line-height: 20px; letter-spacing: -.24px; margin: 0 0 12px; }
+.introList p:last-child { margin-bottom: 0; }
+.introList b { color: var(--label); font-weight: 600; }
 
 .toast {
   position: absolute; left: 50%; z-index: 80;

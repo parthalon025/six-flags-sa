@@ -1,9 +1,10 @@
 # Party Tracker
 
 A live situational-awareness map for a group at a big, crowded place. It ships with
-Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio) and Cedar Point
-(Sandusky, Ohio), and one command — or one form under Actions — builds a map of anywhere
-else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
+Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio), Cedar Point
+(Sandusky, Ohio) and Big Kahuna's (Destin, Florida), and one command — or one form under
+Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15
+(App Router) and React 19.
 
 - **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
   painted as SVG: midways, buildings, water, slides, and every coaster's actual track
@@ -13,8 +14,9 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   under Actions → Build a venue and get a pull request back. See
   [Building a map of somewhere else](#building-a-map-of-somewhere-else). Nothing in the
   renderer is amusement-park specific; a zoo, a campus, a festival ground or a town
-  centre all draw through the same code. Three parks ship today: Kings Island, Six Flags
-  Fiesta Texas and Cedar Point.
+  centre all draw through the same code. Four parks ship today: Kings Island, Six Flags
+  Fiesta Texas, Cedar Point and Big Kahuna's — the last of which is a water park, and
+  came through the same pipeline with nothing added to it but a tag rule for mini golf.
 - **Symbols you can read, not dots you have to decode.** Every place carries three
   redundant channels — shape, colour and a glyph. A solid disc is something you came for,
   a light chip is something you need, a diamond is a landmark and a pin is a gate; inside
@@ -36,9 +38,11 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   through — not faded, because fading is what a party member we have not heard from looks
   like, and not its category colour either, because the whole reason to set a height is to
   see at a glance what is out. Rides that need a grown-up along get a plus badge. Plus a
-  running tally of what's open, what needs an adult, and what's closed. All three parks
-  ship with theirs: 65 rules at Kings Island, 57 at Cedar Point, 47 at Six Flags Fiesta
-  Texas. A venue built from OpenStreetMap alone has none until somebody writes them, and
+  running tally of what's open, what needs an adult, and what's closed. All four parks
+  ship with theirs: 74 rules at Cedar Point, 65 at Kings Island, 60 at Six Flags Fiesta
+  Texas, 15 at Big Kahuna's — which is every ride there, at a park where the rule is as
+  likely to be "no minimum" as a number, and the app says which.
+  A venue built from OpenStreetMap alone has none until somebody writes them, and
   the builder says so rather than quietly shipping a park without its Rides tab — see
   [Height rules](#height-rules-and-other-corrections).
 - **Every location is the same data about a different place.** Nothing in the renderer, the
@@ -491,6 +495,8 @@ draws, and writes a POI list beside it.
 npm run venues:build -- --place "Cedar Point, Sandusky, Ohio" --locality "Sandusky, Ohio"
 npm run venues:build -- --bbox 39.3365,-84.2775,39.348,-84.2595 --name "Kings Island"
 npm run venues:build -- --around 39.3434,-84.267,900 --name "Kings Island"
+npm run venues:build -- --bbox 30.38729,-86.4742,30.39112,-86.47061 --name "Big Kahuna's" \
+    --id big-kahunas --locality "Destin, Florida" --center 30.3883,-86.4730
 npm run venues:build -- --help
 
 npm run venues:report cedar-point     # what a built venue actually contains
@@ -542,6 +548,13 @@ result, and opens a draft pull request with the new park in it. That is the inte
 for adding a venue — the build needs nothing but node and OpenStreetMap, which is precisely
 what a runner has.
 
+**`--center` is worth setting once.** Where the map opens defaults to the middle of the
+bounding box, and a box has to be drawn wide enough to hold the car park — so at a venue
+that owns a lot of tarmac the map opens on the tarmac. Big Kahuna's own polygon runs north
+over its parking, far enough that the box midpoint and the boundary centroid agree to
+within two metres and both of them miss the water park. A rebuild never moves a centre the
+venue already has, so this is a decision made once rather than a flag to remember.
+
 Each build writes `public/venues/<id>.map.json` and `public/venues/<id>.pois.json`, then
 rebuilds `public/venues/manifest.json` and the generated `lib/venueIndex.js`. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
@@ -566,6 +579,29 @@ from `attraction=water_slide`, and `lands` — named districts, tinted and label
 named park sections, neighbourhoods and campuses. A venue with no coasters just has an
 empty coaster layer. Districts the day/night palettes have never heard of get a colour
 derived from their own name, so an unfamiliar venue is still legible.
+
+The path layer is not only drawn. `lib/routing.js` welds it into the route graph, so a
+walkable way missing from it is not a faint line on a map — it is a route the app will not
+send anyone down, and a detour it will send them on instead. Three kinds of walkable ground
+carry no `highway` tag at all and were being dropped: fixed piers and boardwalks
+(`man_made=pier`), station platforms (`public_transport=platform`, `railway=platform`) and
+crossings drawn as ways. Cedar Point had 830 m of boardwalk in that state — Boggy Bridge,
+two 200-metre decks, the walkways around Lighthouse Point. Twelve of the nineteen ways this
+recovers shorten the walk across them by more than 15 m, one of them by 169 m.
+
+`floating=yes` is what keeps the marina out, and it has to: Cedar Point's boat basin is 228
+finger docks and 6.5 km of them, tagged exactly like the boardwalks. A person standing on
+one is not in the water; no route through a park goes down a boat slip.
+
+A ride whose only trace is its track becomes a place anyway, positioned at the middle of
+its own geometry. Track is a line, so it never reaches the closed-ring path that produces
+POIs, and a mapper who has drawn and named a flume or a coaster does not always add a node
+for the ride — which leaves it lit up on the map with nothing in the list to tap. That has
+always been true of coasters; it was not true of water slides until Big Kahuna's, which is
+mapped as twenty-five slides, fourteen of them named, and produced a bundle containing one
+ride. Fiesta Texas gained eighteen water rides from the same fix — Bonzai Pipelines,
+Tornado, Thunder Rapids Water Coaster, the four Texas Treehouse slides and the rest of
+White Water Bay, all of them drawn on the map and none of them on the list until now.
 
 Two rules exist because Cedar Point broke them. Overpass returns whole shapes that merely
 touch the query box, so a venue on the water gets the whole body of water at survey
@@ -866,10 +902,85 @@ try three Overpass endpoints in turn, because the busy ones answer 429 and 504 m
 than they answer.
 
 One caveat on Kings Island specifically: its bundle is the hand-pulled one this app was
-built around, and it is what ships. `--place "Kings Island"` reproduces it closely from
-today's OpenStreetMap — the same 121 coaster track segments and 1 park outline — but OSM
-names fewer of the water slides and flat rides than the shipped list does, so a rebuild
-would match about three quarters of the height overrides. The build tells you which ones.
+built around, and it is what ships. A rebuild from today's OpenStreetMap reproduces it
+closely — the same 121 coaster track segments, the same 1 park outline, the same 10
+districts — and it now matches **all 65** height overrides, where it once matched about
+three quarters of them. OSM caught up.
+
+Rebuild it anyway and the park loses ground: the walkable network drops from 106.2 km to
+95.9 km, most of it service roads the hand-pulled bundle carries and a fresh query does
+not. That is 10 km of route the app would stop offering, against a gain of four station
+platforms, so Kings Island is deliberately left as it is. Cedar Point and Fiesta Texas were
+rebuilt because they gain (+0.74 km and +0.12 km); this is the check worth running before
+rebuilding any venue that already ships.
+
+## Ride entrances
+
+A ride's marker is where the ride *is* — a building footprint, the middle of its track, the
+centroid of its area. It is not where you queue, and this app does not claim it is. Whether
+it could be is worth writing down, because the answer is a fact about OpenStreetMap rather
+than an unfinished job here.
+
+There is no ride-entrance tag in the data. What exists is unnamed gates, and they do not
+reach far enough:
+
+| | Cedar Point | Kings Island | Fiesta Texas | Big Kahuna's |
+| --- | :-: | :-: | :-: | :-: |
+| gate / entrance / booth objects | 185 | 71 | 57 | 0 |
+| of those, carrying a name | 4 | 3 | 0 | 0 |
+| **naming a ride's queue** | **0** | **0** | **0** | **0** |
+| rides with some gate within 45 m | 53% | 25% | 23% | 0% |
+| those matches that are ambiguous | 20% | 22% | 53% | – |
+
+Across 235 rides in four parks, not one gate names the ride it serves. The seven that carry
+a name at all are the car park and admission booths — Cedar Point's *Main Gate*, *Magnum
+XL-200 Gate*, *Valravn Gate* and *Windseeker Gate* are all `barrier=toll_booth` on the
+approach roads, named after whatever they are nearest to, and Kings Island's third is
+*South BOH Gate*, back of house. They are in the app, correctly, as gates. None of them is
+a queue.
+
+"Ambiguous" means a second ride sits nearly as close as the nearest one, so picking by
+proximity is a coin toss. Seventeen rides at Cedar Point have more than one gate within
+45 m and nothing says which is theirs. Nothing anywhere distinguishes an entrance from an
+exit either — a queue gate, a service gate and a fence gate all carry the same
+`barrier=gate`. So the best a proximity rule could do is put an unlabelled pin on somewhere
+between a quarter and a half of rides, one in five of them on the wrong ride, and none of
+them able to say whether it is the way in or the way out. That reads as authoritative and
+is not, which is worse than saying nothing, so it is not done.
+
+### What is derived, and from what
+
+Distance is the wrong instrument. Two things a mapper actually wrote down are the right
+ones, and where both exist the entrance follows exactly, with nothing estimated:
+
+- **the queue's name.** `Millennium Force Standby Queue` says whose queue it is. That is
+  attribution, not inference.
+- **`oneway`.** A queue runs one way, towards the ride. Chain one ride's queue ways together
+  and the vertex that is never any way's end is where the queue begins.
+
+`entrancesFromQueues()` in `scripts/build-venue.mjs` does that and hangs the result on the
+ride as `e`, a list of `{lat, lng, n}` — a list, because a standby queue and a Fastlane
+queue are two ways in, merged only when they start within 8 m of each other, which at
+Top Thrill 2 and Snake River Falls they do.
+
+Six rides at Cedar Point carry one today: Top Thrill 2, Millennium Force, Snake River Falls,
+Rougarou, Steel Vengeance and Gemini. Every one lands within 0.8 m of the walking network,
+as an entrance must, and between 16 m and 146 m from the ride's own marker — which is the
+size of the problem it fixes on the park's biggest queues. Maverick's queues carry no
+`oneway`, so it is reported and skipped rather than approximated. Kings Island's Racer has
+two named queues and will pick them up whenever its bundle is next rebuilt.
+
+Nothing else in the app reads `e` yet; it is data first, and moving routing onto it is a
+separate decision.
+
+The rest needs no code either: name the gate, or the queue, in OpenStreetMap and it appears.
+
+What the app does instead is route to the walking network. `findRoute` snaps both ends of
+every route to the real footpaths before searching, so navigating to a ride walks you to
+the nearest point of the midway that actually serves it, not to a coordinate inside the
+ride's footprint. For a coaster whose marker sits in the middle of its own layout, that
+snap *is* the useful answer — which is also why the walking network being complete
+matters more here than a marker moving a few metres.
 
 ## A word on privacy
 
@@ -888,10 +999,16 @@ browser.
 ## Where the data came from
 
 - **Map geometry and ride positions** — OpenStreetMap contributors, pulled via the
-  Overpass API and licensed ODbL. Positions are building footprints, not queue entrances.
+  Overpass API and licensed ODbL. Positions are building footprints, track midpoints and
+  centroids, **not queue entrances** — see [Ride entrances](#ride-entrances) for why not,
+  and for what the app does instead.
 - **Height requirements** — for Kings Island, compiled from Kings Island Central and
-  Theme Park Insider, reflecting the 2026 season. They live in
-  `data/venues/kings-island.overrides.json`; a venue built from OpenStreetMap alone has
+  Theme Park Insider, reflecting the 2026 season. For Big Kahuna's, from the park's own
+  2026 attraction pages, which state a minimum in prose for the thrill rides and file
+  every attraction under the park's own Over 42"/44"/48" headings. For Six Flags Fiesta
+  Texas, from the park's Guest Safety and Accessibility Guide, topped up for the water park
+  from its own per-attraction pages, which post a Min and Max Height each. They live in
+  `data/venues/<id>.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
   at the gate and has the final say, so the app says as much on the rider-height screen.
 - **Weather** — Open-Meteo, at the active venue's centre from the manifest, so switching

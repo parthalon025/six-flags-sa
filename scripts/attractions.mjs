@@ -42,7 +42,7 @@ import {
   addEvidence, attractionFor, FEATURES, publishable, SCHEMA_VERSION, toGeoJson, trim, unresolved,
 } from './lib/attractions.mjs';
 import { candidates, needEntranceMost } from './lib/candidates.mjs';
-import { PUBLISH_AT } from './lib/evidence.mjs';
+import { metresBetween, PUBLISH_AT } from './lib/evidence.mjs';
 import { OVERRIDE_DIR, readJson, VENUE_DIR, writeJson } from './lib/venue-io.mjs';
 
 const USAGE = `
@@ -218,7 +218,20 @@ function publish(id, pois, records, floor) {
     const targets = byName.get(String(record.name).toLowerCase()) || [];
     for (const t of targets) {
       for (const [key, value] of Object.entries(fields)) {
-        t[key] = value;
+        if (key !== 'e') {
+          t[key] = value;
+          changed += 1;
+          continue;
+        }
+        /* `e` is a list — a ride with a standby and a Fastlane queue has two
+           ways in and both are real. The fused one goes first, since that is
+           the one the app walks to, and anything the builder derived that
+           stands somewhere else is kept beside it rather than overwritten. A
+           previous run's own entry is replaced rather than stacked. */
+        const kept = (t.e || []).filter(
+          (x) => !x.src?.by && metresBetween(x, value) > 20,
+        );
+        t.e = [value, ...kept];
         changed += 1;
       }
     }

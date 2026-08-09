@@ -10,25 +10,32 @@
  * a confidently wrong pin is worse than none: nobody checks a map that looks
  * right.
  *
- * Three detectors, in descending order of how much the evidence is worth. What
+ * Four detectors, in descending order of how much the evidence is worth. What
  * they can find was measured against the three parks on disk rather than
  * guessed, and the yield is the reason the confidence model exists:
  *
- *   named queue    A way called "Top Thrill 2 Standby Queue" names its ride and
- *                  draws its queue. Cedar Point has 22 of them, Kings Island 8,
- *                  Fiesta Texas none. Where it exists this is the best automatic
- *                  evidence there is, because a mapper stood there and wrote the
- *                  ride's name on the path.
+ *   derived        What the builder already worked out and hung on the ride as
+ *                  `e`: a queue way carrying its ride's name *and* tagged
+ *                  `oneway`, chained so that the vertex no way ends at is where
+ *                  the queue begins. Attribution plus a mapper's statement of
+ *                  direction, so it is read rather than recomputed.
+ *   queue name     The same names, without the `oneway`. Cedar Point has 22 ways
+ *                  named for their ride, Kings Island 8, Fiesta Texas none — and
+ *                  Maverick's four lanes carry none of the direction tags, which
+ *                  is the case this exists for. The name is as good either way;
+ *                  which *end* of it faces the park is this file's guess, and it
+ *                  is scored as a guess.
  *   gate           A `barrier=gate` that survived the builder's furniture filter,
  *                  standing near a ride. Cedar Point has 158 gates before
  *                  filtering, which is the problem: most are queue and service
  *                  gates, and near a ride is only a hint.
  *   nearest path   Where the walkable network comes closest to the ride. Always
- *                  available, worth the least, and correct surprisingly often for
- *                  a small flat ride and hopeless for a coaster whose track runs
- *                  four hundred metres past three midways.
+ *                  available and worth the least — measured on this repo's own
+ *                  parks at reaching a quarter to a half of rides and landing one
+ *                  in five on the wrong one, which is why it is a 1 and why
+ *                  nothing publishes on it alone.
  *
- * OpenStreetMap's own `entrance=*` tagging would outrank all three and is read
+ * OpenStreetMap's own `entrance=*` tagging would outrank all four and is read
  * where a park has it. Fiesta Texas has exactly one `entrance` tag in the whole
  * park, against 53 rides, which is why nothing here leans on it.
  */
@@ -93,6 +100,31 @@ export function candidates(map = {}, pois = []) {
 
   const out = [];
 
+  /* ---- 0. what the builder already worked out ---- */
+
+  /* The builder derives entrances from a queue way that carries its ride's name
+     *and* says which way it runs, and hangs them on the ride as `e`. That is
+     strictly better than anything below: `oneway` is a mapper stating where the
+     queue begins, where the best this file can do from a name alone is guess
+     which end of the way faces the park. So it is read as evidence rather than
+     recomputed, and where it exists the name-only detector below stands down —
+     two readings of the same queue name are one fact, and counting them twice
+     would be exactly the repetition the evidence model refuses to reward. */
+  const derived = new Set();
+  for (const ride of rides) {
+    for (const e of ride.e || []) {
+      if (!Number.isFinite(e?.lat)) continue;
+      derived.add(String(ride.n).toLowerCase());
+      out.push({
+        ride: ride.n,
+        type: 'queue_entrance',
+        at: { lat: e.lat, lng: e.lng },
+        source: 'osm_named_queue',
+        why: `where "${e.n || 'the queue'}" begins — a named queue tagged one-way towards the ride`,
+      });
+    }
+  }
+
   /* ---- 1. a queue that carries its ride's name ---- */
 
   /* One ride often has several. Cedar Point draws Maverick's standby lane, its
@@ -133,19 +165,26 @@ export function candidates(map = {}, pois = []) {
   }
 
   for (const p of perRide.values()) {
+    if (derived.has(String(p.ride).toLowerCase())) continue;
     const also = p.lanes > 1 ? `, the outermost of ${p.lanes} lanes mapped for this ride` : '';
     out.push({
       ride: p.ride,
       type: 'queue_entrance',
       at: p.entrance,
-      source: 'osm_named_queue',
-      why: `the park end of "${p.way}", a way in OpenStreetMap named for this ride${also}`,
+      /* Weaker than the derived one on purpose. The name is attribution and is
+         as good either way; which *end* of the way faces the park is this
+         file's guess, where `oneway` is a mapper's statement. Cedar Point's
+         Maverick is the case that keeps it: four named lanes, none tagged
+         one-way, so the builder skips it and this is all there is. */
+      source: 'osm_queue_name',
+      why: `the park end of "${p.way}", named for this ride but with no one-way to say `
+        + `which end you join${also}`,
     });
     out.push({
       ride: p.ride,
       type: 'station',
       at: p.station,
-      source: 'osm_named_queue',
+      source: 'osm_queue_name',
       why: `the far end of "${p.way}", where the queue reaches the ride`,
     });
   }

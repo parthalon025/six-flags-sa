@@ -591,8 +591,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48621,
-            "lng": -82.68951
+            "lat": 41.486212,
+            "lng": -82.689509
           },
           "confidence": "low",
           "score": 5,
@@ -613,11 +613,11 @@
             {
               "source": "osm_named_queue",
               "at": {
-                "lat": 41.48621,
-                "lng": -82.68951
+                "lat": 41.486212,
+                "lng": -82.689509
               },
               "date": "2026-08-09",
-              "note": "the park end of \"Gemini Standby Queue\", a way in OpenStreetMap named for this ride, the outermost of 3 lanes mapped for this ride"
+              "note": "where \"Gemini Standby Queue\" begins — a named queue tagged one-way towards the ride"
             }
           ],
           "from": "osm_named_queue",
@@ -1248,9 +1248,10 @@
             "lng": -82.69237
           },
           "confidence": "low",
-          "score": 4,
+          "score": 6,
           "sources": [
-            "osm_named_queue"
+            "osm_named_queue",
+            "osm_queue_name"
           ],
           "evidence": [
             {
@@ -1270,6 +1271,15 @@
               },
               "date": "2026-08-09",
               "note": "the park end of \"Maverick Fastlane Queue\", a way in OpenStreetMap named for this ride, the outermost of 4 lanes mapped for this ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48553,
+                "lng": -82.69237
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Maverick Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 4 lanes mapped for this ride"
             }
           ],
           "from": "osm_named_queue",
@@ -1290,13 +1300,23 @@
             "lng": -82.69243
           },
           "confidence": "low",
-          "score": 4,
+          "score": 6,
           "sources": [
-            "osm_named_queue"
+            "osm_named_queue",
+            "osm_queue_name"
           ],
           "evidence": [
             {
               "source": "osm_named_queue",
+              "at": {
+                "lat": 41.48535,
+                "lng": -82.69243
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Maverick Fastlane Queue\", where the queue reaches the ride"
+            },
+            {
+              "source": "osm_queue_name",
               "at": {
                 "lat": 41.48535,
                 "lng": -82.69243
@@ -1409,8 +1429,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48183,
-            "lng": -82.68644
+            "lat": 41.48195,
+            "lng": -82.686529
           },
           "confidence": "low",
           "score": 4,
@@ -1430,19 +1450,19 @@
             {
               "source": "osm_named_queue",
               "at": {
-                "lat": 41.48183,
-                "lng": -82.68644
+                "lat": 41.48195,
+                "lng": -82.686529
               },
               "date": "2026-08-09",
-              "note": "the park end of \"Millennium Force Standby Queue\", a way in OpenStreetMap named for this ride, the outermost of 5 lanes mapped for this ride"
+              "note": "where \"Millennium Force Standby Queue\" begins — a named queue tagged one-way towards the ride"
             }
           ],
           "from": "osm_named_queue",
-          "spread_m": 129.8,
+          "spread_m": 125.2,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 129.8
+              "metres": 125.2
             }
           ],
           "conflict": false,
@@ -2148,8 +2168,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48262,
-            "lng": -82.68701
+            "lat": 41.482338,
+            "lng": -82.686767
           },
           "confidence": "low",
           "score": 4,
@@ -2169,19 +2189,19 @@
             {
               "source": "osm_named_queue",
               "at": {
-                "lat": 41.48262,
-                "lng": -82.68701
+                "lat": 41.482338,
+                "lng": -82.686767
               },
               "date": "2026-08-09",
-              "note": "the park end of \"Rougarou Fastlane Queue\", a way in OpenStreetMap named for this ride, the outermost of 2 lanes mapped for this ride"
+              "note": "where \"Rougarou Standby Queue\" begins — a named queue tagged one-way towards the ride"
             }
           ],
           "from": "osm_named_queue",
-          "spread_m": 28.7,
+          "spread_m": 50,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 28.7
+              "metres": 50
             }
           ],
           "conflict": false,
@@ -2436,13 +2456,12 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48416,
-            "lng": -82.69097
+            "lat": 41.484261,
+            "lng": -82.691029
           },
           "confidence": "low",
-          "score": 5,
+          "score": 4,
           "sources": [
-            "geometry",
             "osm_named_queue"
           ],
           "evidence": [
@@ -2458,16 +2477,21 @@
             {
               "source": "osm_named_queue",
               "at": {
-                "lat": 41.48416,
-                "lng": -82.69097
+                "lat": 41.484261,
+                "lng": -82.691029
               },
               "date": "2026-08-09",
-              "note": "the park end of \"Snake River Falls Fastlane Queue\", a way in OpenStreetMap named for this ride, the outermost of 2 lanes mapped for this ride"
+              "note": "where \"Snake River Falls Fastlane Queue / Snake River Falls Standby Queue\" begins — a named queue tagged one-way towards the ride"
             }
           ],
           "from": "osm_named_queue",
-          "spread_m": null,
-          "dissent": [],
+          "spread_m": 20.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 20.3
+            }
+          ],
           "conflict": false,
           "newest_evidence": "2026-08-09",
           "stale": false
@@ -2761,8 +2785,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48656,
-            "lng": -82.69238
+            "lat": 41.486555,
+            "lng": -82.691916
           },
           "confidence": "low",
           "score": 4,
@@ -2782,19 +2806,19 @@
             {
               "source": "osm_named_queue",
               "at": {
-                "lat": 41.48656,
-                "lng": -82.69238
+                "lat": 41.486555,
+                "lng": -82.691916
               },
               "date": "2026-08-09",
-              "note": "the park end of \"Steel Vengeance Queue\", a way in OpenStreetMap named for this ride"
+              "note": "where \"Steel Vengeance Extended Queue\" begins — a named queue tagged one-way towards the ride"
             }
           ],
           "from": "osm_named_queue",
-          "spread_m": 102.6,
+          "spread_m": 134.5,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 102.6
+              "metres": 134.5
             }
           ],
           "conflict": false,
@@ -2926,8 +2950,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48404,
-            "lng": -82.68606
+            "lat": 41.484023,
+            "lng": -82.686051
           },
           "confidence": "low",
           "score": 4,
@@ -2947,19 +2971,19 @@
             {
               "source": "osm_named_queue",
               "at": {
-                "lat": 41.48404,
-                "lng": -82.68606
+                "lat": 41.484023,
+                "lng": -82.686051
               },
               "date": "2026-08-09",
-              "note": "the park end of \"Top Thrill 2 Standby Queue\", a way in OpenStreetMap named for this ride, the outermost of 2 lanes mapped for this ride"
+              "note": "where \"Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue\" begins — a named queue tagged one-way towards the ride"
             }
           ],
           "from": "osm_named_queue",
-          "spread_m": 137.7,
+          "spread_m": 135.7,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 137.7
+              "metres": 135.7
             }
           ],
           "conflict": false,
@@ -3249,14 +3273,14 @@
       "venue": "cedar-point",
       "type": "attraction",
       "at": {
-        "lat": 41.482789,
-        "lng": -82.680686
+        "lat": 41.482798,
+        "lng": -82.680689
       },
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48269,
-            "lng": -82.68077
+            "lat": 41.48284,
+            "lng": -82.68083
           },
           "confidence": "unknown",
           "score": 1,
@@ -3267,8 +3291,8 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 41.48269,
-                "lng": -82.68077
+                "lat": 41.48284,
+                "lng": -82.68083
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 13 m from the ride"
