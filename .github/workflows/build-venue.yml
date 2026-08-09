@@ -145,6 +145,34 @@ jobs:
           echo "id=${ids%% *}" >> "$GITHUB_OUTPUT"
           echo "Built $ids"
 
+      # The ride inventory, straight after the build that overwrites its output.
+      #
+      # `public/venues/<id>.pois.json` has two writers — the builder, wholesale
+      # from OpenStreetMap, and this, which copies the entrances and exits that
+      # clear the confidence bar onto the places they belong to. Only the first
+      # of them ran here, so every rebuild silently reverted the second and the
+      # sidecar was the one artifact on the graph with no schedule at all.
+      # Ordering them in one job is what makes the pair a pipeline: the builder
+      # writes the bundle, the inventory derives on top of it, and the result is
+      # reproducible from the two files that are committed rather than from
+      # whatever happened to be in the bundle already.
+      #
+      # It is safe to run every time because it is re-derivation, not
+      # accumulation: publishing twice leaves one entry, and a run that learns
+      # nothing writes nothing — which is what keeps "nothing changed" a real
+      # answer below rather than a pull request full of fresh dates.
+      - name: Work out the ways into every ride
+        env:
+          VENUE_IDS: ${{ steps.build.outputs.ids }}
+        run: |
+          set -euo pipefail
+          : > venue-attractions.md
+          for id in $VENUE_IDS; do
+            node scripts/attractions.mjs "$id" --report >> venue-attractions.md
+            echo >> venue-attractions.md
+          done
+          cat venue-attractions.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Say what came out
         env:
           VENUE_IDS: ${{ steps.build.outputs.ids }}
@@ -215,6 +243,14 @@ jobs:
             echo "Built by [Build a venue](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) from OpenStreetMap."
             echo
             cat venue-report.md
+            if [ -s venue-attractions.md ]; then
+              echo
+              echo "<details><summary>Ways into every ride, and who says so</summary>"
+              echo
+              cat venue-attractions.md
+              echo
+              echo "</details>"
+            fi
             if [ -s venue-requests.md ]; then
               echo
               echo "<details><summary>What this still needs from outside OpenStreetMap</summary>"

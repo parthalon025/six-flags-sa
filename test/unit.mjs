@@ -2178,8 +2178,14 @@ await check('an entrance lands on the ride it belongs to, and a route on the pat
   const layers = { path: [] };
   const got = applyTrace(pois, layers, {
     features: [
-      tracedFeature({ kind: 'entrance', of: 'Diamondback', src: { error_m: 4 } }, pointAt(39.3440, -84.2660)),
-      tracedFeature({ kind: 'exit', of: 'Diamondback' }, pointAt(39.3441, -84.2661)),
+      tracedFeature(
+        { kind: 'entrance', of: 'Diamondback', src: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+        pointAt(39.3440, -84.2660),
+      ),
+      tracedFeature(
+        { kind: 'exit', of: 'Diamondback', src: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+        pointAt(39.3441, -84.2661),
+      ),
       tracedFeature({ kind: 'route', n: 'The cut-through' }, {
         type: 'LineString',
         coordinates: [[-84.2661, 39.3441], [-84.2665, 39.3444]],
@@ -2199,6 +2205,10 @@ await check('an entrance lands on the ride it belongs to, and a route on the pat
   // How far out the fit was travels with the pin. A place surveyed off a sign
   // and a place read off a drawing are different claims.
   assert.equal(pois[0].e[0].src.error_m, 4);
+  // The tracer's word for its tool becomes the word the weight table scores,
+  // and nothing else about its block is touched.
+  assert.equal(pois[0].e[0].src.by, 'traced');
+  assert.equal(pois[0].e[0].src.image, 'the 2026 park map');
   return true;
 });
 
@@ -2418,7 +2428,7 @@ await check('one ride with four mapped lanes yields one way in', () => {
    traced entrance was invisible, anything else fell through to a default, and
    the app's own output came back round as the heaviest source in the table. */
 
-const { fromTrace, inventory } = await import('../scripts/attractions.mjs');
+const { fromTrace, fromTracedFile, inventory, publish } = await import('../scripts/attractions.mjs');
 const { OVERRIDE_DIR, VENUE_DIR } = await import('../scripts/lib/venue-io.mjs');
 
 const tracedSrc = { by: SRC_BY.TRACED, image: 'the 2026 park map', error_m: 4 };
@@ -2537,6 +2547,143 @@ await check('a traced pin does not stand the name-only detector down, and a name
   }), ['osm_named_queue'], 'the mapper said which end you join, so the guess stands down');
   // And with nothing on the ride at all, the name-only reading is all there is.
   assert.deepEqual(waysIn(at), ['osm_queue_name']);
+  return true;
+});
+
+await check('an unsigned traced feature is refused rather than signed', () => {
+  /* The same shape as the bug on `e`, one file to the left, and the fix had
+     not reached it: `applyTrace` stamped `by: 'traced'` onto whatever arrived,
+     so a point carrying no block at all was minted into the bundle as a signed
+     weight-3 coordinate with no image and no error — and `fromTrace` read it
+     straight back out as evidence on the next run. The label came from which
+     tool was invoked rather than from the data. A human invokes it, so the lie
+     was smaller than the one already fixed; it is the same lie. */
+  const ride = () => ({ n: 'Diamondback', c: 'coaster', lat: 39.3438, lng: -84.2658 });
+  const traceOf = (props) => ({
+    features: [tracedFeature({ kind: 'entrance', of: 'Diamondback', ...props }, pointAt(39.3440, -84.2660))],
+  });
+
+  const bare = [ride()];
+  const got = applyTrace(bare, { path: [] }, traceOf({}));
+  assert.equal(got.entrances, 0);
+  assert.match(got.skipped[0], /no src block/);
+  assert.equal(bare[0].e, undefined, 'and nothing is written onto the place');
+
+  // A block that names no kind of source, and one naming a word no scoring
+  // rule covers, are worth exactly what an absent block is worth.
+  const anonymous = [ride()];
+  applyTrace(anonymous, { path: [] }, traceOf({ src: { image: 'a screenshot', error_m: 9 } }));
+  assert.equal(anonymous[0].e, undefined);
+  const ours = [ride()];
+  applyTrace(ours, { path: [] }, traceOf({ src: { by: SRC_BY.FUSED } }));
+  assert.equal(ours[0].e, undefined, 'this pipeline cannot hand itself a trace either');
+
+  // Signed by the tracer, which is what the tracer actually writes: kept whole,
+  // with the tool's word translated to the kind of source `WEIGHTS` scores.
+  const signed = [ride()];
+  applyTrace(signed, { path: [] }, traceOf({ src: { by: 'trace', image: 'the 2026 park map', error_m: 4 } }));
+  assert.equal(signed[0].e[0].src.by, SRC_BY.TRACED);
+  assert.equal(signed[0].e[0].src.error_m, 4);
+
+  // The tracer signs every feature and signs the collection once. Either is its
+  // own statement about the fit; neither is this reader's guess.
+  const stamped = [ride()];
+  applyTrace(stamped, { path: [] }, {
+    properties: { traced: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+    features: [tracedFeature({ kind: 'exit', of: 'Diamondback' }, pointAt(39.3441, -84.2661))],
+  });
+  assert.equal(stamped[0].out.src.by, SRC_BY.TRACED);
+  return true;
+});
+
+await check('a traced file that says nothing about itself yields no claim', () => {
+  /* The short way round a rebuild, and it hardcoded `source: 'traced'` at
+     weight 3 for every point in whatever GeoJSON it was handed — annotated
+     "traced off the park's own map" whether or not anything in the file said
+     so. What a claim is worth comes off the file. */
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'traced-'));
+  const wrote = (name, gj) => {
+    const file = path.join(dir, name);
+    fs.writeFileSync(file, JSON.stringify(gj));
+    return file;
+  };
+  const entrance = { type: 'Point', coordinates: [-84.2660, 39.3440] };
+  const feature = { type: 'Feature', geometry: entrance, properties: { kind: 'entrance', of: 'Orion' } };
+  try {
+    assert.deepEqual(
+      fromTracedFile(wrote('bare.geojson', { type: 'FeatureCollection', features: [feature] })),
+      [],
+    );
+    const signed = fromTracedFile(wrote('signed.geojson', {
+      type: 'FeatureCollection',
+      properties: { traced: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+      features: [feature],
+    }));
+    assert.deepEqual(signed.map((c) => [c.ride, c.type, c.source]), [['Orion', 'queue_entrance', 'traced']]);
+    // The image and the error come out of the file, not out of the flag.
+    assert.match(signed[0].why, /traced off the 2026 park map at ±4 m/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  return true;
+});
+
+/* A ride with a fused entrance, and the builder's own pin a few metres away —
+   which is the normal case, since the fused point sits on its heaviest source
+   rather than between them. */
+const withFused = () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  for (const feature of ['queue_entrance', 'ride_exit']) {
+    addEvidence(record, feature, { source: 'osm_named_queue', at: near }, { asOf: '2026-08-09' });
+    addEvidence(record, feature, { source: 'traced', at: alsoNear }, { asOf: '2026-08-09' });
+  }
+  const pin = { ...near, n: 'Orion Standby Queue', src: { by: SRC_BY.NAMED_QUEUE } };
+  return { record, pin, place: { n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26, e: [pin] } };
+};
+
+await check('a fused point and the pin that produced it stand together', () => {
+  /* Publishing kept a prior entry only if it was *both* not ours *and* more
+     than 20 m away, and both had to hold — so the builder's own pin, normally
+     a few metres from the point it argued for, was deleted by the conclusion
+     it produced. The comment said such pins were kept beside the fused one.
+     They are the input the next run re-derives from: a conclusion that eats
+     its premises is not re-derivable, it is self-perpetuating. */
+  const { record, pin, place } = withFused();
+  publish('kings-island', [place], [record], 'moderate');
+
+  assert.equal(place.e.length, 2);
+  assert.equal(place.e[0].src.by, SRC_BY.FUSED, 'the conclusion first — it is what the app walks to');
+  assert.deepEqual(place.e[1], pin, 'and the pin behind it, untouched');
+  // Which is the point: the bundle can still say where its own entrance came
+  // from, and the next run reads that back as the evidence it was.
+  assert.deepEqual(fromTrace([place]).map((c) => c.source), ['osm_named_queue']);
+  return true;
+});
+
+await check('a published exit is not called an entrance', () => {
+  const { record } = withFused();
+  const published = publishable(record);
+  assert.equal(published.e.n, 'Orion entrance');
+  assert.equal(published.out.n, 'Orion exit', 'the point you come out of is not the way in');
+  // The feature is a field of its own, as it has to be: `by` is the kind of
+  // source, and the two answer different questions.
+  assert.equal(published.out.src.feature, 'ride_exit');
+  assert.equal(published.out.src.by, SRC_BY.FUSED);
+  return true;
+});
+
+await check('publishing twice leaves one conclusion, not two', () => {
+  /* Derived, not accreted. `e` is a list, so a step that appended rather than
+     replaced would give a ride a second entrance every time it ran, and the
+     bundle would grow a pull request out of a run that learned nothing. */
+  const { record, place } = withFused();
+  publish('kings-island', [place], [record], 'moderate');
+  const first = JSON.stringify(place);
+  publish('kings-island', [place], [record], 'moderate');
+
+  assert.equal(JSON.stringify(place), first, 'the same bytes, so a rebuild that learns nothing writes nothing');
+  assert.equal(place.e.filter((x) => x.src?.by === SRC_BY.FUSED).length, 1);
+  assert.equal(place.e.length, 2);
   return true;
 });
 

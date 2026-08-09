@@ -51,6 +51,45 @@ export const SRC_BY = {
   FUSED: 'fused',
 };
 
+/**
+ * The tracer's word for the tool it is, which is not a kind of source.
+ *
+ * `trace-venue.mjs` stamps `by: 'trace'` because that is what produced the
+ * pixel. `WEIGHTS` scores `traced` because that is what kind of claim it is.
+ * One of them has to give, and it is this translation — in one place, so that
+ * the two readers of a traced file cannot disagree about what it says.
+ */
+export const TRACE_TOOL = 'trace';
+
+/**
+ * The signature on a traced feature, or nothing at all.
+ *
+ * Two things read a traced GeoJSON — `applyTrace`, folding it into a venue
+ * being built, and `fromTracedFile`, folding it straight into the inventory —
+ * and both of them used to assert the provenance rather than read it: a point
+ * became a signed weight-3 coordinate because of *which tool was invoked*,
+ * with an image and an error figure that were nowhere in the file. A human
+ * invokes those, so the lie was smaller than the one already fixed on `e`, but
+ * it is the same lie: a claim says where it came from or it says nothing.
+ *
+ * So the block is required rather than minted. The tracer writes it on every
+ * feature *and* once on the collection, so either is read — both are the
+ * tracer's own statement about the fit, and neither is this reader's guess.
+ *
+ * @param props  a GeoJSON feature's `properties`
+ * @param stamp  the collection's `properties.traced`, if it has one
+ * @returns the `src` block in the pipeline's vocabulary, or `null`
+ */
+export function tracedSrc(props, stamp) {
+  const src = props?.src || stamp || null;
+  if (!src) return null;
+  const by = src.by === TRACE_TOOL ? SRC_BY.TRACED : src.by;
+  // A word no scoring rule covers cannot be scored, and `fused` is this
+  // pipeline's own conclusion coming back round through a file.
+  if (!by || !(by in WEIGHTS)) return null;
+  return { ...src, by };
+}
+
 /* What each kind of already-placed point says for itself. Derived from the
    entry rather than asserted by the reader, because the reader does not know
    which writer put it there and the last thing that guessed was wrong. */
@@ -114,6 +153,12 @@ export const FEATURES = [
  * has to know that a traced entrance lives somewhere else from a derived one.
  */
 export const PUBLISHED = { queue_entrance: 'e', ride_exit: 'out' };
+
+/* What each of them is called on the place. Both entries used to be written
+   `<ride> entrance`, so a published exit reached the app as "Orion entrance" —
+   the point you come out of, labelled as the way in. The label is a fact about
+   the feature and comes from the feature. */
+const NOUN = { queue_entrance: 'entrance', ride_exit: 'exit' };
 
 const blank = () => ({ at: null, confidence: 'unknown', score: 0, sources: [], evidence: [] });
 
@@ -222,7 +267,7 @@ export function publishable(record, floor = PUBLISH_AT) {
     out[key] = {
       lat: slot.at.lat,
       lng: slot.at.lng,
-      n: `${record.name} entrance`,
+      n: `${record.name} ${NOUN[feature]}`,
       /* `by` is the *kind of source* this coordinate is, in the one vocabulary
          every writer uses — not which feature it is, which is what it used to
          say and which is how a published exit came back round as an

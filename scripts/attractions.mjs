@@ -40,11 +40,11 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   addEvidence, attractionFor, claimFromSrc, FEATURES, publishable, SCHEMA_VERSION, SRC_BY,
-  toGeoJson, trim, unresolved,
+  toGeoJson, tracedSrc, trim, unresolved,
 } from './lib/attractions.mjs';
 import { candidates, needEntranceMost } from './lib/candidates.mjs';
-import { metresBetween, PUBLISH_AT } from './lib/evidence.mjs';
-import { OVERRIDE_DIR, readJson, VENUE_DIR, writeJson } from './lib/venue-io.mjs';
+import { PUBLISH_AT } from './lib/evidence.mjs';
+import { OVERRIDE_DIR, readJson, VENUE_DIR } from './lib/venue-io.mjs';
 // The app's own reading of "these two strings are the same ride", so the join
 // here and the builder's cannot drift apart.
 import { normaliseRideName } from '../lib/mapSymbols.js';
@@ -66,6 +66,35 @@ The ride inventory: every attraction, every way into it, and who says so.
 
 const listFile = (id) => path.join(OVERRIDE_DIR, `${id}.attractions.json`);
 const today = () => new Date().toISOString().slice(0, 10);
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Write a file, unless what is already there is what would be written.
+ *
+ * This step runs inside the build now, and the build's most valuable property
+ * is that a run which learns nothing changes nothing on disk. Rewriting a
+ * file with its own bytes is invisible to git but not to everything else — a
+ * mtime moves, a watcher fires, and the habit is how a pipeline ends up
+ * touching two hundred records to record that none of them moved. The bytes
+ * are exactly what `writeJson(file, value, true)` in lib/venue-io.mjs writes,
+ * so the two cannot disagree about what a file looks like.
+ *
+ * @returns whether anything was actually written
+ */
+function writeSettled(file, value) {
+  const next = `${JSON.stringify(value, null, 2)}\n`;
+  let now = null;
+  try {
+    now = readFileSync(file, 'utf8');
+  } catch {
+    // Not there yet, which is a difference like any other.
+  }
+  if (now === next) return false;
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, next);
+  return true;
+}
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -118,17 +147,38 @@ function fromOsmEntrances(pois) {
  */
 function fromTracedFile(file) {
   const gj = JSON.parse(readFileSync(file, 'utf8'));
-  const stamp = gj.properties?.traced || {};
-  const err = stamp.error_m;
-  return (gj.features || [])
-    .filter((f) => f.geometry?.type === 'Point' && ['entrance', 'exit'].includes(f.properties?.kind))
-    .map((f) => ({
+  const stamp = gj.properties?.traced;
+  const points = (gj.features || [])
+    .filter((f) => f.geometry?.type === 'Point' && ['entrance', 'exit'].includes(f.properties?.kind));
+
+  const out = [];
+  let unsigned = 0;
+  for (const f of points) {
+    /* What this is worth, and how far out it was, come off the file — never
+       off the fact that `--trace` was the flag typed. This used to write
+       `source: 'traced'` at weight 3 onto every point in whatever GeoJSON it
+       was handed, annotated "traced off the park's own map" whether or not
+       anything in the file said so. A person types the flag, so it was a
+       smaller lie than the one on `e`, but it is the same one: the label came
+       from which tool was invoked rather than from the data. */
+    const src = tracedSrc(f.properties, stamp);
+    const claim = src && claimFromSrc({ n: f.properties.n, src });
+    if (!claim) {
+      unsigned += 1;
+      continue;
+    }
+    out.push({
       ride: f.properties.of,
       type: f.properties.kind === 'entrance' ? 'queue_entrance' : 'ride_exit',
       at: { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] },
-      source: 'traced',
-      why: `traced off ${stamp.image || "the park's own map"}${err != null ? ` at \u00b1${err} m` : ''}`,
-    }));
+      ...claim,
+    });
+  }
+  if (unsigned) {
+    console.error(`  ! ${unsigned} point(s) in ${file} say nothing about where they came from, `
+      + 'so there is nothing to weigh them as. Re-run scripts/trace-venue.mjs to sign them.');
+  }
+  return out;
 }
 
 /**
@@ -298,15 +348,27 @@ function publish(id, pois, records, floor) {
         }
         /* `e` is a list — a ride with a standby and a Fastlane queue has two
            ways in and both are real. The fused one goes first, since that is
-           the one the app walks to, and anything another writer put there that
-           stands somewhere else is kept beside it rather than overwritten. A
-           previous run's own entry — the only one stamped `fused` — is
-           replaced rather than stacked. The test is on that stamp and not on
-           the absence of one: once every writer signs its work, "unsigned"
-           stops meaning "the builder's" and starts meaning nothing at all. */
-        const kept = (t.e || []).filter(
-          (x) => x.src?.by !== SRC_BY.FUSED && metresBetween(x, value) > 20,
-        );
+           the one the app walks to, and *everything* another writer put there
+           is kept beside it. Only a previous run's own entry — the one stamped
+           `fused` — is replaced, which is what makes running this twice
+           produce one conclusion rather than two.
+
+           The pins that produced the fused point are kept above all. They used
+           to have to stand more than 20 m away to survive, which is exactly
+           backwards: a fused point sits on its heaviest source, so the
+           builder's own `osm_named_queue` pin is normally a few metres from
+           the conclusion it argued for, and publishing deleted it. That is the
+           input to the next run's evidence — `fromTrace` reads these entries
+           back — so deleting it meant the bundle could no longer re-derive
+           what it was already asserting. A conclusion that eats its premises
+           is not re-derivable, it is self-perpetuating.
+
+           The test is on the `fused` stamp and not on the absence of one: once
+           every writer signs its work, "unsigned" stops meaning "the
+           builder's" and starts meaning nothing at all. An unsigned entry is
+           still somebody's and is not this step's to delete — it is simply
+           worth nothing as evidence, which `claimFromSrc` already says. */
+        const kept = (t.e || []).filter((x) => x.src?.by !== SRC_BY.FUSED);
         t.e = [value, ...kept];
         changed += 1;
       }
@@ -406,7 +468,8 @@ function main() {
       continue;
     }
 
-    writeJson(listFile(id), {
+    const onDisk = readJson(listFile(id));
+    const list = {
       version: SCHEMA_VERSION,
       _comment:
         'Every ride at this venue, every feature of it, and the evidence behind each coordinate. '
@@ -418,15 +481,30 @@ function main() {
       generated: asOf,
       publish_at: floor,
       attractions: records.map(trim),
-    }, true);
-    console.error(`  Wrote ${listFile(id).replace(process.cwd() + '/', '')}`);
+    };
+    /* `generated` is the day this file last said something different, not the
+       day the script last ran. The distinction is what lets the inventory run
+       inside the build at all: a nightly rebuild that learns nothing has to
+       leave the tree exactly as it found it, or "does OpenStreetMap still say
+       what we shipped?" stops being a question a diff can answer and every
+       run opens a pull request full of new dates. `addEvidence` already keeps
+       a claim's own date still for the same reason; this is that rule applied
+       to the file around it. */
+    if (onDisk && same({ ...onDisk, generated: null }, { ...list, generated: null })) {
+      list.generated = onDisk.generated;
+    }
+    const short = (f) => f.replace(`${process.cwd()}/`, '');
+    if (writeSettled(listFile(id), list)) console.error(`  Wrote ${short(listFile(id))}`);
+    else console.error(`  ${short(listFile(id))} already says this — left alone.`);
 
     const changed = publish(id, pois, records, floor);
-    if (changed) {
-      writeJson(path.join(VENUE_DIR, `${id}.pois.json`), pois, true);
-      console.error(`  Published ${changed} field(s) onto public/venues/${id}.pois.json`);
-    } else {
+    const bundle = path.join(VENUE_DIR, `${id}.pois.json`);
+    if (!changed) {
       console.error('  Nothing clears the bar yet — the bundle is unchanged.');
+    } else if (writeSettled(bundle, pois)) {
+      console.error(`  Published ${changed} field(s) onto ${short(bundle)}`);
+    } else {
+      console.error(`  ${changed} field(s) published, all of which ${short(bundle)} already carried.`);
     }
 
     if (args.geojson) {
@@ -448,4 +526,4 @@ if (runDirectly) {
   }
 }
 
-export { fromOsmEntrances, fromTrace, inventory, publish };
+export { fromOsmEntrances, fromTrace, fromTracedFile, inventory, publish };
