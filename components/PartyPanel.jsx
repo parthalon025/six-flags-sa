@@ -133,11 +133,12 @@ export default function PartyPanel({
     return (
       <div>
         <div className="label">Group Tracking</div>
-        <p className="fine" style={{ marginTop: 0 }}>
+        <p className="fine">
           One phone starts the party and hosts it. Everyone else joins by scanning the QR,
           opening the link, or typing the six-character code. Positions are sealed with a key
           that never reaches a server, and if the host walks off another phone takes over on
-          its own.
+          its own. Your dot is only shared while you are on the map — off site, your phone
+          stops sending your position.
         </p>
         <button
           type="button"
@@ -335,7 +336,8 @@ export default function PartyPanel({
         <div className="roster">
           {sorted.map((m) => {
             const isMe = m.id === myId;
-            const located = Number.isFinite(m.lat) && Number.isFinite(m.lng);
+            const located = m.visible;
+            const offSite = Number.isFinite(m.lat) && m.visible === false;
             const d = me && located && !isMe ? distance(me.lat, me.lng, m.lat, m.lng) : null;
             const b = d != null ? bearing(me.lat, me.lng, m.lat, m.lng) : null;
             const near = located ? nearestPlace(pois, m.lat, m.lng) : null;
@@ -361,21 +363,25 @@ export default function PartyPanel({
                     {m.status === 'NEED HELP' && <em className="chipTag hot">help</em>}
                   </b>
                   <span>
-                    {near ? near.p.n : 'No fix yet'} · {m.status} ·{' '}
-                    {formatAge(Date.now() - m.ts)}
+                    {offSite
+                      ? 'Off site · not on the map'
+                      : near
+                        ? near.p.n
+                        : 'No fix yet'}{' '}
+                    · {m.status} · {formatAge(Date.now() - m.ts)}
                   </span>
                 </span>
                 <span className="memberRange">
                   {isMe ? (
                     <>
                       <b style={{ color: 'var(--blue)' }}>•</b>
-                      <span>Here</span>
+                      <span>{located ? 'Here' : 'Off site'}</span>
                     </>
                   ) : (
                     <>
                       <b>{formatDistance(d)}</b>
                       <span>{/* The compass point, not the degrees. Nobody navigates a park by 328°. */}
-                    {b != null ? cardinal(b) : ''}</span>
+                    {b != null ? cardinal(b) : offSite ? 'Off site' : ''}</span>
                     </>
                   )}
                 </span>

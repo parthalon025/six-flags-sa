@@ -61,6 +61,7 @@ import {
   withinBounds,
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
+import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -455,6 +456,7 @@ export default function Page() {
   }, []);
   const identityRef = useRef(null);
   const positionRef = useRef(null);
+  const locationSharingRef = useRef(false);
   const helpSeen = useRef(new Set());
 
   /* ---------- boot ---------- */
@@ -666,17 +668,22 @@ export default function Page() {
    */
   const roster = useMemo(
     () =>
-      (party?.members || []).map((m) => ({
-        ...m,
-        lat: m.location?.lat,
-        lng: m.location?.lng,
-        acc: m.location?.acc ?? null,
-        heading: Number.isFinite(m.location?.heading) ? m.location.heading : null,
-        ts: m.location?.ts ?? m.lastSeen,
-        colour: colourFor(m.id),
-        initials: initialsFor(m.name),
-      })),
-    [party],
+      (party?.members || []).map((m) => {
+        const lat = m.location?.lat;
+        const lng = m.location?.lng;
+        return {
+          ...m,
+          lat,
+          lng,
+          acc: m.location?.acc ?? null,
+          heading: Number.isFinite(m.location?.heading) ? m.location.heading : null,
+          ts: m.location?.ts ?? m.lastSeen,
+          colour: colourFor(m.id),
+          initials: initialsFor(m.name),
+          visible: isLocationVisible(venue?.bounds, lat, lng),
+        };
+      }),
+    [party, venue?.bounds],
   );
 
   const selfMember = useMemo(
@@ -697,9 +704,11 @@ export default function Page() {
   }, [mapData?.meta?.coverage, routeProfile]);
 
   const others = useMemo(
-    () => roster.filter((m) => m.id !== party?.selfId && Number.isFinite(m.lat)),
+    () => roster.filter((m) => m.id !== party?.selfId && m.visible),
     [roster, party?.selfId],
   );
+
+  const visibleOnMap = useMemo(() => roster.filter((m) => m.visible).length, [roster]);
 
   const meet = party?.meet ?? localMeet;
 
@@ -715,7 +724,7 @@ export default function Page() {
    */
   const hostLocation = useMemo(() => {
     const host = roster.find((m) => m.id === party?.hostId);
-    if (!host || !Number.isFinite(host.lat) || !Number.isFinite(host.lng)) return null;
+    if (!host || !host.visible) return null;
     return { lat: host.lat, lng: host.lng, name: host.name };
   }, [roster, party?.hostId]);
 
@@ -742,6 +751,14 @@ export default function Page() {
     const tick = () => {
       const fix = positionRef.current;
       if (!fix) return;
+      const inside = shouldShareLocation(venue?.bounds, fix.lat, fix.lng);
+      if (!inside) {
+        if (locationSharingRef.current) {
+          runtime.current?.clearLocation();
+          locationSharingRef.current = false;
+        }
+        return;
+      }
       // `now` is passed explicitly because the gate falls back to the fix's own
       // timestamp as its clock, and a phone that is standing still keeps being
       // handed the same cached fix — so that clock stops, every later tick is
@@ -750,6 +767,7 @@ export default function Page() {
       const decision = shouldBroadcast({ heading, now: Date.now() });
       if (!decision.send) return;
       if (selfMember?.sharingPaused) return;
+      locationSharingRef.current = true;
       runtime.current?.pushLocation({
         lat: fix.lat,
         lng: fix.lng,
@@ -762,7 +780,11 @@ export default function Page() {
     tick();
     const id = setInterval(tick, GATE_TICK_MS);
     return () => clearInterval(id);
-  }, [active, position, heading, shouldBroadcast, selfMember?.sharingPaused]);
+  }, [active, position, heading, shouldBroadcast, venue?.bounds, selfMember?.sharingPaused]);
+
+  useEffect(() => {
+    if (!active) locationSharingRef.current = false;
+  }, [active]);
 
   // NEED HELP has to interrupt, once per person per episode.
   useEffect(() => {
@@ -1503,7 +1525,7 @@ export default function Page() {
    * — the same answer, in the place it now belongs.
    */
   const rootSubtitle = useMemo(() => {
-    if (tab === 'party') return active ? `${roster.length} on the map` : 'Not started';
+    if (tab === 'party') return active ? `${visibleOnMap} on the map` : 'Not started';
     if (tab === 'rides') {
       if (height == null) return 'No rider height set';
       return rideableCount != null
@@ -1512,7 +1534,7 @@ export default function Page() {
     }
     if (tab === 'settings') return identity?.name || 'Guest';
     return '';
-  }, [tab, active, roster.length, height, rideableCount, totalRides, identity?.name]);
+  }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name]);
 
   /* ---------- the tab bar ---------- */
 
@@ -1529,8 +1551,8 @@ export default function Page() {
         // A count while a party is running, and red the moment one of them
         // needs help — a tab bar is the only chrome always on screen, so it is
         // the right place for the one thing that must never be missed.
-        badge: helpNow ? '!' : active ? roster.length : null,
-        badgeLabel: helpNow ? 'someone needs help' : active ? `${roster.length} on the map` : null,
+        badge: helpNow ? '!' : active ? visibleOnMap : null,
+        badgeLabel: helpNow ? 'someone needs help' : active ? `${visibleOnMap} on the map` : null,
         alert: helpNow,
       },
     ];
@@ -1548,7 +1570,7 @@ export default function Page() {
       initials: named ? initialsFor(identity.name) : null,
     });
     return out;
-  }, [helpNow, active, roster.length, heights, identity?.name]);
+  }, [helpNow, active, visibleOnMap, heights, identity?.name]);
 
   useEffect(() => {
     tabsRef.current = tabs.map((t) => t.id);

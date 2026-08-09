@@ -69,6 +69,7 @@ const { createElection, scoreCandidate } = await import('../lib/party/election.j
 const { CADENCE, MOTION, cadenceFor, classifyMotion, createBroadcastGate } = await import(
   '../lib/gps/adaptive.js'
 );
+const { isLocationVisible, shouldShareLocation } = await import('../lib/gps/sharing.js');
 const {
   MAX_SNAP_M,
   OFF_ROUTE_M,
@@ -266,6 +267,22 @@ await check('a nonsense location never reaches the roster', () => {
     assert.equal(r.ops.length, 0, JSON.stringify(location));
   }
   assert.equal(isValidLocation({ lat: 39, lng: -84, ts: 1 }), true);
+  return true;
+});
+
+await check('clearing a location drops it from the roster', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  const fresh = { lat: 39.3, lng: -84.26, acc: 8, ts: now + 5000 };
+  state = reduce(state, { kind: 'location', from: PEER, body: { location: fresh } }, now).state;
+  assert.ok(state.members[PEER].location);
+
+  const cleared = reduce(state, { kind: 'location', from: PEER, body: { clear: true } }, now + 1);
+  assert.equal(cleared.ops.length, 1);
+  assert.equal(cleared.state.members[PEER].location, null);
+
+  const again = reduce(cleared.state, { kind: 'location', from: PEER, body: { clear: true } }, now + 2);
+  assert.equal(again.ops.length, 0, 'clearing an already-clear location is a no-op');
   return true;
 });
 
@@ -1085,6 +1102,32 @@ await check('reset makes the gate treat the next fix as the first', () => {
   assert.equal(gate.shouldSend({ ...base, ts: 100 }, { now: 100 }).send, false);
   gate.reset();
   assert.deepEqual(gate.shouldSend({ ...base, ts: 200 }, { now: 200 }), { send: true, reason: 'first' });
+  return true;
+});
+
+/* --------------------------------------------------------- gps/sharing -- */
+
+section('gps/sharing');
+
+const KI_BOUNDS = {
+  north: 39.348,
+  south: 39.3365,
+  east: -84.2595,
+  west: -84.2775,
+};
+
+await check('shouldShareLocation allows in-park fixes and blocks off-site ones', () => {
+  assert.equal(shouldShareLocation(KI_BOUNDS, 39.343828, -84.265811), true);
+  assert.equal(shouldShareLocation(KI_BOUNDS, 39.35, -84.265811), false);
+  assert.equal(shouldShareLocation(KI_BOUNDS, 39.34, -84.29), false);
+  assert.equal(shouldShareLocation(null, 39.343828, -84.265811), true);
+  assert.equal(shouldShareLocation(KI_BOUNDS, NaN, -84.265811), false);
+  return true;
+});
+
+await check('isLocationVisible mirrors the sharing rule', () => {
+  assert.equal(isLocationVisible(KI_BOUNDS, 39.343828, -84.265811), true);
+  assert.equal(isLocationVisible(KI_BOUNDS, 39.35, -84.265811), false);
   return true;
 });
 
