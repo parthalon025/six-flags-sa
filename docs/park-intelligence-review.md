@@ -540,6 +540,90 @@ during a VICTORY storm. Initials already exist in the tab bar. Similarly delete
 `shareLocationHistory`, which is worse than dead: it implies location history could be
 shared, and the code says flatly that it is never kept.
 
+### Workstream: the party gaps
+
+**Add no assigned roles.** The decisive argument is not taste — **the crypto cannot
+back a role.** The party key is one symmetric key everybody holds, `from` is a
+plaintext field of the inner frame, and `reduce` trusts it unconditionally. Anyone
+with the key can seal a frame claiming to be anybody, so a host-enforced capability
+check constrains phones running this build and nothing else. Today's single rule is
+honest precisely because it is *not* a security claim: self-ownership is a data-model
+invariant that stops two people fighting over one record. Second: host migration is
+designed to be invisible, and attaching powers to `host` turns an automatic failover
+into a power transfer nobody consented to, at the worst possible moment.
+
+The concept's four roles are really three separate wants wearing one word — who can
+end the party (already answered by the code and the key window), a fact about a person
+for heights and supervision (local, not party state), and "I'd rather not give this
+person everything" (a sharing control, not a role). None is a permission.
+
+**Subgroups: membership is a field on the member, not a list on the group.** That one
+choice makes the conflict question vanish — `reduce` always patches `from`, so nobody
+can reassign anybody. You join a group; you are never put in one. A members array
+would be a set-CRDT problem in a reducer that is last-writer-wins on owned fields.
+
+**Split-party is a subgroup plus one scheduled rejoin**, not a third concept. All that
+is missing is time: one optional `at` on the existing `meet`. Deliberately one meet,
+not one per group — a split party has *one* rejoin point, and that is what makes it a
+rejoin. The payoff is the countdown, which flips to "leave now — 12 min walk" and is
+impossible without real graph distances.
+
+**Reunification: fairness first, total walking as tiebreak.** Minimising total walking
+picks a point beside the largest cluster and sends the one straggler on a fourteen-
+minute march — and that straggler is reliably the person with the pushchair, because
+that is *why* they are the straggler. Candidates are named, findable, standing-room
+places (71 of Kings Island's 171 POIs), pruned to the 12 nearest before routing, which
+makes the matrix 96 queries and about 170 ms, once, on a tap.
+
+Two things that would quietly ruin it. `findRoute` silently falls back to crow-flies
+when snapping fails or the detour exceeds its sanity guard, so **any candidate where
+any member's leg came back `direct` must be disqualified** — otherwise the straight
+line the whole exercise exists to eliminate walks back in through the cost function.
+And **never recompute automatically: a meeting point that moves is not a meeting
+point.** Navigate-to-member re-resolves live because a person walks; a rendezvous must
+not.
+
+**Coarsening happens at capture time, on the sharing phone.** `publicSnapshot` cannot
+be made per-recipient without breaking the version contract outright — two replicas at
+the same version would hold different data. A host-side filter would also have to
+travel to the next host through the very channel it is meant to be filtering. And
+capture-time is the only version that is *true*: once a coarse fix leaves the phone,
+the exact one was never on the wire and no replay or future feature can recover it.
+Pleasingly, coarsening before the broadcast gate means the existing 12 m threshold
+suppresses grid flapping for free.
+
+**Pause must be visible.** A dot that goes stale reads as *her phone died*, which is
+scarier than *she stopped sharing* and produces the wrong family response.
+
+**Do not enforce a guardian rule.** Enforcement means refusing an action, and the only
+relevant actions are leaving the party and walking away — the app can refuse neither.
+Physical reality violates the rule constantly: a flat phone, a queue building with no
+signal, a 45-minute eviction while standing next to the child. Worst, any guardian
+alert keyed on staleness repeats the quiet-notification mistake exactly, because
+staleness is what a queue building produces, and that lesson is already written into
+this codebase. Build instead a local one-directional watch, fired on **graph walking
+distance** — *"Mia is 6 minutes' walk away and getting further"* is a fact about the
+world; *"Mia's phone hasn't spoken in 6 minutes"* is a fact about a building.
+
+**Heights: not on the wire, and not even the verdict.** This workstream and the
+eligibility one reached the same conclusion independently, and this one goes further —
+a per-member set of rideable ids is a *reconstruction* of the height, because
+intersecting it against the venue's rules recovers the inches to within a tier. If a
+family wants a group answer, the phone holding the profiles computes it and somebody
+reads it out.
+
+**And a migration hazard worth naming.** `members`, `rides` and `settings` are
+re-copied by hand in **four** separate places across the runtime, host service and
+client. Any new collection must be added to all four, and a missed one loses subgroups
+silently at the exact moment the party is already repairing itself. Better to replace
+the four hand-written spreads with one `adoptSnapshot` helper so the next collection
+cannot be forgotten.
+
+**One measurement worth recording:** Kings Island's places file carries **no queue
+entrances at all** — 0 of 171. The entrance-aware routing added recently is effectively
+a Cedar Point feature, which is a second reason to keep rides out of the reunification
+candidate set.
+
 ## Deliberately not planned
 
 Wait-time prediction, crowd modelling, food and menu data, computer-vision detection,
