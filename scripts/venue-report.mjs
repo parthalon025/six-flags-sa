@@ -16,12 +16,22 @@ import path from 'node:path';
 import process from 'node:process';
 import { pointInRing } from './lib/geometry.mjs';
 import { checklist, checklistTable, failures } from './lib/venue-checklist.mjs';
+import { readRecipe } from './lib/venue-recipe.mjs';
+import { requests } from './lib/venue-requests.mjs';
 
 const VENUE_DIR = path.join(process.cwd(), 'public', 'venues');
 const kb = (file) => Math.round(fs.statSync(file).size / 1024);
 
 const manifest = JSON.parse(fs.readFileSync(path.join(VENUE_DIR, 'manifest.json'), 'utf8'));
 const id = process.argv[2];
+
+const readOverridesFor = (venueId) => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'venues', `${venueId}.overrides.json`), 'utf8'));
+  } catch {
+    return null;
+  }
+};
 
 const load = (v) => {
   const mapFile = path.join(VENUE_DIR, `${v.id}.map.json`);
@@ -66,6 +76,22 @@ if (!id) {
   if (short) {
     console.log(`> [!WARNING]`);
     console.log(`> ${short} required item(s) missing. \`npm run test:unit\` holds the same line.`);
+    console.log('>');
+  }
+  /* The gaps above split in two, and the split is the useful part: some of them
+     are a tag rule to fix in this repo, and some of them are a fact no amount of
+     OpenStreetMap will ever supply. Only the second kind needs somebody to go
+     and read a park's website, so only the second kind gets pointed at. */
+  const outside = manifest.venues.filter((v) => {
+    const { map, pois } = load(v);
+    return requests({ venue: v, map, pois, overrides: readOverridesFor(v.id) }).length;
+  });
+  if (outside.length) {
+    console.log(`> [!NOTE]`);
+    console.log(
+      `> ${outside.length} venue(s) need something OpenStreetMap does not carry — height rules, `
+        + 'most often. What to go and find, venue by venue: `npm run venues:ask`.',
+    );
   }
   process.exit(0);
 }
@@ -100,6 +126,20 @@ say();
 say(`* **${pois.length}** places, **${venue.counts.rides}** of them rides, **${venue.counts.heights}** with height rules`);
 say(`* **${drawn}** drawn shapes across ${layers.length} layers — map **${kb(mapFile)} KB**, places **${kb(poisFile)} KB**`);
 say(`* centre \`${venue.center.lat}, ${venue.center.lng}\`${venue.locality ? ` — ${venue.locality}` : ''}`);
+/* How it was built, which used to be answerable only out of a merged pull
+   request. Worth a line in a report somebody is reading to decide whether to
+   trust a venue: a box drawn too wide is the commonest thing wrong with one. */
+const { data: recipe } = readRecipe(id);
+if (recipe?.box) {
+  const b = recipe.box;
+  const pad = recipe.options?.pad ?? 120;
+  say(`* built from \`${b.south},${b.west},${b.north},${b.east}\` padded by ${pad} m`
+    + `${recipe.place?.query ? `, resolved from "${recipe.place.query}"` : ''}`
+    + ` — \`npm run venues:rebuild -- ${id}\``);
+} else {
+  say(`* **no recipe** — nothing on disk says how this venue was built, so it cannot be rebuilt `
+    + 'without reconstructing the command line. Build it once more and it writes its own.');
+}
 if (map.boundary) {
   const within = pois.filter((p) => pointInRing([p.lng, p.lat], map.boundary)).length;
   say(`* boundary of **${map.boundary.length}** points, with **${within}/${pois.length}** places inside it`);
@@ -133,6 +173,19 @@ const gaps = checklist(venue, map, pois, { mapKb: kb(mapFile), poisKb: kb(poisFi
 if (gaps.length) {
   say('> [!NOTE]');
   for (const gap of gaps) say(`> **${gap.label}** — ${gap.detail}. ${gap.fix}`);
+  say();
+}
+
+/* And the ones no build can close. A gap that needs a tag rule and a gap that
+   needs somebody to read a park's height chart look identical in the table
+   above, and only one of them is work this repo can do to itself. */
+const outside = requests({ venue, map, pois, overrides: readOverridesFor(id) });
+if (outside.length) {
+  const blocking = outside.filter((r) => r.blocking).length;
+  say(`> [!IMPORTANT]`);
+  say(`> ${outside.length} thing(s) here need a source outside OpenStreetMap`
+    + `${blocking ? `, ${blocking} of them blocking` : ''}: ${outside.map((r) => r.need).join('; ')}.`);
+  say(`> The brief, with the shape of every answer: \`npm run venues:ask -- ${id}\``);
   say();
 }
 

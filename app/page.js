@@ -1105,8 +1105,20 @@ export default function Page() {
       if (!car) return null;
       return { ...nav, label: 'Where I parked', lat: car.lat, lng: car.lng };
     }
+    /* Walking to a ride means walking to its queue. A place here is one point,
+       and for a ride the builder took from its track that point is the middle
+       of the track — so "walk me to Diamondback" aimed at the top of the lift
+       hill, over a fence, and told you it was forty seconds away. Where an
+       entrance has been traced off the park's own map, that is what a route is
+       for. The ride keeps its own position for the marker and the callout;
+       only the destination moves. Resolved here rather than at each call site,
+       so no future way of setting off can forget it. */
+    if (nav.kind === 'poi') {
+      const gate = POIS.find((p) => p.n === nav.label)?.in;
+      if (gate && Number.isFinite(gate.lat)) return { ...nav, lat: gate.lat, lng: gate.lng };
+    }
     return nav;
-  }, [nav, roster, meet, car]);
+  }, [nav, roster, meet, car, POIS]);
 
   // Kept in step with `nav` rather than written at each call site, so no future
   // way of setting a destination can forget to arm it.

@@ -41,8 +41,13 @@ import {
   campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline,
 } from './lib/osm-tags.mjs';
 import {
-  OVERRIDE_DIR, readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue,
+  OVERRIDE_DIR, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue,
 } from './lib/venue-io.mjs';
+import {
+  argsFromRecipe, listRecipes, readRecipe, recipeFile, recipeFrom, writeRecipe,
+} from './lib/venue-recipe.mjs';
+import { briefJson, renderBrief, requests } from './lib/venue-requests.mjs';
+import { applyTrace } from './lib/venue-trace.mjs';
 import path from 'node:path';
 
 const OVERPASS = [
@@ -109,6 +114,29 @@ Build a venue bundle from OpenStreetMap.
   --merge <file>            fold a GeoJSON or CSV dataset onto the places, matched
                             by name and then by position. Repeatable.
   --merge-metres <n>        how near a merge point has to land (default: 25)
+  --trace <file>            fold in what was traced off a park's own map with
+                            scripts/trace-venue.mjs: ride entrances and exits,
+                            walking routes, and places OSM has not got.
+                            Repeatable.
+
+Building the same venue again:
+
+  --rebuild <id|all>        build again exactly as it was built before, from
+                            data/venues/<id>.recipe.json. Any flag given
+                            alongside overrides the recipe for this run — and is
+                            written back, so the change sticks.
+  --recipe <file>           build from a recipe file kept somewhere else
+  --refresh-place           ask the geocoder again instead of reusing the box a
+                            --place resolved to. Only with a recipe that has one.
+  --no-recipe               do not write a recipe for this build
+
+Asking for what OpenStreetMap does not have:
+
+  --ask [<id>]              print a research brief for everything this venue
+                            still needs from an outside source — height rules
+                            most of all. No id: every venue that needs one.
+                            Nothing to ask for prints nothing and exits 0.
+  --json                    with --ask, the brief as data rather than markdown
 `;
 
 /* ------------------------------------------------------------- resolving - */
@@ -851,7 +879,17 @@ export function readDataset(file) {
     const feats = gj.type === 'FeatureCollection' ? gj.features || [] : [gj];
     return feats.map((f) => {
       const g = f.geometry || {};
-      const c = g.type === 'Point' ? g.coordinates : null;
+      /* A line is merged at its midpoint. Anything drawn rather than pinned —
+         a queue, a path, the length of a slide — has no single position, and
+         the middle of it is the one place that is on it. Before this a
+         LineString came back as NaN, matched nothing, and was reported as "that
+         landed nowhere near a place", which is a confusing thing to be told
+         about a line that is drawn straight through one. */
+      const c = g.type === 'Point'
+        ? g.coordinates
+        : g.type === 'LineString' && g.coordinates?.length
+          ? g.coordinates[Math.floor(g.coordinates.length / 2)]
+          : null;
       return { lat: c ? Number(c[1]) : NaN, lng: c ? Number(c[0]) : NaN, properties: f.properties || {} };
     });
   }
@@ -918,6 +956,173 @@ function landTints(overrides) {
   return Object.keys(out).length ? out : null;
 }
 
+/* --------------------------------------------------------------- rebuild - */
+
+/**
+ * Build a venue again, the way it was built the first time.
+ *
+ * The recipe supplies the arguments and anything typed alongside overrides it,
+ * because the two reasons to reach for this are "the tag rules improved, run it
+ * again unchanged" and "run it again, but tighter" — and the second one has to
+ * stick, or the next rebuild undoes it. So the merged arguments are what gets
+ * written back.
+ *
+ * `--rebuild all` is the one that pays for the file existing: a rule that gains
+ * a park eighteen water rides is worth nothing until every park already on disk
+ * has been through it, and that used to mean reconstructing four command lines
+ * out of four merged pull requests.
+ */
+async function rebuild(args) {
+  /* Everything typed comes through, including the flags that shape the run
+     rather than the result — `--dry-run` most of all, which is the flag most
+     likely to be reached for here and the one it would be worst to swallow.
+     Nothing has to be filtered out to keep it out of the recipe: `recipeFrom`
+     writes down the shaping flags and only those, so the separation is a
+     property of the writer rather than a list to keep in step here. */
+  const typed = { ...args };
+  delete typed.rebuild;
+  delete typed.recipe;
+
+  let ids;
+  if (args.recipe) ids = [String(args.recipe)];
+  else if (args.rebuild === true || args.rebuild === 'all') {
+    ids = listRecipes();
+    if (!ids.length) {
+      throw new Error(
+        'No venue on disk knows how it was built. A recipe is written by every build from now on; '
+          + 'for a venue built before that, write data/venues/<id>.recipe.json by hand — '
+          + 'or build it once more and it will write its own.',
+      );
+    }
+  } else ids = [String(args.rebuild)];
+
+  const failures = [];
+  for (const [i, ref] of ids.entries()) {
+    const { file, data } = readRecipe(ref);
+    if (!data) {
+      throw new Error(
+        `No recipe at ${recipeFile(ref).replace(process.cwd() + '/', '')}. `
+          + `Build "${ref}" once with the flags it needs and it will write one.`,
+      );
+    }
+    if (ids.length > 1) console.error(`\n[${i + 1}/${ids.length}] ${data.id} — ${file.replace(process.cwd() + '/', '')}`);
+    /* A place-built venue replays its resolved box rather than the name, so a
+       geocoder that changed its mind cannot move a park under a rebuild that
+       was asked to reproduce one. --refresh-place is how to ask for the new
+       answer deliberately. */
+    const fromRecipe = argsFromRecipe(data);
+    if (args['refresh-place'] && data.place?.query) {
+      delete fromRecipe.bbox;
+      fromRecipe.place = data.place.query;
+    }
+    try {
+      await buildOne({ ...fromRecipe, ...typed }, { previous: data });
+    } catch (err) {
+      // One park's rules changing under it should not stop the other three from
+      // being rebuilt. What failed is said again at the end so it cannot scroll
+      // past in a run of a dozen.
+      if (ids.length === 1) throw err;
+      console.error(`  ! ${data.id} failed: ${err.message}`);
+      failures.push(data.id);
+    }
+  }
+
+  if (failures.length) {
+    throw new Error(`${failures.length} of ${ids.length} did not rebuild: ${failures.join(', ')}.`);
+  }
+}
+
+/* ------------------------------------------------------------------- ask - */
+
+/**
+ * What a venue still needs that no build can produce, as a brief.
+ *
+ * Reads what is on disk — this asks nothing of the network, because everything
+ * it has to say is already in the bundle: which rides carry no rule, which
+ * override landed on nothing, whether anything credits the data that is not
+ * OpenStreetMap's. A venue with none of those problems prints nothing, which is
+ * the property that makes it safe to run at the end of every build.
+ */
+function ask(args) {
+  const only = typeof args.ask === 'string' ? args.ask : null;
+  const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
+  const venues = manifest.venues.filter((v) => !only || v.id === only);
+  if (!venues.length) {
+    throw new Error(only ? `No venue called "${only}" in the manifest.` : 'No venues on disk.');
+  }
+
+  const briefs = [];
+  for (const venue of venues) {
+    const map = readJson(path.join(VENUE_DIR, `${venue.id}.map.json`), {});
+    const pois = readJson(path.join(VENUE_DIR, `${venue.id}.pois.json`), []);
+    const { data: overrides } = readOverrides(venue.id, null);
+    const reqs = requests({ venue, map, pois, overrides });
+    if (reqs.length) briefs.push({ venue, reqs });
+  }
+
+  if (args.json) {
+    console.log(JSON.stringify(briefs.map(({ venue, reqs }) => briefJson(venue, reqs)), null, 2));
+    return briefs.length;
+  }
+  if (!briefs.length) {
+    console.error(
+      only
+        ? `${only} needs nothing that OpenStreetMap does not already have.`
+        : 'No venue needs anything that OpenStreetMap does not already have.',
+    );
+    return 0;
+  }
+  console.log(briefs.map(({ venue, reqs }) => renderBrief(venue, reqs)).join('\n---\n\n'));
+  return briefs.length;
+}
+
+/**
+ * The drawn half of a bundle.
+ *
+ * The boundary is called out separately from the ground it fills. They are the
+ * same ring, but they answer different questions — one is "what colour is the
+ * floor here", the other is "am I still in the park" — and only the second one
+ * is worth a line on the map.
+ */
+const mapOf = (layers, anchors, boundary) => ({
+  ...layers,
+  landAnchors: anchors,
+  boundary: boundary?.r || null,
+});
+
+/**
+ * Whether this build would change the venue already on disk, and where.
+ *
+ * Compared as the bytes that ship rather than as parsed objects, because the
+ * file is what the browser fetches and the service worker caches. `generated`
+ * is normalised to the date already on disk first: otherwise every rebuild
+ * differs, and a check that always says "changed" answers nothing.
+ */
+function driftFrom({ id, meta, map, pois, existingMeta }) {
+  const read = (file) => {
+    try {
+      return readFileSync(file, 'utf8');
+    } catch {
+      return null;
+    }
+  };
+  const before = {
+    map: read(path.join(VENUE_DIR, `${id}.map.json`)),
+    pois: read(path.join(VENUE_DIR, `${id}.pois.json`)),
+  };
+  if (before.map == null || before.pois == null) {
+    return { existed: false, changed: true, mapChanged: true, poisChanged: true };
+  }
+  const candidate = serializeVenue({
+    meta: existingMeta?.generated ? { ...meta, generated: existingMeta.generated } : meta,
+    map,
+    pois,
+  });
+  const mapChanged = candidate.map !== before.map;
+  const poisChanged = candidate.pois !== before.pois;
+  return { existed: true, changed: mapChanged || poisChanged, mapChanged, poisChanged };
+}
+
 /* ------------------------------------------------------------------ main - */
 
 async function main() {
@@ -938,6 +1143,30 @@ async function main() {
     return;
   }
 
+  if (args.ask) {
+    ask(args);
+    return;
+  }
+
+  if (args.rebuild || args.recipe) {
+    await rebuild(args);
+    return;
+  }
+
+  await buildOne(args);
+}
+
+/**
+ * One venue, from a bounding box to the files the app loads.
+ *
+ * Takes its arguments rather than reading them, so that `--rebuild` can hand it
+ * a recipe and get the identical build — the replay path and the first build
+ * are the same code, which is the only arrangement where "it was built this
+ * way" stays true.
+ *
+ * @param previous the recipe this build is a replay of, where there is one
+ */
+async function buildOne(args, { previous = null } = {}) {
   let place = null;
   let bounds = null;
 
@@ -959,6 +1188,13 @@ async function main() {
     throw new Error('Give it a --place, a --bbox or an --around.');
   }
 
+  /* The box as it stood before the pad, which is the one worth writing down: it
+     is the same field whether the venue was asked for by name, by box or by a
+     point and a radius, and padding it again reproduces the bounds exactly. The
+     padded bounds — the ones that reach the manifest — cannot do that job,
+     because there is no pad you can pass with them that gives back the build.
+     Kings Island was built with a pad of 0 and Cedar Point was not. */
+  const box = { ...bounds };
   bounds = padBounds(bounds, Number(args.pad ?? 120));
   const km2 = bboxArea(bounds);
   if (km2 > 60) {
@@ -1070,6 +1306,26 @@ async function main() {
     }
   }
 
+  /* What was traced off the park's own map. After the merges, because a trace
+     adds places and an entrance has to find the ride it belongs to among
+     everything that is going to be there. */
+  if (args.trace) {
+    const files = Array.isArray(args.trace) ? args.trace : [String(args.trace)];
+    for (const file of files) {
+      const traced = JSON.parse(readFileSync(file, 'utf8'));
+      const got = applyTrace(pois, layers, traced);
+      const err = traced.properties?.traced?.error_m;
+      console.error(
+        `  · traced from ${file.replace(process.cwd() + '/', '')}`
+          + `${err != null ? ` (±${err} m)` : ''}: `
+          + `${got.entrances} entrance(s), ${got.exits} exit(s), ${got.routes} route(s), `
+          + `${got.places} place(s)`,
+      );
+      for (const miss of got.unmatched) console.error(`    ? no ride named "${miss}"`);
+      for (const skip of got.skipped) console.error(`    − skipped ${skip}`);
+    }
+  }
+
   pois.sort((a, b) => a.n.localeCompare(b.n));
 
   // A rebuild must not silently drop the hand-written parts of the last one.
@@ -1125,6 +1381,16 @@ async function main() {
     generated: new Date().toISOString().slice(0, 10),
   };
 
+  /* A rebuild that changes nothing should change nothing on disk.
+     `generated` was the one field that moved every time, which made the useful
+     question — "does OpenStreetMap still say what we shipped?" — unanswerable
+     from a diff, because the answer was always yes, one line, every venue,
+     every run. So the date is kept when the rest of the bundle comes out
+     identical: it is the date the venue was generated, and a run that produced
+     the same venue did not generate a new one. */
+  const drift = driftFrom({ id, meta, map: mapOf(layers, anchors, boundary), pois, existingMeta });
+  if (!drift.changed && existingMeta?.generated) meta.generated = existingMeta.generated;
+
   const summary = LAYERS.map((k) => `${k}=${layers[k].length}`).join(' ');
   console.error(`  · geometry: ${summary}`);
   console.error(`  · pois: ${pois.length} (${pois.filter((p) => p.h).length} with heights)`);
@@ -1177,28 +1443,77 @@ async function main() {
     }
   }
 
+  /* What this run would do to the venue already on disk. The interesting answer
+     is "nothing": it means OpenStreetMap still says what we shipped, which is
+     the question a rebuild is usually asking and which no amount of layer
+     counts answers. */
+  if (drift.existed) {
+    console.error(
+      drift.changed
+        ? `  · differs from what is on disk: ${[drift.mapChanged && 'the map', drift.poisChanged && 'the places'].filter(Boolean).join(' and ')}`
+        : '  · identical to what is on disk',
+    );
+  }
+
   if (args['dry-run']) {
     console.error('\nDry run — nothing written.');
     return;
   }
 
-  const written = writeVenue({
-    meta,
-    // The boundary is called out separately from the ground it fills. They are
-    // the same ring, but they answer different questions — one is "what colour
-    // is the floor here", the other is "am I still in the park" — and only the
-    // second one is worth a line on the map.
-    map: { ...layers, landAnchors: anchors, boundary: boundary?.r || null },
-    pois,
-  });
+  const written = writeVenue({ meta, map: mapOf(layers, anchors, boundary), pois });
   const manifest = reindex({
     preferredDefault: args.default === true ? id : typeof args.default === 'string' ? args.default : undefined,
   });
 
   console.error(`\nWrote ${written.map.replace(process.cwd() + '/', '')}`);
   console.error(`Wrote ${written.pois.replace(process.cwd() + '/', '')}`);
+
+  /* How this was built, beside the file that holds everything else somebody
+     decided about this venue. Written last, so a build that threw does not
+     leave behind a recipe for a venue that is not on disk. */
+  if (!args['no-recipe']) {
+    const recipe = recipeFrom({
+      args,
+      id,
+      name,
+      box,
+      place,
+      counts: {
+        pois: pois.length,
+        rides: audit.rides,
+        heights: audit.heights,
+        shapes: drawn,
+      },
+      // A rebuild that changed nothing keeps the date it was first built on,
+      // for the same reason `generated` does.
+      built: !drift.changed && previous?.built ? previous.built : null,
+    });
+    const file = writeRecipe(id, recipe);
+    console.error(`Wrote ${file.replace(process.cwd() + '/', '')} — rebuild with: npm run venues:rebuild -- ${id}`);
+  }
+
   console.error(`Manifest now lists ${manifest.venues.length}: ${manifest.venues.map((v) => v.id).join(', ')}`);
   console.error(`Default venue: ${manifest.default}`);
+
+  /* The build has done everything a build can do. Anything still missing here
+     needs a source that is not OpenStreetMap, and saying so at the end — with
+     the one command that spells out what to go and find — is the difference
+     between a venue somebody finishes and a venue that ships half-built
+     because nothing said which half. Only when there is something to ask. */
+  const outstanding = requests({
+    venue: { ...meta, id },
+    map: mapOf(layers, anchors, boundary),
+    pois,
+    overrides,
+  });
+  if (outstanding.length) {
+    const blocking = outstanding.filter((r) => r.blocking).length;
+    console.error(
+      `\n${outstanding.length} thing(s) here need a source outside OpenStreetMap`
+        + `${blocking ? `, ${blocking} of them blocking` : ''}: ${outstanding.map((r) => r.need).join('; ')}.`,
+    );
+    console.error(`What to go and find: npm run venues:ask -- ${id}`);
+  }
 }
 
 /* Only when it is the thing being run. The tag rules and the height parser are
