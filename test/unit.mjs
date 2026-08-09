@@ -115,6 +115,19 @@ const { venueChoiceFor, venueForPosition, venuesByDistance, withinBounds } = awa
   '../lib/venue/store.js'
 );
 const { CATEGORY_LABELS, landTint } = await import('../lib/theme.js');
+const {
+  SHEET_CHROME_PX,
+  SHEET_DIGEST_PX,
+  SHEET_LIST_AT_PX,
+  SHEET_MAGNET_PX,
+  SHEET_PEEK_PX,
+  nextSheetStop,
+  sheetCrowdsMap,
+  settleSheet,
+  sheetForm,
+  sheetPlan,
+  sheetStops,
+} = await import('../lib/sheet.js');
 const { areaOf, centroidOf, clipToBounds, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
@@ -2610,6 +2623,185 @@ await check('nothing readable reaches the push service', async () => {
   const wire = Buffer.from(req.body).toString('latin1');
   assert.equal(/Ava|Iron Rattler|help/i.test(wire), false, 'the words reached the wire');
   assert.equal(wire.includes(pid), false, 'the party id reached the wire');
+  return true;
+});
+
+/* ----------------------------------------------------------- lib/sheet --- */
+
+section('sheet');
+
+const STOPS = sheetStops(844); // an iPhone 13/14/15's viewport
+
+await check('the stops come out where the CSS puts them', () => {
+  assert.equal(STOPS.shut, 84);
+  assert.equal(STOPS.peek, SHEET_PEEK_PX);
+  assert.equal(STOPS.half, 439);
+  assert.equal(STOPS.full, 743);
+  return true;
+});
+
+await check('a release away from every stop stays exactly where it was let go', () => {
+  // The whole point of the rewrite: 360px is nowhere near a stop, so the sheet
+  // is left at 360px rather than jumping to peek or half.
+  assert.equal(settleSheet(360, STOPS, 0), 360);
+  assert.equal(settleSheet(500, STOPS, 0), 500);
+  return true;
+});
+
+await check('a release near a stop is taken by it', () => {
+  assert.equal(settleSheet(STOPS.peek + 8, STOPS, 0), STOPS.peek);
+  assert.equal(settleSheet(STOPS.half - SHEET_MAGNET_PX, STOPS, 0), STOPS.half);
+  assert.equal(settleSheet(STOPS.half - SHEET_MAGNET_PX - 1, STOPS, 0), STOPS.half - 27);
+  return true;
+});
+
+await check('a flick coasts, and a hard one reaches the ceiling', () => {
+  // Let go just above peek but moving up at 2px/ms: 140ms of coast is 280px,
+  // and it comes to rest there rather than being collected by a stop.
+  assert.equal(settleSheet(STOPS.peek + 10, STOPS, 2), STOPS.peek + 290);
+  // Thrown, it still gets all the way up — which is the reason for the coast.
+  assert.equal(settleSheet(STOPS.peek + 10, STOPS, 4), STOPS.full);
+  // The same release, slowly, is a placement rather than a throw.
+  assert.equal(settleSheet(STOPS.peek + 40, STOPS, 0), STOPS.peek + 40);
+  return true;
+});
+
+await check('a settle never leaves the travel', () => {
+  assert.equal(settleSheet(9000, STOPS, 8), STOPS.full);
+  assert.equal(settleSheet(-500, STOPS, -8), STOPS.shut);
+  return true;
+});
+
+await check('a tap walks up the stops and wraps to shut', () => {
+  assert.equal(nextSheetStop(STOPS.shut, STOPS), STOPS.peek);
+  assert.equal(nextSheetStop(STOPS.peek, STOPS), STOPS.half);
+  assert.equal(nextSheetStop(STOPS.half, STOPS), STOPS.full);
+  assert.equal(nextSheetStop(STOPS.full, STOPS), STOPS.shut);
+  return true;
+});
+
+await check('a tap from a height with no name goes to the next stop above it', () => {
+  assert.equal(nextSheetStop(360, STOPS), STOPS.half);
+  assert.equal(nextSheetStop(700, STOPS), STOPS.full);
+  return true;
+});
+
+await check('the form only calls itself full near the ceiling', () => {
+  assert.equal(sheetForm(STOPS.shut, STOPS), 'shut');
+  assert.equal(sheetForm(STOPS.peek, STOPS), 'peek');
+  assert.equal(sheetForm(STOPS.half, STOPS), 'half');
+  assert.equal(sheetForm(STOPS.full, STOPS), 'full');
+  // Two thirds of the way up is still a card floating over a map.
+  assert.equal(sheetForm(560, STOPS), 'half');
+  return true;
+});
+
+await check('the form agrees with the plan about whether anything is on the sheet', () => {
+  // `shut` is not a midpoint: it ends exactly where the first rung becomes
+  // affordable, or the sheet would show a shape with nothing in it.
+  const edge = SHEET_CHROME_PX + SHEET_DIGEST_PX;
+  assert.equal(sheetForm(edge - 1, STOPS), 'shut');
+  assert.equal(sheetPlan(edge - 1).digest, false);
+  assert.equal(sheetForm(edge, STOPS), 'peek');
+  assert.equal(sheetPlan(edge).digest, true);
+  return true;
+});
+
+await check('the shut stop pays for nothing at all', () => {
+  const p = sheetPlan(STOPS.shut);
+  assert.deepEqual(
+    { ...p, spare: 0 },
+    { digest: false, rail: false, search: false, brand: false, list: false, hint: false, spare: 0 },
+  );
+  return true;
+});
+
+await check('the glance stop buys the rail, the search field, the venue line and the hint', () => {
+  const p = sheetPlan(STOPS.peek);
+  assert.equal(p.rail, true);
+  assert.equal(p.digest, false);
+  assert.equal(p.search, true);
+  assert.equal(p.brand, true);
+  assert.equal(p.list, false);
+  assert.equal(p.hint, true);
+  return true;
+});
+
+await check('the rail degrades to one line before it disappears', () => {
+  const p = sheetPlan(SHEET_CHROME_PX + SHEET_DIGEST_PX + 4);
+  assert.equal(p.digest, true);
+  assert.equal(p.rail, false);
+  assert.equal(p.search, false);
+  return true;
+});
+
+await check('the rail is bought before the search field, and the search field before its cards', () => {
+  // The question a phone comes out of a pocket to ask is "which way, and how
+  // long", not "what is this place called" — so the rail's line comes first.
+  // Its upgrade to cards does not, because that would outbid a search field
+  // already on the sheet. See the monotonicity check below.
+  const line = sheetPlan(SHEET_CHROME_PX + SHEET_DIGEST_PX + 10);
+  assert.equal(line.digest, true);
+  assert.equal(line.search, false);
+
+  const both = sheetPlan(200);
+  assert.equal(both.digest, true);
+  assert.equal(both.search, true);
+  assert.equal(both.rail, false);
+  return true;
+});
+
+await check('a rung that will not fit does not let a cheaper one below it in', () => {
+  // Room for the rail's line and the venue line, but not the search field
+  // between them.
+  const p = sheetPlan(SHEET_CHROME_PX + SHEET_DIGEST_PX + 30);
+  assert.equal(p.digest, true);
+  assert.equal(p.search, false);
+  assert.equal(p.brand, false, 'the park name arrived with no way to search it');
+  return true;
+});
+
+await check('the hint is only offered once the list has been turned down', () => {
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX - 1).hint, true);
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX).hint, false);
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX).list, true);
+  return true;
+});
+
+await check('the plan only ever grows as the sheet does', () => {
+  // Nothing may drop out on the way up: a row that appears at 300px and is gone
+  // again at 320 is the arithmetic showing through the interface.
+  const rungs = ['digest', 'rail', 'search', 'brand', 'list'];
+  let best = 0;
+  for (let px = 0; px <= 900; px += 1) {
+    const p = sheetPlan(px);
+    // The digest is the rail's understudy, so count them as one rung.
+    const score = (p.rail || p.digest ? 1 : 0) + rungs.slice(2).filter((k) => p[k]).length;
+    assert.ok(score >= best, `the plan shrank at ${px}px`);
+    best = score;
+    if (p.rail) assert.equal(p.digest, false, `both rails at ${px}px`);
+  }
+  assert.equal(best, 4);
+  return true;
+});
+
+await check('the map controls step aside before the sheet climbs into them', () => {
+  // Not merely at the top stop: with four stops the pad fitted at half and was
+  // hidden at full, and nothing could stop in between. Something can now.
+  assert.equal(sheetCrowdsMap(STOPS.peek, 844), false);
+  assert.equal(sheetCrowdsMap(STOPS.half, 844), false);
+  assert.equal(sheetCrowdsMap(560, 844), true, 'the zoom pad is in the top bar');
+  assert.equal(sheetCrowdsMap(STOPS.full, 844), true);
+  return true;
+});
+
+await check('a short phone still reaches the list', () => {
+  // An SE at 667px: half is 347, which is under the list's floor, so the app
+  // has to send the sheet to the list's own height rather than to a named stop.
+  const small = sheetStops(667);
+  assert.ok(small.half < SHEET_LIST_AT_PX);
+  assert.ok(small.full >= SHEET_LIST_AT_PX, 'no height on this phone shows the list');
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX).list, true);
   return true;
 });
 

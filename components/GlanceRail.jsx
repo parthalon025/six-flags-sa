@@ -55,6 +55,10 @@ export default function GlanceRail({
   onDismiss = null,
   // Kinds of standing card this visitor has got rid of.
   hidden = null,
+  // The rail with the sheet pulled almost shut: one line instead of a row of
+  // cards. See lib/sheet.js — the height the visitor has left the sheet at buys
+  // a card or it buys a line, and a line is a great deal better than nothing.
+  compact = false,
 }) {
   const palette = paletteFor(theme);
   // The places are the loaded venue's, so they have to be a dependency of the
@@ -210,6 +214,38 @@ export default function GlanceRail({
 
     return out;
   }, [pois, me, members, meet, selected, heading, palette, hidden]);
+
+  /* One line, for a sheet with room for one line.
+     Whoever needs help leads it whatever their range, and otherwise it is the
+     nearest thing on the rail — the same order the cards are already in. The
+     rest of them are a count rather than a list, because the point of this
+     strip is that it is one line: it says how many answers are under the
+     handle without pretending to be them. */
+  if (compact) {
+    const lead = cards.find((c) => c.tone === 'help') || cards[0];
+    if (!lead) {
+      return (
+        <div className="glanceDigest quiet">
+          <span>
+            {me ? 'Start or join a party' : 'Turn on location for distance and direction'}
+          </span>
+        </div>
+      );
+    }
+    return (
+      <button
+        type="button"
+        className={`glanceDigest ${lead.tone}`}
+        onClick={() => onFocus(lead.target)}
+      >
+        <Arrow deg={lead.deg} colour={lead.colour} />
+        <b>{lead.walk}</b>
+        <span className="glanceDigestName">{lead.title}</span>
+        <em style={{ color: lead.colour }}>{lead.eyebrow}</em>
+        {cards.length > 1 && <span className="glanceDigestMore">+{cards.length - 1}</span>}
+      </button>
+    );
+  }
 
   if (!me) {
     return (

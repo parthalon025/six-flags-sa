@@ -22,6 +22,16 @@ import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import WeatherBanner from '@/components/WeatherBanner';
+import {
+  SHEET_GAP,
+  SHEET_LIST_AT_PX,
+  SHEET_PEEK_PX,
+  nextSheetStop,
+  sheetCrowdsMap,
+  sheetForm,
+  sheetPlan,
+  sheetStops,
+} from '@/lib/sheet';
 import { CATEGORIES, eligibility, hasHeights } from '@/lib/park';
 import { statusSummary } from '@/lib/rideStatus';
 import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
@@ -101,30 +111,19 @@ const CARD_LABELS = { restroom: 'Nearest toilet', food: 'Nearest food', firstaid
    that cries wolf is one that gets turned off. */
 const QUIET_AFTER_MS = 12 * 60 * 1000;
 
-/* What the sheet is standing on in each of its states, as pixels. The CSS
-   already publishes this as --sheetH for the chrome that rides above it; the
-   map needs the number itself, to lay its labels out above the furniture
-   rather than behind it.
-
-   These have to track --peek and the sheet's insets in globals.css. The sheet
-   floats clear of the bottom edge at its partial stops, so what the map is
-   standing on is the height plus that gap; at the full stop it is anchored and
-   there is no gap. The peek stop is what it is because it has to stand the
-   search field, the glance rail and the tab bar all at once. */
-/* Raised from 286 to carry the "pull up" line: the search field, where you
-   are, the rail, that one line and the tab bar. The line is 22px and this is
-   22px more. Still the first thing to break if anything in the collapsed sheet
-   grows again. */
-const PEEK_PX = 308;
-/* The stop below peek: the tab bar and the handle above it, and nothing else.
-   The tab bar is a 44px item in 4/6px of padding over a .5px rule — 57 — and
-   the handle's box is 27. Whatever the phone reserves for its home indicator
-   sits under both and is added in CSS, which is the only place that knows it. */
-const SHUT_PX = 84;
-const SHEET_PEEK_PX = PEEK_PX + 8;
-const SHEET_OPEN = { half: 0.52, full: 0.88 };
-const SHEET_INSET = { half: 5, full: 0 };
+/* What the sheet is standing on, as pixels. The CSS publishes it as --sheetH
+   for the chrome that rides above it; the map needs the number itself, to lay
+   its labels out above the furniture rather than behind it. The sheet floats
+   clear of the bottom edge at its partial forms, so what the map is standing on
+   is the height plus that gap; pulled to the top it is anchored and there is no
+   gap. Both the height and the gap come out of lib/sheet.js — see that file for
+   why the height is a number the visitor chooses rather than one of four. */
 const STOWED_PX = 96;
+
+/* Where the visitor last left the sheet. The split between map and list is a
+   judgement they made about their own screen, and it should not be undone by
+   the app being closed. */
+const SHEET_KEY = 'party.sheet.height';
 
 /** How often the broadcast gate is asked whether the current fix is worth sending. */
 const GATE_TICK_MS = 4000;
@@ -184,7 +183,10 @@ export default function Page() {
      name of the park. */
   const [filter, setFilter] = useState('all');
   const [onlyRideable, setOnlyRideable] = useState(false);
-  const [sheet, setSheet] = useState('peek');
+  // The sheet's height in pixels, and the only thing that decides either how it
+  // looks or what is on it. Starts at the glance stop; the effect below hands it
+  // whatever the visitor last left it at.
+  const [sheetPx, setSheetPx] = useState(SHEET_PEEK_PX);
   const [follow, setFollow] = useState(true);
   const [armMeet, setArmMeet] = useState(false);
   const [tapeOn, setTapeOn] = useState(false);
@@ -195,6 +197,19 @@ export default function Page() {
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
+  const stops = useMemo(() => sheetStops(viewportH), [viewportH]);
+
+  /* The two things the app itself ever does to the sheet, and both of them are
+     one-way. Nothing in here overrules the visitor: a screen that wants to be
+     read can only grow the sheet, and a map that wants to be looked at can only
+     shrink it, so a sheet deliberately left shut is not reopened by tapping a
+     card and one deliberately pulled up is not collapsed by asking for a
+     route. */
+  const growSheet = useCallback(
+    (px) => setSheetPx((h) => Math.max(h, Math.min(stops.full, px))),
+    [stops],
+  );
+  const shrinkSheet = useCallback((px) => setSheetPx((h) => Math.min(h, px)), []);
 
   // Shared by the sheet's chips and the map's own key, which are two views of
   // the same switch.
@@ -292,9 +307,9 @@ export default function Page() {
         { tab: id, stacks: { ...cur, [id]: [...onIt, next] } },
         'fromRight',
       );
-      setSheet((h) => (h === 'peek' ? 'half' : h));
+      growSheet(stops.half);
     },
-    [goForward],
+    [goForward, growSheet, stops],
   );
 
   /**
@@ -346,9 +361,9 @@ export default function Page() {
       // Explore is read over the top of the map and keeps whatever stop the sheet
       // was left at. The other three are screens you went to read, so they come
       // up far enough to have something on them.
-      if (id !== 'explore') setSheet((h) => (h === 'peek' ? 'half' : h));
+      if (id !== 'explore') growSheet(stops.half);
     },
-    [goForward, applyNav],
+    [goForward, applyNav, growSheet, stops],
   );
 
   // The browser handing back an earlier snapshot is the only thing that ever
@@ -371,6 +386,12 @@ export default function Page() {
   const runtime = useRef(null);
   const lastRoute = useRef(null);
   const arrived = useRef(null);
+  /* Whether there is a walk for `stopNav` to end. It is called on every venue
+     load as well as on a real Stop, and only one of those two should be
+     allowed to move the sheet. A ref rather than the `nav` state itself so that
+     `stopNav` keeps a stable identity — half the effects in this file have it
+     in their dependencies. */
+  const walkOn = useRef(false);
   // The reroute path reads the current choice without taking a dependency on
   // it — recomputing a route must not itself be a reason to recompute it.
   const routesRef = useRef([]);
@@ -502,11 +523,33 @@ export default function Page() {
   }, [theme]);
 
   useEffect(() => {
-    const measure = () => setViewportH(window.innerHeight);
+    const measure = () => {
+      const h = window.innerHeight;
+      setViewportH(h);
+      // A sheet taller than the screen it is on is not a sheet. The clamp runs
+      // on every measure rather than only at boot, because the software
+      // keyboard coming up is a resize too, and a sheet left at 88% of a tall
+      // phone would otherwise be pinned off the top of the short one.
+      const ceiling = sheetStops(h).full;
+      setSheetPx((px) => Math.min(px, ceiling));
+    };
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
   }, []);
+
+  // Where the sheet was left last time, clamped to this screen. Read once, on
+  // the client, so the server and the first paint agree on the default.
+  useEffect(() => {
+    const saved = Number(localStorage.getItem(SHEET_KEY));
+    if (!Number.isFinite(saved) || saved <= 0) return;
+    const { shut, full } = sheetStops(window.innerHeight);
+    setSheetPx(Math.min(full, Math.max(shut, Math.round(saved))));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(SHEET_KEY, String(sheetPx));
+  }, [sheetPx]);
 
   // Close the gate when the fix actually lands — unless the fix has just earned
   // the intake its second question, in which case the gate stays up and shows
@@ -990,6 +1033,12 @@ export default function Page() {
     return nav;
   }, [nav, roster, meet]);
 
+  // Kept in step with `nav` rather than written at each call site, so no future
+  // way of setting a destination can forget to arm it.
+  useEffect(() => {
+    walkOn.current = nav != null;
+  }, [nav]);
+
   const stopNav = useCallback(() => {
     setNav(null);
     setNavPhase('idle');
@@ -1007,8 +1056,12 @@ export default function Page() {
       applyNav(next, 'fromLeft');
       window.history.replaceState({ ...window.history.state, tracker: next }, '');
     }
-    setSheet('peek');
-  }, [applyNav]);
+    // Only if there was a walk to end. This runs on every venue load as well as
+    // on a real Stop, and a sheet the visitor deliberately left open has no
+    // business being collapsed by the map underneath it finishing loading.
+    if (walkOn.current) shrinkSheet(stops.peek);
+    walkOn.current = false;
+  }, [applyNav, shrinkSheet, stops]);
 
   // A walk belongs to the map it was worked out on. When the venue changes —
   // picked by hand, or followed to where the party is — the destination is a
@@ -1046,17 +1099,17 @@ export default function Page() {
       setNav(target);
       setNavPhase('preview');
       setFollow(false);
-      setSheet('peek');
+      shrinkSheet(stops.peek);
     },
-    [position, showToast, stopNav],
+    [position, showToast, stopNav, shrinkSheet, stops],
   );
 
   const beginWalking = useCallback(() => {
     setNavPhase('go');
     setFollow(true);
-    setSheet('peek');
+    shrinkSheet(stops.peek);
     navigator.vibrate?.(30);
-  }, []);
+  }, [shrinkSheet, stops]);
 
   // The person or pin we were walking to is gone. Say so once instead of
   // leaving a banner counting down to nothing.
@@ -1197,7 +1250,7 @@ export default function Page() {
   const focusOn = (target) => {
     setFollow(false);
     setFocusPoint({ lat: target.lat, lng: target.lng });
-    setSheet('peek');
+    shrinkSheet(stops.peek);
   };
 
   const handleMapTap = (lat, lng) => {
@@ -1321,39 +1374,47 @@ export default function Page() {
 
   // While a route is running the sheet is out of the way unless it is asked
   // for: the map and the two HUD strips are the whole interface, and the sheet
-  // comes back over them only when you open the steps.
-  const stowed = previewing || (walking && sheet === 'peek');
+  // comes back over them only when you open the steps. "Asked for" is anything
+  // above the glance stop, which is what a visitor who has pulled the sheet up
+  // during a walk has done.
+  const stowed = previewing || (walking && sheetPx <= stops.peek);
 
-  const stops = useMemo(
-    () => ({
-      shut: SHUT_PX,
-      peek: PEEK_PX,
-      half: Math.round(SHEET_OPEN.half * viewportH),
-      full: Math.round(SHEET_OPEN.full * viewportH),
-    }),
-    [viewportH],
-  );
-  const drag = useSheetDrag({ stops, stop: sheet, onStop: setSheet });
+  const drag = useSheetDrag({ stops, height: sheetPx, onHeight: setSheetPx });
+
+  /* The height under the finger while there is one, and the resting height the
+     rest of the time. Everything the visitor can see is worked out from this
+     one number, so the content ladder runs *during* the drag: the list, the
+     venue line and the cards arrive and leave under the thumb that is paying
+     for them, rather than at the moment it lifts. */
+  const livePx = drag.height ?? sheetPx;
+  const form = sheetForm(livePx, stops);
+  const plan = sheetPlan(livePx);
 
   // `atMap` marks the screen that is read over the top of the map rather than
-  // instead of it — the one the peek stop is designed around.
-  const sheetClass = `sheet ${sheet} ${tab === 'explore' ? 'atMap' : ''} ${
+  // instead of it — the one the glance stop is designed around.
+  const sheetClass = `sheet ${form} ${tab === 'explore' ? 'atMap' : ''} ${
     stowed ? 'stowed' : ''
   } ${drag.dragging ? 'dragging' : ''}`;
 
-  // The same stops, as a number of pixels, for the map's own label layout.
-  const floorPx = stowed
-    ? STOWED_PX
-    : sheet === 'shut'
-      ? SHUT_PX + 8
-      : Math.round((SHEET_OPEN[sheet] ?? 0) * viewportH) + (SHEET_INSET[sheet] ?? 0) ||
-        SHEET_PEEK_PX;
+  /* What the map has to lay its labels above. The resting height, not the live
+     one: relaying out every label in the park on each pointermove is the one
+     thing on this path expensive enough to drop frames, and a map that holds
+     still under a moving sheet is what it already did. */
+  const floorPx = stowed ? STOWED_PX : sheetPx + SHEET_GAP[sheetForm(sheetPx, stops)];
 
   return (
-    // data-sheet publishes the sheet's stop as a CSS custom property, so the
-    // FABs, the toast, the zoom pad and the scale bar all ride up and down with
-    // it on one shared easing instead of each keeping its own copy of the stops.
-    <main className="app" data-sheet={stowed ? 'stowed' : sheet}>
+    // --sheetH is the sheet's live height, so the FABs, the toast, the zoom pad
+    // and the scale bar ride with it — under the finger too, which is why the
+    // dragging flag is published alongside it to take their easing off.
+    <main
+      className="app"
+      data-sheet={stowed ? 'stowed' : form}
+      data-dragging={drag.dragging ? '1' : undefined}
+      /* The map's own controls ride on --sheetH, so a tall enough sheet pushes
+         them into the buttons in the top corners. They step aside instead. */
+      data-crowded={!stowed && sheetCrowdsMap(livePx, viewportH) ? '1' : undefined}
+      style={{ '--sheetH': `${stowed ? STOWED_PX : livePx}px` }}
+    >
       <ParkMap
         data={mapData}
         center={venue?.center}
@@ -1425,7 +1486,7 @@ export default function Page() {
           // screen, filtered to the rides the headline is about.
           selectTab('explore');
           setFilter('coaster');
-          setSheet('half');
+          growSheet(SHEET_LIST_AT_PX);
         }}
       />
 
@@ -1462,7 +1523,7 @@ export default function Page() {
         />
       )}
 
-      <div className={`fabs ${walking ? 'go' : sheet} ${previewing ? 'preview' : ''}`}>
+      <div className={`fabs ${walking ? 'go' : form} ${previewing ? 'preview' : ''}`}>
         {!walking && (
           <button
             type="button"
@@ -1470,7 +1531,7 @@ export default function Page() {
             onClick={() => {
               setArmMeet((v) => !v);
               if (!armMeet) {
-                setSheet('peek');
+                shrinkSheet(stops.peek);
                 showToast('Tap the map to drop the meet-up point');
               }
             }}
@@ -1510,7 +1571,7 @@ export default function Page() {
         />
       )}
 
-      {walking && sheet === 'peek' && (
+      {walking && sheetPx <= stops.peek && (
         <NavBar
           target={navTarget}
           route={route}
@@ -1524,26 +1585,48 @@ export default function Page() {
         />
       )}
 
-      <section
-        className={sheetClass}
-        style={drag.height != null ? { height: `${drag.height}px` } : undefined}
-      >
+      {/* The height is stated rather than left to a class, because there are
+          no longer four of them to have a class each: it is whatever the
+          visitor pulled it to. */}
+      <section className={sheetClass} style={{ height: `${livePx}px` }}>
+        {/* A slider, because that is now what it is: the height is a value on a
+            range rather than a choice between four, and the only way to say
+            that to a screen reader — or to a keyboard, which has no finger to
+            drag with — is to say it. The arrows move it a card's worth at a
+            time; page and home/end walk the named stops. */}
         <button
           type="button"
           className="grab"
           onClick={() => {
             // A drag that ended on this handle emits a click too. It has
-            // already chosen a stop; cycling on top of it would undo it.
+            // already chosen a height; cycling on top of it would undo it.
             if (drag.swallowClick()) return;
-            // Round and round: shut → peek → half → full → shut. Dragging is
-            // the way most people will move the sheet, but a tap has to be
-            // able to reach every stop too, including all the way back down —
-            // somebody who has collapsed it must not need a gesture to undo it.
-            setSheet(
-              sheet === 'shut' ? 'peek' : sheet === 'peek' ? 'half' : sheet === 'half' ? 'full' : 'shut',
-            );
+            // Round and round: shut → peek → half → full → shut, starting from
+            // whichever of them the current height is under. Dragging is the way
+            // most people will move the sheet, but a tap has to be able to reach
+            // every stop too, including all the way back down — somebody who has
+            // collapsed it must not need a gesture to undo it.
+            setSheetPx(nextSheetStop(sheetPx, stops));
           }}
+          role="slider"
           aria-label="Resize panel"
+          aria-orientation="vertical"
+          aria-valuemin={stops.shut}
+          aria-valuemax={stops.full}
+          aria-valuenow={Math.round(sheetPx)}
+          aria-valuetext={`Panel ${Math.round((sheetPx / stops.full) * 100)}% of full height`}
+          onKeyDown={(e) => {
+            const step = (by) =>
+              setSheetPx((px) => Math.max(stops.shut, Math.min(stops.full, px + by)));
+            if (e.key === 'ArrowUp') step(48);
+            else if (e.key === 'ArrowDown') step(-48);
+            else if (e.key === 'PageUp') setSheetPx(nextSheetStop(sheetPx, stops));
+            else if (e.key === 'PageDown') setSheetPx(stops.shut);
+            else if (e.key === 'Home') setSheetPx(stops.shut);
+            else if (e.key === 'End') setSheetPx(stops.full);
+            else return;
+            e.preventDefault();
+          }}
           {...drag.handlers}
         >
           <i />
@@ -1567,70 +1650,89 @@ export default function Page() {
               <span className="navHeadPad" aria-hidden="true" />
             </header>
           ) : tab === 'explore' ? (
+            /* Everything on this screen is here because the height the visitor
+               left the sheet at paid for it. `plan` is that budget, spent in
+               importance order — see lib/sheet.js. Nothing below is squashed to
+               fit: a row either has its measured room or it is not drawn, so
+               what is on the sheet is always something you can read rather than
+               a sliced-off edge of four things you cannot. */
             <>
               {/* Search is the way into a map, so it is the first thing in the
                   sheet and it never scrolls away. */}
-              <div className="searchRow">
-                <div className="searchField">
-                  <Icon name="magnifyingglass" size={17} />
-                  <input
-                    className="field"
-                    placeholder={`Search ${venue?.name || 'the map'}`}
-                    value={query}
-                    onFocus={() => setSheet((h) => (h === 'peek' ? 'half' : h))}
-                    onChange={(e) => {
-                      // Starting to type is a new question, so it clears a
-                      // category left on from browsing. Only on the first
-                      // keystroke: tapping a chip part-way through a query is
-                      // deliberate and has to survive the next one.
-                      const next = e.target.value;
-                      if (!query && next) setFilter('all');
-                      setQuery(next);
-                    }}
-                    aria-label="Search places"
-                  />
-                  {query && (
-                    <button
-                      type="button"
-                      className="searchClear"
-                      onClick={() => setQuery('')}
-                      aria-label="Clear the search"
-                    >
-                      <Icon name="xmark.circle.fill" size={18} />
-                    </button>
-                  )}
+              {plan.search && (
+                <div className="searchRow">
+                  <div className="searchField">
+                    <Icon name="magnifyingglass" size={17} />
+                    <input
+                      className="field"
+                      placeholder={`Search ${venue?.name || 'the map'}`}
+                      value={query}
+                      /* Typing is asking for the list, so the sheet comes up far
+                         enough to be one. */
+                      onFocus={() => growSheet(SHEET_LIST_AT_PX)}
+                      onChange={(e) => {
+                        // Starting to type is a new question, so it clears a
+                        // category left on from browsing. Only on the first
+                        // keystroke: tapping a chip part-way through a query is
+                        // deliberate and has to survive the next one.
+                        const next = e.target.value;
+                        if (!query && next) setFilter('all');
+                        setQuery(next);
+                      }}
+                      aria-label="Search places"
+                    />
+                    {query && (
+                      <button
+                        type="button"
+                        className="searchClear"
+                        onClick={() => setQuery('')}
+                        aria-label="Clear the search"
+                      >
+                        <Icon name="xmark.circle.fill" size={18} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="brand">
-                <b>{venue?.name || 'Party tracker'}</b>
-                <span>{headerLine()}</span>
-              </div>
-              <GlanceRail
-                me={position}
-                members={others}
-                meet={meet}
-                selected={selected}
-                heading={heading}
-                theme={theme}
-                onFocus={focusOn}
-                onNavigate={startNav}
-                navKey={navKeyOf(navTarget)}
-                navMetres={progress?.remaining ?? route?.metres ?? null}
-                onOpenParty={() => selectTab('party')}
-                onDismiss={shedCard}
-                hidden={hiddenHere}
-              />
-              {/* At the peek stop the list below is not merely scrolled off,
-                  it is not rendered — which is the right call, but it leaves a
-                  36×5px grey pill as the only evidence that the sheet moves.
-                  Say what is under there, in words, and make the words the
-                  handle. */}
-              {sheet === 'peek' ? (
-                <button type="button" className="moreHint" onClick={() => setSheet('half')}>
+              )}
+              {plan.brand && (
+                <div className="brand">
+                  <b>{venue?.name || 'Party tracker'}</b>
+                  <span>{headerLine()}</span>
+                </div>
+              )}
+              {(plan.rail || plan.digest) && (
+                <GlanceRail
+                  me={position}
+                  members={others}
+                  meet={meet}
+                  selected={selected}
+                  heading={heading}
+                  theme={theme}
+                  onFocus={focusOn}
+                  onNavigate={startNav}
+                  navKey={navKeyOf(navTarget)}
+                  navMetres={progress?.remaining ?? route?.metres ?? null}
+                  onOpenParty={() => selectTab('party')}
+                  onDismiss={shedCard}
+                  hidden={hiddenHere}
+                  compact={plan.digest}
+                />
+              )}
+              {/* Where the list would be, when the list will not fit: it is not
+                  merely scrolled off, it is not rendered, which is the right
+                  call but leaves a 36×5px grey pill as the only evidence that
+                  the sheet moves. Say what is under there, in words, and make
+                  the words the handle. */}
+              {plan.hint && (
+                <button
+                  type="button"
+                  className="moreHint"
+                  onClick={() => growSheet(SHEET_LIST_AT_PX)}
+                >
                   Pull up for every place — food, toilets and rides
                   <Icon name="chevron.up" size={13} />
                 </button>
-              ) : null}
+              )}
             </>
           ) : (
             /* A tab's own root: the large title a phone puts at the top of a
@@ -1643,7 +1745,7 @@ export default function Page() {
           )}
 
           <div className="sheetBody">
-            {view === null && tab === 'explore' && (
+            {view === null && tab === 'explore' && plan.list && (
               <>
                 {/* The one row left on this screen. Everywhere else it used to
                     lead is a tab now; a walk in progress is not a place, so it
@@ -1689,7 +1791,7 @@ export default function Page() {
                 onStart={beginWalking}
                 onStop={stopNav}
                 onFocus={focusOn}
-                onClose={() => setSheet('peek')}
+                onClose={() => shrinkSheet(stops.peek)}
               />
             )}
 
@@ -1731,7 +1833,7 @@ export default function Page() {
                 onFocus={(m) => {
                   setFollow(false);
                   setFocusPoint({ lat: m.lat, lng: m.lng });
-                  setSheet('peek');
+                  shrinkSheet(stops.peek);
                 }}
                 busy={busy || party?.phase === 'connecting'}
                 myName={identity?.name ?? ''}

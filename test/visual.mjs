@@ -35,7 +35,9 @@ async function shot(page, name) {
 async function openSheet(page, stop = 'full') {
   for (let i = 0; i < 3; i += 1) {
     if (await page.locator(`.sheet.${stop}`).count()) return;
-    await page.getByRole('button', { name: /Resize panel/ }).click();
+    // A slider, not a button: the sheet's height is a value on a range now
+    // rather than a choice between four named stops. It still cycles on a tap.
+    await page.getByRole('slider', { name: /Resize panel/ }).click();
     await page.waitForTimeout(400);
   }
 }

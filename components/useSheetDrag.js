@@ -1,55 +1,38 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { settleSheet } from '@/lib/sheet';
 
 /**
  * Drag the sheet the way a phone's sheet drags.
  *
  * The grab handle used to be a button that cycled peek → half → full, which
  * works but is not what a thumb reaches for: a sheet is a thing you pull. So
- * the handle now follows the finger in real time and snaps to the nearest stop
- * when you let go — and the stop it picks accounts for how fast you were
- * moving, because a short fast flick means "all the way up", not "up a bit".
+ * the handle follows the finger in real time — and, since the sheet's height is
+ * a number rather than one of four names, it now *stays* where the finger left
+ * it. See lib/sheet.js: the named stops survive only as magnets near the ends
+ * of the travel, so "all the way up" and "right down" stay easy to hit while
+ * every height in between is somewhere the sheet can rest.
  *
  * The tap is still there. A press that never travels more than a few pixels is
  * a tap, and the caller's own onClick fires as it always did; only a press that
  * actually moved turns into a drag, and that one swallows the click the browser
  * emits after it so a drag never doubles as a cycle.
  *
- * @param stops  the detents in pixels, from the caller because only it knows
- *               the viewport. Any number of them, in any order — the floor and
- *               the ceiling are taken from the values rather than named, so a
- *               stop added later needs no change here.
- * @param stop   the stop the sheet is resting at now
- * @param onStop called with the name of the stop to settle on
+ * @param stops   the named stops in pixels, from the caller because only it
+ *                knows the viewport. The floor and the ceiling of the travel
+ *                are taken from the values rather than named, so a stop added
+ *                later needs no change here.
+ * @param height  the height the sheet is resting at now, in pixels
+ * @param onHeight called with the height to settle at, in pixels
  */
-export default function useSheetDrag({ stops, stop, onStop }) {
-  const [height, setHeight] = useState(null);
+export default function useSheetDrag({ stops, height, onHeight }) {
+  const [live, setLive] = useState(null);
   const from = useRef(null); // {y, h} at pointerdown, null when not pressing
   const last = useRef({ y: 0, t: 0, v: 0 }); // for the release velocity
   const moved = useRef(false);
   const dragged = useRef(false); // a drag just ended — swallow its click
-  const live = useRef(null); // the height in flight, without a render to read it
-
-  const settle = useCallback(
-    (px) => {
-      // How far the sheet would coast at the speed it was let go at. 140ms of
-      // projection is enough for a flick to carry past the next stop without a
-      // slow drag ever overshooting the one it was aimed at.
-      const projected = px + last.current.v * 140;
-      let best = stop;
-      let bestGap = Infinity;
-      Object.entries(stops).forEach(([name, at]) => {
-        const gap = Math.abs(projected - at);
-        if (gap < bestGap) {
-          bestGap = gap;
-          best = name;
-        }
-      });
-      return best;
-    },
-    [stops, stop],
-  );
+  const at = useRef(null); // the height in flight, without a render to read it
 
   const onPointerDown = useCallback(
     (e) => {
@@ -64,11 +47,11 @@ export default function useSheetDrag({ stops, stop, onStop }) {
       // ends off the handle produces no click at all, and a flag left standing
       // would eat the next real tap instead of the drag's own phantom one.
       dragged.current = false;
-      from.current = { y: e.clientY, h: stops[stop] ?? Math.min(...Object.values(stops)) };
+      from.current = { y: e.clientY, h: height };
       last.current = { y: e.clientY, t: e.timeStamp, v: 0 };
       moved.current = false;
     },
-    [stops, stop],
+    [height],
   );
 
   const onPointerMove = useCallback(
@@ -86,11 +69,12 @@ export default function useSheetDrag({ stops, stop, onStop }) {
         v: (last.current.y - e.clientY) / dt,
       };
       const heights = Object.values(stops);
-      const floor = Math.min(...heights);
-      const ceiling = Math.max(...heights);
-      const next = Math.max(floor, Math.min(ceiling, from.current.h + dy));
-      live.current = next;
-      setHeight(next);
+      const next = Math.max(
+        Math.min(...heights),
+        Math.min(Math.max(...heights), from.current.h + dy),
+      );
+      at.current = next;
+      setLive(next);
     },
     [stops],
   );
@@ -99,17 +83,18 @@ export default function useSheetDrag({ stops, stop, onStop }) {
     (e) => {
       if (!from.current) return;
       const was = moved.current;
-      const px = live.current ?? from.current.h;
+      const px = at.current ?? from.current.h;
+      const v = last.current.v;
       from.current = null;
       moved.current = false;
-      live.current = null;
-      setHeight(null);
+      at.current = null;
+      setLive(null);
       e.currentTarget.releasePointerCapture?.(e.pointerId);
       if (!was) return; // a tap — the caller's onClick still owns it
       dragged.current = true;
-      onStop(settle(px));
+      onHeight(settleSheet(px, stops, v));
     },
-    [onStop, settle],
+    [onHeight, stops],
   );
 
   /** True once, immediately after a drag: the click it produced is not a tap. */
@@ -120,8 +105,8 @@ export default function useSheetDrag({ stops, stop, onStop }) {
   }, []);
 
   return {
-    height,
-    dragging: height != null,
+    height: live,
+    dragging: live != null,
     swallowClick,
     handlers: {
       onPointerDown,
