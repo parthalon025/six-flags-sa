@@ -555,6 +555,20 @@ over its parking, far enough that the box midpoint and the boundary centroid agr
 within two metres and both of them miss the water park. A rebuild never moves a centre the
 venue already has, so this is a decision made once rather than a flag to remember.
 
+A place has two strings and they are not the same string. `i` is its **key** — what a ride
+report on the wire, a favourite and a nav target are addressed by. `n` is its **title** —
+what a visitor reads. A park renaming a ride changes the title and must not change the key,
+because an edit is filed under the key and an edit whose key moved is not moved, it is
+lost. Keys are issued once, at build time, from a ledger committed at
+`data/venues/<id>.ids.json`; a rebuild matches each place back to the number it already had
+by its OpenStreetMap element, then by position within its name group, and anything the
+rebuild cannot claim is retired rather than freed so its number is never handed to a
+different place. The reasoning, including why the OpenStreetMap id is provenance rather
+than identity, is in `scripts/lib/venue-ids.mjs`. Overrides stay filed under the display
+name — those files are edited against a park's published height chart — with the key
+available as the escape hatch for the entries a name cannot address on its own, such as one
+of twenty-six places called "Restrooms".
+
 Each build writes `public/venues/<id>.map.json` and `public/venues/<id>.pois.json`, then
 rebuilds `public/venues/manifest.json` and the generated `lib/venueIndex.js`. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
@@ -1101,6 +1115,7 @@ scripts/
   lib/osm-tags.mjs            the tag → layer and tag → category rules
   lib/geometry.mjs            simplification, clipping, area, centroid, point-in-polygon
   lib/venue-io.mjs            where venues live; manifest and index generation
+  lib/venue-ids.mjs           the primary key of a place, and the ledger that remembers it
   attractions.mjs             the ride inventory: every way into every ride, and who says so
   lib/evidence.mjs            what a source is worth, how claims fuse, when one has expired
   lib/candidates.mjs          plausible entrances proposed from the shape of the park
@@ -1124,6 +1139,7 @@ public/
   venues/<id>.pois.json       the places, with heights where a venue has them
   manifest.webmanifest        home-screen install
 data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
+data/venues/<id>.ids.json        the key issued to each place, and every number already spent
 data/venues/<id>.recipe.json     the box, pad and flags that built it — replayed by --rebuild
 data/venues/<id>.trace.json      control points and features clicked off the park's own map
 data/venues/<id>.attractions.json  per-ride features, their evidence and confidence
