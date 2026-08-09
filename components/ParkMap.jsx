@@ -936,8 +936,12 @@ export default function ParkMap({
         )}
 
         <g className="lyr-slide">{layers.line(data.slide, 'sl')}</g>
-        <g className="lyr-coastershadow">{layers.line(data.coaster, 'cs')}</g>
-        <g className="lyr-coaster">{layers.line(data.coaster, 'co')}</g>
+        {showDetail && (
+          <>
+            <g className="lyr-coastershadow">{layers.line(data.coaster, 'cs')}</g>
+            <g className="lyr-coaster">{layers.line(data.coaster, 'co')}</g>
+          </>
+        )}
 
         {/* the selected ride's own track, so the red spaghetti has an owner */}
         {litTrack.length > 0 && (

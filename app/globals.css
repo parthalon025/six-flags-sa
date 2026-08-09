@@ -342,6 +342,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   0% { opacity: 0; transform: translateX(-50%) translateY(12px) }
   100% { opacity: 1; transform: translateX(-50%) translateY(0) }
 }
+@keyframes toastPopRight {
+  0% { opacity: 0; transform: translateY(12px) }
+  100% { opacity: 1; transform: none }
+}
 @keyframes badgeIn {
   0% { opacity: 0; transform: translateY(-6px) }
   100% { opacity: 1; transform: none }
@@ -938,7 +942,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   display: flex; align-items: center; justify-content: center; gap: 5px;
   width: 100%; min-height: 22px; padding: 0 16px 2px;
   font-size: 12px; line-height: 16px; letter-spacing: 0; font-weight: 400;
-  color: var(--tint); background: none; border: 0;
+  color: var(--label2); background: none; border: 0;
 }
 .moreHint svg { opacity: .8; }
 
@@ -996,8 +1000,17 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .joinRow { display: flex; gap: 10px; align-items: stretch; }
 .joinRow .btn { width: auto; margin: 0; padding: 13px 18px; }
+.joinRow .btn:disabled {
+  opacity: 1;
+  background: var(--fill3);
+  color: var(--label3);
+}
 
-.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+.chips {
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+}
 .chips::-webkit-scrollbar { display: none; }
 .chips.wrap { flex-wrap: wrap; overflow: visible; }
 .chip {
@@ -1108,7 +1121,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .memberRow.paused .pip { filter: grayscale(1); }
 .planList { margin: 0 0 12px; padding-left: 20px; font-size: 14px; color: var(--label2); }
 .planList .struck { text-decoration: line-through; opacity: .55; }
-.intelPanel { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--separator); }
+.intelPanel { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sep); }
 .pip {
   width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
   font-size: 15px; font-weight: 600; letter-spacing: -.2px; color: #fff; flex: none;
@@ -1256,20 +1269,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .updateNotesVersion { margin: 0 0 8px; }
 
 .toast {
-  position: absolute; left: 50%; z-index: 80;
-  /* Clear of the map furniture, which owns the strip directly above the sheet —
-     but never so high that it lands on the buttons in the top corners, which a
-     sheet pulled most of the way up would otherwise push it into. */
+  position: absolute; z-index: 80;
+  /* Right of the scale bar and key, left of the FAB column — a centred toast on
+     a narrow phone spans both and covers the numbers someone is trying to read. */
+  right: 68px;
+  left: auto;
   bottom: min(calc(var(--sheetH) + 116px + var(--bot)), calc(100% - 180px));
   background: var(--glassTintDeep); color: var(--label);
   border: none;
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
   padding: 11px 18px; border-radius: var(--rCapsule);
   font-size: 15px; font-weight: 500; letter-spacing: -.24px;
-  max-width: 88%; text-align: center;
+  max-width: min(72%, 280px); text-align: center;
   box-shadow: var(--lensEdge), var(--lensDrop);
-  transform: translateX(-50%);
-  animation: toastPop var(--t2) var(--easeOut) both;
+  transform: none;
+  animation: toastPopRight var(--t2) var(--easeOut) both;
   transition: bottom var(--t3) var(--ease);
 }
 
@@ -1427,6 +1441,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   flex: 1; min-width: 0; -webkit-appearance: none; appearance: none;
   height: 30px; background: none; margin: 0;
 }
+.heightRow input[type='range']:disabled { opacity: .45; }
+.heightRow input[type='range']:disabled::-webkit-slider-thumb { background: var(--fill3); box-shadow: none; }
+.heightRow input[type='range']:disabled::-moz-range-thumb { background: var(--fill3); box-shadow: none; }
 /* The iOS slider: a 4px track that fills with the tint behind the thumb, and a
    28px white knob that carries a real shadow rather than a border. `--pct` is
    set inline by the panel so the fill follows the value. */
@@ -1947,10 +1964,11 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .glanceGo {
   position: absolute; right: 8px; top: 8px; min-width: 40px; min-height: 26px;
   padding: 4px 10px;
-  border-radius: var(--rCapsule); border: none; background: var(--fill3);
+  border-radius: var(--rCapsule); border: none;
+  background: color-mix(in srgb, var(--blue) 14%, var(--fill3));
   font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
   color: var(--blue);
-  transition: opacity var(--t1) var(--easeOut);
+  transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
 }
 .glanceGo:active { opacity: .55; }
 .glanceGo.on { background: var(--blue); color: var(--onTint); }
@@ -2016,8 +2034,9 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 }
 .mapMeta { display: flex; align-items: center; gap: 8px; }
 .app[data-sheet='half'] .mapFurniture,
-.app[data-sheet='full'] .mapFurniture {
-  opacity: 0; transform: translateY(10px); pointer-events: none;
+.app[data-sheet='full'] .mapFurniture,
+.app[data-crowded] .mapFurniture {
+  display: none;
 }
 .app[data-sheet='stowed'] { --sheetH: 96px; }
 

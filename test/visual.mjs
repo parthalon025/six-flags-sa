@@ -73,6 +73,11 @@ async function main() {
   await page.goto(BASE, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1200);
   await shot(page, 'gps-gate');
+  const continueBtn = page.getByRole('button', { name: 'Continue' });
+  if (await continueBtn.count()) {
+    await continueBtn.click();
+    await page.waitForTimeout(800);
+  }
   check(
     await page.getByRole('heading', { name: 'Park Party' }).isVisible(),
     'the first screen introduces the app',
@@ -112,8 +117,8 @@ async function main() {
   await page.waitForTimeout(700);
   await shot(page, 'rides-panel');
 
-  const slider = page.locator('input[type=range]');
-  await slider.fill('46');
+  const tier46 = page.locator('.tier', { hasText: '46' });
+  await tier46.click();
   await page.waitForTimeout(500);
   await shot(page, 'height-46in');
   const tally = await page.locator('.ratioKey').innerText();
@@ -121,7 +126,7 @@ async function main() {
   // Deliberately not "open" — that word belongs to whether a ride is running.
   check(/\d+ can ride/i.test(tally), `height tally computed: ${tally.replace(/\n/g, ' ')}`);
 
-  await slider.fill('54');
+  await page.locator('.tier', { hasText: '54' }).click();
   await page.waitForTimeout(500);
   await shot(page, 'height-54in');
   const tally54 = await page.locator('.ratioKey').innerText();
