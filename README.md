@@ -41,6 +41,13 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   Texas. A venue built from OpenStreetMap alone has none until somebody writes them, and
   the builder says so rather than quietly shipping a park without its Rides tab — see
   [Height rules](#height-rules-and-other-corrections).
+- **Every location is the same data about a different place.** Nothing in the renderer, the
+  builder or the app names a park: the rules are tag-driven and everything true of one place
+  lives in that place's own file. Even the hand-picked district tints, which used to be a
+  table of Kings Island's themed areas sitting in the renderer — two parks can use the same
+  district name, and one of them did. `npm run venues:report` prints a checklist of what a
+  location has to carry, per venue and all at once, and the suite holds the required half of
+  it so the next park cannot ship half-built the way the first three did.
 - **The campground, where a park has one.** Cedar Point's Lighthouse Point is drawn as a
   district of the park with its name lying along it, and everything in it is on the map and
   in search: all 145 numbered pitches, so "site 247" is a thing you type at eleven at night
@@ -49,11 +56,21 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   campground's own telephone number, one tap from dialling. Campgrounds are tagged
   `caravan_site` as often as `camp_site` and their pitches are usually drawn as named
   driveways rather than as pitches, which is why none of it used to be in the app at all.
+  Hookups too — full hookup, 30/50 amp, water, sewer, pull-through, pad surface — read from
+  OpenStreetMap where a mapper has tagged them and from the venue's own file where nobody
+  has, and searchable either way, because "50 amp" is what somebody towing types and not one
+  pitch has it in its name.
 - **Where you parked.** One tap on the car button over the map saves the spot; after that
   the same button takes you back to it, and a card on the glance rail carries the walking
   time and an arrow the whole way. Violet pin, its own icon, nothing like the crimson
   meet-up pin. It stays on this phone — nobody in your party is told where you parked — and
   each park remembers its own car park.
+- **It opens on the nearest park, or the last one.** Whatever was on screen last time, before
+  the GPS has answered; the venue the fix is inside, or the nearest one, a second later. The
+  manifest has a `default`, and it is only what a phone that has never opened the app looks
+  at for those two seconds — a placeholder, not an opinion about where anybody is. Treating
+  it as an opinion is how a visitor in San Antonio opened the app and was shown a park in
+  Ohio.
 - **Live party tracking.** One person starts a party and hosts it on their own phone;
   everyone else joins by scanning the QR, opening the invite link, or typing the
   6-character code. Range in feet, compass bearing, nearest ride, status and staleness
@@ -64,7 +81,9 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   showing walking time as the headline, distance underneath, and an arrow aimed
   relative to the way you're facing when the compass is on. With no party running it
   falls back to the nearest restroom, food and first aid, and it carries the car once you
-  have told it where the car is. Tap a card to fly to it.
+  have told it where the car is. Tap a card to fly to it. A card that appears at the head of
+  the rail brings the rail back to the start, because a scroll-snap container that gains one
+  otherwise keeps the card it was snapped to and lands the new one off the left edge, unseen.
 - **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Rides and Me sit in
   a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
   moves — and each tab keeps its own navigation stack, so leaving one and coming back
@@ -102,6 +121,12 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   new one, and arriving ends it.
 - **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
   destination at their true bearing — useful when you can't see over a crowd.
+- **The weather, in three steps.** A chip in the top corner whenever there is a reading at
+  all — a glyph and the temperature, the size of the buttons opposite it. Tap it for the
+  headline, what is affected, what the reading was based on and how old it is. It opens
+  itself only when the weather is actually stopping rides or somebody has reported one down.
+  It used to be a full-width banner that appeared when something was wrong and rendered
+  nothing at all otherwise, which meant the app had a forecast and no way to be asked for one.
 - **Light and dark maps.** Light is Apple Maps in daylight — white footpaths on pale
   ground, dark type, deeper marker colours — meant to be readable on a phone in direct
   July sun. Dark is the low-glare version for after the lights come on. It follows the
@@ -566,12 +591,64 @@ because no test tells a water park that belongs to this venue from one that does
 build prints every area it dropped and how many places went with it, so the list is written
 from what it says.
 
+The same file also carries `camping` — what is true of a campground as a whole, which is
+where a fact like "every site is full hookup, 30/50 amp, concrete pad" belongs. It is one
+fact about the place, not a hundred and forty-five facts about pitches, so it sits on the
+venue and a pitch's own details are read *over* it. `rules` narrows it by name where a park
+does publish per-row detail.
+
+And `lands`, the hand-picked tints for a venue's districts. Every district not named there
+takes a colour derived from its own name, which is what a venue nobody has hand-tuned looks
+like and is fine.
+
 Correcting a height does not need a rebuild — the geometry is not what changed:
 
 ```
 npm run venues:overrides              # re-apply every overrides file, no network
 npm run venues:overrides -- cedar-point              # just the one
 ```
+
+### Bringing in data OpenStreetMap does not have
+
+`--merge` folds an outside dataset onto the places, matched by name first and by position
+second. It is how any surveyed layer reaches a venue that was built from OSM alone — pitch
+hookups, locker banks, a fresh set of height signs — and nothing about it is
+campground-specific.
+
+```
+npm run venues:build -- --place "Somewhere" --merge pitches.csv --merge lockers.geojson
+```
+
+A CSV wants a header row and a pair of coordinate columns under any of the usual names
+(`lat`/`latitude`/`y`, `lng`/`lon`/`longitude`/`x`); every other column becomes a property,
+and a dotted name nests one, so `camp.drive` sets `camp: { drive }`. That is what makes a
+spreadsheet of pitch hookups a one-line import rather than a script. GeoJSON works the
+same way through its `properties`.
+
+A feature carrying `name` or `ref` merges onto the place with that name wherever it sits; a
+nameless one merges onto the nearest place within `--merge-metres` (25 by default). Anything
+that matches nothing is reported rather than added, because a point that landed nowhere near
+a place is far more likely to be the wrong projection than a new place.
+
+### The checklist
+
+```
+npm run venues:report                 # every venue, one row each
+npm run venues:report -- cedar-point  # one venue, in full
+```
+
+Every location here is the same data about a different place, and the failure mode that
+comes with that is a park that is *almost* built. Nothing crashes — the map draws, the list
+fills, and some whole feature of the app is silently not there because the one file that
+feeds it was never written. Two of the three parks shipped with no height rules; a third had
+its campground dropped entirely by a tag rule; Fiesta Texas had no way in on the map at all
+until the checklist said so, which turned out to be a rule that had never heard of
+`barrier=toll_booth`.
+
+So the list lives in `scripts/lib/venue-checklist.mjs`, each item knowing whether it applies
+to this venue, whether it passed, and what to type if it did not. `npm run test:unit` holds
+the required half of it. Items that do not apply are never failures — a town centre has no
+ride heights and a campus has no campground.
 
 It reads the venue bundles back off disk, runs them through the same `applyOverrides` the
 build uses, refreshes the manifest and reports the tally per park. An override is applied

@@ -1072,6 +1072,19 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    same kind of thing — a spot somebody chose — in two different colours. */
 .carPin { animation: popIn var(--t2) var(--easeOut) both; }
 
+/* Hookups and pad details, as a checklist rather than a sentence. Wrapping
+   rather than scrolling: this is read against what the caravan needs, and a
+   requirement that scrolled off the right is a requirement nobody checked. */
+.campChips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  list-style: none; margin: 0 0 10px; padding: 0;
+}
+.campChips li {
+  font-size: 13px; font-weight: 500; letter-spacing: -.08px;
+  color: var(--label2); background: var(--fill3);
+  padding: 4px 10px; border-radius: var(--rCapsule);
+}
+
 /* A number you dial rather than read. Sized to the 44px thumb like everything
    else that is tappable, and coloured like the link it is. */
 .poiTel {
@@ -1435,21 +1448,68 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    badge below it moves down by sibling selector rather than by a class the
    page would have to remember to set. It floats over the map, so it is glass
    like the rest of the chrome up there. */
-.wxBanner {
+/* Step one: a chip the size of the buttons opposite it. Top left, because the
+   two round buttons already own the right and a third thing up there would
+   crowd the corner a thumb reaches for. It stays this size on a fine day, and
+   it is the only thing on this screen that answers "what is the weather doing"
+   without being opened. */
+.wxChip {
+  position: absolute; z-index: 40; top: calc(var(--top) + 10px); left: 12px;
+  pointer-events: auto; min-height: 44px; padding: 0 12px;
+  display: flex; align-items: center; gap: 7px;
+  background: var(--glassTint); border: none; border-radius: var(--rCapsule);
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  color: var(--label2);
+  animation: riseIn var(--t3) var(--easeOut) both;
+  transition: transform var(--t1) var(--easeOut), color var(--t1) var(--easeOut),
+              background var(--t1) var(--easeOut);
+}
+.wxChip:active { transform: scale(.94); background: var(--glassTintDeep); }
+.wxChip.on { background: var(--glassTintDeep); }
+/* Colour is the second channel, after the glyph. Clear stays in ordinary label
+   ink rather than going green: nothing is wrong, and a green badge on a sunny
+   day is a notification about the absence of news. */
+.wxChip.warn { color: var(--orange); }
+.wxChip.bad { color: var(--red); }
+.wxTemp {
+  font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+  font-variant-numeric: tabular-nums; color: var(--label);
+}
+.wxTemp em { font-style: normal; margin-left: 1px; }
+/* Something a person actually saw, as opposed to a forecast — worth escaping
+   the chip for. */
+.wxDot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--red);
+  box-shadow: 0 0 0 2px var(--glassTintDeep);
+}
+
+/* Step two: the card it opens into, where the banner used to live. */
+.wxCard {
   position: absolute; z-index: 39; left: 10px; right: 10px; top: calc(var(--top) + 58px);
-  display: flex; flex-direction: column; gap: 3px; text-align: left;
-  padding: 10px 14px; border-radius: var(--r4); border: none;
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 8px 10px 14px; border-radius: var(--r4); border: none;
   background: var(--glassTintDeep);
   -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
   box-shadow: var(--lensEdge), var(--lensDrop);
   animation: riseIn var(--t2) var(--easeOut) both;
 }
-.wxBanner b { font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
-.wxBanner.bad b { color: var(--red); }
+.wxCardMain {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px;
+  text-align: left; background: none; border: none; padding: 0; color: inherit;
+}
+.wxCardMain:active { opacity: .6; }
+.wxClose {
+  flex: none; width: 34px; height: 34px; margin: -4px -2px 0 0;
+  display: grid; place-items: center;
+  background: none; border: none; color: var(--label3);
+}
+.wxCard b { font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
+.wxCard.bad b { color: var(--red); }
 /* Caution, not accent — so it takes the warning colour rather than following
    --beacon onto the tint. */
-.wxBanner.warn b { color: var(--orange); }
-.wxBanner.ok b { color: var(--green); }
+.wxCard.warn b { color: var(--orange); }
+.wxCard.ok b { color: var(--label); }
 .wxMain { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .wxCounts {
   font-size: 13px; letter-spacing: -.08px; text-transform: none; color: var(--label2);
@@ -1459,7 +1519,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 p.wxWhy { margin: 0 0 8px; }
 p.wxWhy.bad { color: color-mix(in srgb, var(--red) 78%, var(--label)); }
 p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
-.wxBanner + .filterBadge { top: calc(var(--top) + 128px); }
+/* The height badge shares this corner. It steps below whichever of the two is
+   there — under the chip normally, under the open card when it is open. */
+.wxChip ~ .filterBadge { top: calc(var(--top) + 66px); }
+.wxCard ~ .filterBadge { top: calc(var(--top) + 128px); }
 
 /* A forecast is a guess and is drawn as one — outlined, not filled, so a row
    never reads with the same weight as something a person actually saw. */

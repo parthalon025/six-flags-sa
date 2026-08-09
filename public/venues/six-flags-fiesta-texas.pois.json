@@ -329,6 +329,13 @@
     }
   },
   {
+    "n": "Entrance",
+    "lat": 29.604356,
+    "lng": -98.608722,
+    "c": "gate",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Fat Burger - Fiesta Bay Boardwalk",
     "lat": 29.595826,
     "lng": -98.607644,
@@ -571,6 +578,7 @@
     "lat": 29.603099,
     "lng": -98.603309,
     "c": "food",
+    "tel": "+1 210-600-4460",
     "a": "Six Flags Fiesta Texas"
   },
   {
@@ -688,6 +696,13 @@
   },
   {
     "n": "Parking",
+    "lat": 29.607774,
+    "lng": -98.607896,
+    "c": "parking",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Parking",
     "lat": 29.600973,
     "lng": -98.604817,
     "c": "parking",
@@ -697,6 +712,41 @@
     "n": "Parking",
     "lat": 29.605832,
     "lng": -98.614615,
+    "c": "parking",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Parking",
+    "lat": 29.592812,
+    "lng": -98.609656,
+    "c": "parking",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Parking",
+    "lat": 29.592274,
+    "lng": -98.608429,
+    "c": "parking",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Parking",
+    "lat": 29.597455,
+    "lng": -98.617809,
+    "c": "parking",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Parking",
+    "lat": 29.597649,
+    "lng": -98.617245,
+    "c": "parking",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Parking",
+    "lat": 29.596914,
+    "lng": -98.617819,
     "c": "parking",
     "a": "Six Flags Fiesta Texas"
   },
@@ -781,6 +831,7 @@
     "lat": 29.605994,
     "lng": -98.60375,
     "c": "food",
+    "tel": "+1 210-435-9411",
     "a": "Six Flags Fiesta Texas"
   },
   {
@@ -1112,6 +1163,7 @@
     "lat": 29.60359,
     "lng": -98.603485,
     "c": "food",
+    "tel": "+1-210-694-1322",
     "a": "Six Flags Fiesta Texas"
   },
   {
@@ -1119,6 +1171,7 @@
     "lat": 29.603493,
     "lng": -98.60346,
     "c": "shop",
+    "tel": "+1-210-595-6245",
     "a": "Six Flags Fiesta Texas"
   },
   {
@@ -1146,6 +1199,7 @@
     "lat": 29.60339,
     "lng": -98.603429,
     "c": "shop",
+    "tel": "+1-210-690-9100",
     "a": "Six Flags Fiesta Texas"
   },
   {

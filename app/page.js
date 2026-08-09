@@ -1550,8 +1550,13 @@ export default function Page() {
         </button>
       </header>
 
+      {/* In the top corner with the rest of the map's chrome, because that is
+          where a phone map puts the thing you glance at rather than open. It
+          is a chip until it has something to say, and its own card when it
+          does — see components/WeatherBanner.jsx. */}
       <WeatherBanner
         weather={weatherFeed.weather}
+        observed={weatherFeed.observed}
         summary={liveSummary}
         at={weatherFeed.at}
         stale={weatherFeed.stale}

@@ -149,6 +149,61 @@ const GLYPHS = {
       <circle cx="12" cy="13.2" r="3.4" fill="var(--bg2, #fff)" />
     </>
   ),
+  /* Weather, at the size a 44px button gives them: one silhouette each, no
+     detail that dies below 20px. The sun already exists above — it doubles as
+     the daylight-map toggle, which is the same idea said twice and fine. */
+  'cloud.fill': (
+    <path
+      d="M7.4 19.6a5.2 5.2 0 0 1-.5-10.4 6.4 6.4 0 0 1 12.2 1.5 4.5 4.5 0 0 1-1 8.9Z"
+      fill="currentColor"
+    />
+  ),
+  'cloud.rain.fill': (
+    <>
+      <path
+        d="M7.4 15.6a5.2 5.2 0 0 1-.5-10.4 6.4 6.4 0 0 1 12.2 1.5 4.5 4.5 0 0 1-1 8.9Z"
+        fill="currentColor"
+      />
+      <path
+        d="M8.4 18.2 7.2 21.4M12.4 18.2 11.2 21.4M16.4 18.2 15.2 21.4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </>
+  ),
+  'bolt.fill': <path d="M13.6 1.8 5.2 13.4h5l-2.4 8.8 8.8-12.2h-5.2l2.2-8.2Z" fill="currentColor" />,
+  wind: (
+    <path
+      d="M2.6 8.4h11.2a3 3 0 1 0-3-3M2.6 13h15a3 3 0 1 1-3 3M2.6 17.6h7.6a2.6 2.6 0 1 1-2.6 2.6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  ),
+  'thermometer.high': (
+    <>
+      <path
+        d="M12 2.6a2.6 2.6 0 0 1 2.6 2.6v8.1a4.6 4.6 0 1 1-5.2 0V5.2A2.6 2.6 0 0 1 12 2.6Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <circle cx="12" cy="17.4" r="2.4" fill="currentColor" />
+      <path d="M12 8.4v6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+    </>
+  ),
+  snowflake: (
+    <path
+      d="M12 2v20M3.4 7l17.2 10M20.6 7 3.4 17M12 6.2 9.4 3.8M12 6.2l2.6-2.4M12 17.8l-2.6 2.4M12 17.8l2.6 2.4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.9"
+      strokeLinecap="round"
+    />
+  ),
   'car.fill': (
     <path
       d="M5.4 11.4 6.9 6.6A2.6 2.6 0 0 1 9.4 4.8h5.2a2.6 2.6 0 0 1 2.5 1.8l1.5 4.8a2.6 2.6 0 0 1 1.8 2.5v3.4a1.3 1.3 0 0 1-1.3 1.3h-1a1.3 1.3 0 0 1-1.3-1.3v-.9H7.2v.9a1.3 1.3 0 0 1-1.3 1.3h-1a1.3 1.3 0 0 1-1.3-1.3v-3.4a2.6 2.6 0 0 1 1.8-2.5ZM7.6 11h8.8l-1-3.2a.9.9 0 0 0-.8-.6H9.4a.9.9 0 0 0-.8.6ZM6.6 13.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4ZM17.4 13.2a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z"

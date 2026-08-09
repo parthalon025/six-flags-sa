@@ -6,7 +6,8 @@ import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { statusFor } from '@/lib/rideStatus';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import { eligibility, heightLabel } from '@/lib/park';
-import { usePois } from '@/lib/venue/useVenue';
+import { usePois, useVenue } from '@/lib/venue/useVenue';
+import { campChips, campDetails, campSearchText } from '@/lib/camping';
 import { categoriesFor, matchedByName, matchesQuery } from '@/lib/search';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
 
@@ -51,6 +52,9 @@ export default function PlaceList({
 }) {
   const palette = paletteFor(theme);
   const POIS = usePois();
+  // The venue, for the half of a campsite's details that belong to the whole
+  // campground rather than to one pitch.
+  const { venue } = useVenue();
   const [onlyRunning, setOnlyRunning] = useState(false);
 
   // One verdict per place, computed once. `now` is a prop rather than a call so
@@ -72,11 +76,24 @@ export default function PlaceList({
   /** Which categories this venue has any of, for the chip row. */
   const present = useMemo(() => new Set(POIS.map((p) => p.c)), [POIS]);
 
+  /* What a campsite offers, as words a query can hit. Every pitch is called
+     "Site 247", so without this "50 amp" and "full hookup" — the two things
+     somebody towing actually searches for — match nothing anywhere. */
+  const campFacets = useMemo(() => {
+    const out = new Map();
+    POIS.forEach((p) => {
+      if (p.c !== 'campsite') return;
+      const text = campSearchText(campDetails(p, venue));
+      if (text) out.set(p.id, text);
+    });
+    return out;
+  }, [POIS, venue]);
+
   const list = useMemo(() => {
     const q = (query || '').trim().toLowerCase();
     let out = POIS.filter((p) => {
       if (filter !== 'all' && p.c !== filter) return false;
-      if (!matchesQuery(p, q, queryCats)) return false;
+      if (!matchesQuery(p, q, queryCats, campFacets)) return false;
       if (onlyRideable && height != null && (p.c === 'coaster' || p.c === 'ride')) {
         const v = eligibility(p, height, withAdult);
         if (v === 'no' || v === 'toobig') return false;
@@ -109,7 +126,7 @@ export default function PlaceList({
        that removes fewer places than the cap hides then looks like it did
        nothing at all. */
     return out.slice(0, 400);
-  }, [POIS, query, queryCats, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
+  }, [POIS, query, queryCats, campFacets, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
 
   return (
     <div>
@@ -196,6 +213,7 @@ export default function PlaceList({
           const open = selected && selected.n === p.n;
           const st = statuses.get(p.id) || null;
           const showStatus = Boolean(st && st.label);
+          const camp = open ? campChips(campDetails(p, venue)) : [];
           return (
             <div key={p.id} className={`poiRow ${open ? 'open' : ''} ${v.cls}`}>
               <button
@@ -251,6 +269,16 @@ export default function PlaceList({
                     </p>
                   )}
                   {p.note && <p className="poiNote">{p.note}</p>}
+                  {/* What is on the pitch. Chips rather than a sentence: this
+                      is a checklist somebody reads against what their caravan
+                      needs, not prose. */}
+                  {camp.length > 0 && (
+                    <ul className="campChips">
+                      {camp.map((chip) => (
+                        <li key={chip}>{chip}</li>
+                      ))}
+                    </ul>
+                  )}
                   {p.approx && (
                     <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
                   )}

@@ -23,6 +23,7 @@ import {
   textWidth,
 } from '@/lib/mapLabels';
 import { Glyph, PoiMarker } from './MapSymbols';
+import { useVenue } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
@@ -134,6 +135,8 @@ export default function ParkMap({
   fitKey = null,
 }) {
   const palette = paletteFor(theme);
+  // The venue's own district tints, where it has hand-picked any.
+  const { venue } = useVenue();
   // What this venue has any of at all, so the key can offer switches for those
   // and only those. Cheap: it is one pass over a list of a few hundred.
   const presentCategories = useMemo(() => new Set((pois || []).map((p) => p.c)), [pois]);
@@ -894,7 +897,7 @@ export default function ParkMap({
         {/* themed lands */}
         <g className="lyr-land">
           {(data.lands || []).map((land, i) => {
-            const tint = landTint(land.n, theme);
+            const tint = landTint(land.n, theme, venue);
             return (
               <path
                 key={`ld${i}`}
@@ -962,7 +965,7 @@ export default function ParkMap({
         {plan.lands.map((l) => {
           const id = `landline-${l.name.replace(/\W+/g, '-')}`;
           return (
-            <text key={`lt${l.name}`} className="landLabel" fill={landTint(l.name, theme).label}>
+            <text key={`lt${l.name}`} className="landLabel" fill={landTint(l.name, theme, venue).label}>
               <textPath href={`#${id}`} xlinkHref={`#${id}`} startOffset="50%">
                 {l.name.toUpperCase()}
               </textPath>

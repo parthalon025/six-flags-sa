@@ -25,7 +25,7 @@
 
 import process from 'node:process';
 import { readFile, writeFile } from 'node:fs/promises';
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import {
   areaOf,
@@ -38,7 +38,7 @@ import {
 } from './lib/geometry.mjs';
 import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
-  classify, isCampground, isCampPitch, isLand, isVenueOutline,
+  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline,
 } from './lib/osm-tags.mjs';
 import {
   OVERRIDE_DIR, readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue,
@@ -67,11 +67,17 @@ function parseArgs(argv) {
     const key = eq === -1 ? a.slice(2) : a.slice(2, eq);
     const inline = eq === -1 ? null : a.slice(eq + 1);
     const next = argv[i + 1];
-    if (inline != null) out[key] = inline;
+    let value;
+    if (inline != null) value = inline;
     else if (next && !next.startsWith('--')) {
-      out[key] = next;
+      value = next;
       i += 1;
-    } else out[key] = true;
+    } else value = true;
+    /* A flag given twice collects rather than overwrites, so `--merge a
+       --merge b` folds in both datasets instead of quietly using the last one.
+       Only on repeat: a flag given once stays the scalar every reader expects. */
+    if (key in out) out[key] = [].concat(out[key], value);
+    else out[key] = value;
   }
   return out;
 }
@@ -100,6 +106,9 @@ Build a venue bundle from OpenStreetMap.
   --reapply [<id>]          re-apply the overrides file to venues already on disk,
                             without going near the network. No id: every venue.
   --allow-no-heights        build a rides venue that publishes no height rules
+  --merge <file>            fold a GeoJSON or CSV dataset onto the places, matched
+                            by name and then by position. Repeatable.
+  --merge-metres <n>        how near a merge point has to land (default: 25)
 `;
 
 /* ------------------------------------------------------------- resolving - */
@@ -458,6 +467,10 @@ function buildPois(elements, areaCandidates, opts) {
        worth nothing at all to somebody standing in a park with one bar. */
     const tel = tags.phone || tags['contact:phone'];
     if (tel) poi.tel = String(tel).split(';')[0].trim();
+    // Hookups, pad surface, pull-through. Only where the tags say so; a venue
+    // whose mapper recorded none gets them from the overrides file instead.
+    const camp = c === 'campsite' ? campDetailsFromTags(tags) : null;
+    if (camp) poi.camp = camp;
     out.push(poi);
   };
 
@@ -528,7 +541,10 @@ function campPitches(elements, campRings, known) {
     const key = tags.name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ n: tags.name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'campsite' });
+    const pitch = { n: tags.name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'campsite' };
+    const camp = campDetailsFromTags(tags);
+    if (camp) pitch.camp = camp;
+    out.push(pitch);
   }
   return out;
 }
@@ -687,16 +703,24 @@ function reapply(only, { strict = true } = {}) {
 
     const merged = applyOverrides(readJson(poisFile, []), overrides);
     const pois = merged.pois.sort((a, b) => a.n.localeCompare(b.n));
+    const narrowed = applyCamping(pois, overrides.camping);
     const { meta, ...map } = built || {};
     // The credit line belongs with the data it credits, so the overrides file
     // is allowed to carry it rather than it living only in a build flag
     // somebody typed once.
-    const next = overrides.credits ? { ...meta, credits: overrides.credits } : meta;
+    let next = overrides.credits ? { ...meta, credits: overrides.credits } : meta;
+    // The camping block is data about the venue, so re-applying the overrides
+    // has to move it too — otherwise correcting a hookup would need a full
+    // rebuild, which is the thing this mode exists to avoid.
+    if (overrides.camping?.defaults) next = { ...next, camping: overrides.camping.defaults };
+    const tints = landTints(overrides);
+    if (tints) next = { ...next, lands: tints };
     writeVenue({ meta: next, map, pois });
 
     const audit = heightAudit(pois);
     console.error(
       `· ${id}: ${merged.applied} override(s) applied, ${audit.heights} of ${audit.rides} rides carry a height rule` +
+        (narrowed ? `, ${narrowed} pitch(es) narrowed` : '') +
         (merged.unmatched.length ? `, ${merged.unmatched.length} unmatched` : ''),
     );
     for (const miss of merged.unmatched) console.error(`    ? no POI named "${miss}"`);
@@ -711,6 +735,187 @@ function reapply(only, { strict = true } = {}) {
         'or pass --allow-no-heights if the venue genuinely has none.',
     );
   }
+}
+
+/**
+ * Facts that are true of a whole campground, and rules that narrow them.
+ *
+ * A campground publishes "every site is full hookup, 30/50 amp, concrete pad".
+ * That is one fact about the place, not a hundred and forty-five facts about
+ * pitches, and writing it out per pitch would be both a lie about where it came
+ * from and forty kilobytes. So it lives on the venue — `meta.camping` — and the
+ * app reads a pitch's own details *over* it. A pitch that OpenStreetMap has
+ * tagged, or that an imported dataset knows something specific about, overrules
+ * the venue for exactly the fields it knows and inherits the rest.
+ *
+ * `rules` narrows by name, for the case a campground does publish per-row
+ * detail: `{ "match": "^Site 5", "set": { "drive": "pull-through" } }`.
+ * Nothing venue-specific here — this reads whatever the overrides file says.
+ */
+export function applyCamping(pois, camping) {
+  if (!camping) return 0;
+  const rules = (camping.rules || [])
+    .map((r) => {
+      try {
+        return { re: new RegExp(r.match, 'i'), set: r.set || {} };
+      } catch {
+        console.error(`    ? "${r.match}" is not a pattern — rule skipped`);
+        return null;
+      }
+    })
+    .filter(Boolean);
+  if (!rules.length) return 0;
+  let touched = 0;
+  for (const p of pois) {
+    if (p.c !== 'campsite') continue;
+    for (const rule of rules) {
+      if (!rule.re.test(p.n)) continue;
+      p.camp = { ...(p.camp || {}), ...rule.set };
+      touched += 1;
+    }
+  }
+  return touched;
+}
+
+/**
+ * Merge an outside dataset onto the places, by position.
+ *
+ * The reusable answer to "OpenStreetMap does not know this and the park does".
+ * Hand it a GeoJSON FeatureCollection or a CSV with lat/lng columns and every
+ * feature is matched to the nearest existing place within `--merge-metres`,
+ * then has its properties folded in. Nothing about it is campground-specific:
+ * it is how any surveyed layer — pitch hookups, locker banks, a fresh set of
+ * height signs — reaches a venue that was built from OSM alone.
+ *
+ * Matching is by name first and position second, because a name is exact and a
+ * centroid is not: a feature carrying `name` or `ref` that matches a place is
+ * merged onto it wherever it sits, and everything else falls back to the
+ * nearest place inside the radius. Anything that matches nothing is reported
+ * rather than added, because a point that landed nowhere near a place is far
+ * more likely to be the wrong projection than a new place.
+ */
+export function mergeDataset(pois, features, { metres = 25 } = {}) {
+  const byName = new Map();
+  for (const p of pois) {
+    for (const key of [p.n, p.ref].filter(Boolean)) {
+      const k = String(key).toLowerCase();
+      if (!byName.has(k)) byName.set(k, []);
+      byName.get(k).push(p);
+    }
+  }
+  let merged = 0;
+  const unmatched = [];
+  for (const f of features) {
+    const props = { ...(f.properties || {}) };
+    const name = props.name ?? props.ref ?? props.site ?? null;
+    let targets = name ? byName.get(String(name).toLowerCase()) : null;
+    if (!targets && Number.isFinite(f.lat) && Number.isFinite(f.lng)) {
+      let best = null;
+      for (const p of pois) {
+        const d = distanceMetres(f.lat, f.lng, p.lat, p.lng);
+        if (!best || d < best.d) best = { p, d };
+      }
+      if (best && best.d <= metres) targets = [best.p];
+    }
+    if (!targets?.length) {
+      unmatched.push(name || `${f.lat},${f.lng}`);
+      continue;
+    }
+    // `name` is the key, not payload — merging it back would rename a place to
+    // the string it was found by, which is at best a no-op and at worst a typo.
+    delete props.name;
+    delete props.site;
+    for (const t of targets) {
+      const { camp, ...rest } = props;
+      Object.assign(t, rest);
+      if (camp && typeof camp === 'object') t.camp = { ...(t.camp || {}), ...camp };
+    }
+    merged += 1;
+  }
+  return { merged, unmatched };
+}
+
+/**
+ * Read a merge file. GeoJSON or CSV, because those are the two things a park's
+ * own data actually turns up as.
+ *
+ * CSV wants a header row and a pair of coordinate columns under any of the
+ * usual names; every other column becomes a property, and a `camp.` prefix
+ * nests one — `camp.hookup` sets `camp: { hookup }`, which is what makes a
+ * spreadsheet of pitch hookups a one-line import.
+ */
+export function readDataset(file) {
+  const raw = readFileSync(file, 'utf8');
+  if (raw.trim().startsWith('{')) {
+    const gj = JSON.parse(raw);
+    const feats = gj.type === 'FeatureCollection' ? gj.features || [] : [gj];
+    return feats.map((f) => {
+      const g = f.geometry || {};
+      const c = g.type === 'Point' ? g.coordinates : null;
+      return { lat: c ? Number(c[1]) : NaN, lng: c ? Number(c[0]) : NaN, properties: f.properties || {} };
+    });
+  }
+  const lines = raw.split(/\r?\n/).filter((l) => l.trim());
+  if (!lines.length) return [];
+  const head = splitCsv(lines[0]).map((h) => h.trim());
+  const latAt = head.findIndex((h) => /^(lat|latitude|y)$/i.test(h));
+  const lngAt = head.findIndex((h) => /^(lng|lon|long|longitude|x)$/i.test(h));
+  return lines.slice(1).map((line) => {
+    const cells = splitCsv(line);
+    const properties = {};
+    head.forEach((key, i) => {
+      if (i === latAt || i === lngAt) return;
+      const value = (cells[i] ?? '').trim();
+      if (value === '') return;
+      const typed = value === 'true' ? true : value === 'false' ? false
+        : /^-?\d+(\.\d+)?$/.test(value) ? Number(value) : value;
+      if (key.includes('.')) {
+        const [outer, inner] = key.split('.');
+        properties[outer] = { ...(properties[outer] || {}), [inner]: typed };
+      } else {
+        properties[key] = typed;
+      }
+    });
+    return {
+      lat: latAt === -1 ? NaN : Number(cells[latAt]),
+      lng: lngAt === -1 ? NaN : Number(cells[lngAt]),
+      properties,
+    };
+  });
+}
+
+/** Enough CSV to read a file somebody exported from a spreadsheet. */
+function splitCsv(line) {
+  const out = [];
+  let cur = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"' && line[i + 1] === '"') {
+        cur += '"';
+        i += 1;
+      } else if (ch === '"') quoted = false;
+      else cur += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') {
+      out.push(cur);
+      cur = '';
+    } else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+/** The hand-picked district tints out of an overrides file, minus its notes. */
+function landTints(overrides) {
+  const lands = overrides?.lands;
+  if (!lands) return null;
+  const out = {};
+  for (const theme of ['night', 'day']) {
+    if (lands[theme] && Object.keys(lands[theme]).length) out[theme] = lands[theme];
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 /* ------------------------------------------------------------------ main - */
@@ -835,6 +1040,36 @@ async function main() {
     if (merged.unmatched.length > 8) console.error(`    … and ${merged.unmatched.length - 8} more`);
   }
 
+  /* The venue's own camping facts, and the rules that narrow them. Read from
+     the overrides file so nothing about any one campground is in this script. */
+  const camping = overrides?.camping || null;
+  const narrowed = applyCamping(pois, camping);
+  if (camping) {
+    const fields = Object.keys(camping.defaults || {}).length;
+    console.error(
+      `  · camping: ${fields} venue-wide field(s)` +
+        (narrowed ? `, ${narrowed} pitch(es) narrowed by rule` : ''),
+    );
+  }
+
+  /* An outside dataset, georeferenced onto what is already here. This is the
+     door for anything OpenStreetMap does not know and a park does. */
+  if (args.merge) {
+    const files = Array.isArray(args.merge) ? args.merge : [String(args.merge)];
+    for (const file of files) {
+      const feats = readDataset(file);
+      const { merged, unmatched } = mergeDataset(pois, feats, {
+        metres: Number(args['merge-metres'] ?? 25),
+      });
+      console.error(
+        `  · merged ${merged} of ${feats.length} from ${file.replace(process.cwd() + '/', '')}` +
+          (unmatched.length ? `, ${unmatched.length} matched nothing` : ''),
+      );
+      for (const miss of unmatched.slice(0, 8)) console.error(`    ? nothing near "${miss}"`);
+      if (unmatched.length > 8) console.error(`    … and ${unmatched.length - 8} more`);
+    }
+  }
+
   pois.sort((a, b) => a.n.localeCompare(b.n));
 
   // A rebuild must not silently drop the hand-written parts of the last one.
@@ -878,6 +1113,15 @@ async function main() {
     // Anything the venue's data owes to a source that is not OSM — height
     // requirements, most often — is credited in the app from here.
     credits: args.credits ? String(args.credits) : existingMeta?.credits || null,
+    /* What is true of this venue's campground as a whole. On the venue rather
+       than repeated onto every pitch, because that is where the fact lives: a
+       campground is full hookup, a pitch is not individually full hookup. The
+       app reads a pitch's own details over this. */
+    ...(camping?.defaults ? { camping: camping.defaults } : existingMeta?.camping ? { camping: existingMeta.camping } : {}),
+    /* This venue's own district tints, where somebody has hand-picked any. The
+       renderer generates a colour for every district that is not named here, so
+       a venue built from OpenStreetMap alone needs none of it. */
+    ...(landTints(overrides) ? { lands: landTints(overrides) } : existingMeta?.lands ? { lands: existingMeta.lands } : {}),
     generated: new Date().toISOString().slice(0, 10),
   };
 

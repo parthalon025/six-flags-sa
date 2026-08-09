@@ -19,6 +19,21 @@
       },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from published 2026 Cedar Point height charts.",
+      "camping": {
+        "hookup": "full",
+        "power": true,
+        "amps": [
+          30,
+          50
+        ],
+        "water": true,
+        "sewer": true,
+        "cable": true,
+        "wifi": true,
+        "surface": "concrete",
+        "caravans": true,
+        "tents": false
+      },
       "generated": "2026-08-09",
       "map": "/venues/cedar-point.map.json",
       "pois": "/venues/cedar-point.pois.json",
@@ -46,6 +61,102 @@
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from Kings Island Central and Theme Park Insider for the 2026 season.",
       "generated": "2026-08-08",
+      "lands": {
+        "night": {
+          "International Street": {
+            "fill": "#2A271D",
+            "stroke": "#3C382A",
+            "label": "#BBAD81"
+          },
+          "Coney Mall": {
+            "fill": "#2A231D",
+            "stroke": "#3C312A",
+            "label": "#BB9981"
+          },
+          "Rivertown": {
+            "fill": "#1D2A1D",
+            "stroke": "#2A3C2A",
+            "label": "#81BB81"
+          },
+          "Action Zone": {
+            "fill": "#1D252A",
+            "stroke": "#2A353C",
+            "label": "#81A3BB"
+          },
+          "Area 72": {
+            "fill": "#231D2A",
+            "stroke": "#312A3C",
+            "label": "#9981BB"
+          },
+          "Planet Snoopy": {
+            "fill": "#2A281D",
+            "stroke": "#3C3A2A",
+            "label": "#BBB381"
+          },
+          "Camp Snoopy": {
+            "fill": "#252A1D",
+            "stroke": "#353C2A",
+            "label": "#A3BB81"
+          },
+          "Adventure Port": {
+            "fill": "#1D2A28",
+            "stroke": "#2A3C3A",
+            "label": "#81BBB3"
+          },
+          "Soak City": {
+            "fill": "#1D272A",
+            "stroke": "#2A383C",
+            "label": "#81ADBB"
+          }
+        },
+        "day": {
+          "International Street": {
+            "fill": "#F1EEE4",
+            "stroke": "#E0DBCC",
+            "label": "#7E6F44"
+          },
+          "Coney Mall": {
+            "fill": "#F1EAE4",
+            "stroke": "#E0D5CC",
+            "label": "#7E5C44"
+          },
+          "Rivertown": {
+            "fill": "#E4F1E4",
+            "stroke": "#CCE0CC",
+            "label": "#447E44"
+          },
+          "Action Zone": {
+            "fill": "#E4ECF1",
+            "stroke": "#CCD8E0",
+            "label": "#44667E"
+          },
+          "Area 72": {
+            "fill": "#EAE4F1",
+            "stroke": "#D5CCE0",
+            "label": "#5C447E"
+          },
+          "Planet Snoopy": {
+            "fill": "#F1EFE4",
+            "stroke": "#E0DECC",
+            "label": "#7E7644"
+          },
+          "Camp Snoopy": {
+            "fill": "#ECF1E4",
+            "stroke": "#D8E0CC",
+            "label": "#667E44"
+          },
+          "Adventure Port": {
+            "fill": "#E4F1EF",
+            "stroke": "#CCE0DE",
+            "label": "#447E76"
+          },
+          "Soak City": {
+            "fill": "#E4EEF1",
+            "stroke": "#CCDBE0",
+            "label": "#446F7E"
+          }
+        }
+      },
       "map": "/venues/kings-island.map.json",
       "pois": "/venues/kings-island.pois.json",
       "counts": {
@@ -64,18 +175,18 @@
         "lng": -98.608872
       },
       "bounds": {
-        "north": 29.60643,
-        "south": 29.59332,
-        "east": -98.60268,
-        "west": -98.61665
+        "north": 29.60751,
+        "south": 29.59224,
+        "east": -98.60144,
+        "west": -98.61789
       },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from the park's own Guest Safety and Accessibility Guide and from published 2026 height charts.",
-      "generated": "2026-08-08",
+      "generated": "2026-08-09",
       "map": "/venues/six-flags-fiesta-texas.map.json",
       "pois": "/venues/six-flags-fiesta-texas.pois.json",
       "counts": {
-        "pois": 136,
+        "pois": 143,
         "rides": 53,
         "heights": 47
       }

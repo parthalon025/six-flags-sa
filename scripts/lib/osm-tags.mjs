@@ -255,6 +255,11 @@ export const POI_RULES = [
     (t) =>
       has(t, 'entrance', ['main', 'primary']) ||
       has(t, 'amenity', ['ticket_booth']) ||
+      /* A toll booth is the way in for everybody who drove, and it is one of
+         the few unnamed barriers worth a pin: nobody puts five of them across a
+         service road by accident. Fiesta Texas is mapped with five and no named
+         entrance at all, so before this the park had no way in on the map. */
+      has(t, 'barrier', ['toll_booth']) ||
       // A named shuttle stop is a way in and out of the venue in the only sense
       // that matters to somebody standing at one: it is where you catch the
       // thing that takes you to the gate. Cedar Point's campground has two of
@@ -285,6 +290,7 @@ export const POI_RULES = [
  */
 export const UNNAMED_AREA_CATEGORIES = new Set(['restroom', 'parking']);
 
+
 /** What an unnamed POI of each category is called, when it is worth keeping anyway. */
 export const UNNAMED_LABELS = {
   restroom: 'Restrooms',
@@ -293,6 +299,74 @@ export const UNNAMED_LABELS = {
   service: 'Services',
   campsite: 'Campsite',
 };
+
+/**
+ * What a campground or a pitch offers, read off the tags that describe it.
+ *
+ * Generic on purpose: these are the documented OpenStreetMap keys for camp and
+ * caravan sites, so any venue anywhere that has been mapped properly answers
+ * this without a line of venue-specific code. Cedar Point's pitches carry none
+ * of them — the mapper drew 145 driveways and named them, which is already more
+ * than most places have — so at that park the same fields arrive from the
+ * overrides file instead. Both paths end at the same shape, which is the point:
+ * the app never learns where a hookup fact came from.
+ *
+ * `null` when the tags say nothing, so a caller can tell "no electricity here"
+ * from "nobody has recorded whether there is electricity here".
+ */
+export function campDetailsFromTags(tags) {
+  const yes = (v) => v === 'yes' || v === 'true' || v === '1';
+  const no = (v) => v === 'no' || v === 'false' || v === '0';
+  const bool = (...keys) => {
+    for (const k of keys) {
+      const v = tags[k];
+      if (v == null) continue;
+      if (yes(v)) return true;
+      if (no(v)) return false;
+    }
+    return null;
+  };
+  const out = {};
+  const set = (k, v) => {
+    if (v != null && v !== '') out[k] = v;
+  };
+
+  set('power', bool('power_supply', 'electricity'));
+  /* Amperage is written every way a person might write it: "30", "30;50",
+     "30 A", "50amp". Everything that is a plausible North American RV service
+     and nothing else. */
+  const amps = String(tags['power_supply:amperage'] || tags.amperage || '')
+    .split(/[;,/]/)
+    .map((x) => Number(String(x).replace(/[^0-9]/g, '')))
+    .filter((n) => [15, 20, 30, 50].includes(n));
+  if (amps.length) set('amps', [...new Set(amps)].sort((a, b) => a - b));
+
+  set('water', bool('water_point', 'drinking_water', 'water_supply'));
+  set('sewer', bool('sanitary_dump_station', 'sewer', 'waste_disposal'));
+  set('wifi', bool('internet_access') ?? (tags.internet_access ? tags.internet_access !== 'no' : null));
+  set('cable', bool('television', 'cable_tv'));
+  set('firepit', bool('openfire', 'fireplace', 'firepit'));
+  set('picnic', bool('picnic_table'));
+
+  // What can stand on it. A pitch that takes a caravan and not a tent is a
+  // different answer to "can we stay here" than one that takes both.
+  set('caravans', bool('caravans', 'motorhome'));
+  set('tents', bool('tents', 'tent'));
+
+  // Back in or drive through — the question anybody towing asks first.
+  if (yes(tags.drive_through) || yes(tags.pull_through)) set('drive', 'pull-through');
+  else if (no(tags.drive_through) || yes(tags.backin)) set('drive', 'back-in');
+
+  const length = Number(String(tags.maxlength || tags['maxlength:caravan'] || tags.length || '').replace(/[^0-9.]/g, ''));
+  if (Number.isFinite(length) && length > 5 && length < 200) set('length', Math.round(length));
+  set('surface', tags.surface || null);
+  const capacity = Number(String(tags.capacity || '').replace(/[^0-9]/g, ''));
+  if (Number.isFinite(capacity) && capacity > 0) set('capacity', capacity);
+  // The number on the post, where it is not already the name.
+  set('ref', tags.ref || null);
+
+  return Object.keys(out).length ? out : null;
+}
 
 export function classify(rules, tags) {
   for (const [key, test] of rules) {
