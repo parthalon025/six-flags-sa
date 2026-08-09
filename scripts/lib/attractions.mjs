@@ -172,8 +172,10 @@ const samePlace = (a, b) => {
 
 /** A record for a ride that has none yet. */
 export function attractionFor(poi, venueId) {
+  const place = poi.i || `${venueId}-${String(poi.n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
   return {
-    id: `${venueId}-${String(poi.n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`,
+    id: place,
+    place,
     name: poi.n,
     venue: venueId,
     type: poi.c === 'coaster' ? 'roller_coaster' : 'attraction',

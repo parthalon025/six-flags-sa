@@ -5,7 +5,7 @@ import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { statusFor } from '@/lib/rideStatus';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { eligibility, heightLabel } from '@/lib/park';
+import { eligibility, heightLabel, isRideable } from '@/lib/park';
 import { usePois, useVenue } from '@/lib/venue/useVenue';
 import { campChips, campDetails, campSearchText } from '@/lib/camping';
 import { categoriesFor, matchedByName, matchesQuery } from '@/lib/search';
@@ -63,7 +63,7 @@ export default function PlaceList({
     const out = new Map();
     if (!weather && !rides) return out;
     POIS.forEach((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride' && p.c !== 'show') return;
+      if (!isRideable(p) && p.c !== 'show') return;
       out.set(p.id, statusFor(p, rides?.[p.id] ?? null, weather, now));
     });
     return out;
@@ -94,7 +94,7 @@ export default function PlaceList({
     let out = POIS.filter((p) => {
       if (filter !== 'all' && p.c !== filter) return false;
       if (!matchesQuery(p, q, queryCats, campFacets)) return false;
-      if (onlyRideable && height != null && (p.c === 'coaster' || p.c === 'ride')) {
+      if (onlyRideable && height != null && isRideable(p)) {
         const v = eligibility(p, height, withAdult);
         if (v === 'no' || v === 'toobig') return false;
       }
@@ -206,7 +206,7 @@ export default function PlaceList({
             </p>
           ))}
         {list.map((p) => {
-          const isRide = p.c === 'coaster' || p.c === 'ride';
+          const isRide = isRideable(p);
           const verdict = isRide ? eligibility(p, height, withAdult) : 'unknown';
           const v = VERDICT[verdict];
           const d = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;

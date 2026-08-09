@@ -24,5 +24,8 @@
       "rides": 73,
       "heights": 65
     }
+  },
+  "expect": {
+    "walkable_km_min": 95
   }
 }

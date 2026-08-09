@@ -29,43 +29,11 @@
     }
   },
   {
-    "i": "age-or-weight",
-    "n": "Age or Weight",
-    "lat": 39.344759,
-    "lng": -84.266532,
-    "c": "ride",
-    "a": "Action Zone"
-  },
-  {
-    "i": "age-or-weight-2",
-    "n": "Age or Weight",
-    "lat": 39.342417,
-    "lng": -84.264783,
-    "c": "ride",
-    "a": "Coney Mall"
-  },
-  {
     "i": "antique-photos",
     "n": "Antique Photos",
     "lat": 39.341072,
     "lng": -84.267249,
     "c": "shop",
-    "a": "Rivertown"
-  },
-  {
-    "i": "arcade",
-    "n": "Arcade",
-    "lat": 39.341998,
-    "lng": -84.264502,
-    "c": "ride",
-    "a": "Coney Mall"
-  },
-  {
-    "i": "arcade-2",
-    "n": "Arcade",
-    "lat": 39.340962,
-    "lng": -84.266469,
-    "c": "ride",
     "a": "Rivertown"
   },
   {

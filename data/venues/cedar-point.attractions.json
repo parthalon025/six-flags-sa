@@ -6,7 +6,7 @@
   "publish_at": "moderate",
   "attractions": [
     {
-      "id": "cedar-point-4x4-s",
+      "id": "4x4-s",
       "name": "4x4's",
       "venue": "cedar-point",
       "type": "attraction",
@@ -44,10 +44,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "4x4-s"
     },
     {
-      "id": "cedar-point-atomic-scrambler",
+      "id": "atomic-scrambler",
       "name": "Atomic Scrambler",
       "venue": "cedar-point",
       "type": "attraction",
@@ -85,10 +86,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "atomic-scrambler"
     },
     {
-      "id": "cedar-point-balloon-race",
+      "id": "balloon-race",
       "name": "Balloon Race",
       "venue": "cedar-point",
       "type": "attraction",
@@ -126,10 +128,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "balloon-race"
     },
     {
-      "id": "cedar-point-blue-streak",
+      "id": "blue-streak",
       "name": "Blue Streak",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -167,10 +170,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "blue-streak"
     },
     {
-      "id": "cedar-point-breakwater-bay",
+      "id": "breakwater-bay",
       "name": "Breakwater Bay",
       "venue": "cedar-point",
       "type": "attraction",
@@ -208,10 +212,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "breakwater-bay"
     },
     {
-      "id": "cedar-point-cadillac-cars",
+      "id": "cadillac-cars",
       "name": "Cadillac Cars",
       "venue": "cedar-point",
       "type": "attraction",
@@ -249,10 +254,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "cadillac-cars"
     },
     {
-      "id": "cedar-point-cedar-creek-mine-ride",
+      "id": "cedar-creek-mine-ride",
       "name": "Cedar Creek Mine Ride",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -290,10 +296,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "cedar-creek-mine-ride"
     },
     {
-      "id": "cedar-point-cedar-downs-racing-derby",
+      "id": "cedar-downs-racing-derby",
       "name": "Cedar Downs Racing Derby",
       "venue": "cedar-point",
       "type": "attraction",
@@ -331,10 +338,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "cedar-downs-racing-derby"
     },
     {
-      "id": "cedar-point-cedar-point-marina-pool",
+      "id": "cedar-point-marina-pool",
       "name": "Cedar Point Marina Pool",
       "venue": "cedar-point",
       "type": "attraction",
@@ -372,10 +380,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "cedar-point-marina-pool"
     },
     {
-      "id": "cedar-point-charlie-brown-s-wind-up",
+      "id": "charlie-brown-s-wind-up",
       "name": "Charlie Brown's Wind Up",
       "venue": "cedar-point",
       "type": "attraction",
@@ -413,10 +422,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "charlie-brown-s-wind-up"
     },
     {
-      "id": "cedar-point-corkscrew",
+      "id": "corkscrew",
       "name": "Corkscrew",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -454,10 +464,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "corkscrew"
     },
     {
-      "id": "cedar-point-dodgem",
+      "id": "dodgem",
       "name": "Dodgem",
       "venue": "cedar-point",
       "type": "attraction",
@@ -495,10 +506,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "dodgem"
     },
     {
-      "id": "cedar-point-dune-buggies",
+      "id": "dune-buggies",
       "name": "Dune Buggies",
       "venue": "cedar-point",
       "type": "attraction",
@@ -536,10 +548,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "dune-buggies"
     },
     {
-      "id": "cedar-point-gatekeeper",
+      "id": "gatekeeper",
       "name": "Gatekeeper",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -577,10 +590,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "gatekeeper"
     },
     {
-      "id": "cedar-point-gemini",
+      "id": "gemini",
       "name": "Gemini",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -591,14 +605,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.486212,
-            "lng": -82.689509
+            "lat": 41.48621,
+            "lng": -82.68951
           },
-          "confidence": "low",
-          "score": 5,
+          "confidence": "unknown",
+          "score": 3,
           "sources": [
             "geometry",
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
@@ -611,16 +625,16 @@
               "note": "the walkable network at its closest, 8 m from the ride"
             },
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
-                "lat": 41.486212,
-                "lng": -82.689509
+                "lat": 41.48621,
+                "lng": -82.68951
               },
               "date": "2026-08-09",
-              "note": "where \"Gemini Standby Queue\" begins — a named queue tagged one-way towards the ride"
+              "note": "the park end of \"Gemini Standby Queue\", named for this ride but with no one-way to say which end you join, the outermost of 3 lanes mapped for this ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -632,14 +646,14 @@
             "lat": 41.48643,
             "lng": -82.68944
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
                 "lat": 41.48643,
                 "lng": -82.68944
@@ -648,7 +662,7 @@
               "note": "the far end of \"Gemini Standby Queue\", where the queue reaches the ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -656,10 +670,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "gemini"
     },
     {
-      "id": "cedar-point-giant-wheel",
+      "id": "giant-wheel",
       "name": "Giant Wheel",
       "venue": "cedar-point",
       "type": "attraction",
@@ -697,10 +712,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "giant-wheel"
     },
     {
-      "id": "cedar-point-great-lakes-cove",
+      "id": "great-lakes-cove",
       "name": "Great Lakes Cove",
       "venue": "cedar-point",
       "type": "attraction",
@@ -738,10 +754,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "great-lakes-cove"
     },
     {
-      "id": "cedar-point-helicopters",
+      "id": "helicopters",
       "name": "Helicopters",
       "venue": "cedar-point",
       "type": "attraction",
@@ -779,10 +796,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "helicopters"
     },
     {
-      "id": "cedar-point-iron-dragon",
+      "id": "iron-dragon",
       "name": "Iron Dragon",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -820,10 +838,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "iron-dragon"
     },
     {
-      "id": "cedar-point-kiddy-kingdom-carrousel",
+      "id": "kiddy-kingdom-carrousel",
       "name": "Kiddy Kingdom Carrousel",
       "venue": "cedar-point",
       "type": "attraction",
@@ -861,10 +880,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "kiddy-kingdom-carrousel"
     },
     {
-      "id": "cedar-point-kite-eating-tree",
+      "id": "kite-eating-tree",
       "name": "Kite Eating Tree",
       "venue": "cedar-point",
       "type": "attraction",
@@ -902,10 +922,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "kite-eating-tree"
     },
     {
-      "id": "cedar-point-lake-erie-eagles",
+      "id": "lake-erie-eagles",
       "name": "Lake Erie Eagles",
       "venue": "cedar-point",
       "type": "attraction",
@@ -943,10 +964,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "lake-erie-eagles"
     },
     {
-      "id": "cedar-point-lake-erie-nor-easter",
+      "id": "lake-erie-nor-easter",
       "name": "Lake Erie Nor'easter",
       "venue": "cedar-point",
       "type": "attraction",
@@ -984,10 +1006,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "lake-erie-nor-easter"
     },
     {
-      "id": "cedar-point-lakeslide-landing",
+      "id": "lakeslide-landing",
       "name": "Lakeslide Landing",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1025,10 +1048,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "lakeslide-landing"
     },
     {
-      "id": "cedar-point-lemmy-s-lagoon",
+      "id": "lemmy-s-lagoon",
       "name": "Lemmy's Lagoon",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1066,10 +1090,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "lemmy-s-lagoon"
     },
     {
-      "id": "cedar-point-lily-pad-walk",
+      "id": "lily-pad-walk",
       "name": "Lily Pad Walk",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1107,10 +1132,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "lily-pad-walk"
     },
     {
-      "id": "cedar-point-magnum-xl-200",
+      "id": "magnum-xl-200",
       "name": "Magnum XL-200",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -1148,10 +1174,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "magnum-xl-200"
     },
     {
-      "id": "cedar-point-main-arcade",
+      "id": "main-arcade",
       "name": "Main Arcade",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1189,10 +1216,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "main-arcade"
     },
     {
-      "id": "cedar-point-matterhorn",
+      "id": "matterhorn",
       "name": "Matterhorn",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1230,10 +1258,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "matterhorn"
     },
     {
-      "id": "cedar-point-maverick",
+      "id": "maverick",
       "name": "Maverick",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -1247,10 +1276,9 @@
             "lat": 41.48553,
             "lng": -82.69237
           },
-          "confidence": "low",
-          "score": 6,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue",
             "osm_queue_name"
           ],
           "evidence": [
@@ -1264,15 +1292,6 @@
               "note": "the walkable network at its closest, 13 m from the ride"
             },
             {
-              "source": "osm_named_queue",
-              "at": {
-                "lat": 41.48553,
-                "lng": -82.69237
-              },
-              "date": "2026-08-09",
-              "note": "the park end of \"Maverick Fastlane Queue\", a way in OpenStreetMap named for this ride, the outermost of 4 lanes mapped for this ride"
-            },
-            {
               "source": "osm_queue_name",
               "at": {
                 "lat": 41.48553,
@@ -1282,7 +1301,7 @@
               "note": "the park end of \"Maverick Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 4 lanes mapped for this ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": 24.4,
           "dissent": [
             {
@@ -1299,22 +1318,12 @@
             "lat": 41.48535,
             "lng": -82.69243
           },
-          "confidence": "low",
-          "score": 6,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue",
             "osm_queue_name"
           ],
           "evidence": [
-            {
-              "source": "osm_named_queue",
-              "at": {
-                "lat": 41.48535,
-                "lng": -82.69243
-              },
-              "date": "2026-08-09",
-              "note": "the far end of \"Maverick Fastlane Queue\", where the queue reaches the ride"
-            },
             {
               "source": "osm_queue_name",
               "at": {
@@ -1325,7 +1334,7 @@
               "note": "the far end of \"Maverick Fastlane Queue\", where the queue reaches the ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -1333,10 +1342,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "maverick"
     },
     {
-      "id": "cedar-point-maxair",
+      "id": "maxair",
       "name": "maXair",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1374,10 +1384,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "maxair"
     },
     {
-      "id": "cedar-point-midway-carousel",
+      "id": "midway-carousel",
       "name": "Midway Carousel",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1415,10 +1426,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "midway-carousel"
     },
     {
-      "id": "cedar-point-millennium-force",
+      "id": "millennium-force",
       "name": "Millennium Force",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -1429,13 +1441,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.48195,
-            "lng": -82.686529
+            "lat": 41.48183,
+            "lng": -82.68644
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
@@ -1448,21 +1460,21 @@
               "note": "the walkable network at its closest, 13 m from the ride"
             },
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
-                "lat": 41.48195,
-                "lng": -82.686529
+                "lat": 41.48183,
+                "lng": -82.68644
               },
               "date": "2026-08-09",
-              "note": "where \"Millennium Force Standby Queue\" begins — a named queue tagged one-way towards the ride"
+              "note": "the park end of \"Millennium Force Standby Queue\", named for this ride but with no one-way to say which end you join, the outermost of 5 lanes mapped for this ride"
             }
           ],
-          "from": "osm_named_queue",
-          "spread_m": 125.2,
+          "from": "osm_queue_name",
+          "spread_m": 129.8,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 125.2
+              "metres": 129.8
             }
           ],
           "conflict": false,
@@ -1474,14 +1486,14 @@
             "lat": 41.48195,
             "lng": -82.68653
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
                 "lat": 41.48195,
                 "lng": -82.68653
@@ -1490,7 +1502,7 @@
               "note": "the far end of \"Millennium Force Standby Queue\", where the queue reaches the ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -1498,10 +1510,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "millennium-force"
     },
     {
-      "id": "cedar-point-monster",
+      "id": "monster",
       "name": "Monster",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1539,10 +1552,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "monster"
     },
     {
-      "id": "cedar-point-motorcycles",
+      "id": "motorcycles",
       "name": "Motorcycles",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1580,10 +1594,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "motorcycles"
     },
     {
-      "id": "cedar-point-mustangs",
+      "id": "mustangs",
       "name": "Mustangs",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1621,10 +1636,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "mustangs"
     },
     {
-      "id": "cedar-point-ocean-motion",
+      "id": "ocean-motion",
       "name": "Ocean Motion",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1662,10 +1678,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "ocean-motion"
     },
     {
-      "id": "cedar-point-peanuts-500",
+      "id": "peanuts-500",
       "name": "Peanuts 500",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1703,10 +1720,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "peanuts-500"
     },
     {
-      "id": "cedar-point-perch-plunge",
+      "id": "perch-plunge",
       "name": "Perch Plunge",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1744,10 +1762,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "perch-plunge"
     },
     {
-      "id": "cedar-point-pipe-scream",
+      "id": "pipe-scream",
       "name": "Pipe Scream",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -1785,10 +1804,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "pipe-scream"
     },
     {
-      "id": "cedar-point-point-plummet",
+      "id": "point-plummet",
       "name": "Point Plummet",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1826,10 +1846,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "point-plummet"
     },
     {
-      "id": "cedar-point-police-cars",
+      "id": "police-cars",
       "name": "Police Cars",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1867,10 +1888,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "police-cars"
     },
     {
-      "id": "cedar-point-portside-plunge",
+      "id": "portside-plunge",
       "name": "Portside Plunge",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1908,10 +1930,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "portside-plunge"
     },
     {
-      "id": "cedar-point-power-tower",
+      "id": "power-tower",
       "name": "Power Tower",
       "venue": "cedar-point",
       "type": "attraction",
@@ -1949,10 +1972,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "power-tower"
     },
     {
-      "id": "cedar-point-raptor",
+      "id": "raptor",
       "name": "Raptor",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -1990,10 +2014,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "raptor"
     },
     {
-      "id": "cedar-point-red-baron",
+      "id": "red-baron",
       "name": "Red Baron",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2031,10 +2056,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "red-baron"
     },
     {
-      "id": "cedar-point-riptide-raceway",
+      "id": "riptide-raceway",
       "name": "Riptide Raceway",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2072,10 +2098,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "riptide-raceway"
     },
     {
-      "id": "cedar-point-rock-spin-turn",
+      "id": "rock-spin-turn",
       "name": "Rock, Spin, & Turn",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2113,10 +2140,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "rock-spin-turn"
     },
     {
-      "id": "cedar-point-roto-whip",
+      "id": "roto-whip",
       "name": "Roto Whip",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2154,10 +2182,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "roto-whip"
     },
     {
-      "id": "cedar-point-rougarou",
+      "id": "rougarou",
       "name": "Rougarou",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -2168,13 +2197,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.482338,
-            "lng": -82.686767
+            "lat": 41.48262,
+            "lng": -82.68701
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
@@ -2187,21 +2216,21 @@
               "note": "the walkable network at its closest, 5 m from the ride"
             },
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
-                "lat": 41.482338,
-                "lng": -82.686767
+                "lat": 41.48262,
+                "lng": -82.68701
               },
               "date": "2026-08-09",
-              "note": "where \"Rougarou Standby Queue\" begins — a named queue tagged one-way towards the ride"
+              "note": "the park end of \"Rougarou Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 2 lanes mapped for this ride"
             }
           ],
-          "from": "osm_named_queue",
-          "spread_m": 50,
+          "from": "osm_queue_name",
+          "spread_m": 28.7,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 50
+              "metres": 28.7
             }
           ],
           "conflict": false,
@@ -2213,14 +2242,14 @@
             "lat": 41.48237,
             "lng": -82.68653
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
                 "lat": 41.48237,
                 "lng": -82.68653
@@ -2229,7 +2258,7 @@
               "note": "the far end of \"Rougarou Fastlane Queue\", where the queue reaches the ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -2237,10 +2266,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "rougarou"
     },
     {
-      "id": "cedar-point-runaway-rapids",
+      "id": "runaway-rapids",
       "name": "Runaway Rapids",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2278,10 +2308,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "runaway-rapids"
     },
     {
-      "id": "cedar-point-siren-s-curse",
+      "id": "siren-s-curse",
       "name": "Siren's Curse",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -2319,10 +2350,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "siren-s-curse"
     },
     {
-      "id": "cedar-point-sky-fighters",
+      "id": "sky-fighters",
       "name": "Sky Fighters",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2360,10 +2392,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "sky-fighters"
     },
     {
-      "id": "cedar-point-skyhawk",
+      "id": "skyhawk",
       "name": "Skyhawk",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2401,10 +2434,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "skyhawk"
     },
     {
-      "id": "cedar-point-slingshot",
+      "id": "slingshot",
       "name": "SlingShot",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2442,10 +2476,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "slingshot"
     },
     {
-      "id": "cedar-point-snake-river-falls",
+      "id": "snake-river-falls",
       "name": "Snake River Falls",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2456,13 +2491,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.484261,
-            "lng": -82.691029
+            "lat": 41.48416,
+            "lng": -82.69097
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 3,
           "sources": [
-            "osm_named_queue"
+            "geometry",
+            "osm_queue_name"
           ],
           "evidence": [
             {
@@ -2475,23 +2511,18 @@
               "note": "the walkable network at its closest, 5 m from the ride"
             },
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
-                "lat": 41.484261,
-                "lng": -82.691029
+                "lat": 41.48416,
+                "lng": -82.69097
               },
               "date": "2026-08-09",
-              "note": "where \"Snake River Falls Fastlane Queue / Snake River Falls Standby Queue\" begins — a named queue tagged one-way towards the ride"
+              "note": "the park end of \"Snake River Falls Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 2 lanes mapped for this ride"
             }
           ],
-          "from": "osm_named_queue",
-          "spread_m": 20.3,
-          "dissent": [
-            {
-              "source": "geometry",
-              "metres": 20.3
-            }
-          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
           "conflict": false,
           "newest_evidence": "2026-08-09",
           "stale": false
@@ -2501,14 +2532,14 @@
             "lat": 41.48426,
             "lng": -82.69103
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
                 "lat": 41.48426,
                 "lng": -82.69103
@@ -2517,7 +2548,7 @@
               "note": "the far end of \"Snake River Falls Fastlane Queue\", where the queue reaches the ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -2525,10 +2556,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snake-river-falls"
     },
     {
-      "id": "cedar-point-snoopy-bounce",
+      "id": "snoopy-bounce",
       "name": "Snoopy Bounce",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2566,10 +2598,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snoopy-bounce"
     },
     {
-      "id": "cedar-point-snoopy-s-deep-sea-divers",
+      "id": "snoopy-s-deep-sea-divers",
       "name": "Snoopy's Deep Sea Divers",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2607,10 +2640,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snoopy-s-deep-sea-divers"
     },
     {
-      "id": "cedar-point-snoopy-s-express-railroad",
+      "id": "snoopy-s-express-railroad",
       "name": "Snoopy's Express Railroad",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2648,10 +2682,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snoopy-s-express-railroad"
     },
     {
-      "id": "cedar-point-snoopy-s-space-race",
+      "id": "snoopy-s-space-race",
       "name": "Snoopy's Space Race",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2689,10 +2724,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "snoopy-s-space-race"
     },
     {
-      "id": "cedar-point-space-age",
+      "id": "space-age",
       "name": "Space Age",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2730,10 +2766,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "space-age"
     },
     {
-      "id": "cedar-point-splash2o",
+      "id": "splash2o",
       "name": "SplasH2O",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2771,10 +2808,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "splash2o"
     },
     {
-      "id": "cedar-point-steel-vengeance",
+      "id": "steel-vengeance",
       "name": "Steel Vengeance",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -2785,13 +2823,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.486555,
-            "lng": -82.691916
+            "lat": 41.48656,
+            "lng": -82.69238
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
@@ -2804,21 +2842,21 @@
               "note": "the walkable network at its closest, 16 m from the ride"
             },
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
-                "lat": 41.486555,
-                "lng": -82.691916
+                "lat": 41.48656,
+                "lng": -82.69238
               },
               "date": "2026-08-09",
-              "note": "where \"Steel Vengeance Extended Queue\" begins — a named queue tagged one-way towards the ride"
+              "note": "the park end of \"Steel Vengeance Queue\", named for this ride but with no one-way to say which end you join"
             }
           ],
-          "from": "osm_named_queue",
-          "spread_m": 134.5,
+          "from": "osm_queue_name",
+          "spread_m": 102.6,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 134.5
+              "metres": 102.6
             }
           ],
           "conflict": false,
@@ -2830,14 +2868,14 @@
             "lat": 41.48619,
             "lng": -82.69341
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
                 "lat": 41.48619,
                 "lng": -82.69341
@@ -2846,7 +2884,7 @@
               "note": "the far end of \"Steel Vengeance Queue\", where the queue reaches the ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -2854,10 +2892,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "steel-vengeance"
     },
     {
-      "id": "cedar-point-storm-surge",
+      "id": "storm-surge",
       "name": "Storm Surge",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2895,10 +2934,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "storm-surge"
     },
     {
-      "id": "cedar-point-thunder-canyon",
+      "id": "thunder-canyon",
       "name": "Thunder Canyon",
       "venue": "cedar-point",
       "type": "attraction",
@@ -2936,10 +2976,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "thunder-canyon"
     },
     {
-      "id": "cedar-point-top-thrill-2",
+      "id": "top-thrill-2",
       "name": "Top Thrill 2",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -2950,13 +2991,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 41.484023,
-            "lng": -82.686051
+            "lat": 41.48404,
+            "lng": -82.68606
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
@@ -2969,21 +3010,21 @@
               "note": "the walkable network at its closest, 11 m from the ride"
             },
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
-                "lat": 41.484023,
-                "lng": -82.686051
+                "lat": 41.48404,
+                "lng": -82.68606
               },
               "date": "2026-08-09",
-              "note": "where \"Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue\" begins — a named queue tagged one-way towards the ride"
+              "note": "the park end of \"Top Thrill 2 Standby Queue\", named for this ride but with no one-way to say which end you join, the outermost of 2 lanes mapped for this ride"
             }
           ],
-          "from": "osm_named_queue",
-          "spread_m": 135.7,
+          "from": "osm_queue_name",
+          "spread_m": 137.7,
           "dissent": [
             {
               "source": "geometry",
-              "metres": 135.7
+              "metres": 137.7
             }
           ],
           "conflict": false,
@@ -2995,14 +3036,14 @@
             "lat": 41.4828,
             "lng": -82.68539
           },
-          "confidence": "low",
-          "score": 4,
+          "confidence": "unknown",
+          "score": 2,
           "sources": [
-            "osm_named_queue"
+            "osm_queue_name"
           ],
           "evidence": [
             {
-              "source": "osm_named_queue",
+              "source": "osm_queue_name",
               "at": {
                 "lat": 41.4828,
                 "lng": -82.68539
@@ -3011,7 +3052,7 @@
               "note": "the far end of \"Top Thrill 2 Standby Queue\", where the queue reaches the ride"
             }
           ],
-          "from": "osm_named_queue",
+          "from": "osm_queue_name",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
@@ -3019,10 +3060,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "top-thrill-2"
     },
     {
-      "id": "cedar-point-valravn",
+      "id": "valravn",
       "name": "Valravn",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -3060,10 +3102,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "valravn"
     },
     {
-      "id": "cedar-point-waterin-hole",
+      "id": "waterin-hole",
       "name": "Waterin' Hole",
       "venue": "cedar-point",
       "type": "attraction",
@@ -3101,10 +3144,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "waterin-hole"
     },
     {
-      "id": "cedar-point-wave-swinger",
+      "id": "wave-swinger",
       "name": "Wave Swinger",
       "venue": "cedar-point",
       "type": "attraction",
@@ -3142,10 +3186,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "wave-swinger"
     },
     {
-      "id": "cedar-point-wild-mouse",
+      "id": "wild-mouse",
       "name": "Wild Mouse",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -3183,10 +3228,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "wild-mouse"
     },
     {
-      "id": "cedar-point-wild-walleye",
+      "id": "wild-walleye",
       "name": "Wild Walleye",
       "venue": "cedar-point",
       "type": "attraction",
@@ -3224,10 +3270,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "wild-walleye"
     },
     {
-      "id": "cedar-point-wilderness-run",
+      "id": "wilderness-run",
       "name": "Wilderness Run",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -3265,10 +3312,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "wilderness-run"
     },
     {
-      "id": "cedar-point-windseeker",
+      "id": "windseeker",
       "name": "WindSeeker",
       "venue": "cedar-point",
       "type": "attraction",
@@ -3306,10 +3354,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "windseeker"
     },
     {
-      "id": "cedar-point-woodstock-express",
+      "id": "woodstock-express",
       "name": "Woodstock Express",
       "venue": "cedar-point",
       "type": "roller_coaster",
@@ -3347,10 +3396,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "woodstock-express"
     },
     {
-      "id": "cedar-point-woodstock-s-airmail",
+      "id": "woodstock-s-airmail",
       "name": "Woodstock's Airmail",
       "venue": "cedar-point",
       "type": "attraction",
@@ -3388,10 +3438,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "woodstock-s-airmail"
     },
     {
-      "id": "cedar-point-woodstock-s-whirlybirds",
+      "id": "woodstock-s-whirlybirds",
       "name": "Woodstock's Whirlybirds",
       "venue": "cedar-point",
       "type": "attraction",
@@ -3429,7 +3480,8 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "woodstock-s-whirlybirds"
     }
   ]
 }

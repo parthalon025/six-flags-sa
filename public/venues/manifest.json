@@ -186,8 +186,8 @@
       "map": "/venues/kings-island.map.json",
       "pois": "/venues/kings-island.pois.json",
       "counts": {
-        "pois": 171,
-        "rides": 73,
+        "pois": 167,
+        "rides": 69,
         "heights": 65
       }
     },

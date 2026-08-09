@@ -32,7 +32,7 @@ import {
   sheetPlan,
   sheetStops,
 } from '@/lib/sheet';
-import { CATEGORIES, eligibility, hasHeights } from '@/lib/park';
+import { CATEGORIES, eligibility, hasHeights, isRideable } from '@/lib/park';
 import { statusSummary } from '@/lib/rideStatus';
 import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
 import {
@@ -1037,14 +1037,14 @@ export default function Page() {
     if (height == null) return null;
     const out = new Map();
     POIS.forEach((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride') return;
+      if (!isRideable(p)) return;
       out.set(p.n, eligibility(p, height, withAdult));
     });
     return out;
   }, [POIS, height, withAdult]);
 
   const totalRides = useMemo(
-    () => POIS.filter((p) => p.c === 'coaster' || p.c === 'ride').length,
+    () => POIS.filter(isRideable).length,
     [POIS],
   );
 
@@ -1062,7 +1062,7 @@ export default function Page() {
   const rideableCount = useMemo(() => {
     if (height == null) return null;
     return POIS.filter((p) => {
-      if (p.c !== 'coaster' && p.c !== 'ride') return false;
+      if (!isRideable(p)) return false;
       const v = eligibility(p, height, withAdult);
       return v === 'yes' || v === 'companion';
     }).length;

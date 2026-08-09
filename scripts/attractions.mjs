@@ -47,6 +47,8 @@ import { PUBLISH_AT } from './lib/evidence.mjs';
 import { OVERRIDE_DIR, readJson, VENUE_DIR } from './lib/venue-io.mjs';
 // The app's own reading of "these two strings are the same ride", so the join
 // here and the builder's cannot drift apart.
+import { purgeRetiredEvidence } from './lib/retired-sources.mjs';
+import { isRideable } from '../lib/ontology.js';
 import { normaliseRideName } from '../lib/mapSymbols.js';
 
 const USAGE = `
@@ -253,31 +255,36 @@ function nameIndex(rows, nameOf) {
 }
 
 /** Build or refresh one venue's inventory. */
-function inventory(id, args) {
-  const map = readJson(path.join(VENUE_DIR, `${id}.map.json`));
-  const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
+function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
+  const map = mapIn || readJson(path.join(VENUE_DIR, `${id}.map.json`));
+  const pois = poisIn || readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
   if (!map) throw new Error(`No venue called "${id}" on disk.`);
 
   const asOf = today();
-  const existing = readJson(listFile(id));
-  const known = nameIndex(existing?.attractions || [], (r) => r.name);
+  const onDisk = existing ?? readJson(listFile(id));
+  const knownByPlace = new Map((onDisk?.attractions || []).filter((r) => r.place).map((r) => [r.place, r]));
+  const known = nameIndex(onDisk?.attractions || [], (r) => r.name);
 
-  const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
+  const rides = pois.filter(isRideable);
   const records = new Map();
   for (const ride of rides) {
-    /* Kept across runs, so evidence gathered in March is still on the record in
-       August and can be seen to disagree with something newer. Only the ride's
-       own position is refreshed from the rebuild — and the record keeps the
-       spelling the park uses now, since the display name is what a person
-       reads and the join no longer depends on it holding still. */
-    const prior = known(ride.n);
+    const place = ride.i;
+    const prior = (place && knownByPlace.get(place)) || known(ride.n);
     const record = prior
-      ? { ...prior, name: ride.n, at: { lat: ride.lat, lng: ride.lng } }
+      ? { ...prior, place: place || prior.place, name: ride.n, at: { lat: ride.lat, lng: ride.lng } }
       : attractionFor(ride, id);
+    if (place) record.place = place;
+    if (place) record.id = place;
+    purgeRetiredEvidence(record);
     for (const f of FEATURES) record.features[f] ||= { at: null, confidence: 'unknown', score: 0, sources: [], evidence: [] };
-    records.set(String(ride.n).toLowerCase(), record);
+    const key = record.place || String(ride.n).toLowerCase();
+    records.set(key, record);
   }
-  const recordFor = nameIndex(records.values(), (r) => r.name);
+  const recordFor = (rideName) => {
+    const ride = pois.find((p) => p.n === rideName || normaliseRideName(p.n) === normaliseRideName(rideName));
+    if (ride?.i && records.has(ride.i)) return records.get(ride.i);
+    return nameIndex(records.values(), (r) => r.name)(rideName);
+  };
 
   const traced = args?.trace
     ? (Array.isArray(args.trace) ? args.trace : [String(args.trace)]).flatMap(fromTracedFile)
@@ -330,15 +337,19 @@ function inventory(id, args) {
  */
 function publish(id, pois, records, floor) {
   let changed = 0;
+  const byPlace = new Map();
   const byName = new Map();
   for (const p of pois) {
+    if (p.i) byPlace.set(p.i, p);
     const key = String(p.n).toLowerCase();
     if (byName.has(key)) byName.get(key).push(p);
     else byName.set(key, [p]);
   }
   for (const record of records) {
     const fields = publishable(record, floor);
-    const targets = byName.get(String(record.name).toLowerCase()) || [];
+    const targets = (record.place && byPlace.has(record.place) ? [byPlace.get(record.place)] : null)
+      || byName.get(String(record.name).toLowerCase())
+      || [];
     for (const t of targets) {
       for (const [key, value] of Object.entries(fields)) {
         if (key !== 'e') {
@@ -526,4 +537,4 @@ if (runDirectly) {
   }
 }
 
-export { fromOsmEntrances, fromTrace, fromTracedFile, inventory, publish };
+export { fromOsmEntrances, fromTrace, fromTracedFile, inventory, publish, listFile, writeSettled, today };
