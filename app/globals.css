@@ -305,10 +305,11 @@ html, body {
 }
 button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
 
+/* --sheetH is the sheet's live height in pixels, set inline by page.js: the
+   sheet no longer has four heights to name, so everything that rides above it
+   reads the one number instead of keeping its own copy of the stops. The value
+   here is only what the first paint uses before React has measured anything. */
 .app { position: fixed; inset: 0; --sheetH: var(--peek); }
-.app[data-sheet='shut'] { --sheetH: var(--shut); }
-.app[data-sheet='half'] { --sheetH: 52vh; }
-.app[data-sheet='full'] { --sheetH: 88vh; }
 
 /* ============================================================
    keyframes
@@ -527,8 +528,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
               transform var(--t3) var(--ease);
 }
-.app[data-sheet='full'] .zoomPad,
-.app[data-sheet='full'] .fabs {
+/* Keyed on how much room is left rather than on the sheet being all the way up:
+   the sheet can now stop anywhere, including at the height where this column
+   would climb into the two buttons in the top corners. See sheetCrowdsMap. */
+.app[data-crowded] .zoomPad,
+.app[data-crowded] .fabs {
   opacity: 0; transform: translateY(10px); pointer-events: none;
 }
 .zoomBtn {
@@ -702,7 +706,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    panel to reach. Everything else is gone rather than squashed: a sliver of a
    search field above a sliced-off card is not a smaller screen, it is a broken
    one. */
-.sheet.shut { height: var(--shut); }
 .sheet.shut .sheetStage,
 .sheet.shut .searchRow,
 .sheet.shut .brand,
@@ -712,12 +715,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sheet.shut .navHead { display: none; }
 
 .sheet.half {
-  height: 52vh;
   left: 5px; right: 5px; bottom: calc(5px + var(--bot));
   border-radius: var(--rFloatHalf);
 }
 .sheet.full {
-  height: 88vh;
   left: 0; right: 0; bottom: 0;
   border-radius: var(--r5) var(--r5) 0 0;
   background: var(--grouped);
@@ -726,9 +727,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 /* A sheet under the finger stops easing: the height is the finger's, and any
    transition on it would lag behind the thing it is meant to be attached to.
-   The easing comes back the moment it is let go, which is what makes the snap
-   to the nearest stop feel like a snap. */
+   The easing comes back the moment it is let go, which is what makes a release
+   into a magnet feel like a snap. */
 .sheet.dragging { transition: none; }
+/* And so does everything that rides on --sheetH. These all ease their `bottom`
+   so they glide when the sheet is sent somewhere; while it is being dragged
+   they are attached to a finger, and a quarter-second of easing behind a finger
+   reads as the map furniture sliding around on its own. */
+.app[data-dragging] .fabs,
+.app[data-dragging] .zoomPad,
+.app[data-dragging] .mapFurniture,
+.app[data-dragging] .toast,
+.app[data-dragging] .mapScrim.bottom { transition: none; }
 
 /* touch-action: none, because a drag on the handle is the sheet's gesture and
    not the browser's — without it the first few pixels are eaten by a pull to
@@ -899,12 +909,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
     linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 12px), transparent 100%);
 }
 .sheetBody > * { animation: fadeIn var(--t2) var(--easeOut) both; }
-/* At the peek stop the Explore screen is a glance, not a list: the search
-   field, where you are and the rail, and then the tab bar. The list below them
-   is not "nearly visible" — it is not there, because five pixels of a chip
-   sliced off above the tab bar is noise, not an invitation. It comes back the
-   instant the sheet is pulled, which is the invitation. */
-.sheet.peek.atMap:not(.dragging) .sheetBody { display: none; }
+/* The Explore screen at a low height is a glance, not a list: the search field,
+   where you are and the rail, and then the tab bar. The list below them is not
+   "nearly visible" — it is not rendered at all, because five pixels of a chip
+   sliced off above the tab bar is noise, not an invitation. Which rows are
+   rendered is decided in lib/sheet.js against the height itself, so it happens
+   continuously under the finger rather than at a stop; all that is left here is
+   collapsing the empty box the body leaves behind. */
+.sheetBody:empty { display: none; }
 
 /* What the hidden body is, said in words, because the grab pill is not an
    affordance anyone reads. Caption 1 on a 22px box: the peek budget below was
@@ -1192,8 +1204,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .toast {
   position: absolute; left: 50%; z-index: 80;
-  /* Clear of the map furniture, which owns the strip directly above the sheet. */
-  bottom: calc(var(--sheetH) + 116px + var(--bot));
+  /* Clear of the map furniture, which owns the strip directly above the sheet —
+     but never so high that it lands on the buttons in the top corners, which a
+     sheet pulled most of the way up would otherwise push it into. */
+  bottom: min(calc(var(--sheetH) + 116px + var(--bot)), calc(100% - 180px));
   background: var(--glassTintDeep); color: var(--label);
   border: none;
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
@@ -1309,6 +1323,36 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   animation: fadeIn var(--t2) var(--easeOut) both;
 }
 .glanceEmpty .btn { margin: 0; }
+
+/* ---- the rail, in one line ----
+   The last rung before the sheet has nothing on it at all. A visitor who has
+   pulled the sheet nearly shut has said they want the map, and taking them at
+   their word means giving back the twenty-six pixels that still answer "which
+   way, and how long" — the arrow, the walking time and the name — and letting
+   the count stand in for the rest of the rail rather than pretending to be it.
+   Measured as SHEET_DIGEST_PX in lib/sheet.js; the two have to agree. */
+.glanceDigest {
+  flex: none; display: flex; align-items: center; gap: 7px;
+  width: 100%; height: 26px; padding: 0 16px 8px;
+  text-align: left; font-size: 13px; line-height: 18px; letter-spacing: -.08px;
+  animation: fadeIn var(--t2) var(--easeOut) both;
+}
+.glanceDigest .glanceArrow { width: 15px; height: 15px; flex: none; }
+.glanceDigest b { flex: none; font-weight: 600; font-variant-numeric: tabular-nums; }
+.glanceDigestName {
+  flex: 0 1 auto; min-width: 0; color: var(--label);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The eyebrow is the first thing to go when the line is short: it is the only
+   part of the strip the arrow and the name do not already imply. */
+.glanceDigest em {
+  flex: 1 1 auto; min-width: 0; font-style: normal; font-weight: 400;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.glanceDigestMore { flex: none; color: var(--label3); font-variant-numeric: tabular-nums; }
+.glanceDigest.quiet { color: var(--label2); }
+.glanceDigest.help { color: var(--crimson); }
+.glanceDigest:active { opacity: .5; }
 
 /* ---- active height filter badge over the map ---- */
 .filterBadge {

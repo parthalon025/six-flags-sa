@@ -51,10 +51,17 @@ else OpenStreetMap covers. Built with Next.js 15 (App Router) and React 19.
   a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
   moves — and each tab keeps its own navigation stack, so leaving one and coming back
   finds it where you left it. Tapping the tab you are already on unwinds it to its root.
-  The sheet itself follows your finger between three stops and snaps to whichever one you
-  flicked it at, and screens slide in from the side they came from. The collapsed stop
-  deliberately shows less: search, where you are, the rail, the tabs. Everything else is
-  one pull away.
+  Screens slide in from the side they came from.
+- **The sheet stops where you let go of it, and shows what fits there.** The handle
+  follows your finger and the sheet stays at whatever height you leave it at — not one of
+  four the app picked. Only the ends of the travel are magnetic, so shut and full stay
+  easy to hit without aiming, and a flick still carries. What is on the sheet is then a
+  budget rather than a switch: each row has a measured cost in pixels and they are paid
+  for in the order they answer a question, so pulling up buys the next one as the room
+  for it appears. Nearly shut, the rail is one line — an arrow, a walking time and a name.
+  A little more and the search field arrives, then the cards, then the venue's own line,
+  then the list. Nothing is ever squashed to fit and nothing that has appeared drops out
+  again on the way up. Where you left it is where it is next time you open the app.
 - **Back is the phone's back, not a button in a corner.** Every screen the app opens goes
   onto the browser's history stack, so the Android back button and the swipe in from the
   left edge walk back through the app one screen at a time and only leave when there is
@@ -593,6 +600,7 @@ lib/mapSymbols.js             the symbol vocabulary: shapes, glyphs, ranks, ink
 lib/mapLabels.js              decluttering grid, district-name geometry, scale bar
 lib/venue/store.js            which venue is loaded; manifest, geometry, places
 lib/venue/ids.js              the one place-id rule, shared by browser and hosts
+lib/sheet.js                  the sheet's heights, and what fits at each of them
 lib/venue/useVenue.js         the hook components read it through
 lib/venueIndex.js             generated: static POI imports for the API routes
 lib/serverStore.js            memory / Upstash backend for the cloud fallback
@@ -608,7 +616,7 @@ components/
   MapLegend.jsx               the on-map key, which is also the category filter
   GlanceRail.jsx              the live card rail in the collapsed sheet
   TabBar.jsx                  the four bottom tabs, badges and all
-  useSheetDrag.js             the sheet under a finger: follow, then snap
+  useSheetDrag.js             the sheet under a finger: follow, then stay put
   PartyPanel.jsx              roster, QR, join, status, meet-up
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
