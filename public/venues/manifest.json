@@ -23,9 +23,9 @@
       "map": "/venues/big-kahunas.map.json",
       "pois": "/venues/big-kahunas.pois.json",
       "counts": {
-        "pois": 11,
-        "rides": 10,
-        "heights": 10
+        "pois": 16,
+        "rides": 15,
+        "heights": 15
       }
     },
     {
@@ -64,7 +64,7 @@
       "map": "/venues/cedar-point.map.json",
       "pois": "/venues/cedar-point.pois.json",
       "counts": {
-        "pois": 423,
+        "pois": 429,
         "rides": 76,
         "heights": 74
       }
@@ -212,8 +212,8 @@
       "map": "/venues/six-flags-fiesta-texas.map.json",
       "pois": "/venues/six-flags-fiesta-texas.pois.json",
       "counts": {
-        "pois": 143,
-        "rides": 53,
+        "pois": 161,
+        "rides": 71,
         "heights": 47
       }
     }

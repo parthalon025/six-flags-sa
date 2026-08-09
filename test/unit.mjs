@@ -2419,6 +2419,29 @@ await check('a mini golf course is a place to meet and a green to draw', () => {
   return true;
 });
 
+await check('walkable ground with no highway tag is still a walking route', () => {
+  /* The path layer is not only drawn — routing.js welds it into the route
+     graph, so a walkable way missing from it is a route the app will not send
+     anyone down. Cedar Point had 830 m of boardwalk in that state. */
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier' }), 'path');
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier', area: 'yes', name: 'Boggy Bridge' }), 'path');
+  assert.equal(classify(LAYER_RULES, { railway: 'platform', area: 'yes' }), 'path');
+  assert.equal(classify(LAYER_RULES, { public_transport: 'platform' }), 'path');
+  assert.equal(classify(LAYER_RULES, { highway: 'crossing' }), 'path');
+  assert.equal(classify(LAYER_RULES, { highway: 'bridleway' }), 'path');
+  return true;
+});
+
+await check('a boat slip is not a walking route', () => {
+  /* The marina at Cedar Point is 228 floating finger docks and six and a half
+     kilometres of them, all tagged exactly like the boardwalks. A person can
+     stand on one; no route through a park goes down one. */
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier', floating: 'yes', name: 'Pier 11' }), null);
+  // Unless it is also drawn as somewhere to walk, which a few of them are.
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier', floating: 'yes', highway: 'footway' }), 'path');
+  return true;
+});
+
 await check('ordinary map furniture lands in the right layer', () => {
   assert.equal(classify(LAYER_RULES, { highway: 'footway' }), 'path');
   assert.equal(classify(LAYER_RULES, { highway: 'service' }), 'service');

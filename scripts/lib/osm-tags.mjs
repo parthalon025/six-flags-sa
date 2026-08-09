@@ -54,9 +54,37 @@ export const LAYER_RULES = [
   ['parking', (t) => has(t, 'amenity', ['parking']) || has(t, 'parking')],
   ['building', (t) => has(t, 'building') || has(t, 'building:part')],
   [
+    /* Everything a visitor can walk along. This layer is not only drawn — it is
+       welded into the route graph in lib/routing.js, so a walkable way that is
+       missing here is not a faint line on a map, it is a route the app will not
+       send anybody down. That is what makes the three additions below worth
+       having rather than pedantic. */
     'path',
     (t) =>
-      has(t, 'highway', ['footway', 'path', 'pedestrian', 'steps', 'corridor', 'living_street', 'cycleway', 'track']),
+      has(t, 'highway', [
+        'footway', 'path', 'pedestrian', 'steps', 'corridor', 'living_street', 'cycleway', 'track',
+        'bridleway',
+        // A marked crossing drawn as a way, which is how a path gets from one
+        // side of a service road to the other. Rare, and exactly the kind of
+        // link whose absence leaves the network in two pieces.
+        'crossing',
+      ]) ||
+      /* A boardwalk, a jetty, the deck along a beach: walkable ground that
+         carries no highway tag at all. Cedar Point has 21 of them — Boggy
+         Bridge, two 200-metre decks, the boardwalks around Lighthouse Point —
+         and 830 metres of walking that the bundle simply did not have.
+
+         `floating` is what keeps the marina out, and it has to: the same tag is
+         on 228 finger docks in the boat basin, six and a half kilometres of
+         them. They are walkable in the sense that a person standing on one is
+         not in the water, and useless in the sense that no route through a park
+         goes down a boat slip. */
+      (has(t, 'man_made', ['pier']) && t.floating !== 'yes') ||
+      // Where you stand for the train. Station platforms are routinely mapped
+      // as areas with no highway tag, so the graph stopped at the platform edge
+      // and the ride everyone queues for was reachable only by guessing.
+      has(t, 'public_transport', ['platform']) ||
+      has(t, 'railway', ['platform']),
   ],
   [
     'service',

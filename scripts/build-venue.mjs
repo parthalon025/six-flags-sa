@@ -994,8 +994,12 @@ async function main() {
 
   const name = String(args.name || place?.name || 'Venue');
   const id = slugify(String(args.id || name));
-  const kind = String(args.kind || place?.kind || 'place');
   const tolerance = Number(args.tolerance ?? 1.2);
+
+  /* Read before the meta is assembled, because a rebuild has to be able to fall
+     back to what the last one decided. */
+  const previousMeta = readJson(path.join(VENUE_DIR, `${id}.map.json`))?.meta || null;
+  const kind = String(args.kind || place?.kind || previousMeta?.kind || 'place');
 
   console.error(`\nBuilding "${name}" (${id}) over ${km2.toFixed(2)} km²`);
 
@@ -1109,7 +1113,7 @@ async function main() {
   pois.sort((a, b) => a.n.localeCompare(b.n));
 
   // A rebuild must not silently drop the hand-written parts of the last one.
-  const existingMeta = readJson(path.join(VENUE_DIR, `${id}.map.json`))?.meta || null;
+  const existingMeta = previousMeta;
 
   /* Where the map opens. A rebuild must not move it: the centre a venue already
      has was chosen, and the midpoint of a bounding box is not the middle of a
@@ -1146,7 +1150,16 @@ async function main() {
   const meta = {
     id,
     name,
-    locality: args.locality ? String(args.locality) : place?.display?.split(', ').slice(-3).join(', ') || null,
+    /* The line under the name. Falls back to the last build's, because a
+       rebuild from a bounding box resolves no place and would otherwise blank
+       it — the same way `credits` and `kind` used to be lost. A venue is
+       routinely rebuilt from `--bbox` precisely because `--place` picked the
+       wrong thing, so this is the common path, not the odd one. */
+    locality:
+      (args.locality ? String(args.locality) : null) ||
+      place?.display?.split(', ').slice(-3).join(', ') ||
+      existingMeta?.locality ||
+      null,
     kind,
     center: { lat: Number(centre.lat.toFixed(6)), lng: Number(centre.lng.toFixed(6)) },
     bounds: {

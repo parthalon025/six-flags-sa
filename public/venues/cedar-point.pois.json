@@ -545,6 +545,20 @@
   },
   {
     "n": "Entrance",
+    "lat": 41.486918,
+    "lng": -82.686281,
+    "c": "gate",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Entrance",
+    "lat": 41.487162,
+    "lng": -82.687437,
+    "c": "gate",
+    "a": "Cedar Point"
+  },
+  {
+    "n": "Entrance",
     "lat": 41.482794,
     "lng": -82.686754,
     "c": "gate",
@@ -960,6 +974,13 @@
     "a": "Gemini Midway"
   },
   {
+    "n": "Magnum XL-200 Gate",
+    "lat": 41.48566,
+    "lng": -82.686255,
+    "c": "gate",
+    "a": "Gemini Midway"
+  },
+  {
     "n": "Magnum XL-200 Lockers",
     "lat": 41.484996,
     "lng": -82.686284,
@@ -972,6 +993,13 @@
     "lng": -82.68136,
     "c": "ride",
     "a": "Main Midway"
+  },
+  {
+    "n": "Main Gate",
+    "lat": 41.478314,
+    "lng": -82.67905,
+    "c": "gate",
+    "a": "Cedar Point"
   },
   {
     "n": "Marina Store",
@@ -2663,141 +2691,141 @@
   },
   {
     "n": "Site 506",
-    "lat": 41.491289,
-    "lng": -82.688197,
+    "lat": 41.491436,
+    "lng": -82.688264,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 507",
-    "lat": 41.490508,
-    "lng": -82.688212,
+    "lat": 41.490509,
+    "lng": -82.688202,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 508",
-    "lat": 41.49049,
-    "lng": -82.688114,
+    "lat": 41.490509,
+    "lng": -82.688019,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 509",
-    "lat": 41.490483,
-    "lng": -82.688028,
+    "lat": 41.490501,
+    "lng": -82.687875,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 510",
-    "lat": 41.490475,
-    "lng": -82.687926,
+    "lat": 41.490495,
+    "lng": -82.687753,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 511",
-    "lat": 41.490471,
-    "lng": -82.687831,
+    "lat": 41.490511,
+    "lng": -82.687597,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 512",
-    "lat": 41.490467,
-    "lng": -82.687712,
+    "lat": 41.490542,
+    "lng": -82.687482,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 513",
-    "lat": 41.490462,
-    "lng": -82.687568,
+    "lat": 41.490595,
+    "lng": -82.687368,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 514",
-    "lat": 41.490471,
-    "lng": -82.687467,
+    "lat": 41.490664,
+    "lng": -82.687265,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 515",
-    "lat": 41.49071,
-    "lng": -82.687768,
+    "lat": 41.490777,
+    "lng": -82.687548,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 516",
-    "lat": 41.490839,
-    "lng": -82.687737,
+    "lat": 41.490962,
+    "lng": -82.687543,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 517",
-    "lat": 41.490931,
-    "lng": -82.687718,
+    "lat": 41.491066,
+    "lng": -82.687561,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 518",
-    "lat": 41.491041,
-    "lng": -82.687696,
+    "lat": 41.49128,
+    "lng": -82.687605,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 519",
-    "lat": 41.491159,
+    "lat": 41.491405,
     "lng": -82.687684,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 520",
-    "lat": 41.490744,
-    "lng": -82.687759,
+    "lat": 41.490924,
+    "lng": -82.68754,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 521",
-    "lat": 41.490811,
-    "lng": -82.687742,
+    "lat": 41.491017,
+    "lng": -82.687547,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 522",
-    "lat": 41.490907,
-    "lng": -82.687723,
+    "lat": 41.491115,
+    "lng": -82.687576,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 523",
-    "lat": 41.490984,
-    "lng": -82.687707,
+    "lat": 41.491212,
+    "lng": -82.687579,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 524",
-    "lat": 41.491102,
-    "lng": -82.687687,
+    "lat": 41.49133,
+    "lng": -82.687634,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
   {
     "n": "Site 525",
-    "lat": 41.491207,
-    "lng": -82.687677,
+    "lat": 41.491446,
+    "lng": -82.687694,
     "c": "campsite",
     "a": "Lighthouse Point"
   },
@@ -3201,6 +3229,13 @@
     }
   },
   {
+    "n": "Valravn Gate",
+    "lat": 41.48091,
+    "lng": -82.683633,
+    "c": "gate",
+    "a": "Main Midway"
+  },
+  {
     "n": "Valravn Gifts",
     "lat": 41.480052,
     "lng": -82.683011,
@@ -3278,14 +3313,21 @@
   },
   {
     "n": "WindSeeker",
-    "lat": 41.482789,
-    "lng": -82.680686,
+    "lat": 41.482798,
+    "lng": -82.680689,
     "c": "ride",
     "h": {
       "min": 52,
       "alone": null,
       "max": null
     },
+    "a": "Lakeside Midway"
+  },
+  {
+    "n": "Windseeker Gate",
+    "lat": 41.482853,
+    "lng": -82.680903,
+    "c": "gate",
     "a": "Lakeside Midway"
   },
   {

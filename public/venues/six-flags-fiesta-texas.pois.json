@@ -14,6 +14,20 @@
     "a": "DC Universe"
   },
   {
+    "n": "Bahama Blaster",
+    "lat": 29.60098,
+    "lng": -98.61002,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Bamboo Chutes",
+    "lat": 29.6008,
+    "lng": -98.61048,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Bat Girl: Coaster Chase",
     "lat": 29.596535,
     "lng": -98.609987,
@@ -59,6 +73,13 @@
     "a": "Rockville"
   },
   {
+    "n": "Bermuda Triagle",
+    "lat": 29.60013,
+    "lng": -98.61076,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Bermuda Triangle, Riptide Runner Slide Pool",
     "lat": 29.599801,
     "lng": -98.610599,
@@ -76,6 +97,13 @@
     "lng": -98.608782,
     "c": "food",
     "a": "Rockville"
+  },
+  {
+    "n": "Bonzai Pipelines",
+    "lat": 29.60032,
+    "lng": -98.61158,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
   },
   {
     "n": "Boomerang Coast to Coast",
@@ -195,6 +223,13 @@
     "n": "Coral Cove",
     "lat": 29.60035,
     "lng": -98.611448,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Cowabunga",
+    "lat": 29.60042,
+    "lng": -98.61157,
     "c": "ride",
     "a": "Six Flags Fiesta Texas"
   },
@@ -912,6 +947,20 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "n": "RipQurl",
+    "lat": 29.60017,
+    "lng": -98.6115,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Riptide Runner",
+    "lat": 29.60025,
+    "lng": -98.61062,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Road Runner Express",
     "lat": 29.598774,
     "lng": -98.612372,
@@ -1002,6 +1051,13 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "n": "Stingray Racer",
+    "lat": 29.60032,
+    "lng": -98.61151,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Stroller & Wheelchair Rental",
     "lat": 29.599117,
     "lng": -98.609384,
@@ -1087,6 +1143,13 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "n": "Texas Tumble Tube Shoot",
+    "lat": 29.59967,
+    "lng": -98.61192,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "The Caped Crusader",
     "lat": 29.597015,
     "lng": -98.610435,
@@ -1126,10 +1189,24 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "n": "Thunder Rapids Water Coaster",
+    "lat": 29.60121,
+    "lng": -98.60973,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Tidal Wave Cafe",
     "lat": 29.599811,
     "lng": -98.61002,
     "c": "food",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tornado",
+    "lat": 29.60022,
+    "lng": -98.61024,
+    "c": "ride",
     "a": "Six Flags Fiesta Texas"
   },
   {
@@ -1167,11 +1244,53 @@
     "a": "Six Flags Fiesta Texas"
   },
   {
+    "n": "Tube Shoot",
+    "lat": 29.60026,
+    "lng": -98.61072,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
     "n": "Tutti Nail Bar",
     "lat": 29.603493,
     "lng": -98.60346,
     "c": "shop",
     "tel": "+1-210-595-6245",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tx Treehouse Green Slide",
+    "lat": 29.60027,
+    "lng": -98.6123,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tx Treehouse Red Slide",
+    "lat": 29.60035,
+    "lng": -98.61225,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tx Treehouse Teal Slide",
+    "lat": 29.60035,
+    "lng": -98.61219,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Tx Treehouse Yellow Slide",
+    "lat": 29.60023,
+    "lng": -98.61226,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
+  },
+  {
+    "n": "Vortex",
+    "lat": 29.60022,
+    "lng": -98.6116,
+    "c": "ride",
     "a": "Six Flags Fiesta Texas"
   },
   {
@@ -1213,6 +1332,13 @@
       "alone": 42,
       "max": null
     }
+  },
+  {
+    "n": "Wipeout",
+    "lat": 29.60044,
+    "lng": -98.61157,
+    "c": "ride",
+    "a": "Six Flags Fiesta Texas"
   },
   {
     "n": "Wonder Woman Gifts",
