@@ -27,6 +27,7 @@ process.emitWarning = (warning, ...rest) => {
 };
 
 const {
+  FAVORITES_MAX,
   MEMBER_TTL_MS,
   OP,
   RIDE_CONFIRM_MS,
@@ -54,6 +55,7 @@ const {
   LOCATION,
   PATCH,
   PING,
+  SET_FAVORITE,
   VICTORY,
   addressedTo,
   createDedupe,
@@ -91,7 +93,7 @@ const {
   parkOutlook,
 } = await import('../lib/weather.js');
 const { STATUS, statusFor, statusSummary } = await import('../lib/rideStatus.js');
-const { indexById, slug, withIds } = await import('../lib/venue/ids.js');
+const { indexById, keyOf, slug, titleOf, withIds } = await import('../lib/venue/ids.js');
 const {
   Declutter,
   boxAround,
@@ -133,9 +135,19 @@ const {
 const { areaOf, centroidOf, clipToBounds, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
-const { LAYER_RULES, POI_RULES, classify, isCivicBoundary, isLand, isVenueOutline } = await import(
-  '../scripts/lib/osm-tags.mjs'
-);
+const {
+  LAYER_RULES,
+  POI_RULES,
+  ROUTED_LAYERS,
+  classify,
+  isCivicBoundary,
+  isLand,
+  isVenueOutline,
+  wayAttributes,
+} = await import('../scripts/lib/osm-tags.mjs');
+const { WAY_FLAGS, hasWayFlag, wayFlagsOf, wayLayerOf } = await import('../lib/wayFlags.js');
+// The layer builder, for the round trip from raw tags to the bytes that ship.
+const { buildLayers } = await import('../scripts/build-venue.mjs');
 
 /* ------------------------------------------------------------- harness --- */
 
@@ -399,6 +411,98 @@ await check('createMember shapes a record the UI can read straight away', () => 
   assert.deepEqual(m.favorites, []);
   assert.equal(m.lastSeen, 7);
   assert.equal(m.role, ROLE_MEMBER);
+  // The UI draws a member as a colour and two initials, both derived from the
+  // id and the name, so there is nothing for an avatar to be.
+  assert.equal('avatar' in m, false);
+  // A caller that still passes one gets a record without it: the field is gone
+  // from the shape, not merely defaulted to null.
+  assert.equal('avatar' in createMember({ id: 'x', avatar: 'data:image/png;base64,AAAA' }), false);
+  return true;
+});
+
+await check('a snapshot carries no avatar', () => {
+  const now = 1_000_000;
+  let state = createParty({ id: 'p1', leader: HOST, now });
+  // An older build puts its whole member record on the wire, avatar and all.
+  // Nothing rejects the join — the field simply never reaches the roster, and
+  // so never reaches WELCOME, a resync SNAPSHOT or a VICTORY frame.
+  state = reduce(
+    state,
+    { kind: 'join', from: PEER, body: { name: 'Ava', avatar: 'data:image/png;base64,AAAA' } },
+    now,
+  ).state;
+  assert.ok(state.members[PEER], 'the join was rejected outright');
+
+  const snap = publicSnapshot(state);
+  assert.equal(snap.members[PEER].avatar, undefined);
+  assert.equal(JSON.stringify(snap).includes('data:image'), false);
+
+  // And patch-member cannot smuggle one back in past the allowlist.
+  const r = reduce(
+    state,
+    { kind: 'patch-member', from: PEER, body: { patch: { avatar: 'data:image/png;base64,BBBB' } } },
+    now + 1,
+  );
+  assert.equal(r.ops.length, 0, 'an avatar patch was accepted');
+  assert.equal(publicSnapshot(r.state).members[PEER].avatar, undefined);
+  return true;
+});
+
+await check('a settings merge for a setting nobody defined is ignored rather than fatal', () => {
+  const state = seeded();
+  // `settings` is deliberately empty: no command emits SETTINGS_MERGE yet, and
+  // the op is kept because it is the mechanism the first party-wide setting
+  // will use. Until then an unknown key must cost nothing.
+  assert.deepEqual(state.settings, {});
+  assert.equal(state.settings.shareLocationHistory, undefined);
+
+  const next = applyOps(state, [
+    { type: OP.SETTINGS_MERGE, patch: { somethingFromTheFuture: true } },
+  ]);
+  // It lands where nothing reads it, and nothing else moves — no throw, the
+  // roster and the version are untouched, and the base state is not mutated.
+  assert.equal(next.settings.somethingFromTheFuture, true);
+  assert.deepEqual(Object.keys(next.members).sort(), [HOST, PEER].sort());
+  assert.equal(next.version, state.version);
+  assert.deepEqual(state.settings, {}, 'the merge mutated the state it was given');
+  return true;
+});
+
+await check('a favourites list cannot grow past its cap', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  for (let i = 0; i < FAVORITES_MAX + 5; i += 1) {
+    state = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: `ride-${i}`, favorite: true } }, now).state;
+  }
+  assert.equal(state.members[PEER].favorites.length, FAVORITES_MAX);
+
+  // Past the cap the command is a no-op, not an error: no version bump, no ops,
+  // and the list it already had is left exactly as it was.
+  const before = state.version;
+  const r = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: 'one-too-many', favorite: true } }, now);
+  assert.equal(r.state.version, before);
+  assert.equal(r.ops.length, 0);
+  assert.equal(r.state.members[PEER].favorites.includes('one-too-many'), false);
+
+  // A full list still un-stars, so a member can always make room.
+  state = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: 'ride-0', favorite: false } }, now).state;
+  assert.equal(state.members[PEER].favorites.length, FAVORITES_MAX - 1);
+  state = reduce(state, { kind: 'set-favorite', from: PEER, body: { rideId: 'one-too-many', favorite: true } }, now).state;
+  assert.equal(state.members[PEER].favorites.includes('one-too-many'), true);
+  return true;
+});
+
+await check('a set-favorite from an older build is still accepted', () => {
+  const now = 1_000_000;
+  const state = seeded(now);
+  // The op, the protocol kind and the REST route all stay: capping the list is
+  // not the same as withdrawing the command, and a phone on the previous build
+  // knows nothing about a cap.
+  assert.equal(SET_FAVORITE, 'set-favorite');
+  const r = reduce(state, { kind: SET_FAVORITE, from: PEER, body: { rideId: 'beast', favorite: true } }, now);
+  assert.equal(r.state.version, state.version + 1);
+  assert.deepEqual(r.ops, [{ type: OP.MEMBER_MERGE, id: PEER, patch: { favorites: ['beast'] } }]);
+  assert.deepEqual(r.state.members[PEER].favorites, ['beast']);
   return true;
 });
 
@@ -1061,6 +1165,185 @@ await check('snapping lands on the path, not on the query point', () => {
   return true;
 });
 
+section('routing/attributes');
+
+/* What OpenStreetMap says about a way, beyond its shape and its name.
+ *
+ * Until these arrived, every feature in `map.path` had two keys and the router
+ * costed a flight of stairs at exactly the price of flat midway. These tests
+ * hold two things at once: that the facts reach the graph, and — the one that
+ * matters more — that carrying them moves nothing. Costs are a separate change
+ * on purpose, so that when the costs do change the route diff means something.
+ */
+
+/** Two ways crossing in plan view, one of them a bridge over the other. */
+const CROSSING = {
+  path: [
+    { r: [[-84.2680, 39.3420], [-84.2660, 39.3420]], n: 'The overpass', f: WAY_FLAGS.BRIDGE, l: 1 },
+    { r: [[-84.2670, 39.3410], [-84.2670, 39.3430]], n: 'The midway' },
+    { r: [[-84.2660, 39.3420], [-84.2650, 39.3426]], n: 'Steps to the midway', f: WAY_FLAGS.STEPS },
+  ],
+  service: [
+    { r: [[-84.2650, 39.3426], [-84.2640, 39.3426]], n: 'Back road', f: WAY_FLAGS.ONEWAY | WAY_FLAGS.RESTRICTED },
+  ],
+};
+
+await check('a flight of steps arrives in the graph marked as steps', () => {
+  const g = buildRouteGraph(CROSSING);
+  const steps = g.segments.filter((s) => hasWayFlag(s.flags, WAY_FLAGS.STEPS));
+  assert.ok(steps.length > 0, 'no segment came through marked as steps');
+  assert.deepEqual([...new Set(steps.map((s) => s.name))], ['Steps to the midway']);
+  // Still walkable, and still costed as ordinary path. Marking them is this
+  // change; charging for them is the next one.
+  assert.deepEqual([...new Set(steps.map((s) => s.kind))], ['path']);
+  assert.deepEqual([...new Set(steps.map((s) => s.factor))], [1]);
+  return true;
+});
+
+await check('a bridge keeps its layer, and the way underneath keeps the ground', () => {
+  const g = buildRouteGraph(CROSSING);
+  const over = g.segments.filter((s) => s.name === 'The overpass');
+  const under = g.segments.filter((s) => s.name === 'The midway');
+  assert.ok(over.length && under.length);
+  assert.ok(over.every((s) => hasWayFlag(s.flags, WAY_FLAGS.BRIDGE)), 'the bridge lost its flag');
+  assert.deepEqual([...new Set(over.map((s) => s.layer))], [1]);
+  assert.deepEqual([...new Set(under.map((s) => s.layer))], [0]);
+  /* The two still weld into a junction, because that is what the router does
+     today and this change is not allowed to alter it. What it now has is the
+     evidence that the junction is invented — which is the whole point of
+     carrying `layer` before anything spends it. */
+  assert.ok(over.length > 1 && under.length > 1, 'the crossing was not cut');
+  return true;
+});
+
+await check('a one-way service road says which way, and who is allowed down it', () => {
+  const g = buildRouteGraph(CROSSING);
+  const road = g.segments.filter((s) => s.name === 'Back road');
+  assert.ok(road.length > 0);
+  assert.ok(road.every((s) => hasWayFlag(s.flags, WAY_FLAGS.ONEWAY)));
+  assert.ok(road.every((s) => hasWayFlag(s.flags, WAY_FLAGS.RESTRICTED)));
+  assert.ok(road.every((s) => !hasWayFlag(s.flags, WAY_FLAGS.ONEWAY_BACK)));
+  // Read, not obeyed: index() still pushes both directions, unchanged.
+  const [seg] = road;
+  assert.ok(g.nodes[seg.a].edges.some((e) => e.to === seg.b));
+  assert.ok(g.nodes[seg.b].edges.some((e) => e.to === seg.a));
+  return true;
+});
+
+await check('the attributes survive the round trip from tags to bundle to graph', () => {
+  const way = (id, tags, coords) => ({
+    type: 'way',
+    id,
+    tags,
+    geometry: coords.map(([lng, lat]) => ({ lat, lon: lng })),
+  });
+  const { layers } = buildLayers(
+    [
+      way(1, { highway: 'steps', name: 'Sky Ride Stairs' }, [[-84.2680, 39.3420], [-84.2676, 39.3420]]),
+      way(2, { highway: 'footway', bridge: 'yes', layer: '2', name: 'The overpass' }, [
+        [-84.2676, 39.3420], [-84.2670, 39.3420],
+      ]),
+      way(3, { highway: 'service', oneway: '-1', access: 'private', name: 'Back road' }, [
+        [-84.2670, 39.3420], [-84.2664, 39.3420],
+      ]),
+      way(4, { highway: 'footway', name: 'Plain midway' }, [[-84.2664, 39.3420], [-84.2658, 39.3420]]),
+    ],
+    {
+      tolerance: 1.2,
+      minArea: 12,
+      venueArea: 1e6,
+      venueName: 'Nowhere',
+      annexed: new Set(),
+      clip: { south: 39.34, west: -84.28, north: 39.35, east: -84.26 },
+    },
+  );
+
+  // Through the exact bytes that ship, because that is what the phone parses.
+  const bundle = JSON.parse(JSON.stringify({ path: layers.path, service: layers.service }));
+  const byName = Object.fromEntries(
+    [...bundle.path, ...bundle.service].map((feat) => [feat.n, feat]),
+  );
+  assert.equal(wayFlagsOf(byName['Sky Ride Stairs']), WAY_FLAGS.STEPS);
+  assert.equal(wayFlagsOf(byName['The overpass']), WAY_FLAGS.BRIDGE);
+  assert.equal(wayLayerOf(byName['The overpass']), 2);
+  assert.equal(
+    wayFlagsOf(byName['Back road']),
+    WAY_FLAGS.ONEWAY_BACK | WAY_FLAGS.RESTRICTED,
+  );
+  // A way with nothing to add is written exactly as it always was.
+  assert.deepEqual(Object.keys(byName['Plain midway']), ['r', 'n']);
+
+  const g = buildRouteGraph(bundle);
+  const flagsOf = (name) => g.segments.filter((s) => s.name === name).map((s) => s.flags);
+  assert.deepEqual(flagsOf('Sky Ride Stairs'), [WAY_FLAGS.STEPS]);
+  assert.deepEqual(flagsOf('Plain midway'), [0]);
+  assert.deepEqual(g.segments.filter((s) => s.name === 'The overpass').map((s) => s.layer), [2]);
+  return true;
+});
+
+await check('a venue built before the attributes existed still loads and routes', () => {
+  /* The four bundles on disk were built before any of this and carry no `f`
+     and no `l` anywhere. They have to keep working untouched — a data change
+     that needs every venue rebuilt before the app runs is not shippable. */
+  const shipped = JSON.stringify(PARK);
+  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'the fixture already carries attributes');
+  const g = buildRouteGraph(PARK);
+  assert.ok(g.segments.every((s) => s.flags === 0 && s.layer === 0));
+  const r = findRoute(graph, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
+  assert.ok(r && r.metres > 0);
+  return true;
+});
+
+await check('carrying the attributes moves no route at all', () => {
+  /* The important one. This change puts data in the bundle and reads it into
+     the graph, and is not allowed to move a single route by a single metre —
+     so the same park is routed twice, once plain and once with an attribute on
+     every way, and the two answers are compared as bytes. */
+  const attributed = JSON.parse(JSON.stringify(PARK));
+  let marked = 0;
+  ['path', 'service'].forEach((key) => {
+    (attributed[key] || []).forEach((feat, i) => {
+      if (Array.isArray(feat)) return;
+      // Deliberately heavy-handed: every third way is steps, every fifth a
+      // bridge two levels up, every seventh one-way and back of house.
+      let f = 0;
+      if (i % 3 === 0) f |= WAY_FLAGS.STEPS;
+      if (i % 5 === 0) f |= WAY_FLAGS.BRIDGE;
+      if (i % 7 === 0) f |= WAY_FLAGS.ONEWAY | WAY_FLAGS.RESTRICTED;
+      if (i % 11 === 0) f |= WAY_FLAGS.TUNNEL;
+      if (f) {
+        feat.f = f;
+        marked += 1;
+      }
+      if (i % 5 === 0) feat.l = 2;
+    });
+  });
+  assert.ok(marked > 300, `${marked} ways marked`);
+
+  const plain = buildRouteGraph(PARK);
+  const loaded = buildRouteGraph(attributed);
+  assert.equal(loaded.segments.length, plain.segments.length);
+  assert.ok(loaded.segments.some((s) => hasWayFlag(s.flags, WAY_FLAGS.STEPS)), 'nothing was marked');
+
+  // Every edge costs the same, so every search over them answers the same.
+  const costOf = (g) => g.segments.map((s) => `${s.a}-${s.b}:${s.kind}:${s.len.toFixed(6)}:${s.factor}`);
+  assert.deepEqual(costOf(loaded), costOf(plain));
+
+  const places = RIDES.filter((p) => p.c === 'coaster' || p.c === 'ride')
+    .sort((a, b) => a.n.localeCompare(b.n));
+  const pairs = [];
+  for (let i = 0; i < places.length; i += 5) {
+    for (let j = 2; j < places.length; j += 7) {
+      if (i !== j) pairs.push([places[i], places[j]]);
+    }
+  }
+  assert.ok(pairs.length > 100, `${pairs.length} pairs`);
+  const routesOf = (g) =>
+    JSON.stringify(pairs.map(([a, b]) => findRoute(g, a, b, { landmarks: RIDES, destination: b.n })));
+  assert.equal(routesOf(loaded), routesOf(plain));
+  return true;
+});
+
 section('routing/routes');
 
 await check('a route follows the paths and is longer than the crow flies', () => {
@@ -1532,6 +1815,9 @@ const readPois = (rel) => JSON.parse(fs.readFileSync(new URL(`../public${rel}`, 
 /* ---------------------------------------------------- the venue checklist -- */
 
 const { checklist, failures } = await import('../scripts/lib/venue-checklist.mjs');
+const {
+  addressBook, assignKeys, keyAudit, osmRef, resolveOverride, seedLedger, serializeLedger,
+} = await import('../scripts/lib/venue-ids.mjs');
 
 await check('no venue ships half-built', () => {
   /* The list of what a location has to carry, held to. A park that is *almost*
@@ -1571,6 +1857,48 @@ await check('the checklist knows the difference between absent and not applicabl
   assert.equal(heights.status, 'missing');
   assert.equal(heights.required, true);
   assert.match(heights.fix, /overrides\.json/);
+
+  // A venue built before keys existed is not half-built either: it loads on the
+  // fallback, and rebuilding it is what issues them.
+  assert.equal(items.find((i) => i.key === 'keys').status, 'n/a');
+  return true;
+});
+
+await check('two places under one key fail the checklist rather than warning', () => {
+  /* This is the item the whole scheme exists for. Everything else on this list
+     is a feature that will be missing; a duplicate key is an edit filed against
+     the wrong place, so it is required and the build refuses. */
+  const bare = { id: 'somewhere', locality: 'Town, State' };
+  const map = { lands: [{ n: 'The Green' }], boundary: [[0, 0]], path: [[0, 0]] };
+  const clash = checklist(bare, map, [
+    { i: 'toilets', n: 'Toilets', c: 'restroom', lat: 0, lng: 0 },
+    { i: 'toilets', n: 'Toilets', c: 'restroom', lat: 1, lng: 1 },
+    { i: 'gate', n: 'Gate', c: 'gate', lat: 0, lng: 0 },
+    { i: 'cafe', n: 'Cafe', c: 'food', lat: 0, lng: 0 },
+  ]);
+  const keys = clash.find((i) => i.key === 'keys');
+  assert.equal(keys.status, 'missing');
+  assert.equal(keys.required, true);
+  assert.match(keys.detail, /"toilets"/);
+  assert.ok(failures(clash).some((i) => i.key === 'keys'));
+
+  // Half-keyed is a failure too: something wrote a place into the bundle
+  // without going through the ledger.
+  const half = checklist(bare, map, [
+    { i: 'gate', n: 'Gate', c: 'gate', lat: 0, lng: 0 },
+    { n: 'Toilets', c: 'restroom', lat: 0, lng: 0 },
+    { i: 'cafe', n: 'Cafe', c: 'food', lat: 0, lng: 0 },
+  ]);
+  assert.equal(half.find((i) => i.key === 'keys').status, 'missing');
+
+  // And a fully keyed venue passes, which is the state a rebuild leaves.
+  const good = checklist(bare, map, [
+    { i: 'gate', n: 'Gate', c: 'gate', lat: 0, lng: 0 },
+    { i: 'toilets', n: 'Toilets', c: 'restroom', lat: 0, lng: 0 },
+    { i: 'cafe', n: 'Cafe', c: 'food', lat: 0, lng: 0 },
+  ]);
+  assert.equal(good.find((i) => i.key === 'keys').status, 'ok');
+  assert.deepEqual(failures(good), []);
   return true;
 });
 
@@ -1626,14 +1954,38 @@ await check('every override is filed under a name the venue actually has', () =>
   files.forEach((file) => {
     const id = file.slice(0, -'.overrides.json'.length);
     const overrides = JSON.parse(fs.readFileSync(new URL(file, dir)));
-    const names = new Set(readPois(`/venues/${id}.pois.json`).map((p) => p.n.toLowerCase()));
+    /* Through the resolver the build itself uses, rather than a second copy of
+       its rules living here: a name, then the name the park renamed it from,
+       then — for the entries a name cannot address on its own — a key. A test
+       that reimplemented that would go on passing after the build stopped
+       agreeing with it. */
+    const book = addressBook(readPois(`/venues/${id}.pois.json`));
     const orphans = Object.entries(overrides.pois || {})
-      .filter(([n, patch]) => !names.has(n.toLowerCase()) && !names.has(String(patch.alias || '').toLowerCase()))
-      .map(([n]) => n);
+      .filter(([name, patch]) => !resolveOverride(book, name, patch))
+      .map(([name]) => name);
     // An override that matches nothing is a correction that silently did not
     // happen — usually the park renamed the ride and the alias was not moved.
     assert.deepEqual(orphans, [], `${id}: overrides with no POI to land on: ${orphans.join(', ')}`);
   });
+  return true;
+});
+
+await check('a key written into an overrides file addresses one place, not every twin', () => {
+  /* The reason keys are allowed in these files at all. `drop: ["Entrance"]` at
+     a park with five gates called Entrance removes all five; a key removes the
+     one that is wrong. Held here because the four venues on disk predate keys,
+     so nothing on the shelf exercises it yet. */
+  const pois = assignKeys(
+    [
+      { n: 'Entrance', lat: 41.4801, lng: -82.6811, c: 'gate' },
+      { n: 'Entrance', lat: 41.4835, lng: -82.6902, c: 'gate' },
+    ],
+    null,
+    { venue: 'v' },
+  ).pois;
+  const book = addressBook(pois);
+  assert.equal(resolveOverride(book, 'Entrance').length, 2);
+  assert.deepEqual(resolveOverride(book, 'entrance-2').map((p) => p.lat), [41.4835]);
   return true;
 });
 
@@ -2015,8 +2367,14 @@ await check('an entrance lands on the ride it belongs to, and a route on the pat
   const layers = { path: [] };
   const got = applyTrace(pois, layers, {
     features: [
-      tracedFeature({ kind: 'entrance', of: 'Diamondback', src: { error_m: 4 } }, pointAt(39.3440, -84.2660)),
-      tracedFeature({ kind: 'exit', of: 'Diamondback' }, pointAt(39.3441, -84.2661)),
+      tracedFeature(
+        { kind: 'entrance', of: 'Diamondback', src: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+        pointAt(39.3440, -84.2660),
+      ),
+      tracedFeature(
+        { kind: 'exit', of: 'Diamondback', src: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+        pointAt(39.3441, -84.2661),
+      ),
       tracedFeature({ kind: 'route', n: 'The cut-through' }, {
         type: 'LineString',
         coordinates: [[-84.2661, 39.3441], [-84.2665, 39.3444]],
@@ -2036,6 +2394,10 @@ await check('an entrance lands on the ride it belongs to, and a route on the pat
   // How far out the fit was travels with the pin. A place surveyed off a sign
   // and a place read off a drawing are different claims.
   assert.equal(pois[0].e[0].src.error_m, 4);
+  // The tracer's word for its tool becomes the word the weight table scores,
+  // and nothing else about its block is touched.
+  assert.equal(pois[0].e[0].src.by, 'traced');
+  assert.equal(pois[0].e[0].src.image, 'the 2026 park map');
   return true;
 });
 
@@ -2174,7 +2536,7 @@ await check('a claim has a shelf life, and it is flagged rather than decayed', (
 
 /* --------------------------------------------------- the ride inventory -- */
 
-const { addEvidence, attractionFor, publishable, unresolved } =
+const { addEvidence, attractionFor, claimFromSrc, publishable, SRC_BY, unresolved } =
   await import('../scripts/lib/attractions.mjs');
 const { candidates, rideNameOf } = await import('../scripts/lib/candidates.mjs');
 
@@ -2243,6 +2605,390 @@ await check('one ride with four mapped lanes yields one way in', () => {
   const got = candidates(map, [ride]).filter((c) => c.source === 'osm_queue_name' && c.type === 'queue_entrance');
   assert.equal(got.length, 1);
   assert.match(got[0].why, /outermost of 2 lanes/);
+  return true;
+});
+
+/* ------------------------------------------------------ who says so ------- */
+
+/* A coordinate already sitting on a place is evidence only if it says where it
+   came from. Three writers hang points on `e` and `out` — the builder's
+   `entrancesFromQueues`, the tracer's `applyTrace`, and this pipeline's own
+   publish step — and for a long time the readers could not tell them apart: a
+   traced entrance was invisible, anything else fell through to a default, and
+   the app's own output came back round as the heaviest source in the table. */
+
+const { fromTrace, fromTracedFile, inventory, publish } = await import('../scripts/attractions.mjs');
+const { OVERRIDE_DIR, VENUE_DIR } = await import('../scripts/lib/venue-io.mjs');
+
+const tracedSrc = { by: SRC_BY.TRACED, image: 'the 2026 park map', error_m: 4 };
+
+await check('a traced entrance reaches the inventory', () => {
+  /* The reader looked for `p.in`, which no writer in this repository has ever
+     produced, so every traced entrance was invisible here while exits worked
+     and nothing said otherwise. `e` is a list and `out` is one point, and both
+     shapes have to be read. */
+  const claims = fromTrace([{
+    n: 'Orion',
+    e: [{ ...near, n: 'Orion entrance', src: tracedSrc }],
+    out: { ...farOff, src: tracedSrc },
+  }]);
+  assert.deepEqual(claims.map((c) => [c.ride, c.type, c.source]), [
+    ['Orion', 'queue_entrance', 'traced'],
+    ['Orion', 'ride_exit', 'traced'],
+  ]);
+  assert.equal(claims[0].at.lat, near.lat);
+  assert.equal(claims[1].at.lng, farOff.lng);
+  // What the point is worth, and how far out it was, both come off the point.
+  assert.match(claims[0].why, /traced off the 2026 park map at ±4 m/);
+
+  // A ride with two ways in traced says both, and the field nothing writes
+  // says nothing.
+  const two = fromTrace([{ n: 'Orion', e: [{ ...near, src: tracedSrc }, { ...farOff, src: tracedSrc }] }]);
+  assert.equal(two.length, 2);
+  assert.deepEqual(fromTrace([{ n: 'Orion', in: { ...near, src: tracedSrc } }]), []);
+  return true;
+});
+
+await check('the pipeline does not cite itself', () => {
+  /* The loop that let one fact reach the publish floor alone. `publish()`
+     stamped `src.by` with the *feature* name, so a published exit carried
+     `ride_exit`, both readers fell through to a default, and this app's own
+     output came back in as `official_map` at 5 — annotated as though a park
+     had printed it. `fuse()` dedupes by source precisely to stop one fact
+     counting twice, and this went round it by the field instead. */
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  for (const feature of ['queue_entrance', 'ride_exit']) {
+    addEvidence(record, feature, { source: 'osm_named_queue', at: near }, { asOf: '2026-08-09' });
+    addEvidence(record, feature, { source: 'traced', at: alsoNear }, { asOf: '2026-08-09' });
+  }
+  const published = publishable(record);
+  assert.equal(published.e.src.by, SRC_BY.FUSED, 'what this pipeline writes is stamped as its own');
+  assert.equal(published.out.src.by, SRC_BY.FUSED);
+
+  // Straight back in through the bundle, which is the way it went round: the
+  // entrance on `e`, the exit on `out`.
+  const place = { n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26, e: [published.e], out: published.out };
+  assert.equal(claimFromSrc(published.e), null, 'a conclusion is not evidence for itself');
+  assert.deepEqual(fromTrace([place]), [], 'nothing off the out path');
+  assert.deepEqual(candidates({}, [place]), [], 'and nothing off the e path');
+  // `fused` is deliberately absent from the weight table, so there is nothing
+  // downstream to score it with either.
+  assert.equal(fuse([{ source: SRC_BY.FUSED, at: near }]).score, 0);
+  return true;
+});
+
+await check('an unsigned or unrecognised coordinate is worth nothing rather than a default', () => {
+  /* There is no fallback and there must never be one. The one that was here
+     read anything not stamped `trace` as `official_map` — a weight of 5 on a
+     coordinate of unknown standing. */
+  assert.equal(claimFromSrc({ ...near }), null, 'nobody signed it');
+  assert.equal(claimFromSrc({ ...near, src: {} }), null);
+  assert.equal(claimFromSrc({ ...near, src: { by: '' } }), null);
+  assert.equal(claimFromSrc(null), null);
+  // A word no scoring rule covers cannot be scored — `trace` included, which is
+  // the tracer's word for its tool and not the one `WEIGHTS` uses for the kind
+  // of source.
+  assert.equal(claimFromSrc({ ...near, src: { by: 'trace' } }), null);
+  assert.equal(claimFromSrc({ ...near, src: { by: 'official_map_2026' } }), null);
+
+  const place = {
+    n: 'Orion',
+    c: 'coaster',
+    lat: 39.34,
+    lng: -84.26,
+    e: [{ ...near }, { ...alsoNear, src: { by: 'trace' } }],
+    out: { ...farOff, src: { by: 'official_map_2026' } },
+  };
+  assert.deepEqual(fromTrace([place]), []);
+  assert.deepEqual(candidates({}, [place]), []);
+
+  // A word it does know reads as that word, with a note taken off the entry
+  // rather than asserted by the reader.
+  const known = claimFromSrc({ ...near, n: 'Orion Gate', src: { by: 'osm_entrance' } });
+  assert.equal(known.source, 'osm_entrance');
+  assert.match(known.why, /"Orion Gate", already on the place, from osm_entrance/);
+  return true;
+});
+
+await check('a traced pin does not stand the name-only detector down, and a named queue does', () => {
+  /* Two readings of the same queue name are one fact and counting them twice is
+     the repetition the evidence model refuses to reward. A traced pin is a
+     different fact about the same ride, so it is heard beside the name. */
+  const at = { n: 'Maverick', c: 'coaster', lat: 41.4800, lng: -82.6860 };
+  const map = {
+    path: [
+      { n: 'Midway', r: [[-82.6870, 41.4805], [-82.6850, 41.4805]] },
+      { n: 'Maverick Standby Queue', r: [[-82.6862, 41.48048], [-82.6860, 41.4800]] },
+    ],
+  };
+  // The walkable network always has something to say and it is not what this
+  // is about.
+  const waysIn = (poi) => candidates(map, [poi])
+    .filter((c) => c.type === 'queue_entrance' && c.source !== 'geometry')
+    .map((c) => c.source)
+    .sort();
+
+  assert.deepEqual(waysIn({ ...at, e: [{ lat: 41.48047, lng: -82.68615, src: tracedSrc }] }),
+    ['osm_queue_name', 'traced']);
+  assert.deepEqual(waysIn({
+    ...at,
+    e: [{ lat: 41.48048, lng: -82.6862, n: 'Maverick Standby Queue', src: { by: SRC_BY.NAMED_QUEUE } }],
+  }), ['osm_named_queue'], 'the mapper said which end you join, so the guess stands down');
+  // And with nothing on the ride at all, the name-only reading is all there is.
+  assert.deepEqual(waysIn(at), ['osm_queue_name']);
+  return true;
+});
+
+await check('an unsigned traced feature is refused rather than signed', () => {
+  /* The same shape as the bug on `e`, one file to the left, and the fix had
+     not reached it: `applyTrace` stamped `by: 'traced'` onto whatever arrived,
+     so a point carrying no block at all was minted into the bundle as a signed
+     weight-3 coordinate with no image and no error — and `fromTrace` read it
+     straight back out as evidence on the next run. The label came from which
+     tool was invoked rather than from the data. A human invokes it, so the lie
+     was smaller than the one already fixed; it is the same lie. */
+  const ride = () => ({ n: 'Diamondback', c: 'coaster', lat: 39.3438, lng: -84.2658 });
+  const traceOf = (props) => ({
+    features: [tracedFeature({ kind: 'entrance', of: 'Diamondback', ...props }, pointAt(39.3440, -84.2660))],
+  });
+
+  const bare = [ride()];
+  const got = applyTrace(bare, { path: [] }, traceOf({}));
+  assert.equal(got.entrances, 0);
+  assert.match(got.skipped[0], /no src block/);
+  assert.equal(bare[0].e, undefined, 'and nothing is written onto the place');
+
+  // A block that names no kind of source, and one naming a word no scoring
+  // rule covers, are worth exactly what an absent block is worth.
+  const anonymous = [ride()];
+  applyTrace(anonymous, { path: [] }, traceOf({ src: { image: 'a screenshot', error_m: 9 } }));
+  assert.equal(anonymous[0].e, undefined);
+  const ours = [ride()];
+  applyTrace(ours, { path: [] }, traceOf({ src: { by: SRC_BY.FUSED } }));
+  assert.equal(ours[0].e, undefined, 'this pipeline cannot hand itself a trace either');
+
+  // Signed by the tracer, which is what the tracer actually writes: kept whole,
+  // with the tool's word translated to the kind of source `WEIGHTS` scores.
+  const signed = [ride()];
+  applyTrace(signed, { path: [] }, traceOf({ src: { by: 'trace', image: 'the 2026 park map', error_m: 4 } }));
+  assert.equal(signed[0].e[0].src.by, SRC_BY.TRACED);
+  assert.equal(signed[0].e[0].src.error_m, 4);
+
+  // The tracer signs every feature and signs the collection once. Either is its
+  // own statement about the fit; neither is this reader's guess.
+  const stamped = [ride()];
+  applyTrace(stamped, { path: [] }, {
+    properties: { traced: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+    features: [tracedFeature({ kind: 'exit', of: 'Diamondback' }, pointAt(39.3441, -84.2661))],
+  });
+  assert.equal(stamped[0].out.src.by, SRC_BY.TRACED);
+  return true;
+});
+
+await check('a traced file that says nothing about itself yields no claim', () => {
+  /* The short way round a rebuild, and it hardcoded `source: 'traced'` at
+     weight 3 for every point in whatever GeoJSON it was handed — annotated
+     "traced off the park's own map" whether or not anything in the file said
+     so. What a claim is worth comes off the file. */
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'traced-'));
+  const wrote = (name, gj) => {
+    const file = path.join(dir, name);
+    fs.writeFileSync(file, JSON.stringify(gj));
+    return file;
+  };
+  const entrance = { type: 'Point', coordinates: [-84.2660, 39.3440] };
+  const feature = { type: 'Feature', geometry: entrance, properties: { kind: 'entrance', of: 'Orion' } };
+  try {
+    assert.deepEqual(
+      fromTracedFile(wrote('bare.geojson', { type: 'FeatureCollection', features: [feature] })),
+      [],
+    );
+    const signed = fromTracedFile(wrote('signed.geojson', {
+      type: 'FeatureCollection',
+      properties: { traced: { by: 'trace', image: 'the 2026 park map', error_m: 4 } },
+      features: [feature],
+    }));
+    assert.deepEqual(signed.map((c) => [c.ride, c.type, c.source]), [['Orion', 'queue_entrance', 'traced']]);
+    // The image and the error come out of the file, not out of the flag.
+    assert.match(signed[0].why, /traced off the 2026 park map at ±4 m/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+  return true;
+});
+
+/* A ride with a fused entrance, and the builder's own pin a few metres away —
+   which is the normal case, since the fused point sits on its heaviest source
+   rather than between them. */
+const withFused = () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  for (const feature of ['queue_entrance', 'ride_exit']) {
+    addEvidence(record, feature, { source: 'osm_named_queue', at: near }, { asOf: '2026-08-09' });
+    addEvidence(record, feature, { source: 'traced', at: alsoNear }, { asOf: '2026-08-09' });
+  }
+  const pin = { ...near, n: 'Orion Standby Queue', src: { by: SRC_BY.NAMED_QUEUE } };
+  return { record, pin, place: { n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26, e: [pin] } };
+};
+
+await check('a fused point and the pin that produced it stand together', () => {
+  /* Publishing kept a prior entry only if it was *both* not ours *and* more
+     than 20 m away, and both had to hold — so the builder's own pin, normally
+     a few metres from the point it argued for, was deleted by the conclusion
+     it produced. The comment said such pins were kept beside the fused one.
+     They are the input the next run re-derives from: a conclusion that eats
+     its premises is not re-derivable, it is self-perpetuating. */
+  const { record, pin, place } = withFused();
+  publish('kings-island', [place], [record], 'moderate');
+
+  assert.equal(place.e.length, 2);
+  assert.equal(place.e[0].src.by, SRC_BY.FUSED, 'the conclusion first — it is what the app walks to');
+  assert.deepEqual(place.e[1], pin, 'and the pin behind it, untouched');
+  // Which is the point: the bundle can still say where its own entrance came
+  // from, and the next run reads that back as the evidence it was.
+  assert.deepEqual(fromTrace([place]).map((c) => c.source), ['osm_named_queue']);
+  return true;
+});
+
+await check('a published exit is not called an entrance', () => {
+  const { record } = withFused();
+  const published = publishable(record);
+  assert.equal(published.e.n, 'Orion entrance');
+  assert.equal(published.out.n, 'Orion exit', 'the point you come out of is not the way in');
+  // The feature is a field of its own, as it has to be: `by` is the kind of
+  // source, and the two answer different questions.
+  assert.equal(published.out.src.feature, 'ride_exit');
+  assert.equal(published.out.src.by, SRC_BY.FUSED);
+  return true;
+});
+
+await check('publishing twice leaves one conclusion, not two', () => {
+  /* Derived, not accreted. `e` is a list, so a step that appended rather than
+     replaced would give a ride a second entrance every time it ran, and the
+     bundle would grow a pull request out of a run that learned nothing. */
+  const { record, place } = withFused();
+  publish('kings-island', [place], [record], 'moderate');
+  const first = JSON.stringify(place);
+  publish('kings-island', [place], [record], 'moderate');
+
+  assert.equal(JSON.stringify(place), first, 'the same bytes, so a rebuild that learns nothing writes nothing');
+  assert.equal(place.e.filter((x) => x.src?.by === SRC_BY.FUSED).length, 1);
+  assert.equal(place.e.length, 2);
+  return true;
+});
+
+await check('a rebuild on a later day rewrites no dates', () => {
+  /* Every record used to read the day the script last ran, so `staleness()`
+     could never fire and every rebuild rewrote all 230 records — no diff could
+     answer "does OpenStreetMap still say what we shipped?". */
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  const slot = () => record.features.queue_entrance;
+  const seen = () => slot().evidence.find((e) => e.source === 'osm_named_queue');
+
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: near }, { asOf: '2026-03-01' });
+  assert.equal(seen().date, '2026-03-01');
+
+  // The same source, the same point, five months on. Re-deriving a point
+  // nobody has moved is not a fresh sighting of anything.
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: { ...near } }, { asOf: '2026-08-09' });
+  assert.equal(seen().date, '2026-03-01');
+  assert.equal(slot().newest_evidence, '2026-03-01');
+
+  // Which is the whole of what makes staleness able to fire at all.
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: near }, { asOf: '2027-04-01' });
+  assert.equal(slot().stale, true);
+
+  // Then the mapper moves it. Not a tolerance: a source that has moved its
+  // point by any amount it bothered to write down has said something new.
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: alsoNear }, { asOf: '2027-04-02' });
+  assert.equal(seen().date, '2027-04-02');
+  assert.equal(slot().stale, false);
+  return true;
+});
+
+await check('an explicit date on a claim beats both the retained one and the run', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  const dateOf = (source) =>
+    record.features.queue_entrance.evidence.find((e) => e.source === source)?.date;
+
+  addEvidence(record, 'queue_entrance', { source: 'traced', at: near }, { asOf: '2026-08-09' });
+  assert.equal(dateOf('traced'), '2026-08-09');
+  // Somebody stating when they saw it, on a point this source has not moved.
+  // The retained prior does not get to answer over them.
+  addEvidence(record, 'queue_entrance', { source: 'traced', at: near, date: '2025-06-01' }, { asOf: '2026-08-09' });
+  assert.equal(dateOf('traced'), '2025-06-01');
+  // Nor does the day the run happens to be on, for a source nobody had heard
+  // from before.
+  addEvidence(record, 'queue_entrance', { source: 'guest_photo', at: near, date: '2024-07-04' }, { asOf: '2026-08-09' });
+  assert.equal(dateOf('guest_photo'), '2024-07-04');
+  assert.equal(record.features.queue_entrance.newest_evidence, '2025-06-01', 'the file dates observations, not runs');
+  return true;
+});
+
+/* `inventory` joins its three files by venue id off disk, so a test of that
+   join needs a venue on disk. Written under an id no park will ever have and
+   taken away again whatever happens, so a failure here cannot leave one. */
+const FIXTURE_ID = 'unit-test-venue';
+
+function inventoryOf(pois, attractions) {
+  const files = [
+    path.join(VENUE_DIR, `${FIXTURE_ID}.map.json`),
+    path.join(VENUE_DIR, `${FIXTURE_ID}.pois.json`),
+    path.join(OVERRIDE_DIR, `${FIXTURE_ID}.attractions.json`),
+  ];
+  try {
+    fs.writeFileSync(files[0], JSON.stringify({ meta: { id: FIXTURE_ID }, path: [] }));
+    fs.writeFileSync(files[1], JSON.stringify(pois));
+    fs.writeFileSync(files[2], JSON.stringify({ version: 1, venue: FIXTURE_ID, attractions }));
+    return inventory(FIXTURE_ID);
+  } finally {
+    for (const file of files) fs.rmSync(file, { force: true });
+  }
+}
+
+const withSurvey = (name) => {
+  const record = attractionFor({ n: name, c: 'coaster', lat: 39.3441, lng: -84.2680 }, FIXTURE_ID);
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: near, date: '2025-04-01' });
+  return record;
+};
+
+await check('a ride the park has recapitalised keeps the evidence it has gathered', () => {
+  /* The join used to be an exact, case-sensitive `Map.get`, the strictest in a
+     pipeline whose every key is a display string that OpenStreetMap edits. A
+     mapper shouting a ride's name would have orphaned every scrap of evidence
+     against the old spelling and started the ride again from nothing, on the
+     next run, without saying so. */
+  const prior = withSurvey('The Beast');
+  const state = inventoryOf([{ n: 'The BEAST', c: 'coaster', lat: 39.3441, lng: -84.2680 }], [prior]);
+  assert.equal(state.records.length, 1);
+  const [record] = state.records;
+  assert.equal(record.id, prior.id, 'the same record, not a new one');
+  assert.equal(record.name, 'The BEAST', 'reading the spelling the park uses now');
+  assert.deepEqual(state.orphans, []);
+  const survey = record.features.queue_entrance.evidence.find((e) => e.source === 'official_map');
+  assert.equal(survey?.date, '2025-04-01', 'March evidence is still on the record in August');
+  return true;
+});
+
+await check('a normalised name finds its record, unless it could be any of three', () => {
+  /* Dropping a leading "The" and gaining a bracketed suffix is past what the
+     lowercased exact index can see, and `normaliseRideName` — the reading the
+     builder joins on when it attaches an entrance — sees it. */
+  const found = inventoryOf(
+    [{ n: 'Beast (Coaster)', c: 'coaster', lat: 39.3441, lng: -84.2680 }],
+    [withSurvey('The Beast')],
+  );
+  assert.equal(found.records[0].features.queue_entrance.evidence.length, 1);
+
+  /* Kings Island ships "The Racer", "Racer (Red)" and "Racer (Blue)" as three
+     separate rides that all normalise to "racer". Keying on the normalised name
+     alone would have merged three records into one and thrown two rides'
+     evidence away, so a reading that identifies three things identifies
+     nothing and the ride starts clean. */
+  const racers = ['The Racer', 'Racer (Red)', 'Racer (Blue)'].map(withSurvey);
+  const merged = inventoryOf([{ n: 'Racer', c: 'coaster', lat: 39.34, lng: -84.26 }], racers);
+  assert.equal(merged.records.length, 1);
+  assert.deepEqual(merged.records[0].features.queue_entrance.evidence, [],
+    'a fresh record beats one of three guesses');
   return true;
 });
 
@@ -2341,7 +3087,15 @@ await check('a named one-way queue says where you join it', () => {
   // The vertex that is never any way's end — the back of the line, not the
   // join between the two halves and not the boarding platform.
   assert.deepEqual(pois[0].e, [
-    { lat: 41.4819, lng: -82.6865, n: 'Millennium Force Standby Queue' },
+    {
+      lat: 41.4819,
+      lng: -82.6865,
+      n: 'Millennium Force Standby Queue',
+      // Signed with the kind of source it is. Three writers hang points on
+      // `e`, and a reader that cannot tell them apart weighs a guess as a
+      // survey — which is exactly what used to happen.
+      src: { by: SRC_BY.NAMED_QUEUE },
+    },
   ]);
   return true;
 });
@@ -2351,7 +3105,9 @@ await check('a queue drawn backwards still points the right way', () => {
   entrancesFromQueues(pois, [
     queueWay('Gemini Standby Queue', [[41.4860, -82.6890], [41.4866, -82.6897]], '-1'),
   ]);
-  assert.deepEqual(pois[0].e, [{ lat: 41.4866, lng: -82.6897, n: 'Gemini Standby Queue' }]);
+  assert.deepEqual(pois[0].e, [
+    { lat: 41.4866, lng: -82.6897, n: 'Gemini Standby Queue', src: { by: SRC_BY.NAMED_QUEUE } },
+  ]);
   return true;
 });
 
@@ -3111,6 +3867,53 @@ await check('walkable ground with no highway tag is still a walking route', () =
   return true;
 });
 
+await check('steps stay in the walkable network and are marked rather than dropped', () => {
+  /* Both halves matter and they pull against each other. Dropping steps from
+     the `path` layer would take 112 flights out of four parks' networks — a
+     route the app will not offer is worse than a route it offers badly — so
+     they stay, and carry a flag instead. */
+  assert.equal(classify(LAYER_RULES, { highway: 'steps' }), 'path');
+  assert.equal(wayAttributes({ highway: 'steps' }).f, WAY_FLAGS.STEPS);
+  return true;
+});
+
+await check('the attributes read off a way are the ones worth their bytes', () => {
+  // Present at all four venues and worth carrying.
+  assert.equal(wayAttributes({ highway: 'footway', bridge: 'viaduct', layer: '1' }).f, WAY_FLAGS.BRIDGE);
+  assert.equal(wayAttributes({ highway: 'footway', bridge: 'yes', layer: '1' }).l, 1);
+  assert.equal(wayAttributes({ highway: 'footway', tunnel: 'building_passage' }).f, WAY_FLAGS.TUNNEL);
+  assert.equal(wayAttributes({ highway: 'service', oneway: 'yes' }).f, WAY_FLAGS.ONEWAY);
+  assert.equal(wayAttributes({ highway: 'service', oneway: '-1' }).f, WAY_FLAGS.ONEWAY_BACK);
+  assert.equal(wayAttributes({ highway: 'service', access: 'private' }).f, WAY_FLAGS.RESTRICTED);
+  assert.equal(wayAttributes({ highway: 'service', access: 'no' }).f, WAY_FLAGS.RESTRICTED);
+
+  // A denial is not an assertion, and neither is silence.
+  assert.equal(wayAttributes({ highway: 'footway' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', bridge: 'no', tunnel: 'no', layer: '0' }), null);
+  assert.equal(wayAttributes({ highway: 'service', oneway: 'no' }), null);
+  /* `access=customers` is 173 ways at Cedar Point and means "people with a
+     ticket", which is nearly every path inside the gate. It is not the same
+     claim as `private`, and folding it in would make a fifth of the park read
+     as back of house. */
+  assert.equal(wayAttributes({ highway: 'footway', access: 'customers' }), null);
+
+  // Measured at zero or near it across all four venues, so deliberately unread.
+  assert.equal(wayAttributes({ highway: 'footway', incline: '10%' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', surface: 'asphalt' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', width: "10'" }), null);
+  assert.equal(wayAttributes({ highway: 'footway', covered: 'yes' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'yes' }), null);
+
+  // A `layer` outside the nibble it is worth storing in is a typo, not a cliff.
+  assert.equal(wayAttributes({ highway: 'footway', layer: '99' }).l, 7);
+  assert.equal(wayAttributes({ highway: 'footway', layer: '-99' }).l, -8);
+  assert.equal(wayAttributes({ highway: 'footway', layer: 'ground' }), null);
+
+  // Only the two layers the router welds carry any of it.
+  assert.deepEqual([...ROUTED_LAYERS].sort(), ['path', 'service']);
+  return true;
+});
+
 await check('a boat slip is not a walking route', () => {
   /* The marina at Cedar Point is 228 floating finger docks and six and a half
      kilometres of them, all tagged exactly like the boardwalks. A person can
@@ -3720,6 +4523,213 @@ await check('a place is addressable by id and by name', () => {
   // The first of a repeated name wins the bare-name key; the rest need the id.
   assert.equal(index.get('restrooms').n, 'Restrooms');
   assert.ok(index.get('restrooms-2'));
+  return true;
+});
+
+/* ------------------------------------------------------- primary keys ---- */
+
+/* The key a place is issued at build time, and the ledger that remembers it.
+   Everything below is about one property: an edit is filed under a key, so a
+   key that moves does not move the edit — it loses it. */
+
+section('venue/keys');
+
+/** A venue at build time: three places, one name worn twice. */
+const SOURCE = () => [
+  { n: 'Orion', lat: 39.3441, lng: -84.2681, c: 'coaster', osm: 'w111' },
+  { n: 'Restrooms', lat: 39.3450, lng: -84.2700, c: 'restroom', osm: 'n222' },
+  { n: 'Restrooms', lat: 39.3402, lng: -84.2650, c: 'restroom', osm: 'n333' },
+];
+/* Keyed on where a place stands, because that is the one thing every pass
+   here leaves alone — the name repeats and `osm` is stripped on the way out. */
+const keysOf = (pois) => Object.fromEntries(pois.map((p) => [`${p.lat},${p.lng}`, p.i]));
+
+await check('a key survives the park renaming the ride', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  assert.equal(first.pois.find((p) => p.n === 'Orion').i, 'orion');
+
+  // Same coaster, same OpenStreetMap way, new name on the sign.
+  const renamed = SOURCE().map((p) => (p.osm === 'w111' ? { ...p, n: 'Orion Reborn' } : p));
+  const second = assignKeys(renamed, first.ledger, { venue: 'v' });
+  const moved = second.pois.find((p) => p.n === 'Orion Reborn');
+  assert.equal(moved.i, 'orion', 'the key follows the ride, not the sign');
+  // And the title moved while the key did not — that is the whole split.
+  assert.equal(titleOf(moved), 'Orion Reborn');
+  assert.equal(keyOf(moved), 'orion');
+  return true;
+});
+
+await check('a key survives a rebuild that hands the places over in another order', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  // Overpass is under no obligation to answer in the same order twice.
+  const shuffled = [...SOURCE()].reverse();
+  const second = assignKeys(shuffled, first.ledger, { venue: 'v' });
+  assert.deepEqual(keysOf(second.pois), keysOf(first.pois));
+  // Even with no ledger at all, the order it arrives in cannot decide a key:
+  // an unmatched place is numbered by where it stands, not by where it sits in
+  // the array.
+  const scratch = assignKeys(shuffled, null, { venue: 'v' });
+  assert.deepEqual(keysOf(scratch.pois), keysOf(first.pois));
+  return true;
+});
+
+await check('two places sharing a name get different keys, and keep the ones they had', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const north = first.pois.find((p) => p.lat > 39.344 && p.n === 'Restrooms').i;
+  const south = first.pois.find((p) => p.lat < 39.344 && p.n === 'Restrooms').i;
+  assert.notEqual(north, south);
+
+  /* The failure this replaces: the northern block is deleted, so under the old
+     rule every restroom after it in the file shifted up a number and a "closed"
+     report landed on the wrong one. Here the survivor keeps its own number. */
+  const without = SOURCE().filter((p) => p.osm !== 'n222');
+  const second = assignKeys(without, first.ledger, { venue: 'v' });
+  assert.equal(second.pois.find((p) => p.n === 'Restrooms').i, south);
+
+  // And the vacated number is retired rather than freed: a new block built on
+  // the same spot next season is a different place and must not inherit its
+  // reports.
+  assert.equal(second.ledger.keys[north].retired, true);
+  const reborn = [...without, { n: 'Restrooms', lat: 39.3450, lng: -84.2700, c: 'restroom', osm: 'n444' }];
+  const third = assignKeys(reborn, second.ledger, { venue: 'v' });
+  const issued = third.pois.map((p) => p.i);
+  assert.equal(new Set(issued).size, issued.length);
+  assert.ok(!issued.includes(north), `${north} was reissued`);
+  return true;
+});
+
+await check('the same object coming back gets its own key back', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const gone = SOURCE().filter((p) => p.osm !== 'n333');
+  const second = assignKeys(gone, first.ledger, { venue: 'v' });
+  // A mapper deletes it, somebody puts it back. Same element, same key.
+  const third = assignKeys(SOURCE(), second.ledger, { venue: 'v' });
+  assert.deepEqual(keysOf(third.pois), keysOf(first.pois));
+  return true;
+});
+
+await check('a place with no OpenStreetMap element of its own still gets a stable key', () => {
+  /* Pitches, rides taken from their track, traced places and everything under
+     `overrides.add` have no element at all, which is the reason an element id
+     could not be the key. They match on position instead. */
+  const hand = [
+    { n: 'First Aid', lat: 39.3410, lng: -84.2660, c: 'service' },
+    { n: 'Site 247', lat: 39.3480, lng: -84.2710, c: 'campsite' },
+  ];
+  const first = assignKeys(hand, null, { venue: 'v' });
+  const second = assignKeys([...hand].reverse(), first.ledger, { venue: 'v' });
+  assert.deepEqual(keysOf(second.pois), keysOf(first.pois));
+  assert.deepEqual(first.pois.map((p) => p.i).sort(), ['first-aid', 'site-247']);
+  return true;
+});
+
+await check('the element id is kept as provenance and never reaches the phone', () => {
+  assert.equal(osmRef({ type: 'way', id: 12345 }), 'w12345');
+  assert.equal(osmRef({ type: 'node', id: 7 }), 'n7');
+  assert.equal(osmRef({ type: 'relation', id: 7 }), 'r7');
+  assert.equal(osmRef({ id: 7 }), null);
+  const { pois, ledger } = assignKeys(SOURCE(), null, { venue: 'v' });
+  // Off the bundle — no reader wants it and it is bytes on a precached file.
+  assert.equal(pois.every((p) => p.osm === undefined), true);
+  // In the ledger, where the next rebuild is the one that needs it.
+  assert.equal(ledger.keys.orion.osm, 'w111');
+  return true;
+});
+
+await check('a venue built before keys existed loads, and loads unchanged', () => {
+  /* The bundles on disk carry no key. A phone updates its app long before it
+     updates its precached map, so the fallback has to hold — and it has to
+     produce exactly the ids that are already out there. */
+  const manifest = JSON.parse(
+    fs.readFileSync(new URL('../public/venues/manifest.json', import.meta.url), 'utf8'),
+  );
+  for (const v of manifest.venues) {
+    const pois = JSON.parse(
+      fs.readFileSync(new URL(`../public/venues/${v.id}.pois.json`, import.meta.url), 'utf8'),
+    );
+    const ids = withIds(pois).map((p) => p.id);
+    assert.equal(new Set(ids).size, ids.length, `${v.id}: the fallback collided`);
+    /* And the migration is free: seeding the ledger from the bundle on disk
+       reproduces every one of those ids, so nothing a visitor has already
+       reported, favourited or navigated to moves when the keys land. */
+    const seeded = seedLedger(v.id, pois);
+    const keyed = assignKeys(pois, seeded, { venue: v.id }).pois.map((p) => p.i);
+    assert.deepEqual(keyed, ids, `${v.id}: the ledger disagrees with what is on phones`);
+  }
+  return true;
+});
+
+await check('a key in the bundle beats the name, and the fallback steps around it', () => {
+  const ids = withIds([
+    { i: 'restrooms-2', n: 'Restrooms' },
+    { n: 'Restrooms' },
+    { n: 'Restrooms' },
+  ]).map((p) => p.id);
+  // The explicit key is honoured, and no derived id is allowed to collide with it.
+  assert.deepEqual(ids, ['restrooms-2', 'restrooms', 'restrooms-3']);
+  assert.equal(new Set(ids).size, 3);
+  return true;
+});
+
+await check('a ledger that would not change is not rewritten', () => {
+  /* A rebuild that changes nothing must change nothing on disk, or "does
+     OpenStreetMap still say what we shipped?" stops being a question a diff can
+     answer. The ledger is written through one serialiser so the build can ask. */
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const second = assignKeys(SOURCE(), first.ledger, { venue: 'v' });
+  assert.equal(serializeLedger(second.ledger), serializeLedger(first.ledger));
+  // One line per key: a rename has to read as one changed line, not eight.
+  assert.equal(serializeLedger(first.ledger).trim().split('\n').length, SOURCE().length + 6);
+  return true;
+});
+
+await check('an overrides file keyed by a display name still lands on its places', () => {
+  const { pois } = assignKeys(SOURCE(), null, { venue: 'v' });
+  const book = addressBook(pois);
+  // The name is an alias layer over the keys, and an ambiguous name deliberately
+  // resolves to every place wearing it — two Poltergeists, one height rule.
+  assert.deepEqual(resolveOverride(book, 'Restrooms').map((p) => p.i).sort(), ['restrooms', 'restrooms-2']);
+  assert.deepEqual(resolveOverride(book, 'orion').map((p) => p.i), ['orion']);
+  // The name the park renamed it *from*, which is what `alias` is for.
+  assert.deepEqual(
+    resolveOverride(book, 'Orion Reborn', { alias: 'Orion' }).map((p) => p.i),
+    ['orion'],
+  );
+  assert.equal(resolveOverride(book, 'Nothing By That Name'), null);
+  return true;
+});
+
+await check('a duplicate key is reported rather than quietly merged away', () => {
+  /* The one function the checklist and the build's own refusal both read, so
+     the two can never disagree about what a broken venue looks like. A hand-
+     written `i` under a name two places wear is how this happens in practice. */
+  const clash = assignKeys(
+    [
+      { i: 'restrooms', n: 'Restrooms', lat: 39.345, lng: -84.27, c: 'restroom' },
+      { i: 'restrooms', n: 'Restrooms', lat: 39.340, lng: -84.265, c: 'restroom' },
+      { n: 'Orion', lat: 39.3441, lng: -84.2681, c: 'coaster' },
+    ],
+    null,
+    { venue: 'v' },
+  );
+  const audit = keyAudit(clash.pois);
+  assert.equal(audit.total, 3);
+  assert.equal(audit.unkeyed, 0);
+  assert.deepEqual(audit.duplicates.map((d) => d.key), ['restrooms']);
+
+  // Clean venues say so, and so does one that has no keys yet.
+  assert.deepEqual(keyAudit(assignKeys(SOURCE(), null, { venue: 'v' }).pois).duplicates, []);
+  assert.equal(keyAudit([{ n: 'Orion' }]).keyed, 0);
+  return true;
+});
+
+await check('a key is the escape hatch for the name that addresses too much', () => {
+  const { pois } = assignKeys(SOURCE(), null, { venue: 'v' });
+  const book = addressBook(pois);
+  // One of the two, on purpose — the case a name cannot express.
+  const hit = resolveOverride(book, 'restrooms-2');
+  assert.equal(hit.length, 1);
+  assert.equal(hit[0].i, 'restrooms-2');
   return true;
 });
 

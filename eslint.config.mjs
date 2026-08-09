@@ -5,7 +5,23 @@ import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 
 const config = [
   // sw.js is a service worker, not app code — it runs in its own global scope.
-  { ignores: ['.next/**', 'node_modules/**', 'out/**', 'public/sw.js'] },
+  // `.gitnexus/` is a generated code-intelligence index and `.claude/` holds
+  // agent skills and scratch worktrees: tool output, not this project's source.
+  // Left unignored they are worse than noise — the React Compiler rules below
+  // carry no `files` key, so they apply to every file ESLint walks, while the
+  // plugin defining them arrives scoped to JS and JSX. A stray `.cjs` in a tool
+  // directory is enough to make the rules outrun their plugin, and ESLint fails
+  // the whole run rather than that one file.
+  {
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'out/**',
+      'public/sw.js',
+      '.gitnexus/**',
+      '.claude/**',
+    ],
+  },
   ...nextCoreWebVitals,
   {
     /**

@@ -1,5 +1,6 @@
 [
   {
+    "i": "big-kahuna-s-tropical-mini-golf",
     "n": "Big Kahuna's Tropical Mini Golf",
     "lat": 30.388012,
     "lng": -86.472376,
@@ -13,6 +14,7 @@
     "note": "Three 18-hole courses over in the Adventure Park."
   },
   {
+    "i": "buccaneer-cove",
     "n": "Buccaneer Cove",
     "lat": 30.387893,
     "lng": -86.473961,
@@ -26,6 +28,7 @@
     "a": "Big Kahuna's"
   },
   {
+    "i": "cobra-twister",
     "n": "Cobra Twister",
     "lat": 30.38775,
     "lng": -86.47326,
@@ -39,6 +42,7 @@
     "note": "300 lb maximum."
   },
   {
+    "i": "hammerhead",
     "n": "Hammerhead",
     "lat": 30.38803,
     "lng": -86.47381,
@@ -52,6 +56,7 @@
     "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
   },
   {
+    "i": "honolulu-half-pipe",
     "n": "Honolulu Half Pipe",
     "lat": 30.38907,
     "lng": -86.472604,
@@ -65,6 +70,7 @@
     "a": "Big Kahuna's"
   },
   {
+    "i": "jumanji",
     "n": "Jumanji",
     "lat": 30.38825,
     "lng": -86.47357,
@@ -78,6 +84,7 @@
     "note": "Five storeys. 300 lb maximum."
   },
   {
+    "i": "kowabunga-racer",
     "n": "Kowabunga Racer",
     "lat": 30.38923,
     "lng": -86.47273,
@@ -91,6 +98,7 @@
     "note": "Head-first mat racer. The park files it under Over 42\"."
   },
   {
+    "i": "lazy-river",
     "n": "Lazy River",
     "lat": 30.387849,
     "lng": -86.473322,
@@ -103,6 +111,7 @@
     "a": "Big Kahuna's"
   },
   {
+    "i": "main-entrance",
     "n": "Main Entrance",
     "lat": 30.388757,
     "lng": -86.472518,
@@ -111,6 +120,7 @@
     "a": "Big Kahuna's"
   },
   {
+    "i": "maui-pipeline",
     "n": "Maui Pipeline",
     "lat": 30.38765,
     "lng": -86.47308,
@@ -124,6 +134,7 @@
     "note": "300 lb maximum."
   },
   {
+    "i": "monkey-river",
     "n": "Monkey River",
     "lat": 30.38766,
     "lng": -86.47318,
@@ -137,6 +148,7 @@
     "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
   },
   {
+    "i": "pleasure-island",
     "n": "Pleasure Island",
     "lat": 30.388936,
     "lng": -86.472939,
@@ -150,6 +162,7 @@
     "a": "Big Kahuna's"
   },
   {
+    "i": "skycoaster",
     "n": "Skycoaster",
     "lat": 30.388721,
     "lng": -86.471682,
@@ -163,6 +176,7 @@
     "a": "Big Kahuna's"
   },
   {
+    "i": "thunder-river",
     "n": "Thunder River",
     "lat": 30.38902,
     "lng": -86.47305,
@@ -176,6 +190,7 @@
     "note": "250 lb maximum."
   },
   {
+    "i": "tiki-river-run",
     "n": "Tiki River Run",
     "lat": 30.38795,
     "lng": -86.47286,
@@ -190,6 +205,7 @@
     "note": "250 lb in a single tube, 400 lb in a double."
   },
   {
+    "i": "wave-pool",
     "n": "Wave Pool",
     "lat": 30.387829,
     "lng": -86.473478,

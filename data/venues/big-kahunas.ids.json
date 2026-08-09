@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "keys": {
+    "big-kahuna-s-tropical-mini-golf": {"n":"Big Kahuna's Tropical Mini Golf","c":"ride","at":"30.388012,-86.472376"},
+    "buccaneer-cove": {"n":"Buccaneer Cove","c":"ride","at":"30.387893,-86.473961"},
+    "cobra-twister": {"n":"Cobra Twister","c":"ride","at":"30.38775,-86.47326"},
+    "hammerhead": {"n":"Hammerhead","c":"ride","at":"30.38803,-86.47381"},
+    "honolulu-half-pipe": {"n":"Honolulu Half Pipe","c":"ride","at":"30.38907,-86.472604"},
+    "jumanji": {"n":"Jumanji","c":"ride","at":"30.38825,-86.47357"},
+    "kowabunga-racer": {"n":"Kowabunga Racer","c":"ride","at":"30.38923,-86.47273"},
+    "lazy-river": {"n":"Lazy River","c":"ride","at":"30.387849,-86.473322"},
+    "main-entrance": {"n":"Main Entrance","c":"gate","at":"30.388757,-86.472518"},
+    "maui-pipeline": {"n":"Maui Pipeline","c":"ride","at":"30.38765,-86.47308"},
+    "monkey-river": {"n":"Monkey River","c":"ride","at":"30.38766,-86.47318"},
+    "pleasure-island": {"n":"Pleasure Island","c":"ride","at":"30.388936,-86.472939"},
+    "skycoaster": {"n":"Skycoaster","c":"ride","at":"30.388721,-86.471682"},
+    "thunder-river": {"n":"Thunder River","c":"ride","at":"30.38902,-86.47305"},
+    "tiki-river-run": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286"},
+    "wave-pool": {"n":"Wave Pool","c":"ride","at":"30.387829,-86.473478"}
+  }
+}

@@ -39,11 +39,15 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
-  addEvidence, attractionFor, FEATURES, publishable, SCHEMA_VERSION, toGeoJson, trim, unresolved,
+  addEvidence, attractionFor, claimFromSrc, FEATURES, publishable, SCHEMA_VERSION, SRC_BY,
+  toGeoJson, tracedSrc, trim, unresolved,
 } from './lib/attractions.mjs';
 import { candidates, needEntranceMost } from './lib/candidates.mjs';
-import { metresBetween, PUBLISH_AT } from './lib/evidence.mjs';
-import { OVERRIDE_DIR, readJson, VENUE_DIR, writeJson } from './lib/venue-io.mjs';
+import { PUBLISH_AT } from './lib/evidence.mjs';
+import { OVERRIDE_DIR, readJson, VENUE_DIR } from './lib/venue-io.mjs';
+// The app's own reading of "these two strings are the same ride", so the join
+// here and the builder's cannot drift apart.
+import { normaliseRideName } from '../lib/mapSymbols.js';
 
 const USAGE = `
 The ride inventory: every attraction, every way into it, and who says so.
@@ -62,6 +66,35 @@ The ride inventory: every attraction, every way into it, and who says so.
 
 const listFile = (id) => path.join(OVERRIDE_DIR, `${id}.attractions.json`);
 const today = () => new Date().toISOString().slice(0, 10);
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * Write a file, unless what is already there is what would be written.
+ *
+ * This step runs inside the build now, and the build's most valuable property
+ * is that a run which learns nothing changes nothing on disk. Rewriting a
+ * file with its own bytes is invisible to git but not to everything else — a
+ * mtime moves, a watcher fires, and the habit is how a pipeline ends up
+ * touching two hundred records to record that none of them moved. The bytes
+ * are exactly what `writeJson(file, value, true)` in lib/venue-io.mjs writes,
+ * so the two cannot disagree about what a file looks like.
+ *
+ * @returns whether anything was actually written
+ */
+function writeSettled(file, value) {
+  const next = `${JSON.stringify(value, null, 2)}\n`;
+  let now = null;
+  try {
+    now = readFileSync(file, 'utf8');
+  } catch {
+    // Not there yet, which is a difference like any other.
+  }
+  if (now === next) return false;
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, next);
+  return true;
+}
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -114,39 +147,109 @@ function fromOsmEntrances(pois) {
  */
 function fromTracedFile(file) {
   const gj = JSON.parse(readFileSync(file, 'utf8'));
-  const stamp = gj.properties?.traced || {};
-  const err = stamp.error_m;
-  return (gj.features || [])
-    .filter((f) => f.geometry?.type === 'Point' && ['entrance', 'exit'].includes(f.properties?.kind))
-    .map((f) => ({
+  const stamp = gj.properties?.traced;
+  const points = (gj.features || [])
+    .filter((f) => f.geometry?.type === 'Point' && ['entrance', 'exit'].includes(f.properties?.kind));
+
+  const out = [];
+  let unsigned = 0;
+  for (const f of points) {
+    /* What this is worth, and how far out it was, come off the file — never
+       off the fact that `--trace` was the flag typed. This used to write
+       `source: 'traced'` at weight 3 onto every point in whatever GeoJSON it
+       was handed, annotated "traced off the park's own map" whether or not
+       anything in the file said so. A person types the flag, so it was a
+       smaller lie than the one on `e`, but it is the same one: the label came
+       from which tool was invoked rather than from the data. */
+    const src = tracedSrc(f.properties, stamp);
+    const claim = src && claimFromSrc({ n: f.properties.n, src });
+    if (!claim) {
+      unsigned += 1;
+      continue;
+    }
+    out.push({
       ride: f.properties.of,
       type: f.properties.kind === 'entrance' ? 'queue_entrance' : 'ride_exit',
       at: { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] },
-      source: 'traced',
-      why: `traced off ${stamp.image || "the park's own map"}${err != null ? ` at \u00b1${err} m` : ''}`,
-    }));
+      ...claim,
+    });
+  }
+  if (unsigned) {
+    console.error(`  ! ${unsigned} point(s) in ${file} say nothing about where they came from, `
+      + 'so there is nothing to weigh them as. Re-run scripts/trace-venue.mjs to sign them.');
+  }
+  return out;
 }
 
-/** Whatever a trace off the park's own map had to say about entrances and exits. */
+/**
+ * Whatever is already sitting on a place about how it is entered and left.
+ *
+ * `e` is a list and `out` is one point, which is the whole reason this loop
+ * normalises before it reads: for a long time it looked for `p.in`, which no
+ * writer in the repository has ever produced, so every traced entrance was
+ * invisible here while exits worked and nothing said otherwise.
+ *
+ * What a point is worth comes off the point. There used to be a fallback —
+ * anything not stamped `trace` was read as `official_map`, the top of the
+ * weight table — and since `publish()` stamped the *feature* name, this
+ * pipeline's own published exit came back round as a park's own map at 5,
+ * annotated "traced off the park's own map". A coordinate that will not say
+ * where it came from is not evidence of anything, so it is skipped.
+ */
 function fromTrace(pois) {
   const out = [];
   for (const p of pois) {
-    for (const [key, type] of [['in', 'queue_entrance'], ['out', 'ride_exit']]) {
-      const at = p[key];
-      if (!Number.isFinite(at?.lat)) continue;
-      // A traced point already carries how far out its fit was; anything the
-      // tracer would not vouch for never reached the bundle in the first place.
-      const err = at.src?.error_m;
-      out.push({
-        ride: p.n,
-        type,
-        at,
-        source: at.src?.by === 'trace' ? 'traced' : 'official_map',
-        why: `traced off ${at.src?.image || "the park's own map"}${err != null ? ` at ±${err} m` : ''}`,
-      });
+    for (const [key, type] of [['e', 'queue_entrance'], ['out', 'ride_exit']]) {
+      const held = p[key];
+      for (const at of Array.isArray(held) ? held : [held]) {
+        if (!Number.isFinite(at?.lat)) continue;
+        const claim = claimFromSrc(at);
+        if (!claim) continue;
+        out.push({ ride: p.n, type, at, ...claim });
+      }
     }
   }
   return out;
+}
+
+/**
+ * Finding a ride again by name, when the name is the only key there is.
+ *
+ * Every join in this pipeline is a display string, and OpenStreetMap edits
+ * display strings. This one used to be the strictest of them — an exact,
+ * case-sensitive `Map.get` — so a mapper recapitalising "The BEAST" would have
+ * orphaned every scrap of evidence accumulated against "The Beast" and started
+ * the ride again from nothing, silently, on the next run.
+ *
+ * Two indexes, because one is not enough:
+ *
+ *   exact       the lowercased name. Unambiguous, and it is what publishing and
+ *               the trace already join on, so they cannot disagree.
+ *   normalised  `normaliseRideName`, the reading the *builder* joins on when it
+ *               attaches an entrance — so this and `entrancesFromQueues` agree
+ *               about which ride a claim is for. It survives recapitalisation,
+ *               bracketed suffixes and a leading "The".
+ *
+ * The normalised index resolves only where it is unambiguous, and that
+ * restriction is not theoretical: Kings Island ships "The Racer", "Racer (Red)"
+ * and "Racer (Blue)" as three separate rides that all normalise to "racer".
+ * Keying on the normalised name alone would have merged three records into one
+ * and thrown two rides' evidence away — a fix that loses more than the bug.
+ */
+function nameIndex(rows, nameOf) {
+  const exact = new Map();
+  const normal = new Map();
+  for (const row of rows) {
+    const name = nameOf(row);
+    exact.set(String(name).toLowerCase(), row);
+    const key = normaliseRideName(name);
+    if (!key) continue;
+    // Seen twice under one normalised name: it identifies nothing on its own.
+    normal.set(key, normal.has(key) ? null : row);
+  }
+  return (name) => exact.get(String(name).toLowerCase())
+    || normal.get(normaliseRideName(name))
+    || null;
 }
 
 /** Build or refresh one venue's inventory. */
@@ -157,19 +260,24 @@ function inventory(id, args) {
 
   const asOf = today();
   const existing = readJson(listFile(id));
-  const known = new Map((existing?.attractions || []).map((r) => [r.name, r]));
+  const known = nameIndex(existing?.attractions || [], (r) => r.name);
 
   const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
   const records = new Map();
   for (const ride of rides) {
     /* Kept across runs, so evidence gathered in March is still on the record in
        August and can be seen to disagree with something newer. Only the ride's
-       own position is refreshed from the rebuild. */
-    const prior = known.get(ride.n);
-    const record = prior ? { ...prior, at: { lat: ride.lat, lng: ride.lng } } : attractionFor(ride, id);
+       own position is refreshed from the rebuild — and the record keeps the
+       spelling the park uses now, since the display name is what a person
+       reads and the join no longer depends on it holding still. */
+    const prior = known(ride.n);
+    const record = prior
+      ? { ...prior, name: ride.n, at: { lat: ride.lat, lng: ride.lng } }
+      : attractionFor(ride, id);
     for (const f of FEATURES) record.features[f] ||= { at: null, confidence: 'unknown', score: 0, sources: [], evidence: [] };
-    records.set(ride.n, record);
+    records.set(String(ride.n).toLowerCase(), record);
   }
+  const recordFor = nameIndex(records.values(), (r) => r.name);
 
   const traced = args?.trace
     ? (Array.isArray(args.trace) ? args.trace : [String(args.trace)]).flatMap(fromTracedFile)
@@ -182,16 +290,31 @@ function inventory(id, args) {
     ...candidates(map, pois),
   ];
 
+  /* One source gets one say per feature, per run, and it is settled here rather
+     than by letting `addEvidence` supersede the same source over and over.
+     Several detectors sign their work `geometry` — a gate standing near the
+     ride and the nearest point on the walkable network are both this repo
+     inferring from shape — and the later of them has always won. Folding first
+     is what makes the dates hold still: a claim overwritten inside the run that
+     produced it was never an observation, and dating the survivor "today"
+     because an intermediate stood somewhere else would re-date the whole file
+     on every run for no change at all. The last claim wins, in the order the
+     detectors ran, which is exactly what repeated supersession did. */
   let applied = 0;
   const orphans = new Set();
+  const folded = new Map();
   for (const claim of claims) {
-    const record = records.get(claim.ride);
+    const record = recordFor(claim.ride);
     if (!record) {
       orphans.add(claim.ride);
       continue;
     }
-    addEvidence(record, claim.type, claim, { asOf });
+    if (!folded.has(record)) folded.set(record, new Map());
+    folded.get(record).set(`${claim.type}\u0000${claim.source}`, claim);
     applied += 1;
+  }
+  for (const [record, perSource] of folded) {
+    for (const claim of perSource.values()) addEvidence(record, claim.type, claim, { asOf });
   }
 
   const all = [...records.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -225,12 +348,27 @@ function publish(id, pois, records, floor) {
         }
         /* `e` is a list — a ride with a standby and a Fastlane queue has two
            ways in and both are real. The fused one goes first, since that is
-           the one the app walks to, and anything the builder derived that
-           stands somewhere else is kept beside it rather than overwritten. A
-           previous run's own entry is replaced rather than stacked. */
-        const kept = (t.e || []).filter(
-          (x) => !x.src?.by && metresBetween(x, value) > 20,
-        );
+           the one the app walks to, and *everything* another writer put there
+           is kept beside it. Only a previous run's own entry — the one stamped
+           `fused` — is replaced, which is what makes running this twice
+           produce one conclusion rather than two.
+
+           The pins that produced the fused point are kept above all. They used
+           to have to stand more than 20 m away to survive, which is exactly
+           backwards: a fused point sits on its heaviest source, so the
+           builder's own `osm_named_queue` pin is normally a few metres from
+           the conclusion it argued for, and publishing deleted it. That is the
+           input to the next run's evidence — `fromTrace` reads these entries
+           back — so deleting it meant the bundle could no longer re-derive
+           what it was already asserting. A conclusion that eats its premises
+           is not re-derivable, it is self-perpetuating.
+
+           The test is on the `fused` stamp and not on the absence of one: once
+           every writer signs its work, "unsigned" stops meaning "the
+           builder's" and starts meaning nothing at all. An unsigned entry is
+           still somebody's and is not this step's to delete — it is simply
+           worth nothing as evidence, which `claimFromSrc` already says. */
+        const kept = (t.e || []).filter((x) => x.src?.by !== SRC_BY.FUSED);
         t.e = [value, ...kept];
         changed += 1;
       }
@@ -330,7 +468,8 @@ function main() {
       continue;
     }
 
-    writeJson(listFile(id), {
+    const onDisk = readJson(listFile(id));
+    const list = {
       version: SCHEMA_VERSION,
       _comment:
         'Every ride at this venue, every feature of it, and the evidence behind each coordinate. '
@@ -342,15 +481,30 @@ function main() {
       generated: asOf,
       publish_at: floor,
       attractions: records.map(trim),
-    }, true);
-    console.error(`  Wrote ${listFile(id).replace(process.cwd() + '/', '')}`);
+    };
+    /* `generated` is the day this file last said something different, not the
+       day the script last ran. The distinction is what lets the inventory run
+       inside the build at all: a nightly rebuild that learns nothing has to
+       leave the tree exactly as it found it, or "does OpenStreetMap still say
+       what we shipped?" stops being a question a diff can answer and every
+       run opens a pull request full of new dates. `addEvidence` already keeps
+       a claim's own date still for the same reason; this is that rule applied
+       to the file around it. */
+    if (onDisk && same({ ...onDisk, generated: null }, { ...list, generated: null })) {
+      list.generated = onDisk.generated;
+    }
+    const short = (f) => f.replace(`${process.cwd()}/`, '');
+    if (writeSettled(listFile(id), list)) console.error(`  Wrote ${short(listFile(id))}`);
+    else console.error(`  ${short(listFile(id))} already says this — left alone.`);
 
     const changed = publish(id, pois, records, floor);
-    if (changed) {
-      writeJson(path.join(VENUE_DIR, `${id}.pois.json`), pois, true);
-      console.error(`  Published ${changed} field(s) onto public/venues/${id}.pois.json`);
-    } else {
+    const bundle = path.join(VENUE_DIR, `${id}.pois.json`);
+    if (!changed) {
       console.error('  Nothing clears the bar yet — the bundle is unchanged.');
+    } else if (writeSettled(bundle, pois)) {
+      console.error(`  Published ${changed} field(s) onto ${short(bundle)}`);
+    } else {
+      console.error(`  ${changed} field(s) published, all of which ${short(bundle)} already carried.`);
     }
 
     if (args.geojson) {
@@ -372,4 +526,4 @@ if (runDirectly) {
   }
 }
 
-export { fromOsmEntrances, fromTrace, inventory, publish };
+export { fromOsmEntrances, fromTrace, fromTracedFile, inventory, publish };

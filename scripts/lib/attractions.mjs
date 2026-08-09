@@ -21,9 +21,108 @@
  * see them.
  */
 
-import { atLeast, fuse, pointOf, PUBLISH_AT, staleness } from './evidence.mjs';
+import { atLeast, fuse, pointOf, PUBLISH_AT, staleness, WEIGHTS } from './evidence.mjs';
 
 export const SCHEMA_VERSION = 1;
+
+/**
+ * The one vocabulary for `src.by`, shared by everything that writes a
+ * coordinate onto a place.
+ *
+ * Three writers hang points on a place: the builder's `entrancesFromQueues`,
+ * the tracer's `applyTrace`, and this pipeline's own `publish()`. Until they
+ * agreed on a word, `publish()` stamped the *feature* name — so a published
+ * exit carried `ride_exit` — and both readers fell through to a default. The
+ * app's own output re-entered the pipeline as `official_map`, the heaviest
+ * source in the table, annotated as though a park had printed it: a claim
+ * citing itself, which is how one fact publishes itself.
+ *
+ * So the writer says what kind of source it is, in the same words `WEIGHTS`
+ * uses, and a reader that does not recognise the word reads nothing. There is
+ * no default and there must never be one — an unlabelled coordinate is a
+ * coordinate of unknown standing, and the honest weight for that is none.
+ *
+ * `fused` is deliberately absent from `WEIGHTS`. It is this pipeline's own
+ * conclusion, and a conclusion is not evidence for itself.
+ */
+export const SRC_BY = {
+  NAMED_QUEUE: 'osm_named_queue',
+  TRACED: 'traced',
+  FUSED: 'fused',
+};
+
+/**
+ * The tracer's word for the tool it is, which is not a kind of source.
+ *
+ * `trace-venue.mjs` stamps `by: 'trace'` because that is what produced the
+ * pixel. `WEIGHTS` scores `traced` because that is what kind of claim it is.
+ * One of them has to give, and it is this translation — in one place, so that
+ * the two readers of a traced file cannot disagree about what it says.
+ */
+export const TRACE_TOOL = 'trace';
+
+/**
+ * The signature on a traced feature, or nothing at all.
+ *
+ * Two things read a traced GeoJSON — `applyTrace`, folding it into a venue
+ * being built, and `fromTracedFile`, folding it straight into the inventory —
+ * and both of them used to assert the provenance rather than read it: a point
+ * became a signed weight-3 coordinate because of *which tool was invoked*,
+ * with an image and an error figure that were nowhere in the file. A human
+ * invokes those, so the lie was smaller than the one already fixed on `e`, but
+ * it is the same lie: a claim says where it came from or it says nothing.
+ *
+ * So the block is required rather than minted. The tracer writes it on every
+ * feature *and* once on the collection, so either is read — both are the
+ * tracer's own statement about the fit, and neither is this reader's guess.
+ *
+ * @param props  a GeoJSON feature's `properties`
+ * @param stamp  the collection's `properties.traced`, if it has one
+ * @returns the `src` block in the pipeline's vocabulary, or `null`
+ */
+export function tracedSrc(props, stamp) {
+  const src = props?.src || stamp || null;
+  if (!src) return null;
+  const by = src.by === TRACE_TOOL ? SRC_BY.TRACED : src.by;
+  // A word no scoring rule covers cannot be scored, and `fused` is this
+  // pipeline's own conclusion coming back round through a file.
+  if (!by || !(by in WEIGHTS)) return null;
+  return { ...src, by };
+}
+
+/* What each kind of already-placed point says for itself. Derived from the
+   entry rather than asserted by the reader, because the reader does not know
+   which writer put it there and the last thing that guessed was wrong. */
+const WHY = {
+  [SRC_BY.NAMED_QUEUE]: (e) =>
+    `where "${e.n || 'the queue'}" begins — a named queue tagged one-way towards the ride`,
+  [SRC_BY.TRACED]: (e) => {
+    const err = e.src?.error_m;
+    return `traced off ${e.src?.image || "the park's own map"}${err != null ? ` at \u00b1${err} m` : ''}`;
+  },
+};
+
+/**
+ * The claim a coordinate already sitting on a place makes about itself, or
+ * nothing at all.
+ *
+ * Nothing at all in three cases, and each of them matters: an entry with no
+ * `src.by` (nobody signed it), an entry naming a source this pipeline does not
+ * weigh (a word no scoring rule covers cannot be scored), and an entry this
+ * pipeline published itself (re-ingesting our own output is the loop).
+ *
+ * @param entry  one `e` or `out` value off a place
+ * @returns `{ source, why }`, or `null` if it may not be cited
+ */
+export function claimFromSrc(entry) {
+  const by = entry?.src?.by;
+  if (!by || by === SRC_BY.FUSED) return null;
+  if (!(by in WEIGHTS)) return null;
+  const why = WHY[by]
+    ? WHY[by](entry)
+    : `${entry.n ? `"${entry.n}", ` : ''}already on the place, from ${by}`;
+  return { source: by, why };
+}
 
 /**
  * The features a ride has, in the order somebody walks them.
@@ -55,7 +154,21 @@ export const FEATURES = [
  */
 export const PUBLISHED = { queue_entrance: 'e', ride_exit: 'out' };
 
+/* What each of them is called on the place. Both entries used to be written
+   `<ride> entrance`, so a published exit reached the app as "Orion entrance" —
+   the point you come out of, labelled as the way in. The label is a fact about
+   the feature and comes from the feature. */
+const NOUN = { queue_entrance: 'entrance', ride_exit: 'exit' };
+
 const blank = () => ({ at: null, confidence: 'unknown', score: 0, sources: [], evidence: [] });
+
+/* Whether two claims are about the same spot, to the last decimal place stored.
+   Not a tolerance: a source that has moved its point by any amount it bothered
+   to write down has said something new, and something new is dated today. */
+const samePlace = (a, b) => {
+  if (!a || !b) return !a && !b;
+  return a.lat === b.lat && a.lng === b.lng;
+};
 
 /** A record for a ride that has none yet. */
 export function attractionFor(poi, venueId) {
@@ -82,16 +195,30 @@ export function attractionFor(poi, venueId) {
  * superseded by a newer claim *from that same source* — a park that redraws its
  * map has changed its mind, and that is exactly what should overwrite; a forum
  * post does not get to overwrite the park.
+ *
+ * **The date is the observation, not the run.** A claim only takes today's date
+ * when it says something new: a source nobody had heard from, or one that has
+ * moved its coordinate. Re-deriving the same point from the same source is not
+ * a fresh sighting of anything, and dating it as though it were is how a
+ * pipeline launders its own age — every record reading the day the script last
+ * ran, `staleness()` unable to fire because nothing is ever older than today,
+ * and every rebuild rewriting all 230 records so no diff can answer "does
+ * OpenStreetMap still say what we shipped?".
  */
 export function addEvidence(record, feature, claim, { asOf } = {}) {
   const slot = record.features[feature];
   if (!slot) throw new Error(`No such feature "${feature}". One of: ${FEATURES.join(', ')}.`);
 
+  const prior = slot.evidence.find((e) => e.source === claim.source);
   const next = slot.evidence.filter((e) => e.source !== claim.source);
+  const at = claim.at ? { lat: claim.at.lat, lng: claim.at.lng } : null;
   next.push({
     source: claim.source,
-    at: claim.at ? { lat: claim.at.lat, lng: claim.at.lng } : null,
-    date: claim.date || asOf || null,
+    at,
+    /* An explicit date on the claim is somebody stating when they saw it and
+       always wins. Otherwise: the date this source was first seen saying this,
+       kept while it keeps saying it, and today's only once it changes. */
+    date: claim.date || (samePlace(prior?.at, at) ? prior.date : null) || asOf || null,
     note: claim.why || claim.note || null,
   });
 
@@ -140,8 +267,12 @@ export function publishable(record, floor = PUBLISH_AT) {
     out[key] = {
       lat: slot.at.lat,
       lng: slot.at.lng,
-      n: `${record.name} entrance`,
-      src: { by: feature, confidence: slot.confidence, sources: slot.sources },
+      n: `${record.name} ${NOUN[feature]}`,
+      /* `by` is the *kind of source* this coordinate is, in the one vocabulary
+         every writer uses — not which feature it is, which is what it used to
+         say and which is how a published exit came back round as an
+         `official_map` survey. The feature keeps its own field. */
+      src: { by: SRC_BY.FUSED, feature, confidence: slot.confidence, sources: slot.sources },
     };
   }
   return out;

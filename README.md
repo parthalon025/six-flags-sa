@@ -543,8 +543,9 @@ ambiguous or the park has no boundary mapped, `--bbox` is the way to say exactly
 meant.
 
 Or skip the terminal entirely: **Actions → Build a venue → Run workflow** fills the same
-arguments in from a form, runs the build on a runner, checks the app still builds with the
-result, and opens a draft pull request with the new park in it. That is the intended route
+arguments in from a form, runs the build on a runner, works out the ways into every ride from
+the result, checks the app still builds with it, and opens a draft pull request with the new
+park in it. That is the intended route
 for adding a venue — the build needs nothing but node and OpenStreetMap, which is precisely
 what a runner has.
 
@@ -554,6 +555,20 @@ that owns a lot of tarmac the map opens on the tarmac. Big Kahuna's own polygon 
 over its parking, far enough that the box midpoint and the boundary centroid agree to
 within two metres and both of them miss the water park. A rebuild never moves a centre the
 venue already has, so this is a decision made once rather than a flag to remember.
+
+A place has two strings and they are not the same string. `i` is its **key** — what a ride
+report on the wire, a favourite and a nav target are addressed by. `n` is its **title** —
+what a visitor reads. A park renaming a ride changes the title and must not change the key,
+because an edit is filed under the key and an edit whose key moved is not moved, it is
+lost. Keys are issued once, at build time, from a ledger committed at
+`data/venues/<id>.ids.json`; a rebuild matches each place back to the number it already had
+by its OpenStreetMap element, then by position within its name group, and anything the
+rebuild cannot claim is retired rather than freed so its number is never handed to a
+different place. The reasoning, including why the OpenStreetMap id is provenance rather
+than identity, is in `scripts/lib/venue-ids.mjs`. Overrides stay filed under the display
+name — those files are edited against a park's published height chart — with the key
+available as the escape hatch for the entries a name cannot address on its own, such as one
+of twenty-six places called "Restrooms".
 
 Each build writes `public/venues/<id>.map.json` and `public/venues/<id>.pois.json`, then
 rebuilds `public/venues/manifest.json` and the generated `lib/venueIndex.js`. The client
@@ -742,7 +757,35 @@ Two rules that took a wrong turn first:
 
 The evidence lives in `data/venues/<id>.attractions.json`, beside the bundle rather than in
 it: the bundle is overwritten by every rebuild and the evidence is the expensive part. Only
-what clears the bar is copied in, as `in` and `out` on the place.
+what clears the bar is copied in, as `e` and `out` on the place, stamped `fused` so that the
+next run can tell the pipeline's own conclusion apart from the evidence behind it.
+
+**The conclusion stands beside its inputs, not on top of them.** A fused entrance goes first
+in `e`, because that is the one the app walks to, and every pin another writer put there —
+the builder's queue-derived one, a traced one — stays behind it. That used to be conditional
+on standing more than 20 m away, which is exactly backwards: the fused point sits *on* its
+heaviest source rather than between them, so the pin that argued for it was normally a few
+metres away and publishing deleted it. Those pins are what the next run reads back as
+evidence, so a bundle that dropped them could no longer re-derive what it was asserting. A
+conclusion that eats its premises is not derived, it is self-perpetuating. Only the previous
+run's own `fused` entry is replaced, which is what makes publishing twice leave one entry.
+
+**It runs inside the build.** `public/venues/<id>.pois.json` has two writers — the builder,
+wholesale from OpenStreetMap, and this — and for a while only the builder ran in the
+**Build a venue** workflow, so every rebuild silently reverted the published entrances and
+the sidecar was the one artifact on the graph with nothing scheduled at all. The workflow now
+runs the inventory straight after the build, in that order, and the two are a pipeline rather
+than two writers racing: the builder emits the bundle, the inventory derives on top of it,
+and both files are committed together in the same pull request. Nothing writes back upstream
+— an override is raw hand input and a fused coordinate is derived output, and putting the
+second in the first would only move the violation one file to the left.
+
+That is affordable only because a run which learns nothing changes nothing. Publishing is
+re-derivation rather than accumulation, and the sidecar's `generated` date is the day the
+file last said something different rather than the day the script last ran — the same rule
+`addEvidence` applies to a single claim's date, applied to the file around it. So a rebuild
+that finds OpenStreetMap unchanged still produces an empty diff, and "does OpenStreetMap
+still say what we shipped?" stays a question a diff can answer.
 
 **What this does not do**, and does not pretend to: it does not look at aerial imagery, run
 computer vision over it, watch a ride walkthrough or fetch a park's PDF. Each of those is a
@@ -782,12 +825,22 @@ of it, both in pixels.
 ```
 
 Each kind lands somewhere different. An **entrance** and an **exit** go onto the ride they
-belong to as `in` and `out` — a place here has always been one point, and for a ride the
+belong to as `e` and `out` — a place here has always been one point, and for a ride the
 builder took from its track that point is the middle of the track, so "walk me to Diamondback"
 aimed at the top of the lift hill, over a fence. The ride keeps its own position for the
 marker; only the destination moves. A **route** goes into the drawn paths, which is also the
 routing graph, so a traced cut-through is walkable the moment it lands with no other change
 anywhere. A **place** is a new POI, for what OSM has not got at all.
+
+**Every pin says it was traced, or it is refused.** The tracer stamps each feature — and the
+collection — with the image, the model, the control count and the RMS error, and both readers
+of that file require it: `applyTrace`, folding a trace into a venue being built, and
+`npm run venues:attractions -- <id> --trace <file>`, the short way round a rebuild. Neither of
+them mints one. They used to, and it was the same laundering as on `e` one file to the left —
+a point became a signed weight-3 coordinate with an image and an error figure that were
+nowhere in the file, because of *which tool had been invoked*. A person types that command, so
+it was a smaller lie; it is the same lie. An unsigned point is reported as skipped and lands
+nowhere.
 
 **The accuracy is the whole design.** Big Kahuna's map was georeferenced by hand once, came
 out at 33 m RMS with residuals to 55 m in a park 400 m across, and every pin from it was
@@ -1100,6 +1153,7 @@ scripts/
   lib/osm-tags.mjs            the tag → layer and tag → category rules
   lib/geometry.mjs            simplification, clipping, area, centroid, point-in-polygon
   lib/venue-io.mjs            where venues live; manifest and index generation
+  lib/venue-ids.mjs           the primary key of a place, and the ledger that remembers it
   attractions.mjs             the ride inventory: every way into every ride, and who says so
   lib/evidence.mjs            what a source is worth, how claims fuse, when one has expired
   lib/candidates.mjs          plausible entrances proposed from the shape of the park
@@ -1123,6 +1177,7 @@ public/
   venues/<id>.pois.json       the places, with heights where a venue has them
   manifest.webmanifest        home-screen install
 data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
+data/venues/<id>.ids.json        the key issued to each place, and every number already spent
 data/venues/<id>.recipe.json     the box, pad and flags that built it — replayed by --rebuild
 data/venues/<id>.trace.json      control points and features clicked off the park's own map
 data/venues/<id>.attractions.json  per-ride features, their evidence and confidence

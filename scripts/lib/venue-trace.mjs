@@ -4,7 +4,7 @@
  * Four kinds of thing come out of a park's own map, and each of them lands
  * somewhere different:
  *
- *   entrance / exit  onto the ride they belong to, as `in` and `out`. A place
+ *   entrance / exit  onto the ride they belong to, as `e` and `out`. A place
  *                    here has always been one point, and for a ride taken from
  *                    its track that point is the middle of the track — so
  *                    "walk me to Diamondback" walks you to the top of the lift
@@ -17,12 +17,22 @@
  *                    with no other change anywhere.
  *   place            a new POI, for the things OpenStreetMap has not got at all.
  *
- * Everything traced keeps the `src` block the tracer stamped on it — the image,
- * the model, and how far out the fit was. That block is the difference between
- * data and decoration: a pin surveyed off a sign and a pin read off a drawing at
- * nine metres of error are different claims, and once they are in the same file
- * with no way to tell them apart, the second one has quietly become the first.
+ * An entrance or an exit lands only if it carries the `src` block the tracer
+ * stamped on it — the image, the model, and how far out the fit was — with
+ * `by` translated to the one word the rest of the pipeline weighs a trace
+ * under. That block is the difference between data and decoration: a pin
+ * surveyed off a sign and a pin read off a drawing at nine metres of error are
+ * different claims, and once they are in the same file with no way to tell
+ * them apart, the second one has quietly become the first. So the block is
+ * read off the feature rather than asserted by this file, and a point that
+ * carries none is reported as skipped instead of being signed on its behalf.
+ *
+ * A traced *route* is not weighed by anything: it is geometry the router walks,
+ * and it carries whatever the tracer said about it without this file adding to
+ * it either way.
  */
+
+import { tracedSrc } from './attractions.mjs';
 
 /** Metres between two lat/lngs, near enough at the scale of one venue. */
 const metresBetween = (a, b) => {
@@ -42,6 +52,10 @@ export function applyTrace(pois, layers, traced) {
   const features = traced?.features || [];
   const out = { entrances: 0, exits: 0, routes: 0, places: 0, unmatched: [], skipped: [] };
   if (!features.length) return out;
+
+  /* The tracer signs every feature and signs the collection once, with the
+     same block. Either will do — both are its own statement about the fit. */
+  const stamp = traced?.properties?.traced;
 
   const byName = new Map();
   for (const p of pois) {
@@ -99,18 +113,36 @@ export function applyTrace(pois, layers, traced) {
         out.skipped.push(`${props.of}: its ${kind} traced ${Math.round(metresBetween(at, targets[0]))} m away`);
         continue;
       }
+      /* The tracer's own block — image, model, error — kept whole, with `by`
+         translated from the tool's word to the kind of source `WEIGHTS`
+         scores it under, so a reader never has to know which writer it is
+         talking to.
+
+         Required, not minted. This used to stamp `by: 'traced'` onto whatever
+         arrived, so a feature carrying no block at all was written into the
+         bundle as a signed weight-3 coordinate with no image and no error —
+         and `fromTrace` read it straight back as evidence on the next run. The
+         signature is the difference between a pin surveyed off a sign and a
+         pin read off a drawing at nine metres of error; inventing one makes
+         the second into the first, quietly, in the file. */
+      const src = tracedSrc(props, stamp);
+      if (!src) {
+        out.skipped.push(`${props.of}: its ${kind} carries no src block, so there is nothing to weigh it as`);
+        continue;
+      }
       for (const t of targets) {
         if (kind === 'exit') {
-          t.out = { ...at, src: props.src || null };
+          t.out = { ...at, src };
           continue;
         }
         /* Into `e`, beside whatever the builder derived from a named one-way
            queue, rather than into a second field of its own. One concept, one
            place to read it — the app takes the first entrance and does not want
-           to learn that a traced one lives somewhere else. Replaces a traced
-           entry rather than stacking, so re-running a trace corrects. */
-        const kept = (t.e || []).filter((x) => x.src?.by !== 'trace');
-        t.e = [{ ...at, n: props.n || `${props.of} entrance`, src: props.src || null }, ...kept];
+           to learn that a traced one lives somewhere else. Replaces an entry
+           from the same kind of source rather than stacking, so re-running a
+           trace corrects rather than accreting. */
+        const kept = (t.e || []).filter((x) => x.src?.by !== src.by);
+        t.e = [{ ...at, n: props.n || `${props.of} entrance`, src }, ...kept];
       }
       out[kind === 'entrance' ? 'entrances' : 'exits'] += 1;
       continue;
