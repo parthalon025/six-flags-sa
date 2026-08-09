@@ -7,3 +7,9 @@ out
 # scratch harnesses agents drop at the root while verifying
 .drive-tmp.mjs
 *.tmp.mjs
+
+# isolated worktrees agents check out while working in parallel
+.claude/worktrees/
+
+# GitNexus code-intelligence index: derived from the source, rebuilt on demand
+.gitnexus/

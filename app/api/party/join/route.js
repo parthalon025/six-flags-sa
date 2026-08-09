@@ -55,7 +55,7 @@ export async function POST(request) {
       {
         kind: 'join',
         from: member.id,
-        body: { name: str(member.name || 'Guest', 24), avatar: member.avatar ?? null },
+        body: { name: str(member.name || 'Guest', 24) },
       },
       now,
     ).state;

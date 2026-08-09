@@ -20,6 +20,8 @@
  * that does not apply is never a failure.
  */
 
+import { keyAudit } from './venue-ids.mjs';
+
 const ok = (key, label, detail) => ({ key, label, status: 'ok', detail });
 const na = (key, label, detail) => ({ key, label, status: 'n/a', detail });
 const miss = (key, label, detail, fix, required = false) => ({
@@ -132,6 +134,48 @@ export function checklist(venue, map, pois, sizes = {}) {
           ),
     );
   }
+
+  /* ---- primary keys ---- */
+
+  /* The one item here that is about the app losing work rather than about a
+     feature being absent. Every edit a visitor makes — a ride reported down, a
+     favourite, a nav target — is filed under a place's key, so a key on two
+     places files an edit against whichever of them a reader finds first, and a
+     key that moves between builds files it against nothing at all. That is not
+     a gap in a venue, it is data loss, so it is required and the build refuses
+     rather than warning.
+
+     A venue with no keys at all is a different state and not a failure: it was
+     built before there were any, `withIds` falls back to the old name-and-file-
+     order rule, and it loads. Rebuilding it, or running npm run venues:overrides
+     over it, is what issues the keys. */
+  const keys = keyAudit(pois);
+  out.push(
+    keys.keyed === 0
+      ? na('keys', 'Primary keys', 'built before keys — ids fall back to the name')
+      : keys.duplicates.length
+        ? miss(
+            'keys',
+            'Primary keys',
+            `${keys.duplicates.length} key(s) on more than one place: `
+              + keys.duplicates.slice(0, 3).map((d) => `"${d.key}"`).join(', '),
+            `A key addresses one place. Usually an "i" written by hand into `
+              + `data/venues/${venue?.id}.overrides.json under a name more than one place wears — `
+              + `move it onto the key of the one you meant.`,
+            true,
+          )
+        : keys.unkeyed
+          ? miss(
+              'keys',
+              'Primary keys',
+              `${keys.unkeyed} of ${keys.total} places carry no key`,
+              `A half-keyed venue means something wrote places into the bundle without going `
+                + `through the ledger. Run npm run venues:overrides -- ${venue?.id} to issue the `
+                + `missing ones.`,
+              true,
+            )
+          : ok('keys', 'Primary keys', `${keys.keyed}, all distinct`),
+  );
 
   /* ---- height rules ---- */
 
