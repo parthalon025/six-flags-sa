@@ -1639,7 +1639,7 @@ await check('every override is filed under a name the venue actually has', () =>
 
 /* ------------------------------------------------------ heights from OSM -- */
 
-const { heightFromTags, poisFromTrack } = await import('../scripts/build-venue.mjs');
+const { heightFromTags, poisFromTrack, entrancesFromQueues } = await import('../scripts/build-venue.mjs');
 
 await check('a height sign on an OpenStreetMap object is read as a rule', () => {
   assert.deepEqual(heightFromTags({ minimum_height_requirement: '48in (122cm)' }), {
@@ -1709,6 +1709,76 @@ await check('track never duplicates a place the venue already has', () => {
 await check('an unnamed or empty piece of track supplies nothing', () => {
   assert.deepEqual(poisFromTrack([], [{ track: [{ r: TRACK('x').r }], category: 'ride' }]), []);
   assert.deepEqual(poisFromTrack([], [{ track: [{ n: 'Nowhere', r: [] }], category: 'ride' }]), []);
+  return true;
+});
+
+/* ------------------------------------------------------- queue entrances -- */
+
+/* A queue drawn as two one-way ways: the far one starts at the midway and runs
+   into the near one, which ends at the ride. Only the first start is a source. */
+const queueWay = (name, coords, oneway = 'yes') => ({
+  type: 'way',
+  tags: { name, highway: 'footway', ...(oneway ? { oneway } : {}) },
+  geometry: coords.map(([lat, lon]) => ({ lat, lon })),
+});
+
+await check('a named one-way queue says where you join it', () => {
+  const pois = [{ n: 'Millennium Force', c: 'coaster', lat: 41.4808, lng: -82.6855 }];
+  const out = entrancesFromQueues(pois, [
+    queueWay('Millennium Force Standby Queue', [[41.4819, -82.6865], [41.4815, -82.6861]]),
+    queueWay('Millennium Force Standby Queue', [[41.4815, -82.6861], [41.4809, -82.6856]]),
+  ]);
+  assert.equal(out.rides, 1);
+  // The vertex that is never any way's end — the back of the line, not the
+  // join between the two halves and not the boarding platform.
+  assert.deepEqual(pois[0].e, [
+    { lat: 41.4819, lng: -82.6865, n: 'Millennium Force Standby Queue' },
+  ]);
+  return true;
+});
+
+await check('a queue drawn backwards still points the right way', () => {
+  const pois = [{ n: 'Gemini', c: 'coaster', lat: 41.4862, lng: -82.6893 }];
+  entrancesFromQueues(pois, [
+    queueWay('Gemini Standby Queue', [[41.4860, -82.6890], [41.4866, -82.6897]], '-1'),
+  ]);
+  assert.deepEqual(pois[0].e, [{ lat: 41.4866, lng: -82.6897, n: 'Gemini Standby Queue' }]);
+  return true;
+});
+
+await check('two queues to one ride are two ways in, unless they touch', () => {
+  const far = [{ n: 'Rougarou', c: 'coaster', lat: 41.4820, lng: -82.6860 }];
+  entrancesFromQueues(far, [
+    queueWay('Rougarou Standby Queue', [[41.4824, -82.6868], [41.4821, -82.6861]]),
+    queueWay('Rougarou Fastlane Queue', [[41.4824, -82.6865], [41.4821, -82.6861]]),
+  ]);
+  assert.equal(far[0].e.length, 2, 'entrances 24 m apart are two doors');
+
+  const together = [{ n: 'Top Thrill 2', c: 'coaster', lat: 41.4830, lng: -82.6860 }];
+  entrancesFromQueues(together, [
+    queueWay('Top Thrill 2 Standby Queue', [[41.484023, -82.686051], [41.4835, -82.6861]]),
+    queueWay('Top Thrill 2 Fastlane Queue', [[41.484038, -82.686062], [41.4835, -82.6861]]),
+  ]);
+  assert.equal(together[0].e.length, 1, 'starts 1.9 m apart are one door');
+  assert.match(together[0].e[0].n, /Standby.*Fastlane|Fastlane.*Standby/);
+  return true;
+});
+
+await check('a queue with nothing to go on is reported, not guessed at', () => {
+  // No `oneway`: which end is the back of the line is not written down.
+  const noDir = [{ n: 'Maverick', c: 'coaster', lat: 41.4785, lng: -82.6835 }];
+  const a = entrancesFromQueues(noDir, [
+    queueWay('Maverick Fastlane Queue', [[41.4789, -82.6840], [41.4786, -82.6836]], null),
+  ]);
+  assert.equal(noDir[0].e, undefined);
+  assert.deepEqual(a.noDirection, ['Maverick']);
+
+  // Names a ride this venue does not have.
+  const b = entrancesFromQueues([{ n: 'The Racer', c: 'coaster', lat: 39.34, lng: -84.26 }], [
+    queueWay('Banshee Queue', [[39.3405, -84.2605], [39.3401, -84.2601]]),
+  ]);
+  assert.deepEqual(b.unmatched, ['Banshee']);
+  assert.equal(b.rides, 0);
   return true;
 });
 

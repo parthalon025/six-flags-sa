@@ -39,7 +39,7 @@ Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.
   like, and not its category colour either, because the whole reason to set a height is to
   see at a glance what is out. Rides that need a grown-up along get a plus badge. Plus a
   running tally of what's open, what needs an adult, and what's closed. All four parks
-  ship with theirs: 74 rules at Cedar Point, 65 at Kings Island, 47 at Six Flags Fiesta
+  ship with theirs: 74 rules at Cedar Point, 65 at Kings Island, 60 at Six Flags Fiesta
   Texas, 15 at Big Kahuna's — which is every ride there, at a park where the rule is as
   likely to be "no minimum" as a number, and the app says which.
   A venue built from OpenStreetMap alone has none until somebody writes them, and
@@ -748,8 +748,32 @@ between a quarter and a half of rides, one in five of them on the wrong ride, an
 them able to say whether it is the way in or the way out. That reads as authoritative and
 is not, which is worse than saying nothing, so it is not done.
 
-The mechanism for fixing it needs no code: name the gate in OpenStreetMap and it appears,
-the same way the seven above did.
+### What is derived, and from what
+
+Distance is the wrong instrument. Two things a mapper actually wrote down are the right
+ones, and where both exist the entrance follows exactly, with nothing estimated:
+
+- **the queue's name.** `Millennium Force Standby Queue` says whose queue it is. That is
+  attribution, not inference.
+- **`oneway`.** A queue runs one way, towards the ride. Chain one ride's queue ways together
+  and the vertex that is never any way's end is where the queue begins.
+
+`entrancesFromQueues()` in `scripts/build-venue.mjs` does that and hangs the result on the
+ride as `e`, a list of `{lat, lng, n}` — a list, because a standby queue and a Fastlane
+queue are two ways in, merged only when they start within 8 m of each other, which at
+Top Thrill 2 and Snake River Falls they do.
+
+Six rides at Cedar Point carry one today: Top Thrill 2, Millennium Force, Snake River Falls,
+Rougarou, Steel Vengeance and Gemini. Every one lands within 0.8 m of the walking network,
+as an entrance must, and between 16 m and 146 m from the ride's own marker — which is the
+size of the problem it fixes on the park's biggest queues. Maverick's queues carry no
+`oneway`, so it is reported and skipped rather than approximated. Kings Island's Racer has
+two named queues and will pick them up whenever its bundle is next rebuilt.
+
+Nothing else in the app reads `e` yet; it is data first, and moving routing onto it is a
+separate decision.
+
+The rest needs no code either: name the gate, or the queue, in OpenStreetMap and it appears.
 
 What the app does instead is route to the walking network. `findRoute` snaps both ends of
 every route to the real footpaths before searching, so navigating to a ride walks you to
@@ -781,7 +805,9 @@ browser.
 - **Height requirements** — for Kings Island, compiled from Kings Island Central and
   Theme Park Insider, reflecting the 2026 season. For Big Kahuna's, from the park's own
   2026 attraction pages, which state a minimum in prose for the thrill rides and file
-  every attraction under the park's own Over 42"/44"/48" headings. They live in
+  every attraction under the park's own Over 42"/44"/48" headings. For Six Flags Fiesta
+  Texas, from the park's Guest Safety and Accessibility Guide, topped up for the water park
+  from its own per-attraction pages, which post a Min and Max Height each. They live in
   `data/venues/<id>.overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
   at the gate and has the final say, so the app says as much on the rider-height screen.

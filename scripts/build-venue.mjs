@@ -43,6 +43,9 @@ import {
 import {
   OVERRIDE_DIR, readJson, readOverrides, reindex, slugify, VENUE_DIR, writeVenue,
 } from './lib/venue-io.mjs';
+// The app's own reading of "these two strings are the same ride", reused so the
+// builder and the renderer cannot disagree about it.
+import { normaliseRideName } from '../lib/mapSymbols.js';
 import path from 'node:path';
 
 const OVERPASS = [
@@ -600,6 +603,108 @@ export function poisFromTrack(pois, sources) {
   return added;
 }
 
+/* A queue's name, minus the words that make it a queue. "Millennium Force
+   Standby Queue" is a fact about Millennium Force. */
+const QUEUE_SUFFIX = /\s*\b(fastlane|fast lane|standby|stand by|extended|single rider)?\s*\b(queue|line)\b\s*$/i;
+
+/**
+ * Where you join the queue.
+ *
+ * A ride's marker is where the ride is — a footprint, a track midpoint, the
+ * centroid of an area — and at a big coaster that is not within sight of where
+ * you start queuing. Cedar Point's markers sit 96 to 148 metres from the back
+ * of the line at Millennium Force, Top Thrill 2 and Steel Vengeance, which is
+ * the wrong side of the ride to be sent to.
+ *
+ * OpenStreetMap has no ride-entrance tag and its gates cannot supply one: they
+ * are unnamed, a queue gate and a fence gate are both `barrier=gate`, and
+ * picking the nearest ride to a gate lands on the wrong ride about one time in
+ * five. So none of that is used here. What is used is the two things a mapper
+ * did write down:
+ *
+ *   the name   "Millennium Force Standby Queue" says whose queue it is. That is
+ *              attribution, not inference — nothing is being guessed at.
+ *   `oneway`   a queue runs one way, towards the ride. Chain the ways of one
+ *              queue together and the vertex that is never any way's end is
+ *              where the queue begins. That is the entrance.
+ *
+ * Nothing is derived without both. A queue with no `oneway` (Cedar Point's
+ * Maverick) and a queue naming a ride this bundle does not have are both
+ * reported and skipped rather than approximated.
+ *
+ * Exits are not attempted, and cannot be: four parks between them contain two
+ * objects naming an exit, both of them called "Attraction Exit", neither saying
+ * which attraction.
+ */
+export function entrancesFromQueues(pois, elements) {
+  const rides = pois.filter((p) => p.c === 'ride' || p.c === 'coaster');
+  const byName = new Map();
+  for (const r of rides) {
+    for (const key of [r.n, r.alias].filter(Boolean)) {
+      const k = normaliseRideName(key);
+      if (k && !byName.has(k)) byName.set(k, r);
+    }
+  }
+
+  const groups = new Map();
+  for (const el of elements) {
+    if (el.type !== 'way') continue;
+    const name = el.tags?.name;
+    if (!name || !QUEUE_SUFFIX.test(name)) continue;
+    const ride = name.replace(QUEUE_SUFFIX, '').trim();
+    if (!ride) continue;
+    if (!groups.has(ride)) groups.set(ride, []);
+    groups.get(ride).push(el);
+  }
+
+  const at = (p) => `${p.lat.toFixed(7)},${p.lon.toFixed(7)}`;
+  const out = { attached: 0, rides: 0, unmatched: [], noDirection: [] };
+
+  for (const [ride, ways] of groups) {
+    const poi = byName.get(normaliseRideName(ride));
+    if (!poi) {
+      out.unmatched.push(ride);
+      continue;
+    }
+    /* Only the ways that say which way they run. `oneway=-1` is drawn the other
+       way round, so its last vertex is its first. */
+    const starts = new Map();
+    const ends = new Set();
+    for (const w of ways) {
+      const dir = w.tags.oneway;
+      if (dir !== 'yes' && dir !== '-1') continue;
+      const g = (w.geometry || []).filter(Boolean);
+      if (g.length < 2) continue;
+      const [head, tail] = dir === '-1' ? [g[g.length - 1], g[0]] : [g[0], g[g.length - 1]];
+      starts.set(at(head), { p: head, n: w.tags.name });
+      ends.add(at(tail));
+    }
+    const sources = [...starts.entries()].filter(([k]) => !ends.has(k)).map(([, v]) => v);
+    if (!sources.length) {
+      out.noDirection.push(ride);
+      continue;
+    }
+
+    /* A ride with a standby queue and a Fastlane queue has two ways in, and
+       they are worth keeping apart — unless they start side by side, which at
+       Top Thrill 2 and Snake River Falls they do, a metre and a half apart. One
+       pin then, carrying both names. */
+    const kept = [];
+    for (const s of sources) {
+      const near = kept.find((k) => distanceMetres(k.lat, k.lng, s.p.lat, s.p.lon) < 8);
+      if (near) {
+        if (!near.n.includes(s.n)) near.n = `${near.n} / ${s.n}`;
+        continue;
+      }
+      kept.push({ lat: Number(s.p.lat.toFixed(6)), lng: Number(s.p.lon.toFixed(6)), n: s.n });
+    }
+    poi.e = kept;
+    out.attached += kept.length;
+    out.rides += 1;
+  }
+  return out;
+}
+
 /**
  * Every POI gets the district it stands in, which is what the header line reads
  * out. Matching runs against every named area found, including the ones outside
@@ -1059,6 +1164,19 @@ async function main() {
     for (const [area, n] of byArea) console.error(`    − ${n} in "${area}"`);
     const cut = new Set(offsite);
     pois = pois.filter((p) => !cut.has(p));
+  }
+
+  /* Where you join the queue, for the rides whose queue somebody named and
+     pointed. Before the overrides, so a hand-written `e` still wins. */
+  const ways = entrancesFromQueues(pois, elements);
+  if (ways.rides || ways.unmatched.length || ways.noDirection.length) {
+    console.error(
+      `  · queue entrances: ${ways.attached} on ${ways.rides} ride(s)` +
+        (ways.noDirection.length ? `, ${ways.noDirection.length} queue(s) with no oneway` : '') +
+        (ways.unmatched.length ? `, ${ways.unmatched.length} naming no ride here` : ''),
+    );
+    for (const miss of ways.noDirection) console.error(`    ? "${miss}" queue is not tagged oneway`);
+    for (const miss of ways.unmatched) console.error(`    ? "${miss}" has a queue but no ride by that name`);
   }
 
   const merged = applyOverrides(pois, overrides);
