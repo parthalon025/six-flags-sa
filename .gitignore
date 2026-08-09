@@ -7,3 +7,6 @@ out
 # scratch harnesses agents drop at the root while verifying
 .drive-tmp.mjs
 *.tmp.mjs
+
+# isolated worktrees agents check out while working in parallel
+.claude/
