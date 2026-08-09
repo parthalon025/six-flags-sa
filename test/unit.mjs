@@ -4963,6 +4963,44 @@ await check('a short phone still reaches the list', () => {
   return true;
 });
 
+/* ------------------------------------------------------------- app version */
+
+const { APP_VERSION, compareVersions, isNewerVersion, parseVersion } = await import('../lib/version.js');
+
+await check('APP_VERSION is a semver string', () => {
+  assert.ok(parseVersion(APP_VERSION), `not semver: ${APP_VERSION}`);
+  return true;
+});
+
+await check('compareVersions orders releases correctly', () => {
+  assert.equal(compareVersions('1.0.0', '1.0.0'), 0);
+  assert.equal(compareVersions('1.1.0', '1.0.9'), 1);
+  assert.equal(compareVersions('1.0.0', '2.0.0'), -1);
+  assert.equal(compareVersions('1.0.0-rc1', '1.0.0'), -1);
+  assert.equal(compareVersions('1.0.0', '1.0.0-rc1'), 1);
+  return true;
+});
+
+await check('isNewerVersion is strict', () => {
+  assert.equal(isNewerVersion('1.1.0', '1.0.0'), true);
+  assert.equal(isNewerVersion('1.0.0', '1.0.0'), false);
+  assert.equal(isNewerVersion('1.0.0', '1.1.0'), false);
+  return true;
+});
+
+await check('inject-version stamps public/app-version.json from package.json', () => {
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const stamped = JSON.parse(
+    fs.readFileSync(new URL('../public/app-version.json', import.meta.url), 'utf8'),
+  );
+  assert.equal(stamped.version, pkg.version);
+  assert.equal(typeof stamped.protocol, 'number');
+  assert.ok(stamped.built);
+  const sw = fs.readFileSync(new URL('../public/sw.js', import.meta.url), 'utf8');
+  assert.match(sw, new RegExp(`const CACHE = 'tracker-${pkg.version.replace(/\./g, '\\.')}'`));
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
 
 

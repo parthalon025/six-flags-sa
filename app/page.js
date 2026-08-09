@@ -22,6 +22,7 @@ import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import WeatherBanner from '@/components/WeatherBanner';
+import useAppUpdate from '@/components/useAppUpdate';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -449,9 +450,7 @@ export default function Page() {
   /* ---------- boot ---------- */
   useEffect(() => {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
-      // Tapping a notification while the app is already open means "show me
-      // this", and the worker cannot navigate the page itself.
+      // Registration and update checks live in useAppUpdate / lib/appUpdate.js.
       navigator.serviceWorker.addEventListener('message', (e) => {
         if (e.data?.type !== 'notification-open') return;
         if (e.data.focus) setTab('party');
@@ -618,6 +617,8 @@ export default function Page() {
     // "Status: In line" and is not enough for a sentence.
     setTimeout(() => setToast((t) => (t === msg ? null : t)), msg.length > 40 ? 6000 : 4000);
   }, []);
+
+  const appUpdate = useAppUpdate({ onToast: showToast });
 
   /* ---------- the party runtime ---------- */
 
@@ -2054,6 +2055,8 @@ export default function Page() {
                   clearCar();
                   showToast('Forgotten where you parked');
                 }}
+                appVersion={appUpdate.version}
+                updateStatus={appUpdate.status}
               />
             )}
 
@@ -2160,7 +2163,15 @@ export default function Page() {
               </div>
             )}
 
-            {view === 'diagnostics' && <Diagnostics runtime={runtimeApi} geo={geo} />}
+            {view === 'diagnostics' && (
+              <Diagnostics
+                runtime={runtimeApi}
+                geo={geo}
+                appVersion={appUpdate.version}
+                remoteVersion={appUpdate.remoteVersion}
+                updateStatus={appUpdate.status}
+              />
+            )}
           </div>
         </div>
 

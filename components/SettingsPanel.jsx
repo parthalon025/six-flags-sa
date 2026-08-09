@@ -31,6 +31,8 @@ export default function SettingsPanel({
   onUnhideCard = null,
   car = null,
   onClearCar = null,
+  appVersion = null,
+  updateStatus = 'idle',
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
@@ -233,6 +235,16 @@ export default function SettingsPanel({
 
       <div className="label">Advanced</div>
       <div className="rowList">
+        <div className="row">
+          <span className="rowText">App version</span>
+          <span className="rowValue">{appVersion || '—'}</span>
+        </div>
+        {updateStatus === 'offline' ? (
+          <div className="row">
+            <span className="rowText">Updates</span>
+            <span className="rowValue">Offline — using cached build</span>
+          </div>
+        ) : null}
         {/* "Frames sent / Version gaps / Electing" one tap from the top of a
             settings screen is somewhere to get lost. It takes a deliberate
             press to open now, and says so. */}

@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+
 /**
  * Cache headers for the files that are not code.
  *
@@ -31,6 +35,9 @@ const durable = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+  },
   reactStrictMode: true,
   async headers() {
     return [
@@ -43,6 +50,10 @@ const nextConfig = {
         // the one file where the default being changed later would be a bug
         // that takes a release to notice and a release to fix.
         source: '/sw.js',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
+      },
+      {
+        source: '/app-version.json',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
       },
     ];
