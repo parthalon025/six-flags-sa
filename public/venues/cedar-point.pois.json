@@ -769,7 +769,26 @@
       {
         "lat": 41.486212,
         "lng": -82.689509,
-        "n": "Gemini Standby Queue"
+        "n": "Gemini entrance",
+        "src": {
+          "by": "fused",
+          "feature": "queue_entrance",
+          "confidence": "moderate",
+          "sources": [
+            "geometry",
+            "osm_named_queue",
+            "osm_queue_name"
+          ]
+        }
+      },
+      {
+        "lat": 41.486212,
+        "lng": -82.689509,
+        "n": "Gemini Standby Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w857292933"
+        }
       }
     ]
   },
@@ -993,7 +1012,7 @@
     "a": "Gemini Midway"
   },
   {
-    "i": "lake-erie-nor-easter",
+    "i": "lake-eerie-nor-easter",
     "n": "Lake Erie Nor'easter",
     "lat": 41.488522,
     "lng": -82.687185,
@@ -1004,7 +1023,6 @@
       "max": null
     },
     "a": "Cedar Point Shores",
-    "alias": "Lake Eerie Nor'easter",
     "note": "OpenStreetMap spells it “Lake Eerie”; the sign does not."
   },
   {
@@ -1203,7 +1221,11 @@
       {
         "lat": 41.48195,
         "lng": -82.686529,
-        "n": "Millennium Force Standby Queue"
+        "n": "Millennium Force Standby Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w845898705"
+        }
       }
     ],
     "h": {
@@ -1871,12 +1893,20 @@
       {
         "lat": 41.482371,
         "lng": -82.68653,
-        "n": "Rougarou Fastlane Queue"
+        "n": "Rougarou Fastlane Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w849649249"
+        }
       },
       {
         "lat": 41.482338,
         "lng": -82.686767,
-        "n": "Rougarou Standby Queue"
+        "n": "Rougarou Standby Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w849650692"
+        }
       }
     ],
     "h": {
@@ -3294,7 +3324,11 @@
       {
         "lat": 41.484261,
         "lng": -82.691029,
-        "n": "Snake River Falls Fastlane Queue / Snake River Falls Standby Queue"
+        "n": "Snake River Falls Fastlane Queue / Snake River Falls Standby Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w844461872"
+        }
       }
     ],
     "note": "Closed for good at the end of the 2024 season — still on the OpenStreetMap drawing."
@@ -3421,12 +3455,20 @@
       {
         "lat": 41.486559,
         "lng": -82.692376,
-        "n": "Steel Vengeance Queue"
+        "n": "Steel Vengeance Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w853013784"
+        }
       },
       {
         "lat": 41.486555,
         "lng": -82.691916,
-        "n": "Steel Vengeance Extended Queue"
+        "n": "Steel Vengeance Extended Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w854077034"
+        }
       }
     ],
     "h": {
@@ -3624,7 +3666,11 @@
       {
         "lat": 41.484023,
         "lng": -82.686051,
-        "n": "Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue"
+        "n": "Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue",
+        "src": {
+          "by": "osm_named_queue",
+          "osm": "w106607194"
+        }
       }
     ],
     "h": {
@@ -3719,7 +3765,7 @@
     "a": "Frontier Town"
   },
   {
-    "i": "waterin-hole",
+    "i": "watterin-hole",
     "n": "Waterin' Hole",
     "lat": 41.487096,
     "lng": -82.684437,
@@ -3730,7 +3776,6 @@
       "max": 52
     },
     "a": "Cedar Point Shores",
-    "alias": "Watterin' Hole",
     "note": "OpenStreetMap doubles the t; the sign does not."
   },
   {

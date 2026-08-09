@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- six-flags-fiesta-texas",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
   "venue": "six-flags-fiesta-texas",
   "generated": "2026-08-09",
   "publish_at": "moderate",
   "attractions": [
     {
-      "id": "six-flags-fiesta-texas-bahama-blaster",
+      "id": "bahama-blaster",
       "name": "Bahama Blaster",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -44,10 +44,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bahama-blaster"
     },
     {
-      "id": "six-flags-fiesta-texas-bamboo-chutes",
+      "id": "bamboo-chutes",
       "name": "Bamboo Chutes",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -85,10 +86,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bamboo-chutes"
     },
     {
-      "id": "six-flags-fiesta-texas-bat-girl-coaster-chase",
+      "id": "bat-girl-coaster-chase",
       "name": "Bat Girl: Coaster Chase",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -99,8 +101,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 29.59654,
-            "lng": -98.61003
+            "lat": 29.59651,
+            "lng": -98.61008
           },
           "confidence": "unknown",
           "score": 1,
@@ -111,11 +113,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 29.59654,
-                "lng": -98.61003
+                "lat": 29.59651,
+                "lng": -98.61008
               },
               "date": "2026-08-09",
-              "note": "the walkable network at its closest, 4 m from the ride"
+              "note": "the walkable network at its closest, 9 m from the ride"
             }
           ],
           "from": "geometry",
@@ -126,10 +128,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bat-girl-coaster-chase"
     },
     {
-      "id": "six-flags-fiesta-texas-batman-the-ride",
+      "id": "batman-the-ride",
       "name": "BATMAN The Ride",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -167,10 +170,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "batman-the-ride"
     },
     {
-      "id": "six-flags-fiesta-texas-bermuda-triagle",
+      "id": "bermuda-triagle",
       "name": "Bermuda Triagle",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -208,10 +212,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bermuda-triagle"
     },
     {
-      "id": "six-flags-fiesta-texas-bermuda-triangle-riptide-runner-slide-pool",
+      "id": "bermuda-triangle-riptide-runner-slide-pool",
       "name": "Bermuda Triangle, Riptide Runner Slide Pool",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -249,10 +254,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bermuda-triangle-riptide-runner-slide-pool"
     },
     {
-      "id": "six-flags-fiesta-texas-bonzai-pipelines",
+      "id": "bonzai-pipelines",
       "name": "Bonzai Pipelines",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -290,10 +296,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bonzai-pipelines"
     },
     {
-      "id": "six-flags-fiesta-texas-boomerang-coast-to-coast",
+      "id": "boomerang-coast-to-coast",
       "name": "Boomerang Coast to Coast",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -331,10 +338,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "boomerang-coast-to-coast"
     },
     {
-      "id": "six-flags-fiesta-texas-bucking-broncos",
+      "id": "bucking-broncos",
       "name": "Bucking Broncos",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -372,10 +380,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bucking-broncos"
     },
     {
-      "id": "six-flags-fiesta-texas-bugs-white-water-rapids",
+      "id": "bugs-white-water-rapids",
       "name": "Bugs White Water Rapids",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -413,10 +422,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "bugs-white-water-rapids"
     },
     {
-      "id": "six-flags-fiesta-texas-chupacabra",
+      "id": "chupacabra",
       "name": "Chupacabra",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -454,10 +464,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "chupacabra"
     },
     {
-      "id": "six-flags-fiesta-texas-coca-cola-vip-lounge",
+      "id": "coca-cola-vip-lounge",
       "name": "Coca-Cola VIP Lounge",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -495,10 +506,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "coca-cola-vip-lounge"
     },
     {
-      "id": "six-flags-fiesta-texas-coral-cove",
+      "id": "coral-cove",
       "name": "Coral Cove",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -536,10 +548,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "coral-cove"
     },
     {
-      "id": "six-flags-fiesta-texas-cowabunga",
+      "id": "cowabunga",
       "name": "Cowabunga",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -577,10 +590,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "cowabunga"
     },
     {
-      "id": "six-flags-fiesta-texas-crow-s-nest",
+      "id": "crow-s-nest",
       "name": "Crow's Nest",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -618,10 +632,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "crow-s-nest"
     },
     {
-      "id": "six-flags-fiesta-texas-cyborg-cyber-revolution",
+      "id": "cyborg-cyber-revolution",
       "name": "Cyborg: Cyber Revolution",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -632,8 +647,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 29.59691,
-            "lng": -98.61019
+            "lat": 29.59689,
+            "lng": -98.61014
           },
           "confidence": "unknown",
           "score": 1,
@@ -644,11 +659,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 29.59691,
-                "lng": -98.61019
+                "lat": 29.59689,
+                "lng": -98.61014
               },
               "date": "2026-08-09",
-              "note": "the walkable network at its closest, 8 m from the ride"
+              "note": "the walkable network at its closest, 11 m from the ride"
             }
           ],
           "from": "geometry",
@@ -659,10 +674,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "cyborg-cyber-revolution"
     },
     {
-      "id": "six-flags-fiesta-texas-daffy-s-bus-stop",
+      "id": "daffy-s-bus-stop",
       "name": "Daffy's Bus Stop",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -700,10 +716,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "daffy-s-bus-stop"
     },
     {
-      "id": "six-flags-fiesta-texas-dare-devil-dive-flying-machines",
+      "id": "dare-devil-dive-flying-machines",
       "name": "Dare Devil Dive Flying Machines",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -741,10 +758,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "dare-devil-dive-flying-machines"
     },
     {
-      "id": "six-flags-fiesta-texas-dc-super-villains-swing",
+      "id": "dc-super-villains-swing",
       "name": "DC Super-Villains Swing",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -782,10 +800,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "dc-super-villains-swing"
     },
     {
-      "id": "six-flags-fiesta-texas-dr-diabolical-s-cliffhanger",
+      "id": "dr-diabolical-s-cliffhanger",
       "name": "Dr. Diabolical's Cliffhanger",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -823,10 +842,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "dr-diabolical-s-cliffhanger"
     },
     {
-      "id": "six-flags-fiesta-texas-fireball",
+      "id": "fireball",
       "name": "Fireball",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -864,10 +884,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "fireball"
     },
     {
-      "id": "six-flags-fiesta-texas-foghorn-leghorn-s-barnyard-railway",
+      "id": "foghorn-leghorn-s-barnyard-railway",
       "name": "Foghorn Leghorn's Barnyard Railway",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -905,10 +926,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "foghorn-leghorn-s-barnyard-railway"
     },
     {
-      "id": "six-flags-fiesta-texas-goliath",
+      "id": "goliath",
       "name": "Goliath",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -946,10 +968,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "goliath"
     },
     {
-      "id": "six-flags-fiesta-texas-green-lantern-emerald-flight",
+      "id": "green-lantern-emerald-flight",
       "name": "Green Lantern Emerald Flight",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -960,8 +983,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 29.59689,
-            "lng": -98.61044
+            "lat": 29.59695,
+            "lng": -98.61054
           },
           "confidence": "unknown",
           "score": 1,
@@ -972,11 +995,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 29.59689,
-                "lng": -98.61044
+                "lat": 29.59695,
+                "lng": -98.61054
               },
               "date": "2026-08-09",
-              "note": "the walkable network at its closest, 9 m from the ride"
+              "note": "the walkable network at its closest, 12 m from the ride"
             }
           ],
           "from": "geometry",
@@ -987,10 +1010,53 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "green-lantern-emerald-flight"
     },
     {
-      "id": "six-flags-fiesta-texas-gully-washer",
+      "id": "gully-washer",
+      "name": "Gully Washer",
+      "venue": "six-flags-fiesta-texas",
+      "type": "attraction",
+      "at": {
+        "lat": 29.597382,
+        "lng": -98.613361
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.59784,
+            "lng": -98.61369
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.59784,
+                "lng": -98.61369
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 14 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "gully-washer"
+    },
+    {
+      "id": "gully-washer-2",
       "name": "Gully Washer",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1028,10 +1094,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "gully-washer-2"
     },
     {
-      "id": "six-flags-fiesta-texas-hurricane-force-5",
+      "id": "hurricane-force-5",
       "name": "Hurricane Force 5",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1069,10 +1136,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "hurricane-force-5"
     },
     {
-      "id": "six-flags-fiesta-texas-hustler",
+      "id": "hustler",
       "name": "Hustler",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1110,10 +1178,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "hustler"
     },
     {
-      "id": "six-flags-fiesta-texas-iron-rattler",
+      "id": "iron-rattler",
       "name": "Iron Rattler",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -1151,10 +1220,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "iron-rattler"
     },
     {
-      "id": "six-flags-fiesta-texas-kid-flash-cosmic-coaster",
+      "id": "kid-flash-cosmic-coaster",
       "name": "Kid Flash Cosmic Coaster",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -1192,10 +1262,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "kid-flash-cosmic-coaster"
     },
     {
-      "id": "six-flags-fiesta-texas-kiddee-koaster",
+      "id": "kiddee-koaster",
       "name": "Kiddee Koaster",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -1233,10 +1304,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "kiddee-koaster"
     },
     {
-      "id": "six-flags-fiesta-texas-kinderstein",
+      "id": "kinderstein",
       "name": "Kinderstein",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1274,10 +1346,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "kinderstein"
     },
     {
-      "id": "six-flags-fiesta-texas-lone-star-lagoon",
+      "id": "lone-star-lagoon",
       "name": "Lone Star Lagoon",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1315,22 +1388,23 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "lone-star-lagoon"
     },
     {
-      "id": "six-flags-fiesta-texas-metropolis-transit-authority",
+      "id": "metropolis-transit-authority",
       "name": "Metropolis Transit Authority",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
       "at": {
-        "lat": 29.596935,
-        "lng": -98.609872
+        "lat": 29.596933,
+        "lng": -98.609988
       },
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 29.59695,
-            "lng": -98.60993
+            "lat": 29.59686,
+            "lng": -98.60996
           },
           "confidence": "unknown",
           "score": 1,
@@ -1341,11 +1415,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 29.59695,
-                "lng": -98.60993
+                "lat": 29.59686,
+                "lng": -98.60996
               },
               "date": "2026-08-09",
-              "note": "the walkable network at its closest, 6 m from the ride"
+              "note": "the walkable network at its closest, 9 m from the ride"
             }
           ],
           "from": "geometry",
@@ -1356,10 +1430,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "metropolis-transit-authority"
     },
     {
-      "id": "six-flags-fiesta-texas-pandemonium",
+      "id": "pandemonium",
       "name": "Pandemonium",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -1397,10 +1472,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "pandemonium"
     },
     {
-      "id": "six-flags-fiesta-texas-paradise-cove",
+      "id": "paradise-cove",
       "name": "Paradise Cove",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1438,10 +1514,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "paradise-cove"
     },
     {
-      "id": "six-flags-fiesta-texas-pirates-of-the-deep-sea",
+      "id": "pirates-of-the-deep-sea",
       "name": "Pirates of the Deep Sea",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1479,10 +1556,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "pirates-of-the-deep-sea"
     },
     {
-      "id": "six-flags-fiesta-texas-poison-ivy-toxic-spin",
+      "id": "poison-ivy-toxic-spin",
       "name": "Poison Ivy Toxic Spin",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1520,10 +1598,53 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "poison-ivy-toxic-spin"
     },
     {
-      "id": "six-flags-fiesta-texas-poltergeist",
+      "id": "poltergeist",
+      "name": "Poltergeist",
+      "venue": "six-flags-fiesta-texas",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 29.597207,
+        "lng": -98.608572
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 29.5969,
+            "lng": -98.60837
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 29.5969,
+                "lng": -98.60837
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "poltergeist"
+    },
+    {
+      "id": "poltergeist-2",
       "name": "Poltergeist",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -1561,10 +1682,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "poltergeist-2"
     },
     {
-      "id": "six-flags-fiesta-texas-ripqurl",
+      "id": "ripqurl",
       "name": "RipQurl",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1602,10 +1724,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "ripqurl"
     },
     {
-      "id": "six-flags-fiesta-texas-riptide-runner",
+      "id": "riptide-runner",
       "name": "Riptide Runner",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1643,10 +1766,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "riptide-runner"
     },
     {
-      "id": "six-flags-fiesta-texas-road-runner-express",
+      "id": "road-runner-express",
       "name": "Road Runner Express",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -1684,10 +1808,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "road-runner-express"
     },
     {
-      "id": "six-flags-fiesta-texas-schi-kugel-arcade",
+      "id": "schi-kugel-arcade",
       "name": "Schi-Kugel Arcade",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1725,10 +1850,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "schi-kugel-arcade"
     },
     {
-      "id": "six-flags-fiesta-texas-scream",
+      "id": "scream",
       "name": "Scream",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1766,10 +1892,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "scream"
     },
     {
-      "id": "six-flags-fiesta-texas-shazam-tower-of-eternity",
+      "id": "shazam-tower-of-eternity",
       "name": "Shazam! Tower of Eternity",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1807,10 +1934,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "shazam-tower-of-eternity"
     },
     {
-      "id": "six-flags-fiesta-texas-spinsanity",
+      "id": "spinsanity",
       "name": "Spinsanity",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1848,10 +1976,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "spinsanity"
     },
     {
-      "id": "six-flags-fiesta-texas-splash-water-springs",
+      "id": "splash-water-springs",
       "name": "Splash Water Springs",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1889,10 +2018,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "splash-water-springs"
     },
     {
-      "id": "six-flags-fiesta-texas-stingray-racer",
+      "id": "stingray-racer",
       "name": "Stingray Racer",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1930,10 +2060,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "stingray-racer"
     },
     {
-      "id": "six-flags-fiesta-texas-supergirl-sky-flight",
+      "id": "supergirl-sky-flight",
       "name": "Supergirl Sky Flight",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -1944,8 +2075,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 29.59674,
-            "lng": -98.61085
+            "lat": 29.59666,
+            "lng": -98.61083
           },
           "confidence": "unknown",
           "score": 1,
@@ -1956,11 +2087,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 29.59674,
-                "lng": -98.61085
+                "lat": 29.59666,
+                "lng": -98.61083
               },
               "date": "2026-08-09",
-              "note": "the walkable network at its closest, 11 m from the ride"
+              "note": "the walkable network at its closest, 12 m from the ride"
             }
           ],
           "from": "geometry",
@@ -1971,10 +2102,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "supergirl-sky-flight"
     },
     {
-      "id": "six-flags-fiesta-texas-superman-krypton-coaster",
+      "id": "superman-krypton-coaster",
       "name": "Superman: Krypton Coaster",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -2012,10 +2144,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "superman-krypton-coaster"
     },
     {
-      "id": "six-flags-fiesta-texas-taz-s-tornado",
+      "id": "taz-s-tornado",
       "name": "Taz's Tornado",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2053,10 +2186,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "taz-s-tornado"
     },
     {
-      "id": "six-flags-fiesta-texas-texas-treehouse",
+      "id": "texas-treehouse",
       "name": "Texas Treehouse",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2094,10 +2228,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "texas-treehouse"
     },
     {
-      "id": "six-flags-fiesta-texas-texas-treehouse-slide-pool",
+      "id": "texas-treehouse-slide-pool",
       "name": "Texas Treehouse Slide Pool",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2135,10 +2270,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "texas-treehouse-slide-pool"
     },
     {
-      "id": "six-flags-fiesta-texas-texas-tumble-tube-shoot",
+      "id": "texas-tumble-tube-shoot",
       "name": "Texas Tumble Tube Shoot",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2176,10 +2312,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "texas-tumble-tube-shoot"
     },
     {
-      "id": "six-flags-fiesta-texas-the-grand-carousel",
+      "id": "the-grand-carousel",
       "name": "The Grand Carousel",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2217,10 +2354,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-grand-carousel"
     },
     {
-      "id": "six-flags-fiesta-texas-the-joker-carnival-of-chaos",
+      "id": "the-joker-carnival-of-chaos",
       "name": "The Joker: Carnival of Chaos",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2258,10 +2396,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "the-joker-carnival-of-chaos"
     },
     {
-      "id": "six-flags-fiesta-texas-thunder-rapids-water-coaster",
+      "id": "thunder-rapids-water-coaster",
       "name": "Thunder Rapids Water Coaster",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2299,10 +2438,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "thunder-rapids-water-coaster"
     },
     {
-      "id": "six-flags-fiesta-texas-tornado",
+      "id": "tornado",
       "name": "Tornado",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2340,10 +2480,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "tornado"
     },
     {
-      "id": "six-flags-fiesta-texas-tornado-slide-pool",
+      "id": "tornado-slide-pool",
       "name": "Tornado Slide Pool",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2381,10 +2522,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "tornado-slide-pool"
     },
     {
-      "id": "six-flags-fiesta-texas-tube-shoot",
+      "id": "tube-shoot",
       "name": "Tube Shoot",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2422,10 +2564,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "tube-shoot"
     },
     {
-      "id": "six-flags-fiesta-texas-tx-treehouse-green-slide",
+      "id": "tx-treehouse-green-slide",
       "name": "Tx Treehouse Green Slide",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2463,10 +2606,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "tx-treehouse-green-slide"
     },
     {
-      "id": "six-flags-fiesta-texas-tx-treehouse-red-slide",
+      "id": "tx-treehouse-red-slide",
       "name": "Tx Treehouse Red Slide",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2504,10 +2648,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "tx-treehouse-red-slide"
     },
     {
-      "id": "six-flags-fiesta-texas-tx-treehouse-teal-slide",
+      "id": "tx-treehouse-teal-slide",
       "name": "Tx Treehouse Teal Slide",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2545,10 +2690,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "tx-treehouse-teal-slide"
     },
     {
-      "id": "six-flags-fiesta-texas-tx-treehouse-yellow-slide",
+      "id": "tx-treehouse-yellow-slide",
       "name": "Tx Treehouse Yellow Slide",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2586,10 +2732,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "tx-treehouse-yellow-slide"
     },
     {
-      "id": "six-flags-fiesta-texas-vortex",
+      "id": "vortex",
       "name": "Vortex",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2627,10 +2774,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "vortex"
     },
     {
-      "id": "six-flags-fiesta-texas-wave-runner",
+      "id": "wave-runner",
       "name": "Wave Runner",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2668,10 +2816,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "wave-runner"
     },
     {
-      "id": "six-flags-fiesta-texas-white-water-canyon",
+      "id": "white-water-canyon",
       "name": "White Water Canyon",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2709,10 +2858,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "white-water-canyon"
     },
     {
-      "id": "six-flags-fiesta-texas-wipeout",
+      "id": "wipeout",
       "name": "Wipeout",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2750,10 +2900,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "wipeout"
     },
     {
-      "id": "six-flags-fiesta-texas-wonder-woman-golden-lasso-coaster",
+      "id": "wonder-woman-golden-lasso-coaster",
       "name": "Wonder Woman Golden Lasso Coaster",
       "venue": "six-flags-fiesta-texas",
       "type": "roller_coaster",
@@ -2791,10 +2942,11 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "wonder-woman-golden-lasso-coaster"
     },
     {
-      "id": "six-flags-fiesta-texas-yosemite-sam-s-wacky-wagons",
+      "id": "yosemite-sam-s-wacky-wagons",
       "name": "Yosemite Sam's Wacky Wagons",
       "venue": "six-flags-fiesta-texas",
       "type": "attraction",
@@ -2832,7 +2984,8 @@
           "stale": false
         }
       },
-      "last_verified": null
+      "last_verified": null,
+      "place": "yosemite-sam-s-wacky-wagons"
     }
   ]
 }

@@ -85,7 +85,6 @@
       "alone": null,
       "max": null
     },
-    "alias": "Backlot Stunt Coaster",
     "note": "Formerly Backlot Stunt Coaster"
   },
   {
@@ -128,8 +127,7 @@
       "min": 46,
       "alone": null,
       "max": null
-    },
-    "alias": "Boo Blasters on Boo Hill"
+    }
   },
   {
     "i": "breakers-bay",
@@ -373,14 +371,6 @@
     "a": "Adventure Port"
   },
   {
-    "i": "entrance",
-    "n": "Entrance",
-    "lat": 39.348596,
-    "lng": -84.278353,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
     "i": "festhaus-theater",
     "n": "Festhaus Theater",
     "lat": 39.344794,
@@ -592,7 +582,6 @@
       "alone": null,
       "max": 54
     },
-    "alias": "Joe Cool's Dodgen School",
     "note": "Joe Cool's Dodgem School - no minimum"
   },
   {
@@ -610,14 +599,6 @@
     "lng": -84.274215,
     "c": "food",
     "a": "Soak City"
-  },
-  {
-    "i": "kings-island",
-    "n": "Kings Island",
-    "lat": 39.348403,
-    "lng": -84.268993,
-    "c": "parking",
-    "a": "Kings Island"
   },
   {
     "i": "kings-island-2",
@@ -789,8 +770,7 @@
       "min": 42,
       "alone": null,
       "max": null
-    },
-    "alias": "Linus' Launcher"
+    }
   },
   {
     "i": "lockers",
@@ -813,6 +793,14 @@
       "max": null
     },
     "note": "Kids area"
+  },
+  {
+    "i": "main-entrance",
+    "n": "Main Entrance",
+    "lat": 39.344794,
+    "lng": -84.268636,
+    "c": "gate",
+    "a": "Kings Island"
   },
   {
     "i": "matildas",
@@ -865,14 +853,6 @@
     }
   },
   {
-    "i": "north-boh-gate",
-    "n": "North BOH Gate",
-    "lat": 39.348732,
-    "lng": -84.273788,
-    "c": "gate",
-    "a": "Kings Island"
-  },
-  {
     "i": "orion",
     "n": "Orion",
     "lat": 39.342993,
@@ -891,6 +871,7 @@
     "lat": 39.344704,
     "lng": -84.266871,
     "c": "food",
+    "tel": "+1 513-754-5217",
     "a": "Oktoberfest"
   },
   {
@@ -978,7 +959,6 @@
       "alone": null,
       "max": null
     },
-    "alias": "Pinaple Pipeline",
     "note": "Pineapple Pipeline"
   },
   {
@@ -1046,7 +1026,6 @@
       "alone": null,
       "max": null
     },
-    "alias": "Rendezveous Run",
     "note": "Rendezvous Run"
   },
   {
@@ -1244,8 +1223,7 @@
       "min": 36,
       "alone": null,
       "max": null
-    },
-    "alias": "Snoopy's Red Baron"
+    }
   },
   {
     "i": "snoopy-s-space-buggies",
@@ -1259,6 +1237,14 @@
       "alone": null,
       "max": null
     }
+  },
+  {
+    "i": "soak-city-entrance",
+    "n": "Soak City Entrance",
+    "lat": 39.340029,
+    "lng": -84.274333,
+    "c": "gate",
+    "a": "Soak City"
   },
   {
     "i": "soap-box-racers",
@@ -1329,6 +1315,7 @@
     "lat": 39.34452,
     "lng": -84.267807,
     "c": "food",
+    "tel": "+1 513-754-5511",
     "a": "International Street"
   },
   {
@@ -1359,14 +1346,6 @@
     "lng": -84.26793,
     "c": "food",
     "a": "International Street"
-  },
-  {
-    "i": "tennis-pro-shop",
-    "n": "Tennis Pro Shop",
-    "lat": 39.348681,
-    "lng": -84.278415,
-    "c": "shop",
-    "a": "Kings Island"
   },
   {
     "i": "the-bat",

@@ -99,7 +99,6 @@
     "lng": -98.61076,
     "c": "ride",
     "a": "Six Flags Fiesta Texas",
-    "alias": "Bermuda Triangle",
     "h": {
       "min": 48,
       "alone": null,
@@ -135,7 +134,6 @@
     "lng": -98.61158,
     "c": "ride",
     "a": "Six Flags Fiesta Texas",
-    "alias": "Bonzai Pipeline",
     "h": {
       "min": 42,
       "alone": null,
@@ -154,8 +152,7 @@
       "min": 48,
       "alone": null,
       "max": null
-    },
-    "alias": "Boomerang"
+    }
   },
   {
     "i": "bucking-broncos",
@@ -169,7 +166,6 @@
       "alone": null,
       "max": 54
     },
-    "alias": "Buckarooz",
     "note": "Formerly Buckarooz"
   },
   {
@@ -758,8 +754,8 @@
   {
     "i": "metropolis-transit-authority",
     "n": "Metropolis Transit Authority",
-    "lat": 29.596935,
-    "lng": -98.609872,
+    "lat": 29.596933,
+    "lng": -98.609988,
     "c": "ride",
     "a": "DC Universe",
     "h": {
@@ -1239,7 +1235,6 @@
       "alone": 48,
       "max": null
     },
-    "alias": "SkyScreamer",
     "note": "Formerly SkyScreamer"
   },
   {
@@ -1304,7 +1299,6 @@
     "lng": -98.612168,
     "c": "ride",
     "a": "Six Flags Fiesta Texas",
-    "alias": "Texas Treehouse",
     "h": {
       "min": 42,
       "alone": null,
@@ -1319,7 +1313,6 @@
     "lng": -98.61192,
     "c": "ride",
     "a": "Six Flags Fiesta Texas",
-    "alias": "Texas Tumble",
     "h": {
       "min": 42,
       "alone": null,
@@ -1377,7 +1370,6 @@
     "lng": -98.60973,
     "c": "ride",
     "a": "Six Flags Fiesta Texas",
-    "alias": "Thunder Rapids",
     "h": {
       "min": 48,
       "alone": null,
@@ -1544,8 +1536,7 @@
       "min": 36,
       "alone": 48,
       "max": null
-    },
-    "alias": "Waverunner"
+    }
   },
   {
     "i": "waxing-the-city",

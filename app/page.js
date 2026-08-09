@@ -1020,7 +1020,7 @@ export default function Page() {
     await runtime.current?.leave();
   };
 
-  const setMeetPoint = (lat, lng, label) => {
+  const setMeetPoint = useCallback((lat, lng, label) => {
     setArmMeet(false);
     const record = { lat, lng, label: label || 'Meet-up' };
     if (active) {
@@ -1037,7 +1037,7 @@ export default function Page() {
       setLocalMeet({ ...record, by: identity?.name || 'Someone', ts: Date.now() });
       showToast('Meet-up marked (join a party to share it)');
     }
-  };
+  }, [active, identity?.name, showToast, pushNote]);
 
   const suggestReunification = useCallback(() => {
     if (!graph || !position) {
@@ -1062,7 +1062,7 @@ export default function Page() {
     } finally {
       setReunifyBusy(false);
     }
-  }, [graph, position, roster, POIS, showToast, shrinkSheet, stops.peek]);
+  }, [graph, position, roster, POIS, showToast, shrinkSheet, stops.peek, setMeetPoint]);
 
   const clearMeet = () => {
     setLocalMeet(null);

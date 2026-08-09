@@ -1281,14 +1281,21 @@ await check('the attributes survive the round trip from tags to bundle to graph'
 });
 
 await check('a venue built before the attributes existed still loads and routes', () => {
-  /* The four bundles on disk were built before any of this and carry no `f`
-     and no `l` anywhere. They have to keep working untouched — a data change
-     that needs every venue rebuilt before the app runs is not shippable. */
-  const shipped = JSON.stringify(PARK);
-  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'the fixture already carries attributes');
-  const g = buildRouteGraph(PARK);
+  /* Bundles on disk now carry `f` and `l`, but a phone that cached an older
+     map must still route. Strip the flags and confirm the graph degrades to
+     zeros without moving a route. */
+  const legacy = JSON.parse(JSON.stringify(PARK));
+  ['path', 'service'].forEach((layer) => {
+    (legacy[layer] || []).forEach((w) => {
+      delete w.f;
+      delete w.l;
+    });
+  });
+  const shipped = JSON.stringify(legacy);
+  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'legacy fixture has no attributes');
+  const g = buildRouteGraph(legacy);
   assert.ok(g.segments.every((s) => s.flags === 0 && s.layer === 0));
-  const r = findRoute(graph, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
+  const r = findRoute(g, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
   assert.ok(r && r.metres > 0);
   return true;
 });

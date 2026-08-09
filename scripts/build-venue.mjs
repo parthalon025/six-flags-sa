@@ -55,6 +55,7 @@ import { SRC_BY, SCHEMA_VERSION, trim } from './lib/attractions.mjs';
 import { inventory, publish, listFile, writeSettled } from './attractions.mjs';
 import { PUBLISH_AT } from './lib/evidence.mjs';
 import { applyHeightsSidecar } from './lib/heights-sidecar.mjs';
+import { tagCoverageFromMap } from './lib/tag-coverage.mjs';
 import { isRideable } from '../lib/ontology.js';
 import { applyTrace } from './lib/venue-trace.mjs';
 // The app's own reading of "these two strings are the same ride", reused so the
