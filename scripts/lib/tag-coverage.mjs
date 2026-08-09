@@ -14,7 +14,7 @@ const countLayer = (ways) => ways.filter((w) => Number(w.l)).length;
 
 /** Summarise tag coverage across path and service ways in a built map. */
 export function tagCoverageFromMap(map) {
-  const ways = ROUTED_LAYERS.flatMap((layer) => map[layer] || []);
+  const ways = [...ROUTED_LAYERS].flatMap((layer) => map[layer] || []);
   const total = ways.length;
   const steps = countFlag(ways, WAY_FLAGS.STEPS);
   const bridge = countFlag(ways, WAY_FLAGS.BRIDGE);

@@ -24,6 +24,7 @@ import { distance, formatDistance, formatWalk } from '@/lib/geo';
 const VERDICT = {
   yes: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
+  advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
   no: { label: 'Too short', cls: 'bad', icon: 'xmark' },
   toobig: { label: 'Too tall', cls: 'bad', icon: 'xmark' },
   unknown: { label: '', cls: '', icon: null },
@@ -48,6 +49,7 @@ export default function PlaceList({
   weather = null,
   rides = null, // the party's report map, keyed by ride id
   onReport = null, // (rideId, 'down'|'open'|null) — null when not in a party
+  onAddToPlan = null,
   now = Date.now(),
 }) {
   const palette = paletteFor(theme);
@@ -327,6 +329,11 @@ export default function PlaceList({
                     <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
                       Make this the meet-up
                     </button>
+                    {onAddToPlan && (
+                      <button type="button" className="btn small" onClick={() => onAddToPlan(p)}>
+                        Add to plan
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

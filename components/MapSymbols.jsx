@@ -126,15 +126,32 @@ export function PoiMarker({ category, colour, r, state, selected, barredInk = '#
           style={{ stroke: inkOn(barredInk) }}
         />
       )}
-      {state === 'companion' && (
+      {(state === 'companion' || state === 'advisory') && (
         <g transform={`translate(${(r * 0.85).toFixed(2)} ${(r * 0.85).toFixed(2)})`}>
-          <circle r={r * 0.52} fill="var(--beacon)" stroke="var(--markerEdge)" strokeWidth="1.1" />
-          <path
-            d={`M${-r * 0.26} 0h${r * 0.52}M0 ${-r * 0.26}v${r * 0.52}`}
+          <circle
+            r={r * 0.52}
+            fill={state === 'advisory' ? 'var(--orange)' : 'var(--beacon)'}
             stroke="var(--markerEdge)"
-            strokeWidth={r * 0.17}
-            strokeLinecap="round"
+            strokeWidth="1.1"
           />
+          {state === 'companion' ? (
+            <path
+              d={`M${-r * 0.26} 0h${r * 0.52}M0 ${-r * 0.26}v${r * 0.52}`}
+              stroke="var(--markerEdge)"
+              strokeWidth={r * 0.17}
+              strokeLinecap="round"
+            />
+          ) : (
+            <text
+              y={r * 0.18}
+              textAnchor="middle"
+              fontSize={r * 0.62}
+              fontWeight="700"
+              fill="var(--markerEdge)"
+            >
+              !
+            </text>
+          )}
         </g>
       )}
     </g>
