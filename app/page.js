@@ -91,7 +91,17 @@ const EMPTY_STACK = [];
 /** The navigation state the app opens on, and the one back returns it to. */
 const HOME_STACKS = { explore: [], party: [], rides: [], settings: [] };
 
-const DEFAULT_CATEGORIES = new Set(['coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom']);
+/* What draws before anybody touches the key. Shops and car parks are off
+   because they are the two categories a park has most of and a visitor asks
+   about least.
+   `campsite` is on, and is the one entry here that is not about a preference:
+   at the three parks in two of them there is nothing under it, so it costs
+   nothing — and at the one where there is, the person it matters to is asleep
+   in it. Somebody looking for pitch 247 at eleven at night should not first
+   have to discover that there is a key and that it has a switch in it. */
+const DEFAULT_CATEGORIES = new Set([
+  'coaster', 'ride', 'gate', 'landmark', 'service', 'food', 'restroom', 'campsite',
+]);
 
 /* Identity used to be filed under a key named after the one park this ran at.
    Read the old key once so nobody who already typed their name has to again. */
@@ -102,6 +112,10 @@ const PUSH_PREFS_KEY = 'tracker-push-prefs';
    not have the same places, and hiding food at one should not hide it at the
    other. */
 const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
+/* Where the car is, per venue. Per venue because the car parks are not the
+   same one and a stale pin two states away is worse than no pin: it would put
+   a card on the rail confidently pointing at Ohio. */
+const CAR_KEY = 'tracker-car';
 /** The standing cards, by the name the visitor saw on them. */
 const CARD_LABELS = { restroom: 'Nearest toilet', food: 'Nearest food', firstaid: 'First aid' };
 
@@ -725,10 +739,59 @@ export default function Page() {
     }
   }, []);
 
+  /* ---------- where the car is ---------- */
+
+  /* The one thing on this map that is not in OpenStreetMap and not in the
+     party: a spot only this phone knows, remembered for as long as it takes to
+     walk back to it. It is deliberately not part of the party — nobody else's
+     roster wants your parking space, and a family that arrived in two cars
+     wants two different answers to the same question.
+
+     Same shape as the hidden cards: a dictionary keyed by venue, one load on
+     mount, one save on change. */
+  const [cars, setCars] = useState({});
+  const car = cars[venue?.id] || null;
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CAR_KEY) || 'null');
+      if (saved && typeof saved === 'object') setCars(saved);
+    } catch {
+      /* nothing parked */
+    }
+  }, []);
+
+  const putCar = useCallback(
+    (lat, lng) => {
+      if (!venue?.id || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      setCars((prev) => {
+        const next = { ...prev, [venue.id]: { lat, lng, at: Date.now() } };
+        localStorage.setItem(CAR_KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    [venue?.id],
+  );
+
+  const clearCar = useCallback(() => {
+    if (!venue?.id) return;
+    setCars((prev) => {
+      const next = { ...prev };
+      delete next[venue.id];
+      localStorage.setItem(CAR_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [venue?.id]);
+
   const shedCard = useCallback(
     (what) => {
       if (what?.kind === 'selected') {
         setSelected(null);
+        return;
+      }
+      if (what?.kind === 'car') {
+        clearCar();
+        showToast('Forgotten where you parked');
         return;
       }
       if (what?.kind !== 'category' || !venue?.id) return;
@@ -741,7 +804,7 @@ export default function Page() {
       });
       showToast('Hidden. Put it back under Me → What the panel shows.');
     },
-    [venue?.id, showToast],
+    [venue?.id, showToast, clearCar],
   );
 
   const unhideCard = useCallback(
@@ -959,6 +1022,12 @@ export default function Page() {
      leads to it are simply not part of the app. */
   const heights = useMemo(() => hasHeights(POIS), [POIS]);
 
+  /* Which categories this venue has any of. The key on the map, the chips
+     behind "Show on the map" and the count beside them are all statements
+     about what is out there, so all three are answered from the venue rather
+     than from the vocabulary. */
+  const presentCategories = useMemo(() => new Set(POIS.map((p) => p.c)), [POIS]);
+
   const rideableCount = useMemo(() => {
     if (height == null) return null;
     return POIS.filter((p) => {
@@ -1030,8 +1099,14 @@ export default function Page() {
       if (!meet) return null;
       return { ...nav, label: meet.label || 'Meet-up', lat: meet.lat, lng: meet.lng };
     }
+    // The car can be moved or forgotten out from under a route the same way a
+    // meet-up can, so it is resolved live rather than copied into `nav`.
+    if (nav.kind === 'car') {
+      if (!car) return null;
+      return { ...nav, label: 'Where I parked', lat: car.lat, lng: car.lng };
+    }
     return nav;
-  }, [nav, roster, meet]);
+  }, [nav, roster, meet, car]);
 
   // Kept in step with `nav` rather than written at each call site, so no future
   // way of setting a destination can forget to arm it.
@@ -1422,6 +1497,7 @@ export default function Page() {
         me={position}
         members={others}
         meet={meet}
+        car={car}
         selected={selected}
         onSelectPoi={handleSelect}
         onMapTap={handleMapTap}
@@ -1474,8 +1550,13 @@ export default function Page() {
         </button>
       </header>
 
+      {/* In the top corner with the rest of the map's chrome, because that is
+          where a phone map puts the thing you glance at rather than open. It
+          is a chip until it has something to say, and its own card when it
+          does — see components/WeatherBanner.jsx. */}
       <WeatherBanner
         weather={weatherFeed.weather}
+        observed={weatherFeed.observed}
         summary={liveSummary}
         at={weatherFeed.at}
         stale={weatherFeed.stale}
@@ -1524,6 +1605,35 @@ export default function Page() {
       )}
 
       <div className={`fabs ${walking ? 'go' : form} ${previewing ? 'preview' : ''}`}>
+        {/* Where the car is. Two taps, and each one does the only thing anybody
+            wants at that moment: with nothing saved it saves where you are
+            standing, which is where you are the second you get out of the car;
+            with something saved it takes the map to it, which is the only
+            reason you ever look at this again. Moving it is saving it again
+            from somewhere else, and forgetting it is the ✕ on its card. */}
+        {!walking && (
+          <button
+            type="button"
+            className={`fab ${car ? 'active' : ''}`}
+            onClick={() => {
+              if (car) {
+                setFollow(false);
+                setFocusPoint({ lat: car.lat, lng: car.lng });
+                shrinkSheet(stops.peek);
+                return;
+              }
+              if (!position) {
+                setGateOpen(true);
+                return;
+              }
+              putCar(position.lat, position.lng);
+              showToast('Saved where you parked');
+            }}
+            aria-label={car ? 'Go to where I parked' : 'Save where I parked'}
+          >
+            <Icon name="car.fill" />
+          </button>
+        )}
         {!walking && (
           <button
             type="button"
@@ -1705,6 +1815,7 @@ export default function Page() {
                   me={position}
                   members={others}
                   meet={meet}
+                  car={car}
                   selected={selected}
                   heading={heading}
                   theme={theme}
@@ -1873,8 +1984,8 @@ export default function Page() {
                 onLocationSettings={() => setGateOpen(true)}
                 theme={theme}
                 onTheme={setTheme}
-                categoryCount={categories.size}
-                categoryTotal={Object.keys(CATEGORIES).length}
+                categoryCount={[...categories].filter((c) => presentCategories.has(c)).length}
+                categoryTotal={Object.keys(CATEGORIES).filter((c) => presentCategories.has(c)).length}
                 venueName={venue?.name}
                 onPush={push}
                 pushKinds={notifier.KINDS}
@@ -1886,13 +1997,24 @@ export default function Page() {
                 hiddenCards={hiddenHere}
                 cardLabels={CARD_LABELS}
                 onUnhideCard={unhideCard}
+                car={car}
+                onClearCar={() => {
+                  clearCar();
+                  showToast('Forgotten where you parked');
+                }}
               />
             )}
 
             {view === 'categories' && (
               <div>
                 <div className="chips wrap">
-                  {Object.entries(CATEGORIES).map(([key, cat]) => (
+                  {/* Only what this venue has. A switch for a category with
+                      nothing behind it is a switch that does nothing, and it
+                      tells the visitor this place has campsites when it has
+                      none. */}
+                  {Object.entries(CATEGORIES)
+                    .filter(([key]) => presentCategories.has(key))
+                    .map(([key, cat]) => (
                     <button
                       key={key}
                       type="button"
@@ -1901,7 +2023,7 @@ export default function Page() {
                     >
                       {cat.label}
                     </button>
-                  ))}
+                    ))}
                 </div>
                 <p className="fine">
                   Anything switched off here stops drawing on the map. It stays in search.

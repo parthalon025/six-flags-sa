@@ -122,7 +122,7 @@ export const isCivicBoundary = (t) => has(t, 'boundary', CIVIC) || has(t, 'admin
  * opposed to a district within it or the ground beside it.
  */
 export const VENUE_RULES = [
-  (t) => has(t, 'tourism', ['theme_park', 'zoo', 'attraction', 'camp_site']),
+  (t) => has(t, 'tourism', ['theme_park', 'zoo', 'attraction', 'camp_site', 'caravan_site']),
   (t) => has(t, 'leisure', ['park', 'water_park', 'nature_reserve', 'stadium', 'golf_course']),
   (t) => has(t, 'amenity', ['university', 'college', 'school', 'hospital']),
   (t) => has(t, 'landuse', ['recreation_ground', 'retail', 'commercial', 'education']),
@@ -148,7 +148,40 @@ export const LAND_RULES = [
   // areas are the retail park over the road.
   (t) => has(t, 'place', ['neighbourhood', 'suburb', 'quarter', 'city_block', 'locality']) && has(t, 'name'),
   (t) => has(t, 'amenity', ['university', 'college', 'school', 'hospital', 'marketplace']) && has(t, 'name'),
+  // A campground inside a venue is a district of it in every sense that
+  // matters here: it has a name people say out loud ("we're at Lighthouse
+  // Point"), it covers ground, and its own places are named after it. Drawing
+  // it as a tinted area with its name lying along it is how a camper finds the
+  // way back at eleven at night.
+  (t) => isCampground(t) && has(t, 'name'),
 ];
+
+/**
+ * A campground: the area, not the pitches inside it.
+ *
+ * `caravan_site` matters as much as `camp_site` and is the commoner tag for the
+ * ones attached to parks — Cedar Point's Lighthouse Point carries it, which is
+ * why the campground was being dropped from the bundle entirely: no land rule,
+ * no layer rule and no POI rule matched it, so two hundred sites, the
+ * registration desk and the shuttle stop simply were not in the app.
+ */
+export const isCampground = (t) => has(t, 'tourism', ['camp_site', 'caravan_site']);
+
+/**
+ * A single pitch inside a campground.
+ *
+ * `tourism=camp_pitch` is what the tag documentation asks for and what a
+ * well-mapped site uses. What a park actually gets mapped as is a named
+ * driveway per site — Lighthouse Point's 200 pitches are `service=parking_aisle`
+ * ways called "Site 247", because that is what they physically are — so the
+ * second half of this rule reads that shape too. It is only ever applied to
+ * ways already known to lie inside a campground ring, which is what keeps it
+ * from turning a supermarket car park into a hundred pitches.
+ */
+export const isCampPitch = (t) =>
+  has(t, 'tourism', ['camp_pitch']) ||
+  has(t, 'service', ['parking_aisle']) ||
+  has(t, 'amenity', ['parking']);
 
 /** Ordered POI category rules. The vocabulary matches lib/theme.js. */
 export const POI_RULES = [
@@ -172,6 +205,20 @@ export const POI_RULES = [
       has(t, 'shop', ['bakery', 'confectionery', 'deli', 'pastry', 'coffee', 'ice_cream']),
   ],
   ['restroom', (t) => has(t, 'amenity', ['toilets'])],
+  [
+    /* Camping, above the general rules because almost every part of a
+       campground answers to something else first: a cabin is a building, the
+       dump station is an amenity, a pitch is a driveway. Sitting here, the
+       whole thing stays one category a visitor can switch on and off, and one
+       thing a search for "camp" can find. */
+    'campsite',
+    (t) =>
+      isCampground(t) ||
+      has(t, 'tourism', ['camp_pitch', 'chalet', 'wilderness_hut']) ||
+      has(t, 'amenity', ['sanitary_dump_station']) ||
+      has(t, 'building', ['cabin', 'static_caravan', 'bungalow']) ||
+      has(t, 'leisure', ['firepit']),
+  ],
   [
     'service',
     (t) =>
@@ -208,6 +255,16 @@ export const POI_RULES = [
     (t) =>
       has(t, 'entrance', ['main', 'primary']) ||
       has(t, 'amenity', ['ticket_booth']) ||
+      /* A toll booth is the way in for everybody who drove, and it is one of
+         the few unnamed barriers worth a pin: nobody puts five of them across a
+         service road by accident. Fiesta Texas is mapped with five and no named
+         entrance at all, so before this the park had no way in on the map. */
+      has(t, 'barrier', ['toll_booth']) ||
+      // A named shuttle stop is a way in and out of the venue in the only sense
+      // that matters to somebody standing at one: it is where you catch the
+      // thing that takes you to the gate. Cedar Point's campground has two of
+      // them and a mile of peninsula between it and the turnstiles.
+      (has(t, 'name') && (has(t, 'highway', ['bus_stop']) || has(t, 'public_transport', ['platform', 'stop_position']))) ||
       (has(t, 'name') &&
         (has(t, 'barrier', ['gate', 'entrance', 'turnstile']) || has(t, 'entrance'))),
   ],
@@ -233,13 +290,83 @@ export const POI_RULES = [
  */
 export const UNNAMED_AREA_CATEGORIES = new Set(['restroom', 'parking']);
 
+
 /** What an unnamed POI of each category is called, when it is worth keeping anyway. */
 export const UNNAMED_LABELS = {
   restroom: 'Restrooms',
   parking: 'Parking',
   gate: 'Entrance',
   service: 'Services',
+  campsite: 'Campsite',
 };
+
+/**
+ * What a campground or a pitch offers, read off the tags that describe it.
+ *
+ * Generic on purpose: these are the documented OpenStreetMap keys for camp and
+ * caravan sites, so any venue anywhere that has been mapped properly answers
+ * this without a line of venue-specific code. Cedar Point's pitches carry none
+ * of them — the mapper drew 145 driveways and named them, which is already more
+ * than most places have — so at that park the same fields arrive from the
+ * overrides file instead. Both paths end at the same shape, which is the point:
+ * the app never learns where a hookup fact came from.
+ *
+ * `null` when the tags say nothing, so a caller can tell "no electricity here"
+ * from "nobody has recorded whether there is electricity here".
+ */
+export function campDetailsFromTags(tags) {
+  const yes = (v) => v === 'yes' || v === 'true' || v === '1';
+  const no = (v) => v === 'no' || v === 'false' || v === '0';
+  const bool = (...keys) => {
+    for (const k of keys) {
+      const v = tags[k];
+      if (v == null) continue;
+      if (yes(v)) return true;
+      if (no(v)) return false;
+    }
+    return null;
+  };
+  const out = {};
+  const set = (k, v) => {
+    if (v != null && v !== '') out[k] = v;
+  };
+
+  set('power', bool('power_supply', 'electricity'));
+  /* Amperage is written every way a person might write it: "30", "30;50",
+     "30 A", "50amp". Everything that is a plausible North American RV service
+     and nothing else. */
+  const amps = String(tags['power_supply:amperage'] || tags.amperage || '')
+    .split(/[;,/]/)
+    .map((x) => Number(String(x).replace(/[^0-9]/g, '')))
+    .filter((n) => [15, 20, 30, 50].includes(n));
+  if (amps.length) set('amps', [...new Set(amps)].sort((a, b) => a - b));
+
+  set('water', bool('water_point', 'drinking_water', 'water_supply'));
+  set('sewer', bool('sanitary_dump_station', 'sewer', 'waste_disposal'));
+  set('wifi', bool('internet_access') ?? (tags.internet_access ? tags.internet_access !== 'no' : null));
+  set('cable', bool('television', 'cable_tv'));
+  set('firepit', bool('openfire', 'fireplace', 'firepit'));
+  set('picnic', bool('picnic_table'));
+
+  // What can stand on it. A pitch that takes a caravan and not a tent is a
+  // different answer to "can we stay here" than one that takes both.
+  set('caravans', bool('caravans', 'motorhome'));
+  set('tents', bool('tents', 'tent'));
+
+  // Back in or drive through — the question anybody towing asks first.
+  if (yes(tags.drive_through) || yes(tags.pull_through)) set('drive', 'pull-through');
+  else if (no(tags.drive_through) || yes(tags.backin)) set('drive', 'back-in');
+
+  const length = Number(String(tags.maxlength || tags['maxlength:caravan'] || tags.length || '').replace(/[^0-9.]/g, ''));
+  if (Number.isFinite(length) && length > 5 && length < 200) set('length', Math.round(length));
+  set('surface', tags.surface || null);
+  const capacity = Number(String(tags.capacity || '').replace(/[^0-9]/g, ''));
+  if (Number.isFinite(capacity) && capacity > 0) set('capacity', capacity);
+  // The number on the post, where it is not already the name.
+  set('ref', tags.ref || null);
+
+  return Object.keys(out).length ? out : null;
+}
 
 export function classify(rules, tags) {
   for (const [key, test] of rules) {

@@ -12,6 +12,8 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 // lib/**.js is ESM in a package with no "type" field, so Node warns once about
 // reparsing it. Not actionable from a test and it buries the tally, so the
@@ -1513,6 +1515,367 @@ await check('every named piece of track belongs to a ride we know', () => {
   return true;
 });
 
+/* ------------------------------------------------------- height rules ---- */
+
+/* Height rules are the one part of a venue OpenStreetMap will never carry, so
+   they arrive from a hand-written overrides file or they do not arrive at all.
+   A venue that has rides and no rules does not degrade gracefully — `hasHeights`
+   comes back false and the app removes the Rides tab, the slider, the running
+   tally, the badge over the map and the struck-through markers, silently and
+   all at once. Two of the three parks shipped that way, so the rule that every
+   park with rides publishes heights is worth holding a test to. */
+
+const readVenues = () =>
+  JSON.parse(fs.readFileSync(new URL('../public/venues/manifest.json', import.meta.url))).venues;
+const readPois = (rel) => JSON.parse(fs.readFileSync(new URL(`../public${rel}`, import.meta.url)));
+
+/* ---------------------------------------------------- the venue checklist -- */
+
+const { checklist, failures } = await import('../scripts/lib/venue-checklist.mjs');
+
+await check('no venue ships half-built', () => {
+  /* The list of what a location has to carry, held to. A park that is *almost*
+     built does not crash: it draws, it lists, and one whole feature of the app
+     silently is not there. This is the check that stops the next one shipping
+     the way the first three did. */
+  const venues = readVenues();
+  assert.ok(venues.length, 'no venues to check');
+  const shortfalls = [];
+  venues.forEach((v) => {
+    const map = JSON.parse(fs.readFileSync(new URL(`../public${v.map}`, import.meta.url)));
+    const items = checklist(v, map, readPois(v.pois));
+    failures(items).forEach((i) => shortfalls.push(`${v.id}: ${i.label} — ${i.detail}`));
+  });
+  assert.deepEqual(shortfalls, [], `\n  ${shortfalls.join('\n  ')}\n  Run: npm run venues:report`);
+  return true;
+});
+
+await check('the checklist knows the difference between absent and not applicable', () => {
+  const bare = { id: 'somewhere', locality: 'Town, State' };
+  const map = { lands: [{ n: 'The Green' }], boundary: [[0, 0]], path: [[0, 0]] };
+  // A town centre with no rides and no campground fails neither: an item that
+  // does not apply is never a failure, or every venue that is not a theme park
+  // would be permanently red.
+  const items = checklist(bare, map, [
+    { n: 'Gate', c: 'gate', lat: 0, lng: 0 },
+    { n: 'Toilets', c: 'restroom', lat: 0, lng: 0 },
+    { n: 'Cafe', c: 'food', lat: 0, lng: 0 },
+  ]);
+  assert.deepEqual(failures(items), []);
+  assert.equal(items.find((i) => i.key === 'heights').status, 'n/a');
+  assert.equal(items.find((i) => i.key === 'camping').status, 'n/a');
+
+  // But a venue with rides and no rules is a failure, and says what to type.
+  const park = checklist(bare, map, [{ n: 'Big One', c: 'coaster', lat: 0, lng: 0 }]);
+  const heights = park.find((i) => i.key === 'heights');
+  assert.equal(heights.status, 'missing');
+  assert.equal(heights.required, true);
+  assert.match(heights.fix, /overrides\.json/);
+  return true;
+});
+
+await check('every park with rides publishes height rules', () => {
+  const venues = readVenues();
+  assert.ok(venues.length, 'no venues to check');
+  venues.forEach((v) => {
+    const pois = readPois(v.pois);
+    const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
+    if (!rides.length) return;
+    const withHeights = rides.filter((p) => p.h);
+    assert.ok(
+      withHeights.length,
+      `${v.id}: ${rides.length} rides and not one height rule — the Rides tab would not exist`,
+    );
+    // The manifest is what the venue list reads, so it has to agree with the
+    // file rather than being a number written down once.
+    assert.equal(v.counts.heights, pois.filter((p) => p.h).length, `${v.id}: manifest miscounts heights`);
+  });
+  return true;
+});
+
+await check('a height rule reads low to high, in inches a person could be', () => {
+  readVenues().forEach((v) => {
+    readPois(v.pois).forEach((p) => {
+      if (!p.h) return;
+      const { min, alone, max } = p.h;
+      const where = `${v.id}/${p.n}`;
+      [['min', min], ['alone', alone], ['max', max]].forEach(([key, n]) => {
+        if (n == null) return;
+        assert.equal(typeof n, 'number', `${where}: ${key} is not a number`);
+        // A min of 0 is how "posts a rule, but no floor" is written — heightLabel
+        // reads it back as "No minimum". Anything else has to be a height a
+        // person could stand up and be measured at.
+        if (key === 'min' && n === 0) return;
+        assert.ok(n >= 24 && n <= 96, `${where}: ${key}=${n}" is not a height a visitor has`);
+      });
+      // A floor above the height you may ride alone at, or above the ceiling,
+      // makes eligibility() answer 'no' for everybody — a rule nobody meets is
+      // indistinguishable from a ride that is shut.
+      if (min != null && alone != null) assert.ok(min <= alone, `${where}: min above alone`);
+      if (min != null && max != null) assert.ok(min < max, `${where}: min at or above max`);
+      assert.ok(min != null || alone != null || max != null, `${where}: an empty height rule`);
+    });
+  });
+  return true;
+});
+
+await check('every override is filed under a name the venue actually has', () => {
+  const dir = new URL('../data/venues/', import.meta.url);
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.overrides.json'));
+  assert.ok(files.length, 'no overrides files to check');
+  files.forEach((file) => {
+    const id = file.slice(0, -'.overrides.json'.length);
+    const overrides = JSON.parse(fs.readFileSync(new URL(file, dir)));
+    const names = new Set(readPois(`/venues/${id}.pois.json`).map((p) => p.n.toLowerCase()));
+    const orphans = Object.entries(overrides.pois || {})
+      .filter(([n, patch]) => !names.has(n.toLowerCase()) && !names.has(String(patch.alias || '').toLowerCase()))
+      .map(([n]) => n);
+    // An override that matches nothing is a correction that silently did not
+    // happen — usually the park renamed the ride and the alias was not moved.
+    assert.deepEqual(orphans, [], `${id}: overrides with no POI to land on: ${orphans.join(', ')}`);
+  });
+  return true;
+});
+
+/* ------------------------------------------------------ heights from OSM -- */
+
+const { heightFromTags } = await import('../scripts/build-venue.mjs');
+
+await check('a height sign on an OpenStreetMap object is read as a rule', () => {
+  assert.deepEqual(heightFromTags({ minimum_height_requirement: '48in (122cm)' }), {
+    min: 48, alone: null, max: null,
+  });
+  // A mapper's double space, and a centimetre figure that must not be read as
+  // a second inch value.
+  assert.deepEqual(heightFromTags({ minimum_height_requirement: '36in  (91cm)' }), {
+    min: 36, alone: null, max: null,
+  });
+  // One tag written as a range is a floor and a ceiling, not two floors.
+  assert.deepEqual(heightFromTags({ minimum_height_requirement: '36in-54in (91cm-137cm)' }), {
+    min: 36, alone: null, max: 54,
+  });
+  assert.deepEqual(heightFromTags({ maximum_height_requirement: '52in (132cm)' }), {
+    min: null, alone: null, max: 52,
+  });
+  return true;
+});
+
+await check('a tag that is not a height is not read as one', () => {
+  assert.equal(heightFromTags({}), null);
+  assert.equal(heightFromTags({ name: 'Blue Streak' }), null);
+  // Metric-only, which this app has nowhere to put — and 122 would be a
+  // nonsense height in inches, so it is refused rather than guessed at.
+  assert.equal(heightFromTags({ minimum_height_requirement: '122cm' }), null);
+  assert.equal(heightFromTags({ minimum_height_requirement: 'ask at the ride' }), null);
+  return true;
+});
+
+/* --------------------------------------------------------- camping detail -- */
+
+const { campDetailsFromTags } = await import('../scripts/lib/osm-tags.mjs');
+const { campChips, campDetails, campSearchText } = await import('../lib/camping.js');
+
+await check('hookups are read off whatever the mapper wrote', () => {
+  assert.deepEqual(
+    campDetailsFromTags({ power_supply: 'yes', 'power_supply:amperage': '30;50', water_point: 'yes' }),
+    { power: true, amps: [30, 50], water: true },
+  );
+  // Every way a person writes amperage, and nothing that is not a real service.
+  assert.deepEqual(campDetailsFromTags({ amperage: '50 A' }).amps, [50]);
+  assert.deepEqual(campDetailsFromTags({ amperage: '30amp/50amp' }).amps, [30, 50]);
+  // 240 is a house supply, not an RV service, so it is not read as one — and a
+  // tag set with nothing else in it comes back empty rather than half-filled.
+  assert.equal(campDetailsFromTags({ amperage: '240' }), null);
+  assert.equal(campDetailsFromTags({ drive_through: 'yes' }).drive, 'pull-through');
+  assert.equal(campDetailsFromTags({ drive_through: 'no' }).drive, 'back-in');
+  // Nothing recorded is not the same as recorded as absent.
+  assert.equal(campDetailsFromTags({ name: 'Site 12' }), null);
+  assert.equal(campDetailsFromTags({ power_supply: 'no' }).power, false);
+  return true;
+});
+
+await check('a pitch says what it knows and inherits the rest', () => {
+  const venue = { camping: { hookup: 'full', amps: [30, 50], water: true, surface: 'gravel' } };
+  const pitch = { c: 'campsite', n: 'Site 5', camp: { surface: 'concrete', drive: 'pull-through' } };
+  const merged = campDetails(pitch, venue);
+  // The pitch overrules for what it knows, the venue answers for the rest.
+  assert.equal(merged.surface, 'concrete');
+  assert.equal(merged.hookup, 'full');
+  assert.equal(merged.drive, 'pull-through');
+  // A place that is not a campsite has no camping details, whatever the venue
+  // publishes — the coaster is not full hookup.
+  assert.equal(campDetails({ c: 'coaster', n: 'Blue Streak' }, venue), null);
+  return true;
+});
+
+await check('what is unknown is left unsaid', () => {
+  const chips = campChips({ hookup: 'full', amps: [30, 50] });
+  assert.deepEqual(chips, ['Full hookup', '30/50 amp']);
+  // Nothing recorded about water must not become "no water".
+  assert.ok(!chips.some((c) => /water/i.test(c)));
+  assert.deepEqual(campChips(null), []);
+  assert.deepEqual(campChips({}), []);
+  return true;
+});
+
+await check('a pitch is findable by what it offers, not just its number', () => {
+  // The whole problem: every pitch is called "Site 247", so the only way to
+  // search for one that fits a caravan is through its details.
+  const text = campSearchText({ hookup: 'full', amps: [30, 50], drive: 'pull-through' });
+  assert.ok(text.includes('50 amp'));
+  assert.ok(text.includes('50amp'));
+  assert.ok(text.includes('pull-through'));
+  assert.ok(text.includes('full hookup'));
+  assert.equal(campSearchText(null), '');
+  return true;
+});
+
+await check('the venue-wide camping facts reach the manifest', () => {
+  readVenues().forEach((v) => {
+    const pois = readPois(v.pois);
+    if (!pois.some((p) => p.c === 'campsite')) return;
+    // A campground with no facts at all is a campground the app can say
+    // nothing useful about, which is the state this all started in.
+    const anything = v.camping || pois.some((p) => p.camp);
+    assert.ok(anything, `${v.id}: a campground and not one hookup fact`);
+  });
+  return true;
+});
+
+/* ------------------------------------------------------ georeferenced merge -- */
+
+const { applyCamping, mergeDataset, readDataset } = await import('../scripts/build-venue.mjs');
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'venue-merge-'));
+
+await check('a spreadsheet of pitch details merges by name', () => {
+  const file = path.join(tmp, 'pitches.csv');
+  fs.writeFileSync(
+    file,
+    'name,camp.drive,camp.length,note\nSite 1,pull-through,45,"Lakefront, quiet"\nSite 2,back-in,32,\n',
+  );
+  const feats = readDataset(file);
+  assert.equal(feats.length, 2);
+  // A dotted column nests, which is what makes a hookup spreadsheet a one-line
+  // import rather than a script.
+  assert.deepEqual(feats[0].properties.camp, { drive: 'pull-through', length: 45 });
+  // And a quoted cell with a comma in it survives being read.
+  assert.equal(feats[0].properties.note, 'Lakefront, quiet');
+
+  const pois = [
+    { id: 'site-1', n: 'Site 1', lat: 1, lng: 1, c: 'campsite' },
+    { id: 'site-2', n: 'Site 2', lat: 1.001, lng: 1, c: 'campsite' },
+  ];
+  const { merged, unmatched } = mergeDataset(pois, feats);
+  assert.equal(merged, 2);
+  assert.deepEqual(unmatched, []);
+  assert.equal(pois[0].camp.drive, 'pull-through');
+  assert.equal(pois[1].camp.length, 32);
+  // The key is not payload: merging must not rewrite the name it matched on.
+  assert.equal(pois[0].n, 'Site 1');
+  return true;
+});
+
+await check('a nameless survey point merges onto the place it is standing on', () => {
+  const file = path.join(tmp, 'points.geojson');
+  fs.writeFileSync(
+    file,
+    JSON.stringify({
+      type: 'FeatureCollection',
+      features: [
+        // Metres away from the first pitch, and nowhere near anything.
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [1.00002, 1.00002] }, properties: { camp: { sewer: true } } },
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [9, 9] }, properties: { camp: { sewer: true } } },
+      ],
+    }),
+  );
+  const pois = [{ id: 'site-1', n: 'Site 1', lat: 1, lng: 1, c: 'campsite' }];
+  const { merged, unmatched } = mergeDataset(pois, readDataset(file), { metres: 25 });
+  assert.equal(merged, 1);
+  assert.equal(pois[0].camp.sewer, true);
+  /* The one a mile away matched nothing and was reported rather than added: a
+     point that lands nowhere near a place is far likelier to be the wrong
+     projection than a new place, and silently inventing one would hide that. */
+  assert.equal(unmatched.length, 1);
+  return true;
+});
+
+await check('a camping rule narrows the venue-wide facts by name', () => {
+  const pois = [
+    { n: 'Site 501', c: 'campsite' },
+    { n: 'Site 226', c: 'campsite' },
+    { n: 'Millennium Force', c: 'coaster' },
+  ];
+  const touched = applyCamping(pois, { rules: [{ match: '^Site 5', set: { drive: 'pull-through' } }] });
+  assert.equal(touched, 1);
+  assert.equal(pois[0].camp.drive, 'pull-through');
+  assert.equal(pois[1].camp, undefined);
+  // A rule can never reach something that is not a pitch.
+  assert.equal(pois[2].camp, undefined);
+  return true;
+});
+
+/* --------------------------------------------------------- the campground -- */
+
+await check('the campground is drawn, and its sites are places you can find', () => {
+  const venues = readVenues();
+  const camping = venues.filter((v) => readPois(v.pois).some((p) => p.c === 'campsite'));
+  // Not every venue has one. The one that does has to have all of it.
+  if (!camping.length) return true;
+  camping.forEach((v) => {
+    const pois = readPois(v.pois);
+    const sites = pois.filter((p) => p.c === 'campsite');
+    assert.ok(sites.length > 1, `${v.id}: a campground with no sites in it`);
+    // The pitches are the point: a name you can type when you cannot remember
+    // which row you are on.
+    assert.ok(
+      sites.some((p) => /\d/.test(p.n)),
+      `${v.id}: not one numbered pitch — the sites did not come through`,
+    );
+    // And the ground itself is a district, or its name is nowhere on the map.
+    const districts = new Set(pois.map((p) => p.a));
+    assert.ok(
+      sites.every((p) => districts.has(p.a)),
+      `${v.id}: a campsite standing in no district`,
+    );
+  });
+  return true;
+});
+
+await check('every place still lands in a district this venue draws', () => {
+  readVenues().forEach((v) => {
+    const map = JSON.parse(fs.readFileSync(new URL(`../public${v.map}`, import.meta.url)));
+    const drawn = new Set((map.lands || []).map((l) => l.n));
+    const pois = readPois(v.pois);
+    /* A place whose district is neither the venue nor anything drawn is a place
+       standing in the retail park over the road — the thing the offsite filter
+       exists to drop. After the annexed-areas list this is the check that it
+       still drops them. */
+    const strays = [...new Set(pois.map((p) => p.a).filter((a) => a && a !== v.name && !drawn.has(a)))];
+    assert.deepEqual(strays, [], `${v.id}: places filed under undrawn areas: ${strays.join(', ')}`);
+  });
+  return true;
+});
+
+await check('both of a duplicated ride carry the same height rule', () => {
+  readVenues().forEach((v) => {
+    const byName = new Map();
+    readPois(v.pois).forEach((p) => {
+      const at = byName.get(p.n);
+      if (at) at.push(p);
+      else byName.set(p.n, [p]);
+    });
+    byName.forEach((twins, name) => {
+      if (twins.length < 2) return;
+      const rules = new Set(twins.map((p) => JSON.stringify(p.h ?? null)));
+      // OSM carries a ride as two nodes often enough that this is routine.
+      // One of them answering "48 inches" and the other "check at the ride" is
+      // the app disagreeing with itself about the same ride.
+      assert.equal(rules.size, 1, `${v.id}/${name}: twins with different height rules`);
+    });
+  });
+  return true;
+});
+
 await check('a party marker says its age in its own ink', () => {
   const now = 1_000_000;
   const fresh = partyMarkerState({ ts: now - 1000, heading: 90 }, now);
@@ -1673,6 +2036,16 @@ const SFFT = {
 };
 const MANIFEST = { venues: [KI, SFFT] };
 
+await check('a fix outside every venue still picks the nearest one', () => {
+  // Austin: inside neither park. "Nearest or last" means a phone with no venue
+  // of its own gets the nearest rather than whatever the manifest happens to
+  // list first — which is how a visitor in San Antonio was shown a park in Ohio.
+  const hit = venueForPosition(MANIFEST, 30.2672, -97.7431);
+  assert.equal(hit.venue.id, 'six-flags-fiesta-texas');
+  assert.equal(hit.inside, false);
+  return true;
+});
+
 await check('a fix inside a venue picks that venue', () => {
   const hit = venueForPosition(MANIFEST, 39.34395, -84.2673);
   assert.equal(hit.venue.id, 'kings-island');
@@ -1770,13 +2143,35 @@ await check('with no fix the parks still list, undistanced', () => {
   return true;
 });
 
-await check('an unknown district still gets a legible, stable tint', () => {
-  const curated = landTint('Coney Mall', 'day');
-  assert.equal(curated.fill, '#F1EAE4');
+await check('a district is tinted by its own venue, or by its own name', () => {
+  /* The curated tints belong to the venue now, not to the renderer. Two parks
+     can and do use the same district name — Cedar Point's water park was Soak
+     City until 2017 and Kings Island's still is — so a table in shared code
+     would paint one park in the other's colours. */
+  const ki = { lands: { day: { 'Coney Mall': { fill: '#F1EAE4', stroke: '#E0D5CC', label: '#7E5C44' } } } };
+  assert.equal(landTint('Coney Mall', 'day', ki).fill, '#F1EAE4');
+  // The same name at a venue that has not named it is generated, not borrowed.
+  assert.notEqual(landTint('Coney Mall', 'day', null).fill, '#F1EAE4');
+
   const made = landTint('Los Festivales', 'day');
   assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
   assert.notEqual(made.fill, landTint('Rockville', 'day').fill); // distinct
   assert.notEqual(made.fill, landTint('Los Festivales', 'night').fill); // themed
+  return true;
+});
+
+await check('every named district is one this venue actually has', () => {
+  readVenues().forEach((v) => {
+    if (!v.lands) return;
+    const map = JSON.parse(fs.readFileSync(new URL(`../public${v.map}`, import.meta.url)));
+    const drawn = new Set((map.lands || []).map((l) => l.n));
+    for (const theme of ['night', 'day']) {
+      const strays = Object.keys(v.lands[theme] || {}).filter((n) => !drawn.has(n));
+      // A tint for a district that is not on the map is a colour nobody will
+      // ever see, and usually the sign of a park that renamed an area.
+      assert.deepEqual(strays, [], `${v.id}/${theme}: tints for absent districts: ${strays.join(', ')}`);
+    }
+  });
   return true;
 });
 

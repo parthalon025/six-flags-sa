@@ -1,0 +1,154 @@
+{
+  "_comment": "Ride height requirements are not in OpenStreetMap. This file is re-applied on every rebuild of the venue, keyed by POI name. Sources: Six Flags Fiesta Texas Guest Safety and Accessibility Guide (the park's own document, which is where every min/alone pair below comes from where it names the ride), topped up from published 2026 height charts for the rides the guide predates. `min` is the floor nobody rides under; `alone` is the height below which a supervising companion is required; `max` is a genuine rider maximum, not a 'no unaccompanied adults' rule — those are written into `note` instead.",
+  "credits": "Height requirements were compiled from the park's own Guest Safety and Accessibility Guide and from published 2026 height charts.",
+  "pois": {
+    "BATMAN The Ride": {
+      "h": { "min": 48, "alone": null, "max": 77 }
+    },
+    "Bat Girl: Coaster Chase": {
+      "h": { "min": 36, "alone": null, "max": null }
+    },
+    "Bermuda Triangle, Riptide Runner Slide Pool": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "Boomerang Coast to Coast": {
+      "h": { "min": 48, "alone": null, "max": null },
+      "alias": "Boomerang"
+    },
+    "Bucking Broncos": {
+      "h": { "min": 36, "alone": null, "max": 54 },
+      "alias": "Buckarooz",
+      "note": "Formerly Buckarooz"
+    },
+    "Bugs White Water Rapids": {
+      "h": { "min": 36, "alone": 42, "max": null }
+    },
+    "Chupacabra": {
+      "h": { "min": 54, "alone": null, "max": null }
+    },
+    "Crow's Nest": {
+      "h": { "min": null, "alone": 42, "max": null },
+      "note": "Walking age and up with a grown-up. No single riders."
+    },
+    "Cyborg: Cyber Revolution": {
+      "h": { "min": 42, "alone": 48, "max": null }
+    },
+    "Daffy's Bus Stop": {
+      "h": { "min": null, "alone": 42, "max": null },
+      "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    },
+    "Dare Devil Dive Flying Machines": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "DC Super-Villains Swing": {
+      "h": { "min": 36, "alone": 48, "max": null }
+    },
+    "Dr. Diabolical's Cliffhanger": {
+      "h": { "min": 52, "alone": null, "max": 78 }
+    },
+    "Fireball": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "Foghorn Leghorn's Barnyard Railway": {
+      "h": { "min": null, "alone": 36, "max": null },
+      "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    },
+    "Goliath": {
+      "h": { "min": 54, "alone": null, "max": null },
+      "note": "Runs as Chupacabra since the 2024 rename — the map still carries both names."
+    },
+    "Green Lantern Emerald Flight": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "Gully Washer": {
+      "h": { "min": 36, "alone": 42, "max": null }
+    },
+    "Hurricane Force 5": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "Hustler": {
+      "h": { "min": 36, "alone": null, "max": null }
+    },
+    "Iron Rattler": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "Kid Flash Cosmic Coaster": {
+      "h": { "min": 36, "alone": null, "max": null }
+    },
+    "Kiddee Koaster": {
+      "h": { "min": 36, "alone": null, "max": null }
+    },
+    "Kinderstein": {
+      "h": { "min": null, "alone": 36, "max": null },
+      "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    },
+    "Lone Star Lagoon": {
+      "h": { "min": null, "alone": 42, "max": null }
+    },
+    "Metropolis Transit Authority": {
+      "h": { "min": null, "alone": 42, "max": null }
+    },
+    "Pandemonium": {
+      "h": { "min": 42, "alone": 47, "max": null }
+    },
+    "Pirates of the Deep Sea": {
+      "h": { "min": null, "alone": 42, "max": null }
+    },
+    "Poison Ivy Toxic Spin": {
+      "h": { "min": null, "alone": 42, "max": null }
+    },
+    "Poltergeist": {
+      "h": { "min": 54, "alone": null, "max": null }
+    },
+    "Road Runner Express": {
+      "h": { "min": 42, "alone": null, "max": null }
+    },
+    "Scream": {
+      "h": { "min": 52, "alone": null, "max": null }
+    },
+    "Shazam! Tower of Eternity": {
+      "h": { "min": 42, "alone": 48, "max": null }
+    },
+    "Spinsanity": {
+      "h": { "min": 36, "alone": 46, "max": null }
+    },
+    "Supergirl Sky Flight": {
+      "h": { "min": 44, "alone": 48, "max": null },
+      "alias": "SkyScreamer",
+      "note": "Formerly SkyScreamer"
+    },
+    "Superman: Krypton Coaster": {
+      "h": { "min": 54, "alone": null, "max": null }
+    },
+    "Taz's Tornado": {
+      "h": { "min": null, "alone": 42, "max": null }
+    },
+    "Texas Treehouse": {
+      "h": { "min": 42, "alone": null, "max": null }
+    },
+    "The Grand Carousel": {
+      "h": { "min": null, "alone": 42, "max": null },
+      "note": "Lap children and infants on the chariots only."
+    },
+    "The Joker: Carnival of Chaos": {
+      "h": { "min": 52, "alone": null, "max": 84 }
+    },
+    "Tornado Slide Pool": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "Wave Runner": {
+      "h": { "min": 36, "alone": 48, "max": null },
+      "alias": "Waverunner"
+    },
+    "White Water Canyon": {
+      "h": { "min": null, "alone": 42, "max": null }
+    },
+    "Wonder Woman Golden Lasso Coaster": {
+      "h": { "min": 48, "alone": null, "max": null }
+    },
+    "Yosemite Sam's Wacky Wagons": {
+      "h": { "min": null, "alone": 36, "max": null },
+      "note": "Anyone over 54\" has to be riding with a child under 54\"."
+    }
+  }
+}
