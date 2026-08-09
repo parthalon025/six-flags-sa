@@ -5001,6 +5001,47 @@ await check('inject-version stamps public/app-version.json from package.json', (
   return true;
 });
 
+/* ---------------------------------------------------------- release notes */
+
+const {
+  normalizeCatalog,
+  releaseNotesSince,
+} = await import('../lib/releaseNotes.js');
+
+await check('release notes catalog normalises and sorts by version', () => {
+  const blocks = normalizeCatalog({
+    '1.2.0': { title: 'Two', items: ['b'] },
+    '1.1.0': { title: 'One', items: ['a'] },
+    '1.0.0': { items: [] },
+  });
+  assert.equal(blocks.length, 2);
+  assert.equal(blocks[0].version, '1.1.0');
+  assert.equal(blocks[1].version, '1.2.0');
+  return true;
+});
+
+await check('releaseNotesSince returns every unseen version up to the installed build', () => {
+  const catalog = {
+    '1.1.0': { items: ['Auto-update'] },
+    '1.2.0': { items: ['Splash notes'] },
+  };
+  const jumped = releaseNotesSince('1.0.0', '1.2.0', catalog);
+  assert.deepEqual(jumped.map((b) => b.version), ['1.1.0', '1.2.0']);
+  const currentOnly = releaseNotesSince('1.1.0', '1.2.0', catalog);
+  assert.deepEqual(currentOnly.map((b) => b.version), ['1.2.0']);
+  assert.equal(releaseNotesSince('1.2.0', '1.2.0', catalog).length, 0);
+  return true;
+});
+
+await check('the shipped release-notes file has an entry for the current version', () => {
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const shipped = JSON.parse(
+    fs.readFileSync(new URL('../data/release-notes.json', import.meta.url), 'utf8'),
+  );
+  assert.ok(Array.isArray(shipped[pkg.version]?.items) && shipped[pkg.version].items.length > 0);
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
 
 

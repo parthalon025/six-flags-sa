@@ -36,9 +36,22 @@ page.
 ## Shipping a release
 
 1. Bump `version` in `package.json` (semver).
-2. Build and deploy as usual — inject runs automatically.
-3. Phones online within ~5 minutes (or on next focus) should update; offline
+2. Add user-facing bullets to `data/release-notes.json` for that version — they
+   show once on the startup splash the first time someone opens the new build.
+3. Build and deploy as usual — inject runs automatically.
+4. Phones online within ~5 minutes (or on next focus) should update; offline
    phones stay on the last good build until they have connectivity.
+
+## User-facing update notes
+
+- **Where:** full-screen splash (same chrome as the location gate), before the
+  map or the location ask.
+- **When:** first open after an update, for every version between the last one
+  they acknowledged and the build now installed.
+- **Storage:** `tracker-release-notes-seen` in localStorage — dismissed with
+  **Continue**.
+- **Offline:** notes ship in the bundle via `data/release-notes.json`, so they
+  do not need a network fetch.
 
 If `protocol` in `lib/core/protocol.js` ever changes, that is a separate,
 harder compatibility break — this machinery only tracks the **app build**
