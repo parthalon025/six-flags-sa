@@ -133,6 +133,8 @@ export default function ParkMap({
   navZoom = null,
   fitPoints,
   fitKey = null,
+  /** Fold the category key while route preview or walking HUD is up. */
+  mapKeyHidden = false,
 }) {
   const palette = paletteFor(theme);
   // The venue's own district tints, where it has hand-picked any.
@@ -1261,6 +1263,7 @@ export default function ParkMap({
           onToggleCategory={onToggleCategory}
           heightFilterOn={!!rideEligibility}
           presentCategories={presentCategories}
+          hidden={mapKeyHidden}
         />
         <div className="mapMeta">
           {/* Which way is north, without having to open the compass tape. */}

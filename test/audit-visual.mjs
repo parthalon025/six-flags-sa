@@ -4,7 +4,7 @@
  *   npm start &
  *   node test/audit-visual.mjs
  */
-import { BASE, go, launch } from './browser.mjs';
+import { BASE, closeGate, dismissUpdateSplash, go, launch } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -20,25 +20,7 @@ async function shot(page, name) {
 }
 
 async function dismissIntake(page) {
-  // Update splash
-  const continueBtn = page.locator('button:has-text("Continue")');
-  if (await continueBtn.count()) {
-    await continueBtn.click();
-    await page.waitForTimeout(800);
-  }
-  const allow = page.locator('button:has-text("Allow location")');
-  if (await allow.count()) {
-    await allow.click();
-    await page.waitForTimeout(2500);
-  }
-  const setup = page.locator('button:has-text("Yes — set up")');
-  if (await setup.count()) {
-    await setup.click();
-    await page.waitForTimeout(1800);
-  }
-  const dismiss = page.locator('button:has-text("Just show me")');
-  if (await dismiss.count()) await dismiss.click();
-  await page.waitForTimeout(1000);
+  await closeGate(page);
 }
 
 async function setTheme(page, theme) {
@@ -136,12 +118,20 @@ if (await search.count()) {
   await shot(page, '13-search-food');
 }
 
-// Route preview
-await search.fill('');
-await page.waitForTimeout(300);
+// Route preview — search a ride, open detail, preview walk (map key folds for preview)
+await go(page, 'Explore');
+await sheetStop(page, 'peek');
+const wxClose = page.locator('.wxChip[aria-expanded="true"]');
+if (await wxClose.count()) {
+  await wxClose.click();
+  await page.waitForTimeout(400);
+}
+const searchRoute = page.locator('.field[aria-label="Search places"]');
+await searchRoute.fill('beast');
+await page.waitForTimeout(700);
 await page.locator('.poiRow .poiMain').first().click().catch(() => {});
-await page.waitForTimeout(800);
-const walkBtn = page.getByText('Walk me there', { exact: false }).first();
+await page.waitForTimeout(500);
+const walkBtn = page.locator('button:has-text("Walk me there")').first();
 if (await walkBtn.count()) {
   await walkBtn.click();
   await page.waitForTimeout(2000);
@@ -160,9 +150,7 @@ await ctx2.addInitScript(() => {
 });
 const page2 = await ctx2.newPage();
 await page2.goto(BASE, { waitUntil: 'domcontentloaded' });
-await page2.waitForTimeout(1500);
-const continue2 = page2.locator('button:has-text("Continue")');
-if (await continue2.count()) await continue2.click();
+await dismissUpdateSplash(page2);
 await page2.waitForTimeout(500);
 await shot(page2, '15-gps-gate-welcome');
 

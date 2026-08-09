@@ -951,8 +951,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    ============================================================ */
 /* A grouped-list section header, the way Settings sets one. */
 .label {
-  font-size: 13px; font-weight: 400; line-height: 18px; letter-spacing: -.08px;
-  text-transform: none; color: var(--label2);
+  font-size: 13px; font-weight: 500; line-height: 18px; letter-spacing: -.08px;
+  text-transform: none;
+  /* Secondary ink, but dark enough for section headers on a white sheet (AA on
+     13px). Pure --label2 at 60% opacity fails on outdoor glare. */
+  color: color-mix(in srgb, var(--label) 78%, var(--label2));
   margin: 24px 0 7px; padding: 0 4px;
   display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
 }
@@ -1202,7 +1205,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-variant-numeric: tabular-nums;
 }
 
-.fine { font-size: 13px; line-height: 18px; letter-spacing: -.08px; color: var(--label2); margin: 8px 4px 0; }
+.fine {
+  font-size: 13px; line-height: 18px; letter-spacing: -.08px;
+  color: color-mix(in srgb, var(--label) 58%, var(--label2));
+  margin: 8px 4px 0;
+}
 .fine.block { display: block; margin-left: 0; margin-right: 0; }
 .warnText { color: var(--orange); }
 
@@ -1286,6 +1293,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   animation: toastPopRight var(--t2) var(--easeOut) both;
   transition: bottom var(--t3) var(--ease);
 }
+/* A selection toast over the route card covers Start — preview is one screen. */
+.app[data-nav='preview'] .toast { display: none; }
 
 /* ============================================================
    glance rail — the live dashboard in the sheet's peek state

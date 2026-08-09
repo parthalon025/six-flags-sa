@@ -11,7 +11,7 @@
  *   npm run test:visual
  */
 
-import { go, launch, until } from './browser.mjs';
+import { dismissUpdateSplash, go, launch, openPhone, until } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -52,10 +52,13 @@ async function main() {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 }, // iPhone 15 class
     deviceScaleFactor: 2,
-    permissions: ['geolocation'],
-    geolocation: HOME,
     locale: 'en-US',
   });
+  await context.addInitScript(() => {
+    localStorage.removeItem('tracker-intro-seen');
+    localStorage.removeItem('tracker-release-notes-seen');
+  });
+  await context.setGeolocation(HOME);
 
   const errors = [];
   const page = await context.newPage();
@@ -70,26 +73,18 @@ async function main() {
 
   console.log(`\nvisual inspection against ${BASE}\n`);
 
-  await page.goto(BASE, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(1200);
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await dismissUpdateSplash(page);
+  await page.waitForSelector('.gate', { timeout: 10000 });
   await shot(page, 'gps-gate');
-  const continueBtn = page.getByRole('button', { name: 'Continue' });
-  if (await continueBtn.count()) {
-    await continueBtn.click();
-    await page.waitForTimeout(800);
-  }
-  check(
-    await page.getByRole('heading', { name: 'Park Party' }).isVisible(),
-    'the first screen introduces the app',
-  );
-  // The introduction and the ask are one screen, not two: the point of saying
-  // what the app is here is that the permission button is right under it.
   const first = await page.locator('.gate').innerText();
   check(
-    /see where everyone is/i.test(first) && /Allow location/i.test(first),
-    'the first screen asks for location on the same card',
+    /Park Party/i.test(first) && /see where everyone is/i.test(first),
+    'the first screen introduces the app',
   );
+  check(/Allow location/i.test(first), 'the first screen asks for location on the same card');
 
+  await context.grantPermissions(['geolocation']);
   await page.getByRole('button', { name: 'Allow location' }).click();
   await page.waitForTimeout(2000);
 
@@ -150,17 +145,11 @@ async function main() {
 
   // A second phone joins the same party from across the park
   if (code) {
-    const other = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      permissions: ['geolocation'],
-      geolocation: { latitude: 39.343328, longitude: -84.266981 }, // Eiffel Tower
+    const { context: other, page: page2 } = await openPhone(browser, {
+      lat: 39.343328,
+      lng: -84.266981, // Eiffel Tower
+      label: 'B',
     });
-    const page2 = await other.newPage();
-    await page2.goto(BASE, { waitUntil: 'networkidle' });
-    await page2.getByRole('button', { name: 'Allow location' }).click();
-    await page2.waitForTimeout(1600);
-    await page2.getByRole('button', { name: /Yes — set up/ }).click().catch(() => {});
-    await page2.waitForTimeout(1200);
     await go(page2, 'Party');
     await openSheet(page2, 'full');
     await page2.locator('input.code').fill(code);
