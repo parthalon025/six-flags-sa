@@ -1,0 +1,2879 @@
+{
+  "version": 1,
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- kings-island",
+  "venue": "kings-island",
+  "generated": "2026-08-09",
+  "publish_at": "moderate",
+  "attractions": [
+    {
+      "id": "kings-island-3-point-challange",
+      "name": "3 Point Challange",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.341395,
+        "lng": -84.265345
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34144,
+            "lng": -84.26529
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34144,
+                "lng": -84.26529
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-adventure-express",
+      "name": "Adventure Express",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.344465,
+        "lng": -84.264865
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34456,
+            "lng": -84.26488
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34456,
+                "lng": -84.26488
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-age-or-weight",
+      "name": "Age or Weight",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342417,
+        "lng": -84.264783
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3424,
+            "lng": -84.26478
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3424,
+                "lng": -84.26478
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-arcade",
+      "name": "Arcade",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.340962,
+        "lng": -84.266469
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34101,
+            "lng": -84.26638
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34101,
+                "lng": -84.26638
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-arcade-games",
+      "name": "Arcade Games",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342906,
+        "lng": -84.264725
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34289,
+            "lng": -84.26478
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34289,
+                "lng": -84.26478
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-aruba-tuba",
+      "name": "Aruba Tuba",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.338326,
+        "lng": -84.274013
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33839,
+            "lng": -84.27394
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33839,
+                "lng": -84.27394
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-backlot-stunt-coaster",
+      "name": "Backlot Stunt Coaster",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.341937,
+        "lng": -84.265944
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34196,
+            "lng": -84.26597
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34196,
+                "lng": -84.26597
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 3 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-bank-ball",
+      "name": "Bank Ball",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.3437,
+        "lng": -84.26524
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34364,
+            "lng": -84.26512
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34364,
+                "lng": -84.26512
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 12 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-banshee",
+      "name": "Banshee",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.345666,
+        "lng": -84.265478
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3456,
+            "lng": -84.26549
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3456,
+                "lng": -84.26549
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-beagle-scout-acres",
+      "name": "Beagle Scout Acres",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.341811,
+        "lng": -84.269915
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34187,
+            "lng": -84.26986
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34187,
+                "lng": -84.26986
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-boo-blasters-on-boo-hill",
+      "name": "Boo Blasters on Boo Hill",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.34325,
+        "lng": -84.268169
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34348,
+            "lng": -84.26842
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34348,
+                "lng": -84.26842
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 33 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-breakers-bay",
+      "name": "Breakers Bay",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.338159,
+        "lng": -84.274999
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33793,
+            "lng": -84.27513
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33793,
+                "lng": -84.27513
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 28 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-cargo-loco",
+      "name": "Cargo Loco",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.34479,
+        "lng": -84.265742
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3447,
+            "lng": -84.26575
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3447,
+                "lng": -84.26575
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride (Cargo Loco)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-castaway-cove",
+      "name": "Castaway Cove",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.338532,
+        "lng": -84.273955
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3386,
+            "lng": -84.27399
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3386,
+                "lng": -84.27399
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-character-carousel",
+      "name": "Character Carousel",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342709,
+        "lng": -84.268748
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34278,
+            "lng": -84.26861
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34278,
+                "lng": -84.26861
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 14 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-charlie-brown-s-rushing-river-log-ride",
+      "name": "Charlie Brown's Rushing River Log Ride",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.34154,
+        "lng": -84.268513
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34153,
+            "lng": -84.26858
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34153,
+                "lng": -84.26858
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-charlie-brown-s-wind-up",
+      "name": "Charlie Brown's Wind Up",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.343314,
+        "lng": -84.268918
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34327,
+            "lng": -84.26893
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34327,
+                "lng": -84.26893
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride (Charlie Brown's Wind Up)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-coconut-cove",
+      "name": "Coconut Cove",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.339527,
+        "lng": -84.273815
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33958,
+            "lng": -84.27374
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33958,
+                "lng": -84.27374
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-congo-falls",
+      "name": "Congo Falls",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.346122,
+        "lng": -84.266964
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34611,
+            "lng": -84.26696
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34611,
+                "lng": -84.26696
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 1 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-delirium",
+      "name": "Delirium",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.345157,
+        "lng": -84.266324
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34509,
+            "lng": -84.26629
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34509,
+                "lng": -84.26629
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-diamondback",
+      "name": "Diamondback",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.342102,
+        "lng": -84.267493
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34215,
+            "lng": -84.26747
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34215,
+                "lng": -84.26747
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-dodgem",
+      "name": "Dodgem",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342642,
+        "lng": -84.26539
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34273,
+            "lng": -84.26523
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34273,
+                "lng": -84.26523
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 17 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-drop-tower-scream-zone",
+      "name": "Drop Tower: Scream Zone",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.346038,
+        "lng": -84.266381
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3461,
+            "lng": -84.26631
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3461,
+                "lng": -84.26631
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-flight-of-fear",
+      "name": "Flight of Fear",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.342858,
+        "lng": -84.263426
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34289,
+            "lng": -84.2635
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34289,
+                "lng": -84.2635
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-franklin-s-flyers",
+      "name": "Franklin's Flyers",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342136,
+        "lng": -84.26944
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3422,
+            "lng": -84.26947
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3422,
+                "lng": -84.26947
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-goblet-toss",
+      "name": "Goblet Toss",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.341727,
+        "lng": -84.264693
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34172,
+            "lng": -84.26457
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34172,
+                "lng": -84.26457
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-hang-time",
+      "name": "Hang Time",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.344051,
+        "lng": -84.265356
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34407,
+            "lng": -84.26533
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34407,
+                "lng": -84.26533
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 3 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-high-striker",
+      "name": "High Striker",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342234,
+        "lng": -84.264963
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34219,
+            "lng": -84.26506
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34219,
+                "lng": -84.26506
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-invertigo",
+      "name": "Invertigo",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.345832,
+        "lng": -84.268009
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34587,
+            "lng": -84.26813
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34587,
+                "lng": -84.26813
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-joe-cool-s-dodgen-school",
+      "name": "Joe Cool's Dodgen School",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.3432,
+        "lng": -84.269092
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34325,
+            "lng": -84.26903
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34325,
+                "lng": -84.26903
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-kings-mills-antique-autos",
+      "name": "Kings Mills Antique Autos",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.341392,
+        "lng": -84.264386
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34143,
+            "lng": -84.26438
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34143,
+                "lng": -84.26438
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-kite-eating-tree",
+      "name": "Kite Eating Tree",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342219,
+        "lng": -84.26923
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3422,
+            "lng": -84.26927
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3422,
+                "lng": -84.26927
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride (Kite Eating Tree)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-linus-beetle-bugs",
+      "name": "Linus' Beetle Bugs",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342188,
+        "lng": -84.269945
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34222,
+            "lng": -84.26992
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34222,
+                "lng": -84.26992
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-linus-launcher",
+      "name": "Linus' Launcher",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.341974,
+        "lng": -84.268548
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34196,
+            "lng": -84.26863
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34196,
+                "lng": -84.26863
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-lookout-lagoon",
+      "name": "Lookout Lagoon",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.33804,
+        "lng": -84.274003
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33809,
+            "lng": -84.27385
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33809,
+                "lng": -84.27385
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 14 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-mystic-timbers",
+      "name": "Mystic Timbers",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.341217,
+        "lng": -84.268528
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34125,
+            "lng": -84.26853
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34125,
+                "lng": -84.26853
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-orion",
+      "name": "Orion",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.342993,
+        "lng": -84.262729
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.343,
+            "lng": -84.26273
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.343,
+                "lng": -84.26273
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 1 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-peanuts-500",
+      "name": "Peanuts 500",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342772,
+        "lng": -84.26969
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34272,
+            "lng": -84.26976
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34272,
+                "lng": -84.26976
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-peanuts-off-road-rally",
+      "name": "PEANUTS Off-Road Rally",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342581,
+        "lng": -84.270141
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34256,
+            "lng": -84.27019
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34256,
+                "lng": -84.27019
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-pipeline-paradise",
+      "name": "Pipeline Paradise",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.337451,
+        "lng": -84.274689
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3374,
+            "lng": -84.27469
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3374,
+                "lng": -84.27469
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-racer-blue",
+      "name": "Racer (Blue)",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.3401,
+        "lng": -84.26239
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33999,
+            "lng": -84.26251
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33999,
+                "lng": -84.26251
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-racer-red",
+      "name": "Racer (Red)",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.34341,
+        "lng": -84.26456
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34343,
+            "lng": -84.26467
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34343,
+                "lng": -84.26467
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-ring-toss",
+      "name": "Ring Toss",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342429,
+        "lng": -84.264992
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34239,
+            "lng": -84.26509
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34239,
+                "lng": -84.26509
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-rope-ladder",
+      "name": "Rope Ladder",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.344269,
+        "lng": -84.265321
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.3442,
+            "lng": -84.26531
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.3442,
+                "lng": -84.26531
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride (Oktoberfest)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-sally-s-sea-plane",
+      "name": "Sally's Sea Plane",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342197,
+        "lng": -84.268896
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34223,
+            "lng": -84.26895
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34223,
+                "lng": -84.26895
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride (Sally's Sea Plane)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-shake-rattle-roll",
+      "name": "Shake, Rattle & Roll",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.341172,
+        "lng": -84.264765
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34126,
+            "lng": -84.26472
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34126,
+                "lng": -84.26472
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-shoot-down",
+      "name": "Shoot Down",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342135,
+        "lng": -84.265136
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34219,
+            "lng": -84.26512
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34219,
+                "lng": -84.26512
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-snoopy-s-junction",
+      "name": "Snoopy's Junction",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342299,
+        "lng": -84.270058
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34226,
+            "lng": -84.26999
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34226,
+                "lng": -84.26999
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-snoopy-s-red-baron",
+      "name": "Snoopy's Red Baron",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342816,
+        "lng": -84.269154
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34283,
+            "lng": -84.2691
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34283,
+                "lng": -84.2691
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride (Snoopy's Red Baron)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-snoopy-s-space-buggies",
+      "name": "Snoopy's Space Buggies",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342306,
+        "lng": -84.269415
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34227,
+            "lng": -84.2694
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34227,
+                "lng": -84.2694
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride (Snoopy's Space Buggies)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-soap-box-racers",
+      "name": "Soap Box Racers",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.341562,
+        "lng": -84.269372
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34161,
+            "lng": -84.26934
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34161,
+                "lng": -84.26934
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-sol-spin",
+      "name": "Sol Spin",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.344557,
+        "lng": -84.265555
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34467,
+            "lng": -84.26566
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34467,
+                "lng": -84.26566
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 15 m from the ride (Cargo Loco)"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-splash-river",
+      "name": "Splash River",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.33956,
+        "lng": -84.272662
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33954,
+            "lng": -84.27267
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33954,
+                "lng": -84.27267
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-surf-dog",
+      "name": "Surf Dog",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.342361,
+        "lng": -84.269793
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34234,
+            "lng": -84.2698
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34234,
+                "lng": -84.2698
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-bat",
+      "name": "The Bat",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.34759,
+        "lng": -84.265238
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34749,
+            "lng": -84.26529
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34749,
+                "lng": -84.26529
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 12 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-beast",
+      "name": "The Beast",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.340142,
+        "lng": -84.266032
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34019,
+            "lng": -84.26593
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34019,
+                "lng": -84.26593
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-grand-carousel",
+      "name": "The Grand Carousel",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.343231,
+        "lng": -84.266109
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34312,
+            "lng": -84.26622
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34312,
+                "lng": -84.26622
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-great-pumpkin-coaster",
+      "name": "The Great Pumpkin Coaster",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.342949,
+        "lng": -84.268412
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34291,
+            "lng": -84.2685
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34291,
+                "lng": -84.2685
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-monster",
+      "name": "The Monster",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.343369,
+        "lng": -84.264819
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34341,
+            "lng": -84.26493
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34341,
+                "lng": -84.26493
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-racer",
+      "name": "The Racer",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.343496,
+        "lng": -84.264597
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34343,
+            "lng": -84.26467
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34343,
+                "lng": -84.26467
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-scrambler",
+      "name": "The Scrambler",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.34312,
+        "lng": -84.26543
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34312,
+            "lng": -84.26532
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34312,
+                "lng": -84.26532
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-the-zephyr",
+      "name": "The Zephyr",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.342364,
+        "lng": -84.264606
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34232,
+            "lng": -84.26457
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34232,
+                "lng": -84.26457
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-total-wave-bay",
+      "name": "Total Wave Bay",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.338848,
+        "lng": -84.27622
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33893,
+            "lng": -84.27639
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33893,
+                "lng": -84.27639
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 17 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-viking-fury",
+      "name": "Viking Fury",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.344126,
+        "lng": -84.266612
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34413,
+            "lng": -84.26667
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34413,
+                "lng": -84.26667
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-white-water-canyon",
+      "name": "White Water Canyon",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.339892,
+        "lng": -84.269493
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.33986,
+            "lng": -84.2694
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.33986,
+                "lng": -84.2694
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-windseeker",
+      "name": "WindSeeker",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.340723,
+        "lng": -84.263798
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34079,
+            "lng": -84.26369
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34079,
+                "lng": -84.26369
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 12 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-woodstock-express",
+      "name": "Woodstock Express",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.343048,
+        "lng": -84.269602
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.343,
+            "lng": -84.26975
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.343,
+                "lng": -84.26975
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 14 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-woodstock-whirlybirds",
+      "name": "Woodstock Whirlybirds",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.342733,
+        "lng": -84.26896
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34275,
+            "lng": -84.26899
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34275,
+                "lng": -84.26899
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 3 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-woodstock-s-air-rail",
+      "name": "Woodstock's Air Rail",
+      "venue": "kings-island",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 39.341575,
+        "lng": -84.269035
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34158,
+            "lng": -84.26903
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34158,
+                "lng": -84.26903
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 1 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "kings-island-xtreme-skyflyer",
+      "name": "Xtreme Skyflyer",
+      "venue": "kings-island",
+      "type": "attraction",
+      "at": {
+        "lat": 39.345873,
+        "lng": -84.265853
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 39.34585,
+            "lng": -84.26582
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 39.34585,
+                "lng": -84.26582
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    }
+  ]
+}

@@ -16,6 +16,7 @@
     "venues:rebuild": "node scripts/build-venue.mjs --rebuild",
     "venues:ask": "node scripts/build-venue.mjs --ask",
     "venues:trace": "node scripts/trace-venue.mjs",
+    "venues:attractions": "node scripts/attractions.mjs",
     "venues:reindex": "node scripts/build-venue.mjs --reindex",
     "venues:overrides": "node scripts/build-venue.mjs --reapply",
     "venues:report": "node scripts/venue-report.mjs",

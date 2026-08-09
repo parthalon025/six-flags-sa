@@ -2076,6 +2076,174 @@ await check('a traced place is added once and corrected on the next run', () => 
   return true;
 });
 
+/* ------------------------------------------------- evidence and confidence -- */
+
+/* Every coordinate this pipeline produces about a ride's entrance is a claim
+   from a source, and the sources are not equal. The failure mode is that "the
+   park's own map says so" and "there is a footpath near it, so probably" end up
+   as the same six decimal places in the same file and nobody can tell which was
+   which afterwards. */
+
+const { atLeast, bandOf, fuse, pointOf, staleness } = await import('../scripts/lib/evidence.mjs');
+
+const near = { lat: 39.3438, lng: -84.2658 };
+const alsoNear = { lat: 39.34381, lng: -84.26581 };
+const farOff = { lat: 39.3450, lng: -84.2680 };
+
+await check('agreement is worth more than repetition', () => {
+  const agreeing = fuse([
+    { source: 'osm_named_queue', at: near },
+    { source: 'traced', at: alsoNear },
+  ]);
+  assert.equal(agreeing.score, 7);
+  assert.equal(agreeing.band, 'moderate');
+
+  // The same source cited twice is one source. Three forum threads repeating
+  // each other are three people repeating each other.
+  const repeated = fuse([{ source: 'forum', at: near }, { source: 'forum', at: alsoNear }]);
+  assert.deepEqual(repeated.sources, ['forum']);
+  assert.equal(repeated.score, 1);
+  return true;
+});
+
+await check('a guess disagreeing with a survey is the guess being wrong', () => {
+  /* The first rule here treated any spread as a standoff, and it was wrong in a
+     way the parks on disk showed immediately: a coaster's nearest footpath is
+     somewhere along its own track, so it lands a hundred metres from the queue
+     every time. That let the weakest source in the pipeline veto the strongest,
+     and Cedar Point's three best-evidenced coasters came out disputed. */
+  const f = fuse([
+    { source: 'osm_named_queue', at: near },
+    { source: 'geometry', at: farOff },
+  ]);
+  assert.equal(f.conflict, false, 'being outranked is not a dispute');
+  assert.deepEqual(f.sources, ['osm_named_queue'], 'and the outvoted source does not score');
+  assert.equal(f.score, 4);
+  assert.equal(f.dissent[0].source, 'geometry');
+  assert.ok(f.dissent[0].metres > 100);
+  return true;
+});
+
+await check('two sources of equal standing disagreeing is a conflict', () => {
+  const f = fuse([
+    { source: 'official_map', at: near },
+    { source: 'official_site', at: farOff },
+  ]);
+  // The one a person has to settle. Never averaged into a point between them,
+  // which is a coordinate neither source supports.
+  assert.equal(f.conflict, true);
+  assert.equal(f.score, 5, 'capped at what one of them is worth');
+  return true;
+});
+
+await check('the heaviest source picks the spot outright', () => {
+  const at = pointOf([
+    { source: 'geometry', at: farOff },
+    { source: 'official_map', at: near },
+    { source: 'forum', at: farOff },
+  ]);
+  assert.equal(at.from, 'official_map');
+  assert.equal(at.lat, near.lat);
+  return true;
+});
+
+await check('the bands are the ones a single source cannot reach alone', () => {
+  assert.equal(bandOf(0), 'unknown');
+  assert.equal(bandOf(4), 'low');
+  assert.equal(bandOf(7), 'moderate');
+  assert.equal(bandOf(10), 'high');
+  assert.equal(bandOf(13), 'very_high');
+  // Deliberate: the best automatic evidence there is, on its own, is "low".
+  // Corroboration is the whole point of scoring at all.
+  assert.equal(bandOf(4), 'low');
+  assert.ok(!atLeast('low', 'moderate'));
+  assert.ok(atLeast('high', 'moderate'));
+  return true;
+});
+
+await check('a claim has a shelf life, and it is flagged rather than decayed', () => {
+  const old = staleness([{ source: 'official_map', date: '2024-01-01' }], '2026-08-09');
+  assert.equal(old.stale, true);
+  assert.match(old.why, /2024-01-01/);
+  // Not scored down: an old survey is still a survey, and quietly decaying it
+  // would invent a decay rate nobody measured.
+  assert.equal(fuse([{ source: 'official_map', date: '2024-01-01', at: near }]).score, 5);
+  assert.equal(staleness([], '2026-08-09').stale, true, 'undated is stale');
+  return true;
+});
+
+/* --------------------------------------------------- the ride inventory -- */
+
+const { addEvidence, attractionFor, publishable, unresolved } =
+  await import('../scripts/lib/attractions.mjs');
+const { candidates, rideNameOf } = await import('../scripts/lib/candidates.mjs');
+
+await check('a queue lane is named for its ride, not for itself', () => {
+  assert.equal(rideNameOf('Top Thrill 2 Standby Queue'), 'top thrill 2');
+  assert.equal(rideNameOf('Millennium Force Fastlane Queue'), 'millennium force');
+  assert.equal(rideNameOf('Red Racer Queue'), 'red racer');
+  return true;
+});
+
+await check('geometry proposes and does not publish', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  addEvidence(record, 'queue_entrance', { source: 'geometry', at: near }, { asOf: '2026-08-09' });
+  // Not even "low": the cheapest evidence there is, and the only kind that
+  // scales to every ride in every park, which is exactly why it is worth 1.
+  assert.equal(record.features.queue_entrance.confidence, 'unknown');
+  // If the path network alone were enough, every ride in every park would get an
+  // entrance and not one of them would ever be checked.
+  assert.deepEqual(publishable(record), {});
+
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: near }, { asOf: '2026-08-09' });
+  addEvidence(record, 'queue_entrance', { source: 'traced', at: alsoNear }, { asOf: '2026-08-09' });
+  const out = publishable(record);
+  assert.ok(out.in, 'corroborated evidence reaches the app');
+  assert.equal(out.in.src.confidence, 'moderate');
+  return true;
+});
+
+await check('a conflicted feature is never published', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: near });
+  addEvidence(record, 'queue_entrance', { source: 'official_site', at: farOff });
+  assert.deepEqual(publishable(record), {});
+  assert.equal(unresolved([record]).length, 1);
+  return true;
+});
+
+await check('evidence accumulates, and only its own source supersedes it', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: near, date: '2025-04-01' });
+  addEvidence(record, 'queue_entrance', { source: 'forum', at: farOff });
+  // A forum post does not overwrite the park; the park overwrites the park.
+  assert.equal(record.features.queue_entrance.at.lat, near.lat);
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: farOff, date: '2026-04-01' });
+  assert.equal(record.features.queue_entrance.at.lat, farOff.lat, 'a redrawn map is a change of mind');
+  assert.equal(record.features.queue_entrance.evidence.filter((e) => e.source === 'official_map').length, 1);
+  return true;
+});
+
+await check('one ride with four mapped lanes yields one way in', () => {
+  /* Cedar Point draws Maverick's standby lane, its Fastlane lane and two more
+     segments as separate ways, all carrying the ride's name. They are not four
+     entrances, and the evidence model dedupes by source rather than by place —
+     so without reconciling here, whichever way came last in the file won. */
+  const ride = { n: 'Maverick', c: 'coaster', lat: 41.4800, lng: -82.6860 };
+  const q = (n, from, to) => ({ n, r: [from, to] });
+  const map = {
+    path: [
+      { n: 'Midway', r: [[-82.6870, 41.4805], [-82.6850, 41.4805]] },
+      q('Maverick Standby Queue', [-82.6862, 41.48048], [-82.6860, 41.4800]),
+      q('Maverick Fastlane Queue', [-82.6861, 41.4802], [-82.6860, 41.4800]),
+    ],
+  };
+  const got = candidates(map, [ride]).filter((c) => c.source === 'osm_named_queue' && c.type === 'queue_entrance');
+  assert.equal(got.length, 1);
+  assert.match(got[0].why, /outermost of 2 lanes/);
+  return true;
+});
+
 /* ------------------------------------------------------ heights from OSM -- */
 
 const { heightFromTags } = await import('../scripts/build-venue.mjs');

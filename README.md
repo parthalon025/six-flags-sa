@@ -642,6 +642,78 @@ npm run venues:overrides              # re-apply every overrides file, no networ
 npm run venues:overrides -- cedar-point              # just the one
 ```
 
+### The ride inventory: every way into every ride
+
+A place in the bundle is one point, and a ride is not one point. It has a queue that starts
+out on the midway, a station, and an exit that puts you somewhere else entirely — and for
+getting a family across a park, the **queue entrance** and the **exit** are the two
+coordinates anybody actually walks to.
+
+```
+npm run venues:attractions -- cedar-point --report
+npm run venues:attractions -- cedar-point --trace data/venues/cedar-point.traced.geojson
+npm run venues:attractions -- --all
+npm run venues:attractions -- cedar-point --geojson entrances.geojson
+```
+
+It assembles them from every source available, per ride, per feature —
+`queue_entrance`, `queue_path`, `ride_entrance`, `station`, `unload`, `ride_exit`,
+`queue_exit`. A park map prints one arrow and calls it the entrance; on the ground the queue
+entrance is on the midway and the ride entrance is at the far end of forty metres of
+switchback, and those are different places.
+
+**Nothing is stored bare.** Every coordinate carries the sources behind it, a fused score and
+the dates, because a park moves a queue between seasons and an *expired* coordinate and a
+*wrong* one are indistinguishable in a file that stores only numbers.
+
+| Source | Worth |
+| --- | ---: |
+| the park's own map or site | 5 |
+| `entrance=*` in OpenStreetMap | 4 |
+| a way named for its ride (`Maverick Standby Queue`) | 4 |
+| current aerial imagery | 4 |
+| a guest photo, a ride walkthrough, a georeferenced trace | 3 |
+| a historical map | 2 |
+| a forum thread, or this repo's own inference from geometry | 1 |
+
+0–3 unknown · 4–6 low · 7–9 moderate · 10–12 high · 13+ very high. Only **moderate** and above
+reaches the app.
+
+That bar is deliberately above what any automatic source can reach alone, and the numbers
+from the three parks are why. Cedar Point has 22 ways named for their ride, Kings Island 8,
+Fiesta Texas none; Fiesta Texas carries exactly **one** `entrance` tag against 53 rides. So
+running the whole pipeline over all three parks today publishes **nothing**. That is the
+system working: every ride in every park can be given a plausible entrance from the path
+network, and if that were enough to publish then none of them would ever be checked.
+Geometry proposes. One corroborating source — a trace, a mapped entrance — carries a ride
+over the line.
+
+Two rules that took a wrong turn first:
+
+- **A guess disagreeing with a survey is not a dispute.** The first fusion rule treated any
+  spread as a standoff, and a coaster's nearest footpath is somewhere along its own track —
+  so it lands a hundred metres from the queue every time, and the weakest source in the
+  pipeline was vetoing the strongest. Cedar Point's three best-evidenced coasters came out
+  disputed. Now the heaviest source picks the spot, lighter ones that disagree are recorded
+  as `dissent`, and a **conflict** is only two sources of equal standing pointing at
+  different places — which is never published, and never averaged into a point neither of
+  them supports.
+- **One ride often has four mapped lanes.** Cedar Point draws Maverick's standby lane, its
+  Fastlane lane and two more segments as separate ways, all carrying the ride's name. They
+  are not four entrances, and the evidence model dedupes by *source*, so whichever way came
+  last in the file used to win. They are reconciled to the end that reaches furthest into the
+  park — the one somebody walking up actually meets.
+
+The evidence lives in `data/venues/<id>.attractions.json`, beside the bundle rather than in
+it: the bundle is overwritten by every rebuild and the evidence is the expensive part. Only
+what clears the bar is copied in, as `in` and `out` on the place.
+
+**What this does not do**, and does not pretend to: it does not look at aerial imagery, run
+computer vision over it, watch a ride walkthrough or fetch a park's PDF. Each of those is a
+real source and a project of its own. What is here is what can be done from data already on
+disk — plus the door for the rest, since every one of those sources already has a weight and
+lands through the same call the automatic ones use.
+
 ### Getting things off the park's own map
 
 The map a park hands out at the gate knows things OpenStreetMap does not, and until now none
@@ -911,6 +983,9 @@ scripts/
   lib/osm-tags.mjs            the tag → layer and tag → category rules
   lib/geometry.mjs            simplification, clipping, area, centroid, point-in-polygon
   lib/venue-io.mjs            where venues live; manifest and index generation
+  attractions.mjs             the ride inventory: every way into every ride, and who says so
+  lib/evidence.mjs            what a source is worth, how claims fuse, when one has expired
+  lib/candidates.mjs          plausible entrances proposed from the shape of the park
   trace-venue.mjs             a park's own map, georeferenced → entrances, routes, places
   lib/georef.mjs              the transforms, and honest error by cross-validation
   lib/venue-trace.mjs         where a traced feature lands in a venue
@@ -933,5 +1008,6 @@ public/
 data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
 data/venues/<id>.recipe.json     the box, pad and flags that built it — replayed by --rebuild
 data/venues/<id>.trace.json      control points and features clicked off the park's own map
+data/venues/<id>.attractions.json  per-ride features, their evidence and confidence
 Dockerfile  docker-compose.yml
 ```
