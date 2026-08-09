@@ -47,6 +47,10 @@ import {
   argsFromRecipe, listRecipes, readRecipe, recipeFile, recipeFrom, writeRecipe,
 } from './lib/venue-recipe.mjs';
 import { briefJson, renderBrief, requests } from './lib/venue-requests.mjs';
+import {
+  addressBook, assignKeys, keyAudit, osmRef, readLedger, resolveOverride, seedLedger,
+  serializeLedger, writeLedger,
+} from './lib/venue-ids.mjs';
 import { SRC_BY } from './lib/attractions.mjs';
 import { applyTrace } from './lib/venue-trace.mjs';
 // The app's own reading of "these two strings are the same ride", reused so the
@@ -358,7 +362,7 @@ function buildLayers(elements, opts) {
              Point has an office, opening hours and a telephone number, and a
              visitor who wants any of those wants a place in the list rather
              than a word lying across the ground. So a campground is both. */
-          if (isCampground(tags)) areaCandidates.push({ tags, ring });
+          if (isCampground(tags)) areaCandidates.push({ tags, ring, el });
           continue;
         }
         if (size >= opts.venueArea * 0.7) continue;
@@ -371,7 +375,7 @@ function buildLayers(elements, opts) {
          ever saw it — which is why a park with eleven surveyed toilets shipped
          with none. */
       if (closed && (tags.name || UNNAMED_AREA_CATEGORIES.has(classify(POI_RULES, tags)))) {
-        areaCandidates.push({ tags, ring });
+        areaCandidates.push({ tags, ring, el });
       }
 
       if (!layer) continue;
@@ -494,13 +498,23 @@ export function heightFromTags(tags) {
 
 function buildPois(elements, areaCandidates, opts) {
   const out = [];
-  const push = (tags, lat, lng) => {
+  const push = (tags, lat, lng, el) => {
     const c = classify(POI_RULES, tags);
     if (!c) return;
     const name = tags.name || tags.operator || UNNAMED_LABELS[c];
     if (!name) return; // an unnamed bench is noise on a map you read at a glance
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
     const poi = { n: name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c };
+    /* Which OpenStreetMap object this came off, as `n123` / `w123` / `r123`.
+       Not identity — see scripts/lib/venue-ids.mjs for why an element id cannot
+       be the primary key here — but it is the tiebreaker that lets a rebuild
+       recognise a place a mapper has renamed or nudged, and it is the only
+       thread back from a row in the bundle to the thing a human can go and fix.
+       Carried through the build and parked in the ledger by `assignKeys`, which
+       takes it off again before anything is written: no phone reads it, and
+       four hundred of them is eleven kilobytes on a precached download. */
+    const ref = osmRef(el);
+    if (ref) poi.osm = ref;
     const h = heightFromTags(tags);
     if (h) poi.h = h;
     /* A phone number, where the place has one. Kept and nothing else from the
@@ -518,11 +532,11 @@ function buildPois(elements, areaCandidates, opts) {
 
   for (const el of elements) {
     if (el.type !== 'node') continue;
-    push(el.tags || {}, el.lat, el.lon);
+    push(el.tags || {}, el.lat, el.lon, el);
   }
-  for (const { tags, ring } of areaCandidates) {
+  for (const { tags, ring, el } of areaCandidates) {
     const [lng, lat] = centroidOf(ring);
-    push(tags, lat, lng);
+    push(tags, lat, lng, el);
   }
 
   // A ride is routinely mapped three times: the track, the station building and
@@ -584,6 +598,8 @@ function campPitches(elements, campRings, known) {
     if (seen.has(key)) continue;
     seen.add(key);
     const pitch = { n: tags.name, lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)), c: 'campsite' };
+    const ref = osmRef(el);
+    if (ref) pitch.osm = ref;
     const camp = campDetailsFromTags(tags);
     if (camp) pitch.camp = camp;
     out.push(pitch);
@@ -705,7 +721,7 @@ export function entrancesFromQueues(pois, elements) {
       const g = (w.geometry || []).filter(Boolean);
       if (g.length < 2) continue;
       const [head, tail] = dir === '-1' ? [g[g.length - 1], g[0]] : [g[0], g[g.length - 1]];
-      starts.set(at(head), { p: head, n: w.tags.name });
+      starts.set(at(head), { p: head, n: w.tags.name, osm: osmRef(w) });
       ends.add(at(tail));
     }
     const sources = [...starts.entries()].filter(([k]) => !ends.has(k)).map(([, v]) => v);
@@ -728,12 +744,16 @@ export function entrancesFromQueues(pois, elements) {
       /* Signed with the kind of source it is, in the one vocabulary every
          writer of a coordinate on a place uses. Three writers hang points on
          `e` — this, the tracer, and the inventory's own publish step — and a
-         reader that cannot tell them apart weighs a guess as a survey. */
+         reader that cannot tell them apart weighs a guess as a survey.
+         The queue way's own element id rides along: an entrance derived from a
+         way is a claim *about that way*, and two detectors that read the same
+         way are one source however they are labelled. This is the field that
+         lets a dedupe say so. */
       kept.push({
         lat: Number(s.p.lat.toFixed(6)),
         lng: Number(s.p.lon.toFixed(6)),
         n: s.n,
-        src: { by: SRC_BY.NAMED_QUEUE },
+        src: { by: SRC_BY.NAMED_QUEUE, ...(s.osm ? { osm: s.osm } : {}) },
       });
     }
     poi.e = kept;
@@ -770,7 +790,17 @@ function assignLands(pois, lands, venueName, drawnNames) {
  *
  * OSM will never carry "48 inches to ride alone", and a generated file cannot
  * be hand-edited without the next rebuild eating the edit — so both live here,
- * keyed by name, and are re-applied on every build.
+ * and are re-applied on every build.
+ *
+ * Filed under the display name, and staying that way. Converting the hundred
+ * and ninety-six hand-written entries in these files to slugs would be a
+ * downgrade: they are read and edited against a park's published height chart,
+ * where `"BATMAN The Ride"` is checkable against the sign and `batman-the-ride`
+ * is not. So the name is an alias layer over the primary key rather than a
+ * rival to it — `resolveOverride` tries the key first and the name second, and
+ * a key is the escape hatch for the entries a name cannot address: one of Cedar
+ * Point's twenty-six "Restrooms", or one of five gates all called "Entrance".
+ * Same rule for `drop`, where a name has always dropped all five of them.
  */
 function applyOverrides(pois, overrides) {
   if (!overrides) return { pois, applied: 0, unmatched: [] };
@@ -780,14 +810,8 @@ function applyOverrides(pois, overrides) {
      Washers for exactly that reason. Patching one of each put a height rule on
      one marker and left its twin saying "check at the ride", which reads as the
      app disagreeing with itself about the same ride. */
-  const byName = new Map();
-  for (const p of pois) {
-    const key = p.n.toLowerCase();
-    const at = byName.get(key);
-    if (at) at.push(p);
-    else byName.set(key, [p]);
-  }
-  const lookup = (name) => byName.get(String(name).toLowerCase()) || null;
+  const book = addressBook(pois);
+  const lookup = (name, patch = null) => resolveOverride(book, name, patch);
   let applied = 0;
   const unmatched = [];
 
@@ -795,7 +819,7 @@ function applyOverrides(pois, overrides) {
     // Parks rename rides faster than OSM follows, so an override may be filed
     // under the name on the sign while the map still carries the old one. The
     // alias is what bridges the two, in whichever direction the drift went.
-    const targets = lookup(name) || (patch.alias ? lookup(patch.alias) : null);
+    const targets = lookup(name, patch);
     if (!targets) {
       unmatched.push(name);
       continue;
@@ -804,11 +828,14 @@ function applyOverrides(pois, overrides) {
     applied += 1;
   }
 
-  const dropped = new Set((overrides.drop || []).map((n) => n.toLowerCase()));
-  let next = pois.filter((p) => !dropped.has(p.n.toLowerCase()));
+  const dropped = new Set();
+  for (const name of overrides.drop || []) {
+    for (const hit of lookup(name) || []) dropped.add(hit);
+  }
+  let next = pois.filter((p) => !dropped.has(p));
 
   for (const extra of overrides.add || []) {
-    const existing = lookup(extra.n);
+    const existing = lookup(extra.i || extra.n);
     if (existing) existing.forEach((p) => Object.assign(p, extra));
     else next.push({ ...extra });
   }
@@ -869,8 +896,31 @@ function reapply(only, { strict = true } = {}) {
       continue;
     }
 
-    const merged = applyOverrides(readJson(poisFile, []), overrides);
-    const pois = merged.pois.sort((a, b) => a.n.localeCompare(b.n));
+    const onDisk = readJson(poisFile, []);
+    /* The migration, and it costs nothing and touches no network: a venue built
+       before keys existed has its ledger seeded from the bundle already on
+       disk, under the *old* numbering. That reproduces, by definition, exactly
+       the ids the phones out there are already using — so the ledger is born
+       agreeing with production and no live ride report moves. */
+    let ledger = readLedger(id);
+    if (!ledger) {
+      ledger = seedLedger(id, onDisk);
+      console.error(`  · ${id}: no key ledger — seeded ${Object.keys(ledger.keys).length} from the bundle on disk`);
+    }
+    const merged = applyOverrides(assignKeys(onDisk, ledger, { venue: id, keepOsm: true }).pois, overrides);
+    const keyed = assignKeys(merged.pois.sort((a, b) => a.n.localeCompare(b.n)), ledger, { venue: id });
+    const pois = keyed.pois;
+    const keyCheck = keyAudit(pois);
+    if (keyCheck.duplicates.length) {
+      throw new Error(
+        `${id}: ${keyCheck.duplicates.length} duplicate primary key(s) — ` +
+          keyCheck.duplicates.map((d) => `"${d.key}" on ${d.names.join(' and ')}`).join('; ') +
+          '. A key addresses one place.',
+      );
+    }
+    if (!readLedger(id) || serializeLedger(readLedger(id)) !== serializeLedger(keyed.ledger)) {
+      writeLedger(id, keyed.ledger);
+    }
     const narrowed = applyCamping(pois, overrides.camping);
     const { meta, ...map } = built || {};
     // The credit line belongs with the data it credits, so the overrides file
@@ -1425,6 +1475,18 @@ async function buildOne(args, { previous = null } = {}) {
     for (const miss of ways.unmatched) console.error(`    ? "${miss}" has a queue but no ride by that name`);
   }
 
+  /* Primary keys, from the ledger committed beside the overrides file.
+     Assigned here, before the overrides are read, so an overrides entry can
+     address a key as well as a name — and again after the trace, for whatever
+     the overrides and the trace introduce. Both calls read the same ledger off
+     disk and only the second one's output is kept, so a place the overrides go
+     on to drop never spends a number. */
+  const ledger = readLedger(id);
+  if (!ledger) {
+    console.error(`  · keys: no ledger yet — data/venues/${id}.ids.json will be written from this build`);
+  }
+  pois = assignKeys(pois, ledger, { venue: id, keepOsm: true }).pois;
+
   const merged = applyOverrides(pois, overrides);
   pois = merged.pois;
   if (overrideFile) {
@@ -1495,6 +1557,32 @@ async function buildOne(args, { previous = null } = {}) {
   }
 
   pois.sort((a, b) => a.n.localeCompare(b.n));
+
+  /* The keys again, now that the overrides and the trace have had their say.
+     Anything already keyed keeps its key; what they introduced gets one. */
+  const keyed = assignKeys(pois, ledger, { venue: id });
+  pois = keyed.pois;
+  console.error(
+    `  · keys: ${keyed.reused} kept, ${keyed.issued} issued` +
+      (keyed.retired ? `, ${keyed.retired} retired` : ''),
+  );
+
+  /* A key on two places is the one failure this whole scheme exists to prevent,
+     because an edit filed under it lands on whichever of them a reader happened
+     to find first. It is not a warning. */
+  const keys = keyAudit(pois);
+  if (keys.duplicates.length) {
+    const shown = keys.duplicates
+      .slice(0, 5)
+      .map((d) => `"${d.key}" on ${d.names.join(' and ')}`)
+      .join('; ');
+    throw new Error(
+      `${name} would ship ${keys.duplicates.length} duplicate primary key(s): ${shown}` +
+        (keys.duplicates.length > 5 ? ', …' : '') +
+        `. A key addresses one place. Usually an "i" written by hand into ` +
+        `${path.relative(process.cwd(), path.join(OVERRIDE_DIR, `${id}.overrides.json`))} onto a name more than one place wears.`,
+    );
+  }
 
   // A rebuild must not silently drop the hand-written parts of the last one.
   const existingMeta = previousMeta;
@@ -1653,6 +1741,14 @@ async function buildOne(args, { previous = null } = {}) {
   }
 
   const written = writeVenue({ meta, map: mapOf(layers, anchors, boundary), pois });
+  /* The ledger, beside the overrides file rather than under public/, because it
+     is not a download and because the numbers in it are the thing a human
+     reviews when a rebuild moves something. Written only when its bytes change,
+     so a rebuild that changed nothing still changes nothing on disk. */
+  if (!ledger || serializeLedger(ledger) !== serializeLedger(keyed.ledger)) {
+    const file = writeLedger(id, keyed.ledger);
+    console.error(`Wrote ${file.replace(process.cwd() + '/', '')}`);
+  }
   const manifest = reindex({
     preferredDefault: args.default === true ? id : typeof args.default === 'string' ? args.default : undefined,
   });

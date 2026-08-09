@@ -93,7 +93,7 @@ const {
   parkOutlook,
 } = await import('../lib/weather.js');
 const { STATUS, statusFor, statusSummary } = await import('../lib/rideStatus.js');
-const { indexById, slug, withIds } = await import('../lib/venue/ids.js');
+const { indexById, keyOf, slug, titleOf, withIds } = await import('../lib/venue/ids.js');
 const {
   Declutter,
   boxAround,
@@ -1626,6 +1626,9 @@ const readPois = (rel) => JSON.parse(fs.readFileSync(new URL(`../public${rel}`, 
 /* ---------------------------------------------------- the venue checklist -- */
 
 const { checklist, failures } = await import('../scripts/lib/venue-checklist.mjs');
+const {
+  addressBook, assignKeys, keyAudit, osmRef, resolveOverride, seedLedger, serializeLedger,
+} = await import('../scripts/lib/venue-ids.mjs');
 
 await check('no venue ships half-built', () => {
   /* The list of what a location has to carry, held to. A park that is *almost*
@@ -1665,6 +1668,48 @@ await check('the checklist knows the difference between absent and not applicabl
   assert.equal(heights.status, 'missing');
   assert.equal(heights.required, true);
   assert.match(heights.fix, /overrides\.json/);
+
+  // A venue built before keys existed is not half-built either: it loads on the
+  // fallback, and rebuilding it is what issues them.
+  assert.equal(items.find((i) => i.key === 'keys').status, 'n/a');
+  return true;
+});
+
+await check('two places under one key fail the checklist rather than warning', () => {
+  /* This is the item the whole scheme exists for. Everything else on this list
+     is a feature that will be missing; a duplicate key is an edit filed against
+     the wrong place, so it is required and the build refuses. */
+  const bare = { id: 'somewhere', locality: 'Town, State' };
+  const map = { lands: [{ n: 'The Green' }], boundary: [[0, 0]], path: [[0, 0]] };
+  const clash = checklist(bare, map, [
+    { i: 'toilets', n: 'Toilets', c: 'restroom', lat: 0, lng: 0 },
+    { i: 'toilets', n: 'Toilets', c: 'restroom', lat: 1, lng: 1 },
+    { i: 'gate', n: 'Gate', c: 'gate', lat: 0, lng: 0 },
+    { i: 'cafe', n: 'Cafe', c: 'food', lat: 0, lng: 0 },
+  ]);
+  const keys = clash.find((i) => i.key === 'keys');
+  assert.equal(keys.status, 'missing');
+  assert.equal(keys.required, true);
+  assert.match(keys.detail, /"toilets"/);
+  assert.ok(failures(clash).some((i) => i.key === 'keys'));
+
+  // Half-keyed is a failure too: something wrote a place into the bundle
+  // without going through the ledger.
+  const half = checklist(bare, map, [
+    { i: 'gate', n: 'Gate', c: 'gate', lat: 0, lng: 0 },
+    { n: 'Toilets', c: 'restroom', lat: 0, lng: 0 },
+    { i: 'cafe', n: 'Cafe', c: 'food', lat: 0, lng: 0 },
+  ]);
+  assert.equal(half.find((i) => i.key === 'keys').status, 'missing');
+
+  // And a fully keyed venue passes, which is the state a rebuild leaves.
+  const good = checklist(bare, map, [
+    { i: 'gate', n: 'Gate', c: 'gate', lat: 0, lng: 0 },
+    { i: 'toilets', n: 'Toilets', c: 'restroom', lat: 0, lng: 0 },
+    { i: 'cafe', n: 'Cafe', c: 'food', lat: 0, lng: 0 },
+  ]);
+  assert.equal(good.find((i) => i.key === 'keys').status, 'ok');
+  assert.deepEqual(failures(good), []);
   return true;
 });
 
@@ -1720,14 +1765,38 @@ await check('every override is filed under a name the venue actually has', () =>
   files.forEach((file) => {
     const id = file.slice(0, -'.overrides.json'.length);
     const overrides = JSON.parse(fs.readFileSync(new URL(file, dir)));
-    const names = new Set(readPois(`/venues/${id}.pois.json`).map((p) => p.n.toLowerCase()));
+    /* Through the resolver the build itself uses, rather than a second copy of
+       its rules living here: a name, then the name the park renamed it from,
+       then — for the entries a name cannot address on its own — a key. A test
+       that reimplemented that would go on passing after the build stopped
+       agreeing with it. */
+    const book = addressBook(readPois(`/venues/${id}.pois.json`));
     const orphans = Object.entries(overrides.pois || {})
-      .filter(([n, patch]) => !names.has(n.toLowerCase()) && !names.has(String(patch.alias || '').toLowerCase()))
-      .map(([n]) => n);
+      .filter(([name, patch]) => !resolveOverride(book, name, patch))
+      .map(([name]) => name);
     // An override that matches nothing is a correction that silently did not
     // happen — usually the park renamed the ride and the alias was not moved.
     assert.deepEqual(orphans, [], `${id}: overrides with no POI to land on: ${orphans.join(', ')}`);
   });
+  return true;
+});
+
+await check('a key written into an overrides file addresses one place, not every twin', () => {
+  /* The reason keys are allowed in these files at all. `drop: ["Entrance"]` at
+     a park with five gates called Entrance removes all five; a key removes the
+     one that is wrong. Held here because the four venues on disk predate keys,
+     so nothing on the shelf exercises it yet. */
+  const pois = assignKeys(
+    [
+      { n: 'Entrance', lat: 41.4801, lng: -82.6811, c: 'gate' },
+      { n: 'Entrance', lat: 41.4835, lng: -82.6902, c: 'gate' },
+    ],
+    null,
+    { venue: 'v' },
+  ).pois;
+  const book = addressBook(pois);
+  assert.equal(resolveOverride(book, 'Entrance').length, 2);
+  assert.deepEqual(resolveOverride(book, 'entrance-2').map((p) => p.lat), [41.4835]);
   return true;
 });
 
@@ -4071,6 +4140,213 @@ await check('a place is addressable by id and by name', () => {
   // The first of a repeated name wins the bare-name key; the rest need the id.
   assert.equal(index.get('restrooms').n, 'Restrooms');
   assert.ok(index.get('restrooms-2'));
+  return true;
+});
+
+/* ------------------------------------------------------- primary keys ---- */
+
+/* The key a place is issued at build time, and the ledger that remembers it.
+   Everything below is about one property: an edit is filed under a key, so a
+   key that moves does not move the edit — it loses it. */
+
+section('venue/keys');
+
+/** A venue at build time: three places, one name worn twice. */
+const SOURCE = () => [
+  { n: 'Orion', lat: 39.3441, lng: -84.2681, c: 'coaster', osm: 'w111' },
+  { n: 'Restrooms', lat: 39.3450, lng: -84.2700, c: 'restroom', osm: 'n222' },
+  { n: 'Restrooms', lat: 39.3402, lng: -84.2650, c: 'restroom', osm: 'n333' },
+];
+/* Keyed on where a place stands, because that is the one thing every pass
+   here leaves alone — the name repeats and `osm` is stripped on the way out. */
+const keysOf = (pois) => Object.fromEntries(pois.map((p) => [`${p.lat},${p.lng}`, p.i]));
+
+await check('a key survives the park renaming the ride', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  assert.equal(first.pois.find((p) => p.n === 'Orion').i, 'orion');
+
+  // Same coaster, same OpenStreetMap way, new name on the sign.
+  const renamed = SOURCE().map((p) => (p.osm === 'w111' ? { ...p, n: 'Orion Reborn' } : p));
+  const second = assignKeys(renamed, first.ledger, { venue: 'v' });
+  const moved = second.pois.find((p) => p.n === 'Orion Reborn');
+  assert.equal(moved.i, 'orion', 'the key follows the ride, not the sign');
+  // And the title moved while the key did not — that is the whole split.
+  assert.equal(titleOf(moved), 'Orion Reborn');
+  assert.equal(keyOf(moved), 'orion');
+  return true;
+});
+
+await check('a key survives a rebuild that hands the places over in another order', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  // Overpass is under no obligation to answer in the same order twice.
+  const shuffled = [...SOURCE()].reverse();
+  const second = assignKeys(shuffled, first.ledger, { venue: 'v' });
+  assert.deepEqual(keysOf(second.pois), keysOf(first.pois));
+  // Even with no ledger at all, the order it arrives in cannot decide a key:
+  // an unmatched place is numbered by where it stands, not by where it sits in
+  // the array.
+  const scratch = assignKeys(shuffled, null, { venue: 'v' });
+  assert.deepEqual(keysOf(scratch.pois), keysOf(first.pois));
+  return true;
+});
+
+await check('two places sharing a name get different keys, and keep the ones they had', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const north = first.pois.find((p) => p.lat > 39.344 && p.n === 'Restrooms').i;
+  const south = first.pois.find((p) => p.lat < 39.344 && p.n === 'Restrooms').i;
+  assert.notEqual(north, south);
+
+  /* The failure this replaces: the northern block is deleted, so under the old
+     rule every restroom after it in the file shifted up a number and a "closed"
+     report landed on the wrong one. Here the survivor keeps its own number. */
+  const without = SOURCE().filter((p) => p.osm !== 'n222');
+  const second = assignKeys(without, first.ledger, { venue: 'v' });
+  assert.equal(second.pois.find((p) => p.n === 'Restrooms').i, south);
+
+  // And the vacated number is retired rather than freed: a new block built on
+  // the same spot next season is a different place and must not inherit its
+  // reports.
+  assert.equal(second.ledger.keys[north].retired, true);
+  const reborn = [...without, { n: 'Restrooms', lat: 39.3450, lng: -84.2700, c: 'restroom', osm: 'n444' }];
+  const third = assignKeys(reborn, second.ledger, { venue: 'v' });
+  const issued = third.pois.map((p) => p.i);
+  assert.equal(new Set(issued).size, issued.length);
+  assert.ok(!issued.includes(north), `${north} was reissued`);
+  return true;
+});
+
+await check('the same object coming back gets its own key back', () => {
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const gone = SOURCE().filter((p) => p.osm !== 'n333');
+  const second = assignKeys(gone, first.ledger, { venue: 'v' });
+  // A mapper deletes it, somebody puts it back. Same element, same key.
+  const third = assignKeys(SOURCE(), second.ledger, { venue: 'v' });
+  assert.deepEqual(keysOf(third.pois), keysOf(first.pois));
+  return true;
+});
+
+await check('a place with no OpenStreetMap element of its own still gets a stable key', () => {
+  /* Pitches, rides taken from their track, traced places and everything under
+     `overrides.add` have no element at all, which is the reason an element id
+     could not be the key. They match on position instead. */
+  const hand = [
+    { n: 'First Aid', lat: 39.3410, lng: -84.2660, c: 'service' },
+    { n: 'Site 247', lat: 39.3480, lng: -84.2710, c: 'campsite' },
+  ];
+  const first = assignKeys(hand, null, { venue: 'v' });
+  const second = assignKeys([...hand].reverse(), first.ledger, { venue: 'v' });
+  assert.deepEqual(keysOf(second.pois), keysOf(first.pois));
+  assert.deepEqual(first.pois.map((p) => p.i).sort(), ['first-aid', 'site-247']);
+  return true;
+});
+
+await check('the element id is kept as provenance and never reaches the phone', () => {
+  assert.equal(osmRef({ type: 'way', id: 12345 }), 'w12345');
+  assert.equal(osmRef({ type: 'node', id: 7 }), 'n7');
+  assert.equal(osmRef({ type: 'relation', id: 7 }), 'r7');
+  assert.equal(osmRef({ id: 7 }), null);
+  const { pois, ledger } = assignKeys(SOURCE(), null, { venue: 'v' });
+  // Off the bundle — no reader wants it and it is bytes on a precached file.
+  assert.equal(pois.every((p) => p.osm === undefined), true);
+  // In the ledger, where the next rebuild is the one that needs it.
+  assert.equal(ledger.keys.orion.osm, 'w111');
+  return true;
+});
+
+await check('a venue built before keys existed loads, and loads unchanged', () => {
+  /* The bundles on disk carry no key. A phone updates its app long before it
+     updates its precached map, so the fallback has to hold — and it has to
+     produce exactly the ids that are already out there. */
+  const manifest = JSON.parse(
+    fs.readFileSync(new URL('../public/venues/manifest.json', import.meta.url), 'utf8'),
+  );
+  for (const v of manifest.venues) {
+    const pois = JSON.parse(
+      fs.readFileSync(new URL(`../public/venues/${v.id}.pois.json`, import.meta.url), 'utf8'),
+    );
+    const ids = withIds(pois).map((p) => p.id);
+    assert.equal(new Set(ids).size, ids.length, `${v.id}: the fallback collided`);
+    /* And the migration is free: seeding the ledger from the bundle on disk
+       reproduces every one of those ids, so nothing a visitor has already
+       reported, favourited or navigated to moves when the keys land. */
+    const seeded = seedLedger(v.id, pois);
+    const keyed = assignKeys(pois, seeded, { venue: v.id }).pois.map((p) => p.i);
+    assert.deepEqual(keyed, ids, `${v.id}: the ledger disagrees with what is on phones`);
+  }
+  return true;
+});
+
+await check('a key in the bundle beats the name, and the fallback steps around it', () => {
+  const ids = withIds([
+    { i: 'restrooms-2', n: 'Restrooms' },
+    { n: 'Restrooms' },
+    { n: 'Restrooms' },
+  ]).map((p) => p.id);
+  // The explicit key is honoured, and no derived id is allowed to collide with it.
+  assert.deepEqual(ids, ['restrooms-2', 'restrooms', 'restrooms-3']);
+  assert.equal(new Set(ids).size, 3);
+  return true;
+});
+
+await check('a ledger that would not change is not rewritten', () => {
+  /* A rebuild that changes nothing must change nothing on disk, or "does
+     OpenStreetMap still say what we shipped?" stops being a question a diff can
+     answer. The ledger is written through one serialiser so the build can ask. */
+  const first = assignKeys(SOURCE(), null, { venue: 'v' });
+  const second = assignKeys(SOURCE(), first.ledger, { venue: 'v' });
+  assert.equal(serializeLedger(second.ledger), serializeLedger(first.ledger));
+  // One line per key: a rename has to read as one changed line, not eight.
+  assert.equal(serializeLedger(first.ledger).trim().split('\n').length, SOURCE().length + 6);
+  return true;
+});
+
+await check('an overrides file keyed by a display name still lands on its places', () => {
+  const { pois } = assignKeys(SOURCE(), null, { venue: 'v' });
+  const book = addressBook(pois);
+  // The name is an alias layer over the keys, and an ambiguous name deliberately
+  // resolves to every place wearing it — two Poltergeists, one height rule.
+  assert.deepEqual(resolveOverride(book, 'Restrooms').map((p) => p.i).sort(), ['restrooms', 'restrooms-2']);
+  assert.deepEqual(resolveOverride(book, 'orion').map((p) => p.i), ['orion']);
+  // The name the park renamed it *from*, which is what `alias` is for.
+  assert.deepEqual(
+    resolveOverride(book, 'Orion Reborn', { alias: 'Orion' }).map((p) => p.i),
+    ['orion'],
+  );
+  assert.equal(resolveOverride(book, 'Nothing By That Name'), null);
+  return true;
+});
+
+await check('a duplicate key is reported rather than quietly merged away', () => {
+  /* The one function the checklist and the build's own refusal both read, so
+     the two can never disagree about what a broken venue looks like. A hand-
+     written `i` under a name two places wear is how this happens in practice. */
+  const clash = assignKeys(
+    [
+      { i: 'restrooms', n: 'Restrooms', lat: 39.345, lng: -84.27, c: 'restroom' },
+      { i: 'restrooms', n: 'Restrooms', lat: 39.340, lng: -84.265, c: 'restroom' },
+      { n: 'Orion', lat: 39.3441, lng: -84.2681, c: 'coaster' },
+    ],
+    null,
+    { venue: 'v' },
+  );
+  const audit = keyAudit(clash.pois);
+  assert.equal(audit.total, 3);
+  assert.equal(audit.unkeyed, 0);
+  assert.deepEqual(audit.duplicates.map((d) => d.key), ['restrooms']);
+
+  // Clean venues say so, and so does one that has no keys yet.
+  assert.deepEqual(keyAudit(assignKeys(SOURCE(), null, { venue: 'v' }).pois).duplicates, []);
+  assert.equal(keyAudit([{ n: 'Orion' }]).keyed, 0);
+  return true;
+});
+
+await check('a key is the escape hatch for the name that addresses too much', () => {
+  const { pois } = assignKeys(SOURCE(), null, { venue: 'v' });
+  const book = addressBook(pois);
+  // One of the two, on purpose — the case a name cannot express.
+  const hit = resolveOverride(book, 'restrooms-2');
+  assert.equal(hit.length, 1);
+  assert.equal(hit[0].i, 'restrooms-2');
   return true;
 });
 
