@@ -29,6 +29,10 @@ on:
         description: 'The line under the name, e.g. "Sandusky, Ohio".'
         required: false
         type: string
+      center:
+        description: 'Where the map opens, lat,lng. Worth setting when the venue owns a lot of car park — the middle of the box is not the middle of anywhere.'
+        required: false
+        type: string
       kind:
         description: 'What sort of place this is. Cosmetic — the pipeline treats them all the same.'
         required: false
@@ -84,6 +88,7 @@ jobs:
           BBOX: ${{ inputs.bbox }}
           NAME: ${{ inputs.name }}
           LOCALITY: ${{ inputs.locality }}
+          CENTER: ${{ inputs.center }}
           KIND: ${{ inputs.kind }}
           CREDITS: ${{ inputs.credits }}
           MAKE_DEFAULT: ${{ inputs.make_default }}
@@ -93,6 +98,7 @@ jobs:
           if [ -n "$BBOX" ]; then args+=(--bbox "$BBOX"); else args+=(--place "$PLACE"); fi
           if [ -n "$NAME" ]; then args+=(--name "$NAME"); fi
           if [ -n "$LOCALITY" ]; then args+=(--locality "$LOCALITY"); fi
+          if [ -n "$CENTER" ]; then args+=(--center "$CENTER"); fi
           if [ -n "$KIND" ]; then args+=(--kind "$KIND"); fi
           if [ -n "$CREDITS" ]; then args+=(--credits "$CREDITS"); fi
           if [ "$MAKE_DEFAULT" = "true" ]; then args+=(--default); fi

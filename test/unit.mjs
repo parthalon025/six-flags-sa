@@ -1639,7 +1639,7 @@ await check('every override is filed under a name the venue actually has', () =>
 
 /* ------------------------------------------------------ heights from OSM -- */
 
-const { heightFromTags } = await import('../scripts/build-venue.mjs');
+const { heightFromTags, poisFromTrack, entrancesFromQueues } = await import('../scripts/build-venue.mjs');
 
 await check('a height sign on an OpenStreetMap object is read as a rule', () => {
   assert.deepEqual(heightFromTags({ minimum_height_requirement: '48in (122cm)' }), {
@@ -1667,6 +1667,118 @@ await check('a tag that is not a height is not read as one', () => {
   // nonsense height in inches, so it is refused rather than guessed at.
   assert.equal(heightFromTags({ minimum_height_requirement: '122cm' }), null);
   assert.equal(heightFromTags({ minimum_height_requirement: 'ask at the ride' }), null);
+  return true;
+});
+
+/* ------------------------------------------------------- rides from track -- */
+
+const TRACK = (n) => ({ n, r: [[-86.4, 30.3], [-86.41, 30.31], [-86.42, 30.32]] });
+
+await check('a named flume with no place of its own becomes a ride', () => {
+  // The whole of Big Kahuna's arrived this way: twenty-five water slides drawn
+  // as lines, fourteen of them named, and not one of them on the list.
+  const added = poisFromTrack([], [
+    { track: [TRACK('The Beast')], category: 'coaster' },
+    { track: [TRACK('Maui Pipeline')], category: 'ride' },
+  ]);
+  assert.deepEqual(added.map((p) => [p.n, p.c]), [
+    ['The Beast', 'coaster'],
+    ['Maui Pipeline', 'ride'],
+  ]);
+  // Positioned at the middle of its own geometry, not at a guess.
+  assert.deepEqual([added[0].lat, added[0].lng], [30.31, -86.41]);
+  return true;
+});
+
+await check('track never duplicates a place the venue already has', () => {
+  // Both within one source and across them: a ride mapped as coaster track and
+  // as a flume is one ride, filed as the first thing it matched.
+  assert.deepEqual(poisFromTrack([{ n: 'maui pipeline', lat: 1, lng: 2, c: 'ride' }], [
+    { track: [TRACK('Maui Pipeline')], category: 'ride' },
+  ]), []);
+  assert.deepEqual(
+    poisFromTrack([], [
+      { track: [TRACK('Hybrid')], category: 'coaster' },
+      { track: [TRACK('Hybrid'), TRACK('Hybrid')], category: 'ride' },
+    ]).map((p) => [p.n, p.c]),
+    [['Hybrid', 'coaster']],
+  );
+  return true;
+});
+
+await check('an unnamed or empty piece of track supplies nothing', () => {
+  assert.deepEqual(poisFromTrack([], [{ track: [{ r: TRACK('x').r }], category: 'ride' }]), []);
+  assert.deepEqual(poisFromTrack([], [{ track: [{ n: 'Nowhere', r: [] }], category: 'ride' }]), []);
+  return true;
+});
+
+/* ------------------------------------------------------- queue entrances -- */
+
+/* A queue drawn as two one-way ways: the far one starts at the midway and runs
+   into the near one, which ends at the ride. Only the first start is a source. */
+const queueWay = (name, coords, oneway = 'yes') => ({
+  type: 'way',
+  tags: { name, highway: 'footway', ...(oneway ? { oneway } : {}) },
+  geometry: coords.map(([lat, lon]) => ({ lat, lon })),
+});
+
+await check('a named one-way queue says where you join it', () => {
+  const pois = [{ n: 'Millennium Force', c: 'coaster', lat: 41.4808, lng: -82.6855 }];
+  const out = entrancesFromQueues(pois, [
+    queueWay('Millennium Force Standby Queue', [[41.4819, -82.6865], [41.4815, -82.6861]]),
+    queueWay('Millennium Force Standby Queue', [[41.4815, -82.6861], [41.4809, -82.6856]]),
+  ]);
+  assert.equal(out.rides, 1);
+  // The vertex that is never any way's end — the back of the line, not the
+  // join between the two halves and not the boarding platform.
+  assert.deepEqual(pois[0].e, [
+    { lat: 41.4819, lng: -82.6865, n: 'Millennium Force Standby Queue' },
+  ]);
+  return true;
+});
+
+await check('a queue drawn backwards still points the right way', () => {
+  const pois = [{ n: 'Gemini', c: 'coaster', lat: 41.4862, lng: -82.6893 }];
+  entrancesFromQueues(pois, [
+    queueWay('Gemini Standby Queue', [[41.4860, -82.6890], [41.4866, -82.6897]], '-1'),
+  ]);
+  assert.deepEqual(pois[0].e, [{ lat: 41.4866, lng: -82.6897, n: 'Gemini Standby Queue' }]);
+  return true;
+});
+
+await check('two queues to one ride are two ways in, unless they touch', () => {
+  const far = [{ n: 'Rougarou', c: 'coaster', lat: 41.4820, lng: -82.6860 }];
+  entrancesFromQueues(far, [
+    queueWay('Rougarou Standby Queue', [[41.4824, -82.6868], [41.4821, -82.6861]]),
+    queueWay('Rougarou Fastlane Queue', [[41.4824, -82.6865], [41.4821, -82.6861]]),
+  ]);
+  assert.equal(far[0].e.length, 2, 'entrances 24 m apart are two doors');
+
+  const together = [{ n: 'Top Thrill 2', c: 'coaster', lat: 41.4830, lng: -82.6860 }];
+  entrancesFromQueues(together, [
+    queueWay('Top Thrill 2 Standby Queue', [[41.484023, -82.686051], [41.4835, -82.6861]]),
+    queueWay('Top Thrill 2 Fastlane Queue', [[41.484038, -82.686062], [41.4835, -82.6861]]),
+  ]);
+  assert.equal(together[0].e.length, 1, 'starts 1.9 m apart are one door');
+  assert.match(together[0].e[0].n, /Standby.*Fastlane|Fastlane.*Standby/);
+  return true;
+});
+
+await check('a queue with nothing to go on is reported, not guessed at', () => {
+  // No `oneway`: which end is the back of the line is not written down.
+  const noDir = [{ n: 'Maverick', c: 'coaster', lat: 41.4785, lng: -82.6835 }];
+  const a = entrancesFromQueues(noDir, [
+    queueWay('Maverick Fastlane Queue', [[41.4789, -82.6840], [41.4786, -82.6836]], null),
+  ]);
+  assert.equal(noDir[0].e, undefined);
+  assert.deepEqual(a.noDirection, ['Maverick']);
+
+  // Names a ride this venue does not have.
+  const b = entrancesFromQueues([{ n: 'The Racer', c: 'coaster', lat: 39.34, lng: -84.26 }], [
+    queueWay('Banshee Queue', [[39.3405, -84.2605], [39.3401, -84.2601]]),
+  ]);
+  assert.deepEqual(b.unmatched, ['Banshee']);
+  assert.equal(b.rides, 0);
   return true;
 });
 
@@ -2365,6 +2477,38 @@ await check('coaster track is track and its station is a building', () => {
     classify(LAYER_RULES, { attraction: 'roller_coaster', roller_coaster: 'station', building: 'yes' }),
     'building',
   );
+  return true;
+});
+
+await check('a mini golf course is a place to meet and a green to draw', () => {
+  // Half of Big Kahuna's Adventure Park is three 18-hole courses. Without this
+  // they were neither on the list nor on the map — a couple of acres of bare
+  // ground where the golf is.
+  assert.equal(classify(POI_RULES, { leisure: 'miniature_golf', name: 'Tropical Mini Golf' }), 'ride');
+  assert.equal(classify(LAYER_RULES, { leisure: 'miniature_golf' }), 'grass');
+  return true;
+});
+
+await check('walkable ground with no highway tag is still a walking route', () => {
+  /* The path layer is not only drawn — routing.js welds it into the route
+     graph, so a walkable way missing from it is a route the app will not send
+     anyone down. Cedar Point had 830 m of boardwalk in that state. */
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier' }), 'path');
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier', area: 'yes', name: 'Boggy Bridge' }), 'path');
+  assert.equal(classify(LAYER_RULES, { railway: 'platform', area: 'yes' }), 'path');
+  assert.equal(classify(LAYER_RULES, { public_transport: 'platform' }), 'path');
+  assert.equal(classify(LAYER_RULES, { highway: 'crossing' }), 'path');
+  assert.equal(classify(LAYER_RULES, { highway: 'bridleway' }), 'path');
+  return true;
+});
+
+await check('a boat slip is not a walking route', () => {
+  /* The marina at Cedar Point is 228 floating finger docks and six and a half
+     kilometres of them, all tagged exactly like the boardwalks. A person can
+     stand on one; no route through a park goes down one. */
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier', floating: 'yes', name: 'Pier 11' }), null);
+  // Unless it is also drawn as somewhere to walk, which a few of them are.
+  assert.equal(classify(LAYER_RULES, { man_made: 'pier', floating: 'yes', highway: 'footway' }), 'path');
   return true;
 });
 
