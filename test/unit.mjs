@@ -135,9 +135,19 @@ const {
 const { areaOf, centroidOf, clipToBounds, pointInRing, round, simplify } = await import(
   '../scripts/lib/geometry.mjs'
 );
-const { LAYER_RULES, POI_RULES, classify, isCivicBoundary, isLand, isVenueOutline } = await import(
-  '../scripts/lib/osm-tags.mjs'
-);
+const {
+  LAYER_RULES,
+  POI_RULES,
+  ROUTED_LAYERS,
+  classify,
+  isCivicBoundary,
+  isLand,
+  isVenueOutline,
+  wayAttributes,
+} = await import('../scripts/lib/osm-tags.mjs');
+const { WAY_FLAGS, hasWayFlag, wayFlagsOf, wayLayerOf } = await import('../lib/wayFlags.js');
+// The layer builder, for the round trip from raw tags to the bytes that ship.
+const { buildLayers } = await import('../scripts/build-venue.mjs');
 
 /* ------------------------------------------------------------- harness --- */
 
@@ -1152,6 +1162,185 @@ await check('snapping lands on the path, not on the query point', () => {
   const snap = snapToGraph(graph, beast.lat, beast.lng);
   const drift = distance(beast.lat, beast.lng, snap.lat, snap.lng);
   assert.ok(Math.abs(drift - snap.offset) < 2, `${drift} vs ${snap.offset}`);
+  return true;
+});
+
+section('routing/attributes');
+
+/* What OpenStreetMap says about a way, beyond its shape and its name.
+ *
+ * Until these arrived, every feature in `map.path` had two keys and the router
+ * costed a flight of stairs at exactly the price of flat midway. These tests
+ * hold two things at once: that the facts reach the graph, and — the one that
+ * matters more — that carrying them moves nothing. Costs are a separate change
+ * on purpose, so that when the costs do change the route diff means something.
+ */
+
+/** Two ways crossing in plan view, one of them a bridge over the other. */
+const CROSSING = {
+  path: [
+    { r: [[-84.2680, 39.3420], [-84.2660, 39.3420]], n: 'The overpass', f: WAY_FLAGS.BRIDGE, l: 1 },
+    { r: [[-84.2670, 39.3410], [-84.2670, 39.3430]], n: 'The midway' },
+    { r: [[-84.2660, 39.3420], [-84.2650, 39.3426]], n: 'Steps to the midway', f: WAY_FLAGS.STEPS },
+  ],
+  service: [
+    { r: [[-84.2650, 39.3426], [-84.2640, 39.3426]], n: 'Back road', f: WAY_FLAGS.ONEWAY | WAY_FLAGS.RESTRICTED },
+  ],
+};
+
+await check('a flight of steps arrives in the graph marked as steps', () => {
+  const g = buildRouteGraph(CROSSING);
+  const steps = g.segments.filter((s) => hasWayFlag(s.flags, WAY_FLAGS.STEPS));
+  assert.ok(steps.length > 0, 'no segment came through marked as steps');
+  assert.deepEqual([...new Set(steps.map((s) => s.name))], ['Steps to the midway']);
+  // Still walkable, and still costed as ordinary path. Marking them is this
+  // change; charging for them is the next one.
+  assert.deepEqual([...new Set(steps.map((s) => s.kind))], ['path']);
+  assert.deepEqual([...new Set(steps.map((s) => s.factor))], [1]);
+  return true;
+});
+
+await check('a bridge keeps its layer, and the way underneath keeps the ground', () => {
+  const g = buildRouteGraph(CROSSING);
+  const over = g.segments.filter((s) => s.name === 'The overpass');
+  const under = g.segments.filter((s) => s.name === 'The midway');
+  assert.ok(over.length && under.length);
+  assert.ok(over.every((s) => hasWayFlag(s.flags, WAY_FLAGS.BRIDGE)), 'the bridge lost its flag');
+  assert.deepEqual([...new Set(over.map((s) => s.layer))], [1]);
+  assert.deepEqual([...new Set(under.map((s) => s.layer))], [0]);
+  /* The two still weld into a junction, because that is what the router does
+     today and this change is not allowed to alter it. What it now has is the
+     evidence that the junction is invented — which is the whole point of
+     carrying `layer` before anything spends it. */
+  assert.ok(over.length > 1 && under.length > 1, 'the crossing was not cut');
+  return true;
+});
+
+await check('a one-way service road says which way, and who is allowed down it', () => {
+  const g = buildRouteGraph(CROSSING);
+  const road = g.segments.filter((s) => s.name === 'Back road');
+  assert.ok(road.length > 0);
+  assert.ok(road.every((s) => hasWayFlag(s.flags, WAY_FLAGS.ONEWAY)));
+  assert.ok(road.every((s) => hasWayFlag(s.flags, WAY_FLAGS.RESTRICTED)));
+  assert.ok(road.every((s) => !hasWayFlag(s.flags, WAY_FLAGS.ONEWAY_BACK)));
+  // Read, not obeyed: index() still pushes both directions, unchanged.
+  const [seg] = road;
+  assert.ok(g.nodes[seg.a].edges.some((e) => e.to === seg.b));
+  assert.ok(g.nodes[seg.b].edges.some((e) => e.to === seg.a));
+  return true;
+});
+
+await check('the attributes survive the round trip from tags to bundle to graph', () => {
+  const way = (id, tags, coords) => ({
+    type: 'way',
+    id,
+    tags,
+    geometry: coords.map(([lng, lat]) => ({ lat, lon: lng })),
+  });
+  const { layers } = buildLayers(
+    [
+      way(1, { highway: 'steps', name: 'Sky Ride Stairs' }, [[-84.2680, 39.3420], [-84.2676, 39.3420]]),
+      way(2, { highway: 'footway', bridge: 'yes', layer: '2', name: 'The overpass' }, [
+        [-84.2676, 39.3420], [-84.2670, 39.3420],
+      ]),
+      way(3, { highway: 'service', oneway: '-1', access: 'private', name: 'Back road' }, [
+        [-84.2670, 39.3420], [-84.2664, 39.3420],
+      ]),
+      way(4, { highway: 'footway', name: 'Plain midway' }, [[-84.2664, 39.3420], [-84.2658, 39.3420]]),
+    ],
+    {
+      tolerance: 1.2,
+      minArea: 12,
+      venueArea: 1e6,
+      venueName: 'Nowhere',
+      annexed: new Set(),
+      clip: { south: 39.34, west: -84.28, north: 39.35, east: -84.26 },
+    },
+  );
+
+  // Through the exact bytes that ship, because that is what the phone parses.
+  const bundle = JSON.parse(JSON.stringify({ path: layers.path, service: layers.service }));
+  const byName = Object.fromEntries(
+    [...bundle.path, ...bundle.service].map((feat) => [feat.n, feat]),
+  );
+  assert.equal(wayFlagsOf(byName['Sky Ride Stairs']), WAY_FLAGS.STEPS);
+  assert.equal(wayFlagsOf(byName['The overpass']), WAY_FLAGS.BRIDGE);
+  assert.equal(wayLayerOf(byName['The overpass']), 2);
+  assert.equal(
+    wayFlagsOf(byName['Back road']),
+    WAY_FLAGS.ONEWAY_BACK | WAY_FLAGS.RESTRICTED,
+  );
+  // A way with nothing to add is written exactly as it always was.
+  assert.deepEqual(Object.keys(byName['Plain midway']), ['r', 'n']);
+
+  const g = buildRouteGraph(bundle);
+  const flagsOf = (name) => g.segments.filter((s) => s.name === name).map((s) => s.flags);
+  assert.deepEqual(flagsOf('Sky Ride Stairs'), [WAY_FLAGS.STEPS]);
+  assert.deepEqual(flagsOf('Plain midway'), [0]);
+  assert.deepEqual(g.segments.filter((s) => s.name === 'The overpass').map((s) => s.layer), [2]);
+  return true;
+});
+
+await check('a venue built before the attributes existed still loads and routes', () => {
+  /* The four bundles on disk were built before any of this and carry no `f`
+     and no `l` anywhere. They have to keep working untouched — a data change
+     that needs every venue rebuilt before the app runs is not shippable. */
+  const shipped = JSON.stringify(PARK);
+  assert.ok(!/"f":/.test(shipped) && !/"l":/.test(shipped), 'the fixture already carries attributes');
+  const g = buildRouteGraph(PARK);
+  assert.ok(g.segments.every((s) => s.flags === 0 && s.layer === 0));
+  const r = findRoute(graph, poi('The Beast'), poi('Orion'), { landmarks: RIDES, destination: 'Orion' });
+  assert.ok(r && r.metres > 0);
+  return true;
+});
+
+await check('carrying the attributes moves no route at all', () => {
+  /* The important one. This change puts data in the bundle and reads it into
+     the graph, and is not allowed to move a single route by a single metre —
+     so the same park is routed twice, once plain and once with an attribute on
+     every way, and the two answers are compared as bytes. */
+  const attributed = JSON.parse(JSON.stringify(PARK));
+  let marked = 0;
+  ['path', 'service'].forEach((key) => {
+    (attributed[key] || []).forEach((feat, i) => {
+      if (Array.isArray(feat)) return;
+      // Deliberately heavy-handed: every third way is steps, every fifth a
+      // bridge two levels up, every seventh one-way and back of house.
+      let f = 0;
+      if (i % 3 === 0) f |= WAY_FLAGS.STEPS;
+      if (i % 5 === 0) f |= WAY_FLAGS.BRIDGE;
+      if (i % 7 === 0) f |= WAY_FLAGS.ONEWAY | WAY_FLAGS.RESTRICTED;
+      if (i % 11 === 0) f |= WAY_FLAGS.TUNNEL;
+      if (f) {
+        feat.f = f;
+        marked += 1;
+      }
+      if (i % 5 === 0) feat.l = 2;
+    });
+  });
+  assert.ok(marked > 300, `${marked} ways marked`);
+
+  const plain = buildRouteGraph(PARK);
+  const loaded = buildRouteGraph(attributed);
+  assert.equal(loaded.segments.length, plain.segments.length);
+  assert.ok(loaded.segments.some((s) => hasWayFlag(s.flags, WAY_FLAGS.STEPS)), 'nothing was marked');
+
+  // Every edge costs the same, so every search over them answers the same.
+  const costOf = (g) => g.segments.map((s) => `${s.a}-${s.b}:${s.kind}:${s.len.toFixed(6)}:${s.factor}`);
+  assert.deepEqual(costOf(loaded), costOf(plain));
+
+  const places = RIDES.filter((p) => p.c === 'coaster' || p.c === 'ride')
+    .sort((a, b) => a.n.localeCompare(b.n));
+  const pairs = [];
+  for (let i = 0; i < places.length; i += 5) {
+    for (let j = 2; j < places.length; j += 7) {
+      if (i !== j) pairs.push([places[i], places[j]]);
+    }
+  }
+  assert.ok(pairs.length > 100, `${pairs.length} pairs`);
+  const routesOf = (g) =>
+    JSON.stringify(pairs.map(([a, b]) => findRoute(g, a, b, { landmarks: RIDES, destination: b.n })));
+  assert.equal(routesOf(loaded), routesOf(plain));
   return true;
 });
 
@@ -3675,6 +3864,53 @@ await check('walkable ground with no highway tag is still a walking route', () =
   assert.equal(classify(LAYER_RULES, { public_transport: 'platform' }), 'path');
   assert.equal(classify(LAYER_RULES, { highway: 'crossing' }), 'path');
   assert.equal(classify(LAYER_RULES, { highway: 'bridleway' }), 'path');
+  return true;
+});
+
+await check('steps stay in the walkable network and are marked rather than dropped', () => {
+  /* Both halves matter and they pull against each other. Dropping steps from
+     the `path` layer would take 112 flights out of four parks' networks — a
+     route the app will not offer is worse than a route it offers badly — so
+     they stay, and carry a flag instead. */
+  assert.equal(classify(LAYER_RULES, { highway: 'steps' }), 'path');
+  assert.equal(wayAttributes({ highway: 'steps' }).f, WAY_FLAGS.STEPS);
+  return true;
+});
+
+await check('the attributes read off a way are the ones worth their bytes', () => {
+  // Present at all four venues and worth carrying.
+  assert.equal(wayAttributes({ highway: 'footway', bridge: 'viaduct', layer: '1' }).f, WAY_FLAGS.BRIDGE);
+  assert.equal(wayAttributes({ highway: 'footway', bridge: 'yes', layer: '1' }).l, 1);
+  assert.equal(wayAttributes({ highway: 'footway', tunnel: 'building_passage' }).f, WAY_FLAGS.TUNNEL);
+  assert.equal(wayAttributes({ highway: 'service', oneway: 'yes' }).f, WAY_FLAGS.ONEWAY);
+  assert.equal(wayAttributes({ highway: 'service', oneway: '-1' }).f, WAY_FLAGS.ONEWAY_BACK);
+  assert.equal(wayAttributes({ highway: 'service', access: 'private' }).f, WAY_FLAGS.RESTRICTED);
+  assert.equal(wayAttributes({ highway: 'service', access: 'no' }).f, WAY_FLAGS.RESTRICTED);
+
+  // A denial is not an assertion, and neither is silence.
+  assert.equal(wayAttributes({ highway: 'footway' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', bridge: 'no', tunnel: 'no', layer: '0' }), null);
+  assert.equal(wayAttributes({ highway: 'service', oneway: 'no' }), null);
+  /* `access=customers` is 173 ways at Cedar Point and means "people with a
+     ticket", which is nearly every path inside the gate. It is not the same
+     claim as `private`, and folding it in would make a fifth of the park read
+     as back of house. */
+  assert.equal(wayAttributes({ highway: 'footway', access: 'customers' }), null);
+
+  // Measured at zero or near it across all four venues, so deliberately unread.
+  assert.equal(wayAttributes({ highway: 'footway', incline: '10%' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', surface: 'asphalt' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', width: "10'" }), null);
+  assert.equal(wayAttributes({ highway: 'footway', covered: 'yes' }), null);
+  assert.equal(wayAttributes({ highway: 'footway', wheelchair: 'yes' }), null);
+
+  // A `layer` outside the nibble it is worth storing in is a typo, not a cliff.
+  assert.equal(wayAttributes({ highway: 'footway', layer: '99' }).l, 7);
+  assert.equal(wayAttributes({ highway: 'footway', layer: '-99' }).l, -8);
+  assert.equal(wayAttributes({ highway: 'footway', layer: 'ground' }), null);
+
+  // Only the two layers the router welds carry any of it.
+  assert.deepEqual([...ROUTED_LAYERS].sort(), ['path', 'service']);
   return true;
 });
 

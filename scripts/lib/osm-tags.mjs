@@ -12,6 +12,8 @@
  * before `building`, or every coaster station swallows its own track.
  */
 
+import { WAY_FLAGS } from '../../lib/wayFlags.js';
+
 const has = (tags, key, values) => {
   const v = tags[key];
   if (v == null) return false;
@@ -108,6 +110,84 @@ export const LAYER_RULES = [
 
 /** Layers drawn as open polylines rather than filled rings. */
 export const LINE_LAYERS = new Set(['path', 'service', 'coaster', 'slide']);
+
+/**
+ * The layers lib/routing.js welds into the walkable graph.
+ *
+ * Only these carry the extra attributes below. Coaster track and water slides
+ * are drawn and never walked, so a `layer` on one is bytes nobody reads.
+ */
+export const ROUTED_LAYERS = new Set(['path', 'service']);
+
+/**
+ * What OpenStreetMap says about a walkable way, beyond its shape and its name.
+ *
+ * The set is chosen against measured coverage across the four venues that ship
+ * — 3,037 path and service ways between them — rather than against the tag
+ * documentation, which lists a great many things nobody has actually surveyed
+ * in a theme park:
+ *
+ *   steps        112 ways   the live defect. Kept in the `path` layer, because
+ *                           a missing walkable way is a route the app will not
+ *                           offer, and marked, because it is not flat midway
+ *   bridge       135 ways   with `layer`, the reason two ways that cross in
+ *   tunnel        36 ways   plan view need not meet on the ground
+ *   layer        124 ways
+ *   oneway       567 ways   read at build time to find queue entrances and then
+ *                           thrown away; the graph pushes both directions
+ *   access       220 ways   `no` and `private` only — back of house
+ *
+ * Deliberately not carried, with the counts behind each call:
+ *
+ *   incline, indoor, conveying   zero ways at all four venues
+ *   width                        13 ways, nine of them written `10'`
+ *   wheelchair                   77 ways, every one of them at Cedar Point and
+ *                                76 of them `yes`, which asserts nothing that
+ *                                absence did not. The single `no` is the whole
+ *                                signal, against 112 flights of steps
+ *   covered                      28 ways of 3,037. Shade matters, and an
+ *                                attribute on 0.9% of paths cannot answer "is
+ *                                this route shaded" — it would look present and
+ *                                be absent
+ *   surface                      218 ways, but 15.7% at Fiesta Texas against
+ *                                0.3% at Cedar Point, and it wants a value
+ *                                vocabulary rather than a bit
+ *   access=customers             173 ways at Cedar Point, meaning "ticket
+ *                                holders", which is true of nearly every path
+ *                                inside the gate and tells a guest nothing
+ *
+ * Returns null when a way says none of it, so an ordinary footpath is written
+ * exactly as it was before this existed and a rebuild that changed nothing
+ * still changes nothing on disk.
+ */
+const FALSEY = new Set(['no', 'false', '0']);
+const TRUTHY = new Set(['yes', 'true', '1']);
+
+export function wayAttributes(tags) {
+  let f = 0;
+  if (tags.highway === 'steps') f |= WAY_FLAGS.STEPS;
+  // `bridge=viaduct`, `bridge=boardwalk` and a dozen others are all bridges.
+  // Only an explicit denial is not one.
+  if (tags.bridge != null && !FALSEY.has(tags.bridge)) f |= WAY_FLAGS.BRIDGE;
+  // `tunnel=building_passage` is the common one in a park: the walk-through
+  // under a station or a shop.
+  if (tags.tunnel != null && !FALSEY.has(tags.tunnel)) f |= WAY_FLAGS.TUNNEL;
+  if (TRUTHY.has(tags.oneway)) f |= WAY_FLAGS.ONEWAY;
+  else if (tags.oneway === '-1' || tags.oneway === 'reverse') f |= WAY_FLAGS.ONEWAY_BACK;
+  if (tags.access === 'no' || tags.access === 'private') f |= WAY_FLAGS.RESTRICTED;
+
+  /* Clamped rather than dropped, because a `layer` outside ±8 is a typo and a
+     typo should not become an unbounded integer in a file the phone parses. */
+  const raw = Number(tags.layer);
+  const l = Number.isFinite(raw) ? Math.max(-8, Math.min(7, Math.trunc(raw))) : 0;
+
+  if (!f && !l) return null;
+  // Fixed key order, because the bundle is compared as bytes.
+  const out = {};
+  if (f) out.f = f;
+  if (l) out.l = l;
+  return out;
+}
 
 /** Every layer the renderer knows how to draw, in the order it expects them. */
 export const LAYERS = [

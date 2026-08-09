@@ -37,8 +37,8 @@ import {
   simplify,
 } from './lib/geometry.mjs';
 import {
-  LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
-  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline,
+  LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, ROUTED_LAYERS, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
+  campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, wayAttributes,
 } from './lib/osm-tags.mjs';
 import {
   OVERRIDE_DIR, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue,
@@ -317,7 +317,7 @@ const isClosed = (ring) =>
   ring[0][0] === ring[ring.length - 1][0] &&
   ring[0][1] === ring[ring.length - 1][1];
 
-function buildLayers(elements, opts) {
+export function buildLayers(elements, opts) {
   const layers = Object.fromEntries(LAYERS.map((k) => [k, []]));
   const lands = [];
   const outlines = []; // rings that could be the venue's own boundary
@@ -389,7 +389,18 @@ function buildLayers(elements, opts) {
       // it, every path and building submerged. The sea goes underneath instead,
       // and the peninsula reads as a peninsula.
       const bed = layer === 'water' && size >= opts.venueArea * 0.7 ? 'sea' : layer;
-      layers[bed].push(tags.name ? { r: ring, n: tags.name } : { r: ring });
+      /* Everything a walkable way says about itself that is not its shape or
+         its name. Only on the two layers the router welds into the graph, and
+         only when OpenStreetMap said something: a way with nothing to add is
+         written exactly as it was before this existed, which is what keeps a
+         rebuild that changed nothing from changing anything on disk. Keys go on
+         in a fixed order for the same reason — the bundle is diffed as bytes,
+         and a diff is how "does OpenStreetMap still say what we shipped?" gets
+         answered. */
+      const feature = { r: ring };
+      if (tags.name) feature.n = tags.name;
+      if (ROUTED_LAYERS.has(bed)) Object.assign(feature, wayAttributes(tags));
+      layers[bed].push(feature);
     }
   }
 
