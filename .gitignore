@@ -9,4 +9,7 @@ out
 *.tmp.mjs
 
 # isolated worktrees agents check out while working in parallel
-.claude/
+.claude/worktrees/
+
+# GitNexus code-intelligence index: derived from the source, rebuilt on demand
+.gitnexus/
