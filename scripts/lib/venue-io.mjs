@@ -40,18 +40,34 @@ export function readJson(file, fallback = null) {
   }
 }
 
-const writeJson = (file, value, pretty) => {
+export const writeJson = (file, value, pretty) => {
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, pretty ? `${JSON.stringify(value, null, 2)}\n` : JSON.stringify(value));
 };
+
+/**
+ * The exact bytes a venue is written as.
+ *
+ * Split out from the writing so that a build can ask "would this change what is
+ * already on disk?" and get an answer worth trusting. Comparing parsed objects
+ * would answer a different and less useful question — the file is what ships,
+ * and the file is what the service worker caches.
+ */
+export const serializeVenue = ({ meta, map, pois }) => ({
+  map: JSON.stringify({ meta, ...map }),
+  pois: `${JSON.stringify(pois, null, 2)}\n`,
+});
 
 export function writeVenue({ meta, map, pois }) {
   const id = meta.id;
   // The map file is the big one and nobody reads it by hand, so it goes out
   // minified. The POI list is small, gets edited when a name is wrong, and is
-  // worth a readable diff.
-  writeJson(path.join(VENUE_DIR, `${id}.map.json`), { meta, ...map }, false);
-  writeJson(path.join(VENUE_DIR, `${id}.pois.json`), pois, true);
+  // worth a readable diff. Written through the same serialiser the drift check
+  // reads with, so the two can never disagree about what a venue looks like.
+  const bytes = serializeVenue({ meta, map, pois });
+  mkdirSync(VENUE_DIR, { recursive: true });
+  writeFileSync(path.join(VENUE_DIR, `${id}.map.json`), bytes.map);
+  writeFileSync(path.join(VENUE_DIR, `${id}.pois.json`), bytes.pois);
   return {
     map: path.join(VENUE_DIR, `${id}.map.json`),
     pois: path.join(VENUE_DIR, `${id}.pois.json`),

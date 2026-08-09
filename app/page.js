@@ -1136,8 +1136,29 @@ export default function Page() {
       if (!car) return null;
       return { ...nav, label: 'Where I parked', lat: car.lat, lng: car.lng };
     }
+    /* Walking to a ride means walking to its queue. A place here is one point,
+       and for a ride the builder took from its track that point is the middle
+       of the track — so "walk me to Diamondback" aimed at the top of the lift
+       hill, over a fence, and told you it was forty seconds away.
+
+       The builder already works these out, from a queue way that carries its
+       ride's name and says which way it runs, and hangs them on the ride as
+       `e`. Nothing read them until now: six rides at Cedar Point had a surveyed
+       queue entrance sitting in the bundle and every route still aimed at the
+       middle of the track.
+
+       The first entrance rather than the nearest one. A ride with a standby and
+       a Fastlane queue has two, they are kept apart only when they start more
+       than eight metres apart, and picking by live position would move the
+       destination under somebody already walking to it — which is the one thing
+       the reroute logic below exists to avoid. The ride keeps its own position
+       for the marker and the callout; only the destination moves. */
+    if (nav.kind === 'poi') {
+      const gate = POIS.find((p) => p.n === nav.label)?.e?.[0];
+      if (gate && Number.isFinite(gate.lat)) return { ...nav, lat: gate.lat, lng: gate.lng };
+    }
     return nav;
-  }, [nav, roster, meet, car]);
+  }, [nav, roster, meet, car, POIS]);
 
   // Kept in step with `nav` rather than written at each call site, so no future
   // way of setting a destination can forget to arm it.

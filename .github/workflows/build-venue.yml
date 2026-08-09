@@ -13,6 +13,10 @@ name: Build a venue
 on:
   workflow_dispatch:
     inputs:
+      rebuild:
+        description: 'Build a venue already here again, exactly as it was built before, from its recipe. A venue id, or "all". Wins over everything below — use it after a tag rule changes.'
+        required: false
+        type: string
       place:
         description: 'Place to resolve, e.g. "Cedar Point, Sandusky, Ohio". Be specific — plain "Cedar Point" is a village in Illinois.'
         required: false
@@ -56,7 +60,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: build-venue-${{ inputs.bbox || inputs.place }}
+  group: build-venue-${{ inputs.rebuild || inputs.bbox || inputs.place }}
   cancel-in-progress: false
 
 jobs:
@@ -65,9 +69,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Refuse a run with nothing to build
-        if: ${{ !inputs.place && !inputs.bbox }}
+        if: ${{ !inputs.place && !inputs.bbox && !inputs.rebuild }}
         run: |
-          echo "::error::Give the workflow a place name or a bounding box."
+          echo "::error::Give the workflow a place name, a bounding box, or a venue to rebuild."
           exit 1
 
       - uses: actions/checkout@v4
@@ -86,6 +90,7 @@ jobs:
         env:
           PLACE: ${{ inputs.place }}
           BBOX: ${{ inputs.bbox }}
+          REBUILD: ${{ inputs.rebuild }}
           NAME: ${{ inputs.name }}
           LOCALITY: ${{ inputs.locality }}
           CENTER: ${{ inputs.center }}
@@ -94,8 +99,14 @@ jobs:
           MAKE_DEFAULT: ${{ inputs.make_default }}
         run: |
           set -uo pipefail
+          # A rebuild carries its own arguments in data/venues/<id>.recipe.json,
+          # which is the whole point of the file: "run every park through the new
+          # tag rules" is one word here rather than four command lines
+          # reconstructed out of four merged pull requests.
           args=()
-          if [ -n "$BBOX" ]; then args+=(--bbox "$BBOX"); else args+=(--place "$PLACE"); fi
+          if [ -n "$REBUILD" ]; then args+=(--rebuild "$REBUILD")
+          elif [ -n "$BBOX" ]; then args+=(--bbox "$BBOX")
+          else args+=(--place "$PLACE"); fi
           if [ -n "$NAME" ]; then args+=(--name "$NAME"); fi
           if [ -n "$LOCALITY" ]; then args+=(--locality "$LOCALITY"); fi
           if [ -n "$CENTER" ]; then args+=(--center "$CENTER"); fi
@@ -120,24 +131,51 @@ jobs:
             exit 1
           fi
 
-          # The builder says exactly what it wrote, so take the id from that
-          # rather than guessing at how the name was slugified.
-          id=$(sed -n 's|^Wrote public/venues/\(.*\)\.map\.json$|\1|p' build.log | tail -1)
-          if [ -z "$id" ]; then
+          # The builder says exactly what it wrote, so take the ids from that
+          # rather than guessing at how a name was slugified. Plural, because
+          # "--rebuild all" writes one line per venue and reporting on only the
+          # last of them would quietly hide the rest.
+          ids=$(sed -n 's|^Wrote public/venues/\(.*\)\.map\.json$|\1|p' build.log | sort -u | tr '\n' ' ')
+          ids=${ids% }
+          if [ -z "$ids" ]; then
             echo "::error::The build wrote no map file. See the log above."
             exit 1
           fi
-          echo "id=$id" >> "$GITHUB_OUTPUT"
-          echo "Built $id"
+          echo "ids=$ids" >> "$GITHUB_OUTPUT"
+          echo "id=${ids%% *}" >> "$GITHUB_OUTPUT"
+          echo "Built $ids"
 
       - name: Say what came out
         env:
-          VENUE_ID: ${{ steps.build.outputs.id }}
+          VENUE_IDS: ${{ steps.build.outputs.ids }}
         run: |
           set -euo pipefail
-          node scripts/venue-report.mjs "$VENUE_ID" > venue-report.md
+          : > venue-report.md
+          for id in $VENUE_IDS; do
+            node scripts/venue-report.mjs "$id" >> venue-report.md
+            echo >> venue-report.md
+          done
           cat venue-report.md >> "$GITHUB_STEP_SUMMARY"
           cat venue-report.md
+
+      # Everything the build could not produce, because OpenStreetMap does not
+      # carry it — height rules above all. Empty when there is nothing to ask,
+      # which is why it can run every time. It goes in the pull request because
+      # that is where somebody is already looking at this venue and deciding
+      # whether it is finished, and "it needs 17 height rules" is the answer.
+      - name: Ask for what OpenStreetMap does not have
+        env:
+          VENUE_IDS: ${{ steps.build.outputs.ids }}
+        run: |
+          set -euo pipefail
+          : > venue-requests.md
+          for id in $VENUE_IDS; do
+            node scripts/build-venue.mjs --ask "$id" >> venue-requests.md
+          done
+          if [ -s venue-requests.md ]; then
+            cat venue-requests.md >> "$GITHUB_STEP_SUMMARY"
+            cat venue-requests.md
+          fi
 
       - name: Make sure the app still builds with it
         run: |
@@ -149,18 +187,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VENUE_ID: ${{ steps.build.outputs.id }}
+          VENUE_IDS: ${{ steps.build.outputs.ids }}
+          REBUILD: ${{ inputs.rebuild }}
         run: |
           set -euo pipefail
           branch="venue/${VENUE_ID}-${GITHUB_RUN_ID}"
+          if [ -n "$REBUILD" ]; then
+            title="Rebuild ${VENUE_IDS// /, } from OpenStreetMap"
+          else
+            title="Add ${VENUE_ID}, built from OpenStreetMap"
+          fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
           git add public/venues lib/venueIndex.js data/venues
           if git diff --cached --quiet; then
-            echo "::notice::Nothing changed — this venue is already in the repo and up to date."
+            # For a rebuild this is the good answer rather than a wasted run: it
+            # means OpenStreetMap still says what we shipped.
+            echo "::notice::Nothing changed — ${VENUE_IDS} already match what OpenStreetMap has."
             exit 0
           fi
-          git commit -m "Add ${VENUE_ID}, built from OpenStreetMap" \
+          git commit -m "$title" \
                      -m "Generated by the Build a venue workflow, run ${GITHUB_RUN_ID}."
           git push -u origin "$branch"
 
@@ -168,10 +215,18 @@ jobs:
             echo "Built by [Build a venue](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) from OpenStreetMap."
             echo
             cat venue-report.md
+            if [ -s venue-requests.md ]; then
+              echo
+              echo "<details><summary>What this still needs from outside OpenStreetMap</summary>"
+              echo
+              cat venue-requests.md
+              echo
+              echo "</details>"
+            fi
             echo
             echo "Map geometry is © OpenStreetMap contributors, ODbL."
           } > pr-body.md
 
           gh pr create --draft --base "${GITHUB_REF_NAME}" --head "$branch" \
-            --title "Add ${VENUE_ID}, built from OpenStreetMap" \
+            --title "$title" \
             --body-file pr-body.md

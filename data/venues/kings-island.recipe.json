@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "_comment": "How this venue was built, so it can be built again. Written by scripts/build-venue.mjs on every build; replayed with \"npm run venues:rebuild -- kings-island\". \"box\" is the bounding box before \"pad\" was applied to it, which is why a venue asked for by place name, by box or by a point and a radius all record the same field. Edit it by hand if you like — a rebuild reads whatever is here. This one was written from the manifest rather than by the build that made it: these three parks were built before recipes existed, and the bounds a manifest keeps are the padded ones, so the box here is the padded box and the pad is 0. It rebuilds the venue that shipped. The next build overwrites this with what it actually did.",
+  "id": "kings-island",
+  "name": "Kings Island",
+  "place": null,
+  "box": {
+    "south": 39.3365,
+    "west": -84.2775,
+    "north": 39.348,
+    "east": -84.2595
+  },
+  "options": {
+    "name": "Kings Island",
+    "locality": "Mason, Ohio",
+    "kind": "theme-park",
+    "pad": 0,
+    "default": true
+  },
+  "built": {
+    "at": "2026-08-08",
+    "counts": {
+      "pois": 171,
+      "rides": 73,
+      "heights": 65
+    }
+  }
+}

@@ -502,6 +502,40 @@ npm run venues:build -- --help
 npm run venues:report cedar-point     # what a built venue actually contains
 ```
 
+### Building the same park again
+
+Every build writes `data/venues/<id>.recipe.json` beside the venue's overrides — the box,
+the pad, the tolerance, the merges, everything that shaped what came out. `--rebuild` reads
+it back:
+
+```bash
+npm run venues:rebuild -- cedar-point            # exactly as it was built before
+npm run venues:rebuild                           # every park on disk
+npm run venues:rebuild -- cedar-point --dry-run  # would anything change?
+npm run venues:rebuild -- cedar-point --tolerance 2   # …but tighter, and remember that
+```
+
+This exists because a venue that cannot be rebuilt is stuck at whichever tag rules were in
+force the day somebody typed a command line. When water slides started supplying rides,
+Fiesta Texas stood to gain eighteen of them *on its next rebuild* — a rebuild that first
+needed somebody to reconstruct the arguments out of a merged pull request. The manifest was
+no help: the bounds it keeps are the **padded** ones, and there is no `--pad` you can pass
+with them that reproduces the build. Kings Island was built with a pad of 0 and Cedar Point
+was not, and nothing on disk said so.
+
+So the recipe records the box as it stood *before* the pad, which is the one field that
+serves all three ways of asking — a `--place` that resolved, a `--bbox` that was typed, an
+`--around` that was expanded all land there, and padding it again gives back the identical
+bounds. A place-built venue replays its box rather than the name it was found by: a geocoder
+is free to change its mind about where "Cedar Point" is, and a rebuild asked to reproduce a
+venue must not be the thing that moves it. `--refresh-place` asks again, deliberately.
+
+A flag typed alongside `--rebuild` beats the recipe for that run **and is written back**,
+because the second reason to reach for this is "again, but tighter" and that has to stick.
+
+A rebuild that changes nothing changes nothing on disk, down to the `generated` date — which
+makes "does OpenStreetMap still say what we shipped?" a question a diff can answer.
+
 **Name the place precisely.** The geocoder answers the question you asked, and plain
 `"Cedar Point"` is a village of 264 people in LaSalle County, Illinois. `--place` prints
 what it resolved to before it builds anything, and `--dry-run` stops there; when a name is
@@ -643,6 +677,172 @@ Correcting a height does not need a rebuild — the geometry is not what changed
 npm run venues:overrides              # re-apply every overrides file, no network
 npm run venues:overrides -- cedar-point              # just the one
 ```
+
+### The ride inventory: every way into every ride
+
+A place in the bundle is one point, and a ride is not one point. It has a queue that starts
+out on the midway, a station, and an exit that puts you somewhere else entirely — and for
+getting a family across a park, the **queue entrance** and the **exit** are the two
+coordinates anybody actually walks to.
+
+```
+npm run venues:attractions -- cedar-point --report
+npm run venues:attractions -- cedar-point --trace data/venues/cedar-point.traced.geojson
+npm run venues:attractions -- --all
+npm run venues:attractions -- cedar-point --geojson entrances.geojson
+```
+
+It assembles them from every source available, per ride, per feature —
+`queue_entrance`, `queue_path`, `ride_entrance`, `station`, `unload`, `ride_exit`,
+`queue_exit`. A park map prints one arrow and calls it the entrance; on the ground the queue
+entrance is on the midway and the ride entrance is at the far end of forty metres of
+switchback, and those are different places.
+
+**Nothing is stored bare.** Every coordinate carries the sources behind it, a fused score and
+the dates, because a park moves a queue between seasons and an *expired* coordinate and a
+*wrong* one are indistinguishable in a file that stores only numbers.
+
+| Source | Worth |
+| --- | ---: |
+| the park's own map or site | 5 |
+| `entrance=*` in OpenStreetMap | 4 |
+| a way named for its ride (`Maverick Standby Queue`) | 4 |
+| current aerial imagery | 4 |
+| a guest photo, a ride walkthrough, a georeferenced trace | 3 |
+| a historical map | 2 |
+| a forum thread, or this repo's own inference from geometry | 1 |
+
+0–3 unknown · 4–6 low · 7–9 moderate · 10–12 high · 13+ very high. Only **moderate** and above
+reaches the app.
+
+That bar is deliberately above what any automatic source can reach alone, and the numbers
+from the three parks are why. Cedar Point has 22 ways named for their ride, Kings Island 8,
+Fiesta Texas none; Fiesta Texas carries exactly **one** `entrance` tag against 53 rides. So
+running the whole pipeline over all three parks today publishes **nothing**. That is the
+system working: every ride in every park can be given a plausible entrance from the path
+network, and if that were enough to publish then none of them would ever be checked.
+Geometry proposes. One corroborating source — a trace, a mapped entrance — carries a ride
+over the line.
+
+Two rules that took a wrong turn first:
+
+- **A guess disagreeing with a survey is not a dispute.** The first fusion rule treated any
+  spread as a standoff, and a coaster's nearest footpath is somewhere along its own track —
+  so it lands a hundred metres from the queue every time, and the weakest source in the
+  pipeline was vetoing the strongest. Cedar Point's three best-evidenced coasters came out
+  disputed. Now the heaviest source picks the spot, lighter ones that disagree are recorded
+  as `dissent`, and a **conflict** is only two sources of equal standing pointing at
+  different places — which is never published, and never averaged into a point neither of
+  them supports.
+- **One ride often has four mapped lanes.** Cedar Point draws Maverick's standby lane, its
+  Fastlane lane and two more segments as separate ways, all carrying the ride's name. They
+  are not four entrances, and the evidence model dedupes by *source*, so whichever way came
+  last in the file used to win. They are reconciled to the end that reaches furthest into the
+  park — the one somebody walking up actually meets.
+
+The evidence lives in `data/venues/<id>.attractions.json`, beside the bundle rather than in
+it: the bundle is overwritten by every rebuild and the evidence is the expensive part. Only
+what clears the bar is copied in, as `in` and `out` on the place.
+
+**What this does not do**, and does not pretend to: it does not look at aerial imagery, run
+computer vision over it, watch a ride walkthrough or fetch a park's PDF. Each of those is a
+real source and a project of its own. What is here is what can be done from data already on
+disk — plus the door for the rest, since every one of those sources already has a weight and
+lands through the same call the automatic ones use.
+
+### Getting things off the park's own map
+
+The map a park hands out at the gate knows things OpenStreetMap does not, and until now none
+of it was reachable: `--merge` takes points that are already surveyed, which is exactly what
+a picture's are not. `trace-venue.mjs` ties the picture to the ground.
+
+```
+npm run venues:trace -- data/venues/big-kahunas.trace.json
+npm run venues:trace -- <file> --model tps --max-error 6
+npm run venues:trace -- <file> --report          # the fit, as markdown
+npm run venues:build -- --rebuild big-kahunas --trace data/venues/big-kahunas.traced.geojson
+```
+
+The input is one JSON file: **control points** — places you can identify in the picture *and*
+read a real coordinate for out of OpenStreetMap — and the **features** somebody clicked out
+of it, both in pixels.
+
+```json
+{
+  "venue": "big-kahunas",
+  "image": "docs/big-kahunas-2026-parkmap.png",
+  "controls": [{ "n": "Wave pool, NE corner", "px": [1204, 880], "lat": 30.38871, "lng": -86.47262 }],
+  "features": [
+    { "kind": "entrance", "of": "Jumanji", "px": [990, 640] },
+    { "kind": "exit",     "of": "Jumanji", "px": [1010, 700] },
+    { "kind": "place", "n": "Toilets, by the wave pool", "c": "restroom", "px": [880, 910] },
+    { "kind": "route", "n": "Boardwalk", "px": [[880, 910], [905, 940], [960, 980]] }
+  ]
+}
+```
+
+Each kind lands somewhere different. An **entrance** and an **exit** go onto the ride they
+belong to as `in` and `out` — a place here has always been one point, and for a ride the
+builder took from its track that point is the middle of the track, so "walk me to Diamondback"
+aimed at the top of the lift hill, over a fence. The ride keeps its own position for the
+marker; only the destination moves. A **route** goes into the drawn paths, which is also the
+routing graph, so a traced cut-through is walkable the moment it lands with no other change
+anywhere. A **place** is a new POI, for what OSM has not got at all.
+
+**The accuracy is the whole design.** Big Kahuna's map was georeferenced by hand once, came
+out at 33 m RMS with residuals to 55 m in a park 400 m across, and every pin from it was
+thrown away — correctly, and only because somebody happened to check. So the checking is the
+tool. Four models are offered: `similarity` and `affine` for a scan, `projective` for a
+photograph of a map board, and `tps` — a thin-plate spline — for a drawing, which is not a
+photograph of anything and is stretched wherever the artist needed room. `auto` fits every
+one the controls can carry and keeps whichever *measures* best, because which suits a picture
+is a fact about the picture, not about the control count.
+
+And it is measured by **leave-one-out cross-validation**: fit on every control but one,
+predict that one, see how far off it lands. A spline passes exactly through its own controls,
+so its residual against them is zero however wrong it is in between — quote that and you have
+proved that arithmetic works. The in-sample number is printed and immediately undercut, and
+the cross-validated one is what the gate reads. Nothing is written above `--max-error`,
+ten metres by default: about the width of a midway, and the point past which a pin is
+pointing at the wrong side of the path.
+
+Its advice when it refuses is the advice that works — more control points, spread to the
+corners. On a synthetic warped drawing, six controls cross-validate at 17 m and twenty at
+3 m, while the rigid fits stay stuck in the twenties throughout. What comes out carries the
+image, the model and the error on every feature, so a pin surveyed off a sign and a pin read
+off a drawing at nine metres never quietly become the same claim.
+
+### Asking for what OpenStreetMap does not have
+
+Everything above is a fact a build cannot produce, and the gap between "the build is done"
+and "the venue is finished" is exactly that list. `venues:ask` writes it out:
+
+```
+npm run venues:ask                    # every venue that still needs something
+npm run venues:ask -- kings-island    # one venue
+npm run venues:ask -- kings-island --json     # the same thing as data
+```
+
+What comes out is a brief somebody — or something — can work from without this repo in
+front of them: which rides carry no rule, by the exact name the bundle spells them, the
+shape of the answer as JSON, and every convention this file has that is not obvious from
+looking at it. Each of those conventions is in there because it has already been got wrong
+once. That an override keyed to a name nothing answers to is a correction that *silently did
+not happen*, and belongs under `_unmapped` instead — Big Kahuna's carries thirteen published
+rules there. That `min: 0` is a park saying out loud there is no floor, which the app reads
+back as "No minimum", and is not the same as `null`, which means nobody has looked. That
+weight limits and life-jacket exceptions go in `note` rather than being rounded off into a
+height. That a coordinate is never estimated: Big Kahuna's own illustrated park map
+georeferences to 33 m RMS against eleven control points, in a park 400 m across, so nothing
+was placed from it.
+
+A venue that needs nothing prints nothing and exits 0, which is what makes it safe to run at
+the end of every build — and it does run there, and in the **Build a venue** workflow, which
+folds the brief into the pull request it opens. The half-built park is the failure mode this
+whole pipeline is arranged against, and the last thing a build says is now which half.
+
+It only ever asks for what an outside source can settle. A town centre is never asked for
+its ride heights and a park with no campground is never asked what its pitches have.
 
 ### Bringing in data OpenStreetMap does not have
 
@@ -900,6 +1100,15 @@ scripts/
   lib/osm-tags.mjs            the tag → layer and tag → category rules
   lib/geometry.mjs            simplification, clipping, area, centroid, point-in-polygon
   lib/venue-io.mjs            where venues live; manifest and index generation
+  attractions.mjs             the ride inventory: every way into every ride, and who says so
+  lib/evidence.mjs            what a source is worth, how claims fuse, when one has expired
+  lib/candidates.mjs          plausible entrances proposed from the shape of the park
+  trace-venue.mjs             a park's own map, georeferenced → entrances, routes, places
+  lib/georef.mjs              the transforms, and honest error by cross-validation
+  lib/venue-trace.mjs         where a traced feature lands in a venue
+  lib/venue-recipe.mjs        how a venue was built, so it can be built that way again
+  lib/venue-requests.mjs      what a build cannot answer, as a brief somebody can
+  lib/venue-checklist.mjs     what a location has to carry before it is finished
   phone.mjs                   one command to a QR you can scan
   setup.sh                    toolchain check, install, build
 test/
@@ -914,5 +1123,8 @@ public/
   venues/<id>.pois.json       the places, with heights where a venue has them
   manifest.webmanifest        home-screen install
 data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
+data/venues/<id>.recipe.json     the box, pad and flags that built it — replayed by --rebuild
+data/venues/<id>.trace.json      control points and features clicked off the park's own map
+data/venues/<id>.attractions.json  per-ride features, their evidence and confidence
 Dockerfile  docker-compose.yml
 ```

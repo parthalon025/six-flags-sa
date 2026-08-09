@@ -1637,6 +1637,615 @@ await check('every override is filed under a name the venue actually has', () =>
   return true;
 });
 
+/* ----------------------------------------------------------- the recipe -- */
+
+/* A venue is repeatable or it is not, and for a long time it was not: the
+   bounding box, the pad, the tolerance and the merges lived in whatever
+   somebody typed that afternoon, and the best record was a pull request body in
+   prose. That is a correctness problem rather than a filing one — a tag rule
+   that gains a park eighteen water rides is worth nothing until every park
+   already on disk can be put through it. */
+
+const { argsFromRecipe, recipeFrom, SHAPING_FLAGS } = await import('../scripts/lib/venue-recipe.mjs');
+
+await check('a recipe records what shapes the venue and nothing about the run', () => {
+  const recipe = recipeFrom({
+    args: {
+      bbox: '1,2,3,4',
+      name: 'Somewhere',
+      locality: 'Town, State',
+      pad: 0,
+      tolerance: 2,
+      merge: ['data/pitches.csv'],
+      'keep-offsite': true,
+      // None of these change what comes out, so none of them belong in a file
+      // that says what came out.
+      'dry-run': true,
+      dump: '/tmp/osm.json',
+      endpoint: 'https://example.invalid/api',
+      rebuild: 'somewhere',
+    },
+    id: 'somewhere',
+    name: 'Somewhere',
+    box: { south: 1, west: 2, north: 3, east: 4 },
+  });
+
+  assert.equal(recipe.id, 'somewhere');
+  assert.deepEqual(recipe.box, { south: 1, west: 2, north: 3, east: 4 });
+  assert.deepEqual(Object.keys(recipe.options).sort(), [
+    'keep-offsite', 'locality', 'merge', 'name', 'pad', 'tolerance',
+  ]);
+  for (const flag of ['dry-run', 'dump', 'endpoint', 'rebuild', 'bbox']) {
+    assert.ok(!(flag in recipe.options), `${flag} has no business in a recipe`);
+  }
+  // The id is the venue's identity and lives at the top level. Carried in both
+  // places is how the two get to disagree.
+  assert.ok(!('id' in recipe.options));
+  return true;
+});
+
+await check('a recipe replays as the flags that made it', () => {
+  const args = {
+    name: "Big Kahuna's",
+    locality: 'Destin, Florida',
+    kind: 'theme-park',
+    pad: 120,
+    tolerance: 1.2,
+  };
+  const box = { south: 30.3872902, west: -86.4741956, north: 30.391115, east: -86.4706131 };
+  const back = argsFromRecipe(recipeFrom({ args, id: 'big-kahunas', name: args.name, box }));
+
+  // Round-tripped as flags rather than as an argv, because a park called "Big
+  // Kahuna's" is exactly the sort of name that does not survive a shell.
+  assert.equal(back.id, 'big-kahunas');
+  assert.equal(back.name, "Big Kahuna's");
+  assert.equal(back.pad, 120);
+  // Six decimal places is a tenth of a metre, which is finer than anything here
+  // is surveyed to. Held as numbers, so a trailing zero is simply not there.
+  assert.equal(back.bbox, '30.38729,-86.474196,30.391115,-86.470613');
+  return true;
+});
+
+await check('a place-built venue replays its box, not the place name', () => {
+  /* A geocoder is free to change its mind about where "Cedar Point" is — it is
+     also a village of 264 people in Illinois — and a rebuild that was asked to
+     reproduce a venue must not be the thing that moves it. The name is kept as
+     provenance and as what --refresh-place asks again with. */
+  const recipe = recipeFrom({
+    args: { place: 'Cedar Point, Sandusky, Ohio', name: 'Cedar Point' },
+    id: 'cedar-point',
+    name: 'Cedar Point',
+    box: { south: 41.47, west: -82.69, north: 41.49, east: -82.67 },
+    place: { display: 'Cedar Point, Erie County, Ohio, United States' },
+  });
+  assert.equal(recipe.place.query, 'Cedar Point, Sandusky, Ohio');
+  const back = argsFromRecipe(recipe);
+  assert.ok(back.bbox, 'replays the box it resolved to');
+  assert.ok(!back.place, 'and not the question it asked');
+  return true;
+});
+
+await check('a recipe with nothing to build from says so', () => {
+  assert.throws(() => argsFromRecipe({ id: 'nowhere', options: {} }), /neither a box nor a place/);
+  return true;
+});
+
+await check('every venue on disk knows how it was built', () => {
+  /* The point of the file. A venue that cannot be rebuilt is a venue that is
+     stuck at whichever tag rules were in force the day somebody typed a command
+     line, and the only way back is to reconstruct it out of a merged pull
+     request. */
+  const missing = readVenues()
+    .filter((v) => !fs.existsSync(new URL(`../data/venues/${v.id}.recipe.json`, import.meta.url)));
+  assert.deepEqual(
+    missing.map((v) => v.id),
+    [],
+    'no recipe on disk — build it once more and it writes its own',
+  );
+  return true;
+});
+
+await check('a recipe on disk is one this builder still understands', () => {
+  readVenues().forEach((v) => {
+    const recipe = JSON.parse(
+      fs.readFileSync(new URL(`../data/venues/${v.id}.recipe.json`, import.meta.url)),
+    );
+    assert.equal(recipe.id, v.id, `${v.id}: recipe is filed under the wrong id`);
+    const back = argsFromRecipe(recipe);
+    assert.ok(back.bbox || back.place, `${v.id}: nothing to build from`);
+    // A flag in a recipe that the builder no longer records is a flag that will
+    // be dropped the next time this venue is built, silently.
+    const strays = Object.keys(recipe.options || {}).filter((k) => !SHAPING_FLAGS.includes(k));
+    assert.deepEqual(strays, [], `${v.id}: options the builder does not write`);
+  });
+  return true;
+});
+
+/* ------------------------------------------- what a build cannot produce -- */
+
+const { renderBrief, requests } = await import('../scripts/lib/venue-requests.mjs');
+
+const rideVenue = (extra = {}) => ({
+  venue: { id: 'somewhere', name: 'Somewhere', locality: 'Town, State', credits: 'From the park.' },
+  map: { lands: [{ n: 'The Green' }] },
+  pois: [
+    { n: 'Gate', c: 'gate' },
+    { n: 'Loos', c: 'restroom' },
+    { n: 'Chips', c: 'food' },
+    { n: 'The Big One', c: 'coaster', h: { min: 48 } },
+  ],
+  ...extra,
+});
+
+await check('a finished venue is asked for nothing', () => {
+  assert.deepEqual(requests(rideVenue()), []);
+  return true;
+});
+
+await check('a venue with rides and no rules is asked first and blocks', () => {
+  const reqs = requests(rideVenue({
+    pois: [
+      { n: 'Gate', c: 'gate' },
+      { n: 'Loos', c: 'restroom' },
+      { n: 'Chips', c: 'food' },
+      { n: 'The Big One', c: 'coaster' },
+    ],
+  }));
+  assert.equal(reqs[0].key, 'heights');
+  // Not a nicety: with no rules at all the app drops the Rides tab, the slider,
+  // the tally, the badge over the map and the struck-through markers, silently.
+  assert.equal(reqs[0].blocking, true);
+  assert.deepEqual(reqs[0].targets, ['The Big One']);
+  return true;
+});
+
+await check('one ride under two names is asked about once', () => {
+  /* OpenStreetMap routinely carries a ride as a way and a node both, which is
+     why Fiesta Texas ships two Poltergeists. Both take the rule when one answer
+     arrives, so both on the list is the same question asked twice. */
+  const reqs = requests(rideVenue({
+    pois: [
+      { n: 'Gate', c: 'gate' },
+      { n: 'Loos', c: 'restroom' },
+      { n: 'Chips', c: 'food' },
+      { n: 'Poltergeist', c: 'coaster' },
+      { n: 'Poltergeist', c: 'ride' },
+    ],
+  }));
+  assert.deepEqual(reqs[0].targets, ['Poltergeist']);
+  return true;
+});
+
+await check('an override that lands on nothing becomes a question', () => {
+  const reqs = requests(rideVenue({
+    overrides: {
+      pois: {
+        'The Big One': { h: { min: 48 } },
+        'Renamed Last Season': { h: { min: 54 } },
+        'Known By Another Name': { alias: 'The Big One', h: { min: 48 } },
+      },
+    },
+  }));
+  const unmatched = reqs.find((r) => r.key === 'unmatched');
+  // The alias is what bridges a park that renamed a ride and a map that has not
+  // caught up, so an entry carrying one has landed.
+  assert.deepEqual(unmatched.targets, ['Renamed Last Season']);
+  return true;
+});
+
+await check('a town centre is never asked for its ride heights', () => {
+  const reqs = requests({
+    venue: { id: 'town', name: 'Town', locality: 'Town, State' },
+    map: {},
+    pois: [{ n: 'Gate', c: 'gate' }, { n: 'Loos', c: 'restroom' }, { n: 'Chips', c: 'food' }],
+  });
+  assert.deepEqual(reqs.map((r) => r.key), []);
+  return true;
+});
+
+await check('the brief carries the conventions somebody would otherwise get wrong', () => {
+  const reqs = requests(rideVenue({
+    pois: [
+      { n: 'Gate', c: 'gate' },
+      { n: 'Loos', c: 'restroom' },
+      { n: 'Chips', c: 'food' },
+      { n: 'Lazy River', c: 'ride' },
+    ],
+  }));
+  const brief = renderBrief({ id: 'somewhere', name: 'Somewhere' }, reqs);
+  // Every one of these has already been got wrong here once, which is why they
+  // are in the brief rather than in somebody's head.
+  assert.match(brief, /_unmapped/, 'where a rule with nothing to land on goes');
+  assert.match(brief, /`min: 0`/, 'no floor is not the same as nobody looked');
+  assert.match(brief, /alias/, 'how a renamed ride is bridged');
+  assert.match(brief, /Never estimate a coordinate/);
+  assert.match(brief, /data\/venues\/somewhere\.overrides\.json/, 'the one file it all lands in');
+  // The name it must be keyed by, exactly as the bundle spells it.
+  assert.match(brief, /"Lazy River"/);
+  return true;
+});
+
+await check('a brief with nothing to ask is empty rather than encouraging', () => {
+  const brief = renderBrief({ id: 'somewhere', name: 'Somewhere' }, []);
+  assert.match(brief, /Nothing here needs a source outside OpenStreetMap/);
+  return true;
+});
+
+/* -------------------------------------------------------- georeferencing -- */
+
+/* The park's own map knows things OpenStreetMap does not — which end of a
+   coaster the queue is at, the path across the lawn, half the toilets — and
+   getting them out means tying a picture to the ground. Big Kahuna's was
+   georeferenced by hand once, came out at 33 m RMS in a park 400 m across, and
+   every pin from it was thrown away. Correctly; and only because somebody
+   happened to check. These are the checks. */
+
+const { compare, crossValidate, fit, project, residuals } = await import('../scripts/lib/georef.mjs');
+
+/* A synthetic park: pixels that are a known rotation, scale and shift away from
+   a patch of ground, so the right answer is knowable rather than plausible. */
+const KX = 6371000 * (Math.PI / 180) * Math.cos(39.34 * (Math.PI / 180));
+const KY = 6371000 * (Math.PI / 180);
+const groundOf = (px, py) => {
+  const th = 0.15;
+  const s = 0.42; // metres per pixel
+  const X = s * (px * Math.cos(th) - py * Math.sin(th));
+  const Y = s * (px * Math.sin(th) + py * Math.cos(th));
+  return { lat: 39.34 + Y / KY, lng: -84.26 + X / KX };
+};
+const CONTROLS = [[100, 120], [900, 140], [880, 960], [140, 880], [500, 500], [300, 700]]
+  .map(([x, y], i) => ({ n: `c${i + 1}`, px: [x, y], ...groundOf(x, y) }));
+
+/* An illustrated map, as a grid of controls put through a warp: stretched where
+   the artist needed room, which is what a drawing is and what no rotation,
+   scale and shift on Earth straightens out. This is the Big Kahuna's failure,
+   reproduced — and the fix. */
+const warpedGrid = (n) => {
+  const k = Math.ceil(Math.sqrt(n));
+  const pts = [];
+  for (let i = 0; i < k; i += 1) {
+    for (let j = 0; j < k && pts.length < n; j += 1) {
+      pts.push([100 + (800 * i) / (k - 1), 100 + (800 * j) / (k - 1)]);
+    }
+  }
+  return pts.map(([x, y], i) => ({
+    n: `c${i + 1}`,
+    px: [x + 90 * Math.sin(y / 300), y - 70 * Math.sin(x / 280)],
+    ...groundOf(x, y),
+  }));
+};
+
+
+await check('a square-on scan is read back to the metre', () => {
+  for (const model of ['similarity', 'affine', 'projective', 'tps']) {
+    const fitted = fit(CONTROLS, { model });
+    const worst = Math.max(...residuals(fitted, CONTROLS).map((r) => r.metres));
+    assert.ok(worst < 0.5, `${model} is ${worst.toFixed(2)} m out on a transform it can represent exactly`);
+    // And a pixel none of the controls sat on.
+    const want = groundOf(640, 300);
+    const got = project(fitted, [640, 300]);
+    const off = Math.hypot((got.lng - want.lng) * KX, (got.lat - want.lat) * KY);
+    assert.ok(off < 1, `${model} put an unseen point ${off.toFixed(2)} m out`);
+  }
+  return true;
+});
+
+await check('accuracy is measured where the fit has never been', () => {
+  /* The number that matters, and the reason there are two of them. A spline
+     passes exactly through its own control points, so its residual against
+     them is zero however wrong it is in between — quote that and you have
+     proved that arithmetic works, nothing more. Leave-one-out estimates the
+     error at a point nobody pinned, which is every point anybody will use.
+
+     Shown on a warped drawing, because that is where the two numbers come
+     apart. On a picture whose transform the model can represent exactly they
+     agree, and agreeing is not the interesting case. */
+  const warped = warpedGrid(9);
+  const flattered = Math.max(...residuals(fit(warped, { model: 'tps' }), warped).map((r) => r.metres));
+  // Not exactly zero only because a projected point is rounded to six decimal
+  // places on the way out — a tenth of a metre, the precision a venue file is
+  // written at.
+  assert.ok(flattered < 0.2, `a spline flatters itself: ${flattered.toFixed(3)} m`);
+
+  const cv = crossValidate(warped, { model: 'tps' });
+  assert.equal(cv.possible, true);
+  assert.equal(cv.residuals.length, warped.length);
+  // Metres out where nobody pinned it, while claiming perfection where they did.
+  assert.ok(cv.rms > 5, `cross-validation should not flatter: ${cv.rms.toFixed(2)} m`);
+  assert.ok(cv.rms > flattered * 20, 'the two are not the same measurement');
+  return true;
+});
+
+await check('too few controls to check is said, not guessed', () => {
+  // Four points and a projective fit: it will pass through all four exactly and
+  // there is nothing left over to test it with. The honest answer is to say so.
+  const cv = crossValidate(CONTROLS.slice(0, 4), { model: 'projective' });
+  assert.equal(cv.possible, false);
+  assert.equal(cv.rms, null);
+  assert.match(cv.why, /too few/);
+  return true;
+});
+
+await check('a drawing that is not flat is fitted by the model that bends', () => {
+  const ranked = compare(warpedGrid(12));
+  assert.ok(ranked.length > 1, 'every model the controls can carry is scored');
+  assert.equal(ranked[0].model, 'tps', `tps should win, got ${ranked.map((r) => r.model).join(' < ')}`);
+  const rigid = ranked.find((r) => r.model === 'similarity');
+  // Not a tie-break: the rigid fit is stuck in the tens of metres that got Big
+  // Kahuna's thrown out, and the spline is the thing that gets under the gate.
+  assert.ok(ranked[0].rms < rigid.rms / 2, 'and beat the rigid fit by a distance');
+  return true;
+});
+
+await check('more control points is what actually buys accuracy', () => {
+  /* The advice the tool gives when a fit is refused, held to. Eleven controls
+     and a global fit is where Big Kahuna's got 33 m; the answer is not a
+     cleverer model, it is more places pinned, spread out. */
+  const few = compare(warpedGrid(6)).find((r) => r.model === 'tps');
+  const many = compare(warpedGrid(20)).find((r) => r.model === 'tps');
+  assert.ok(many.rms < few.rms / 2, `${few.rms.toFixed(1)} m to ${many.rms.toFixed(1)} m`);
+  return true;
+});
+
+await check('controls in a line are refused rather than fitted', () => {
+  // Collinear controls pin down no unique transform, and a wrong one looks
+  // exactly like an answer.
+  const inARow = [0, 1, 2, 3].map((i) => ({ n: `c${i}`, px: [100 * i, 500], ...groundOf(100 * i, 500) }));
+  assert.throws(() => fit(inARow, { model: 'affine' }), /collinear|do not pin down/);
+  return true;
+});
+
+await check('a control with nothing surveyed about it is refused', () => {
+  assert.throws(
+    () => fit([{ n: 'nowhere', px: [1, 2] }, ...CONTROLS], { model: 'affine' }),
+    /no surveyed lat\/lng/,
+  );
+  return true;
+});
+
+/* ------------------------------------------- what a trace lands on -------- */
+
+const { applyTrace } = await import('../scripts/lib/venue-trace.mjs');
+
+const tracedFeature = (props, geometry) => ({ type: 'Feature', geometry, properties: props });
+const pointAt = (lat, lng) => ({ type: 'Point', coordinates: [lng, lat] });
+
+await check('an entrance lands on the ride it belongs to, and a route on the paths', () => {
+  const pois = [{ n: 'Diamondback', c: 'coaster', lat: 39.3438, lng: -84.2658 }];
+  const layers = { path: [] };
+  const got = applyTrace(pois, layers, {
+    features: [
+      tracedFeature({ kind: 'entrance', of: 'Diamondback', src: { error_m: 4 } }, pointAt(39.3440, -84.2660)),
+      tracedFeature({ kind: 'exit', of: 'Diamondback' }, pointAt(39.3441, -84.2661)),
+      tracedFeature({ kind: 'route', n: 'The cut-through' }, {
+        type: 'LineString',
+        coordinates: [[-84.2661, 39.3441], [-84.2665, 39.3444]],
+      }),
+    ],
+  });
+
+  assert.deepEqual(got.unmatched, []);
+  assert.equal(pois[0].e[0].lat, 39.344);
+  assert.equal(pois[0].out.lng, -84.2661);
+  // The ride itself does not move — only where walking to it means.
+  assert.equal(pois[0].lat, 39.3438);
+  // Straight into `path`, which is what lib/routing.js welds into the walkable
+  // graph, so a traced cut-through is routable with no other change anywhere.
+  assert.equal(layers.path.length, 1);
+  assert.equal(layers.path[0].n, 'The cut-through');
+  // How far out the fit was travels with the pin. A place surveyed off a sign
+  // and a place read off a drawing are different claims.
+  assert.equal(pois[0].e[0].src.error_m, 4);
+  return true;
+});
+
+await check('an entrance to a ride that is not here is reported, not dropped', () => {
+  const pois = [{ n: 'Diamondback', c: 'coaster', lat: 39.3438, lng: -84.2658 }];
+  const got = applyTrace(pois, { path: [] }, {
+    features: [tracedFeature({ kind: 'entrance', of: 'Banshee' }, pointAt(39.344, -84.266))],
+  });
+  // The same failure as an override that lands on nothing: a correction that
+  // silently did not happen.
+  assert.deepEqual(got.unmatched, ['Banshee (entrance)']);
+  return true;
+});
+
+await check('an entrance traced half a park away from its ride is a mis-click', () => {
+  const pois = [{ n: 'Diamondback', c: 'coaster', lat: 39.3438, lng: -84.2658 }];
+  const got = applyTrace(pois, { path: [] }, {
+    features: [tracedFeature({ kind: 'entrance', of: 'Diamondback' }, pointAt(39.36, -84.30))],
+  });
+  assert.equal(got.entrances, 0);
+  assert.equal(got.skipped.length, 1);
+  assert.ok(!pois[0].e, 'and the ride keeps no entrance it never had');
+  return true;
+});
+
+await check('a traced place is added once and corrected on the next run', () => {
+  const pois = [{ n: 'Diamondback', c: 'coaster', lat: 39.3438, lng: -84.2658 }];
+  const trace = {
+    features: [tracedFeature({ kind: 'place', n: 'Toilets by the lake', c: 'restroom' }, pointAt(39.3450, -84.2670))],
+  };
+  applyTrace(pois, { path: [] }, trace);
+  assert.equal(pois.length, 2);
+  // Re-running a trace must correct rather than duplicate, or a venue gains a
+  // second set of toilets every time somebody re-fits the picture.
+  applyTrace(pois, { path: [] }, trace);
+  assert.equal(pois.length, 2);
+  assert.equal(pois[1].c, 'restroom');
+  return true;
+});
+
+/* ------------------------------------------------- evidence and confidence -- */
+
+/* Every coordinate this pipeline produces about a ride's entrance is a claim
+   from a source, and the sources are not equal. The failure mode is that "the
+   park's own map says so" and "there is a footpath near it, so probably" end up
+   as the same six decimal places in the same file and nobody can tell which was
+   which afterwards. */
+
+const { atLeast, bandOf, fuse, pointOf, staleness } = await import('../scripts/lib/evidence.mjs');
+
+const near = { lat: 39.3438, lng: -84.2658 };
+const alsoNear = { lat: 39.34381, lng: -84.26581 };
+const farOff = { lat: 39.3450, lng: -84.2680 };
+
+await check('agreement is worth more than repetition', () => {
+  const agreeing = fuse([
+    { source: 'osm_named_queue', at: near },
+    { source: 'traced', at: alsoNear },
+  ]);
+  assert.equal(agreeing.score, 7);
+  assert.equal(agreeing.band, 'moderate');
+
+  // The same source cited twice is one source. Three forum threads repeating
+  // each other are three people repeating each other.
+  const repeated = fuse([{ source: 'forum', at: near }, { source: 'forum', at: alsoNear }]);
+  assert.deepEqual(repeated.sources, ['forum']);
+  assert.equal(repeated.score, 1);
+  return true;
+});
+
+await check('a guess disagreeing with a survey is the guess being wrong', () => {
+  /* The first rule here treated any spread as a standoff, and it was wrong in a
+     way the parks on disk showed immediately: a coaster's nearest footpath is
+     somewhere along its own track, so it lands a hundred metres from the queue
+     every time. That let the weakest source in the pipeline veto the strongest,
+     and Cedar Point's three best-evidenced coasters came out disputed. */
+  const f = fuse([
+    { source: 'osm_named_queue', at: near },
+    { source: 'geometry', at: farOff },
+  ]);
+  assert.equal(f.conflict, false, 'being outranked is not a dispute');
+  assert.deepEqual(f.sources, ['osm_named_queue'], 'and the outvoted source does not score');
+  assert.equal(f.score, 4);
+  assert.equal(f.dissent[0].source, 'geometry');
+  assert.ok(f.dissent[0].metres > 100);
+  return true;
+});
+
+await check('two sources of equal standing disagreeing is a conflict', () => {
+  const f = fuse([
+    { source: 'official_map', at: near },
+    { source: 'official_site', at: farOff },
+  ]);
+  // The one a person has to settle. Never averaged into a point between them,
+  // which is a coordinate neither source supports.
+  assert.equal(f.conflict, true);
+  assert.equal(f.score, 5, 'capped at what one of them is worth');
+  return true;
+});
+
+await check('the heaviest source picks the spot outright', () => {
+  const at = pointOf([
+    { source: 'geometry', at: farOff },
+    { source: 'official_map', at: near },
+    { source: 'forum', at: farOff },
+  ]);
+  assert.equal(at.from, 'official_map');
+  assert.equal(at.lat, near.lat);
+  return true;
+});
+
+await check('the bands are the ones a single source cannot reach alone', () => {
+  assert.equal(bandOf(0), 'unknown');
+  assert.equal(bandOf(4), 'low');
+  assert.equal(bandOf(7), 'moderate');
+  assert.equal(bandOf(10), 'high');
+  assert.equal(bandOf(13), 'very_high');
+  // Deliberate: the best automatic evidence there is, on its own, is "low".
+  // Corroboration is the whole point of scoring at all.
+  assert.equal(bandOf(4), 'low');
+  assert.ok(!atLeast('low', 'moderate'));
+  assert.ok(atLeast('high', 'moderate'));
+  return true;
+});
+
+await check('a claim has a shelf life, and it is flagged rather than decayed', () => {
+  const old = staleness([{ source: 'official_map', date: '2024-01-01' }], '2026-08-09');
+  assert.equal(old.stale, true);
+  assert.match(old.why, /2024-01-01/);
+  // Not scored down: an old survey is still a survey, and quietly decaying it
+  // would invent a decay rate nobody measured.
+  assert.equal(fuse([{ source: 'official_map', date: '2024-01-01', at: near }]).score, 5);
+  assert.equal(staleness([], '2026-08-09').stale, true, 'undated is stale');
+  return true;
+});
+
+/* --------------------------------------------------- the ride inventory -- */
+
+const { addEvidence, attractionFor, publishable, unresolved } =
+  await import('../scripts/lib/attractions.mjs');
+const { candidates, rideNameOf } = await import('../scripts/lib/candidates.mjs');
+
+await check('a queue lane is named for its ride, not for itself', () => {
+  assert.equal(rideNameOf('Top Thrill 2 Standby Queue'), 'top thrill 2');
+  assert.equal(rideNameOf('Millennium Force Fastlane Queue'), 'millennium force');
+  assert.equal(rideNameOf('Red Racer Queue'), 'red racer');
+  return true;
+});
+
+await check('geometry proposes and does not publish', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  addEvidence(record, 'queue_entrance', { source: 'geometry', at: near }, { asOf: '2026-08-09' });
+  // Not even "low": the cheapest evidence there is, and the only kind that
+  // scales to every ride in every park, which is exactly why it is worth 1.
+  assert.equal(record.features.queue_entrance.confidence, 'unknown');
+  // If the path network alone were enough, every ride in every park would get an
+  // entrance and not one of them would ever be checked.
+  assert.deepEqual(publishable(record), {});
+
+  addEvidence(record, 'queue_entrance', { source: 'osm_named_queue', at: near }, { asOf: '2026-08-09' });
+  addEvidence(record, 'queue_entrance', { source: 'traced', at: alsoNear }, { asOf: '2026-08-09' });
+  const out = publishable(record);
+  // Into `e`, where the builder already puts entrances derived from named
+  // one-way queues and where the app reads them. One concept, one field.
+  assert.ok(out.e, 'corroborated evidence reaches the app');
+  assert.equal(out.e.src.confidence, 'moderate');
+  return true;
+});
+
+await check('a conflicted feature is never published', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: near });
+  addEvidence(record, 'queue_entrance', { source: 'official_site', at: farOff });
+  assert.deepEqual(publishable(record), {});
+  assert.equal(unresolved([record]).length, 1);
+  return true;
+});
+
+await check('evidence accumulates, and only its own source supersedes it', () => {
+  const record = attractionFor({ n: 'Orion', c: 'coaster', lat: 39.34, lng: -84.26 }, 'kings-island');
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: near, date: '2025-04-01' });
+  addEvidence(record, 'queue_entrance', { source: 'forum', at: farOff });
+  // A forum post does not overwrite the park; the park overwrites the park.
+  assert.equal(record.features.queue_entrance.at.lat, near.lat);
+  addEvidence(record, 'queue_entrance', { source: 'official_map', at: farOff, date: '2026-04-01' });
+  assert.equal(record.features.queue_entrance.at.lat, farOff.lat, 'a redrawn map is a change of mind');
+  assert.equal(record.features.queue_entrance.evidence.filter((e) => e.source === 'official_map').length, 1);
+  return true;
+});
+
+await check('one ride with four mapped lanes yields one way in', () => {
+  /* Cedar Point draws Maverick's standby lane, its Fastlane lane and two more
+     segments as separate ways, all carrying the ride's name. They are not four
+     entrances, and the evidence model dedupes by source rather than by place —
+     so without reconciling here, whichever way came last in the file won. */
+  const ride = { n: 'Maverick', c: 'coaster', lat: 41.4800, lng: -82.6860 };
+  const q = (n, from, to) => ({ n, r: [from, to] });
+  const map = {
+    path: [
+      { n: 'Midway', r: [[-82.6870, 41.4805], [-82.6850, 41.4805]] },
+      q('Maverick Standby Queue', [-82.6862, 41.48048], [-82.6860, 41.4800]),
+      q('Maverick Fastlane Queue', [-82.6861, 41.4802], [-82.6860, 41.4800]),
+    ],
+  };
+  const got = candidates(map, [ride]).filter((c) => c.source === 'osm_queue_name' && c.type === 'queue_entrance');
+  assert.equal(got.length, 1);
+  assert.match(got[0].why, /outermost of 2 lanes/);
+  return true;
+});
+
 /* ------------------------------------------------------ heights from OSM -- */
 
 const { heightFromTags, poisFromTrack, entrancesFromQueues } = await import('../scripts/build-venue.mjs');
