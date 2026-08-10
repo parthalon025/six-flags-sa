@@ -20,6 +20,7 @@ export default function BrandLockup({
   stacked = false,
   className = '',
   markTitle,
+  nameId,
 }) {
   const markPx = size === 'lg' ? 56 : size === 'sm' ? 28 : 40;
   const NameTag = size === 'lg' ? 'h2' : 'span';
@@ -31,7 +32,9 @@ export default function BrandLockup({
     >
       <BrandMark variant="lockup" size={markPx} title={markTitle} className="brandLockupMark" />
       <div className="brandLockupText">
-        <NameTag className="brandLockupName">{BRAND.nameUpper}</NameTag>
+        <NameTag className="brandLockupName" id={nameId}>
+          {BRAND.nameUpper}
+        </NameTag>
         {showTagline ? (
           <span className="brandLockupTagline">{BRAND.slogan}</span>
         ) : null}

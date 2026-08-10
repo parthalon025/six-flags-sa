@@ -4,7 +4,7 @@
  *   npm start &
  *   node test/audit-visual.mjs
  */
-import { BASE, closeGate, dismissUpdateSplash, go, launch } from './browser.mjs';
+import { BASE, closeGate, dismissIntroSplash, dismissUpdateSplash, go, launch } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -152,7 +152,10 @@ const page2 = await ctx2.newPage();
 await page2.goto(BASE, { waitUntil: 'domcontentloaded' });
 await dismissUpdateSplash(page2);
 await page2.waitForTimeout(500);
-await shot(page2, '15-gps-gate-welcome');
+await shot(page2, '15-intro-splash');
+await dismissIntroSplash(page2);
+await page2.waitForTimeout(500);
+await shot(page2, '16-gps-gate');
 
 await browser.close();
 console.log('\nDone — review test/audit/*.png\n');

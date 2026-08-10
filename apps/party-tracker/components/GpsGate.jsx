@@ -1,6 +1,5 @@
 'use client';
 
-import BrandLockup from '@/components/BrandLockup';
 import { BRAND } from '@/lib/brand';
 import { formatDistance } from '@/lib/geo';
 
@@ -51,15 +50,9 @@ function dataText(venue) {
 }
 
 /*
- * The landing is one line and one button. Someone standing in a car park does
- * not need five bullets before they will tap Allow — they need to know what
- * this is and what the one good button does. The park question used to be a
- * whole second card; it now lives here when it is needed, and the happy path
- * ("go to nearest park") skips it and reports progress with a toast instead.
- *
- * Brand copy is Parkbound (name + slogan). The five-bullet Welcome intro from
- * the design-language branch yields to this streamlined first-run flow from
- * main — both intents cannot own the same card.
+ * GPS and park intake — the screen after the intro splash. The happy path
+ * ("go to nearest park") skips the park question and reports progress with a
+ * toast instead. Brand copy lives on IntroSplash; this card is location only.
  */
 function ParkSection({
   choice,
@@ -147,7 +140,7 @@ export default function GpsGate({
   onDismiss,
   onGoNearest,
   venueName,
-  welcome = false,
+  highlightNearest = false,
   parkChoice = null,
   parkOptions = [],
   onConfirmPark,
@@ -159,17 +152,17 @@ export default function GpsGate({
   const parkVenue = parkChoice?.venue;
   const settingUp = nearestIntent && parkVenue;
   const showParkQuestion = parkVenue && !nearestIntent;
-  const welcomeIdle = welcome && status === 'idle' && !nearestIntent;
-  const welcomeSearching = welcome && nearestIntent && status === 'asking';
+  const nearestIdle = highlightNearest && status === 'idle' && !nearestIntent;
+  const nearestSearching = highlightNearest && nearestIntent && status === 'asking';
 
   let primaryLabel = copy.action;
   let primaryAction = onRequest;
   let primaryDisabled = false;
 
-  if (welcomeIdle) {
+  if (nearestIdle) {
     primaryLabel = 'Go to nearest park';
     primaryAction = onGoNearest || onRequest;
-  } else if (welcomeSearching || (welcome && status === 'asking' && nearestIntent)) {
+  } else if (nearestSearching || (highlightNearest && status === 'asking' && nearestIntent)) {
     primaryLabel = 'Finding your location…';
     primaryDisabled = true;
   } else if (settingUp) {
@@ -182,32 +175,19 @@ export default function GpsGate({
   return (
     <div className="gate">
       <div className="gateCard">
-        {welcome && !showParkQuestion && !settingUp ? (
-          <>
-            <div className="gateEyebrow">Welcome</div>
-            {/* Splash: primary logo lockup (brand sheet Image 1) */}
-            <BrandLockup size="lg" stacked showTagline className="gateBrandLockup" />
-            <p>{BRAND.shortDescription}</p>
-          </>
-        ) : (
-          <>
-            <div className="gateEyebrow">
-              {welcome
-                ? 'Welcome'
-                : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
-            </div>
-            <h2>
-              {showParkQuestion
-                ? parkChoice.inside
-                  ? `You’re at ${parkVenue.name}!`
-                  : `Headed to ${parkVenue.name}?`
-                : settingUp
-                  ? BRAND.nameUpper
-                  : copy.title}
-            </h2>
-            {!showParkQuestion && !settingUp && <p>{copy.body}</p>}
-          </>
-        )}
+        <div className="gateEyebrow">
+          {`${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
+        </div>
+        <h2>
+          {showParkQuestion
+            ? parkChoice.inside
+              ? `You’re at ${parkVenue.name}!`
+              : `Headed to ${parkVenue.name}?`
+            : settingUp
+              ? BRAND.nameUpper
+              : copy.title}
+        </h2>
+        {!showParkQuestion && !settingUp && <p>{copy.body}</p>}
 
         {(settingUp || showParkQuestion) && (
           <ParkSection

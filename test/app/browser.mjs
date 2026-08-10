@@ -151,9 +151,27 @@ export const hydrated = (page) =>
 export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
   const deadline = Date.now() + timeout;
   do {
-    const continueBtn = page.locator('button:has-text("Continue")');
-    if (await continueBtn.count()) {
-      await continueBtn.click().catch(() => {});
+    const splash = page.locator('#update-splash-title');
+    if (await splash.count()) {
+      await page.locator('.gate:has(#update-splash-title) .btn.primary').click().catch(() => {});
+      await page.waitForTimeout(600);
+      return true;
+    }
+    if (timeout === 0) break;
+    await page.waitForTimeout(250);
+  } while (Date.now() < deadline);
+  return false;
+}
+
+/**
+ * Dismiss the first-run intro splash if it is up.
+ */
+export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
+  const deadline = Date.now() + timeout;
+  do {
+    const splash = page.locator('#intro-splash-title');
+    if (await splash.count()) {
+      await page.locator('.gate:has(#intro-splash-title) .btn.primary').click().catch(() => {});
       await page.waitForTimeout(600);
       return true;
     }
@@ -171,6 +189,7 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
  */
 export async function closeGate(page) {
   await dismissUpdateSplash(page);
+  await dismissIntroSplash(page);
   const nearest = page.locator('button:has-text("Go to nearest park")');
   const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("set up")');
