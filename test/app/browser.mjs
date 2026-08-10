@@ -101,6 +101,15 @@ export async function openPhone(
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   if (url.includes('/join')) {
+    // Name-before-join: /join asks what the family should call this phone.
+    const joinName = page.locator('.gateCard input[aria-label="Your name"]');
+    try {
+      await joinName.waitFor({ state: 'visible', timeout: 15000 });
+      if (name) await joinName.fill(name);
+      await page.locator('.gateCard .btn.primary').click();
+    } catch {
+      /* legacy handoff without the name card */
+    }
     await page.waitForURL((u) => !String(u).includes('/join'), { timeout: 30000 }).catch(() => {});
   }
   await hydrated(page);

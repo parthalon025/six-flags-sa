@@ -249,6 +249,8 @@ await check('"walk me there" offers the route before setting off', async () => {
   if (!/\d+ min/.test(summary)) throw new Error(summary);
   if (!/arrive \d/.test(summary)) throw new Error(`no arrival time: ${summary}`);
   if (!/via /.test(await a.locator('.previewWhere').innerText())) throw new Error('route has no via');
+  await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+  await a.waitForTimeout(300);
   return true;
 });
 
