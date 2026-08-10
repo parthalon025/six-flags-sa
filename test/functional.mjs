@@ -12,13 +12,16 @@
 
 import {
   BASE,
+  clearSearch,
   closeGate,
   go,
   hydrated,
   launch,
   openPhone,
+  rideHeightVerdict,
   root,
   rosterNames,
+  searchPlaces,
   until,
 } from './browser.mjs';
 
@@ -149,13 +152,19 @@ await check('filter badge shows a live count', async () => {
 });
 
 await check('verdicts respond to height', async () => {
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(400);
   await go(a, 'Places');
-  const at48 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await searchPlaces(a, 'beast');
+  const at48 = await rideHeightVerdict(a, 'The Beast');
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(400);
   await go(a, 'Places');
-  const at36 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await searchPlaces(a, 'beast');
+  const at36 = await rideHeightVerdict(a, 'The Beast');
+  await clearSearch(a);
   if (!/CAN RIDE/i.test(at48) || !/TOO SHORT/i.test(at36)) throw new Error(`${at48} / ${at36}`);
   return true;
 });
@@ -175,7 +184,11 @@ await check('"adult along" changes the companion tally', async () => {
 });
 
 await check('"only what they can ride" filters the list', async () => {
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("36")').click();
+  await a.waitForTimeout(300);
   await go(a, 'Places');
+  await searchPlaces(a, 'beast');
   const before = await a.locator('.poiRow').count();
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(500);
@@ -183,16 +196,20 @@ await check('"only what they can ride" filters the list', async () => {
   if (!(after < before)) throw new Error(`${before} -> ${after}`);
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(400);
+  await clearSearch(a);
   return true;
 });
 
 await check('search narrows results', async () => {
   await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await a.waitForTimeout(500);
+  const onlyChip = a.locator('.chip:has-text("Only what")');
+  if ((await onlyChip.getAttribute('aria-pressed')) === 'true') {
+    await onlyChip.click();
+    await a.waitForTimeout(300);
+  }
+  await searchPlaces(a, 'beast');
   const n = await a.locator('.poiRow').count();
-  await a.locator('.field[aria-label="Search places"]').fill('');
-  await a.waitForTimeout(400);
+  await clearSearch(a);
   if (n !== 1) throw new Error(`got ${n} rows`);
   return true;
 });
@@ -218,8 +235,7 @@ console.log('\n--- walking directions ---');
 
 await check('"walk me there" offers the route before setting off', async () => {
   await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await a.waitForTimeout(400);
+  await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
   await a.locator('button:has-text("Walk me there")').first().click();
@@ -236,8 +252,7 @@ await check('"walk me there" offers the route before setting off', async () => {
 
 await check('ride detail explains when queue entrance is not confirmed', async () => {
   await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await a.waitForTimeout(400);
+  await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
   const note = await a.locator('.entranceNote').innerText();
@@ -258,8 +273,7 @@ await check('cedar point route preview names surveyed queue entrances', async ()
     label: 'cedar point venue load',
   });
   await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('gemini');
-  await a.waitForTimeout(500);
+  await searchPlaces(a, 'gemini');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
   await a.locator('button:has-text("Walk me there")').first().click();
@@ -406,6 +420,10 @@ await check('a glance card walks you to a place and stops again', async () => {
 });
 
 console.log('\n--- party: create and invite ---');
+if (await a.locator('.navBanner').count()) {
+  await a.locator('.navEnd').click().catch(() => {});
+  await a.waitForTimeout(600);
+}
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();

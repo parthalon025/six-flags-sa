@@ -1967,6 +1967,15 @@ await check('every named piece of track belongs to a ride we know', () => {
 
 /* ------------------------------------------------------- height rules ---- */
 
+await check('lib/park re-exports place search helpers', () => {
+  const src = fs.readFileSync(new URL('../lib/park.js', import.meta.url), 'utf8');
+  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search'/);
+  const listSrc = fs.readFileSync(new URL('../components/PlaceList.jsx', import.meta.url), 'utf8');
+  assert.match(listSrc, /from '@\/lib\/park'/);
+  assert.doesNotMatch(listSrc, /from '@\/lib\/search'/);
+  return true;
+});
+
 /* Height rules are the one part of a venue OpenStreetMap will never carry, so
    they arrive from a hand-written overrides file or they do not arrive at all.
    A venue that has rides and no rules does not degrade gracefully — `hasHeights`

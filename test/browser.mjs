@@ -256,6 +256,27 @@ export async function go(page, dest) {
   await page.waitForTimeout(350);
 }
 
+/** Type into the Explore search field and wait for the list to settle. */
+export async function searchPlaces(page, query) {
+  const field = page.locator('.field[aria-label="Search places"]');
+  await field.fill(query);
+  await page.waitForTimeout(500);
+}
+
+/** Clear Explore search back to the full list. */
+export async function clearSearch(page) {
+  const field = page.locator('.field[aria-label="Search places"]');
+  await field.fill('');
+  await page.waitForTimeout(400);
+}
+
+/** Rider-height verdict on one row — not the running-status pill beside it. */
+export async function rideHeightVerdict(page, rideName) {
+  const row = page.locator('.poiRow', { hasText: rideName }).first();
+  await row.waitFor({ state: 'visible', timeout: 15000 });
+  return row.locator('.verdict:not(.statusPill)').innerText();
+}
+
 /** Set the roster name through Me, as a visitor would, and come back to Explore. */
 export async function setName(page, name) {
   await closeGate(page);

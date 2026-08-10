@@ -5,7 +5,14 @@ import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { statusFor } from '@/lib/rideStatus';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { eligibility, heightLabel, isRideable } from '@/lib/park';
+import {
+  categoriesFor,
+  eligibility,
+  heightLabel,
+  isRideable,
+  matchedByName,
+  matchesQuery,
+} from '@/lib/park';
 import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails, campSearchText } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
