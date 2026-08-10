@@ -12,13 +12,16 @@
 
 import {
   BASE,
+  clearSearch,
   closeGate,
   go,
   hydrated,
   launch,
   openPhone,
+  rideHeightVerdict,
   root,
   rosterNames,
+  searchPlaces,
   until,
 } from './browser.mjs';
 
@@ -149,13 +152,19 @@ await check('filter badge shows a live count', async () => {
 });
 
 await check('verdicts respond to height', async () => {
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(400);
   await go(a, 'Places');
-  const at48 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await searchPlaces(a, 'beast');
+  const at48 = await rideHeightVerdict(a, 'The Beast');
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(400);
   await go(a, 'Places');
-  const at36 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await searchPlaces(a, 'beast');
+  const at36 = await rideHeightVerdict(a, 'The Beast');
+  await clearSearch(a);
   if (!/CAN RIDE/i.test(at48) || !/TOO SHORT/i.test(at36)) throw new Error(`${at48} / ${at36}`);
   return true;
 });
@@ -175,7 +184,11 @@ await check('"adult along" changes the companion tally', async () => {
 });
 
 await check('"only what they can ride" filters the list', async () => {
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("36")').click();
+  await a.waitForTimeout(300);
   await go(a, 'Places');
+  await searchPlaces(a, 'beast');
   const before = await a.locator('.poiRow').count();
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(500);
@@ -183,16 +196,20 @@ await check('"only what they can ride" filters the list', async () => {
   if (!(after < before)) throw new Error(`${before} -> ${after}`);
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(400);
+  await clearSearch(a);
   return true;
 });
 
 await check('search narrows results', async () => {
   await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await a.waitForTimeout(500);
+  const onlyChip = a.locator('.chip:has-text("Only what")');
+  if ((await onlyChip.getAttribute('aria-pressed')) === 'true') {
+    await onlyChip.click();
+    await a.waitForTimeout(300);
+  }
+  await searchPlaces(a, 'beast');
   const n = await a.locator('.poiRow').count();
-  await a.locator('.field[aria-label="Search places"]').fill('');
-  await a.waitForTimeout(400);
+  await clearSearch(a);
   if (n !== 1) throw new Error(`got ${n} rows`);
   return true;
 });
@@ -218,11 +235,10 @@ console.log('\n--- walking directions ---');
 
 await check('"walk me there" offers the route before setting off', async () => {
   await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await a.waitForTimeout(400);
+  await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('button:has-text("Go")').first().click();
+  await a.locator('button:has-text("Walk me there")').first().click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -231,6 +247,39 @@ await check('"walk me there" offers the route before setting off', async () => {
   if (!/\d+ min/.test(summary)) throw new Error(summary);
   if (!/arrive \d/.test(summary)) throw new Error(`no arrival time: ${summary}`);
   if (!/via /.test(await a.locator('.previewWhere').innerText())) throw new Error('route has no via');
+  return true;
+});
+
+await check('ride detail explains when queue entrance is not confirmed', async () => {
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  const note = await a.locator('.entranceNote').innerText();
+  if (!/not confirmed|approximate/i.test(note)) throw new Error(`entrance note: ${note}`);
+  return true;
+});
+
+await check('cedar point route preview names surveyed queue entrances', async () => {
+  const venueNameA = async () => {
+    await a.locator('.tabItem[data-tab="explore"]').click();
+    await root(a);
+    return a.locator('.brand b').innerText();
+  };
+  await go(a, 'Which map');
+  await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
+  await until(async () => /cedar point/i.test(await venueNameA()), {
+    timeout: 15000,
+    label: 'cedar point venue load',
+  });
+  await go(a, 'Places');
+  await searchPlaces(a, 'gemini');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.waitForTimeout(900);
+  const where = await a.locator('.previewWhere').innerText();
+  if (!/queue entrance/i.test(where)) throw new Error(`preview: ${where}`);
   return true;
 });
 
@@ -371,6 +420,10 @@ await check('a glance card walks you to a place and stops again', async () => {
 });
 
 console.log('\n--- party: create and invite ---');
+if (await a.locator('.navBanner').count()) {
+  await a.locator('.navEnd').click().catch(() => {});
+  await a.waitForTimeout(600);
+}
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
@@ -591,7 +644,7 @@ async function openRide(page, name) {
 
 /**
  * The report buttons are addressed by `data-report` rather than by their label:
- * the label is deliberately stateful ("It's down" becomes "PAUSED"), so
+ * the label is deliberately stateful ("It's down" becomes "Reported down"), so
  * matching on text couples the test to which way the button is currently
  * pointing — which is the thing under test.
  */
@@ -625,13 +678,13 @@ await check('a ride reported down on one phone reaches the other', async () => {
 
   // The reporting phone shows it straight away — via the host's patch, not an
   // optimistic local write.
-  await until(async () => /paused/i.test(await pillFor(a, 'Diamondback')), {
+  await until(async () => /reported down/i.test(await pillFor(a, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'phone A to show its own report',
   });
 
   await openRide(b, 'Diamondback');
-  await until(async () => /paused/i.test(await pillFor(b, 'Diamondback')), {
+  await until(async () => /reported down/i.test(await pillFor(b, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'the report to reach phone B',
   });
@@ -653,12 +706,12 @@ await check('the report says who saw it and when', async () => {
 await check('the other phone can correct it', async () => {
   const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
   await reportBtn(row, 'open').click();
-  await until(async () => /\bopen\b/i.test(await pillFor(b, 'Diamondback')), {
+  await until(async () => /reported running/i.test(await pillFor(b, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'phone B to overwrite the report',
   });
   // A ride report is not owned by whoever wrote it, so A sees B's correction.
-  await until(async () => /\bopen\b/i.test(await pillFor(a, 'Diamondback')), {
+  await until(async () => /reported running/i.test(await pillFor(a, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: "the correction to reach phone A",
   });
@@ -671,8 +724,8 @@ await check('retracting a report clears it everywhere', async () => {
   await reportBtn(row, 'open').click();
   // Not asserting the pill is gone outright: this suite runs against a live
   // forecast, and if it is genuinely storming the row keeps a weather pill.
-  // What must disappear is the party's claim (the ● marker on an OPEN/PAUSED pill).
-  const cleared = async (page) => !/●/.test(await pillFor(page, 'Diamondback'));
+  // What must disappear is the party's claim.
+  const cleared = async (page) => !/reported/i.test(await pillFor(page, 'Diamondback'));
   await until(() => cleared(b), { timeout: JOIN_TIMEOUT, label: 'phone B to drop the report' });
   await until(() => cleared(a), { timeout: JOIN_TIMEOUT, label: 'phone A to drop the report' });
   return true;
@@ -816,48 +869,63 @@ await dismissUpdateSplash(e);
 await check('the first screen says what the app is, above the location ask', async () => {
   const card = await e.locator('.gate').innerText();
   const heading = (await e.locator('.gate h2').innerText()).trim();
-  if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
-  // One screen, in the order that earns the answer: what you get, then what it
-  // needs, then the button. A permission asked cold is a permission refused.
-  const said = card.indexOf('Spot your whole crew');
-  const asked = card.indexOf('just needs your location');
-  const button = card.indexOf('Share my location');
-  if (said < 0 || asked < 0 || button < 0) throw new Error('the introduction and the ask are not on one card');
-  if (!(said < asked && asked < button)) throw new Error('the ask comes before what it is for');
+  if (heading !== 'Park Party') throw new Error(`opened on: "${heading}"`);
+  // One line and one button: what it is, then the nearest-park shortcut.
+  const said = card.indexOf('Live group map for busy parks');
+  const button = card.indexOf('Go to nearest park');
+  if (said < 0 || button < 0) throw new Error('the landing line and nearest-park button are not on one card');
+  if (!(said < button)) throw new Error('the button comes before what it is for');
   return true;
 });
 
-await check('the intake asks about the nearest park, not the default one', async () => {
-  await e.locator('button:has-text("Share my location")').click();
-  // Wait for the question itself, not merely for a heading: the location card
-  // is still up while the fix lands, and reading .gate h2 the moment it says
-  // anything gets "Waiting for a fix" rather than the park.
-  await until(async () => (await e.locator('.gate .btn.primary:has-text("set up")').count()) > 0, {
-    timeout: 25000,
-    label: 'the park question',
-  });
-  const heading = (await e.locator('.gate h2').innerText()).trim();
-  if (!/headed to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
-  // And the guess it did not make is one tap away, with the distance that
-  // explains why it was not the guess.
-  const other = await e.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
-  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
-  return true;
-});
-
-await check('saying yes builds that park, geometry and places', async () => {
-  await e.locator('.gate .btn.primary:has-text("set up")').click();
+await check('the nearest-park button builds that park without a second card', async () => {
+  await e.locator('button:has-text("Go to nearest park")').click();
+  // Auto-builds on fix — no "Going to …?" confirmation step.
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
-  // The places have to have come with it. Fiesta Texas ships no height data, so
-  // the sheet's root screen carries no rider-height row — and the list on it
-  // holds a ride only that park has.
-  await go(e, 'Places');
-  await until(async () => (await e.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
+  const toast = await e.locator('.toast').innerText().catch(() => '');
+  if (!/fiesta texas is (ready|loaded)/i.test(toast)) throw new Error(`toast: "${toast}"`);
+  return true;
+});
+
+await check('the park question is inline when the venue is not yet confirmed', async () => {
+  const returning = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await returning.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+    localStorage.removeItem('tracker-venue-confirmed');
+    localStorage.removeItem('tracker-venue');
+    localStorage.setItem('tracker-release-notes-seen', '9.9.9');
+  });
+  const p = await returning.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  if (await p.locator('.gate h2:has-text("Park Party")').count()) {
+    throw new Error('the introduction came back for a returning phone');
+  }
+  await p.locator('button:has-text("Allow location")').click();
+  await until(async () => (await p.locator('.gate .btn.primary:has-text("set up")').count()) > 0, {
+    timeout: 25000,
+    label: 'the park question',
+  });
+  const heading = (await p.locator('.gate h2').innerText()).trim();
+  if (!/headed to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
+  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
+  await p.locator('.gate .btn.primary:has-text("set up")').click();
+  await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const shown = await p.locator('.brand b').innerText();
+  if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
+  await go(p, 'Places');
+  await until(async () => (await p.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
     timeout: 15000,
     label: "Fiesta Texas's place list",
   });
+  await returning.close();
   return true;
 });
 
@@ -867,12 +935,9 @@ await check('the park answered stays answered across a reload', async () => {
   await dismissUpdateSplash(e);
   // Introduced once per phone, not once per launch: coming back gets the plain
   // question, not the sales pitch again.
-  if (await e.locator('.gate h2:has-text("PARKBOUND")').count()) {
+  if (await e.locator('.gate h2:has-text("Park Party")').count()) {
     throw new Error('the introduction came back on a reload');
   }
-  await e.locator('button:has-text("Share my location")').click();
-  // Asked once. If the question came back, the gate would still be up here —
-  // nothing else in the intake waits on a fix that has already landed.
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}" after reload`);

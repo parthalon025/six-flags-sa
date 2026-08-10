@@ -79,26 +79,21 @@ async function main() {
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();
   check(
-    /Parkbound|PARKBOUND/i.test(first) && /spot your whole crew/i.test(first),
-    'the first screen introduces the app',
+    /Park Party/i.test(first) && /live group map for busy parks/i.test(first),
+    'the first screen introduces the app in one line',
   );
-  check(/Share my location/i.test(first), 'the first screen asks for location on the same card');
+  check(/Go to nearest park/i.test(first), 'the first screen offers the nearest-park shortcut');
 
   await context.grantPermissions(['geolocation']);
-  await page.getByRole('button', { name: 'Share my location' }).click();
+  await page.getByRole('button', { name: 'Go to nearest park' }).click();
   await page.waitForTimeout(2000);
 
-  // The second half of the intake. Numbered off the step it belongs to rather
-  // than taking a step of its own, so adding it does not renumber every shot
-  // taken after it.
-  const intakeShot = path.join(OUT, '01b-park-intake.png');
+  // Auto-builds on fix — no separate park-intake card.
+  const intakeShot = path.join(OUT, '01b-park-auto-setup.png');
   await page.screenshot({ path: intakeShot });
   console.log(`  shot  ${path.relative(process.cwd(), intakeShot)}`);
-  const asked = await page.locator('.gate h2').innerText().catch(() => '');
-  check(/kings island/i.test(asked), `intake asks which park: "${asked.replace(/\n/g, ' ')}"`);
 
-  await page.getByRole('button', { name: /set up/ }).click();
-  await page.waitForTimeout(1800);
+  await page.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   await shot(page, 'map-located');
 
   const paths = await page.locator('.mapSvg path').count();

@@ -48,5 +48,29 @@
     "items": [
       "Add agent handoff standards for out-of-scope issues"
     ]
+  },
+  "1.1.8": {
+    "title": "What's new",
+    "items": [
+      "Universal Venue Builder: MIT agents, adapters, entrance UX"
+    ]
+  },
+  "1.1.9": {
+    "title": "What's new",
+    "items": [
+      "Add builder/app output contract rule"
+    ]
+  },
+  "1.1.10": {
+    "title": "What's new",
+    "items": [
+      "Document auto-bump on merge so PRs do not touch version files"
+    ]
+  },
+  "1.1.11": {
+    "title": "What's new",
+    "items": [
+      "Streamline first-run landing with nearest-park shortcut (#46)"
+    ]
   }
 }

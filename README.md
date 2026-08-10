@@ -1,15 +1,10 @@
-# Parkbound
+# Party Tracker
 
-**Explore more. Stress less.**
-
-An explorer’s companion for a group at a big, crowded park. It ships with
+A live situational-awareness map for a group at a big, crowded place. It ships with
 Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio), Cedar Point
 (Sandusky, Ohio) and Big Kahuna's (Destin, Florida), and one command — or one form under
 Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15
 (App Router) and React 19.
-
-Parkbound turns a complicated park day into an adventure you can actually enjoy —
-live party tracking, walking trails, and a drawn park map.
 
 - **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
   painted as SVG: midways, buildings, water, slides, and every coaster's actual track
@@ -929,6 +924,11 @@ a place is far more likely to be the wrong projection than a new place.
 ```
 npm run venues:report                 # every venue, one row each
 npm run venues:report -- cedar-point  # one venue, in full
+
+npm run venues:adapters               # external OSS dependency matrix (wrap targets)
+npm run venues:adapters -- matrix     # markdown table for docs
+npm run venues:build-agent -- cedar-point --offline   # multi-agent orchestrator (no network)
+npm run venues:build-agent -- cedar-point --ai --apply  # LLM agents + publish entrances
 ```
 
 Every location here is the same data about a different place, and the failure mode that

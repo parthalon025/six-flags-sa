@@ -1,12 +1,12 @@
 'use client';
 
-import { BRAND } from '@/lib/brand';
+import { formatDistance } from '@/lib/geo';
 
 const COPY = {
   idle: {
     title: 'Find you on the map',
-    body: 'Parkbound needs your GPS to drop your dot, see how far the crew is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
-    action: 'Share my location',
+    body: 'We need your GPS to drop your dot, see how far the crew is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
+    action: 'Allow location',
   },
   asking: {
     title: 'Hang tight…',
@@ -30,56 +30,108 @@ const COPY = {
   },
 };
 
+const TAGLINE =
+  'Live group map for busy parks — spot your whole crew and meet up without the group-chat spiral.';
+
+const MILE_M = 1609.344;
+
+/** Park-scale distances read in feet; drive-scale ones read in whole miles. */
+function awayText(metres) {
+  if (metres == null || Number.isNaN(metres)) return null;
+  const miles = metres / MILE_M;
+  if (miles >= 10) return `${Math.round(miles).toLocaleString()} mi away`;
+  return `${formatDistance(metres)} away`;
+}
+
+function dataText(venue) {
+  const counts = venue?.counts || {};
+  const bits = [];
+  if (counts.rides) bits.push(`${counts.rides} rides`);
+  if (counts.pois) bits.push(`${counts.pois} places`);
+  return bits.join(' · ');
+}
+
 /*
- * The first screen says what Parkbound is and asks for location, in that
- * order, on the one screen — rather than asking on a screen of its own.
- *
- * That order is the whole point. Someone handed the phone's own permission box
- * before anything has said what the app does says no, and on a phone "no" is
- * close to permanent: getting it back means a trip into browser settings that
- * most people never make. Saying what they get first, in lines they can read
- * standing in a car park, is what makes the box worth saying yes to — and the
- * ways out below are ours rather than the phone's, so turning it down here
- * costs nothing and the same button works later.
+ * The landing is one line and one button. Someone standing in a car park does
+ * not need five bullets before they will tap Allow — they need to know what
+ * this is and what the one good button does. The park question used to be a
+ * whole second card; it now lives here when it is needed, and the happy path
+ * ("go to nearest park") skips it and reports progress with a toast instead.
  */
-function Welcome() {
+function ParkSection({
+  choice,
+  options = [],
+  busy = false,
+  error = null,
+  onConfirm,
+  autoSetup = false,
+}) {
+  const venue = choice?.venue;
+  if (!venue) return null;
+  const inside = Boolean(choice.inside);
+  const distanceText = inside ? 'you are here' : awayText(choice.metres);
+  const data = dataText(venue);
+
+  if (autoSetup) {
+    return (
+      <>
+        <p>
+          {busy
+            ? `Getting ${venue.name} ready — the map, rides and places for ${venue.locality}.`
+            : `Found ${venue.name}${distanceText ? `, ${distanceText}` : ''}.`}
+        </p>
+        {error && <p className="gateError">{error}</p>}
+      </>
+    );
+  }
+
   return (
     <>
-      <p className="gateSlogan">{BRAND.slogan}</p>
-      <p>{BRAND.promise}</p>
-      <div className="introList">
-        <p>
-          <b>Spot your whole crew.</b> Your party is an expedition on the map — how far away
-          they are and how long the walk takes.
+      <p>
+        {inside
+          ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load the full map.`
+          : `${venue.name} in ${venue.locality} is the closest park we have (${distanceText}). Headed that way?`}
+      </p>
+      {error && <p className="gateError">{error}</p>}
+
+      <button
+        type="button"
+        className="btn primary"
+        disabled={busy}
+        onClick={() => onConfirm?.(venue.id)}
+      >
+        {busy ? 'Getting it ready…' : `Yes! Set up ${venue.name}`}
+      </button>
+
+      {options.length > 0 && (
+        <>
+          <div className="label">Different park?</div>
+          <div className="venueList">
+            {options.map(({ venue: other, metres, inside: within }) => (
+              <button
+                key={other.id}
+                type="button"
+                className="venueRow"
+                disabled={busy}
+                onClick={() => onConfirm?.(other.id)}
+              >
+                <b>{other.name}</b>
+                <span>
+                  {[other.locality, within ? 'you are here' : awayText(metres)]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {data && (
+        <p className="gateFine">
+          {venue.name} has {data}. Everything downloads once and stays on this phone.
         </p>
-        <p>
-          <b>Meet up without the group-chat spiral.</b> Drop a pin on a spot and everyone
-          gets a walking trail straight to it.
-        </p>
-        <p>
-          <b>Trails that actually help.</b> Tap Go on any ride, bathroom or snack stand and
-          follow step-by-step routes, just like a street map.
-        </p>
-        <p>
-          <b>Everything the park has to offer.</b> Every ride, who is tall enough, what is
-          running right now, and the nearest toilet, food or first aid.
-        </p>
-        <p>
-          <b>Keep an eye on the weather.</b> The forecast for the park and a heads-up when
-          rides tend to shut for rain or lightning.
-        </p>
-        <p>
-          <b>Your favorite parks, ready to roll.</b> Cedar Point, Kings Island, Fiesta Texas,
-          Big Kahuna&apos;s and more — pick yours and the whole map downloads before you walk
-          in the gate.
-        </p>
-        <p>
-          <b>Works even in the dead zone.</b> The map, rides and trails live on your phone, so
-          queues with no signal are no problem. Parkbound updates itself when you are back
-          online. Only live crew tracking needs bars — everyone catches up when they return.
-        </p>
-      </div>
-      <p>Ready to put yourself on the map? Parkbound just needs your location for that.</p>
+      )}
     </>
   );
 }
@@ -90,31 +142,104 @@ export default function GpsGate({
   onRequest,
   onManual,
   onDismiss,
+  onGoNearest,
   venueName,
   welcome = false,
+  parkChoice = null,
+  parkOptions = [],
+  onConfirmPark,
+  setupBusy = false,
+  setupError = null,
+  nearestIntent = false,
 }) {
   const copy = COPY[status] || COPY.idle;
+  const parkVenue = parkChoice?.venue;
+  const settingUp = nearestIntent && parkVenue;
+  const showParkQuestion = parkVenue && !nearestIntent;
+  const welcomeIdle = welcome && status === 'idle' && !nearestIntent;
+  const welcomeSearching = welcome && nearestIntent && status === 'asking';
+
+  let primaryLabel = copy.action;
+  let primaryAction = onRequest;
+  let primaryDisabled = false;
+
+  if (welcomeIdle) {
+    primaryLabel = 'Go to nearest park';
+    primaryAction = onGoNearest || onRequest;
+  } else if (welcomeSearching || (welcome && status === 'asking' && nearestIntent)) {
+    primaryLabel = 'Finding your location…';
+    primaryDisabled = true;
+  } else if (settingUp) {
+    primaryLabel = setupBusy ? `Setting up ${parkVenue.name}…` : `Found ${parkVenue.name}`;
+    primaryDisabled = true;
+  } else if (status === 'asking') {
+    primaryLabel = 'Ask again';
+  }
+
   return (
     <div className="gate">
       <div className="gateCard">
         <div className="gateEyebrow">
-          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
+          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}Park Party`}
         </div>
-        <h2>{welcome ? BRAND.nameUpper : copy.title}</h2>
-        {welcome ? <Welcome /> : <p>{copy.body}</p>}
-        {error && <p className="gateError">{error}</p>}
-        <button type="button" className="btn primary" onClick={onRequest}>
-          {status === 'asking' ? 'Ask again' : copy.action}
-        </button>
-        <button type="button" className="btn" onClick={onManual}>
-          I&apos;ll tap where I am
-        </button>
-        <button type="button" className="btnQuiet" onClick={onDismiss}>
-          {venueName ? `Just browsing ${venueName}` : 'Just show me the map'}
-        </button>
+        <h2>
+          {welcome && !showParkQuestion
+            ? 'Park Party'
+            : showParkQuestion
+              ? parkChoice.inside
+                ? `You’re at ${parkVenue.name}!`
+                : `Headed to ${parkVenue.name}?`
+              : copy.title}
+        </h2>
+
+        {welcome && !showParkQuestion && !settingUp && <p>{TAGLINE}</p>}
+        {!welcome && !showParkQuestion && !settingUp && <p>{copy.body}</p>}
+
+        {(settingUp || showParkQuestion) && (
+          <ParkSection
+            choice={parkChoice}
+            options={parkOptions}
+            busy={setupBusy}
+            error={setupError}
+            onConfirm={onConfirmPark}
+            autoSetup={settingUp}
+          />
+        )}
+
+        {error && !setupError && <p className="gateError">{error}</p>}
+
+        {!showParkQuestion && (
+          <button
+            type="button"
+            className="btn primary"
+            disabled={primaryDisabled}
+            onClick={primaryAction}
+          >
+            {primaryLabel}
+          </button>
+        )}
+
+        {!showParkQuestion && !settingUp && (
+          <>
+            <button type="button" className="btn" onClick={onManual}>
+              I&apos;ll tap where I am
+            </button>
+            <button type="button" className="btnQuiet" onClick={onDismiss}>
+              {venueName ? `Just browsing ${venueName}` : 'Just show me the map'}
+            </button>
+          </>
+        )}
+
+        {showParkQuestion && (
+          <button type="button" className="btnQuiet" onClick={onDismiss}>
+            Skip for now — just show me the map
+          </button>
+        )}
+
         <p className="gateFine">
           Your location stays on your phone. Join a party and it goes only to your crew,
           encrypted in transit — nobody in the middle can peek.
+          {showParkQuestion ? ' Switch parks any time under Me → Which map.' : ''}
         </p>
       </div>
     </div>

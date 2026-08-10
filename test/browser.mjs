@@ -110,6 +110,8 @@ export async function openPhone(
       await until(
         async () => {
           if ((await page.locator('.gate').count()) > 0) return false;
+          const paths = await page.locator('.mapSvg path').count();
+          if (paths < 100) return false;
           if ((await page.locator('.mePulse').count()) > 0) return true;
           const brand = await page.locator('.brand span').innerText().catch(() => '');
           return /near/i.test(brand);
@@ -117,7 +119,10 @@ export async function openPhone(
         { timeout: 40000, label: 'GPS fix and gates dismissed' },
       );
     } else {
-      await until(async () => (await page.locator('.gate').count()) === 0, {
+      await until(async () => {
+        if ((await page.locator('.gate').count()) > 0) return false;
+        return (await page.locator('.mapSvg path').count()) >= 100;
+      }, {
         timeout: 40000,
         label: 'gates dismissed',
       });
@@ -166,12 +171,14 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
  */
 export async function closeGate(page) {
   await dismissUpdateSplash(page);
-  const allow = page.locator('button:has-text("Share my location"), button:has-text("Allow location")');
+  const nearest = page.locator('button:has-text("Go to nearest park")');
+  const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("set up")');
   const quiet = page.locator(
     'button:has-text("Just browsing"), button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Skip for now"), button:has-text("Not now")',
   );
-  if (await allow.count()) await allow.click().catch(() => {});
+  if (await nearest.count()) await nearest.click().catch(() => {});
+  else if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
     await dismissUpdateSplash(page, { timeout: 250 });
@@ -179,8 +186,9 @@ export async function closeGate(page) {
     const gates = await page.locator('.gate').count();
     if (!gates && paths > 100) return;
     if (await yes.count()) await yes.click().catch(() => {});
+    else if (await nearest.count()) await nearest.click().catch(() => {});
     else if (await allow.count()) await allow.click().catch(() => {});
-    if (await quiet.count() && !(await yes.count()) && !(await allow.count())) {
+    if (await quiet.count() && !(await yes.count()) && !(await allow.count()) && !(await nearest.count())) {
       await quiet.first().click().catch(() => {});
     }
     if (!(await page.locator('.gate').count()) && paths > 100) return;
@@ -209,36 +217,27 @@ export async function root(page) {
  * The bottom tab bar carries the four top-level screens, and each of them keeps
  * its own navigation stack, so getting somewhere is: tap the tab, unwind
  * whatever that tab was left on, and — for the three screens that live behind a
- * row inside Day — tap the row.
+ * row inside Me — tap the row.
  *
  *   'Places'         the Explore tab: search, the rail and the list
  *   'Party'          the Party tab
  *   'Rider height',
- *   'Rides', 'Plan'  the Plan tab, where the venue publishes height rules
- *   'Settings', 'Me',
- *   'Day'            the Day tab
- *   'Which map', 'Which park',
- *   'Show on the map', 'On the map',
- *   'Diagnostics'    a row inside Day
+ *   'Rides'          the Rides tab, where the venue publishes height rules
+ *   'Settings', 'Me' the Me tab
+ *   'Which map',
+ *   'Show on the map',
+ *   'Diagnostics'    a row inside Me
  */
 const TAB_OF = {
   Places: 'explore',
   Explore: 'explore',
   Party: 'party',
   Rides: 'rides',
-  Plan: 'rides',
   'Rider height': 'rides',
   Settings: 'settings',
   Me: 'settings',
-  Day: 'settings',
 };
-const SETTINGS_ROWS = new Set([
-  'Which map',
-  'Which park',
-  'Show on the map',
-  'On the map',
-  'Diagnostics',
-]);
+const SETTINGS_ROWS = new Set(['Which map', 'Show on the map', 'Diagnostics']);
 
 export async function go(page, dest) {
   await closeGate(page);
@@ -256,14 +255,29 @@ export async function go(page, dest) {
     await page.waitForTimeout(350);
   }
   if (!SETTINGS_ROWS.has(dest)) return;
-  const rowLabel =
-    dest === 'Which map'
-      ? 'Which park'
-      : dest === 'Show on the map'
-        ? 'On the map'
-        : dest;
-  await page.locator(`.row:has-text("${rowLabel}")`).first().click();
+  await page.locator(`.row:has-text("${dest}")`).first().click();
   await page.waitForTimeout(350);
+}
+
+/** Type into the Explore search field and wait for the list to settle. */
+export async function searchPlaces(page, query) {
+  const field = page.locator('.field[aria-label="Search places"]');
+  await field.fill(query);
+  await page.waitForTimeout(500);
+}
+
+/** Clear Explore search back to the full list. */
+export async function clearSearch(page) {
+  const field = page.locator('.field[aria-label="Search places"]');
+  await field.fill('');
+  await page.waitForTimeout(400);
+}
+
+/** Rider-height verdict on one row — not the running-status pill beside it. */
+export async function rideHeightVerdict(page, rideName) {
+  const row = page.locator('.poiRow', { hasText: rideName }).first();
+  await row.waitFor({ state: 'visible', timeout: 15000 });
+  return row.locator('.verdict:not(.statusPill)').innerText();
 }
 
 /** Set the roster name through Me, as a visitor would, and come back to Explore. */
@@ -274,9 +288,14 @@ export async function setName(page, name) {
   await field.fill(name);
   await field.blur();
   await page.waitForTimeout(300);
-  // Back to the map. The tab bar means leaving a phone on the Me tab leaves it
-  // there, and everything downstream of a fresh phone expects Explore.
-  await go(page, 'Places');
+  // Back to the map. Pop any settings sub-screen first — leaving Me on a
+  // pushed row leaves the map unmounted when Explore is tapped.
+  await page.locator('.tabItem[data-tab="explore"]').click();
+  await page.waitForTimeout(250);
+  await root(page);
+  await page.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    timeout: 40000,
+  });
 }
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */
