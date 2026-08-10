@@ -1926,6 +1926,41 @@ await check('detail layers use enter/leave thresholds', () => {
   return true;
 });
 
+await check('zoom-about-point keeps the focal pixel pinned', () => {
+  const spin = { cos: Math.cos(-0.35), sin: Math.sin(-0.35) };
+  const cx = 180;
+  const cy = 320;
+  const view = { x: 4_812_000, y: 2_650_000, scale: 2.4 };
+  const px = 240;
+  const py = 410;
+  const dx = px - cx;
+  const dy = py - cy;
+  const u = dx * spin.cos + dy * spin.sin;
+  const v = -dx * spin.sin + dy * spin.cos;
+  const world = { x: u / view.scale + view.x, y: view.y - v / view.scale };
+  const nextScale = 4.8;
+  const next = {
+    x: world.x - u / nextScale,
+    y: world.y + v / nextScale,
+    scale: nextScale,
+  };
+  const backU = (world.x - next.x) * next.scale;
+  const backV = (next.y - world.y) * next.scale;
+  const backSx = backU * spin.cos - backV * spin.sin + cx;
+  const backSy = backU * spin.sin + backV * spin.cos + cy;
+  assert.ok(Math.abs(backSx - px) < 0.02, `x drift ${backSx - px}`);
+  assert.ok(Math.abs(backSy - py) < 0.02, `y drift ${backSy - py}`);
+  return true;
+});
+
+await check('follow deadband shrinks with zoom so sub-metre jitter is ignored', () => {
+  const deadband = (scale) => Math.max(0.8, 6 / scale);
+  assert.ok(deadband(6) < deadband(1));
+  assert.ok(deadband(6) <= 1.1);
+  assert.equal(deadband(3), 2);
+  return true;
+});
+
 await check('track names and catalogue names meet in the middle', () => {
   assert.equal(normaliseRideName('Racer (Red)'), normaliseRideName('The Racer'));
   assert.equal(normaliseRideName('Racer (Blue)'), normaliseRideName('The Racer'));

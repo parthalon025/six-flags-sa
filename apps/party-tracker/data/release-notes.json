@@ -54,5 +54,17 @@
     "items": [
       "Universal Venue Builder: MIT agents, adapters, entrance UX"
     ]
+  },
+  "1.1.9": {
+    "title": "What's new",
+    "items": [
+      "Add builder/app output contract rule"
+    ]
+  },
+  "1.1.10": {
+    "title": "What's new",
+    "items": [
+      "Document auto-bump on merge so PRs do not touch version files"
+    ]
   }
 }

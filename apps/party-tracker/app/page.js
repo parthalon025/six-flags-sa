@@ -1717,7 +1717,7 @@ export default function Page() {
         liftCentre={walking ? 0.2 : previewing ? -0.12 : 0}
         navZoom={walking ? 3 : null}
         fitPoints={previewing ? route?.points : null}
-        fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}:${Math.round(route?.metres ?? 0)}` : null}
+        fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
         mapKeyHidden={previewing || walking}
       />
 
