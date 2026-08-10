@@ -1,7 +1,7 @@
 {
   "version": 1,
   "venue": "big-kahunas",
-  "_comment": "Open-data and imagery sources used beside OpenStreetMap for this venue. The builder reads this file on every build to wire datasets and credits.",
+  "_comment": "Open-data and imagery sources used beside OpenStreetMap for this venue. The builder reads this file on every build to wire datasets and credits. Official website data is fetched by `npm run venues:research -- big-kahunas --fetch` into big-kahunas.official-cache.json.",
   "generated": "2026-08-10",
   "sources": [
     {

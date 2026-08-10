@@ -59,6 +59,7 @@ import { tagCoverageFromMap } from './lib/tag-coverage.mjs';
 import { isRideable } from '../lib/ontology.js';
 import { applyTrace } from './lib/venue-trace.mjs';
 import { wireSources, osmGaps, resolveCredits } from './lib/venue-sources.mjs';
+import { judgements } from './lib/venue-judge.mjs';
 import { applyImagery } from './lib/venue-imagery.mjs';
 // The app's own reading of "these two strings are the same ride", reused so the
 // builder and the renderer cannot disagree about it.
@@ -1896,6 +1897,16 @@ async function buildOne(args, { previous = null } = {}) {
     );
     console.error(`What to go and find: npm run venues:ask -- ${id}`);
   }
+
+  const judge = judgements({
+    pois,
+    layers: { coaster: layers.coaster, slide: layers.slide },
+    overrides,
+  });
+  if (judge.length || gaps.missingRides.length) {
+    console.error(`Judgement and sourcing hints: npm run venues:research -- ${id}`);
+  }
+  console.error(`Cross-park weaknesses: npm run venues:audit -- ${id}`);
 }
 
 /* Only when it is the thing being run. The tag rules and the height parser are

@@ -3441,6 +3441,163 @@ await check('big-kahunas carries a source catalogue the builder understands', ()
   return true;
 });
 
+/* -------------------------------------------------------- venue research -- */
+
+const {
+  nameSimilarity, pairSuggestions, judgements, sourcingPlan,
+} = await import('../scripts/lib/venue-judge.mjs');
+const { llmConfig } = await import('../scripts/lib/venue-llm.mjs');
+
+await check('name similarity pairs parenthetical ride names', () => {
+  assert.ok(nameSimilarity('Tiki River Run (Right Slide)', 'Tiki River Run') >= 0.9);
+  assert.ok(nameSimilarity('Maui Pipeline', 'Pirate\'s Escape') < 0.5);
+  return true;
+});
+
+await check('pair suggestions prefer the strongest unmatched name', () => {
+  const pairs = pairSuggestions(
+    ['Tiki River Run (Right Slide)'],
+    ['Tiki River Run', 'Wave Pool'],
+    { floor: 0.5 },
+  );
+  assert.equal(pairs[0].right, 'Tiki River Run');
+  return true;
+});
+
+await check('judgements flag OSM track gaps and suggest alias pairings', () => {
+  const judge = judgements({
+    pois: [{ n: 'Tiki River Run', c: 'ride' }],
+    layers: { slide: [{ n: 'Tiki River Run (Right Slide)' }] },
+    overrides: null,
+  });
+  assert.ok(judge.some((j) => j.key === 'osm-gap-rides'));
+  return true;
+});
+
+await check('sourcing plan lists what the catalogue already covers', () => {
+  const { data: catalog } = readSources('big-kahunas');
+  const venue = readVenues().find((v) => v.id === 'big-kahunas');
+  const map = JSON.parse(fs.readFileSync(new URL(`../public${venue.map}`, import.meta.url)));
+  const pois = readPois(venue.pois);
+  const plan = sourcingPlan({
+    catalog,
+    pois,
+    layers: map,
+    requests: [],
+    judgements: [],
+  });
+  assert.ok(plan.catalogued.includes('aerial_imagery'));
+  assert.ok(plan.sources.length >= 3);
+  return true;
+});
+
+await check('LLM helper reports not ready without an API key', () => {
+  const prev = process.env.VENUE_LLM_API_KEY;
+  const prevO = process.env.OPENAI_API_KEY;
+  delete process.env.VENUE_LLM_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  assert.equal(llmConfig().ready, false);
+  if (prev) process.env.VENUE_LLM_API_KEY = prev;
+  if (prevO) process.env.OPENAI_API_KEY = prevO;
+  return true;
+});
+
+const {
+  parseAttractionListing,
+  parseAttractionDetail,
+  categoryToHeight,
+  compareOfficialToBundle,
+  loadFixtureHtml,
+} = await import('../scripts/lib/venue-official-site.mjs');
+
+await check('official listing parser reads attraction names and height categories', () => {
+  const html = loadFixtureHtml(
+    new URL('../test/fixtures/official-site/big-kahunas-listing.html', import.meta.url).pathname,
+  );
+  const rows = parseAttractionListing(html);
+  assert.ok(rows.length >= 20, `expected many attractions, got ${rows.length}`);
+  const maui = rows.find((r) => r.name === 'Maui Pipeline');
+  assert.ok(maui);
+  assert.equal(maui.height?.min, 48);
+  const bombay = rows.find((r) => r.name === 'Bombay Blasters');
+  assert.equal(bombay?.height?.min, 48);
+  return true;
+});
+
+await check('attraction detail parser reads minimum height prose', () => {
+  const detail = parseAttractionDetail(
+    '<p>With a minimum height requirement of 48 inches and a maximum weight limit of 300 lbs</p>',
+  );
+  assert.equal(detail.min, 48);
+  assert.equal(detail.weightLb, 300);
+  return true;
+});
+
+await check('categoryToHeight maps over-42 to a floor', () => {
+  assert.deepEqual(categoryToHeight(['water-slides-rides', 'over-42']), { min: 42, label: 'Over 42"' });
+  return true;
+});
+
+await check('slug-key overrides resolve via addressBook, not display name', async () => {
+  const { requests: reqsFn } = await import('../scripts/lib/venue-requests.mjs');
+  const pois = [{ n: "Lake Erie Nor'easter", i: 'lake-eerie-nor-easter', c: 'ride' }];
+  const overrides = { pois: { 'lake-eerie-nor-easter': { n: "Lake Erie Nor'easter" } } };
+  const reqs = reqsFn({ venue: { id: 'test' }, pois, overrides });
+  assert.equal(reqs.find((r) => r.key === 'unmatched'), undefined);
+  return true;
+});
+
+const { auditVenue, renderAuditMarkdown } = await import('../scripts/lib/venue-audit.mjs');
+const { scaffoldSourcesCatalogue } = await import('../scripts/lib/park-capabilities.mjs');
+const { enrichOfficialFromSidecar } = await import('../scripts/lib/venue-official-site.mjs');
+
+await check('scaffold sources catalogue includes official URLs for known parks', () => {
+  const cat = scaffoldSourcesCatalogue('cedar-point', { name: 'Cedar Point' });
+  assert.equal(cat.venue, 'cedar-point');
+  assert.ok(cat.sources.some((s) => s.kind === 'official_site'));
+  return true;
+});
+
+await check('heights sidecar fills official data when site fetch is empty', () => {
+  const enriched = enrichOfficialFromSidecar(
+    { attractions: [] },
+    { rules: { Maverick: { h: { min: 52 } } }, generated: '2026-08-10' },
+    { sources: [{ kind: 'official_site', url: 'https://example.com/rides', id: 'x' }] },
+  );
+  assert.equal(enriched.fallback, 'heights_sidecar');
+  assert.equal(enriched.attractions[0].name, 'Maverick');
+  assert.equal(enriched.attractions[0].height.min, 52);
+  return true;
+});
+
+await check('cross-park audit flags missing source catalogues', () => {
+  const report = auditVenue({
+    venue: { id: 'test-park', name: 'Test' },
+    map: { coaster: [], slide: [], path: [] },
+    pois: [],
+    overrides: null,
+  });
+  assert.ok(report.weaknesses.some((w) => w.key === 'no-source-catalogue'));
+  const md = renderAuditMarkdown({ generated: '2026-08-10', parks: [report] });
+  assert.ok(md.includes('Universal builder'));
+  return true;
+});
+
+await check('official compare flags site-only and bundle-only rides', () => {
+  const html = loadFixtureHtml(
+    new URL('../test/fixtures/official-site/big-kahunas-listing.html', import.meta.url).pathname,
+  );
+  const official = { attractions: parseAttractionListing(html), fetched: '2026-08-10' };
+  const pois = [
+    { n: 'Maui Pipeline', c: 'ride' },
+    { n: 'Not On The Website', c: 'ride' },
+  ];
+  const cmp = compareOfficialToBundle({ official, pois });
+  assert.ok(cmp.matched >= 1);
+  assert.ok(cmp.onlyInBundle.includes('Not On The Website'));
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {

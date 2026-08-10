@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "_comment": "Source catalogue for Kings Island. Official listings are JS-rendered; heights sidecar is the ground truth until a cache is built.",
+  "generated": "2026-08-10",
+  "sources": [
+    {
+      "id": "osm",
+      "kind": "openstreetmap",
+      "license": "ODbL",
+      "url": "https://www.openstreetmap.org",
+      "used_for": "Park geometry, coasters, paths, buildings, and named districts."
+    },
+    {
+      "id": "kings-island-site",
+      "kind": "official_site",
+      "url": "https://www.visitkingsisland.com/rides-experiences",
+      "used_for": "Height requirements and attraction names for the 2026 season."
+    },
+    {
+      "id": "kings-island-map",
+      "kind": "official_map",
+      "url": "https://www.visitkingsisland.com/park-map",
+      "used_for": "Ride labels, food, restrooms; trace control points when georeferenced."
+    }
+  ],
+  "datasets": {}
+}
