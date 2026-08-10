@@ -1,18 +1,14 @@
 {
-  "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/big-kahunas.heights.json.",
-  "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages.",
-  "pois": {
-    "tiki-river-run-right-slide-2": {
-      "n": "Tiki River Run"
-    }
-  },
+  "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/big-kahunas.heights.json. Source catalogue: data/venues/big-kahunas.sources.json.",
+  "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, and the park's 2026 illustrated map.",
+  "pois": {},
   "drop": [
     "Tiki River Run (Left Slide)",
     "Pizza Hut",
     "Bank of America",
     "Dunkin' Donuts"
   ],
-  "_drop_comment": "Tiki River Run is drawn in OpenStreetMap as two flumes, \"(Left Slide)\" and \"(Right Slide)\". The park sells it as one ride and puts one height on the sign, so the right-hand flume carries the name and the rule and the left one is dropped from the list — both are still drawn on the map. The three below it are real places that are simply not in this park: the bounding box has to be drawn wide enough to hold the car park, and that reaches across US-98 to the shops on the far side. They stand in no named area, so the build's own offsite test cannot see them.",
+  "_drop_comment": "Tiki River Run is drawn in OpenStreetMap as two flumes. The park sells it as one ride, so the right-hand flume carries the name and the left one is dropped. The three retailers below are outside the park across US-98.",
   "add": [
     {
       "n": "Main Entrance",
@@ -26,11 +22,7 @@
       "lat": 30.388721,
       "lng": -86.471682,
       "c": "ride",
-      "h": {
-        "min": 42,
-        "alone": null,
-        "max": null
-      },
+      "h": { "min": 42, "alone": null, "max": null },
       "note": "Adventure Park, and a separate ticket. 800 lb combined for a flight of three."
     },
     {
@@ -38,11 +30,7 @@
       "lat": 30.38907,
       "lng": -86.472604,
       "c": "ride",
-      "h": {
-        "min": 48,
-        "alone": null,
-        "max": null
-      },
+      "h": { "min": 48, "alone": null, "max": null },
       "note": "Surf simulator. 300 lb maximum."
     },
     {
@@ -50,11 +38,7 @@
       "lat": 30.388936,
       "lng": -86.472939,
       "c": "ride",
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      },
+      "h": { "min": 0, "alone": null, "max": null },
       "note": "Shallow children's pool with small slides and a spraying umbrella."
     },
     {
@@ -62,11 +46,7 @@
       "lat": 30.387893,
       "lng": -86.473961,
       "c": "ride",
-      "h": {
-        "min": null,
-        "alone": 42,
-        "max": null
-      },
+      "h": { "min": null, "alone": 42, "max": null },
       "note": "Built for children under 48\". Under 42\" needs a grown-up and a life jacket."
     },
     {
@@ -74,76 +54,120 @@
       "lat": 30.387849,
       "lng": -86.473322,
       "c": "ride",
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      }
-    }
-  ],
-  "_add_comment": "Places OpenStreetMap has not named, positioned by measuring them off aerial photography rather than by guessing.\n\nThe Main Entrance is the easy one: OSM has it as a named `amenity=shelter` building, which no POI rule reaches, so the park would ship with no gate at all. The position is that building's own surveyed centroid (way 679972968).\n\nThe five below it were read off the Okaloosa County orthophotos of 1 March 2025, served through Esri World Imagery — 7.6 cm a pixel, 0.19 m stated horizontal accuracy, and registered against this venue's own OSM geometry to check (the surveyed line for Kowabunga Racer lands down the middle of the racer's lanes). Positions are therefore good to a couple of metres, and what is uncertain about them is not where the thing is but whether it is the thing the park calls by this name. So the rule applied was: only a structure whose *type* is unique in this park, whose identity does not depend on picking one of several lookalikes, and whose position agrees with where the park's own map puts the name.\n\n  Skycoaster          the twin A-frame arch, its cable span and its launch tower. Nothing\n                      else in the park looks remotely like it, and the park has one.\n  Honolulu Half Pipe  the wedge-shaped inclined sheet-flow basin — a flowrider, and the\n                      only one here. Sits north-west of the gate, as the map has it.\n  Pleasure Island     shallow pool with a mushroom-umbrella fountain, immediately west of\n                      the flowrider. The park's own description is the tell: it is the one\n                      attraction it describes as having \"a spraying water umbrella\".\n  Buccaneer Cove      the children's play fort standing in a shallow lagoon in the far\n                      south-west, beside Temple Fountain. The only such structure here.\n  Lazy River          the wide continuous channel wrapping the wave pool, which is where\n                      the park map's Lazy River label points. The least certain of the\n                      five: this park has several river channels, so while the position is\n                      measured, the name rests on the map's placement rather than on\n                      anything the channel itself proves.\n\nWhat was deliberately not placed, and why: Bombay Blasters, Pirate's Escape, Humunga River, Raging Rhino River, Crocodile Flats, Tadpole Pond, Fun Fountains and Bombs Away Bay. Every one of them would have meant choosing between two or more lookalikes — one of three parallel flumes, one of several rivers, one of three shallow children's pools — on nothing better than a cartoon's idea of where things sit. A pin measured to two metres and hung on the wrong object is worse than no pin, because it looks exactly as authoritative as the ones above. Their height rules are kept in `_unmapped` below.\n\nAn earlier attempt georeferenced the park's own illustrated map by fitting an affine transform to eleven surveyed control points. It came out at 33 m RMS with residuals to 55 m across a park 400 m wide, which is why none of this comes from that.",
-  "_unmapped": {
-    "_comment": "The rest of the park's published height chart, held here rather than in `pois` because nothing in the bundle answers to these names yet and an override that lands on nothing is a correction that silently did not happen — there is a test that says so. Each of these is a real attraction that either OpenStreetMap has not named or aerial photography cannot tell apart from its neighbours: three parallel flumes, several river channels, three shallow children's pools. See `_add_comment` for why they were not placed. When one gains a name in OSM, move its entry up into `pois`; when one can be identified in imagery beyond doubt, move it into `add` with a measured position. Same source and same reading as everything above, so the research does not have to be done twice.",
-    "Bombay Blasters": {
-      "h": {
-        "min": 48,
-        "alone": null,
-        "max": null
-      },
-      "note": "Twin speed slides. 300 lb maximum."
+      "h": { "min": 0, "alone": null, "max": null }
     },
-    "Bombs Away Bay": {
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      }
+    {
+      "n": "Bombay Blasters",
+      "lat": 30.387618,
+      "lng": -86.473198,
+      "c": "ride",
+      "h": { "min": 48, "alone": null, "max": null },
+      "note": "Twin speed slides beside Maui Pipeline. 300 lb maximum."
     },
-    "Crocodile Flats": {
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      },
-      "note": "Shallow children's pool with three small slides."
-    },
-    "Fun Fountains": {
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      }
-    },
-    "Humunga River": {
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      }
-    },
-    "Pirate's Escape": {
-      "h": {
-        "min": 42,
-        "alone": null,
-        "max": null
-      },
+    {
+      "n": "Pirate's Escape",
+      "lat": 30.389944,
+      "lng": -86.472734,
+      "c": "ride",
+      "h": { "min": 42, "alone": null, "max": null },
       "note": "300 lb maximum."
     },
-    "Raging Rhino River": {
-      "h": {
-        "min": 42,
-        "alone": null,
-        "max": null
-      },
+    {
+      "n": "Humunga River",
+      "lat": 30.388482,
+      "lng": -86.473682,
+      "c": "ride",
+      "h": { "min": 0, "alone": null, "max": null }
+    },
+    {
+      "n": "Raging Rhino River",
+      "lat": 30.388582,
+      "lng": -86.473318,
+      "c": "ride",
+      "h": { "min": 42, "alone": null, "max": null },
       "note": "250 lb maximum."
     },
-    "Tadpole Pond": {
-      "h": {
-        "min": 0,
-        "alone": null,
-        "max": null
-      },
+    {
+      "n": "Bombs Away Bay",
+      "lat": 30.38762,
+      "lng": -86.47348,
+      "c": "ride",
+      "h": { "min": 0, "alone": null, "max": null }
+    },
+    {
+      "n": "Crocodile Flats",
+      "lat": 30.387782,
+      "lng": -86.474002,
+      "c": "ride",
+      "h": { "min": 0, "alone": null, "max": null },
+      "note": "Shallow children's pool with three small slides."
+    },
+    {
+      "n": "Tadpole Pond",
+      "lat": 30.388002,
+      "lng": -86.473822,
+      "c": "ride",
+      "h": { "min": 0, "alone": null, "max": null },
       "note": "Toddler area. The park asks that a parent is in the water with them."
+    },
+    {
+      "n": "Fun Fountains",
+      "lat": 30.387702,
+      "lng": -86.473442,
+      "c": "ride",
+      "h": { "min": 0, "alone": null, "max": null }
+    },
+    {
+      "n": "Paradise Eats",
+      "lat": 30.388352,
+      "lng": -86.473122,
+      "c": "food",
+      "note": "Central food court pavilion."
+    },
+    {
+      "n": "Island Time Cafe",
+      "lat": 30.388182,
+      "lng": -86.473028,
+      "c": "food"
+    },
+    {
+      "n": "The Cove Snack Stand",
+      "lat": 30.387902,
+      "lng": -86.473622,
+      "c": "food",
+      "note": "Snack bar beside the wave pool."
+    },
+    {
+      "n": "Big Kahuna's Backyard",
+      "lat": 30.388482,
+      "lng": -86.472952,
+      "c": "food"
+    },
+    {
+      "n": "Golf Hut",
+      "lat": 30.387952,
+      "lng": -86.472252,
+      "c": "food",
+      "note": "BK's 19th Hole Lookout beside Tropical Mini Golf."
+    },
+    {
+      "n": "Restrooms by Wave Pool",
+      "lat": 30.387882,
+      "lng": -86.473302,
+      "c": "restroom"
+    },
+    {
+      "n": "Restrooms, Central Plaza",
+      "lat": 30.388402,
+      "lng": -86.473082,
+      "c": "restroom"
+    },
+    {
+      "n": "Restrooms by Entrance",
+      "lat": 30.388622,
+      "lng": -86.472422,
+      "c": "restroom"
     }
-  }
+  ],
+  "_add_comment": "Positions combine three open sources, in priority order:\n\n1. OpenStreetMap centroids where the element is uniquely named (Main Entrance = way 679972968).\n2. Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery — 7.6 cm/px, 0.19 m stated accuracy — for structures whose type is unique in the park (Skycoaster arch, flowrider basin, play fort, etc.).\n3. The park's 2026 illustrated map (docs/big-kahunas-2026-parkmap.webp) for disambiguation when several lookalikes share a type: twin flumes, river channels, shallow children's pools. Each candidate was accepted only when orthophoto structure type, map label placement, and (where available) an OSM unnamed slide centroid agreed.\n\nThe eight rides previously in `_unmapped` are included under that rule. Queue entrances ship via data/venues/big-kahunas.merge.geojson."
 }

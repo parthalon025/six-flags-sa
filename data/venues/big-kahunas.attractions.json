@@ -20,12 +20,22 @@
             "lat": 30.38794,
             "lng": -86.4727
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38794,
+                "lng": -86.4727
+              },
+              "date": "2026-08-10",
+              "note": "\"Mini golf entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -36,16 +46,100 @@
               "note": "the walkable network at its closest, 32 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "big-kahuna-s-tropical-mini-golf"
+    },
+    {
+      "id": "bombay-blasters",
+      "place": "bombay-blasters",
+      "name": "Bombay Blasters",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.387618,
+        "lng": -86.473198
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.38755,
+            "lng": -86.47317
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.38755,
+                "lng": -86.47317
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "bombs-away-bay",
+      "place": "bombs-away-bay",
+      "name": "Bombs Away Bay",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.38762,
+        "lng": -86.47348
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.38749,
+            "lng": -86.47357
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.38749,
+                "lng": -86.47357
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 17 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "buccaneer-cove",
@@ -62,12 +156,22 @@
             "lat": 30.38834,
             "lng": -86.47384
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38834,
+                "lng": -86.47384
+              },
+              "date": "2026-08-10",
+              "note": "\"Buccaneer Cove entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -78,11 +182,11 @@
               "note": "the walkable network at its closest, 51 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
@@ -104,12 +208,22 @@
             "lat": 30.38781,
             "lng": -86.47311
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38781,
+                "lng": -86.47311
+              },
+              "date": "2026-08-10",
+              "note": "\"Cobra Twister entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -120,16 +234,100 @@
               "note": "the walkable network at its closest, 16 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "cobra-twister"
+    },
+    {
+      "id": "crocodile-flats",
+      "place": "crocodile-flats",
+      "name": "Crocodile Flats",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.387782,
+        "lng": -86.474002
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.3874,
+            "lng": -86.47385
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.3874,
+                "lng": -86.47385
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 45 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "fun-fountains",
+      "place": "fun-fountains",
+      "name": "Fun Fountains",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.387702,
+        "lng": -86.473442
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.38749,
+            "lng": -86.47357
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.38749,
+                "lng": -86.47357
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 26 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "hammerhead",
@@ -146,12 +344,22 @@
             "lat": 30.38834,
             "lng": -86.47384
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38834,
+                "lng": -86.47384
+              },
+              "date": "2026-08-10",
+              "note": "\"Hammerhead entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -162,11 +370,11 @@
               "note": "the walkable network at its closest, 34 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
@@ -188,12 +396,22 @@
             "lat": 30.389,
             "lng": -86.47255
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.389,
+                "lng": -86.47255
+              },
+              "date": "2026-08-10",
+              "note": "\"Honolulu Half Pipe entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -204,16 +422,58 @@
               "note": "the walkable network at its closest, 9 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "honolulu-half-pipe"
+    },
+    {
+      "id": "humunga-river",
+      "place": "humunga-river",
+      "name": "Humunga River",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.388482,
+        "lng": -86.473682
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.38852,
+            "lng": -86.47375
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.38852,
+                "lng": -86.47375
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "jumanji",
@@ -230,12 +490,22 @@
             "lat": 30.38835,
             "lng": -86.47337
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38835,
+                "lng": -86.47337
+              },
+              "date": "2026-08-10",
+              "note": "\"Jumanji entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -246,11 +516,11 @@
               "note": "the walkable network at its closest, 22 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
@@ -272,12 +542,22 @@
             "lat": 30.38923,
             "lng": -86.47277
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38923,
+                "lng": -86.47277
+              },
+              "date": "2026-08-10",
+              "note": "\"Kowabunga Racer entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -288,11 +568,11 @@
               "note": "the walkable network at its closest, 4 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
@@ -314,12 +594,22 @@
             "lat": 30.38788,
             "lng": -86.47311
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38788,
+                "lng": -86.47311
+              },
+              "date": "2026-08-10",
+              "note": "\"Lazy River entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -330,11 +620,11 @@
               "note": "the walkable network at its closest, 21 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
@@ -356,12 +646,22 @@
             "lat": 30.38755,
             "lng": -86.47317
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38755,
+                "lng": -86.47317
+              },
+              "date": "2026-08-10",
+              "note": "\"Maui Pipeline entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -372,11 +672,11 @@
               "note": "the walkable network at its closest, 14 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
@@ -398,12 +698,22 @@
             "lat": 30.38755,
             "lng": -86.47317
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38755,
+                "lng": -86.47317
+              },
+              "date": "2026-08-10",
+              "note": "\"Monkey River entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -414,16 +724,58 @@
               "note": "the walkable network at its closest, 12 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "monkey-river"
+    },
+    {
+      "id": "pirate-s-escape",
+      "place": "pirate-s-escape",
+      "name": "Pirate's Escape",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.389944,
+        "lng": -86.472734
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.38979,
+            "lng": -86.47251
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.38979,
+                "lng": -86.47251
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 27 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "pleasure-island",
@@ -440,12 +792,22 @@
             "lat": 30.38895,
             "lng": -86.47298
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38895,
+                "lng": -86.47298
+              },
+              "date": "2026-08-10",
+              "note": "\"Pleasure Island entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -456,16 +818,58 @@
               "note": "the walkable network at its closest, 4 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "pleasure-island"
+    },
+    {
+      "id": "raging-rhino-river",
+      "place": "raging-rhino-river",
+      "name": "Raging Rhino River",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.388582,
+        "lng": -86.473318
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.38859,
+            "lng": -86.47328
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.38859,
+                "lng": -86.47328
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "skycoaster",
@@ -482,12 +886,22 @@
             "lat": 30.38866,
             "lng": -86.47186
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38866,
+                "lng": -86.47186
+              },
+              "date": "2026-08-10",
+              "note": "\"Skycoaster entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -498,16 +912,58 @@
               "note": "the walkable network at its closest, 18 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
       "last_verified": null,
       "place": "skycoaster"
+    },
+    {
+      "id": "tadpole-pond",
+      "place": "tadpole-pond",
+      "name": "Tadpole Pond",
+      "venue": "big-kahunas",
+      "type": "attraction",
+      "at": {
+        "lat": 30.388002,
+        "lng": -86.473822
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 30.38834,
+            "lng": -86.47384
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 30.38834,
+                "lng": -86.47384
+              },
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 37 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-10",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "thunder-river",
@@ -524,12 +980,22 @@
             "lat": 30.38904,
             "lng": -86.47295
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38904,
+                "lng": -86.47295
+              },
+              "date": "2026-08-10",
+              "note": "\"Thunder River entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -540,11 +1006,11 @@
               "note": "the walkable network at its closest, 10 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
@@ -552,8 +1018,8 @@
       "place": "thunder-river"
     },
     {
-      "id": "tiki-river-run-right-slide-2",
-      "name": "Tiki River Run",
+      "id": "tiki-river-run-right-slide-5",
+      "name": "Tiki River Run (Right Slide)",
       "venue": "big-kahunas",
       "type": "attraction",
       "at": {
@@ -566,12 +1032,22 @@
             "lat": 30.38794,
             "lng": -86.4727
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38794,
+                "lng": -86.4727
+              },
+              "date": "2026-08-10",
+              "note": "\"Tiki River Run entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -582,16 +1058,16 @@
               "note": "the walkable network at its closest, 15 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },
       "last_verified": null,
-      "place": "tiki-river-run-right-slide-2"
+      "place": "tiki-river-run-right-slide-5"
     },
     {
       "id": "wave-pool",
@@ -608,12 +1084,22 @@
             "lat": 30.38781,
             "lng": -86.47311
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 5,
           "sources": [
+            "aerial",
             "geometry"
           ],
           "evidence": [
+            {
+              "source": "aerial",
+              "at": {
+                "lat": 30.38781,
+                "lng": -86.47311
+              },
+              "date": "2026-08-10",
+              "note": "\"Wave Pool entrance\", already on the place, from aerial"
+            },
             {
               "source": "geometry",
               "at": {
@@ -624,11 +1110,11 @@
               "note": "the walkable network at its closest, 35 m from the ride"
             }
           ],
-          "from": "geometry",
+          "from": "aerial",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         }
       },

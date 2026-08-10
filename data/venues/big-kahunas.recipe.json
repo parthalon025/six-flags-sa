@@ -15,14 +15,17 @@
     "locality": "Destin, Florida",
     "kind": "theme-park",
     "center": "30.3883,-86.473",
-    "pad": 0
+    "pad": 0,
+    "merge": [
+      "data/venues/big-kahunas.merge.geojson"
+    ]
   },
   "built": {
     "at": "2026-08-10",
     "counts": {
-      "pois": 16,
-      "rides": 15,
-      "heights": 15,
+      "pois": 32,
+      "rides": 23,
+      "heights": 23,
       "shapes": 283
     }
   }

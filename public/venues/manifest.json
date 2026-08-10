@@ -18,7 +18,7 @@
         "west": -86.47545
       },
       "source": "OpenStreetMap contributors, ODbL",
-      "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages.",
+      "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages. Ride and amenity positions combine OpenStreetMap (ODbL), Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, and the park's 2026 illustrated map.",
       "generated": "2026-08-10",
       "coverage": {
         "ways": 170,
@@ -33,9 +33,9 @@
       "map": "/venues/big-kahunas.map.json",
       "pois": "/venues/big-kahunas.pois.json",
       "counts": {
-        "pois": 16,
-        "rides": 15,
-        "heights": 15
+        "pois": 32,
+        "rides": 23,
+        "heights": 23
       }
     },
     {
