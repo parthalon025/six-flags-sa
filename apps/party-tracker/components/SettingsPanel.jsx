@@ -246,8 +246,8 @@ export default function SettingsPanel({
       )}
       <InstallCard />
       <p className="fine">
-        Location drops your dot on the map. Add to Home Screen keeps the park map offline in a
-        queue line — both belong on this phone before you need them.
+        Location drops your dot. The Home Screen app keeps the park map when the midway wifi
+        dies — we only ask when you are not already running from the icon.
       </p>
 
       <div className="label">Advanced</div>

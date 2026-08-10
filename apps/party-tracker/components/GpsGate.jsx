@@ -211,7 +211,9 @@ export default function GpsGate({
             >
               {primaryLabel}
             </button>
-            <InstallCard compact />
+            {/* Install only on first-run welcome — never when already on Home Screen
+                (InstallCard hides itself) and not on every later GPS re-ask. */}
+            {welcome && !nearestIntent && <InstallCard compact />}
           </div>
         )}
 

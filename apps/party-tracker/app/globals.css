@@ -1877,15 +1877,28 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 }
 .gatePhoneSetup .btn { width: 100%; }
 .gatePhoneSetup .btn.primary { margin: 0; }
-.gateInstallHint {
-  margin: 0;
-  padding: 10px 14px;
-  font-size: 14px; line-height: 20px; letter-spacing: -.2px;
-  color: var(--label2);
+.gateInstallPitch {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px;
   background: var(--grouped2);
   border-radius: var(--r2);
 }
+.gateInstallHook,
+.installHook {
+  margin: 0;
+  font-size: 15px; line-height: 21px; letter-spacing: -.24px;
+  color: var(--label);
+  font-weight: 600;
+}
+.gateInstallHint {
+  margin: 0;
+  font-size: 14px; line-height: 20px; letter-spacing: -.2px;
+  color: var(--label2);
+}
 .gateInstallHint b { color: var(--label); font-weight: 600; }
+.gateInstallSkip { margin: 0; align-self: center; }
+.gateInstallSteps { margin: 0; padding-left: 18px; }
+.installCard .installHook { margin: 0 0 10px; }
 
 /* ---- mobile-only hardening ---- */
 html { -webkit-text-size-adjust: 100%; }
