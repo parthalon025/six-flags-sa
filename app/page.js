@@ -43,6 +43,7 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
+import { positionForMap } from '@/lib/gps/smooth';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -1458,6 +1459,17 @@ export default function Page() {
     return { lat: progress.snapped[0], lng: progress.snapped[1], course: progress.course };
   }, [walking, progress]);
 
+  const mapMe = useMemo(
+    () =>
+      positionForMap({
+        position,
+        graph,
+        bounds: venue?.bounds,
+        walking,
+      }),
+    [position, graph, venue?.bounds, walking],
+  );
+
   const { done: routeDone, ahead: routeAhead } = useMemo(() => {
     if (!walking || !routingRef.current) return { done: [], ahead: route?.points ?? [] };
     return routingRef.current.splitRouteAt(route, progress);
@@ -1668,7 +1680,7 @@ export default function Page() {
         data={mapData}
         center={venue?.center}
         pois={POIS}
-        me={position}
+        me={mapMe}
         members={others}
         meet={meet}
         car={car}
@@ -1833,7 +1845,10 @@ export default function Page() {
           onClick={() => {
             if (position) {
               setFollow(true);
-              setFocusPoint({ lat: puck?.lat ?? position.lat, lng: puck?.lng ?? position.lng });
+              setFocusPoint({
+                lat: puck?.lat ?? mapMe?.lat ?? position.lat,
+                lng: puck?.lng ?? mapMe?.lng ?? position.lng,
+              });
             } else {
               setGateOpen(true);
             }

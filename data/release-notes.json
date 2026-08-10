@@ -24,5 +24,29 @@
     "items": [
       "Performance roadmap: map smoothness, load time, party join, scale polish"
     ]
+  },
+  "1.1.4": {
+    "title": "What's new",
+    "items": [
+      "Map Key, zoom controls, and action buttons now sit above the tab bar at the collapsed sheet stop instead of overlapping it"
+    ]
+  },
+  "1.1.5": {
+    "title": "What's new",
+    "items": [
+      "Fix map bottom UI overlapping tab bar at shut stop"
+    ]
+  },
+  "1.1.6": {
+    "title": "What's new",
+    "items": [
+      "GPS Kalman smoothing and map snapping (Tier 1)"
+    ]
+  },
+  "1.1.7": {
+    "title": "What's new",
+    "items": [
+      "Add agent handoff standards for out-of-scope issues"
+    ]
   }
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MOTION, cadenceFor, classifyMotion, createBroadcastGate } from '@/lib/gps/adaptive';
+import { createGpsSmoother } from '@/lib/gps/smooth';
 
 /**
  * States: 'idle' | 'asking' | 'live' | 'denied' | 'unsupported' | 'insecure' | 'manual'
@@ -43,6 +44,8 @@ export default function useGeolocation() {
 
   const gate = useRef(null);
   if (gate.current === null) gate.current = createBroadcastGate();
+  const smoother = useRef(null);
+  if (smoother.current === null) smoother.current = createGpsSmoother();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -93,16 +96,17 @@ export default function useGeolocation() {
     (pos) => {
       const c = pos.coords;
       const ts = Date.now();
-      const fix = {
+      const raw = {
         lat: c.latitude,
         lng: c.longitude,
         acc: c.accuracy,
         ts,
         manual: false,
       };
-      if (Number.isFinite(c.heading)) fix.heading = c.heading;
-      if (Number.isFinite(c.speed)) fix.speed = c.speed;
+      if (Number.isFinite(c.heading)) raw.heading = c.heading;
+      if (Number.isFinite(c.speed)) raw.speed = c.speed;
 
+      const fix = smoother.current.update(raw) ?? raw;
       positionRef.current = fix;
       setStatus('live');
       setError(null);
@@ -158,7 +162,7 @@ export default function useGeolocation() {
   }, [arm]);
 
   const setManual = useCallback((lat, lng) => {
-    const fix = { lat, lng, acc: null, ts: Date.now(), manual: true };
+    const fix = smoother.current.update({ lat, lng, acc: null, ts: Date.now(), manual: true });
     positionRef.current = fix;
     setStatus('manual');
     setPosition(fix);
