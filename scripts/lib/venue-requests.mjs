@@ -1,3 +1,5 @@
+import { addressBook, resolveOverride } from './venue-ids.mjs';
+
 /**
  * The questions a build cannot answer, written so somebody — or something — can.
  *
@@ -249,8 +251,6 @@ export function requests({ venue, map = {}, pois = [], overrides = null } = {}) 
 
   return out.sort((a, b) => Number(b.blocking) - Number(a.blocking));
 }
-
-import { addressBook, resolveOverride } from './venue-ids.mjs';
 
 /** Override keys that no place in the bundle answers to. Mirrors applyOverrides' matching. */
 function unmatchedOverrides(pois, overrides) {

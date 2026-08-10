@@ -13,8 +13,10 @@
  *   BASE_URL=http://127.0.0.1:3711 node test/functional.mjs
  */
 import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs';
 
 const executablePath = process.env.CHROMIUM_PATH || undefined;
+const APP_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url))).version;
 
 export const launch = (opts = {}) =>
   chromium.launch({ ...opts, ...(executablePath ? { executablePath } : {}) });
@@ -54,7 +56,16 @@ export async function until(fn, { timeout = 30000, step = 500, label = 'conditio
  */
 export async function openPhone(
   browser,
-  { lat, lng, name = null, colorScheme = 'light', url = BASE, label = 'phone' } = {},
+  {
+    lat,
+    lng,
+    name = null,
+    colorScheme = 'light',
+    url = BASE,
+    label = 'phone',
+    venue = null,
+    requireGps = true,
+  } = {},
 ) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -64,6 +75,15 @@ export async function openPhone(
     colorScheme,
     locale: 'en-US',
   });
+  // The update splash is driven by a client effect that runs after hydration,
+  // so seed the seen-version key before the first paint rather than racing it.
+  await context.addInitScript(({ version, venueId }) => {
+    localStorage.setItem('tracker-release-notes-seen', version);
+    localStorage.setItem('tracker-intro-seen', '1');
+    // Confirmed is the intake answer; pinned is tracker-venue, which would block
+    // the map from following the party host.
+    if (venueId) localStorage.setItem('tracker-venue-confirmed', venueId);
+  }, { version: APP_VERSION, venueId: venue });
   const page = await context.newPage();
 
   const errors = [];
@@ -80,8 +100,35 @@ export async function openPhone(
   page.on('request', (r) => requests.push(r.url()));
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
+  if (url.includes('/join')) {
+    await page.waitForURL((u) => !String(u).includes('/join'), { timeout: 30000 }).catch(() => {});
+  }
   await hydrated(page);
   await closeGate(page);
+  const waitForReady = async () => {
+    if (requireGps) {
+      await until(
+        async () => {
+          if ((await page.locator('.gate').count()) > 0) return false;
+          if ((await page.locator('.mePulse').count()) > 0) return true;
+          const brand = await page.locator('.brand span').innerText().catch(() => '');
+          return /near/i.test(brand);
+        },
+        { timeout: 40000, label: 'GPS fix and gates dismissed' },
+      );
+    } else {
+      await until(async () => (await page.locator('.gate').count()) === 0, {
+        timeout: 40000,
+        label: 'gates dismissed',
+      });
+    }
+  };
+  try {
+    await waitForReady();
+  } catch {
+    await closeGate(page);
+    await waitForReady();
+  }
   if (name) await setName(page, name);
 
   return { context, page, errors, requests, label };
@@ -121,6 +168,9 @@ export async function closeGate(page) {
   await dismissUpdateSplash(page);
   const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("Yes — set up")');
+  const quiet = page.locator(
+    'button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Not now — just show me the map")',
+  );
   if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
@@ -130,15 +180,13 @@ export async function closeGate(page) {
     if (!gates && paths > 100) return;
     if (await yes.count()) await yes.click().catch(() => {});
     else if (await allow.count()) await allow.click().catch(() => {});
-    const quiet = page.locator('button:has-text("Just show me")');
     if (await quiet.count() && !(await yes.count()) && !(await allow.count())) {
-      await quiet.click().catch(() => {});
+      await quiet.first().click().catch(() => {});
     }
     if (!(await page.locator('.gate').count()) && paths > 100) return;
     await page.waitForTimeout(750);
   }
-  const quiet = page.locator('button:has-text("Just show me")');
-  if (await quiet.count()) await quiet.click().catch(() => {});
+  if (await quiet.count()) await quiet.first().click().catch(() => {});
   await page.waitForSelector('.gate', { state: 'detached', timeout: 10000 }).catch(() => {});
   await hydrated(page).catch(() => {});
 }
@@ -184,6 +232,7 @@ const TAB_OF = {
 const SETTINGS_ROWS = new Set(['Which map', 'Show on the map', 'Diagnostics']);
 
 export async function go(page, dest) {
+  await closeGate(page);
   const tab = SETTINGS_ROWS.has(dest) ? 'settings' : TAB_OF[dest];
   if (!tab) throw new Error(`go: nothing called "${dest}"`);
   await page.locator(`.tabItem[data-tab="${tab}"]`).click();
@@ -204,6 +253,7 @@ export async function go(page, dest) {
 
 /** Set the roster name through Me, as a visitor would, and come back to Explore. */
 export async function setName(page, name) {
+  await closeGate(page);
   await go(page, 'Settings');
   const field = page.locator('.field[placeholder="Name"]');
   await field.fill(name);

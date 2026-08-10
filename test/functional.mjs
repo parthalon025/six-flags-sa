@@ -53,7 +53,13 @@ console.log(`\nfunctional suite against ${BASE}\n`);
 console.log('--- phone A: core ---');
 
 // The Beast's station.
-const A = await openPhone(browser, { lat: 39.34395, lng: -84.2673, name: 'Justin', label: 'A' });
+const A = await openPhone(browser, {
+  lat: 39.34395,
+  lng: -84.2673,
+  name: 'Justin',
+  label: 'A',
+  venue: 'kings-island',
+});
 const a = A.page;
 
 await check('GPS gate closes and position resolves', async () => {
@@ -422,7 +428,13 @@ await check('the invite QR is drawn', async () => {
 console.log('\n--- party: joining ---');
 
 // Phone B, down in Coney Mall, types the code in.
-const B = await openPhone(browser, { lat: 39.3412, lng: -84.2652, name: 'Ava', label: 'B' });
+const B = await openPhone(browser, {
+  lat: 39.3412,
+  lng: -84.2652,
+  name: 'Ava',
+  label: 'B',
+  venue: 'kings-island',
+});
 const b = B.page;
 await go(b, 'Party');
 await b.locator('.field.code').fill(code);
@@ -510,6 +522,7 @@ const C = await openPhone(browser, {
   name: 'Sam',
   url: invite,
   label: 'C',
+  venue: 'kings-island',
 });
 const c = C.page;
 
@@ -666,7 +679,14 @@ await check('retracting a report clears it everywhere', async () => {
 });
 
 await check('the reporting buttons are absent without a party', async () => {
-  const solo = await openPhone(browser, { lat: 39.3432, lng: -84.2669, name: 'Solo', label: 'S' });
+  const solo = await openPhone(browser, {
+    lat: 39.3432,
+    lng: -84.2669,
+    name: 'Solo',
+    label: 'S',
+    venue: 'kings-island',
+    requireGps: false,
+  });
   await openRide(solo.page, 'Diamondback');
   const buttons = await solo.page.locator('.reportRow button').count();
   await solo.context.close();
@@ -762,6 +782,37 @@ const e = await intake.newPage();
 await e.goto(BASE, { waitUntil: 'domcontentloaded' });
 await hydrated(e);
 
+const dismissUpdateSplash = async (page) => {
+  const cont = page.locator('.gate .btn.primary:has-text("Continue")');
+  if (await cont.count()) {
+    await cont.click();
+    await page.waitForTimeout(500);
+  }
+};
+
+await check('the update splash appears before the introduction on a fresh install', async () => {
+  // A brand-new phone on a build with release notes sees the splash first.
+  // Re-open on a context that has not dismissed it yet.
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  await until(async () => (await p.locator('#update-splash-title').count()) > 0, {
+    timeout: 10000,
+    label: 'the update splash',
+  });
+  const title = (await p.locator('#update-splash-title').innerText()).trim();
+  if (!/what's new/i.test(title)) throw new Error(`splash title: "${title}"`);
+  await fresh.close();
+  return true;
+});
+
+await dismissUpdateSplash(e);
+
 await check('the first screen says what the app is, above the location ask', async () => {
   const card = await e.locator('.gate').innerText();
   const heading = (await e.locator('.gate h2').innerText()).trim();
@@ -813,6 +864,7 @@ await check('saying yes builds that park, geometry and places', async () => {
 await check('the park answered stays answered across a reload', async () => {
   await e.reload({ waitUntil: 'domcontentloaded' });
   await hydrated(e);
+  await dismissUpdateSplash(e);
   // Introduced once per phone, not once per launch: coming back gets the plain
   // question, not the sales pitch again.
   if (await e.locator('.gate h2:has-text("Park Party")').count()) {
@@ -838,6 +890,7 @@ const D = await openPhone(browser, {
   lng: -98.6145, // Six Flags Fiesta Texas, San Antonio
   name: 'Remote',
   label: 'D',
+  venue: 'six-flags-fiesta-texas',
 });
 const d = D.page;
 /* Which map this phone is showing. The name is on the Explore screen, so read
