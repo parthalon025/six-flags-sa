@@ -2181,6 +2181,7 @@ export default function Page() {
                   showToast('Forgotten where you parked');
                 }}
                 appVersion={appUpdate.version}
+                appBuilt={appUpdate.built}
                 updateStatus={appUpdate.status}
               />
             )}
@@ -2293,7 +2294,9 @@ export default function Page() {
                 runtime={runtimeApi}
                 geo={geo}
                 appVersion={appUpdate.version}
+                appBuilt={appUpdate.built}
                 remoteVersion={appUpdate.remoteVersion}
+                remoteBuilt={appUpdate.remoteBuilt}
                 updateStatus={appUpdate.status}
               />
             )}

@@ -8,16 +8,18 @@ page.
 
 - **Single version source:** `package.json` `version` (semver). `predev` /
   `prebuild` runs `scripts/inject-version.mjs`, which writes
-  `public/app-version.json` and rewrites the service-worker cache name
-  (`tracker-<version>`).
-- **Client stamp:** `NEXT_PUBLIC_APP_VERSION` from `next.config.mjs` — baked into
-  the JS bundle at build time.
-- **Server truth:** `/api/version` returns `{ version, protocol }` (unchanged
-  shape; `protocol` is still the party-wire compatibility number).
-- **Update loop:** `lib/appUpdate.js` polls `/api/version` when online, probes
-  `registration.update()`, activates a waiting worker, and reloads once if the
-  bundle is behind but the worker has not caught up. Offline or timed-out checks
-  are silent.
+  `public/app-version.json` (including a per-deploy `built` ISO timestamp) and
+  rewrites the service-worker cache name (`tracker-<version>`).
+- **Client stamp:** `NEXT_PUBLIC_APP_VERSION` and `NEXT_PUBLIC_APP_BUILT` from
+  `next.config.mjs` — baked into the JS bundle at build time.
+- **Server truth:** `/api/version` returns `{ version, protocol, built }`
+  (`protocol` is still the party-wire compatibility number).
+- **Update loop:** `lib/appUpdate.js` polls `/api/version` when online. A phone
+  updates when the server reports a **higher semver** or the **same semver with
+  a newer `built` stamp** — so merges that redeploy without bumping
+  `package.json` still land. The loop probes `registration.update()`, activates
+  a waiting worker, and reloads once if the bundle is behind but the worker has
+  not caught up. Offline or timed-out checks are silent.
 
 ## What it brings
 
@@ -35,12 +37,19 @@ page.
 
 ## Shipping a release
 
-1. Bump `version` in `package.json` (semver).
-2. Add user-facing bullets to `data/release-notes.json` for that version — they
-   show once on the startup splash the first time someone opens the new build.
-3. Build and deploy as usual — inject runs automatically.
+1. Bump `version` in `package.json` when you want a new semver on screen (optional
+   for code-only deploys — `built` still changes every build).
+2. Add user-facing bullets to `data/release-notes.json` when the semver changes
+   — they show once on the startup splash the first time someone opens the new
+   build.
+3. Build and deploy as usual — inject runs automatically and stamps a fresh
+   `built` time.
 4. Phones online within ~5 minutes (or on next focus) should update; offline
    phones stay on the last good build until they have connectivity.
+
+**How to verify auto-update:** open **Me → Advanced → Diagnostics**. Compare
+**Installed build** vs **Server build**. If the server stamp is newer, the app
+should reload into the new deploy within one check cycle.
 
 ## User-facing update notes
 

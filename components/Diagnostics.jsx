@@ -33,7 +33,14 @@ const toneFor = (status) => {
   return '';
 };
 
-export default function Diagnostics({ runtime, geo, appVersion, remoteVersion, updateStatus }) {
+/** Format an ISO build stamp for diagnostics. */
+const formatBuilt = (raw) => {
+  if (!raw) return '—';
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? raw : d.toLocaleString();
+};
+
+export default function Diagnostics({ runtime, geo, appVersion, appBuilt, remoteVersion, remoteBuilt, updateStatus }) {
   const [snap, setSnap] = useState(null);
 
   // Polled rather than pushed: most of this changes without any state change
@@ -55,7 +62,9 @@ export default function Diagnostics({ runtime, geo, appVersion, remoteVersion, u
       <div className="label">App</div>
       <div className="diagTable">
         <Row label="Installed version" value={appVersion || '—'} />
+        <Row label="Installed build" value={formatBuilt(appBuilt)} />
         <Row label="Server version" value={remoteVersion || '—'} />
+        <Row label="Server build" value={formatBuilt(remoteBuilt)} />
         <Row
           label="Update status"
           value={
