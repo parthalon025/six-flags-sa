@@ -231,11 +231,43 @@ const TAB_OF = {
 };
 const SETTINGS_ROWS = new Set(['Which map', 'Show on the map', 'Diagnostics']);
 
+/** Clear search and category filters on the places list. */
+export async function resetPlaces(page) {
+  await go(page, 'Places');
+  await page.locator('.field[aria-label="Search places"]').fill('');
+  const all = page.locator('.chip:has-text("All")').first();
+  if (await all.count()) await all.click();
+  const only = page.locator('.chip:has-text("Only what")');
+  if (await only.count()) {
+    const on = await only.getAttribute('class');
+    if (on?.includes('on')) await only.click();
+  }
+  await page.waitForTimeout(400);
+}
+
+/** End an active walk so the tab bar is clickable again. */
+export async function dismissNavigation(page) {
+  if (!(await page.locator('.navBar, .navBanner').count())) return;
+  const end = page.locator('.navEnd');
+  if (await end.count()) {
+    await end.click();
+  } else {
+    const back = page.locator('button:has-text("Back to the map")');
+    if (await back.count()) await back.click();
+  }
+  await until(async () => (await page.locator('.navBar, .navBanner').count()) === 0, {
+    timeout: 15000,
+    label: 'navigation to dismiss',
+  }).catch(() => {});
+  await page.waitForTimeout(300);
+}
+
 export async function go(page, dest) {
   await closeGate(page);
+  await dismissNavigation(page);
   const tab = SETTINGS_ROWS.has(dest) ? 'settings' : TAB_OF[dest];
   if (!tab) throw new Error(`go: nothing called "${dest}"`);
-  await page.locator(`.tabItem[data-tab="${tab}"]`).click();
+  await page.locator(`.tabItem[data-tab="${tab}"]`).click({ force: true });
   await page.waitForTimeout(300);
   // Tapping the tab you are already on pops it, but arriving from another tab
   // lands on whatever that one was left showing.
@@ -243,7 +275,7 @@ export async function go(page, dest) {
   // Everything below the fold at the peek stop needs the sheet pulled up first
   // — the way a thumb would.
   if (await page.locator('.sheet.peek').count()) {
-    await page.locator('.grab').click();
+    await page.getByRole('slider', { name: /Resize panel/ }).click();
     await page.waitForTimeout(350);
   }
   if (!SETTINGS_ROWS.has(dest)) return;

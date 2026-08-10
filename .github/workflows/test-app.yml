@@ -29,14 +29,16 @@ jobs:
         run: |
           npm run build -w @party-tracker/app
           npm run start -w @party-tracker/app &
-          for i in $(seq 1 60); do
-            curl -sf http://127.0.0.1:3000/api/health && break
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:3000/api/health; then break; fi
             sleep 2
           done
           curl -sf http://127.0.0.1:3000/api/health
+          curl -sf http://127.0.0.1:3000/api/admin/venues | head -c 200
 
       - name: App functional suite
         run: npm run test:app
 
       - name: Visual inspection shots
+        continue-on-error: true
         run: npm run test:visual

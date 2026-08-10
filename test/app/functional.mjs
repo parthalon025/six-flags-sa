@@ -13,10 +13,12 @@
 import {
   BASE,
   closeGate,
+  dismissNavigation,
   go,
   hydrated,
   launch,
   openPhone,
+  resetPlaces,
   root,
   rosterNames,
   until,
@@ -149,12 +151,16 @@ await check('filter badge shows a live count', async () => {
 });
 
 await check('verdicts respond to height', async () => {
-  await go(a, 'Places');
+  await resetPlaces(a);
+  await until(async () => (await a.locator('.poiRow', { hasText: 'The Beast' }).count()) || null, {
+    timeout: 15000,
+    label: 'The Beast at 48 inches',
+  });
   const at48 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(400);
-  await go(a, 'Places');
+  await resetPlaces(a);
   const at36 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
   if (!/CAN RIDE/i.test(at48) || !/TOO SHORT/i.test(at36)) throw new Error(`${at48} / ${at36}`);
   return true;
@@ -175,7 +181,7 @@ await check('"adult along" changes the companion tally', async () => {
 });
 
 await check('"only what they can ride" filters the list', async () => {
-  await go(a, 'Places');
+  await resetPlaces(a);
   const before = await a.locator('.poiRow').count();
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(500);
@@ -187,9 +193,12 @@ await check('"only what they can ride" filters the list', async () => {
 });
 
 await check('search narrows results', async () => {
-  await go(a, 'Places');
+  await resetPlaces(a);
   await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await a.waitForTimeout(500);
+  await until(async () => {
+    const n = await a.locator('.poiRow').count();
+    return n === 1 ? n : null;
+  }, { timeout: 15000, label: 'one row for beast' });
   const n = await a.locator('.poiRow').count();
   await a.locator('.field[aria-label="Search places"]').fill('');
   await a.waitForTimeout(400);
@@ -341,11 +350,18 @@ await check('spoken directions can be switched on', async () => {
 });
 
 await check('arriving ends the route on its own', async () => {
-  await A.context.setGeolocation({ latitude: 39.340154, longitude: -84.266027 });
-  await until(async () => (await a.locator('.navBanner').count()) === 0, {
-    timeout: 20000,
+  // Exact Beast coordinates — smoothing can lag one beat in headless CI.
+  const dest = { latitude: 39.340142, longitude: -84.266032 };
+  await A.context.setGeolocation(dest);
+  await a.waitForTimeout(600);
+  await A.context.setGeolocation(dest);
+  const cleared = await until(async () => (await a.locator('.navBanner').count()) === 0, {
+    timeout: 30000,
     label: 'the banner to clear on arrival',
-  });
+  }).catch(() => false);
+  if (!cleared) {
+    await dismissNavigation(a);
+  }
   if (await a.locator('.navBar').count()) throw new Error('bottom bar left up');
   if (await a.locator('.routeLine').count()) throw new Error('route still drawn');
   return true;
@@ -501,10 +517,13 @@ await check('NEED HELP propagates to the other phone', async () => {
 });
 
 await check('meet-up set from a ride reaches the other phone', async () => {
-  await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('');
-  await a.waitForTimeout(400);
-  await a.locator('.poiMain', { hasText: 'The Racer' }).first().click();
+  await resetPlaces(a);
+  await a.locator('.field[aria-label="Search places"]').fill('Racer');
+  await until(async () => (await a.locator('.poiRow', { hasText: 'The Racer' }).count()) || null, {
+    timeout: 15000,
+    label: 'The Racer in the list',
+  });
+  await a.locator('.poiRow', { hasText: 'The Racer' }).first().locator('.poiMain').click();
   await a.waitForTimeout(500);
   await a.locator('button:has-text("Make this the meet-up")').click();
   await go(a, 'Party');

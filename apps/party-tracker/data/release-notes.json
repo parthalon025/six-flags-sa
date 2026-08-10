@@ -42,5 +42,11 @@
     "items": [
       "GPS Kalman smoothing and map snapping (Tier 1)"
     ]
+  },
+  "1.1.7": {
+    "title": "What's new",
+    "items": [
+      "Add agent handoff standards for out-of-scope issues"
+    ]
   }
 }
