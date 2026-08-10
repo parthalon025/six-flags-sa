@@ -66,5 +66,11 @@
     "items": [
       "Document auto-bump on merge so PRs do not touch version files"
     ]
+  },
+  "1.1.11": {
+    "title": "What's new",
+    "items": [
+      "Streamline first-run landing with nearest-park shortcut (#46)"
+    ]
   }
 }
