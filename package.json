@@ -23,6 +23,7 @@
     "venues:overrides": "node scripts/build-venue.mjs --reapply",
     "venues:report": "node scripts/venue-report.mjs",
     "venues:research": "node scripts/venue-research.mjs",
+    "venues:audit": "node scripts/venue-audit.mjs",
     "sync": "node server/index.mjs",
     "test": "node test/functional.mjs",
     "test:unit": "node test/unit.mjs",

@@ -3538,6 +3538,51 @@ await check('categoryToHeight maps over-42 to a floor', () => {
   return true;
 });
 
+await check('slug-key overrides resolve via addressBook, not display name', async () => {
+  const { requests: reqsFn } = await import('../scripts/lib/venue-requests.mjs');
+  const pois = [{ n: "Lake Erie Nor'easter", i: 'lake-eerie-nor-easter', c: 'ride' }];
+  const overrides = { pois: { 'lake-eerie-nor-easter': { n: "Lake Erie Nor'easter" } } };
+  const reqs = reqsFn({ venue: { id: 'test' }, pois, overrides });
+  assert.equal(reqs.find((r) => r.key === 'unmatched'), undefined);
+  return true;
+});
+
+const { auditVenue, renderAuditMarkdown } = await import('../scripts/lib/venue-audit.mjs');
+const { scaffoldSourcesCatalogue } = await import('../scripts/lib/park-capabilities.mjs');
+const { enrichOfficialFromSidecar } = await import('../scripts/lib/venue-official-site.mjs');
+
+await check('scaffold sources catalogue includes official URLs for known parks', () => {
+  const cat = scaffoldSourcesCatalogue('cedar-point', { name: 'Cedar Point' });
+  assert.equal(cat.venue, 'cedar-point');
+  assert.ok(cat.sources.some((s) => s.kind === 'official_site'));
+  return true;
+});
+
+await check('heights sidecar fills official data when site fetch is empty', () => {
+  const enriched = enrichOfficialFromSidecar(
+    { attractions: [] },
+    { rules: { Maverick: { h: { min: 52 } } }, generated: '2026-08-10' },
+    { sources: [{ kind: 'official_site', url: 'https://example.com/rides', id: 'x' }] },
+  );
+  assert.equal(enriched.fallback, 'heights_sidecar');
+  assert.equal(enriched.attractions[0].name, 'Maverick');
+  assert.equal(enriched.attractions[0].height.min, 52);
+  return true;
+});
+
+await check('cross-park audit flags missing source catalogues', () => {
+  const report = auditVenue({
+    venue: { id: 'test-park', name: 'Test' },
+    map: { coaster: [], slide: [], path: [] },
+    pois: [],
+    overrides: null,
+  });
+  assert.ok(report.weaknesses.some((w) => w.key === 'no-source-catalogue'));
+  const md = renderAuditMarkdown({ generated: '2026-08-10', parks: [report] });
+  assert.ok(md.includes('Universal builder'));
+  return true;
+});
+
 await check('official compare flags site-only and bundle-only rides', () => {
   const html = loadFixtureHtml(
     new URL('../test/fixtures/official-site/big-kahunas-listing.html', import.meta.url).pathname,

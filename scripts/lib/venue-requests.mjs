@@ -250,13 +250,14 @@ export function requests({ venue, map = {}, pois = [], overrides = null } = {}) 
   return out.sort((a, b) => Number(b.blocking) - Number(a.blocking));
 }
 
+import { addressBook, resolveOverride } from './venue-ids.mjs';
+
 /** Override keys that no place in the bundle answers to. Mirrors applyOverrides' matching. */
 function unmatchedOverrides(pois, overrides) {
   if (!overrides?.pois) return [];
-  const known = new Set(pois.map((p) => String(p.n).toLowerCase()));
+  const book = addressBook(pois);
   return Object.entries(overrides.pois)
-    .filter(([name, patch]) => !known.has(name.toLowerCase())
-      && !(patch?.alias && known.has(String(patch.alias).toLowerCase())))
+    .filter(([name, patch]) => !resolveOverride(book, name, patch))
     .map(([name]) => name)
     .sort();
 }

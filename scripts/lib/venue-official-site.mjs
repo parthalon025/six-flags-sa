@@ -277,6 +277,39 @@ export function compareOfficialToBundle({ official, pois = [], heightsSidecar = 
   };
 }
 
+/** Build pseudo-official attraction rows from the heights sidecar when the site is a SPA. */
+export function attractionsFromHeightsSidecar(sidecar, catalog) {
+  if (!sidecar?.rules) return [];
+  const siteUrl = catalog?.sources?.find((s) => s.kind === 'official_site')?.url || null;
+  return Object.entries(sidecar.rules).map(([name, rule]) => ({
+    name: rule.alias ? name : name,
+    alias: rule.alias || null,
+    url: siteUrl,
+    categories: [],
+    height: rule.h?.min != null ? { min: rule.h.min, label: rule.h.min === 0 ? 'No minimum' : `Min ${rule.h.min}"` } : null,
+    source: 'heights_sidecar',
+    note: rule.note || null,
+  }));
+}
+
+/**
+ * When live fetch yields nothing (SPA parks), fall back to heights sidecar + catalogue URLs.
+ */
+export function enrichOfficialFromSidecar(official, heightsSidecar, catalog) {
+  if (official?.attractions?.length) return official;
+  const fromSidecar = attractionsFromHeightsSidecar(heightsSidecar, catalog);
+  if (!fromSidecar.length) return official;
+  return {
+    ...official,
+    fetched: official?.fetched || heightsSidecar?.generated || null,
+    attractions: fromSidecar,
+    fallback: 'heights_sidecar',
+    pages: official?.pages?.length ? official.pages : (catalog?.sources || [])
+      .filter((s) => s.kind === 'official_site' || s.kind === 'official_map')
+      .map((s) => ({ id: s.id, url: s.url, kind: s.kind })),
+  };
+}
+
 /** Read cached HTML from a fixture path (tests). */
 export function loadFixtureHtml(file) {
   return readFileSync(file, 'utf8');

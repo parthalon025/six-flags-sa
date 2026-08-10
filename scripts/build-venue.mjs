@@ -1906,6 +1906,7 @@ async function buildOne(args, { previous = null } = {}) {
   if (judge.length || gaps.missingRides.length) {
     console.error(`Judgement and sourcing hints: npm run venues:research -- ${id}`);
   }
+  console.error(`Cross-park weaknesses: npm run venues:audit -- ${id}`);
 }
 
 /* Only when it is the thing being run. The tag rules and the height parser are

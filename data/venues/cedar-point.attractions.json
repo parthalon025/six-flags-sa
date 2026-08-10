@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- cedar-point",
   "venue": "cedar-point",
-  "generated": "2026-08-09",
+  "generated": "2026-08-10",
   "publish_at": "moderate",
   "attractions": [
     {
@@ -631,7 +631,7 @@
                 "lat": 41.486212,
                 "lng": -82.689509
               },
-              "date": "2026-08-09",
+              "date": "2026-08-10",
               "note": "where \"Gemini Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -648,7 +648,7 @@
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         },
         "station": {
@@ -936,48 +936,6 @@
       "place": "kite-eating-tree"
     },
     {
-      "id": "lake-eerie-nor-easter",
-      "place": "lake-eerie-nor-easter",
-      "name": "Lake Eerie Nor'easter",
-      "venue": "cedar-point",
-      "type": "attraction",
-      "at": {
-        "lat": 41.488522,
-        "lng": -82.687185
-      },
-      "features": {
-        "queue_entrance": {
-          "at": {
-            "lat": 41.48847,
-            "lng": -82.68715
-          },
-          "confidence": "unknown",
-          "score": 1,
-          "sources": [
-            "geometry"
-          ],
-          "evidence": [
-            {
-              "source": "geometry",
-              "at": {
-                "lat": 41.48847,
-                "lng": -82.68715
-              },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 6 m from the ride"
-            }
-          ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
-          "conflict": false,
-          "newest_evidence": "2026-08-09",
-          "stale": false
-        }
-      },
-      "last_verified": null
-    },
-    {
       "id": "lake-erie-eagles",
       "name": "Lake Erie Eagles",
       "venue": "cedar-point",
@@ -1018,6 +976,48 @@
       },
       "last_verified": null,
       "place": "lake-erie-eagles"
+    },
+    {
+      "id": "lake-eerie-nor-easter",
+      "place": "lake-eerie-nor-easter",
+      "name": "Lake Erie Nor'easter",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.488522,
+        "lng": -82.687185
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48847,
+            "lng": -82.68715
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48847,
+                "lng": -82.68715
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
     },
     {
       "id": "lakeslide-landing",
@@ -1476,7 +1476,7 @@
                 "lat": 41.48195,
                 "lng": -82.686529
               },
-              "date": "2026-08-09",
+              "date": "2026-08-10",
               "note": "where \"Millennium Force Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -1498,7 +1498,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         },
         "station": {
@@ -2241,7 +2241,7 @@
                 "lat": 41.482338,
                 "lng": -82.686767
               },
-              "date": "2026-08-09",
+              "date": "2026-08-10",
               "note": "where \"Rougarou Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -2267,7 +2267,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         },
         "station": {
@@ -2549,7 +2549,7 @@
                 "lat": 41.484261,
                 "lng": -82.691029
               },
-              "date": "2026-08-09",
+              "date": "2026-08-10",
               "note": "where \"Snake River Falls Fastlane Queue / Snake River Falls Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -2571,7 +2571,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         },
         "station": {
@@ -2894,7 +2894,7 @@
                 "lat": 41.486555,
                 "lng": -82.691916
               },
-              "date": "2026-08-09",
+              "date": "2026-08-10",
               "note": "where \"Steel Vengeance Extended Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -2920,7 +2920,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         },
         "station": {
@@ -3076,7 +3076,7 @@
                 "lat": 41.484023,
                 "lng": -82.686051
               },
-              "date": "2026-08-09",
+              "date": "2026-08-10",
               "note": "where \"Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue\" begins — a named queue tagged one-way towards the ride"
             },
             {
@@ -3098,7 +3098,7 @@
             }
           ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-10",
           "stale": false
         },
         "station": {
@@ -3178,7 +3178,7 @@
     {
       "id": "watterin-hole",
       "place": "watterin-hole",
-      "name": "Watterin' Hole",
+      "name": "Waterin' Hole",
       "venue": "cedar-point",
       "type": "attraction",
       "at": {

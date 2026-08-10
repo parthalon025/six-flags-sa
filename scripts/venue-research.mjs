@@ -25,6 +25,7 @@ import {
   loadOfficialData,
   officialUrls,
   parseAttractionListing,
+  enrichOfficialFromSidecar,
 } from './lib/venue-official-site.mjs';
 
 const USAGE = `
@@ -89,12 +90,17 @@ async function loadVenue(id, opts = {}) {
   const reqs = requests({ venue, map, pois, overrides });
   const judge = judgements({ pois, layers, overrides });
   const sourcing = sourcingPlan({ catalog, pois, layers, requests: reqs, judgements: judge });
-  const officialRaw = await loadOfficialData(id, catalog, {
-    fetch: opts.fetch,
-    offline: opts.offline,
-    details: opts.fetchDetails,
-  });
+  const officialRaw = enrichOfficialFromSidecar(
+    await loadOfficialData(id, catalog, {
+      fetch: opts.fetch,
+      offline: opts.offline,
+      details: opts.fetchDetails,
+    }),
+    heightsSidecar,
+    catalog,
+  );
   const official = compareOfficialToBundle({ official: officialRaw, pois, heightsSidecar });
+  if (officialRaw?.fallback) official.fallback = officialRaw.fallback;
 
   return {
     venue,
@@ -173,7 +179,12 @@ function renderOfficial(official, catalog) {
     lines.push(`- [${p.kind}](${p.url})${extra}`);
   }
   lines.push('');
-  if (official.fetched) lines.push(`Cache date: ${official.fetched}. Refresh with \`npm run venues:research -- <id> --fetch\`.`, '');
+  if (official.fetched) {
+    const note = official.fallback === 'heights_sidecar'
+      ? ' (heights sidecar — official site is JS-rendered)'
+      : '';
+    lines.push(`Data date: ${official.fetched}${note}. Live listing: \`npm run venues:research -- <id> --fetch\`.`, '');
+  }
   if (official.errors?.length) {
     lines.push('**Fetch errors**', '');
     official.errors.forEach((e) => lines.push(`- ${e}`));

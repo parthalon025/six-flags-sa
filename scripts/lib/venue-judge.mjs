@@ -7,6 +7,7 @@
 
 import { normaliseRideName } from '../../lib/mapSymbols.js';
 import { osmGaps } from './venue-sources.mjs';
+import { addressBook, resolveOverride } from './venue-ids.mjs';
 
 const WORD = (s) => String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
 
@@ -103,10 +104,9 @@ export function trackNames(layers = {}) {
  */
 export function strayOverrideKeys(pois, overrides) {
   if (!overrides) return { pois: [], unmapped: Object.keys(overrides?._unmapped || {}).sort() };
-  const known = new Set(pois.map((p) => String(p.n).toLowerCase()));
+  const book = addressBook(pois);
   const poisKeys = Object.entries(overrides.pois || {})
-    .filter(([name, patch]) => !known.has(name.toLowerCase())
-      && !(patch?.alias && known.has(String(patch.alias).toLowerCase())))
+    .filter(([name, patch]) => !resolveOverride(book, name, patch))
     .map(([name]) => name)
     .sort();
   const unmapped = Object.keys(overrides._unmapped || {}).sort();
