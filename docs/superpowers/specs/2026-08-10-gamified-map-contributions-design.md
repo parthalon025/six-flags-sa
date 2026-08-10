@@ -2,6 +2,7 @@
 
 **Date:** 2026-08-10  
 **Status:** Draft for review — not approved for implementation  
+**Master plan:** [`./2026-08-10-park-bound-master-spec.md`](./2026-08-10-park-bound-master-spec.md) · backlog epic **E9–E11** in [`./park-bound-implementation-backlog.md`](./park-bound-implementation-backlog.md)  
 **Companion research:** [`../../research/2026-08-10-gamified-map-contributions.md`](../../research/2026-08-10-gamified-map-contributions.md)
 
 ---

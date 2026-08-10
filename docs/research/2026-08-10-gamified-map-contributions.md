@@ -2,6 +2,7 @@
 
 **Date:** 2026-08-10  
 **Status:** Research complete; design proposal in [`../superpowers/specs/2026-08-10-gamified-map-contributions-design.md`](../superpowers/specs/2026-08-10-gamified-map-contributions-design.md)  
+**Master plan:** [`../superpowers/specs/2026-08-10-park-bound-master-spec.md`](../superpowers/specs/2026-08-10-park-bound-master-spec.md)  
 **Notion:** MCP server required desktop OAuth — workspace search/write was **blocked** in this cloud run. Authenticate Notion in Cursor Desktop, then re-run to merge any existing product notes and publish a Notion copy of this brief.
 
 ---
