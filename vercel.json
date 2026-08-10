@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["iad1"],
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build -w @party-tracker/app",
-  "outputDirectory": "apps/party-tracker/.next"
+  "rootDirectory": "apps/party-tracker",
+  "installCommand": "cd ../.. && npm ci",
+  "buildCommand": "cd ../.. && npm run build -w @party-tracker/app"
 }
