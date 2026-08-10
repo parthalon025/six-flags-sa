@@ -64,6 +64,7 @@ export async function openPhone(
     url = BASE,
     label = 'phone',
     venue = null,
+    requireGps = true,
   } = {},
 ) {
   const context = await browser.newContext({
@@ -79,10 +80,9 @@ export async function openPhone(
   await context.addInitScript(({ version, venueId }) => {
     localStorage.setItem('tracker-release-notes-seen', version);
     localStorage.setItem('tracker-intro-seen', '1');
-    if (venueId) {
-      localStorage.setItem('tracker-venue', venueId);
-      localStorage.setItem('tracker-venue-confirmed', venueId);
-    }
+    // Confirmed is the intake answer; pinned is tracker-venue, which would block
+    // the map from following the party host.
+    if (venueId) localStorage.setItem('tracker-venue-confirmed', venueId);
   }, { version: APP_VERSION, venueId: venue });
   const page = await context.newPage();
 
@@ -100,12 +100,35 @@ export async function openPhone(
   page.on('request', (r) => requests.push(r.url()));
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
+  if (url.includes('/join')) {
+    await page.waitForURL((u) => !String(u).includes('/join'), { timeout: 30000 }).catch(() => {});
+  }
   await hydrated(page);
   await closeGate(page);
-  await until(async () => (await page.locator('.gate').count()) === 0, {
-    timeout: 40000,
-    label: 'all gates to dismiss',
-  });
+  const waitForReady = async () => {
+    if (requireGps) {
+      await until(
+        async () => {
+          if ((await page.locator('.gate').count()) > 0) return false;
+          if ((await page.locator('.mePulse').count()) > 0) return true;
+          const brand = await page.locator('.brand span').innerText().catch(() => '');
+          return /near/i.test(brand);
+        },
+        { timeout: 40000, label: 'GPS fix and gates dismissed' },
+      );
+    } else {
+      await until(async () => (await page.locator('.gate').count()) === 0, {
+        timeout: 40000,
+        label: 'gates dismissed',
+      });
+    }
+  };
+  try {
+    await waitForReady();
+  } catch {
+    await closeGate(page);
+    await waitForReady();
+  }
   if (name) await setName(page, name);
 
   return { context, page, errors, requests, label };
@@ -125,7 +148,7 @@ export const hydrated = (page) =>
 export async function closeGate(page) {
   // The update splash can appear a tick after hydration; keep dismissing gates
   // until nothing is blocking taps.
-  for (let round = 0; round < 6; round += 1) {
+  for (let round = 0; round < 8; round += 1) {
     const updateContinue = page.locator('.gate .btn.primary:has-text("Continue")');
     if (await updateContinue.count()) {
       await updateContinue.click();
@@ -134,16 +157,16 @@ export async function closeGate(page) {
 
     const allow = page.locator('button:has-text("Allow location")');
     const yes = page.locator('.gate .btn.primary:has-text("Yes — set up")');
-    const skip = page.locator(
-      'button:has-text("Just look around"), button:has-text("Just show me the map"), button:has-text("Not now — just show me the map")',
-    );
     if (await allow.count()) await allow.click();
     if (await yes.count()) await yes.click().catch(() => {});
-    if (await skip.count()) await skip.first().click({ force: true }).catch(() => {});
     if (!(await page.locator('.gate').count())) return;
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
   }
 
+  const skip = page.locator(
+    'button:has-text("Just look around"), button:has-text("Just show me the map"), button:has-text("Not now — just show me the map")',
+  );
+  if (await skip.count()) await skip.first().click();
   await page.waitForSelector('.gate', { state: 'detached', timeout: 10000 });
 }
 

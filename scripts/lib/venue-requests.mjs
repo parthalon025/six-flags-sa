@@ -1,3 +1,5 @@
+import { addressBook, resolveOverride } from './venue-ids.mjs';
+
 /**
  * The questions a build cannot answer, written so somebody — or something — can.
  *
@@ -253,10 +255,9 @@ export function requests({ venue, map = {}, pois = [], overrides = null } = {}) 
 /** Override keys that no place in the bundle answers to. Mirrors applyOverrides' matching. */
 function unmatchedOverrides(pois, overrides) {
   if (!overrides?.pois) return [];
-  const known = new Set(pois.map((p) => String(p.n).toLowerCase()));
+  const book = addressBook(pois);
   return Object.entries(overrides.pois)
-    .filter(([name, patch]) => !known.has(name.toLowerCase())
-      && !(patch?.alias && known.has(String(patch.alias).toLowerCase())))
+    .filter(([name, patch]) => !resolveOverride(book, name, patch))
     .map(([name]) => name)
     .sort();
 }

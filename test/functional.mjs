@@ -685,6 +685,7 @@ await check('the reporting buttons are absent without a party', async () => {
     name: 'Solo',
     label: 'S',
     venue: 'kings-island',
+    requireGps: false,
   });
   await openRide(solo.page, 'Diamondback');
   const buttons = await solo.page.locator('.reportRow button').count();

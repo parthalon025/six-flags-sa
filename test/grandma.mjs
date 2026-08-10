@@ -76,7 +76,6 @@ async function arrive(geo, { venue = null } = {}) {
   // intake question about it, so the choice is seeded rather than driven.
   if (venue) {
     await ctx.addInitScript((id) => {
-      localStorage.setItem('tracker-venue', id);
       localStorage.setItem('tracker-venue-confirmed', id);
     }, venue);
   }

@@ -723,10 +723,12 @@ export default function Page() {
    * it decides this too.
    */
   const hostLocation = useMemo(() => {
-    const host = roster.find((m) => m.id === party?.hostId);
-    if (!host || !host.visible) return null;
-    return { lat: host.lat, lng: host.lng, name: host.name };
-  }, [roster, party?.hostId]);
+    const host = (party?.members || []).find((m) => m.id === party?.hostId);
+    const lat = host?.location?.lat;
+    const lng = host?.location?.lng;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng, name: host.name };
+  }, [party?.members, party?.hostId]);
 
   // The host's position outranks this phone's own, and keeps outranking it: if
   // the host turns out to be somewhere else, follow. Picking a venue by hand
