@@ -71,6 +71,12 @@ const { CADENCE, MOTION, cadenceFor, classifyMotion, createBroadcastGate } = awa
 );
 const { isLocationVisible, shouldShareLocation } = await import('../lib/gps/sharing.js');
 const {
+  MAX_ACC_M,
+  MAX_SPEED_MS,
+  createGpsSmoother,
+  positionForMap,
+} = await import('../lib/gps/smooth.js');
+const {
   MAX_SNAP_M,
   OFF_ROUTE_M,
   buildRouteGraph,
@@ -1110,6 +1116,60 @@ await check('reset makes the gate treat the next fix as the first', () => {
   return true;
 });
 
+/* ----------------------------------------------------------- gps/smooth -- */
+
+section('gps/smooth');
+
+await check('the smoother passes the first fix through and damps jitter', () => {
+  const s = createGpsSmoother();
+  const base = { lat: 39.34395, lng: -84.2673, acc: 12, ts: 0 };
+  const first = s.update(base);
+  assert.ok(first.smooth);
+  assert.equal(first.lat, base.lat);
+  assert.equal(first.lng, base.lng);
+  // A 3 m jump one second later should move less than the measurement.
+  const jitter = s.update({ lat: 39.34398, lng: -84.26732, acc: 12, ts: 1000 });
+  const moved = distance(first.lat, first.lng, jitter.lat, jitter.lng);
+  assert.ok(moved < 2.5, `moved ${moved} m`);
+  assert.ok(jitter.raw);
+  return true;
+});
+
+await check('the smoother rejects impossible speed and coarse accuracy', () => {
+  const s = createGpsSmoother();
+  s.update({ lat: 39.34395, lng: -84.2673, acc: 12, ts: 0 });
+  const jump = s.update({ lat: 39.34595, lng: -84.2673, acc: 12, ts: 1000 });
+  assert.equal(jump.rejected, true);
+  assert.equal(jump.lat, 39.34395);
+
+  const coarse = createGpsSmoother();
+  coarse.update({ lat: 39.34395, lng: -84.2673, acc: 12, ts: 0 });
+  const bad = coarse.update({ lat: 39.34396, lng: -84.26731, acc: MAX_ACC_M + 10, ts: 2000 });
+  assert.equal(bad.rejected, true);
+  return true;
+});
+
+await check('after enough rejections the smoother accepts a fix anyway', () => {
+  const s = createGpsSmoother({ maxRejectStreak: 2 });
+  s.update({ lat: 39.34395, lng: -84.2673, acc: 12, ts: 0 });
+  s.update({ lat: 39.34695, lng: -84.2673, acc: 12, ts: 1000 });
+  s.update({ lat: 39.34695, lng: -84.2673, acc: 12, ts: 2000 });
+  const forced = s.update({ lat: 39.34695, lng: -84.2673, acc: 12, ts: 3000 });
+  assert.equal(forced.rejected, false);
+  assert.ok(forced.lat > 39.345);
+  return true;
+});
+
+await check('manual placement resets the smoother', () => {
+  const s = createGpsSmoother();
+  s.update({ lat: 39.34395, lng: -84.2673, acc: 12, ts: 0 });
+  const manual = s.update({ lat: 39.35, lng: -84.27, acc: null, ts: 1000, manual: true });
+  assert.equal(manual.manual, true);
+  assert.equal(manual.smooth, false);
+  assert.equal(manual.raw, null);
+  return true;
+});
+
 /* --------------------------------------------------------- gps/sharing -- */
 
 section('gps/sharing');
@@ -1210,6 +1270,36 @@ await check('snapping lands on the path, not on the query point', () => {
   const snap = snapToGraph(graph, beast.lat, beast.lng);
   const drift = distance(beast.lat, beast.lng, snap.lat, snap.lng);
   assert.ok(Math.abs(drift - snap.offset) < 2, `${drift} vs ${snap.offset}`);
+  return true;
+});
+
+await check('positionForMap snaps inside the venue when the graph is near', () => {
+  const beast = poi('The Beast');
+  const bounds = PARK.meta.bounds;
+  const query = { lat: beast.lat + 0.00003, lng: beast.lng, acc: 20, ts: 0 };
+  const snapped = positionForMap({ position: query, graph, bounds });
+  assert.equal(snapped.snapped, true);
+  assert.ok(snapped.raw);
+  const onPath = snapToGraph(graph, snapped.lat, snapped.lng);
+  assert.ok(onPath.offset < 2, `still ${onPath.offset.toFixed(1)} m off the path`);
+  return true;
+});
+
+await check('positionForMap leaves off-site and manual fixes alone', () => {
+  const bounds = PARK.meta.bounds;
+  const off = positionForMap({
+    position: { lat: 39.35, lng: -84.29, acc: 12, ts: 0 },
+    graph,
+    bounds,
+  });
+  assert.equal(off.snapped, undefined);
+  const manual = positionForMap({
+    position: { lat: 39.34395, lng: -84.2673, acc: null, ts: 0, manual: true },
+    graph,
+    bounds,
+  });
+  assert.equal(manual.manual, true);
+  assert.equal(manual.snapped, undefined);
   return true;
 });
 
