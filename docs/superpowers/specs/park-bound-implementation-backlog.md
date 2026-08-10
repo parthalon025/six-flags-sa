@@ -12,7 +12,7 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 
 | Vision phase | Backlog epics | Notes |
 |--------------|---------------|-------|
-| 0 Architecture | E0 | Add twin schemas + PostGIS beside existing app |
+| 0 Architecture | E0, **EP** | Twin schemas + PostGIS; **required user profiles** |
 | 1 Park foundation | E1 | Align models; KI completeness — app already has 4 venues |
 | 2 GIS | E2 | Entrances/exits, georef validation, path integrity |
 | 3 Routing | E3 | Profiles + layer-aware graph (on-device first) |
@@ -36,12 +36,31 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 | ID | Item | Ships | Done when |
 |----|------|-------|-----------|
 | E0.1 | Audit & ADR | `docs/` ADR: dual-layer truth (PostGIS ↔ JSON export) | ADR merged; linked from master spec |
-| E0.2 | Docker PostGIS service | Optional `infra/docker` compose profile `twin` | `docker compose --profile twin up` healthy; app still runs without it |
-| E0.3 | Shared schemas package | `packages/schemas` (or extend `packages/shared`) for Park/Attraction/POI/Evidence | Types + JSON Schema; CI validates fixtures |
-| E0.4 | Minimal park-twin tables | parks, areas, attractions, pois, geometries, evidence_claims | Migrations apply cleanly |
+| E0.2 | Docker PostGIS service | Optional `infra/docker` compose profile `twin` | `docker compose --profile twin up` healthy; core map still offline-capable after profile cache |
+| E0.3 | Shared schemas package | `packages/schemas` (or extend `packages/shared`) for Park/Attraction/POI/Evidence/**User** | Types + JSON Schema; CI validates fixtures |
+| E0.4 | Minimal park-twin tables | parks, areas, attractions, pois, geometries, evidence_claims, **users/profiles** | Migrations apply cleanly |
 | E0.5 | Export stub | Script: twin → builder-compatible staging OR document “JSON remains builder-owned until E1.4” | Clear single direction of export; no dual-write to `public/venues` |
 
-**Non-goals:** Replacing Next.js; deleting venue-builder; phone querying PostGIS.
+**Non-goals:** Replacing Next.js; deleting venue-builder; phone querying PostGIS for map draw.
+
+---
+
+## EP — User profiles (required foundation)
+
+**Depends on:** E0.3 schemas (can stub types earlier)  
+**Goal:** Signed-in profiles required before party personalization, contributions, and XP.  
+**Product decision (2026-08-10):** User profiles are **required** — not deferred to living-map-only scoring.
+
+| ID | Item | Ships | Done when |
+|----|------|-------|-----------|
+| EP.1 | Auth provider choice + ADR | Email magic link and/or OAuth; session model | ADR documents provider, token storage, offline session |
+| EP.2 | Profile schema | `users`, `profiles` (display name, avatar key, created_at) | Migrations + shared types |
+| EP.3 | Sign-in / sign-up UX | Required gate before main park experience (or soft-gate with clear block on party/contribute) | Functional tests; no anonymous contribution path |
+| EP.4 | Offline profile cache | Profile + rank/passport snapshot in IndexedDB after login | Map still draws offline; identity available for local queues |
+| EP.5 | Party ↔ profile link | Party members bind to `user_id` (invite still works; join requires signed-in profile) | Protocol/tests updated |
+| EP.6 | Managed guest profiles | Height/age for kids under guardian profile | Eligibility-ready; privacy rules documented |
+
+**Ordering note:** EP.1–EP.4 should land before E9 (living map) and before E10 (XP). Prefer EP before or alongside E4 party privacy so sharing controls attach to real users.
 
 ---
 
@@ -234,7 +253,7 @@ Detail: [`2026-08-10-gamified-map-contributions-design.md`](./2026-08-10-gamifie
 | ID | Item | Ships | Done when |
 |----|------|-------|-----------|
 | E14.1 | Park config templates | Ingest checklist per venue | `venues:report` gates |
-| E14.2 | Cross-park explorer profile | Passport federation | Account optional until E9/E10 |
+| E14.2 | Cross-park explorer profile | Passport federation | Requires EP; one profile across parks |
 | E14.3 | No per-park forks | Enforce in review | Documented |
 
 ---
@@ -244,25 +263,28 @@ Detail: [`2026-08-10-gamified-map-contributions-design.md`](./2026-08-10-gamifie
 Do **not** start at gamification or CV.
 
 1. **E0.1** — ADR dual-layer truth (docs only)  
-2. **E1.1** — Pipeline integrity defects (highest data-quality ROI)  
-3. **E0.2–E0.4** — PostGIS + schemas beside app  
-4. **E1.2** — Deterministic ids  
-5. **E1.4** — Ingest KI into twin  
-6. **E3.1–E3.2** — Routing correctness  
-7. **E4.1** — Party privacy controls  
-8. **E5.1–E5.2** — Eligibility v2  
-9. **E8.1** — Next-best + Why?  
-10. **E9.1** — Living map Tier-1  
+2. **EP.1** — Auth/profile ADR (required profiles)  
+3. **E1.1** — Pipeline integrity defects (highest data-quality ROI)  
+4. **E0.2–E0.4** — PostGIS + schemas (include users)  
+5. **EP.2–EP.4** — Profile schema, sign-in UX, offline cache  
+6. **E1.2** — Deterministic ids  
+7. **E1.4** — Ingest KI into twin  
+8. **E3.1–E3.2** — Routing correctness  
+9. **EP.5 + E4.1** — Party ↔ profile + privacy controls  
+10. **E5.1–E5.2** — Eligibility v2 (on profiles)  
+11. **E8.1** — Next-best + Why?  
+12. **E9.1** — Living map Tier-1 (always attributed to `user_id`)  
 
 ---
 
 ## Open product decisions (blockers for later epics)
 
-1. **Identity:** When do accounts become required — E9 scoring only, or earlier?  
+1. ~~**Identity:** When do accounts become required?~~ **Resolved 2026-08-10: user profiles are required** (see epic **EP**). Auth *provider* still TBD in EP.1.  
 2. **PostGIS hosting:** Local docker for dev; production host TBD.  
 3. **Height rules → OSM?** Prefer Park Bound overrides forever unless OSM has a clear tag.  
 4. **MapLibre:** Stay on SVG until a measured need.  
-5. **Python workers now vs later:** Prefer Node workers first if team velocity is JS; Python OK for GIS-heavy E12/E13.
+5. **Python workers now vs later:** Prefer Node workers first if team velocity is JS; Python OK for GIS-heavy E12/E13.  
+6. **Sign-in gate hardness:** Hard block entire app vs allow browse-only map until sign-in (profile still required for party/contribute/planner sync).
 
 ---
 

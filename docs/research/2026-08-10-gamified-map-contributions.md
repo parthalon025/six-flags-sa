@@ -114,7 +114,7 @@ Parkbound already precaches venue maps. Contributions must:
 
 - **Gaming the score:** volume farming, false confirms, sockpuppets → need rate limits, agreement metrics, proximity checks, delayed full credit.
 - **OSM policy missteps:** organised editing without disclosure; automated low-quality tags.
-- **Conflict with offline premise:** overbuilding a mandatory accounts/server path.
+- **Profiles vs offline:** user profiles are required (product decision); mitigate with offline profile cache after sign-in — do not require continuous connectivity for map draw.
 - **Leaderboard demotivation:** global boards demotivate mid-pack → use per-venue / weekly leagues.
 - **Notion gap:** product intent in Notion could not be merged this run.
 

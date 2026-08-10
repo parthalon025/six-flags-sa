@@ -173,6 +173,22 @@ Every important field retains sources, confidence, dissent. Preferred hierarchy:
 
 Normalize aliases to stable ids (`kings-island:orion`). Display names are not primary keys.
 
+### User profiles (required)
+
+**Signed-in user profiles are required** for Park Bound product use (map session, party, contributions, planner personalization, and explorer progress). Anonymous throwaway sessions are not a supported product mode.
+
+| Concern | Requirement |
+|---------|-------------|
+| Identity | Stable `user_id` backed by an account (email/OAuth/device-linked signup TBD in implementation) |
+| Profile | Display name, avatar/cosmetics hooks, explorer level, reputation, impact, per-park passport |
+| Party | Party members resolve to (or are linked from) user profiles; roles attach to profile membership |
+| Eligibility | Height/age/accessibility live on profile (or linked guest profiles the user manages) |
+| Contributions | All reports, confirms, and quests attribute to `user_id`; no anonymous global score |
+| Offline | Profile + entitlements cache on device after sign-in; sync when online; sealed party crypto unchanged |
+| Privacy | Location sharing remains explicit; profile existence ≠ continuous location broadcast |
+
+Child accounts / guardian-managed profiles are in scope for the party roles model (`Child` under an `Adult`/`Owner`).
+
 ---
 
 ## 5. Party system (product requirements)

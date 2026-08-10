@@ -21,16 +21,17 @@ Park maps drift: restrooms close, paths get mis-tagged, heights are wrong, rides
 ## Non-goals (v1)
 
 - Full freeform OSM geometry editor in the PWA.
-- Mandatory accounts for using the map or party features.
 - Redeemable cash / gift-card economy.
 - Replacing the venue builder with a live PostGIS runtime on phones.
+- Anonymous contribution or scoring paths.
 
 ## Constraints (from existing product)
 
 - Offline map draw stays service-worker / JSON based.
 - Only the builder may write `public/venues/*.json` and `lib/venueIndex.js`.
 - Hand corrections for a venue live in `data/venues/<id>.*` then rebuild.
-- Party mesh is already the social unit; contributions should optionally amplify party value without requiring a global identity for basic park use.
+- **User profiles are required** (product decision 2026-08-10): map/party/contribute/XP all attribute to a signed-in profile; cache profile offline after login.
+- Party mesh remains the realtime coordination fabric; members bind to `user_id`.
 
 ---
 
@@ -183,13 +184,13 @@ Unlocked by rank: batch MapRoulette-like tasks for a venue, conflict resolution,
 
 | Rank | Rough XP | Unlocks |
 |------|----------|---------|
-| Guest | 0 | View map; optional anonymous local notes (no global score) |
-| Scout | 50 | Tier-1 reports with account; appear on venue board |
+| Visitor | 0 | Signed-in baseline; view map; party join; no Tier-2 quests |
+| Scout | 50 | Tier-1 reports; appear on venue board |
 | Ranger | 250 | Tier-2 quests; karma confirms count double weight |
 | Cartographer | 1000 | Height/path quests; nominate OSM export |
 | Steward | invite / high reputation | Review queue; temporary mute; organised OSM edits |
 
-Anonymous use remains first-class for navigation/party. Scoring requires a lightweight identity (device-backed account or OAuth).
+Every contribution and score event requires `authorId` → user profile. Offline queue retains `user_id` from the cached session; sync rejects unauthenticated uploads.
 
 ### Leaderboards
 
@@ -274,18 +275,19 @@ Keep first-viewport / brand rules of the main app intact; contribution UI lives 
 
 ### Phase 0 — Spec alignment
 
-- Approve this design; decide identity provider; confirm Notion notes after MCP auth.
+- Approve this design; pick auth provider (backlog **EP.1**); confirm Notion notes after MCP auth.
+- User profiles required (resolved).
 
-### Phase 1 — Local + party value (minimal server)
+### Phase 1 — Profile + local/party value
 
-- Contribution queue on device.
-- Tier-1 ride/amenity reports shared on party mesh (action-log style).
-- Local XP ledger (not global).
-- Proves UX without committing to OSM.
+- Sign-in and offline profile cache (**EP**).
+- Contribution queue on device, always tagged with `user_id`.
+- Tier-1 ride/amenity reports on party mesh (action-log style).
+- Local XP ledger that reconciles to server on sync.
 
 ### Phase 2 — Central store + scoring
 
-- Accounts, contribution API, confirmations, venue weekly boards.
+- Contribution API, confirmations, venue weekly boards (auth required).
 - Overlays fetched when online; cached for offline.
 - Rank gates for Tier-2.
 
@@ -313,7 +315,7 @@ Keep first-viewport / brand rules of the main app intact; contribution UI lives 
 
 ## Open decisions (need product call)
 
-1. Is global identity required in Phase 1, or is party-local scoring enough to start?
+1. ~~Is global identity required?~~ **Resolved: user profiles required.** Remaining: which auth provider (EP.1) and hard vs soft sign-in gate for browse-only map.
 2. Should height rules ever export to OSM, or always stay Parkbound overrides?
 3. Photo storage: required for Tier-2, optional, or notes-only?
 4. Partner “stuff” rewards with parks — in or out of scope for year one?
@@ -335,4 +337,4 @@ Keep first-viewport / brand rules of the main app intact; contribution UI lives 
 - No TBDs left without an owning “Open decision.”
 - Approach B is explicit vs A/C.
 - Scope is multi-phase: implement Phase 1 only after approval; later phases get their own implementation plans.
-- Ambiguity on identity deferred to open decision #1 rather than silently assuming accounts.
+- Identity resolved: profiles required; auth provider remains EP.1.
