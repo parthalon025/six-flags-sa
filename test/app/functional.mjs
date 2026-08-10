@@ -440,18 +440,20 @@ await check('a glance card walks you to a place and stops again', async () => {
 });
 
 console.log('\n--- party: create and invite ---');
+await dismissNavigation(a).catch(() => {});
 if (await a.locator('.navBanner').count()) {
   await a.locator('.navEnd').click().catch(() => {});
   await a.waitForTimeout(600);
 }
-// Cedar Point walk setup leaves this phone on that map; party ride tests need Kings Island.
+// Cedar Point walk coverage leaves this phone on that map; party ride tests need Kings Island.
 {
+  await go(a, 'Places');
   const brand = async () => a.locator('.brandName, .brand b').first().innerText();
   if (!/kings island/i.test(await brand().catch(() => ''))) {
     await go(a, 'Which map');
     await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
-    await until(async () => /kings island/i.test(await brand()), {
-      timeout: 15000,
+    await until(async () => /kings island/i.test(await brand().catch(() => '')), {
+      timeout: 20000,
       label: 'back on Kings Island',
     });
   }
