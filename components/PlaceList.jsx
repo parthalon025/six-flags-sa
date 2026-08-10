@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
-import { statusFor } from '@/lib/rideStatus';
+import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import { eligibility, heightLabel, isRideable } from '@/lib/park';
 import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
@@ -51,6 +51,7 @@ export default function PlaceList({
   onReport = null, // (rideId, 'down'|'open'|null) — null when not in a party
   onAddToPlan = null,
   now = Date.now(),
+  members = null, // party members for BUSY clustering
 }) {
   const palette = paletteFor(theme);
   const POIS = usePois();
@@ -64,17 +65,25 @@ export default function PlaceList({
   const [containerHeight, setContainerHeight] = useState(400);
   const listRef = useRef(null);
 
-  // One verdict per place, computed once. `now` is a prop rather than a call so
-  // the whole screen agrees on what "12 min ago" means within a render.
+  // One live verdict per place. Distance and party clustering turn OPEN into
+  // GO NOW / BUSY without inventing a wait-time number.
   const statuses = useMemo(() => {
     const out = new Map();
-    if (!weather && !rides) return out;
+    if (!weather && !rides && !me) return out;
     POIS.forEach((p) => {
       if (!isRideable(p) && p.c !== 'show') return;
-      out.set(p.id, statusFor(p, rides?.[p.id] ?? null, weather, now));
+      const metres = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
+      const near = membersAt(p, members);
+      out.set(
+        p.id,
+        liveFor(p, rides?.[p.id] ?? null, weather, now, {
+          metres,
+          membersNear: near,
+        }),
+      );
     });
     return out;
-  }, [POIS, weather, rides, now]);
+  }, [POIS, weather, rides, now, me, members]);
 
   // Which categories the words themselves are asking for — computed once per
   // query rather than once per place.
@@ -217,9 +226,14 @@ export default function PlaceList({
                 className={[
                   'liveBadge',
                   'statusPill',
-                  st.tone === 'ok' || st.key === 'open' ? 'open' : '',
-                  st.tone === 'bad' || st.key === 'down' || st.key === 'hold' ? 'paused' : '',
-                  st.key === 'closed' || st.key === 'watch' || st.source === 'weather' ? 'weather' : '',
+                  st.live === 'goNow' || st.key === 'goNow' ? 'goNow' : '',
+                  st.live === 'busy' || st.key === 'busy' ? 'busy' : '',
+                  st.live === 'later' || st.key === 'later' || st.key === 'watch' ? 'later' : '',
+                  st.live === 'open' || st.key === 'open' ? 'open' : '',
+                  st.live === 'paused' || st.key === 'down' || st.key === 'hold' || st.key === 'paused'
+                    ? 'paused'
+                    : '',
+                  st.live === 'weather' || st.key === 'closed' ? 'weather' : '',
                   st.source === 'weather' ? 'guess' : '',
                 ]
                   .filter(Boolean)

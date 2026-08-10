@@ -1394,6 +1394,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: var(--helpTint);
   animation: railIn var(--t2) var(--easeOut) both, alertRing 1.8s ease-out infinite .4s;
 }
+.glanceCard.goNow {
+  box-shadow: var(--shadow1), 0 0 0 2px color-mix(in srgb, var(--adventure) 55%, transparent);
+}
 .glanceCard.selected { box-shadow: var(--shadow1), 0 0 0 2px var(--blue); }
 .glanceCard.stale { opacity: .45; }
 /* Footnote. The line-height is stated rather than inherited: without it this
@@ -2303,6 +2306,12 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 }
 .liveBadge.goNow {
   color: var(--onTint); background: var(--adventure);
+}
+.liveBadge.busy {
+  color: #8A5A00; background: color-mix(in srgb, var(--sun) 42%, transparent);
+}
+.liveBadge.later {
+  color: var(--aqua); background: color-mix(in srgb, var(--aqua) 16%, transparent);
 }
 .liveBadge.paused, .liveBadge.bad {
   color: var(--onTint); background: var(--signal);

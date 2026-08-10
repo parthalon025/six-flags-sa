@@ -4897,6 +4897,94 @@ await check('the summary survives no weather and no party', () => {
   return true;
 });
 
+/* -------------------------------------------------- live recommendations -- */
+
+section('live/recommend');
+
+const {
+  liveFor,
+  membersAt,
+  recommendNow,
+  GO_NOW_M,
+} = await import('../lib/live.js');
+const { LIVE } = await import('../lib/brand.js');
+
+const BEAST_HERE = { ...BEAST, lat: 39.3441, lng: -84.268 };
+
+await check('a nearby open report is GO NOW', () => {
+  const now = 5_000_000;
+  const s = liveFor(
+    BEAST_HERE,
+    { status: RIDE_OPEN, byName: 'Ava', ts: now },
+    FINE,
+    now,
+    { metres: GO_NOW_M - 10 },
+  );
+  assert.equal(s.key, 'goNow');
+  assert.equal(s.label, LIVE.goNow);
+  return true;
+});
+
+await check('an open report far away stays OPEN', () => {
+  const now = 5_000_000;
+  const s = liveFor(
+    BEAST_HERE,
+    { status: RIDE_OPEN, byName: 'Ava', ts: now },
+    FINE,
+    now,
+    { metres: GO_NOW_M + 200 },
+  );
+  assert.equal(s.key, 'open');
+  assert.equal(s.label, LIVE.open);
+  return true;
+});
+
+await check('a watch outlook becomes LATER', () => {
+  const now = 5_000_000;
+  // Rain watch on an outdoor coaster.
+  const wet = classifyWeather({
+    code: 0,
+    tempF: 72,
+    precipIn: 0,
+    gustMph: 5,
+    precipChance: 70,
+    isDay: true,
+  });
+  const s = liveFor(BEAST_HERE, null, wet, now, { metres: 100 });
+  assert.equal(s.key, 'later');
+  assert.equal(s.label, LIVE.later);
+  return true;
+});
+
+await check('party clustered on a ride is BUSY', () => {
+  const now = 5_000_000;
+  const s = liveFor(BEAST_HERE, null, FINE, now, {
+    metres: 80,
+    membersNear: 2,
+  });
+  assert.equal(s.key, 'busy');
+  assert.equal(s.label, LIVE.busy);
+  return true;
+});
+
+await check('membersAt counts only people at the place', () => {
+  const here = [
+    { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng, visible: true },
+    { lat: BEAST_HERE.lat + 0.0001, lng: BEAST_HERE.lng, visible: true },
+    { lat: BEAST_HERE.lat + 1, lng: BEAST_HERE.lng, visible: true },
+  ];
+  assert.equal(membersAt(BEAST_HERE, here), 2);
+  return true;
+});
+
+await check('recommendNow surfaces nearby clear-sky rides', () => {
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const picks = recommendNow([BEAST_HERE], null, FINE, me, [], 5_000_000, 2);
+  assert.ok(picks.length >= 1);
+  assert.equal(picks[0].live.label, LIVE.goNow);
+  return true;
+});
+
 /* ------------------------------------------------------------ venue ids -- */
 
 section('venue/ids');

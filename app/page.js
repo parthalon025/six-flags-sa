@@ -123,7 +123,12 @@ const INTRO_KEY = 'tracker-intro-seen';
    a card on the rail confidently pointing at Ohio. */
 const CAR_KEY = 'tracker-car';
 /** The standing cards, by the name the visitor saw on them. */
-const CARD_LABELS = { restroom: 'Nearest toilet', food: 'Nearest food', firstaid: 'First aid' };
+const CARD_LABELS = {
+  restroom: 'Nearest toilet',
+  food: 'Nearest food',
+  firstaid: 'First aid',
+  gonow: 'GO NOW',
+};
 
 /* How long a phone has to say nothing before the others are told it has gone
    quiet. Deliberately longer than the five minutes at which the roster row
@@ -2023,6 +2028,9 @@ export default function Page() {
                   onDismiss={shedCard}
                   hidden={hiddenHere}
                   compact={plan.digest}
+                  weather={weatherFeed.weather}
+                  rides={partyRides}
+                  now={Date.now()}
                 />
               )}
               {/* Where the list would be, when the list will not fit: it is not
@@ -2081,6 +2089,7 @@ export default function Page() {
                   theme={theme}
                   weather={weatherFeed.weather}
                   rides={partyRides}
+                  members={others}
                   // Reporting needs somewhere to send it. Outside a party the list
                   // still shows the forecast, minus the buttons.
                   onReport={party?.active ? reportRide : null}

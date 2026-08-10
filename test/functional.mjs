@@ -607,7 +607,7 @@ const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`
  */
 async function pillFor(page, name) {
   const row = page.locator('.poiRow', { hasText: name }).first();
-  const pill = row.locator('.verdict.statusPill').first();
+  const pill = row.locator('.statusPill').first();
   try {
     // Short timeout and a catch rather than a count() guard: the retraction
     // test is polling for this pill to vanish, so it can and does disappear
@@ -653,12 +653,12 @@ await check('the report says who saw it and when', async () => {
 await check('the other phone can correct it', async () => {
   const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
   await reportBtn(row, 'open').click();
-  await until(async () => /\bopen\b/i.test(await pillFor(b, 'Diamondback')), {
+  await until(async () => /go now|\bopen\b/i.test(await pillFor(b, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'phone B to overwrite the report',
   });
   // A ride report is not owned by whoever wrote it, so A sees B's correction.
-  await until(async () => /\bopen\b/i.test(await pillFor(a, 'Diamondback')), {
+  await until(async () => /go now|\bopen\b/i.test(await pillFor(a, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: "the correction to reach phone A",
   });

@@ -2,7 +2,9 @@
 
 import { memo, useEffect, useMemo, useRef } from 'react';
 import Icon from '@/components/Icon';
+import { LIVE } from '@/lib/brand';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
+import { recommendNow } from '@/lib/live';
 import { navKeyOf as keyOfNav } from '@/lib/routing';
 import { usePois } from '@/lib/venue/useVenue';
 import { paletteFor } from '@/lib/theme';
@@ -51,6 +53,10 @@ function GlanceRail({
   navKey,
   navMetres,
   onOpenParty,
+  // Live recommendations. Optional — without them the rail is proximity-only.
+  weather = null,
+  rides = null,
+  now = Date.now(),
   // Called when the visitor gets rid of a card: {kind:'selected'} for the
   // place they tapped, {kind:'category', category} for a standing one.
   onDismiss = null,
@@ -200,6 +206,28 @@ function GlanceRail({
       out[out.length - 1].shed = { kind: 'selected' };
     }
 
+    /* What should I do right now? Up to two GO NOW rides, before standing
+       amenity cards — recommendations beat the nearest toilet when the sky
+       and the party say a ride is worth walking to. */
+    if (!hidden?.includes('gonow')) {
+      const picks = recommendNow(pois, rides, weather, me, members, now, 2);
+      picks.forEach(({ poi, live, metres }, i) => {
+        const at = `${poi.lat},${poi.lng}`;
+        if (out.some((c) => c.target && `${c.target.lat},${c.target.lng}` === at)) return;
+        push(
+          `go-${poi.id || i}`,
+          LIVE.goNow,
+          poi.n,
+          poi,
+          'var(--adventure)',
+          live.detail || poi.a || formatWalk(metres),
+          'goNow',
+          { kind: 'poi', label: poi.n, lat: poi.lat, lng: poi.lng },
+        );
+        out[out.length - 1].shed = { kind: 'category', category: 'gonow' };
+      });
+    }
+
     /* The nearest of the things people actually go looking for. These used to
        appear only on an otherwise empty rail, which put them behind the exact
        condition that hides them: join a party or tap a ride and the nearest
@@ -241,7 +269,7 @@ function GlanceRail({
     });
 
     return out;
-  }, [pois, me, members, meet, car, selected, heading, palette, hidden]);
+  }, [pois, me, members, meet, car, selected, heading, palette, hidden, weather, rides, now]);
 
   const leadKey = cards[0]?.key ?? null;
   useEffect(() => {
