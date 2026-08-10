@@ -107,9 +107,14 @@ const {
 } = await import('../lib/mapLabels.js');
 const {
   inkOn,
+  labelWantedAtZoom,
   labelZoomFor,
+  LABEL_ZOOM_HYSTERESIS,
+  layerVisible,
   normaliseRideName,
   partyMarkerState,
+  planZoom,
+  PLAN_ZOOM_STEP,
   sizeAtZoom,
   symbolFor,
   STALE_AFTER_MS,
@@ -1804,6 +1809,30 @@ await check('markers grow with the map but nothing like as fast', () => {
   assert.ok(wide > 6, 'still visible at the park-wide view');
   assert.ok(close < 12, 'not covering a midway at walking zoom');
   assert.ok(close > wide);
+  return true;
+});
+
+await check('a place name does not strobe across its zoom threshold', () => {
+  const enter = labelZoomFor(3);
+  assert.equal(labelWantedAtZoom(3, enter, false), true);
+  assert.equal(labelWantedAtZoom(3, enter - 0.01, false), false);
+  // Once shown, it survives a little below the enter line.
+  assert.equal(labelWantedAtZoom(3, enter - LABEL_ZOOM_HYSTERESIS, true), true);
+  assert.equal(labelWantedAtZoom(3, enter - LABEL_ZOOM_HYSTERESIS - 0.01, true), false);
+  return true;
+});
+
+await check('declutter zoom is quantized so a pinch does not re-bid every frame', () => {
+  assert.equal(planZoom(1.5), planZoom(1.5 + PLAN_ZOOM_STEP / 3));
+  assert.notEqual(planZoom(1.5), planZoom(1.5 + PLAN_ZOOM_STEP));
+  return true;
+});
+
+await check('detail layers use enter/leave thresholds', () => {
+  assert.equal(layerVisible(0.7, 0.7, 0.62, false), true);
+  assert.equal(layerVisible(0.69, 0.7, 0.62, false), false);
+  assert.equal(layerVisible(0.62, 0.7, 0.62, true), true);
+  assert.equal(layerVisible(0.61, 0.7, 0.62, true), false);
   return true;
 });
 

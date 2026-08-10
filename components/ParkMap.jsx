@@ -1,14 +1,16 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { distance, formatAge, formatDistance, project, unproject } from '@/lib/geo';
 import { landTint, paletteFor } from '@/lib/theme';
 import Icon from '@/components/Icon';
 import { heightLabel, isRideable } from '@/lib/park';
 import {
-  labelZoomFor,
+  labelWantedAtZoom,
+  layerVisible,
   normaliseRideName,
   partyMarkerState,
+  planZoom,
   sizeAtZoom,
   symbolFor,
 } from '@/lib/mapSymbols';
@@ -35,9 +37,9 @@ import MapLegend from './MapLegend';
    campus or a state fair all render through the same code. Layers a venue has
    no examples of arrive empty and draw nothing.
 
-   `to(x, y)` is the one place world metres become screen pixels — pan, zoom,
-   rotation and the lifted centre all live in it, and everything drawn below
-   goes through it.
+   Static geometry is projected once into mercator metres and moved with an SVG
+   transform; `to(x, y)` is still the one place world metres become screen
+   pixels for anything that has to stay upright (labels, markers, the puck).
 
    Everything that moves the viewport goes through animateTo(), so a tap on a
    roster row glides to the person instead of teleporting, and a flick keeps
@@ -74,15 +76,28 @@ const LAND_FONT = 15;
 const LAND_TRACKING = 2.4; // .16em at 15px
 const POI_FONT = 9.5;
 
-function pathFromRing(ring, to) {
+/* Screen-space paths for overlays that move every frame live in
+   pathFromLatLngs below. Venue geometry uses {@link worldPathFromRing}. */
+
+/** Mercator-metre path. Drawn once, then moved by the viewport transform. */
+function worldPathFromRing(ring, close = false) {
   if (!Array.isArray(ring) || ring.length < 2) return '';
   let d = '';
   for (let i = 0; i < ring.length; i += 1) {
     const [x, y] = project(ring[i][1], ring[i][0]);
-    const [sx, sy] = to(x, y);
-    d += `${i === 0 ? 'M' : 'L'}${sx.toFixed(1)} ${sy.toFixed(1)}`;
+    d += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
   }
-  return d;
+  return close ? `${d}Z` : d;
+}
+
+function worldPaths(list, close) {
+  const out = [];
+  (list || []).forEach((f, i) => {
+    const r = Array.isArray(f) ? f : f?.r;
+    const d = worldPathFromRing(r, close);
+    if (d) out.push({ i, d, n: f?.n });
+  });
+  return out;
 }
 
 /* Map geometry is [lng, lat] because that is how the file stores it; a route
@@ -99,7 +114,7 @@ function pathFromLatLngs(points, to) {
   return d;
 }
 
-export default function ParkMap({
+function ParkMap({
   data,
   center,
   pois,
@@ -154,12 +169,31 @@ export default function ParkMap({
   const moved = useRef(false);
   const viewRef = useRef(view);
   const raf = useRef(0);
+  const viewRaf = useRef(0);
+  const pendingView = useRef(null);
   const fling = useRef({ vx: 0, vy: 0, t: 0 });
   const lastTap = useRef({ t: 0, x: 0, y: 0 });
   // The laid-out markers, so a tap can be resolved against what was drawn.
   const planRef = useRef({ lands: [], markers: [], labels: [] });
+  // Hysteresis for zoom-gated layers and place names — previous pass's answer,
+  // so a jittery pinch does not restrobe the map.
+  const [layersOn, setLayersOn] = useState({ lands: false, detail: false, service: false });
+  const [shownLabels, setShownLabels] = useState(() => new Set());
 
   viewRef.current = view;
+
+  /** Push a view change. Gestures may fire faster than paint; coalesce to one
+   *  React update per frame while keeping viewRef hot for the next event. */
+  const pushView = useCallback((next) => {
+    const resolved = typeof next === 'function' ? next(viewRef.current) : next;
+    viewRef.current = resolved;
+    pendingView.current = resolved;
+    if (viewRaf.current) return;
+    viewRaf.current = requestAnimationFrame(() => {
+      viewRaf.current = 0;
+      if (pendingView.current) setView(pendingView.current);
+    });
+  }, []);
 
   useEffect(() => {
     const node = wrapRef.current;
@@ -177,7 +211,13 @@ export default function ParkMap({
     raf.current = 0;
   }, []);
 
-  useEffect(() => stopAnim, [stopAnim]);
+  useEffect(
+    () => () => {
+      stopAnim();
+      if (viewRaf.current) cancelAnimationFrame(viewRaf.current);
+    },
+    [stopAnim],
+  );
 
   /**
    * Tween the viewport to a target. Scale is interpolated geometrically —
@@ -187,6 +227,10 @@ export default function ParkMap({
   const animateTo = useCallback(
     (target, { duration = 620, ease = easeOut } = {}) => {
       stopAnim();
+      if (viewRaf.current) {
+        cancelAnimationFrame(viewRaf.current);
+        viewRaf.current = 0;
+      }
       const from = { ...viewRef.current };
       const to = {
         x: Number.isFinite(target.x) ? target.x : from.x,
@@ -197,6 +241,7 @@ export default function ParkMap({
         && Math.abs(to.scale - from.scale) < 0.001;
       if (still) return;
       if (prefersStill() || duration <= 0) {
+        viewRef.current = to;
         setView(to);
         return;
       }
@@ -204,11 +249,13 @@ export default function ParkMap({
       const step = (now) => {
         const p = Math.min(1, (now - t0) / duration);
         const k = ease(p);
-        setView({
+        const next = {
           x: from.x + (to.x - from.x) * k,
           y: from.y + (to.y - from.y) * k,
           scale: from.scale * (to.scale / from.scale) ** k,
-        });
+        };
+        viewRef.current = next;
+        setView(next);
         raf.current = p < 1 ? requestAnimationFrame(step) : 0;
       };
       raf.current = requestAnimationFrame(step);
@@ -378,7 +425,7 @@ export default function ParkMap({
       const ratio = dist / gesture.current.dist;
       const scale = clampScale(gesture.current.scale * ratio);
       if (Math.abs(dist - gesture.current.dist) > 4) moved.current = true;
-      setView((v) => ({ ...v, scale }));
+      pushView((v) => ({ ...v, scale }));
       return;
     }
 
@@ -399,7 +446,7 @@ export default function ParkMap({
     // different axis than the finger does.
     const u = dx * spin.cos + dy * spin.sin;
     const v = -dx * spin.sin + dy * spin.cos;
-    setView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
+    pushView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
   };
 
   /** Momentum after a flick: decay the last velocity until it is under a pixel. */
@@ -509,7 +556,7 @@ export default function ParkMap({
     const scale = clampScale(v.scale * (e.deltaY > 0 ? 0.9 : 1.11));
     const ox = px - size.w / 2;
     const oy = py - size.h / 2;
-    setView({
+    pushView({
       x: v.x + ox / v.scale - ox / scale,
       y: v.y - oy / v.scale + oy / scale,
       scale,
@@ -530,31 +577,58 @@ export default function ParkMap({
 
   /* ---------- layer rendering ---------- */
   const z = view.scale;
-  const showDetail = z > 0.7;
-  const showService = z > 1.4;
-  /* District names survive far further out than place names do, because the
-     whole-venue view is precisely when "which part is that" is the question. */
-  const showLands = z > 0.34;
+  const zPlan = planZoom(z);
+  /* District names / detail / service layers use enter/leave thresholds so a
+     pinch that jitters on the boundary does not remount thousands of paths. */
+  const showLands = layerVisible(zPlan, 0.34, 0.28, layersOn.lands);
+  const showDetail = layerVisible(zPlan, 0.7, 0.62, layersOn.detail);
+  const showService = layerVisible(zPlan, 1.4, 1.28, layersOn.service);
 
-  const layers = useMemo(() => {
+  useEffect(() => {
+    setLayersOn((prev) => {
+      if (prev.lands === showLands && prev.detail === showDetail && prev.service === showService) {
+        return prev;
+      }
+      return { lands: showLands, detail: showDetail, service: showService };
+    });
+  }, [showLands, showDetail, showService]);
+
+  /* Venue geometry in mercator metres, built once per dataset. The viewport
+     is an SVG transform over this group — pan/zoom no longer rewrites ~14k
+     vertex strings every frame. */
+  const world = useMemo(() => {
     if (!data) return null;
-    const ringOf = (f) => (Array.isArray(f) ? f : f?.r);
-    const poly = (list, key) =>
-      (list || []).map((f, i) => {
-        const r = ringOf(f);
-        if (!r?.length) return null;
-        const d = pathFromRing(r, to);
-        if (!d) return null;
-        return <path key={`${key}${i}`} d={`${d}Z`} />;
-      });
-    const line = (list, key) =>
-      (list || []).map((f, i) => {
-        const r = ringOf(f);
-        if (!r?.length) return null;
-        return <path key={`${key}${i}`} d={pathFromRing(r, to)} />;
-      });
-    return { poly, line };
-  }, [data, to]);
+    return {
+      sea: worldPaths(data.sea, true),
+      park: worldPaths(data.park, true),
+      lands: (data.lands || [])
+        .map((land, i) => {
+          const d = worldPathFromRing(land.r, true);
+          return d ? { i, d, n: land.n } : null;
+        })
+        .filter(Boolean),
+      wood: worldPaths(data.wood, true),
+      grass: worldPaths(data.grass, true),
+      parking: worldPaths(data.parking, true),
+      water: worldPaths(data.water, true),
+      pool: worldPaths(data.pool, true),
+      boundary: data.boundary ? worldPaths([data.boundary], true) : [],
+      service: worldPaths(data.service, false),
+      path: worldPaths(data.path, false),
+      building: worldPaths(data.building, true),
+      slide: worldPaths(data.slide, false),
+      coaster: (data.coaster || []).map((f, i) => {
+        const d = worldPathFromRing(Array.isArray(f) ? f : f?.r, false);
+        return d ? { i, d, n: f?.n } : null;
+      }),
+    };
+  }, [data]);
+
+  const viewTransform = useMemo(
+    () =>
+      `translate(${cx} ${cy}) rotate(${-rotation}) scale(${z} ${-z}) translate(${-view.x} ${-view.y})`,
+    [cx, cy, rotation, z, view.x, view.y],
+  );
 
   /* Coaster track carries the ride's name in the source geometry, so the red
      polylines need not stay anonymous: tapping Diamondback can light up
@@ -601,13 +675,16 @@ export default function ParkMap({
      One budget of screen space, spent in importance order: district names
      first, then the markers you and your party are, then places, then place
      names. Anything that will not fit is dropped rather than drawn on top of
-     what is already there. */
+     what is already there.
+
+     Membership decisions use a quantized zoom so a continuous pinch does not
+     re-bid every frame; marker/label positions still track the live view. */
   const plan = useMemo(() => {
     const grid = new Declutter();
     const lands = [];
     const markers = [];
     const labels = [];
-    if (!data) return { lands, markers, labels };
+    if (!data) return { lands, markers, labels, nextShown: new Set() };
 
     // `bottomInset` is how much of the map the sheet is standing on right now:
     // it grows when the sheet is opened and shrinks to the nav bar while
@@ -759,6 +836,7 @@ export default function ParkMap({
     });
     ranked.sort((a, b) => a.priority - b.priority);
 
+    const nextShown = new Set();
     /* A place takes its marker and its name in one go, in importance order.
        Placing every marker first and then every label would let a snack bar's
        dot outrank Diamondback's name — which is exactly backwards.
@@ -767,14 +845,16 @@ export default function ParkMap({
        every printed map, and the other three are what rescues a coaster whose
        usual spot is already spoken for. */
     ranked.forEach((item) => {
-      const r = sizeAtZoom(item.sym.r, z);
+      const r = sizeAtZoom(item.sym.r, zPlan);
       const pinned = item.isSel || item.isNav;
       if (!grid.claim(boxAround(item.sx, item.sy, r + 1.5, r + 1.5), pinned)) return;
       markers.push({ ...item, r });
 
       // The selected place gets a callout with its name in it, so a label
       // underneath would only say the same thing again.
-      const wanted = (pinned && !item.isSel) || z >= labelZoomFor(item.sym.rank);
+      const wasShown = shownLabels.has(item.p.n);
+      const wanted =
+        (pinned && !item.isSel) || labelWantedAtZoom(item.sym.rank, zPlan, wasShown);
       if (!wanted || item.isSel) return;
       const { sx, sy, p } = item;
       const halfW = textWidth(p.n, POI_FONT) / 2 + 3;
@@ -790,18 +870,19 @@ export default function ParkMap({
         if (!wholly(box)) continue;
         if (!grid.claim(box, false)) continue;
         labels.push({
-          key: `${p.n}${Math.round(sx)}`,
+          key: p.n,
           text: p.n,
           x: spot.x,
           y: spot.y,
           anchor: spot.anchor,
           faded: item.state === 'no' || item.state === 'toobig',
         });
+        nextShown.add(p.n);
         return;
       }
     });
 
-    return { lands, markers, labels };
+    return { lands, markers, labels, nextShown };
   }, [
     data,
     pois,
@@ -811,7 +892,7 @@ export default function ParkMap({
     size.w,
     size.h,
     bottomInset,
-    z,
+    zPlan,
     showLands,
     landAxes,
     visibleCategories,
@@ -822,9 +903,18 @@ export default function ParkMap({
     meet,
     me,
     puck,
+    shownLabels,
   ]);
 
   planRef.current = plan;
+
+  useEffect(() => {
+    setShownLabels((prev) => {
+      const next = plan.nextShown || new Set();
+      if (prev.size === next.size && [...next].every((k) => prev.has(k))) return prev;
+      return next;
+    });
+  }, [plan]);
 
   const bar = useMemo(() => scaleBar(z), [z]);
 
@@ -887,79 +977,147 @@ export default function ParkMap({
           </filter>
         </defs>
 
-        {/* The lake or sea the venue stands in, under the ground rather than
-            over it — a venue on a peninsula is drawn on its land, not beneath
-            the water around it. Venues built before this layer existed simply
-            have nothing here. */}
-        <g className="lyr-sea">{layers.poly(data.sea, 'se')}</g>
+        {/* Venue geometry in mercator metres — the transform is pan/zoom/rotate.
+            Labels and markers stay outside so they remain upright. */}
+        <g className="mapWorld" transform={viewTransform}>
+          {/* The lake or sea the venue stands in, under the ground rather than
+              over it — a venue on a peninsula is drawn on its land, not beneath
+              the water around it. Venues built before this layer existed simply
+              have nothing here. */}
+          <g className="lyr-sea">
+            {world.sea.map((f) => (
+              <path key={`se${f.i}`} d={f.d} />
+            ))}
+          </g>
 
-        {/* park ground */}
-        <g className="lyr-park">{layers.poly(data.park, 'pk')}</g>
+          <g className="lyr-park">
+            {world.park.map((f) => (
+              <path key={`pk${f.i}`} d={f.d} />
+            ))}
+          </g>
 
-        {/* themed lands */}
-        <g className="lyr-land">
-          {(data.lands || []).map((land, i) => {
-            const tint = landTint(land.n, theme, venue);
-            return (
-              <path
-                key={`ld${i}`}
-                d={`${pathFromRing(land.r, to)}Z`}
-                fill={tint.fill}
-                stroke={tint.stroke}
-                strokeWidth="1"
-              />
-            );
-          })}
+          <g className="lyr-land">
+            {world.lands.map((land) => {
+              const tint = landTint(land.n, theme, venue);
+              return (
+                <path
+                  key={`ld${land.i}`}
+                  d={land.d}
+                  fill={tint.fill}
+                  stroke={tint.stroke}
+                  strokeWidth="1"
+                />
+              );
+            })}
+          </g>
+
+          <g className="lyr-wood">
+            {world.wood.map((f) => (
+              <path key={`wd${f.i}`} d={f.d} />
+            ))}
+          </g>
+          {showDetail && (
+            <g className="lyr-grass lyr-detail">
+              {world.grass.map((f) => (
+                <path key={`gr${f.i}`} d={f.d} />
+              ))}
+            </g>
+          )}
+          <g className="lyr-parking">
+            {world.parking.map((f) => (
+              <path key={`pa${f.i}`} d={f.d} />
+            ))}
+          </g>
+          <g className="lyr-water">
+            {world.water.map((f) => (
+              <path key={`wa${f.i}`} d={f.d} />
+            ))}
+          </g>
+          <g className="lyr-watersheen">
+            {world.water.map((f) => (
+              <path key={`wash${f.i}`} d={f.d} />
+            ))}
+          </g>
+          <g className="lyr-pool">
+            {world.pool.map((f) => (
+              <path key={`po${f.i}`} d={f.d} />
+            ))}
+          </g>
+
+          {/* Where the park stops. Drawn over the ground and under everything you
+              walk on, so it reads as the edge of the place rather than another
+              thing in it — the answer to "is the car park still inside?", which
+              is otherwise a guess from the colour of the fill. */}
+          <g className="lyr-boundary">
+            {world.boundary.map((f) => (
+              <path key={`bd${f.i}`} d={f.d} />
+            ))}
+          </g>
+
+          {showService && (
+            <g className="lyr-service lyr-detail">
+              {world.service.map((f) => (
+                <path key={`sv${f.i}`} d={f.d} />
+              ))}
+            </g>
+          )}
+          <g className="lyr-pathcase">
+            {world.path.map((f) => (
+              <path key={`pc${f.i}`} d={f.d} />
+            ))}
+          </g>
+          <g className="lyr-path">
+            {world.path.map((f) => (
+              <path key={`ph${f.i}`} d={f.d} />
+            ))}
+          </g>
+
+          {showDetail && (
+            <g className="lyr-building lyr-detail">
+              {world.building.map((f) => (
+                <path key={`bldg${f.i}`} d={f.d} />
+              ))}
+            </g>
+          )}
+
+          <g className="lyr-slide">
+            {world.slide.map((f) => (
+              <path key={`sl${f.i}`} d={f.d} />
+            ))}
+          </g>
+          {showDetail && (
+            <>
+              <g className="lyr-coastershadow">
+                {world.coaster.map((f) => (
+                  <path key={`cs${f.i}`} d={f.d} />
+                ))}
+              </g>
+              <g className="lyr-coaster">
+                {world.coaster.map((f) => (
+                  <path key={`co${f.i}`} d={f.d} />
+                ))}
+              </g>
+            </>
+          )}
+
+          {/* the selected ride's own track, so the red spaghetti has an owner */}
+          {litTrack.length > 0 && (
+            <>
+              <g className="lyr-trackglow">
+                {litTrack.map((i) => {
+                  const d = world.coaster[i]?.d;
+                  return d ? <path key={`tg${i}`} d={d} /> : null;
+                })}
+              </g>
+              <g className="lyr-trackpick">
+                {litTrack.map((i) => {
+                  const d = world.coaster[i]?.d;
+                  return d ? <path key={`tp${i}`} d={d} /> : null;
+                })}
+              </g>
+            </>
+          )}
         </g>
-
-        <g className="lyr-wood">{layers.poly(data.wood, 'wd')}</g>
-        {showDetail && (
-          <g className="lyr-grass lyr-detail">{layers.poly(data.grass, 'gr')}</g>
-        )}
-        <g className="lyr-parking">{layers.poly(data.parking, 'pa')}</g>
-        <g className="lyr-water">{layers.poly(data.water, 'wa')}</g>
-        <g className="lyr-watersheen">{layers.poly(data.water, 'wash')}</g>
-        <g className="lyr-pool">{layers.poly(data.pool, 'po')}</g>
-
-        {/* Where the park stops. Drawn over the ground and under everything you
-            walk on, so it reads as the edge of the place rather than another
-            thing in it — the answer to "is the car park still inside?", which
-            is otherwise a guess from the colour of the fill. */}
-        <g className="lyr-boundary">{layers.poly(data.boundary ? [data.boundary] : null, 'bd')}</g>
-
-        {showService && (
-          <g className="lyr-service lyr-detail">{layers.line(data.service, 'sv')}</g>
-        )}
-        <g className="lyr-pathcase">{layers.line(data.path, 'pc')}</g>
-        <g className="lyr-path">{layers.line(data.path, 'ph')}</g>
-
-        {showDetail && (
-          <g className="lyr-building lyr-detail">{layers.poly(data.building, 'bd')}</g>
-        )}
-
-        <g className="lyr-slide">{layers.line(data.slide, 'sl')}</g>
-        {showDetail && (
-          <>
-            <g className="lyr-coastershadow">{layers.line(data.coaster, 'cs')}</g>
-            <g className="lyr-coaster">{layers.line(data.coaster, 'co')}</g>
-          </>
-        )}
-
-        {/* the selected ride's own track, so the red spaghetti has an owner */}
-        {litTrack.length > 0 && (
-          <>
-            <g className="lyr-trackglow">
-              {litTrack.map((i) => (
-                <path key={`tg${i}`} d={pathFromRing(data.coaster[i].r, to)} />
-              ))}
-            </g>
-            <g className="lyr-trackpick">
-              {litTrack.map((i) => (
-                <path key={`tp${i}`} d={pathFromRing(data.coaster[i].r, to)} />
-              ))}
-            </g>
-          </>
-        )}
 
         {/* District names, lying along their district and clamped to the part
             of it you can actually see. */}
@@ -1301,3 +1459,7 @@ export default function ParkMap({
     </div>
   );
 }
+
+/* Parent re-renders on every sheet-drag frame (live --sheetH). The map's
+   bottomInset is the resting height, so memo keeps pan/zoom off that path. */
+export default memo(ParkMap);

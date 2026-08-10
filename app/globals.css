@@ -417,6 +417,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .mapLoading span { animation: shimmer 1.6s ease-in-out infinite; }
 
+/* Geometry lives in mercator metres and is scaled by an SVG transform, so
+   stroke widths have to stay in screen pixels — otherwise a pinch thickens
+   every midway into a highway. */
+.mapWorld path { vector-effect: non-scaling-stroke; }
 .lyr-park path { fill: var(--ground); stroke: var(--groundEdge); stroke-width: 1.5; }
 .lyr-wood path { fill: var(--wood); stroke: none; }
 .lyr-grass path { fill: var(--grass); stroke: none; }
@@ -449,7 +453,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .lyr-water path, .lyr-pool path { opacity: 1; }
 .lyr-watersheen path { fill: url(#waterSheen); stroke: none; pointer-events: none; }
 .lyr-land { transition: opacity var(--t3) var(--easeOut); }
-.lyr-detail { animation: fadeIn var(--t3) var(--easeOut) both; }
+/* Detail layers used to fadeIn on mount. They mount and unmount around a zoom
+   threshold, and a 350ms fade every time a pinch crossed it was the flash.
+   They appear, or they do not — no animation on .lyr-detail. */
 
 /* Apple Maps sets district names in wide-tracked caps and POI names in plain
    SF with a halo, which is what these two do. */
@@ -457,7 +463,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-family: var(--ui); font-size: 11px; font-weight: 600; letter-spacing: .12em;
   text-transform: uppercase; text-anchor: middle; opacity: .85; pointer-events: none;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 2.5px; stroke-linejoin: round;
-  animation: fadeIn var(--t3) var(--easeOut) both;
 }
 .poiLabel {
   font-family: var(--ui); font-size: 10.5px; font-weight: 500; letter-spacing: -.1px;

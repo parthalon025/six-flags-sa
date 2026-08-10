@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
@@ -226,6 +226,11 @@ export default function Page() {
   const [tapeOn, setTapeOn] = useState(false);
   const [toast, setToast] = useState(null);
   const [height, setHeight] = useState(null);
+  /* The rider-height slider fires on every inch. Recomputing eligibility and
+     relaying out the map on each tick is what made the vertical slider feel
+     stuck; the panel reads `height` live, and the expensive consumers follow
+     a frame or two behind. */
+  const mapHeight = useDeferredValue(height);
   const [withAdult, setWithAdult] = useState(true);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   // The sheet's open stops are fractions of the viewport, so their height in
@@ -571,8 +576,8 @@ export default function Page() {
   useEffect(() => {
     if (!identity) return;
     identityRef.current = identity;
-    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height, theme }));
-  }, [identity, height, theme]);
+    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height: mapHeight, theme }));
+  }, [identity, mapHeight, theme]);
 
   useEffect(() => {
     partyRef.current = party;
@@ -1116,14 +1121,14 @@ export default function Page() {
      so ParkMap now draws "too short" and "needs a grown-up" as symbols, and
      that needs the whole answer rather than a set of names to dim. */
   const rideEligibility = useMemo(() => {
-    if (height == null) return null;
+    if (mapHeight == null) return null;
     const out = new Map();
     POIS.forEach((p) => {
       if (!isRideable(p)) return;
-      out.set(p.n, eligibility(p, height, withAdult));
+      out.set(p.n, eligibility(p, mapHeight, withAdult));
     });
     return out;
-  }, [POIS, height, withAdult]);
+  }, [POIS, mapHeight, withAdult]);
 
   const totalRides = useMemo(
     () => POIS.filter(isRideable).length,
@@ -1142,13 +1147,13 @@ export default function Page() {
   const presentCategories = useMemo(() => new Set(POIS.map((p) => p.c)), [POIS]);
 
   const rideableCount = useMemo(() => {
-    if (height == null) return null;
+    if (mapHeight == null) return null;
     return POIS.filter((p) => {
       if (!isRideable(p)) return false;
-      const v = eligibility(p, height, withAdult);
+      const v = eligibility(p, mapHeight, withAdult);
       return v === 'yes' || v === 'companion';
     }).length;
-  }, [POIS, height, withAdult]);
+  }, [POIS, mapHeight, withAdult]);
 
   /** The party's ride reports, or an empty map when there is no party. */
   const partyRides = party?.rides ?? null;
@@ -2016,7 +2021,7 @@ export default function Page() {
                 )}
                 <PlaceList
                   me={position}
-                  height={height}
+                  height={mapHeight}
                   withAdult={withAdult}
                   query={query}
                   filter={filter}
