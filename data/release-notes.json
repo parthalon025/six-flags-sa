@@ -60,5 +60,23 @@
     "items": [
       "Add builder/app output contract rule"
     ]
+  },
+  "1.1.10": {
+    "title": "What's new",
+    "items": [
+      "Document auto-bump on merge so PRs do not touch version files"
+    ]
+  },
+  "1.1.11": {
+    "title": "What's new",
+    "items": [
+      "Streamline first-run landing with nearest-park shortcut (#46)"
+    ]
+  },
+  "1.1.12": {
+    "title": "What's new",
+    "items": [
+      "Document architecture and venue pipeline visuals for onboarding (#47)"
+    ]
   }
 }

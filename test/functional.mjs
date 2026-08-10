@@ -870,47 +870,62 @@ await check('the first screen says what the app is, above the location ask', asy
   const card = await e.locator('.gate').innerText();
   const heading = (await e.locator('.gate h2').innerText()).trim();
   if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
-  // One screen, in the order that earns the answer: what you get, then what it
-  // needs, then the button. A permission asked cold is a permission refused.
-  const said = card.indexOf('See where everyone is');
-  const asked = card.indexOf('needs to use your location');
-  const button = card.indexOf('Allow location');
-  if (said < 0 || asked < 0 || button < 0) throw new Error('the introduction and the ask are not on one card');
-  if (!(said < asked && asked < button)) throw new Error('the ask comes before what it is for');
+  // One line and one button: what it is, then the nearest-park shortcut.
+  const said = card.indexOf('Explore more. Stress less.');
+  const button = card.indexOf('Go to nearest park');
+  if (said < 0 || button < 0) throw new Error('the landing line and nearest-park button are not on one card');
+  if (!(said < button)) throw new Error('the button comes before what it is for');
   return true;
 });
 
-await check('the intake asks about the nearest park, not the default one', async () => {
-  await e.locator('button:has-text("Allow location")').click();
-  // Wait for the question itself, not merely for a heading: the location card
-  // is still up while the fix lands, and reading .gate h2 the moment it says
-  // anything gets "Waiting for a fix" rather than the park.
-  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
-    timeout: 25000,
-    label: 'the park question',
-  });
-  const heading = (await e.locator('.gate h2').innerText()).trim();
-  if (!/going to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
-  // And the guess it did not make is one tap away, with the distance that
-  // explains why it was not the guess.
-  const other = await e.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
-  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
-  return true;
-});
-
-await check('saying yes builds that park, geometry and places', async () => {
-  await e.locator('.gate .btn.primary:has-text("Yes — set up")').click();
+await check('the nearest-park button builds that park without a second card', async () => {
+  await e.locator('button:has-text("Go to nearest park")').click();
+  // Auto-builds on fix — no "Going to …?" confirmation step.
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
-  // The places have to have come with it. Fiesta Texas ships no height data, so
-  // the sheet's root screen carries no rider-height row — and the list on it
-  // holds a ride only that park has.
-  await go(e, 'Places');
-  await until(async () => (await e.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
+  const toast = await e.locator('.toast').innerText().catch(() => '');
+  if (!/fiesta texas is ready/i.test(toast)) throw new Error(`toast: "${toast}"`);
+  return true;
+});
+
+await check('the park question is inline when the venue is not yet confirmed', async () => {
+  const returning = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await returning.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+    localStorage.removeItem('tracker-venue-confirmed');
+    localStorage.removeItem('tracker-venue');
+    localStorage.setItem('tracker-release-notes-seen', '9.9.9');
+  });
+  const p = await returning.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  if (await p.locator('.gate h2:has-text("Park Party")').count()) {
+    throw new Error('the introduction came back for a returning phone');
+  }
+  await p.locator('button:has-text("Allow location")').click();
+  await until(async () => (await p.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
+    timeout: 25000,
+    label: 'the park question',
+  });
+  const heading = (await p.locator('.gate h2').innerText()).trim();
+  if (!/going to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
+  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
+  await p.locator('.gate .btn.primary:has-text("Yes — set up")').click();
+  await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const shown = await p.locator('.brand b').innerText();
+  if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
+  await go(p, 'Places');
+  await until(async () => (await p.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
     timeout: 15000,
     label: "Fiesta Texas's place list",
   });
+  await returning.close();
   return true;
 });
 

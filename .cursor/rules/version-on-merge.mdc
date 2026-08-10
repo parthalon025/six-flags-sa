@@ -1,0 +1,44 @@
+---
+description: App semver is auto-bumped on merge to main — never edit version files in PRs.
+alwaysApply: true
+---
+
+# App version — auto-bumped on merge
+
+The app build version (`package.json` `version`) is **not** something PR authors
+bump. After every merge to `main`, GitHub Actions (`.github/workflows/bump-version.yml`)
+runs `scripts/bump-version.mjs`, which:
+
+- increments the patch version in `package.json` and `package-lock.json`
+- stamps `public/app-version.json` and `public/sw.js`
+- adds a `data/release-notes.json` entry from the PR title (or a generic fallback)
+
+This keeps version bumps off the PR path so they do not block merges or create
+avoidable conflicts.
+
+## Never bump version in a PR
+
+Do **not** edit these in feature branches:
+
+- `package.json` `version`
+- `package-lock.json` version fields
+- `public/app-version.json`
+- `public/sw.js` service-worker cache name
+- `data/release-notes.json` entries for versions that do not exist on `main` yet
+
+`predev` / `prebuild` may rewrite stamped files locally from the current
+`package.json` version — that is fine. Do not commit those stamp-only changes
+unless you are fixing the bump workflow itself.
+
+## Resolving merge conflicts on version files
+
+When merging or rebasing `main` into a branch, if any of the files above
+conflict, **keep `main`'s side** (the higher semver and its stamped artifacts).
+Your PR does not need to advance the version; the bump workflow does that after
+merge.
+
+## Custom release notes
+
+The workflow seeds release notes from the PR title. For richer bullets, either
+put the headline in the PR title or edit `data/release-notes.json` on `main`
+after the bump commit lands — do not guess a future version number in the PR.
