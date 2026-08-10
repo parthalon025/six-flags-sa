@@ -113,7 +113,7 @@ export async function openPhone(
           const paths = await page.locator('.mapSvg path').count();
           if (paths < 100) return false;
           if ((await page.locator('.mePulse').count()) > 0) return true;
-          const brand = await page.locator('.brand span').innerText().catch(() => '');
+          const brand = await page.locator('.brandStatus').innerText().catch(() => '');
           return /near/i.test(brand);
         },
         { timeout: 40000, label: 'GPS fix and gates dismissed' },

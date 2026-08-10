@@ -69,7 +69,7 @@ const a = A.page;
 
 await check('GPS gate closes and position resolves', async () => {
   if (await a.locator('.gate').count()) throw new Error('gate still up');
-  const brand = await a.locator('.brand span').innerText();
+  const brand = await a.locator('.brandStatus').innerText();
   if (!/NEAR/i.test(brand)) throw new Error(brand);
   return true;
 });
@@ -890,11 +890,16 @@ await check('the first screen says what the app is, above the location ask', asy
   return true;
 });
 
-await check('the nearest-park button builds that park without a second card', async () => {
+await check('the nearest-park button asks before building that park', async () => {
   await e.locator('button:has-text("Go to nearest park")').click();
-  // Auto-builds on fix — no "Going to …?" confirmation step.
+  // Confirm the nearest park — never auto-download the wrong map.
+  await until(
+    async () => (await e.locator('.gate .btn.primary:has-text("set up")').count()) > 0,
+    { timeout: 25000, label: 'park confirm' },
+  );
+  await e.locator('.gate .btn.primary:has-text("set up")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
-  const shown = await e.locator('.brand b').innerText();
+  const shown = await e.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
   const toast = await e.locator('.toast').innerText().catch(() => '');
   if (!/fiesta texas is (ready|loaded)/i.test(toast)) throw new Error(`toast: "${toast}"`);

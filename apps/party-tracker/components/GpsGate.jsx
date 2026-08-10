@@ -7,7 +7,7 @@ import { formatDistance } from '@/lib/geo';
 const COPY = {
   idle: {
     title: 'Find you on the map',
-    body: 'Parkbound needs your GPS to drop your dot, see how far the party is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
+    body: 'Parkbound uses your GPS to drop your dot, point you at toilets, food and rides, and walk you there on guest paths. Nothing leaves your phone until you join a party.',
     action: 'Allow location',
   },
   asking: {
@@ -53,13 +53,8 @@ function dataText(venue) {
 /*
  * The landing is one line and one button. Someone standing in a car park does
  * not need five bullets before they will tap Allow — they need to know what
- * this is and what the one good button does. The park question used to be a
- * whole second card; it now lives here when it is needed, and the happy path
- * ("go to nearest park") skips it and reports progress with a toast instead.
- *
- * Brand copy is Parkbound (name + slogan). The five-bullet Welcome intro from
- * the design-language branch yields to this streamlined first-run flow from
- * main — both intents cannot own the same card.
+ * this is and what the one good button does. Nearest-park still asks "is this
+ * the right park?" before downloading — auto-setup used to skip that confirm.
  */
 function ParkSection({
   choice,
@@ -67,26 +62,12 @@ function ParkSection({
   busy = false,
   error = null,
   onConfirm,
-  autoSetup = false,
 }) {
   const venue = choice?.venue;
   if (!venue) return null;
   const inside = Boolean(choice.inside);
   const distanceText = inside ? 'you are here' : awayText(choice.metres);
   const data = dataText(venue);
-
-  if (autoSetup) {
-    return (
-      <>
-        <p>
-          {busy
-            ? `Getting ${venue.name} ready — the map, rides and places for ${venue.locality}.`
-            : `Found ${venue.name}${distanceText ? `, ${distanceText}` : ''}.`}
-        </p>
-        {error && <p className="gateError">{error}</p>}
-      </>
-    );
-  }
 
   return (
     <>
@@ -157,10 +138,9 @@ export default function GpsGate({
 }) {
   const copy = COPY[status] || COPY.idle;
   const parkVenue = parkChoice?.venue;
-  const settingUp = nearestIntent && parkVenue;
-  const showParkQuestion = parkVenue && !nearestIntent;
-  const welcomeIdle = welcome && status === 'idle' && !nearestIntent;
-  const welcomeSearching = welcome && nearestIntent && status === 'asking';
+  const showParkQuestion = Boolean(parkVenue);
+  const welcomeIdle = welcome && status === 'idle' && !nearestIntent && !showParkQuestion;
+  const welcomeSearching = welcome && nearestIntent && status === 'asking' && !showParkQuestion;
 
   let primaryLabel = copy.action;
   let primaryAction = onRequest;
@@ -169,20 +149,17 @@ export default function GpsGate({
   if (welcomeIdle) {
     primaryLabel = 'Go to nearest park';
     primaryAction = onGoNearest || onRequest;
-  } else if (welcomeSearching || (welcome && status === 'asking' && nearestIntent)) {
+  } else if (welcomeSearching || (welcome && status === 'asking' && nearestIntent && !showParkQuestion)) {
     primaryLabel = 'Finding your location…';
     primaryDisabled = true;
-  } else if (settingUp) {
-    primaryLabel = setupBusy ? `Setting up ${parkVenue.name}…` : `Found ${parkVenue.name}`;
-    primaryDisabled = true;
-  } else if (status === 'asking') {
+  } else if (status === 'asking' && !showParkQuestion) {
     primaryLabel = 'Ask again';
   }
 
   return (
     <div className="gate">
       <div className="gateCard">
-        {welcome && !showParkQuestion && !settingUp ? (
+        {welcome && !showParkQuestion ? (
           <>
             <div className="gateEyebrow">Welcome</div>
             {/* Splash: primary logo lockup (brand sheet Image 1) */}
@@ -201,22 +178,19 @@ export default function GpsGate({
                 ? parkChoice.inside
                   ? `You’re at ${parkVenue.name}!`
                   : `Headed to ${parkVenue.name}?`
-                : settingUp
-                  ? BRAND.nameUpper
-                  : copy.title}
+                : copy.title}
             </h2>
-            {!showParkQuestion && !settingUp && <p>{copy.body}</p>}
+            {!showParkQuestion && <p>{copy.body}</p>}
           </>
         )}
 
-        {(settingUp || showParkQuestion) && (
+        {showParkQuestion && (
           <ParkSection
             choice={parkChoice}
             options={parkOptions}
             busy={setupBusy}
             error={setupError}
             onConfirm={onConfirmPark}
-            autoSetup={settingUp}
           />
         )}
 
@@ -233,7 +207,7 @@ export default function GpsGate({
           </button>
         )}
 
-        {!showParkQuestion && !settingUp && (
+        {!showParkQuestion && (
           <>
             <button type="button" className="btn" onClick={onManual}>
               I&apos;ll tap where I am
@@ -253,7 +227,7 @@ export default function GpsGate({
         <p className="gateFine">
           Your location stays on your phone. Join a party and it goes only to your crew,
           encrypted in transit — nobody in the middle can peek.
-          {showParkQuestion ? ' Switch parks any time under Day → Which park.' : ''}
+          {showParkQuestion ? ' Switch parks any time under Me → Which park.' : ''}
         </p>
       </div>
     </div>

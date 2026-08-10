@@ -88,10 +88,13 @@ async function main() {
   await page.getByRole('button', { name: 'Go to nearest park' }).click();
   await page.waitForTimeout(2000);
 
-  // Auto-builds on fix — no separate park-intake card.
+  // Confirm nearest park before download (no silent auto-setup).
+  const confirm = page.locator('.gate .btn.primary:has-text("set up")');
+  await confirm.waitFor({ state: 'visible', timeout: 25000 });
   const intakeShot = path.join(OUT, '01b-park-auto-setup.png');
   await page.screenshot({ path: intakeShot });
   console.log(`  shot  ${path.relative(process.cwd(), intakeShot)}`);
+  await confirm.click();
 
   await page.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   await shot(page, 'map-located');

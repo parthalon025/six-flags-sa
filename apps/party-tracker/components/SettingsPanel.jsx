@@ -49,7 +49,7 @@ export default function SettingsPanel({
         <BrandMark variant="glyph" size={22} aqua="var(--aqua)" className="brandMark" />
         <div>
           <b>Explore more. Stress less.</b>
-          <span>Your day at the park — settings, saved spots, and what the panel shows.</span>
+          <span>Your settings — which park, theme, and what the panel shows.</span>
         </div>
       </div>
 
@@ -62,17 +62,18 @@ export default function SettingsPanel({
       </div>
       {helpOpen && (
         <p className="fine block">
-          A <b>party</b> is your expedition. One phone starts one and reads out the six-character code;
-          everyone else types it in, scans the square, or opens the link. After that each phone
-          shows the others as coloured markers, with how far away they are and how long it takes to
-          walk there. A <b>meet-up</b> is one spot everybody agrees on, and anyone can set it. The
-          phone that started the party <b>hosts</b> it, which only means it keeps the list — if it
-          goes flat another phone picks the list up on its own, and nobody has to do anything.
-          Nothing you do here is visible outside your party.
+          Start on <b>Explore</b> — toilets, food and rides on guest walking paths. A <b>party</b> is
+          optional when your expedition wants to stick together: one phone starts one and reads out
+          the six-character code; everyone else types it in, scans the square, or opens the link.
+          After that each phone shows the others as coloured markers, with how far away they are and
+          how long it takes to walk there. A <b>meet-up</b> is one spot everybody agrees on, and
+          anyone can set it. The phone that started the party <b>hosts</b> it, which only means it
+          keeps the list — if it goes flat another phone picks the list up on its own, and nobody
+          has to do anything. Nothing you do here is visible outside your party.
         </p>
       )}
 
-      <div className="label">Your Name in the Party</div>
+      <div className="label">Your Name</div>
       <input
         className="field"
         maxLength={14}
@@ -81,7 +82,7 @@ export default function SettingsPanel({
         onChange={(e) => onName(e.target.value)}
         onBlur={(e) => onNameCommit(e.target.value)}
       />
-      <p className="fine">This is what your party sees on the map and in the roster.</p>
+      <p className="fine">Shown on the map and roster when you join a party. Solo guests can leave this blank.</p>
 
       <div className="label">Map Appearance</div>
       <div className="segmented" role="group" aria-label="Map appearance">

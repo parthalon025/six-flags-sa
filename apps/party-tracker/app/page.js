@@ -90,7 +90,7 @@ const TAB_ORDER = ['explore', 'party', 'rides', 'settings'];
 /* A tab root gets a large title instead of the search field. Explore is the
    exception — its title is the search field, because searching a map is the
    thing you came to that screen to do. */
-const ROOT_TITLES = { party: 'Party', rides: 'Plan', settings: 'Your Day' };
+const ROOT_TITLES = { party: 'Party', rides: 'Plan', settings: 'Me' };
 
 const EMPTY_STACK = [];
 /** The navigation state the app opens on, and the one back returns it to. */
@@ -568,9 +568,9 @@ export default function Page() {
   }, []);
 
   const askingPark = Boolean(parkChoice);
-  /** Inline park question on the gate (GPS path). Explore-without-GPS uses ParkPrompt. */
-  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark && !nearestIntent;
-  const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore);
+  /** Inline park question on the gate (GPS path), including after "nearest park". */
+  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark;
+  const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore) && !nearestIntent;
 
   useEffect(() => {
     if (!position || position.manual) return;
@@ -684,8 +684,8 @@ export default function Page() {
     setTimeout(() => setToast((t) => (t === msg ? null : t)), msg.length > 40 ? 6000 : 4000);
   }, []);
 
-  // The welcome landing's one button: grant location, then build the nearest
-  // park without a second card. Progress is a toast; the gate shows setup state.
+  // The welcome landing's one button: grant location, then ask to confirm the
+  // nearest park before downloading (never auto-confirm — wrong park is costly).
   const confirmPark = useCallback(
     (id) => {
       setNearestIntent(false);
@@ -706,13 +706,6 @@ export default function Page() {
     [position, showToast],
   );
 
-  useEffect(() => {
-    if (!nearestIntent || !parkChoice || venueStatus === 'loading') return;
-    confirmPark(parkChoice.venue.id).catch(() => {});
-    // Only the first fix after "Go to nearest park" — not every GPS tick.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearestIntent, parkChoice?.venue?.id]);
-
   const appUpdate = useAppUpdate();
 
   /* ---------- the party runtime ---------- */
@@ -729,10 +722,30 @@ export default function Page() {
       rt = partyRuntime.createPartyRuntime({ onState: setParty, onToast: showToast });
       runtime.current = rt;
       setRuntimeApi(rt);
+      const pending = partyRuntime.takePendingInvite();
+      if (pending?.payload) {
+        const named = (pending.name || '').trim();
+        if (named) {
+          identityRef.current = { ...identityRef.current, name: named };
+          setIdentity((i) => ({ ...i, name: named }));
+        }
+        const memberName = named || identityRef.current?.name || 'Guest';
+        Promise.resolve(rt.joinParty(pending.payload, { memberName }))
+          .then((snap) => {
+            if (destroyed) return;
+            selectTab('party');
+            showToast(
+              snap?.code
+                ? `You’re in party ${snap.code}${named ? '' : ' — rename under Me'}`
+                : 'You’re in the party',
+            );
+          })
+          .catch((err) => showToast(err?.message || 'Could not open that invite.'));
+        return;
+      }
       const memberName = identityRef.current?.name || 'Guest';
-      const invite = partyRuntime.takePendingInvite();
-      Promise.resolve(invite ? rt.joinParty(invite, { memberName }) : rt.resume({ memberName })).catch(
-        (err) => showToast(err?.message || 'Could not open that invite.'),
+      Promise.resolve(rt.resume({ memberName })).catch((err) =>
+        showToast(err?.message || 'Could not reopen the party.'),
       );
     })();
     return () => {
@@ -741,7 +754,7 @@ export default function Page() {
       setRuntimeApi(null);
       rt?.destroy();
     };
-  }, [showToast]);
+  }, [showToast, selectTab]);
 
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
@@ -784,6 +797,7 @@ export default function Page() {
     const cov = mapData?.meta?.coverage;
     if (!cov) return 'Path tags not measured for this venue yet.';
     if (routeProfile === 'no_steps' && !cov.steps) return 'No stairs recorded in OpenStreetMap here.';
+    if (routeProfile === 'allow_restricted') return 'May cut through service roads marked restricted.';
     return null;
   }, [mapData?.meta?.coverage, routeProfile]);
 
@@ -974,7 +988,7 @@ export default function Page() {
         localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
         return next;
       });
-      showToast('Hidden. Put it back under Day → What the panel shows.');
+      showToast('Hidden. Put it back under Me → What the panel shows.');
     },
     [venue?.id, showToast, clearCar],
   );
@@ -1093,7 +1107,10 @@ export default function Page() {
         memberName: identity?.name || 'Guest',
         name: 'Party',
       });
-      showToast(`Party ${snap.code} started`);
+      selectTab('party');
+      showToast(
+        `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
+      );
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
     }
@@ -1106,10 +1123,20 @@ export default function Page() {
       // A name typed on the join screen is the freshest thing we know, and it
       // has not necessarily been committed to identity yet.
       const memberName = (asName || '').trim() || identity?.name || 'Guest';
+      if ((asName || '').trim()) {
+        setIdentity((i) => ({ ...i, name: memberName }));
+        identityRef.current = { ...identityRef.current, name: memberName };
+      }
       const snap = await runtime.current.joinParty(raw, { memberName });
+      selectTab('party');
       showToast(`Joined ${snap.code}`);
     } catch (err) {
-      showToast(err?.message || 'Could not join that party.');
+      const msg = err?.message || 'Could not join that party.';
+      showToast(
+        /not answer|timed out|window/i.test(msg)
+          ? `${msg} Ask them to open Party → Let someone join, or send the invite link / QR.`
+          : msg,
+      );
     }
     setBusy(false);
   };
@@ -1459,9 +1486,8 @@ export default function Page() {
         landmarks: POIS,
         destination: navTarget.label,
         areas: mapData?.landAnchors,
-        ...(graph && routeProfile !== 'default'
-          ? profileOpts(routeProfile, graph)
-          : {}),
+        // Always apply the active profile — default is guest paths (skips service roads).
+        ...(graph ? profileOpts(routeProfile, graph) : {}),
       };
       if (navPhase === 'preview') {
         setRoutes(routing.findRoutes(graph, position, navTarget, opts));
@@ -1674,11 +1700,11 @@ export default function Page() {
     if (heights) out.push({ id: 'rides', label: 'Plan', icon: 'figure.rollercoaster' });
     // Once there is a name, the tab wears it. "Guest" is the placeholder
     // nobody typed, and "GU" on a tab is not a person — so that one keeps the
-    // Day glyph until the visitor says who they are.
+    // Me glyph until the visitor says who they are.
     const named = identity?.name && identity.name !== 'Guest';
     out.push({
       id: 'settings',
-      label: 'Day',
+      label: 'Me',
       icon: 'sparkles',
       initials: named ? initialsFor(identity.name) : null,
     });
@@ -2091,7 +2117,7 @@ export default function Page() {
                   ) : (
                     <BrandLockup size="sm" showTagline className="sheetBrandLockup" />
                   )}
-                  <span className="brandStatus">{headerLine()}</span>
+                  <div className="brandStatus">{headerLine()}</div>
                 </div>
               )}
               {(plan.rail || plan.digest) && (
@@ -2488,7 +2514,7 @@ export default function Page() {
       )}
 
       {/* The intake: one landing card for location and, when needed, which park.
-          The happy path is "Go to nearest park" → GPS → auto-build with a toast. */}
+          "Go to nearest park" still asks for a confirm before downloading. */}
       {gateOpen && introSeen !== null && !showExplorePrompt && !showUpdateSplash && (
         <GpsGate
           venueName={venue?.name}
@@ -2496,7 +2522,9 @@ export default function Page() {
           error={geo.error}
           welcome={nearestIntent || (introSeen === false && geo.status === 'idle' && !parkChoice)}
           nearestIntent={nearestIntent}
-          parkChoice={askingPark && !parkChoice?.explore ? parkChoice : nearestIntent ? parkChoice : null}
+          parkChoice={
+            askingPark && (!parkChoice?.explore || nearestIntent) ? parkChoice : null
+          }
           parkOptions={parkOptions}
           setupBusy={venueStatus === 'loading'}
           setupError={venueStatus === 'error' ? venueError : null}
@@ -2533,7 +2561,7 @@ export default function Page() {
             if (venueConfirmed || venuePinned) {
               setParkAsked(true);
               setGateOpen(false);
-              if (venue?.name) showToast(`Browsing ${venue.name}. Change parks under Day → Which park.`);
+              if (venue?.name) showToast(`Browsing ${venue.name}. Change parks under Me → Which park.`);
             }
           }}
         />

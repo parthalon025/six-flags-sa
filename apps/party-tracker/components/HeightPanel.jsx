@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { eligibility, isRideable } from '@/lib/park';
+import { HEIGHT_TIERS, eligibility, isRideable } from '@/lib/park';
 import { usePois } from '@/lib/venue/useVenue';
 
 /* The height requirement is the thing a family checks twenty times a day, so it
@@ -9,7 +9,7 @@ import { usePois } from '@/lib/venue/useVenue';
    tier, read the bar, and everything a rider can't get on fades out on the map
    and drops out of the list behind you. */
 
-const TIERS = [36, 40, 42, 46, 48, 52, 54];
+const TIERS = HEIGHT_TIERS;
 
 export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, venue }) {
   const POIS = usePois();
