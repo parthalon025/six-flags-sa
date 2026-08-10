@@ -1,5 +1,13 @@
 [
   {
+    "i": "big-kahuna-s-backyard",
+    "n": "Big Kahuna's Backyard",
+    "lat": 30.388482,
+    "lng": -86.472952,
+    "c": "food",
+    "a": "Big Kahuna's"
+  },
+  {
     "i": "big-kahuna-s-tropical-mini-golf",
     "n": "Big Kahuna's Tropical Mini Golf",
     "lat": 30.388012,
@@ -11,7 +19,45 @@
       "alone": null,
       "max": null
     },
-    "note": "Three 18-hole courses over in the Adventure Park."
+    "note": "Three 18-hole courses over in the Adventure Park.",
+    "e": [
+      {
+        "lat": 30.38794,
+        "lng": -86.4727,
+        "n": "Mini golf entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
+  },
+  {
+    "i": "bombay-blasters",
+    "n": "Bombay Blasters",
+    "lat": 30.387618,
+    "lng": -86.473198,
+    "c": "ride",
+    "h": {
+      "min": 48,
+      "alone": null,
+      "max": null
+    },
+    "note": "Twin speed slides beside Maui Pipeline. 300 lb maximum.",
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "bombs-away-bay",
+    "n": "Bombs Away Bay",
+    "lat": 30.38762,
+    "lng": -86.47348,
+    "c": "ride",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "a": "Big Kahuna's"
   },
   {
     "i": "buccaneer-cove",
@@ -25,7 +71,18 @@
       "max": null
     },
     "note": "Built for children under 48\". Under 42\" needs a grown-up and a life jacket.",
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "e": [
+      {
+        "lat": 30.38834,
+        "lng": -86.47384,
+        "n": "Buccaneer Cove entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
     "i": "cobra-twister",
@@ -39,7 +96,54 @@
       "alone": null,
       "max": null
     },
-    "note": "300 lb maximum."
+    "note": "300 lb maximum.",
+    "e": [
+      {
+        "lat": 30.38781,
+        "lng": -86.47311,
+        "n": "Cobra Twister entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
+  },
+  {
+    "i": "crocodile-flats",
+    "n": "Crocodile Flats",
+    "lat": 30.387782,
+    "lng": -86.474002,
+    "c": "ride",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "Shallow children's pool with three small slides.",
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "fun-fountains",
+    "n": "Fun Fountains",
+    "lat": 30.387702,
+    "lng": -86.473442,
+    "c": "ride",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "golf-hut",
+    "n": "Golf Hut",
+    "lat": 30.387952,
+    "lng": -86.472252,
+    "c": "food",
+    "note": "BK's 19th Hole Lookout beside Tropical Mini Golf.",
+    "a": "Big Kahuna's"
   },
   {
     "i": "hammerhead",
@@ -53,7 +157,18 @@
       "alone": null,
       "max": null
     },
-    "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
+    "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum.",
+    "e": [
+      {
+        "lat": 30.38834,
+        "lng": -86.47384,
+        "n": "Hammerhead entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
     "i": "honolulu-half-pipe",
@@ -67,6 +182,38 @@
       "max": null
     },
     "note": "Surf simulator. 300 lb maximum.",
+    "a": "Big Kahuna's",
+    "e": [
+      {
+        "lat": 30.389,
+        "lng": -86.47255,
+        "n": "Honolulu Half Pipe entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
+  },
+  {
+    "i": "humunga-river",
+    "n": "Humunga River",
+    "lat": 30.388482,
+    "lng": -86.473682,
+    "c": "ride",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "island-time-cafe",
+    "n": "Island Time Cafe",
+    "lat": 30.388182,
+    "lng": -86.473028,
+    "c": "food",
     "a": "Big Kahuna's"
   },
   {
@@ -81,7 +228,18 @@
       "alone": null,
       "max": null
     },
-    "note": "Five storeys. 300 lb maximum."
+    "note": "Five storeys. 300 lb maximum.",
+    "e": [
+      {
+        "lat": 30.38835,
+        "lng": -86.47337,
+        "n": "Jumanji entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
     "i": "kowabunga-racer",
@@ -95,7 +253,18 @@
       "alone": null,
       "max": null
     },
-    "note": "Head-first mat racer. The park files it under Over 42\"."
+    "note": "Head-first mat racer. The park files it under Over 42\".",
+    "e": [
+      {
+        "lat": 30.38923,
+        "lng": -86.47277,
+        "n": "Kowabunga Racer entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
     "i": "lazy-river",
@@ -108,7 +277,18 @@
       "alone": null,
       "max": null
     },
-    "a": "Big Kahuna's"
+    "a": "Big Kahuna's",
+    "e": [
+      {
+        "lat": 30.38788,
+        "lng": -86.47311,
+        "n": "Lazy River entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
     "i": "main-entrance",
@@ -131,7 +311,18 @@
       "alone": null,
       "max": null
     },
-    "note": "300 lb maximum."
+    "note": "300 lb maximum.",
+    "e": [
+      {
+        "lat": 30.38755,
+        "lng": -86.47317,
+        "n": "Maui Pipeline entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
     "i": "monkey-river",
@@ -145,7 +336,41 @@
       "alone": null,
       "max": null
     },
-    "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum."
+    "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum.",
+    "e": [
+      {
+        "lat": 30.38755,
+        "lng": -86.47317,
+        "n": "Monkey River entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
+  },
+  {
+    "i": "paradise-eats",
+    "n": "Paradise Eats",
+    "lat": 30.388352,
+    "lng": -86.473122,
+    "c": "food",
+    "note": "Central food court pavilion.",
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "pirate-s-escape",
+    "n": "Pirate's Escape",
+    "lat": 30.389944,
+    "lng": -86.472734,
+    "c": "ride",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    },
+    "note": "300 lb maximum.",
+    "a": "Big Kahuna's"
   },
   {
     "i": "pleasure-island",
@@ -159,6 +384,55 @@
       "max": null
     },
     "note": "Shallow children's pool with small slides and a spraying umbrella.",
+    "a": "Big Kahuna's",
+    "e": [
+      {
+        "lat": 30.38895,
+        "lng": -86.47298,
+        "n": "Pleasure Island entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
+  },
+  {
+    "i": "raging-rhino-river",
+    "n": "Raging Rhino River",
+    "lat": 30.388582,
+    "lng": -86.473318,
+    "c": "ride",
+    "h": {
+      "min": 42,
+      "alone": null,
+      "max": null
+    },
+    "note": "250 lb maximum.",
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "restrooms-by-entrance",
+    "n": "Restrooms by Entrance",
+    "lat": 30.388622,
+    "lng": -86.472422,
+    "c": "restroom",
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "restrooms-by-wave-pool",
+    "n": "Restrooms by Wave Pool",
+    "lat": 30.387882,
+    "lng": -86.473302,
+    "c": "restroom",
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "restrooms-central-plaza",
+    "n": "Restrooms, Central Plaza",
+    "lat": 30.388402,
+    "lng": -86.473082,
+    "c": "restroom",
     "a": "Big Kahuna's"
   },
   {
@@ -173,6 +447,40 @@
       "max": null
     },
     "note": "Adventure Park, and a separate ticket. 800 lb combined for a flight of three.",
+    "a": "Big Kahuna's",
+    "e": [
+      {
+        "lat": 30.38866,
+        "lng": -86.47186,
+        "n": "Skycoaster entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
+  },
+  {
+    "i": "tadpole-pond",
+    "n": "Tadpole Pond",
+    "lat": 30.388002,
+    "lng": -86.473822,
+    "c": "ride",
+    "h": {
+      "min": 0,
+      "alone": null,
+      "max": null
+    },
+    "note": "Toddler area. The park asks that a parent is in the water with them.",
+    "a": "Big Kahuna's"
+  },
+  {
+    "i": "the-cove-snack-stand",
+    "n": "The Cove Snack Stand",
+    "lat": 30.387902,
+    "lng": -86.473622,
+    "c": "food",
+    "note": "Snack bar beside the wave pool.",
     "a": "Big Kahuna's"
   },
   {
@@ -187,11 +495,22 @@
       "alone": null,
       "max": null
     },
-    "note": "250 lb maximum."
+    "note": "250 lb maximum.",
+    "e": [
+      {
+        "lat": 30.38904,
+        "lng": -86.47295,
+        "n": "Thunder River entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
-    "i": "tiki-river-run-right-slide",
-    "n": "Tiki River Run",
+    "i": "tiki-river-run-right-slide-5",
+    "n": "Tiki River Run (Right Slide)",
     "lat": 30.38795,
     "lng": -86.47286,
     "c": "ride",
@@ -201,7 +520,18 @@
       "alone": null,
       "max": null
     },
-    "note": "250 lb in a single tube, 400 lb in a double."
+    "note": "250 lb in a single tube, 400 lb in a double.",
+    "e": [
+      {
+        "lat": 30.38794,
+        "lng": -86.4727,
+        "n": "Tiki River Run entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   },
   {
     "i": "wave-pool",
@@ -215,6 +545,17 @@
       "alone": 48,
       "max": null
     },
-    "note": "Under 42\" must wear a flotation device."
+    "note": "Under 42\" must wear a flotation device.",
+    "e": [
+      {
+        "lat": 30.38781,
+        "lng": -86.47311,
+        "n": "Wave Pool entrance",
+        "src": {
+          "by": "aerial",
+          "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path"
+        }
+      }
+    ]
   }
 ]
