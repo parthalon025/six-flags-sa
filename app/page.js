@@ -5,7 +5,6 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
-import ParkPrompt from '@/components/ParkPrompt';
 import GlanceRail from '@/components/GlanceRail';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
@@ -180,6 +179,8 @@ export default function Page() {
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
+  /** First-run "Go to nearest park" — auto-confirms on fix instead of a second card. */
+  const [nearestIntent, setNearestIntent] = useState(false);
   /* Has this phone been told what the app is? null until localStorage has been
      read, which cannot happen on the server: rendering a card before the answer
      is known would show a first-time visitor the location question for a frame
@@ -541,8 +542,8 @@ export default function Page() {
   }, []);
 
   const askingPark = Boolean(parkChoice);
-  /** The question is only load-bearing while it is actually on screen. */
-  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark;
+  /** Park question is inline on the gate unless the nearest-park shortcut is running. */
+  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark && !nearestIntent;
 
   useEffect(() => {
     if (!position || position.manual) return;
@@ -649,6 +650,35 @@ export default function Page() {
     // "Status: In line" and is not enough for a sentence.
     setTimeout(() => setToast((t) => (t === msg ? null : t)), msg.length > 40 ? 6000 : 4000);
   }, []);
+
+  // The welcome landing's one button: grant location, then build the nearest
+  // park without a second card. Progress is a toast; the gate shows setup state.
+  const confirmPark = useCallback(
+    (id) => {
+      setNearestIntent(false);
+      return confirmVenue(id)
+        .then((v) => {
+          setSelected(null);
+          setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+          setParkAsked(true);
+          setGateOpen(false);
+          showToast(`${v.name} is ready`);
+          return v;
+        })
+        .catch((err) => {
+          showToast(err?.message || 'Could not build that map.');
+          throw err;
+        });
+    },
+    [position, showToast],
+  );
+
+  useEffect(() => {
+    if (!nearestIntent || !parkChoice || venueStatus === 'loading') return;
+    confirmPark(parkChoice.venue.id).catch(() => {});
+    // Only the first fix after "Go to nearest park" — not every GPS tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearestIntent, parkChoice?.venue?.id]);
 
   const appUpdate = useAppUpdate();
 
@@ -2378,65 +2408,44 @@ export default function Page() {
         />
       )}
 
-      {/* The intake, in the order the answers become possible: location first,
-          because nothing else can be decided without a fix — carrying, the
-          first time this phone opens the app, the introduction that makes that
-          question worth saying yes to — then which park, which is the question
-          that actually builds a map. */}
-      {showParkPrompt && (
-        <ParkPrompt
-          choice={parkChoice}
-          options={parkOptions}
-          busy={venueStatus === 'loading'}
-          error={venueStatus === 'error' ? venueError : null}
-          onConfirm={(id) => {
-            confirmVenue(id)
-              .then((v) => {
-                setSelected(null);
-                // Following your own dot only makes sense on a map you are
-                // standing on; from the road, the park itself is the view.
-                setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
-                showToast(`${v.name} is ready`);
-              })
-              .catch((err) => showToast(err?.message || 'Could not build that map.'));
-          }}
-          onSkip={() => {
-            setParkAsked(true);
-            setGateOpen(false);
-          }}
-        />
-      )}
-
-      {gateOpen && introSeen !== null && !showParkPrompt && !showUpdateSplash && (
+      {/* The intake: one landing card for location and, when needed, which park.
+          The happy path is "Go to nearest park" → GPS → auto-build with a toast. */}
+      {gateOpen && introSeen !== null && !showUpdateSplash && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
-          // Said once per phone, and only in front of the ask itself: by the
-          // time the phone is waiting on a fix or reporting a refusal, the
-          // introduction is behind us and the card has something more urgent to
-          // say.
-          welcome={introSeen === false && geo.status === 'idle'}
+          welcome={nearestIntent || (introSeen === false && geo.status === 'idle' && !parkChoice)}
+          nearestIntent={nearestIntent}
+          parkChoice={askingPark ? parkChoice : null}
+          parkOptions={parkOptions}
+          setupBusy={venueStatus === 'loading'}
+          setupError={venueStatus === 'error' ? venueError : null}
+          onGoNearest={() => {
+            markIntroSeen();
+            setNearestIntent(true);
+            showToast('Finding your nearest park…');
+            geo.request();
+            geo.enableCompass();
+          }}
           onRequest={() => {
             markIntroSeen();
             geo.request();
             geo.enableCompass();
           }}
+          onConfirmPark={(id) => {
+            confirmPark(id).catch(() => {});
+          }}
           onManual={() => {
             markIntroSeen();
-            // Waving the intake off waves off both of its questions: whichever
-            // one you come back for, you came back deliberately, and the one
-            // you get should be the one this button is under.
+            setNearestIntent(false);
             setParkAsked(true);
             setGateOpen(false);
             showToast('Tap the map to place yourself');
           }}
           onDismiss={() => {
             markIntroSeen();
-            // Waving both questions off leaves whichever park happened to boot,
-            // which is the one place the app can be showing somebody a map of
-            // somewhere they are not. Name it, so that is a fact rather than a
-            // surprise found later.
+            setNearestIntent(false);
             setParkAsked(true);
             setGateOpen(false);
             if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
