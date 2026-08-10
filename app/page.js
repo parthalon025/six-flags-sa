@@ -18,7 +18,6 @@ import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import { markReleaseNotesSeen, pendingReleaseNotes } from '@/lib/releaseNotes';
-import { BRAND } from '@/lib/brand';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -59,7 +58,7 @@ const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: f
 const IntelligencePanel = dynamic(() => import('@/components/IntelligencePanel'), { ssr: false });
 const CompassTape = dynamic(() => import('@/components/CompassTape'), { ssr: false });
 
-const PALETTE = ['#66B56A', '#27B8B0', '#9B6BFF', '#FF5C8A', '#5B7CFF', '#B8956A', '#FFC857', '#FF6B35'];
+const PALETTE = ['#30D158', '#40C8E0', '#BF5AF2', '#FF375F', '#5E5CE6', '#AC8E68', '#FFD60A', '#FF9F0A'];
 const colourFor = (id) => {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -71,23 +70,21 @@ const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
    in here: they are tabs now, and a tab's root screen carries a large title
    rather than a back button. */
 const VIEW_TITLES = {
-  route: 'Trail',
-  categories: 'On the map',
-  venues: 'Which park',
+  route: 'Directions',
+  categories: 'Show on the map',
+  venues: 'Which map',
   diagnostics: 'Diagnostics',
 };
 
-/* The tab bar, left to right. Parkbound's primary areas: Explore, Party, Plan,
-   Day. The map itself is the canvas underneath — shut the sheet to live in it.
-   The order is the whole of the animation's direction logic: moving right along
-   the bar slides the next screen in from the right, and moving left slides it
-   back. */
+/* The tab bar, left to right. The order is the whole of the animation's
+   direction logic: moving right along the bar slides the next screen in from
+   the right, and moving left slides it back. */
 const TAB_ORDER = ['explore', 'party', 'rides', 'settings'];
 
 /* A tab root gets a large title instead of the search field. Explore is the
    exception — its title is the search field, because searching a map is the
    thing you came to that screen to do. */
-const ROOT_TITLES = { party: 'Party', rides: 'Plan', settings: 'Your Day' };
+const ROOT_TITLES = { party: 'Party', rides: 'Rides', settings: 'Me' };
 
 const EMPTY_STACK = [];
 /** The navigation state the app opens on, and the one back returns it to. */
@@ -1579,7 +1576,7 @@ export default function Page() {
         ? `${height}" · ${rideableCount} of ${totalRides} rides`
         : `${height}"`;
     }
-    if (tab === 'settings') return identity?.name ? `${identity.name} · ${BRAND.slogan}` : BRAND.slogan;
+    if (tab === 'settings') return identity?.name || 'Guest';
     return '';
   }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name]);
 
@@ -1590,7 +1587,7 @@ export default function Page() {
 
   const tabs = useMemo(() => {
     const out = [
-      { id: 'explore', label: 'Explore', icon: 'safari' },
+      { id: 'explore', label: 'Explore', icon: 'magnifyingglass' },
       {
         id: 'party',
         label: 'Party',
@@ -1604,16 +1601,16 @@ export default function Page() {
       },
     ];
     // Height rules only exist where a venue publishes them, so neither does the
-    // Plan tab that reads them (itinerary + rider height).
-    if (heights) out.push({ id: 'rides', label: 'Plan', icon: 'figure.rollercoaster' });
+    // tab that reads them.
+    if (heights) out.push({ id: 'rides', label: 'Rides', icon: 'figure.rollercoaster' });
     // Once there is a name, the tab wears it. "Guest" is the placeholder
     // nobody typed, and "GU" on a tab is not a person — so that one keeps the
-    // Day glyph until the visitor says who they are.
+    // generic glyph until the visitor says who they are.
     const named = identity?.name && identity.name !== 'Guest';
     out.push({
       id: 'settings',
-      label: 'Day',
-      icon: 'sparkles',
+      label: 'Me',
+      icon: 'person.crop.circle.fill',
       initials: named ? initialsFor(identity.name) : null,
     });
     return out;
@@ -1968,7 +1965,7 @@ export default function Page() {
                     </span>
                     <input
                       className="field"
-                      placeholder={`Explore ${venue?.name || 'the park'}`}
+                      placeholder={`Search ${venue?.name || 'the map'}`}
                       value={query}
                       /* Typing is asking for the list, so the sheet comes up far
                          enough to be one. */
@@ -1999,11 +1996,8 @@ export default function Page() {
               )}
               {plan.brand && (
                 <div className="brand">
-                  <div className="brandRow">
-                    <b className="brandName">{venue?.name || 'PARKBOUND'}</b>
-                    {!venue?.name && <span className="brandSlogan">Explore more. Stress less.</span>}
-                  </div>
-                  <span className="brandStatus">{headerLine()}</span>
+                  <b>{venue?.name || 'Party tracker'}</b>
+                  <span>{headerLine()}</span>
                 </div>
               )}
               {(plan.rail || plan.digest) && (
@@ -2036,7 +2030,7 @@ export default function Page() {
                   className="moreHint"
                   onClick={() => growSheet(SHEET_LIST_AT_PX)}
                 >
-                  Pull up to explore — food, toilets and rides
+                  Pull up for every place — food, toilets and rides
                   <Icon name="chevron.up" size={13} />
                 </button>
               )}
@@ -2060,7 +2054,7 @@ export default function Page() {
                 {navTarget && (
                   <div className="rowList">
                     <button type="button" className="row" onClick={() => push('route')}>
-                      <span className="rowText">Trail</span>
+                      <span className="rowText">Directions</span>
                       <span className="rowValue">{navTarget.label}</span>
                     </button>
                   </div>

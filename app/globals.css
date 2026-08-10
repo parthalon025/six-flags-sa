@@ -1,13 +1,14 @@
 /* ============================================================
-   PARKBOUND — surface layer.
+   Party tracker — surface layer.
 
-   Design north star: park map × trail guide × modern mobile app.
-   Adventure + Wayfinding + Party. Restrained base UI; bright colour only
-   when something matters. The map is the canvas; chrome floats above it.
+   The visual language here is iOS: Apple's semantic colour set, the SF text
+   ramp on the system font stack, blur materials, the 44pt touch floor, and
+   the sheet easing a phone actually uses. Nothing here is invented — the point
+   is that someone who has used Maps already knows what every control does.
 
-   Two palettes, light (Trail) and dark (Park Midnight), keyed off
-   `data-theme` on <html>. Theme keys stay 'day' and 'night' because they
-   are what the app has always written to localStorage.
+   Two palettes, light and dark, keyed off `data-theme` on <html>. The theme
+   keys stay 'day' and 'night' because they are what the app has always
+   written to localStorage.
    ============================================================ */
 
 :root {
@@ -24,51 +25,42 @@
   /* The tint the tab bar stands on, over the sheet's own glass. */
   --tabBarFill: color-mix(in srgb, var(--bg2) 42%, transparent);
 
-  /* ---- Parkbound brand tokens ---- */
-  --park-midnight: #10233F;
-  --trail: #F7F4EC;
-  --sky: #E8F5F7;
-  --adventure: #FF6B35;
-  --aqua: #27B8B0;
-  --sun: #FFC857;
-  --meadow: #66B56A;
-  --signal: #E55353;
-
-  /* ---- backgrounds (Park Midnight) ---- */
-  --bg: #0B1829;
-  --bg2: #10233F;
-  --bg3: #1A3354;
-  --grouped: #0B1829;
-  --grouped2: #10233F;
+  /* ---- backgrounds ---- */
+  --bg: #000000;
+  --bg2: #1c1c1e;
+  --bg3: #2c2c2e;
+  --grouped: #000000;
+  --grouped2: #1c1c1e;
 
   /* ---- labels ---- */
-  --label: #F7F4EC;
-  --label2: rgba(247, 244, 236, .62);
-  --label3: rgba(247, 244, 236, .34);
-  --label4: rgba(247, 244, 236, .16);
+  --label: #ffffff;
+  --label2: rgba(235, 235, 245, .60);
+  --label3: rgba(235, 235, 245, .30);
+  --label4: rgba(235, 235, 245, .16);
 
   /* ---- separators + fills ---- */
-  --sep: rgba(120, 150, 180, .28);
-  --sepOpaque: #1A3354;
-  --fill: rgba(120, 150, 180, .28);
-  --fill2: rgba(120, 150, 180, .22);
-  --fill3: rgba(120, 150, 180, .16);
+  --sep: rgba(84, 84, 88, .60);
+  --sepOpaque: #38383a;
+  --fill: rgba(120, 120, 128, .36);
+  --fill2: rgba(120, 120, 128, .32);
+  --fill3: rgba(118, 118, 128, .24);
 
-  /* ---- semantic colours ----
-     Adventure is the primary action colour (sunset / attraction signage).
-     Aqua carries navigation and secondary movement. The rest stay as signals
-     — colour appears when something matters, not as wallpaper. */
-  --blue: var(--adventure);
-  --green: var(--meadow);
-  --red: var(--signal);
-  --orange: #FF8A4C;
-  --yellow: var(--sun);
-  --teal: var(--aqua);
-  --indigo: #5B7CFF;
-  --purple: #9B6BFF;
-  --pink: #FF5C8A;
-  --gray: #8A9BB0;
-  --brown: #B8956A;
+  /* ---- system colours ---- */
+  /* Re-specified by Apple on 9 June 2025, alongside Liquid Glass. Most of the
+     set moved — blue, red, orange, teal, indigo and purple all shifted, some
+     of them a long way — while green, yellow and pink came through unchanged.
+     The iOS 18 values these replace now read as dated next to system chrome. */
+  --blue: #0091ff;
+  --green: #30d158;
+  --red: #ff4245;
+  --orange: #ff9230;
+  --yellow: #ffd600;
+  --teal: #00d2e0;
+  --indigo: #6d7cff;
+  --purple: #db34f2;
+  --pink: #ff375f;
+  --gray: #8e8e93;
+  --brown: #b78a66;
   --onTint: #ffffff;
 
   /* ---- legacy aliases ----
@@ -82,18 +74,16 @@
   --panel2: var(--bg3);
   --line: var(--sep);
   --void: var(--bg);
-  --beacon: var(--adventure);
-  --crimson: var(--signal);
-  --mint: var(--meadow);
-  --helpTint: rgba(229, 83, 83, .16);
+  --beacon: var(--blue);
+  --crimson: var(--red);
+  --mint: var(--green);
+  --helpTint: rgba(255, 69, 58, .16);
 
-  /* ---- type ----
-     Display: rounded geometric sans for PARKBOUND, attraction names, big
-     numbers. Interface: highly legible neutral sans for everything else.
-     --display is wired from next/font when available; the stack still works
-     offline on the system fallback. */
-  --display: 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system,
-             BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+  /* ---- type ---- */
+  /* Deliberately does not name 'SF Pro Text' or 'SF Pro Display'. SF is a
+     variable font that interpolates between those two optical sizes
+     continuously from 17pt to 28pt; naming either one pins it and throws that
+     interpolation away, which is the whole reason to ask for -apple-system. */
   --ui: -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', Roboto,
         'Helvetica Neue', Arial, sans-serif;
   --mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
@@ -167,15 +157,15 @@
      Two depths: --glassTint for controls that carry only a glyph, and
      --glassTintDeep for anything with words on it, which needs the extra
      opacity to stay legible over a busy patch of map. */
-  --glassTint: rgba(16, 35, 63, .48);
-  --glassTintDeep: rgba(11, 24, 41, .82);
-  --glassRim: rgba(247, 244, 236, .28);
-  --glassRimLo: rgba(247, 244, 236, .08);
-  --glassRing: rgba(39, 184, 176, .18);
-  --onGlass: rgba(247, 244, 236, .10);
-  --lens: blur(20px) saturate(170%) brightness(1.10);
-  --lensLite: blur(14px) saturate(160%) brightness(1.08);
-  --lensDeep: blur(44px) saturate(170%) brightness(1.08);
+  --glassTint: rgba(40, 40, 44, .42);
+  --glassTintDeep: rgba(24, 24, 26, .76);
+  --glassRim: rgba(255, 255, 255, .34);
+  --glassRimLo: rgba(255, 255, 255, .10);
+  --glassRing: rgba(255, 255, 255, .14);
+  --onGlass: rgba(255, 255, 255, .10);
+  --lens: blur(20px) saturate(180%) brightness(1.14);
+  --lensLite: blur(14px) saturate(170%) brightness(1.10);
+  --lensDeep: blur(44px) saturate(180%) brightness(1.10);
   --lensEdge:
     inset 0 1px .5px var(--glassRim),
     inset 0 -1px .5px var(--glassRimLo),
@@ -183,131 +173,132 @@
   --lensDrop: 0 1px 2px rgba(0, 0, 0, .28), 0 6px 20px rgba(0, 0, 0, .30);
 
   /* ---- materials ---- */
-  --matThin: rgba(16, 35, 63, .64);
-  --matRegular: rgba(11, 24, 41, .78);
-  --matThick: rgba(8, 18, 32, .88);
-  --matChrome: rgba(8, 18, 32, .94);
+  --matThin: rgba(28, 28, 30, .64);
+  --matRegular: rgba(24, 24, 26, .76);
+  --matThick: rgba(20, 20, 22, .86);
+  --matChrome: rgba(18, 18, 20, .92);
   --glass: var(--matRegular);
   --glassDeep: var(--matThick);
-  --glassEdge: rgba(247, 244, 236, .08);
-  --glassHi: rgba(247, 244, 236, .06);
+  --glassEdge: rgba(255, 255, 255, .08);
+  --glassHi: rgba(255, 255, 255, .06);
   --glassLo: rgba(0, 0, 0, .30);
-  --blur: blur(20px) saturate(170%);
-  --blurLite: blur(14px) saturate(170%);
+  --blur: blur(20px) saturate(180%);
+  --blurLite: blur(14px) saturate(180%);
   --shadow1: 0 1px 3px rgba(0, 0, 0, .30), 0 4px 14px rgba(0, 0, 0, .28);
   --shadow2: 0 2px 6px rgba(0, 0, 0, .34), 0 10px 30px rgba(0, 0, 0, .40);
-  --shadow3: 0 -1px 0 rgba(247, 244, 236, .06), 0 -12px 40px rgba(0, 0, 0, .44);
+  --shadow3: 0 -1px 0 rgba(255, 255, 255, .06), 0 -12px 40px rgba(0, 0, 0, .44);
   --thumbShadow: 0 3px 8px rgba(0, 0, 0, .18), 0 3px 1px rgba(0, 0, 0, .06);
 
-  /* ---- map layers: Park Midnight ---- */
-  --markerEdge: #0B1829;
-  --puckRing: #F7F4EC;
-  --mapBg: #0E1F35;
-  --ground: #142845;      --groundEdge: #1A3354;
-  --wood: #143024;        --grass: #163828;
-  --lot: #1A2E48;         --lotEdge: #243A58;
-  --waterFill: #0E4A5C;   --waterEdge: #176A7F;
-  --poolFill: #125A6E;    --poolEdge: #1D7A99;
-  --backOfHouse: #1A2E48;
-  --midwayCase: #1A3354;  --midway: #4A6A88;
-  --structure: #1A2E48;   --structureEdge: #243A58;
-  --slide: var(--aqua);
-  --trackCase: #0B1829;   --track: var(--adventure);
-  --labelStroke: #0B1829;
-  --labelFill: #F7F4EC;
+  /* ---- map layers: Apple Maps at night ---- */
+  --markerEdge: #000000;
+  --puckRing: #ffffff;
+  --mapBg: #121214;
+  --ground: #1c1c1e;      --groundEdge: #2c2c2e;
+  --wood: #15241a;        --grass: #182c1e;
+  --lot: #232326;         --lotEdge: #2e2e31;
+  --waterFill: #0e3a5c;   --waterEdge: #17547f;
+  --poolFill: #12496e;    --poolEdge: #1d6a99;
+  --backOfHouse: #2a2a2d;
+  --midwayCase: #2c2c2e;  --midway: #5a5a5e;
+  --structure: #2a2a2d;   --structureEdge: #38383a;
+  --slide: #63e6e2;
+  --trackCase: #000000;   --track: #ff453a;
+  --labelStroke: #000000;
+  --labelFill: #ffffff;
   /* marker furniture: a solid disc for attractions, a recessed chip for
      amenities, a hollow shape for what today's height rules out — and the
      tint a coaster's track takes when it is the one you are looking at */
-  --markerChip: #1A3354;
-  --markerVoid: #10233F;
+  --markerChip: #2c2c2e;
+  --markerVoid: #1c1c1e;
   /* The one ink everything today's height rules out wears, whatever its
      category. Held in step with NIGHT_BARRED / DAY_BARRED in lib/theme.js,
      which is what the markers themselves are painted from — this token is for
      the chrome that talks about them. */
-  --barred: #FF6B6B;
-  --trackLit: var(--aqua);
-  --vignette: rgba(8, 18, 32, .36);
+  --barred: #ff5e54;
+  --trackLit: var(--blue);
+  --vignette: rgba(0, 0, 0, .28);
 }
 
-/* Light / Trail. Warm off-white park-map paper, Sky informational surfaces,
-   deeper marker colours that survive direct sun. */
+/* Light. Apple Maps in daylight: near-white land, white roads over a warm grey
+   casing, pale blue water. Chrome goes to white materials — a dark scrim over
+   pale land is the one thing that never reads outdoors. */
 :root[data-theme='day'] {
   color-scheme: light;
 
-  --bg: #F7F4EC;
-  --bg2: #FFFFFF;
-  --bg3: #E8F5F7;
-  --grouped: #EFEBE1;
-  --grouped2: #FFFFFF;
+  --bg: #ffffff;
+  --bg2: #f2f2f7;
+  --bg3: #ffffff;
+  --grouped: #f2f2f7;
+  --grouped2: #ffffff;
 
-  --label: #10233F;
-  --label2: rgba(16, 35, 63, .62);
-  --label3: rgba(16, 35, 63, .36);
-  --label4: rgba(16, 35, 63, .18);
+  --label: #000000;
+  --label2: rgba(60, 60, 67, .60);
+  --label3: rgba(60, 60, 67, .30);
+  --label4: rgba(60, 60, 67, .18);
 
-  --sep: rgba(16, 35, 63, .16);
-  --sepOpaque: #D4CFC3;
-  --fill: rgba(16, 35, 63, .10);
-  --fill2: rgba(16, 35, 63, .08);
-  --fill3: rgba(16, 35, 63, .06);
+  --sep: rgba(60, 60, 67, .29);
+  --sepOpaque: #c6c6c8;
+  --fill: rgba(120, 120, 128, .20);
+  --fill2: rgba(120, 120, 128, .16);
+  --fill3: rgba(118, 118, 128, .12);
 
-  --blue: var(--adventure);
-  --green: #4FA854;
-  --red: #D64545;
-  --orange: #E85D2C;
-  --yellow: #E6B040;
-  --teal: #1FA59E;
-  --indigo: #4A68E8;
-  --purple: #8B5CF0;
-  --pink: #E84B78;
-  --gray: #6B7C90;
-  --brown: #9A7A55;
+  --blue: #0088ff;
+  --green: #34c759;
+  --red: #ff383c;
+  --orange: #ff8d28;
+  --yellow: #ffcc00;
+  --teal: #00c3d0;
+  --indigo: #6155f5;
+  --purple: #cb30e0;
+  --pink: #ff2d55;
+  --gray: #8e8e93;
+  --brown: #ac7f5e;
 
-  --helpTint: rgba(229, 83, 83, .10);
+  --helpTint: rgba(255, 59, 48, .10);
 
-  --glassTint: rgba(247, 244, 236, .52);
-  --glassTintDeep: rgba(255, 255, 255, .82);
+  --glassTint: rgba(255, 255, 255, .42);
+  --glassTintDeep: rgba(255, 255, 255, .76);
   --glassRim: rgba(255, 255, 255, .92);
   --glassRimLo: rgba(255, 255, 255, .42);
-  --glassRing: rgba(39, 184, 176, .28);
+  --glassRing: rgba(255, 255, 255, .58);
   --onGlass: rgba(255, 255, 255, .62);
-  --lens: blur(20px) saturate(170%) brightness(1.04);
-  --lensLite: blur(14px) saturate(160%) brightness(1.03);
-  --lensDeep: blur(44px) saturate(170%) brightness(1.02);
-  --lensDrop: 0 1px 2px rgba(16, 35, 63, .08), 0 6px 20px rgba(16, 35, 63, .10);
+  --lens: blur(20px) saturate(190%) brightness(1.06);
+  --lensLite: blur(14px) saturate(175%) brightness(1.04);
+  --lensDeep: blur(44px) saturate(190%) brightness(1.03);
+  --lensDrop: 0 1px 2px rgba(0, 0, 0, .10), 0 6px 20px rgba(0, 0, 0, .12);
 
   --matThin: rgba(255, 255, 255, .60);
-  --matRegular: rgba(255, 255, 255, .76);
-  --matThick: rgba(247, 244, 236, .88);
-  --matChrome: rgba(255, 255, 255, .92);
-  --glassEdge: rgba(16, 35, 63, .06);
+  --matRegular: rgba(255, 255, 255, .72);
+  --matThick: rgba(255, 255, 255, .84);
+  --matChrome: rgba(255, 255, 255, .90);
+  --glassEdge: rgba(0, 0, 0, .06);
   --glassHi: rgba(255, 255, 255, .50);
-  --glassLo: rgba(16, 35, 63, .08);
-  --shadow1: 0 1px 2px rgba(16, 35, 63, .08), 0 4px 14px rgba(16, 35, 63, .08);
-  --shadow2: 0 2px 6px rgba(16, 35, 63, .08), 0 10px 30px rgba(16, 35, 63, .12);
-  --shadow3: 0 -1px 0 rgba(16, 35, 63, .05), 0 -12px 40px rgba(16, 35, 63, .10);
-  --thumbShadow: 0 3px 8px rgba(16, 35, 63, .10), 0 3px 1px rgba(16, 35, 63, .04);
+  --glassLo: rgba(0, 0, 0, .10);
+  --shadow1: 0 1px 2px rgba(0, 0, 0, .10), 0 4px 14px rgba(0, 0, 0, .10);
+  --shadow2: 0 2px 6px rgba(0, 0, 0, .10), 0 10px 30px rgba(0, 0, 0, .14);
+  --shadow3: 0 -1px 0 rgba(0, 0, 0, .05), 0 -12px 40px rgba(0, 0, 0, .12);
+  --thumbShadow: 0 3px 8px rgba(0, 0, 0, .12), 0 3px 1px rgba(0, 0, 0, .04);
 
-  --markerEdge: #FFFFFF;
-  --puckRing: #FFFFFF;
-  --mapBg: #EDE8DC;
-  --ground: #F7F4EC;      --groundEdge: #E0D9C8;
-  --wood: #C5DFB0;        --grass: #D6ECC0;
-  --lot: #E8E2D4;         --lotEdge: #D8D0BE;
-  --waterFill: #B5DDE8;   --waterEdge: #8FC8D8;
-  --poolFill: #A8D8E6;    --poolEdge: #7CBFD4;
-  --backOfHouse: #E0D9C8;
-  --midwayCase: #D8D0BE;  --midway: #FFFFFF;
-  --structure: #E8E2D4;   --structureEdge: #D4CDBA;
-  --slide: var(--aqua);
-  --trackCase: #FFFFFF;   --track: var(--adventure);
-  --labelStroke: #F7F4EC;
-  --labelFill: #10233F;
-  --markerChip: #FFFFFF;
-  --markerVoid: #EFEBE1;
-  --barred: #D64545;
-  --trackLit: var(--aqua);
-  --vignette: rgba(16, 35, 63, .05);
+  --markerEdge: #ffffff;
+  --puckRing: #ffffff;
+  --mapBg: #f2efe9;
+  --ground: #faf8f5;      --groundEdge: #e4e0d8;
+  --wood: #c6e1ac;        --grass: #d8edc0;
+  --lot: #edeae4;         --lotEdge: #dcd8d0;
+  --waterFill: #a8d8f0;   --waterEdge: #8fc6e4;
+  --poolFill: #9fd4ee;    --poolEdge: #7cbcdb;
+  --backOfHouse: #e2ded6;
+  --midwayCase: #d8d2c8;  --midway: #ffffff;
+  --structure: #e6e1d8;   --structureEdge: #d5cfc4;
+  --slide: #00c7be;
+  --trackCase: #ffffff;   --track: #ff3b30;
+  --labelStroke: #ffffff;
+  --labelFill: #3c3c43;
+  --markerChip: #ffffff;
+  --markerVoid: #f2f2f7;
+  --barred: #d70015;
+  --trackLit: var(--blue);
+  --vignette: rgba(0, 0, 0, .06);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -598,21 +589,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   animation: riseIn var(--t3) var(--easeOut) both;
 }
 .brand {
-  flex: none; display: flex; flex-direction: column; gap: 2px;
+  flex: none; display: flex; align-items: baseline; gap: 6px;
   padding: 0 16px 8px; min-width: 0;
 }
-.brandRow {
-  display: flex; align-items: baseline; gap: 8px; min-width: 0;
+.brand b {
+  flex: none; font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.08px;
 }
-.brand b, .brandName {
-  flex: none; font-family: var(--display); font-size: 15px; font-weight: 700;
-  line-height: 20px; letter-spacing: -.02em; color: var(--label);
-}
-.brandSlogan {
-  flex: none; font-size: 11px; font-weight: 500; line-height: 14px;
-  letter-spacing: .01em; color: var(--aqua);
-}
-.brand span, .brandStatus {
+.brand span {
   flex: 1; min-width: 0; font-size: 13px; font-weight: 400; line-height: 18px;
   letter-spacing: -.08px; color: var(--label2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -845,8 +828,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    minimum around 19–20pt and opens back up above it, so the reflex of
    "bigger means tighter" has this one backwards. See the table in :root. */
 .sheetHead h2 {
-  margin: 0; font-family: var(--display); font-size: 28px; font-weight: 700;
-  line-height: 34px; letter-spacing: -.02em;
+  margin: 0; font-size: 28px; font-weight: 700; line-height: 34px; letter-spacing: .38px;
 }
 .sheetHead span {
   display: block; margin-top: 2px;
@@ -903,8 +885,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tabItem.on .tabLabel { font-weight: 600; }
-/* The Day tab wears the visitor's own initials rather than a glyph — it is the
-   screen with their name and their day on it. */
+/* The Me tab wears the visitor's own initials rather than a glyph — it is the
+   screen with their name on it. */
 .tabAvatar {
   width: 25px; height: 25px; border-radius: 50%;
   display: grid; place-items: center;
@@ -1016,9 +998,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    of asking for a different one has to stop taking taps, or a slow connection
    turns into two half-loaded maps. */
 .btn:disabled, .venueRow:disabled { opacity: .35; }
-.btn.primary { background: var(--adventure); color: var(--onTint); }
-.btn.primary:active { opacity: .85; }
-.btn.secondary { background: color-mix(in srgb, var(--aqua) 18%, transparent); color: var(--aqua); }
+.btn.primary { background: var(--blue); color: var(--onTint); }
 .btn.small {
   min-height: 36px; padding: 8px 16px; font-size: 15px; width: auto; margin: 0;
   border-radius: var(--rCapsule);
@@ -1297,18 +1277,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   width: 36px; height: 5px; border-radius: 2.5px; background: var(--label3);
 }
 .gateEyebrow {
-  font-family: var(--display); font-size: 12px; font-weight: 700;
-  letter-spacing: .12em; text-transform: uppercase;
-  color: var(--aqua); margin-bottom: 8px;
+  font-size: 13px; font-weight: 400; letter-spacing: -.08px; text-transform: none;
+  color: var(--label2); margin-bottom: 6px;
 }
 .gateCard h2 {
-  font-family: var(--display); font-size: 34px; font-weight: 800;
-  letter-spacing: -.02em; line-height: 40px;
-  margin: 0 0 6px; text-transform: none;
-}
-.gateSlogan {
-  margin: 0 0 16px; font-family: var(--display); font-size: 17px; font-weight: 600;
-  letter-spacing: -.02em; line-height: 22px; color: var(--adventure);
+  font-size: 34px; font-weight: 700; letter-spacing: .4px; line-height: 41px;
+  margin: 0 0 8px; text-transform: none;
 }
 .gateCard p { margin: 0 0 18px; font-size: 17px; line-height: 22px; letter-spacing: -.4px; color: var(--label2); }
 .gateError { color: var(--red); }
@@ -1409,8 +1383,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .glanceWalk { display: flex; align-items: baseline; gap: 5px; min-width: 0; flex-wrap: nowrap; }
 .glanceWalk b {
   flex: none; white-space: nowrap;
-  font-family: var(--display); font-size: 20px; font-weight: 700;
-  line-height: 25px; letter-spacing: -.02em;
+  font-size: 20px; font-weight: 600; line-height: 25px; letter-spacing: -.45px;
   font-variant-numeric: tabular-nums;
 }
 .glanceWalk em {
@@ -1436,8 +1409,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .glanceCard { position: relative; }
 
 .glanceTitle {
-  font-family: var(--display); font-size: 15px; font-weight: 600;
-  line-height: 20px; letter-spacing: -.02em;
+  font-size: 15px; font-weight: 400; line-height: 20px; letter-spacing: -.23px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .glanceFoot {
@@ -1685,8 +1657,7 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .poiWalk em { font-style: normal; font-size: 12px; color: var(--label3); margin-top: 4px; }
 .verdict {
   display: inline-flex; align-items: center; gap: 4px; font-style: normal;
-  font-family: var(--display); font-size: 11px; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase;
+  font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
   padding: 4px 9px; border-radius: var(--rCapsule); white-space: nowrap; min-width: 74px;
   justify-content: center; border: none;
 }
@@ -2217,47 +2188,39 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   }
 }
 @media (prefers-contrast: more) {
-  /* High-contrast Parkbound accents — brighter Adventure / Meadow / Signal
-     so markers and actions survive outdoor glare and accessibility settings. */
+  /* Apple ships a whole second accent palette for Increase Contrast. It is
+     not the default one darkened, and the two appearances get different
+     values, so they are stated separately. The label and separator steps are
+     not published and are a judgement call. */
   :root {
-    --adventure: #FF8A55;
-    --aqua: #3DD4CC;
-    --meadow: #7DCF80;
-    --sun: #FFD56A;
-    --signal: #FF6E6E;
-    --blue: var(--adventure);
-    --green: var(--meadow);
-    --red: var(--signal);
-    --orange: #FFA056;
-    --yellow: var(--sun);
-    --teal: var(--aqua);
-    --indigo: #A7AAFF;
-    --purple: #EA8DFF;
-    --pink: #FF8AC4;
-    --barred: #FF7A70;
-    --label2: rgba(247, 244, 236, .82);
-    --label3: rgba(247, 244, 236, .55);
-    --sep: rgba(247, 244, 236, .42);
+    --blue: #5cb8ff;
+    --green: #4ad968;
+    --red: #ff6165;
+    --orange: #ffa056;
+    --yellow: #fedf43;
+    --teal: #3bddec;
+    --indigo: #a7aaff;
+    --purple: #ea8dff;
+    --pink: #ff8ac4;
+    --barred: #ff7a70;
+    --label2: rgba(235, 235, 245, .82);
+    --label3: rgba(235, 235, 245, .55);
+    --sep: rgba(235, 235, 245, .42);
   }
   :root[data-theme='day'] {
-    --adventure: #D44E1A;
-    --aqua: #0F8F88;
-    --meadow: #2F8A36;
-    --sun: #B8860B;
-    --signal: #C62828;
-    --blue: var(--adventure);
-    --green: var(--meadow);
-    --red: var(--signal);
-    --orange: #C55300;
-    --yellow: var(--sun);
-    --teal: var(--aqua);
-    --indigo: #3A4FD0;
-    --purple: #7A3FCF;
-    --pink: #C7124D;
-    --barred: #B3000F;
-    --label2: rgba(16, 35, 63, .82);
-    --label3: rgba(16, 35, 63, .55);
-    --sep: rgba(16, 35, 63, .45);
+    --blue: #1e6ef4;
+    --green: #008932;
+    --red: #e9152d;
+    --orange: #c55300;
+    --yellow: #a16a00;
+    --teal: #008198;
+    --indigo: #564ade;
+    --purple: #b02fc2;
+    --pink: #e7124d;
+    --barred: #b3000f;
+    --label2: rgba(60, 60, 67, .82);
+    --label3: rgba(60, 60, 67, .55);
+    --sep: rgba(60, 60, 67, .45);
   }
   :root, :root[data-theme='day'] {
     --glassTint: var(--bg2); --glassTintDeep: var(--bg2);
@@ -2269,66 +2232,6 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
     --blur: none; --blurLite: none;
     --lensEdge: inset 0 0 0 1px var(--sep);
   }
-}
-
-/* ============================================================
-   PARKBOUND — attraction signage, live states, trail language
-   ============================================================ */
-.poiName, .memberText b, .heightVal b, .codeText, .previewAlt b {
-  font-family: var(--display);
-}
-.poiName {
-  font-weight: 700; letter-spacing: -.02em;
-}
-.liveBadge {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--display); font-size: 11px; font-weight: 800;
-  letter-spacing: .08em; text-transform: uppercase;
-  padding: 3px 8px; border-radius: var(--rCapsule);
-  background: var(--fill3); color: var(--label2);
-}
-.liveBadge.open, .liveBadge.ok {
-  color: var(--meadow); background: color-mix(in srgb, var(--meadow) 16%, transparent);
-}
-.liveBadge.goNow {
-  color: var(--onTint); background: var(--adventure);
-}
-.liveBadge.paused, .liveBadge.bad {
-  color: var(--onTint); background: var(--signal);
-}
-.liveBadge.weather, .liveBadge.warn {
-  color: #8A5A00; background: color-mix(in srgb, var(--sun) 36%, transparent);
-}
-.liveBadge.meetup, .liveBadge.info {
-  color: var(--aqua); background: color-mix(in srgb, var(--aqua) 16%, transparent);
-}
-.partyDot {
-  width: 10px; height: 10px; border-radius: 50%; flex: none;
-  box-shadow: 0 0 0 2px var(--bg2);
-}
-.partyDot.together { background: var(--meadow); }
-.partyDot.onTheWay { background: var(--sun); }
-.partyDot.separated { background: var(--orange); }
-.partyDot.meetHere { background: var(--aqua); }
-.dayMoment {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 12px 16px; border-radius: var(--r3);
-  background: var(--grouped2); margin-bottom: 8px;
-}
-.dayMoment b {
-  display: block; font-family: var(--display); font-size: 15px; font-weight: 700;
-  letter-spacing: -.02em;
-}
-.dayMoment span { display: block; font-size: 13px; color: var(--label2); margin-top: 2px; }
-.brandMark {
-  width: 22px; height: 22px; flex: none; color: var(--adventure);
-}
-.trailLine {
-  stroke: var(--aqua); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 1 10; fill: none;
-}
-.trailLine.active {
-  stroke: var(--adventure); stroke-width: 4; stroke-dasharray: none;
 }
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes

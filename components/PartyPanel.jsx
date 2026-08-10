@@ -132,7 +132,7 @@ export default function PartyPanel({
   if (!code) {
     return (
       <div>
-        <div className="label">Your Party</div>
+        <div className="label">Group Tracking</div>
         <p className="fine">
           One phone starts the party and hosts it. Everyone else joins by scanning the QR,
           opening the link, or typing the six-character code. Positions are sealed with a key
@@ -453,7 +453,7 @@ export default function PartyPanel({
           </div>
           <div className="joinRow">
             <button type="button" className="btn small primary" onClick={onNavigateMeet}>
-              Go
+              Walk me there
             </button>
             <button type="button" className="btn small" onClick={() => onFocus(meet)}>
               Show on map

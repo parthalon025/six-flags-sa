@@ -140,28 +140,6 @@ const GLYPHS = {
       />
     </>
   ),
-  /* Your Day — subtle sparkle for adventure moments, not a game badge. */
-  sparkles: (
-    <>
-      <path
-        d="M12 2.8 13.4 8.2 18.8 9.6 13.4 11 12 16.4 10.6 11 5.2 9.6 10.6 8.2Z"
-        fill="currentColor"
-      />
-      <path d="M18.2 14.2 18.9 16.6 21.4 17.3 18.9 18 18.2 20.4 17.5 18 15 17.3 17.5 16.6Z" fill="currentColor" />
-      <path d="M6.2 15.4 6.7 17.1 8.4 17.6 6.7 18.1 6.2 19.8 5.7 18.1 4 17.6 5.7 17.1Z" fill="currentColor" />
-    </>
-  ),
-  /* Parkbound waypoint — pin × trail marker × compass eye. */
-  waypoint: (
-    <>
-      <path d="M12 2.4 20.2 12 12 21.6 3.8 12Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" opacity=".55" />
-      <path
-        d="M12 5.2a4.4 4.4 0 0 0-4.4 4.4c0 3.2 4.4 7.6 4.4 7.6s4.4-4.4 4.4-7.6A4.4 4.4 0 0 0 12 5.2Z"
-        fill="currentColor"
-      />
-      <circle cx="12" cy="9.4" r="1.7" fill="var(--bg2, #fff)" />
-    </>
-  ),
   'camera.fill': (
     <>
       <path

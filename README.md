@@ -1,15 +1,10 @@
-# Parkbound
+# Party Tracker
 
-**Explore more. Stress less.**
-
-An explorer’s companion for a group at a big, crowded park. It ships with
+A live situational-awareness map for a group at a big, crowded place. It ships with
 Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio), Cedar Point
 (Sandusky, Ohio) and Big Kahuna's (Destin, Florida), and one command — or one form under
 Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15
 (App Router) and React 19.
-
-Parkbound turns a complicated park day into an adventure you can actually enjoy —
-live party tracking, walking trails, and a drawn park map.
 
 - **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
   painted as SVG: midways, buildings, water, slides, and every coaster's actual track

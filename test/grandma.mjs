@@ -163,7 +163,7 @@ await score('B', 'B5', 'a walk inside the park is not named after the mall next 
   await typeSearch(b, 'toilet');
   await b.locator('.poiRow .poiMain').first().click();
   await b.waitForTimeout(1000);
-  if (!(await tapText(b, 'Go'))) return 0;
+  if (!(await tapText(b, 'Walk me there'))) return 0;
   await b.waitForTimeout(3500);
   const sheet = await b.locator('.sheet').innerText().catch(() => '');
   if (/La Cantera|Legend Hills/i.test(sheet)) return { score: 0, note: 'still routes "via" the mall' };

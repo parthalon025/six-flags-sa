@@ -290,14 +290,14 @@ export default function PlaceList({
                 className="btn small primary"
                 onClick={() => onNavigate({ kind: 'poi', label: p.n, lat: p.lat, lng: p.lng })}
               >
-                Go
+                Walk me there
               </button>
               <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
                 Make this the meet-up
               </button>
               {onAddToPlan && (
                 <button type="button" className="btn small" onClick={() => onAddToPlan(p)}>
-                  Save
+                  Add to plan
                 </button>
               )}
             </div>

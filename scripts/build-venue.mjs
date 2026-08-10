@@ -72,7 +72,7 @@ const OVERPASS = [
   'https://overpass.private.coffee/api/interpreter',
 ];
 const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
-const UA = 'parkbound-venue-builder/1.0 (+https://github.com/parthalon025/six-flags-sa)';
+const UA = 'party-tracker-venue-builder/1.0 (+https://github.com/parthalon025/six-flags-sa)';
 
 /* ------------------------------------------------------------------ args - */
 

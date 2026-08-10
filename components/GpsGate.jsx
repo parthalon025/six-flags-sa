@@ -1,11 +1,9 @@
 'use client';
 
-import { BRAND } from '@/lib/brand';
-
 const COPY = {
   idle: {
     title: 'Turn on location',
-    body: 'Parkbound needs your phone’s GPS to place you on the map, measure range and bearing to your party, and point you at the meet-up. Nothing is stored until you join a party.',
+    body: 'This map needs your phone’s GPS to place you on it, measure range and bearing to your party, and point you at the meet-up. Nothing is stored until you join a party.',
     action: 'Allow location',
   },
   asking: {
@@ -31,7 +29,7 @@ const COPY = {
 };
 
 /*
- * The first screen says what Parkbound is and asks for location, in that
+ * The first screen says what Park Party is and asks for location, in that
  * order, on the one screen — rather than asking on a screen of its own.
  *
  * That order is the whole point. Someone handed the phone's own permission box
@@ -45,16 +43,15 @@ const COPY = {
 function Welcome() {
   return (
     <>
-      <p className="gateSlogan">{BRAND.slogan}</p>
-      <p>{BRAND.promise}</p>
+      <p>Keep your group together at a big, busy park.</p>
       <div className="introList">
         <p>
-          <b>See where everyone is.</b> Your party is an expedition on the map, with how far
-          away they are and how long the walk is.
+          <b>See where everyone is.</b> Everyone is a dot on the map, with how far away
+          they are and how long the walk is.
         </p>
         <p>
           <b>Meet up without ringing round.</b> Anyone can drop a pin on a spot, and
-          everyone else gets a trail to it.
+          everyone else gets directions to it.
         </p>
         <p>
           <b>Everything in the park.</b> Every ride and who is tall enough for it, and the
@@ -65,12 +62,12 @@ function Welcome() {
           when the weather turns.
         </p>
         <p>
-          <b>No bars, no problem.</b> The map, the rides and the walking trails are
+          <b>No bars, no problem.</b> The map, the rides and the walking directions are
           saved on your phone, so they work in a queue with no signal. Only watching your
-          party move needs a connection, and everyone catches up when it comes back.
+          group move needs a connection, and everyone catches up when it comes back.
         </p>
       </div>
-      <p>To put you on the map, Parkbound needs to use your location.</p>
+      <p>To put you on the map, Park Party needs to use your location.</p>
     </>
   );
 }
@@ -89,9 +86,9 @@ export default function GpsGate({
     <div className="gate">
       <div className="gateCard">
         <div className="gateEyebrow">
-          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
+          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}Park Party`}
         </div>
-        <h2>{welcome ? BRAND.nameUpper : copy.title}</h2>
+        <h2>{welcome ? 'Park Party' : copy.title}</h2>
         {welcome ? <Welcome /> : <p>{copy.body}</p>}
         {error && <p className="gateError">{error}</p>}
         <button type="button" className="btn primary" onClick={onRequest}>
