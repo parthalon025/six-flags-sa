@@ -288,7 +288,15 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   await gemini.locator('.poiMain').click();
   await a.waitForTimeout(400);
   await gemini.locator('button:has-text("Walk me there")').click();
-  await a.waitForTimeout(900);
+  await until(async () => (await a.locator('.routePreview').count()) > 0, {
+    timeout: 15000,
+    label: 'route preview card',
+  });
+  // Graph weld waits for idle after a venue switch — give it a beat.
+  await until(async () => (await a.locator('.routeLine').count()) > 0, {
+    timeout: 20000,
+    label: 'route line on the map',
+  });
   const where = await a.locator('.previewWhere').innerText();
   if (!/gemini/i.test(where)) throw new Error(`preview: ${where}`);
   // Surveyed queue entrances prefer that wording; approximate pins say Ride area.
