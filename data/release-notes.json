@@ -48,5 +48,11 @@
     "items": [
       "Add agent handoff standards for out-of-scope issues"
     ]
+  },
+  "1.1.8": {
+    "title": "What's new",
+    "items": [
+      "Universal Venue Builder: MIT agents, adapters, entrance UX"
+    ]
   }
 }
