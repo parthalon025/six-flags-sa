@@ -59,6 +59,7 @@ function GlyphMark({
   aqua = 'currentColor',
   adventure = '#FF6B35',
   title,
+  className,
 }) {
   return (
     <svg
@@ -67,6 +68,7 @@ function GlyphMark({
       viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className={className || undefined}
       role={title ? 'img' : 'presentation'}
       aria-hidden={title ? undefined : true}
       aria-label={title || undefined}
@@ -107,15 +109,23 @@ export default function BrandMark({
   adventure,
   title,
 }) {
-  const mark =
-    variant === 'lockup' ? (
-      <LockupMark size={size} title={title} />
-    ) : (
-      <GlyphMark size={size} aqua={aqua} adventure={adventure} title={title} />
+  if (variant === 'lockup') {
+    return (
+      <span className={className || undefined}>
+        <LockupMark size={size} title={title} />
+      </span>
     );
+  }
 
-  if (!className) return mark;
-  return <span className={className}>{mark}</span>;
+  return (
+    <GlyphMark
+      size={size}
+      aqua={aqua}
+      adventure={adventure}
+      title={title}
+      className={className}
+    />
+  );
 }
 
 export { LOCKUP_COLORS };
