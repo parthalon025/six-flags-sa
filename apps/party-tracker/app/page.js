@@ -47,7 +47,7 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
-import { positionForMap } from '@/lib/gps/smooth';
+import { mapDisplayPosition } from '@/lib/gps/display';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -696,7 +696,7 @@ export default function Page() {
       return confirmVenue(id)
         .then((v) => {
           setSelected(null);
-          setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+          setFollow(Boolean(position));
           setParkAsked(true);
           setGateOpen(false);
           showToast(`${v.name} is loaded — you are good to go!`);
@@ -1528,13 +1528,14 @@ export default function Page() {
 
   const mapMe = useMemo(
     () =>
-      positionForMap({
+      mapDisplayPosition({
         position,
+        pois: POIS,
         graph,
         bounds: venue?.bounds,
         walking,
       }),
-    [position, graph, venue?.bounds, walking],
+    [position, graph, venue?.bounds, walking, POIS],
   );
 
   const { done: routeDone, ahead: routeAhead } = useMemo(() => {
@@ -1623,7 +1624,11 @@ export default function Page() {
        row — once in bold as the heading, once as the district. "On site" is
        what that fallback actually means. */
     const district = nearest?.p.a && nearest.p.a !== venue?.name ? nearest.p.a : null;
-    const where = inside ? district || 'On site' : 'Off site';
+    const where = inside
+      ? district || 'On site'
+      : mapMe?.arrival
+        ? `Near ${mapMe.arrivalLabel || 'entrance'}`
+        : 'Off site';
     /* "±0 ft" is worse than saying nothing — it reads as a precision claim
        nobody made. A fix is either good enough not to mention or loose enough
        to be worth a warning, and the number only helps in the second case. */

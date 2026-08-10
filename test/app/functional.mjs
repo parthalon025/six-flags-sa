@@ -897,6 +897,10 @@ await check('the GPS gate follows the intro with nearest-park and location', asy
   const card = await e.locator('.gate').innerText();
   if (!/Find you on the map/i.test(card)) throw new Error('the GPS gate title is missing');
   if (!/Go to nearest park/i.test(card)) throw new Error('the nearest-park shortcut is missing');
+  const paths = await e.locator('.mapSvg path').count();
+  const dot = await e.locator('.mePulse').count();
+  if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
+  if (!dot) throw new Error('off-site GPS should still show a dot at the park entrance');
   return true;
 });
 
