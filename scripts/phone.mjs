@@ -251,7 +251,7 @@ async function main() {
   process.stdout.write(`  ${GREEN}${target}${OFF}${via ? `   ${DIM}via ${via}${OFF}` : ''}\n\n`);
 
   if (target.startsWith('https://')) {
-    process.stdout.write(`${DIM}  Then: allow location, open the Me tab, and add it to the home screen.${OFF}\n`);
+    process.stdout.write(`${DIM}  Then: allow location, open the Day tab, and add it to the home screen.${OFF}\n`);
     if (via === 'localtunnel') {
       process.stdout.write(
         `${DIM}  localtunnel asks for a password the first time — it is this machine's\n  public IP, which the page itself shows you.${OFF}\n`,

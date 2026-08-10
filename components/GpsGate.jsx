@@ -1,11 +1,12 @@
 'use client';
 
+import { BRAND } from '@/lib/brand';
 import { formatDistance } from '@/lib/geo';
 
 const COPY = {
   idle: {
     title: 'Find you on the map',
-    body: 'We need your GPS to drop your dot, see how far the crew is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
+    body: 'Parkbound needs your GPS to drop your dot, see how far the party is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
     action: 'Allow location',
   },
   asking: {
@@ -29,9 +30,6 @@ const COPY = {
     action: 'Try anyway',
   },
 };
-
-const TAGLINE =
-  'Live group map for busy parks — spot your whole crew and meet up without the group-chat spiral.';
 
 const MILE_M = 1609.344;
 
@@ -57,6 +55,10 @@ function dataText(venue) {
  * this is and what the one good button does. The park question used to be a
  * whole second card; it now lives here when it is needed, and the happy path
  * ("go to nearest park") skips it and reports progress with a toast instead.
+ *
+ * Brand copy is Parkbound (name + slogan). The five-bullet Welcome intro from
+ * the design-language branch yields to this streamlined first-run flow from
+ * main — both intents cannot own the same card.
  */
 function ParkSection({
   choice,
@@ -180,11 +182,11 @@ export default function GpsGate({
     <div className="gate">
       <div className="gateCard">
         <div className="gateEyebrow">
-          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}Park Party`}
+          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
         </div>
         <h2>
           {welcome && !showParkQuestion
-            ? 'Park Party'
+            ? BRAND.nameUpper
             : showParkQuestion
               ? parkChoice.inside
                 ? `You’re at ${parkVenue.name}!`
@@ -192,7 +194,12 @@ export default function GpsGate({
               : copy.title}
         </h2>
 
-        {welcome && !showParkQuestion && !settingUp && <p>{TAGLINE}</p>}
+        {welcome && !showParkQuestion && !settingUp && (
+          <p className="gateSlogan">{BRAND.slogan}</p>
+        )}
+        {welcome && !showParkQuestion && !settingUp && (
+          <p>{BRAND.shortDescription}</p>
+        )}
         {!welcome && !showParkQuestion && !settingUp && <p>{copy.body}</p>}
 
         {(settingUp || showParkQuestion) && (
@@ -239,7 +246,7 @@ export default function GpsGate({
         <p className="gateFine">
           Your location stays on your phone. Join a party and it goes only to your crew,
           encrypted in transit — nobody in the middle can peek.
-          {showParkQuestion ? ' Switch parks any time under Me → Which map.' : ''}
+          {showParkQuestion ? ' Switch parks any time under Day → Which park.' : ''}
         </p>
       </div>
     </div>

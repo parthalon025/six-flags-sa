@@ -132,7 +132,7 @@ export default function PartyPanel({
   if (!code) {
     return (
       <div>
-        <div className="label">Group Tracking</div>
+        <div className="label">Your Party</div>
         <p className="fine">
           One phone starts the party and hosts it. Everyone else joins by scanning the QR,
           opening the link, or typing the six-character code. Positions are sealed with a key
@@ -313,7 +313,7 @@ export default function PartyPanel({
           </button>
           <p className="fine">
             {pushNeedsInstall
-              ? 'On an iPhone this needs the app on your Home Screen first — Me → Install on this phone.'
+              ? 'On an iPhone this needs the app on your Home Screen first — Day → Install on this phone.'
               : 'Right now a locked phone in a bag shows nothing at all when somebody needs you.'}
           </p>
         </>
@@ -350,15 +350,36 @@ export default function PartyPanel({
                 className={`memberRow ${stale && !paused ? 'stale' : ''} ${paused ? 'paused' : ''}`}
                 onClick={() => !isMe && located && onFocus(m)}
               >
-                <span className="pip" style={{ background: isMe ? 'var(--blue)' : m.colour }}>
+                <span className="pip" style={{ background: isMe ? 'var(--adventure)' : m.colour }}>
                   {m.initials}
+                  <span
+                    className={`partyDot ${
+                      m.status === 'NEED HELP'
+                        ? 'separated'
+                        : stale || paused
+                          ? 'onTheWay'
+                          : meet && located
+                            ? 'meetHere'
+                            : 'together'
+                    }`}
+                    title={
+                      m.status === 'NEED HELP'
+                        ? 'Separated'
+                        : stale || paused
+                          ? 'On the way'
+                          : meet && located
+                            ? 'Meet here'
+                            : 'Together'
+                    }
+                    aria-hidden="true"
+                  />
                 </span>
                 <span className="memberText">
                   <b>
                     {m.name}
                     {isMe && <em className="chipTag">you</em>}
                     {m.id === hostId && <em className="chipTag">host</em>}
-                    {m.groupId && <em className="chipTag">grp {m.groupId}</em>}
+                    {m.groupId && <em className="chipTag">party {m.groupId}</em>}
                     {paused && <em className="chipTag">paused</em>}
                     {m.status === 'NEED HELP' && <em className="chipTag hot">help</em>}
                   </b>
@@ -453,10 +474,10 @@ export default function PartyPanel({
           </div>
           <div className="joinRow">
             <button type="button" className="btn small primary" onClick={onNavigateMeet}>
-              Walk me there
+              Go
             </button>
             <button type="button" className="btn small" onClick={() => onFocus(meet)}>
-              Show on map
+              On the map
             </button>
             <button
               type="button"

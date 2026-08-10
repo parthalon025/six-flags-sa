@@ -131,7 +131,7 @@ await searchRoute.fill('beast');
 await page.waitForTimeout(700);
 await page.locator('.poiRow .poiMain').first().click().catch(() => {});
 await page.waitForTimeout(500);
-const walkBtn = page.locator('button:has-text("Walk me there")').first();
+const walkBtn = page.locator('button:has-text("Go")').first();
 if (await walkBtn.count()) {
   await walkBtn.click();
   await page.waitForTimeout(2000);

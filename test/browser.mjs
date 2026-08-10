@@ -217,27 +217,36 @@ export async function root(page) {
  * The bottom tab bar carries the four top-level screens, and each of them keeps
  * its own navigation stack, so getting somewhere is: tap the tab, unwind
  * whatever that tab was left on, and — for the three screens that live behind a
- * row inside Me — tap the row.
+ * row inside Day — tap the row.
  *
  *   'Places'         the Explore tab: search, the rail and the list
  *   'Party'          the Party tab
  *   'Rider height',
- *   'Rides'          the Rides tab, where the venue publishes height rules
- *   'Settings', 'Me' the Me tab
- *   'Which map',
- *   'Show on the map',
- *   'Diagnostics'    a row inside Me
+ *   'Rides', 'Plan'  the Plan tab, where the venue publishes height rules
+ *   'Settings', 'Me',
+ *   'Day'            the Day tab
+ *   'Which map', 'Which park',
+ *   'Show on the map', 'On the map',
+ *   'Diagnostics'    a row inside Day
  */
 const TAB_OF = {
   Places: 'explore',
   Explore: 'explore',
   Party: 'party',
   Rides: 'rides',
+  Plan: 'rides',
   'Rider height': 'rides',
   Settings: 'settings',
   Me: 'settings',
+  Day: 'settings',
 };
-const SETTINGS_ROWS = new Set(['Which map', 'Show on the map', 'Diagnostics']);
+const SETTINGS_ROWS = new Set([
+  'Which map',
+  'Which park',
+  'Show on the map',
+  'On the map',
+  'Diagnostics',
+]);
 
 export async function go(page, dest) {
   await closeGate(page);
@@ -255,7 +264,13 @@ export async function go(page, dest) {
     await page.waitForTimeout(350);
   }
   if (!SETTINGS_ROWS.has(dest)) return;
-  await page.locator(`.row:has-text("${dest}")`).first().click();
+  const rowLabel =
+    dest === 'Which map'
+      ? 'Which park'
+      : dest === 'Show on the map'
+        ? 'On the map'
+        : dest;
+  await page.locator(`.row:has-text("${rowLabel}")`).first().click();
   await page.waitForTimeout(350);
 }
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
-import { statusFor } from '@/lib/rideStatus';
+import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import {
   categoriesFor,
@@ -58,6 +58,7 @@ export default function PlaceList({
   onReport = null, // (rideId, 'down'|'open'|null) — null when not in a party
   onAddToPlan = null,
   now = Date.now(),
+  members = null, // party members for BUSY clustering
 }) {
   const palette = paletteFor(theme);
   const POIS = usePois();
@@ -71,17 +72,25 @@ export default function PlaceList({
   const [containerHeight, setContainerHeight] = useState(400);
   const listRef = useRef(null);
 
-  // One verdict per place, computed once. `now` is a prop rather than a call so
-  // the whole screen agrees on what "12 min ago" means within a render.
+  // One live verdict per place. Distance and party clustering turn OPEN into
+  // GO NOW / BUSY without inventing a wait-time number.
   const statuses = useMemo(() => {
     const out = new Map();
-    if (!weather && !rides) return out;
+    if (!weather && !rides && !me) return out;
     POIS.forEach((p) => {
       if (!isRideable(p) && p.c !== 'show') return;
-      out.set(p.id, statusFor(p, rides?.[p.id] ?? null, weather, now));
+      const metres = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
+      const near = membersAt(p, members);
+      out.set(
+        p.id,
+        liveFor(p, rides?.[p.id] ?? null, weather, now, {
+          metres,
+          membersNear: near,
+        }),
+      );
     });
     return out;
-  }, [POIS, weather, rides, now]);
+  }, [POIS, weather, rides, now, me, members]);
 
   // Which categories the words themselves are asking for — computed once per
   // query rather than once per place.
@@ -207,7 +216,7 @@ export default function PlaceList({
             style={{ background: v.cls === 'bad' ? palette.barred : palette.categories[p.c] }}
           />
           <span className="poiText">
-            <b>{p.n}</b>
+            <b className="poiName">{p.n}</b>
             <span>
               {isRide ? heightLabel(p) : CATEGORY_LABELS[p.c]} · {p.a}
             </span>
@@ -221,7 +230,21 @@ export default function PlaceList({
             )}
             {showStatus && (
               <span
-                className={`verdict statusPill ${st.tone} ${st.source === 'weather' ? 'guess' : ''}`}
+                className={[
+                  'liveBadge',
+                  'statusPill',
+                  st.live === 'goNow' || st.key === 'goNow' ? 'goNow' : '',
+                  st.live === 'busy' || st.key === 'busy' ? 'busy' : '',
+                  st.live === 'later' || st.key === 'later' || st.key === 'watch' ? 'later' : '',
+                  st.live === 'open' || st.key === 'open' ? 'open' : '',
+                  st.live === 'paused' || st.key === 'down' || st.key === 'hold' || st.key === 'paused'
+                    ? 'paused'
+                    : '',
+                  st.live === 'weather' || st.key === 'closed' ? 'weather' : '',
+                  st.source === 'weather' ? 'guess' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
               >
                 <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {st.label}
@@ -305,14 +328,14 @@ export default function PlaceList({
                 className="btn small primary"
                 onClick={() => onNavigate({ kind: 'poi', label: p.n, lat: p.lat, lng: p.lng })}
               >
-                Walk me there
+                Go
               </button>
               <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
                 Make this the meet-up
               </button>
               {onAddToPlan && (
                 <button type="button" className="btn small" onClick={() => onAddToPlan(p)}>
-                  Add to plan
+                  Save
                 </button>
               )}
             </div>

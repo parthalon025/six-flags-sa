@@ -1,10 +1,12 @@
-# Installing Party Tracker
+# Installing Parkbound
+
+**Explore more. Stress less.**
 
 The app ends up as an icon on everyone's phone, and one phone runs the party.
 There are no accounts and nobody has to sign up for anything.
 
-It opens on Kings Island, and Six Flags Fiesta Texas is in the **Me** tab under
-**Which map**. It switches on its own: to whichever one your first GPS fix lands
+It opens on Kings Island, and Six Flags Fiesta Texas is in the **Day** tab under
+**Which park**. It switches on its own: to whichever one your first GPS fix lands
 inside, and then to wherever the phone hosting your party is, so everyone in a
 party sees the same map. To add anywhere else, see *Building a map of somewhere
 else* in [README.md](README.md).

@@ -79,7 +79,7 @@ async function main() {
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();
   check(
-    /Park Party/i.test(first) && /live group map for busy parks/i.test(first),
+    /Parkbound|PARKBOUND/i.test(first) && /Explore more\. Stress less/i.test(first),
     'the first screen introduces the app in one line',
   );
   check(/Go to nearest park/i.test(first), 'the first screen offers the nearest-park shortcut');

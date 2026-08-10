@@ -26,7 +26,7 @@ export default function DirectionsPanel({
   return (
     <div>
       <div className="label">
-        Walking To
+        Next Stop
         <span className="labelRight">
           {route.mode === 'direct' ? 'straight line' : route.via ? `via ${route.via}` : 'on the paths'}
         </span>
@@ -72,7 +72,7 @@ export default function DirectionsPanel({
         </p>
       )}
 
-      <div className="label">Directions</div>
+      <div className="label">Trail</div>
       <ol className="stepList">
         {route.steps.map((s, i) => (
           <li
