@@ -37,19 +37,21 @@ page.
 
 ## Shipping a release
 
-1. Bump `version` in `package.json` when you want a new semver on screen (optional
-   for code-only deploys — `built` still changes every build).
-2. Add user-facing bullets to `data/release-notes.json` when the semver changes
-   — they show once on the startup splash the first time someone opens the new
-   build.
-3. Build and deploy as usual — inject runs automatically and stamps a fresh
-   `built` time.
-4. Phones online within ~5 minutes (or on next focus) should update; offline
+1. **Merge to `main`.** GitHub Actions bumps the patch version in `package.json`,
+   updates `package-lock.json`, stamps `public/app-version.json` / `public/sw.js`,
+   and adds a release-notes line from the PR title (or a generic fallback).
+2. Edit `data/release-notes.json` before merging if you want more than one bullet
+   or a custom title — the workflow only adds an entry when the new version is
+   missing.
+3. Build and deploy as usual — inject also runs on `prebuild` / `predev` and
+   stamps a fresh `built` time.
+4. Phones online within ~5 minutes (or on tab focus) should update; offline
    phones stay on the last good build until they have connectivity.
 
-**How to verify auto-update:** open **Me → Advanced → Diagnostics**. Compare
-**Installed build** vs **Server build**. If the server stamp is newer, the app
-should reload into the new deploy within one check cycle.
+**How to verify auto-update:** open **Me → Advanced → Diagnostics**. The
+**Server version** should be higher than **Installed version** right after a
+deploy; **Server build** should be newer than **Installed build** if the semver
+already matched.
 
 ## User-facing update notes
 
