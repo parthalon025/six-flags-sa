@@ -1305,6 +1305,8 @@ export default function Page() {
       arrived.current = null;
       lastRoute.current = null;
       setPick(0);
+      setSelected(null);
+      setToast(null);
       setNav(target);
       setNavPhase('preview');
       setFollow(false);
@@ -1625,6 +1627,7 @@ export default function Page() {
       /* The map's own controls ride on --sheetH, so a tall enough sheet pushes
          them into the buttons in the top corners. They step aside instead. */
       data-crowded={!stowed && sheetCrowdsMap(livePx, viewportH) ? '1' : undefined}
+      data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : livePx}px` }}
     >
       <ParkMap
@@ -1661,6 +1664,7 @@ export default function Page() {
         navZoom={walking ? 3 : null}
         fitPoints={previewing ? route?.points : null}
         fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}:${Math.round(route?.metres ?? 0)}` : null}
+        mapKeyHidden={previewing || walking}
       />
 
       {/* Nothing runs across the top of a phone map. The two controls float in

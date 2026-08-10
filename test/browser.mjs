@@ -93,25 +93,54 @@ export const hydrated = (page) =>
   });
 
 /**
+ * Dismiss the one-time update splash if it is up. Polls because React may not
+ * have painted it yet when `goto` returns.
+ */
+export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
+  const deadline = Date.now() + timeout;
+  do {
+    const continueBtn = page.locator('button:has-text("Continue")');
+    if (await continueBtn.count()) {
+      await continueBtn.click().catch(() => {});
+      await page.waitForTimeout(600);
+      return true;
+    }
+    if (timeout === 0) break;
+    await page.waitForTimeout(250);
+  } while (Date.now() < deadline);
+  return false;
+}
+
+/**
  * Take the intake down the way a visitor would: grant location, then say yes to
  * the park the fix lands nearest — which is the one every phone in these tests
  * is standing in. The fallbacks cover a phone whose mocked GPS never resolves,
  * so an intake bug fails its own assertion rather than every test behind it.
  */
 export async function closeGate(page) {
+  await dismissUpdateSplash(page);
   const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("Yes — set up")');
-  if (await allow.count()) await allow.click();
-  for (let i = 0; i < 3; i += 1) {
-    if (!(await page.locator('.gate').count())) return;
-    await page.waitForTimeout(1500);
-    if (!(await page.locator('.gate').count())) return;
+  if (await allow.count()) await allow.click().catch(() => {});
+  const deadline = Date.now() + 20000;
+  while (Date.now() < deadline) {
+    await dismissUpdateSplash(page, { timeout: 250 });
+    const paths = await page.locator('.mapSvg path').count();
+    const gates = await page.locator('.gate').count();
+    if (!gates && paths > 100) return;
     if (await yes.count()) await yes.click().catch(() => {});
-    else await allow.click().catch(() => {});
+    else if (await allow.count()) await allow.click().catch(() => {});
+    const quiet = page.locator('button:has-text("Just show me")');
+    if (await quiet.count() && !(await yes.count()) && !(await allow.count())) {
+      await quiet.click().catch(() => {});
+    }
+    if (!(await page.locator('.gate').count()) && paths > 100) return;
+    await page.waitForTimeout(750);
   }
   const quiet = page.locator('button:has-text("Just show me")');
-  if (await quiet.count()) await quiet.click();
-  await page.waitForSelector('.gate', { state: 'detached', timeout: 10000 });
+  if (await quiet.count()) await quiet.click().catch(() => {});
+  await page.waitForSelector('.gate', { state: 'detached', timeout: 10000 }).catch(() => {});
+  await hydrated(page).catch(() => {});
 }
 
 /**
