@@ -92,6 +92,12 @@ which is Vercel's own default:
 { "regions": ["iad1"] }
 ```
 
+**Monorepo layout.** The Next.js app is in `apps/party-tracker`. Vercel builds with
+`npx turbo run build --filter=@party-tracker/app` and reads output from
+`apps/party-tracker/.next`. Do **not** put `rootDirectory` in `vercel.json` —
+Vercel rejects it (use the project dashboard Root Directory setting only if you
+deploy the app package directly).
+
 If you add an Upstash database (below), **create it in the same region and leave
 this alone, or change both together**. Every relayed message is a round trip to
 that database, so a relay in Virginia talking to a database in Frankfurt pays

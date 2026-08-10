@@ -1,0 +1,34 @@
+{
+  "name": "@party-tracker/app",
+  "version": "1.1.15",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.9"
+  },
+  "scripts": {
+    "predev": "node scripts/inject-version.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/inject-version.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "phone": "node scripts/phone.mjs",
+    "setup": "bash scripts/setup.sh",
+    "sync": "node server/index.mjs",
+    "dev:all": "node server/index.mjs & next dev"
+  },
+  "dependencies": {
+    "@party-tracker/shared": "1.1.15",
+    "next": "^16.3.0",
+    "qrcode": "^1.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.0",
+    "playwright": "^1.62.1"
+  }
+}

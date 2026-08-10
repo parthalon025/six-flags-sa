@@ -119,7 +119,7 @@ jobs:
           # being busy at once, which does happen.
           built=no
           for attempt in 1 2 3; do
-            if node scripts/build-venue.mjs "${args[@]}" 2>&1 | tee -a build.log; then
+            if node packages/venue-builder/bin/build-venue.mjs "${args[@]}" 2>&1 | tee -a build.log; then
               built=yes
               break
             fi
@@ -168,7 +168,7 @@ jobs:
           set -euo pipefail
           : > venue-attractions.md
           for id in $VENUE_IDS; do
-            node scripts/attractions.mjs "$id" --report >> venue-attractions.md
+            node packages/venue-builder/bin/attractions.mjs "$id" --report >> venue-attractions.md
             echo >> venue-attractions.md
           done
           cat venue-attractions.md >> "$GITHUB_STEP_SUMMARY"
@@ -180,7 +180,7 @@ jobs:
           set -euo pipefail
           : > venue-report.md
           for id in $VENUE_IDS; do
-            node scripts/venue-report.mjs "$id" >> venue-report.md
+            node packages/venue-builder/bin/venue-report.mjs "$id" >> venue-report.md
             echo >> venue-report.md
           done
           cat venue-report.md >> "$GITHUB_STEP_SUMMARY"
@@ -198,7 +198,7 @@ jobs:
           set -euo pipefail
           : > venue-requests.md
           for id in $VENUE_IDS; do
-            node scripts/build-venue.mjs --ask "$id" >> venue-requests.md
+            node packages/venue-builder/bin/build-venue.mjs --ask "$id" >> venue-requests.md
           done
           if [ -s venue-requests.md ]; then
             cat venue-requests.md >> "$GITHUB_STEP_SUMMARY"
@@ -209,7 +209,7 @@ jobs:
         run: |
           npm run lint
           npm run test:unit
-          npm run build
+          npm run build -w @party-tracker/app
 
       - name: Open a pull request
         env:

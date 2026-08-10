@@ -1,0 +1,12 @@
+{
+  "name": "@party-tracker/shared",
+  "version": "1.1.15",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./ontology.js": "./ontology.js",
+    "./wayFlags.js": "./wayFlags.js",
+    "./mapSymbols.js": "./mapSymbols.js",
+    "./ontology.json": "./ontology.json"
+  }
+}
