@@ -1279,7 +1279,7 @@ function ParkMap({
           </text>
         ))}
 
-        {/* meet-up */}
+        {/* meet-up — Parkbound waypoint (trail marker × pin × compass eye) */}
         {meet &&
           (() => {
             const [sx, sy] = at(meet.lat, meet.lng);
@@ -1287,19 +1287,28 @@ function ParkMap({
               <g key="meet" className="meetPin">
                 <ellipse
                   cx={sx}
-                  cy={sy + 1.5}
-                  rx={7}
-                  ry={2.4}
+                  cy={sy + 2}
+                  rx={8}
+                  ry={2.6}
                   fill="#000"
                   opacity="0.28"
                 />
                 <path
-                  d={`M${sx} ${sy} l-9 -13 a11 11 0 1 1 18 0 Z`}
-                  fill="var(--crimson)"
-                  stroke="var(--markerEdge)"
-                  strokeWidth="1.6"
+                  d={`M${sx} ${sy - 22} L${sx + 12} ${sy - 6} L${sx} ${sy + 8} L${sx - 12} ${sy - 6} Z`}
+                  fill="none"
+                  stroke="var(--aqua)"
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  opacity="0.9"
                 />
-                <circle cx={sx} cy={sy - 16} r={4} fill="#fff" />
+                <path
+                  d={`M${sx} ${sy} l-8 -12 a10 10 0 1 1 16 0 Z`}
+                  fill="var(--adventure)"
+                  stroke="var(--markerEdge)"
+                  strokeWidth="1.5"
+                />
+                <circle cx={sx} cy={sy - 14} r={3.6} fill="var(--trail, #F7F4EC)" />
+                <circle cx={sx} cy={sy - 14} r={1.5} fill="var(--park-midnight, #10233F)" />
               </g>
             );
           })()}

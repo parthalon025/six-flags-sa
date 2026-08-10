@@ -67,7 +67,7 @@ const colourFor = (id) => {
 };
 const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
 
-/* The titles a pushed screen wears in its nav bar. Party, Rides and Me are not
+/* The titles a pushed screen wears in its nav bar. Party, Plan and Day are not
    in here: they are tabs now, and a tab's root screen carries a large title
    rather than a back button. */
 const VIEW_TITLES = {
@@ -913,7 +913,7 @@ export default function Page() {
         localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
         return next;
       });
-      showToast('Hidden. Put it back under Me → What the panel shows.');
+      showToast('Hidden. Put it back under Day → What the panel shows.');
     },
     [venue?.id, showToast, clearCar],
   );
@@ -2438,7 +2438,7 @@ export default function Page() {
             // surprise found later.
             setParkAsked(true);
             setGateOpen(false);
-            if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
+            if (venue?.name) showToast(`Showing ${venue.name}. Change it under Day → Which park.`);
           }}
         />
       )}

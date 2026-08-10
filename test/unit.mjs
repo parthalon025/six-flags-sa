@@ -4836,7 +4836,7 @@ await check('a stale down still counts against a clear sky', () => {
   const s = statusFor(BEAST, { status: RIDE_DOWN, byName: 'Ava', ts: now - RIDE_STALE_AFTER_MS - 1 }, FINE, now);
   assert.equal(s.tone, 'bad');
   assert.equal(s.stale, true);
-  assert.equal(s.label, 'Was down');
+  assert.equal(s.label, 'PAUSED');
   return true;
 });
 

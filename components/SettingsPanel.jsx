@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
+import Icon from '@/components/Icon';
 
 /* Settings, arranged the way Settings is: short groups of rows, a value on the
    right of the row that has one, and a chevron on the rows that lead somewhere.
@@ -45,7 +46,7 @@ export default function SettingsPanel({
   return (
     <div>
       <div className="dayMoment">
-        <span aria-hidden="true">✨</span>
+        <Icon name="sparkles" size={22} className="brandMark" />
         <div>
           <b>Explore more. Stress less.</b>
           <span>Your day at the park — settings, saved spots, and what the panel shows.</span>
@@ -227,7 +228,7 @@ export default function SettingsPanel({
       <div className="label">You Are Here</div>
       <div className="rowList">
         <button type="button" className="row" onClick={onLocationSettings}>
-          <span className="rowText">Location settings</span>
+          <span className="rowText">You Are Here</span>
           <span className="rowValue">
             {position ? (position.manual ? 'Placed by hand' : 'Phone GPS') : 'No fix yet'}
           </span>

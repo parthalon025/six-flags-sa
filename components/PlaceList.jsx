@@ -200,7 +200,7 @@ export default function PlaceList({
             style={{ background: v.cls === 'bad' ? palette.barred : palette.categories[p.c] }}
           />
           <span className="poiText">
-            <b>{p.n}</b>
+            <b className="poiName">{p.n}</b>
             <span>
               {isRide ? heightLabel(p) : CATEGORY_LABELS[p.c]} · {p.a}
             </span>
@@ -214,7 +214,16 @@ export default function PlaceList({
             )}
             {showStatus && (
               <span
-                className={`verdict statusPill ${st.tone} ${st.source === 'weather' ? 'guess' : ''}`}
+                className={[
+                  'liveBadge',
+                  'statusPill',
+                  st.tone === 'ok' || st.key === 'open' ? 'open' : '',
+                  st.tone === 'bad' || st.key === 'down' || st.key === 'hold' ? 'paused' : '',
+                  st.key === 'closed' || st.key === 'watch' || st.source === 'weather' ? 'weather' : '',
+                  st.source === 'weather' ? 'guess' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
               >
                 <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {st.label}

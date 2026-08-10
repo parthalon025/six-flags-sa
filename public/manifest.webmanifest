@@ -1,7 +1,7 @@
 {
   "name": "Parkbound",
   "short_name": "Parkbound",
-  "description": "Explore more. Stress less. An explorer’s companion for theme-park days — live party tracking, walking trails, and a drawn park map.",
+  "description": "Explore more. Stress less. An explorer’s companion for theme-park days — live party coordination, walking trails, and a drawn park map.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

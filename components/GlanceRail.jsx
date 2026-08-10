@@ -140,7 +140,7 @@ function GlanceRail({
     };
 
     if (meet) {
-      push('meet', 'Meet-up', meet.label, meet, 'var(--crimson)', `set by ${meet.by}`, 'meet', {
+      push('meet', 'MEET UP', meet.label, meet, 'var(--adventure)', `set by ${meet.by}`, 'meet', {
         kind: 'meet',
         label: meet.label || 'Meet-up',
       });
@@ -191,7 +191,7 @@ function GlanceRail({
       });
 
     if (selected) {
-      push('sel', 'Heading for', selected.n, selected, 'var(--beacon)', selected.a, 'selected', {
+      push('sel', 'Next Stop', selected.n, selected, 'var(--beacon)', selected.a, 'selected', {
         kind: 'poi',
         label: selected.n,
         lat: selected.lat,
@@ -290,7 +290,7 @@ function GlanceRail({
   if (!me) {
     return (
       <div className="glanceEmpty">
-        <span>Turn on location to see distance and direction to your group.</span>
+        <span>Turn on location to see distance and direction to your party.</span>
       </div>
     );
   }

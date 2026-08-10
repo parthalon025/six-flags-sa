@@ -93,11 +93,12 @@ live party tracking, walking trails, and a drawn park map.
   have told it where the car is. Tap a card to fly to it. A card that appears at the head of
   the rail brings the rail back to the start, because a scroll-snap container that gains one
   otherwise keeps the card it was snapped to and lands the new one off the left edge, unseen.
-- **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Rides and Me sit in
+- **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Plan and Day sit in
   a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
   moves — and each tab keeps its own navigation stack, so leaving one and coming back
   finds it where you left it. Tapping the tab you are already on unwinds it to its root.
-  Screens slide in from the side they came from.
+  Screens slide in from the side they came from. The map itself is the canvas underneath —
+  shut the sheet to live in it.
 - **The sheet stops where you let go of it, and shows what fits there.** The handle
   follows your finger and the sheet stays at whatever height you leave it at — not one of
   four the app picked. Only the ends of the travel are magnetic, so shut and full stay
@@ -140,7 +141,7 @@ live party tracking, walking trails, and a drawn park map.
   ground, dark type, deeper marker colours — meant to be readable on a phone in direct
   July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the moon button floating over the map, or on the Me tab.
+  with the moon button floating over the map, or on the Day tab.
 - **What's open when the weather turns.** The park publishes no live feed this app can
   read, so it builds one from the two sources it actually has. Your party reports what it
   walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
@@ -160,7 +161,7 @@ live party tracking, walking trails, and a drawn park map.
 - **Switches maps on its own, to where the party is.** Once you are in a party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  under Me → Which map and it stops second-guessing you.
+  under Day → Which park and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
