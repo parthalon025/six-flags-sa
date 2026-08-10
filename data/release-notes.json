@@ -24,5 +24,11 @@
     "items": [
       "Performance roadmap: map smoothness, load time, party join, scale polish"
     ]
+  },
+  "1.1.4": {
+    "title": "What's new",
+    "items": [
+      "Map Key, zoom controls, and action buttons now sit above the tab bar at the collapsed sheet stop instead of overlapping it"
+    ]
   }
 }
