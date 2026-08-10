@@ -216,7 +216,7 @@ export default function GpsGate({
         {!showParkQuestion && !settingUp && (
           <>
             <button type="button" className="btn" onClick={onManual}>
-              I&apos;ll tap where I am
+              Explore parks
             </button>
             <button type="button" className="btnQuiet" onClick={onDismiss}>
               {venueName ? `Just browsing ${venueName}` : 'Just show me the map'}
