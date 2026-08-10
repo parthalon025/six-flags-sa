@@ -84,5 +84,11 @@
     "items": [
       "Update user intro and require park selection when not in a park (#40)"
     ]
+  },
+  "1.1.14": {
+    "title": "What's new",
+    "items": [
+      "Refresh visual regression shots for Parkbound intro"
+    ]
   }
 }
