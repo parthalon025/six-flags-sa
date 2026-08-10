@@ -65,6 +65,9 @@ export const SHAPING_FLAGS = [
   'dedupe',
   'merge',
   'merge-metres',
+  'sources',
+  'imagery',
+  'imagery-metres',
   'trace',
   'keep-offsite',
   'allow-no-heights',
@@ -84,7 +87,7 @@ const relativise = (value) => {
   return rel.startsWith('..') ? String(value) : rel;
 };
 
-const PATH_FLAGS = new Set(['overrides', 'merge', 'trace']);
+const PATH_FLAGS = new Set(['overrides', 'merge', 'trace', 'imagery', 'sources']);
 
 /**
  * The recipe for a build that just happened.

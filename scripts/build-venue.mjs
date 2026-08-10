@@ -58,6 +58,8 @@ import { applyHeightsSidecar } from './lib/heights-sidecar.mjs';
 import { tagCoverageFromMap } from './lib/tag-coverage.mjs';
 import { isRideable } from '../lib/ontology.js';
 import { applyTrace } from './lib/venue-trace.mjs';
+import { wireSources, osmGaps, resolveCredits } from './lib/venue-sources.mjs';
+import { applyImagery } from './lib/venue-imagery.mjs';
 // The app's own reading of "these two strings are the same ride", reused so the
 // builder and the renderer cannot disagree about it.
 import { normaliseRideName } from '../lib/mapSymbols.js';
@@ -130,6 +132,10 @@ Build a venue bundle from OpenStreetMap.
   --merge <file>            fold a GeoJSON or CSV dataset onto the places, matched
                             by name and then by position. Repeatable.
   --merge-metres <n>        how near a merge point has to land (default: 25)
+  --sources <file>          source catalogue (default: data/venues/<id>.sources.json)
+  --imagery <file>          fold in paths and places surveyed from aerial imagery.
+                            Repeatable. Also wired from the source catalogue.
+  --imagery-metres <n>      how near an imagery ride has to be to count as a duplicate (default: 15)
   --trace <file>            fold in what was traced off a park's own map with
                             scripts/trace-venue.mjs: ride entrances and exits,
                             walking routes, and places OSM has not got.
@@ -1437,6 +1443,13 @@ async function buildOne(args, { previous = null } = {}) {
      is read: which named areas count as part of this venue. See `annexed`. */
   const { file: overrideFile, data: overrides } = readOverrides(id, args.overrides ? String(args.overrides) : null);
 
+  const wired = wireSources(id, args);
+  args = wired.args;
+  const sourcesCatalog = wired.catalog;
+  if (wired.file) {
+    console.error(`  · sources: ${wired.file.replace(process.cwd() + '/', '')}`);
+  }
+
   const { layers, anchors, areaCandidates, allLands, boundary, campRings } = buildLayers(elements, {
     tolerance,
     minArea: 12,
@@ -1461,6 +1474,17 @@ async function buildOne(args, { previous = null } = {}) {
   if (fromTrack.length) {
     console.error(`  · ${fromTrack.length} ride(s) taken from named track with no place of their own`);
     pois = pois.concat(fromTrack);
+  }
+  const gaps = osmGaps({ pois, layers });
+  if (gaps.missingRides.length) {
+    console.error(
+      `  · ${gaps.missingRides.length} named track(s) still have no place — `
+        + (sourcesCatalog?.datasets?.imagery?.length
+          ? 'imagery dataset(s) in the source catalogue may supply them'
+          : 'add rides to an imagery dataset or overrides'),
+    );
+    for (const miss of gaps.missingRides.slice(0, 8)) console.error(`    ? ${miss}`);
+    if (gaps.missingRides.length > 8) console.error(`    … and ${gaps.missingRides.length - 8} more`);
   }
   const drawnNames = new Set(layers.lands.map((l) => l.n));
   const offsite = assignLands(pois, allLands, name, drawnNames);
@@ -1576,6 +1600,26 @@ async function buildOne(args, { previous = null } = {}) {
     }
   }
 
+  /* Paths and places surveyed from aerial imagery. After trace, because both add
+     to the same layers and POI list, and imagery refuses unsigned features. */
+  if (args.imagery) {
+    const files = Array.isArray(args.imagery) ? args.imagery : [String(args.imagery)];
+    for (const file of files) {
+      const collection = JSON.parse(readFileSync(file, 'utf8'));
+      const got = applyImagery(pois, layers, collection, {
+        metres: Number(args['imagery-metres'] ?? 15),
+      });
+      const err = collection.properties?.imagery?.horizontal_accuracy_m;
+      console.error(
+        `  · imagery from ${file.replace(process.cwd() + '/', '')}`
+          + `${err != null ? ` (±${err} m)` : ''}: `
+          + `${got.paths} path(s), ${got.rides} ride(s), ${got.places} place(s)`,
+      );
+      for (const dup of got.duplicates.slice(0, 8)) console.error(`    = already have "${dup}"`);
+      for (const skip of got.skipped.slice(0, 8)) console.error(`    − skipped ${skip}`);
+    }
+  }
+
   pois.sort((a, b) => a.n.localeCompare(b.n));
 
   /* The keys again, now that the overrides and the trace have had their say.
@@ -1668,7 +1712,7 @@ async function buildOne(args, { previous = null } = {}) {
        read it from there. Only the build did not, so a venue whose heights and
        whose credit were written in the same file shipped the heights
        uncredited. */
-    credits: args.credits ? String(args.credits) : overrides?.credits || existingMeta?.credits || null,
+    credits: resolveCredits({ args, overrides, existingMeta, catalog: sourcesCatalog }),
     /* What is true of this venue's campground as a whole. On the venue rather
        than repeated onto every pitch, because that is where the fact lives: a
        campground is full hookup, a pitch is not individually full hookup. The

@@ -157,10 +157,9 @@
             "lng": -86.47384
           },
           "confidence": "low",
-          "score": 5,
+          "score": 4,
           "sources": [
-            "aerial",
-            "geometry"
+            "aerial"
           ],
           "evidence": [
             {
@@ -175,16 +174,21 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 30.38834,
-                "lng": -86.47384
+                "lat": 30.38792,
+                "lng": -86.47402
               },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 51 m from the ride"
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 6 m from the ride (Buccaneer Cove bridge)"
             }
           ],
           "from": "aerial",
-          "spread_m": null,
-          "dissent": [],
+          "spread_m": 49.5,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 49.5
+            }
+          ],
           "conflict": false,
           "newest_evidence": "2026-08-10",
           "stale": false
@@ -258,8 +262,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 30.3874,
-            "lng": -86.47385
+            "lat": 30.38792,
+            "lng": -86.47402
           },
           "confidence": "unknown",
           "score": 1,
@@ -270,11 +274,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 30.3874,
-                "lng": -86.47385
+                "lat": 30.38792,
+                "lng": -86.47402
               },
               "date": "2026-08-10",
-              "note": "the walkable network at its closest, 45 m from the ride"
+              "note": "the walkable network at its closest, 15 m from the ride (Buccaneer Cove bridge)"
             }
           ],
           "from": "geometry",
@@ -345,10 +349,9 @@
             "lng": -86.47384
           },
           "confidence": "low",
-          "score": 5,
+          "score": 4,
           "sources": [
-            "aerial",
-            "geometry"
+            "aerial"
           ],
           "evidence": [
             {
@@ -363,16 +366,21 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 30.38834,
-                "lng": -86.47384
+                "lat": 30.38812,
+                "lng": -86.47395
               },
-              "date": "2026-08-09",
-              "note": "the walkable network at its closest, 34 m from the ride"
+              "date": "2026-08-10",
+              "note": "the walkable network at its closest, 17 m from the ride (Buccaneer Cove bridge)"
             }
           ],
           "from": "aerial",
-          "spread_m": null,
-          "dissent": [],
+          "spread_m": 26.5,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 26.5
+            }
+          ],
           "conflict": false,
           "newest_evidence": "2026-08-10",
           "stale": false
@@ -936,8 +944,8 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 30.38834,
-            "lng": -86.47384
+            "lat": 30.38812,
+            "lng": -86.47395
           },
           "confidence": "unknown",
           "score": 1,
@@ -948,11 +956,11 @@
             {
               "source": "geometry",
               "at": {
-                "lat": 30.38834,
-                "lng": -86.47384
+                "lat": 30.38812,
+                "lng": -86.47395
               },
               "date": "2026-08-10",
-              "note": "the walkable network at its closest, 37 m from the ride"
+              "note": "the walkable network at its closest, 18 m from the ride (Buccaneer Cove bridge)"
             }
           ],
           "from": "geometry",

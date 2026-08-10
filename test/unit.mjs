@@ -3339,6 +3339,108 @@ await check('a camping rule narrows the venue-wide facts by name', () => {
   return true;
 });
 
+/* -------------------------------------------------------- source catalogue -- */
+
+const { wireSources, osmGaps, resolveCredits, readSources } = await import('../scripts/lib/venue-sources.mjs');
+const { applyImagery } = await import('../scripts/lib/venue-imagery.mjs');
+
+await check('a source catalogue wires its datasets into build arguments', () => {
+  const file = path.join(tmp, 'catalog.sources.json');
+  fs.writeFileSync(
+    file,
+    JSON.stringify({
+      version: 1,
+      venue: 'test-park',
+      datasets: {
+        merge: ['data/a.merge.geojson'],
+        imagery: ['data/a.imagery.geojson'],
+      },
+      credits_append: 'Imagery from a survey.',
+    }),
+  );
+  const { args, catalog, file: rel } = wireSources('test-park', { sources: file, merge: ['data/extra.merge.geojson'] });
+  assert.ok(rel.endsWith('catalog.sources.json'));
+  assert.deepEqual(args.merge, ['data/extra.merge.geojson', 'data/a.merge.geojson']);
+  assert.deepEqual(args.imagery, ['data/a.imagery.geojson']);
+  assert.equal(catalog.credits_append, 'Imagery from a survey.');
+  return true;
+});
+
+await check('credits from overrides are not duplicated by the catalogue', () => {
+  const line = resolveCredits({
+    overrides: { credits: 'Heights from the park. Imagery from a survey.' },
+    catalog: { credits_append: 'Imagery from a survey.' },
+  });
+  assert.equal(line, 'Heights from the park. Imagery from a survey.');
+  return true;
+});
+
+await check('named track with no place is reported as a gap', () => {
+  const gaps = osmGaps({
+    pois: [{ n: 'Maui Pipeline', c: 'ride' }],
+    layers: { slide: [{ n: 'Maui Pipeline' }, { n: 'Pirate\'s Escape' }] },
+  });
+  assert.deepEqual(gaps.missingRides, ["Pirate's Escape"]);
+  return true;
+});
+
+await check('imagery paths join the walkable layer and refuse unsigned features', () => {
+  const pois = [];
+  const layers = { path: [] };
+  const got = applyImagery(pois, layers, {
+    features: [
+      {
+        type: 'Feature',
+        properties: { kind: 'path', n: 'The cut-through', src: { by: 'aerial' } },
+        geometry: { type: 'LineString', coordinates: [[-86.47, 30.38], [-86.469, 30.381]] },
+      },
+      {
+        type: 'Feature',
+        properties: { kind: 'path', n: 'Unsigned' },
+        geometry: { type: 'LineString', coordinates: [[-86.47, 30.38], [-86.469, 30.381]] },
+      },
+    ],
+  });
+  assert.equal(got.paths, 1);
+  assert.equal(layers.path.length, 1);
+  assert.equal(layers.path[0].n, 'The cut-through');
+  assert.equal(got.skipped.length, 1);
+  return true;
+});
+
+await check('imagery rides are added only when the name is not already here', () => {
+  const pois = [{ n: 'Wave Pool', c: 'ride', lat: 30.3878, lng: -86.4734 }];
+  const layers = { path: [] };
+  const got = applyImagery(pois, layers, {
+    properties: { imagery: { by: 'aerial' } },
+    features: [
+      {
+        type: 'Feature',
+        properties: { kind: 'ride', n: 'Wave Pool', c: 'ride' },
+        geometry: { type: 'Point', coordinates: [-86.4734, 30.3878] },
+      },
+      {
+        type: 'Feature',
+        properties: { kind: 'ride', n: 'New Slide', c: 'ride' },
+        geometry: { type: 'Point', coordinates: [-86.473, 30.388] },
+      },
+    ],
+  });
+  assert.equal(got.rides, 1);
+  assert.deepEqual(got.duplicates, ['Wave Pool']);
+  assert.equal(pois.length, 2);
+  assert.equal(pois[1].n, 'New Slide');
+  return true;
+});
+
+await check('big-kahunas carries a source catalogue the builder understands', () => {
+  const { file, data } = readSources('big-kahunas');
+  assert.ok(file?.endsWith('big-kahunas.sources.json'));
+  assert.ok(data.datasets?.merge?.length);
+  assert.ok(data.datasets?.imagery?.length);
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {
