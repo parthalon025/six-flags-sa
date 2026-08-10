@@ -26,7 +26,8 @@ Rules you must follow:
 - Never invent height requirements. Cite the park's own pages or omit.
 - Prefer alias suggestions over renaming bundle places.
 - When two pools or flumes look alike on a map, say what evidence would disambiguate them (labels, queue signs, orthophoto shape).
-- Output concise markdown with sections: Summary, Name pairings, Sourcing priorities, Open questions.`;
+- Treat official-site data in the packet as the park's own website — prefer it over fan wikis for heights and names.
+- Output concise markdown with sections: Summary, Official site gaps, Name pairings, Sourcing priorities, Open questions.`;
 
 /**
  * Ask a model to review a structured research packet.

@@ -3502,6 +3502,57 @@ await check('LLM helper reports not ready without an API key', () => {
   return true;
 });
 
+const {
+  parseAttractionListing,
+  parseAttractionDetail,
+  categoryToHeight,
+  compareOfficialToBundle,
+  loadFixtureHtml,
+} = await import('../scripts/lib/venue-official-site.mjs');
+
+await check('official listing parser reads attraction names and height categories', () => {
+  const html = loadFixtureHtml(
+    new URL('../test/fixtures/official-site/big-kahunas-listing.html', import.meta.url).pathname,
+  );
+  const rows = parseAttractionListing(html);
+  assert.ok(rows.length >= 20, `expected many attractions, got ${rows.length}`);
+  const maui = rows.find((r) => r.name === 'Maui Pipeline');
+  assert.ok(maui);
+  assert.equal(maui.height?.min, 48);
+  const bombay = rows.find((r) => r.name === 'Bombay Blasters');
+  assert.equal(bombay?.height?.min, 48);
+  return true;
+});
+
+await check('attraction detail parser reads minimum height prose', () => {
+  const detail = parseAttractionDetail(
+    '<p>With a minimum height requirement of 48 inches and a maximum weight limit of 300 lbs</p>',
+  );
+  assert.equal(detail.min, 48);
+  assert.equal(detail.weightLb, 300);
+  return true;
+});
+
+await check('categoryToHeight maps over-42 to a floor', () => {
+  assert.deepEqual(categoryToHeight(['water-slides-rides', 'over-42']), { min: 42, label: 'Over 42"' });
+  return true;
+});
+
+await check('official compare flags site-only and bundle-only rides', () => {
+  const html = loadFixtureHtml(
+    new URL('../test/fixtures/official-site/big-kahunas-listing.html', import.meta.url).pathname,
+  );
+  const official = { attractions: parseAttractionListing(html), fetched: '2026-08-10' };
+  const pois = [
+    { n: 'Maui Pipeline', c: 'ride' },
+    { n: 'Not On The Website', c: 'ride' },
+  ];
+  const cmp = compareOfficialToBundle({ official, pois });
+  assert.ok(cmp.matched >= 1);
+  assert.ok(cmp.onlyInBundle.includes('Not On The Website'));
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {

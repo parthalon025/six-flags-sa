@@ -9,6 +9,7 @@
  * Reads what is on disk — bundle, overrides, source catalogue, recipe — and
  * prints judgement hints (name pairings, OSM gaps) plus a sourcing plan.
  * With --ai and VENUE_LLM_API_KEY set, asks a model to review the packet.
+ * With --fetch, pulls the park's official website from URLs in sources.json.
  *
  * This never writes venue files and never runs during a build.
  */
@@ -19,6 +20,12 @@ import { requests, renderBrief, briefJson } from './lib/venue-requests.mjs';
 import { readSources } from './lib/venue-sources.mjs';
 import { judgements, sourcingPlan } from './lib/venue-judge.mjs';
 import { llmConfig, reviewResearch } from './lib/venue-llm.mjs';
+import {
+  compareOfficialToBundle,
+  loadOfficialData,
+  officialUrls,
+  parseAttractionListing,
+} from './lib/venue-official-site.mjs';
 
 const USAGE = `
 Research assistant for venue builds — judgement, sourcing, optional AI review.
@@ -28,16 +35,31 @@ Research assistant for venue builds — judgement, sourcing, optional AI review.
 
   --json        structured output instead of markdown
   --ai          ask VENUE_LLM_API_KEY (OpenAI-compatible) to review the packet
+  --fetch       fetch official park website data (cached to data/venues/<id>.official-cache.json)
+  --fetch-details  also fetch each attraction page for height prose (slower)
+  --offline     use only the on-disk official cache; do not hit the network
   --no-brief    skip the venues:ask brief; only judgements and sourcing
 `;
 
 function parseArgs(argv) {
-  const out = { _: [], all: false, json: false, ai: false, brief: true };
+  const out = {
+    _: [],
+    all: false,
+    json: false,
+    ai: false,
+    brief: true,
+    fetch: false,
+    fetchDetails: false,
+    offline: false,
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === '--all') out.all = true;
     else if (a === '--json') out.json = true;
     else if (a === '--ai') out.ai = true;
+    else if (a === '--fetch') out.fetch = true;
+    else if (a === '--fetch-details') out.fetchDetails = true;
+    else if (a === '--offline') out.offline = true;
     else if (a === '--no-brief') out.brief = false;
     else if (!a.startsWith('--')) out._.push(a);
     else throw new Error(`Unknown flag: ${a}`);
@@ -45,7 +67,7 @@ function parseArgs(argv) {
   return out;
 }
 
-function loadVenue(id) {
+async function loadVenue(id, opts = {}) {
   const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
   const venue = manifest.venues.find((v) => v.id === id);
   if (!venue) throw new Error(`No venue called "${id}" in the manifest.`);
@@ -53,6 +75,7 @@ function loadVenue(id) {
   const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), {});
   const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
   const overrides = readJson(path.join(OVERRIDE_DIR, `${id}.overrides.json`), null);
+  const heightsSidecar = readJson(path.join(OVERRIDE_DIR, `${id}.heights.json`), null);
   const recipe = readJson(path.join(OVERRIDE_DIR, `${id}.recipe.json`), null);
   const { data: catalog } = readSources(id, recipe?.flags?.sources || null);
 
@@ -66,17 +89,25 @@ function loadVenue(id) {
   const reqs = requests({ venue, map, pois, overrides });
   const judge = judgements({ pois, layers, overrides });
   const sourcing = sourcingPlan({ catalog, pois, layers, requests: reqs, judgements: judge });
+  const officialRaw = await loadOfficialData(id, catalog, {
+    fetch: opts.fetch,
+    offline: opts.offline,
+    details: opts.fetchDetails,
+  });
+  const official = compareOfficialToBundle({ official: officialRaw, pois, heightsSidecar });
 
   return {
     venue,
     map,
     pois,
     overrides,
+    heightsSidecar,
     recipe,
     catalog,
     requests: reqs,
     judgements: judge,
     sourcing,
+    official,
   };
 }
 
@@ -130,18 +161,80 @@ function renderJudgements(judge) {
   return lines.join('\n');
 }
 
+function renderOfficial(official, catalog) {
+  const urls = officialUrls(catalog);
+  const lines = ['## Official park website', ''];
+  if (!urls.site.length && !urls.map.length) {
+    lines.push('No `official_site` or `official_map` URL in the source catalogue.', '');
+    return lines.join('\n');
+  }
+  for (const p of official.pages || []) {
+    const extra = p.image ? ` (map image: \`${p.image}\`)` : '';
+    lines.push(`- [${p.kind}](${p.url})${extra}`);
+  }
+  lines.push('');
+  if (official.fetched) lines.push(`Cache date: ${official.fetched}. Refresh with \`npm run venues:research -- <id> --fetch\`.`, '');
+  if (official.errors?.length) {
+    lines.push('**Fetch errors**', '');
+    official.errors.forEach((e) => lines.push(`- ${e}`));
+    lines.push('');
+  }
+  if (!official.siteCount) {
+    lines.push('No attractions parsed yet — run with `--fetch` to pull the park listing.', '');
+    return lines.join('\n');
+  }
+  lines.push(
+    `${official.siteCount} attraction(s) on the official site; `
+      + `${official.matched} matched to bundle rides; `
+      + `${official.bundleRideCount} ride(s) in the bundle.`,
+    '',
+  );
+  if (official.onlyOnSite.length) {
+    lines.push('**On the park site but not in the bundle** (may need imagery or overrides):', '');
+    official.onlyOnSite.forEach((n) => lines.push(`- ${n}`));
+    lines.push('');
+  }
+  if (official.onlyInBundle.length) {
+    lines.push('**In the bundle but not on the park listing** (check naming or retired rides):', '');
+    official.onlyInBundle.forEach((n) => lines.push(`- ${n}`));
+    lines.push('');
+  }
+  if (official.heightMismatches.length) {
+    lines.push('**Height rule mismatches** (bundle vs official site category/prose):', '');
+    for (const m of official.heightMismatches) {
+      lines.push(`- ${m.name}: bundle min ${m.bundleMin}\" vs site ${m.siteMin}\"${m.url ? ` — ${m.url}` : ''}`);
+    }
+    lines.push('');
+  }
+  const withHeights = (official.attractions || []).filter((a) => a.height?.min != null);
+  if (withHeights.length) {
+    lines.push('**Published height categories** (from listing cards):', '');
+    lines.push('| Attraction | Site says | URL |');
+    lines.push('| --- | --- | --- |');
+    for (const a of withHeights) {
+      const label = a.height.label || `min ${a.height.min}\"`;
+      const link = a.url ? `[page](${a.url})` : '—';
+      lines.push(`| ${a.name} | ${label} | ${link} |`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
 function renderMarkdown(packet, aiText = null) {
   const { venue, requests: reqs } = packet;
   const parts = [
     `# ${venue.name} — research packet`,
     '',
-    `Venue id: \`${venue.id}\`. Judgement and sourcing are computed from the built bundle on disk.`,
+    `Venue id: \`${venue.id}\`. Judgement, official site data, and sourcing are computed from the built bundle on disk.`,
     '',
     '```bash',
     `npm run venues:rebuild -- ${venue.id}`,
     `npm run venues:overrides -- ${venue.id}`,
+    `npm run venues:research -- ${venue.id} --fetch`,
     '```',
     '',
+    renderOfficial(packet.official, packet.catalog),
     renderJudgements(packet.judgements),
     renderSourcing(packet.sourcing),
   ];
@@ -157,13 +250,14 @@ function renderMarkdown(packet, aiText = null) {
 }
 
 function packetJson(packet, aiText = null) {
-  const { venue, judgements: judge, sourcing, requests: reqs } = packet;
+  const { venue, judgements: judge, sourcing, requests: reqs, official } = packet;
   return {
     venue: {
       id: venue.id,
       name: venue.name,
       locality: venue.locality || null,
     },
+    official,
     judgements: judge,
     sourcing,
     brief: briefJson(venue, reqs),
@@ -183,7 +277,14 @@ async function main() {
     process.exit(1);
   }
 
-  const packets = ids.map((id) => loadVenue(id));
+  const packets = [];
+  for (const id of ids) {
+    packets.push(await loadVenue(id, {
+      fetch: args.fetch,
+      offline: args.offline,
+      fetchDetails: args.fetchDetails,
+    }));
+  }
 
   if (args.ai) {
     if (!llmConfig().ready) {
