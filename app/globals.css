@@ -661,7 +661,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   box-shadow: var(--lensEdge), var(--lensDrop);
   overflow: hidden;
   animation: riseIn var(--t2) var(--easeOut) both;
+  transition: top var(--t3) var(--ease);
 }
+/* While the maneuver strip is up, the tape steps below it rather than
+   drawing over the distance and step text someone is navigating by. */
+.tape.lowered { top: calc(var(--top) + 132px); }
 .tape canvas { width: 100%; height: 100%; display: block; }
 .tapeMode {
   position: absolute; right: 9px; bottom: 4px; font-size: 11px; font-weight: 400;
@@ -1327,8 +1331,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   flex: none; width: 180px; scroll-snap-align: start; text-align: left;
   background: var(--glassTint);
   border: none;
-  border-radius: var(--r3); padding: 10px 13px 10px;
-  display: flex; flex-direction: column; gap: 1px;
+  border-radius: var(--r3); padding: 10px 8px 10px 13px;
+  display: grid; grid-template-columns: 1fr auto; align-items: stretch;
   box-shadow: var(--shadow1);
   animation: railIn var(--t2) var(--easeOut) both;
   transition: opacity var(--t1) var(--easeOut), box-shadow var(--t2) var(--easeOut);
@@ -1351,7 +1355,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .glanceEyebrow {
   font-size: 13px; font-weight: 600; line-height: 18px; letter-spacing: -.08px;
   text-transform: none;
-  padding-right: 38px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .glanceMain { display: flex; align-items: center; gap: 9px; margin: 3px 0 1px; }
@@ -1375,14 +1378,15 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   color: var(--label2); font-variant-numeric: tabular-nums;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* Sits opposite the Go button, in the room the eyebrow's padding already keeps
-   clear. Small, because it is not the thing to reach for by accident — the hit
-   box below is what a finger actually gets. */
+/* User actions live in their own column so Go and the remove control never
+   sit on top of the eyebrow or the footnote they used to share a corner with. */
+.glanceActions {
+  grid-column: 2; grid-row: 1;
+  display: flex; flex-direction: column; justify-content: space-between;
+  align-items: center; width: 44px; flex: none; padding-left: 2px;
+}
 .glanceShed {
-  /* Bottom corner, not top: the top-right belongs to Go, and putting the thing
-     that removes a card next to the thing that acts on it is how people remove
-     cards they meant to walk to. */
-  position: absolute; bottom: 8px; right: 9px;
+  position: relative;
   display: grid; place-items: center;
   color: var(--label3); opacity: .85;
 }
@@ -1394,7 +1398,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-size: 15px; font-weight: 400; line-height: 20px; letter-spacing: -.23px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.glanceFoot { padding-right: 26px;
+.glanceFoot {
   font-size: 12px; line-height: 16px; letter-spacing: 0; color: var(--label3);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -1629,6 +1633,10 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .unlock b { color: var(--label); }
 
 /* ---- verdict + walk time in the list ---- */
+.poiOut {
+  display: flex; align-items: center; gap: 10px; flex: none; text-align: right;
+  justify-content: flex-end;
+}
 .poiRight { display: flex; align-items: center; gap: 10px; flex: none; text-align: right; }
 .poiWalk { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; font-variant-numeric: tabular-nums; }
 .poiWalk b { font-size: 15px; font-weight: 600; letter-spacing: -.24px; }
@@ -1664,16 +1672,23 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 /* ---- icons ---- */
 .icn { display: block; flex: none; }
 
-/* An iOS search field: the glass sits inside the fill, not beside it. */
+/* An iOS search field: three zones — input icon, text, clear action. */
 .searchField {
-  position: relative; display: flex; align-items: center;
+  position: relative; display: grid;
+  grid-template-columns: 36px 1fr 36px; align-items: center;
   margin-bottom: 12px;
 }
-.searchField .icn { position: absolute; left: 11px; color: var(--label3); pointer-events: none; }
-.searchField .field { padding-left: 36px; padding-right: 38px; margin-bottom: 0; }
+.searchIn {
+  grid-column: 1; display: grid; place-items: center;
+  color: var(--label3); pointer-events: none;
+}
+.searchField .field {
+  grid-column: 2; padding-left: 0; padding-right: 0; margin-bottom: 0;
+}
 .searchClear {
-  position: absolute; right: 8px; display: grid; place-items: center;
-  width: 28px; height: 28px; color: var(--label3);
+  grid-column: 3; display: grid; place-items: center;
+  width: 28px; height: 28px; justify-self: center;
+  color: var(--label3);
   transition: opacity var(--t1) var(--easeOut);
 }
 .searchClear:active { opacity: .5; }
@@ -1969,14 +1984,15 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .fab.resume { background: var(--blue); color: var(--onTint); border-color: transparent; }
 
 /* ---- the Go button on a glance card ---- */
-.glanceCard { position: relative; }
 .glanceHit {
-  display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left;
+  grid-column: 1; grid-row: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 1px; text-align: left;
   padding: 0; background: none; border: none; color: inherit;
 }
 .glanceCard.walking { background: color-mix(in srgb, var(--blue) 12%, var(--grouped2)); }
 .glanceGo {
-  position: absolute; right: 8px; top: 8px; min-width: 40px; min-height: 26px;
+  position: relative;
+  min-width: 40px; min-height: 26px;
   padding: 4px 10px;
   border-radius: var(--rCapsule); border: none;
   background: color-mix(in srgb, var(--blue) 14%, var(--fill3));

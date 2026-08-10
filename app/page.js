@@ -1924,7 +1924,9 @@ export default function Page() {
               {plan.search && (
                 <div className="searchRow">
                   <div className="searchField">
-                    <Icon name="magnifyingglass" size={17} />
+                    <span className="searchIn" aria-hidden="true">
+                      <Icon name="magnifyingglass" size={17} />
+                    </span>
                     <input
                       className="field"
                       placeholder={`Search ${venue?.name || 'the map'}`}
