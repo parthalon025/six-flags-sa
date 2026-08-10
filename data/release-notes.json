@@ -12,5 +12,11 @@
     "items": [
       "Fix auto-update and auto-bump version on merge (#33)"
     ]
+  },
+  "1.1.2": {
+    "title": "What's new",
+    "items": [
+      "Fix overlapping user actions with dedicated icon zones"
+    ]
   }
 }
