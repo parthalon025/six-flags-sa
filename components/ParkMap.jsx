@@ -309,6 +309,12 @@ function ParkMap({
   useEffect(() => {
     if (!follow || anchorLat == null) return;
     const [x, y] = project(anchorLat, anchorLng);
+    const cur = viewRef.current;
+    const drift = Math.hypot(x - cur.x, y - cur.y);
+    // GPS and graph snapping jitter by a metre or two; at walking zoom that is
+    // a few pixels, but zoomed in it reads as the map bouncing in place.
+    const deadband = Math.max(0.8, 6 / cur.scale);
+    if (drift < deadband) return;
     animateTo({ x, y }, { duration: 480 });
   }, [follow, anchorLat, anchorLng, animateTo]);
 
@@ -401,23 +407,48 @@ function ParkMap({
     [view, spin, cx, cy],
   );
 
+  /** World metres under a screen point at the current view. */
+  const screenToWorld = useCallback(
+    (px, py, snap = viewRef.current) => {
+      const dx = px - cx;
+      const dy = py - cy;
+      const u = dx * spin.cos + dy * spin.sin;
+      const v = -dx * spin.sin + dy * spin.cos;
+      return {
+        x: u / snap.scale + snap.x,
+        y: snap.y - v / snap.scale,
+      };
+    },
+    [spin, cx, cy],
+  );
+
+  /** View centre that keeps `world` pinned under the same screen point at `scale`. */
+  const viewForScaleAt = useCallback(
+    (scale, px, py, world, snap = viewRef.current) => {
+      const dx = px - cx;
+      const dy = py - cy;
+      const u = dx * spin.cos + dy * spin.sin;
+      const v = -dx * spin.sin + dy * spin.cos;
+      return {
+        x: world.x - u / scale,
+        y: world.y + v / scale,
+        scale,
+      };
+    },
+    [spin, cx, cy],
+  );
+
   /** Zoom about a screen point, keeping whatever is under it under it. */
   const zoomAround = useCallback(
     (factor, px, py, duration = 320) => {
       const v = viewRef.current;
       const scale = clampScale(v.scale * factor);
-      const ox = px == null ? 0 : px - size.w / 2;
-      const oy = py == null ? 0 : py - size.h / 2;
-      animateTo(
-        {
-          x: v.x + ox / v.scale - ox / scale,
-          y: v.y - oy / v.scale + oy / scale,
-          scale,
-        },
-        { duration },
-      );
+      const fx = px == null ? cx : px;
+      const fy = py == null ? cy : py;
+      const world = screenToWorld(fx, fy, v);
+      animateTo(viewForScaleAt(scale, fx, fy, world, v), { duration });
     },
-    [animateTo, size.w, size.h],
+    [animateTo, screenToWorld, viewForScaleAt, cx, cy],
   );
 
   /* ---------- gestures ---------- */
@@ -429,9 +460,13 @@ function ParkMap({
     moved.current = false;
     if (pointers.current.size === 2) {
       const [a, b] = [...pointers.current.values()];
+      const rect = wrapRef.current.getBoundingClientRect();
       gesture.current = {
+        mode: 'pinch',
         dist: Math.hypot(a.x - b.x, a.y - b.y),
         scale: viewRef.current.scale,
+        midX: (a.x + b.x) / 2 - rect.left,
+        midY: (a.y + b.y) / 2 - rect.top,
       };
     }
   };
@@ -442,13 +477,21 @@ function ParkMap({
     const next = { x: e.clientX, y: e.clientY };
     pointers.current.set(e.pointerId, next);
 
-    if (pointers.current.size === 2 && gesture.current) {
+    if (pointers.current.size === 2 && gesture.current?.mode === 'pinch') {
       const [a, b] = [...pointers.current.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       const ratio = dist / gesture.current.dist;
       const scale = clampScale(gesture.current.scale * ratio);
-      if (Math.abs(dist - gesture.current.dist) > 4) moved.current = true;
-      pushView((v) => ({ ...v, scale }));
+      if (Math.abs(dist - gesture.current.dist) > 4) {
+        moved.current = true;
+        onUserPan?.();
+      }
+      const rect = wrapRef.current.getBoundingClientRect();
+      const midX = (a.x + b.x) / 2 - rect.left;
+      const midY = (a.y + b.y) / 2 - rect.top;
+      const snap = viewRef.current;
+      const world = screenToWorld(midX, midY, snap);
+      pushView(viewForScaleAt(scale, midX, midY, world, snap));
       return;
     }
 
@@ -526,7 +569,7 @@ function ParkMap({
     if (pointers.current.size < 2) gesture.current = null;
     if (pointers.current.size > 0) return;
 
-    if (moved.current) {
+    if (moved.current && gesture.current?.mode !== 'pinch') {
       startFling();
       return;
     }
@@ -577,13 +620,8 @@ function ParkMap({
     const py = e.clientY - rect.top;
     const v = viewRef.current;
     const scale = clampScale(v.scale * (e.deltaY > 0 ? 0.9 : 1.11));
-    const ox = px - size.w / 2;
-    const oy = py - size.h / 2;
-    pushView({
-      x: v.x + ox / v.scale - ox / scale,
-      y: v.y - oy / v.scale + oy / scale,
-      scale,
-    });
+    const world = screenToWorld(px, py, v);
+    pushView(viewForScaleAt(scale, px, py, world, v));
   };
 
   useEffect(() => {
@@ -1467,7 +1505,7 @@ function ParkMap({
           className="zoomBtn"
           onClick={() => {
             onUserPan?.();
-            zoomAround(1.6, size.w / 2, size.h / 2);
+            zoomAround(1.6, cx, cy);
           }}
           aria-label="Zoom in"
         >
@@ -1478,7 +1516,7 @@ function ParkMap({
           className="zoomBtn"
           onClick={() => {
             onUserPan?.();
-            zoomAround(1 / 1.6, size.w / 2, size.h / 2);
+            zoomAround(1 / 1.6, cx, cy);
           }}
           aria-label="Zoom out"
         >
