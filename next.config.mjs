@@ -2,6 +2,17 @@ import { readFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
+/** Stamped by scripts/inject-version.mjs on predev/prebuild. */
+function readVersionDoc() {
+  try {
+    return JSON.parse(readFileSync(new URL('./public/app-version.json', import.meta.url), 'utf8'));
+  } catch {
+    return { version: pkg.version, built: '' };
+  }
+}
+
+const versionDoc = readVersionDoc();
+
 /**
  * Cache headers for the files that are not code.
  *
@@ -36,7 +47,8 @@ const durable = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    NEXT_PUBLIC_APP_VERSION: pkg.version,
+    NEXT_PUBLIC_APP_VERSION: versionDoc.version || pkg.version,
+    NEXT_PUBLIC_APP_BUILT: versionDoc.built || '',
   },
   reactStrictMode: true,
   async headers() {

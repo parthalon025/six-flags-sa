@@ -1,0 +1,64 @@
+# Every merge to main gets a new patch version so phones can see the number move
+# and auto-update has a semver to compare. The workflow skips its own bump commits
+# so it does not loop.
+
+name: Bump version on merge
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bump-version-main
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    if: >-
+      github.event.head_commit.author.name != 'github-actions[bot]' &&
+      !startsWith(github.event.head_commit.message, 'chore: bump version to')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Resolve release note from the merge
+        id: note
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MSG="${{ github.event.head_commit.message }}"
+          NOTE=$(printf '%s' "$MSG" | head -1)
+          if [[ "$NOTE" =~ ^Merge\ pull\ request\ \#([0-9]+) ]]; then
+            PR="${BASH_REMATCH[1]}"
+            TITLE=$(gh pr view "$PR" --json title -q .title 2>/dev/null || true)
+            if [ -n "$TITLE" ]; then NOTE="$TITLE"; fi
+          fi
+          {
+            echo 'note<<EOF'
+            printf '%s' "$NOTE"
+            echo
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Bump patch version
+        run: node scripts/bump-version.mjs "${{ steps.note.outputs.note }}"
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json public/app-version.json public/sw.js data/release-notes.json
+          VERSION=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
+          git commit -m "chore: bump version to $VERSION"
+          git push
