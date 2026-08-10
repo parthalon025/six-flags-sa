@@ -13,3 +13,4 @@ out
 
 # GitNexus code-intelligence index: derived from the source, rebuilt on demand
 .gitnexus/
+.turbo
