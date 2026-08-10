@@ -230,12 +230,12 @@ export default function SettingsPanel({
         </>
       )}
 
-      <div className="label">You Are Here</div>
+      <div className="label">This Phone</div>
       <div className="rowList">
         <button type="button" className="row" onClick={onLocationSettings}>
-          <span className="rowText">You Are Here</span>
+          <span className="rowText">Location (GPS)</span>
           <span className="rowValue">
-            {position ? (position.manual ? 'Placed by hand' : 'Phone GPS') : 'No fix yet'}
+            {position ? (position.manual ? 'Placed by hand' : 'On') : 'Off — tap to enable'}
           </span>
         </button>
       </div>
@@ -244,9 +244,11 @@ export default function SettingsPanel({
           {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
         </p>
       )}
-
-      <div className="label">Install on This Phone</div>
       <InstallCard />
+      <p className="fine">
+        Location drops your dot on the map. Add to Home Screen keeps the park map offline in a
+        queue line — both belong on this phone before you need them.
+      </p>
 
       <div className="label">Advanced</div>
       <div className="rowList">

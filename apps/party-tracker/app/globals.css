@@ -1870,6 +1870,23 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .steps { margin: 0 0 4px; padding-left: 20px; font-size: 15px; line-height: 24px; color: var(--label2); }
 .steps b { color: var(--label); font-weight: 600; }
 
+/* Welcome gate: GPS enable + Add to Home Screen as one phone-setup stack. */
+.gatePhoneSetup {
+  display: flex; flex-direction: column; gap: 10px;
+  margin: 0 0 12px;
+}
+.gatePhoneSetup .btn { width: 100%; }
+.gatePhoneSetup .btn.primary { margin: 0; }
+.gateInstallHint {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 14px; line-height: 20px; letter-spacing: -.2px;
+  color: var(--label2);
+  background: var(--grouped2);
+  border-radius: var(--r2);
+}
+.gateInstallHint b { color: var(--label); font-weight: 600; }
+
 /* ---- mobile-only hardening ---- */
 html { -webkit-text-size-adjust: 100%; }
 body { touch-action: manipulation; user-select: none; -webkit-user-select: none; }

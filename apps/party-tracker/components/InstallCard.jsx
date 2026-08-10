@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
    iOS Safari never fires it and has no API, so the only honest thing is to
    describe the two taps. Both are hidden once the app is already standalone. */
 
-export default function InstallCard() {
+export default function InstallCard({ compact = false }) {
   const [deferred, setDeferred] = useState(null);
   const [platform, setPlatform] = useState('other');
   const [standalone, setStandalone] = useState(false);
@@ -29,12 +29,48 @@ export default function InstallCard() {
   }, []);
 
   if (standalone || done) {
+    if (compact) return null;
     return (
       <p className="fine">
         Installed. It runs full screen and the park map works with no signal — handy in a
         queue line where the wifi gives up.
       </p>
     );
+  }
+
+  const promptInstall = async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    if (outcome === 'accepted') setDone(true);
+    setDeferred(null);
+  };
+
+  /* Compact: sits beside the GPS button on the welcome gate — one control, not
+     a full how-to card. iOS still needs the Share sheet; we say so in one line. */
+  if (compact) {
+    if (deferred) {
+      return (
+        <button type="button" className="btn" onClick={promptInstall}>
+          Add to home screen
+        </button>
+      );
+    }
+    if (platform === 'ios') {
+      return (
+        <p className="gateInstallHint">
+          Add to Home Screen via Safari <b>Share</b> for full-screen offline maps.
+        </p>
+      );
+    }
+    if (platform === 'android') {
+      return (
+        <p className="gateInstallHint">
+          Browser menu <b>⋮</b> → <b>Add to Home screen</b> for offline maps.
+        </p>
+      );
+    }
+    return null;
   }
 
   return (
@@ -44,16 +80,7 @@ export default function InstallCard() {
           <p className="fine" style={{ margin: '0 0 10px' }}>
             Add it to your home screen so it opens full screen and works offline.
           </p>
-          <button
-            type="button"
-            className="btn primary"
-            onClick={async () => {
-              deferred.prompt();
-              const { outcome } = await deferred.userChoice;
-              if (outcome === 'accepted') setDone(true);
-              setDeferred(null);
-            }}
-          >
+          <button type="button" className="btn primary" onClick={promptInstall}>
             Add to home screen
           </button>
         </>

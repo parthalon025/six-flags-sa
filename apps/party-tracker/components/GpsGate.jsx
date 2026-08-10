@@ -1,6 +1,7 @@
 'use client';
 
 import BrandLockup from '@/components/BrandLockup';
+import InstallCard from '@/components/InstallCard';
 import { BRAND } from '@/lib/brand';
 import { formatDistance } from '@/lib/geo';
 
@@ -55,6 +56,9 @@ function dataText(venue) {
  * not need five bullets before they will tap Allow — they need to know what
  * this is and what the one good button does. Nearest-park still asks "is this
  * the right park?" before downloading — auto-setup used to skip that confirm.
+ *
+ * GPS enable and Add to Home Screen sit together: both are "get this phone
+ * ready for the park" actions on first open.
  */
 function ParkSection({
   choice,
@@ -141,6 +145,7 @@ export default function GpsGate({
   const showParkQuestion = Boolean(parkVenue);
   const welcomeIdle = welcome && status === 'idle' && !nearestIntent && !showParkQuestion;
   const welcomeSearching = welcome && nearestIntent && status === 'asking' && !showParkQuestion;
+  const showPhoneSetup = !showParkQuestion;
 
   let primaryLabel = copy.action;
   let primaryAction = onRequest;
@@ -196,15 +201,18 @@ export default function GpsGate({
 
         {error && !setupError && <p className="gateError">{error}</p>}
 
-        {!showParkQuestion && (
-          <button
-            type="button"
-            className="btn primary"
-            disabled={primaryDisabled}
-            onClick={primaryAction}
-          >
-            {primaryLabel}
-          </button>
+        {showPhoneSetup && (
+          <div className="gatePhoneSetup">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={primaryDisabled}
+              onClick={primaryAction}
+            >
+              {primaryLabel}
+            </button>
+            <InstallCard compact />
+          </div>
         )}
 
         {!showParkQuestion && (
