@@ -1,0 +1,77 @@
+name: Agent handoff
+description: Out-of-scope error or failure found during agent work — for another agent to fix
+title: "[Agent handoff] "
+labels:
+  - agent-handoff
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Filed automatically (or by an agent) when a problem was found outside the scope of the current task.
+        Another agent can pick this up without needing the original conversation context.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What failed
+      description: One or two sentences describing the error or failure.
+      placeholder: "Unit test `test/foo.mjs` fails with assertion error on line 42."
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Where it was found
+      description: What task was in progress, and where the problem lives (paths, CI run, etc.).
+      placeholder: |
+        Task: implementing GPS smoothing tier 1
+        Location: `lib/gps/smooth.js`, CI run https://github.com/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps or the exact command with relevant output.
+      placeholder: |
+        ```bash
+        npm run test:unit
+        ```
+        ```
+        FAIL test/unit.mjs > smoothGps > ...
+        ```
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Impact
+      description: How this affects ongoing work.
+      options:
+        - Blocking — cannot proceed without a fix
+        - Non-blocking — workaround exists or task can continue
+        - Informational — noticed but not affecting current work
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix (optional)
+      description: Concrete direction if you have one — do not implement here.
+      placeholder: "Likely needs null check in `smoothGps` before accessing `prev.fix`."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Filer checklist
+      options:
+        - label: I confirmed this is outside my current task scope
+          required: true
+        - label: I searched for an existing open issue and did not find a duplicate
+          required: true
+        - label: I continued (or will continue) my assigned work after filing
+          required: false
