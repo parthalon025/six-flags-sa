@@ -151,15 +151,22 @@ const GLYPHS = {
       <path d="M6.2 15.4 6.7 17.1 8.4 17.6 6.7 18.1 6.2 19.8 5.7 18.1 4 17.6 5.7 17.1Z" fill="currentColor" />
     </>
   ),
-  /* Parkbound waypoint — pin × trail marker × compass eye. */
+  /* Parkbound simplified Waypoint — app/map glyph (not the full lockup). */
   waypoint: (
     <>
-      <path d="M12 2.4 20.2 12 12 21.6 3.8 12Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" opacity=".55" />
       <path
-        d="M12 5.2a4.4 4.4 0 0 0-4.4 4.4c0 3.2 4.4 7.6 4.4 7.6s4.4-4.4 4.4-7.6A4.4 4.4 0 0 0 12 5.2Z"
-        fill="currentColor"
+        d="M8.2 5.4 L12 2.6 L15.8 5.4 M18.6 8.2 L21.4 12 L18.6 15.8 M15.8 18.6 L12 21.4 L8.2 18.6 M5.4 15.8 L2.6 12 L5.4 8.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <circle cx="12" cy="9.4" r="1.7" fill="var(--bg2, #fff)" />
+      <path d="M12 1.2 L13.3 3.8 H10.7 Z" fill="currentColor" />
+      <path d="M22.8 12 L20.2 10.7 V13.3 Z" fill="currentColor" />
+      <path d="M12 22.8 L10.7 20.2 H13.3 Z" fill="currentColor" />
+      <path d="M1.2 12 L3.8 13.3 V10.7 Z" fill="currentColor" />
+      <circle cx="12" cy="12" r="3.1" fill="var(--adventure, #FF6B35)" />
     </>
   ),
   'camera.fill': (

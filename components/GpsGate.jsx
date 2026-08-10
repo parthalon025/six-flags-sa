@@ -1,5 +1,6 @@
 'use client';
 
+import BrandLockup from '@/components/BrandLockup';
 import { BRAND } from '@/lib/brand';
 import { formatDistance } from '@/lib/geo';
 
@@ -181,26 +182,32 @@ export default function GpsGate({
   return (
     <div className="gate">
       <div className="gateCard">
-        <div className="gateEyebrow">
-          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
-        </div>
-        <h2>
-          {welcome && !showParkQuestion
-            ? BRAND.nameUpper
-            : showParkQuestion
-              ? parkChoice.inside
-                ? `You’re at ${parkVenue.name}!`
-                : `Headed to ${parkVenue.name}?`
-              : copy.title}
-        </h2>
-
-        {welcome && !showParkQuestion && !settingUp && (
-          <p className="gateSlogan">{BRAND.slogan}</p>
+        {welcome && !showParkQuestion && !settingUp ? (
+          <>
+            <div className="gateEyebrow">Welcome</div>
+            {/* Splash: primary logo lockup (brand sheet Image 1) */}
+            <BrandLockup size="lg" stacked showTagline className="gateBrandLockup" />
+            <p>{BRAND.shortDescription}</p>
+          </>
+        ) : (
+          <>
+            <div className="gateEyebrow">
+              {welcome
+                ? 'Welcome'
+                : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
+            </div>
+            <h2>
+              {showParkQuestion
+                ? parkChoice.inside
+                  ? `You’re at ${parkVenue.name}!`
+                  : `Headed to ${parkVenue.name}?`
+                : settingUp
+                  ? BRAND.nameUpper
+                  : copy.title}
+            </h2>
+            {!showParkQuestion && !settingUp && <p>{copy.body}</p>}
+          </>
         )}
-        {welcome && !showParkQuestion && !settingUp && (
-          <p>{BRAND.shortDescription}</p>
-        )}
-        {!welcome && !showParkQuestion && !settingUp && <p>{copy.body}</p>}
 
         {(settingUp || showParkQuestion) && (
           <ParkSection

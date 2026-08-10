@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import BrandMark from '@/components/BrandMark';
 import { loadScenario, saveScenario, createScenario, addStep, clearScenario, visibleSteps, mergeScenario } from '@/lib/scenario';
 import { recent } from '@/lib/actionLog';
 
@@ -112,6 +113,20 @@ export default function IntelligencePanel({
       {log.length > 0 && (
         <>
           <div className="label">Your Day</div>
+          {/* Trail language for the day summary — glyph + dotted path (brand sheet Image 3). */}
+          <div className="dayTrail" aria-hidden="true">
+            <svg className="dayTrailPath" viewBox="0 0 120 24" preserveAspectRatio="none">
+              <path
+                d="M4 18 C28 4, 52 20, 76 10 S108 6, 116 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeDasharray="0 8"
+              />
+            </svg>
+            <BrandMark variant="glyph" size={22} aqua="var(--aqua)" className="dayTrailMark" />
+          </div>
           <ul className="planList">
             {log.map((e) => (
               <li key={e.id}>

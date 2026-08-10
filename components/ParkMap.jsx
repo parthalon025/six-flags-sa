@@ -1317,36 +1317,33 @@ function ParkMap({
           </text>
         ))}
 
-        {/* meet-up — Parkbound waypoint (trail marker × pin × compass eye) */}
+        {/* meet-up — Parkbound simplified Waypoint (brand sheet: live map) */}
         {meet &&
           (() => {
             const [sx, sy] = at(meet.lat, meet.lng);
+            const s = 1.15;
             return (
-              <g key="meet" className="meetPin">
-                <ellipse
-                  cx={sx}
-                  cy={sy + 2}
-                  rx={8}
-                  ry={2.6}
-                  fill="#000"
-                  opacity="0.28"
-                />
+              <g key="meet" className="meetPin" transform={`translate(${sx} ${sy})`}>
+                <ellipse cx={0} cy={10} rx={9} ry={2.8} fill="#000" opacity="0.28" />
+                {/* Diamond sides with corner gaps */}
                 <path
-                  d={`M${sx} ${sy - 22} L${sx + 12} ${sy - 6} L${sx} ${sy + 8} L${sx - 12} ${sy - 6} Z`}
+                  d={`M${-9.5 * s} ${-14 * s} L0 ${-20 * s} L${9.5 * s} ${-14 * s}
+                      M${14 * s} ${-9.5 * s} L${20 * s} 0 L${14 * s} ${9.5 * s}
+                      M${9.5 * s} ${14 * s} L0 ${20 * s} L${-9.5 * s} ${14 * s}
+                      M${-14 * s} ${9.5 * s} L${-20 * s} 0 L${-14 * s} ${-9.5 * s}`}
                   fill="none"
                   stroke="var(--aqua)"
-                  strokeWidth="1.8"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
                   strokeLinejoin="round"
-                  opacity="0.9"
                 />
-                <path
-                  d={`M${sx} ${sy} l-8 -12 a10 10 0 1 1 16 0 Z`}
-                  fill="var(--adventure)"
-                  stroke="var(--markerEdge)"
-                  strokeWidth="1.5"
-                />
-                <circle cx={sx} cy={sy - 14} r={3.6} fill="var(--trail, #F7F4EC)" />
-                <circle cx={sx} cy={sy - 14} r={1.5} fill="var(--park-midnight, #10233F)" />
+                {/* Teal outward arrows */}
+                <path d={`M0 ${-24 * s} L${3.2 * s} ${-17.2 * s} H${-3.2 * s} Z`} fill="var(--aqua)" />
+                <path d={`M${24 * s} 0 L${17.2 * s} ${-3.2 * s} V${3.2 * s} Z`} fill="var(--aqua)" />
+                <path d={`M0 ${24 * s} L${-3.2 * s} ${17.2 * s} H${3.2 * s} Z`} fill="var(--aqua)" />
+                <path d={`M${-24 * s} 0 L${-17.2 * s} ${3.2 * s} V${-3.2 * s} Z`} fill="var(--aqua)" />
+                {/* Orange compass eye */}
+                <circle cx={0} cy={0} r={6.2 * s} fill="var(--adventure)" stroke="var(--markerEdge)" strokeWidth="1.2" />
               </g>
             );
           })()}

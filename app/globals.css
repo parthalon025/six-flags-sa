@@ -594,16 +594,35 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 40;
   padding: calc(var(--top) + 10px) 12px 0;
-  display: flex; justify-content: flex-end; gap: 9px; pointer-events: none;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 9px;
+  pointer-events: none;
   animation: riseIn var(--t3) var(--easeOut) both;
+}
+.topbarBrand, .topbarActions {
+  display: flex; align-items: center; gap: 9px; pointer-events: auto;
+}
+.topbarBrand {
+  /* Phones: keep the map clear. Desktop/wide: primary lockup top-left. */
+  display: none;
+  padding: 6px 10px;
+  border-radius: var(--rCapsule);
+  background: color-mix(in srgb, var(--bg2) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 1px 0 var(--glassRing), 0 8px 24px rgba(16, 35, 63, .12);
+}
+.topbarGlyph, .topbarLockup { display: flex; align-items: center; }
+@media (min-width: 720px) {
+  .topbarBrand { display: flex; }
 }
 .brand {
   flex: none; display: flex; flex-direction: column; gap: 2px;
   padding: 0 16px 8px; min-width: 0;
 }
 .brandRow {
-  display: flex; align-items: baseline; gap: 8px; min-width: 0;
+  display: flex; align-items: center; gap: 8px; min-width: 0;
 }
+.brandGlyph { display: flex; flex: none; color: var(--aqua); }
 .brand b, .brandName {
   flex: none; font-family: var(--display); font-size: 15px; font-weight: 700;
   line-height: 20px; letter-spacing: -.02em; color: var(--label);
@@ -617,6 +636,48 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   letter-spacing: -.08px; color: var(--label2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+
+/* Primary logo lockup — Modern Waypoint + wordmark + tagline */
+.brandLockup {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.brandLockup.stacked {
+  flex-direction: column; align-items: flex-start; gap: 12px;
+  margin: 4px 0 16px;
+}
+.brandLockupMark { display: flex; flex: none; line-height: 0; }
+.brandLockupText {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+}
+.brandLockupName {
+  font-family: var(--display); font-weight: 800; letter-spacing: -.02em;
+  color: var(--label); line-height: 1.05; text-transform: uppercase;
+}
+.brandLockupTagline {
+  font-family: var(--display); font-weight: 600; letter-spacing: -.01em;
+  color: var(--adventure); line-height: 1.2;
+}
+.brandLockup[data-size="sm"] .brandLockupName { font-size: 15px; }
+.brandLockup[data-size="sm"] .brandLockupTagline { font-size: 11px; font-weight: 500; color: var(--aqua); }
+.brandLockup[data-size="md"] .brandLockupName { font-size: 22px; }
+.brandLockup[data-size="md"] .brandLockupTagline { font-size: 13px; }
+.brandLockup[data-size="lg"] .brandLockupName { font-size: 34px; }
+.brandLockup[data-size="lg"] .brandLockupTagline { font-size: 17px; }
+.sheetBrandLockup { margin: 0 0 2px; }
+.gateBrandLockup { width: 100%; }
+.gateEyebrow .gateGlyph {
+  display: inline-flex; vertical-align: -3px; margin-right: 6px;
+}
+
+/* Your Day — trail path ending at the Waypoint glyph */
+.dayTrail {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 16px 10px; color: var(--park-midnight);
+  opacity: .72;
+}
+[data-theme="night"] .dayTrail { color: var(--trail); opacity: .55; }
+.dayTrailPath { flex: 1; height: 24px; min-width: 0; }
+.dayTrailMark { flex: none; display: flex; color: var(--aqua); }
 
 /* ---- the search row: the first thing in the sheet, and it never scrolls ---- */
 .searchRow {
@@ -1307,10 +1368,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   letter-spacing: .12em; text-transform: uppercase;
   color: var(--aqua); margin-bottom: 8px;
 }
-.gateCard h2 {
+.gateCard h2,
+.brandLockupName {
   font-family: var(--display); font-size: 34px; font-weight: 800;
   letter-spacing: -.02em; line-height: 40px;
   margin: 0 0 6px; text-transform: none;
+}
+.brandLockup .brandLockupName {
+  margin: 0;
+  text-transform: uppercase;
+}
+.brandLockup[data-size="sm"] .brandLockupName {
+  font-size: 15px; font-weight: 700; line-height: 20px;
+}
+.brandLockup[data-size="md"] .brandLockupName {
+  font-size: 22px; font-weight: 800; line-height: 26px;
+}
+.brandLockup[data-size="lg"] .brandLockupName {
+  font-size: 34px; font-weight: 800; line-height: 40px;
 }
 .gateSlogan {
   margin: 0 0 16px; font-family: var(--display); font-size: 17px; font-weight: 600;
