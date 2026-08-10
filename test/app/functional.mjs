@@ -278,6 +278,9 @@ await check('cedar point route preview names surveyed queue entrances', async ()
     timeout: 15000,
     label: 'cedar point venue load',
   });
+  // Walk graph is at the park — phone A was still GPS-pinned at Kings Island.
+  await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
+  await a.waitForTimeout(800);
   await go(a, 'Places');
   await searchPlaces(a, 'gemini');
   const gemini = a.locator('.poiRow').filter({ has: a.locator('.poiName', { hasText: /^Gemini$/ }) }).first();
