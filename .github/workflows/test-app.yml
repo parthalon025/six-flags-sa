@@ -1,0 +1,42 @@
+name: Test app
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Builder unit + compare
+        run: npm run test:builder
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Build and start app
+        run: |
+          npm run build -w @party-tracker/app
+          npm run start -w @party-tracker/app &
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:3000/api/health && break
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:3000/api/health
+
+      - name: App functional suite
+        run: npm run test:app
+
+      - name: Visual inspection shots
+        run: npm run test:visual
