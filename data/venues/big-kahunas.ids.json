@@ -2,7 +2,7 @@
   "version": 1,
   "venue": "big-kahunas",
   "keys": {
-    "big-kahuna-s-tropical-mini-golf": {"n":"Big Kahuna's Tropical Mini Golf","c":"ride","at":"30.388012,-86.472376"},
+    "big-kahuna-s-tropical-mini-golf": {"n":"Big Kahuna's Tropical Mini Golf","c":"ride","at":"30.388012,-86.472376","osm":"w679973001"},
     "buccaneer-cove": {"n":"Buccaneer Cove","c":"ride","at":"30.387893,-86.473961"},
     "cobra-twister": {"n":"Cobra Twister","c":"ride","at":"30.38775,-86.47326"},
     "hammerhead": {"n":"Hammerhead","c":"ride","at":"30.38803,-86.47381"},
@@ -17,7 +17,8 @@
     "skycoaster": {"n":"Skycoaster","c":"ride","at":"30.388721,-86.471682"},
     "thunder-river": {"n":"Thunder River","c":"ride","at":"30.38902,-86.47305"},
     "tiki-river-run": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286","retired":true},
-    "tiki-river-run-right-slide": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286"},
-    "wave-pool": {"n":"Wave Pool","c":"ride","at":"30.387829,-86.473478"}
+    "tiki-river-run-right-slide": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286","retired":true},
+    "tiki-river-run-right-slide-2": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286"},
+    "wave-pool": {"n":"Wave Pool","c":"ride","at":"30.387829,-86.473478","osm":"w679972995"}
   }
 }

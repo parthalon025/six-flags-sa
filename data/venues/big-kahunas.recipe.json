@@ -18,12 +18,12 @@
     "pad": 0
   },
   "built": {
-    "at": "2026-08-09",
+    "at": "2026-08-10",
     "counts": {
       "pois": 16,
       "rides": 15,
       "heights": 15,
-      "shapes": 274
+      "shapes": 283
     }
   }
 }

@@ -19,16 +19,16 @@
       },
       "source": "OpenStreetMap contributors, ODbL",
       "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages.",
-      "generated": "2026-08-09",
+      "generated": "2026-08-10",
       "coverage": {
-        "ways": 161,
+        "ways": 170,
         "steps": 3,
         "bridge": 4,
         "tunnel": 1,
         "layer": 4,
         "oneway": 38,
         "restricted": 0,
-        "walkable_km": 22.8
+        "walkable_km": 23.5
       },
       "map": "/venues/big-kahunas.map.json",
       "pois": "/venues/big-kahunas.pois.json",

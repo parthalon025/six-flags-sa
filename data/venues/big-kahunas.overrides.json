@@ -2,7 +2,7 @@
   "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/big-kahunas.heights.json.",
   "credits": "Height requirements were compiled from Big Kahuna's own 2026 attraction pages.",
   "pois": {
-    "tiki-river-run-right-slide": {
+    "tiki-river-run-right-slide-2": {
       "n": "Tiki River Run"
     }
   },
