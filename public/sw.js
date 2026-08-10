@@ -84,6 +84,17 @@ function staleWhileRevalidate(request) {
   });
 }
 
+/** Cache first, refresh in the background. For the app shell and hashed assets. */
+function cacheFirstRevalidate(request) {
+  return caches.match(request).then((cached) => {
+    const fetchPromise = fetch(request).then((res) => {
+      if (res.ok) caches.open(CACHE).then((c) => c.put(request, res.clone()));
+      return res;
+    });
+    return cached || fetchPromise;
+  });
+}
+
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
@@ -107,6 +118,15 @@ self.addEventListener('fetch', (e) => {
   // signal, so they are held for as long as the cache lives.
   if (url.pathname.startsWith('/venues/')) {
     e.respondWith(staleWhileRevalidate(e.request));
+    return;
+  }
+
+  if (
+    url.pathname === '/' ||
+    url.pathname === '/join' ||
+    url.pathname.startsWith('/_next/static/')
+  ) {
+    e.respondWith(cacheFirstRevalidate(e.request));
     return;
   }
 

@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { statusFor } from '@/lib/rideStatus';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import { eligibility, heightLabel, isRideable } from '@/lib/park';
-import { usePois, useVenue } from '@/lib/venue/useVenue';
+import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails, campSearchText } from '@/lib/camping';
 import { categoriesFor, matchedByName, matchesQuery } from '@/lib/search';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -56,8 +56,13 @@ export default function PlaceList({
   const POIS = usePois();
   // The venue, for the half of a campsite's details that belong to the whole
   // campground rather than to one pitch.
-  const { venue } = useVenue();
+  const venue = useVenueSelector((s) => s.venue);
   const [onlyRunning, setOnlyRunning] = useState(false);
+
+  const ROW_H = 52;
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(400);
+  const listRef = useRef(null);
 
   // One verdict per place, computed once. `now` is a prop rather than a call so
   // the whole screen agrees on what "12 min ago" means within a render.
@@ -130,6 +135,178 @@ export default function PlaceList({
     return out.slice(0, 400);
   }, [POIS, query, queryCats, campFacets, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
 
+  const useVirtual = list.length > 50;
+  const visibleStart = Math.floor(scrollTop / ROW_H);
+  const visibleCount = Math.ceil(containerHeight / ROW_H) + 2;
+  const visibleItems = useVirtual ? list.slice(visibleStart, visibleStart + visibleCount) : list;
+
+  useEffect(() => {
+    if (!useVirtual) return undefined;
+    const listEl = listRef.current;
+    if (!listEl) return undefined;
+    const scrollEl = listEl.closest('.sheetBody');
+    if (!scrollEl) return undefined;
+
+    const offsetWithin = (el, ancestor) => {
+      let top = 0;
+      let node = el;
+      while (node && node !== ancestor) {
+        top += node.offsetTop;
+        node = node.parentElement;
+      }
+      return top;
+    };
+
+    const update = () => {
+      const listTop = offsetWithin(listEl, scrollEl);
+      setScrollTop(Math.max(0, scrollEl.scrollTop - listTop));
+      setContainerHeight(scrollEl.clientHeight);
+    };
+
+    scrollEl.addEventListener('scroll', update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(scrollEl);
+    update();
+    return () => {
+      scrollEl.removeEventListener('scroll', update);
+      ro.disconnect();
+    };
+  }, [useVirtual, list.length]);
+
+  const renderRow = (p) => {
+    const isRide = isRideable(p);
+    const verdict = isRide ? eligibility(p, height, withAdult) : 'unknown';
+    const v = VERDICT[verdict];
+    const d = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
+    const open = selected && selected.n === p.n;
+    const st = statuses.get(p.id) || null;
+    const showStatus = Boolean(st && st.label);
+    const camp = open ? campChips(campDetails(p, venue)) : [];
+    return (
+      <div key={p.id} className={`poiRow ${open ? 'open' : ''} ${v.cls}`}>
+        <button
+          type="button"
+          className="poiMain"
+          onClick={() => onSelect(p)}
+          aria-expanded={Boolean(open)}
+        >
+          {/* A ruled-out ride takes the same red here as it does on the
+              map, rather than its category colour dimmed — the list and
+              the map are two views of one answer, and a visitor who has
+              learnt the red on one should not have to learn a fade on
+              the other. */}
+          <span
+            className="dot"
+            style={{ background: v.cls === 'bad' ? palette.barred : palette.categories[p.c] }}
+          />
+          <span className="poiText">
+            <b>{p.n}</b>
+            <span>
+              {isRide ? heightLabel(p) : CATEGORY_LABELS[p.c]} · {p.a}
+            </span>
+          </span>
+          <span className="poiOut">
+            {d != null && (
+              <span className="poiWalk">
+                <b>{formatWalk(d)}</b>
+                <em>{formatDistance(d)}</em>
+              </span>
+            )}
+            {showStatus && (
+              <span
+                className={`verdict statusPill ${st.tone} ${st.source === 'weather' ? 'guess' : ''}`}
+              >
+                <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
+                {st.label}
+              </span>
+            )}
+            {v.label && (
+              <span className={`verdict ${v.cls}`}>
+                <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
+                {v.label}
+              </span>
+            )}
+          </span>
+        </button>
+        {open && (
+          <div className="poiDetail">
+            {showStatus && st.detail && (
+              <p className={`poiNote wxWhy ${st.tone}`}>
+                {st.detail}
+                {st.source === 'weather' && ' — a guess from the forecast, not the park'}
+              </p>
+            )}
+            {p.note && <p className="poiNote">{p.note}</p>}
+            {/* What is on the pitch. Chips rather than a sentence: this
+                is a checklist somebody reads against what their caravan
+                needs, not prose. */}
+            {camp.length > 0 && (
+              <ul className="campChips">
+                {camp.map((chip) => (
+                  <li key={chip}>{chip}</li>
+                ))}
+              </ul>
+            )}
+            {p.approx && (
+              <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
+            )}
+            {/* A campground office, a first-aid post, a ticket line. One
+                tap to dial, because the moment you want this number is
+                the moment reading it off a screen and typing it in is
+                exactly what you cannot manage. */}
+            {p.tel && (
+              <a className="poiTel" href={`tel:${p.tel.replace(/[^\d+]/g, '')}`}>
+                <Icon name="phone.fill" size={15} />
+                {p.tel}
+              </a>
+            )}
+            {onReport && isRide && (
+              <div className="joinRow reportRow">
+                {/* Reporting is one tap and instantly retractable. Anything
+                    slower and nobody does it while walking past. */}
+                <button
+                  type="button"
+                  data-report={RIDE_DOWN}
+                  className={`btn small ${st?.report?.status === RIDE_DOWN ? 'on' : ''}`}
+                  onClick={() => onReport(p.id, st?.report?.status === RIDE_DOWN ? null : RIDE_DOWN)}
+                  aria-pressed={st?.report?.status === RIDE_DOWN}
+                >
+                  {st?.report?.status === RIDE_DOWN ? 'Reported down' : 'It\u2019s down'}
+                </button>
+                <button
+                  type="button"
+                  data-report={RIDE_OPEN}
+                  className={`btn small ${st?.report?.status === RIDE_OPEN ? 'on' : ''}`}
+                  onClick={() => onReport(p.id, st?.report?.status === RIDE_OPEN ? null : RIDE_OPEN)}
+                  aria-pressed={st?.report?.status === RIDE_OPEN}
+                >
+                  {st?.report?.status === RIDE_OPEN ? 'Reported running' : 'It\u2019s running'}
+                </button>
+              </div>
+            )}
+            <div className="joinRow">
+              <button
+                type="button"
+                className="btn small primary"
+                onClick={() => onNavigate({ kind: 'poi', label: p.n, lat: p.lat, lng: p.lng })}
+              >
+                Walk me there
+              </button>
+              <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
+                Make this the meet-up
+              </button>
+              {onAddToPlan && (
+                <button type="button" className="btn small" onClick={() => onAddToPlan(p)}>
+                  Add to plan
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div>
       <div className="chips">
@@ -186,7 +363,7 @@ export default function PlaceList({
         </div>
       )}
 
-      <div className="poiList">
+      <div className="poiList" ref={listRef}>
         {list.length === 0 &&
           (filter !== 'all' ? (
             /* The commonest way to see nothing is to be looking at one
@@ -207,139 +384,15 @@ export default function PlaceList({
               “toilet”, “food” or “first aid”.
             </p>
           ))}
-        {list.map((p) => {
-          const isRide = isRideable(p);
-          const verdict = isRide ? eligibility(p, height, withAdult) : 'unknown';
-          const v = VERDICT[verdict];
-          const d = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
-          const open = selected && selected.n === p.n;
-          const st = statuses.get(p.id) || null;
-          const showStatus = Boolean(st && st.label);
-          const camp = open ? campChips(campDetails(p, venue)) : [];
-          return (
-            <div key={p.id} className={`poiRow ${open ? 'open' : ''} ${v.cls}`}>
-              <button
-                type="button"
-                className="poiMain"
-                onClick={() => onSelect(p)}
-                aria-expanded={Boolean(open)}
-              >
-                {/* A ruled-out ride takes the same red here as it does on the
-                    map, rather than its category colour dimmed — the list and
-                    the map are two views of one answer, and a visitor who has
-                    learnt the red on one should not have to learn a fade on
-                    the other. */}
-                <span
-                  className="dot"
-                  style={{ background: v.cls === 'bad' ? palette.barred : palette.categories[p.c] }}
-                />
-                <span className="poiText">
-                  <b>{p.n}</b>
-                  <span>
-                    {isRide ? heightLabel(p) : CATEGORY_LABELS[p.c]} · {p.a}
-                  </span>
-                </span>
-                <span className="poiOut">
-                  {d != null && (
-                    <span className="poiWalk">
-                      <b>{formatWalk(d)}</b>
-                      <em>{formatDistance(d)}</em>
-                    </span>
-                  )}
-                  {showStatus && (
-                    <span
-                      className={`verdict statusPill ${st.tone} ${st.source === 'weather' ? 'guess' : ''}`}
-                    >
-                      <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
-                      {st.label}
-                    </span>
-                  )}
-                  {v.label && (
-                    <span className={`verdict ${v.cls}`}>
-                      <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
-                      {v.label}
-                    </span>
-                  )}
-                </span>
-              </button>
-              {open && (
-                <div className="poiDetail">
-                  {showStatus && st.detail && (
-                    <p className={`poiNote wxWhy ${st.tone}`}>
-                      {st.detail}
-                      {st.source === 'weather' && ' — a guess from the forecast, not the park'}
-                    </p>
-                  )}
-                  {p.note && <p className="poiNote">{p.note}</p>}
-                  {/* What is on the pitch. Chips rather than a sentence: this
-                      is a checklist somebody reads against what their caravan
-                      needs, not prose. */}
-                  {camp.length > 0 && (
-                    <ul className="campChips">
-                      {camp.map((chip) => (
-                        <li key={chip}>{chip}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {p.approx && (
-                    <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
-                  )}
-                  {/* A campground office, a first-aid post, a ticket line. One
-                      tap to dial, because the moment you want this number is
-                      the moment reading it off a screen and typing it in is
-                      exactly what you cannot manage. */}
-                  {p.tel && (
-                    <a className="poiTel" href={`tel:${p.tel.replace(/[^\d+]/g, '')}`}>
-                      <Icon name="phone.fill" size={15} />
-                      {p.tel}
-                    </a>
-                  )}
-                  {onReport && isRide && (
-                    <div className="joinRow reportRow">
-                      {/* Reporting is one tap and instantly retractable. Anything
-                          slower and nobody does it while walking past. */}
-                      <button
-                        type="button"
-                        data-report={RIDE_DOWN}
-                        className={`btn small ${st?.report?.status === RIDE_DOWN ? 'on' : ''}`}
-                        onClick={() => onReport(p.id, st?.report?.status === RIDE_DOWN ? null : RIDE_DOWN)}
-                        aria-pressed={st?.report?.status === RIDE_DOWN}
-                      >
-                        {st?.report?.status === RIDE_DOWN ? 'Reported down' : 'It\u2019s down'}
-                      </button>
-                      <button
-                        type="button"
-                        data-report={RIDE_OPEN}
-                        className={`btn small ${st?.report?.status === RIDE_OPEN ? 'on' : ''}`}
-                        onClick={() => onReport(p.id, st?.report?.status === RIDE_OPEN ? null : RIDE_OPEN)}
-                        aria-pressed={st?.report?.status === RIDE_OPEN}
-                      >
-                        {st?.report?.status === RIDE_OPEN ? 'Reported running' : 'It\u2019s running'}
-                      </button>
-                    </div>
-                  )}
-                  <div className="joinRow">
-                    <button
-                      type="button"
-                      className="btn small primary"
-                      onClick={() => onNavigate({ kind: 'poi', label: p.n, lat: p.lat, lng: p.lng })}
-                    >
-                      Walk me there
-                    </button>
-                    <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
-                      Make this the meet-up
-                    </button>
-                    {onAddToPlan && (
-                      <button type="button" className="btn small" onClick={() => onAddToPlan(p)}>
-                        Add to plan
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
+        {useVirtual ? (
+          <div style={{ height: list.length * ROW_H }}>
+            <div style={{ paddingTop: visibleStart * ROW_H }}>
+              {visibleItems.map((p) => renderRow(p))}
             </div>
-          );
-        })}
+          </div>
+        ) : (
+          list.map((p) => renderRow(p))
+        )}
       </div>
 
       {statuses.size > 0 && (

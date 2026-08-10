@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { jsonCached } from '@/app/api/_lib/http';
 import { VENUE_IDS, catalogFor, defaultVenueId } from './catalog';
 
 /**
@@ -10,5 +10,6 @@ export function GET(request) {
   const asked = new URL(request.url).searchParams.get('venue');
   const venue = asked && VENUE_IDS.includes(asked) ? asked : defaultVenueId();
   const { rides } = catalogFor(venue);
-  return NextResponse.json({ venue, venues: VENUE_IDS, rides, count: rides.length });
+  const data = { venue, venues: VENUE_IDS, rides, count: rides.length };
+  return jsonCached(data, { maxAge: 3600, sMaxAge: 86400, swr: 86400 });
 }

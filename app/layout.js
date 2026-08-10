@@ -37,6 +37,11 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preload" href="/venues/manifest.json" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/venues/kings-island.map.json" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/venues/kings-island.pois.json" as="fetch" crossOrigin="anonymous" />
+      </head>
       <body>{children}</body>
     </html>
   );

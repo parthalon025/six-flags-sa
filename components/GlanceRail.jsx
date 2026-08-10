@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import Icon from '@/components/Icon';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { navKeyOf as keyOfNav } from '@/lib/routing';
@@ -38,7 +38,7 @@ function nearestOf(pois, lat, lng, predicate) {
   return best;
 }
 
-export default function GlanceRail({
+function GlanceRail({
   me,
   members,
   meet,
@@ -375,3 +375,5 @@ export default function GlanceRail({
     </div>
   );
 }
+
+export default memo(GlanceRail);
