@@ -45,6 +45,11 @@
     "test:ux": "node test/app/ux.mjs",
     "test:grandma": "node test/app/grandma.mjs"
   },
+  "dependencies": {
+    "next": "^16.3.0",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
   "devDependencies": {
     "playwright": "^1.62.1"
   }
