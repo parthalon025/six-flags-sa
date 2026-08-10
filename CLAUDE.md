@@ -77,3 +77,35 @@ Each issue must include:
 5. **Suggested fix** — optional, if you have a concrete direction
 
 After filing, mention the issue number in your task summary and continue with your assigned work.
+
+## Builder ↔ app contract
+
+The venue builder (`scripts/build-venue.mjs` and its helpers in `scripts/lib/`, plus `scripts/attractions.mjs`, `scripts/trace-venue.mjs`, `scripts/venue-*.mjs`) is the only thing allowed to write `public/venues/*.map.json`, `public/venues/*.pois.json`, `public/venues/manifest.json` and the generated `lib/venueIndex.js`. Everything the app reads at runtime comes out of that pipeline.
+
+### Builder output is wrong → fix the builder, not the output
+
+If a generated file under `public/venues/` or `lib/venueIndex.js` is wrong — a missing ride, a wrong height, a bad tag mapping, a stale manifest entry — never hand-edit the generated JSON/JS to patch it. Fix it at the source instead:
+
+- A tag rule, inference or pipeline bug → fix the builder code (`scripts/build-venue.mjs`, `scripts/attractions.mjs`, `scripts/lib/*.mjs`).
+- A one-off correction for a single venue (height, area, alias, hand-added place, district tint, recipe/box/sources) → fix that venue's own input file under `data/venues/<id>.*.json` (`overrides.json`, `sources.json`, `recipe.json`, `ids.json`, `attractions.json`, `heights.json`).
+
+Then regenerate the output with the matching script — `npm run venues:build`, `venues:rebuild`, `venues:overrides`, `venues:reindex` or `venues:attractions` — instead of editing the regenerated file by hand. `data/venues/` is builder input and is meant to be hand-edited; `public/venues/*.json` and `lib/venueIndex.js` are builder output and are not.
+
+### Prove the fix works in the app
+
+A fix isn't done when the regenerated JSON looks right on its own. After rebuilding, confirm it in the app:
+
+- `npm run venues:report <id>` to sanity-check the rebuilt venue.
+- The relevant suite (`npm test`, `npm run test:functional`, `npm run test:visual`, etc.) and/or a manual check of the affected screen, so the fix is proven against the running app and not just the file on disk.
+
+### App change touches the builder's contract → validate against the builder
+
+Going the other way: if an app change reads a new or changed shape from `public/venues/*.json`, `manifest.json` or `lib/venueIndex.js` (a new field, a renamed key, a new required invariant), don't assume the builder already produces it. Before shipping:
+
+- Confirm the builder actually emits that shape for every shipped venue, or update the builder so it does.
+- Rerun `npm run venues:build`/`venues:rebuild` (or at minimum `npm run venues:report`) for the affected venues to check the contract holds across all of them, not just the one you tested with.
+- Update the builder section of `README.md` if the on-disk contract changed, so the next person building a venue sees the same shape the app now expects.
+
+### Ask before guessing
+
+If it's unclear whether a file is builder input (edit it) or builder output (regenerate it, don't hand-edit it) — or whether a fix belongs in the builder vs. the app — ask before proceeding rather than guessing.
