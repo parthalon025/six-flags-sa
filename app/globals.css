@@ -314,8 +314,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* --sheetH is the sheet's live height in pixels, set inline by page.js: the
    sheet no longer has four heights to name, so everything that rides above it
    reads the one number instead of keeping its own copy of the stops. The value
-   here is only what the first paint uses before React has measured anything. */
-.app { position: fixed; inset: 0; --sheetH: var(--peek); }
+   here is only what the first paint uses before React has measured anything.
+
+   --sheetFoot is the sheet's top edge measured from the viewport bottom: its
+   height, the float gap it sits on, and the home-indicator inset. Map chrome
+   used to read --sheetH alone and landed on the tab bar at the shut stop. */
+.app {
+  position: fixed; inset: 0;
+  --sheetH: var(--peek);
+  --sheetFoot: calc(8px + var(--bot) + var(--sheetH));
+}
+.app[data-sheet='half'] { --sheetFoot: calc(5px + var(--bot) + var(--sheetH)); }
+.app[data-sheet='full'] { --sheetFoot: calc(var(--bot) + var(--sheetH)); }
+.app[data-sheet='stowed'] {
+  --sheetH: 96px;
+  --sheetFoot: calc(96px + var(--bot));
+}
 
 /* ============================================================
    keyframes
@@ -406,7 +420,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 42%, transparent), transparent);
 }
 .mapScrim.bottom {
-  bottom: 0; height: calc(var(--sheetH) + 90px);
+  bottom: 0; height: calc(var(--sheetFoot) + 82px);
   background: linear-gradient(0deg, color-mix(in srgb, var(--bg) 38%, transparent), transparent);
   transition: height var(--t3) var(--ease);
 }
@@ -541,7 +555,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    an empty left edge for the scale bar and the toast. At the full stop the
    sheet has taken the screen, so the pad gets out of the way. */
 .zoomPad {
-  position: absolute; right: 12px; bottom: calc(var(--sheetH) + 142px); z-index: 5;
+  position: absolute; right: 12px; bottom: calc(var(--sheetFoot) + 142px); z-index: 5;
   display: flex; flex-direction: column;
   border-radius: var(--r5); overflow: hidden;
   background: var(--glassTint); border: none;
@@ -674,7 +688,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .fabs {
   position: absolute; right: 12px; z-index: 38; display: flex; flex-direction: column; gap: 10px;
-  bottom: calc(var(--sheetH) + 16px);
+  bottom: calc(var(--sheetFoot) + 16px);
   transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
               transform var(--t3) var(--ease);
 }
@@ -1290,7 +1304,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
      a narrow phone spans both and covers the numbers someone is trying to read. */
   right: 68px;
   left: auto;
-  bottom: min(calc(var(--sheetH) + 116px + var(--bot)), calc(100% - 180px));
+  bottom: min(calc(var(--sheetFoot) + 116px), calc(100% - 180px));
   background: var(--glassTintDeep); color: var(--label);
   border: none;
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
@@ -2056,7 +2070,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 }
 
 .mapFurniture {
-  position: absolute; left: 12px; bottom: calc(var(--sheetH) + 22px); z-index: 6;
+  position: absolute; left: 12px; bottom: calc(var(--sheetFoot) + 22px); z-index: 6;
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
   pointer-events: none; max-width: min(300px, calc(100% - 24px));
   transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
@@ -2068,8 +2082,6 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .app[data-crowded] .mapFurniture {
   display: none;
 }
-.app[data-sheet='stowed'] { --sheetH: 96px; }
-
 .northRose {
   width: 34px; height: 34px; flex: none; padding: 2px; border-radius: 50%;
   background: var(--glassTint); border: none;
