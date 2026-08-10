@@ -54,5 +54,11 @@
     "items": [
       "Universal Venue Builder: MIT agents, adapters, entrance UX"
     ]
+  },
+  "1.1.9": {
+    "title": "What's new",
+    "items": [
+      "Add builder/app output contract rule"
+    ]
   }
 }
