@@ -1,30 +1,22 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
-import CompassTape from '@/components/CompassTape';
-import PartyPanel from '@/components/PartyPanel';
 import GlanceRail from '@/components/GlanceRail';
-import HeightPanel from '@/components/HeightPanel';
-import PlaceList from '@/components/PlaceList';
-import SettingsPanel from '@/components/SettingsPanel';
-import Diagnostics from '@/components/Diagnostics';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
-import RoutePreview from '@/components/RoutePreview';
-import IntelligencePanel, { addPlaceToPlan } from '@/components/IntelligencePanel';
-import DirectionsPanel from '@/components/DirectionsPanel';
+import WeatherBanner from '@/components/WeatherBanner';
+import UpdateSplash from '@/components/UpdateSplash';
 import useSheetDrag from '@/components/useSheetDrag';
 import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
-import WeatherBanner from '@/components/WeatherBanner';
 import useAppUpdate from '@/components/useAppUpdate';
-import UpdateSplash from '@/components/UpdateSplash';
 import { markReleaseNotesSeen, pendingReleaseNotes } from '@/lib/releaseNotes';
 import {
   SHEET_GAP,
@@ -38,18 +30,7 @@ import {
 } from '@/lib/sheet';
 import { CATEGORIES, eligibility, hasHeights, isRideable } from '@/lib/park';
 import { statusSummary } from '@/lib/rideStatus';
-import { createPartyRuntime, takePendingInvite } from '@/lib/partyRuntime';
-import {
-  buildRouteGraph,
-  findRoute,
-  findRoutes,
-  navKeyOf,
-  routeProgress,
-  splitRouteAt,
-  OFF_ROUTE_M,
-} from '@/lib/routing';
 import { profilesForCoverage, profileOpts } from '@/lib/routingProfiles';
-import { pickReunification } from '@/lib/reunification';
 import {
   bootVenue,
   confirmVenue,
@@ -65,6 +46,16 @@ import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
+
+const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
+const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
+const HeightPanel = dynamic(() => import('@/components/HeightPanel'), { ssr: false });
+const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
+const Diagnostics = dynamic(() => import('@/components/Diagnostics'), { ssr: false });
+const DirectionsPanel = dynamic(() => import('@/components/DirectionsPanel'), { ssr: false });
+const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: false });
+const IntelligencePanel = dynamic(() => import('@/components/IntelligencePanel'), { ssr: false });
+const CompassTape = dynamic(() => import('@/components/CompassTape'), { ssr: false });
 
 const PALETTE = ['#30D158', '#40C8E0', '#BF5AF2', '#FF375F', '#5E5CE6', '#AC8E68', '#FFD60A', '#FF9F0A'];
 const colourFor = (id) => {
@@ -159,6 +150,17 @@ const GATE_TICK_MS = 4000;
  * every GPS jitter makes the line twitch and the instruction flicker.
  */
 const REROUTE_M = 12;
+
+/** How far off the line counts as off-route — kept local so render does not pull in routing. */
+const OFF_ROUTE_M = 32;
+
+/** Stable identity for a walk target — local copy of routing.navKeyOf. */
+const navKeyOf = (nav) => {
+  if (!nav) return null;
+  if (nav.kind === 'member') return `member:${nav.id}`;
+  if (nav.kind === 'meet') return 'meet';
+  return `poi:${nav.label}`;
+};
 
 export default function Page() {
   const geo = useGeolocation();
@@ -316,6 +318,7 @@ export default function Page() {
   const tabRef = useRef('explore');
   // The tab ids in bar order, for the gestures that step along it.
   const tabsRef = useRef(TAB_ORDER);
+  const appRef = useRef(null);
   useEffect(() => {
     tabRef.current = tab;
   }, [tab]);
@@ -441,6 +444,12 @@ export default function Page() {
   // Also in state, because the diagnostics panel is a render-time consumer and
   // a ref assigned inside an effect never triggers the render that reads it.
   const [runtimeApi, setRuntimeApi] = useState(null);
+
+  const routingRef = useRef(null);
+  const getRouting = useCallback(async () => {
+    if (!routingRef.current) routingRef.current = await import('@/lib/routing');
+    return routingRef.current;
+  }, []);
 
   /*
    * Live status: what the sky is doing, and what the party has walked past.
@@ -647,20 +656,25 @@ export default function Page() {
   // and whichever half of the protocol this device is running; everything below
   // reads its snapshot and calls its verbs.
   useEffect(() => {
-    const rt = createPartyRuntime({ onState: setParty, onToast: showToast });
-    runtime.current = rt;
-    setRuntimeApi(rt);
-    const memberName = identityRef.current?.name || 'Guest';
-    // A link opened at /join parks its invite here rather than connecting on a
-    // route it is about to navigate away from.
-    const invite = takePendingInvite();
-    Promise.resolve(invite ? rt.joinParty(invite, { memberName }) : rt.resume({ memberName })).catch(
-      (err) => showToast(err?.message || 'Could not open that invite.'),
-    );
+    let destroyed = false;
+    let rt = null;
+    (async () => {
+      const partyRuntime = await import('@/lib/partyRuntime');
+      if (destroyed) return;
+      rt = partyRuntime.createPartyRuntime({ onState: setParty, onToast: showToast });
+      runtime.current = rt;
+      setRuntimeApi(rt);
+      const memberName = identityRef.current?.name || 'Guest';
+      const invite = partyRuntime.takePendingInvite();
+      Promise.resolve(invite ? rt.joinParty(invite, { memberName }) : rt.resume({ memberName })).catch(
+        (err) => showToast(err?.message || 'Could not open that invite.'),
+      );
+    })();
     return () => {
+      destroyed = true;
       runtime.current = null;
       setRuntimeApi(null);
-      rt.destroy();
+      rt?.destroy();
     };
   }, [showToast]);
 
@@ -1078,13 +1092,14 @@ export default function Page() {
     }
   }, [active, identity?.name, showToast, pushNote]);
 
-  const suggestReunification = useCallback(() => {
+  const suggestReunification = useCallback(async () => {
     if (!graph || !position) {
       showToast('Need a map and your position first');
       return;
     }
     setReunifyBusy(true);
     try {
+      const { pickReunification } = await import('@/lib/reunification');
       const located = roster.filter((m) => Number.isFinite(m.lat) && Number.isFinite(m.lng));
       const candidate = pickReunification(
         graph,
@@ -1193,17 +1208,18 @@ export default function Page() {
   useEffect(() => {
     if (!mapData) return undefined;
     let live = true;
-    const build = () => {
-      if (live) setGraph(buildRouteGraph(mapData));
+    const build = async () => {
+      const routing = await getRouting();
+      if (live) setGraph(routing.buildRouteGraphCached(venue?.id, mapData, POIS));
     };
     const idle = typeof window !== 'undefined' ? window.requestIdleCallback : null;
-    const handle = idle ? idle(build, { timeout: 3000 }) : setTimeout(build, 400);
+    const handle = idle ? idle(() => { build(); }, { timeout: 3000 }) : setTimeout(build, 400);
     return () => {
       live = false;
       if (idle) window.cancelIdleCallback?.(handle);
       else clearTimeout(handle);
     };
-  }, [mapData]);
+  }, [mapData, venue?.id, POIS, getRouting]);
 
   // A destination is held by reference, not by coordinates: a party member
   // walks around while you are walking to them, and a meet-up can be moved or
@@ -1342,12 +1358,10 @@ export default function Page() {
     if (!navTarget || !position || navPhase === 'idle') {
       setRoutes([]);
       lastRoute.current = null;
-      return;
+      return undefined;
     }
     const prev = lastRoute.current;
     const key = navKeyOf(navTarget);
-    // Recompute on a new destination, on the graph finally landing, on setting
-    // off, or once either end has moved far enough that the old line is a lie.
     const stale =
       !prev ||
       prev.key !== key ||
@@ -1355,46 +1369,44 @@ export default function Page() {
       prev.phase !== navPhase ||
       distance(prev.from.lat, prev.from.lng, position.lat, position.lng) > REROUTE_M ||
       distance(prev.to.lat, prev.to.lng, navTarget.lat, navTarget.lng) > REROUTE_M;
-    if (!stale) return;
-    // A recompute that happens while the walker is off the line is a reroute,
-    // not a refresh — worth saying so, briefly and only when it is true.
-    if (navPhase === 'go' && prev && progressRef.current?.offset > OFF_ROUTE_M) {
-      setRerouted(Date.now());
-    }
-    lastRoute.current = {
-      key,
-      graph,
-      phase: navPhase,
-      from: { lat: position.lat, lng: position.lng },
-      to: { lat: navTarget.lat, lng: navTarget.lng },
+    if (!stale) return undefined;
+
+    let cancelled = false;
+    (async () => {
+      const routing = await getRouting();
+      if (cancelled) return;
+      if (navPhase === 'go' && prev && progressRef.current?.offset > OFF_ROUTE_M) {
+        setRerouted(Date.now());
+      }
+      lastRoute.current = {
+        key,
+        graph,
+        phase: navPhase,
+        from: { lat: position.lat, lng: position.lng },
+        to: { lat: navTarget.lat, lng: navTarget.lng },
+      };
+      const opts = {
+        landmarks: POIS,
+        destination: navTarget.label,
+        areas: mapData?.landAnchors,
+        ...(graph && routeProfile !== 'default'
+          ? profileOpts(routeProfile, graph)
+          : {}),
+      };
+      if (navPhase === 'preview') {
+        setRoutes(routing.findRoutes(graph, position, navTarget, opts));
+        setPick(0);
+      } else {
+        const chosen = routesRef.current[pickRef.current];
+        const penalty = chosen?.avoid ?? null;
+        setRoutes([routing.findRoute(graph, position, navTarget, { ...opts, penalty })]);
+        setPick(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
     };
-    const opts = {
-      landmarks: POIS,
-      destination: navTarget.label,
-      areas: mapData?.landAnchors,
-      ...(graph && routeProfile !== 'default'
-        ? profileOpts(routeProfile, graph)
-        : {}),
-    };
-    // Alternatives are a choice you make once, before setting off. Recomputing
-    // them on every step of the walk would keep changing the answer under a
-    // person who has already decided.
-    if (navPhase === 'preview') {
-      setRoutes(findRoutes(graph, position, navTarget, opts));
-      setPick(0);
-    } else {
-      const chosen = routesRef.current[pickRef.current];
-      // Rerouting keeps you on the road you chose where it still makes sense:
-      // the penalty pass is what made the alternative different in the first
-      // place, so replaying it is what keeps a reroute from silently moving
-      // you onto the fastest line you already turned down.
-      const penalty = chosen?.avoid ?? null;
-      setRoutes([findRoute(graph, position, navTarget, { ...opts, penalty })]);
-      setPick(0);
-    }
-    // POIS is in here because the landmarks a turn is named after belong to the
-    // loaded venue now, not to a module constant.
-  }, [navTarget, position, graph, navPhase, mapData, POIS, routeProfile, pick]);
+  }, [navTarget, position, graph, navPhase, mapData, POIS, routeProfile, pick, getRouting]);
 
   const routes = routesList;
   const route = routesList[pick] ?? routesList[0] ?? null;
@@ -1410,10 +1422,10 @@ export default function Page() {
     return () => clearTimeout(id);
   }, [rerouted]);
 
-  const progress = useMemo(
-    () => (route && position ? routeProgress(route, position.lat, position.lng) : null),
-    [route, position],
-  );
+  const progress = useMemo(() => {
+    if (!route || !position || !routingRef.current) return null;
+    return routingRef.current.routeProgress(route, position.lat, position.lng);
+  }, [route, position, graph]);
 
   useEffect(() => {
     progressRef.current = progress;
@@ -1440,10 +1452,10 @@ export default function Page() {
     return { lat: progress.snapped[0], lng: progress.snapped[1], course: progress.course };
   }, [walking, progress]);
 
-  const { done: routeDone, ahead: routeAhead } = useMemo(
-    () => (walking ? splitRouteAt(route, progress) : { done: [], ahead: route?.points ?? [] }),
-    [walking, route, progress],
-  );
+  const { done: routeDone, ahead: routeAhead } = useMemo(() => {
+    if (!walking || !routingRef.current) return { done: [], ahead: route?.points ?? [] };
+    return routingRef.current.splitRouteAt(route, progress);
+  }, [walking, route, progress, graph]);
 
   // The routes not taken, drawn behind the chosen one while you are choosing.
   const shownAlternatives = useMemo(
@@ -1468,43 +1480,54 @@ export default function Page() {
     stopNav();
   }, [walking, progress?.arrived, navTarget, showToast, stopNav]);
 
-  const focusOn = (target) => {
-    setFollow(false);
-    setFocusPoint({ lat: target.lat, lng: target.lng });
-    shrinkSheet(stops.peek);
-  };
+  const focusOn = useCallback(
+    (target) => {
+      setFollow(false);
+      setFocusPoint({ lat: target.lat, lng: target.lng });
+      shrinkSheet(stops.peek);
+    },
+    [shrinkSheet, stops.peek],
+  );
 
-  const handleMapTap = (lat, lng) => {
-    if (armMeet) {
-      setMeetPoint(lat, lng);
-      return;
-    }
-    if (geo.status === 'manual' || geo.status === 'idle') {
-      geo.setManual(lat, lng);
-      return;
-    }
-    /* Tapping the map away from anything is how every map on a phone says
-       "never mind" — and until now this one had no way of saying it at all, so
-       a place you tapped once stayed on the rail until you tapped another. */
-    if (selected) setSelected(null);
-  };
+  const handleMapTap = useCallback(
+    (lat, lng) => {
+      if (armMeet) {
+        setMeetPoint(lat, lng);
+        return;
+      }
+      if (geo.status === 'manual' || geo.status === 'idle') {
+        geo.setManual(lat, lng);
+        return;
+      }
+      /* Tapping the map away from anything is how every map on a phone says
+         "never mind" — and until now this one had no way of saying it at all, so
+         a place you tapped once stayed on the rail until you tapped another. */
+      if (selected) setSelected(null);
+    },
+    [armMeet, setMeetPoint, geo.status, geo.setManual, selected],
+  );
 
-  const handleSelect = (poi) => {
-    // The same pin twice is a toggle. Nobody taps the thing that is already
-    // open expecting it to open harder.
-    if (selected && selected.lat === poi.lat && selected.lng === poi.lng) {
-      setSelected(null);
-      return;
-    }
-    setSelected(poi);
-    setFollow(false);
-    setFocusPoint({ lat: poi.lat, lng: poi.lng });
-    if (position) {
-      const d = distance(position.lat, position.lng, poi.lat, poi.lng);
-      const b = bearing(position.lat, position.lng, poi.lat, poi.lng);
-      showToast(`${poi.n} · ${formatDistance(d)} ${cardinal(b)} · ${formatWalk(d)} walk`);
-    }
-  };
+  const handleSelect = useCallback(
+    (poi) => {
+      // The same pin twice is a toggle. Nobody taps the thing that is already
+      // open expecting it to open harder.
+      if (selected && selected.lat === poi.lat && selected.lng === poi.lng) {
+        setSelected(null);
+        return;
+      }
+      setSelected(poi);
+      setFollow(false);
+      setFocusPoint({ lat: poi.lat, lng: poi.lng });
+      if (position) {
+        const d = distance(position.lat, position.lng, poi.lat, poi.lng);
+        const b = bearing(position.lat, position.lng, poi.lat, poi.lng);
+        showToast(`${poi.n} · ${formatDistance(d)} ${cardinal(b)} · ${formatWalk(d)} walk`);
+      }
+    },
+    [selected, position, showToast],
+  );
+
+  const onUserPan = useCallback(() => setFollow(false), []);
 
   const headerLine = () => {
     if (venueStatus === 'loading') return 'Loading the map…';
@@ -1600,16 +1623,13 @@ export default function Page() {
   // during a walk has done.
   const stowed = previewing || (walking && sheetPx <= stops.peek);
 
-  const drag = useSheetDrag({ stops, height: sheetPx, onHeight: setSheetPx });
+  const drag = useSheetDrag({ stops, height: sheetPx, onHeight: setSheetPx, rootRef: appRef });
 
-  /* The height under the finger while there is one, and the resting height the
-     rest of the time. Everything the visitor can see is worked out from this
-     one number, so the content ladder runs *during* the drag: the list, the
-     venue line and the cards arrive and leave under the thumb that is paying
-     for them, rather than at the moment it lifts. */
-  const livePx = drag.height ?? sheetPx;
-  const form = sheetForm(livePx, stops);
-  const plan = sheetPlan(livePx);
+  /* Resting height drives the content ladder; --sheetH on the root is updated
+     directly during a drag so the map chrome rides the finger without a full
+     page re-render every pointermove. */
+  const form = sheetForm(sheetPx, stops);
+  const plan = sheetPlan(sheetPx);
 
   // `atMap` marks the screen that is read over the top of the map rather than
   // instead of it — the one the glance stop is designed around.
@@ -1628,14 +1648,15 @@ export default function Page() {
     // and the scale bar ride with it — under the finger too, which is why the
     // dragging flag is published alongside it to take their easing off.
     <main
+      ref={appRef}
       className="app"
       data-sheet={stowed ? 'stowed' : form}
       data-dragging={drag.dragging ? '1' : undefined}
       /* The map's own controls ride on --sheetH, so a tall enough sheet pushes
          them into the buttons in the top corners. They step aside instead. */
-      data-crowded={!stowed && sheetCrowdsMap(livePx, viewportH) ? '1' : undefined}
+      data-crowded={!stowed && sheetCrowdsMap(sheetPx, viewportH) ? '1' : undefined}
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
-      style={{ '--sheetH': `${stowed ? STOWED_PX : livePx}px` }}
+      style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       <ParkMap
         data={mapData}
@@ -1650,7 +1671,7 @@ export default function Page() {
         onMapTap={handleMapTap}
         armMeet={armMeet}
         follow={follow}
-        onUserPan={() => setFollow(false)}
+        onUserPan={onUserPan}
         heading={heading}
         rideEligibility={rideEligibility}
         visibleCategories={categories}
@@ -1850,7 +1871,7 @@ export default function Page() {
       {/* The height is stated rather than left to a class, because there are
           no longer four of them to have a class each: it is whatever the
           visitor pulled it to. */}
-      <section className={sheetClass} style={{ height: `${livePx}px` }}>
+      <section className={sheetClass} style={{ height: 'var(--sheetH)' }}>
         {/* A slider, because that is now what it is: the height is a value on a
             range rather than a choice between four, and the only way to say
             that to a screen reader — or to a keyboard, which has no finger to
@@ -2040,7 +2061,16 @@ export default function Page() {
                   // Reporting needs somewhere to send it. Outside a party the list
                   // still shows the forecast, minus the buttons.
                   onReport={party?.active ? reportRide : null}
-                  onAddToPlan={party?.active ? (p) => { addPlaceToPlan(p); showToast(`Added ${p.n} to plan`); } : null}
+                  onAddToPlan={
+                    party?.active
+                      ? (p) => {
+                          import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
+                            addPlaceToPlan(p);
+                            showToast(`Added ${p.n} to plan`);
+                          });
+                        }
+                      : null
+                  }
                   now={clock}
                 />
               </>

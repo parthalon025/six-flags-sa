@@ -25,7 +25,7 @@ import {
   textWidth,
 } from '@/lib/mapLabels';
 import { Glyph, PoiMarker } from './MapSymbols';
-import { useVenue } from '@/lib/venue/useVenue';
+import { useVenueSelector } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
@@ -75,6 +75,31 @@ function distToSegment(px, py, ax, ay, bx, by) {
 const LAND_FONT = 15;
 const LAND_TRACKING = 2.4; // .16em at 15px
 const POI_FONT = 9.5;
+
+/** Screen projection for a viewport snapshot — used by the declutter pass so
+ *  membership does not re-run on every pan frame. */
+function projectionFor(view, spin, cx, cy) {
+  const to = (x, y) => {
+    const u = (x - view.x) * view.scale;
+    const v = (view.y - y) * view.scale;
+    return [u * spin.cos - v * spin.sin + cx, u * spin.sin + v * spin.cos + cy];
+  };
+  const at = (lat, lng) => to(...project(lat, lng));
+  const screenDir = (ux, uy) => {
+    const u = ux;
+    const v = -uy;
+    return [u * spin.cos - v * spin.sin, u * spin.sin + v * spin.cos];
+  };
+  return { to, at, screenDir };
+}
+
+/** Label spots around a marker, in screen pixels. */
+const LABEL_SPOTS = (sx, sy, r, halfW, gap) => [
+  { x: sx, y: sy - gap, anchor: 'middle', bx: sx, by: sy - gap - 4 },
+  { x: sx, y: sy + gap + 10, anchor: 'middle', bx: sx, by: sy + gap + 6 },
+  { x: sx + gap, y: sy + 3.5, anchor: 'start', bx: sx + gap + halfW - 3, by: sy },
+  { x: sx - gap, y: sy + 3.5, anchor: 'end', bx: sx - gap - halfW + 3, by: sy },
+];
 
 /* Screen-space paths for overlays that move every frame live in
    pathFromLatLngs below. Venue geometry uses {@link worldPathFromRing}. */
@@ -153,7 +178,7 @@ function ParkMap({
 }) {
   const palette = paletteFor(theme);
   // The venue's own district tints, where it has hand-picked any.
-  const { venue } = useVenue();
+  const venue = useVenueSelector((s) => s.venue);
   // What this venue has any of at all, so the key can offer switches for those
   // and only those. Cheap: it is one pass over a list of a few hundred.
   const presentCategories = useMemo(() => new Set((pois || []).map((p) => p.c)), [pois]);
@@ -241,8 +266,7 @@ function ParkMap({
         && Math.abs(to.scale - from.scale) < 0.001;
       if (still) return;
       if (prefersStill() || duration <= 0) {
-        viewRef.current = to;
-        setView(to);
+        pushView(to);
         return;
       }
       const t0 = performance.now();
@@ -254,13 +278,12 @@ function ParkMap({
           y: from.y + (to.y - from.y) * k,
           scale: from.scale * (to.scale / from.scale) ** k,
         };
-        viewRef.current = next;
-        setView(next);
+        pushView(next);
         raf.current = p < 1 ? requestAnimationFrame(step) : 0;
       };
       raf.current = requestAnimationFrame(step);
     },
-    [stopAnim],
+    [stopAnim, pushView],
   );
 
   // A new venue is a new part of the world: jump to it rather than leaving the
@@ -468,11 +491,11 @@ function ParkMap({
       // to coast along the axis the thumb threw it, not along north.
       const u = dx * spin.cos + dy * spin.sin;
       const w = -dx * spin.sin + dy * spin.cos;
-      setView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + w / s.scale }));
+      pushView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + w / s.scale }));
       raf.current = requestAnimationFrame(step);
     };
     raf.current = requestAnimationFrame(step);
-  }, [spin]);
+  }, [spin, pushView]);
 
   const pickAt = (px, py) => {
     let best = null;
@@ -679,12 +702,14 @@ function ParkMap({
 
      Membership decisions use a quantized zoom so a continuous pinch does not
      re-bid every frame; marker/label positions still track the live view. */
-  const plan = useMemo(() => {
+  const layoutPlan = useMemo(() => {
     const grid = new Declutter();
-    const lands = [];
-    const markers = [];
-    const labels = [];
-    if (!data) return { lands, markers, labels, nextShown: new Set() };
+    const landWinners = [];
+    const markerItems = [];
+    const nextShown = new Set();
+    if (!data) return { landWinners, markerItems, nextShown };
+
+    const { to, at, screenDir } = projectionFor(viewRef.current, spin, cx, cy);
 
     // `bottomInset` is how much of the map the sheet is standing on right now:
     // it grows when the sheet is opened and shrinks to the nav bar while
@@ -698,14 +723,6 @@ function ParkMap({
       { x0: -30, x1: 180, y0: floor - 106, y1: floor + 4 }, // key, compass, scale
     ].forEach((box) => grid.occupy(box));
 
-    // A name half over the edge of the phone is worse than no name: it reads
-    // as a different, shorter word.
-    const wholly = (box) => box.x0 >= 2 && box.y0 >= 2 && box.x1 <= size.w - 2 && box.y1 <= floor;
-
-    /* District names go down first, but they have to survive each other too:
-       they are gathered, ordered by how much of the screen each one actually
-       occupies, and only then placed. Otherwise PLANET SNOOPY writes itself
-       straight through INTERNATIONAL STREET and neither can be read. */
     if (showLands) {
       const candidates = [];
       landAxes.forEach(({ name, axis }) => {
@@ -719,14 +736,10 @@ function ParkMap({
           y0: Math.min(...corners.map((c) => c[1])),
           y1: Math.max(...corners.map((c) => c[1])),
         };
-        // Keep the name over its own district and inside the usable frame; one
-        // that is only visible behind the sheet does not get a name at all.
         const room = intersect(box, frame);
         if (!room) return;
 
         const width = textWidth(name, LAND_FONT, LAND_TRACKING);
-        // The text is centred on the arc, so the arc only needs to be a little
-        // longer than the words — and a longer one would only bow harder.
         const span = width * 1.25;
         let [dx, dy] = screenDir(axis.ux, axis.uy);
         const mag = Math.hypot(dx, dy) || 1;
@@ -736,9 +749,6 @@ function ParkMap({
           dx = -dx;
           dy = -dy;
         }
-        // Clamp the whole run, not its midpoint: a name centred inside the
-        // frame still hangs half its length over the edge, which is how
-        // RIVERTOWN used to come out as "OWN".
         const insetX = Math.abs(dx * width) / 2 + 4;
         const insetY = Math.abs(dy * width) / 2 + 8;
         const shrink = (rect) => ({
@@ -756,23 +766,16 @@ function ParkMap({
         if (holds(roomFits)) {
           [lx, ly] = clampInto(ax, ay, roomFits);
         } else if (holds(frameFits)) {
-          // The district is mostly off screen. Stay as near to it as the screen
-          // allows rather than printing half a word at the edge.
           const [nx, ny] = clampInto(ax, ay, room);
           [lx, ly] = clampInto(nx, ny, frameFits);
         } else {
-          return; // longer than the screen along its own axis: no good place
+          return;
         }
 
-        /* Claim the run as a chain of small boxes rather than one bounding
-           box. A near-vertical name is 15 px of ink through 220 px of map, and
-           reserving the rectangle around it used to blank out whatever else
-           lived in that column — which is how Diamondback lost its marker to
-           the words INTERNATIONAL STREET. */
         const steps = Math.max(2, Math.round(width / 30));
         const step = width / steps;
         const along = step / 2;
-        const across = 8; // half the cap height of the district face, plus a hair
+        const across = 8;
         const boxes = [];
         for (let i = 0; i < steps; i += 1) {
           const t = -width / 2 + (i + 0.5) * step;
@@ -787,8 +790,10 @@ function ParkMap({
         }
         candidates.push({
           name,
+          anchor,
+          axis,
+          span,
           boxes,
-          d: labelArc(lx, ly, dx, dy, span),
           area: (room.x1 - room.x0) * (room.y1 - room.y0),
         });
       });
@@ -797,11 +802,15 @@ function ParkMap({
       candidates.forEach((c) => {
         if (c.boxes.some((b) => !grid.free(b))) return;
         c.boxes.forEach((b) => grid.occupy(b));
-        lands.push({ name: c.name, d: c.d });
+        landWinners.push({
+          name: c.name,
+          anchor: c.anchor,
+          axis: c.axis,
+          span: c.span,
+        });
       });
     }
 
-    // You, your party and the meet-up own their pixels outright.
     const reserve = (lat, lng, half) => {
       if (lat == null || lng == null) return;
       const [sx, sy] = at(lat, lng);
@@ -822,73 +831,52 @@ function ParkMap({
       const barred = state === 'no' || state === 'toobig';
       const isSel = selectedName === p.n;
       const isNav = routeTargetName === p.n;
-      /* A ride the party cannot ride today loses ties to one it can, so a
-         height filter clears space for what is actually on the table. A tie,
-         though — not a demotion. At 1.4 this pushed a ruled-out coaster below
-         every flat ride and landmark on the map, so in a crowded midway the
-         one thing a parent most needs to see is out was the first thing
-         dropped, which is the opposite of what setting a height is for. A
-         quarter of a rank keeps it behind the coaster next to it and ahead of
-         the snack bar. */
       const rank = sym.rank + (barred ? 0.25 : 0);
       const priority = isSel ? -1000 : isNav ? -900 : rank * 1000 + i;
       ranked.push({ p, sx, sy, sym, state, isSel, isNav, priority });
     });
     ranked.sort((a, b) => a.priority - b.priority);
 
-    const nextShown = new Set();
-    /* A place takes its marker and its name in one go, in importance order.
-       Placing every marker first and then every label would let a snack bar's
-       dot outrank Diamondback's name — which is exactly backwards.
-
-       Four spots to try before giving up on a name: above is the habit of
-       every printed map, and the other three are what rescues a coaster whose
-       usual spot is already spoken for. */
     ranked.forEach((item) => {
       const r = sizeAtZoom(item.sym.r, zPlan);
       const pinned = item.isSel || item.isNav;
       if (!grid.claim(boxAround(item.sx, item.sy, r + 1.5, r + 1.5), pinned)) return;
-      markers.push({ ...item, r });
 
-      // The selected place gets a callout with its name in it, so a label
-      // underneath would only say the same thing again.
       const wasShown = shownLabels.has(item.p.n);
       const wanted =
         (pinned && !item.isSel) || labelWantedAtZoom(item.sym.rank, zPlan, wasShown);
-      if (!wanted || item.isSel) return;
-      const { sx, sy, p } = item;
-      const halfW = textWidth(p.n, POI_FONT) / 2 + 3;
-      const gap = r + 5;
-      const spots = [
-        { x: sx, y: sy - gap, anchor: 'middle', bx: sx, by: sy - gap - 4 },
-        { x: sx, y: sy + gap + 10, anchor: 'middle', bx: sx, by: sy + gap + 6 },
-        { x: sx + gap, y: sy + 3.5, anchor: 'start', bx: sx + gap + halfW - 3, by: sy },
-        { x: sx - gap, y: sy + 3.5, anchor: 'end', bx: sx - gap - halfW + 3, by: sy },
-      ];
-      for (const spot of spots) {
-        const box = boxAround(spot.bx, spot.by, halfW, 7);
-        if (!wholly(box)) continue;
-        if (!grid.claim(box, false)) continue;
-        labels.push({
-          key: p.n,
-          text: p.n,
-          x: spot.x,
-          y: spot.y,
-          anchor: spot.anchor,
-          faded: item.state === 'no' || item.state === 'toobig',
-        });
-        nextShown.add(p.n);
-        return;
+      let labelSpot = -1;
+      if (wanted && !item.isSel) {
+        const halfW = textWidth(item.p.n, POI_FONT) / 2 + 3;
+        const gap = r + 5;
+        const spots = LABEL_SPOTS(item.sx, item.sy, r, halfW, gap);
+        for (let si = 0; si < spots.length; si += 1) {
+          const spot = spots[si];
+          const box = boxAround(spot.bx, spot.by, halfW, 7);
+          if (box.x0 < 2 || box.y0 < 2 || box.x1 > size.w - 2 || box.y1 > floor - 2) continue;
+          if (!grid.claim(box, false)) continue;
+          labelSpot = si;
+          nextShown.add(item.p.n);
+          break;
+        }
       }
+
+      markerItems.push({
+        p: item.p,
+        sym: item.sym,
+        state: item.state,
+        isSel: item.isSel,
+        isNav: item.isNav,
+        r,
+        labelSpot,
+        faded: item.state === 'no' || item.state === 'toobig',
+      });
     });
 
-    return { lands, markers, labels, nextShown };
+    return { landWinners, markerItems, nextShown };
   }, [
     data,
     pois,
-    at,
-    to,
-    screenDir,
     size.w,
     size.h,
     bottomInset,
@@ -904,7 +892,90 @@ function ParkMap({
     me,
     puck,
     shownLabels,
+    spin,
+    cx,
+    cy,
   ]);
+
+  const plan = useMemo(() => {
+    const lands = [];
+    const markers = [];
+    const labels = [];
+    const { landWinners, markerItems, nextShown } = layoutPlan;
+
+    const floor = size.h - bottomInset;
+    const frame = { x0: 58, x1: size.w - 58, y0: 104, y1: floor - 6 };
+    const wholly = (box) => box.x0 >= 2 && box.y0 >= 2 && box.x1 <= size.w - 2 && box.y1 <= floor;
+
+    landWinners.forEach(({ name, anchor, axis, span }) => {
+      const { x0, x1, y0, y1 } = axis.bounds;
+      const corners = [to(x0, y0), to(x1, y0), to(x1, y1), to(x0, y1)];
+      const box = {
+        x0: Math.min(...corners.map((c) => c[0])),
+        x1: Math.max(...corners.map((c) => c[0])),
+        y0: Math.min(...corners.map((c) => c[1])),
+        y1: Math.max(...corners.map((c) => c[1])),
+      };
+      const room = intersect(box, frame);
+      if (!room) return;
+
+      const width = textWidth(name, LAND_FONT, LAND_TRACKING);
+      let [dx, dy] = screenDir(axis.ux, axis.uy);
+      const mag = Math.hypot(dx, dy) || 1;
+      dx /= mag;
+      dy /= mag;
+      if (dx < 0) {
+        dx = -dx;
+        dy = -dy;
+      }
+      const insetX = Math.abs(dx * width) / 2 + 4;
+      const insetY = Math.abs(dy * width) / 2 + 8;
+      const shrink = (rect) => ({
+        x0: rect.x0 + insetX,
+        x1: rect.x1 - insetX,
+        y0: rect.y0 + insetY,
+        y1: rect.y1 - insetY,
+      });
+      const roomFits = shrink(room);
+      const frameFits = shrink(frame);
+      const holds = (r) => r.x0 <= r.x1 && r.y0 <= r.y1;
+      const [ax, ay] = at(anchor[0], anchor[1]);
+      let lx;
+      let ly;
+      if (holds(roomFits)) {
+        [lx, ly] = clampInto(ax, ay, roomFits);
+      } else if (holds(frameFits)) {
+        const [nx, ny] = clampInto(ax, ay, room);
+        [lx, ly] = clampInto(nx, ny, frameFits);
+      } else {
+        return;
+      }
+      lands.push({ name, d: labelArc(lx, ly, dx, dy, span) });
+    });
+
+    markerItems.forEach((item) => {
+      const [sx, sy] = at(item.p.lat, item.p.lng);
+      if (sx < -60 || sy < -60 || sx > size.w + 60 || sy > size.h + 60) return;
+      markers.push({ ...item, sx, sy });
+
+      if (item.labelSpot < 0) return;
+      const halfW = textWidth(item.p.n, POI_FONT) / 2 + 3;
+      const gap = item.r + 5;
+      const spot = LABEL_SPOTS(sx, sy, item.r, halfW, gap)[item.labelSpot];
+      const box = boxAround(spot.bx, spot.by, halfW, 7);
+      if (!wholly(box)) return;
+      labels.push({
+        key: item.p.n,
+        text: item.p.n,
+        x: spot.x,
+        y: spot.y,
+        anchor: spot.anchor,
+        faded: item.faded,
+      });
+    });
+
+    return { lands, markers, labels, nextShown };
+  }, [layoutPlan, at, to, screenDir, size.w, size.h, bottomInset]);
 
   planRef.current = plan;
 

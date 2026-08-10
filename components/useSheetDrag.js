@@ -25,14 +25,26 @@ import { settleSheet } from '@/lib/sheet';
  *                later needs no change here.
  * @param height  the height the sheet is resting at now, in pixels
  * @param onHeight called with the height to settle at, in pixels
+ * @param rootRef when set, --sheetH on this element is updated during the drag
+ *                instead of calling setState every pointermove
  */
-export default function useSheetDrag({ stops, height, onHeight }) {
+export default function useSheetDrag({ stops, height, onHeight, rootRef = null }) {
   const [live, setLive] = useState(null);
+  const [dragging, setDragging] = useState(false);
   const from = useRef(null); // {y, h} at pointerdown, null when not pressing
   const last = useRef({ y: 0, t: 0, v: 0 }); // for the release velocity
   const moved = useRef(false);
   const dragged = useRef(false); // a drag just ended — swallow its click
   const at = useRef(null); // the height in flight, without a render to read it
+  const cssDrag = Boolean(rootRef);
+
+  const publishHeight = useCallback(
+    (px) => {
+      if (cssDrag) rootRef.current?.style.setProperty('--sheetH', `${px}px`);
+      else setLive(px);
+    },
+    [cssDrag, rootRef],
+  );
 
   const onPointerDown = useCallback(
     (e) => {
@@ -61,6 +73,7 @@ export default function useSheetDrag({ stops, height, onHeight }) {
       if (!moved.current) {
         if (Math.abs(dy) < 5) return;
         moved.current = true;
+        if (cssDrag) setDragging(true);
       }
       const dt = Math.max(1, e.timeStamp - last.current.t);
       last.current = {
@@ -74,9 +87,9 @@ export default function useSheetDrag({ stops, height, onHeight }) {
         Math.min(Math.max(...heights), from.current.h + dy),
       );
       at.current = next;
-      setLive(next);
+      publishHeight(next);
     },
-    [stops],
+    [stops, cssDrag, publishHeight],
   );
 
   const end = useCallback(
@@ -88,13 +101,17 @@ export default function useSheetDrag({ stops, height, onHeight }) {
       from.current = null;
       moved.current = false;
       at.current = null;
-      setLive(null);
+      if (cssDrag) {
+        setDragging(false);
+      } else {
+        setLive(null);
+      }
       e.currentTarget.releasePointerCapture?.(e.pointerId);
       if (!was) return; // a tap — the caller's onClick still owns it
       dragged.current = true;
       onHeight(settleSheet(px, stops, v));
     },
-    [onHeight, stops],
+    [onHeight, stops, cssDrag],
   );
 
   /** True once, immediately after a drag: the click it produced is not a tap. */
@@ -105,8 +122,8 @@ export default function useSheetDrag({ stops, height, onHeight }) {
   }, []);
 
   return {
-    height: live,
-    dragging: live != null,
+    height: cssDrag ? null : live,
+    dragging: cssDrag ? dragging : live != null,
     swallowClick,
     handlers: {
       onPointerDown,

@@ -219,6 +219,17 @@ export default function useGeolocation() {
   }, [retune]);
 
   // Compass. iOS needs an explicit permission call from a gesture too.
+  const compassListening = useRef(false);
+  const onOriRef = useRef(null);
+
+  const disableCompass = useCallback(() => {
+    if (!compassListening.current || !onOriRef.current) return;
+    window.removeEventListener('deviceorientationabsolute', onOriRef.current, true);
+    window.removeEventListener('deviceorientation', onOriRef.current, true);
+    onOriRef.current = null;
+    compassListening.current = false;
+  }, []);
+
   const enableCompass = useCallback(async () => {
     const D = typeof window !== 'undefined' ? window.DeviceOrientationEvent : null;
     if (!D) return;
@@ -230,15 +241,20 @@ export default function useGeolocation() {
     } catch {
       return;
     }
+    disableCompass();
     const onOri = (e) => {
       let h = null;
       if (e.webkitCompassHeading != null) h = e.webkitCompassHeading;
       else if (e.alpha != null && e.absolute !== false) h = (360 - e.alpha) % 360;
       if (h != null && !Number.isNaN(h)) setHeading(h);
     };
+    onOriRef.current = onOri;
     window.addEventListener('deviceorientationabsolute', onOri, true);
     window.addEventListener('deviceorientation', onOri, true);
-  }, []);
+    compassListening.current = true;
+  }, [disableCompass]);
+
+  useEffect(() => () => disableCompass(), [disableCompass]);
 
   /**
    * "Is this fix worth the radio?" — the party layer asks, the policy answers,
@@ -261,6 +277,7 @@ export default function useGeolocation() {
     request,
     setManual,
     enableCompass,
+    disableCompass,
     shouldBroadcast,
   };
 }

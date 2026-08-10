@@ -21,13 +21,16 @@ export async function commandRoute({ partyId, memberId, kind, body = {} }) {
   if (!party) return notFound('No such party');
   if (!party.members[memberId]) return notFound('No such member');
 
-  // `reduce` may decide nothing changed and leave version alone; the write
-  // still happens because a no-op heartbeat has moved lastSeen.
-  const { state } = reduce(party, { kind, from: memberId, body }, Date.now());
-  try {
-    await writeParty(partyId, state);
-  } catch {
-    return serverError('Store unavailable');
+  // Bare heartbeats refresh lastSeen without ops or a version bump; everything
+  // else that changes state either emits ops or bumps version. `none()` returns
+  // the same object reference, so a reference check skips true no-ops only.
+  const { state, ops } = reduce(party, { kind, from: memberId, body }, Date.now());
+  if (state !== party || ops.length > 0) {
+    try {
+      await writeParty(partyId, state);
+    } catch {
+      return serverError('Store unavailable');
+    }
   }
   return json({ version: state.version });
 }
