@@ -291,10 +291,11 @@ Keep first-viewport / brand rules of the main app intact; contribution UI lives 
 - Overlays fetched when online; cached for offline.
 - Rank gates for Tier-2.
 
-### Phase 3 — Builder graduation
+### Phase 3 — Builder graduation (batch consolidate)
 
-- Operator tooling / automated PR drafts into `data/venues/<id>.overrides.json` or heights.
+- Scheduled **daily/weekly** job: accepted durable edits → `data/venues/<id>.overrides.json` / heights (PR or steward apply).
 - `venues:overrides` / rebuild pipeline unchanged as sole publisher of public JSON.
+- Between runs, phones keep overlays so users do not wait for the batch.
 
 ### Phase 4 — OSM graduation
 

@@ -12,7 +12,7 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 
 | Vision phase | Backlog epics | Notes |
 |--------------|---------------|-------|
-| 0 Architecture | E0, **EP** | Twin schemas + PostGIS; **required user profiles** |
+| 0 Architecture | E0, **EP** | Schemas + **batch consolidate** (no PostGIS required); **required user profiles** |
 | 1 Park foundation | E1 | Align models; KI completeness — app already has 4 venues |
 | 2 GIS | E2 | Entrances/exits, georef validation, path integrity |
 | 3 Routing | E3 | Profiles + layer-aware graph (on-device first) |
@@ -28,20 +28,25 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 
 ---
 
-## E0 — Platform twin foundation
+## E0 — Platform data foundation (batch consolidate, no PostGIS required)
 
 **Depends on:** nothing  
-**Goal:** Canonical schema + PostGIS without breaking offline JSON.
+**Goal:** Profiles + contributions + durable map improvements **without** PostGIS. Geometry stays in builder JSON; daily/weekly jobs consolidate into `data/venues/` then rebuild.  
+**ADR:** [`adr-dual-layer-park-truth.md`](./adr-dual-layer-park-truth.md)
 
 | ID | Item | Ships | Done when |
 |----|------|-------|-----------|
-| E0.1 | Audit & ADR | `docs/` ADR: dual-layer truth (PostGIS ↔ JSON export) | ADR merged; linked from master spec |
-| E0.2 | Docker PostGIS service | Optional `infra/docker` compose profile `twin` | `docker compose --profile twin up` healthy; core map still offline-capable after profile cache |
-| E0.3 | Shared schemas package | `packages/schemas` (or extend `packages/shared`) for Park/Attraction/POI/Evidence/**User** | Types + JSON Schema; CI validates fixtures |
-| E0.4 | Minimal park-twin tables | parks, areas, attractions, pois, geometries, evidence_claims, **users/profiles** | Migrations apply cleanly |
-| E0.5 | Export stub | Script: twin → builder-compatible staging OR document “JSON remains builder-owned until E1.4” | Clear single direction of export; no dual-write to `public/venues` |
+| E0.1 | ADR | Batch consolidate + offline JSON; PostGIS deferred | Merged (done) |
+| E0.2 | Plain store (optional docker) | Postgres **without** PostGIS *or* managed SQL for users/contributions | App runs; map still offline from JSON |
+| E0.3 | Shared schemas | User, Contribution, Observation, EvidenceClaim (non-spatial) | Types + CI fixtures |
+| E0.4 | Contribution + profile tables | users/profiles, contributions, confirmations, score_events | Migrations clean |
+| E0.5 | **Consolidate job** | Cron/GitHub Action: accepted durable edits → override/heights PR or apply → `venues:overrides`/`rebuild` | Dry-run on KI; no hand-edit of `public/venues` |
+| E0.6 | Cadence config | Per-venue `daily` \| `weekly` \| `manual` | Documented; default weekly |
+| E0.7 | Precomputed park-completion sidecar | Stats baked at consolidate for fog/missions | Phone reads sidecar/meta; no spatial SQL needed |
 
-**Non-goals:** Replacing Next.js; deleting venue-builder; phone querying PostGIS for map draw.
+**Non-goals:** PostGIS; phone querying any DB for map draw; deleting venue-builder.
+
+**Later (optional E0-GIS):** Introduce PostGIS only if admin polygon queries / GIS validation UI are blocked — export still feeds JSON.
 
 ---
 
@@ -74,7 +79,7 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 | E1.1 | Pipeline integrity defects | Fixes from `park-intelligence-review` workstream (provenance, inventory stage, expect locks) | Tests green; KI bundle provenance coherent |
 | E1.2 | Deterministic entity ids | Stable ids for rides/POIs; overrides migrate off display-name-only keys where safe | Joins survive OSM rename; Fiesta duplicate names still OK |
 | E1.3 | Static vs dynamic schema | Ride static record shape documented; live fields only in observation/realtime tables | No wait/open mixed into static JSON as “official” |
-| E1.4 | Twin ingest from builder | Load KI (then all venues) into PostGIS from current builder outputs | Round-trip counts match; provenance columns populated |
+| E1.4 | Bundle completeness gate | `venues:report` + expect locks; consolidate dry-run | KI (then all) pass report after rebuild |
 
 ---
 
@@ -176,8 +181,8 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 
 ## E9 — Community Living Map
 
-**Depends on:** E0 twin + E2.2 validation; gamification design Approach B  
-**Goal:** Contribute → verify → overlay → graduate.
+**Depends on:** E0 contribution store + E2.2 validation; gamification design Approach B  
+**Goal:** Contribute → verify → overlay → **consolidate** into overrides/rebuild.
 
 | ID | Item | Ships | Done when |
 |----|------|-------|-----------|
@@ -262,29 +267,30 @@ Detail: [`2026-08-10-gamified-map-contributions-design.md`](./2026-08-10-gamifie
 
 Do **not** start at gamification or CV.
 
-1. **E0.1** — ADR dual-layer truth (docs only)  
+1. **E0.1** — ADR batch consolidate (done)  
 2. **EP.1** — Auth/profile ADR (required profiles)  
 3. **E1.1** — Pipeline integrity defects (highest data-quality ROI)  
-4. **E0.2–E0.4** — PostGIS + schemas (include users)  
+4. **E0.3–E0.4** — Schemas + profile/contribution tables (plain SQL)  
 5. **EP.2–EP.4** — Profile schema, sign-in UX, offline cache  
-6. **E1.2** — Deterministic ids  
-7. **E1.4** — Ingest KI into twin  
+6. **E0.5–E0.6** — Consolidate job + cadence  
+7. **E1.2** — Deterministic ids  
 8. **E3.1–E3.2** — Routing correctness  
 9. **EP.5 + E4.1** — Party ↔ profile + privacy controls  
 10. **E5.1–E5.2** — Eligibility v2 (on profiles)  
 11. **E8.1** — Next-best + Why?  
-12. **E9.1** — Living map Tier-1 (always attributed to `user_id`)  
+12. **E9.1** — Living map Tier-1 (overlays; consolidate later graduates durable edits)  
 
 ---
 
 ## Open product decisions (blockers for later epics)
 
 1. ~~**Identity:** When do accounts become required?~~ **Resolved 2026-08-10: user profiles are required** (see epic **EP**). Auth *provider* still TBD in EP.1.  
-2. **PostGIS hosting:** Local docker for dev; production host TBD.  
+2. ~~**PostGIS Day-1?**~~ **Resolved 2026-08-10: no — use daily/weekly consolidate into builder; PostGIS optional later.** Cadence default weekly vs daily per venue still choosable (E0.6).  
 3. **Height rules → OSM?** Prefer Park Bound overrides forever unless OSM has a clear tag.  
 4. **MapLibre:** Stay on SVG until a measured need.  
 5. **Python workers now vs later:** Prefer Node workers first if team velocity is JS; Python OK for GIS-heavy E12/E13.  
-6. **Sign-in gate hardness:** Hard block entire app vs allow browse-only map until sign-in (profile still required for party/contribute/planner sync).
+6. **Sign-in gate hardness:** Hard block entire app vs allow browse-only map until sign-in (profile still required for party/contribute/planner sync).  
+7. **Consolidate apply mode:** Auto-merge override PRs vs steward-approved only.
 
 ---
 

@@ -29,3 +29,11 @@ Format per entry:
 - **Fix:** Sign-in once → cache profile/session entitlements; map/routing remain SW-precached; contribution sync authenticates when online.
 - **Regression test:** (pending) signed-in offline session still draws map and enqueues contributions.
 - **Guardrail:** Backlog epic **EP**; master spec “User profiles (required).”
+
+## 2026-08-10 — Batch consolidate instead of Day-1 PostGIS
+
+- **Lesson:** Living Map does not need a spatial DB if overlays are continuous and durable fixes batch into the builder.
+- **Root cause:** Equating “canonical twin” with “PostGIS on day one.”
+- **Fix:** ADR revised — daily/weekly consolidate → `data/venues` → rebuild; PostGIS optional later.
+- **Regression test:** (pending) consolidate job never writes `public/venues` except via builder scripts.
+- **Guardrail:** Backlog E0.5–E0.6; overlays mandatory between consolidates.

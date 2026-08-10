@@ -65,30 +65,36 @@ Shipped venues today: **Kings Island**, **Cedar Point**, **Six Flags Fiesta Texa
 
 ## 3. Critical architecture decision (reconcile with reality)
 
-The product vision wants **PostGIS as canonical geospatial truth**. The running app requires **offline JSON** that a service worker can precache. Both are true.
+The product vision originally asked for **PostGIS as canonical geospatial truth**. The running app requires **offline JSON**. **Revised decision:** do **not** require PostGIS Day-1. Use **client overlays + daily/weekly consolidate** into the existing builder (`data/venues/` → rebuild). PostGIS remains an optional later upgrade for heavy GIS admin.
 
-### Decision: dual-layer truth
+### Decision: batch consolidate (default) + optional PostGIS later
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│  PLATFORM TWIN (authoring / intelligence / contributions)│
-│  PostgreSQL + PostGIS + evidence + temporal validity     │
-│  Workers: ingest, georef, CV candidates, mission gen     │
+│  CONTRIBUTION + PROFILE STORE (plain SQL / auth)         │
+│  reports, confirms, XP, users — not a spatial twin       │
 └───────────────────────────┬─────────────────────────────┘
-                            │ export / bake
+                            │ overlays (continuous)
                             ▼
 ┌─────────────────────────────────────────────────────────┐
-│  PHONE SNAPSHOT (offline contract — immutable per build) │
-│  public/venues/*.map.json + *.pois.json + routing graph  │
-│  ⊕ client overlays (pending/accepted contributions)      │
+│  PHONE SNAPSHOT + OVERLAYS (offline contract)            │
+│  public/venues/*.json  ⊕  pending/accepted edits         │
+└───────────────────────────┬─────────────────────────────┘
+                            │ daily / weekly consolidate
+                            ▼
+┌─────────────────────────────────────────────────────────┐
+│  BUILDER INPUTS → rebuild                                │
+│  data/venues/<id>.*  →  venues:overrides / rebuild       │
 └─────────────────────────────────────────────────────────┘
 ```
 
 | Layer | Role | Rules |
 |-------|------|-------|
-| **PostGIS twin** | Canonical mutable model for parks, geometry, provenance, contributions, history | Source of truth for *platform* features; admin GIS; graduation target |
-| **Venue JSON bundle** | Deterministic offline snapshot for the PWA | Still the only thing the phone *must* have; still produced only by the builder/export pipeline |
-| **Client overlays** | Live Base ⊕ edits for accepted/pending contributions | Never silently rewrite generated `public/venues/*` |
+| **Contribution store** | Profiles, reports, confirms, scores | No PostGIS required |
+| **Venue JSON bundle** | Offline map + routing graph | Only builder writes generated files |
+| **Client overlays** | Immediate Living Map UX between consolidates | Never patch `public/venues` by hand |
+| **Consolidate job** | Accepted durable edits → overrides → rebuild | Cadence daily/weekly/manual |
+| **PostGIS (optional later)** | Only if polygon GIS admin / missions need it | Still exports to JSON for phones |
 
 ### What we deliberately do **not** do
 
@@ -99,6 +105,7 @@ The product vision wants **PostGIS as canonical geospatial truth**. The running 
 5. Treat LLM output as canonical coordinates, distances, eligibility, or weather thresholds.
 6. Make community edits canonical without validation.
 7. Present predictions or stale GPS as official / live.
+8. **Block Living Map or profiles on PostGIS.**
 
 ### Stack evolution (pragmatic)
 
@@ -107,12 +114,11 @@ The product vision wants **PostGIS as canonical geospatial truth**. The running 
 | Phone app | Keep Next.js PWA (`apps/party-tracker`) | Optional later native shell; not a rewrite prerequisite |
 | Map render | Keep SVG `ParkMap.jsx` | Evaluate MapLibre only if tiles/perf demand it |
 | Routing | Keep `lib/routing.js` | Optional Valhalla in workers for graph QA / bake |
-| Builder | Keep Node `packages/venue-builder` | Grow export-from-PostGIS; do not delete OSM pipeline |
-| Twin DB | **Introduce** PostGIS for platform twin | Required before Living Map graduation at scale |
-| API | Next route handlers + optional Node host first | Extract FastAPI/services when boundaries stabilize |
+| Builder | Keep Node `packages/venue-builder` | Consolidate job feeds overrides; do not delete OSM pipeline |
+| Twin DB | **Defer PostGIS** | Add only with measured GIS need |
+| Profiles / contributions | Plain Postgres (or managed SQL) + auth | Required profiles; offline cache |
+| API | Next route handlers + optional Node host first | Extract services when boundaries stabilize |
 | AI | Interface + mocks; Ollama optional in workers | Never final authority on deterministic facts |
-
-Greenfield `services/*` Python layout from the vision doc is a **target shape**, not a Day-1 rewrite. Prefer strangler: add `services/park-twin` (PostGIS + schemas) beside the existing app; migrate exports into the builder.
 
 ---
 

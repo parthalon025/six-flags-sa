@@ -1,60 +1,105 @@
-# ADR: Dual-layer park truth (PostGIS twin ⊕ offline JSON)
+# ADR: Park truth without requiring PostGIS (batch consolidate + offline JSON)
 
-**Status:** Accepted (planning)  
-**Date:** 2026-08-10  
-**Context:** Master Park Bound vision asks for PostGIS as canonical geospatial truth. The shipped PWA requires service-worker-precached venue JSON and must work offline in a queue line. `docs/park-intelligence-review.md` correctly rejected PostGIS *as the phone primary store*.
+**Status:** Accepted (planning) — revised 2026-08-10  
+**Supersedes:** Earlier draft that treated PostGIS as Day-1 platform twin  
 
-**GitNexus (2026-08-10):** Repo indexed with CLI (`gitnexus analyze`) — 3,450 symbols / 8,592 edges / 291 flows. Queries confirm today’s truth path is builder `writeVenue` → `public/venues/*.json`, and routing is on-device `findRoute` (called from reunification), not a DB spatial service.
+**Context:** Park Bound needs living-map contributions, required user profiles, and continuously improving venue data — while the phone must stay offline-first on precached JSON. GitNexus shows today’s path is already batch: builder `writeVenue` / `reindex` → `public/venues/*.json`; routing is on-device `findRoute`.
 
 ## Decision
 
-1. **Platform twin:** PostgreSQL + PostGIS holds the mutable canonical model (geometry, evidence, temporal validity, contributions, history, admin GIS, user profiles).
-2. **Phone snapshot:** Builder/export pipeline produces `public/venues/*.map.json` and `*.pois.json` (and related indexes). The phone reads snapshots + client overlays. It does not query PostGIS for core map draw.
-3. **Overlays:** Accepted/pending community contributions apply as Base ⊕ edits on the client (and optionally sync via a contribution service). They never hand-edit generated venue files.
-4. **Graduation:** Durable fixes flow twin → overrides/OSM → rebuild/export → new snapshot.
+**Near-term (default): no PostGIS.** Use a **daily or weekly consolidate** pipeline on top of the existing venue builder.
 
-## Pros of PostGIS (for Park Bound)
+```text
+Phone (signed-in profile)
+  → contribution / observation API  (plain Postgres or equivalent — not PostGIS)
+  → client overlays (immediate Base ⊕ edits)
+  → peer confirm / steward review
+        │
+        ▼  schedule: daily (hot parks) or weekly (default)
+  consolidate job
+        │
+        ├─ durable accepted edits → data/venues/<id>.overrides.json | heights | …
+        ├─ optional OSM changeset graduation (later)
+        └─ npm run venues:overrides | venues:rebuild | venues:reindex
+                │
+                ▼
+        public/venues/*.json  (sole offline map contract)
+```
 
-| Pro | Why it matters here |
-|-----|---------------------|
-| **Spatial queries as first-class SQL** | ST_DWithin, ST_Intersects, clustering, “POIs needing survey in this polygon” for Living Map missions — hard and slow in flat JSON. |
-| **Canonical mutable twin** | Contributions, temporal validity (`valid_from`/`valid_to`), evidence rows, and history need relational integrity; Git-only JSON fights concurrent writers. |
-| **Provenance & confidence tables** | Evidence claims, dissent, verification audits fit normalized tables better than re-fusing sidecars every build. |
-| **User profiles + authz** | Required profiles, party membership, contribution `author_id`, reputation — natural RDBMS fit (PostGIS is Postgres). |
-| **GIS admin / validation UI** | Human validation of low-confidence geometry, georef metadata, CV candidates need a queryable store, not SW-precached blobs. |
-| **OSM sync / quality gating** | Partial extracts, thematic filters, and “hold until validated” patterns (Clearance-style) assume a spatial DB. |
-| **Multi-park scale** | One schema, many parks; completion metrics and stale/conflict dashboards aggregate cleanly. |
-| **Worker ecosystem** | GDAL/GeoPandas/Valhalla QA and Celery-style jobs expect PostGIS or can export to it. |
+| Layer | Store | Cadence |
+|-------|--------|---------|
+| Ephemeral ops (ride down, queue band) | Contribution API + TTL; party mesh | Minutes–hours; **never** baked into venue JSON |
+| Pending / accepted overlays | API + client cache | Continuous |
+| Durable map/POI/height fixes | Git `data/venues/*` via consolidate | **Daily or weekly** rebuild |
+| Phone map / routing | SW-precached JSON | After each ship |
 
-## Cons of PostGIS (for Park Bound)
+**PostGIS is optional later** — only if/when spatial admin queries, polygon mission generation, or GIS validation UI outgrow JSON + precomputed stats.
 
-| Con | Why it matters here |
-|-----|---------------------|
-| **Cannot be the phone primary store** | Service worker cannot precache a live DB; offline queue-line use requires JSON (or equivalent) snapshots. GitNexus flows show map/routing already local (`writeVenue` → static venues; `findRoute` on device). |
-| **Dual-write / drift risk** | Twin + JSON can disagree unless export is the *only* path into `public/venues/*` (builder contract). |
-| **Ops cost** | Postgres hosting, backups, migrations, connection pooling — heavier than today’s static Vercel/PWA + thin Node host. |
-| **Latency & connectivity** | Phone → PostGIS for every pan/route breaks the “no server required” premise and battery/network budget. |
-| **Team/stack mismatch (near term)** | Repo is Node/Next today; PostGIS often pulls Python GIS tooling — training and CI complexity. |
-| **False sense of “live map”** | Putting geometry in PostGIS does not fix OSM quality; still need evidence fusion and human validation. |
-| **Overkill for static facts alone** | Heights and POI lists that change rarely are already well served by builder JSON + overrides. |
-| **Migration hazard** | Big-bang rewrite of phone to MapLibre+PostGIS would discard working SVG map, party mesh, and offline tests. |
+## Why batch consolidate works here
+
+1. **Matches the builder contract** — only the builder writes `public/venues/*`; consolidate feeds **inputs**, not generated outputs.
+2. **Matches product tempo** — durable park geometry does not need second-by-second DB truth; guests feel immediacy via **overlays**, not via PostGIS.
+3. **Avoids dual spatial truth** — one geospatial artifact on the phone (JSON graph), one authoring path (overrides → rebuild).
+4. **Profiles still work** — required accounts live in ordinary Postgres/Auth tables; they do not need geometry types.
+5. **GitNexus-aligned** — `writeVenue`, `reindex`, override sidecars already form a consolidate-friendly pipeline.
+
+## Cadence guidance
+
+| Cadence | Use when |
+|---------|----------|
+| **Continuous overlay sync** | Always — accepted contributions visible before rebuild |
+| **Daily consolidate** | Active season / high contribution volume / KI reference park |
+| **Weekly consolidate** | Default multi-park; low churn |
+| **On-demand** | Steward “ship now” after a high-impact fix |
+
+Ship notes / app-version bump workflow stays separate (merge-time version bump on `main`).
+
+## Pros of “no PostGIS + batch consolidate”
+
+| Pro | Detail |
+|-----|--------|
+| Lower ops | No spatial extension, simpler hosting, fewer migration footguns |
+| No phone↔DB spatial coupling | Offline premise intact |
+| Fits existing scripts | `venues:overrides` / `rebuild` / `reindex` are the consolidate sinks |
+| Clear audit trail | Durable changes are Git diffs in `data/venues/` |
+| Faster to Living Map MVP | E9 can ship overlays + confirm before any GIS DB |
+| Profiles/XP without geometry | Auth + score tables ≠ PostGIS |
+
+## Cons / limits (when you’d add PostGIS later)
+
+| Con | Mitigation until PostGIS |
+|-----|--------------------------|
+| Weak “points in polygon” admin SQL | Precompute area completion % into export `meta`; survey missions from entity lists + bbox |
+| Harder live GIS editing UI | Steward reviews contribution payloads + map deep-link; full digitizing stays in builder/trace tools |
+| Historical geometry versions | Git history of overrides + dated exports; not a temporal DB |
+| Heavy concurrent spatial analytics | Defer; not needed for v1 explorer loop |
+| OSM quality-gated extracts | Keep using Overpass + builder; Clearance-style later |
+
+## PostGIS pros/cons (reference — deferred)
+
+**Pros if introduced later:** ST_DWithin/Intersects, canonical mutable geometry, GIS admin, thematic OSM sync, multi-park spatial dashboards, GDAL/Valhalla worker fit.
+
+**Cons if introduced too early:** dual-write drift, ops cost, temptation to query PostGIS from the phone, stack complexity, overkill for static facts, migration hazard vs working SVG/`findRoute` stack.
 
 ## Verdict
 
-Use PostGIS where its pros dominate: **platform twin, profiles, contributions, evidence, admin GIS, mission generation.**  
-Keep JSON where its cons of PostGIS dominate: **offline map draw and on-device routing.**
+| Horizon | Geometry / map truth | Profiles & contributions |
+|---------|----------------------|---------------------------|
+| **Now → Living Map MVP** | JSON snapshots + overlays; **daily/weekly consolidate → builder** | Plain DB / auth (required profiles) |
+| **Later (optional)** | Add PostGIS twin **behind** export if spatial admin/missions demand it | Unchanged; still export to JSON for phones |
 
-That is this ADR’s dual-layer decision — not “PostGIS everywhere” and not “JSON forever.”
+Do **not** block EP (profiles), E9 (contributions), or E10 (XP) on PostGIS.
 
 ## Consequences
 
-- We can grow Living Map, provenance, history, and required user profiles without breaking offline.
-- We must maintain an export contract (tests that twin ↔ snapshot invariants hold).
-- Valhalla/MapLibre/Python workers may attach to the twin/builder side; they are not phone runtime dependencies.
-- JSON ceases to be the *only* place platform truth lives, but remains the *offline contract*.
+- Backlog E0 drops PostGIS-as-blocker; add **E0-C consolidate scheduler** instead.
+- Contribution graduation always lands in `data/venues/` (or OSM), then rebuild — never patches `public/venues` by hand.
+- Precompute any “completion / stale / fog” stats the phone needs into the bundle or a small sidecar JSON at consolidate time.
+- Revisit PostGIS only with a measured need (admin GIS or mission generator blocked).
 
 ## Rejected alternatives
 
-- PostGIS-only online map (breaks offline premise).
-- JSON-only forever with no twin (blocks temporal/contribution/profile scale).
-- Guests writing `public/venues/*` directly (breaks builder contract).
+- PostGIS-only online map (breaks offline).
+- PostGIS as Day-1 requirement (unnecessary for batch Living Map).
+- Guests writing `public/venues/*` directly (builder contract).
+- Skipping overlays and waiting a week for every fix to appear (poor UX — overlays are mandatory between consolidates).
