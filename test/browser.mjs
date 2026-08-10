@@ -171,12 +171,14 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
  */
 export async function closeGate(page) {
   await dismissUpdateSplash(page);
+  const nearest = page.locator('button:has-text("Go to nearest park")');
   const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("Yes — set up")');
   const quiet = page.locator(
     'button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Not now — just show me the map")',
   );
-  if (await allow.count()) await allow.click().catch(() => {});
+  if (await nearest.count()) await nearest.click().catch(() => {});
+  else if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
     await dismissUpdateSplash(page, { timeout: 250 });
@@ -184,8 +186,9 @@ export async function closeGate(page) {
     const gates = await page.locator('.gate').count();
     if (!gates && paths > 100) return;
     if (await yes.count()) await yes.click().catch(() => {});
+    else if (await nearest.count()) await nearest.click().catch(() => {});
     else if (await allow.count()) await allow.click().catch(() => {});
-    if (await quiet.count() && !(await yes.count()) && !(await allow.count())) {
+    if (await quiet.count() && !(await yes.count()) && !(await allow.count()) && !(await nearest.count())) {
       await quiet.first().click().catch(() => {});
     }
     if (!(await page.locator('.gate').count()) && paths > 100) return;
