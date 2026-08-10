@@ -594,7 +594,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 40;
   padding: calc(var(--top) + 10px) 12px 0;
-  display: flex; justify-content: space-between; align-items: flex-start; gap: 9px;
+  display: flex; justify-content: flex-end; align-items: flex-start; gap: 9px;
   pointer-events: none;
   animation: riseIn var(--t3) var(--easeOut) both;
 }
@@ -604,6 +604,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .topbarBrand {
   /* Phones: keep the map clear. Desktop/wide: primary lockup top-left. */
   display: none;
+  margin-right: auto;
   padding: 6px 10px;
   border-radius: var(--rCapsule);
   background: color-mix(in srgb, var(--bg2) 78%, transparent);
@@ -614,6 +615,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .topbarGlyph, .topbarLockup { display: flex; align-items: center; }
 @media (min-width: 720px) {
   .topbarBrand { display: flex; }
+  .topbar { justify-content: space-between; }
 }
 .brand {
   flex: none; display: flex; flex-direction: column; gap: 2px;
@@ -622,7 +624,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .brandRow {
   display: flex; align-items: center; gap: 8px; min-width: 0;
 }
-.brandGlyph { display: flex; flex: none; color: var(--aqua); }
+.brandGlyph { flex: none; color: var(--aqua); display: block; }
 .brand b, .brandName {
   flex: none; font-family: var(--display); font-size: 15px; font-weight: 700;
   line-height: 20px; letter-spacing: -.02em; color: var(--label);
