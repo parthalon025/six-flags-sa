@@ -5,6 +5,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
+import ParkPrompt from '@/components/ParkPrompt';
 import GlanceRail from '@/components/GlanceRail';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
@@ -36,7 +37,7 @@ import {
   retargetForPosition,
   selectVenue,
   unpinVenue,
-  venueChoiceFor,
+  intakeChoiceFor,
   venuesByDistance,
   withinBounds,
 } from '@/lib/venue/store';
@@ -179,6 +180,9 @@ export default function Page() {
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
+  /* The location card has had its turn — allow the explore park question even when
+     there is no fix yet. */
+  const [locationSettled, setLocationSettled] = useState(false);
   /** First-run "Go to nearest park" — auto-confirms on fix instead of a second card. */
   const [nearestIntent, setNearestIntent] = useState(false);
   /* Has this phone been told what the app is? null until localStorage has been
@@ -501,17 +505,21 @@ export default function Page() {
    * answering is what sets `venueConfirmed` and stops it.
    */
   const parkChoice = useMemo(() => {
-    if (parkAsked || !manifest || !position) return null;
-    return venueChoiceFor(manifest, position.lat, position.lng, {
+    if (parkAsked || !manifest) return null;
+    const lat = position?.lat;
+    const lng = position?.lng;
+    const hasFix = Number.isFinite(lat) && Number.isFinite(lng);
+    if (!hasFix && !locationSettled) return null;
+    return intakeChoiceFor(manifest, lat, lng, {
       confirmed: venueConfirmed,
       pinned: venuePinned,
     });
-  }, [parkAsked, manifest, position, venueConfirmed, venuePinned]);
+  }, [parkAsked, manifest, position, venueConfirmed, venuePinned, locationSettled]);
 
   /** The other parks, nearest first, for when the nearest one is the wrong guess. */
   const parkOptions = useMemo(() => {
-    if (!parkChoice || !position) return [];
-    return venuesByDistance(manifest, position.lat, position.lng).filter(
+    if (!parkChoice || !manifest) return [];
+    return venuesByDistance(manifest, position?.lat ?? null, position?.lng ?? null).filter(
       (row) => row.venue.id !== parkChoice.venue.id,
     );
   }, [parkChoice, manifest, position]);
@@ -542,8 +550,9 @@ export default function Page() {
   }, []);
 
   const askingPark = Boolean(parkChoice);
-  /** Park question is inline on the gate unless the nearest-park shortcut is running. */
+  /** Inline park question on the gate (GPS path). Explore-without-GPS uses ParkPrompt. */
   const showParkPrompt = !showUpdateSplash && gateOpen && askingPark && !nearestIntent;
+  const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore);
 
   useEffect(() => {
     if (!position || position.manual) return;
@@ -637,8 +646,14 @@ export default function Page() {
   // "Just show me the park map" — which is the opposite of what someone who
   // just granted location wants.
   useEffect(() => {
-    if (geo.status === 'live' && !askingPark) setGateOpen(false);
-  }, [geo.status, askingPark]);
+    if (geo.status !== 'idle' && geo.status !== 'asking') setLocationSettled(true);
+  }, [geo.status]);
+
+  useEffect(() => {
+    if (!askingPark && (geo.status === 'live' || parkAsked)) {
+      setGateOpen(false);
+    }
+  }, [geo.status, askingPark, parkAsked]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -662,7 +677,7 @@ export default function Page() {
           setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
           setParkAsked(true);
           setGateOpen(false);
-          showToast(`${v.name} is ready`);
+          showToast(`${v.name} is loaded — you are good to go!`);
           return v;
         })
         .catch((err) => {
@@ -2408,16 +2423,34 @@ export default function Page() {
         />
       )}
 
+      {/* Explore-without-GPS uses its own card; everything else is one gate. */}
+      {showExplorePrompt && (
+        <ParkPrompt
+          choice={parkChoice}
+          options={parkOptions}
+          explore
+          busy={venueStatus === 'loading'}
+          error={venueStatus === 'error' ? venueError : null}
+          onConfirm={(id) => {
+            confirmPark(id).catch(() => {});
+          }}
+          onSkip={() => {
+            setParkAsked(true);
+            setGateOpen(false);
+          }}
+        />
+      )}
+
       {/* The intake: one landing card for location and, when needed, which park.
           The happy path is "Go to nearest park" → GPS → auto-build with a toast. */}
-      {gateOpen && introSeen !== null && !showUpdateSplash && (
+      {gateOpen && introSeen !== null && !showExplorePrompt && !showUpdateSplash && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
           welcome={nearestIntent || (introSeen === false && geo.status === 'idle' && !parkChoice)}
           nearestIntent={nearestIntent}
-          parkChoice={askingPark ? parkChoice : null}
+          parkChoice={askingPark && !parkChoice?.explore ? parkChoice : nearestIntent ? parkChoice : null}
           parkOptions={parkOptions}
           setupBusy={venueStatus === 'loading'}
           setupError={venueStatus === 'error' ? venueError : null}
@@ -2430,6 +2463,7 @@ export default function Page() {
           }}
           onRequest={() => {
             markIntroSeen();
+            setLocationSettled(true);
             geo.request();
             geo.enableCompass();
           }}
@@ -2438,17 +2472,23 @@ export default function Page() {
           }}
           onManual={() => {
             markIntroSeen();
+            setLocationSettled(true);
             setNearestIntent(false);
-            setParkAsked(true);
-            setGateOpen(false);
-            showToast('Tap the map to place yourself');
+            if (venueConfirmed || venuePinned) {
+              setParkAsked(true);
+              setGateOpen(false);
+              showToast('Tap the map to drop your pin');
+            }
           }}
           onDismiss={() => {
             markIntroSeen();
+            setLocationSettled(true);
             setNearestIntent(false);
-            setParkAsked(true);
-            setGateOpen(false);
-            if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
+            if (venueConfirmed || venuePinned) {
+              setParkAsked(true);
+              setGateOpen(false);
+              if (venue?.name) showToast(`Browsing ${venue.name}. Change parks under Me → Which map.`);
+            }
           }}
         />
       )}

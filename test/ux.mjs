@@ -7,9 +7,9 @@ const p = await c.newPage();
 p.on('pageerror', e => console.log('PAGEERROR:', e.message));
 await p.goto(B,{waitUntil:'networkidle'});
 await p.waitForTimeout(1200);
-const allow = p.locator('button:has-text("Allow location")');
+const allow = p.locator('button:has-text("Share my location"), button:has-text("Allow location")');
 if (await allow.count()) { await allow.click(); await p.waitForTimeout(2500); }
-const dis = p.locator('button:has-text("Just show me")');
+const dis = p.locator('button:has-text("Just browsing"), button:has-text("Just show me"), button:has-text("Skip for now")');
 if (await dis.count()) await dis.click();
 await p.waitForTimeout(1200);
 
