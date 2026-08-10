@@ -31,7 +31,7 @@ export default function UpdateSplash({ notes, onContinue }) {
           Continue
         </button>
         <p className="gateFine">
-          You will only see this once for this update. The map is ready when you tap Continue.
+          You will only see this once. Tap Continue and let&apos;s ride.
         </p>
       </div>
     </div>

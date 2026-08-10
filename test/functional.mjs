@@ -819,25 +819,25 @@ await check('the first screen says what the app is, above the location ask', asy
   if (heading !== 'Park Party') throw new Error(`opened on: "${heading}"`);
   // One screen, in the order that earns the answer: what you get, then what it
   // needs, then the button. A permission asked cold is a permission refused.
-  const said = card.indexOf('See where everyone is');
-  const asked = card.indexOf('needs to use your location');
-  const button = card.indexOf('Allow location');
+  const said = card.indexOf('Spot your whole crew');
+  const asked = card.indexOf('just needs your location');
+  const button = card.indexOf('Share my location');
   if (said < 0 || asked < 0 || button < 0) throw new Error('the introduction and the ask are not on one card');
   if (!(said < asked && asked < button)) throw new Error('the ask comes before what it is for');
   return true;
 });
 
 await check('the intake asks about the nearest park, not the default one', async () => {
-  await e.locator('button:has-text("Allow location")').click();
+  await e.locator('button:has-text("Share my location")').click();
   // Wait for the question itself, not merely for a heading: the location card
   // is still up while the fix lands, and reading .gate h2 the moment it says
   // anything gets "Waiting for a fix" rather than the park.
-  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
+  await until(async () => (await e.locator('.gate .btn.primary:has-text("set up")').count()) > 0, {
     timeout: 25000,
     label: 'the park question',
   });
   const heading = (await e.locator('.gate h2').innerText()).trim();
-  if (!/going to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  if (!/headed to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
   // And the guess it did not make is one tap away, with the distance that
   // explains why it was not the guess.
   const other = await e.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
@@ -846,7 +846,7 @@ await check('the intake asks about the nearest park, not the default one', async
 });
 
 await check('saying yes builds that park, geometry and places', async () => {
-  await e.locator('.gate .btn.primary:has-text("Yes — set up")').click();
+  await e.locator('.gate .btn.primary:has-text("set up")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
@@ -870,7 +870,7 @@ await check('the park answered stays answered across a reload', async () => {
   if (await e.locator('.gate h2:has-text("Park Party")').count()) {
     throw new Error('the introduction came back on a reload');
   }
-  await e.locator('button:has-text("Allow location")').click();
+  await e.locator('button:has-text("Share my location")').click();
   // Asked once. If the question came back, the gate would still be up here —
   // nothing else in the intake waits on a fix that has already landed.
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
@@ -893,16 +893,16 @@ await check('skipping location still asks which park to explore', async () => {
   await hydrated(p);
   await dismissUpdateSplash(p);
   const skip = p.locator(
-    'button:has-text("Just look around"), button:has-text("Just show me the map")',
+    'button:has-text("Just browsing"), button:has-text("Just show me the map")',
   );
   await until(async () => (await skip.count()) > 0, { timeout: 10000, label: 'the location skip button' });
   await skip.first().click();
-  await until(async () => (await p.locator('.gate h2').innerText()).includes('explore'), {
+  await until(async () => (await p.locator('.gate h2').innerText()).includes('headed'), {
     timeout: 10000,
     label: 'the explore park question',
   });
   const heading = (await p.locator('.gate h2').innerText()).trim();
-  if (!/which park would you like to explore/i.test(heading)) {
+  if (!/where are we headed today/i.test(heading)) {
     throw new Error(`asked: "${heading}"`);
   }
   await p.locator('.gate .btn.primary').click();

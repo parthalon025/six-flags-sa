@@ -166,10 +166,10 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
  */
 export async function closeGate(page) {
   await dismissUpdateSplash(page);
-  const allow = page.locator('button:has-text("Allow location")');
+  const allow = page.locator('button:has-text("Share my location"), button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("set up")');
   const quiet = page.locator(
-    'button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Not now — just show me the map")',
+    'button:has-text("Just browsing"), button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Skip for now"), button:has-text("Not now")',
   );
   if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;

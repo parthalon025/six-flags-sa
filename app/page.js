@@ -2390,7 +2390,7 @@ export default function Page() {
                 // standing on; from the road, the park itself is the view.
                 setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
                 setGateOpen(false);
-                showToast(`${v.name} is ready`);
+                showToast(`${v.name} is loaded — you are good to go!`);
               })
               .catch((err) => showToast(err?.message || 'Could not build that map.'));
           }}
@@ -2424,7 +2424,7 @@ export default function Page() {
             // not been answered yet, the park question is what comes next.
             if (venueConfirmed || venuePinned) {
               setGateOpen(false);
-              showToast('Tap the map to place yourself');
+              showToast('Tap the map to drop your pin');
             }
           }}
           onDismiss={() => {
@@ -2436,7 +2436,7 @@ export default function Page() {
             if (venueConfirmed || venuePinned) {
               setParkAsked(true);
               setGateOpen(false);
-              if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
+              if (venue?.name) showToast(`Browsing ${venue.name}. Change parks under Me → Which map.`);
             }
           }}
         />

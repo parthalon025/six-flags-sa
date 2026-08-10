@@ -79,13 +79,13 @@ async function main() {
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();
   check(
-    /Park Party/i.test(first) && /see where everyone is/i.test(first),
+    /Park Party/i.test(first) && /spot your whole crew/i.test(first),
     'the first screen introduces the app',
   );
-  check(/Allow location/i.test(first), 'the first screen asks for location on the same card');
+  check(/Share my location/i.test(first), 'the first screen asks for location on the same card');
 
   await context.grantPermissions(['geolocation']);
-  await page.getByRole('button', { name: 'Allow location' }).click();
+  await page.getByRole('button', { name: 'Share my location' }).click();
   await page.waitForTimeout(2000);
 
   // The second half of the intake. Numbered off the step it belongs to rather
@@ -97,7 +97,7 @@ async function main() {
   const asked = await page.locator('.gate h2').innerText().catch(() => '');
   check(/kings island/i.test(asked), `intake asks which park: "${asked.replace(/\n/g, ' ')}"`);
 
-  await page.getByRole('button', { name: /Yes — set up/ }).click();
+  await page.getByRole('button', { name: /set up/ }).click();
   await page.waitForTimeout(1800);
   await shot(page, 'map-located');
 

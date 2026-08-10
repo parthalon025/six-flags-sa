@@ -51,20 +51,20 @@ export default function ParkPrompt({
   const data = dataText(venue);
 
   const heading = explore
-    ? 'Which park would you like to explore?'
+    ? 'Where are we headed today?'
     : inside
-      ? `You’re at ${venue.name}`
-      : `Going to ${venue.name}?`;
+      ? `You’re at ${venue.name}!`
+      : `Headed to ${venue.name}?`;
   const body = explore
-    ? 'Pick a park and this phone builds it — the paths, the rides and every place on it — so the map is ready before you arrive.'
+    ? 'Pick a park and we will build the whole thing on this phone — paths, rides and every spot on the map — so you are ready before you even park the car.'
     : inside
-      ? `Your fix puts you inside ${venue.name}, ${venue.locality}. Say the word and this phone builds that park: the paths, the ride track and every place on it.`
-      : `${venue.name} in ${venue.locality} is the closest park this app carries — ${distanceText}. If that is where you are headed, this phone builds it now so the map is ready before you park.`;
+      ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load the full map — every path, ride and place.`
+      : `${venue.name} in ${venue.locality} is the closest park we have (${distanceText}). Headed that way? We will build the map now so it is waiting when you arrive.`;
 
   return (
     <div className="gate">
       <div className="gateCard">
-        <div className="gateEyebrow">Which park</div>
+        <div className="gateEyebrow">Pick your park</div>
         <h2>{heading}</h2>
         <p>{body}</p>
         {error && <p className="gateError">{error}</p>}
@@ -76,15 +76,15 @@ export default function ParkPrompt({
           onClick={() => onConfirm?.(venue.id)}
         >
           {busy
-            ? 'Setting it up…'
+            ? 'Getting it ready…'
             : explore
               ? `Set up ${venue.name}`
-              : `Yes — set up ${venue.name}`}
+              : `Yes! Set up ${venue.name}`}
         </button>
 
         {options.length > 0 && (
           <>
-            <div className="label">Somewhere Else</div>
+            <div className="label">Different park?</div>
             <div className="venueList">
               {options.map(({ venue: other, metres, inside: within }) => (
                 <button
@@ -107,12 +107,12 @@ export default function ParkPrompt({
         )}
 
         <button type="button" className="btnQuiet" onClick={onSkip}>
-          Not now — just show me the map
+          Skip for now — just show me the map
         </button>
         <p className="gateFine">
-          {data ? `${venue.name} is ${data}. ` : ''}
-          Everything is fetched once and kept on this phone, so the map still draws
-          in a queue with no signal. Change parks any time under Me &rarr; Which map.
+          {data ? `${venue.name} has ${data}. ` : ''}
+          Everything downloads once and stays on this phone, so the map still works in a
+          queue with no signal. Switch parks any time under Me &rarr; Which map.
         </p>
       </div>
     </div>
