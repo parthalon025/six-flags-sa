@@ -12,12 +12,15 @@ import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
 import WeatherBanner from '@/components/WeatherBanner';
 import UpdateSplash from '@/components/UpdateSplash';
+import BrandLockup from '@/components/BrandLockup';
+import BrandMark from '@/components/BrandMark';
 import useSheetDrag from '@/components/useSheetDrag';
 import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import { markReleaseNotesSeen, pendingReleaseNotes } from '@/lib/releaseNotes';
+import { BRAND } from '@/lib/brand';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -37,7 +40,7 @@ import {
   retargetForPosition,
   selectVenue,
   unpinVenue,
-  venueChoiceFor,
+  intakeChoiceFor,
   venuesByDistance,
   withinBounds,
 } from '@/lib/venue/store';
@@ -59,7 +62,7 @@ const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: f
 const IntelligencePanel = dynamic(() => import('@/components/IntelligencePanel'), { ssr: false });
 const CompassTape = dynamic(() => import('@/components/CompassTape'), { ssr: false });
 
-const PALETTE = ['#30D158', '#40C8E0', '#BF5AF2', '#FF375F', '#5E5CE6', '#AC8E68', '#FFD60A', '#FF9F0A'];
+const PALETTE = ['#66B56A', '#27B8B0', '#9B6BFF', '#FF5C8A', '#5B7CFF', '#B8956A', '#FFC857', '#FF6B35'];
 const colourFor = (id) => {
   let h = 0;
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -67,25 +70,27 @@ const colourFor = (id) => {
 };
 const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
 
-/* The titles a pushed screen wears in its nav bar. Party, Rides and Me are not
+/* The titles a pushed screen wears in its nav bar. Party, Plan and Day are not
    in here: they are tabs now, and a tab's root screen carries a large title
    rather than a back button. */
 const VIEW_TITLES = {
-  route: 'Directions',
-  categories: 'Show on the map',
-  venues: 'Which map',
+  route: 'Trail',
+  categories: 'On the map',
+  venues: 'Which park',
   diagnostics: 'Diagnostics',
 };
 
-/* The tab bar, left to right. The order is the whole of the animation's
-   direction logic: moving right along the bar slides the next screen in from
-   the right, and moving left slides it back. */
+/* The tab bar, left to right. Parkbound's primary areas: Explore, Party, Plan,
+   Day. The map itself is the canvas underneath — shut the sheet to live in it.
+   The order is the whole of the animation's direction logic: moving right along
+   the bar slides the next screen in from the right, and moving left slides it
+   back. */
 const TAB_ORDER = ['explore', 'party', 'rides', 'settings'];
 
 /* A tab root gets a large title instead of the search field. Explore is the
    exception — its title is the search field, because searching a map is the
    thing you came to that screen to do. */
-const ROOT_TITLES = { party: 'Party', rides: 'Rides', settings: 'Me' };
+const ROOT_TITLES = { party: 'Party', rides: 'Plan', settings: 'Your Day' };
 
 const EMPTY_STACK = [];
 /** The navigation state the app opens on, and the one back returns it to. */
@@ -121,7 +126,12 @@ const INTRO_KEY = 'tracker-intro-seen';
    a card on the rail confidently pointing at Ohio. */
 const CAR_KEY = 'tracker-car';
 /** The standing cards, by the name the visitor saw on them. */
-const CARD_LABELS = { restroom: 'Nearest toilet', food: 'Nearest food', firstaid: 'First aid' };
+const CARD_LABELS = {
+  restroom: 'Nearest toilet',
+  food: 'Nearest food',
+  firstaid: 'First aid',
+  gonow: 'GO NOW',
+};
 
 /* How long a phone has to say nothing before the others are told it has gone
    quiet. Deliberately longer than the five minutes at which the roster row
@@ -180,6 +190,11 @@ export default function Page() {
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
+  /* The location card has had its turn — allow the explore park question even when
+     there is no fix yet. */
+  const [locationSettled, setLocationSettled] = useState(false);
+  /** First-run "Go to nearest park" — auto-confirms on fix instead of a second card. */
+  const [nearestIntent, setNearestIntent] = useState(false);
   /* Has this phone been told what the app is? null until localStorage has been
      read, which cannot happen on the server: rendering a card before the answer
      is known would show a first-time visitor the location question for a frame
@@ -508,17 +523,21 @@ export default function Page() {
    * answering is what sets `venueConfirmed` and stops it.
    */
   const parkChoice = useMemo(() => {
-    if (parkAsked || !manifest || !position) return null;
-    return venueChoiceFor(manifest, position.lat, position.lng, {
+    if (parkAsked || !manifest) return null;
+    const lat = position?.lat;
+    const lng = position?.lng;
+    const hasFix = Number.isFinite(lat) && Number.isFinite(lng);
+    if (!hasFix && !locationSettled) return null;
+    return intakeChoiceFor(manifest, lat, lng, {
       confirmed: venueConfirmed,
       pinned: venuePinned,
     });
-  }, [parkAsked, manifest, position, venueConfirmed, venuePinned]);
+  }, [parkAsked, manifest, position, venueConfirmed, venuePinned, locationSettled]);
 
   /** The other parks, nearest first, for when the nearest one is the wrong guess. */
   const parkOptions = useMemo(() => {
-    if (!parkChoice || !position) return [];
-    return venuesByDistance(manifest, position.lat, position.lng).filter(
+    if (!parkChoice || !manifest) return [];
+    return venuesByDistance(manifest, position?.lat ?? null, position?.lng ?? null).filter(
       (row) => row.venue.id !== parkChoice.venue.id,
     );
   }, [parkChoice, manifest, position]);
@@ -549,8 +568,9 @@ export default function Page() {
   }, []);
 
   const askingPark = Boolean(parkChoice);
-  /** The question is only load-bearing while it is actually on screen. */
-  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark;
+  /** Inline park question on the gate (GPS path). Explore-without-GPS uses ParkPrompt. */
+  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark && !nearestIntent;
+  const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore);
 
   useEffect(() => {
     if (!position || position.manual) return;
@@ -644,8 +664,14 @@ export default function Page() {
   // "Just show me the park map" — which is the opposite of what someone who
   // just granted location wants.
   useEffect(() => {
-    if (geo.status === 'live' && !askingPark) setGateOpen(false);
-  }, [geo.status, askingPark]);
+    if (geo.status !== 'idle' && geo.status !== 'asking') setLocationSettled(true);
+  }, [geo.status]);
+
+  useEffect(() => {
+    if (!askingPark && (geo.status === 'live' || parkAsked)) {
+      setGateOpen(false);
+    }
+  }, [geo.status, askingPark, parkAsked]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -657,6 +683,35 @@ export default function Page() {
     // "Status: In line" and is not enough for a sentence.
     setTimeout(() => setToast((t) => (t === msg ? null : t)), msg.length > 40 ? 6000 : 4000);
   }, []);
+
+  // The welcome landing's one button: grant location, then build the nearest
+  // park without a second card. Progress is a toast; the gate shows setup state.
+  const confirmPark = useCallback(
+    (id) => {
+      setNearestIntent(false);
+      return confirmVenue(id)
+        .then((v) => {
+          setSelected(null);
+          setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+          setParkAsked(true);
+          setGateOpen(false);
+          showToast(`${v.name} is loaded — you are good to go!`);
+          return v;
+        })
+        .catch((err) => {
+          showToast(err?.message || 'Could not build that map.');
+          throw err;
+        });
+    },
+    [position, showToast],
+  );
+
+  useEffect(() => {
+    if (!nearestIntent || !parkChoice || venueStatus === 'loading') return;
+    confirmPark(parkChoice.venue.id).catch(() => {});
+    // Only the first fix after "Go to nearest park" — not every GPS tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearestIntent, parkChoice?.venue?.id]);
 
   const appUpdate = useAppUpdate();
 
@@ -919,7 +974,7 @@ export default function Page() {
         localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
         return next;
       });
-      showToast('Hidden. Put it back under Me → What the panel shows.');
+      showToast('Hidden. Put it back under Day → What the panel shows.');
     },
     [venue?.id, showToast, clearCar],
   );
@@ -1590,7 +1645,7 @@ export default function Page() {
         ? `${height}" · ${rideableCount} of ${totalRides} rides`
         : `${height}"`;
     }
-    if (tab === 'settings') return identity?.name || 'Guest';
+    if (tab === 'settings') return identity?.name ? `${identity.name} · ${BRAND.slogan}` : BRAND.slogan;
     return '';
   }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name]);
 
@@ -1601,7 +1656,7 @@ export default function Page() {
 
   const tabs = useMemo(() => {
     const out = [
-      { id: 'explore', label: 'Explore', icon: 'magnifyingglass' },
+      { id: 'explore', label: 'Explore', icon: 'safari' },
       {
         id: 'party',
         label: 'Party',
@@ -1615,16 +1670,16 @@ export default function Page() {
       },
     ];
     // Height rules only exist where a venue publishes them, so neither does the
-    // tab that reads them.
-    if (heights) out.push({ id: 'rides', label: 'Rides', icon: 'figure.rollercoaster' });
+    // Plan tab that reads them (itinerary + rider height).
+    if (heights) out.push({ id: 'rides', label: 'Plan', icon: 'figure.rollercoaster' });
     // Once there is a name, the tab wears it. "Guest" is the placeholder
     // nobody typed, and "GU" on a tab is not a person — so that one keeps the
-    // generic glyph until the visitor says who they are.
+    // Day glyph until the visitor says who they are.
     const named = identity?.name && identity.name !== 'Guest';
     out.push({
       id: 'settings',
-      label: 'Me',
-      icon: 'person.crop.circle.fill',
+      label: 'Day',
+      icon: 'sparkles',
       initials: named ? initialsFor(identity.name) : null,
     });
     return out;
@@ -1724,25 +1779,42 @@ export default function Page() {
       {/* Nothing runs across the top of a phone map. The two controls float in
           the corner and the rest of the frame is map. */}
       <header className="topbar">
-        <button
-          type="button"
-          className="iconBtn"
-          onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
-          aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
-        >
-          <Icon name={theme === 'day' ? 'moon.fill' : 'sun.max.fill'} />
-        </button>
-        <button
-          type="button"
-          className={`iconBtn ${tapeOn ? 'on' : ''}`}
-          onClick={() => {
-            setTapeOn((v) => !v);
-            geo.enableCompass();
-          }}
-          aria-label="Bearing tape"
-        >
-          <Icon name="safari" />
-        </button>
+        {/* Desktop / wide: primary logo lockup in the top-left (brand sheet Image 1).
+            Phones keep the map chrome clear — the sheet brand + splash carry the lockup. */}
+        <div className="topbarBrand">
+          {venue?.name ? (
+            <BrandMark
+              variant="glyph"
+              size={22}
+              aqua="var(--aqua)"
+              className="topbarGlyph"
+              title={BRAND.name}
+            />
+          ) : (
+            <BrandLockup size="sm" showTagline={false} className="topbarLockup" markTitle={BRAND.name} />
+          )}
+        </div>
+        <div className="topbarActions">
+          <button
+            type="button"
+            className="iconBtn"
+            onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
+            aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
+          >
+            <Icon name={theme === 'day' ? 'moon.fill' : 'sun.max.fill'} />
+          </button>
+          <button
+            type="button"
+            className={`iconBtn ${tapeOn ? 'on' : ''}`}
+            onClick={() => {
+              setTapeOn((v) => !v);
+              geo.enableCompass();
+            }}
+            aria-label="Bearing tape"
+          >
+            <Icon name="safari" />
+          </button>
+        </div>
       </header>
 
       {/* In the top corner with the rest of the map's chrome, because that is
@@ -1980,7 +2052,7 @@ export default function Page() {
                     </span>
                     <input
                       className="field"
-                      placeholder={`Search ${venue?.name || 'the map'}`}
+                      placeholder={`Explore ${venue?.name || 'the park'}`}
                       value={query}
                       /* Typing is asking for the list, so the sheet comes up far
                          enough to be one. */
@@ -2011,8 +2083,15 @@ export default function Page() {
               )}
               {plan.brand && (
                 <div className="brand">
-                  <b>{venue?.name || 'Party tracker'}</b>
-                  <span>{headerLine()}</span>
+                  {venue?.name ? (
+                    <div className="brandRow">
+                      <BrandMark variant="glyph" size={18} aqua="var(--aqua)" className="brandGlyph" />
+                      <b className="brandName">{venue.name}</b>
+                    </div>
+                  ) : (
+                    <BrandLockup size="sm" showTagline className="sheetBrandLockup" />
+                  )}
+                  <span className="brandStatus">{headerLine()}</span>
                 </div>
               )}
               {(plan.rail || plan.digest) && (
@@ -2032,6 +2111,9 @@ export default function Page() {
                   onDismiss={shedCard}
                   hidden={hiddenHere}
                   compact={plan.digest}
+                  weather={weatherFeed.weather}
+                  rides={partyRides}
+                  now={Date.now()}
                 />
               )}
               {/* Where the list would be, when the list will not fit: it is not
@@ -2045,7 +2127,7 @@ export default function Page() {
                   className="moreHint"
                   onClick={() => growSheet(SHEET_LIST_AT_PX)}
                 >
-                  Pull up for every place — food, toilets and rides
+                  Pull up to explore — food, toilets and rides
                   <Icon name="chevron.up" size={13} />
                 </button>
               )}
@@ -2069,7 +2151,7 @@ export default function Page() {
                 {navTarget && (
                   <div className="rowList">
                     <button type="button" className="row" onClick={() => push('route')}>
-                      <span className="rowText">Directions</span>
+                      <span className="rowText">Trail</span>
                       <span className="rowValue">{navTarget.label}</span>
                     </button>
                   </div>
@@ -2090,6 +2172,7 @@ export default function Page() {
                   theme={theme}
                   weather={weatherFeed.weather}
                   rides={partyRides}
+                  members={others}
                   // Reporting needs somewhere to send it. Outside a party the list
                   // still shows the forecast, minus the buttons.
                   onReport={party?.active ? reportRide : null}
@@ -2386,27 +2469,16 @@ export default function Page() {
         />
       )}
 
-      {/* The intake, in the order the answers become possible: location first,
-          because nothing else can be decided without a fix — carrying, the
-          first time this phone opens the app, the introduction that makes that
-          question worth saying yes to — then which park, which is the question
-          that actually builds a map. */}
-      {showParkPrompt && (
+      {/* Explore-without-GPS uses its own card; everything else is one gate. */}
+      {showExplorePrompt && (
         <ParkPrompt
           choice={parkChoice}
           options={parkOptions}
+          explore
           busy={venueStatus === 'loading'}
           error={venueStatus === 'error' ? venueError : null}
           onConfirm={(id) => {
-            confirmVenue(id)
-              .then((v) => {
-                setSelected(null);
-                // Following your own dot only makes sense on a map you are
-                // standing on; from the road, the park itself is the view.
-                setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
-                showToast(`${v.name} is ready`);
-              })
-              .catch((err) => showToast(err?.message || 'Could not build that map.'));
+            confirmPark(id).catch(() => {});
           }}
           onSkip={() => {
             setParkAsked(true);
@@ -2415,39 +2487,54 @@ export default function Page() {
         />
       )}
 
-      {gateOpen && introSeen !== null && !showParkPrompt && !showUpdateSplash && (
+      {/* The intake: one landing card for location and, when needed, which park.
+          The happy path is "Go to nearest park" → GPS → auto-build with a toast. */}
+      {gateOpen && introSeen !== null && !showExplorePrompt && !showUpdateSplash && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
-          // Said once per phone, and only in front of the ask itself: by the
-          // time the phone is waiting on a fix or reporting a refusal, the
-          // introduction is behind us and the card has something more urgent to
-          // say.
-          welcome={introSeen === false && geo.status === 'idle'}
-          onRequest={() => {
+          welcome={nearestIntent || (introSeen === false && geo.status === 'idle' && !parkChoice)}
+          nearestIntent={nearestIntent}
+          parkChoice={askingPark && !parkChoice?.explore ? parkChoice : nearestIntent ? parkChoice : null}
+          parkOptions={parkOptions}
+          setupBusy={venueStatus === 'loading'}
+          setupError={venueStatus === 'error' ? venueError : null}
+          onGoNearest={() => {
             markIntroSeen();
+            setNearestIntent(true);
+            showToast('Finding your nearest park…');
             geo.request();
             geo.enableCompass();
           }}
+          onRequest={() => {
+            markIntroSeen();
+            setLocationSettled(true);
+            geo.request();
+            geo.enableCompass();
+          }}
+          onConfirmPark={(id) => {
+            confirmPark(id).catch(() => {});
+          }}
           onManual={() => {
             markIntroSeen();
-            // Waving the intake off waves off both of its questions: whichever
-            // one you come back for, you came back deliberately, and the one
-            // you get should be the one this button is under.
-            setParkAsked(true);
-            setGateOpen(false);
-            showToast('Tap the map to place yourself');
+            setLocationSettled(true);
+            setNearestIntent(false);
+            if (venueConfirmed || venuePinned) {
+              setParkAsked(true);
+              setGateOpen(false);
+              showToast('Tap the map to drop your pin');
+            }
           }}
           onDismiss={() => {
             markIntroSeen();
-            // Waving both questions off leaves whichever park happened to boot,
-            // which is the one place the app can be showing somebody a map of
-            // somewhere they are not. Name it, so that is a fact rather than a
-            // surprise found later.
-            setParkAsked(true);
-            setGateOpen(false);
-            if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
+            setLocationSettled(true);
+            setNearestIntent(false);
+            if (venueConfirmed || venuePinned) {
+              setParkAsked(true);
+              setGateOpen(false);
+              if (venue?.name) showToast(`Browsing ${venue.name}. Change parks under Day → Which park.`);
+            }
           }}
         />
       )}

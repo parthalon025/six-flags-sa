@@ -1,6 +1,6 @@
 {
-  "name": "party-tracker",
-  "version": "1.1.10",
+  "name": "parkbound",
+  "version": "1.1.15",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -20,6 +20,7 @@
     "dev:all": "npm run dev:all -w @party-tracker/app",
     "phone": "npm run phone -w @party-tracker/app",
     "setup": "npm run setup -w @party-tracker/app",
+    "icons:build": "node scripts/build-icons.mjs",
     "venues:build": "node packages/venue-builder/bin/build-venue.mjs",
     "venues:rebuild": "node packages/venue-builder/bin/build-venue.mjs --rebuild",
     "venues:ask": "node packages/venue-builder/bin/build-venue.mjs --ask",

@@ -97,9 +97,9 @@ async function arrive(geo, { venue = null } = {}) {
   await page.waitForTimeout(2000);
   await page.locator('.gate .btn.primary:has-text("Continue")').click().catch(() => {});
   await page.waitForTimeout(500);
-  await page.locator('button:has-text("Allow location")').click().catch(() => {});
+  await page.locator('button:has-text("Share my location"), button:has-text("Allow location")').click().catch(() => {});
   await page.waitForTimeout(2500);
-  await page.locator('.gate .btn.primary:has-text("Yes — set up")').click().catch(() => {});
+  await page.locator('.gate .btn.primary:has-text("set up")').click().catch(() => {});
   await page.waitForFunction(() => !document.querySelector('.gate'), null, { timeout: 30000 }).catch(() => {});
   await page.waitForTimeout(2000);
   return { page, errors };
@@ -163,7 +163,7 @@ await score('B', 'B5', 'a walk inside the park is not named after the mall next 
   await typeSearch(b, 'toilet');
   await b.locator('.poiRow .poiMain').first().click();
   await b.waitForTimeout(1000);
-  if (!(await tapText(b, 'Walk me there'))) return 0;
+  if (!(await tapText(b, 'Go'))) return 0;
   await b.waitForTimeout(3500);
   const sheet = await b.locator('.sheet').innerText().catch(() => '');
   if (/La Cantera|Legend Hills/i.test(sheet)) return { score: 0, note: 'still routes "via" the mall' };
@@ -259,9 +259,9 @@ await score('B', 'B11', 'a card she removes stays removed, and Me can put it bac
   }
   await b.reload({ waitUntil: 'domcontentloaded' });
   await b.waitForTimeout(2500);
-  await b.locator('button:has-text("Allow location")').click().catch(() => {});
+  await b.locator('button:has-text("Share my location"), button:has-text("Allow location")').click().catch(() => {});
   await b.waitForTimeout(2500);
-  await b.locator('.gate .btn.primary:has-text("Yes — set up")').click().catch(() => {});
+  await b.locator('.gate .btn.primary:has-text("set up")').click().catch(() => {});
   await b.waitForFunction(() => !document.querySelector('.gate'), null, { timeout: 25000 }).catch(() => {});
   await b.waitForTimeout(2000);
   if (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) {

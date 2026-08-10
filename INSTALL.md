@@ -1,10 +1,12 @@
-# Installing Party Tracker
+# Installing Parkbound
+
+**Explore more. Stress less.**
 
 The app ends up as an icon on everyone's phone, and one phone runs the party.
 There are no accounts and nobody has to sign up for anything.
 
-It opens on Kings Island, and Six Flags Fiesta Texas is in the **Me** tab under
-**Which map**. It switches on its own: to whichever one your first GPS fix lands
+It opens on Kings Island, and Six Flags Fiesta Texas is in the **Day** tab under
+**Which park**. It switches on its own: to whichever one your first GPS fix lands
 inside, and then to wherever the phone hosting your party is, so everyone in a
 party sees the same map. To add anywhere else, see *Building a map of somewhere
 else* in [README.md](README.md).
@@ -89,6 +91,12 @@ which is Vercel's own default:
 ```json
 { "regions": ["iad1"] }
 ```
+
+**Monorepo layout.** The Next.js app is in `apps/party-tracker`. Vercel builds with
+`npx turbo run build --filter=@party-tracker/app` and reads output from
+`apps/party-tracker/.next`. Do **not** put `rootDirectory` in `vercel.json` —
+Vercel rejects it (use the project dashboard Root Directory setting only if you
+deploy the app package directly).
 
 If you add an Upstash database (below), **create it in the same region and leave
 this alone, or change both together**. Every relayed message is a round trip to

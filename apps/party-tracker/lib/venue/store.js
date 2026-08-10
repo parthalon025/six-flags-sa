@@ -135,6 +135,32 @@ export function venueChoiceFor(manifest, lat, lng, { confirmed = null, pinned = 
   return hit;
 }
 
+/**
+ * The park the intake should ask about — with or without a GPS fix.
+ *
+ * With a fix, this is `venueChoiceFor`. Without one, a visitor who has not
+ * yet answered still needs to pick a park: otherwise the app opens on whatever
+ * placeholder booted and the map looks empty until they stumble into Me →
+ * Which map. The explore flag tells the prompt to ask openly rather than guess
+ * from distance.
+ */
+export function intakeChoiceFor(manifest, lat, lng, { confirmed = null, pinned = false } = {}) {
+  if (pinned) return null;
+  const hasFix = Number.isFinite(lat) && Number.isFinite(lng);
+  if (hasFix) {
+    const hit = venueChoiceFor(manifest, lat, lng, { confirmed, pinned });
+    return hit ? { ...hit, explore: false } : null;
+  }
+  if (confirmed) return null;
+  const rows = venuesByDistance(manifest, null, null);
+  const venue =
+    rows.find((r) => r.venue.id === manifest?.default)?.venue ||
+    rows[0]?.venue ||
+    manifest?.venues?.[0];
+  if (!venue) return null;
+  return { venue, metres: null, inside: false, explore: true };
+}
+
 /* --------------------------------------------------------------- loading - */
 
 const readLocal = (key) => {

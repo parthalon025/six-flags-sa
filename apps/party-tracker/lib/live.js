@@ -1,0 +1,161 @@
+/**
+ * Parkbound live recommendations: GO NOW / BUSY / LATER.
+ *
+ * There is no wait-time feed. These states are derived from what the app
+ * already knows — party ride reports, the weather outlook, how far you are,
+ * and whether your party is clustered on a ride — so they never invent a
+ * queue length they cannot defend.
+ */
+
+import { LIVE } from './brand.js';
+import { distance } from './geo.js';
+import { isRideable } from './ontology.js';
+import { exposureFor } from './weather.js';
+import { statusFor } from './rideStatus.js';
+
+/** Walk this close and an open ride becomes GO NOW (~6–7 min). */
+export const GO_NOW_M = 480;
+
+/** Party members this close to a ride count as "here". */
+export const BUSY_CLUSTER_M = 50;
+
+/** How many party members at a ride make it BUSY. */
+export const BUSY_MIN_MEMBERS = 2;
+
+/**
+ * Count visible party members standing at a place.
+ * @param {{lat:number,lng:number}} poi
+ * @param {Array<{lat?:number,lng?:number,visible?:boolean}>} members
+ */
+export function membersAt(poi, members, radiusM = BUSY_CLUSTER_M) {
+  if (!poi || !Number.isFinite(poi.lat) || !Number.isFinite(poi.lng)) return 0;
+  let n = 0;
+  for (const m of members || []) {
+    if (!Number.isFinite(m?.lat) || !Number.isFinite(m?.lng)) continue;
+    if (m.visible === false) continue;
+    if (distance(poi.lat, poi.lng, m.lat, m.lng) <= radiusM) n += 1;
+  }
+  return n;
+}
+
+/**
+ * Parkbound live label for one place.
+ *
+ * @param {object} poi
+ * @param {object|null} report  party ride report
+ * @param {object|null} weather classifyWeather result
+ * @param {number} [now]
+ * @param {{ metres?: number|null, membersNear?: number }} [opts]
+ */
+export function liveFor(poi, report, weather, now = Date.now(), opts = {}) {
+  const metres = opts.metres;
+  const membersNear = opts.membersNear ?? 0;
+  const base = statusFor(poi, report, weather, now);
+  const nearby = metres != null && Number.isFinite(metres) && metres <= GO_NOW_M;
+  const exposure = exposureFor(poi);
+  const isDay = weather?.obs?.isDay !== false;
+  const rideable = isRideable(poi) || poi?.c === 'show';
+
+  const withLive = (live, patch = {}) => ({
+    ...base,
+    live,
+    label: LIVE[live] || base.label,
+    ...patch,
+  });
+
+  // Hard party / weather stops keep their vocabulary.
+  if (base.key === 'down' || base.key === 'hold') {
+    return withLive('paused', { key: 'paused', tone: 'bad' });
+  }
+  if (base.key === 'closed') {
+    return withLive('weather', { key: 'weather', tone: 'bad' });
+  }
+  // Sky to watch — come back later, not "it's closed".
+  if (base.key === 'watch') {
+    return withLive('later', {
+      key: 'later',
+      tone: 'warn',
+      detail: base.detail || 'Watch the sky — try again later',
+    });
+  }
+
+  // BUSY: your expedition is already piled onto this ride.
+  if (
+    rideable &&
+    membersNear >= BUSY_MIN_MEMBERS &&
+    (base.key === 'open' || base.key === 'running')
+  ) {
+    return withLive('busy', {
+      key: 'busy',
+      tone: 'warn',
+      source: base.source === 'none' ? 'party' : base.source,
+      detail: base.detail || `${membersNear} of your party are here`,
+    });
+  }
+
+  // GO NOW: someone just saw it open, and you can walk there in minutes.
+  if (base.key === 'open' && nearby) {
+    return withLive('goNow', {
+      key: 'goNow',
+      tone: 'ok',
+      detail: base.detail,
+    });
+  }
+
+  // GO NOW (hedged): clear sky, outdoor ride, nearby, daytime, no report.
+  if (
+    base.key === 'running' &&
+    nearby &&
+    isDay &&
+    rideable &&
+    exposure.shelter === 'open' &&
+    (poi.c === 'coaster' || poi.c === 'ride')
+  ) {
+    return withLive('goNow', {
+      key: 'goNow',
+      tone: 'ok',
+      source: 'weather',
+      detail: 'Nearby and the sky looks clear',
+    });
+  }
+
+  // Night outdoors with nothing else to say — not a GO NOW.
+  if (base.key === 'running' && !isDay && exposure.shelter === 'open' && rideable) {
+    return withLive('later', {
+      key: 'later',
+      tone: 'warn',
+      source: 'none',
+      detail: 'Night — better by daylight',
+    });
+  }
+
+  if (base.key === 'open') {
+    return withLive('open', { key: 'open' });
+  }
+
+  return { ...base, live: base.label ? base.key : 'none' };
+}
+
+/**
+ * Ranked GO NOW picks for the Explore rail — what should I do right now?
+ *
+ * @returns {Array<{ poi, live, metres }>}
+ */
+export function recommendNow(pois, rides, weather, me, members = [], now = Date.now(), limit = 2) {
+  if (!me || !Number.isFinite(me.lat) || !Number.isFinite(me.lng)) return [];
+
+  const scored = [];
+  for (const poi of pois || []) {
+    if (!isRideable(poi) && poi.c !== 'show') continue;
+    const metres = distance(me.lat, me.lng, poi.lat, poi.lng);
+    const membersNear = membersAt(poi, members);
+    const live = liveFor(poi, rides?.[poi.id] ?? null, weather, now, { metres, membersNear });
+    if (live.live !== 'goNow' && live.key !== 'goNow') continue;
+    // Prefer party-confirmed opens, then nearer rides.
+    const rank = live.source === 'party' ? 0 : 1;
+    scored.push({ poi, live, metres, rank });
+  }
+
+  scored.sort((a, b) => a.rank - b.rank || a.metres - b.metres);
+  return scored.slice(0, limit);
+}

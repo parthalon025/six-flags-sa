@@ -140,6 +140,35 @@ const GLYPHS = {
       />
     </>
   ),
+  /* Your Day — subtle sparkle for adventure moments, not a game badge. */
+  sparkles: (
+    <>
+      <path
+        d="M12 2.8 13.4 8.2 18.8 9.6 13.4 11 12 16.4 10.6 11 5.2 9.6 10.6 8.2Z"
+        fill="currentColor"
+      />
+      <path d="M18.2 14.2 18.9 16.6 21.4 17.3 18.9 18 18.2 20.4 17.5 18 15 17.3 17.5 16.6Z" fill="currentColor" />
+      <path d="M6.2 15.4 6.7 17.1 8.4 17.6 6.7 18.1 6.2 19.8 5.7 18.1 4 17.6 5.7 17.1Z" fill="currentColor" />
+    </>
+  ),
+  /* Parkbound simplified Waypoint — app/map glyph (not the full lockup). */
+  waypoint: (
+    <>
+      <path
+        d="M8.2 5.4 L12 2.6 L15.8 5.4 M18.6 8.2 L21.4 12 L18.6 15.8 M15.8 18.6 L12 21.4 L8.2 18.6 M5.4 15.8 L2.6 12 L5.4 8.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M12 1.2 L13.3 3.8 H10.7 Z" fill="currentColor" />
+      <path d="M22.8 12 L20.2 10.7 V13.3 Z" fill="currentColor" />
+      <path d="M12 22.8 L10.7 20.2 H13.3 Z" fill="currentColor" />
+      <path d="M1.2 12 L3.8 13.3 V10.7 Z" fill="currentColor" />
+      <circle cx="12" cy="12" r="3.1" fill="var(--adventure, #FF6B35)" />
+    </>
+  ),
   'camera.fill': (
     <>
       <path

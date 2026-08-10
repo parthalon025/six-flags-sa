@@ -240,7 +240,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.locator('button:has-text("Go")').first().click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -656,7 +656,7 @@ async function openRide(page, name) {
 
 /**
  * The report buttons are addressed by `data-report` rather than by their label:
- * the label is deliberately stateful ("It's down" becomes "Reported down"), so
+ * the label is deliberately stateful ("It's down" becomes "PAUSED"), so
  * matching on text couples the test to which way the button is currently
  * pointing — which is the thing under test.
  */
@@ -672,7 +672,7 @@ const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`
  */
 async function pillFor(page, name) {
   const row = page.locator('.poiRow', { hasText: name }).first();
-  const pill = row.locator('.verdict.statusPill').first();
+  const pill = row.locator('.statusPill').first();
   try {
     // Short timeout and a catch rather than a count() guard: the retraction
     // test is polling for this pill to vanish, so it can and does disappear
@@ -690,13 +690,13 @@ await check('a ride reported down on one phone reaches the other', async () => {
 
   // The reporting phone shows it straight away — via the host's patch, not an
   // optimistic local write.
-  await until(async () => /reported down/i.test(await pillFor(a, 'Diamondback')), {
+  await until(async () => /paused/i.test(await pillFor(a, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'phone A to show its own report',
   });
 
   await openRide(b, 'Diamondback');
-  await until(async () => /reported down/i.test(await pillFor(b, 'Diamondback')), {
+  await until(async () => /paused/i.test(await pillFor(b, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'the report to reach phone B',
   });
@@ -718,12 +718,12 @@ await check('the report says who saw it and when', async () => {
 await check('the other phone can correct it', async () => {
   const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
   await reportBtn(row, 'open').click();
-  await until(async () => /reported running/i.test(await pillFor(b, 'Diamondback')), {
+  await until(async () => /go now|\bopen\b/i.test(await pillFor(b, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'phone B to overwrite the report',
   });
   // A ride report is not owned by whoever wrote it, so A sees B's correction.
-  await until(async () => /reported running/i.test(await pillFor(a, 'Diamondback')), {
+  await until(async () => /go now|\bopen\b/i.test(await pillFor(a, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: "the correction to reach phone A",
   });
@@ -736,8 +736,8 @@ await check('retracting a report clears it everywhere', async () => {
   await reportBtn(row, 'open').click();
   // Not asserting the pill is gone outright: this suite runs against a live
   // forecast, and if it is genuinely storming the row keeps a weather pill.
-  // What must disappear is the party's claim.
-  const cleared = async (page) => !/reported/i.test(await pillFor(page, 'Diamondback'));
+  // What must disappear is the party's claim (the ● marker on an OPEN/PAUSED pill).
+  const cleared = async (page) => !/●/.test(await pillFor(page, 'Diamondback'));
   await until(() => cleared(b), { timeout: JOIN_TIMEOUT, label: 'phone B to drop the report' });
   await until(() => cleared(a), { timeout: JOIN_TIMEOUT, label: 'phone A to drop the report' });
   return true;
@@ -881,42 +881,23 @@ await dismissUpdateSplash(e);
 await check('the first screen says what the app is, above the location ask', async () => {
   const card = await e.locator('.gate').innerText();
   const heading = (await e.locator('.gate h2').innerText()).trim();
-  if (heading !== 'Park Party') throw new Error(`opened on: "${heading}"`);
-  // One screen, in the order that earns the answer: what you get, then what it
-  // needs, then the button. A permission asked cold is a permission refused.
-  const said = card.indexOf('See where everyone is');
-  const asked = card.indexOf('needs to use your location');
-  const button = card.indexOf('Allow location');
-  if (said < 0 || asked < 0 || button < 0) throw new Error('the introduction and the ask are not on one card');
-  if (!(said < asked && asked < button)) throw new Error('the ask comes before what it is for');
+  if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
+  // One line and one button: what it is, then the nearest-park shortcut.
+  const said = card.indexOf('Explore more. Stress less.');
+  const button = card.indexOf('Go to nearest park');
+  if (said < 0 || button < 0) throw new Error('the landing line and nearest-park button are not on one card');
+  if (!(said < button)) throw new Error('the button comes before what it is for');
   return true;
 });
 
-await check('the intake asks about the nearest park, not the default one', async () => {
-  await e.locator('button:has-text("Allow location")').click();
-  // Wait for the question itself, not merely for a heading: the location card
-  // is still up while the fix lands, and reading .gate h2 the moment it says
-  // anything gets "Waiting for a fix" rather than the park.
-  await until(async () => (await e.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
-    timeout: 25000,
-    label: 'the park question',
-  });
-  const heading = (await e.locator('.gate h2').innerText()).trim();
-  if (!/going to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
-  // And the guess it did not make is one tap away, with the distance that
-  // explains why it was not the guess.
-  const other = await e.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
-  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
-  return true;
-});
-
-await check('saying yes builds that park, geometry and places', async () => {
-  await e.locator('.gate .btn.primary:has-text("Yes — set up")').click();
+await check('the nearest-park button builds that park without a second card', async () => {
+  await e.locator('button:has-text("Go to nearest park")').click();
+  // Auto-builds on fix — no "Going to …?" confirmation step.
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
-  // The places have to have come with it, and height rules must be live —
-  // Fiesta Texas ships 60 height records now, so the Rides tab belongs here too.
+  const toast = await e.locator('.toast').innerText().catch(() => '');
+  if (!/fiesta texas is (ready|loaded)/i.test(toast)) throw new Error(`toast: "${toast}"`);
   await go(e, 'Rider height');
   await e.locator('.tier:has-text("48")').click();
   await e.waitForTimeout(400);
@@ -930,21 +911,92 @@ await check('saying yes builds that park, geometry and places', async () => {
   return true;
 });
 
+await check('the park question is inline when the venue is not yet confirmed', async () => {
+  const returning = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await returning.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+    localStorage.removeItem('tracker-venue-confirmed');
+    localStorage.removeItem('tracker-venue');
+    localStorage.setItem('tracker-release-notes-seen', '9.9.9');
+  });
+  const p = await returning.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  if (await p.locator('.gate h2:has-text("Park Party")').count()) {
+    throw new Error('the introduction came back for a returning phone');
+  }
+  await p.locator('button:has-text("Allow location")').click();
+  await until(async () => (await p.locator('.gate .btn.primary:has-text("set up")').count()) > 0, {
+    timeout: 25000,
+    label: 'the park question',
+  });
+  const heading = (await p.locator('.gate h2').innerText()).trim();
+  if (!/headed to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
+  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
+  await p.locator('.gate .btn.primary:has-text("set up")').click();
+  await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const shown = await p.locator('.brand b').innerText();
+  if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
+  await go(p, 'Places');
+  await until(async () => (await p.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
+    timeout: 15000,
+    label: "Fiesta Texas's place list",
+  });
+  await returning.close();
+  return true;
+});
+
 await check('the park answered stays answered across a reload', async () => {
   await e.reload({ waitUntil: 'domcontentloaded' });
   await hydrated(e);
   await dismissUpdateSplash(e);
   // Introduced once per phone, not once per launch: coming back gets the plain
   // question, not the sales pitch again.
-  if (await e.locator('.gate h2:has-text("Park Party")').count()) {
+  if (await e.locator('.gate h2:has-text("PARKBOUND")').count()) {
     throw new Error('the introduction came back on a reload');
   }
-  await e.locator('button:has-text("Allow location")').click();
-  // Asked once. If the question came back, the gate would still be up here —
-  // nothing else in the intake waits on a fix that has already landed.
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}" after reload`);
+  return true;
+});
+
+await check('skipping location still asks which park to explore', async () => {
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: [],
+  });
+  await fresh.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+    localStorage.setItem('tracker-release-notes-seen', '1.1.3');
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  await dismissUpdateSplash(p);
+  const skip = p.locator(
+    'button:has-text("Just browsing"), button:has-text("Just show me the map")',
+  );
+  await until(async () => (await skip.count()) > 0, { timeout: 10000, label: 'the location skip button' });
+  await skip.first().click();
+  await until(async () => (await p.locator('.gate h2').innerText()).includes('headed'), {
+    timeout: 10000,
+    label: 'the explore park question',
+  });
+  const heading = (await p.locator('.gate h2').innerText()).trim();
+  if (!/where are we headed today/i.test(heading)) {
+    throw new Error(`asked: "${heading}"`);
+  }
+  await p.locator('.gate .btn.primary').click();
+  await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const paths = await p.locator('svg.mapSvg path').count();
+  if (paths < 100) throw new Error(`map did not draw after picking a park (${paths} paths)`);
+  await fresh.close();
   return true;
 });
 

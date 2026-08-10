@@ -1,13 +1,13 @@
 {
-  "name": "Party Tracker",
-  "short_name": "Party Tracker",
-  "description": "Live group tracking, walking times and a drawn map of wherever you are, built from OpenStreetMap.",
+  "name": "Parkbound",
+  "short_name": "Parkbound",
+  "description": "Explore more. Stress less. An explorer’s companion for theme-park days — live party coordination, walking trails, and a drawn park map.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#F7F4EC",
+  "theme_color": "#10233F",
   "icons": [
     {
       "src": "/icon-192.png",

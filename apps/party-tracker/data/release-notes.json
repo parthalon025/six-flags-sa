@@ -3,7 +3,7 @@
     "title": "What's new",
     "items": [
       "The app now updates itself when you have signal — no need to reinstall from your home screen.",
-      "Your version number lives under Me → Advanced, so you can check you are on the latest build.",
+      "Your version number lives under Day → Advanced, so you can check you are on the latest build.",
       "When you are offline, the map and rides keep working from what is saved on your phone."
     ]
   },
@@ -65,6 +65,36 @@
     "title": "What's new",
     "items": [
       "Document auto-bump on merge so PRs do not touch version files"
+    ]
+  },
+  "1.1.11": {
+    "title": "What's new",
+    "items": [
+      "Streamline first-run landing with nearest-park shortcut (#46)"
+    ]
+  },
+  "1.1.12": {
+    "title": "What's new",
+    "items": [
+      "Document architecture and venue pipeline visuals for onboarding (#47)"
+    ]
+  },
+  "1.1.13": {
+    "title": "What's new",
+    "items": [
+      "Update user intro and require park selection when not in a park (#40)"
+    ]
+  },
+  "1.1.14": {
+    "title": "What's new",
+    "items": [
+      "Refresh visual regression shots for Parkbound intro"
+    ]
+  },
+  "1.1.15": {
+    "title": "What's new",
+    "items": [
+      "Align Parkbound brand assets with logo lockup, icon, and map usage (#49)"
     ]
   }
 }

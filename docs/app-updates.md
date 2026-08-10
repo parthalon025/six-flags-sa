@@ -1,7 +1,7 @@
 # App updates — insider notes
 
 **Audience:** whoever ships, hosts, or debugs deployments. Visitors see a version
-number under **Me → Advanced** and in **Diagnostics**; they do not need this
+number under **Day → Advanced** and in **Diagnostics**; they do not need this
 page.
 
 ## What changed
@@ -56,7 +56,7 @@ page.
 `package.json`, `package-lock.json`, `public/app-version.json`, `public/sw.js`,
 and `data/release-notes.json`. Your merge does not need to advance the semver.
 
-**How to verify auto-update:** open **Me → Advanced → Diagnostics**. The
+**How to verify auto-update:** open **Day → Advanced → Diagnostics**. The
 **Server version** should be higher than **Installed version** right after a
 deploy; **Server build** should be newer than **Installed build** if the semver
 already matched.
