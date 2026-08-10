@@ -239,7 +239,7 @@ export default function PlaceList({
                     {isRide ? heightLabel(p) : CATEGORY_LABELS[p.c]} · {p.a}
                   </span>
                 </span>
-                <span className="poiRight">
+                <span className="poiOut">
                   {d != null && (
                     <span className="poiWalk">
                       <b>{formatWalk(d)}</b>
