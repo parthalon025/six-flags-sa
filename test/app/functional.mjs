@@ -240,7 +240,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.locator('.poiRow.open .joinRow button:has-text("Walk me there")').click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -270,6 +270,8 @@ await check('cedar point route preview names surveyed queue entrances', async ()
     await root(a);
     return a.locator('.brandName, .brand b').first().innerText();
   };
+  // Search "gemini" also hits every place in the Gemini Midway land (area match).
+  await dismissNavigation(a).catch(() => {});
   await go(a, 'Which map');
   await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
   await until(async () => /cedar point/i.test(await venueNameA()), {
@@ -278,11 +280,11 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   });
   await go(a, 'Places');
   await searchPlaces(a, 'gemini');
-  const gemini = a.locator('.poiRow', { hasText: /gemini/i }).first();
-  await until(async () => (await gemini.count()) > 0, { timeout: 15000, label: 'Gemini in the list' });
+  const gemini = a.locator('.poiRow').filter({ has: a.locator('.poiName', { hasText: /^Gemini$/ }) }).first();
+  await until(async () => (await gemini.count()) > 0, { timeout: 15000, label: 'Gemini coaster in the list' });
   await gemini.locator('.poiMain').click();
-  await a.waitForTimeout(300);
-  await a.locator('.poiRow.open .joinRow button:has-text("Walk me there")').click();
+  await a.waitForTimeout(400);
+  await gemini.locator('button:has-text("Walk me there")').click();
   await a.waitForTimeout(900);
   const where = await a.locator('.previewWhere').innerText();
   if (!/gemini/i.test(where)) throw new Error(`preview: ${where}`);
