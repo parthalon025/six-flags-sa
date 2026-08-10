@@ -76,6 +76,8 @@ const {
   createGpsSmoother,
   positionForMap,
 } = await import('../../apps/party-tracker/lib/gps/smooth.js');
+const { mapDisplayPosition } = await import('../../apps/party-tracker/lib/gps/display.js');
+const { arrivalPointForVenue } = await import('../../apps/party-tracker/lib/venue/arrival.js');
 const {
   MAX_SNAP_M,
   OFF_ROUTE_M,
@@ -1299,6 +1301,49 @@ await check('positionForMap leaves off-site and manual fixes alone', () => {
   });
   assert.equal(manual.manual, true);
   assert.equal(manual.snapped, undefined);
+  return true;
+});
+
+section('gps/display');
+
+await check('arrivalPointForVenue prefers the main entrance POI', () => {
+  const hit = arrivalPointForVenue(RIDES, PARK.meta.bounds);
+  assert.equal(hit?.label, 'Main Entrance');
+  assert.ok(withinBounds(PARK.meta.bounds, hit.lat, hit.lng), 'entrance is inside the venue');
+  return true;
+});
+
+await check('mapDisplayPosition mocks an off-site fix to the arrival point', () => {
+  const shown = mapDisplayPosition({
+    position: { lat: 30.2672, lng: -97.7431, acc: 20, ts: 0 },
+    pois: RIDES,
+    bounds: PARK.meta.bounds,
+    graph,
+  });
+  assert.equal(shown.arrival, true);
+  assert.ok(withinBounds(PARK.meta.bounds, shown.lat, shown.lng), 'mocked dot is on the map');
+  const entrance = poi('Main Entrance');
+  const drift = distance(entrance.lat, entrance.lng, shown.lat, shown.lng);
+  assert.ok(drift < 30, `mocked dot should stay at the entrance, not ${drift.toFixed(0)} m away`);
+  return true;
+});
+
+await check('mapDisplayPosition leaves on-site and manual fixes alone', () => {
+  const onSite = mapDisplayPosition({
+    position: { lat: 39.34395, lng: -84.2673, acc: 12, ts: 0 },
+    pois: RIDES,
+    bounds: PARK.meta.bounds,
+    graph,
+  });
+  assert.equal(onSite.arrival, undefined);
+  const manual = mapDisplayPosition({
+    position: { lat: 39.35, lng: -84.29, acc: null, ts: 0, manual: true },
+    pois: RIDES,
+    bounds: PARK.meta.bounds,
+    graph,
+  });
+  assert.equal(manual.manual, true);
+  assert.equal(manual.arrival, undefined);
   return true;
 });
 

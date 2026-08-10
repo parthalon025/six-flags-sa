@@ -78,3 +78,13 @@ export function markReleaseNotesSeen(version = APP_VERSION) {
 export function pendingReleaseNotes(current = APP_VERSION) {
   return releaseNotesSince(readReleaseNotesSeen(), current);
 }
+
+/**
+ * All shipped release notes up to and including `current`, for on-demand display
+ * (e.g. tapping the version on the intro splash).
+ * @param {string} [current]
+ * @returns {ReleaseNoteBlock[]}
+ */
+export function allReleaseNotes(current = APP_VERSION, source = catalog) {
+  return releaseNotesSince('0.0.0', current, source);
+}

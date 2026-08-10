@@ -11,7 +11,7 @@
  *   npm run test:visual
  */
 
-import { dismissUpdateSplash, go, launch, openPhone, until } from './browser.mjs';
+import { dismissUpdateSplash, dismissIntroSplash, go, launch, openPhone, until } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -75,14 +75,15 @@ async function main() {
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
   await dismissUpdateSplash(page);
+  await dismissIntroSplash(page);
   await page.waitForSelector('.gate', { timeout: 10000 });
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();
   check(
-    /Parkbound|PARKBOUND/i.test(first) && /Explore more\. Stress less/i.test(first),
-    'the first screen introduces the app in one line',
+    /Find you on the map/i.test(first),
+    'the GPS gate asks for location after the intro',
   );
-  check(/Go to nearest park/i.test(first), 'the first screen offers the nearest-park shortcut');
+  check(/Go to nearest park/i.test(first), 'the GPS gate offers the nearest-park shortcut');
 
   await context.grantPermissions(['geolocation']);
   await page.getByRole('button', { name: 'Go to nearest park' }).click();

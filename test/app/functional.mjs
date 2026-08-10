@@ -14,7 +14,9 @@ import {
   BASE,
   clearSearch,
   closeGate,
+  dismissIntroSplash,
   dismissNavigation,
+  dismissUpdateSplash,
   go,
   hydrated,
   launch,
@@ -847,14 +849,6 @@ const e = await intake.newPage();
 await e.goto(BASE, { waitUntil: 'domcontentloaded' });
 await hydrated(e);
 
-const dismissUpdateSplash = async (page) => {
-  const cont = page.locator('.gate .btn.primary:has-text("Continue")');
-  if (await cont.count()) {
-    await cont.click();
-    await page.waitForTimeout(500);
-  }
-};
-
 await check('the update splash appears before the introduction on a fresh install', async () => {
   // A brand-new phone on a build with release notes sees the splash first.
   // Re-open on a context that has not dismissed it yet.
@@ -878,15 +872,35 @@ await check('the update splash appears before the introduction on a fresh instal
 
 await dismissUpdateSplash(e);
 
-await check('the first screen says what the app is, above the location ask', async () => {
+await check('the first screen is the intro splash with brand, pitch, and version', async () => {
   const card = await e.locator('.gate').innerText();
-  const heading = (await e.locator('.gate h2').innerText()).trim();
+  const heading = (await e.locator('#intro-splash-title').innerText()).trim();
   if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
-  // One line and one button: what it is, then the nearest-park shortcut.
   const said = card.indexOf('Explore more. Stress less.');
-  const button = card.indexOf('Go to nearest park');
-  if (said < 0 || button < 0) throw new Error('the landing line and nearest-park button are not on one card');
-  if (!(said < button)) throw new Error('the button comes before what it is for');
+  const pitch = card.indexOf('explorer');
+  const version = card.indexOf('Version ');
+  if (said < 0 || pitch < 0 || version < 0) {
+    throw new Error('the intro splash is missing slogan, pitch, or version');
+  }
+  if (/Go to nearest park/i.test(card)) {
+    throw new Error('the intro splash should not include the GPS gate yet');
+  }
+  return true;
+});
+
+await check('the GPS gate follows the intro with nearest-park and location', async () => {
+  await e.locator('button:has-text("Get started")').click();
+  await until(async () => (await e.locator('button:has-text("Go to nearest park")').count()) > 0, {
+    timeout: 10000,
+    label: 'the GPS gate',
+  });
+  const card = await e.locator('.gate').innerText();
+  if (!/Find you on the map/i.test(card)) throw new Error('the GPS gate title is missing');
+  if (!/Go to nearest park/i.test(card)) throw new Error('the nearest-park shortcut is missing');
+  const paths = await e.locator('.mapSvg path').count();
+  const dot = await e.locator('.mePulse').count();
+  if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
+  if (!dot) throw new Error('off-site GPS should still show a dot at the park entrance');
   return true;
 });
 
@@ -926,7 +940,7 @@ await check('the park question is inline when the venue is not yet confirmed', a
   const p = await returning.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
   await hydrated(p);
-  if (await p.locator('.gate h2:has-text("Park Party")').count()) {
+  if (await p.locator('#intro-splash-title').count()) {
     throw new Error('the introduction came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
@@ -957,7 +971,7 @@ await check('the park answered stays answered across a reload', async () => {
   await dismissUpdateSplash(e);
   // Introduced once per phone, not once per launch: coming back gets the plain
   // question, not the sales pitch again.
-  if (await e.locator('.gate h2:has-text("PARKBOUND")').count()) {
+  if (await e.locator('#intro-splash-title').count()) {
     throw new Error('the introduction came back on a reload');
   }
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });

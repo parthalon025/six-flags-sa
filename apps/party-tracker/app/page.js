@@ -5,6 +5,7 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
+import IntroSplash from '@/components/IntroSplash';
 import ParkPrompt from '@/components/ParkPrompt';
 import GlanceRail from '@/components/GlanceRail';
 import NavBanner from '@/components/NavBanner';
@@ -46,7 +47,7 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
-import { positionForMap } from '@/lib/gps/smooth';
+import { mapDisplayPosition } from '@/lib/gps/display';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -195,6 +196,8 @@ export default function Page() {
   const [locationSettled, setLocationSettled] = useState(false);
   /** First-run "Go to nearest park" — auto-confirms on fix instead of a second card. */
   const [nearestIntent, setNearestIntent] = useState(false);
+  /** True when GpsGate opens right after the intro splash this session. */
+  const [gpsFromIntro, setGpsFromIntro] = useState(false);
   /* Has this phone been told what the app is? null until localStorage has been
      read, which cannot happen on the server: rendering a card before the answer
      is known would show a first-time visitor the location question for a frame
@@ -204,6 +207,7 @@ export default function Page() {
   /** Release-note blocks for the installed build, or [] once dismissed / none. */
   const [updateNotes, setUpdateNotes] = useState(null);
   const showUpdateSplash = updateNotes !== null && updateNotes.length > 0;
+  const showIntroSplash = introSeen === false && !showUpdateSplash;
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
@@ -692,7 +696,7 @@ export default function Page() {
       return confirmVenue(id)
         .then((v) => {
           setSelected(null);
-          setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+          setFollow(Boolean(position));
           setParkAsked(true);
           setGateOpen(false);
           showToast(`${v.name} is loaded — you are good to go!`);
@@ -1524,13 +1528,14 @@ export default function Page() {
 
   const mapMe = useMemo(
     () =>
-      positionForMap({
+      mapDisplayPosition({
         position,
+        pois: POIS,
         graph,
         bounds: venue?.bounds,
         walking,
       }),
-    [position, graph, venue?.bounds, walking],
+    [position, graph, venue?.bounds, walking, POIS],
   );
 
   const { done: routeDone, ahead: routeAhead } = useMemo(() => {
@@ -1619,7 +1624,11 @@ export default function Page() {
        row — once in bold as the heading, once as the district. "On site" is
        what that fallback actually means. */
     const district = nearest?.p.a && nearest.p.a !== venue?.name ? nearest.p.a : null;
-    const where = inside ? district || 'On site' : 'Off site';
+    const where = inside
+      ? district || 'On site'
+      : mapMe?.arrival
+        ? `Near ${mapMe.arrivalLabel || 'entrance'}`
+        : 'Off site';
     /* "±0 ft" is worse than saying nothing — it reads as a precision claim
        nobody made. A fix is either good enough not to mention or loose enough
        to be worth a warning, and the number only helps in the second case. */
@@ -2469,7 +2478,17 @@ export default function Page() {
         />
       )}
 
-      {/* Explore-without-GPS uses its own card; everything else is one gate. */}
+      {showIntroSplash && introSeen !== null && (
+        <IntroSplash
+          version={appUpdate.version}
+          onContinue={() => {
+            markIntroSeen();
+            setGpsFromIntro(true);
+          }}
+        />
+      )}
+
+      {/* Explore-without-GPS uses its own card; location intake is the GPS gate. */}
       {showExplorePrompt && (
         <ParkPrompt
           choice={parkChoice}
@@ -2487,28 +2506,25 @@ export default function Page() {
         />
       )}
 
-      {/* The intake: one landing card for location and, when needed, which park.
-          The happy path is "Go to nearest park" → GPS → auto-build with a toast. */}
-      {gateOpen && introSeen !== null && !showExplorePrompt && !showUpdateSplash && (
+      {/* Location and park intake — shown after the intro splash (or immediately for return visits). */}
+      {gateOpen && introSeen && !showExplorePrompt && !showUpdateSplash && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
-          welcome={nearestIntent || (introSeen === false && geo.status === 'idle' && !parkChoice)}
+          highlightNearest={gpsFromIntro}
           nearestIntent={nearestIntent}
           parkChoice={askingPark && !parkChoice?.explore ? parkChoice : nearestIntent ? parkChoice : null}
           parkOptions={parkOptions}
           setupBusy={venueStatus === 'loading'}
           setupError={venueStatus === 'error' ? venueError : null}
           onGoNearest={() => {
-            markIntroSeen();
             setNearestIntent(true);
             showToast('Finding your nearest park…');
             geo.request();
             geo.enableCompass();
           }}
           onRequest={() => {
-            markIntroSeen();
             setLocationSettled(true);
             geo.request();
             geo.enableCompass();
@@ -2517,7 +2533,6 @@ export default function Page() {
             confirmPark(id).catch(() => {});
           }}
           onManual={() => {
-            markIntroSeen();
             setLocationSettled(true);
             setNearestIntent(false);
             if (venueConfirmed || venuePinned) {
@@ -2527,7 +2542,6 @@ export default function Page() {
             }
           }}
           onDismiss={() => {
-            markIntroSeen();
             setLocationSettled(true);
             setNearestIntent(false);
             if (venueConfirmed || venuePinned) {
