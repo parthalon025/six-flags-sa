@@ -6,6 +6,11 @@ Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio), Cedar Point
 Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15
 (App Router) and React 19.
 
+**New to the codebase?** Start with the
+[architecture map](docs/architecture-map.md) — system diagram, venue build
+pipeline, phone layers, and party mesh visuals — then come back here for the
+full feature and layout prose.
+
 - **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
   painted as SVG: midways, buildings, water, slides, and every coaster's actual track
   centreline. Pan with one finger, pinch or scroll to zoom.
@@ -1086,6 +1091,9 @@ browser.
 The park's own printed map artwork is copyrighted and is deliberately not used here.
 
 ## Layout
+
+Visual overview first: [docs/architecture-map.md](docs/architecture-map.md).
+The tree below is the same map as prose.
 
 ```
 lib/core/                     the domain — pure, no I/O, runs anywhere
