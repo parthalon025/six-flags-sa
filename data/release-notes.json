@@ -72,5 +72,11 @@
     "items": [
       "Streamline first-run landing with nearest-park shortcut (#46)"
     ]
+  },
+  "1.1.12": {
+    "title": "What's new",
+    "items": [
+      "Document architecture and venue pipeline visuals for onboarding (#47)"
+    ]
   }
 }
