@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["iad1"],
   "framework": "nextjs",
-  "installCommand": "npm ci && node scripts/vercel-link.mjs",
+  "installCommand": "npm ci && node scripts/vercel-prepare.mjs",
   "buildCommand": "node scripts/vercel-build.mjs"
 }

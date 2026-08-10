@@ -8,7 +8,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const app = path.join(root, 'apps/party-tracker');
 
 process.chdir(root);
-execSync('node scripts/vercel-link.mjs', { stdio: 'inherit' });
+execSync('node scripts/vercel-prepare.mjs', { stdio: 'inherit' });
 execSync('npm run build -w @party-tracker/app', { stdio: 'inherit' });
 
 const srcNext = path.join(app, '.next');
