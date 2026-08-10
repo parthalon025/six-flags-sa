@@ -18,6 +18,10 @@
     "pad": 0,
     "merge": [
       "data/venues/big-kahunas.merge.geojson"
+    ],
+    "sources": "data/venues/big-kahunas.sources.json",
+    "imagery": [
+      "data/venues/big-kahunas.imagery.geojson"
     ]
   },
   "built": {
@@ -26,7 +30,7 @@
       "pois": 32,
       "rides": 23,
       "heights": 23,
-      "shapes": 283
+      "shapes": 286
     }
   }
 }

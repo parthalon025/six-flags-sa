@@ -1,7 +1,7 @@
 {
   "version": 1,
   "venue": "big-kahunas",
-  "_comment": "Open-data and imagery sources used beside OpenStreetMap for this venue. Referenced by overrides, merge, and trace files; replayed on every rebuild via the recipe.",
+  "_comment": "Open-data and imagery sources used beside OpenStreetMap for this venue. The builder reads this file on every build to wire datasets and credits.",
   "generated": "2026-08-10",
   "sources": [
     {
@@ -19,14 +19,14 @@
       "capture_date": "2025-03-01",
       "resolution_cm": 7.6,
       "horizontal_accuracy_m": 0.19,
-      "used_for": "Ride and amenity positions where OSM names a geometry type but not the attraction, cross-checked against OSM slide and pool centroids."
+      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction."
     },
     {
       "id": "park-map-2026",
       "kind": "official_map",
       "url": "https://bigkahunas.com/destin/park-map/",
       "image": "docs/big-kahunas-2026-parkmap.webp",
-      "used_for": "Food, restroom, and river labels on the illustrated map; disambiguation of lookalike pools and flumes when paired with orthophoto positions."
+      "used_for": "Food, restroom, and river labels; disambiguation of lookalike pools and flumes when paired with orthophoto positions."
     },
     {
       "id": "park-site-2026",
@@ -34,5 +34,9 @@
       "url": "https://bigkahunas.com/destin/attractions/water-park/",
       "used_for": "Height requirements and attraction names for the 2026 season."
     }
-  ]
+  ],
+  "datasets": {
+    "merge": ["data/venues/big-kahunas.merge.geojson"],
+    "imagery": ["data/venues/big-kahunas.imagery.geojson"]
+  }
 }
