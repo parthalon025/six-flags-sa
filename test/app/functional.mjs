@@ -282,7 +282,7 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   await until(async () => (await gemini.count()) > 0, { timeout: 15000, label: 'Gemini in the list' });
   await gemini.locator('.poiMain').click();
   await a.waitForTimeout(300);
-  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.locator('.poiRow.open .joinRow button:has-text("Walk me there")').click();
   await a.waitForTimeout(900);
   const where = await a.locator('.previewWhere').innerText();
   if (!/gemini/i.test(where)) throw new Error(`preview: ${where}`);
