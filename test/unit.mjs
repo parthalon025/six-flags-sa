@@ -5394,6 +5394,53 @@ await check('the shipped release-notes file has an entry for the current version
   return true;
 });
 
+/* -------------------------------- adapter registry & evidence graph -- */
+
+const { getAdapter, registrySummary, ADAPTER_REGISTRY } = await import('../scripts/lib/adapters/index.mjs');
+const { graphFromAttractions, convergenceReport } = await import('../scripts/lib/evidence-graph.mjs');
+
+await check('adapter registry lists core external stacks', () => {
+  assert.ok(getAdapter('langgraph'));
+  assert.ok(getAdapter('playwright'));
+  assert.ok(getAdapter('valhalla'));
+  assert.ok(getAdapter('mapillary-tools'));
+  assert.ok(ADAPTER_REGISTRY.length >= 20);
+  const summary = registrySummary();
+  assert.ok(summary.byAdopt.wrap >= 5);
+  return true;
+});
+
+await check('evidence graph summarises converging claims', () => {
+  const { nodes, summary } = graphFromAttractions({
+    rides: {
+      maverick: {
+        name: 'Maverick',
+        features: [
+          {
+            kind: 'entrance',
+            evidence: [
+              { source: 'official_map', at: near, date: '2026-01-01' },
+              { source: 'mapillary', at: alsoNear, date: '2026-02-01' },
+            ],
+          },
+        ],
+      },
+    },
+  });
+  const entrance = nodes.find((n) => n.kind === 'entrance');
+  assert.ok(entrance?.published);
+  assert.ok(summary.published >= 1);
+  assert.ok(convergenceReport(entrance).includes('band'));
+  return true;
+});
+
+await check('new evidence sources fuse with expected weights', () => {
+  const m = fuse([{ source: 'mapillary', at: near }, { source: 'parks_api' }]);
+  assert.equal(m.score, 7);
+  assert.equal(m.band, 'moderate');
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
 
 

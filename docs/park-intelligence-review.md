@@ -785,3 +785,19 @@ source that does not require a server. Computer vision is a stated non-goal in
 one is a project. The door is already open — `aerial`, `guest_photo` and `video`
 carry weights in the evidence table — and nothing needs to be built until somebody
 walks through it.
+
+## Appendix: external open-source adapters (2026)
+
+A dependency matrix now evaluates ~20 open-source projects (LangGraph, Playwright,
+OSM tooling, Valhalla, MapLibre, Tippecanoe, Mapillary, YOLO, SAM 2, ParksAPI, etc.)
+for **wrap** integration into the builder without forking them into this monorepo or
+adding server dependencies to the phone runtime.
+
+- [universal-venue-builder-dependency-matrix.md](./universal-venue-builder-dependency-matrix.md)
+- [universal-venue-builder-architecture.md](./universal-venue-builder-architecture.md)
+- Code registry: `scripts/lib/adapters/registry.mjs`
+- CLI: `npm run venues:adapters`
+
+Verdict unchanged for phone runtime: PostGIS, Valhalla-on-phone, and live ops feeds
+stay rejected. Builder-side wrappers and the Venue Evidence Graph (`evidence-graph.mjs`)
+extend the evidence engine without changing offline-first constraints.
