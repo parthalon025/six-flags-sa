@@ -1,0 +1,29 @@
+# frozen_string_literal: true
+
+require "dotenv"
+
+env_file = File.expand_path("../.env", __dir__)
+Dotenv.load(env_file) if File.exist?(env_file)
+
+# App identifiers and team configuration are loaded from environment variables.
+# Copy .env.example to .env and fill in your values before running fastlane.
+
+app_identifier(ENV.fetch("IOS_BUNDLE_IDENTIFIER", "com.parkbound.app"))
+
+apple_id(ENV["APPLE_ID"]) if ENV["APPLE_ID"] && !ENV["APPLE_ID"].empty?
+
+if ENV["IOS_ITC_TEAM_ID"] && !ENV["IOS_ITC_TEAM_ID"].empty?
+  itc_team_id(ENV["IOS_ITC_TEAM_ID"])
+end
+
+if ENV["IOS_TEAM_ID"] && !ENV["IOS_TEAM_ID"].empty?
+  team_id(ENV["IOS_TEAM_ID"])
+end
+
+if ENV["GOOGLE_PLAY_JSON_KEY_PATH"] && !ENV["GOOGLE_PLAY_JSON_KEY_PATH"].empty?
+  json_key_file(File.expand_path(ENV["GOOGLE_PLAY_JSON_KEY_PATH"], File.expand_path("..", __dir__)))
+end
+
+if ENV["ANDROID_PACKAGE_NAME"] && !ENV["ANDROID_PACKAGE_NAME"].empty?
+  package_name(ENV["ANDROID_PACKAGE_NAME"])
+end

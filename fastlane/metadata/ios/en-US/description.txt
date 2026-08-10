@@ -1,0 +1,11 @@
+Parkbound is an explorer’s companion for a group at a big, crowded park.
+
+• Drawn park map — real geometry painted as SVG, not generic map tiles
+• Live party tracking — share location with your group via QR, link, or code
+• Walking directions — trails and walking times to rides, restrooms, and food
+• Height requirements — see at a glance which rides work for your group
+• Works offline — maps and core features after the first visit
+
+Ships with Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna's. Build a map of anywhere OpenStreetMap covers.
+
+Explore more. Stress less.

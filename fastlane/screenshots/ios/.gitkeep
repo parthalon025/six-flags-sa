@@ -1,0 +1,3 @@
+# Keep screenshot directories in git; add device-specific images before release.
+# iOS: fastlane/screenshots/ios/<locale>/
+# Android: fastlane/screenshots/android/<locale>/

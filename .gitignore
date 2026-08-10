@@ -14,3 +14,13 @@ out
 # GitNexus code-intelligence index: derived from the source, rebuilt on demand
 .gitnexus/
 .turbo
+
+# Fastlane secrets and local env
+.env
+secrets/
+*.p8
+fastlane/report.xml
+fastlane/test_output
+fastlane/README.html
+build/ios
+build/android
