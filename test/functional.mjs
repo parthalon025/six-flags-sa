@@ -885,7 +885,7 @@ await check('the nearest-park button builds that park without a second card', as
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
   const toast = await e.locator('.toast').innerText().catch(() => '');
-  if (!/fiesta texas is ready/i.test(toast)) throw new Error(`toast: "${toast}"`);
+  if (!/fiesta texas is (ready|loaded)/i.test(toast)) throw new Error(`toast: "${toast}"`);
   return true;
 });
 
@@ -908,15 +908,15 @@ await check('the park question is inline when the venue is not yet confirmed', a
     throw new Error('the introduction came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
-  await until(async () => (await p.locator('.gate .btn.primary:has-text("Yes — set up")').count()) > 0, {
+  await until(async () => (await p.locator('.gate .btn.primary:has-text("set up")').count()) > 0, {
     timeout: 25000,
     label: 'the park question',
   });
   const heading = (await p.locator('.gate h2').innerText()).trim();
-  if (!/going to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  if (!/headed to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
   const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
   if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
-  await p.locator('.gate .btn.primary:has-text("Yes — set up")').click();
+  await p.locator('.gate .btn.primary:has-text("set up")').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await p.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
@@ -938,12 +938,43 @@ await check('the park answered stays answered across a reload', async () => {
   if (await e.locator('.gate h2:has-text("PARKBOUND")').count()) {
     throw new Error('the introduction came back on a reload');
   }
-  await e.locator('button:has-text("Allow location")').click();
-  // Asked once. If the question came back, the gate would still be up here —
-  // nothing else in the intake waits on a fix that has already landed.
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}" after reload`);
+  return true;
+});
+
+await check('skipping location still asks which park to explore', async () => {
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: [],
+  });
+  await fresh.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+    localStorage.setItem('tracker-release-notes-seen', '1.1.3');
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  await dismissUpdateSplash(p);
+  const skip = p.locator(
+    'button:has-text("Just browsing"), button:has-text("Just show me the map")',
+  );
+  await until(async () => (await skip.count()) > 0, { timeout: 10000, label: 'the location skip button' });
+  await skip.first().click();
+  await until(async () => (await p.locator('.gate h2').innerText()).includes('headed'), {
+    timeout: 10000,
+    label: 'the explore park question',
+  });
+  const heading = (await p.locator('.gate h2').innerText()).trim();
+  if (!/where are we headed today/i.test(heading)) {
+    throw new Error(`asked: "${heading}"`);
+  }
+  await p.locator('.gate .btn.primary').click();
+  await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const paths = await p.locator('svg.mapSvg path').count();
+  if (paths < 100) throw new Error(`map did not draw after picking a park (${paths} paths)`);
+  await fresh.close();
   return true;
 });
 

@@ -5,28 +5,28 @@ import { formatDistance } from '@/lib/geo';
 
 const COPY = {
   idle: {
-    title: 'Turn on location',
-    body: 'Parkbound needs your phone’s GPS to place you on the map, measure range and bearing to your party, and point you at the meet-up. Nothing is stored until you join a party.',
+    title: 'Find you on the map',
+    body: 'Parkbound needs your GPS to drop your dot, see how far the party is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
     action: 'Allow location',
   },
   asking: {
-    title: 'Waiting for a fix',
-    body: 'Your phone should be asking for permission now. Say yes, then give it a few seconds — first fix under tree cover or inside a queue building can take a while.',
+    title: 'Hang tight…',
+    body: 'Your phone should be asking right now — tap Allow, then give it a few seconds. First fix under trees or inside a queue building can take a minute.',
     action: 'Ask again',
   },
   denied: {
-    title: 'Location is blocked',
-    body: 'Your browser is refusing the request. On iPhone: Settings → Safari → Location → Ask, then reload. On Android Chrome: tap the padlock in the address bar → Permissions → Location → Allow.',
+    title: 'Location is turned off',
+    body: 'No worries — you can fix it. On iPhone: Settings → Safari → Location → Ask, then reload. On Android Chrome: tap the padlock → Permissions → Location → Allow.',
     action: 'Try again',
   },
   insecure: {
     title: 'Needs a secure connection',
-    body: 'Browsers only hand out GPS over HTTPS or on localhost. Open this on http://localhost:3000 while developing, or deploy it and use the https:// address.',
+    body: 'Browsers only share GPS over HTTPS (or localhost while you are building). Open the https:// link, or use http://localhost:3000 in dev.',
     action: 'Try anyway',
   },
   unsupported: {
-    title: 'No location API',
-    body: 'This browser does not expose geolocation at all. You can still use every other part of the map by placing yourself by hand.',
+    title: 'No GPS here',
+    body: 'This browser does not do location — but you can still explore the map by tapping where you are.',
     action: 'Try anyway',
   },
 };
@@ -79,7 +79,7 @@ function ParkSection({
       <>
         <p>
           {busy
-            ? `Setting up ${venue.name} — the map, rides and places for ${venue.locality}.`
+            ? `Getting ${venue.name} ready — the map, rides and places for ${venue.locality}.`
             : `Found ${venue.name}${distanceText ? `, ${distanceText}` : ''}.`}
         </p>
         {error && <p className="gateError">{error}</p>}
@@ -91,8 +91,8 @@ function ParkSection({
     <>
       <p>
         {inside
-          ? `Your fix puts you inside ${venue.name}, ${venue.locality}. Say the word and this phone builds that park.`
-          : `${venue.name} in ${venue.locality} is the closest park — ${distanceText}.`}
+          ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load the full map.`
+          : `${venue.name} in ${venue.locality} is the closest park we have (${distanceText}). Headed that way?`}
       </p>
       {error && <p className="gateError">{error}</p>}
 
@@ -102,12 +102,12 @@ function ParkSection({
         disabled={busy}
         onClick={() => onConfirm?.(venue.id)}
       >
-        {busy ? 'Setting it up…' : `Yes — set up ${venue.name}`}
+        {busy ? 'Getting it ready…' : `Yes! Set up ${venue.name}`}
       </button>
 
       {options.length > 0 && (
         <>
-          <div className="label">Somewhere Else</div>
+          <div className="label">Different park?</div>
           <div className="venueList">
             {options.map(({ venue: other, metres, inside: within }) => (
               <button
@@ -131,7 +131,7 @@ function ParkSection({
 
       {data && (
         <p className="gateFine">
-          {venue.name} is {data}. Everything is fetched once and kept on this phone.
+          {venue.name} has {data}. Everything downloads once and stays on this phone.
         </p>
       )}
     </>
@@ -189,8 +189,8 @@ export default function GpsGate({
             ? BRAND.nameUpper
             : showParkQuestion
               ? parkChoice.inside
-                ? `You’re at ${parkVenue.name}`
-                : `Going to ${parkVenue.name}?`
+                ? `You’re at ${parkVenue.name}!`
+                : `Headed to ${parkVenue.name}?`
               : copy.title}
         </h2>
 
@@ -229,24 +229,24 @@ export default function GpsGate({
         {!showParkQuestion && !settingUp && (
           <>
             <button type="button" className="btn" onClick={onManual}>
-              I&apos;ll tap where I am on the map
+              I&apos;ll tap where I am
             </button>
             <button type="button" className="btnQuiet" onClick={onDismiss}>
-              {venueName ? `Just look around ${venueName}` : 'Just show me the map'}
+              {venueName ? `Just browsing ${venueName}` : 'Just show me the map'}
             </button>
           </>
         )}
 
         {showParkQuestion && (
           <button type="button" className="btnQuiet" onClick={onDismiss}>
-            Not now — just show me the map
+            Skip for now — just show me the map
           </button>
         )}
 
         <p className="gateFine">
-          Where you are stays on your phone. Join a party and it goes only to those
-          people, encrypted on the way, so nobody in between can read it.
-          {showParkQuestion ? ' Change parks any time under Day → Which park.' : ''}
+          Your location stays on your phone. Join a party and it goes only to your crew,
+          encrypted in transit — nobody in the middle can peek.
+          {showParkQuestion ? ' Switch parks any time under Day → Which park.' : ''}
         </p>
       </div>
     </div>

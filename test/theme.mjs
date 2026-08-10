@@ -24,12 +24,12 @@ p.on('pageerror', (e) => problems.push(`PAGEERROR: ${e.message}`));
 await p.goto(BASE, { waitUntil: 'domcontentloaded' });
 await p.waitForTimeout(1500);
 
-const allow = p.locator('button:has-text("Allow location")');
+const allow = p.locator('button:has-text("Share my location"), button:has-text("Allow location")');
 if (await allow.count()) {
   await allow.click();
   await p.waitForTimeout(2500);
 }
-const dismiss = p.locator('button:has-text("Just show me")');
+const dismiss = p.locator('button:has-text("Just browsing"), button:has-text("Just show me"), button:has-text("Skip for now")');
 if (await dismiss.count()) await dismiss.click();
 await p.waitForTimeout(1500);
 

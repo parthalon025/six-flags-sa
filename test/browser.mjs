@@ -173,9 +173,9 @@ export async function closeGate(page) {
   await dismissUpdateSplash(page);
   const nearest = page.locator('button:has-text("Go to nearest park")');
   const allow = page.locator('button:has-text("Allow location")');
-  const yes = page.locator('.gate .btn.primary:has-text("Yes — set up")');
+  const yes = page.locator('.gate .btn.primary:has-text("set up")');
   const quiet = page.locator(
-    'button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Not now — just show me the map")',
+    'button:has-text("Just browsing"), button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Skip for now"), button:has-text("Not now")',
   );
   if (await nearest.count()) await nearest.click().catch(() => {});
   else if (await allow.count()) await allow.click().catch(() => {});
