@@ -3,6 +3,5 @@
   "regions": ["iad1"],
   "framework": "nextjs",
   "installCommand": "npm ci",
-  "buildCommand": "npm run build -w @party-tracker/app",
-  "outputDirectory": "apps/party-tracker/.next"
+  "buildCommand": "node scripts/vercel-build.mjs"
 }
