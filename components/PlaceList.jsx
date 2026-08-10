@@ -5,10 +5,17 @@ import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { statusFor } from '@/lib/rideStatus';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { eligibility, heightLabel, isRideable } from '@/lib/park';
+import {
+  categoriesFor,
+  eligibility,
+  heightLabel,
+  isRideable,
+  matchedByName,
+  matchesQuery,
+} from '@/lib/park';
 import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails, campSearchText } from '@/lib/camping';
-import { categoriesFor, matchedByName, matchesQuery } from '@/lib/search';
+import { entranceMeta } from '@/lib/entrance';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
 
 /* The results, the way a phone map shows them: a row of category filters and
@@ -250,6 +257,14 @@ export default function PlaceList({
             {p.approx && (
               <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
             )}
+            {isRide && (() => {
+              const ent = entranceMeta(p);
+              return (
+                <p className={`poiNote entranceNote ${ent.confirmed ? 'confirmed' : 'approx'}`}>
+                  {ent.confirmed ? 'Queue entrance on map' : ent.hint}
+                </p>
+              );
+            })()}
             {/* A campground office, a first-aid post, a ticket line. One
                 tap to dial, because the moment you want this number is
                 the moment reading it off a screen and typing it in is

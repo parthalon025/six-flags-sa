@@ -1969,6 +1969,10 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .previewGo:active { opacity: .55; }
 .previewWhere { font-size: 15px; letter-spacing: -.24px; color: var(--label2); margin: 12px 0 0; }
 .previewWhere b { color: var(--label); font-weight: 600; }
+.entranceHint, .navEntrance, .entranceNote { font-size: 13px; line-height: 1.35; color: var(--label2); margin: 8px 0 0; }
+.entranceHint.approx, .navEntrance.approx, .entranceNote.approx { color: var(--orange); }
+.entranceHint.confirmed, .navEntrance.confirmed, .entranceNote.confirmed { color: var(--green); }
+.navEntrance { margin: 0 12px 4px; font-weight: 600; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; }
 .previewAlts { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; scrollbar-width: none; }
 .previewAlts::-webkit-scrollbar { display: none; }
 .previewAlt {

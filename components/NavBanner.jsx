@@ -57,6 +57,11 @@ export default function NavBanner({ target, route, progress, offRoute, rerouted 
 
   return (
     <section className={`navBanner ${offRoute ? 'off' : ''}`} aria-live="polite">
+      {target.entranceMeta && (
+        <p className={`navEntrance ${target.entranceMeta.confirmed ? 'confirmed' : 'approx'}`}>
+          {target.entranceMeta.confirmed ? 'Queue entrance' : target.entranceMeta.label}
+        </p>
+      )}
       <div className="navMain">
         <span className={`navTurn ${step?.turn || 'depart'}`}>
           <TurnIcon turn={step?.turn || 'depart'} />

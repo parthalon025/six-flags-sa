@@ -47,6 +47,7 @@ import { positionForMap } from '@/lib/gps/smooth';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
+import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -1260,8 +1261,13 @@ export default function Page() {
        the reroute logic below exists to avoid. The ride keeps its own position
        for the marker and the callout; only the destination moves. */
     if (nav.kind === 'poi') {
-      const gate = POIS.find((p) => p.n === nav.label)?.e?.[0];
-      if (gate && Number.isFinite(gate.lat)) return { ...nav, lat: gate.lat, lng: gate.lng };
+      const poi = POIS.find((p) => p.n === nav.label);
+      const gate = bestEntrance(poi);
+      const meta = poi ? entranceMeta(poi) : null;
+      if (gate && Number.isFinite(gate.lat)) {
+        return { ...nav, lat: gate.lat, lng: gate.lng, entranceMeta: meta };
+      }
+      if (meta) return { ...nav, entranceMeta: meta };
     }
     return nav;
   }, [nav, roster, meet, car, POIS]);
@@ -1866,6 +1872,7 @@ export default function Page() {
           profileId={routeProfile}
           onProfile={setRouteProfile}
           profileNote={profileNote}
+          entranceHint={navTarget?.kind === 'poi' ? entranceLine(POIS.find((p) => p.n === navTarget.label)) : null}
         />
       )}
 

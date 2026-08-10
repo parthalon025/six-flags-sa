@@ -1,6 +1,7 @@
 {
   "name": "party-tracker",
   "version": "1.1.7",
+  "license": "MIT",
   "private": true,
   "engines": {
     "node": ">=20.9"
@@ -24,6 +25,9 @@
     "venues:report": "node scripts/venue-report.mjs",
     "venues:research": "node scripts/venue-research.mjs",
     "venues:audit": "node scripts/venue-audit.mjs",
+    "venues:adapters": "node scripts/venue-adapters.mjs",
+    "venues:route-qa": "node scripts/venue-route-qa.mjs",
+    "venues:build-agent": "node scripts/venue-build-agent.mjs",
     "sync": "node server/index.mjs",
     "test": "node test/functional.mjs",
     "test:unit": "node test/unit.mjs",
