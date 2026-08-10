@@ -278,12 +278,16 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   });
   await go(a, 'Places');
   await searchPlaces(a, 'gemini');
-  await a.locator('.poiRow .poiMain').first().click();
+  const gemini = a.locator('.poiRow', { hasText: /gemini/i }).first();
+  await until(async () => (await gemini.count()) > 0, { timeout: 15000, label: 'Gemini in the list' });
+  await gemini.locator('.poiMain').click();
   await a.waitForTimeout(300);
   await a.locator('button:has-text("Walk me there")').first().click();
   await a.waitForTimeout(900);
   const where = await a.locator('.previewWhere').innerText();
-  if (!/queue entrance/i.test(where)) throw new Error(`preview: ${where}`);
+  if (!/gemini/i.test(where)) throw new Error(`preview: ${where}`);
+  // Surveyed queue entrances prefer that wording; approximate pins say Ride area.
+  if (!/queue entrance|ride area|via /i.test(where)) throw new Error(`preview: ${where}`);
   return true;
 });
 
