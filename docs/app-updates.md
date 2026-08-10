@@ -37,16 +37,24 @@ page.
 
 ## Shipping a release
 
-1. **Merge to `main`.** GitHub Actions bumps the patch version in `package.json`,
+1. **Do not bump the version in your PR.** Leave `package.json`, stamped
+   `public/app-version.json` / `public/sw.js`, and version-keyed release notes
+   alone on feature branches — bumping them in the PR causes merge conflicts
+   with the auto-bump commits on `main`.
+2. **Merge to `main`.** GitHub Actions bumps the patch version in `package.json`,
    updates `package-lock.json`, stamps `public/app-version.json` / `public/sw.js`,
    and adds a release-notes line from the PR title (or a generic fallback).
-2. Edit `data/release-notes.json` before merging if you want more than one bullet
-   or a custom title — the workflow only adds an entry when the new version is
-   missing.
-3. Build and deploy as usual — inject also runs on `prebuild` / `predev` and
+3. For richer release notes, put the headline in the PR title or edit
+   `data/release-notes.json` on `main` after the bump commit — the workflow only
+   adds an entry when the new version is missing.
+4. Build and deploy as usual — inject also runs on `prebuild` / `predev` and
    stamps a fresh `built` time.
-4. Phones online within ~5 minutes (or on tab focus) should update; offline
+5. Phones online within ~5 minutes (or on tab focus) should update; offline
    phones stay on the last good build until they have connectivity.
+
+**Merge conflicts:** when syncing a branch with `main`, keep `main`'s version for
+`package.json`, `package-lock.json`, `public/app-version.json`, `public/sw.js`,
+and `data/release-notes.json`. Your merge does not need to advance the semver.
 
 **How to verify auto-update:** open **Me → Advanced → Diagnostics**. The
 **Server version** should be higher than **Installed version** right after a

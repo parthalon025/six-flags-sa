@@ -109,3 +109,15 @@ Going the other way: if an app change reads a new or changed shape from `public/
 ### Ask before guessing
 
 If it's unclear whether a file is builder input (edit it) or builder output (regenerate it, don't hand-edit it) — or whether a fix belongs in the builder vs. the app — ask before proceeding rather than guessing.
+
+## App version — auto-bumped on merge
+
+The app build semver is **not** bumped in PRs. After every merge to `main`, `.github/workflows/bump-version.yml` runs `scripts/bump-version.mjs` to increment `package.json`, stamp `public/app-version.json` / `public/sw.js`, and add a `data/release-notes.json` line from the PR title. This keeps version bumps off the merge path.
+
+### Never bump version in a PR
+
+Do not edit `package.json` `version`, `package-lock.json` version fields, `public/app-version.json`, `public/sw.js`, or future `data/release-notes.json` keys in feature branches.
+
+### Merge conflicts on version files
+
+When syncing with `main`, if those files conflict, keep `main`'s side. The bump workflow assigns the next version after your PR merges.
