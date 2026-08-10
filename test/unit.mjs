@@ -3441,6 +3441,67 @@ await check('big-kahunas carries a source catalogue the builder understands', ()
   return true;
 });
 
+/* -------------------------------------------------------- venue research -- */
+
+const {
+  nameSimilarity, pairSuggestions, judgements, sourcingPlan,
+} = await import('../scripts/lib/venue-judge.mjs');
+const { llmConfig } = await import('../scripts/lib/venue-llm.mjs');
+
+await check('name similarity pairs parenthetical ride names', () => {
+  assert.ok(nameSimilarity('Tiki River Run (Right Slide)', 'Tiki River Run') >= 0.9);
+  assert.ok(nameSimilarity('Maui Pipeline', 'Pirate\'s Escape') < 0.5);
+  return true;
+});
+
+await check('pair suggestions prefer the strongest unmatched name', () => {
+  const pairs = pairSuggestions(
+    ['Tiki River Run (Right Slide)'],
+    ['Tiki River Run', 'Wave Pool'],
+    { floor: 0.5 },
+  );
+  assert.equal(pairs[0].right, 'Tiki River Run');
+  return true;
+});
+
+await check('judgements flag OSM track gaps and suggest alias pairings', () => {
+  const judge = judgements({
+    pois: [{ n: 'Tiki River Run', c: 'ride' }],
+    layers: { slide: [{ n: 'Tiki River Run (Right Slide)' }] },
+    overrides: null,
+  });
+  assert.ok(judge.some((j) => j.key === 'osm-gap-rides'));
+  return true;
+});
+
+await check('sourcing plan lists what the catalogue already covers', () => {
+  const { data: catalog } = readSources('big-kahunas');
+  const venue = readVenues().find((v) => v.id === 'big-kahunas');
+  const map = JSON.parse(fs.readFileSync(new URL(`../public${venue.map}`, import.meta.url)));
+  const pois = readPois(venue.pois);
+  const plan = sourcingPlan({
+    catalog,
+    pois,
+    layers: map,
+    requests: [],
+    judgements: [],
+  });
+  assert.ok(plan.catalogued.includes('aerial_imagery'));
+  assert.ok(plan.sources.length >= 3);
+  return true;
+});
+
+await check('LLM helper reports not ready without an API key', () => {
+  const prev = process.env.VENUE_LLM_API_KEY;
+  const prevO = process.env.OPENAI_API_KEY;
+  delete process.env.VENUE_LLM_API_KEY;
+  delete process.env.OPENAI_API_KEY;
+  assert.equal(llmConfig().ready, false);
+  if (prev) process.env.VENUE_LLM_API_KEY = prev;
+  if (prevO) process.env.OPENAI_API_KEY = prevO;
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {

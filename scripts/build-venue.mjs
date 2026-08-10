@@ -59,6 +59,7 @@ import { tagCoverageFromMap } from './lib/tag-coverage.mjs';
 import { isRideable } from '../lib/ontology.js';
 import { applyTrace } from './lib/venue-trace.mjs';
 import { wireSources, osmGaps, resolveCredits } from './lib/venue-sources.mjs';
+import { judgements } from './lib/venue-judge.mjs';
 import { applyImagery } from './lib/venue-imagery.mjs';
 // The app's own reading of "these two strings are the same ride", reused so the
 // builder and the renderer cannot disagree about it.
@@ -1895,6 +1896,15 @@ async function buildOne(args, { previous = null } = {}) {
         + `${blocking ? `, ${blocking} of them blocking` : ''}: ${outstanding.map((r) => r.need).join('; ')}.`,
     );
     console.error(`What to go and find: npm run venues:ask -- ${id}`);
+  }
+
+  const judge = judgements({
+    pois,
+    layers: { coaster: layers.coaster, slide: layers.slide },
+    overrides,
+  });
+  if (judge.length || gaps.missingRides.length) {
+    console.error(`Judgement and sourcing hints: npm run venues:research -- ${id}`);
   }
 }
 
