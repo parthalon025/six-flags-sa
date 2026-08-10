@@ -12,6 +12,7 @@
 
 import {
   BASE,
+  clearSearch,
   closeGate,
   dismissNavigation,
   go,
@@ -19,8 +20,10 @@ import {
   launch,
   openPhone,
   resetPlaces,
+  rideHeightVerdict,
   root,
   rosterNames,
+  searchPlaces,
   until,
 } from './browser.mjs';
 
@@ -151,17 +154,19 @@ await check('filter badge shows a live count', async () => {
 });
 
 await check('verdicts respond to height', async () => {
-  await resetPlaces(a);
-  await until(async () => (await a.locator('.poiRow', { hasText: 'The Beast' }).count()) || null, {
-    timeout: 15000,
-    label: 'The Beast at 48 inches',
-  });
-  const at48 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(400);
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  const at48 = await rideHeightVerdict(a, 'The Beast');
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(400);
-  await resetPlaces(a);
-  const at36 = await a.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  const at36 = await rideHeightVerdict(a, 'The Beast');
+  await clearSearch(a);
   if (!/CAN RIDE/i.test(at48) || !/TOO SHORT/i.test(at36)) throw new Error(`${at48} / ${at36}`);
   return true;
 });
@@ -181,7 +186,11 @@ await check('"adult along" changes the companion tally', async () => {
 });
 
 await check('"only what they can ride" filters the list', async () => {
-  await resetPlaces(a);
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("36")').click();
+  await a.waitForTimeout(300);
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
   const before = await a.locator('.poiRow').count();
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(500);
@@ -189,19 +198,20 @@ await check('"only what they can ride" filters the list', async () => {
   if (!(after < before)) throw new Error(`${before} -> ${after}`);
   await a.locator('.chip:has-text("Only what")').click();
   await a.waitForTimeout(400);
+  await clearSearch(a);
   return true;
 });
 
 await check('search narrows results', async () => {
-  await resetPlaces(a);
-  await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await until(async () => {
-    const n = await a.locator('.poiRow').count();
-    return n === 1 ? n : null;
-  }, { timeout: 15000, label: 'one row for beast' });
+  await go(a, 'Places');
+  const onlyChip = a.locator('.chip:has-text("Only what")');
+  if ((await onlyChip.getAttribute('aria-pressed')) === 'true') {
+    await onlyChip.click();
+    await a.waitForTimeout(300);
+  }
+  await searchPlaces(a, 'beast');
   const n = await a.locator('.poiRow').count();
-  await a.locator('.field[aria-label="Search places"]').fill('');
-  await a.waitForTimeout(400);
+  await clearSearch(a);
   if (n !== 1) throw new Error(`got ${n} rows`);
   return true;
 });
@@ -227,8 +237,7 @@ console.log('\n--- walking directions ---');
 
 await check('"walk me there" offers the route before setting off', async () => {
   await go(a, 'Places');
-  await a.locator('.field[aria-label="Search places"]').fill('beast');
-  await a.waitForTimeout(400);
+  await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
   await a.locator('button:has-text("Walk me there")').first().click();
@@ -240,6 +249,39 @@ await check('"walk me there" offers the route before setting off', async () => {
   if (!/\d+ min/.test(summary)) throw new Error(summary);
   if (!/arrive \d/.test(summary)) throw new Error(`no arrival time: ${summary}`);
   if (!/via /.test(await a.locator('.previewWhere').innerText())) throw new Error('route has no via');
+  return true;
+});
+
+await check('ride detail explains when queue entrance is not confirmed', async () => {
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  const note = await a.locator('.entranceNote').innerText();
+  if (!/not confirmed|approximate/i.test(note)) throw new Error(`entrance note: ${note}`);
+  return true;
+});
+
+await check('cedar point route preview names surveyed queue entrances', async () => {
+  const venueNameA = async () => {
+    await a.locator('.tabItem[data-tab="explore"]').click();
+    await root(a);
+    return a.locator('.brand b').innerText();
+  };
+  await go(a, 'Which map');
+  await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
+  await until(async () => /cedar point/i.test(await venueNameA()), {
+    timeout: 15000,
+    label: 'cedar point venue load',
+  });
+  await go(a, 'Places');
+  await searchPlaces(a, 'gemini');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.waitForTimeout(900);
+  const where = await a.locator('.previewWhere').innerText();
+  if (!/queue entrance/i.test(where)) throw new Error(`preview: ${where}`);
   return true;
 });
 
@@ -387,6 +429,10 @@ await check('a glance card walks you to a place and stops again', async () => {
 });
 
 console.log('\n--- party: create and invite ---');
+if (await a.locator('.navBanner').count()) {
+  await a.locator('.navEnd').click().catch(() => {});
+  await a.waitForTimeout(600);
+}
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
@@ -876,6 +922,7 @@ await check('saying yes builds that park, geometry and places', async () => {
   await e.waitForTimeout(400);
   if (!(await e.locator('.filterBadge').count())) throw new Error('no height filter on Fiesta Texas');
   await go(e, 'Places');
+  await searchPlaces(e, 'batman');
   await until(async () => (await e.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
     timeout: 15000,
     label: "Fiesta Texas's place list",
@@ -1101,7 +1148,8 @@ await check('ride heights still work with the network cut', async () => {
   await off.waitForTimeout(500);
   if (!(await off.locator('.ratioBar').count())) throw new Error('no ratio bar offline');
   await go(off, 'Places');
-  const verdict = await off.locator('.poiRow', { hasText: 'The Beast' }).first().locator('.verdict').innerText();
+  await searchPlaces(off, 'beast');
+  const verdict = await rideHeightVerdict(off, 'The Beast');
   if (!/CAN RIDE/i.test(verdict)) throw new Error(`verdict offline: ${verdict}`);
   const badge = await off.locator('.filterBadge').textContent();
   if (!/\d+ of \d+ rides/.test(badge.replace(/\s+/g, ' '))) throw new Error(badge);
@@ -1115,7 +1163,7 @@ const VENUE_SMOKE = [
   { id: 'kings-island', lat: 39.34395, lng: -84.2673, search: 'The Beast', minPaths: 700 },
   { id: 'six-flags-fiesta-texas', lat: 29.5992, lng: -98.6145, search: 'BATMAN', minPaths: 800 },
   { id: 'cedar-point', lat: 41.4826, lng: -82.6862, search: 'Millennium Force', minPaths: 1000 },
-  { id: 'big-kahunas', lat: 30.3883, lng: -86.473, search: 'Honu', minPaths: 100 },
+  { id: 'big-kahunas', lat: 30.3883, lng: -86.473, search: 'Jumanji', minPaths: 100 },
 ];
 
 for (const v of VENUE_SMOKE) {
@@ -1166,7 +1214,13 @@ await check('save where I parked and walk back to it', async () => {
   await b.waitForTimeout(800);
   await b.locator('button[aria-label="Save where I parked"]').click();
   await b.waitForTimeout(600);
-  await b.locator('button[aria-label="Go to where I parked"]').click();
+  // Move away from the saved spot so a walk is worth previewing.
+  await B.context.setGeolocation({ latitude: 39.3455, longitude: -84.265 });
+  await b.waitForTimeout(800);
+  await go(b, 'Places');
+  const carGo = b.locator('.glanceCard', { hasText: 'Your car' }).locator('.glanceGo');
+  await until(async () => (await carGo.count()) > 0, { timeout: 10000, label: 'car glance card' });
+  await carGo.click();
   await b.waitForTimeout(900);
   if (!(await b.locator('.routePreview').count())) throw new Error('no route to car');
   await b.locator('.previewGo').click();

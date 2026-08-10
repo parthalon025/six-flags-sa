@@ -157,14 +157,33 @@ export async function loadOfficialData(id, catalog, opts = {}) {
 
   for (const src of urls.site) {
     try {
-      const html = await fetchUrl(src.url);
-      pages.push({ id: src.id, url: src.url, kind: 'official_site' });
-      const parsed = parseAttractionListing(html);
+      let html = await fetchUrl(src.url);
+      let parsed = parseAttractionListing(html);
+      if (opts.browser && !parsed.length) {
+        const { fetchWithBrowser } = await import('./adapters/playwright-official.mjs');
+        html = await fetchWithBrowser(src.url);
+        parsed = parseAttractionListing(html);
+      }
+      pages.push({ id: src.id, url: src.url, kind: 'official_site', via: parsed.length && opts.browser ? 'browser' : 'fetch' });
       for (const row of parsed) {
         attractions.push({ ...row, source: src.id, listing: src.url });
       }
     } catch (err) {
-      errors.push(`${src.url}: ${err.message}`);
+      if (opts.browser) {
+        try {
+          const { fetchWithBrowser } = await import('./adapters/playwright-official.mjs');
+          const html = await fetchWithBrowser(src.url);
+          pages.push({ id: src.id, url: src.url, kind: 'official_site', via: 'browser' });
+          const parsed = parseAttractionListing(html);
+          for (const row of parsed) {
+            attractions.push({ ...row, source: src.id, listing: src.url });
+          }
+        } catch (browserErr) {
+          errors.push(`${src.url}: ${err.message}; browser: ${browserErr.message}`);
+        }
+      } else {
+        errors.push(`${src.url}: ${err.message}`);
+      }
     }
   }
 

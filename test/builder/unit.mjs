@@ -1967,6 +1967,15 @@ await check('every named piece of track belongs to a ride we know', () => {
 
 /* ------------------------------------------------------- height rules ---- */
 
+await check('lib/park re-exports place search helpers', () => {
+  const src = fs.readFileSync(new URL('../../apps/party-tracker/lib/park.js', import.meta.url), 'utf8');
+  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search'/);
+  const listSrc = fs.readFileSync(new URL('../../apps/party-tracker/components/PlaceList.jsx', import.meta.url), 'utf8');
+  assert.match(listSrc, /from '@\/lib\/park'/);
+  assert.doesNotMatch(listSrc, /from '@\/lib\/search'/);
+  return true;
+});
+
 /* Height rules are the one part of a venue OpenStreetMap will never carry, so
    they arrive from a hand-written overrides file or they do not arrive at all.
    A venue that has rides and no rules does not degrade gracefully — `hasHeights`
@@ -5481,6 +5490,125 @@ await check('the shipped release-notes file has an entry for the current version
     fs.readFileSync(new URL('../../apps/party-tracker/data/release-notes.json', import.meta.url), 'utf8'),
   );
   assert.ok(Array.isArray(shipped[pkg.version]?.items) && shipped[pkg.version].items.length > 0);
+  return true;
+});
+
+/* -------------------------------- adapter registry & evidence graph -- */
+
+const { getAdapter, registrySummary, ADAPTER_REGISTRY } = await import('../../packages/venue-builder/lib/adapters/index.mjs');
+const { graphFromAttractions, graphFromSidecar, convergenceReport } = await import('../../packages/venue-builder/lib/evidence-graph.mjs');
+const { entranceMeta, entranceLine, bestEntrance, atLeastBand } = await import('../../apps/party-tracker/lib/entrance.js');
+
+await check('adapter registry lists core external stacks', () => {
+  assert.ok(getAdapter('langgraph'));
+  assert.ok(getAdapter('playwright'));
+  assert.ok(getAdapter('valhalla'));
+  assert.ok(getAdapter('mapillary-tools'));
+  assert.ok(ADAPTER_REGISTRY.length >= 20);
+  const summary = registrySummary();
+  assert.ok(summary.byAdopt.wrap >= 5);
+  return true;
+});
+
+await check('evidence graph summarises converging claims', () => {
+  const { nodes, summary } = graphFromAttractions({
+    rides: {
+      maverick: {
+        name: 'Maverick',
+        features: [
+          {
+            kind: 'entrance',
+            evidence: [
+              { source: 'official_map', at: near, date: '2026-01-01' },
+              { source: 'mapillary', at: alsoNear, date: '2026-02-01' },
+            ],
+          },
+        ],
+      },
+    },
+  });
+  const entrance = nodes.find((n) => n.kind === 'entrance');
+  assert.ok(entrance?.published);
+  assert.ok(summary.published >= 1);
+  assert.ok(convergenceReport(entrance).includes('band'));
+  return true;
+});
+
+await check('evidence graph reads shipped attractions[] sidecar', () => {
+  const { nodes, summary } = graphFromSidecar({
+    attractions: [
+      {
+        id: 'gemini',
+        name: 'Gemini',
+        features: {
+          queue_entrance: {
+            confidence: 'moderate',
+            conflict: false,
+            at: near,
+            evidence: [
+              { source: 'osm_named_queue', at: near, date: '2026-01-01' },
+              { source: 'geometry', at: alsoNear, date: '2026-01-01' },
+            ],
+          },
+        },
+      },
+    ],
+  });
+  assert.ok(summary.published >= 1);
+  assert.ok(nodes.some((n) => n.rideName === 'Gemini'));
+  return true;
+});
+
+await check('entrance meta labels confirmed vs approximate', () => {
+  const confirmed = entranceMeta({
+    n: 'Gemini',
+    e: [{ lat: near.lat, lng: near.lng, src: { confidence: 'moderate', sources: ['osm_named_queue'] } }],
+  });
+  assert.equal(confirmed.confirmed, true);
+  assert.equal(entranceLine({ n: 'X', e: [{ lat: 1, lng: 2, src: { confidence: 'low' } }] }), 'Approximate queue area');
+  assert.ok(bestEntrance({ e: [
+    { lat: 1, lng: 2, src: { confidence: 'low' } },
+    { lat: 3, lng: 4, src: { confidence: 'high' } },
+  ] }).src.confidence === 'high');
+  return true;
+});
+
+await check('new evidence sources fuse with expected weights', () => {
+  const m = fuse([{ source: 'mapillary', at: near }, { source: 'parks_api' }]);
+  assert.equal(m.score, 7);
+  assert.equal(m.band, 'moderate');
+  return true;
+});
+
+await check('parks-api adapter maps cedar point', async () => {
+  const { loadParksApiData, compareParksApiToBundle, PARK_ENTITY_IDS } = await import('../../packages/venue-builder/lib/adapters/parks-api.mjs');
+  assert.ok(PARK_ENTITY_IDS['cedar-point']);
+  const data = await loadParksApiData('cedar-point', { fetch: true });
+  assert.ok(data.attractions?.length > 50);
+  const cmp = compareParksApiToBundle({ parksApi: data, pois: [{ n: 'Millennium Force', c: 'ride' }] });
+  assert.ok(cmp.matched >= 1);
+  return true;
+});
+
+await check('build-agent orchestrator runs offline', async () => {
+  const { runBuildOrchestrator } = await import('../../packages/venue-builder/lib/agents/orchestrator.mjs');
+  const trace = await runBuildOrchestrator('cedar-point', {
+    offline: true,
+    fetch: false,
+    browser: false,
+    skip: ['vision'],
+  });
+  assert.equal(trace.venueId, 'cedar-point');
+  assert.ok(trace.agents.length >= 3);
+  assert.ok(trace.agents.some((a) => a.role === 'qa' && a.ok));
+  return true;
+});
+
+await check('AGPL yolo adapter is rejected by runner', async () => {
+  const { runAdapter } = await import('../../packages/venue-builder/lib/adapters/runner.mjs');
+  const r = await runAdapter('ultralytics-yolo', { venueId: 'cedar-point' });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'license_rejected');
   return true;
 });
 

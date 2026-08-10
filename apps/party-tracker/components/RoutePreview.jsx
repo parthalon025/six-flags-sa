@@ -27,6 +27,7 @@ export default function RoutePreview({
   profileId = 'default',
   onProfile,
   profileNote = null,
+  entranceHint = null,
 }) {
   if (!target || !routes?.length) return null;
   const route = routes[index] ?? routes[0];
@@ -51,9 +52,13 @@ export default function RoutePreview({
 
       <p className="previewWhere">
         To <b>{target.label}</b>
+        {entranceHint ? ` · ${entranceHint}` : ''}
         {route.via ? ` · via ${route.via}` : ''}
         {route.mode === 'direct' ? ' · no mapped path, straight line' : ''}
       </p>
+      {target.entranceMeta?.hint && target.entranceMeta.confirmed === false && (
+        <p className="entranceHint approx">{target.entranceMeta.hint}</p>
+      )}
 
       {profiles.length > 1 && (
         <div className="previewAlts" role="radiogroup" aria-label="Route profile">

@@ -78,6 +78,41 @@ export const CAPABILITIES = [
     file: 'public/venues/<id>.map.json',
     note: 'Steps, oneway, and layer tags for routing profiles.',
   },
+  {
+    id: 'adapter-matrix',
+    weakness: 'unknown-external-tool',
+    tool: 'npm run venues:adapters',
+    file: 'docs/universal-venue-builder-dependency-matrix.md',
+    note: 'Evaluate wrap vs adopt for OSM, Valhalla, Mapillary, CV, and agent stacks.',
+  },
+  {
+    id: 'evidence-graph',
+    weakness: 'low-entrance-confidence',
+    tool: 'npm run venues:attractions -- <id> --report',
+    file: 'data/venues/<id>.attractions.json + scripts/lib/evidence-graph.mjs',
+    note: 'Converging claims per feature; fusion publishes only validated coordinates.',
+  },
+  {
+    id: 'playwright-research',
+    weakness: 'no-official-cache',
+    tool: 'adapter: playwright (wrap) — future venues:research --browser',
+    file: 'scripts/lib/adapters/registry.mjs',
+    note: 'Browser agent for park maps and accessibility pages beyond regex fetch.',
+  },
+  {
+    id: 'mapillary-evidence',
+    weakness: 'low-entrance-confidence',
+    tool: 'adapter: mapillary-tools (wrap) — future imagery ingest',
+    file: 'data/venues/<id>.attractions.json',
+    note: 'Street-level sequences as mapillary evidence source.',
+  },
+  {
+    id: 'parks-api-metadata',
+    weakness: 'missing-hours',
+    tool: 'adapter: parks-api (wrap)',
+    file: 'data/venues/<id>.attractions.json',
+    note: 'Park inventories and hours concepts into sidecar; not live wait times on phone.',
+  },
 ];
 
 /** Default official URLs for parks already in the manifest. */

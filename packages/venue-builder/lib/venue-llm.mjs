@@ -1,13 +1,7 @@
 /**
- * Optional model assistance for venue research.
+ * Optional model assistance for venue research and build agents.
  *
- * Deliberately not in the build hot path. Uses fetch against any
  * OpenAI-compatible chat API — no SDK dependency.
- *
- * Configure with environment variables:
- *   VENUE_LLM_API_KEY   required to call
- *   VENUE_LLM_BASE_URL  default https://api.openai.com/v1
- *   VENUE_LLM_MODEL     default gpt-4o-mini
  */
 
 const DEFAULT_BASE = 'https://api.openai.com/v1';
@@ -20,45 +14,39 @@ export function llmConfig() {
   return { apiKey, baseUrl, model, ready: Boolean(apiKey) };
 }
 
-const SYSTEM = `You assist with theme-park venue research for an open-source map builder.
+const BASE_RULES = `You assist with theme-park venue research for an open-source MIT map builder.
 Rules you must follow:
 - Never invent coordinates. Positions come only from surveyed orthophoto, traced park maps with measured error, or OpenStreetMap.
 - Never invent height requirements. Cite the park's own pages or omit.
 - Prefer alias suggestions over renaming bundle places.
-- When two pools or flumes look alike on a map, say what evidence would disambiguate them (labels, queue signs, orthophoto shape).
-- Treat official-site data in the packet as the park's own website — prefer it over fan wikis for heights and names.
-- Output concise markdown with sections: Summary, Official site gaps, Name pairings, Sourcing priorities, Open questions.`;
+- AGPL-licensed CV (Ultralytics YOLO) is forbidden — recommend SAM 2, orthophoto trace, or Mapillary instead.
+- Output concise markdown.`;
 
-/**
- * Ask a model to review a structured research packet.
- *
- * @returns {string|null} markdown commentary, or null when no API key
- */
-export async function reviewResearch(packet, { apiKey, baseUrl, model } = {}) {
+const ROLE_PROMPTS = {
+  orchestrator: 'You coordinate QA, research, GIS, vision, and validation agents. Summarize what ran, what failed, and the next 3 maintainer actions.',
+  research: 'You review official-site and ParksAPI name matches. Prioritize alias fixes and imagery surveys for unmatched rides.',
+  gis: 'You review path graph health. Flag disconnected networks and missing tag coverage for routing profiles.',
+  vision: 'You guide orthophoto/trace workflows. Never recommend embedding AGPL YOLO.',
+  validation: 'You review entrance evidence convergence. Say which rides need trace or OSM queue ways before publish.',
+};
+
+export async function chatCompletion(messages, opts = {}) {
   const cfg = llmConfig();
-  const key = apiKey || cfg.apiKey;
+  const key = opts.apiKey || cfg.apiKey;
   if (!key) return null;
 
-  const url = `${(baseUrl || cfg.baseUrl).replace(/\/$/, '')}/chat/completions`;
-  const body = {
-    model: model || cfg.model,
-    temperature: 0.2,
-    messages: [
-      { role: 'system', content: SYSTEM },
-      {
-        role: 'user',
-        content: `Review this venue research packet and help a human decide what to do next.\n\n\`\`\`json\n${JSON.stringify(packet, null, 2)}\n\`\`\``,
-      },
-    ],
-  };
-
+  const url = `${(opts.baseUrl || cfg.baseUrl).replace(/\/$/, '')}/chat/completions`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      model: opts.model || cfg.model,
+      temperature: opts.temperature ?? 0.2,
+      messages,
+    }),
   });
 
   if (!res.ok) {
@@ -69,4 +57,38 @@ export async function reviewResearch(packet, { apiKey, baseUrl, model } = {}) {
   const data = await res.json();
   const content = data?.choices?.[0]?.message?.content;
   return content ? String(content).trim() : null;
+}
+
+export async function agentReview(role, context, opts = {}) {
+  const roleLine = ROLE_PROMPTS[role] || 'Review the builder context.';
+  return chatCompletion(
+    [
+      { role: 'system', content: `${BASE_RULES}\n\n${roleLine}` },
+      {
+        role: 'user',
+        content: `Context:\n\`\`\`json\n${JSON.stringify(context, null, 2)}\n\`\`\``,
+      },
+    ],
+    opts,
+  );
+}
+
+const RESEARCH_SYSTEM = `${BASE_RULES}
+When two pools or flumes look alike on a map, say what evidence would disambiguate them.
+Output sections: Summary, Official site gaps, Name pairings, Sourcing priorities, Open questions.`;
+
+/**
+ * Ask a model to review a structured research packet.
+ */
+export async function reviewResearch(packet, opts = {}) {
+  return chatCompletion(
+    [
+      { role: 'system', content: RESEARCH_SYSTEM },
+      {
+        role: 'user',
+        content: `Review this venue research packet.\n\n\`\`\`json\n${JSON.stringify(packet, null, 2)}\n\`\`\``,
+      },
+    ],
+    opts,
+  );
 }

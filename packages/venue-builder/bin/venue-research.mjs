@@ -16,17 +16,10 @@
 
 import path from 'node:path';
 import { readJson, VENUE_DIR, OVERRIDE_DIR } from '../lib/venue-io.mjs';
-import { requests, renderBrief, briefJson } from '../lib/venue-requests.mjs';
-import { readSources } from '../lib/venue-sources.mjs';
-import { judgements, sourcingPlan } from '../lib/venue-judge.mjs';
+import { renderBrief, briefJson } from '../lib/venue-requests.mjs';
 import { llmConfig, reviewResearch } from '../lib/venue-llm.mjs';
-import {
-  compareOfficialToBundle,
-  loadOfficialData,
-  officialUrls,
-  parseAttractionListing,
-  enrichOfficialFromSidecar,
-} from '../lib/venue-official-site.mjs';
+import { loadVenuePacket } from '../lib/venue-packet.mjs';
+import { officialUrls } from '../lib/venue-official-site.mjs';
 
 const USAGE = `
 Research assistant for venue builds — judgement, sourcing, optional AI review.
@@ -37,7 +30,9 @@ Research assistant for venue builds — judgement, sourcing, optional AI review.
   --json        structured output instead of markdown
   --ai          ask VENUE_LLM_API_KEY (OpenAI-compatible) to review the packet
   --fetch       fetch official park website data (cached to data/venues/<id>.official-cache.json)
+  --browser     use Playwright when fetch returns empty HTML (SPA park sites)
   --fetch-details  also fetch each attraction page for height prose (slower)
+  --parks-api   fetch ThemeParks.wiki inventory (cached to data/venues/<id>.parks-api-cache.json)
   --offline     use only the on-disk official cache; do not hit the network
   --no-brief    skip the venues:ask brief; only judgements and sourcing
 `;
@@ -52,6 +47,8 @@ function parseArgs(argv) {
     fetch: false,
     fetchDetails: false,
     offline: false,
+    browser: false,
+    parksApi: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -61,6 +58,8 @@ function parseArgs(argv) {
     else if (a === '--fetch') out.fetch = true;
     else if (a === '--fetch-details') out.fetchDetails = true;
     else if (a === '--offline') out.offline = true;
+    else if (a === '--browser') out.browser = true;
+    else if (a === '--parks-api') out.parksApi = true;
     else if (a === '--no-brief') out.brief = false;
     else if (!a.startsWith('--')) out._.push(a);
     else throw new Error(`Unknown flag: ${a}`);
@@ -69,52 +68,7 @@ function parseArgs(argv) {
 }
 
 async function loadVenue(id, opts = {}) {
-  const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
-  const venue = manifest.venues.find((v) => v.id === id);
-  if (!venue) throw new Error(`No venue called "${id}" in the manifest.`);
-
-  const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), {});
-  const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
-  const overrides = readJson(path.join(OVERRIDE_DIR, `${id}.overrides.json`), null);
-  const heightsSidecar = readJson(path.join(OVERRIDE_DIR, `${id}.heights.json`), null);
-  const recipe = readJson(path.join(OVERRIDE_DIR, `${id}.recipe.json`), null);
-  const { data: catalog } = readSources(id, recipe?.flags?.sources || null);
-
-  const layers = {
-    coaster: map.coaster || [],
-    slide: map.slide || [],
-    path: map.path || [],
-    lands: map.lands || [],
-  };
-
-  const reqs = requests({ venue, map, pois, overrides });
-  const judge = judgements({ pois, layers, overrides });
-  const sourcing = sourcingPlan({ catalog, pois, layers, requests: reqs, judgements: judge });
-  const officialRaw = enrichOfficialFromSidecar(
-    await loadOfficialData(id, catalog, {
-      fetch: opts.fetch,
-      offline: opts.offline,
-      details: opts.fetchDetails,
-    }),
-    heightsSidecar,
-    catalog,
-  );
-  const official = compareOfficialToBundle({ official: officialRaw, pois, heightsSidecar });
-  if (officialRaw?.fallback) official.fallback = officialRaw.fallback;
-
-  return {
-    venue,
-    map,
-    pois,
-    overrides,
-    heightsSidecar,
-    recipe,
-    catalog,
-    requests: reqs,
-    judgements: judge,
-    sourcing,
-    official,
-  };
+  return loadVenuePacket(id, opts);
 }
 
 function renderSourcing(sourcing) {
@@ -232,6 +186,35 @@ function renderOfficial(official, catalog) {
   return lines.join('\n');
 }
 
+function renderParksApi(parksApi, parksApiRaw) {
+  const lines = ['## ThemeParks.wiki inventory', ''];
+  if (parksApiRaw?.error) {
+    lines.push(parksApiRaw.error, '');
+    return lines.join('\n');
+  }
+  if (!parksApiRaw?.attractions?.length) {
+    lines.push('No ParksAPI cache yet — run with `--parks-api` or `--fetch`.', '');
+    return lines.join('\n');
+  }
+  lines.push(
+    `${parksApi.apiCount} attraction(s) in API; ${parksApi.matched} matched bundle rides; `
+      + `fetched ${parksApiRaw.fetched || '—'}.`,
+    '',
+  );
+  if (parksApi.onlyOnApi.length) {
+    lines.push('**On API but not in bundle**', '');
+    parksApi.onlyOnApi.slice(0, 20).forEach((n) => lines.push(`- ${n}`));
+    if (parksApi.onlyOnApi.length > 20) lines.push(`- … and ${parksApi.onlyOnApi.length - 20} more`);
+    lines.push('');
+  }
+  if (parksApi.onlyInBundle.length) {
+    lines.push('**In bundle but not on API**', '');
+    parksApi.onlyInBundle.slice(0, 15).forEach((n) => lines.push(`- ${n}`));
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
 function renderMarkdown(packet, aiText = null) {
   const { venue, requests: reqs } = packet;
   const parts = [
@@ -246,6 +229,7 @@ function renderMarkdown(packet, aiText = null) {
     '```',
     '',
     renderOfficial(packet.official, packet.catalog),
+    renderParksApi(packet.parksApi, packet.parksApiRaw),
     renderJudgements(packet.judgements),
     renderSourcing(packet.sourcing),
   ];
@@ -269,6 +253,12 @@ function packetJson(packet, aiText = null) {
       locality: venue.locality || null,
     },
     official,
+    parksApi: packet.parksApi,
+    parksApiMeta: {
+      fetched: packet.parksApiRaw?.fetched || null,
+      parkId: packet.parksApiRaw?.parkId || null,
+      error: packet.parksApiRaw?.error || null,
+    },
     judgements: judge,
     sourcing,
     brief: briefJson(venue, reqs),
@@ -294,6 +284,8 @@ async function main() {
       fetch: args.fetch,
       offline: args.offline,
       fetchDetails: args.fetchDetails,
+      browser: args.browser,
+      parksApi: args.parksApi,
     }));
   }
 

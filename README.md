@@ -924,6 +924,11 @@ a place is far more likely to be the wrong projection than a new place.
 ```
 npm run venues:report                 # every venue, one row each
 npm run venues:report -- cedar-point  # one venue, in full
+
+npm run venues:adapters               # external OSS dependency matrix (wrap targets)
+npm run venues:adapters -- matrix     # markdown table for docs
+npm run venues:build-agent -- cedar-point --offline   # multi-agent orchestrator (no network)
+npm run venues:build-agent -- cedar-point --ai --apply  # LLM agents + publish entrances
 ```
 
 Every location here is the same data about a different place, and the failure mode that

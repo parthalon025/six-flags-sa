@@ -50,6 +50,8 @@ import { OVERRIDE_DIR, readJson, VENUE_DIR } from '../lib/venue-io.mjs';
 import { purgeRetiredEvidence } from '../lib/retired-sources.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
 import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
+import { renderEvidenceHtml } from '../lib/venue-validate-html.mjs';
+import { exportTileGeoJson } from '../lib/tiles-export.mjs';
 
 const USAGE = `
 The ride inventory: every attraction, every way into it, and who says so.
@@ -61,6 +63,8 @@ The ride inventory: every attraction, every way into it, and who says so.
                       waiting for a rebuild to carry it in
   --report            print what the list knows, as markdown
   --geojson <file>    write every located feature as GeoJSON
+  --html <file>       write maintainer evidence review map (Leaflet HTML)
+  --tiles <dir>       export GeoJSON layers + tippecanoe.sh recipe for vector tiles
   --publish-at <b>    confidence needed to reach the app
                       (unknown | low | moderate | high | very_high; default: ${PUBLISH_AT})
   --dry-run           work it out, write nothing
@@ -523,6 +527,27 @@ function main() {
       mkdirSync(path.dirname(out), { recursive: true });
       writeFileSync(out, `${JSON.stringify(toGeoJson(records), null, 2)}\n`);
       console.error(`  Wrote ${out}`);
+    }
+
+    if (args.html) {
+      const out = String(args.html);
+      const sidecar = readJson(listFile(id)) || list;
+      const html = renderEvidenceHtml({
+        venueId: id,
+        venueName: map.meta?.name || id,
+        mapMeta: map.meta || {},
+        sidecar,
+        geojson: toGeoJson(records),
+      });
+      mkdirSync(path.dirname(out), { recursive: true });
+      writeFileSync(out, html);
+      console.error(`  Wrote evidence review ${out}`);
+    }
+
+    if (args.tiles) {
+      const outDir = path.resolve(String(args.tiles));
+      const written = exportTileGeoJson(outDir, map, pois);
+      console.error(`  Exported ${written.length} tile layer file(s) to ${outDir}`);
     }
   }
 }
