@@ -110,6 +110,8 @@ export async function openPhone(
       await until(
         async () => {
           if ((await page.locator('.gate').count()) > 0) return false;
+          const paths = await page.locator('.mapSvg path').count();
+          if (paths < 100) return false;
           if ((await page.locator('.mePulse').count()) > 0) return true;
           const brand = await page.locator('.brand span').innerText().catch(() => '');
           return /near/i.test(brand);
@@ -117,7 +119,10 @@ export async function openPhone(
         { timeout: 40000, label: 'GPS fix and gates dismissed' },
       );
     } else {
-      await until(async () => (await page.locator('.gate').count()) === 0, {
+      await until(async () => {
+        if ((await page.locator('.gate').count()) > 0) return false;
+        return (await page.locator('.mapSvg path').count()) >= 100;
+      }, {
         timeout: 40000,
         label: 'gates dismissed',
       });
@@ -266,6 +271,27 @@ export async function go(page, dest) {
   await page.waitForTimeout(350);
 }
 
+/** Type into the Explore search field and wait for the list to settle. */
+export async function searchPlaces(page, query) {
+  const field = page.locator('.field[aria-label="Search places"]');
+  await field.fill(query);
+  await page.waitForTimeout(500);
+}
+
+/** Clear Explore search back to the full list. */
+export async function clearSearch(page) {
+  const field = page.locator('.field[aria-label="Search places"]');
+  await field.fill('');
+  await page.waitForTimeout(400);
+}
+
+/** Rider-height verdict on one row — not the running-status pill beside it. */
+export async function rideHeightVerdict(page, rideName) {
+  const row = page.locator('.poiRow', { hasText: rideName }).first();
+  await row.waitFor({ state: 'visible', timeout: 15000 });
+  return row.locator('.verdict:not(.statusPill)').innerText();
+}
+
 /** Set the roster name through Me, as a visitor would, and come back to Explore. */
 export async function setName(page, name) {
   await closeGate(page);
@@ -274,9 +300,14 @@ export async function setName(page, name) {
   await field.fill(name);
   await field.blur();
   await page.waitForTimeout(300);
-  // Back to the map. The tab bar means leaving a phone on the Me tab leaves it
-  // there, and everything downstream of a fresh phone expects Explore.
-  await go(page, 'Places');
+  // Back to the map. Pop any settings sub-screen first — leaving Me on a
+  // pushed row leaves the map unmounted when Explore is tapped.
+  await page.locator('.tabItem[data-tab="explore"]').click();
+  await page.waitForTimeout(250);
+  await root(page);
+  await page.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    timeout: 40000,
+  });
 }
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */
