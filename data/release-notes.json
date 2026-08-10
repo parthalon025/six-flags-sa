@@ -78,5 +78,11 @@
     "items": [
       "Document architecture and venue pipeline visuals for onboarding (#47)"
     ]
+  },
+  "1.1.13": {
+    "title": "What's new",
+    "items": [
+      "Update user intro and require park selection when not in a park (#40)"
+    ]
   }
 }
