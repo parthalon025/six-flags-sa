@@ -1,0 +1,365 @@
+# frozen_string_literal: true
+
+# Parkbound — unified iOS (App Store Connect) and Android (Google Play) deployment.
+#
+# Prerequisites:
+#   1. Native shells at ios/ and android/ (Capacitor or equivalent).
+#   2. Secrets in .env (see .env.example).
+#   3. bundle install && bundle exec fastlane install_plugins
+#
+# Lanes:
+#   fastlane ios beta|production
+#   fastlane android beta|production
+#   fastlane beta          # both platforms
+#   fastlane production    # both platforms
+
+default_platform(:ios)
+
+# ---------------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------------
+
+def load_deployment_env!
+  env_file = File.expand_path("../.env", __dir__)
+  if File.exist?(env_file)
+    require "dotenv"
+    Dotenv.load(env_file)
+  end
+
+  required = %w[
+    IOS_BUNDLE_IDENTIFIER
+    IOS_TEAM_ID
+    IOS_ITC_TEAM_ID
+    APP_STORE_CONNECT_API_KEY_ID
+    APP_STORE_CONNECT_ISSUER_ID
+    APP_STORE_CONNECT_API_KEY_PATH
+    ANDROID_PACKAGE_NAME
+    GOOGLE_PLAY_JSON_KEY_PATH
+  ]
+
+  missing = required.select { |key| ENV[key].nil? || ENV[key].strip.empty? }
+  UI.user_error!("Missing required environment variables: #{missing.join(', ')}") unless missing.empty?
+
+  key_path = File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH"), repo_root)
+  UI.user_error!("App Store Connect API key not found at #{key_path}") unless File.exist?(key_path)
+
+  play_key_path = File.expand_path(ENV.fetch("GOOGLE_PLAY_JSON_KEY_PATH"), repo_root)
+  UI.user_error!("Google Play service account JSON not found at #{play_key_path}") unless File.exist?(play_key_path)
+end
+
+def repo_root
+  File.expand_path("..", __dir__)
+end
+
+def web_app_path
+  File.join(repo_root, ENV.fetch("WEB_APP_PATH", "apps/party-tracker"))
+end
+
+def ios_workspace_path
+  File.expand_path(ENV.fetch("IOS_WORKSPACE_PATH", "ios/App/App.xcworkspace"), repo_root)
+end
+
+def ios_scheme
+  ENV.fetch("IOS_SCHEME", "App")
+end
+
+def android_project_path
+  File.expand_path(ENV.fetch("ANDROID_PROJECT_PATH", "android"), repo_root)
+end
+
+def app_version
+  package_json = File.join(web_app_path, "package.json")
+  UI.user_error!("Web app package.json not found at #{package_json}") unless File.exist?(package_json)
+
+  require "json"
+  JSON.parse(File.read(package_json))["version"]
+end
+
+def app_store_connect_api_key
+  api_key_path = File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH"), repo_root)
+
+  app_store_connect_api_key(
+    key_id: ENV.fetch("APP_STORE_CONNECT_API_KEY_ID"),
+    issuer_id: ENV.fetch("APP_STORE_CONNECT_ISSUER_ID"),
+    key_filepath: api_key_path,
+    duration: 1200,
+    in_house: false
+  )
+end
+
+def build_web_app
+  UI.header("Building web app (#{web_app_path})")
+  Dir.chdir(web_app_path) do
+    sh("npm", "ci")
+    sh("npm", "run", "build")
+  end
+end
+
+def sync_capacitor
+  UI.header("Syncing Capacitor native projects")
+  Dir.chdir(repo_root) do
+    if File.exist?(File.join(repo_root, "package.json")) && system("grep -q '@capacitor/cli' package.json 2>/dev/null")
+      sh("npx", "cap", "sync")
+    else
+      UI.important("Capacitor CLI not detected in package.json — skipping `cap sync`.")
+      UI.important("Ensure ios/ and android/ already contain the latest web build.")
+    end
+  end
+end
+
+def sync_ios_version
+  version = app_version
+  increment_version_number(
+    version_number: version,
+    xcodeproj: File.join(File.dirname(ios_workspace_path), "App.xcodeproj")
+  )
+end
+
+def sync_android_version
+  version = app_version
+  code = android_version_code
+
+  gradle_files = [
+    File.join(android_project_path, "app", "build.gradle"),
+    File.join(android_project_path, "app", "build.gradle.kts")
+  ]
+
+  updated = false
+  gradle_files.each do |file|
+    next unless File.exist?(file)
+
+    content = File.read(file)
+    content = content.gsub(/versionName\s*=\s*"[^"]*"/, "versionName = \"#{version}\"")
+    content = content.gsub(/versionName\s+"[^"]*"/, "versionName \"#{version}\"")
+    content = content.gsub(/versionCode\s*=\s*\d+/, "versionCode = #{code}")
+    content = content.gsub(/versionCode\s+\d+/, "versionCode #{code}")
+    File.write(file, content)
+    updated = true
+  end
+
+  UI.user_error!("Android Gradle file not found under #{android_project_path}/app/") unless updated
+end
+
+def ios_output_directory
+  File.join(repo_root, "build", "ios")
+end
+
+def android_output_directory
+  File.join(repo_root, "build", "android")
+end
+
+before_all do
+  load_deployment_env!
+  setup_ci if ENV["CI"]
+end
+
+# ---------------------------------------------------------------------------
+# iOS
+# ---------------------------------------------------------------------------
+
+platform :ios do
+  desc "Build and upload a TestFlight beta"
+  lane :beta do
+    build_web_app
+    sync_capacitor
+
+    UI.user_error!("iOS workspace not found at #{ios_workspace_path}") unless File.exist?(ios_workspace_path)
+
+    sync_ios_version
+
+    api_key = app_store_connect_api_key
+
+    build_app(
+      workspace: ios_workspace_path,
+      scheme: ios_scheme,
+      configuration: ENV.fetch("IOS_BUILD_CONFIGURATION", "Release"),
+      export_method: "app-store",
+      output_directory: ios_output_directory,
+      output_name: "Parkbound.ipa",
+      clean: true,
+      include_bitcode: false,
+      api_key: api_key
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: ENV.fetch("IOS_SKIP_WAIT_FOR_PROCESSING", "true") == "true",
+      distribute_external: false,
+      notify_external_testers: false,
+      changelog: ENV.fetch("IOS_CHANGELOG", "Beta build #{app_version}")
+    )
+  end
+
+  desc "Build and submit to the App Store for production release"
+  lane :production do
+    build_web_app
+    sync_capacitor
+
+    UI.user_error!("iOS workspace not found at #{ios_workspace_path}") unless File.exist?(ios_workspace_path)
+
+    sync_ios_version
+
+    api_key = app_store_connect_api_key
+
+    build_app(
+      workspace: ios_workspace_path,
+      scheme: ios_scheme,
+      configuration: ENV.fetch("IOS_BUILD_CONFIGURATION", "Release"),
+      export_method: "app-store",
+      output_directory: ios_output_directory,
+      output_name: "Parkbound.ipa",
+      clean: true,
+      include_bitcode: false,
+      api_key: api_key
+    )
+
+    deliver(
+      api_key: api_key,
+      app_identifier: ENV.fetch("IOS_BUNDLE_IDENTIFIER"),
+      app_version: app_version,
+      skip_binary_upload: false,
+      skip_metadata: ENV.fetch("IOS_SKIP_METADATA", "false") == "true",
+      skip_screenshots: ENV.fetch("IOS_SKIP_SCREENSHOTS", "true") == "true",
+      submit_for_review: ENV.fetch("IOS_SUBMIT_FOR_REVIEW", "true") == "true",
+      automatic_release: ENV.fetch("IOS_AUTOMATIC_RELEASE", "false") == "true",
+      force: true,
+      precheck_include_in_app_purchases: false,
+      metadata_path: File.join(__dir__, "metadata", "ios"),
+      screenshots_path: File.join(__dir__, "screenshots", "ios"),
+      submission_information: {
+        add_id_info_uses_idfa: false
+      }
+    )
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Android
+# ---------------------------------------------------------------------------
+
+platform :android do
+  desc "Build and upload an internal/closed testing release"
+  lane :beta do
+    build_web_app
+    sync_capacitor
+
+    UI.user_error!("Android project not found at #{android_project_path}") unless File.directory?(android_project_path)
+
+    sync_android_version
+
+    gradle(
+      project_dir: android_project_path,
+      task: "clean",
+      properties: android_signing_properties
+    )
+
+    gradle(
+      project_dir: android_project_path,
+      task: "bundle",
+      build_type: "Release",
+      properties: android_signing_properties
+    )
+
+    aab_path = lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH]
+
+    upload_to_play_store(
+      package_name: ENV.fetch("ANDROID_PACKAGE_NAME"),
+      aab: aab_path,
+      track: ENV.fetch("ANDROID_BETA_TRACK", "internal"),
+      release_status: ENV.fetch("ANDROID_BETA_RELEASE_STATUS", "completed"),
+      json_key: File.expand_path(ENV.fetch("GOOGLE_PLAY_JSON_KEY_PATH"), repo_root),
+      skip_upload_metadata: ENV.fetch("ANDROID_SKIP_METADATA", "false") == "true",
+      skip_upload_images: ENV.fetch("ANDROID_SKIP_IMAGES", "true") == "true",
+      skip_upload_screenshots: ENV.fetch("ANDROID_SKIP_SCREENSHOTS", "true") == "true",
+      metadata_path: File.join(__dir__, "metadata", "android"),
+      version_name: app_version,
+      version_code: android_version_code
+    )
+  end
+
+  desc "Build and upload a production release to Google Play"
+  lane :production do
+    build_web_app
+    sync_capacitor
+
+    UI.user_error!("Android project not found at #{android_project_path}") unless File.directory?(android_project_path)
+
+    sync_android_version
+
+    gradle(
+      project_dir: android_project_path,
+      task: "clean",
+      properties: android_signing_properties
+    )
+
+    gradle(
+      project_dir: android_project_path,
+      task: "bundle",
+      build_type: "Release",
+      properties: android_signing_properties
+    )
+
+    aab_path = lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH]
+
+    upload_to_play_store(
+      package_name: ENV.fetch("ANDROID_PACKAGE_NAME"),
+      aab: aab_path,
+      track: ENV.fetch("ANDROID_PRODUCTION_TRACK", "production"),
+      release_status: ENV.fetch("ANDROID_PRODUCTION_RELEASE_STATUS", "completed"),
+      json_key: File.expand_path(ENV.fetch("GOOGLE_PLAY_JSON_KEY_PATH"), repo_root),
+      skip_upload_metadata: ENV.fetch("ANDROID_SKIP_METADATA", "false") == "true",
+      skip_upload_images: ENV.fetch("ANDROID_SKIP_IMAGES", "true") == "true",
+      skip_upload_screenshots: ENV.fetch("ANDROID_SKIP_SCREENSHOTS", "true") == "true",
+      metadata_path: File.join(__dir__, "metadata", "android"),
+      version_name: app_version,
+      version_code: android_version_code
+    )
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Cross-platform convenience lanes
+# ---------------------------------------------------------------------------
+
+desc "Deploy beta builds to TestFlight and Google Play internal testing"
+lane :beta do
+  sh("bundle exec fastlane ios beta")
+  sh("bundle exec fastlane android beta")
+end
+
+desc "Deploy production builds to the App Store and Google Play production track"
+lane :production do
+  sh("bundle exec fastlane ios production")
+  sh("bundle exec fastlane android production")
+end
+
+# ---------------------------------------------------------------------------
+# Android signing helpers (private)
+# ---------------------------------------------------------------------------
+
+private_lane :android_signing_properties do
+  props = {}
+
+  keystore_path = ENV["ANDROID_KEYSTORE_PATH"]
+  if keystore_path && !keystore_path.strip.empty?
+    props["android.injected.signing.store.file"] = File.expand_path(keystore_path, repo_root)
+    props["android.injected.signing.store.password"] = ENV.fetch("ANDROID_KEYSTORE_PASSWORD")
+    props["android.injected.signing.key.alias"] = ENV.fetch("ANDROID_KEY_ALIAS")
+    props["android.injected.signing.key.password"] = ENV.fetch("ANDROID_KEY_PASSWORD")
+  end
+
+  props
+end
+
+def android_version_code
+  if ENV["ANDROID_VERSION_CODE"] && !ENV["ANDROID_VERSION_CODE"].strip.empty?
+    ENV["ANDROID_VERSION_CODE"].to_i
+  else
+  # Monotonic code derived from semver: major*10000 + minor*100 + patch
+    parts = app_version.split(".").map(&:to_i)
+    major = parts[0] || 0
+    minor = parts[1] || 0
+    patch = parts[2] || 0
+    (major * 10_000) + (minor * 100) + patch
+  end
+end
