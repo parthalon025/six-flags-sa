@@ -60,5 +60,11 @@
     "items": [
       "Add builder/app output contract rule"
     ]
+  },
+  "1.1.10": {
+    "title": "What's new",
+    "items": [
+      "Document auto-bump on merge so PRs do not touch version files"
+    ]
   }
 }
