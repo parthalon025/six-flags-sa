@@ -12,6 +12,8 @@ import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
 import WeatherBanner from '@/components/WeatherBanner';
 import UpdateSplash from '@/components/UpdateSplash';
+import BrandLockup from '@/components/BrandLockup';
+import BrandMark from '@/components/BrandMark';
 import useSheetDrag from '@/components/useSheetDrag';
 import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
@@ -1769,25 +1771,42 @@ export default function Page() {
       {/* Nothing runs across the top of a phone map. The two controls float in
           the corner and the rest of the frame is map. */}
       <header className="topbar">
-        <button
-          type="button"
-          className="iconBtn"
-          onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
-          aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
-        >
-          <Icon name={theme === 'day' ? 'moon.fill' : 'sun.max.fill'} />
-        </button>
-        <button
-          type="button"
-          className={`iconBtn ${tapeOn ? 'on' : ''}`}
-          onClick={() => {
-            setTapeOn((v) => !v);
-            geo.enableCompass();
-          }}
-          aria-label="Bearing tape"
-        >
-          <Icon name="safari" />
-        </button>
+        {/* Desktop / wide: primary logo lockup in the top-left (brand sheet Image 1).
+            Phones keep the map chrome clear — the sheet brand + splash carry the lockup. */}
+        <div className="topbarBrand">
+          {venue?.name ? (
+            <BrandMark
+              variant="glyph"
+              size={22}
+              aqua="var(--aqua)"
+              className="topbarGlyph"
+              title={BRAND.name}
+            />
+          ) : (
+            <BrandLockup size="sm" showTagline={false} className="topbarLockup" markTitle={BRAND.name} />
+          )}
+        </div>
+        <div className="topbarActions">
+          <button
+            type="button"
+            className="iconBtn"
+            onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
+            aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
+          >
+            <Icon name={theme === 'day' ? 'moon.fill' : 'sun.max.fill'} />
+          </button>
+          <button
+            type="button"
+            className={`iconBtn ${tapeOn ? 'on' : ''}`}
+            onClick={() => {
+              setTapeOn((v) => !v);
+              geo.enableCompass();
+            }}
+            aria-label="Bearing tape"
+          >
+            <Icon name="safari" />
+          </button>
+        </div>
       </header>
 
       {/* In the top corner with the rest of the map's chrome, because that is
@@ -2056,10 +2075,14 @@ export default function Page() {
               )}
               {plan.brand && (
                 <div className="brand">
-                  <div className="brandRow">
-                    <b className="brandName">{venue?.name || 'PARKBOUND'}</b>
-                    {!venue?.name && <span className="brandSlogan">Explore more. Stress less.</span>}
-                  </div>
+                  {venue?.name ? (
+                    <div className="brandRow">
+                      <BrandMark variant="glyph" size={18} aqua="var(--aqua)" className="brandGlyph" />
+                      <b className="brandName">{venue.name}</b>
+                    </div>
+                  ) : (
+                    <BrandLockup size="sm" showTagline className="sheetBrandLockup" />
+                  )}
                   <span className="brandStatus">{headerLine()}</span>
                 </div>
               )}

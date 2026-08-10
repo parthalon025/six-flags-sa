@@ -28,6 +28,7 @@
     "venues:adapters": "node scripts/venue-adapters.mjs",
     "venues:route-qa": "node scripts/venue-route-qa.mjs",
     "venues:build-agent": "node scripts/venue-build-agent.mjs",
+    "icons:build": "node scripts/build-icons.mjs",
     "sync": "node server/index.mjs",
     "test": "node test/functional.mjs",
     "test:unit": "node test/unit.mjs",

@@ -1,8 +1,13 @@
 'use client';
 
+import BrandMark from '@/components/BrandMark';
+import { BRAND } from '@/lib/brand';
+
 /**
  * Startup splash for release notes after an update. Uses the same gate chrome as
  * the location intake so it feels like part of the same first-run experience.
+ * Shows the simplified Waypoint glyph (not the full lockup) so it stays an
+ * "in-app" moment rather than a marketing splash.
  */
 
 export default function UpdateSplash({ notes, onContinue }) {
@@ -11,7 +16,10 @@ export default function UpdateSplash({ notes, onContinue }) {
   return (
     <div className="gate" role="dialog" aria-labelledby="update-splash-title">
       <div className="gateCard">
-        <div className="gateEyebrow">Updated</div>
+        <div className="gateEyebrow">
+          <BrandMark variant="glyph" size={16} aqua="var(--aqua)" className="gateGlyph" />
+          {BRAND.nameUpper}
+        </div>
         <h2 id="update-splash-title">
           {notes.length === 1 ? notes[0].title : "What's new"}
         </h2>

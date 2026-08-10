@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
-import Icon from '@/components/Icon';
+import BrandMark from '@/components/BrandMark';
 
 /* Settings, arranged the way Settings is: short groups of rows, a value on the
    right of the row that has one, and a chevron on the rows that lead somewhere.
@@ -46,7 +46,7 @@ export default function SettingsPanel({
   return (
     <div>
       <div className="dayMoment">
-        <Icon name="sparkles" size={22} className="brandMark" />
+        <BrandMark variant="glyph" size={22} aqua="var(--aqua)" className="brandMark" />
         <div>
           <b>Explore more. Stress less.</b>
           <span>Your day at the park — settings, saved spots, and what the panel shows.</span>
