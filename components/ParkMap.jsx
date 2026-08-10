@@ -1375,9 +1375,12 @@ function ParkMap({
         {/* me — as a puck on the route while one is running, as a dot otherwise */}
         {me &&
           (() => {
-            const [fx, fy] = at(me.lat, me.lng);
-            const [sx, sy] = puck ? at(puck.lat, puck.lng) : [fx, fy];
-            const accR = me.acc ? me.acc * view.scale : 0;
+            const raw = me.raw ?? me;
+            const [fx, fy] = at(raw.lat, raw.lng);
+            const [sx, sy] = puck ? at(puck.lat, puck.lng) : at(me.lat, me.lng);
+            const accM = raw.acc ?? me.acc;
+            const accR = accM ? accM * view.scale : 0;
+            const showRaw = puck || me.snapped;
             // A bearing lands on screen at `bearing - rotation`, because that
             // is what turning the map under it does. The cone is drawn pointing
             // up, so it needs the same subtraction — with the map course-up the
@@ -1386,7 +1389,7 @@ function ParkMap({
             return (
               <g key="me">
                 {accR > 6 && <circle cx={fx} cy={fy} r={accR} className="accCircle" />}
-                {puck && <circle cx={fx} cy={fy} r={3} className="rawFix" />}
+                {showRaw && <circle cx={fx} cy={fy} r={3} className="rawFix" />}
                 <circle cx={sx} cy={sy} r={30} fill="url(#meGlow)" pointerEvents="none" />
                 {facing != null && (
                   <path

@@ -1,9 +1,11 @@
 'use client';
 
+import { BRAND } from '@/lib/brand';
+
 const COPY = {
   idle: {
     title: 'Find you on the map',
-    body: 'We need your GPS to drop your dot, see how far the crew is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
+    body: 'Parkbound needs your GPS to drop your dot, see how far the crew is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
     action: 'Share my location',
   },
   asking: {
@@ -29,7 +31,7 @@ const COPY = {
 };
 
 /*
- * The first screen says what Park Party is and asks for location, in that
+ * The first screen says what Parkbound is and asks for location, in that
  * order, on the one screen — rather than asking on a screen of its own.
  *
  * That order is the whole point. Someone handed the phone's own permission box
@@ -43,19 +45,20 @@ const COPY = {
 function Welcome() {
   return (
     <>
-      <p>Big park. Big group. One map to keep everyone together.</p>
+      <p className="gateSlogan">{BRAND.slogan}</p>
+      <p>{BRAND.promise}</p>
       <div className="introList">
         <p>
-          <b>Spot your whole crew.</b> Everyone is a dot on the map — how far away they
-          are and how long the walk takes.
+          <b>Spot your whole crew.</b> Your party is an expedition on the map — how far away
+          they are and how long the walk takes.
         </p>
         <p>
           <b>Meet up without the group-chat spiral.</b> Drop a pin on a spot and everyone
-          gets turn-by-turn walking directions straight to it.
+          gets a walking trail straight to it.
         </p>
         <p>
-          <b>Walking directions that actually help.</b> Tap Go on any ride, bathroom or
-          snack stand and follow step-by-step routes, just like a street map.
+          <b>Trails that actually help.</b> Tap Go on any ride, bathroom or snack stand and
+          follow step-by-step routes, just like a street map.
         </p>
         <p>
           <b>Everything the park has to offer.</b> Every ride, who is tall enough, what is
@@ -71,13 +74,12 @@ function Welcome() {
           in the gate.
         </p>
         <p>
-          <b>Works even in the dead zone.</b> The map, rides and directions live on your
-          phone, so queues with no signal are no problem. The app updates itself when you are
-          back online. Only live crew tracking needs bars — everyone catches up when they
-          return.
+          <b>Works even in the dead zone.</b> The map, rides and trails live on your phone, so
+          queues with no signal are no problem. Parkbound updates itself when you are back
+          online. Only live crew tracking needs bars — everyone catches up when they return.
         </p>
       </div>
-      <p>Ready to put yourself on the map? Park Party just needs your location for that.</p>
+      <p>Ready to put yourself on the map? Parkbound just needs your location for that.</p>
     </>
   );
 }
@@ -96,9 +98,9 @@ export default function GpsGate({
     <div className="gate">
       <div className="gateCard">
         <div className="gateEyebrow">
-          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}Park Party`}
+          {welcome ? 'Welcome' : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
         </div>
-        <h2>{welcome ? 'Park Party' : copy.title}</h2>
+        <h2>{welcome ? BRAND.nameUpper : copy.title}</h2>
         {welcome ? <Welcome /> : <p>{copy.body}</p>}
         {error && <p className="gateError">{error}</p>}
         <button type="button" className="btn primary" onClick={onRequest}>

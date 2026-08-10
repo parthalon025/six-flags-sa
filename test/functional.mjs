@@ -222,7 +222,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await a.waitForTimeout(400);
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.locator('button:has-text("Go")').first().click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -591,7 +591,7 @@ async function openRide(page, name) {
 
 /**
  * The report buttons are addressed by `data-report` rather than by their label:
- * the label is deliberately stateful ("It's down" becomes "Reported down"), so
+ * the label is deliberately stateful ("It's down" becomes "PAUSED"), so
  * matching on text couples the test to which way the button is currently
  * pointing — which is the thing under test.
  */
@@ -625,13 +625,13 @@ await check('a ride reported down on one phone reaches the other', async () => {
 
   // The reporting phone shows it straight away — via the host's patch, not an
   // optimistic local write.
-  await until(async () => /reported down/i.test(await pillFor(a, 'Diamondback')), {
+  await until(async () => /paused/i.test(await pillFor(a, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'phone A to show its own report',
   });
 
   await openRide(b, 'Diamondback');
-  await until(async () => /reported down/i.test(await pillFor(b, 'Diamondback')), {
+  await until(async () => /paused/i.test(await pillFor(b, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'the report to reach phone B',
   });
@@ -653,12 +653,12 @@ await check('the report says who saw it and when', async () => {
 await check('the other phone can correct it', async () => {
   const row = b.locator('.poiRow', { hasText: 'Diamondback' }).first();
   await reportBtn(row, 'open').click();
-  await until(async () => /reported running/i.test(await pillFor(b, 'Diamondback')), {
+  await until(async () => /\bopen\b/i.test(await pillFor(b, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: 'phone B to overwrite the report',
   });
   // A ride report is not owned by whoever wrote it, so A sees B's correction.
-  await until(async () => /reported running/i.test(await pillFor(a, 'Diamondback')), {
+  await until(async () => /\bopen\b/i.test(await pillFor(a, 'Diamondback')), {
     timeout: JOIN_TIMEOUT,
     label: "the correction to reach phone A",
   });
@@ -671,8 +671,8 @@ await check('retracting a report clears it everywhere', async () => {
   await reportBtn(row, 'open').click();
   // Not asserting the pill is gone outright: this suite runs against a live
   // forecast, and if it is genuinely storming the row keeps a weather pill.
-  // What must disappear is the party's claim.
-  const cleared = async (page) => !/reported/i.test(await pillFor(page, 'Diamondback'));
+  // What must disappear is the party's claim (the ● marker on an OPEN/PAUSED pill).
+  const cleared = async (page) => !/●/.test(await pillFor(page, 'Diamondback'));
   await until(() => cleared(b), { timeout: JOIN_TIMEOUT, label: 'phone B to drop the report' });
   await until(() => cleared(a), { timeout: JOIN_TIMEOUT, label: 'phone A to drop the report' });
   return true;
@@ -816,7 +816,7 @@ await dismissUpdateSplash(e);
 await check('the first screen says what the app is, above the location ask', async () => {
   const card = await e.locator('.gate').innerText();
   const heading = (await e.locator('.gate h2').innerText()).trim();
-  if (heading !== 'Park Party') throw new Error(`opened on: "${heading}"`);
+  if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
   // One screen, in the order that earns the answer: what you get, then what it
   // needs, then the button. A permission asked cold is a permission refused.
   const said = card.indexOf('Spot your whole crew');
@@ -867,7 +867,7 @@ await check('the park answered stays answered across a reload', async () => {
   await dismissUpdateSplash(e);
   // Introduced once per phone, not once per launch: coming back gets the plain
   // question, not the sales pitch again.
-  if (await e.locator('.gate h2:has-text("Park Party")').count()) {
+  if (await e.locator('.gate h2:has-text("PARKBOUND")').count()) {
     throw new Error('the introduction came back on a reload');
   }
   await e.locator('button:has-text("Share my location")').click();

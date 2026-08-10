@@ -79,7 +79,7 @@ async function main() {
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();
   check(
-    /Park Party/i.test(first) && /spot your whole crew/i.test(first),
+    /Parkbound|PARKBOUND/i.test(first) && /spot your whole crew/i.test(first),
     'the first screen introduces the app',
   );
   check(/Share my location/i.test(first), 'the first screen asks for location on the same card');
