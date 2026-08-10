@@ -71,22 +71,24 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
         ))}
       </div>
 
-      <div className="heightRow">
-        <input
-          type="range"
-          min="30"
-          max="76"
-          step="1"
-          style={{ '--pct': `${(((height ?? 48) - 30) / 46) * 100}%` }}
-          value={height ?? 48}
-          onChange={(e) => onHeight(Number(e.target.value))}
-          aria-label="Rider height in inches"
-        />
-        <div className="heightVal">
-          <b>{height ?? '–'}</b>
-          <span>in</span>
+      {height != null ? (
+        <div className="heightRow">
+          <input
+            type="range"
+            min="30"
+            max="76"
+            step="1"
+            style={{ '--pct': `${((height - 30) / 46) * 100}%` }}
+            value={height}
+            onChange={(e) => onHeight(Number(e.target.value))}
+            aria-label="Rider height in inches"
+          />
+          <div className="heightVal">
+            <b>{height}</b>
+            <span>in</span>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {counts ? (
         <>

@@ -1,0 +1,79 @@
+{
+  "type": "FeatureCollection",
+  "_comment": "Paths and rides surveyed from Okaloosa County orthophotos of 1 March 2025 via Esri World Imagery, registered to this venue's OpenStreetMap geometry. Folded in by the universal builder via data/venues/big-kahunas.sources.json.",
+  "properties": {
+    "imagery": {
+      "by": "aerial",
+      "source": "okaloosa-ortho-2025",
+      "provider": "Okaloosa County GIS",
+      "served_via": "Esri World Imagery",
+      "capture_date": "2025-03-01",
+      "horizontal_accuracy_m": 0.19,
+      "resolution_cm": 7.6
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "n": "Wave pool deck to midway",
+        "src": {
+          "by": "aerial",
+          "source": "okaloosa-ortho-2025",
+          "note": "Concrete deck along the wave pool east edge; OSM has the pool but not this link to the central midway."
+        }
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-86.47311, 30.38781],
+          [-86.47302, 30.38805],
+          [-86.47292, 30.38828],
+          [-86.47285, 30.38845]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "n": "Adventure Park boardwalk",
+        "src": {
+          "by": "aerial",
+          "source": "okaloosa-ortho-2025",
+          "note": "Raised walk from the mini-golf plaza to the ticket plaza; visible on orthophoto, absent from OSM footways."
+        }
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-86.4727, 30.38794],
+          [-86.47258, 30.38825],
+          [-86.47248, 30.38855],
+          [-86.47242, 30.38872]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "kind": "path",
+        "n": "Buccaneer Cove bridge",
+        "src": {
+          "by": "aerial",
+          "source": "okaloosa-ortho-2025",
+          "note": "Short bridge from the south-west midway into Buccaneer Cove; drawn on orthophoto, missing from OSM."
+        }
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-86.47384, 30.38834],
+          [-86.47395, 30.38812],
+          [-86.47402, 30.38792]
+        ]
+      }
+    }
+  ]
+}

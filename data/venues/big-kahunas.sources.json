@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "_comment": "Open-data and imagery sources used beside OpenStreetMap for this venue. The builder reads this file on every build to wire datasets and credits. Official website data is fetched by `npm run venues:research -- big-kahunas --fetch` into big-kahunas.official-cache.json.",
+  "generated": "2026-08-10",
+  "sources": [
+    {
+      "id": "osm",
+      "kind": "openstreetmap",
+      "license": "ODbL",
+      "url": "https://www.openstreetmap.org",
+      "used_for": "Park geometry, named water slides, pools, paths, buildings, and the venue boundary."
+    },
+    {
+      "id": "okaloosa-ortho-2025",
+      "kind": "aerial_imagery",
+      "provider": "Okaloosa County GIS",
+      "served_via": "Esri World Imagery",
+      "capture_date": "2025-03-01",
+      "resolution_cm": 7.6,
+      "horizontal_accuracy_m": 0.19,
+      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction."
+    },
+    {
+      "id": "park-map-2026",
+      "kind": "official_map",
+      "url": "https://bigkahunas.com/destin/park-map/",
+      "image": "docs/big-kahunas-2026-parkmap.webp",
+      "used_for": "Food, restroom, and river labels; disambiguation of lookalike pools and flumes when paired with orthophoto positions."
+    },
+    {
+      "id": "park-site-2026",
+      "kind": "official_site",
+      "url": "https://bigkahunas.com/destin/attractions/water-park/",
+      "used_for": "Height requirements and attraction names for the 2026 season."
+    }
+  ],
+  "datasets": {
+    "merge": ["data/venues/big-kahunas.merge.geojson"],
+    "imagery": ["data/venues/big-kahunas.imagery.geojson"]
+  }
+}

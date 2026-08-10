@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CATEGORY_LABELS } from '@/lib/theme';
 import { SYMBOLS } from '@/lib/mapSymbols';
 import { LegendLine, LegendMark, PoiMarker } from './MapSymbols';
@@ -36,8 +36,14 @@ export default function MapLegend({
   onToggleCategory,
   heightFilterOn,
   presentCategories = null,
+  /** Route preview and turn-by-turn HUD need the map clear — the key folds away. */
+  hidden = false,
 }) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (hidden) setOpen(false);
+  }, [hidden]);
+  if (hidden) return null;
   // The map's own gesture handlers sit on the wrapper; a tap meant for the key
   // must not also pan the park or drop a meet-up pin.
   const swallow = (e) => e.stopPropagation();

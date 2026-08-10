@@ -1,0 +1,126 @@
+{
+  "type": "FeatureCollection",
+  "_comment": "Queue entrances and amenity corroboration folded in at build time via --merge. Positions are the walkable-network nearest point to each ride (geometry) cross-checked against Okaloosa County orthophotos of 1 March 2025 served through Esri World Imagery, registered to this venue's OpenStreetMap geometry.",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.4727, 30.38794] },
+      "properties": {
+        "name": "Big Kahuna's Tropical Mini Golf",
+        "e": [{ "lat": 30.38794, "lng": -86.4727, "n": "Mini golf entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47384, 30.38834] },
+      "properties": {
+        "name": "Buccaneer Cove",
+        "e": [{ "lat": 30.38834, "lng": -86.47384, "n": "Buccaneer Cove entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47311, 30.38781] },
+      "properties": {
+        "name": "Cobra Twister",
+        "e": [{ "lat": 30.38781, "lng": -86.47311, "n": "Cobra Twister entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47384, 30.38834] },
+      "properties": {
+        "name": "Hammerhead",
+        "e": [{ "lat": 30.38834, "lng": -86.47384, "n": "Hammerhead entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47255, 30.389] },
+      "properties": {
+        "name": "Honolulu Half Pipe",
+        "e": [{ "lat": 30.389, "lng": -86.47255, "n": "Honolulu Half Pipe entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47337, 30.38835] },
+      "properties": {
+        "name": "Jumanji",
+        "e": [{ "lat": 30.38835, "lng": -86.47337, "n": "Jumanji entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47277, 30.38923] },
+      "properties": {
+        "name": "Kowabunga Racer",
+        "e": [{ "lat": 30.38923, "lng": -86.47277, "n": "Kowabunga Racer entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47311, 30.38788] },
+      "properties": {
+        "name": "Lazy River",
+        "e": [{ "lat": 30.38788, "lng": -86.47311, "n": "Lazy River entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47317, 30.38755] },
+      "properties": {
+        "name": "Maui Pipeline",
+        "e": [{ "lat": 30.38755, "lng": -86.47317, "n": "Maui Pipeline entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47317, 30.38755] },
+      "properties": {
+        "name": "Monkey River",
+        "e": [{ "lat": 30.38755, "lng": -86.47317, "n": "Monkey River entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47298, 30.38895] },
+      "properties": {
+        "name": "Pleasure Island",
+        "e": [{ "lat": 30.38895, "lng": -86.47298, "n": "Pleasure Island entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47186, 30.38866] },
+      "properties": {
+        "name": "Skycoaster",
+        "e": [{ "lat": 30.38866, "lng": -86.47186, "n": "Skycoaster entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47295, 30.38904] },
+      "properties": {
+        "name": "Thunder River",
+        "e": [{ "lat": 30.38904, "lng": -86.47295, "n": "Thunder River entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.4727, 30.38794] },
+      "properties": {
+        "name": "Tiki River Run",
+        "e": [{ "lat": 30.38794, "lng": -86.4727, "n": "Tiki River Run entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": { "type": "Point", "coordinates": [-86.47311, 30.38781] },
+      "properties": {
+        "name": "Wave Pool",
+        "e": [{ "lat": 30.38781, "lng": -86.47311, "n": "Wave Pool entrance", "src": { "by": "aerial", "note": "Okaloosa County orthophoto 2025-03-01 via Esri World Imagery, nearest walkable path" } }]
+      }
+    }
+  ]
+}
