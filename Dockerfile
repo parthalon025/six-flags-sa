@@ -1,29 +1,26 @@
 # syntax=docker/dockerfile:1
 #
-# One image, two processes: the Next.js app on 3000 and the party host on 8787.
-# They are separate servers on purpose — the party host has to keep working when
-# the web app is being redeployed, and it holds SSE connections that a static
-# host cannot.
-#
-#   docker build -t six-flags-sa .
-#   docker run -p 3000:3000 -p 8787:8787 -v party-data:/data six-flags-sa
+# Monorepo image: Next.js app on 3000, party host on 8787.
 
-# --- production dependencies, resolved once and copied in verbatim -----------
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+COPY apps/party-tracker/package.json ./apps/party-tracker/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/venue-builder/package.json ./packages/venue-builder/
+RUN npm ci --omit=dev -w @party-tracker/app
 
-# --- build stage: full dependency tree, thrown away afterwards ---------------
 FROM node:22-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
+COPY apps/party-tracker/package.json ./apps/party-tracker/
+COPY packages/shared/package.json ./packages/shared/
+COPY packages/venue-builder/package.json ./packages/venue-builder/
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN npm run build -w @party-tracker/app
 
-# --- runtime -----------------------------------------------------------------
 FROM node:22-alpine AS runtime
 WORKDIR /app
 
@@ -34,19 +31,19 @@ ENV NODE_ENV=production \
     ORIGIN=* \
     DATA_FILE=/data/parties.json
 
-# /data is created here so a fresh named volume inherits this ownership; a
-# volume mounted over a root-owned directory would be unwritable to `party`.
 RUN addgroup -S party \
  && adduser -S -G party party \
  && mkdir -p /data \
  && chown -R party:party /data
 
 COPY --from=deps  --chown=party:party /app/node_modules ./node_modules
-COPY --from=build --chown=party:party /app/.next ./.next
-COPY --chown=party:party public ./public
-COPY --chown=party:party lib ./lib
-COPY --chown=party:party server ./server
-COPY --chown=party:party package.json next.config.mjs ./
+COPY --from=build --chown=party:party /app/apps/party-tracker/.next ./apps/party-tracker/.next
+COPY --chown=party:party apps/party-tracker/public ./apps/party-tracker/public
+COPY --chown=party:party apps/party-tracker/lib ./apps/party-tracker/lib
+COPY --chown=party:party apps/party-tracker/server ./apps/party-tracker/server
+COPY --chown=party:party apps/party-tracker/package.json ./apps/party-tracker/
+COPY --chown=party:party apps/party-tracker/next.config.mjs ./apps/party-tracker/
+COPY --chown=party:party package.json ./
 
 USER party
 EXPOSE 3000 8787
@@ -54,6 +51,5 @@ EXPOSE 3000 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD wget -qO- "http://127.0.0.1:${PORT}/api/health" >/dev/null || exit 1
 
-# No init system and no supervisor: two children, signals forwarded to both, and
-# the container dies with whichever one dies first so the orchestrator restarts it.
-CMD ["sh", "-c", "node server/index.mjs & sync=$!; ./node_modules/.bin/next start -p \"$WEB_PORT\" & web=$!; trap 'kill -TERM $sync $web 2>/dev/null' TERM INT; wait $web; kill -TERM $sync 2>/dev/null; wait $sync"]
+WORKDIR /app/apps/party-tracker
+CMD ["sh", "-c", "node server/index.mjs & sync=$!; ../../node_modules/.bin/next start -p \"$WEB_PORT\" & web=$!; trap 'kill -TERM $sync $web 2>/dev/null' TERM INT; wait $web; kill -TERM $sync 2>/dev/null; wait $sync"]
