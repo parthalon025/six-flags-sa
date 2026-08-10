@@ -5301,7 +5301,7 @@ await check('a short phone still reaches the list', () => {
 
 /* ------------------------------------------------------------- app version */
 
-const { APP_VERSION, compareVersions, isNewerVersion, parseVersion } = await import('../lib/version.js');
+const { APP_BUILT, APP_VERSION, bumpPatchVersion, compareVersions, isNewerBuild, isNewerVersion, parseVersion } = await import('../lib/version.js');
 
 await check('APP_VERSION is a semver string', () => {
   assert.ok(parseVersion(APP_VERSION), `not semver: ${APP_VERSION}`);
@@ -5321,6 +5321,22 @@ await check('isNewerVersion is strict', () => {
   assert.equal(isNewerVersion('1.1.0', '1.0.0'), true);
   assert.equal(isNewerVersion('1.0.0', '1.0.0'), false);
   assert.equal(isNewerVersion('1.0.0', '1.1.0'), false);
+  return true;
+});
+
+await check('bumpPatchVersion increments the patch segment', () => {
+  assert.equal(bumpPatchVersion('1.1.0'), '1.1.1');
+  assert.equal(bumpPatchVersion('2.0.9'), '2.0.10');
+  return true;
+});
+
+await check('isNewerBuild detects redeploys with the same semver', () => {
+  const older = { version: '1.1.0', built: '2026-08-09T10:00:00.000Z' };
+  const newer = { version: '1.1.0', built: '2026-08-10T10:00:00.000Z' };
+  assert.equal(isNewerBuild(newer, older), true);
+  assert.equal(isNewerBuild(older, newer), false);
+  assert.equal(isNewerBuild(newer, { version: '1.1.0' }), true);
+  assert.equal(isNewerBuild({ version: '1.2.0', built: older.built }, older), true);
   return true;
 });
 

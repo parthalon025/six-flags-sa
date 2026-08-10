@@ -342,28 +342,32 @@ function GlanceRail({
                   the line is down to the thing the arrow cannot say. */}
               <span className="glanceFoot">{c.footnote}</span>
             </button>
-            {shed && (
-              /* Both, on purpose. The swipe is what a thumb already knows and
-                 it costs the card no room; the × is what makes it findable by
-                 somebody who has never swiped a card away in their life. */
-              <button
-                type="button"
-                className="glanceShed"
-                onClick={shed}
-                aria-label={`Remove ${c.title} from this list`}
-              >
-                <Icon name="xmark.circle.fill" size={17} />
-              </button>
-            )}
-            {onNavigate && c.nav && (
-              <button
-                type="button"
-                className={`glanceGo ${walking ? 'on' : ''}`}
-                onClick={() => onNavigate(walking ? null : c.nav)}
-                aria-label={walking ? `Stop walking to ${c.title}` : `Walk me to ${c.title}`}
-              >
-                {walking ? 'Stop' : 'Go'}
-              </button>
+            {(shed || (onNavigate && c.nav)) && (
+              <div className="glanceActions">
+                {onNavigate && c.nav && (
+                  <button
+                    type="button"
+                    className={`glanceGo ${walking ? 'on' : ''}`}
+                    onClick={() => onNavigate(walking ? null : c.nav)}
+                    aria-label={walking ? `Stop walking to ${c.title}` : `Walk me to ${c.title}`}
+                  >
+                    {walking ? 'Stop' : 'Go'}
+                  </button>
+                )}
+                {shed && (
+                  /* Both, on purpose. The swipe is what a thumb already knows and
+                     it costs the card no room; the × is what makes it findable by
+                     somebody who has never swiped a card away in their life. */
+                  <button
+                    type="button"
+                    className="glanceShed"
+                    onClick={shed}
+                    aria-label={`Remove ${c.title} from this list`}
+                  >
+                    <Icon name="xmark.circle.fill" size={17} />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         );

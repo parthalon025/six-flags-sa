@@ -1945,7 +1945,9 @@ export default function Page() {
               {plan.search && (
                 <div className="searchRow">
                   <div className="searchField">
-                    <Icon name="magnifyingglass" size={17} />
+                    <span className="searchIn" aria-hidden="true">
+                      <Icon name="magnifyingglass" size={17} />
+                    </span>
                     <input
                       className="field"
                       placeholder={`Search ${venue?.name || 'the map'}`}
@@ -2211,6 +2213,7 @@ export default function Page() {
                   showToast('Forgotten where you parked');
                 }}
                 appVersion={appUpdate.version}
+                appBuilt={appUpdate.built}
                 updateStatus={appUpdate.status}
               />
             )}
@@ -2323,7 +2326,9 @@ export default function Page() {
                 runtime={runtimeApi}
                 geo={geo}
                 appVersion={appUpdate.version}
+                appBuilt={appUpdate.built}
                 remoteVersion={appUpdate.remoteVersion}
+                remoteBuilt={appUpdate.remoteBuilt}
                 updateStatus={appUpdate.status}
               />
             )}

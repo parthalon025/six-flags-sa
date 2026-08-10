@@ -6,5 +6,17 @@
       "Your version number lives under Me → Advanced, so you can check you are on the latest build.",
       "When you are offline, the map and rides keep working from what is saved on your phone."
     ]
+  },
+  "1.1.1": {
+    "title": "What's new",
+    "items": [
+      "Fix auto-update and auto-bump version on merge (#33)"
+    ]
+  },
+  "1.1.2": {
+    "title": "What's new",
+    "items": [
+      "Fix overlapping user actions with dedicated icon zones"
+    ]
   }
 }
