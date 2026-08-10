@@ -9,14 +9,14 @@
 import { WAY_FLAGS, hasWayFlag } from './wayFlags.js';
 
 export const PROFILES = {
-  /** Default walk: guest paths first (service / restricted ways are avoided). */
+  /** Default walk: prefer guest paths; still allow restricted when needed. */
   default: {
     id: 'default',
     label: 'Guest paths',
-    description: 'Fastest walk on guest paths — skips service roads',
+    description: 'Prefers guest paths — service roads cost more',
     minCoverage: () => true,
     segmentPenalty: (seg) => (hasWayFlag(seg.flags, WAY_FLAGS.RESTRICTED) ? 4 : 1),
-    segmentExcluded: (seg) => hasWayFlag(seg.flags, WAY_FLAGS.RESTRICTED),
+    segmentExcluded: () => false,
   },
   no_steps: {
     id: 'no_steps',
@@ -27,14 +27,13 @@ export const PROFILES = {
       if (hasWayFlag(seg.flags, WAY_FLAGS.STEPS)) return Infinity;
       return hasWayFlag(seg.flags, WAY_FLAGS.RESTRICTED) ? 4 : 1;
     },
-    segmentExcluded: (seg) =>
-      hasWayFlag(seg.flags, WAY_FLAGS.STEPS) || hasWayFlag(seg.flags, WAY_FLAGS.RESTRICTED),
+    segmentExcluded: (seg) => hasWayFlag(seg.flags, WAY_FLAGS.STEPS),
   },
-  /** Prefer every mapped walk, including restricted service cuts. */
+  /** Equal weight on every mapped walk, including restricted service cuts. */
   allow_restricted: {
     id: 'allow_restricted',
     label: 'Any path',
-    description: 'May use service roads marked restricted',
+    description: 'Treats service roads the same as guest paths',
     minCoverage: (cov) => cov.restricted > 0,
     segmentPenalty: () => 1,
     segmentExcluded: () => false,

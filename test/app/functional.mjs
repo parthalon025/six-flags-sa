@@ -240,7 +240,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('button:has-text("Go")').first().click();
+  await a.locator('button:has-text("Walk me there")').first().click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -266,7 +266,7 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   const venueNameA = async () => {
     await a.locator('.tabItem[data-tab="explore"]').click();
     await root(a);
-    return a.locator('.brand b').innerText();
+    return a.locator('.brandName, .brand b').first().innerText();
   };
   await go(a, 'Which map');
   await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
