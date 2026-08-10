@@ -167,7 +167,7 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
 export async function closeGate(page) {
   await dismissUpdateSplash(page);
   const allow = page.locator('button:has-text("Allow location")');
-  const yes = page.locator('.gate .btn.primary:has-text("Yes — set up")');
+  const yes = page.locator('.gate .btn.primary:has-text("set up")');
   const quiet = page.locator(
     'button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Not now — just show me the map")',
   );

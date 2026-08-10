@@ -879,6 +879,40 @@ await check('the park answered stays answered across a reload', async () => {
   return true;
 });
 
+await check('skipping location still asks which park to explore', async () => {
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: [],
+  });
+  await fresh.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+    localStorage.setItem('tracker-release-notes-seen', '1.1.3');
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await hydrated(p);
+  await dismissUpdateSplash(p);
+  const skip = p.locator(
+    'button:has-text("Just look around"), button:has-text("Just show me the map")',
+  );
+  await until(async () => (await skip.count()) > 0, { timeout: 10000, label: 'the location skip button' });
+  await skip.first().click();
+  await until(async () => (await p.locator('.gate h2').innerText()).includes('explore'), {
+    timeout: 10000,
+    label: 'the explore park question',
+  });
+  const heading = (await p.locator('.gate h2').innerText()).trim();
+  if (!/which park would you like to explore/i.test(heading)) {
+    throw new Error(`asked: "${heading}"`);
+  }
+  await p.locator('.gate .btn.primary').click();
+  await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  const paths = await p.locator('svg.mapSvg path').count();
+  if (paths < 100) throw new Error(`map did not draw after picking a park (${paths} paths)`);
+  await fresh.close();
+  return true;
+});
+
 await intake.close();
 
 // A phone that is nowhere near the party. It should open on the venue its own

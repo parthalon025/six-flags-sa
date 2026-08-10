@@ -37,7 +37,7 @@ import {
   retargetForPosition,
   selectVenue,
   unpinVenue,
-  venueChoiceFor,
+  intakeChoiceFor,
   venuesByDistance,
   withinBounds,
 } from '@/lib/venue/store';
@@ -178,6 +178,10 @@ export default function Page() {
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
+  /* The location card has had its turn — allow the park question even when there
+     is no fix yet. Without this, explore-mode intake would draw on first paint
+     and skip the introduction entirely. */
+  const [locationSettled, setLocationSettled] = useState(false);
   /* Has this phone been told what the app is? null until localStorage has been
      read, which cannot happen on the server: rendering a card before the answer
      is known would show a first-time visitor the location question for a frame
@@ -498,17 +502,21 @@ export default function Page() {
    * answering is what sets `venueConfirmed` and stops it.
    */
   const parkChoice = useMemo(() => {
-    if (parkAsked || !manifest || !position) return null;
-    return venueChoiceFor(manifest, position.lat, position.lng, {
+    if (parkAsked || !manifest) return null;
+    const lat = position?.lat;
+    const lng = position?.lng;
+    const hasFix = Number.isFinite(lat) && Number.isFinite(lng);
+    if (!hasFix && !locationSettled) return null;
+    return intakeChoiceFor(manifest, lat, lng, {
       confirmed: venueConfirmed,
       pinned: venuePinned,
     });
-  }, [parkAsked, manifest, position, venueConfirmed, venuePinned]);
+  }, [parkAsked, manifest, position, venueConfirmed, venuePinned, locationSettled]);
 
   /** The other parks, nearest first, for when the nearest one is the wrong guess. */
   const parkOptions = useMemo(() => {
-    if (!parkChoice || !position) return [];
-    return venuesByDistance(manifest, position.lat, position.lng).filter(
+    if (!parkChoice || !manifest) return [];
+    return venuesByDistance(manifest, position?.lat ?? null, position?.lng ?? null).filter(
       (row) => row.venue.id !== parkChoice.venue.id,
     );
   }, [parkChoice, manifest, position]);
@@ -634,8 +642,14 @@ export default function Page() {
   // "Just show me the park map" — which is the opposite of what someone who
   // just granted location wants.
   useEffect(() => {
-    if (geo.status === 'live' && !askingPark) setGateOpen(false);
-  }, [geo.status, askingPark]);
+    if (geo.status !== 'idle' && geo.status !== 'asking') setLocationSettled(true);
+  }, [geo.status]);
+
+  useEffect(() => {
+    if (!askingPark && (geo.status === 'live' || parkAsked)) {
+      setGateOpen(false);
+    }
+  }, [geo.status, askingPark, parkAsked]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -2365,6 +2379,7 @@ export default function Page() {
         <ParkPrompt
           choice={parkChoice}
           options={parkOptions}
+          explore={Boolean(parkChoice?.explore)}
           busy={venueStatus === 'loading'}
           error={venueStatus === 'error' ? venueError : null}
           onConfirm={(id) => {
@@ -2374,6 +2389,7 @@ export default function Page() {
                 // Following your own dot only makes sense on a map you are
                 // standing on; from the road, the park itself is the view.
                 setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+                setGateOpen(false);
                 showToast(`${v.name} is ready`);
               })
               .catch((err) => showToast(err?.message || 'Could not build that map.'));
@@ -2397,27 +2413,31 @@ export default function Page() {
           welcome={introSeen === false && geo.status === 'idle'}
           onRequest={() => {
             markIntroSeen();
+            setLocationSettled(true);
             geo.request();
             geo.enableCompass();
           }}
           onManual={() => {
             markIntroSeen();
-            // Waving the intake off waves off both of its questions: whichever
-            // one you come back for, you came back deliberately, and the one
-            // you get should be the one this button is under.
-            setParkAsked(true);
-            setGateOpen(false);
-            showToast('Tap the map to place yourself');
+            setLocationSettled(true);
+            // Manual placement still needs a park on screen. If the intake has
+            // not been answered yet, the park question is what comes next.
+            if (venueConfirmed || venuePinned) {
+              setGateOpen(false);
+              showToast('Tap the map to place yourself');
+            }
           }}
           onDismiss={() => {
             markIntroSeen();
-            // Waving both questions off leaves whichever park happened to boot,
-            // which is the one place the app can be showing somebody a map of
-            // somewhere they are not. Name it, so that is a fact rather than a
-            // surprise found later.
-            setParkAsked(true);
-            setGateOpen(false);
-            if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
+            setLocationSettled(true);
+            // Skipping location is fine — but skipping the park is not. A new
+            // visitor who waves off GPS still has to pick a map or they open on
+            // a placeholder with nothing built for where they are going.
+            if (venueConfirmed || venuePinned) {
+              setParkAsked(true);
+              setGateOpen(false);
+              if (venue?.name) showToast(`Showing ${venue.name}. Change it under Me → Which map.`);
+            }
           }}
         />
       )}

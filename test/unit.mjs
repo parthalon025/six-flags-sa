@@ -121,9 +121,8 @@ const {
   GLYPHS,
   SYMBOLS,
 } = await import('../lib/mapSymbols.js');
-const { venueChoiceFor, venueForPosition, venuesByDistance, withinBounds } = await import(
-  '../lib/venue/store.js'
-);
+const { venueChoiceFor, intakeChoiceFor, venueForPosition, venuesByDistance, withinBounds } =
+  await import('../lib/venue/store.js');
 const { CATEGORY_LABELS, landTint } = await import('../lib/theme.js');
 const {
   SHEET_CHROME_PX,
@@ -3847,7 +3846,7 @@ const SFFT = {
   center: { lat: 29.5992, lng: -98.61455 },
   bounds: { north: 29.60898, south: 29.58942, east: -98.60346, west: -98.62564 },
 };
-const MANIFEST = { venues: [KI, SFFT] };
+const MANIFEST = { default: 'kings-island', venues: [KI, SFFT] };
 
 await check('a fix outside every venue still picks the nearest one', () => {
   // Austin: inside neither park. "Nearest or last" means a phone with no venue
@@ -3953,6 +3952,27 @@ await check('with no fix the parks still list, undistanced', () => {
   assert.equal(rows.length, 2);
   assert.equal(rows[0].metres, null);
   assert.equal(rows[0].inside, false);
+  return true;
+});
+
+await check('with no fix an unplaced visitor is asked to explore a park', () => {
+  const ask = intakeChoiceFor(MANIFEST, null, null, {});
+  assert.equal(ask.explore, true);
+  assert.equal(ask.venue.id, MANIFEST.default);
+  assert.equal(ask.metres, null);
+  assert.equal(ask.inside, false);
+  return true;
+});
+
+await check('with no fix a confirmed visitor is not asked again', () => {
+  assert.equal(intakeChoiceFor(MANIFEST, null, null, { confirmed: 'kings-island' }), null);
+  return true;
+});
+
+await check('with a fix intakeChoiceFor defers to venueChoiceFor', () => {
+  const ask = intakeChoiceFor(MANIFEST, 30.2672, -97.7431, {});
+  assert.equal(ask.explore, false);
+  assert.equal(ask.venue.id, 'six-flags-fiesta-texas');
   return true;
 });
 

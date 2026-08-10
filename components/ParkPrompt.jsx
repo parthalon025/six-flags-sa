@@ -40,6 +40,7 @@ export default function ParkPrompt({
   options = [],
   busy = false,
   error = null,
+  explore = false,
   onConfirm,
   onSkip,
 }) {
@@ -49,16 +50,23 @@ export default function ParkPrompt({
   const distanceText = inside ? 'you are here' : awayText(choice.metres);
   const data = dataText(venue);
 
+  const heading = explore
+    ? 'Which park would you like to explore?'
+    : inside
+      ? `You’re at ${venue.name}`
+      : `Going to ${venue.name}?`;
+  const body = explore
+    ? 'Pick a park and this phone builds it — the paths, the rides and every place on it — so the map is ready before you arrive.'
+    : inside
+      ? `Your fix puts you inside ${venue.name}, ${venue.locality}. Say the word and this phone builds that park: the paths, the ride track and every place on it.`
+      : `${venue.name} in ${venue.locality} is the closest park this app carries — ${distanceText}. If that is where you are headed, this phone builds it now so the map is ready before you park.`;
+
   return (
     <div className="gate">
       <div className="gateCard">
         <div className="gateEyebrow">Which park</div>
-        <h2>{inside ? `You’re at ${venue.name}` : `Going to ${venue.name}?`}</h2>
-        <p>
-          {inside
-            ? `Your fix puts you inside ${venue.name}, ${venue.locality}. Say the word and this phone builds that park: the paths, the ride track and every place on it.`
-            : `${venue.name} in ${venue.locality} is the closest park this app carries — ${distanceText}. If that is where you are headed, this phone builds it now so the map is ready before you park.`}
-        </p>
+        <h2>{heading}</h2>
+        <p>{body}</p>
         {error && <p className="gateError">{error}</p>}
 
         <button
@@ -67,7 +75,11 @@ export default function ParkPrompt({
           disabled={busy}
           onClick={() => onConfirm?.(venue.id)}
         >
-          {busy ? 'Setting it up…' : `Yes — set up ${venue.name}`}
+          {busy
+            ? 'Setting it up…'
+            : explore
+              ? `Set up ${venue.name}`
+              : `Yes — set up ${venue.name}`}
         </button>
 
         {options.length > 0 && (

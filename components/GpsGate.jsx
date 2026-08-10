@@ -51,20 +51,31 @@ function Welcome() {
         </p>
         <p>
           <b>Meet up without ringing round.</b> Anyone can drop a pin on a spot, and
-          everyone else gets directions to it.
+          everyone else gets turn-by-turn walking directions to it.
         </p>
         <p>
-          <b>Everything in the park.</b> Every ride and who is tall enough for it, and the
-          nearest toilet, food or first aid.
+          <b>Walking directions through the park.</b> Tap Go on any ride, toilet or food
+          stand and follow the same kind of step-by-step route a phone map gives you on the
+          street.
+        </p>
+        <p>
+          <b>Everything in the park.</b> Every ride and who is tall enough for it, which
+          ones are running, and the nearest toilet, food or first aid.
         </p>
         <p>
           <b>An eye on the sky.</b> The forecast for the park, and which rides tend to shut
           when the weather turns.
         </p>
         <p>
+          <b>Your park, on your phone.</b> Cedar Point, Kings Island, Fiesta Texas, Big
+          Kahuna&apos;s and more — pick the one you are visiting and the whole map is built
+          here before you walk in.
+        </p>
+        <p>
           <b>No bars, no problem.</b> The map, the rides and the walking directions are
-          saved on your phone, so they work in a queue with no signal. Only watching your
-          group move needs a connection, and everyone catches up when it comes back.
+          saved on your phone, so they work in a queue with no signal. The app updates
+          itself when you are back online. Only watching your group move needs a live
+          connection, and everyone catches up when it comes back.
         </p>
       </div>
       <p>To put you on the map, Park Party needs to use your location.</p>
