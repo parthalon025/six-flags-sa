@@ -441,6 +441,18 @@ if (await a.locator('.navBanner').count()) {
   await a.locator('.navEnd').click().catch(() => {});
   await a.waitForTimeout(600);
 }
+// Cedar Point walk setup leaves this phone on that map; party ride tests need Kings Island.
+{
+  const brand = async () => a.locator('.brandName, .brand b').first().innerText();
+  if (!/kings island/i.test(await brand().catch(() => ''))) {
+    await go(a, 'Which map');
+    await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
+    await until(async () => /kings island/i.test(await brand()), {
+      timeout: 15000,
+      label: 'back on Kings Island',
+    });
+  }
+}
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
