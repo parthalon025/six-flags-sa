@@ -18,5 +18,11 @@
     "items": [
       "Fix overlapping user actions with dedicated icon zones"
     ]
+  },
+  "1.1.3": {
+    "title": "What's new",
+    "items": [
+      "Performance roadmap: map smoothness, load time, party join, scale polish"
+    ]
   }
 }
