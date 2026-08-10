@@ -100,7 +100,7 @@ export default function ParkPrompt({
         <p className="gateFine">
           {data ? `${venue.name} is ${data}. ` : ''}
           Everything is fetched once and kept on this phone, so the map still draws
-          in a queue with no signal. Change parks any time under Me &rarr; Which map.
+          in a queue with no signal. Change parks any time under Day → Which park.
         </p>
       </div>
     </div>

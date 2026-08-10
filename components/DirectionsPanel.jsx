@@ -72,7 +72,7 @@ export default function DirectionsPanel({
         </p>
       )}
 
-      <div className="label">Directions</div>
+      <div className="label">Trail</div>
       <ol className="stepList">
         {route.steps.map((s, i) => (
           <li
