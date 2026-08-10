@@ -5397,7 +5397,8 @@ await check('the shipped release-notes file has an entry for the current version
 /* -------------------------------- adapter registry & evidence graph -- */
 
 const { getAdapter, registrySummary, ADAPTER_REGISTRY } = await import('../scripts/lib/adapters/index.mjs');
-const { graphFromAttractions, convergenceReport } = await import('../scripts/lib/evidence-graph.mjs');
+const { graphFromAttractions, graphFromSidecar, convergenceReport } = await import('../scripts/lib/evidence-graph.mjs');
+const { entranceMeta, entranceLine, bestEntrance, atLeastBand } = await import('../lib/entrance.js');
 
 await check('adapter registry lists core external stacks', () => {
   assert.ok(getAdapter('langgraph'));
@@ -5434,10 +5435,81 @@ await check('evidence graph summarises converging claims', () => {
   return true;
 });
 
+await check('evidence graph reads shipped attractions[] sidecar', () => {
+  const { nodes, summary } = graphFromSidecar({
+    attractions: [
+      {
+        id: 'gemini',
+        name: 'Gemini',
+        features: {
+          queue_entrance: {
+            confidence: 'moderate',
+            conflict: false,
+            at: near,
+            evidence: [
+              { source: 'osm_named_queue', at: near, date: '2026-01-01' },
+              { source: 'geometry', at: alsoNear, date: '2026-01-01' },
+            ],
+          },
+        },
+      },
+    ],
+  });
+  assert.ok(summary.published >= 1);
+  assert.ok(nodes.some((n) => n.rideName === 'Gemini'));
+  return true;
+});
+
+await check('entrance meta labels confirmed vs approximate', () => {
+  const confirmed = entranceMeta({
+    n: 'Gemini',
+    e: [{ lat: near.lat, lng: near.lng, src: { confidence: 'moderate', sources: ['osm_named_queue'] } }],
+  });
+  assert.equal(confirmed.confirmed, true);
+  assert.equal(entranceLine({ n: 'X', e: [{ lat: 1, lng: 2, src: { confidence: 'low' } }] }), 'Approximate queue area');
+  assert.ok(bestEntrance({ e: [
+    { lat: 1, lng: 2, src: { confidence: 'low' } },
+    { lat: 3, lng: 4, src: { confidence: 'high' } },
+  ] }).src.confidence === 'high');
+  return true;
+});
+
 await check('new evidence sources fuse with expected weights', () => {
   const m = fuse([{ source: 'mapillary', at: near }, { source: 'parks_api' }]);
   assert.equal(m.score, 7);
   assert.equal(m.band, 'moderate');
+  return true;
+});
+
+await check('parks-api adapter maps cedar point', async () => {
+  const { loadParksApiData, compareParksApiToBundle, PARK_ENTITY_IDS } = await import('../scripts/lib/adapters/parks-api.mjs');
+  assert.ok(PARK_ENTITY_IDS['cedar-point']);
+  const data = await loadParksApiData('cedar-point', { fetch: true });
+  assert.ok(data.attractions?.length > 50);
+  const cmp = compareParksApiToBundle({ parksApi: data, pois: [{ n: 'Millennium Force', c: 'ride' }] });
+  assert.ok(cmp.matched >= 1);
+  return true;
+});
+
+await check('build-agent orchestrator runs offline', async () => {
+  const { runBuildOrchestrator } = await import('../scripts/lib/agents/orchestrator.mjs');
+  const trace = await runBuildOrchestrator('cedar-point', {
+    offline: true,
+    fetch: false,
+    browser: false,
+    skip: ['vision'],
+  });
+  assert.equal(trace.venueId, 'cedar-point');
+  assert.ok(trace.agents.length >= 3);
+  assert.ok(trace.agents.some((a) => a.role === 'qa' && a.ok));
+  return true;
+});
+
+await check('AGPL yolo adapter is rejected by runner', async () => {
+  const { runAdapter } = await import('../scripts/lib/adapters/runner.mjs');
+  const r = await runAdapter('ultralytics-yolo', { venueId: 'cedar-point' });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'license_rejected');
   return true;
 });
 

@@ -141,17 +141,22 @@ Builder-side services may use Valhalla or Tippecanoe; output still lands in `pub
 
 ## Integration phases
 
-### Phase 1 — wrap without new runtime deps (current + next)
+### Phase 1 — wrap without new runtime deps (current)
 
 - [x] Dependency registry and evidence graph module
-- [x] Extended evidence source keys (mapillary, parks_api, cv_*)
-- [ ] Playwright adapter for `venues:research --browser`
-- [ ] ParksAPI wrapper for sidecar metadata
-- [ ] Human validation UI shell (Mapillary JS optional)
+- [x] Extended evidence source keys (mapillary, parks_api, cv_segmentation)
+- [x] Playwright adapter for `venues:research --browser`
+- [x] ParksAPI wrapper (`venues:research --parks-api`, agent tool)
+- [x] LLM multi-agent orchestrator (`venues:build-agent`)
+- [x] MIT license on package.json + `docs/THIRD_PARTY_LICENSES.md`
+- [x] AGPL YOLO rejected — SAM 2 / external workers only
+- [x] Entrance confidence UX in phone app
+- [x] Maintainer evidence HTML (`venues:attractions --html`)
 
 ### Phase 2 — geospatial services (builder only)
 
-- [ ] Tippecanoe tile pipeline for large venues
+- [x] Route QA CLI (`venues:route-qa`) — client graph health
+- [x] Tippecanoe GeoJSON export (`venues:attractions --tiles`)
 - [ ] Valhalla vs GraphHopper bake-off on pedestrian subgraph
 - [ ] Local Overpass/Nominatim for reproducible CI
 

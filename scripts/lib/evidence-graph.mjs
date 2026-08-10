@@ -9,59 +9,109 @@
  * This module is sidecar-only. Nothing here ships to the client bundle.
  */
 
-import { fuse, bandOf, PUBLISH_AT, atLeast, pointOf } from './evidence.mjs';
+import { fuse, PUBLISH_AT, atLeast, pointOf } from './evidence.mjs';
 
 /**
  * @typedef {object} EvidenceGraphNode
  * @property {string} id
  * @property {string} kind — ride | entrance | exit | queue | path | amenity | metadata
  * @property {string} [label]
- * @property {object[]} claims — raw evidence rows ({ source, at?, date?, uri?, note? })
- * @property {object} [fusion] — output of fuse()
+ * @property {string} [rideName]
+ * @property {object[]} claims
+ * @property {object} [fusion]
  * @property {boolean} [published]
+ * @property {string} [report]
+ * @property {{ lat: number, lng: number }} [at]
  */
 
+function normaliseFeatureMap(features) {
+  if (Array.isArray(features)) {
+    const out = {};
+    for (const f of features) {
+      const key = f.kind || f.id || 'feature';
+      out[key] = { ...f, evidence: f.evidence || [] };
+    }
+    return out;
+  }
+  return features || {};
+}
+
 /**
- * Build a graph from attractions sidecar rows.
+ * Normalise sidecar rows — supports legacy `rides` map and shipped `attractions[]`.
+ */
+export function normaliseAttractionRows(sidecar = {}) {
+  if (sidecar.attractions?.length) {
+    return sidecar.attractions.map((row) => ({
+      id: row.id,
+      name: row.name,
+      features: normaliseFeatureMap(row.features),
+    }));
+  }
+  return Object.entries(sidecar.rides || {}).map(([id, row]) => ({
+    id,
+    name: row.name || id,
+    features: normaliseFeatureMap(row.features),
+  }));
+}
+
+/**
+ * Build a graph from attractions sidecar.
  *
- * @param {object} attractionsJson — data/venues/<id>.attractions.json shape
+ * @param {object} sidecar — data/venues/<id>.attractions.json
  * @returns {{ nodes: EvidenceGraphNode[], summary: object }}
  */
-export function graphFromAttractions(attractionsJson = {}) {
+export function graphFromSidecar(sidecar = {}) {
   const nodes = [];
-  for (const [rideId, row] of Object.entries(attractionsJson.rides || {})) {
+  const rows = normaliseAttractionRows(sidecar);
+  for (const row of rows) {
     nodes.push({
-      id: rideId,
+      id: row.id,
       kind: 'ride',
-      label: row.name || rideId,
+      label: row.name,
+      rideName: row.name,
       claims: [],
       fusion: null,
       published: false,
     });
-    for (const feat of row.features || []) {
-      const claims = feat.evidence || [];
+    const feats = row.features || {};
+    for (const [featureKey, slot] of Object.entries(feats)) {
+      if (!slot) continue;
+      const claims = slot.evidence || [];
       const fusion = fuse(claims);
       const where = pointOf(claims);
+      const at = slot.at || (where ? { lat: where.lat, lng: where.lng } : null);
       const published =
-        atLeast(fusion.band, PUBLISH_AT) &&
-        (Number.isFinite(feat.at?.lat) || Number.isFinite(where?.lat));
-      nodes.push({
-        id: feat.id || `${rideId}:${feat.kind || 'feature'}`,
-        kind: feat.kind || 'entrance',
-        label: feat.label || feat.kind,
+        atLeast(slot.confidence || fusion.band, PUBLISH_AT) &&
+        Number.isFinite(at?.lat) &&
+        !slot.conflict;
+      const node = {
+        id: `${row.id}:${featureKey}`,
+        kind: featureKey.replace(/_/g, ' '),
+        label: featureKey,
+        rideName: row.name,
         claims,
-        fusion,
+        fusion: {
+          ...fusion,
+          band: slot.confidence || fusion.band,
+          score: slot.score ?? fusion.score,
+        },
         published,
-      });
+        report: convergenceReport({ fusion: { ...fusion, band: slot.confidence || fusion.band }, claims }),
+        at,
+      };
+      nodes.push(node);
     }
   }
   return { nodes, summary: summarise(nodes) };
 }
 
+/** @deprecated use graphFromSidecar */
+export function graphFromAttractions(attractionsJson = {}) {
+  return graphFromSidecar(attractionsJson);
+}
+
 /**
  * Human-readable convergence report for a single node.
- *
- * Example: "Six evidence sources converge; four current; estimated band high."
  */
 export function convergenceReport(node) {
   if (!node?.fusion) return 'No claims recorded.';
@@ -94,27 +144,20 @@ export function summarise(nodes = []) {
 }
 
 /**
- * Merge adapter-emitted claims into an attractions sidecar ride row.
- *
- * @param {object} rideRow
- * @param {object[]} newClaims — EvidenceClaim from adapters/types.mjs
- * @param {string} featureKind
+ * Merge adapter-emitted claims into an attractions sidecar ride row (legacy array helper).
  */
 export function appendClaims(rideRow, newClaims, featureKind = 'entrance') {
-  const out = { ...rideRow, features: [...(rideRow.features || [])] };
+  const out = { ...rideRow, features: { ...(rideRow.features || {}) } };
+  const key = featureKind === 'entrance' ? 'queue_entrance' : featureKind;
+  const slot = out.features[key] || { evidence: [] };
   for (const claim of newClaims) {
-    let feat = out.features.find((f) => f.kind === featureKind);
-    if (!feat) {
-      feat = { kind: featureKind, evidence: [] };
-      out.features.push(feat);
-    }
-    feat.evidence = [...(feat.evidence || []), {
+    slot.evidence = [...(slot.evidence || []), {
       source: claim.source,
       at: claim.at,
       date: claim.date,
       note: claim.note || claim.uri,
     }];
-    feat.fusion = fuse(feat.evidence);
   }
+  out.features[key] = slot;
   return out;
 }

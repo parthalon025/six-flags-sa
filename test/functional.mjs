@@ -234,6 +234,41 @@ await check('"walk me there" offers the route before setting off', async () => {
   return true;
 });
 
+await check('ride detail explains when queue entrance is not confirmed', async () => {
+  await go(a, 'Places');
+  await a.locator('.field[aria-label="Search places"]').fill('beast');
+  await a.waitForTimeout(400);
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  const note = await a.locator('.entranceNote').innerText();
+  if (!/not confirmed|approximate/i.test(note)) throw new Error(`entrance note: ${note}`);
+  return true;
+});
+
+await check('cedar point route preview names surveyed queue entrances', async () => {
+  const venueNameA = async () => {
+    await a.locator('.tabItem[data-tab="explore"]').click();
+    await root(a);
+    return a.locator('.brand b').innerText();
+  };
+  await go(a, 'Which map');
+  await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
+  await until(async () => /cedar point/i.test(await venueNameA()), {
+    timeout: 15000,
+    label: 'cedar point venue load',
+  });
+  await go(a, 'Places');
+  await a.locator('.field[aria-label="Search places"]').fill('gemini');
+  await a.waitForTimeout(500);
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  await a.locator('button:has-text("Walk me there")').first().click();
+  await a.waitForTimeout(900);
+  const where = await a.locator('.previewWhere').innerText();
+  if (!/queue entrance/i.test(where)) throw new Error(`preview: ${where}`);
+  return true;
+});
+
 await check('the whole route is drawn, with the other ways beside it', async () => {
   const d = await a.locator('.routeLine').getAttribute('d');
   if (!d) throw new Error('no route line');

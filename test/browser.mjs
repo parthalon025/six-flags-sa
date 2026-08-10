@@ -110,6 +110,8 @@ export async function openPhone(
       await until(
         async () => {
           if ((await page.locator('.gate').count()) > 0) return false;
+          const paths = await page.locator('.mapSvg path').count();
+          if (paths < 100) return false;
           if ((await page.locator('.mePulse').count()) > 0) return true;
           const brand = await page.locator('.brand span').innerText().catch(() => '');
           return /near/i.test(brand);
@@ -117,7 +119,10 @@ export async function openPhone(
         { timeout: 40000, label: 'GPS fix and gates dismissed' },
       );
     } else {
-      await until(async () => (await page.locator('.gate').count()) === 0, {
+      await until(async () => {
+        if ((await page.locator('.gate').count()) > 0) return false;
+        return (await page.locator('.mapSvg path').count()) >= 100;
+      }, {
         timeout: 40000,
         label: 'gates dismissed',
       });
@@ -259,9 +264,14 @@ export async function setName(page, name) {
   await field.fill(name);
   await field.blur();
   await page.waitForTimeout(300);
-  // Back to the map. The tab bar means leaving a phone on the Me tab leaves it
-  // there, and everything downstream of a fresh phone expects Explore.
-  await go(page, 'Places');
+  // Back to the map. Pop any settings sub-screen first — leaving Me on a
+  // pushed row leaves the map unmounted when Explore is tapped.
+  await page.locator('.tabItem[data-tab="explore"]').click();
+  await page.waitForTimeout(250);
+  await root(page);
+  await page.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    timeout: 40000,
+  });
 }
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */
