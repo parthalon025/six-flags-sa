@@ -9,7 +9,7 @@
    lives in the client's own replica and its outbox instead, which are
    versioned and know how to catch up. */
 /* Replaced by scripts/inject-version.mjs from package.json on prebuild/predev. */
-const CACHE = 'tracker-1.1.5';
+const CACHE = 'tracker-1.1.6';
 const SHELL = [
   '/',
   '/join',

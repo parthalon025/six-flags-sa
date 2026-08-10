@@ -36,5 +36,11 @@
     "items": [
       "Fix map bottom UI overlapping tab bar at shut stop"
     ]
+  },
+  "1.1.6": {
+    "title": "What's new",
+    "items": [
+      "GPS Kalman smoothing and map snapping (Tier 1)"
+    ]
   }
 }
