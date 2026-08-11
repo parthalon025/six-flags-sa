@@ -105,6 +105,26 @@ export function anonymizeSession(session) {
       t: Math.max(0, Math.round((p.ts || 0) - t0)),
       ...(Number.isFinite(p.acc) ? { acc: Math.round(p.acc) } : {}),
     })),
+    observations: Array.isArray(session?.observations)
+      ? session.observations.map((o) => ({
+          id: o.id,
+          feature: o.feature,
+          placeId: String(o.placeId || '').slice(0, 80),
+          placeName: String(o.placeName || '').slice(0, 80),
+          category: o.category || null,
+          mode: o.mode === 'confirm' ? 'confirm' : 'dwell',
+          lat: roundCoord(o.lat),
+          lng: roundCoord(o.lng),
+          published: o.published
+            ? { lat: roundCoord(o.published.lat), lng: roundCoord(o.published.lng) }
+            : null,
+          deltaM: Number.isFinite(o.deltaM) ? Math.round(o.deltaM) : null,
+          acc: Number.isFinite(o.acc) ? Math.round(o.acc) : null,
+          ts: o.ts || null,
+          dwellMs: Number.isFinite(o.dwellMs) ? Math.round(o.dwellMs) : null,
+          targetKey: o.targetKey || null,
+        }))
+      : [],
   };
 }
 
@@ -133,32 +153,78 @@ export function sessionToGeoJSON(session, { anonymize = true } = {}) {
 }
 
 export function sessionsToFeatureCollection(sessions, opts) {
+  const features = [];
+  for (const s of sessions || []) {
+    if ((s.points || []).length >= 2) features.push(sessionToGeoJSON(s, opts));
+    for (const o of s.observations || []) {
+      features.push(observationFeatureFromSession(s, o, opts));
+    }
+  }
+  return { type: 'FeatureCollection', features };
+}
+
+function observationFeatureFromSession(session, obs, { anonymize = true } = {}) {
+  const body = anonymize
+    ? {
+        ...obs,
+        lat: roundCoord(obs.lat),
+        lng: roundCoord(obs.lng),
+        published: obs.published
+          ? { lat: roundCoord(obs.published.lat), lng: roundCoord(obs.published.lng) }
+          : null,
+      }
+    : obs;
   return {
-    type: 'FeatureCollection',
-    features: (sessions || [])
-      .filter((s) => (s.points || []).length >= 2)
-      .map((s) => sessionToGeoJSON(s, opts)),
+    type: 'Feature',
+    properties: {
+      kind: 'guest_ground_truth',
+      feature: body.feature,
+      venueId: session.venueId || '',
+      sessionId: session.id,
+      observationId: body.id,
+      placeId: body.placeId || '',
+      placeName: body.placeName || '',
+      category: body.category || null,
+      mode: body.mode === 'confirm' ? 'confirm' : 'dwell',
+      published: body.published || null,
+      deltaM: Number.isFinite(body.deltaM) ? body.deltaM : null,
+      dwellMs: Number.isFinite(body.dwellMs) ? body.dwellMs : null,
+      acc: Number.isFinite(body.acc) ? Math.round(body.acc) : null,
+      ts: body.ts || null,
+      source: 'parkbound_guest_movement',
+    },
+    geometry: {
+      type: 'Point',
+      coordinates: [body.lng, body.lat],
+    },
   };
 }
 
 export function summarizeSession(session) {
   const points = session?.points || [];
+  const observations = session?.observations || [];
   const metres = Number.isFinite(session?.metres) ? session.metres : metresAlong(points);
-  const startedAt = session?.startedAt || points[0]?.ts || null;
-  const endedAt = session?.endedAt || points[points.length - 1]?.ts || startedAt;
+  const startedAt = session?.startedAt || points[0]?.ts || observations[0]?.ts || null;
+  const endedAt =
+    session?.endedAt ||
+    points[points.length - 1]?.ts ||
+    observations[observations.length - 1]?.ts ||
+    startedAt;
   const durationMs =
     Number.isFinite(startedAt) && Number.isFinite(endedAt) ? Math.max(0, endedAt - startedAt) : 0;
+  const ready = points.length >= 2 || observations.length > 0;
   return {
     id: session?.id,
     venueId: session?.venueId || '',
     venueName: session?.venueName || '',
     pointCount: points.length,
+    observationCount: observations.length,
     metres: Math.round(metres),
     startedAt,
     endedAt,
     durationMs,
     uploadedAt: session?.uploadedAt || null,
-    status: session?.uploadedAt ? 'uploaded' : points.length >= 2 ? 'ready' : 'recording',
+    status: session?.uploadedAt ? 'uploaded' : ready ? 'ready' : 'recording',
   };
 }
 
@@ -172,7 +238,7 @@ export function validateTraceUpload(body) {
   if (body.type === 'FeatureCollection') {
     const features = Array.isArray(body.features) ? body.features : [];
     if (!features.length) return { ok: false, error: 'Empty FeatureCollection' };
-    if (features.length > 20) return { ok: false, error: 'Too many features (max 20)' };
+    if (features.length > 120) return { ok: false, error: 'Too many features (max 120)' };
     const parsed = [];
     for (const f of features) {
       const one = validateTraceFeature(f);
@@ -202,7 +268,15 @@ export function validateTraceUpload(body) {
 function validateTraceFeature(feature) {
   if (!feature || feature.type !== 'Feature') return { ok: false, error: 'Expected Feature' };
   const geom = feature.geometry;
-  if (!geom || geom.type !== 'LineString') return { ok: false, error: 'Expected LineString' };
+  const props = feature.properties || {};
+  const venueId = String(props.venueId || '').trim();
+  if (!venueId || venueId.length > 64) return { ok: false, error: 'venueId required' };
+
+  if (geom?.type === 'Point' || props.kind === 'guest_ground_truth') {
+    return validateGroundTruthFeature(feature, venueId);
+  }
+
+  if (!geom || geom.type !== 'LineString') return { ok: false, error: 'Expected LineString or Point' };
   const coords = geom.coordinates;
   if (!Array.isArray(coords) || coords.length < 2) {
     return { ok: false, error: 'LineString needs at least two points' };
@@ -218,9 +292,6 @@ function validateTraceFeature(feature) {
       return { ok: false, error: 'Coordinate out of range' };
     }
   }
-  const props = feature.properties || {};
-  const venueId = String(props.venueId || '').trim();
-  if (!venueId || venueId.length > 64) return { ok: false, error: 'venueId required' };
 
   const points = coords.map(([lng, lat], i) => ({
     lat: roundCoord(lat),
@@ -232,12 +303,78 @@ function validateTraceFeature(feature) {
     ok: true,
     trace: {
       id: String(props.sessionId || newSessionId()).slice(0, 80),
+      kind: 'guest_trace',
+      geometryType: 'LineString',
       venueId,
       startedAt: props.startedAt ?? null,
       endedAt: props.endedAt ?? null,
       metres: Number.isFinite(props.metres) ? props.metres : metresAlong(points),
       pointCount: points.length,
       points,
+      receivedAt: Date.now(),
+      source: 'parkbound_guest_movement',
+    },
+  };
+}
+
+const GROUND_TRUTH_FEATURES = new Set([
+  'queue_entrance',
+  'ride_exit',
+  'park_entrance',
+  'ride_area',
+  'restroom',
+  'food',
+  'service',
+  'landmark',
+  'shop',
+  'water',
+  'poi',
+]);
+
+function validateGroundTruthFeature(feature, venueId) {
+  const geom = feature.geometry;
+  const props = feature.properties || {};
+  if (!geom || geom.type !== 'Point') return { ok: false, error: 'Ground truth expects a Point' };
+  const c = geom.coordinates;
+  if (!Array.isArray(c) || c.length < 2 || !Number.isFinite(c[0]) || !Number.isFinite(c[1])) {
+    return { ok: false, error: 'Invalid point coordinate' };
+  }
+  if (Math.abs(c[1]) > 90 || Math.abs(c[0]) > 180) {
+    return { ok: false, error: 'Coordinate out of range' };
+  }
+  const feat = String(props.feature || '').trim();
+  if (!GROUND_TRUTH_FEATURES.has(feat)) {
+    return { ok: false, error: 'Unknown ground-truth feature' };
+  }
+  const lat = roundCoord(c[1]);
+  const lng = roundCoord(c[0]);
+  let published = null;
+  if (props.published && Number.isFinite(props.published.lat) && Number.isFinite(props.published.lng)) {
+    published = {
+      lat: roundCoord(props.published.lat),
+      lng: roundCoord(props.published.lng),
+    };
+  }
+
+  return {
+    ok: true,
+    trace: {
+      id: String(props.observationId || props.sessionId || newSessionId()).slice(0, 80),
+      kind: 'guest_ground_truth',
+      geometryType: 'Point',
+      feature: feat,
+      venueId,
+      sessionId: String(props.sessionId || '').slice(0, 80),
+      placeId: String(props.placeId || '').slice(0, 80),
+      placeName: String(props.placeName || '').slice(0, 80),
+      category: props.category ? String(props.category).slice(0, 40) : null,
+      mode: props.mode === 'confirm' ? 'confirm' : 'dwell',
+      published,
+      deltaM: Number.isFinite(props.deltaM) ? Math.round(props.deltaM) : null,
+      dwellMs: Number.isFinite(props.dwellMs) ? Math.round(props.dwellMs) : null,
+      metres: 0,
+      pointCount: 1,
+      points: [{ lat, lng, t: 0 }],
       receivedAt: Date.now(),
       source: 'parkbound_guest_movement',
     },
@@ -272,6 +409,7 @@ export function recordPoint(state, { point, venueId, venueName, bounds }) {
       endedAt: point.ts,
       points: [],
       metres: 0,
+      observations: [],
       uploadedAt: null,
     });
     trimSessions(sessions);

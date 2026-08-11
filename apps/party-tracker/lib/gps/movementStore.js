@@ -14,6 +14,7 @@ import {
   recordPoint,
   MAX_SESSIONS,
 } from './movementLog.js';
+import { confirmObservation, updateDwell } from './groundTruth.js';
 
 const DB = 'parkbound-movement-log';
 const STORE = 'state';
@@ -41,7 +42,7 @@ function openDb() {
 }
 
 function emptyState() {
-  return { key: STATE_KEY, sessions: [], openId: null, updatedAt: Date.now() };
+  return { key: STATE_KEY, sessions: [], openId: null, dwell: null, updatedAt: Date.now() };
 }
 
 export async function loadState() {
@@ -60,6 +61,7 @@ export async function loadState() {
         key: STATE_KEY,
         sessions: row.sessions,
         openId: row.openId || null,
+        dwell: row.dwell || null,
         updatedAt: row.updatedAt || Date.now(),
       });
     };
@@ -74,6 +76,7 @@ export async function saveState(state) {
     key: STATE_KEY,
     sessions: (state.sessions || []).slice(-MAX_SESSIONS),
     openId: state.openId || null,
+    dwell: state.dwell || null,
     updatedAt: Date.now(),
   };
   return new Promise((resolve, reject) => {
@@ -107,19 +110,48 @@ export function savePrefs(prefs) {
 }
 
 /**
- * Record one GPS fix when tracking is enabled. Returns the updated state plus
- * whether a point was kept (for UI feedback / diagnostics).
+ * Record one GPS fix when tracking is enabled: path breadcrumbs + dwell
+ * ground-truth near entrances / exits / amenities.
  */
-export async function appendFix({ point, venueId, venueName, bounds, enabled }) {
+export async function appendFix({
+  point,
+  venueId,
+  venueName,
+  bounds,
+  enabled,
+  targets = [],
+}) {
   if (!enabled) {
     const state = await loadState();
-    return { ...state, recorded: false, reason: 'disabled' };
+    return { ...state, recorded: false, reason: 'disabled', observation: null };
   }
   const state = await loadState();
-  const next = recordPoint(state, { point, venueId, venueName, bounds });
-  if (next.recorded) {
+  const path = recordPoint(state, { point, venueId, venueName, bounds });
+  const merged = {
+    sessions: path.sessions,
+    openId: path.openId,
+    dwell: state.dwell || null,
+  };
+  const dwell = updateDwell(merged, { point, targets, venueId, venueName, bounds });
+  const next = {
+    sessions: dwell.sessions,
+    openId: dwell.openId || path.openId,
+    dwell: dwell.dwell,
+    recorded: path.recorded || dwell.recorded,
+    reason: dwell.recorded ? dwell.reason : path.reason,
+    observation: dwell.observation || null,
+    pathRecorded: path.recorded,
+  };
+  if (next.recorded || dwell.reason === 'dwell-start' || dwell.reason === 'dwell-progress') {
     await saveState(next);
   }
+  return next;
+}
+
+export async function appendConfirm({ point, target, venueId, venueName, bounds }) {
+  const state = await loadState();
+  const next = confirmObservation(state, { point, target, venueId, venueName, bounds });
+  if (next.recorded) await saveState(next);
   return next;
 }
 

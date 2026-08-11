@@ -949,10 +949,11 @@ npm run venues:build-agent -- cedar-point --offline   # multi-agent orchestrator
 npm run venues:build-agent -- cedar-point --ai --apply  # LLM agents + publish entrances
 ```
 
-Guest walk uploads (`Me → Walk history`, opt-in) post anonymised LineStrings to
-`/api/contributions/traces`. The `guest-traces` adapter reads the Redis queue (or a dumped
-`data/venues/<id>.guest-traces-cache.json`) and proposes walkway candidates where guests walk
-but the path graph is empty — research only; it never writes `public/venues`.
+Guest walk uploads (`Me → Walk history`, opt-in) post anonymised LineStrings and ground-truth
+Points (queue entrances, ride exits, park gates, amenities) to `/api/contributions/traces`. The
+`guest-traces` adapter reads the Redis queue (or a dumped `data/venues/<id>.guest-traces-cache.json`)
+and proposes walkway / entrance candidates where guests disagree with the published graph — research
+only; it never writes `public/venues`.
 
 Every location here is the same data about a different place, and the failure mode that
 comes with that is a park that is *almost* built. Nothing crashes — the map draws, the list

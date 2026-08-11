@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   anonymizeSession,
   sessionToGeoJSON,
@@ -10,6 +10,13 @@ import {
   formatDuration,
 } from '@/lib/gps/movementLog';
 import {
+  confirmOptions,
+  extractTargets,
+  FEATURE_LABELS,
+  summarizeObservations,
+} from '@/lib/gps/groundTruth';
+import {
+  appendConfirm,
   appendFix,
   clearAllSessions,
   deleteSession,
@@ -21,9 +28,10 @@ import {
 
 /**
  * Opt-in movement logger. Feeds off the live GPS position already held by the
- * page — it does not open a second watchPosition.
+ * page — it does not open a second watchPosition. Also accumulates ground-truth
+ * dwell / confirm sightings for entrances, exits and amenities.
  */
-export default function useMovementLog({ position, venue } = {}) {
+export default function useMovementLog({ position, venue, pois = [] } = {}) {
   const [prefs, setPrefs] = useState(() => defaultClientPrefs());
   const [sessions, setSessions] = useState([]);
   const [openId, setOpenId] = useState(null);
@@ -31,6 +39,8 @@ export default function useMovementLog({ position, venue } = {}) {
   const [lastReason, setLastReason] = useState('idle');
   const writing = useRef(false);
   const lastTs = useRef(0);
+
+  const targets = useMemo(() => extractTargets(pois), [pois]);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +72,7 @@ export default function useMovementLog({ position, venue } = {}) {
       venueName: venue.name,
       bounds: venue.bounds,
       enabled: true,
+      targets,
     })
       .then((next) => {
         setSessions(next.sessions || []);
@@ -74,7 +85,7 @@ export default function useMovementLog({ position, venue } = {}) {
       .finally(() => {
         writing.current = false;
       });
-  }, [ready, prefs.enabled, position, venue?.id, venue?.name, venue?.bounds]);
+  }, [ready, prefs.enabled, position, venue?.id, venue?.name, venue?.bounds, targets]);
 
   const setEnabled = useCallback((enabled) => {
     const next = savePrefs({ ...loadPrefs(), enabled: Boolean(enabled) });
@@ -109,11 +120,41 @@ export default function useMovementLog({ position, venue } = {}) {
     return next;
   }, []);
 
+  const nearbyConfirms = useMemo(() => {
+    if (!position || position.manual) return [];
+    return confirmOptions(position, pois);
+  }, [position, pois]);
+
+  const confirmNearby = useCallback(
+    async (target) => {
+      if (!position || !venue?.id || !target) {
+        return { ok: false, error: 'Need GPS inside the park' };
+      }
+      const next = await appendConfirm({
+        point: position,
+        target,
+        venueId: venue.id,
+        venueName: venue.name,
+        bounds: venue.bounds,
+      });
+      setSessions(next.sessions || []);
+      setOpenId(next.openId || null);
+      setLastReason(next.reason || 'idle');
+      if (!next.recorded) {
+        return { ok: false, error: next.reason === 'already-observed' ? 'Already confirmed this visit' : 'Could not save' };
+      }
+      return { ok: true, observation: next.observation };
+    },
+    [position, venue],
+  );
+
   const buildUploadPayload = useCallback(
     (ids) => {
       const want = ids ? new Set(ids) : null;
       const picked = sessions.filter((s) => {
-        if ((s.points || []).length < 2) return false;
+        const ready =
+          (s.points || []).length >= 2 || (s.observations || []).length > 0;
+        if (!ready) return false;
         if (want && !want.has(s.id)) return false;
         return true;
       });
@@ -137,10 +178,18 @@ export default function useMovementLog({ position, venue } = {}) {
       if (!res.ok) {
         return { ok: false, error: body.error || `Upload failed (${res.status})` };
       }
-      const uploadedIds = collection.features.map((f) => f.properties.sessionId);
+      const uploadedIds = [
+        ...new Set(
+          collection.features
+            .map((f) => f.properties?.sessionId)
+            .filter(Boolean),
+        ),
+      ];
       const next = await markUploaded(uploadedIds);
       setSessions(next.sessions || []);
-      return { ok: true, count: uploadedIds.length, body };
+      const paths = collection.features.filter((f) => f.geometry?.type === 'LineString').length;
+      const truth = collection.features.filter((f) => f.properties?.kind === 'guest_ground_truth').length;
+      return { ok: true, count: uploadedIds.length, paths, truth, body };
     },
     [buildUploadPayload],
   );
@@ -149,7 +198,7 @@ export default function useMovementLog({ position, venue } = {}) {
     (id) => {
       const session = sessions.find((s) => s.id === id);
       if (!session) return null;
-      return sessionToGeoJSON(anonymizeSession(session), { anonymize: false });
+      return sessionsToFeatureCollection([anonymizeSession(session)], { anonymize: false });
     },
     [sessions],
   );
@@ -158,14 +207,17 @@ export default function useMovementLog({ position, venue } = {}) {
     .map(summarizeSession)
     .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
 
+  const observations = summarizeObservations(sessions);
+
   const totals = summaries.reduce(
     (acc, s) => {
       acc.metres += s.metres || 0;
-      acc.walks += s.pointCount >= 2 ? 1 : 0;
+      acc.walks += s.pointCount >= 2 || s.observationCount > 0 ? 1 : 0;
       acc.pending += s.status === 'ready' ? 1 : 0;
+      acc.observations += s.observationCount || 0;
       return acc;
     },
-    { metres: 0, walks: 0, pending: 0 },
+    { metres: 0, walks: 0, pending: 0, observations: 0 },
   );
 
   return {
@@ -176,6 +228,9 @@ export default function useMovementLog({ position, venue } = {}) {
     setAutoUpload,
     sessions,
     summaries,
+    observations,
+    nearbyConfirms,
+    confirmNearby,
     openId,
     lastReason,
     totals,
@@ -186,6 +241,7 @@ export default function useMovementLog({ position, venue } = {}) {
     exportSessionJson,
     formatMetres,
     formatDuration,
+    featureLabels: FEATURE_LABELS,
   };
 }
 

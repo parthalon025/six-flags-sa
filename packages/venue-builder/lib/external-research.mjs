@@ -16,7 +16,7 @@ import { loadRcdbData, compareRcdbToBundle, rcdbClaims } from './adapters/rcdb.m
 import { loadOpenMeteoData } from './adapters/open-meteo.mjs';
 import { loadOhmData } from './adapters/openhistoricalmap.mjs';
 import { loadProjectSidewalkData, sidewalkClaims } from './adapters/project-sidewalk.mjs';
-import { loadGuestTracesData, guestTraceClaims } from './adapters/guest-traces.mjs';
+import { loadGuestTracesData, guestTraceClaims, guestGroundTruthClaims } from './adapters/guest-traces.mjs';
 import { loadMapillaryData, mapillaryClaims } from './adapters/mapillary-api.mjs';
 import { loadOrsRouteQa } from './adapters/openrouteservice.mjs';
 import { WIKIDATA_QIDS } from './park-slug-map.mjs';
@@ -85,6 +85,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
     ...accessibilityClaims(accessibilityRaw),
     ...sidewalkClaims(sidewalkRaw),
     ...guestTraceClaims(guestTracesRaw),
+    ...guestGroundTruthClaims(guestTracesRaw),
     ...mapillaryClaims(mapillaryRaw),
     ...rcdbClaims(rcdbRaw, rcdb),
   ];

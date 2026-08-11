@@ -7,9 +7,10 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 15;
 
 /**
- * Guest walk traces for path-geometry research.
+ * Guest walk traces + ground-truth pins for path and entrance research.
  *
- * POST — anonymised Feature / FeatureCollection / compact session from phones.
+ * POST — anonymised Feature / FeatureCollection (LineString walks and Point
+ *        entrance/exit/amenity sightings) from phones.
  * GET  — operator export (token gated like /api/metrics). Never mutates venues.
  */
 
@@ -43,7 +44,7 @@ export async function POST(request) {
     ok: true,
     stored: result.stored,
     venues: result.venues,
-    note: 'Traces queued for builder research. They do not change the live map.',
+    note: 'Traces and ground-truth pins queued for builder research. They do not change the live map.',
   });
 }
 

@@ -4,8 +4,8 @@ import { useState } from 'react';
 import BrandMark from '@/components/BrandMark';
 
 /**
- * Movement history — opt-in walk log, list of past sessions, upload to help
- * the venue builder learn real midways and cut-throughs.
+ * Movement history — opt-in walk log + ground-truth confirms for entrances,
+ * exits and amenities. Uploads help the builder learn real midways and pins.
  */
 export default function MovementHistoryPanel({ movement, venueName }) {
   const [busy, setBusy] = useState(false);
@@ -19,12 +19,16 @@ export default function MovementHistoryPanel({ movement, venueName }) {
     setEnabled,
     summaries,
     totals,
+    observations,
+    nearbyConfirms,
+    confirmNearby,
     uploadSessions,
     removeSession,
     clearHistory,
     exportSessionJson,
     formatMetres,
     formatDuration,
+    featureLabels,
     ready,
   } = movement;
 
@@ -33,7 +37,7 @@ export default function MovementHistoryPanel({ movement, venueName }) {
     setEnabled(next);
     setMessage(
       next
-        ? 'Walk tracking is on. Paths stay on this phone until you upload.'
+        ? 'Walk tracking is on. Paths and nearby entrance/exit sightings stay on this phone until you upload.'
         : 'Walk tracking is off. Existing history is still here.',
     );
   };
@@ -43,11 +47,16 @@ export default function MovementHistoryPanel({ movement, venueName }) {
     setMessage(null);
     try {
       const result = await uploadSessions(ids);
-      setMessage(
-        result.ok
-          ? `Uploaded ${result.count} walk${result.count === 1 ? '' : 's'}. Thanks — that helps map real paths.`
-          : result.error || 'Upload failed',
-      );
+      if (!result.ok) {
+        setMessage(result.error || 'Upload failed');
+      } else {
+        const bits = [];
+        if (result.paths) bits.push(`${result.paths} path${result.paths === 1 ? '' : 's'}`);
+        if (result.truth) bits.push(`${result.truth} ground-truth pin${result.truth === 1 ? '' : 's'}`);
+        setMessage(
+          `Uploaded ${bits.join(' · ') || `${result.count} session${result.count === 1 ? '' : 's'}`}. Thanks — that helps map real paths and entrances.`,
+        );
+      }
     } catch {
       setMessage('Upload failed. Try again when you have a signal.');
     } finally {
@@ -56,9 +65,9 @@ export default function MovementHistoryPanel({ movement, venueName }) {
   };
 
   const onExport = (id) => {
-    const feature = exportSessionJson(id);
-    if (!feature) return;
-    const blob = new Blob([JSON.stringify(feature, null, 2)], { type: 'application/json' });
+    const collection = exportSessionJson(id);
+    if (!collection) return;
+    const blob = new Blob([JSON.stringify(collection, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -80,16 +89,33 @@ export default function MovementHistoryPanel({ movement, venueName }) {
     setMessage('Walk history cleared on this phone.');
   };
 
+  const onConfirm = async (target) => {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await confirmNearby(target);
+      setMessage(
+        result.ok
+          ? `Saved ${featureLabels[target.feature] || target.feature} at ${target.placeName}. Upload when you are ready.`
+          : result.error || 'Could not save',
+      );
+    } catch {
+      setMessage('Could not save that confirm.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div>
       <div className="dayMoment">
         <BrandMark variant="glyph" size={22} aqua="var(--aqua)" className="brandMark" />
         <div>
-          <b>Your walks in the park</b>
+          <b>Walks & ground truth</b>
           <span>
             {venueName
-              ? `Record midways at ${venueName} and share anonymised paths so maps match where guests actually walk.`
-              : 'Record midways and share anonymised paths so maps match where guests actually walk.'}
+              ? `Log midways at ${venueName} and mark real queue entrances, exits and amenities so the map matches the park.`
+              : 'Log midways and mark real queue entrances, exits and amenities so the map matches the park.'}
           </span>
         </div>
       </div>
@@ -103,15 +129,46 @@ export default function MovementHistoryPanel({ movement, venueName }) {
           aria-pressed={enabled}
           disabled={!ready}
         >
-          <span className="rowText">Log walks inside the park</span>
+          <span className="rowText">Log walks & nearby pins</span>
           <span className="rowValue">{enabled ? 'On' : 'Off'}</span>
         </button>
       </div>
       <p className="fine">
-        Off by default. When on, GPS points inside the park fence stay on this phone. Uploads are
-        anonymised LineStrings — no name, and coordinates rounded so they help path geometry
-        without pinpointing you. Nothing changes the live map until a builder reviews the traces.
+        Off by default. When on, GPS inside the park stays on this phone. Standing near a ride
+        entrance or exit for a while records a dwell sighting automatically; you can also confirm
+        “I am here” below. Uploads are anonymised — no name, rounded coordinates — and never write
+        straight into the published map.
       </p>
+
+      {enabled && nearbyConfirms?.length > 0 && (
+        <>
+          <div className="label">Near you — confirm ground truth</div>
+          <div className="rowList">
+            {nearbyConfirms.map((t) => (
+              <button
+                key={t.key}
+                type="button"
+                className="row"
+                disabled={busy}
+                onClick={() => onConfirm(t)}
+              >
+                <span className="rowText">
+                  {featureLabels[t.feature] || t.feature} · {t.placeName}
+                  <span className="fine" style={{ display: 'block', marginTop: 2 }}>
+                    {Math.round(t.distanceM)} m away
+                    {t.published ? '' : ' · no published pin yet'}
+                  </span>
+                </span>
+                <span className="rowValue">I&apos;m here</span>
+              </button>
+            ))}
+          </div>
+          <p className="fine">
+            Use this when you are standing at the queue entrance, the exit, a park gate, or an
+            amenity — that pin becomes research evidence for the venue builder.
+          </p>
+        </>
+      )}
 
       <div className="label">This phone</div>
       <div className="rowList">
@@ -122,6 +179,10 @@ export default function MovementHistoryPanel({ movement, venueName }) {
         <div className="row">
           <span className="rowText">Distance logged</span>
           <span className="rowValue">{formatMetres(totals.metres)}</span>
+        </div>
+        <div className="row">
+          <span className="rowText">Ground-truth pins</span>
+          <span className="rowValue">{totals.observations}</span>
         </div>
         <div className="row">
           <span className="rowText">Ready to upload</span>
@@ -138,25 +199,45 @@ export default function MovementHistoryPanel({ movement, venueName }) {
               disabled={busy}
               onClick={() => onUpload(null)}
             >
-              <span className="rowText">Upload pending walks</span>
+              <span className="rowText">Upload pending data</span>
               <span className="rowValue">{busy ? 'Sending…' : `${totals.pending}`}</span>
             </button>
           </div>
           <p className="fine">
-            Uploads help the venue builder spot missing walkways and cut-throughs. They never write
-            straight into the published park map.
+            Uploads help the venue builder spot missing walkways and correct entrance / exit
+            geometry. They never write straight into the published park map.
           </p>
         </>
       )}
 
       {message && <p className="fine block">{message}</p>}
 
+      {observations?.length > 0 && (
+        <>
+          <div className="label">Ground truth</div>
+          <div className="rowList">
+            {observations.slice(0, 24).map((o) => (
+              <div key={o.id} className="row">
+                <span className="rowText">
+                  {featureLabels[o.feature] || o.feature} · {o.placeName || o.placeId || 'Place'}
+                  <span className="fine" style={{ display: 'block', marginTop: 2 }}>
+                    {o.mode === 'confirm' ? 'Confirmed' : 'Dwell'} · {formatWhen(o.ts)}
+                    {Number.isFinite(o.deltaM) ? ` · ${o.deltaM} m from map pin` : ' · new pin'}
+                  </span>
+                </span>
+                <span className="rowValue">{o.uploadedAt ? 'Sent' : 'Ready'}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="label">History</div>
       {!summaries.length ? (
         <p className="fine">
           {enabled
-            ? 'No walks yet. Walk the midways with GPS on and they will show up here.'
-            : 'Turn tracking on, then walk — your sessions will list here.'}
+            ? 'No walks yet. Walk the midways with GPS on, or confirm a nearby entrance — they will show up here.'
+            : 'Turn tracking on, then walk or confirm a pin — your sessions will list here.'}
         </p>
       ) : (
         <div className="rowList">
@@ -168,6 +249,7 @@ export default function MovementHistoryPanel({ movement, venueName }) {
                   <span className="fine" style={{ display: 'block', marginTop: 2 }}>
                     {formatWhen(s.startedAt)} · {formatMetres(s.metres)} ·{' '}
                     {formatDuration(s.durationMs)} · {s.pointCount} pts
+                    {s.observationCount ? ` · ${s.observationCount} pins` : ''}
                   </span>
                 </span>
                 <span className="rowValue">
@@ -214,7 +296,9 @@ export default function MovementHistoryPanel({ movement, venueName }) {
             </button>
           </div>
           {confirmClear && (
-            <p className="fine">This only deletes the copy on this phone. Uploaded traces stay with the builder queue.</p>
+            <p className="fine">
+              This only deletes the copy on this phone. Uploaded traces stay with the builder queue.
+            </p>
           )}
         </>
       )}

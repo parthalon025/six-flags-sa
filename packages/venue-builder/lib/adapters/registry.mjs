@@ -588,7 +588,7 @@ const ENTRIES = [
     name: 'Parkbound guest movement traces',
     repo: 'six-flags-sa',
     url: 'apps/party-tracker/app/api/contributions/traces',
-    capability: 'Opt-in anonymised GPS LineStrings for midway / walkway geometry',
+    capability: 'Opt-in anonymised GPS LineStrings + entrance/exit/amenity ground-truth Points',
     role: 'PATH_GEOMETRY_RESEARCH',
     stage: 'research',
     license: 'guest opt-in',
@@ -602,9 +602,9 @@ const ENTRIES = [
     commercial_ok: true,
     evidence_sources: ['guest_trace'],
     integration: 'low',
-    overlap: 'Complements OSM footways; Strava-like heatmap signal inside the fence',
+    overlap: 'Complements OSM footways and entrance evidence; Strava-like heatmap + sightings inside the fence',
     notes:
-      'Phones upload via /api/contributions/traces; cache as data/venues/<id>.guest-traces-cache.json. Never auto-writes public/venues.',
+      'Phones upload via /api/contributions/traces; cache as data/venues/<id>.guest-traces-cache.json. Path + queue_entrance/ride_exit/park_entrance claims. Never auto-writes public/venues.',
   },
   {
     id: 'open-meteo',

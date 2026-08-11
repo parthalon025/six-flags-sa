@@ -254,9 +254,10 @@ export default function SettingsPanel({
       )}
       <InstallCard />
       <p className="fine">
-        Location drops your dot. Walk history (opt-in) keeps a private path log you can upload to
-        help map real midways. The Home Screen app keeps the park map when the midway wifi dies —
-        we only ask when you are not already running from the icon.
+        Location drops your dot. Walk history (opt-in) keeps a private path log and ground-truth
+        pins for entrances and exits you can upload to help map real midways. The Home Screen app
+        keeps the park map when the midway wifi dies — we only ask when you are not already running
+        from the icon.
       </p>
 
       <div className="label">Advanced</div>

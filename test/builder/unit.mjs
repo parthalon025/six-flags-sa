@@ -83,13 +83,23 @@ const {
   parsePrefs,
   recordPoint,
   sessionToGeoJSON,
+  sessionsToFeatureCollection,
   shouldKeepPoint,
   shouldStartNewSession,
   validateTraceUpload,
 } = await import('../../apps/party-tracker/lib/gps/movementLog.js');
 const {
+  confirmObservation,
+  confirmOptions,
+  extractTargets,
+  updateDwell,
+  DWELL_MS,
+} = await import('../../apps/party-tracker/lib/gps/groundTruth.js');
+const {
   guestTraceClaims,
+  guestGroundTruthClaims,
   proposeWalkwaysFromTraces,
+  proposeEntranceCandidates,
 } = await import('../../packages/venue-builder/lib/adapters/guest-traces.mjs');
 const { arrivalPointForVenue } = await import('../../apps/party-tracker/lib/venue/arrival.js');
 const {
@@ -1495,6 +1505,125 @@ await check('guest-traces propose walkways far from existing paths', () => {
   assert.equal(claims.length, 1);
   assert.equal(claims[0].source, 'guest_trace');
   assert.equal(claims[0].kind, 'path_geometry');
+  return true;
+});
+
+section('gps/groundTruth');
+
+await check('extractTargets surfaces queue entrances, exits and gates', () => {
+  const pois = [
+    {
+      i: 'orion',
+      n: 'Orion',
+      c: 'coaster',
+      lat: 39.344,
+      lng: -84.267,
+      e: [{ lat: 39.3441, lng: -84.2671, src: { confidence: 'moderate' } }],
+      out: { lat: 39.3439, lng: -84.2669 },
+    },
+    { i: 'main-gate', n: 'Main Entrance', c: 'gate', lat: 39.342, lng: -84.268 },
+    { i: 'wc', n: 'Restrooms', c: 'restroom', lat: 39.3435, lng: -84.2675 },
+  ];
+  const targets = extractTargets(pois);
+  assert.ok(targets.some((t) => t.feature === 'queue_entrance' && t.published));
+  assert.ok(targets.some((t) => t.feature === 'ride_exit'));
+  assert.ok(targets.some((t) => t.feature === 'park_entrance'));
+  assert.ok(targets.some((t) => t.feature === 'restroom'));
+  return true;
+});
+
+await check('dwell near a published entrance becomes a ground-truth observation', () => {
+  const target = {
+    key: 'orion:queue_entrance:0',
+    feature: 'queue_entrance',
+    placeId: 'orion',
+    placeName: 'Orion',
+    category: 'coaster',
+    lat: 39.3441,
+    lng: -84.2671,
+    published: true,
+  };
+  const bounds = MOVE_BOUNDS;
+  let state = { sessions: [], openId: null, dwell: null };
+  state = updateDwell(state, {
+    point: { lat: 39.34412, lng: -84.26712, acc: 8, ts: 1000 },
+    targets: [target],
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds,
+  });
+  assert.equal(state.reason, 'dwell-start');
+  state = updateDwell(state, {
+    point: { lat: 39.34411, lng: -84.26713, acc: 8, ts: 20_000 },
+    targets: [target],
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds,
+  });
+  assert.equal(state.reason, 'dwell-progress');
+  state = updateDwell(state, {
+    point: { lat: 39.3441, lng: -84.2671, acc: 6, ts: 1000 + DWELL_MS + 2000 },
+    targets: [target],
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds,
+  });
+  assert.equal(state.recorded, true);
+  assert.equal(state.observation.feature, 'queue_entrance');
+  assert.equal(state.observation.mode, 'dwell');
+  assert.ok(Number.isFinite(state.observation.deltaM));
+  return true;
+});
+
+await check('confirmObservation and upload FeatureCollection include Points', () => {
+  const target = {
+    key: 'orion:ride_exit:confirm',
+    feature: 'ride_exit',
+    placeId: 'orion',
+    placeName: 'Orion',
+    category: 'coaster',
+    lat: 39.3439,
+    lng: -84.2669,
+    published: true,
+  };
+  const point = { lat: 39.34392, lng: -84.26691, acc: 5, ts: 5000 };
+  const state = confirmObservation(
+    { sessions: [], openId: null },
+    {
+      point,
+      target,
+      venueId: 'kings-island',
+      venueName: 'Kings Island',
+      bounds: MOVE_BOUNDS,
+    },
+  );
+  assert.equal(state.recorded, true);
+  assert.equal(state.observation.mode, 'confirm');
+  const collection = sessionsToFeatureCollection(state.sessions);
+  assert.ok(collection.features.some((f) => f.properties.kind === 'guest_ground_truth'));
+  const parsed = validateTraceUpload(collection);
+  assert.equal(parsed.ok, true);
+  assert.ok(parsed.traces.some((t) => t.kind === 'guest_ground_truth'));
+  const gtClaims = guestGroundTruthClaims({
+    fetched: '2026-08-11',
+    collection,
+  });
+  assert.equal(gtClaims[0].kind, 'ride_exit');
+  const entrances = proposeEntranceCandidates(collection, { gapM: 0 });
+  assert.ok(entrances.features.length >= 1);
+  const options = confirmOptions(point, [
+    {
+      i: 'orion',
+      n: 'Orion',
+      c: 'coaster',
+      lat: 39.344,
+      lng: -84.267,
+      e: [{ lat: 39.3441, lng: -84.2671 }],
+      out: { lat: 39.3439, lng: -84.2669 },
+    },
+  ]);
+  assert.ok(options.some((o) => o.feature === 'queue_entrance'));
+  assert.ok(options.some((o) => o.feature === 'ride_exit'));
   return true;
 });
 

@@ -189,7 +189,7 @@ export default function Page() {
     confirmed: venueConfirmed,
     pinned: venuePinned,
   } = useVenue();
-  const movement = useMovementLog({ position, venue });
+  const movement = useMovementLog({ position, venue, pois: POIS });
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);

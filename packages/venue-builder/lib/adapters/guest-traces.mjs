@@ -93,6 +93,7 @@ export function guestTraceClaims(data) {
   const features = data?.collection?.features || [];
   const claims = [];
   for (const f of features.slice(0, 80)) {
+    if (f.geometry?.type !== 'LineString') continue;
     const coords = f.geometry?.coordinates;
     if (!Array.isArray(coords) || coords.length < 2) continue;
     const mid = coords[Math.floor(coords.length / 2)];
@@ -108,6 +109,93 @@ export function guestTraceClaims(data) {
   return claims;
 }
 
+/**
+ * Ground-truth Point sightings → evidence claims for entrances, exits, gates,
+ * amenities. Confirm mode is noted; dwell is softer but still useful.
+ */
+export function guestGroundTruthClaims(data) {
+  const date = data?.fetched || new Date().toISOString().slice(0, 10);
+  const features = data?.collection?.features || [];
+  const claims = [];
+  for (const f of features.slice(0, 120)) {
+    if (f.properties?.kind !== 'guest_ground_truth' && f.geometry?.type !== 'Point') continue;
+    if (f.geometry?.type !== 'Point') continue;
+    const [lng, lat] = f.geometry.coordinates || [];
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    const feature = f.properties?.feature || 'poi';
+    const mode = f.properties?.mode || 'dwell';
+    const delta = Number.isFinite(f.properties?.deltaM) ? `${f.properties.deltaM} m from published` : 'no published pin';
+    claims.push({
+      source: 'guest_trace',
+      kind: feature,
+      at: { lat, lng },
+      date,
+      note: `${mode} · ${f.properties?.placeName || f.properties?.placeId || 'place'} · ${delta}`,
+      placeId: f.properties?.placeId || null,
+      placeName: f.properties?.placeName || null,
+      mode,
+      deltaM: f.properties?.deltaM ?? null,
+      published: f.properties?.published || null,
+      sessionId: f.properties?.sessionId,
+    });
+  }
+  return claims;
+}
+
+/**
+ * When guest sightings for queue_entrance / ride_exit / park_entrance disagree
+ * with the published pin (or there is none), emit review candidates.
+ */
+export function proposeEntranceCandidates(collection, { gapM = 15 } = {}) {
+  const candidates = [];
+  for (const f of collection?.features || []) {
+    if (f.geometry?.type !== 'Point') continue;
+    if (f.properties?.kind && f.properties.kind !== 'guest_ground_truth') continue;
+    const feature = f.properties?.feature;
+    if (!['queue_entrance', 'ride_exit', 'park_entrance'].includes(feature)) continue;
+    const [lng, lat] = f.geometry.coordinates || [];
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    const published = f.properties?.published;
+    const deltaM = Number.isFinite(f.properties?.deltaM)
+      ? f.properties.deltaM
+      : published
+        ? Math.round(
+            Math.hypot(
+              (lng - published.lng) * 111320 * Math.cos((lat * Math.PI) / 180),
+              (lat - published.lat) * 110540,
+            ),
+          )
+        : Infinity;
+    if (published && deltaM < gapM) continue;
+    candidates.push({
+      type: 'Feature',
+      properties: {
+        kind: 'guest_entrance_candidate',
+        feature,
+        source: 'guest_trace',
+        mode: f.properties?.mode || 'dwell',
+        placeId: f.properties?.placeId,
+        placeName: f.properties?.placeName,
+        deltaM: Number.isFinite(deltaM) && deltaM !== Infinity ? Math.round(deltaM) : null,
+        published: published || null,
+        note: published
+          ? `Guest ${f.properties?.mode || 'dwell'} is ${Math.round(deltaM)} m from published ${feature}. Review before promoting.`
+          : `Guest ${f.properties?.mode || 'dwell'} proposes a ${feature} with no published pin. Review before promoting.`,
+      },
+      geometry: { type: 'Point', coordinates: [lng, lat] },
+    });
+  }
+  return {
+    type: 'FeatureCollection',
+    properties: {
+      source: 'parkbound_guest_movement',
+      candidateCount: candidates.length,
+      gapM,
+    },
+    features: candidates,
+  };
+}
+
 export async function loadGuestTracesData(
   venueId,
   { fetch = false, offline = false, existingPaths = [] } = {},
@@ -119,6 +207,7 @@ export async function loadGuestTracesData(
         fetched: null,
         collection: { type: 'FeatureCollection', features: [] },
         candidates: { type: 'FeatureCollection', features: [] },
+        entranceCandidates: { type: 'FeatureCollection', features: [] },
         error: 'No guest-traces cache on disk.',
       }
     );
@@ -143,6 +232,7 @@ export async function loadGuestTracesData(
             fetched: null,
             collection: { type: 'FeatureCollection', features: [] },
             candidates: { type: 'FeatureCollection', features: [] },
+            entranceCandidates: { type: 'FeatureCollection', features: [] },
             error: err.message,
           };
         }
@@ -156,20 +246,31 @@ export async function loadGuestTracesData(
       fetched: null,
       collection: { type: 'FeatureCollection', features: [] },
       candidates: { type: 'FeatureCollection', features: [] },
+      entranceCandidates: { type: 'FeatureCollection', features: [] },
       error: 'No guest traces yet. Upload from the app or drop a cache file.',
     };
   }
 
-  const candidates = proposeWalkwaysFromTraces(collection, { existingPaths });
+  const pathFeatures = {
+    type: 'FeatureCollection',
+    features: (collection.features || []).filter((f) => f.geometry?.type === 'LineString'),
+  };
+  const candidates = proposeWalkwaysFromTraces(pathFeatures, { existingPaths });
+  const entranceCandidates = proposeEntranceCandidates(collection);
   const out = {
     fetched: new Date().toISOString().slice(0, 10),
     source: 'parkbound_guest_movement',
     license: 'guest opt-in contribution',
     collection,
     candidates,
+    entranceCandidates,
     meta: {
-      traces: collection.features?.length || 0,
+      traces: pathFeatures.features.length,
+      groundTruth: (collection.features || []).filter(
+        (f) => f.properties?.kind === 'guest_ground_truth' || f.geometry?.type === 'Point',
+      ).length,
       candidates: candidates.features?.length || 0,
+      entranceCandidates: entranceCandidates.features?.length || 0,
     },
   };
   writeCache(venueId, 'guest-traces', out);
@@ -189,7 +290,7 @@ export async function run(ctx = {}) {
       adapterId: 'guest-traces',
       ok: true,
       meta: data.meta || { traces: 0, candidates: 0 },
-      claims: guestTraceClaims(data),
+      claims: [...guestTraceClaims(data), ...guestGroundTruthClaims(data)],
       artifacts: [guestTracesCacheFile(id)],
       data,
       error: data.error || undefined,

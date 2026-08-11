@@ -90,23 +90,51 @@ export function tracesToFeatureCollection(traces) {
       exportedAt: new Date().toISOString(),
       count: traces.length,
     },
-    features: traces.map((t) => ({
-      type: 'Feature',
-      properties: {
-        kind: 'guest_trace',
-        venueId: t.venueId,
-        sessionId: t.id,
-        startedAt: t.startedAt,
-        endedAt: t.endedAt,
-        metres: t.metres,
-        pointCount: t.pointCount,
-        receivedAt: t.receivedAt,
-        source: 'parkbound_guest_movement',
-      },
-      geometry: {
-        type: 'LineString',
-        coordinates: (t.points || []).map((p) => [p.lng, p.lat]),
-      },
-    })),
+    features: traces.map((t) => {
+      if (t.kind === 'guest_ground_truth' || t.geometryType === 'Point') {
+        const p = t.points?.[0] || {};
+        return {
+          type: 'Feature',
+          properties: {
+            kind: 'guest_ground_truth',
+            feature: t.feature,
+            venueId: t.venueId,
+            sessionId: t.sessionId || t.id,
+            observationId: t.id,
+            placeId: t.placeId,
+            placeName: t.placeName,
+            category: t.category,
+            mode: t.mode,
+            published: t.published,
+            deltaM: t.deltaM,
+            dwellMs: t.dwellMs,
+            receivedAt: t.receivedAt,
+            source: 'parkbound_guest_movement',
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [p.lng, p.lat],
+          },
+        };
+      }
+      return {
+        type: 'Feature',
+        properties: {
+          kind: 'guest_trace',
+          venueId: t.venueId,
+          sessionId: t.id,
+          startedAt: t.startedAt,
+          endedAt: t.endedAt,
+          metres: t.metres,
+          pointCount: t.pointCount,
+          receivedAt: t.receivedAt,
+          source: 'parkbound_guest_movement',
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: (t.points || []).map((p) => [p.lng, p.lat]),
+        },
+      };
+    }),
   };
 }
