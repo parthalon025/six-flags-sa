@@ -24,7 +24,7 @@ export const BRAND = {
   slogan: 'Explore more. Stress less.',
   promise: 'Parkbound turns a complicated park day into an adventure you can actually enjoy.',
   shortDescription:
-    'An explorer’s companion for theme-park days — live party coordination, walking trails, and a drawn park map.',
+    'Find toilets, food and rides on a drawn park map — walk there on guest paths. Start a party when the family wants to stick together.',
 };
 
 /** Where each brand visual belongs — keep call sites honest. */
@@ -47,17 +47,17 @@ export const BRAND_ASSETS = {
 /** Explorer vocabulary: product words → Parkbound words. */
 export const WORDS = {
   location: 'You Are Here',
-  navigation: 'Go',
+  navigation: 'Walk me there',
   favorites: 'Saved',
   recommendations: 'Explore',
   group: 'Party',
   route: 'Trail',
   destination: 'Next Stop',
-  history: 'Your Day',
+  history: 'Settings',
   directions: 'Trail',
   whichMap: 'Which park',
   showOnMap: 'On the map',
-  settingsTab: 'Day',
+  settingsTab: 'Me',
   ridesTab: 'Plan',
   exploreTab: 'Explore',
   partyTab: 'Party',

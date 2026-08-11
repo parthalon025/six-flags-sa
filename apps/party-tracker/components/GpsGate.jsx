@@ -1,12 +1,14 @@
 'use client';
 
+import BrandLockup from '@/components/BrandLockup';
+import InstallCard from '@/components/InstallCard';
 import { BRAND } from '@/lib/brand';
 import { formatDistance } from '@/lib/geo';
 
 const COPY = {
   idle: {
     title: 'Find you on the map',
-    body: 'Parkbound needs your GPS to drop your dot, see how far the party is, and point you at the meet-up. Nothing leaves your phone until you join a party.',
+    body: 'Parkbound uses your GPS to drop your dot, point you at toilets, food and rides, and walk you there on guest paths. Nothing leaves your phone until you join a party.',
     action: 'Allow location',
   },
   asking: {
@@ -31,6 +33,9 @@ const COPY = {
   },
 };
 
+const NEAREST_PARK_HINT =
+  'Go to nearest park uses your GPS once to find the closest map we have, shows you which park that is, and asks you to confirm before anything downloads — so you never pull the wrong park by accident.';
+
 const MILE_M = 1609.344;
 
 /** Park-scale distances read in feet; drive-scale ones read in whole miles. */
@@ -50,9 +55,9 @@ function dataText(venue) {
 }
 
 /*
- * GPS and park intake — the screen after the intro splash. The happy path
- * ("go to nearest park") skips the park question and reports progress with a
- * toast instead. Brand copy lives on IntroSplash; this card is location only.
+ * First-run landing: brand lockup, optional install pitch, and a clear nearest-park
+ * path. Nearest-park always confirms before download — wrong park is costly on
+ * park wifi. GPS enable and Add to Home Screen sit together on first open.
  */
 function ParkSection({
   choice,
@@ -60,26 +65,12 @@ function ParkSection({
   busy = false,
   error = null,
   onConfirm,
-  autoSetup = false,
 }) {
   const venue = choice?.venue;
   if (!venue) return null;
   const inside = Boolean(choice.inside);
   const distanceText = inside ? 'you are here' : awayText(choice.metres);
   const data = dataText(venue);
-
-  if (autoSetup) {
-    return (
-      <>
-        <p>
-          {busy
-            ? `Getting ${venue.name} ready — the map, rides and places for ${venue.locality}.`
-            : `Found ${venue.name}${distanceText ? `, ${distanceText}` : ''}.`}
-        </p>
-        {error && <p className="gateError">{error}</p>}
-      </>
-    );
-  }
 
   return (
     <>
@@ -140,7 +131,7 @@ export default function GpsGate({
   onDismiss,
   onGoNearest,
   venueName,
-  highlightNearest = false,
+  welcome = false,
   parkChoice = null,
   parkOptions = [],
   onConfirmPark,
@@ -150,70 +141,86 @@ export default function GpsGate({
 }) {
   const copy = COPY[status] || COPY.idle;
   const parkVenue = parkChoice?.venue;
-  const settingUp = nearestIntent && parkVenue;
-  const showParkQuestion = parkVenue && !nearestIntent;
-  const nearestIdle = highlightNearest && status === 'idle' && !nearestIntent;
-  const nearestSearching = highlightNearest && nearestIntent && status === 'asking';
+  const showParkQuestion = Boolean(parkVenue);
+  const welcomeIdle = welcome && status === 'idle' && !nearestIntent && !showParkQuestion;
+  const welcomeSearching = welcome && nearestIntent && status === 'asking' && !showParkQuestion;
+  const showPhoneSetup = !showParkQuestion;
 
   let primaryLabel = copy.action;
   let primaryAction = onRequest;
   let primaryDisabled = false;
 
-  if (nearestIdle) {
+  if (welcomeIdle) {
     primaryLabel = 'Go to nearest park';
     primaryAction = onGoNearest || onRequest;
-  } else if (nearestSearching || (highlightNearest && status === 'asking' && nearestIntent)) {
+  } else if (welcomeSearching || (welcome && status === 'asking' && nearestIntent && !showParkQuestion)) {
     primaryLabel = 'Finding your location…';
     primaryDisabled = true;
-  } else if (settingUp) {
-    primaryLabel = setupBusy ? `Setting up ${parkVenue.name}…` : `Found ${parkVenue.name}`;
-    primaryDisabled = true;
-  } else if (status === 'asking') {
+  } else if (status === 'asking' && !showParkQuestion) {
     primaryLabel = 'Ask again';
   }
 
   return (
     <div className="gate">
       <div className="gateCard">
-        <div className="gateEyebrow">
-          {`${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
-        </div>
-        <h2>
-          {showParkQuestion
-            ? parkChoice.inside
-              ? `You’re at ${parkVenue.name}!`
-              : `Headed to ${parkVenue.name}?`
-            : settingUp
-              ? BRAND.nameUpper
-              : copy.title}
-        </h2>
-        {!showParkQuestion && !settingUp && <p>{copy.body}</p>}
+        {welcome && !showParkQuestion ? (
+          <>
+            <div className="gateEyebrow">Welcome</div>
+            <BrandLockup size="lg" stacked showTagline className="gateBrandLockup" />
+            <p>{BRAND.shortDescription}</p>
+            {welcomeIdle && <p className="gateFine">{NEAREST_PARK_HINT}</p>}
+            {welcomeSearching && (
+              <p className="gateFine">
+                When your phone shares a fix, we will show the nearest park and ask you to
+                confirm before the map downloads.
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="gateEyebrow">
+              {welcome
+                ? 'Welcome'
+                : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
+            </div>
+            <h2>
+              {showParkQuestion
+                ? parkChoice.inside
+                  ? `You’re at ${parkVenue.name}!`
+                  : `Headed to ${parkVenue.name}?`
+                : copy.title}
+            </h2>
+            {!showParkQuestion && <p>{copy.body}</p>}
+          </>
+        )}
 
-        {(settingUp || showParkQuestion) && (
+        {showParkQuestion && (
           <ParkSection
             choice={parkChoice}
             options={parkOptions}
             busy={setupBusy}
             error={setupError}
             onConfirm={onConfirmPark}
-            autoSetup={settingUp}
           />
         )}
 
         {error && !setupError && <p className="gateError">{error}</p>}
 
-        {!showParkQuestion && (
-          <button
-            type="button"
-            className="btn primary"
-            disabled={primaryDisabled}
-            onClick={primaryAction}
-          >
-            {primaryLabel}
-          </button>
+        {showPhoneSetup && (
+          <div className="gatePhoneSetup">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={primaryDisabled}
+              onClick={primaryAction}
+            >
+              {primaryLabel}
+            </button>
+            {welcome && !nearestIntent && <InstallCard compact />}
+          </div>
         )}
 
-        {!showParkQuestion && !settingUp && (
+        {!showParkQuestion && (
           <>
             <button type="button" className="btn" onClick={onManual}>
               Explore parks
@@ -233,7 +240,7 @@ export default function GpsGate({
         <p className="gateFine">
           Your location stays on your phone. Join a party and it goes only to your crew,
           encrypted in transit — nobody in the middle can peek.
-          {showParkQuestion ? ' Switch parks any time under Day → Which park.' : ''}
+          {showParkQuestion ? ' Switch parks any time under Me → Which park.' : ''}
         </p>
       </div>
     </div>
