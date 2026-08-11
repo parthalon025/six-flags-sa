@@ -115,7 +115,8 @@ export function heightsSidecarFromOfficial(park, pois, official, credit = defaul
 export async function syncHeightsFromOfficial(park, pois, opts = {}) {
   const catalog = ensureSourcesCatalogue(park);
   const official = await loadOfficialData(park.id, catalog, {
-    fetch: true,
+    fetch: opts.fetch ?? !opts.offline,
+    offline: opts.offline ?? false,
     browser: opts.browser ?? true,
     details: opts.fetchDetails ?? true,
   });

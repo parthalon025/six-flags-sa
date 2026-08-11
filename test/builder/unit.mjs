@@ -3871,6 +3871,31 @@ await check('heightsSidecarFromOfficial pairs official listings to bundle rides'
   return true;
 });
 
+const { runVenuePipeline, STAGES } = await import('../../packages/venue-builder/lib/build-pipeline.mjs');
+
+await check('unified build pipeline lists all seven stages', () => {
+  assert.deepEqual(STAGES, [
+    'sources', 'geometry', 'research', 'heights', 'rebuild', 'attractions', 'agent',
+  ]);
+  return true;
+});
+
+await check('unified build pipeline dry-run covers research and agent', async () => {
+  const result = await runVenuePipeline(
+    {
+      id: 'magic-kingdom',
+      rank: 1,
+      name: 'Magic Kingdom',
+      place: 'Magic Kingdom theme park, Florida',
+      locality: 'Lake Buena Vista, Florida',
+    },
+    { dryRun: true },
+  );
+  assert.equal(result.status, 'dry-run');
+  assert.equal(result.id, 'magic-kingdom');
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {
