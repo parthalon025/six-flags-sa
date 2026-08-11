@@ -3,10 +3,36 @@
  * All caches live under data/venues/<id>/ as builder input sidecars.
  */
 
+import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { readJson, venueSidecar } from '../venue-io.mjs';
 
+/**
+ * Adapter id → on-disk cache suffix (`${suffix}-cache.json`).
+ * Most match the adapter id; Mapillary keeps the historical `mapillary` name.
+ */
+export const ADAPTER_CACHE_SUFFIX = {
+  'parks-api': 'parks-api',
+  'queue-times': 'queue-times',
+  ropedrop: 'ropedrop',
+  wikidata: 'wikidata',
+  'accessibility-cloud': 'accessibility-cloud',
+  rcdb: 'rcdb',
+  'open-meteo': 'open-meteo',
+  openhistoricalmap: 'openhistoricalmap',
+  'project-sidewalk': 'project-sidewalk',
+  'mapillary-api': 'mapillary',
+  openrouteservice: 'openrouteservice',
+  playwright: 'official',
+};
+
 export const cachePath = (venueId, suffix) => venueSidecar(venueId, `${suffix}-cache.json`);
+
+/** Resolve the cache path for a registry adapter id. */
+export function adapterCacheFile(venueId, adapterId) {
+  const suffix = ADAPTER_CACHE_SUFFIX[adapterId] || String(adapterId).replace(/-api$/, '');
+  return cachePath(venueId, suffix);
+}
 
 export function readCache(venueId, suffix) {
   return readJson(cachePath(venueId, suffix));

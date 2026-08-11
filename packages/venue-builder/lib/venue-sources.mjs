@@ -11,26 +11,97 @@
 
 import path from 'node:path';
 import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-io.mjs';
-import { EXTERNAL_ADAPTER_IDS } from './adapters/implementations.mjs';
 
 const ROOT = path.dirname(path.dirname(OVERRIDE_DIR));
 
 export const sourcesFile = (id) => venueSidecar(id, 'sources.json');
 
 /**
- * Default open-data adapters declared for a theme-park venue.
- * Token-gated adapters stay listed; sync records a gap when secrets are missing.
+ * Adapters that need API secrets. Scaffolded offline catalogues omit these;
+ * venues that have bounds may still declare them explicitly. Sync records a
+ * gap (ok) when the token is absent so CI without secrets still passes.
+ *
+ * Kept as a static list (not imported from implementations) to avoid a cycle:
+ * venue-sources → implementations → parks-api → venue-judge → venue-sources.
  */
-export const DEFAULT_EXTERNAL_ADAPTERS = EXTERNAL_ADAPTER_IDS.filter(
-  (id) => id !== 'ropedrop', // Disney/Universal only; declare per venue when mapped
+export const TOKEN_GATED_ADAPTERS = Object.freeze([
+  'mapillary-api',
+  'accessibility-cloud',
+  'openrouteservice',
+]);
+
+/**
+ * Known runnable external adapter ids (mirrors implementations.mjs, minus playwright).
+ * Duplicated here deliberately — see TOKEN_GATED_ADAPTERS note.
+ */
+export const KNOWN_EXTERNAL_ADAPTER_IDS = Object.freeze([
+  'parks-api',
+  'queue-times',
+  'ropedrop',
+  'wikidata',
+  'accessibility-cloud',
+  'rcdb',
+  'open-meteo',
+  'openhistoricalmap',
+  'project-sidewalk',
+  'mapillary-api',
+  'openrouteservice',
+]);
+
+/**
+ * Default open-data adapters for a theme-park venue when scaffolding offline.
+ * Excludes RopeDrop (Disney/Universal only) and token-gated adapters.
+ */
+export const DEFAULT_EXTERNAL_ADAPTERS = KNOWN_EXTERNAL_ADAPTER_IDS.filter(
+  (id) => id !== 'ropedrop' && !TOKEN_GATED_ADAPTERS.includes(id),
+);
+
+/**
+ * Full theme-park catalogue pattern including optional a11y / Mapillary / ORS.
+ */
+export const THEME_PARK_EXTERNAL_ADAPTERS = KNOWN_EXTERNAL_ADAPTER_IDS.filter(
+  (id) => id !== 'ropedrop',
 );
 
 /** Adapter ids listed in sources.json datasets.external (validated against registry). */
 export function externalAdaptersFromCatalog(catalog, { fallback = DEFAULT_EXTERNAL_ADAPTERS } = {}) {
   const listed = catalog?.datasets?.external;
   if (!Array.isArray(listed) || !listed.length) return [...fallback];
-  const known = new Set(EXTERNAL_ADAPTER_IDS);
+  const known = new Set(KNOWN_EXTERNAL_ADAPTER_IDS);
   return listed.filter((id) => known.has(String(id)));
+}
+
+/**
+ * Ensure `datasets.external` is present and registry-validated.
+ * Missing lists get the offline-safe default; unknown ids are dropped.
+ */
+export function ensureExternalDatasets(catalog) {
+  if (!catalog || typeof catalog !== 'object') return catalog;
+  if (!catalog.datasets || typeof catalog.datasets !== 'object') catalog.datasets = {};
+  const listed = catalog.datasets.external;
+  if (!Array.isArray(listed) || !listed.length) {
+    catalog.datasets.external = [...DEFAULT_EXTERNAL_ADAPTERS];
+  } else {
+    catalog.datasets.external = externalAdaptersFromCatalog(catalog, { fallback: [] });
+  }
+  return catalog;
+}
+
+/** Declared adapter gaps from sources.json (`gaps.adapters` or `gaps.<id>`). */
+export function adapterGapNotes(catalog) {
+  const gaps = catalog?.gaps;
+  if (!gaps || typeof gaps !== 'object') return {};
+  if (gaps.adapters && typeof gaps.adapters === 'object') {
+    return Object.fromEntries(
+      Object.entries(gaps.adapters).map(([k, v]) => [k, String(v)]),
+    );
+  }
+  const out = {};
+  for (const [k, v] of Object.entries(gaps)) {
+    if (k === 'adapters' || typeof v === 'object') continue;
+    out[k] = String(v);
+  }
+  return out;
 }
 
 const relativise = (value) => {

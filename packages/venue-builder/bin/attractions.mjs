@@ -52,7 +52,7 @@ import { isRideable } from '@party-tracker/shared/ontology.js';
 import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
 import { renderEvidenceHtml } from '../lib/venue-validate-html.mjs';
 import { exportTileGeoJson } from '../lib/tiles-export.mjs';
-import { collectExternalClaims } from '../lib/external-claims.mjs';
+import { collectExternalClaims, ingestExternalClaims } from '../lib/external-claims.mjs';
 
 const USAGE = `
 The ride inventory: every attraction, every way into it, and who says so.
@@ -303,7 +303,6 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
   ];
 
   const external = collectExternalClaims(id, pois);
-  const externalEntrance = external.entrance || [];
 
   /* One source gets one say per feature, per run, and it is settled here rather
      than by letting `addEvidence` supersede the same source over and over.
@@ -318,7 +317,7 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
   let applied = 0;
   const orphans = new Set();
   const folded = new Map();
-  for (const claim of [...claims, ...externalEntrance]) {
+  for (const claim of claims) {
     const record = recordFor(claim.ride);
     if (!record) {
       orphans.add(claim.ride);
@@ -332,6 +331,21 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
     for (const claim of perSource.values()) addEvidence(record, claim.type, claim, { asOf });
   }
 
+  /* External research caches → evidence ingest. Entrance/exit with `at` publish
+     through addEvidence; accessibility lands as place notes; inventory/metadata
+     become asks / evidence-graph nodes and never invent pois[].e alone. */
+  const externalIngest = ingestExternalClaims([...records.values()], external.claims, {
+    asOf,
+    addEvidence,
+    recordFor: (key) => {
+      if (!key) return null;
+      if (records.has(key)) return records.get(key);
+      return recordFor(key);
+    },
+  });
+  applied += externalIngest.applied;
+  for (const o of externalIngest.orphans) orphans.add(o);
+
   const all = [...records.values()].sort((a, b) => a.name.localeCompare(b.name));
   return {
     id,
@@ -343,6 +357,8 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
     asOf,
     externalStats: external.stats,
     externalMetadata: external.metadata,
+    externalAsks: externalIngest.asks,
+    externalGraphNodes: externalIngest.graphNodes,
   };
 }
 

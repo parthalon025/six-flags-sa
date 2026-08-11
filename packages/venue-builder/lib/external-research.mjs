@@ -20,7 +20,7 @@ import { loadMapillaryData, mapillaryClaims } from './adapters/mapillary-api.mjs
 import { loadOrsRouteQa } from './adapters/openrouteservice.mjs';
 import { WIKIDATA_QIDS } from './park-slug-map.mjs';
 import { readSources, externalAdaptersFromCatalog, DEFAULT_EXTERNAL_ADAPTERS } from './venue-sources.mjs';
-import { parksApiEntranceClaims, snapClaimsToRides } from './external-claims.mjs';
+import { normalizeExternalClaims } from './external-claims.mjs';
 
 export { EXTERNAL_ADAPTER_IDS, DEFAULT_EXTERNAL_ADAPTERS };
 
@@ -89,16 +89,33 @@ export async function loadExternalResearch(venueId, opts = {}) {
   const queueTimes = compareQueueTimesToBundle({ queueTimes: queueTimesRaw, pois });
   const rcdb = compareRcdbToBundle({ rcdb: rcdbRaw, pois });
 
+  const normalised = normalizeExternalClaims(venueId, {
+    pois,
+    external: {
+      parksApiRaw,
+      queueTimesRaw,
+      queueTimesCompare: queueTimes,
+      ropedropRaw,
+      wikidataRaw,
+      accessibilityRaw,
+      sidewalkRaw,
+      mapillaryRaw,
+      rcdbRaw,
+      rcdbCompare: rcdb,
+      ohmRaw,
+      openMeteoRaw,
+      llm: null,
+    },
+  });
+
+  /* Unbound imagery/a11y retained for research packets; fusion uses normalised claims. */
   const claims = [
+    ...normalised.claims,
     ...wikidataClaims(wikidataRaw),
     ...accessibilityClaims(accessibilityRaw),
     ...sidewalkClaims(sidewalkRaw),
     ...mapillaryClaims(mapillaryRaw),
     ...rcdbClaims(rcdbRaw, rcdb),
-    ...parksApiEntranceClaims(parksApiRaw, pois),
-    ...snapClaimsToRides(mapillaryClaims(mapillaryRaw), pois),
-    ...snapClaimsToRides(accessibilityClaims(accessibilityRaw), pois),
-    ...snapClaimsToRides(sidewalkClaims(sidewalkRaw), pois),
   ];
 
   return {
@@ -117,6 +134,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
     mapillaryRaw,
     orsRaw,
     claims,
+    normalised,
     declaredAdapters: resolveExternalAdapterIds(venueId),
   };
 }

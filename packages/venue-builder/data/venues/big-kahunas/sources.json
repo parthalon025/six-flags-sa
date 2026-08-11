@@ -51,8 +51,18 @@
       "open-meteo",
       "openhistoricalmap",
       "mapillary-api",
+      "accessibility-cloud",
+      "project-sidewalk",
       "openrouteservice"
     ]
+  },
+  "gaps": {
+    "adapters": {
+      "ropedrop": "RopeDrop open data covers Disney/Universal parks only — not applicable to this water park.",
+      "parks-api": "ThemeParks.wiki has no entity for Big Kahuna's Destin — inventory comes from official_site + OSM.",
+      "rcdb": "RCDB is coaster-focused; this water park has no roller coasters to compare.",
+      "queue-times": "Queue-Times does not list Big Kahuna's Destin — wait/inventory QA N/A."
+    }
   },
   "research": {
     "official_pages": true,

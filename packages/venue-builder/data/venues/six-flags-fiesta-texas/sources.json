@@ -39,6 +39,11 @@
       "openrouteservice"
     ]
   },
+  "gaps": {
+    "adapters": {
+      "ropedrop": "RopeDrop open data covers Disney/Universal parks only — not applicable to Six Flags parks in this catalogue."
+    }
+  },
   "research": {
     "official_pages": true,
     "llm_open_research": true,

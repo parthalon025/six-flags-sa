@@ -1,0 +1,1788 @@
+{
+  "fetched": "2026-08-11",
+  "parkId": "a0df8d87-7f72-4545-a58d-eb8aa76f914b",
+  "parkName": "Kings Island",
+  "source": "api.themeparks.wiki",
+  "attractions": [
+    {
+      "id": "c2875e68-05ee-4544-a755-1cbe8ab27449",
+      "name": "RiverRacers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00335",
+      "at": {
+        "lat": 39.337569,
+        "lng": -84.27485
+      }
+    },
+    {
+      "id": "b9c74269-0a40-4823-b79b-edb4ff926f02",
+      "name": "Snoopy's Soap Box Racers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00332",
+      "at": {
+        "lat": 39.34191,
+        "lng": -84.26961
+      }
+    },
+    {
+      "id": "2d7d68b8-bc97-4d8b-88c0-44dcb393d5d1",
+      "name": "PEANUTS™ 500",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00279",
+      "at": {
+        "lat": 39.342828,
+        "lng": -84.269688
+      }
+    },
+    {
+      "id": "59ced81c-fb76-4fa3-a998-2b9ddb0a6955",
+      "name": "The Bat",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00257",
+      "at": {
+        "lat": 39.346026,
+        "lng": -84.265478
+      }
+    },
+    {
+      "id": "e8e74b01-f30a-437b-a4af-a9df189bc6a7",
+      "name": "Salamander Sliders",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00336",
+      "at": {
+        "lat": 39.337834,
+        "lng": -84.273939
+      }
+    },
+    {
+      "id": "c7877f6b-93c6-42b3-a8a0-2d68cbbc0a06",
+      "name": "Queen City Stunt Coaster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00248",
+      "at": {
+        "lat": 39.341627,
+        "lng": -84.265827
+      }
+    },
+    {
+      "id": "c0cf7eb9-d3ed-4a0c-a2ea-8028c232afad",
+      "name": "Flight of Fear",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00266",
+      "at": {
+        "lat": 39.342731,
+        "lng": -84.263489
+      }
+    },
+    {
+      "id": "1ac0ed26-223e-46d6-929d-41a94f217692",
+      "name": "Sol Spin",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00329",
+      "at": {
+        "lat": 39.344371,
+        "lng": -84.265439
+      }
+    },
+    {
+      "id": "e70105af-a4e0-41ff-a23f-a64a35427d20",
+      "name": "Woodstock's Air Rail",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00267",
+      "at": {
+        "lat": 39.341995,
+        "lng": -84.269092
+      }
+    },
+    {
+      "id": "b9f049d8-c9ec-448c-97fc-3f30e39508e0",
+      "name": "Snoopy's Junction",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00273",
+      "at": {
+        "lat": 39.342354,
+        "lng": -84.270017
+      }
+    },
+    {
+      "id": "0481efb3-d8a8-4a62-a897-5dc71026abc6",
+      "name": "Adventure Express",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00245",
+      "at": {
+        "lat": 39.344277,
+        "lng": -84.265244
+      }
+    },
+    {
+      "id": "df68fc32-12bc-4612-9248-d1130a772334",
+      "name": "Woodstock Whirlybirds",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00304",
+      "at": {
+        "lat": 39.342688,
+        "lng": -84.269212
+      }
+    },
+    {
+      "id": "818e819c-8d9d-458b-babd-c4ce9e97994e",
+      "name": "Eiffel Tower",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00263",
+      "at": {
+        "lat": 39.343323,
+        "lng": -84.26696
+      }
+    },
+    {
+      "id": "514d68f2-51be-44cf-92dd-8efd538d9e20",
+      "name": "Snow Flake Lake Ice Skating",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00318",
+      "at": {
+        "lat": 39.34401,
+        "lng": -84.26747
+      }
+    },
+    {
+      "id": "f14312bb-30a8-4183-a568-0082ecec8b0b",
+      "name": "The Fangtastics",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00047",
+      "at": {
+        "lat": 39.34442,
+        "lng": -84.26728
+      }
+    },
+    {
+      "id": "32286947-9a3a-465d-b00f-0712702d7e20",
+      "name": "Twisted River Treats",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00116",
+      "at": {
+        "lat": 39.34007,
+        "lng": -84.2733
+      }
+    },
+    {
+      "id": "d5b0a804-0a75-4145-aaff-3e03e7c0fb62",
+      "name": "Seaside Supplies Refill",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00062",
+      "at": {
+        "lat": 39.33986,
+        "lng": -84.27382
+      }
+    },
+    {
+      "id": "03addb7c-1d5e-42a6-9a55-f5eadeef4c3e",
+      "name": "Candy Cane Concoctions",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00046",
+      "at": {
+        "lat": 39.34233,
+        "lng": -84.26524
+      }
+    },
+    {
+      "id": "d43412f8-94b4-423e-9fad-1e17e536f782",
+      "name": "Snake Bite Saloon",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00119",
+      "at": {
+        "lat": 39.34088,
+        "lng": -84.26689
+      }
+    },
+    {
+      "id": "b2e64b2d-e189-4dbf-bde5-fb8200ed3237",
+      "name": "Skyline Chili Express",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00065",
+      "at": {
+        "lat": 39.33869,
+        "lng": -84.27548
+      }
+    },
+    {
+      "id": "43472a7b-0d38-475a-acc3-dd5d8c9c844d",
+      "name": "Coca-Cola® Freestyles, Marketplaces & Refill Stations",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00082",
+      "at": {
+        "lat": 39.34343,
+        "lng": -84.26709
+      }
+    },
+    {
+      "id": "14f0fefa-d190-445b-b88e-28a557abbd2f",
+      "name": "Kings Island’s Nighttime Spectacular",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00006",
+      "at": {
+        "lat": 39.3446,
+        "lng": -84.26841
+      }
+    },
+    {
+      "id": "a243c7b9-b3e1-4784-84e6-890f5be47a66",
+      "name": "Hollywood Hits - Top 40!",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00087",
+      "at": {
+        "lat": 39.34482,
+        "lng": -84.26703
+      }
+    },
+    {
+      "id": "2bccbde5-5cb8-4cb4-995e-f6fc082e38f1",
+      "name": "Beach Blast X-Treme",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00060",
+      "at": {
+        "lat": 39.34296,
+        "lng": -84.26743
+      }
+    },
+    {
+      "id": "2793baf2-cd37-43ad-849e-e5eb0aace530",
+      "name": "The Candy Horns",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00078",
+      "at": {
+        "lat": 39.34189289041095,
+        "lng": -84.26907257534245
+      }
+    },
+    {
+      "id": "b58ac2fb-50a1-40a7-b6c6-b6db6b423c21",
+      "name": "Franklin's Flyers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00312",
+      "at": {
+        "lat": 39.342175,
+        "lng": -84.269363
+      }
+    },
+    {
+      "id": "cafa2d21-691a-4456-83e4-8ec46e8f34f2",
+      "name": "The Racer (Blue)",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00283",
+      "at": {
+        "lat": 39.343966,
+        "lng": -84.265114
+      }
+    },
+    {
+      "id": "2a23be0e-eb36-4453-b06d-c3d94709df6d",
+      "name": "Character Carousel",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00252",
+      "at": {
+        "lat": 39.342681,
+        "lng": -84.268741
+      }
+    },
+    {
+      "id": "3434ea54-e405-4ab1-9e92-e38a6972277e",
+      "name": "Grand Carousel",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00251",
+      "at": {
+        "lat": 39.343332,
+        "lng": -84.266152
+      }
+    },
+    {
+      "id": "3446a273-1d8f-44fa-9cf1-1bef1624085c",
+      "name": "Delirium",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00258",
+      "at": {
+        "lat": 39.345268,
+        "lng": -84.266397
+      }
+    },
+    {
+      "id": "1d6e9e86-47be-475d-a327-866b7036c253",
+      "name": "Linus' Beetle Bugs",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00250",
+      "at": {
+        "lat": 39.342242,
+        "lng": -84.269997
+      }
+    },
+    {
+      "id": "847c4cc7-1226-453c-b51a-d1319f5a6034",
+      "name": "Dodgem",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00260",
+      "at": {
+        "lat": 39.34273,
+        "lng": -84.26525
+      }
+    },
+    {
+      "id": "61f24b79-d90d-40c3-9c2c-466d020d4cbb",
+      "name": "WindSeeker",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00308",
+      "at": {
+        "lat": 39.340762,
+        "lng": -84.263912
+      }
+    },
+    {
+      "id": "3107c286-4828-4c30-8cf5-99553bc50a61",
+      "name": "Kings Mills Antique Autos",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00319",
+      "at": {
+        "lat": 39.341385,
+        "lng": -84.264389
+      }
+    },
+    {
+      "id": "ab1cb222-d3e6-4a3a-b066-705f716be025",
+      "name": "Diamondback",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00259",
+      "at": {
+        "lat": 39.34207,
+        "lng": -84.26779
+      }
+    },
+    {
+      "id": "625832f1-ec3f-4edd-b126-1c96265d93b1",
+      "name": "Cargo Loco",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00328",
+      "at": {
+        "lat": 39.344725,
+        "lng": -84.265926
+      }
+    },
+    {
+      "id": "6e408a49-a06e-4464-bc40-6e2bc47855ee",
+      "name": "Snoopy's Space Buggies",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00313",
+      "at": {
+        "lat": 39.342327,
+        "lng": -84.269357
+      }
+    },
+    {
+      "id": "7a1b3644-0c13-4037-967f-8189edda95ce",
+      "name": "Drop Tower",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00262",
+      "at": {
+        "lat": 39.345967,
+        "lng": -84.26648
+      }
+    },
+    {
+      "id": "99764c38-b4e4-42be-8ed0-5ace7cc70c87",
+      "name": "Invertigo",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00270",
+      "at": {
+        "lat": 39.346105,
+        "lng": -84.267749
+      }
+    },
+    {
+      "id": "cbc6f908-c995-43af-abb1-fe23bedfdb94",
+      "name": "Linus Launcher",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00277",
+      "at": {
+        "lat": 39.341949,
+        "lng": -84.268646
+      }
+    },
+    {
+      "id": "3f13b31f-cc25-4dc5-92d5-c27c52a322ea",
+      "name": "Viking Fury",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00300",
+      "at": {
+        "lat": 39.344091,
+        "lng": -84.266725
+      }
+    },
+    {
+      "id": "6d3f03b2-bad9-4464-bb2a-f310ea76074c",
+      "name": "Snoopy vs. Red Baron",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00285",
+      "at": {
+        "lat": 39.342826,
+        "lng": -84.269115
+      }
+    },
+    {
+      "id": "f30124de-9eb6-4c88-955e-dfe64fdd6c09",
+      "name": "PEANUTS™ Off-Road Rally",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00287",
+      "at": {
+        "lat": 39.342588,
+        "lng": -84.270148
+      }
+    },
+    {
+      "id": "40e0be48-88e6-4f46-875a-4a3f93842b2c",
+      "name": "Kite Eating Tree",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00299",
+      "at": {
+        "lat": 39.342237,
+        "lng": -84.269202
+      }
+    },
+    {
+      "id": "482983ac-87e3-44e3-804a-936eaf49f4e9",
+      "name": "Zephyr",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00307",
+      "at": {
+        "lat": 39.342191,
+        "lng": -84.264774
+      }
+    },
+    {
+      "id": "a09bc088-47e8-4f90-9325-4b190ceca720",
+      "name": "Banshee",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00311",
+      "at": {
+        "lat": 39.345513,
+        "lng": -84.265775
+      }
+    },
+    {
+      "id": "4129fd36-0bb1-4606-91da-2be318f9e194",
+      "name": "Scrambler",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00289",
+      "at": {
+        "lat": 39.343142,
+        "lng": -84.265342
+      }
+    },
+    {
+      "id": "1a9fbb70-42f2-4ff9-8f65-549b93c62748",
+      "name": "The Great Pumpkin Coaster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00268",
+      "at": {
+        "lat": 39.342914,
+        "lng": -84.268421
+      }
+    },
+    {
+      "id": "4f608015-a084-4d61-8246-af69ad1d40e2",
+      "name": "Monster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00278",
+      "at": {
+        "lat": 39.34335,
+        "lng": -84.265004
+      }
+    },
+    {
+      "id": "6424cf47-084b-4ba9-89b8-fdea6aed8e37",
+      "name": "Joe Cool's Dodgem School",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00272",
+      "at": {
+        "lat": 39.343183,
+        "lng": -84.269172
+      }
+    },
+    {
+      "id": "dd196c10-781b-4ba0-ad77-e933acd81921",
+      "name": "America 250 Trivia",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00089",
+      "at": {
+        "lat": 39.343028,
+        "lng": -84.266383
+      }
+    },
+    {
+      "id": "e67212f7-e01e-43a6-858e-28aeb3cef17d",
+      "name": "Snow Works",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00317",
+      "at": {
+        "lat": 39.34575,
+        "lng": -84.26661
+      }
+    },
+    {
+      "id": "1db0a52c-6f2f-4f5c-9e93-290b048a5b43",
+      "name": "Tropical Plunge",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00314",
+      "at": {
+        "lat": 39.33928,
+        "lng": -84.27552
+      }
+    },
+    {
+      "id": "2a17ecee-6400-420c-b1ae-a6700c059d00",
+      "name": "Pineapple Pipeline",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00249",
+      "at": {
+        "lat": 39.33998,
+        "lng": -84.27223
+      }
+    },
+    {
+      "id": "bf8c84ff-6acf-43ce-9c9a-79163ae9880e",
+      "name": "Rendezvous Run",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00254",
+      "at": {
+        "lat": 39.33981,
+        "lng": -84.27359
+      }
+    },
+    {
+      "id": "4f1191b7-dfd8-4097-ba9b-a81bd296dd6c",
+      "name": "Bluegill Lagoon",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00274",
+      "at": {
+        "lat": 39.337991,
+        "lng": -84.274053
+      }
+    },
+    {
+      "id": "7ebfd64f-67ed-43a3-b371-f2302fa1e7f5",
+      "name": "Tropical Twister",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00246",
+      "at": {
+        "lat": 39.34032,
+        "lng": -84.27261
+      }
+    },
+    {
+      "id": "c1b44371-3ab6-4d8f-8d44-039703fbe7a0",
+      "name": "Paradise Plunge",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00261",
+      "at": {
+        "lat": 39.33942,
+        "lng": -84.27266
+      }
+    },
+    {
+      "id": "7eb10a28-1b52-474a-ad61-a249de95c868",
+      "name": "Splash River",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00255",
+      "at": {
+        "lat": 39.339167,
+        "lng": -84.272987
+      }
+    },
+    {
+      "id": "a614df46-e37c-4d2a-a383-244351598546",
+      "name": "Thunder Falls",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00296",
+      "at": {
+        "lat": 39.33935,
+        "lng": -84.27246
+      }
+    },
+    {
+      "id": "808a1cc6-8dd8-4aeb-91c8-94c5e30c1afc",
+      "name": "Riverbank Slide Out",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00281",
+      "at": {
+        "lat": 39.338383,
+        "lng": -84.273665
+      }
+    },
+    {
+      "id": "6059ffa4-2d7b-4dcf-8fe9-6b303259a3a0",
+      "name": "Mondo Monsoon",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00297",
+      "at": {
+        "lat": 39.337625,
+        "lng": -84.274255
+      }
+    },
+    {
+      "id": "939cfe9a-d534-41d9-af55-2181772e462d",
+      "name": "Tadpool",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00302",
+      "at": {
+        "lat": 39.338501,
+        "lng": -84.273974
+      }
+    },
+    {
+      "id": "f07e1fd1-e8d0-45d7-b3b3-60aa0ebe3f49",
+      "name": "Zoom Flume",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00294",
+      "at": {
+        "lat": 39.33885,
+        "lng": -84.27185
+      }
+    },
+    {
+      "id": "92f2a74d-5170-4138-962e-e366610183c9",
+      "name": "Splash Landing",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00271",
+      "at": {
+        "lat": 39.339298,
+        "lng": -84.27345
+      }
+    },
+    {
+      "id": "b20d586e-dba2-43e5-9ac0-70f8e1602f33",
+      "name": "Breakers Bay",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00286",
+      "at": {
+        "lat": 39.33818,
+        "lng": -84.27477
+      }
+    },
+    {
+      "id": "9c95d954-6362-472d-a5a6-dc0753a40497",
+      "name": "Tidal Wave Bay",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00310",
+      "at": {
+        "lat": 39.33891,
+        "lng": -84.27589
+      }
+    },
+    {
+      "id": "6013ae42-92cd-494c-8280-f0cd6ec12d7a",
+      "name": "Haunt Opening Ceremony",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00076",
+      "at": {
+        "lat": 39.34373,
+        "lng": -84.26742
+      }
+    },
+    {
+      "id": "8ffe97aa-aaee-4e2a-9a3f-0b7338cd503a",
+      "name": "Dr. Nightmare",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00042",
+      "at": {
+        "lat": 39.343764,
+        "lng": -84.267405
+      }
+    },
+    {
+      "id": "cf2de493-63a3-422d-a31a-5e5189e33885",
+      "name": "Spectacle of Color Parade Start",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00031",
+      "at": {
+        "lat": 39.342514,
+        "lng": -84.264676
+      }
+    },
+    {
+      "id": "a75de17e-a512-4e82-ad61-16fccd5216f7",
+      "name": "Costume Counsel",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00046",
+      "at": {
+        "lat": 39.343764,
+        "lng": -84.267405
+      }
+    },
+    {
+      "id": "3de8d5a8-a7fb-4a8b-8824-4db87fe60380",
+      "name": "The Monsters are Coming, Charlie Brown",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00044",
+      "at": {
+        "lat": 39.34307,
+        "lng": -84.26834
+      }
+    },
+    {
+      "id": "6d30ad55-7222-4b84-8514-3304939fcc89",
+      "name": "Ghouls Gone Wild",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00072",
+      "at": {
+        "lat": 39.34494,
+        "lng": -84.26708
+      }
+    },
+    {
+      "id": "a908a08e-bf1d-4467-8ce4-09736ab27373",
+      "name": "Skelebration!",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00074",
+      "at": {
+        "lat": 39.34374,
+        "lng": -84.26744
+      }
+    },
+    {
+      "id": "490c8d6f-d8db-461d-96a5-76877182064e",
+      "name": "Beanboozled",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00073",
+      "at": {
+        "lat": 39.3431,
+        "lng": -84.26838
+      }
+    },
+    {
+      "id": "68ff23bd-705b-4f63-82a8-2caaf3777c7e",
+      "name": "The Spectral Sisters",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00075",
+      "at": {
+        "lat": 39.3444,
+        "lng": -84.26727
+      }
+    },
+    {
+      "id": "2aff1e80-8143-4b77-abdb-d0670b533d46",
+      "name": "Star Spangled Nights",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00085",
+      "at": {
+        "lat": 39.3446,
+        "lng": -84.26841
+      }
+    },
+    {
+      "id": "743a9853-0dab-4daf-8d97-ad56ac368060",
+      "name": "Dippin' Dots®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00049",
+      "at": {
+        "lat": 39.345265,
+        "lng": -84.266756
+      }
+    },
+    {
+      "id": "9ba38294-cccc-4f9a-bb0f-897f3cc5150b",
+      "name": "Oktoberfest Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00053",
+      "at": {
+        "lat": 39.34428,
+        "lng": -84.26718
+      }
+    },
+    {
+      "id": "a9245d16-ff78-4cc7-932c-613af3c0e10f",
+      "name": "Coca-Cola® Freestyles, Marketplaces & Refill Stations",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00059",
+      "at": {
+        "lat": 39.34198,
+        "lng": -84.26821
+      }
+    },
+    {
+      "id": "56f8820a-7a5a-4994-8871-6dd2ad734df4",
+      "name": "Festhaus Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00051",
+      "at": {
+        "lat": 39.3446,
+        "lng": -84.26701
+      }
+    },
+    {
+      "id": "24e90bb5-515e-4a28-b31b-60501fa1a67a",
+      "name": "11 Pipers Piping Pizza",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00069",
+      "at": {
+        "lat": 39.341229,
+        "lng": -84.266406
+      }
+    },
+    {
+      "id": "541ea06a-60ff-4e9f-b3b6-69d8cd262209",
+      "name": "Route 666",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00060",
+      "at": {
+        "lat": 39.34157,
+        "lng": -84.26491
+      }
+    },
+    {
+      "id": "26ed71ed-d2f2-4439-95f9-bddc3d12f5bc",
+      "name": "Dippin' Dots®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00047",
+      "at": {
+        "lat": 39.3423,
+        "lng": -84.26855
+      }
+    },
+    {
+      "id": "4b72e73a-83b4-47c9-92a6-99e875ba625e",
+      "name": "Sugar's Cake Factory",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00075",
+      "at": {
+        "lat": 39.343803,
+        "lng": -84.266927
+      }
+    },
+    {
+      "id": "35d25044-5cfc-413c-b852-76ce252b6e32",
+      "name": "Tiny Tots Hot Chocolate",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00076",
+      "at": {
+        "lat": 39.342219,
+        "lng": -84.269068
+      }
+    },
+    {
+      "id": "0661b2bb-f81e-47e8-9a86-a2f479d9444d",
+      "name": "International Street Treats",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00074",
+      "at": {
+        "lat": 39.34332,
+        "lng": -84.26764
+      }
+    },
+    {
+      "id": "326a22b6-8db9-44b2-abb2-bd85f9273fdb",
+      "name": "Sip and Slide",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00061",
+      "at": {
+        "lat": 39.339989,
+        "lng": -84.273379
+      }
+    },
+    {
+      "id": "ac495ddb-c5da-4d7b-aeb6-d6fd3c9eb425",
+      "name": "Shooting Star Cafe",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00077",
+      "at": {
+        "lat": 39.34214,
+        "lng": -84.26683
+      }
+    },
+    {
+      "id": "a8d2ec30-7208-417d-92bd-a6e0cc96fccc",
+      "name": "Panda Express®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00012",
+      "at": {
+        "lat": 39.34469,
+        "lng": -84.26696
+      }
+    },
+    {
+      "id": "0a773fc2-1329-476d-889e-4f2086b72411",
+      "name": "Skyline Chili",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00003",
+      "at": {
+        "lat": 39.34295,
+        "lng": -84.26527
+      }
+    },
+    {
+      "id": "0d18dcbd-3075-4f8e-9744-7bdc07172f0a",
+      "name": "Auntie Anne's®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00017",
+      "at": {
+        "lat": 39.34418,
+        "lng": -84.26744
+      }
+    },
+    {
+      "id": "b344a30c-db0b-41c9-b8f3-91dbffee922e",
+      "name": "Enrique's Cantina",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00007",
+      "at": {
+        "lat": 39.34419,
+        "lng": -84.26581
+      }
+    },
+    {
+      "id": "074cbd02-009d-42ff-a009-8e21f8a07847",
+      "name": "Potato Works",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00015",
+      "at": {
+        "lat": 39.340857,
+        "lng": -84.267462
+      }
+    },
+    {
+      "id": "09c6e45d-18dd-4b35-8ebc-ddfa77989af4",
+      "name": "Island Smokehouse",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00009",
+      "at": {
+        "lat": 39.33866,
+        "lng": -84.27451
+      }
+    },
+    {
+      "id": "87426fa4-a43e-4926-a31d-802ea6b013e0",
+      "name": "Auntie Anne's®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00018",
+      "at": {
+        "lat": 39.34102,
+        "lng": -84.26711
+      }
+    },
+    {
+      "id": "333d3855-2b31-4a39-8a66-a9ea6420323a",
+      "name": "LaRosa's Pizzeria",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00008",
+      "at": {
+        "lat": 39.344199,
+        "lng": -84.268372
+      }
+    },
+    {
+      "id": "12ba0737-41d5-47b2-8ef3-9b79b3e5fd34",
+      "name": "Miami River Brewhouse",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00011",
+      "at": {
+        "lat": 39.34153,
+        "lng": -84.26796
+      }
+    },
+    {
+      "id": "af1414c4-fc9b-4082-a02b-02e6ed6125d5",
+      "name": "LaRosa's Pizzeria",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00014",
+      "at": {
+        "lat": 39.341229,
+        "lng": -84.266406
+      }
+    },
+    {
+      "id": "c8b92884-b557-4c4e-8945-19ce768e2bfa",
+      "name": "Jukebox Diner",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00004",
+      "at": {
+        "lat": 39.341404,
+        "lng": -84.264832
+      }
+    },
+    {
+      "id": "d4ef7911-c5fd-4bd6-8e54-0ce770bbea6d",
+      "name": "Planet Snoopy Grill",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00013",
+      "at": {
+        "lat": 39.34244,
+        "lng": -84.26857
+      }
+    },
+    {
+      "id": "2b5973f8-d7f6-4611-8871-386c3d60d78f",
+      "name": "Coconut Cove Café",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00006",
+      "at": {
+        "lat": 39.338954,
+        "lng": -84.274761
+      }
+    },
+    {
+      "id": "eba60f52-c189-49ae-9669-953ca29b4720",
+      "name": "Chicken Shack",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00005",
+      "at": {
+        "lat": 39.345531,
+        "lng": -84.266862
+      }
+    },
+    {
+      "id": "b2d191d2-fbeb-4da3-a8bd-21827ed0c54d",
+      "name": "Coca-Cola® Freestyles, Marketplaces & Refill Stations",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00022",
+      "at": {
+        "lat": 39.34418,
+        "lng": -84.26557
+      }
+    },
+    {
+      "id": "9ecc56dc-cf29-4500-a14b-e5a1d439b916",
+      "name": "Tom & Chee",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00016",
+      "at": {
+        "lat": 39.34279,
+        "lng": -84.26801
+      }
+    },
+    {
+      "id": "a0d67134-e6c3-4bf0-81b2-6283240d938e",
+      "name": "Sand Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00021",
+      "at": {
+        "lat": 39.338905,
+        "lng": -84.274927
+      }
+    },
+    {
+      "id": "22e8d738-e182-4f45-8703-0d101f5ec0c4",
+      "name": "Graeter's Ice Cream",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00026",
+      "at": {
+        "lat": 39.343994,
+        "lng": -84.268167
+      }
+    },
+    {
+      "id": "acc8dbb1-f9ae-4eec-8c36-309cdb3023aa",
+      "name": "Grain & Grill International Kitchen",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00027",
+      "at": {
+        "lat": 39.34465,
+        "lng": -84.26799
+      }
+    },
+    {
+      "id": "82b5d460-823d-4d08-aae6-00b499551742",
+      "name": "Coney Treats",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00023",
+      "at": {
+        "lat": 39.34233,
+        "lng": -84.26525
+      }
+    },
+    {
+      "id": "92a093d7-cca9-4f43-94d8-51ce6e997cca",
+      "name": "Coca-Cola® Freestyles, Marketplaces & Refill Stations",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00025",
+      "at": {
+        "lat": 39.34095,
+        "lng": -84.26791
+      }
+    },
+    {
+      "id": "7ebd0b91-f325-4704-82fd-1ac317bfc339",
+      "name": "Snoopy Treats",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00034",
+      "at": {
+        "lat": 39.34225,
+        "lng": -84.2691
+      }
+    },
+    {
+      "id": "f9bfb5cb-7180-4053-813e-9010416a7d4c",
+      "name": "Ralph's Ice Cream",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00031",
+      "at": {
+        "lat": 39.341412,
+        "lng": -84.265068
+      }
+    },
+    {
+      "id": "97dad6c6-0c24-402a-88d7-31889bc9eeca",
+      "name": "World's Greatest Funnel Cakes",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00039",
+      "at": {
+        "lat": 39.343803,
+        "lng": -84.266927
+      }
+    },
+    {
+      "id": "325cfd0d-8e89-4323-9b5c-5a13ad2fa966",
+      "name": "The French Corner",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00037",
+      "at": {
+        "lat": 39.343418,
+        "lng": -84.267589
+      }
+    },
+    {
+      "id": "ffc46c8e-9aaf-4130-aecc-08072cf7da43",
+      "name": "The Mercado",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00038",
+      "at": {
+        "lat": 39.34433,
+        "lng": -84.26595
+      }
+    },
+    {
+      "id": "8421c15d-b6d9-4577-9e83-eb58289cef31",
+      "name": "Festhaus",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00024",
+      "at": {
+        "lat": 39.34453,
+        "lng": -84.26715
+      }
+    },
+    {
+      "id": "a61bb5e2-474a-4af6-9737-2a4e47f404d0",
+      "name": "Calypso Coolers",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00019",
+      "at": {
+        "lat": 39.340086,
+        "lng": -84.274245
+      }
+    },
+    {
+      "id": "6a100d6f-5d81-487b-880a-168c20ab6d0c",
+      "name": "Breakers Bay Refill",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00043",
+      "at": {
+        "lat": 39.33826,
+        "lng": -84.27442
+      }
+    },
+    {
+      "id": "748d0c43-24d1-4284-a9ec-49ae509f780e",
+      "name": "Starbucks",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00036",
+      "at": {
+        "lat": 39.34448,
+        "lng": -84.2678
+      }
+    },
+    {
+      "id": "88d64851-213f-4637-8fb2-ebba03b897e4",
+      "name": "Outpost Frozen Cocktails",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00029",
+      "at": {
+        "lat": 39.342045,
+        "lng": -84.268042
+      }
+    },
+    {
+      "id": "d1726b7e-8b94-4068-b925-7e8f1b5f5824",
+      "name": "Coca-Cola® Freestyles, Marketplaces & Refill Stations",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00042",
+      "at": {
+        "lat": 39.3411,
+        "lng": -84.26656
+      }
+    },
+    {
+      "id": "da27fdac-052b-49d4-916c-03f3ee7fe4d1",
+      "name": "Ice Scream Zone",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00028",
+      "at": {
+        "lat": 39.34541,
+        "lng": -84.26634
+      }
+    },
+    {
+      "id": "49434b59-5451-434e-b327-3665ef4341df",
+      "name": "Snoopy Snow Cone",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00033",
+      "at": {
+        "lat": 39.343098,
+        "lng": -84.269199
+      }
+    },
+    {
+      "id": "fab3c897-040b-4eab-9b43-39efee3bcf83",
+      "name": "Dippin' Dots®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00044",
+      "at": {
+        "lat": 39.34387,
+        "lng": -84.26529
+      }
+    },
+    {
+      "id": "0cee397c-8963-42fe-9878-66d1de1b13f0",
+      "name": "Area 72 Beer Cart",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00054",
+      "at": {
+        "lat": 39.34276,
+        "lng": -84.26386
+      }
+    },
+    {
+      "id": "e798320a-4124-465b-9aba-17267bc071a2",
+      "name": "Café du Père Noël",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00070",
+      "at": {
+        "lat": 39.343418,
+        "lng": -84.267589
+      }
+    },
+    {
+      "id": "828f5ebd-de74-4f74-8dfa-5375e7dfe020",
+      "name": "Claus Confectionery",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00071",
+      "at": {
+        "lat": 39.34102,
+        "lng": -84.26754
+      }
+    },
+    {
+      "id": "da3c1e8e-5a58-4418-b736-2885da725ce1",
+      "name": "Action Zone Container Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00040",
+      "at": {
+        "lat": 39.3457,
+        "lng": -84.26675
+      }
+    },
+    {
+      "id": "63d208a5-0a30-4fa7-bb89-9a882fdfabbe",
+      "name": "Blitzen's Hot Beverage Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00052",
+      "at": {
+        "lat": 39.343994,
+        "lng": -84.268167
+      }
+    },
+    {
+      "id": "134eaa81-ad30-4731-9c71-3b77446d7eea",
+      "name": "Tinsel Town Diner",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00067",
+      "at": {
+        "lat": 39.34142,
+        "lng": -84.26483
+      }
+    },
+    {
+      "id": "610bf581-6efe-494e-a6df-aa9eec17ae0d",
+      "name": "Dippin' Dots®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00058",
+      "at": {
+        "lat": 39.34138,
+        "lng": -84.26643
+      }
+    },
+    {
+      "id": "ce05f986-cbcb-45e7-9019-2c8a0ff36af3",
+      "name": "Dippin' Dots®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00064",
+      "at": {
+        "lat": 39.34221,
+        "lng": -84.26976
+      }
+    },
+    {
+      "id": "52737a36-6268-4338-9055-924f86823fd9",
+      "name": "Rivertown Beer Cart",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00057",
+      "at": {
+        "lat": 39.34127,
+        "lng": -84.26635
+      }
+    },
+    {
+      "id": "00bb5dec-66b3-4e87-8c26-ac7304eda750",
+      "name": "Dippin' Dots®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00114",
+      "at": {
+        "lat": 39.34225,
+        "lng": -84.26513
+      }
+    },
+    {
+      "id": "c91e259d-6631-4de4-9fee-00779c553fba",
+      "name": "The Rotten Gourd",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00066",
+      "at": {
+        "lat": 39.34571,
+        "lng": -84.26675
+      }
+    },
+    {
+      "id": "f639d1c0-2169-4c16-aa28-44eac3c2afbb",
+      "name": "Yuletide Tavern",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00072",
+      "at": {
+        "lat": 39.342045,
+        "lng": -84.268042
+      }
+    },
+    {
+      "id": "87d85e09-b0c7-4fd9-81b0-0f5653ea7ba2",
+      "name": "Blitzen's Brewhouse",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00086",
+      "at": {
+        "lat": 39.34152,
+        "lng": -84.26796
+      }
+    },
+    {
+      "id": "df6f4f50-86ca-44ba-a425-4e3664a76df9",
+      "name": "Wishbone Grill",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00078",
+      "at": {
+        "lat": 39.34431,
+        "lng": -84.26763
+      }
+    },
+    {
+      "id": "4c25d275-76c6-46ca-bee5-7387f4806174",
+      "name": "Coca-Cola® Freestyles, Marketplaces & Refill Stations",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00115",
+      "at": {
+        "lat": 39.34522,
+        "lng": -84.2668
+      }
+    },
+    {
+      "id": "94d25521-5e30-480d-8eb7-02853ff062bf",
+      "name": "Coconut Cove Refill",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00081",
+      "at": {
+        "lat": 39.33911,
+        "lng": -84.27434
+      }
+    },
+    {
+      "id": "a8e6e323-cefa-4f42-9af8-c8f8a14ed7d1",
+      "name": "Mullins Workshop Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00117",
+      "at": {
+        "lat": 39.34088,
+        "lng": -84.26689
+      }
+    },
+    {
+      "id": "31091986-c1d9-45a9-b399-bd7d94191a41",
+      "name": "Tannenbaumhaus",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00091",
+      "at": {
+        "lat": 39.344514,
+        "lng": -84.267044
+      }
+    },
+    {
+      "id": "7ff020ce-621b-4a4b-a9a1-a2a0ea78a00a",
+      "name": "Action Zone Hot Chocolate",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00112",
+      "at": {
+        "lat": 39.34523,
+        "lng": -84.266806
+      }
+    },
+    {
+      "id": "64dc208e-f93e-41aa-9692-9fa02afca67f",
+      "name": "21° and Colder",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00094",
+      "at": {
+        "lat": 39.34356,
+        "lng": -84.26505
+      }
+    },
+    {
+      "id": "87252e55-0d97-4cf0-80e3-c7e8ca536800",
+      "name": "Camp Snoopy Hot Cocoa & Dippin Dots",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00113",
+      "at": {
+        "lat": 39.34229,
+        "lng": -84.26854
+      }
+    },
+    {
+      "id": "b816590a-a571-425b-b929-2d2070c952c5",
+      "name": "Rivertown Whistle Stop Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00095",
+      "at": {
+        "lat": 39.34099,
+        "lng": -84.26778
+      }
+    },
+    {
+      "id": "3dafd799-1445-4280-8911-8312a37a784b",
+      "name": "Picnic Grove",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00097",
+      "at": {
+        "lat": 39.34162,
+        "lng": -84.27123
+      }
+    },
+    {
+      "id": "08883ff8-68ea-41d5-b88d-f6e4b0b93325",
+      "name": "Jukebox Beer Car",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00096",
+      "at": {
+        "lat": 39.34158,
+        "lng": -84.26486
+      }
+    },
+    {
+      "id": "f08984d9-be81-4ed2-b43f-28f5e1534a87",
+      "name": "Dippin' Dots®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00083",
+      "at": {
+        "lat": 39.3447,
+        "lng": -84.26638
+      }
+    },
+    {
+      "id": "6a064578-8f77-4aa3-9f84-9cdb0936db73",
+      "name": "Pigpen's Mess Hall",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00093",
+      "at": {
+        "lat": 39.342022,
+        "lng": -84.269938
+      }
+    },
+    {
+      "id": "80f42c02-f1ae-4c21-89d2-40b5ac33b451",
+      "name": "Coconut Cove Dippin' Dots",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00084",
+      "at": {
+        "lat": 39.33885,
+        "lng": -84.27504
+      }
+    },
+    {
+      "id": "a3c21f90-dce2-448b-a30d-73055a3a840f",
+      "name": "Orion®",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00327",
+      "at": {
+        "lat": 39.342487,
+        "lng": -84.263165
+      }
+    },
+    {
+      "id": "1652f9d9-f83f-4385-89bf-af6322ee24ca",
+      "name": "The Racer (Red)",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00284",
+      "at": {
+        "lat": 39.343966,
+        "lng": -84.265114
+      }
+    },
+    {
+      "id": "14378301-6a1e-458c-aff6-642d755385bf",
+      "name": "White Water Canyon",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00306",
+      "at": {
+        "lat": 39.340879,
+        "lng": -84.267358
+      }
+    },
+    {
+      "id": "9fee104c-5867-49b2-9271-f62f18e72964",
+      "name": "K.I. & Miami Valley Railroad",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00275",
+      "at": {
+        "lat": 39.340958,
+        "lng": -84.267932
+      }
+    },
+    {
+      "id": "20c1acb9-5563-4a51-a2e7-42d1f4060693",
+      "name": "Shake, Rattle & Roll",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00290",
+      "at": {
+        "lat": 39.341298,
+        "lng": -84.264913
+      }
+    },
+    {
+      "id": "23b66715-8134-448f-8ba0-1d0dff532557",
+      "name": "Congo Falls",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00253",
+      "at": {
+        "lat": 39.34575,
+        "lng": -84.26661
+      }
+    },
+    {
+      "id": "23e4a3b3-f11b-4fd5-b80c-3dc8f9368757",
+      "name": "Beagle Scout Acres",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00334",
+      "at": {
+        "lat": 39.34195,
+        "lng": -84.26981
+      }
+    },
+    {
+      "id": "56de2b58-f97d-4ba1-8a6c-544d35b59bb5",
+      "name": "Mystic Timbers",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00316",
+      "at": {
+        "lat": 39.341279,
+        "lng": -84.267999
+      }
+    },
+    {
+      "id": "10c4e4ca-7f0f-44da-bd26-03791b0ff582",
+      "name": "The Beast",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00247",
+      "at": {
+        "lat": 39.340423,
+        "lng": -84.266328
+      }
+    },
+    {
+      "id": "f94bee2e-cb75-46f2-ac9e-f0e0d33bcf15",
+      "name": "Phantom Theater: Opening Nightmare",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00269",
+      "at": {
+        "lat": 39.343303,
+        "lng": -84.26862
+      }
+    },
+    {
+      "id": "d03bf771-59dd-4374-ade4-6ebf0a8194c8",
+      "name": "Sally's Sea Plane",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00288",
+      "at": {
+        "lat": 39.342158,
+        "lng": -84.268911
+      }
+    },
+    {
+      "id": "ca94fd87-484a-40e5-b061-ffe9faeb77fe",
+      "name": "K.I. and Miami Valley Railroad - Soak City Station",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00333",
+      "at": {
+        "lat": 39.34027,
+        "lng": -84.2733
+      }
+    },
+    {
+      "id": "d42659a2-7c4f-4ccc-9343-1724e73e0917",
+      "name": "Woodstock Express",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00303",
+      "at": {
+        "lat": 39.342969,
+        "lng": -84.269474
+      }
+    },
+    {
+      "id": "0e43808b-3415-4f47-b5a1-0a590066b288",
+      "name": "Coconut Cove",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00276",
+      "at": {
+        "lat": 39.339546,
+        "lng": -84.273899
+      }
+    },
+    {
+      "id": "084ab8a6-5a02-49aa-a205-04ed337abbdd",
+      "name": "Charlie Brown's Wind Up",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00305",
+      "at": {
+        "lat": 39.343312,
+        "lng": -84.26894
+      }
+    },
+    {
+      "id": "53a1b923-94d2-4f3b-87c8-779285e673ca",
+      "name": "Surf Dog",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00295",
+      "at": {
+        "lat": 39.342549,
+        "lng": -84.269811
+      }
+    },
+    {
+      "id": "e28b2f46-09eb-4714-8268-42e2d3a3f25c",
+      "name": "Tropical Plunge - Tube Slides",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00315",
+      "at": {
+        "lat": 39.3393,
+        "lng": -84.27561
+      }
+    },
+    {
+      "id": "1b9a9ddb-04c0-459b-a5c2-0f0e7764c51d",
+      "name": "Charlie Brown's Rushing River Log Ride",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-020-00282",
+      "at": {
+        "lat": 39.341707,
+        "lng": -84.268674
+      }
+    },
+    {
+      "id": "545eb6ce-d87b-401f-9f16-4972322b2d2f",
+      "name": "PEANUTS™ Meet & Greet",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00041",
+      "at": {
+        "lat": 39.34306,
+        "lng": -84.26835
+      }
+    },
+    {
+      "id": "7ee33349-1af1-42e7-a938-fad4444697dd",
+      "name": "Hot Rhythm Nights",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00034",
+      "at": {
+        "lat": 39.34372,
+        "lng": -84.26742
+      }
+    },
+    {
+      "id": "a9eade58-29aa-4d8c-bd17-6544b3d7ca39",
+      "name": "NyteWalkers",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00043",
+      "at": {
+        "lat": 39.34293,
+        "lng": -84.26743
+      }
+    },
+    {
+      "id": "8e4bef2b-4eae-4067-8b0b-cfaa47442bdc",
+      "name": "Meteor Canteen",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00010",
+      "at": {
+        "lat": 39.34256,
+        "lng": -84.26382
+      }
+    },
+    {
+      "id": "ae081bb8-3211-4be9-a283-22d5137cfb7b",
+      "name": "Coney Bar-B-Que",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00001",
+      "at": {
+        "lat": 39.34347,
+        "lng": -84.265453
+      }
+    },
+    {
+      "id": "61580ed9-f8d4-42b9-b140-c0af84bb19b7",
+      "name": "Planet Snoopy Ice Cream",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00030",
+      "at": {
+        "lat": 39.34264,
+        "lng": -84.26844
+      }
+    },
+    {
+      "id": "cde19550-da77-475e-9f1c-6eba8857ddab",
+      "name": "Cinnabon®",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00020",
+      "at": {
+        "lat": 39.344134,
+        "lng": -84.268325
+      }
+    },
+    {
+      "id": "2660c714-21f9-449f-9032-432a119871ed",
+      "name": "Rivertown Funnel Cakes",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-020-00032",
+      "at": {
+        "lat": 39.34102,
+        "lng": -84.26754
+      }
+    },
+    {
+      "id": "8f225ec5-8dcd-4acf-b0ca-475920c59044",
+      "name": "George Washington’s Two Truths & A Lie",
+      "entityType": "SHOW",
+      "externalId": "SHOW-020-00088",
+      "at": {
+        "lat": 39.343028,
+        "lng": -84.266383
+      }
+    }
+  ]
+}

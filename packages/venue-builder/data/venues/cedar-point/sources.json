@@ -39,6 +39,11 @@
       "openrouteservice"
     ]
   },
+  "gaps": {
+    "adapters": {
+      "ropedrop": "RopeDrop open data covers Disney/Universal parks only — not applicable to Cedar Fair venues."
+    }
+  },
   "research": {
     "official_pages": true,
     "llm_open_research": true,

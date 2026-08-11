@@ -82,10 +82,10 @@
       "claim": "Queue entrances published at ≥moderate or recorded as proposals",
       "pass": true,
       "evidence": {
-        "numerator": 1,
+        "numerator": 3,
         "denominator": 76,
         "known": 76,
-        "detail": "1 published / 76 known / 76 rides inventoried"
+        "detail": "3 published / 76 known / 76 rides inventoried"
       },
       "confidence": "moderate",
       "falsifier": "No entrance evidence was inventoried for rideable attractions",
@@ -104,6 +104,52 @@
       "confidence": "high",
       "falsifier": "A blocking gap was papered over instead of recorded",
       "soWhat": "Blocking requests mean a whole app feature is absent without saying so"
+    },
+    {
+      "key": "external_sources",
+      "claim": "Declared external adapters have caches or an honest gap note",
+      "pass": true,
+      "evidence": {
+        "numerator": 10,
+        "denominator": 10,
+        "detail": "7/10 caches, 3 gap(s); claims=61+38; attached=82",
+        "declared": [
+          "parks-api",
+          "queue-times",
+          "wikidata",
+          "rcdb",
+          "open-meteo",
+          "openhistoricalmap",
+          "mapillary-api",
+          "accessibility-cloud",
+          "project-sidewalk",
+          "openrouteservice"
+        ],
+        "missingRequired": [],
+        "bySource": {
+          "parks_api": 61,
+          "queue_times": 35,
+          "wikidata": 2,
+          "open_meteo": 1
+        }
+      },
+      "confidence": "high",
+      "falsifier": "sources.json lists a required adapter with no cache and no gaps.adapters note",
+      "soWhat": "Explore-more research sources must either feed the twin or show as an honest gap"
+    },
+    {
+      "key": "park_map_research",
+      "claim": "Official park map image is local or LLM park-map search recorded candidates",
+      "pass": false,
+      "evidence": {
+        "numerator": 0,
+        "denominator": 1,
+        "detail": "local_images=0; parkMap_candidates=0; llm_park_map_search=false",
+        "searchQueries": []
+      },
+      "confidence": "low",
+      "falsifier": "sources.json lists official_map but no image and no LLM park-map search cache",
+      "soWhat": "Guest maps for tracing require LLM search (or a package maps/ image) before georef"
     }
   ],
   "ask": {
@@ -113,7 +159,7 @@
       "locality": "Sandusky, Ohio",
       "kind": "theme-park"
     },
-    "overridesFile": "data/venues/cedar-point.overrides.json",
+    "overridesFile": "data/venues/cedar-point/overrides.json",
     "blocking": false,
     "requests": [
       {
@@ -137,10 +183,107 @@
           "`min` is the floor nobody rides under. `min: 0` is the park saying there is no floor, and the app reads that back as \"No minimum\" — that is the right answer for a lazy river, and it is not the same as `null`, which means nobody has looked yet.",
           "`alone` is the height below which a supervising rider has to come along. `max` is a ceiling, which most rides have none of.",
           "Keys must match the place name in the bundle exactly, character for character. The list below is those names.",
-          "If the park publishes a rule for an attraction whose name is *not* in that list, put it under `_unmapped` in data/venues/cedar-point.overrides.json instead of under `pois`. An override keyed to a name nothing answers to is a correction that silently did not happen, and there is a test that fails on it. It moves up into `pois` the day OpenStreetMap gains that name.",
+          "If the park publishes a rule for an attraction whose name is *not* in that list, put it under `_unmapped` in data/venues/cedar-point/overrides.json instead of under `pois`. An override keyed to a name nothing answers to is a correction that silently did not happen, and there is a test that fails on it. It moves up into `pois` the day OpenStreetMap gains that name.",
           "If the park's name for a ride differs from the name in the list, key the entry by the park's name and add `\"alias\": \"<the name in the list>\"`.",
           "Weight limits, life-jacket exceptions, \"must ride with an adult\", single-tube versus double — real rules this model has no field for — go in `note`, in the park's own terms. Never round one off into a height."
         ]
+      }
+    ],
+    "questSeeds": {
+      "version": 1,
+      "venueId": "cedar-point",
+      "principle": "Open sources build the base map; gamified on-the-ground contributions fill what they cannot reliably settle.",
+      "durable": [
+        {
+          "venueId": "cedar-point",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Cedar Point Marina Pool",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "cedar-point",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Main Arcade",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        }
+      ],
+      "ambient": [
+        {
+          "venueId": "cedar-point",
+          "type": "ride_status",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Ride up / down / delayed",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "cedar-point",
+          "type": "queue_band",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Queue short / medium / long",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "cedar-point",
+          "type": "amenity_outage",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Restroom or fountain outage",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "cedar-point",
+          "type": "crowd_hotspot",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Midway crowded",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "cedar-point",
+          "type": "hazard",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Spill or blocked path",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        }
+      ],
+      "counts": {
+        "durable": 2,
+        "ambient": 5
+      }
+    },
+    "inventory": [
+      {
+        "key": "parks-api-inventory",
+        "need": "ParksAPI matched 36/76 rides — declare gaps or improve aliases",
+        "blocking": false
       }
     ]
   }

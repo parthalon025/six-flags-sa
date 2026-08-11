@@ -23,6 +23,8 @@ const OVERRIDES = {
   'cedar-point': 'c8299e1a-0098-4677-8ead-dd0da204f8dc',
   'kings-island': 'a0df8d87-7f72-4545-a58d-eb8aa76f914b',
   'six-flags-fiesta-texas': '8be1e984-1e5f-40d0-a750-ce8e4dc2e87c',
+  // Big Kahuna's (Destin water park) is not on ThemeParks.wiki — declare
+  // gaps.adapters['parks-api'] in sources.json rather than inventing an id.
   'magic-kingdom': '75ea578a-adc8-4116-a54d-dccb60765ef9',
   epcot: '47f90d2c-e191-4239-a466-5892ef59a88b',
   'disney-s-hollywood-studios': '288747d1-8b4f-4a64-867e-ea7c9b27bad8',

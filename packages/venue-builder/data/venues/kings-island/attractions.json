@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it.",
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- kings-island",
   "venue": "kings-island",
-  "generated": "2026-08-09",
+  "generated": "2026-08-11",
   "publish_at": "moderate",
   "attractions": [
     {
@@ -59,13 +59,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34456,
-            "lng": -84.26488
+            "lat": 39.344277,
+            "lng": -84.265244
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -76,13 +76,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 11 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.344277,
+                "lng": -84.265244
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Adventure Express\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 44.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 44.3
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -269,13 +283,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.3456,
-            "lng": -84.26549
+            "lat": 39.345513,
+            "lng": -84.265775
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -286,13 +300,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 7 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.345513,
+                "lng": -84.265775
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Banshee\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 26.4,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 26.4
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -311,13 +339,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34187,
-            "lng": -84.26986
+            "lat": 39.34195,
+            "lng": -84.26981
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -328,13 +357,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.34195,
+                "lng": -84.26981
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Beagle Scout Acres\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -395,13 +433,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.33793,
-            "lng": -84.27513
+            "lat": 39.33826,
+            "lng": -84.27442
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -412,13 +450,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 28 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.33826,
+                "lng": -84.27442
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Breakers Bay Refill\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 71.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 71.2
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -437,13 +489,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.3447,
-            "lng": -84.26575
+            "lat": 39.344725,
+            "lng": -84.265926
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -454,13 +507,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 10 m from the ride (Cargo Loco)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.344725,
+                "lng": -84.265926
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Cargo Loco\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -521,13 +583,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34278,
-            "lng": -84.26861
+            "lat": 39.342681,
+            "lng": -84.268741
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -538,13 +601,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 14 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342681,
+                "lng": -84.268741
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Character Carousel\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -563,13 +635,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34153,
-            "lng": -84.26858
+            "lat": 39.341707,
+            "lng": -84.268674
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -580,13 +652,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.341707,
+                "lng": -84.268674
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Charlie Brown's Rushing River Log Ride\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 21.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 21.2
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -605,13 +691,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34327,
-            "lng": -84.26893
+            "lat": 39.343312,
+            "lng": -84.26894
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -622,13 +709,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 5 m from the ride (Charlie Brown's Wind Up)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.343312,
+                "lng": -84.26894
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Charlie Brown's Wind Up\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -647,13 +743,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.33958,
-            "lng": -84.27374
+            "lat": 39.339546,
+            "lng": -84.273899
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -664,13 +761,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 9 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.339546,
+                "lng": -84.273899
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Coconut Cove\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -689,13 +795,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34611,
-            "lng": -84.26696
+            "lat": 39.34575,
+            "lng": -84.26661
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -706,13 +812,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 1 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.34575,
+                "lng": -84.26661
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Congo Falls\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 49.9,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 49.9
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -731,13 +851,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34509,
-            "lng": -84.26629
+            "lat": 39.345268,
+            "lng": -84.266397
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -748,13 +868,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.345268,
+                "lng": -84.266397
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Delirium\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 21.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 21.7
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -773,13 +907,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34215,
-            "lng": -84.26747
+            "lat": 39.34207,
+            "lng": -84.26779
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -790,13 +924,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.34207,
+                "lng": -84.26779
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Diamondback\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 28.9,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 28.9
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -815,13 +963,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34273,
-            "lng": -84.26523
+            "lat": 39.343183,
+            "lng": -84.269172
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -832,13 +980,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 17 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.343183,
+                "lng": -84.269172
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Joe Cool's Dodgem School\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 343,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 343
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -857,13 +1019,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.3461,
-            "lng": -84.26631
+            "lat": 39.345967,
+            "lng": -84.26648
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -874,13 +1036,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 9 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.345967,
+                "lng": -84.26648
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Drop Tower\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 20.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 20.7
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -899,13 +1075,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34289,
-            "lng": -84.2635
+            "lat": 39.342731,
+            "lng": -84.263489
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -916,13 +1093,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 7 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342731,
+                "lng": -84.263489
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Flight of Fear\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -941,13 +1127,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.3422,
-            "lng": -84.26947
+            "lat": 39.342175,
+            "lng": -84.269363
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -958,13 +1145,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342175,
+                "lng": -84.269363
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Franklin's Flyers\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1109,13 +1305,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34587,
-            "lng": -84.26813
+            "lat": 39.346105,
+            "lng": -84.267749
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1126,13 +1322,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 11 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.346105,
+                "lng": -84.267749
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Invertigo\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 41.8,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 41.8
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1193,13 +1403,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34143,
-            "lng": -84.26438
+            "lat": 39.341385,
+            "lng": -84.264389
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1210,13 +1421,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 4 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.341385,
+                "lng": -84.264389
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Kings Mills Antique Autos\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1235,13 +1455,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.3422,
-            "lng": -84.26927
+            "lat": 39.342237,
+            "lng": -84.269202
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1252,13 +1473,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 4 m from the ride (Kite Eating Tree)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342237,
+                "lng": -84.269202
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Kite Eating Tree\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1277,13 +1507,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34222,
-            "lng": -84.26992
+            "lat": 39.342242,
+            "lng": -84.269997
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1294,13 +1525,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 4 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342242,
+                "lng": -84.269997
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Linus' Beetle Bugs\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1319,13 +1559,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34196,
-            "lng": -84.26863
+            "lat": 39.341949,
+            "lng": -84.268646
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1336,13 +1577,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 7 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.341949,
+                "lng": -84.268646
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Linus Launcher\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1403,13 +1653,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34125,
-            "lng": -84.26853
+            "lat": 39.341279,
+            "lng": -84.267999
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1420,13 +1670,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 4 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.341279,
+                "lng": -84.267999
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Mystic Timbers\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 45.8,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 45.8
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1445,13 +1709,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.343,
-            "lng": -84.26273
+            "lat": 39.342487,
+            "lng": -84.263165
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1462,13 +1726,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 1 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342487,
+                "lng": -84.263165
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Orion®\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 68,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 68
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1487,13 +1765,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34272,
-            "lng": -84.26976
+            "lat": 39.342828,
+            "lng": -84.269688
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1504,13 +1783,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342828,
+                "lng": -84.269688
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"PEANUTS™ 500\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1529,13 +1817,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34256,
-            "lng": -84.27019
+            "lat": 39.342588,
+            "lng": -84.270148
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1546,13 +1835,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342588,
+                "lng": -84.270148
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"PEANUTS™ Off-Road Rally\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1613,13 +1911,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34343,
-            "lng": -84.26467
+            "lat": 39.343966,
+            "lng": -84.265114
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1630,13 +1928,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.343966,
+                "lng": -84.265114
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"The Racer (Red)\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 70.5,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 70.5
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1781,13 +2093,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34223,
-            "lng": -84.26895
+            "lat": 39.342158,
+            "lng": -84.268911
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1798,13 +2111,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 6 m from the ride (Sally's Sea Plane)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342158,
+                "lng": -84.268911
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Sally's Sea Plane\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1823,13 +2145,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34126,
-            "lng": -84.26472
+            "lat": 39.341298,
+            "lng": -84.264913
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1840,13 +2163,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.341298,
+                "lng": -84.264913
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Shake, Rattle & Roll\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1907,13 +2239,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34226,
-            "lng": -84.26999
+            "lat": 39.342354,
+            "lng": -84.270017
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -1924,13 +2257,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 7 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342354,
+                "lng": -84.270017
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Snoopy's Junction\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -1991,13 +2333,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34227,
-            "lng": -84.2694
+            "lat": 39.342327,
+            "lng": -84.269357
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2008,13 +2351,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 4 m from the ride (Snoopy's Space Buggies)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342327,
+                "lng": -84.269357
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Snoopy's Space Buggies\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2075,13 +2427,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34467,
-            "lng": -84.26566
+            "lat": 39.344371,
+            "lng": -84.265439
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2092,13 +2444,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 15 m from the ride (Cargo Loco)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.344371,
+                "lng": -84.265439
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Sol Spin\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 38.1,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 38.1
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2117,13 +2483,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.33954,
-            "lng": -84.27267
+            "lat": 39.339167,
+            "lng": -84.272987
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2134,13 +2500,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 2 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.339167,
+                "lng": -84.272987
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Splash River\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 49.4,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 49.4
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2159,13 +2539,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34234,
-            "lng": -84.2698
+            "lat": 39.342549,
+            "lng": -84.269811
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2176,13 +2556,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 2 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342549,
+                "lng": -84.269811
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Surf Dog\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 23.1,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 23.1
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2201,13 +2595,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34749,
-            "lng": -84.26529
+            "lat": 39.346026,
+            "lng": -84.265478
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2218,13 +2612,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 12 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.346026,
+                "lng": -84.265478
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"The Bat\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 162.6,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 162.6
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2243,13 +2651,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34019,
-            "lng": -84.26593
+            "lat": 39.340423,
+            "lng": -84.266328
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2260,13 +2668,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.340423,
+                "lng": -84.266328
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"The Beast\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 42.9,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 42.9
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2285,13 +2707,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34312,
-            "lng": -84.26622
+            "lat": 39.343332,
+            "lng": -84.266152
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2302,13 +2724,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 16 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.343332,
+                "lng": -84.266152
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Grand Carousel\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 24.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 24.2
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2327,13 +2763,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34291,
-            "lng": -84.2685
+            "lat": 39.342914,
+            "lng": -84.268421
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2344,13 +2781,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 9 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342914,
+                "lng": -84.268421
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"The Great Pumpkin Coaster\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2369,13 +2815,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34341,
-            "lng": -84.26493
+            "lat": 39.34307,
+            "lng": -84.26834
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2386,13 +2832,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 11 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.34307,
+                "lng": -84.26834
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"The Monsters are Coming, Charlie Brown\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 296,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 296
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2453,13 +2913,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34312,
-            "lng": -84.26532
+            "lat": 39.343142,
+            "lng": -84.265342
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2470,13 +2931,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 9 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.343142,
+                "lng": -84.265342
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Scrambler\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2495,13 +2965,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34232,
-            "lng": -84.26457
+            "lat": 39.342191,
+            "lng": -84.264774
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2512,13 +2982,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342191,
+                "lng": -84.264774
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Zephyr\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 22.6,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 22.6
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2579,13 +3063,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34413,
-            "lng": -84.26667
+            "lat": 39.344091,
+            "lng": -84.266725
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2596,13 +3081,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.344091,
+                "lng": -84.266725
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Viking Fury\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2621,13 +3115,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.33983,
-            "lng": -84.26943
+            "lat": 39.340879,
+            "lng": -84.267358
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2638,13 +3132,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 9 m from the ride (White Water Canyon)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.340879,
+                "lng": -84.267358
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"White Water Canyon\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 212.8,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 212.8
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2663,13 +3171,14 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34079,
-            "lng": -84.26369
+            "lat": 39.340762,
+            "lng": -84.263912
           },
-          "confidence": "unknown",
-          "score": 1,
+          "confidence": "low",
+          "score": 4,
           "sources": [
-            "geometry"
+            "geometry",
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2680,13 +3189,22 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 12 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.340762,
+                "lng": -84.263912
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"WindSeeker\""
             }
           ],
-          "from": "geometry",
+          "from": "parks_api",
           "spread_m": null,
           "dissent": [],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2705,13 +3223,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.343,
-            "lng": -84.26975
+            "lat": 39.342969,
+            "lng": -84.269474
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2722,13 +3240,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 14 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342969,
+                "lng": -84.269474
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Woodstock Express\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 24,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 24
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2747,13 +3279,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34275,
-            "lng": -84.26899
+            "lat": 39.342688,
+            "lng": -84.269212
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2764,13 +3296,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 3 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.342688,
+                "lng": -84.269212
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Woodstock Whirlybirds\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 20.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 20.3
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },
@@ -2831,13 +3377,13 @@
       "features": {
         "queue_entrance": {
           "at": {
-            "lat": 39.34158,
-            "lng": -84.26903
+            "lat": 39.341995,
+            "lng": -84.269092
           },
           "confidence": "unknown",
-          "score": 1,
+          "score": 3,
           "sources": [
-            "geometry"
+            "parks_api"
           ],
           "evidence": [
             {
@@ -2848,13 +3394,27 @@
               },
               "date": "2026-08-09",
               "note": "the walkable network at its closest, 1 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 39.341995,
+                "lng": -84.269092
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Woodstock's Air Rail\""
             }
           ],
-          "from": "geometry",
-          "spread_m": null,
-          "dissent": [],
+          "from": "parks_api",
+          "spread_m": 46.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 46.2
+            }
+          ],
           "conflict": false,
-          "newest_evidence": "2026-08-09",
+          "newest_evidence": "2026-08-11",
           "stale": false
         }
       },

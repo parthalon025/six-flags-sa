@@ -1221,6 +1221,21 @@
       {
         "lat": 41.48195,
         "lng": -82.686529,
+        "n": "Millennium Force entrance",
+        "src": {
+          "by": "fused",
+          "feature": "queue_entrance",
+          "confidence": "moderate",
+          "sources": [
+            "osm_named_queue",
+            "osm_queue_name",
+            "parks_api"
+          ]
+        }
+      },
+      {
+        "lat": 41.48195,
+        "lng": -82.686529,
         "n": "Millennium Force Standby Queue",
         "src": {
           "by": "osm_named_queue",
@@ -3663,6 +3678,21 @@
     "c": "coaster",
     "a": "Gemini Midway",
     "e": [
+      {
+        "lat": 41.484023,
+        "lng": -82.686051,
+        "n": "Top Thrill 2 entrance",
+        "src": {
+          "by": "fused",
+          "feature": "queue_entrance",
+          "confidence": "moderate",
+          "sources": [
+            "osm_named_queue",
+            "osm_queue_name",
+            "parks_api"
+          ]
+        }
+      },
       {
         "lat": 41.484023,
         "lng": -82.686051,

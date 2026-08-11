@@ -947,9 +947,18 @@ npm run venues:report -- cedar-point  # one venue, in full
 
 npm run venues:adapters               # external OSS dependency matrix (wrap targets)
 npm run venues:adapters -- matrix     # markdown table for docs
+npm run venues:sync-sources -- cedar-point          # cache datasets.external (offline/cache)
+npm run venues:sync-sources -- cedar-point --fetch  # refresh adapters from the network
 npm run venues:build-agent -- cedar-point --offline   # multi-agent orchestrator (no network)
 npm run venues:build-agent -- cedar-point --ai --apply  # LLM agents + publish entrances
 ```
+
+Declare open-data adapters in `data/venues/<id>/sources.json` under `datasets.external`
+(ids from `npm run venues:adapters`). Offline scaffolds omit token-gated adapters
+(Mapillary, Accessibility Cloud, OpenRouteService); list them when bounds exist.
+Adapters that do not apply (e.g. RopeDrop on Cedar Fair) belong in `gaps.adapters`.
+Research caches feed `normalizeExternalClaims` → attractions evidence; live waits and
+weather stay builder-only and never land in `pois.json`.
 
 Every location here is the same data about a different place, and the failure mode that
 comes with that is a park that is *almost* built. Nothing crashes — the map draws, the list
@@ -959,7 +968,7 @@ its campground dropped entirely by a tag rule; Fiesta Texas had no way in on the
 until the checklist said so, which turned out to be a rule that had never heard of
 `barrier=toll_booth`.
 
-So the list lives in `scripts/lib/venue-checklist.mjs`, each item knowing whether it applies
+So the list lives in `packages/venue-builder/lib/venue-checklist.mjs`, each item knowing whether it applies
 to this venue, whether it passed, and what to type if it did not. `npm run test:unit` holds
 the required half of it. Items that do not apply are never failures — a town centre has no
 ride heights and a campus has no campground.

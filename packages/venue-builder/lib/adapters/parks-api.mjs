@@ -39,12 +39,15 @@ export async function loadParksApiData(id, { fetch = false, offline = false } = 
 
   const parkId = PARK_ENTITY_IDS[id];
   if (!parkId) {
-    return cached || {
+    const stub = cached || {
       fetched: null,
       parkId: null,
       attractions: [],
       error: `No ParksAPI mapping for venue "${id}".`,
     };
+    mkdirSync(path.dirname(cachePath), { recursive: true });
+    writeFileSync(cachePath, `${JSON.stringify(stub, null, 2)}\n`);
+    return stub;
   }
 
   const entity = await apiGet(`/entity/${parkId}/children`);

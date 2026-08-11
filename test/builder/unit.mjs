@@ -6080,7 +6080,12 @@ await check('sync external sources cache-only does not throw', async () => {
 
 await check('datasets.external from sources.json filters sync list', async () => {
   const { resolveExternalAdapterIds } = await import('../../packages/venue-builder/lib/external-research.mjs');
-  const { externalAdaptersFromCatalog } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const {
+    externalAdaptersFromCatalog,
+    DEFAULT_EXTERNAL_ADAPTERS,
+    TOKEN_GATED_ADAPTERS,
+    ensureExternalDatasets,
+  } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
   const catalog = {
     datasets: { external: ['parks-api', 'wikidata', 'not-a-real-adapter'] },
   };
@@ -6090,6 +6095,11 @@ await check('datasets.external from sources.json filters sync list', async () =>
   assert.ok(fromVenue.includes('parks-api'));
   assert.ok(fromVenue.includes('wikidata'));
   assert.ok(!fromVenue.includes('ropedrop'));
+  assert.ok(TOKEN_GATED_ADAPTERS.includes('mapillary-api'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('mapillary-api'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('ropedrop'));
+  const scaffolded = ensureExternalDatasets({});
+  assert.deepEqual(scaffolded.datasets.external, [...DEFAULT_EXTERNAL_ADAPTERS]);
   return true;
 });
 
@@ -6098,7 +6108,11 @@ await check('ParksAPI location claims attach to rides; metadata never invents en
     parksApiEntranceClaims,
     inventoryMetadataClaims,
     snapClaimsToRides,
+    normalizeExternalClaims,
+    ingestExternalClaims,
+    toEvidenceClaim,
   } = await import('../../packages/venue-builder/lib/external-claims.mjs');
+  const { addEvidence, attractionFor } = await import('../../packages/venue-builder/lib/attractions.mjs');
   const pois = [
     { n: 'Orion', i: 'orion', c: 'coaster', lat: 39.345, lng: -84.268 },
     { n: 'Restrooms', i: 'restrooms', c: 'restroom', lat: 39.346, lng: -84.269 },
@@ -6115,6 +6129,7 @@ await check('ParksAPI location claims attach to rides; metadata never invents en
   );
   assert.equal(entrance.length, 1);
   assert.equal(entrance[0].ride, 'Orion');
+  assert.equal(entrance[0].feature_id, 'orion');
   assert.equal(entrance[0].source, 'parks_api');
   assert.equal(entrance[0].type, 'queue_entrance');
   assert.equal(entrance[0].date, '2026-08-01');
@@ -6125,10 +6140,17 @@ await check('ParksAPI location claims attach to rides; metadata never invents en
     rcdbRaw: {},
     wikidataRaw: {},
     llm: { inventoryGaps: [{ name: 'Lost River', note: 'gap' }], fetched: '2026-08-03' },
+    openMeteoRaw: { fetched: '2026-08-04', hourly: { time: [] } },
+    ohmRaw: { fetched: '2026-01-01', features: [{ type: 'node', id: 1, tags: { historic: 'yes' }, lat: 1, lng: 2 }] },
+    ropedropRaw: { slug: null, error: 'Disney/Universal only' },
   });
   assert.ok(meta.some((c) => c.source === 'queue_times' && c.kind === 'inventory'));
   assert.ok(meta.some((c) => c.source === 'llm_extract'));
+  assert.ok(meta.some((c) => c.source === 'open_meteo' && c.kind === 'metadata'));
+  assert.ok(meta.some((c) => c.source === 'openhistoricalmap'));
+  assert.ok(meta.some((c) => c.source === 'ropedrop'));
   assert.ok(meta.every((c) => c.type == null));
+  assert.ok(meta.every((c) => !c.note?.toLowerCase().includes('wait_time') || c.kind === 'metadata'));
 
   const snapped = snapClaimsToRides(
     [{ source: 'mapillary', kind: 'imagery', at: { lat: 39.34505, lng: -84.26805 }, date: '2026-07-01', note: 'img' }],
@@ -6137,6 +6159,91 @@ await check('ParksAPI location claims attach to rides; metadata never invents en
   assert.equal(snapped.length, 1);
   assert.equal(snapped[0].ride, 'Orion');
   assert.equal(snapped[0].source, 'mapillary');
+
+  const record = attractionFor(pois[0], 'test-park');
+  const contract = toEvidenceClaim(entrance[0]);
+  assert.ok(contract.feature_id);
+  const ingest = ingestExternalClaims([record], [
+    contract,
+    { source: 'open_meteo', kind: 'metadata', note: 'climate', date: '2026-08-04' },
+    { source: 'queue_times', kind: 'inventory', note: 'missing ride X', date: '2026-08-02' },
+  ], {
+    asOf: '2099-01-01',
+    addEvidence,
+    recordFor: (key) => (key === 'Orion' || key === 'orion' ? record : null),
+  });
+  assert.equal(ingest.applied, 1);
+  assert.equal(record.features.queue_entrance.evidence[0].date, '2026-08-01', 'must not launder observation date to asOf');
+  assert.ok(ingest.asks.length >= 1);
+  assert.ok(ingest.graphNodes.length >= 1);
+  assert.equal(record.features.queue_entrance.evidence.some((e) => e.source === 'open_meteo'), false);
+
+  const normalised = normalizeExternalClaims('test-park', {
+    pois,
+    external: {
+      parksApiRaw: {
+        fetched: '2026-08-01',
+        attractions: [{ name: 'Orion', at: { lat: 39.3451, lng: -84.2681 } }],
+      },
+      openMeteoRaw: { fetched: '2026-08-04', hourly: {} },
+    },
+  });
+  assert.ok(normalised.entrance.length >= 1);
+  assert.ok(normalised.metadata.some((c) => c.source === 'open_meteo'));
+  assert.ok(normalised.claims.every((c) => c.kind));
+  return true;
+});
+
+await check('Queue-Times and RopeDrop never write wait minutes into pois claims', async () => {
+  const { inventoryMetadataClaims, ingestExternalClaims } = await import(
+    '../../packages/venue-builder/lib/external-claims.mjs'
+  );
+  const { addEvidence, attractionFor } = await import('../../packages/venue-builder/lib/attractions.mjs');
+  const claims = inventoryMetadataClaims({
+    queueTimes: {
+      onlyOnApi: ['Foobar'],
+      fetched: '2026-08-02',
+      rides: [{ name: 'Foobar', waitTime: 45 }],
+    },
+    ropedropRaw: {
+      slug: 'magic-kingdom',
+      fetched: '2026-08-02T12:00:00',
+      waitTimes: { rides: [{ name: 'Space Mountain', wait: 30 }] },
+    },
+  });
+  assert.ok(claims.every((c) => c.type == null));
+  assert.ok(claims.every((c) => c.kind === 'inventory' || c.kind === 'metadata'));
+  assert.ok(!JSON.stringify(claims).includes('"waitTime"'));
+  const record = attractionFor({ n: 'Orion', i: 'orion', c: 'coaster', lat: 1, lng: 2 }, 't');
+  const result = ingestExternalClaims([record], claims, {
+    addEvidence,
+    recordFor: () => record,
+  });
+  assert.equal(result.applied, 0);
+  assert.equal(record.features.queue_entrance.evidence.length, 0);
+  return true;
+});
+
+await check('cert external_sources denominators honour gaps and token soft-pass', async () => {
+  const { adapterGapNotes, TOKEN_GATED_ADAPTERS, externalAdaptersFromCatalog } = await import(
+    '../../packages/venue-builder/lib/venue-sources.mjs'
+  );
+  const { certifyVenue } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
+  assert.ok(TOKEN_GATED_ADAPTERS.includes('mapillary-api'));
+  const gaps = adapterGapNotes({
+    gaps: { adapters: { ropedrop: 'Disney only', 'parks-api': 'no entity' } },
+  });
+  assert.equal(gaps.ropedrop, 'Disney only');
+  assert.equal(gaps['parks-api'], 'no entity');
+  const declared = externalAdaptersFromCatalog({
+    datasets: { external: ['parks-api', 'mapillary-api', 'wikidata'] },
+  });
+  assert.deepEqual(declared, ['parks-api', 'mapillary-api', 'wikidata']);
+  const doc = certifyVenue('big-kahunas', { write: false });
+  const ext = doc.checks.find((c) => c.key === 'external_sources');
+  assert.ok(ext, 'external_sources gate present');
+  assert.ok(ext.evidence.denominator >= 1);
+  assert.equal(ext.pass, true, ext.evidence.detail);
   return true;
 });
 

@@ -1,0 +1,18 @@
+{
+  "fetched": "2026-08-11",
+  "source": "wikidata.org",
+  "license": "CC0",
+  "search": "Six Flags Fiesta Texas",
+  "entity": {
+    "qid": "Q2521644",
+    "label": "Six Flags Fiesta Texas",
+    "website": "http://www.sixflags.com/fiestaTexas/",
+    "coordinates": {
+      "lat": 29.5995,
+      "lng": -98.6094
+    },
+    "inception": null,
+    "operator": {},
+    "wikipedia": null
+  }
+}

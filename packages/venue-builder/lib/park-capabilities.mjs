@@ -7,6 +7,8 @@
  * a park maintainer can reach for when an audit flags a weakness.
  */
 
+import { DEFAULT_EXTERNAL_ADAPTERS } from './venue-sources.mjs';
+
 export const CAPABILITIES = [
   {
     id: 'recipe',
@@ -197,22 +199,17 @@ export function scaffoldSourcesCatalogue(id, venue = {}) {
   return {
     version: 1,
     venue: id,
-    _comment: `Source catalogue for ${name}. Wire datasets as they are surveyed; fetch official listings with npm run venues:research -- ${id} --fetch. External adapters sync via npm run venues:sync-sources -- ${id}.`,
+    _comment: `Source catalogue for ${name}. Wire datasets as they are surveyed; fetch official listings with npm run venues:research -- ${id} --fetch. External adapters sync via npm run venues:sync-sources -- ${id}. Offline scaffolds omit token-gated adapters; declare mapillary/a11y/ORS when bounds exist.`,
     generated: today,
     sources,
     datasets: {
-      external: [
-        'parks-api',
-        'queue-times',
-        'wikidata',
-        'rcdb',
-        'open-meteo',
-        'openhistoricalmap',
-        'mapillary-api',
-        'accessibility-cloud',
-        'project-sidewalk',
-        'openrouteservice',
-      ],
+      /* Safe offline subset — no MAPILLARY_TOKEN / ACCESSIBILITY_CLOUD_TOKEN / ORS_API_KEY. */
+      external: [...DEFAULT_EXTERNAL_ADAPTERS],
+    },
+    gaps: {
+      adapters: {
+        ropedrop: 'RopeDrop open data covers Disney/Universal parks only — not applicable here.',
+      },
     },
     research: {
       official_pages: true,

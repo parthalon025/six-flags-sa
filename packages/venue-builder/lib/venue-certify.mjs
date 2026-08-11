@@ -16,7 +16,12 @@ import { readRecipe } from './venue-recipe.mjs';
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
 import { VENUE_DIR, readJson, writeJson, venueSidecar, resolveBuilderPath } from './venue-io.mjs';
 import { qaVenueRouting, MAX_ROUTING_ISLANDS, MAX_RIDE_SNAP_METRES } from './venue-route-qa-core.mjs';
-import { readSources, externalAdaptersFromCatalog } from './venue-sources.mjs';
+import { readSources, externalAdaptersFromCatalog, adapterGapNotes, TOKEN_GATED_ADAPTERS } from './venue-sources.mjs';
+import { adapterCacheFile } from './adapters/_cache.mjs';
+import { compareParksApiToBundle } from './adapters/parks-api.mjs';
+import { compareQueueTimesToBundle } from './adapters/queue-times.mjs';
+import { collectExternalClaims } from './external-claims.mjs';
+import { isRideable } from '@party-tracker/shared/ontology.js';
 
 export const CERT_VERSION = 1;
 
@@ -233,40 +238,84 @@ export function certifyVenue(id, opts = {}) {
   /* ---- external sources catalogue ---- */
   const { data: catalog } = readSources(id);
   const declared = externalAdaptersFromCatalog(catalog, { fallback: [] });
+  const gapNotes = adapterGapNotes(catalog);
+  const tokenGated = new Set(TOKEN_GATED_ADAPTERS);
   let cachedExternal = 0;
+  let gapCovered = 0;
+  let missingRequired = [];
   for (const adapterId of declared) {
-    const name = adapterId === 'parks-api'
-      ? 'parks-api-cache.json'
-      : `${adapterId}-cache.json`;
-    if (readJson(venueSidecar(id, name), null)) cachedExternal += 1;
+    const cache = readJson(adapterCacheFile(id, adapterId), null);
+    const hasCache = Boolean(cache);
+    const hasGap = Boolean(gapNotes[adapterId]);
+    if (hasCache) cachedExternal += 1;
+    else if (hasGap) gapCovered += 1;
+    else if (tokenGated.has(adapterId)) gapCovered += 1; /* optional secrets — soft gap */
+    else missingRequired.push(adapterId);
   }
   const llmResearch = readJson(venueSidecar(id, 'llm-research-cache.json'), null);
   const officialCache = readJson(venueSidecar(id, 'official-cache.json'), null);
   const hasOfficialStrategy = Boolean(catalog?.sources?.some((s) => s.kind === 'official_site'));
-  const hasResearchTrail = Boolean(officialCache) || Boolean(llmResearch) || cachedExternal > 0;
-  const externalPass = declared.length === 0 || hasResearchTrail || hasOfficialStrategy;
+  /* Fail when a declared non-optional adapter has neither cache nor gap note.
+     Do not fail solely because token-gated adapters are empty (CI without secrets). */
+  const externalPass = declared.length === 0
+    ? (hasOfficialStrategy || Boolean(officialCache) || Boolean(llmResearch))
+    : missingRequired.length === 0;
+  const externalClaims = collectExternalClaims(id, pois);
   checks.push(
     check({
       key: 'external_sources',
-      claim: 'Declared external adapters have caches or open research is recorded',
+      claim: 'Declared external adapters have caches or an honest gap note',
       pass: externalPass,
       evidence: {
-        numerator: cachedExternal + (officialCache ? 1 : 0) + (llmResearch ? 1 : 0),
+        numerator: cachedExternal + gapCovered,
         denominator: Math.max(declared.length, 1),
         detail: declared.length
-          ? `${cachedExternal}/${declared.length} external caches; official=${Boolean(officialCache)}; llm=${Boolean(llmResearch)}`
+          ? `${cachedExternal}/${declared.length} caches, ${gapCovered} gap(s); `
+            + `claims=${externalClaims.stats.entranceClaims}+${externalClaims.stats.metadataClaims}; `
+            + `attached=${externalClaims.stats.attachedToPlaces}`
+            + (missingRequired.length ? `; missing=${missingRequired.join(',')}` : '')
           : 'no datasets.external declared',
         declared,
+        missingRequired,
+        bySource: externalClaims.stats.bySource,
       },
       confidence:
         declared.length && cachedExternal >= Math.ceil(declared.length * 0.5) ? 'high'
-          : hasResearchTrail ? 'moderate'
+          : missingRequired.length === 0 && (cachedExternal > 0 || gapCovered > 0) ? 'moderate'
             : hasOfficialStrategy ? 'low'
               : 'unknown',
-      falsifier: 'sources.json lists adapters that were never synced and no open research ran',
+      falsifier: 'sources.json lists a required adapter with no cache and no gaps.adapters note',
       soWhat: 'Explore-more research sources must either feed the twin or show as an honest gap',
     }),
   );
+
+  /* Inventory compare — ask when ParksAPI / Queue-Times under-cover published rides. */
+  const inventoryAsks = [];
+  const rideables = pois.filter(isRideable);
+  const parksApiCache = readJson(adapterCacheFile(id, 'parks-api'), null);
+  if (parksApiCache?.attractions?.length && !gapNotes['parks-api']) {
+    const cmp = compareParksApiToBundle({ parksApi: parksApiCache, pois });
+    const coverage = rideables.length ? cmp.matched / rideables.length : 1;
+    if (coverage < 0.5) {
+      inventoryAsks.push({
+        key: 'parks-api-inventory',
+        need: `ParksAPI matched ${cmp.matched}/${rideables.length} rides — declare gaps or improve aliases`,
+        blocking: false,
+      });
+    }
+  }
+  const qtCache = readJson(adapterCacheFile(id, 'queue-times'), null);
+  if (qtCache?.rides?.length && !gapNotes['queue-times']) {
+    const cmp = compareQueueTimesToBundle({ queueTimes: qtCache, pois });
+    const coverage = rideables.length ? cmp.matched / rideables.length : 1;
+    if (coverage < 0.5) {
+      inventoryAsks.push({
+        key: 'queue-times-inventory',
+        need: `Queue-Times matched ${cmp.matched}/${rideables.length} rides — builder QA only, never wait minutes in pois`,
+        blocking: false,
+      });
+    }
+  }
 
   /* ---- official park map acquisition (LLM search required when declared) ---- */
   const wantsParkMapSearch = catalog?.research?.llm_park_map_search !== false
@@ -304,7 +353,11 @@ export function certifyVenue(id, opts = {}) {
   }
 
   const certified = checks.every((c) => c.pass);
-  const askBrief = certified ? null : briefJson(venue, reqs);
+  let askBrief = certified && !inventoryAsks.length ? null : briefJson(venue, reqs);
+  if (inventoryAsks.length) {
+    askBrief = askBrief || briefJson(venue, reqs) || { venue: venue.id, requests: [] };
+    askBrief.inventory = inventoryAsks;
+  }
 
   const doc = {
     version: CERT_VERSION,
