@@ -255,14 +255,29 @@ function ParkMap({
   const pendingView = useRef(null);
   const fling = useRef({ vx: 0, vy: 0, t: 0 });
   const lastTap = useRef({ t: 0, x: 0, y: 0 });
+  // Cached wrap rect for the active gesture — getBoundingClientRect every
+  // touchmove is layout thrash on phones during pinch.
+  const wrapRect = useRef(null);
+  // Sticky across both finger-ups so a pinch cannot hand off to fling.
+  const pinchSession = useRef(false);
   // The laid-out markers, so a tap can be resolved against what was drawn.
   const planRef = useRef({ lands: [], markers: [], labels: [] });
   // Hysteresis for zoom-gated layers and place names — previous pass's answer,
   // so a jittery pinch does not restrobe the map.
   const [layersOn, setLayersOn] = useState({ lands: false, detail: false, service: false });
   const [shownLabels, setShownLabels] = useState(() => new Set());
+  const pixelRatio =
+    typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
 
   viewRef.current = view;
+
+  const readWrapRect = useCallback((force = false) => {
+    if (!force && wrapRect.current) return wrapRect.current;
+    const node = wrapRef.current;
+    if (!node) return { left: 0, top: 0, width: 0, height: 0 };
+    wrapRect.current = node.getBoundingClientRect();
+    return wrapRect.current;
+  }, []);
 
   /** Push a view change. Gestures may fire faster than paint; coalesce to one
    *  React update per frame while keeping viewRef hot for the next event. */
@@ -270,7 +285,8 @@ function ParkMap({
     const resolved = typeof next === 'function' ? next(viewRef.current) : next;
     const prev = viewRef.current;
     // Wheel/pinch at the scale clamp still rebuilds a new object; skip the
-    // React paint when nothing actually moved.
+    // React paint when nothing actually moved. On phones a clamped pinch still
+    // floods move events; bailing here keeps the map from thrashing.
     if (
       prev &&
       Math.abs(resolved.x - prev.x) < 1e-9 &&
@@ -526,9 +542,12 @@ function ParkMap({
     e.currentTarget.setPointerCapture(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     moved.current = false;
+    // Fresh layout box for this gesture — pinch maths and tap hit-tests share it.
+    readWrapRect(true);
     if (pointers.current.size === 2) {
+      pinchSession.current = true;
       const [a, b] = [...pointers.current.values()];
-      const rect = wrapRef.current.getBoundingClientRect();
+      const rect = readWrapRect();
       gesture.current = {
         mode: 'pinch',
         dist: Math.hypot(a.x - b.x, a.y - b.y),
@@ -540,47 +559,57 @@ function ParkMap({
   };
 
   const onPointerMove = (e) => {
-    const prev = pointers.current.get(e.pointerId);
-    if (!prev) return;
-    const next = { x: e.clientX, y: e.clientY };
-    pointers.current.set(e.pointerId, next);
+    if (!pointers.current.has(e.pointerId)) return;
+    // Touch screens deliver coalesced samples between frames; folding them in
+    // keeps the finger glued to the map and gives fling a truer release velocity.
+    const samples =
+      typeof e.getCoalescedEvents === 'function' && e.getCoalescedEvents().length
+        ? e.getCoalescedEvents()
+        : [e];
 
-    if (pointers.current.size === 2 && gesture.current?.mode === 'pinch') {
-      const [a, b] = [...pointers.current.values()];
-      const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      const ratio = dist / gesture.current.dist;
-      const scale = clampScale(gesture.current.scale * ratio);
-      if (Math.abs(dist - gesture.current.dist) > 4) {
+    for (const sample of samples) {
+      const prev = pointers.current.get(sample.pointerId) || pointers.current.get(e.pointerId);
+      if (!prev) continue;
+      const next = { x: sample.clientX, y: sample.clientY };
+      pointers.current.set(e.pointerId, next);
+
+      if (pointers.current.size === 2 && gesture.current?.mode === 'pinch') {
+        const [a, b] = [...pointers.current.values()];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        const ratio = dist / gesture.current.dist;
+        const scale = clampScale(gesture.current.scale * ratio);
+        if (Math.abs(dist - gesture.current.dist) > 4) {
+          moved.current = true;
+          onUserPan?.();
+        }
+        const rect = readWrapRect();
+        const midX = (a.x + b.x) / 2 - rect.left;
+        const midY = (a.y + b.y) / 2 - rect.top;
+        const snap = viewRef.current;
+        const world = screenToWorld(midX, midY, snap);
+        pushView(viewForScaleAt(scale, midX, midY, world, snap));
+        continue;
+      }
+
+      const dx = next.x - prev.x;
+      const dy = next.y - prev.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) {
         moved.current = true;
         onUserPan?.();
       }
-      const rect = wrapRef.current.getBoundingClientRect();
-      const midX = (a.x + b.x) / 2 - rect.left;
-      const midY = (a.y + b.y) / 2 - rect.top;
-      const snap = viewRef.current;
-      const world = screenToWorld(midX, midY, snap);
-      pushView(viewForScaleAt(scale, midX, midY, world, snap));
-      return;
+      // Screen-space velocity, kept for the flick. Blended rather than replaced so
+      // one stuttering frame at lift-off cannot cancel the whole throw.
+      fling.current = {
+        vx: fling.current.vx * 0.5 + dx * 0.5,
+        vy: fling.current.vy * 0.5 + dy * 0.5,
+        t: performance.now(),
+      };
+      // A drag is in screen pixels; with the map turned, the world moves along a
+      // different axis than the finger does.
+      const u = dx * spin.cos + dy * spin.sin;
+      const v = -dx * spin.sin + dy * spin.cos;
+      pushView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
     }
-
-    const dx = next.x - prev.x;
-    const dy = next.y - prev.y;
-    if (Math.abs(dx) + Math.abs(dy) > 3) {
-      moved.current = true;
-      onUserPan?.();
-    }
-    // Screen-space velocity, kept for the flick. Blended rather than replaced so
-    // one stuttering frame at lift-off cannot cancel the whole throw.
-    fling.current = {
-      vx: fling.current.vx * 0.5 + dx * 0.5,
-      vy: fling.current.vy * 0.5 + dy * 0.5,
-      t: performance.now(),
-    };
-    // A drag is in screen pixels; with the map turned, the world moves along a
-    // different axis than the finger does.
-    const u = dx * spin.cos + dy * spin.sin;
-    const v = -dx * spin.sin + dy * spin.cos;
-    pushView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
   };
 
   /** Momentum after a flick: decay the last velocity until it is under a pixel. */
@@ -636,13 +665,18 @@ function ParkMap({
     pointers.current.delete(e.pointerId);
     if (pointers.current.size < 2) gesture.current = null;
     if (pointers.current.size > 0) return;
+    wrapRect.current = null;
+    const wasPinch = pinchSession.current;
+    pinchSession.current = false;
 
-    if (moved.current && gesture.current?.mode !== 'pinch') {
+    // Pinch must not hand off to fling — on phones that reads as the map
+    // leaping after a zoom. pinchSession stays set until every finger is up.
+    if (moved.current && !wasPinch) {
       startFling();
       return;
     }
 
-    const rect = wrapRef.current.getBoundingClientRect();
+    const rect = readWrapRect(true);
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
 
@@ -683,7 +717,7 @@ function ParkMap({
     e.preventDefault();
     onUserPan?.();
     stopAnim();
-    const rect = wrapRef.current.getBoundingClientRect();
+    const rect = readWrapRect(true);
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
     const v = viewRef.current;
@@ -769,8 +803,9 @@ function ParkMap({
         viewY: view.y,
         originX: worldOrigin[0],
         originY: worldOrigin[1],
+        pixelRatio,
       }),
-    [cx, cy, rotation, z, view.x, view.y, worldOrigin],
+    [cx, cy, rotation, z, view.x, view.y, worldOrigin, pixelRatio],
   );
 
   /* Cull heavy layers at high zoom, but snap the cull camera onto a

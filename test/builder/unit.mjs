@@ -6332,6 +6332,54 @@ await check('local SVG origin keeps max-zoom pan within a pixel of float64', () 
   return true;
 });
 
+await check('retina pixel-snap keeps local translate on a device-pixel grid', () => {
+  const ox = -9_378_000;
+  const oy = 4_760_000;
+  const scale = 6;
+  const pr = 3;
+  const t = localViewTransform({
+    cx: 180,
+    cy: 320,
+    scale,
+    viewX: ox + 40.07,
+    viewY: oy - 12.04,
+    originX: ox,
+    originY: oy,
+    pixelRatio: pr,
+  });
+  // 40.07 * 6 * 3 = 721.26 → round 721 → 721 / 18 = 40.0555…
+  assert.match(t, /translate\(-40\.055/);
+  return true;
+});
+
+await check('pinch session suppresses fling after both fingers lift', () => {
+  // Mirrors ParkMap's pinchSession ref: set while two pointers are down, cleared
+  // only when the pointer map is empty, so the final finger-up cannot fling.
+  let pinchSession = false;
+  const pointers = new Set();
+  const onDown = (id) => {
+    pointers.add(id);
+    if (pointers.size === 2) pinchSession = true;
+  };
+  const onUp = (id) => {
+    pointers.delete(id);
+    if (pointers.size > 0) return { fling: false, pending: true };
+    const wasPinch = pinchSession;
+    pinchSession = false;
+    return { fling: !wasPinch, pending: false };
+  };
+  onDown(1);
+  onDown(2);
+  assert.equal(onUp(1).fling, false);
+  assert.equal(pinchSession, true);
+  const last = onUp(2);
+  assert.equal(last.fling, false);
+  assert.equal(pinchSession, false);
+  onDown(3);
+  assert.equal(onUp(3).fling, true);
+  return true;
+});
+
 await check('stable cull view only moves when the camera crosses a cell', () => {
   const a = stableCullView({ x: 1000, y: 2000, scale: 6 });
   const b = stableCullView({ x: 1000 + 5 / 6, y: 2000, scale: 6 });

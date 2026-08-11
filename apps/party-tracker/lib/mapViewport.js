@@ -68,11 +68,30 @@ export function bboxFromRing(ring) {
 /**
  * SVG transform string for venue geometry stored relative to `origin`.
  * View centre stays in absolute mercator; only the translate is rebased.
+ *
+ * Optional `pixelRatio` snaps the scaled translation to device pixels so a
+ * finger-drag on a retina phone does not shimmer from sub-pixel SVG rounding.
  */
-export function localViewTransform({ cx, cy, rotation = 0, scale, viewX, viewY, originX = 0, originY = 0 }) {
+export function localViewTransform({
+  cx,
+  cy,
+  rotation = 0,
+  scale,
+  viewX,
+  viewY,
+  originX = 0,
+  originY = 0,
+  pixelRatio = 1,
+}) {
   const lx = viewX - originX;
   const ly = viewY - originY;
-  return `translate(${cx} ${cy}) rotate(${-rotation}) scale(${scale} ${-scale}) translate(${-lx} ${-ly})`;
+  const pr = Math.max(1, pixelRatio || 1);
+  const snap = (metres) => {
+    const px = metres * scale * pr;
+    if (!Number.isFinite(px)) return metres;
+    return Math.round(px) / (scale * pr);
+  };
+  return `translate(${cx} ${cy}) rotate(${-rotation}) scale(${scale} ${-scale}) translate(${-snap(lx)} ${-snap(ly)})`;
 }
 
 /**
