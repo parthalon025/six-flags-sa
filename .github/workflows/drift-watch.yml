@@ -1,0 +1,65 @@
+# Weekly drift watch — does OpenStreetMap still match what we shipped?
+
+name: Drift watch
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Fleet drift check
+        id: drift
+        run: |
+          set +e
+          npm run venues:drift-watch -- --json > drift-report.json
+          code=$?
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          cat drift-report.json
+          exit 0
+
+      - name: Open handoff issue on drift
+        if: steps.drift.outputs.exit != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Venue drift detected — OSM no longer matches shipped bundles" \
+            --label agent-handoff \
+            --body "$(cat <<'EOF'
+          ## What failed
+          Weekly drift watch found venues that would change on rebuild.
+
+          ## Where
+          Workflow: `.github/workflows/drift-watch.yml`
+          Report: see workflow artifacts / `npm run venues:drift-watch -- --json`
+
+          ## Reproduction
+          ```bash
+          npm run venues:drift-watch
+          ```
+
+          ## Impact
+          Non-blocking for app runtime; drifted parks should lose certification until re-certified.
+
+          ## Suggested fix
+          Rebuild affected venues, re-run `venues:certify`, open PRs for human review.
+          EOF
+          )"

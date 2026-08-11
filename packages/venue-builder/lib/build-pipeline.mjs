@@ -9,6 +9,7 @@
  *   5. rebuild   — build-venue --rebuild (imagery, trace, merge wired from sources)
  *   6. attractions — entrance inventory and evidence sidecar
  *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
+ *   8. certify   — report + compare + route-qa + ask; writes certification.json
  */
 
 import path from 'node:path';
@@ -20,6 +21,11 @@ import { recipeFile } from './venue-recipe.mjs';
 import { ensureSourcesCatalogue, syncHeightsFromOfficial } from './heights-from-official.mjs';
 import { runResearchAgent } from './agents/research.mjs';
 import { runBuildOrchestrator } from './agents/orchestrator.mjs';
+import { certifyVenue } from './venue-certify.mjs';
+import { proposeAliases, applyAliasClaims } from './auto-alias.mjs';
+import { loadParksApiData } from './adapters/parks-api.mjs';
+import { readSources } from './venue-sources.mjs';
+import { loadOfficialData } from './venue-official-site.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -29,10 +35,12 @@ export const STAGES = [
   'sources',
   'geometry',
   'research',
+  'aliases',
   'heights',
   'rebuild',
   'attractions',
   'agent',
+  'certify',
 ];
 
 function sleep(seconds) {
@@ -92,9 +100,11 @@ export async function runVenuePipeline(park, opts = {}) {
     dryRun = false,
     retries = 3,
     allowNoHeights = false,
+    applyAliases = true,
     browser = true,
     attractions = true,
     agent = true,
+    certify = true,
     skip = [],
   } = opts;
 
@@ -110,6 +120,7 @@ export async function runVenuePipeline(park, opts = {}) {
       await runBuildWithRetries('geometry', buildArgsFor(park, ['--allow-no-heights']), { dryRun: true });
     }
     if (!skip.includes('research')) console.log(`#   research → official cache + ParksAPI`);
+    if (!skip.includes('aliases') && applyAliases) console.log(`#   aliases → official name claims`);
     if (!skip.includes('heights') && !allowNoHeights) {
       console.log(`#   heights → data/venues/${park.id}.heights.json`);
     }
@@ -121,6 +132,9 @@ export async function runVenuePipeline(park, opts = {}) {
     }
     if (!skip.includes('agent') && agent) {
       console.log(`#   agent → QA, GIS, vision, validation --apply`);
+    }
+    if (!skip.includes('certify') && certify) {
+      console.log(`#   certify → report + compare + route-qa + ask`);
     }
     return { id: park.id, rank: park.rank, status: 'dry-run', stages };
   }
@@ -174,6 +188,29 @@ export async function runVenuePipeline(park, opts = {}) {
         });
       } catch (err) {
         return { id: park.id, rank: park.rank, status: 'failed', error: `research failed: ${err.message}`, stages };
+      }
+    }
+
+    if (!skip.includes('aliases') && applyAliases) {
+      const pois = readBuiltPois(park.id);
+      if (pois?.length) {
+        console.error('  · aliases: official name pairing');
+        try {
+          const { data: catalog } = readSources(park.id);
+          const official = await loadOfficialData(park.id, catalog, { fetch: false, offline: true });
+          const parksApi = await loadParksApiData(park.id, { fetch: false, offline: true });
+          const { claims } = proposeAliases({
+            venueId: park.id,
+            pois,
+            officialNames: (official?.attractions || []).map((a) => a.name),
+            parksApiNames: (parksApi?.attractions || []).map((a) => a.name),
+          });
+          const { applied } = applyAliasClaims(park.id, claims);
+          logStage('aliases', { claims: claims.length, applied });
+        } catch (err) {
+          console.error(`    alias pass skipped: ${err.message}`);
+          logStage('aliases', { skipped: err.message });
+        }
       }
     }
 
@@ -257,5 +294,146 @@ export async function runVenuePipeline(park, opts = {}) {
     }
   }
 
+  if (!skip.includes('certify') && certify) {
+    console.error('  · certify: report + compare + route-qa + ask');
+    try {
+      const cert = certifyVenue(park.id);
+      logStage('certify', {
+        certified: cert.certified,
+        failed: cert.checks.filter((c) => !c.pass).map((c) => c.key),
+      });
+      if (!cert.certified) {
+        const failed = cert.checks.filter((c) => !c.pass).map((c) => c.key).join(', ');
+        return {
+          id: park.id,
+          rank: park.rank,
+          status: 'uncertified',
+          error: `certification failed: ${failed}`,
+          certification: cert,
+          stages,
+        };
+      }
+    } catch (err) {
+      return { id: park.id, rank: park.rank, status: 'failed', error: `certify failed: ${err.message}`, stages };
+    }
+  }
+
   return { id: park.id, rank: park.rank, status: 'built', stages };
+}
+
+/**
+ * Run the universal builder over many catalog parks — a loop over runVenuePipeline.
+ *
+ * @param {object[]} parks catalog rows from selectParks()
+ * @param {object} opts same options as runVenuePipeline, plus batchDelay, openPr, catalogSize
+ */
+export async function runVenueBatch(parks, opts = {}) {
+  const {
+    batchDelay = 5,
+    openPr = false,
+    catalogSize = parks.length,
+    dryRun = false,
+    ...pipelineOpts
+  } = opts;
+
+  const results = [];
+  for (const [i, park] of parks.entries()) {
+    const result = await runVenuePipeline(park, { ...pipelineOpts, dryRun });
+    results.push(result);
+
+    if (openPr && result.status === 'built' && !dryRun) {
+      try {
+        const { openVenueDraftPr } = await import('./venue-pr.mjs');
+        const pr = openVenueDraftPr(park.id, { runId: Date.now() });
+        result.pr = pr;
+        if (pr.prUrl) console.error(`  → draft PR: ${pr.prUrl}`);
+        else if (pr.skipped) console.error(`  → PR skipped: ${pr.reason}`);
+      } catch (err) {
+        console.error(`  ! PR failed for ${park.id}: ${err.message}`);
+      }
+    }
+
+    if (i < parks.length - 1 && !dryRun && batchDelay > 0) {
+      await sleep(batchDelay);
+    }
+  }
+
+  const built = results.filter((r) => r.status === 'built' || r.status === 'dry-run');
+  const uncertified = results.filter((r) => r.status === 'uncertified');
+  const failed = results.filter((r) => r.status === 'failed');
+
+  return {
+    catalog: catalogSize,
+    selected: parks.length,
+    built: built.length,
+    uncertified: uncertified.length,
+    failed: failed.length,
+    skippedExisting: catalogSize - parks.length,
+    results,
+    ok: failed.length === 0 && uncertified.length === 0,
+  };
+}
+
+/** Parse batch/catalog flags shared by the universal builder CLI. */
+export function parseCatalogArgs(argv) {
+  const out = {
+    _: [],
+    catalog: false,
+    pipeline: false,
+    from: null,
+    to: null,
+    skipExisting: true,
+    dryRun: false,
+    delay: 5,
+    retries: 3,
+    allowNoHeights: false,
+    browser: true,
+    attractions: true,
+    agent: true,
+    certify: true,
+    applyAliases: true,
+    openPr: false,
+    json: false,
+  };
+  const withValue = new Set(['--from', '--to', '--delay', '--retries']);
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--catalog') out.catalog = true;
+    else if (a === '--pipeline') out.pipeline = true;
+    else if (a === '--from') out.from = Number(argv[++i]);
+    else if (a === '--to') out.to = Number(argv[++i]);
+    else if (a === '--skip-existing') out.skipExisting = true;
+    else if (a === '--no-skip-existing') out.skipExisting = false;
+    else if (a === '--dry-run') out.dryRun = true;
+    else if (a === '--delay') out.delay = Number(argv[++i]);
+    else if (a === '--retries') out.retries = Number(argv[++i]);
+    else if (a === '--allow-no-heights') out.allowNoHeights = true;
+    else if (a === '--no-browser') out.browser = false;
+    else if (a === '--no-attractions') out.attractions = false;
+    else if (a === '--no-agent') out.agent = false;
+    else if (a === '--no-certify') out.certify = false;
+    else if (a === '--no-aliases') out.applyAliases = false;
+    else if (a === '--pr') out.openPr = true;
+    else if (a === '--json') out.json = true;
+    else if (!a.startsWith('--')) out._.push(a);
+    else if (withValue.has(a) && argv[i + 1] && !argv[i + 1].startsWith('--')) i += 1;
+    else if (a.includes('=')) { /* inline value — skip */ }
+    /* else: build-venue flags (--place, --bbox, …) — ignore here */
+  }
+  return out;
+}
+
+export function pipelineOptsFromCatalogArgs(args) {
+  return {
+    dryRun: args.dryRun,
+    retries: args.retries,
+    allowNoHeights: args.allowNoHeights,
+    applyAliases: args.applyAliases,
+    browser: args.browser,
+    attractions: args.attractions,
+    agent: args.agent,
+    certify: args.certify,
+    rebuildOnly: args.skipExisting,
+    skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
+  };
 }

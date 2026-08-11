@@ -1,0 +1,78 @@
+# Batch-build catalog parks through the universal venue builder.
+#
+# Actions → Build catalog parks → Run workflow.
+# Uses the same build-venue.mjs entry point as a single-park build — --catalog
+# is just a loop over runVenuePipeline.
+
+name: Build catalog parks
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Start at catalog rank (inclusive)'
+        required: false
+        type: number
+      to:
+        description: 'Stop at catalog rank (inclusive)'
+        required: false
+        type: number
+      venue_id:
+        description: 'Single venue id instead of a rank range'
+        required: false
+        type: string
+      allow_uncertified:
+        description: 'Do not fail the job when certification fails'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: build-catalog-${{ inputs.venue_id || inputs.from || 'all' }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Discover ParksAPI entity ids
+        run: npm run venues:discover-parks-api
+
+      - name: Build catalog parks
+        id: build
+        env:
+          FROM: ${{ inputs.from }}
+          TO: ${{ inputs.to }}
+          VENUE: ${{ inputs.venue_id }}
+        run: |
+          set -euo pipefail
+          args=(--catalog --pr --json)
+          if [ -n "${VENUE:-}" ]; then args+=("$VENUE")
+          else
+            [ -n "${FROM:-}" ] && args+=(--from "$FROM")
+            [ -n "${TO:-}" ] && args+=(--to "$TO")
+          fi
+          npm run venues:build -- "${args[@]}" | tee build-catalog.json
+
+      - name: Certify gate
+        if: ${{ inputs.allow_uncertified != true }}
+        run: npm run venues:certify -- --all
+
+      - name: Lint and test
+        run: |
+          npm run lint
+          npm run test:unit

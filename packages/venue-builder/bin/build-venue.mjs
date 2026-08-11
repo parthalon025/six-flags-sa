@@ -65,6 +65,13 @@ import { applyImagery } from '../lib/venue-imagery.mjs';
 // builder and the renderer cannot disagree about it.
 import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
 import path from 'node:path';
+import {
+  runVenuePipeline,
+  runVenueBatch,
+  parseCatalogArgs,
+  pipelineOptsFromCatalogArgs,
+} from '../lib/build-pipeline.mjs';
+import { loadCatalog, selectParks, withIds } from '../lib/top-parks-catalog.mjs';
 
 const OVERPASS = [
   'https://overpass-api.de/api/interpreter',
@@ -160,6 +167,24 @@ Asking for what OpenStreetMap does not have:
                             most of all. No id: every venue that needs one.
                             Nothing to ask for prints nothing and exits 0.
   --json                    with --ask, the brief as data rather than markdown
+
+Full factory pipeline (sources → geometry → research → aliases → heights →
+rebuild → attractions → agent → certify):
+
+  --pipeline                run the full pipeline for one park (requires --place)
+  --catalog [id ...]        run the pipeline for catalog parks; ids filter the list
+  --from <rank>             catalog rank start (with --catalog)
+  --to <rank>               catalog rank end (with --catalog)
+  --skip-existing           skip parks that already have a recipe (default with --catalog)
+  --no-skip-existing        build even when a recipe exists
+  --delay <seconds>         pause between catalog parks (default: 5)
+  --retries <n>             attempts per build step (default: 3)
+  --no-browser              skip Playwright for JS-rendered park sites
+  --no-attractions          skip attractions inventory
+  --no-agent                skip build-agent (QA, GIS, vision, validation)
+  --no-certify              skip certification gate
+  --no-aliases              skip auto-alias resolution
+  --pr                      open a draft PR per built park (requires gh; with --catalog)
 `;
 
 /* ------------------------------------------------------------- resolving - */
@@ -1336,10 +1361,79 @@ function driftFrom({ id, meta, map, pois, existingMeta }) {
   return { existed: true, changed: mapChanged || poisChanged, mapChanged, poisChanged };
 }
 
+async function runCatalogBatch(argv) {
+  const args = parseCatalogArgs(argv);
+  const catalog = loadCatalog();
+  const parks = selectParks(catalog.parks, {
+    skipExisting: args.skipExisting,
+    from: args.from ?? undefined,
+    to: args.to ?? undefined,
+    only: args._.length ? args._ : undefined,
+  });
+
+  if (!parks.length) {
+    console.error('Nothing to build — every selected park already has a recipe, or the filter matched nothing.');
+    process.exit(0);
+  }
+
+  const mode = args.allowNoHeights ? 'geometry only' : 'full pipeline';
+  console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${mode})…`);
+
+  const summary = await runVenueBatch(parks, {
+    ...pipelineOptsFromCatalogArgs(args),
+    batchDelay: args.delay,
+    openPr: args.openPr,
+    catalogSize: catalog.parks.length,
+  });
+
+  if (args.json) {
+    console.log(JSON.stringify(summary, null, 2));
+  } else {
+    console.log(
+      `\n==== ${summary.built} built, ${summary.uncertified} uncertified, `
+        + `${summary.failed} failed, ${summary.skippedExisting} skipped (already on disk) ====`,
+    );
+    for (const row of summary.results.filter((r) => r.status === 'uncertified' || r.status === 'failed')) {
+      console.log(`  ${row.id}: ${row.error || row.status}`);
+    }
+  }
+
+  process.exit(summary.ok ? 0 : 1);
+}
+
+async function runSinglePipeline(argv) {
+  const catalogArgs = parseCatalogArgs(argv);
+  const args = parseArgs(argv);
+  if (!args.place) throw new Error('--pipeline requires --place');
+  const catalog = loadCatalog();
+  const id = args.id || slugify(String(args.name || args.place));
+  const fromCatalog = withIds(catalog.parks).find((p) => p.id === id);
+  const park = fromCatalog || {
+    id,
+    name: args.name || id,
+    place: args.place,
+    locality: args.locality || '',
+    kind: args.kind || 'theme-park',
+  };
+  const result = await runVenuePipeline(park, pipelineOptsFromCatalogArgs(catalogArgs));
+  process.exit(result.status === 'built' || result.status === 'dry-run' ? 0 : 1);
+}
+
 /* ------------------------------------------------------------------ main - */
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (argv.includes('--catalog')) {
+    await runCatalogBatch(argv);
+    return;
+  }
+
+  if (argv.includes('--pipeline')) {
+    await runSinglePipeline(argv);
+    return;
+  }
+
+  const args = parseArgs(argv);
   if (args.help || args.h) {
     console.log(USAGE);
     return;

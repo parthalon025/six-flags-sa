@@ -1,0 +1,689 @@
+{
+  "version": 1,
+  "generated": "2026-08-11",
+  "apiParkCount": 197,
+  "matched": 61,
+  "unmatched": 39,
+  "entities": {
+    "magic-kingdom": {
+      "entityId": "75ea578a-adc8-4116-a54d-dccb60765ef9",
+      "apiName": "Magic Kingdom Park",
+      "score": 1,
+      "reason": "override"
+    },
+    "disneyland-park": {
+      "entityId": "dae968d5-630d-4719-8b06-3d107e944401",
+      "apiName": "Disneyland Park",
+      "score": 1,
+      "destination": "Disneyland Paris"
+    },
+    "epcot": {
+      "entityId": "47f90d2c-e191-4239-a466-5892ef59a88b",
+      "apiName": "EPCOT",
+      "score": 1,
+      "reason": "override"
+    },
+    "disney-s-hollywood-studios": {
+      "entityId": "288747d1-8b4f-4a64-867e-ea7c9b27bad8",
+      "apiName": "Disney's Hollywood Studios",
+      "score": 1,
+      "reason": "override"
+    },
+    "disney-california-adventure": {
+      "entityId": "832fcd51-ea19-4e77-85c7-75d5843b127c",
+      "apiName": "Disney California Adventure Park",
+      "score": 0.92,
+      "destination": "Disneyland Resort"
+    },
+    "universal-studios-florida": {
+      "entityId": "267615cc-8943-4c2a-b2b6-5a8ca1ae7a45",
+      "apiName": "Universal Studios Florida",
+      "score": 1,
+      "reason": "override"
+    },
+    "universal-s-islands-of-adventure": {
+      "entityId": "267615cc-8943-4c2a-b2b6-5a8ca1ae7a45",
+      "apiName": "Universal's Islands of Adventure",
+      "score": 1,
+      "reason": "override"
+    },
+    "disney-s-animal-kingdom": {
+      "entityId": "1c84a229-8862-4648-9c71-378ddd2c7693",
+      "apiName": "Disney's Animal Kingdom Theme Park",
+      "score": 1,
+      "reason": "override"
+    },
+    "universal-studios-hollywood": {
+      "entityId": "bc4005c5-8c7e-41d7-b349-cdddf1796427",
+      "apiName": "Universal Studios Hollywood",
+      "score": 1,
+      "destination": "Universal Studios Hollywood"
+    },
+    "knott-s-berry-farm": {
+      "entityId": "0a6123bb-1e8c-4b18-a2d3-2696cf2451f5",
+      "apiName": "Knott's Berry Farm",
+      "score": 1,
+      "destination": "Knott's Berry Farm"
+    },
+    "seaworld-orlando": {
+      "entityId": "27d64dee-d85e-48dc-ad6d-8077445cd946",
+      "apiName": "SeaWorld Orlando",
+      "score": 1,
+      "destination": "SeaWorld Parks and Resorts Orlando"
+    },
+    "seaworld-san-diego": {
+      "entityId": "75122979-ddea-414d-b633-6b09042a227c",
+      "apiName": "SeaWorld San Diego",
+      "score": 1,
+      "destination": "SeaWorld San Diego"
+    },
+    "busch-gardens-tampa-bay": {
+      "entityId": "fc40c99a-be0a-42f4-a483-1e939db275c2",
+      "apiName": "Busch Gardens Tampa",
+      "score": 0.92,
+      "destination": "Busch Gardens Tampa"
+    },
+    "cedar-point": {
+      "entityId": "c8299e1a-0098-4677-8ead-dd0da204f8dc",
+      "apiName": "Cedar Point",
+      "score": 1,
+      "reason": "override"
+    },
+    "kings-island": {
+      "entityId": "a0df8d87-7f72-4545-a58d-eb8aa76f914b",
+      "apiName": "Kings Island",
+      "score": 1,
+      "reason": "override"
+    },
+    "six-flags-magic-mountain": {
+      "entityId": "c6073ab0-83aa-4e25-8d60-12c8f25684bc",
+      "apiName": "Six Flags Magic Mountain",
+      "score": 1,
+      "destination": "Six Flags Magic Mountain"
+    },
+    "dollywood": {
+      "entityId": "7502308a-de08-41a3-b997-961f8275ab3c",
+      "apiName": "Dollywood",
+      "score": 1,
+      "destination": "Dollywood"
+    },
+    "six-flags-great-america": {
+      "entityId": "15805a4d-4023-4702-b9f2-3d3cab2e0c1e",
+      "apiName": "Six Flags Great America",
+      "score": 1,
+      "destination": "Six Flags Great America"
+    },
+    "hersheypark": {
+      "entityId": "0f044655-cd94-4bb8-a8e3-c789f4eca787",
+      "apiName": "Hersheypark",
+      "score": 1,
+      "destination": "Hersheypark"
+    },
+    "six-flags-great-adventure": {
+      "entityId": "556f0126-8082-4b66-aeee-1e3593fed188",
+      "apiName": "Six Flags Great Adventure",
+      "score": 1,
+      "destination": "Six Flags Great Adventure"
+    },
+    "carowinds": {
+      "entityId": "24cdcaa8-0500-4340-9725-992865eb18d6",
+      "apiName": "Carowinds",
+      "score": 1,
+      "destination": "Carowinds"
+    },
+    "busch-gardens-williamsburg": {
+      "entityId": "98f634cd-c388-439c-b309-960f9475b84d",
+      "apiName": "Busch Gardens Williamsburg",
+      "score": 1,
+      "destination": "Busch Gardens Williamsburg"
+    },
+    "worlds-of-fun": {
+      "entityId": "bb731eae-7bd3-4713-bd7b-89d79b031743",
+      "apiName": "Worlds of Fun",
+      "score": 1,
+      "destination": "Worlds of Fun"
+    },
+    "valleyfair": {
+      "entityId": "1989dca9-c8d3-43b8-b0dd-e5575f692b95",
+      "apiName": "Valleyfair",
+      "score": 1,
+      "destination": "Valleyfair"
+    },
+    "kings-dominion": {
+      "entityId": "95162318-b955-4b7e-b601-a99033aa0279",
+      "apiName": "Kings Dominion",
+      "score": 1,
+      "destination": "Kings Dominion"
+    },
+    "six-flags-over-texas": {
+      "entityId": "4535960b-45fb-49fb-a38a-59cf602a0a9c",
+      "apiName": "Six Flags Over Texas",
+      "score": 1,
+      "destination": "Six Flags Over Texas"
+    },
+    "six-flags-fiesta-texas": {
+      "entityId": "8be1e984-1e5f-40d0-a750-ce8e4dc2e87c",
+      "apiName": "Six Flags Fiesta Texas",
+      "score": 1,
+      "reason": "override"
+    },
+    "six-flags-over-georgia": {
+      "entityId": "0c7ab128-259a-4390-93b9-d2e0233dfc16",
+      "apiName": "Six Flags Over Georgia",
+      "score": 1,
+      "destination": "Six Flags Over Georgia"
+    },
+    "six-flags-new-england": {
+      "entityId": "d553882d-5316-4fca-9530-cc898258aec0",
+      "apiName": "Six Flags New England",
+      "score": 1,
+      "destination": "Six Flags New England"
+    },
+    "six-flags-america": {
+      "entityId": "d4c88416-3361-494d-8905-23a83e9cb091",
+      "apiName": "Six Flags America",
+      "score": 1,
+      "destination": "Six Flags America"
+    },
+    "six-flags-great-escape": {
+      "entityId": "000c724a-cd0f-41a1-b355-f764902c2b55",
+      "apiName": "Six Flags Great Escape",
+      "score": 1,
+      "destination": "Six Flags Great Escape"
+    },
+    "six-flags-darien-lake": {
+      "entityId": "ab49b801-9b07-4cbc-9b3e-9896e538872e",
+      "apiName": "Six Flags Darien Lake",
+      "score": 1,
+      "destination": "Six Flags Darien Lake"
+    },
+    "six-flags-discovery-kingdom": {
+      "entityId": "3237a0c2-8e35-4a1c-9356-a319d5988e7c",
+      "apiName": "Six Flags Discovery Kingdom",
+      "score": 1,
+      "destination": "Six Flags Discovery Kingdom"
+    },
+    "six-flags-frontier-city": {
+      "entityId": "589627eb-fe16-4373-a2db-08d73805fb1f",
+      "apiName": "Six Flags Frontier City",
+      "score": 1,
+      "destination": "Six Flags Frontier City"
+    },
+    "legoland-california": {
+      "entityId": "722116aa-56be-4466-8c6f-a5acbac05da2",
+      "apiName": "LEGOLAND California",
+      "score": 1,
+      "destination": "LEGOLAND California"
+    },
+    "legoland-florida": {
+      "entityId": "bb285952-7e52-4a07-a312-d0a1ed91a9ac",
+      "apiName": "LEGOLAND Florida",
+      "score": 1,
+      "destination": "LEGOLAND Florida"
+    },
+    "legoland-new-york": {
+      "entityId": "39c46e22-9031-41ff-84d6-fcd1d0a62867",
+      "apiName": "LEGOLAND New York",
+      "score": 1,
+      "destination": "LEGOLAND New York"
+    },
+    "silver-dollar-city": {
+      "entityId": "d21fac4f-1099-4461-849c-0f8e0d6e85a6",
+      "apiName": "Silver Dollar City",
+      "score": 1,
+      "destination": "Silver Dollar City"
+    },
+    "kennywood": {
+      "entityId": "3dada5aa-0feb-4a3a-8c2d-685901f256be",
+      "apiName": "Kennywood",
+      "score": 1,
+      "destination": "Kennywood"
+    },
+    "sesame-place-philadelphia": {
+      "entityId": "f8afaec2-f022-4398-8f43-46022b91541b",
+      "apiName": "Sesame Place Langhorne",
+      "score": 0.92,
+      "destination": "Sesame Place Philadelphia"
+    },
+    "sesame-place-san-diego": {
+      "entityId": "9b66f62d-d8cd-454f-8286-9322fd1dcc8d",
+      "apiName": "Sesame Place San Diego",
+      "score": 1,
+      "destination": "Sesame Place San Diego"
+    },
+    "michigan-s-adventure": {
+      "entityId": "e9805d65-edad-4700-8942-946e6a2b4784",
+      "apiName": "Michigan's Adventure",
+      "score": 1,
+      "destination": "Michigan's Adventure"
+    },
+    "dorney-park-wildwater-kingdom": {
+      "entityId": "19d7f29b-e2e7-4c95-bd12-2d4e37d14ccf",
+      "apiName": "Dorney Park",
+      "score": 0.92,
+      "destination": "Dorney Park"
+    },
+    "california-s-great-america": {
+      "entityId": "bdf9b533-144c-4b78-aa2f-5173c5ce5e85",
+      "apiName": "Great America",
+      "score": 0.92,
+      "destination": "Great America"
+    },
+    "universal-volcano-bay": {
+      "entityId": "fe78a026-b91b-470c-b906-9d2266b692da",
+      "apiName": "Universal Volcano Bay",
+      "score": 1,
+      "destination": "Universal Orlando Resort"
+    },
+    "disney-s-typhoon-lagoon": {
+      "entityId": "b070cbc5-feaa-4b87-a8c1-f94cca037a18",
+      "apiName": "Disney's Typhoon Lagoon Water Park",
+      "score": 0.92,
+      "destination": "Walt Disney World® Resort"
+    },
+    "disney-s-blizzard-beach": {
+      "entityId": "ead53ea5-22e5-4095-9a83-8c29300d7c63",
+      "apiName": "Disney's Blizzard Beach Water Park",
+      "score": 0.92,
+      "destination": "Walt Disney World® Resort"
+    },
+    "aquatica-orlando": {
+      "entityId": "9e2867f8-68eb-454f-b367-0ed0fd72d72a",
+      "apiName": "Aquatica Orlando",
+      "score": 1,
+      "destination": "SeaWorld Parks and Resorts Orlando"
+    },
+    "aquatica-san-antonio": {
+      "entityId": "e7bed04c-62b1-47eb-8aed-54ba77dc2c41",
+      "apiName": "Aquatica San Antonio",
+      "score": 1,
+      "destination": "SeaWorld San Antonio"
+    },
+    "discovery-cove": {
+      "entityId": "27d64dee-d85e-48dc-ad6d-8077445cd946",
+      "apiName": "SeaWorld Orlando",
+      "score": 0.92,
+      "destination": "SeaWorld Parks and Resorts Orlando"
+    },
+    "universal-epic-universe": {
+      "entityId": "12dbb85b-265f-44e6-bccf-f1faa17211fc",
+      "apiName": "Universal Epic Universe",
+      "score": 1,
+      "destination": "Universal Orlando Resort"
+    },
+    "belmont-park": {
+      "entityId": "9b66f62d-d8cd-454f-8286-9322fd1dcc8d",
+      "apiName": "Sesame Place San Diego",
+      "score": 0.92,
+      "destination": "Sesame Place San Diego"
+    },
+    "lagoon": {
+      "entityId": "b070cbc5-feaa-4b87-a8c1-f94cca037a18",
+      "apiName": "Disney's Typhoon Lagoon Water Park",
+      "score": 0.92,
+      "destination": "Walt Disney World® Resort"
+    },
+    "kentucky-kingdom": {
+      "entityId": "a18f8292-9c30-4361-851b-62b6c4fec177",
+      "apiName": "Kentucky Kingdom",
+      "score": 1,
+      "destination": "Kentucky Kingdom"
+    },
+    "cedar-point-shores": {
+      "entityId": "5d4442cf-0db1-4406-942b-a7052e743e99",
+      "apiName": "Cedar Point Shores",
+      "score": 1,
+      "destination": "Cedar Point"
+    },
+    "fun-spot-america-orlando": {
+      "entityId": "27d64dee-d85e-48dc-ad6d-8077445cd946",
+      "apiName": "SeaWorld Orlando",
+      "score": 0.92,
+      "destination": "SeaWorld Parks and Resorts Orlando"
+    },
+    "castles-n-coasters": {
+      "entityId": "e0766f31-9a00-4ba4-99e3-dfd3666542ef",
+      "apiName": "Hurricane Harbor Phoenix!",
+      "score": 0.92,
+      "destination": "Hurricane Harbor Phoenix!"
+    },
+    "water-country-usa": {
+      "entityId": "16d97cc2-0029-45a7-846f-5f8bf5b5aca8",
+      "apiName": "Water Country USA",
+      "score": 1,
+      "destination": "Busch Gardens Williamsburg"
+    },
+    "adventure-island": {
+      "entityId": "fc40c99a-be0a-42f4-a483-1e939db275c2",
+      "apiName": "Busch Gardens Tampa",
+      "score": 0.92,
+      "destination": "Busch Gardens Tampa"
+    },
+    "wet-n-wild-emerald-pointe": {
+      "entityId": "ee018a72-f99c-4a37-b436-966b94aa7aa5",
+      "apiName": "Wet'n'Wild",
+      "score": 0.92,
+      "destination": "Wet'n'Wild"
+    },
+    "morgan-s-wonderland": {
+      "entityId": "dd0e159a-4e4b-48e5-8949-353794ef2ecb",
+      "apiName": "SeaWorld San Antonio",
+      "score": 0.92,
+      "destination": "SeaWorld San Antonio"
+    }
+  },
+  "failures": [
+    {
+      "id": "six-flags-st-louis",
+      "name": "Six Flags St. Louis",
+      "best": {
+        "name": "Six Flags Fiesta Texas",
+        "score": 0.4772727272727273
+      }
+    },
+    {
+      "id": "holiday-world-splashin-safari",
+      "name": "Holiday World & Splashin' Safari",
+      "best": {
+        "name": "Phantasialand",
+        "score": 0.34615384615384615
+      }
+    },
+    {
+      "id": "knoebels-amusement-resort",
+      "name": "Knoebels Amusement Resort",
+      "best": {
+        "name": "Knoebels Amusement Park",
+        "score": 0.6000000000000001
+      }
+    },
+    {
+      "id": "lake-compounce",
+      "name": "Lake Compounce",
+      "best": {
+        "name": "La Ronde",
+        "score": 0.32142857142857145
+      }
+    },
+    {
+      "id": "canobie-lake-park",
+      "name": "Canobie Lake Park",
+      "best": {
+        "name": "Caribe Aquatic Park",
+        "score": 0.3947368421052632
+      }
+    },
+    {
+      "id": "idlewild-soakzone",
+      "name": "Idlewild & SoakZone",
+      "best": {
+        "name": "LEGOLAND Windsor",
+        "score": 0.28125
+      }
+    },
+    {
+      "id": "dutch-wonderland",
+      "name": "Dutch Wonderland",
+      "best": {
+        "name": "Parc Asterix",
+        "score": 0.43749999999999994
+      }
+    },
+    {
+      "id": "schlitterbahn-new-braunfels",
+      "name": "Schlitterbahn New Braunfels",
+      "best": {
+        "name": "Schlitterbahn NB",
+        "score": 0.4444444444444444
+      }
+    },
+    {
+      "id": "santa-cruz-beach-boardwalk",
+      "name": "Santa Cruz Beach Boardwalk",
+      "best": {
+        "name": "Hansa-Park",
+        "score": 0.30000000000000004
+      }
+    },
+    {
+      "id": "gilroy-gardens",
+      "name": "Gilroy Gardens",
+      "best": {
+        "name": "Busch Gardens Tampa",
+        "score": 0.27631578947368424
+      }
+    },
+    {
+      "id": "elitch-gardens",
+      "name": "Elitch Gardens",
+      "best": {
+        "name": "Busch Gardens Tampa",
+        "score": 0.35526315789473684
+      }
+    },
+    {
+      "id": "noah-s-ark-waterpark",
+      "name": "Noah's Ark Waterpark",
+      "best": {
+        "name": "Superior Shores Waterpark",
+        "score": 0.39
+      }
+    },
+    {
+      "id": "mt-olympus-water-theme-park",
+      "name": "Mt. Olympus Water & Theme Park",
+      "best": {
+        "name": "Peppa Pig Theme Park",
+        "score": 0.36111111111111116
+      }
+    },
+    {
+      "id": "waldameer-water-world",
+      "name": "Waldameer & Water World",
+      "best": {
+        "name": "Fantawild Water World Ziyang",
+        "score": 0.375
+      }
+    },
+    {
+      "id": "adventureland",
+      "name": "Adventureland",
+      "best": {
+        "name": "Adventure Island Tampa",
+        "score": 0.4431818181818181
+      }
+    },
+    {
+      "id": "adventureland-usa",
+      "name": "Adventureland USA",
+      "best": {
+        "name": "Adventure Island Tampa",
+        "score": 0.5113636363636365
+      }
+    },
+    {
+      "id": "pacific-park",
+      "name": "Pacific Park",
+      "best": {
+        "name": "Paultons Park",
+        "score": 0.40384615384615385
+      }
+    },
+    {
+      "id": "luna-park-coney-island",
+      "name": "Luna Park Coney Island",
+      "best": {
+        "name": "Canada's Wonderland",
+        "score": 0.34090909090909094
+      }
+    },
+    {
+      "id": "fun-spot-america-kissimmee",
+      "name": "Fun Spot America Kissimmee",
+      "best": {
+        "name": "Fantawild Water Park Xiamen",
+        "score": 0.2777777777777778
+      }
+    },
+    {
+      "id": "fun-spot-america-atlanta",
+      "name": "Fun Spot America Atlanta",
+      "best": {
+        "name": "Mid-America Parks",
+        "score": 0.3125
+      }
+    },
+    {
+      "id": "lake-winnepesaukah",
+      "name": "Lake Winnepesaukah",
+      "best": {
+        "name": "Parque Warner Madrid",
+        "score": 0.26249999999999996
+      }
+    },
+    {
+      "id": "seabreeze-amusement-park",
+      "name": "Seabreeze Amusement Park",
+      "best": {
+        "name": "Knoebels Amusement Park",
+        "score": 0.5
+      }
+    },
+    {
+      "id": "rye-playland",
+      "name": "Rye Playland",
+      "best": {
+        "name": "Tokyo Disneyland",
+        "score": 0.328125
+      }
+    },
+    {
+      "id": "morey-s-piers",
+      "name": "Morey's Piers",
+      "best": {
+        "name": "Dollywood",
+        "score": 0.4166666666666667
+      }
+    },
+    {
+      "id": "glenwood-caverns-adventure-park",
+      "name": "Glenwood Caverns Adventure Park",
+      "best": {
+        "name": "Disney California Adventure Park",
+        "score": 0.4453125
+      }
+    },
+    {
+      "id": "wild-waves-theme-water-park",
+      "name": "Wild Waves Theme & Water Park",
+      "best": {
+        "name": "Six Flags White Water, Atlanta",
+        "score": 0.33620689655172414
+      }
+    },
+    {
+      "id": "silverwood-theme-park",
+      "name": "Silverwood Theme Park",
+      "best": {
+        "name": "Genting SkyWorlds Theme Park",
+        "score": 0.4017857142857143
+      }
+    },
+    {
+      "id": "cliff-s-amusement-park",
+      "name": "Cliff's Amusement Park",
+      "best": {
+        "name": "Knoebels Amusement Park",
+        "score": 0.5217391304347826
+      }
+    },
+    {
+      "id": "camden-park",
+      "name": "Camden Park",
+      "best": {
+        "name": "Heide Park",
+        "score": 0.4772727272727273
+      }
+    },
+    {
+      "id": "conneaut-lake-park",
+      "name": "Conneaut Lake Park",
+      "best": {
+        "name": "Disneyland Park",
+        "score": 0.375
+      }
+    },
+    {
+      "id": "joyland-amusement-park",
+      "name": "Joyland Amusement Park",
+      "best": {
+        "name": "Knoebels Amusement Park",
+        "score": 0.5217391304347826
+      }
+    },
+    {
+      "id": "story-land",
+      "name": "Story Land",
+      "best": {
+        "name": "SeaWorld Orlando",
+        "score": 0.375
+      }
+    },
+    {
+      "id": "santa-s-village",
+      "name": "Santa's Village",
+      "best": {
+        "name": "Phantasialand",
+        "score": 0.35
+      }
+    },
+    {
+      "id": "enchanted-forest",
+      "name": "Enchanted Forest",
+      "best": {
+        "name": "LEGOLAND® Korea",
+        "score": 0.328125
+      }
+    },
+    {
+      "id": "big-kahuna-s",
+      "name": "Big Kahuna's",
+      "best": {
+        "name": "Efteling",
+        "score": 0.28125
+      }
+    },
+    {
+      "id": "oaks-amusement-park",
+      "name": "Oaks Amusement Park",
+      "best": {
+        "name": "Knoebels Amusement Park",
+        "score": 0.5543478260869565
+      }
+    },
+    {
+      "id": "martin-s-fantasy-island",
+      "name": "Martin's Fantasy Island",
+      "best": {
+        "name": "Kings Island",
+        "score": 0.43749999999999994
+      }
+    },
+    {
+      "id": "palace-playland",
+      "name": "Palace Playland",
+      "best": {
+        "name": "Phantasialand",
+        "score": 0.35
+      }
+    },
+    {
+      "id": "nickelodeon-universe",
+      "name": "Nickelodeon Universe",
+      "best": {
+        "name": "Universal Epic Universe",
+        "score": 0.3913043478260869
+      }
+    }
+  ]
+}
