@@ -1,0 +1,5 @@
+{
+  "name": "parkbound",
+  "install": "npm ci",
+  "start": "node scripts/gitnexus-sync.mjs startup"
+}

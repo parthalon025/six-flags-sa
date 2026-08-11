@@ -1,0 +1,37 @@
+---
+description: Keep the committed GitNexus index fresh on agent start and before finishing work.
+alwaysApply: true
+---
+
+# GitNexus index — keep updated
+
+The `.gitnexus/` code-intelligence index is **committed** to the repo. Agents use the **CLI** (`node .gitnexus/run.cjs`), not MCP.
+
+## On start
+
+Cloud Agent `start` runs `node scripts/gitnexus-sync.mjs startup`, which re-analyzes when needed and drops GitNexus's inner `.gitignore` so the index stays tracked.
+
+If you are not on a Cloud Agent pod, run the same command once at the beginning of substantive work:
+
+```bash
+npm run gitnexus:startup
+```
+
+## Before finishing
+
+Before your **final commit and push** for a task, refresh and stage the index:
+
+```bash
+npm run gitnexus:sync
+```
+
+This runs `node scripts/gitnexus-sync.mjs finish`, which re-analyzes, removes the inner `.gitignore`, and stages `.gitnexus/`, `AGENTS.md`, and `CLAUDE.md`. **Include those staged files in your commit** so the next agent starts with a current graph.
+
+## Manual commands
+
+| Command | Purpose |
+|---------|---------|
+| `node .gitnexus/run.cjs status` | Check freshness |
+| `node .gitnexus/run.cjs analyze` | Rebuild index only |
+| `npm run gitnexus:startup` | Start-of-work sync |
+| `npm run gitnexus:sync` | End-of-work sync + stage |
