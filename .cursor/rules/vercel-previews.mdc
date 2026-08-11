@@ -1,0 +1,29 @@
+---
+description: Minimize Vercel preview deployments — verify locally unless deployed behavior is required.
+alwaysApply: true
+---
+
+# Vercel previews — don't spam builds
+
+Every pushed branch can trigger a Vercel preview. Treat that as a cost, not a
+default debugging step.
+
+## Do not push unless there is code to land
+
+- No branch or PR for read-only investigation, Q&A, or tasks with nothing to merge.
+- No WIP pushes just to "see it on Vercel" when `npm run build -w @party-tracker/app`
+  and local Playwright/manual checks suffice.
+
+## When a preview IS warranted
+
+Push/open a PR only when deployed behavior is genuinely required — PWA/service
+worker, Vercel routing or serverless runtime, production env vars, CDN headers, or
+a defect that does not reproduce on local `npm run build && npm start`. Say in the
+PR why a preview is needed.
+
+## Which commits build on Vercel
+
+**Do not restate this in agent docs** — `scripts/vercel-ignore.sh` (wired in
+`vercel.json`) decides whether a commit needs a Vercel build. Read that script if
+you need the path list. Avoid unnecessary branches anyway; the ignore step is not
+permission to spam pushes.
