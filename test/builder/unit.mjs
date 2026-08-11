@@ -3805,6 +3805,97 @@ await check('official compare flags site-only and bundle-only rides', () => {
   return true;
 });
 
+/* -------------------------------------------- top 100 US theme parks catalog */
+
+const {
+  loadCatalog,
+  withIds: catalogWithIds,
+  selectParks,
+} = await import('../../packages/venue-builder/lib/top-parks-catalog.mjs');
+
+await check('the top-100 US theme park catalog has 100 unique venues', () => {
+  const catalog = loadCatalog();
+  assert.equal(catalog.parks.length, 100);
+  const ids = catalogWithIds(catalog.parks).map((p) => p.id);
+  assert.equal(new Set(ids).size, 100);
+  for (const park of catalog.parks) {
+    assert.ok(park.rank >= 1 && park.rank <= 100, `${park.name}: rank out of range`);
+    assert.ok(park.place?.length > 10, `${park.name}: place query too short`);
+    assert.ok(park.locality?.includes(','), `${park.name}: locality should be "City, State"`);
+  }
+  return true;
+});
+
+await check('selectParks can filter by rank range and skip existing recipes', () => {
+  const catalog = loadCatalog();
+  const slice = selectParks(catalog.parks, { from: 14, to: 15, skipExisting: false });
+  assert.equal(slice.length, 2);
+  assert.equal(slice[0].id, 'cedar-point');
+  assert.equal(slice[1].id, 'kings-island');
+  const remaining = selectParks(catalog.parks, { skipExisting: true });
+  assert.ok(remaining.length < 100);
+  assert.ok(remaining.every((p) => !['cedar-point', 'kings-island', 'six-flags-fiesta-texas', 'big-kahunas'].includes(p.id)));
+  return true;
+});
+
+const { OFFICIAL_SITES, officialSiteForPark } = await import('../../packages/venue-builder/lib/park-official-urls.mjs');
+const { heightsSidecarFromOfficial } = await import('../../packages/venue-builder/lib/heights-from-official.mjs');
+
+await check('every catalog park has an official website URL for height research', () => {
+  const catalog = loadCatalog();
+  const parks = catalogWithIds(catalog.parks);
+  const missing = parks.filter((p) => !officialSiteForPark(p));
+  assert.equal(missing.length, 0, `missing official URLs: ${missing.map((p) => p.id).join(', ')}`);
+  assert.equal(Object.keys(OFFICIAL_SITES).length, 100);
+  return true;
+});
+
+await check('heightsSidecarFromOfficial pairs official listings to bundle rides', () => {
+  const official = JSON.parse(
+    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/big-kahunas.official-cache.json', import.meta.url)),
+  );
+  const pois = [
+    { n: 'Maui Pipeline', c: 'ride' },
+    { n: 'Bombay Blasters', c: 'ride' },
+    { n: 'Restrooms', c: 'restroom' },
+  ];
+  const { sidecar, matched } = heightsSidecarFromOfficial(
+    { id: 'big-kahunas', name: "Big Kahuna's" },
+    pois,
+    official,
+  );
+  assert.ok(matched >= 2);
+  assert.equal(sidecar.venue, 'big-kahunas');
+  assert.equal(sidecar.rules['Maui Pipeline'].h.min, 48);
+  assert.equal(sidecar.rules['Bombay Blasters'].h.min, 48);
+  return true;
+});
+
+const { runVenuePipeline, STAGES } = await import('../../packages/venue-builder/lib/build-pipeline.mjs');
+
+await check('unified build pipeline lists all seven stages', () => {
+  assert.deepEqual(STAGES, [
+    'sources', 'geometry', 'research', 'heights', 'rebuild', 'attractions', 'agent',
+  ]);
+  return true;
+});
+
+await check('unified build pipeline dry-run covers research and agent', async () => {
+  const result = await runVenuePipeline(
+    {
+      id: 'magic-kingdom',
+      rank: 1,
+      name: 'Magic Kingdom',
+      place: 'Magic Kingdom theme park, Florida',
+      locality: 'Lake Buena Vista, Florida',
+    },
+    { dryRun: true },
+  );
+  assert.equal(result.status, 'dry-run');
+  assert.equal(result.id, 'magic-kingdom');
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {
