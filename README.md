@@ -451,6 +451,7 @@ npx playwright install chromium     # once
 npm run test:unit                   # pure layers, no browser, seconds
 npm run build && npm start &
 npm test                            # unit, then the three-phone behavioural suite
+npm run test:validate-ui            # e2e functional + grandma (required for UI changes)
 npm run test:visual                 # screenshots to test/shots/
 npm run test:theme                  # daylight and night, via the real toggle
 npm run test:ux                     # glance rail with a live party
@@ -495,6 +496,9 @@ zero fails the run.
 
 All the suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser already on the
 machine instead of Playwright's own copy.
+
+For UI work, see [docs/ui-enhancement-validation.md](docs/ui-enhancement-validation.md) —
+`npm run test:validate-ui` runs the functional e2e suite and the grandma test together.
 
 ## Building a map of somewhere else
 
