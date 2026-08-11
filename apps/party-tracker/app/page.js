@@ -1418,8 +1418,12 @@ export default function Page() {
         return;
       }
       if (!position) {
-        setGateOpen(true);
-        showToast('Turn location on to get walking directions.');
+        if (geo.status === 'denied' || geo.status === 'unsupported' || geo.status === 'insecure') {
+          showToast('Tap the map to set your starting point first.');
+        } else {
+          setGateOpen(true);
+          showToast('Turn location on to get walking directions.');
+        }
         return;
       }
       arrived.current = null;
@@ -1603,7 +1607,13 @@ export default function Page() {
         setMeetPoint(lat, lng);
         return;
       }
-      if (geo.status === 'manual' || geo.status === 'idle') {
+      if (
+        geo.status === 'manual' ||
+        geo.status === 'idle' ||
+        geo.status === 'denied' ||
+        geo.status === 'unsupported' ||
+        geo.status === 'insecure'
+      ) {
         geo.setManual(lat, lng);
         return;
       }
