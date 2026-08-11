@@ -9,47 +9,46 @@
  * mount: a server component would be handed a URL with nothing after the `#`
  * and could only ever fail.
  *
- * It hands off rather than connecting here. A client-side navigation to `/`
- * unmounts this route, so a party opened on this page would have to be torn
- * down and rebuilt a moment later — two selection passes, two HELLOs and a
- * roster that flickers. Moving the invite into session storage and letting the
- * map page open it once is the same join with one connection.
+ * Name-before-join: ask what the family should call this phone, then hand the
+ * invite (+ name) to `/` via session storage so the map page joins once.
  */
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeInvite } from '@/lib/core/session';
 import { normalizeCode } from '@/lib/core/ids';
-import { PENDING_INVITE_KEY } from '@/lib/partyRuntime';
+import { stashPendingInvite } from '@/lib/partyRuntime';
 
 function JoinFlow() {
   const router = useRouter();
   const params = useSearchParams();
-  const [state, setState] = useState('reading'); // reading | joining | bad
+  const [state, setState] = useState('reading'); // reading | name | joining | bad
   const [code, setCode] = useState(null);
+  const [payload, setPayload] = useState(null);
+  const [name, setName] = useState('');
 
-  const handoff = useCallback(
-    (payload, partyCode) => {
-      try {
-        window.sessionStorage.setItem(PENDING_INVITE_KEY, payload);
-      } catch {
-        // Private mode with storage disabled: the map page can still be joined
-        // by hand, so say what to type rather than dead-ending here.
-        setState('bad');
-        return;
-      }
-      setCode(partyCode);
-      setState('joining');
-      router.replace('/');
-    },
-    [router],
-  );
+  const acceptInvite = useCallback((invitePayload, partyCode) => {
+    setPayload(invitePayload);
+    setCode(partyCode);
+    setState('name');
+  }, []);
+
+  const handoff = useCallback(() => {
+    if (!payload) return;
+    const clean = name.trim();
+    if (!stashPendingInvite(payload, clean)) {
+      setState('bad');
+      return;
+    }
+    setState('joining');
+    router.replace('/');
+  }, [payload, name, router]);
 
   useEffect(() => {
     const hash = typeof window === 'undefined' ? '' : window.location.hash;
     const invite = decodeInvite(hash);
     if (invite) {
-      handoff(hash, invite.code);
+      acceptInvite(hash, invite.code);
       return;
     }
     // A fragment survives a paste but not every link preview, chat client or
@@ -57,11 +56,11 @@ function JoinFlow() {
     // being self-contained, but it beats telling someone their link is broken.
     const fallback = normalizeCode(params.get('code') || '');
     if (fallback.length === 6) {
-      handoff(fallback, fallback);
+      acceptInvite(fallback, fallback);
       return;
     }
     setState('bad');
-  }, [handoff, params]);
+  }, [acceptInvite, params]);
 
   if (state === 'bad') {
     return (
@@ -80,15 +79,46 @@ function JoinFlow() {
     );
   }
 
+  if (state === 'name' && code) {
+    const named = Boolean(name.trim());
+    return (
+      <div className="gateCard">
+        <div className="gateEyebrow">Invite · {code}</div>
+        <h2>What should the family call you?</h2>
+        <p>This is the name beside your dot on everyone else&apos;s map.</p>
+        <input
+          className="field"
+          maxLength={14}
+          placeholder="Your name"
+          aria-label="Your name"
+          value={name}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handoff();
+          }}
+        />
+        <button type="button" className="btn primary" onClick={handoff}>
+          {named ? `Join party ${code}` : 'Join as Guest'}
+        </button>
+        <p className="gateFine">
+          {named
+            ? 'Next we open the map and put you in the party.'
+            : 'You can join as Guest, then rename under Me.'}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="gateCard">
       <div className="gateEyebrow">Invite</div>
       <h2>{state === 'joining' && code ? `Joining party ${code}` : 'Reading the invite'}</h2>
       <p>
-        Handing this over to the map. Your position is not sent anywhere until the party is
-        actually open.
+        {state === 'joining'
+          ? 'Handing this over to the map — you will land on Party so you can see the family.'
+          : 'Checking the invite link.'}
       </p>
-      <p className="gateFine">Nothing after the # ever reaches a server.</p>
     </div>
   );
 }
