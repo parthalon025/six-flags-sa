@@ -98,12 +98,14 @@ full feature and layout prose.
   have told it where the car is. Tap a card to fly to it. A card that appears at the head of
   the rail brings the rail back to the start, because a scroll-snap container that gains one
   otherwise keeps the card it was snapped to and lands the new one off the left edge, unseen.
-- **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Plan and Day sit in
-  a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
-  moves — and each tab keeps its own navigation stack, so leaving one and coming back
-  finds it where you left it. Tapping the tab you are already on unwinds it to its root.
-  Screens slide in from the side they came from. The map itself is the canvas underneath —
-  shut the sheet to live in it.
+- **Five tabs at the bottom, and a sheet you pull.** Explore, Party, Side Quests, Plan and
+  Me sit in a tab bar at the foot of the sheet, so the whole app is one thumb-reach away
+  and never moves — and each tab keeps its own navigation stack, so leaving one and coming
+  back finds it where you left it. Tapping the tab you are already on unwinds it to its
+  root. Screens slide in from the side they came from. The map itself is the canvas
+  underneath — shut the sheet to live in it. Opt-in **Walk history** (path log, ground-truth
+  pins, upload) is not a tab: it lives under **Me → Walk history**.
+
 - **The sheet stops where you let go of it, and shows what fits there.** The handle
   follows your finger and the sheet stays at whatever height you leave it at — not one of
   four the app picked. Only the ends of the travel are magnetic, so shut and full stay
@@ -146,7 +148,7 @@ full feature and layout prose.
   ground, dark type, deeper marker colours — meant to be readable on a phone in direct
   July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the moon button floating over the map, or on the Day tab.
+  with the moon button floating over the map, or under Me.
 - **What's open when the weather turns.** The park publishes no live feed this app can
   read, so it builds one from the two sources it actually has. Your party reports what it
   walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
@@ -166,7 +168,7 @@ full feature and layout prose.
 - **Switches maps on its own, to where the party is.** Once you are in a party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  under Day → Which park and it stops second-guessing you.
+  under Me → Which park and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
@@ -1172,15 +1174,16 @@ components/
   MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
   MapLegend.jsx               the on-map key, which is also the category filter
   GlanceRail.jsx              the live card rail in the collapsed sheet
-  TabBar.jsx                  the four bottom tabs, badges and all
+  TabBar.jsx                  Explore / Party / Side Quests / Plan / Me, badges and all
   useSheetDrag.js             the sheet under a finger: follow, then stay put
   PartyPanel.jsx              roster, QR, join, status, meet-up
+  SideQuestsPanel.jsx         on-the-ground missions for gaps open data cannot settle
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
   PlaceList.jsx               place search, live status and reporting
   HeightPanel.jsx             the rider-height filter and what it unlocks
-  SettingsPanel.jsx           name, appearance, which map, and the long tail
-  MovementHistoryPanel.jsx    opt-in walk log, history, upload / GeoJSON export
+  SettingsPanel.jsx           Me root: name, appearance, park, Walk history row, long tail
+  MovementHistoryPanel.jsx    Me → Walk history: opt-in log, upload / GeoJSON export
   WeatherBanner.jsx           the park-wide headline; renders nothing on a clear day
   useWeather.js               polls the forecast, caches it, survives losing signal
   useMovementLog.js           records in-park GPS into IndexedDB when opted in
