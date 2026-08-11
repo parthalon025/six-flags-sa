@@ -24,9 +24,10 @@
     {
       "id": "park-map-2026",
       "kind": "official_map",
+      "map_kind": "schematic",
       "url": "https://bigkahunas.com/destin/park-map/",
       "image": "docs/big-kahunas-2026-parkmap.webp",
-      "used_for": "Food, restroom, and river labels; disambiguation of lookalike pools and flumes when paired with orthophoto positions."
+      "used_for": "Food, restroom, and river labels; walking paths and ride entrances when georeferenced (illustrated / not-to-scale — use TPS)."
     },
     {
       "id": "park-site-2026",

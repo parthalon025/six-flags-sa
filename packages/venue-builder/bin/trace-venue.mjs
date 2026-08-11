@@ -56,21 +56,35 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { compare, crossValidate, fit, MODELS, project, residuals } from '../lib/georef.mjs';
+import {
+  resolveTraceGeorefOptions,
+  scaffoldOfficialMapTrace,
+  ensureTraceDatasetWired,
+  MAP_KINDS,
+} from '../lib/official-map.mjs';
 
 const USAGE = `
-Georeference a park's own map and pull features off it.
+Georeference a park's own map and pull features off it — including maps that are
+not to scale (illustrated / schematic handouts).
 
   node scripts/trace-venue.mjs <trace file> [options]
+  node scripts/trace-venue.mjs --scaffold <venue-id>
 
-  --model <m>        ${Object.keys(MODELS).join(' | ')} | auto   (default: auto)
-  --smoothing <n>    tps only: let the spline miss its controls, for when the
-                     controls themselves are only roughly surveyed (default: 0)
-  --max-error <m>    refuse to write a fit whose cross-validated error is worse
-                     than this, in metres (default: 10)
-  --anyway           write it regardless, with the error stamped on every feature
+  --model <m>        ${Object.keys(MODELS).join(' | ')} | auto
+                     (default: from map_kind — schematic→tps, else auto)
+  --smoothing <n>    tps only: allow the spline to miss controls (schematic default 0.25)
+  --max-error <m>    refuse to write when CV RMS exceeds this
+                     (defaults: to_scale 10 m, photo 12 m, schematic 25 m)
+  --map-kind <k>     ${MAP_KINDS.join(' | ')} — overrides trace.map_kind
+  --anyway           write regardless; error stamped on every feature
+  --wire             after a successful write, add datasets.trace to sources.json
   --out <file>       where to write (default: data/venues/<venue>.traced.geojson)
   --report           print the fit as markdown rather than a terminal summary
   --dry-run          fit and report, write nothing
+  --scaffold <id>    create data/venues/<id>.trace.json from official_map in sources.json
+
+Control points pin the picture to the ground. Features:
+  entrance | exit | place | route | path   (path is an alias for route / walking lines)
 `;
 
 /* ------------------------------------------------------------------ args - */
@@ -97,7 +111,7 @@ function parseArgs(argv) {
 
 /* ----------------------------------------------------------------- shapes - */
 
-const KINDS = new Set(['entrance', 'exit', 'place', 'route']);
+const KINDS = new Set(['entrance', 'exit', 'place', 'route', 'path']);
 
 /**
  * Check the trace file before any arithmetic happens to it.
@@ -111,11 +125,15 @@ function validate(trace) {
   if (!Array.isArray(trace.controls) || trace.controls.length < 2) {
     throw new Error('The trace file needs a "controls" list of at least two surveyed points.');
   }
-  const features = trace.features || [];
+  const features = (trace.features || []).map((f) => {
+    /* Walking paths: park maps call them paths; the build folds `route` into map.path. */
+    if (f.kind === 'path') return { ...f, kind: 'route' };
+    return f;
+  });
   features.forEach((f, i) => {
     const where = f.n || f.of || `feature #${i + 1}`;
-    if (!KINDS.has(f.kind)) {
-      throw new Error(`"${where}" has kind "${f.kind}" — one of: ${[...KINDS].join(', ')}.`);
+    if (!['entrance', 'exit', 'place', 'route'].includes(f.kind)) {
+      throw new Error(`"${where}" has kind "${f.kind}" — one of: entrance, exit, place, route, path.`);
     }
     if (f.kind === 'entrance' || f.kind === 'exit') {
       if (!f.of) throw new Error(`"${where}" is an ${f.kind} of nothing — give it "of": "<ride name>".`);
@@ -132,13 +150,15 @@ function validate(trace) {
 }
 
 /** The traced features as GeoJSON, each carrying where it came from and how well. */
-function toGeoJson(trace, fitted, features, accuracy) {
+function toGeoJson(trace, fitted, features, accuracy, policy) {
   const src = {
     by: 'trace',
     image: trace.image || null,
     source: trace.source || null,
+    map_kind: policy?.mapKind || trace.map_kind || null,
     model: fitted.model,
     controls: fitted.n,
+    smoothing: fitted.smoothing ?? 0,
     /* The number that decides whether a pin is worth having, carried by the pin
        rather than left in a terminal somebody has closed. A place two metres out
        and a place twenty metres out are different data and must not become the
@@ -166,14 +186,17 @@ function report(trace, fitted, accuracy, options, asMarkdown) {
   const lines = [];
   const say = (s = '') => lines.push(s);
   const m = (n) => (n == null ? '—' : `${n.toFixed(1)} m`);
+  const policy = options.policy;
 
   say(`### ${trace.venue} — georeferencing ${trace.image || 'the traced picture'}`);
   say();
   say(`* **${fitted.n}** control points, fitted as **${fitted.model}**`
+    + `${policy?.mapKind ? ` (${policy.mapKind} map)` : ''}`
     + `${trace.source ? ` — ${trace.source}` : ''}`);
+  if (policy?.note) say(`* Policy: ${policy.note}`);
   if (accuracy.possible) {
     say(`* **${m(accuracy.rms)}** RMS error at a point the fit has never seen, worst `
-      + `**${m(accuracy.max)}** (${accuracy.worst})`);
+      + `**${m(accuracy.max)}** (${accuracy.worst}); budget **${m(policy?.maxErrorM)}**`);
   } else {
     say(`* **accuracy unknown** — ${accuracy.why}`);
   }
@@ -219,9 +242,35 @@ function report(trace, fitted, accuracy, options, asMarkdown) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.help || args.h || (!args._[0] && !args.trace)) {
+  if (args.help || args.h) {
     console.log(USAGE);
-    if (!args._[0] && !args.trace && !args.help && !args.h) process.exitCode = 1;
+    return;
+  }
+
+  if (args.scaffold) {
+    const id = String(args.scaffold === true ? args._[0] : args.scaffold);
+    if (!id) {
+      console.log(USAGE);
+      process.exitCode = 1;
+      return;
+    }
+    const result = scaffoldOfficialMapTrace(id, { force: Boolean(args.force) });
+    console.error(
+      result.wrote
+        ? `Scaffolded ${result.file} (${result.map.mapKind} — ${result.map.policy.note})`
+        : `${result.file} already exists — pass --force to overwrite`,
+    );
+    console.error(
+      `Add ≥${result.map.policy.minControls} control points (px + lat/lng), then:\n`
+        + `  npm run venues:trace -- ${result.file}\n`
+        + `  npm run venues:rebuild -- ${id}`,
+    );
+    return;
+  }
+
+  if (!args._[0] && !args.trace) {
+    console.log(USAGE);
+    process.exitCode = 1;
     return;
   }
 
@@ -229,9 +278,27 @@ function main() {
   const trace = JSON.parse(readFileSync(file, 'utf8'));
   const features = validate(trace);
 
-  const model = args.model ? String(args.model) : trace.model || 'auto';
-  const smoothing = Number(args.smoothing ?? trace.smoothing ?? 0);
-  const maxError = Number(args['max-error'] ?? 10);
+  const policy = resolveTraceGeorefOptions(trace, {
+    model: args.model ? String(args.model) : undefined,
+    smoothing: args.smoothing != null ? Number(args.smoothing) : undefined,
+    maxErrorM: args['max-error'] != null ? Number(args['max-error']) : undefined,
+    mapKind: args['map-kind'] ? String(args['map-kind']) : undefined,
+  });
+
+  if (trace.controls.length < policy.minControls) {
+    console.error(
+      `Warning: ${policy.mapKind} maps want ≥${policy.minControls} controls; `
+        + `this file has ${trace.controls.length}. Spread to the corners.`,
+    );
+  }
+
+  const model = args.model ? String(args.model) : policy.preferredModel;
+  const smoothing = Number(
+    args.smoothing != null ? args.smoothing : policy.smoothing,
+  );
+  const maxError = Number(
+    args['max-error'] != null ? args['max-error'] : policy.maxErrorM,
+  );
 
   /* Every model the control count can carry, scored, before one is chosen.
      Which transform suits a picture is not a thing anybody can tell by looking
@@ -241,7 +308,7 @@ function main() {
 
   const fitted = fit(trace.controls, { model: chosen, smoothing });
   const accuracy = crossValidate(trace.controls, { model: chosen, smoothing });
-  report(trace, fitted, accuracy, { alternatives }, Boolean(args.report));
+  report(trace, fitted, accuracy, { alternatives, policy }, Boolean(args.report));
 
   if (!features.length) {
     console.error('No features traced — nothing to write. The fit above is still worth keeping.');
@@ -250,15 +317,16 @@ function main() {
 
   /* The gate. A pin that is confidently in the wrong place is worse than no pin:
      nobody checks a map that looks right, and "the toilets are over there" is
-     the one thing this app is asked at a run. */
+     the one thing this app is asked at a run. Schematic maps get a wider budget
+     but still refuse when CV says the warp does not generalise. */
   if (accuracy.possible && accuracy.rms > maxError && !args.anyway) {
     throw new Error(
       `${accuracy.rms.toFixed(1)} m of error is worse than the ${maxError} m this is allowed to `
-        + 'write, so nothing was written.\n'
+        + `write (${policy.mapKind} budget), so nothing was written.\n`
         + '  · Look at the worst control above — one bad pixel or one coordinate off a neighbouring '
         + 'building costs more than any model choice.\n'
         + '  · Add control points, spread to the corners. An illustrated map needs more than a scan.\n'
-        + '  · Try --model tps, which stops assuming the drawing is flat.\n'
+        + '  · Try --model tps (default for schematic), which stops assuming the drawing is flat.\n'
         + '  · Raise --max-error if this venue genuinely does not need the precision, or pass '
         + '--anyway to write it with the error stamped on every feature.',
     );
@@ -272,7 +340,7 @@ function main() {
   const out = args.out
     ? String(args.out)
     : path.join('data', 'venues', `${trace.venue}.traced.geojson`);
-  const gj = toGeoJson(trace, fitted, features, accuracy);
+  const gj = toGeoJson(trace, fitted, features, accuracy, policy);
 
   if (args['dry-run']) {
     console.error(`\nDry run — ${gj.features.length} feature(s) would go to ${out}.`);
@@ -285,7 +353,11 @@ function main() {
   console.error(
     `\nWrote ${out} — ${Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(', ')}.`,
   );
-  console.error(`Fold it into the venue: npm run venues:build -- --rebuild ${trace.venue} --trace ${out}`);
+  if (args.wire) {
+    const wired = ensureTraceDatasetWired(trace.venue);
+    if (wired.wired) console.error(`Wired ${wired.file} into sources.json datasets.trace.`);
+  }
+  console.error(`Fold it into the venue: npm run venues:rebuild -- ${trace.venue}`);
 }
 
 const runDirectly = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;

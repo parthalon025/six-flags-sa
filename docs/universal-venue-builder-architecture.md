@@ -29,6 +29,14 @@ pairing from the official-site cache (heights/aliases/inventory gaps). With `--a
 quoted from official text. LLM output is never coordinates and never auto-writes
 heights; weight `llm_extract` alone cannot clear the publish floor.
 
+**Official park maps (including not-to-scale):** Catalogue `kind: "official_map"` with
+`map_kind` (`schematic` | `photo` | `to_scale`) and optional `image`. Scaffold a pixel
+trace with `npm run venues:trace -- --scaffold <id>`, pin control points to OSM corners,
+digitize `entrance` / `exit` / `place` / `path` features, then run
+`npm run venues:trace -- data/venues/<id>.trace.json --wire`. Schematic maps default to
+TPS + 25 m CV budget; every feature carries `error_m`. Rebuild folds routes into the
+walk network and entrances into POIs via `applyTrace`.
+
 ## Adapter contract
 
 ```mermaid

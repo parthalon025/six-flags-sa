@@ -46,9 +46,11 @@ export const CAPABILITIES = [
   {
     id: 'trace',
     weakness: 'missing-poi',
-    tool: 'npm run venues:trace -- data/venues/<id>.trace.json',
-    file: 'data/venues/<id>.traced.geojson',
-    note: 'Georeferenced park map; refuses fits worse than 10 m RMS.',
+    tool: 'npm run venues:trace -- --scaffold <id>  →  fill controls  →  npm run venues:trace -- data/venues/<id>.trace.json --wire',
+    file: 'data/venues/<id>.trace.json → <id>.traced.geojson',
+    note:
+      'Georeference official park maps (including not-to-scale / schematic) with TPS; '
+      + 'entrances, exits, places, and walking paths fold into the rebuild with ±error_m provenance.',
   },
   {
     id: 'attractions',
@@ -175,8 +177,12 @@ export function scaffoldSourcesCatalogue(id, venue = {}) {
     sources.push({
       id: `${id}-map`,
       kind: 'official_map',
+      map_kind: 'schematic',
       url: known.map,
-      used_for: 'Food, restroom, and ride labels; trace control points when georeferenced.',
+      used_for:
+        'Food, restroom, and ride labels; walking paths and queue entrances when georeferenced '
+        + '(illustrated / not-to-scale handouts use TPS — npm run venues:trace -- --scaffold '
+        + `${id}).`,
     });
   }
   return {

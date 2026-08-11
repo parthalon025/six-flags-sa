@@ -98,7 +98,9 @@ const WHY = {
     `where "${e.n || 'the queue'}" begins — a named queue tagged one-way towards the ride`,
   [SRC_BY.TRACED]: (e) => {
     const err = e.src?.error_m;
-    return `traced off ${e.src?.image || "the park's own map"}${err != null ? ` at \u00b1${err} m` : ''}`;
+    const kind = e.src?.map_kind;
+    const kindNote = kind === 'schematic' ? ' (schematic map)' : kind === 'photo' ? ' (photo of map)' : '';
+    return `traced off ${e.src?.image || "the park's own map"}${kindNote}${err != null ? ` at \u00b1${err} m` : ''}`;
   },
 };
 

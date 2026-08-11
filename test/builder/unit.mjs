@@ -6170,6 +6170,78 @@ await check('llm_extract weight exists and cannot publish alone', async () => {
   return true;
 });
 
+await check('schematic official maps get TPS policy and wider error budget', async () => {
+  const {
+    georefPolicyFor,
+    normalizeMapKind,
+    officialMapsFromCatalog,
+    resolveTraceGeorefOptions,
+  } = await import('../../packages/venue-builder/lib/official-map.mjs');
+  assert.equal(normalizeMapKind('not-to-scale'), 'schematic');
+  const schematic = georefPolicyFor('schematic');
+  assert.equal(schematic.preferredModel, 'tps');
+  assert.equal(schematic.maxErrorM, 25);
+  assert.ok(schematic.minControls >= 8);
+  const tight = georefPolicyFor('to_scale');
+  assert.equal(tight.maxErrorM, 10);
+  const maps = officialMapsFromCatalog({
+    sources: [
+      {
+        kind: 'official_map',
+        id: 'park-map',
+        map_kind: 'schematic',
+        image: 'docs/map.webp',
+        url: 'https://example.test/map',
+      },
+    ],
+  });
+  assert.equal(maps.length, 1);
+  assert.equal(maps[0].mapKind, 'schematic');
+  const policy = resolveTraceGeorefOptions(
+    { map_kind: 'schematic', image: 'docs/map.webp' },
+    {},
+  );
+  assert.equal(policy.preferredModel, 'tps');
+  assert.equal(policy.maxErrorM, 25);
+  const overridden = resolveTraceGeorefOptions(
+    { map_kind: 'schematic' },
+    { maxErrorM: 40, model: 'affine' },
+  );
+  assert.equal(overridden.maxErrorM, 40);
+  assert.equal(overridden.preferredModel, 'affine');
+  return true;
+});
+
+await check('trace validate accepts path as walking-route alias', async () => {
+  const { validate } = await import('../../packages/venue-builder/bin/trace-venue.mjs');
+  const features = validate({
+    venue: 'demo',
+    controls: [
+      { px: [0, 0], lat: 30, lng: -86 },
+      { px: [10, 10], lat: 30.01, lng: -86.01 },
+    ],
+    features: [
+      { kind: 'path', n: 'Boardwalk', px: [[1, 1], [2, 2], [3, 3]] },
+      { kind: 'entrance', of: 'Wave Pool', px: [4, 4] },
+    ],
+  });
+  assert.equal(features[0].kind, 'route');
+  assert.equal(features[1].kind, 'entrance');
+  return true;
+});
+
+await check('big-kahunas catalogue declares schematic official map with image', async () => {
+  const { readSources } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const { officialMapsFromCatalog } = await import('../../packages/venue-builder/lib/official-map.mjs');
+  const { data } = readSources('big-kahunas');
+  const maps = officialMapsFromCatalog(data);
+  assert.ok(maps.length >= 1);
+  assert.equal(maps[0].mapKind, 'schematic');
+  assert.ok(maps[0].image);
+  assert.equal(maps[0].policy.preferredModel, 'tps');
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
 
 
