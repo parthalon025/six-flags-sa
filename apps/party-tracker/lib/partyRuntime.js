@@ -57,8 +57,9 @@ import {
   createSession,
   decodeInvite,
   encodeInvite,
+  isLiveSession,
   loadSession,
-  saveSession,
+  persistLiveSession,
 } from '@/lib/core/session';
 import { adoptSnapshot, coarsenLocation } from '@/lib/core/state';
 
@@ -154,6 +155,12 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   /** Whichever half of the protocol is live. Migration swaps this atomically. */
   const service = () => host || client || null;
   const partyState = () => service()?.getState?.() ?? null;
+
+  function persistSession() {
+    if (!session) return;
+    session.live = true;
+    persistLiveSession(session);
+  }
 
   /* ------------------------------------------------------------ snapshot -- */
 
@@ -677,7 +684,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       }
       host.applyLocal({ kind: 'set-leader', body: { leader: session.selfId } });
     }
-    saveSession(session);
+    persistSession();
   }
 
   /* ------------------------------------------------------------- client --- */
@@ -690,7 +697,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       // session the next time it opens, and the diagnostics panel shows it.
       if (state?.leader && state.leader !== session.hostId) {
         session.hostId = state.leader;
-        saveSession(session);
+        persistSession();
       }
       emit();
     });
@@ -705,7 +712,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       promote(snapshot, { score, joinOrder }),
     );
     client.start();
-    saveSession(session);
+    persistSession();
   }
 
   /* ---------------------------------------------------------- migration --- */
@@ -839,6 +846,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     else startClient();
     phase = 'live';
     error = null;
+    persistSession();
     emit();
     return getSnapshot();
   }
@@ -1000,7 +1008,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     const clean = String(name || '').trim().slice(0, 24) || 'Guest';
     if (session) {
       session.memberName = clean;
-      saveSession(session);
+      persistSession();
       submit(PATCH_MEMBER, { patch: { name: clean } });
     }
     return clean;
@@ -1055,21 +1063,12 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     await teardown();
   }
 
-  /**
-   * Stop the mailbox poll loop and timers without leaving the party.
-   *
-   * The saved session stays on disk so a later `resume()` can pick up where
-   * this phone left off. Used when the visitor is not on the Party screen and
-   * the relay does not need to be kept warm.
-   */
-  async function suspend() {
-    if (destroyed || (!session && !service())) return getSnapshot();
-    await teardown({ announce: false });
-    emit();
-    return getSnapshot();
+  /** True when local storage holds an active party that should reopen on load. */
+  function hasLiveParty() {
+    return isLiveSession(loadSession());
   }
 
-  /** True when local storage still holds enough to `resume()`. */
+  /** True when a dormant session could be resumed from the Party screen. */
   function hasSavedParty() {
     const saved = loadSession();
     return Boolean(saved?.partyId && saved?.keyString);
@@ -1079,7 +1078,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     createParty,
     joinParty,
     resume,
-    suspend,
+    hasLiveParty,
     hasSavedParty,
     leave,
     allowJoins,

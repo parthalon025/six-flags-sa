@@ -741,10 +741,14 @@ export default function Page() {
             );
           })
           .catch((err) => showToast(err?.message || 'Could not open that invite.'));
+        return;
       }
-      // No auto-resume here: the mailbox poll loop only starts when the visitor
-      // opens Party or explicitly creates/joins, which keeps idle map browsing
-      // from hitting the relay on every page load.
+      if (rt.hasLiveParty?.()) {
+        const memberName = identityRef.current?.name || 'Guest';
+        Promise.resolve(rt.resume({ memberName })).catch((err) =>
+          showToast(err?.message || 'Could not reopen the party.'),
+        );
+      }
     })();
     return () => {
       destroyed = true;
@@ -754,31 +758,22 @@ export default function Page() {
     };
   }, [showToast, selectTab]);
 
-  /* Resume when Party is opened; suspend when the visitor leaves it. The poll
-     loop and heartbeats are what cost relay invocations, so they track whether
-     this screen is in use rather than whether a session exists on disk. */
-  const partyTabUsed = useRef(false);
+  /* Reopen a saved but dormant session when Party is opened. Live sessions
+     resume on mount above and keep syncing on every tab. */
   const resumeInFlight = useRef(false);
 
   useEffect(() => {
-    if (tab === 'party') {
-      partyTabUsed.current = true;
-      if (!runtimeApi || party?.active || party?.phase === 'connecting') return undefined;
-      if (!runtime.current?.hasSavedParty?.()) return undefined;
-      if (resumeInFlight.current) return undefined;
-      resumeInFlight.current = true;
-      const memberName = identityRef.current?.name || 'Guest';
-      Promise.resolve(runtime.current.resume({ memberName }))
-        .catch((err) => showToast(err?.message || 'Could not reopen the party.'))
-        .finally(() => {
-          resumeInFlight.current = false;
-        });
-      return undefined;
-    }
-    if (!partyTabUsed.current || !party?.active || party?.phase === 'connecting') {
-      return undefined;
-    }
-    Promise.resolve(runtime.current?.suspend?.()).catch(() => {});
+    if (tab !== 'party') return undefined;
+    if (!runtimeApi || party?.active || party?.phase === 'connecting') return undefined;
+    if (!runtime.current?.hasSavedParty?.()) return undefined;
+    if (resumeInFlight.current) return undefined;
+    resumeInFlight.current = true;
+    const memberName = identityRef.current?.name || 'Guest';
+    Promise.resolve(runtime.current.resume({ memberName }))
+      .catch((err) => showToast(err?.message || 'Could not reopen the party.'))
+      .finally(() => {
+        resumeInFlight.current = false;
+      });
     return undefined;
   }, [tab, runtimeApi, party?.active, party?.phase, showToast]);
 
