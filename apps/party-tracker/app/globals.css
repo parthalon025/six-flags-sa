@@ -571,7 +571,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    an empty left edge for the scale bar and the toast. At the full stop the
    sheet has taken the screen, so the pad gets out of the way. */
 .zoomPad {
-  position: absolute; right: 12px; bottom: calc(var(--sheetFoot) + 142px); z-index: 5;
+  /* Sit clear of the three-FAB column (3×48 + 2×10 gap + 16 bottom offset + 8
+     breathing room). 142 assumed two FABs and buried zoom-out under Park. */
+  position: absolute; right: 12px; bottom: calc(var(--sheetFoot) + 188px); z-index: 5;
   display: flex; flex-direction: column;
   border-radius: var(--r5); overflow: hidden;
   background: var(--glassTint); border: none;
@@ -586,6 +588,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .app[data-crowded] .zoomPad,
 .app[data-crowded] .fabs {
   opacity: 0; transform: translateY(10px); pointer-events: none;
+}
+/* Route preview replaces the sheet; keep the right-hand column and the key
+   from sitting on Start walking / the profile chips. */
+.app[data-nav='preview'] .zoomPad,
+.app[data-nav='preview'] .fabs,
+.app[data-nav='preview'] .mapFurniture {
+  display: none;
 }
 .zoomBtn {
   width: 44px; height: 44px; display: grid; place-items: center;
@@ -628,6 +637,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 @media (min-width: 720px) {
   .topbarBrand { display: flex; }
   .topbar { justify-content: space-between; }
+  /* Weather chip owns the same top-left corner on wide layouts — slide the
+     lockup clear rather than stacking two glass pills on top of each other.
+     :has() because the chip is a sibling *after* the topbar in the DOM. */
+  .app:has(.wxChip) .topbarBrand { margin-left: 92px; }
 }
 .brand {
   flex: none; display: flex; flex-direction: column; gap: 2px;
@@ -1552,15 +1565,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .glanceRail::-webkit-scrollbar { display: none; }
 .glanceCard {
-  /* 180, not 158. Two things did not fit at the old width. The standing cards'
-     labels: "Nearest toilet" arrived as "Nearest re…", which to the person that
-     card exists for is indistinguishable from a restaurant. And the range beside
-     the walking time, which truncated — measured, the row is 111px of which the
-     time takes 77 and the range needs 35, so it lost its last character and
-     "195 ft" became "19…". A number that has been shortened is not a shorter
-     number, it is a wrong one. The rail scrolls sideways, so the extra width
-     costs nothing in the collapsed sheet's measured budget. */
-  flex: none; width: 180px; scroll-snap-align: start; text-align: left;
+  /* 200, not 180. Room for the walk time and a full short range ("800 ft")
+     beside the actions column — at 180 the range truncated to "80…", which
+     is a wrong number rather than a shorter one. The rail scrolls sideways. */
+  flex: none; width: 200px; scroll-snap-align: start; text-align: left;
   background: var(--glassTint);
   border: none;
   border-radius: var(--r3); padding: 10px 8px 10px 13px;
@@ -1621,10 +1629,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   grid-column: 2; grid-row: 1;
   display: flex; flex-direction: column; justify-content: space-between;
   align-items: center; width: 44px; flex: none; padding-left: 2px;
+  overflow: hidden;
 }
 .glanceShed {
   position: relative;
   display: grid; place-items: center;
+  width: 28px; height: 28px;
   color: var(--label3); opacity: .85;
 }
 .glanceShed::before { content: ''; position: absolute; inset: -12px; }
@@ -1687,6 +1697,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   box-shadow: var(--shadow1);
   animation: badgeIn var(--t2) var(--easeOut) both;
   transition: opacity var(--t1) var(--easeOut);
+}
+/* Open map key owns the left column — park the height badge.
+   animation:none is required: badgeIn uses fill-mode both, which otherwise
+   keeps opacity/transform at the end keyframe and ignores these rules. */
+.app:has(.mapKey.open) .filterBadge {
+  animation: none;
+  opacity: 0; pointer-events: none; transform: translateY(-6px);
 }
 .filterBadge:active { opacity: .6; }
 .filterBadge b { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -1772,9 +1789,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   box-shadow: 0 0 0 2px var(--glassTintDeep);
 }
 
-/* Step two: the card it opens into, where the banner used to live. */
+/* Step two: the card it opens into, where the banner used to live.
+   Right inset clears the theme/compass column and the zoom pad — on a short
+   phone at peek the pad climbs into this band, and a full-bleed card put the
+   ✕ on top of zoom-in. */
 .wxCard {
-  position: absolute; z-index: 39; left: 10px; right: 10px; top: calc(var(--top) + 58px);
+  position: absolute; z-index: 39; left: 10px; right: 68px; top: calc(var(--top) + 58px);
   display: flex; align-items: flex-start; gap: 8px;
   padding: 10px 8px 10px 14px; border-radius: var(--r4); border: none;
   background: var(--glassTintDeep);
@@ -1788,7 +1808,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .wxCardMain:active { opacity: .6; }
 .wxClose {
-  flex: none; width: 34px; height: 34px; margin: -4px -2px 0 0;
+  flex: none; position: relative; width: 44px; height: 44px; margin: -8px -6px 0 0;
   display: grid; place-items: center;
   background: none; border: none; color: var(--label3);
 }
@@ -1807,10 +1827,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 p.wxWhy { margin: 0 0 8px; }
 p.wxWhy.bad { color: color-mix(in srgb, var(--red) 78%, var(--label)); }
 p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
-/* The height badge shares this corner. It steps below whichever of the two is
-   there — under the chip normally, under the open card when it is open. */
+/* The height badge shares this corner. Under the chip normally; parked while
+   the open card is up (card height grows when the line wraps on a narrow phone). */
 .wxChip ~ .filterBadge { top: calc(var(--top) + 66px); }
-.wxCard ~ .filterBadge { top: calc(var(--top) + 128px); }
+.app:has(.wxCard) .filterBadge {
+  animation: none;
+  opacity: 0; pointer-events: none; transform: translateY(-6px);
+}
 
 /* A forecast is a guess and is drawn as one — outlined, not filled, so a row
    never reads with the same weight as something a person actually saw. */
@@ -2198,11 +2221,15 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 /* ---- the choice you make before setting off ---- */
 .routePreview {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: 46;
-  background: var(--glassTintDeep);
+  /* Opaque enough that a stowed sheet / tab bar cannot ghost through the glass. */
+  background: color-mix(in srgb, var(--bg2) 92%, transparent);
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
   border-top: none;
   border-radius: var(--r4) var(--r4) 0 0; padding: 16px 16px calc(16px + var(--bot));
   box-shadow: var(--lensEdge), var(--shadow3);
+  max-height: min(58vh, 520px);
+  overflow-x: hidden; overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .previewHead { display: flex; align-items: center; gap: 14px; }
 .previewMain { flex: 1; min-width: 0; }
@@ -2244,7 +2271,12 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   display: block; font-size: 12px; color: var(--label2); margin-top: 3px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.previewFoot { display: flex; gap: 20px; margin-top: 14px; }
+.previewFoot {
+  display: flex; gap: 20px; margin-top: 14px;
+  position: sticky; bottom: 0;
+  padding: 10px 0 2px;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--bg2) 92%, transparent) 28%);
+}
 .previewLink {
   font-size: 15px; font-weight: 400; letter-spacing: -.24px; text-transform: none;
   color: var(--blue); text-decoration: none;
@@ -2253,7 +2285,10 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .previewLink:active { opacity: .5; }
 
 /* The sheet steps aside for the HUD, and the FABs ride above whichever is up. */
-.sheet.stowed { height: 0; border-top: none; box-shadow: none; overflow: hidden; }
+.sheet.stowed {
+  height: 0; border-top: none; box-shadow: none; overflow: hidden;
+  visibility: hidden; pointer-events: none;
+}
 .fabs.go { bottom: calc(96px + var(--bot)); }
 .fabs.preview { bottom: calc(214px + var(--bot)); }
 .fab.resume { background: var(--blue); color: var(--onTint); border-color: transparent; }
@@ -2332,7 +2367,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 }
 
 .mapFurniture {
-  position: absolute; left: 12px; bottom: calc(var(--sheetFoot) + 22px); z-index: 6;
+  position: absolute; left: 12px; bottom: calc(var(--sheetFoot) + 30px); z-index: 6;
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
   pointer-events: none; max-width: min(300px, calc(100% - 24px));
   transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
@@ -2364,7 +2399,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 
 .mapKey { pointer-events: auto; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .mapKeyToggle {
-  display: flex; align-items: center; gap: 7px; min-height: 34px;
+  display: flex; align-items: center; gap: 7px; min-height: 44px;
   padding: 6px 14px 6px 10px; border-radius: var(--rCapsule);
   color: var(--blue); background: var(--glassTint); border: none;
   -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
@@ -2375,12 +2410,25 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 }
 .mapKeyToggle:active { transform: scale(.93); background: var(--glassTintDeep); }
 .mapKey.open .mapKeyToggle { background: var(--blue); color: var(--onTint); }
+/* Furniture is bottom-anchored, so a tall open key grows upward. Keep the
+   toggle where "Key" was (beside the scale) and let the list climb above it —
+   otherwise "Hide key" lands on the weather chip. */
+.mapKey.open {
+  flex-direction: column-reverse;
+  overflow: hidden;
+  max-height: calc(100dvh - var(--sheetFoot) - var(--top) - 118px);
+}
+.mapKey.open ~ .mapMeta {
+  opacity: 0; transform: translateY(6px); pointer-events: none;
+}
 .mapKeyBody {
   width: 268px; padding: 12px 12px 10px; border-radius: var(--r4);
   background: var(--glassTintDeep); border: none;
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
   box-shadow: var(--lensEdge), var(--lensDrop);
-  max-height: min(52vh, 420px); overflow-y: auto;
+  /* Clear weather + height badge up top and the sheet below. */
+  max-height: min(34vh, calc(100dvh - var(--sheetFoot) - var(--top) - 196px));
+  overflow-y: auto;
   /* .mapWrap turns touch gestures off so a drag pans the map; the key is a
      list on top of it and still has to scroll. */
   touch-action: pan-y;
