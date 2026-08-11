@@ -20,6 +20,7 @@ import { renderBrief, briefJson } from '../lib/venue-requests.mjs';
 import { llmConfig, reviewResearch } from '../lib/venue-llm.mjs';
 import { loadVenuePacket } from '../lib/venue-packet.mjs';
 import { officialUrls } from '../lib/venue-official-site.mjs';
+import { syncExternalSources, EXTERNAL_ADAPTER_IDS } from '../lib/external-research.mjs';
 
 const USAGE = `
 Research assistant for venue builds — judgement, sourcing, optional AI review.
@@ -33,6 +34,7 @@ Research assistant for venue builds — judgement, sourcing, optional AI review.
   --browser     use Playwright when fetch returns empty HTML (SPA park sites)
   --fetch-details  also fetch each attraction page for height prose (slower)
   --parks-api   fetch ThemeParks.wiki inventory (cached to data/venues/<id>.parks-api-cache.json)
+  --sync-sources  fetch all open-source external adapters (see npm run venues:sync-sources -- --list)
   --offline     use only the on-disk official cache; do not hit the network
   --no-brief    skip the venues:ask brief; only judgements and sourcing
 `;
@@ -49,6 +51,7 @@ function parseArgs(argv) {
     offline: false,
     browser: false,
     parksApi: false,
+    syncSources: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -60,6 +63,7 @@ function parseArgs(argv) {
     else if (a === '--offline') out.offline = true;
     else if (a === '--browser') out.browser = true;
     else if (a === '--parks-api') out.parksApi = true;
+    else if (a === '--sync-sources') out.syncSources = true;
     else if (a === '--no-brief') out.brief = false;
     else if (!a.startsWith('--')) out._.push(a);
     else throw new Error(`Unknown flag: ${a}`);
@@ -215,6 +219,37 @@ function renderParksApi(parksApi, parksApiRaw) {
   return lines.join('\n');
 }
 
+function renderExternal(external) {
+  const lines = ['## Open-source external research', ''];
+  if (!external) {
+    lines.push('No external caches loaded.', '');
+    return lines.join('\n');
+  }
+  const rows = [
+    ['ThemeParks.wiki', external.parksApiRaw?.attractions?.length, external.parksApi?.matched],
+    ['Queue-Times', external.queueTimesRaw?.rides?.length, external.queueTimes?.matched],
+    ['RCDB', external.rcdbRaw?.coasters?.length, external.rcdb?.matched],
+    ['Wikidata', external.wikidataRaw?.entity?.label, null],
+    ['Open-Meteo', external.openMeteoRaw?.hourly ? 'forecast' : null, null],
+    ['OHM', external.ohmRaw?.features?.length, null],
+    ['Mapillary', external.mapillaryRaw?.images?.length, null],
+    ['Accessibility Cloud', external.accessibilityRaw?.places?.length, null],
+    ['Project Sidewalk', external.sidewalkRaw?.labels?.length, null],
+  ];
+  lines.push('| Source | Records | Matched bundle |');
+  lines.push('| --- | --- | --- |');
+  for (const [name, records, matched] of rows) {
+    const rec = records ?? (external[`${name}Raw`]?.error ? '—' : '0');
+    const mat = matched != null ? String(matched) : '—';
+    lines.push(`| ${name} | ${rec} | ${mat} |`);
+  }
+  if (external.claims?.length) {
+    lines.push('', `**Evidence claims from external caches:** ${external.claims.length}`, '');
+  }
+  lines.push('', `Sync live: \`npm run venues:sync-sources -- <id> --fetch\`. Adapters: ${EXTERNAL_ADAPTER_IDS.join(', ')}.`, '');
+  return lines.join('\n');
+}
+
 function renderMarkdown(packet, aiText = null) {
   const { venue, requests: reqs } = packet;
   const parts = [
@@ -230,6 +265,7 @@ function renderMarkdown(packet, aiText = null) {
     '',
     renderOfficial(packet.official, packet.catalog),
     renderParksApi(packet.parksApi, packet.parksApiRaw),
+    renderExternal(packet.external),
     renderJudgements(packet.judgements),
     renderSourcing(packet.sourcing),
   ];
@@ -259,6 +295,7 @@ function packetJson(packet, aiText = null) {
       parkId: packet.parksApiRaw?.parkId || null,
       error: packet.parksApiRaw?.error || null,
     },
+    external: packet.external,
     judgements: judge,
     sourcing,
     brief: briefJson(venue, reqs),
@@ -280,6 +317,9 @@ async function main() {
 
   const packets = [];
   for (const id of ids) {
+    if (args.syncSources) {
+      await syncExternalSources(id, { fetch: !args.offline });
+    }
     packets.push(await loadVenue(id, {
       fetch: args.fetch,
       offline: args.offline,

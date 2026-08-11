@@ -107,7 +107,7 @@ export async function run(ctx = {}) {
   const id = ctx.venueId;
   if (!id) return { adapterId: 'parks-api', ok: false, error: 'venueId_required' };
   try {
-    const data = await loadParksApiData(id, { fetch: true });
+    const data = await loadParksApiData(id, { fetch: ctx.fetch ?? true, offline: ctx.offline });
     return {
       adapterId: 'parks-api',
       ok: true,

@@ -3,23 +3,23 @@
 import { useState } from 'react';
 import BrandLockup from '@/components/BrandLockup';
 import { BRAND } from '@/lib/brand';
-import { allReleaseNotes } from '@/lib/releaseNotes';
+import { pendingReleaseNotes } from '@/lib/releaseNotes';
 import { APP_VERSION } from '@/lib/version';
 
 /**
- * First-run intro splash — brand, slogan, one-line pitch, and a tappable version.
- * GPS and park intake live on the next screen (GpsGate).
+ * First-run logo splash — brand, slogan, one-line pitch, and a tappable version.
+ * Release notes are opt-in from the version control; GPS intake is on the next screen.
  */
 export default function IntroSplash({ version = APP_VERSION, onContinue }) {
   const [showNotes, setShowNotes] = useState(false);
-  const notes = allReleaseNotes(version);
+  const notes = pendingReleaseNotes(version);
 
   if (showNotes) {
     return (
       <div className="gate" role="dialog" aria-labelledby="intro-notes-title">
         <div className="gateCard">
           <div className="gateEyebrow">{BRAND.nameUpper}</div>
-          <h2 id="intro-notes-title">Updates</h2>
+          <h2 id="intro-notes-title">What&apos;s new</h2>
           {notes.length > 0 ? (
             notes.map((block) => (
               <section key={block.version} className="updateNotesBlock">

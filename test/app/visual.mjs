@@ -74,8 +74,8 @@ async function main() {
   console.log(`\nvisual inspection against ${BASE}\n`);
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await dismissUpdateSplash(page);
   await dismissIntroSplash(page);
+  await dismissUpdateSplash(page);
   await page.waitForSelector('.gate', { timeout: 10000 });
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();

@@ -176,6 +176,19 @@ function pathFromLatLngs(points, to) {
   return d;
 }
 
+/** World-coordinate path from a route's [lat, lng] points. Drawn once in
+ *  mercator metres, then transformed by viewTransform like venue geometry.
+ *  Use vector-effect="non-scaling-stroke" to maintain stroke width. */
+function worldPathFromLatLngs(points) {
+  if (!Array.isArray(points) || points.length < 2) return '';
+  let d = '';
+  for (let i = 0; i < points.length; i += 1) {
+    const [x, y] = project(points[i][0], points[i][1]);
+    d += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
+  }
+  return d;
+}
+
 function ParkMap({
   data,
   center,
@@ -758,6 +771,22 @@ function ParkMap({
 
   const mapLayers = drawWorld || world;
 
+  /* Route paths in world coordinates — drawn once per route change, then
+     transformed by viewTransform like venue geometry. Uses non-scaling-stroke
+     so stroke widths stay constant across zoom levels. */
+  const worldRouteAhead = useMemo(
+    () => worldPathFromLatLngs(routeAhead?.length > 1 ? routeAhead : route?.points),
+    [routeAhead, route?.points],
+  );
+  const worldRouteDone = useMemo(
+    () => (routeDone?.length > 1 ? worldPathFromLatLngs(routeDone) : ''),
+    [routeDone],
+  );
+  const worldAlternatives = useMemo(
+    () => (alternatives || []).map((alt) => worldPathFromLatLngs(alt.points)),
+    [alternatives],
+  );
+
   /* Coaster track carries the ride's name in the source geometry, so the red
      polylines need not stay anonymous: tapping Diamondback can light up
      Diamondback's track rather than leaving you to guess which squiggle it is. */
@@ -1314,40 +1343,52 @@ function ParkMap({
         })}
 
         {/* the routes not taken, offered while you are still deciding — the tap
-            that takes one is resolved in onPointerUp with the rest */}
-        {alternatives?.map((alt, i) => {
-          const d = pathFromLatLngs(alt.points, to);
-          if (!d) return null;
-          return <path key={`alt${i}`} className="altLine" d={d} />;
-        })}
+            that takes one is resolved in onPointerUp with the rest
+            Routes are drawn in world coordinates and transformed like venue
+            geometry for smooth pan/zoom. non-scaling-stroke keeps line width
+            constant across zoom levels. */}
+        <g className="routeOverlay" transform={viewTransform}>
+          {worldAlternatives.map((d, i) =>
+            d ? (
+              <path
+                key={`alt${i}`}
+                className="altLine"
+                d={d}
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : null,
+          )}
 
-        {/* the walking route, under the markers it runs between */}
-        {route?.points?.length > 1 &&
-          (() => {
-            // Split at the walker: what is behind fades, what is ahead leads.
-            const ahead = pathFromLatLngs(routeAhead?.length > 1 ? routeAhead : route.points, to);
-            const done = routeDone?.length > 1 ? pathFromLatLngs(routeDone, to) : '';
-            return (
-              <g className="routeLayer">
-                {done && <path className="routeDone" d={done} />}
-                <path className="routeCase" d={ahead} />
-                <path className={`routeLine ${route.mode === 'direct' ? 'direct' : ''}`} d={ahead} />
-                {routeStep?.at && routeStep.turn !== 'arrive' && (
-                  <circle
-                    cx={at(routeStep.at[0], routeStep.at[1])[0]}
-                    cy={at(routeStep.at[0], routeStep.at[1])[1]}
-                    r={6}
-                    className="routeTurn"
-                  />
-                )}
-              </g>
-            );
-          })()}
+          {/* the walking route, under the markers it runs between */}
+          {route?.points?.length > 1 && (
+            <g className="routeLayer">
+              {worldRouteDone && (
+                <path className="routeDone" d={worldRouteDone} vectorEffect="non-scaling-stroke" />
+              )}
+              <path className="routeCase" d={worldRouteAhead} vectorEffect="non-scaling-stroke" />
+              <path
+                className={`routeLine ${route.mode === 'direct' ? 'direct' : ''}`}
+                d={worldRouteAhead}
+                vectorEffect="non-scaling-stroke"
+              />
+            </g>
+          )}
+        </g>
+
+        {/* Turn indicator — in screen coordinates since it's a fixed-size circle */}
+        {route?.points?.length > 1 && routeStep?.at && routeStep.turn !== 'arrive' && (
+          <circle
+            cx={at(routeStep.at[0], routeStep.at[1])[0]}
+            cy={at(routeStep.at[0], routeStep.at[1])[1]}
+            r={6}
+            className="routeTurn"
+          />
+        )}
 
         {/* places */}
         {plan.markers.map((m) => (
           <g
-            key={m.p.n + m.p.lat}
+            key={`${m.p.n}-${m.p.lat}-${m.p.lng}`}
             className="poiMarker"
             transform={`translate(${m.sx.toFixed(1)} ${m.sy.toFixed(1)})`}
             style={{ cursor: 'pointer' }}

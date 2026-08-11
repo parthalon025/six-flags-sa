@@ -30,6 +30,7 @@
     "venues:overrides": "node packages/venue-builder/bin/build-venue.mjs --reapply",
     "venues:report": "node packages/venue-builder/bin/venue-report.mjs",
     "venues:research": "node packages/venue-builder/bin/venue-research.mjs",
+    "venues:sync-sources": "node packages/venue-builder/bin/sync-external-sources.mjs",
     "venues:audit": "node packages/venue-builder/bin/venue-audit.mjs",
     "venues:compare": "node packages/venue-builder/bin/compare-venues.mjs",
     "venues:inspect": "node packages/venue-builder/bin/inspect-server.mjs",
@@ -40,6 +41,8 @@
     "venues:discover-parks-api": "node packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node packages/venue-builder/bin/geocode-catalog.mjs",
     "venues:drift-watch": "node packages/venue-builder/bin/drift-watch.mjs",
+    "venues:build-top100": "node packages/venue-builder/bin/build-top-parks.mjs",
+    "venues:pipeline": "node packages/venue-builder/bin/build-top-parks.mjs",
     "test": "npm run test:builder && npm run test:app",
     "test:builder": "node test/builder/unit.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",
@@ -49,7 +52,9 @@
     "test:visual": "node test/app/visual.mjs",
     "test:theme": "node test/app/theme.mjs",
     "test:ux": "node test/app/ux.mjs",
-    "test:grandma": "node test/app/grandma.mjs"
+    "test:grandma": "node test/app/grandma.mjs",
+    "gitnexus:startup": "node scripts/gitnexus-sync.mjs startup",
+    "gitnexus:sync": "node scripts/gitnexus-sync.mjs finish"
   },
   "dependencies": {
     "next": "^16.3.0",

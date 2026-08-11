@@ -6,6 +6,7 @@ import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { OVERRIDE_DIR, VENUE_DIR, readJson } from '../venue-io.mjs';
 import { getAdapter } from './index.mjs';
+import { getAdapterImplementation } from './implementations.mjs';
 import { fetchWithBrowser } from './playwright-official.mjs';
 import { loadParksApiData, parksApiCacheFile } from './parks-api.mjs';
 import { exportTileGeoJson } from '../tiles-export.mjs';
@@ -81,8 +82,11 @@ export async function runAdapter(adapterId, ctx = {}) {
       const graph = graphFromSidecar(sc);
       return { adapterId, ok: true, meta: graph.summary };
 
-    default:
+    default: {
+      const impl = getAdapterImplementation(adapterId);
+      if (impl) return impl({ ...ctx, fetch: ctx.fetch ?? true });
       return desc.run(ctx);
+    }
   }
 }
 

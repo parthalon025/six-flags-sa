@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { GLYPHS, inkOn, symbolFor } from '@/lib/mapSymbols';
 
 /* Rendering for the symbol vocabulary in lib/mapSymbols.js. Kept out of
@@ -7,7 +8,7 @@ import { GLYPHS, inkOn, symbolFor } from '@/lib/mapSymbols';
    is redrawn by hand is a key that goes stale. */
 
 /** The 24×24 glyph art, scaled to `size` and centred on the origin. */
-export function Glyph({ name, size, colour, opacity = 1 }) {
+export const Glyph = memo(function Glyph({ name, size, colour, opacity = 1 }) {
   const art = GLYPHS[name];
   if (!art) return null;
   const s = size / 24;
@@ -30,7 +31,7 @@ export function Glyph({ name, size, colour, opacity = 1 }) {
       )}
     </g>
   );
-}
+});
 
 /* Where the glyph sits inside each silhouette, and how much room it gets.
    A pin carries its glyph in the head, not on the point. */
@@ -78,7 +79,14 @@ function shapeOf(shape, r) {
  * dots, and struck edge to edge in ink that contrasts with the fill. `barredInk`
  * is that red; it comes from the palette so the legend and the map cannot drift.
  */
-export function PoiMarker({ category, colour, r, state, selected, barredInk = '#FF5E54' }) {
+export const PoiMarker = memo(function PoiMarker({
+  category,
+  colour,
+  r,
+  state,
+  selected,
+  barredInk = '#FF5E54',
+}) {
   const sym = symbolFor(category);
   const { d, gx, gy, gs } = shapeOf(sym.shape, r);
   const barred = state === 'no' || state === 'toobig';
@@ -156,7 +164,7 @@ export function PoiMarker({ category, colour, r, state, selected, barredInk = '#
       )}
     </g>
   );
-}
+});
 
 /** The same marker, standalone, for the legend. */
 export function LegendMark({ category, colour, size = 22, state = 'unknown', barredInk }) {

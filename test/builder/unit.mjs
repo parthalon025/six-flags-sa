@@ -6018,6 +6018,49 @@ await check('viewport culling keeps on-screen features', () => {
   return true;
 });
 
+await check('external adapters are wired in runner', async () => {
+  const { getAdapterImplementation, EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  assert.ok(EXTERNAL_ADAPTER_IDS.includes('wikidata'));
+  assert.ok(EXTERNAL_ADAPTER_IDS.includes('queue-times'));
+  assert.equal(typeof getAdapterImplementation('wikidata'), 'function');
+  return true;
+});
+
+await check('venue research context loads manifest center', async () => {
+  const { venueResearchContext } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const ctx = venueResearchContext('cedar-point');
+  assert.equal(ctx.venueName, 'Cedar Point');
+  assert.ok(ctx.center?.lat > 41);
+  assert.ok(ctx.bounds?.north);
+  assert.equal(ctx.qid, 'Q859230');
+  return true;
+});
+
+await check('loadExternalResearch reads caches offline', async () => {
+  const { loadExternalResearch } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const ext = await loadExternalResearch('cedar-point', { pois: [{ n: 'Millennium Force', c: 'ride' }] });
+  assert.ok(ext.parksApiRaw);
+  assert.ok(ext.parksApi);
+  assert.ok(Array.isArray(ext.claims));
+  return true;
+});
+
+await check('new external evidence sources fuse', async () => {
+  const { fuse } = await import('../../packages/venue-builder/lib/evidence.mjs');
+  const m = fuse([{ source: 'wikidata' }, { source: 'rcdb' }]);
+  assert.equal(m.score, 5);
+  assert.equal(m.band, 'low');
+  return true;
+});
+
+await check('sync external sources cache-only does not throw', async () => {
+  const { syncExternalSources } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const runs = await syncExternalSources('cedar-point', { fetch: false, sources: ['wikidata', 'open-meteo'] });
+  assert.ok(runs.wikidata);
+  assert.ok(runs['open-meteo']);
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
 
 

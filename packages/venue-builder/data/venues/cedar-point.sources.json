@@ -24,5 +24,14 @@
       "used_for": "Ride labels, food, restrooms; trace control points when georeferenced."
     }
   ],
-  "datasets": {}
+  "datasets": {
+    "external": [
+      "parks-api",
+      "queue-times",
+      "wikidata",
+      "rcdb",
+      "open-meteo",
+      "openhistoricalmap"
+    ]
+  }
 }
