@@ -11,6 +11,7 @@ import { run as runRcdb } from './rcdb.mjs';
 import { run as runOpenMeteo } from './open-meteo.mjs';
 import { run as runOhm } from './openhistoricalmap.mjs';
 import { run as runProjectSidewalk } from './project-sidewalk.mjs';
+import { run as runGuestTraces } from './guest-traces.mjs';
 import { run as runMapillary } from './mapillary-api.mjs';
 import { run as runOrs } from './openrouteservice.mjs';
 import { run as runPlaywright } from './playwright-official.mjs';
@@ -26,6 +27,7 @@ export const ADAPTER_IMPLEMENTATIONS = {
   'open-meteo': runOpenMeteo,
   openhistoricalmap: runOhm,
   'project-sidewalk': runProjectSidewalk,
+  'guest-traces': runGuestTraces,
   'mapillary-api': runMapillary,
   openrouteservice: runOrs,
   playwright: runPlaywright,

@@ -46,6 +46,9 @@ export const LIMITS = {
   // Redis round trip to police the cheapest endpoint would cost more than the
   // traffic it is policing.
   mailboxRead: { limit: 2400, windowMs: 60 * 1000 },
+  // Guest walk uploads — keyed by IP, generous for park wifi NAT, still caps
+  // a runaway client dumping fabricated LineStrings into the research queue.
+  guestTraceUpload: { limit: 120, windowMs: 60 * 60 * 1000 },
 };
 
 const mem =
