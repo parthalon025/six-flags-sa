@@ -50,6 +50,7 @@ export const WEIGHTS = {
   rcdb: 2,
   accessibility_cloud: 3,
   sidewalk_labels: 2,
+  guest_trace: 2,
   open_meteo: 1,
   openhistoricalmap: 2,
   forum: 1,

@@ -34,6 +34,8 @@ export default function SettingsPanel({
   onClearCar = null,
   appVersion = null,
   updateStatus = 'idle',
+  movementEnabled = false,
+  movementPending = 0,
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
@@ -238,6 +240,12 @@ export default function SettingsPanel({
             {position ? (position.manual ? 'Placed by hand' : 'On') : 'Off — tap to enable'}
           </span>
         </button>
+        <button type="button" className="row" onClick={() => onPush('movement')}>
+          <span className="rowText">Walk history</span>
+          <span className="rowValue">
+            {movementEnabled ? 'Logging' : movementPending > 0 ? `${movementPending} to upload` : 'Off'}
+          </span>
+        </button>
       </div>
       {position && (
         <p className="fine">
@@ -246,8 +254,9 @@ export default function SettingsPanel({
       )}
       <InstallCard />
       <p className="fine">
-        Location drops your dot. The Home Screen app keeps the park map when the midway wifi
-        dies — we only ask when you are not already running from the icon.
+        Location drops your dot. Walk history (opt-in) keeps a private path log you can upload to
+        help map real midways. The Home Screen app keeps the park map when the midway wifi dies —
+        we only ask when you are not already running from the icon.
       </p>
 
       <div className="label">Advanced</div>

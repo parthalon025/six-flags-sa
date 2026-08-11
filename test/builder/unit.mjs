@@ -77,6 +77,20 @@ const {
   positionForMap,
 } = await import('../../apps/party-tracker/lib/gps/smooth.js');
 const { mapDisplayPosition } = await import('../../apps/party-tracker/lib/gps/display.js');
+const {
+  anonymizeSession,
+  metresAlong,
+  parsePrefs,
+  recordPoint,
+  sessionToGeoJSON,
+  shouldKeepPoint,
+  shouldStartNewSession,
+  validateTraceUpload,
+} = await import('../../apps/party-tracker/lib/gps/movementLog.js');
+const {
+  guestTraceClaims,
+  proposeWalkwaysFromTraces,
+} = await import('../../packages/venue-builder/lib/adapters/guest-traces.mjs');
 const { arrivalPointForVenue } = await import('../../apps/party-tracker/lib/venue/arrival.js');
 const {
   MAX_SNAP_M,
@@ -1344,6 +1358,143 @@ await check('mapDisplayPosition leaves on-site and manual fixes alone', () => {
   });
   assert.equal(manual.manual, true);
   assert.equal(manual.arrival, undefined);
+  return true;
+});
+
+/* ------------------------------------------------------ gps/movementLog -- */
+
+section('gps/movementLog');
+
+const MOVE_BOUNDS = {
+  north: 39.348,
+  south: 39.339,
+  east: -84.262,
+  west: -84.275,
+};
+
+await check('prefs default off and parse safely', () => {
+  assert.deepEqual(parsePrefs(null), { enabled: false, autoUpload: false });
+  assert.equal(parsePrefs({ enabled: 1, autoUpload: 'yes' }).enabled, true);
+  assert.equal(parsePrefs({ enabled: true, autoUpload: true }).autoUpload, true);
+  return true;
+});
+
+await check('shouldKeepPoint rejects outside, inaccurate, manual, and jitter', () => {
+  const inside = { lat: 39.34395, lng: -84.2673, acc: 10, ts: 1000 };
+  assert.equal(shouldKeepPoint({ point: inside, bounds: MOVE_BOUNDS }).keep, true);
+  assert.equal(
+    shouldKeepPoint({ point: { ...inside, manual: true }, bounds: MOVE_BOUNDS }).reason,
+    'manual',
+  );
+  assert.equal(
+    shouldKeepPoint({ point: { ...inside, lat: 30.0 }, bounds: MOVE_BOUNDS }).reason,
+    'outside',
+  );
+  assert.equal(
+    shouldKeepPoint({ point: { ...inside, acc: 80 }, bounds: MOVE_BOUNDS }).reason,
+    'accuracy',
+  );
+  const near = { lat: 39.34396, lng: -84.2673, acc: 8, ts: 2000 };
+  assert.equal(shouldKeepPoint({ prev: inside, point: near, bounds: MOVE_BOUNDS }).reason, 'too-close');
+  const far = { lat: 39.3442, lng: -84.2673, acc: 8, ts: 3000 };
+  assert.equal(shouldKeepPoint({ prev: inside, point: far, bounds: MOVE_BOUNDS }).keep, true);
+  return true;
+});
+
+await check('session gap and recordPoint build walks', () => {
+  assert.equal(
+    shouldStartNewSession({ ts: 0 }, { ts: 20 * 60 * 1000 }),
+    true,
+  );
+  assert.equal(shouldStartNewSession({ ts: 0 }, { ts: 60_000 }), false);
+
+  let state = { sessions: [], openId: null };
+  const a = { lat: 39.34395, lng: -84.2673, acc: 8, ts: 1_000 };
+  const b = { lat: 39.3442, lng: -84.2673, acc: 8, ts: 5_000 };
+  state = recordPoint(state, {
+    point: a,
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds: MOVE_BOUNDS,
+  });
+  assert.equal(state.recorded, true);
+  assert.equal(state.sessions.length, 1);
+  state = recordPoint(state, {
+    point: b,
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds: MOVE_BOUNDS,
+  });
+  assert.equal(state.sessions[0].points.length, 2);
+  assert.ok(state.sessions[0].metres > 20);
+  assert.ok(metresAlong(state.sessions[0].points) > 20);
+  return true;
+});
+
+await check('anonymise + GeoJSON + upload validation', () => {
+  const session = {
+    id: 'walk-1',
+    venueId: 'kings-island',
+    startedAt: 1000,
+    endedAt: 5000,
+    metres: 40,
+    points: [
+      { lat: 39.34395123, lng: -84.26731234, ts: 1000, acc: 7.4 },
+      { lat: 39.34420123, lng: -84.26731234, ts: 5000, acc: 6.1 },
+    ],
+  };
+  const anon = anonymizeSession(session);
+  assert.equal(anon.points[0].lat, 39.34395);
+  assert.equal(anon.points[0].t, 0);
+  assert.equal(anon.points[1].t, 4000);
+  const feature = sessionToGeoJSON(session);
+  assert.equal(feature.geometry.type, 'LineString');
+  assert.equal(feature.properties.kind, 'guest_trace');
+  const ok = validateTraceUpload(feature);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.traces[0].venueId, 'kings-island');
+  const bad = validateTraceUpload({ type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] } });
+  assert.equal(bad.ok, false);
+  return true;
+});
+
+await check('guest-traces propose walkways far from existing paths', () => {
+  const collection = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { sessionId: 'a', metres: 50 },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [-84.27, 39.344],
+            [-84.269, 39.3445],
+          ],
+        },
+      },
+    ],
+  };
+  const nearPath = [
+    {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [-84.2701, 39.344],
+          [-84.2691, 39.3445],
+        ],
+      },
+    },
+  ];
+  const near = proposeWalkwaysFromTraces(collection, { existingPaths: nearPath, gapM: 12 });
+  assert.equal(near.features.length, 0, 'near existing path is not a candidate');
+  const far = proposeWalkwaysFromTraces(collection, { existingPaths: [], gapM: 12 });
+  assert.equal(far.features.length, 1);
+  const claims = guestTraceClaims({ fetched: '2026-08-11', collection });
+  assert.equal(claims.length, 1);
+  assert.equal(claims[0].source, 'guest_trace');
+  assert.equal(claims[0].kind, 'path_geometry');
   return true;
 });
 

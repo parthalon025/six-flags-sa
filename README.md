@@ -949,6 +949,11 @@ npm run venues:build-agent -- cedar-point --offline   # multi-agent orchestrator
 npm run venues:build-agent -- cedar-point --ai --apply  # LLM agents + publish entrances
 ```
 
+Guest walk uploads (`Me → Walk history`, opt-in) post anonymised LineStrings to
+`/api/contributions/traces`. The `guest-traces` adapter reads the Redis queue (or a dumped
+`data/venues/<id>.guest-traces-cache.json`) and proposes walkway candidates where guests walk
+but the path graph is empty — research only; it never writes `public/venues`.
+
 Every location here is the same data about a different place, and the failure mode that
 comes with that is a park that is *almost* built. Nothing crashes — the map draws, the list
 fills, and some whole feature of the app is silently not there because the one file that
@@ -1127,6 +1132,8 @@ lib/party/                    the halves of the protocol
   client.js                   thin replica, submits commands, requests resyncs
   election.js                 scoring, leader election, host migration
 lib/gps/adaptive.js           motion classification, cadence, broadcast gating
+lib/gps/movementLog.js        opt-in walk sessions, anonymise, upload validation
+lib/guestTraces.js            server queue for guest LineStrings (builder research)
 lib/partyRuntime.js           the seam: session, transports, host service or client
 lib/geo.js                    distance, bearing, Mercator projection
 lib/routing.js                path graph, repair passes, A*, turn-by-turn
@@ -1146,6 +1153,7 @@ app/
   join/page.js                invite landing; reads the fragment, never the query
   api/mailbox/…               the relay
   api/…                       party, members, location, rides, health, metrics
+  api/contributions/traces    guest walk uploads (POST) + operator export (GET)
   api/weather/                the only outbound call in the app; cached, fails soft
 components/
   ParkMap.jsx                 SVG renderer, pan + pinch zoom, label layout
@@ -1160,8 +1168,10 @@ components/
   PlaceList.jsx               place search, live status and reporting
   HeightPanel.jsx             the rider-height filter and what it unlocks
   SettingsPanel.jsx           name, appearance, which map, and the long tail
+  MovementHistoryPanel.jsx    opt-in walk log, history, upload / GeoJSON export
   WeatherBanner.jsx           the park-wide headline; renders nothing on a clear day
   useWeather.js               polls the forecast, caches it, survives losing signal
+  useMovementLog.js           records in-park GPS into IndexedDB when opted in
   GpsGate.jsx                 permission dialog with per-failure guidance
   ParkPrompt.jsx              which park, asked from the first fix and built on yes
   InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps

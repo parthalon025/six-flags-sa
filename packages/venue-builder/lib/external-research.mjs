@@ -16,6 +16,7 @@ import { loadRcdbData, compareRcdbToBundle, rcdbClaims } from './adapters/rcdb.m
 import { loadOpenMeteoData } from './adapters/open-meteo.mjs';
 import { loadOhmData } from './adapters/openhistoricalmap.mjs';
 import { loadProjectSidewalkData, sidewalkClaims } from './adapters/project-sidewalk.mjs';
+import { loadGuestTracesData, guestTraceClaims } from './adapters/guest-traces.mjs';
 import { loadMapillaryData, mapillaryClaims } from './adapters/mapillary-api.mjs';
 import { loadOrsRouteQa } from './adapters/openrouteservice.mjs';
 import { WIKIDATA_QIDS } from './park-slug-map.mjs';
@@ -71,6 +72,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
   const openMeteoRaw = await loadOpenMeteoData(venueId, { center: ctx.center, ...loadOpts });
   const ohmRaw = await loadOhmData(venueId, { bounds: ctx.bounds, ...loadOpts });
   const sidewalkRaw = await loadProjectSidewalkData(venueId, { bounds: ctx.bounds, ...loadOpts });
+  const guestTracesRaw = await loadGuestTracesData(venueId, { ...loadOpts });
   const mapillaryRaw = await loadMapillaryData(venueId, { bounds: ctx.bounds, ...loadOpts });
   const orsRaw = await loadOrsRouteQa(venueId, { samples: [], ...loadOpts });
 
@@ -82,6 +84,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
     ...wikidataClaims(wikidataRaw),
     ...accessibilityClaims(accessibilityRaw),
     ...sidewalkClaims(sidewalkRaw),
+    ...guestTraceClaims(guestTracesRaw),
     ...mapillaryClaims(mapillaryRaw),
     ...rcdbClaims(rcdbRaw, rcdb),
   ];
@@ -99,6 +102,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
     openMeteoRaw,
     ohmRaw,
     sidewalkRaw,
+    guestTracesRaw,
     mapillaryRaw,
     orsRaw,
     claims,
