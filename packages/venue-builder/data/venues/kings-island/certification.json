@@ -1,0 +1,416 @@
+{
+  "version": 1,
+  "venue": {
+    "id": "kings-island",
+    "name": "Kings Island",
+    "locality": "Mason, Ohio"
+  },
+  "certified": false,
+  "certifiedAt": null,
+  "checks": [
+    {
+      "key": "checklist",
+      "claim": "Required completeness items pass",
+      "pass": true,
+      "evidence": {
+        "numerator": 4,
+        "denominator": 4,
+        "detail": "4/4 required items ok"
+      },
+      "confidence": "high",
+      "falsifier": "Any required checklist item is missing",
+      "soWhat": "Half-built venues draw a map but hide whole app features silently"
+    },
+    {
+      "key": "compare",
+      "claim": "Built bundle matches manifest counts and has a recipe",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "manifest and disk agree",
+        "counts": {
+          "pois": 165,
+          "rides": 69,
+          "heights": 65,
+          "campsites": 0,
+          "paths": 764,
+          "hasHeightsTab": true
+        }
+      },
+      "confidence": "high",
+      "falsifier": "POI, ride, height, or path counts drift from manifest",
+      "soWhat": "The app reads manifest numbers; drift breaks trust in coverage badges"
+    },
+    {
+      "key": "route",
+      "claim": "Path graph has ≤2 islands and every ride snaps to the network",
+      "pass": true,
+      "evidence": {
+        "numerator": 69,
+        "denominator": 69,
+        "detail": "1 component(s), 0 ride(s) >35 m from network",
+        "components": 1,
+        "largestComponent": 4,
+        "farRides": []
+      },
+      "confidence": "high",
+      "falsifier": "OpenStreetMap path gaps strand rides on routing islands",
+      "soWhat": "Offline routing cannot reach a ride that is not on the walk network"
+    },
+    {
+      "key": "heights",
+      "claim": "Height rules present or declared absent",
+      "pass": true,
+      "evidence": {
+        "numerator": 56,
+        "denominator": 69,
+        "detail": "56 of 69 rides carry height rules",
+        "declaredAbsent": false
+      },
+      "confidence": "moderate",
+      "falsifier": "A park with rides ships without height filter coverage",
+      "soWhat": "Guests cannot filter by rider height offline without these rules"
+    },
+    {
+      "key": "entrances",
+      "claim": "Queue entrances published at ≥moderate or recorded as proposals",
+      "pass": true,
+      "evidence": {
+        "numerator": 0,
+        "denominator": 69,
+        "known": 69,
+        "detail": "0 published / 69 known / 69 rides inventoried"
+      },
+      "confidence": "low",
+      "falsifier": "No entrance evidence was inventoried for rideable attractions",
+      "soWhat": "Routing to a ride uses queue entrance coordinates when published"
+    },
+    {
+      "key": "ask",
+      "claim": "No blocking external requests remain",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "1 non-blocking request(s)",
+        "blocking": []
+      },
+      "confidence": "high",
+      "falsifier": "A blocking gap was papered over instead of recorded",
+      "soWhat": "Blocking requests mean a whole app feature is absent without saying so"
+    },
+    {
+      "key": "external_sources",
+      "claim": "Declared external adapters have caches or an honest gap note",
+      "pass": true,
+      "evidence": {
+        "numerator": 10,
+        "denominator": 10,
+        "detail": "10/10 caches, 0 gap(s); claims=55+45; attached=74",
+        "declared": [
+          "parks-api",
+          "queue-times",
+          "wikidata",
+          "rcdb",
+          "open-meteo",
+          "openhistoricalmap",
+          "mapillary-api",
+          "accessibility-cloud",
+          "project-sidewalk",
+          "openrouteservice"
+        ],
+        "missingRequired": [],
+        "bySource": {
+          "parks_api": 55,
+          "queue_times": 44,
+          "open_meteo": 1
+        }
+      },
+      "confidence": "high",
+      "falsifier": "sources.json lists a required adapter with no cache and no gaps.adapters note",
+      "soWhat": "Explore-more research sources must either feed the twin or show as an honest gap"
+    },
+    {
+      "key": "park_map_research",
+      "claim": "Official park map image is local or LLM park-map search recorded candidates",
+      "pass": false,
+      "evidence": {
+        "numerator": 0,
+        "denominator": 1,
+        "detail": "local_images=0; parkMap_candidates=0; llm_park_map_search=false",
+        "searchQueries": []
+      },
+      "confidence": "low",
+      "falsifier": "sources.json lists official_map but no image and no LLM park-map search cache",
+      "soWhat": "Guest maps for tracing require LLM search (or a package maps/ image) before georef"
+    }
+  ],
+  "ask": {
+    "venue": {
+      "id": "kings-island",
+      "name": "Kings Island",
+      "locality": "Mason, Ohio",
+      "kind": "theme-park"
+    },
+    "overridesFile": "data/venues/kings-island/overrides.json",
+    "blocking": false,
+    "requests": [
+      {
+        "key": "heights",
+        "need": "Ride height requirements",
+        "blocking": false,
+        "why": "13 of 69 rides at Kings Island (Mason, Ohio) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
+        "targets": [
+          "3 Point Challange",
+          "Arcade Games",
+          "Bank Ball",
+          "Beagle Scout Acres",
+          "Goblet Toss",
+          "Hang Time",
+          "High Striker",
+          "Racer (Blue)",
+          "Racer (Red)",
+          "Ring Toss",
+          "Rope Ladder",
+          "Shoot Down",
+          "Xtreme Skyflyer"
+        ],
+        "ask": [
+          "Find the published height requirement for each ride listed below at Kings Island (Mason, Ohio).",
+          "Work from the park's own current-season attraction pages first. A park's own words are the source; a fan wiki is a lead to check, not an answer.",
+          "Heights are in inches, as the American parks in this app publish them.",
+          "Write down where each number came from. If a ride is not on the park's site, leave it out entirely and say so — an omission is recoverable and a guess is not.",
+          "Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool all arrive tagged as attractions and none of them has a height on a sign. Say which ones those are rather than inventing a rule for them — that answer is a fix to the category rules in scripts/lib/osm-tags.mjs, which helps every venue, not just this one."
+        ],
+        "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"3 Point Challange\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" },\n    \"Arcade Games\": { \"h\": { \"min\": 0, \"alone\": null, \"max\": null } }\n  }\n}",
+        "rules": [
+          "`min` is the floor nobody rides under. `min: 0` is the park saying there is no floor, and the app reads that back as \"No minimum\" — that is the right answer for a lazy river, and it is not the same as `null`, which means nobody has looked yet.",
+          "`alone` is the height below which a supervising rider has to come along. `max` is a ceiling, which most rides have none of.",
+          "Keys must match the place name in the bundle exactly, character for character. The list below is those names.",
+          "If the park publishes a rule for an attraction whose name is *not* in that list, put it under `_unmapped` in data/venues/kings-island/overrides.json instead of under `pois`. An override keyed to a name nothing answers to is a correction that silently did not happen, and there is a test that fails on it. It moves up into `pois` the day OpenStreetMap gains that name.",
+          "If the park's name for a ride differs from the name in the list, key the entry by the park's name and add `\"alias\": \"<the name in the list>\"`.",
+          "Weight limits, life-jacket exceptions, \"must ride with an adult\", single-tube versus double — real rules this model has no field for — go in `note`, in the park's own terms. Never round one off into a height."
+        ]
+      }
+    ],
+    "questSeeds": {
+      "version": 1,
+      "venueId": "kings-island",
+      "principle": "Open sources build the base map; gamified on-the-ground contributions fill what they cannot reliably settle.",
+      "durable": [
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "3 Point Challange",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Arcade Games",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Bank Ball",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Beagle Scout Acres",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Goblet Toss",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Hang Time",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "High Striker",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Racer (Blue)",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Racer (Red)",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Ring Toss",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Rope Ladder",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Shoot Down",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        },
+        {
+          "venueId": "kings-island",
+          "type": "height_rule",
+          "tier": 2,
+          "graduation": "overrides_heights",
+          "sourceGap": "heights",
+          "target": "Xtreme Skyflyer",
+          "blocking": false,
+          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
+          "need": "Ride height requirements"
+        }
+      ],
+      "ambient": [
+        {
+          "venueId": "kings-island",
+          "type": "ride_status",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Ride up / down / delayed",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "kings-island",
+          "type": "queue_band",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Queue short / medium / long",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "kings-island",
+          "type": "amenity_outage",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Restroom or fountain outage",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "kings-island",
+          "type": "crowd_hotspot",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Midway crowded",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "kings-island",
+          "type": "hazard",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Spill or blocked path",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        }
+      ],
+      "counts": {
+        "durable": 13,
+        "ambient": 5
+      }
+    },
+    "inventory": [
+      {
+        "key": "parks-api-inventory",
+        "need": "ParksAPI matched 32/69 rides — declare gaps or improve aliases",
+        "blocking": false
+      }
+    ]
+  }
+}

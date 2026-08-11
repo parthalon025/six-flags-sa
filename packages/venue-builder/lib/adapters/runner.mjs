@@ -4,7 +4,7 @@
 
 import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { OVERRIDE_DIR, VENUE_DIR, readJson } from '../venue-io.mjs';
+import { OVERRIDE_DIR, VENUE_DIR, readJson, venueSidecar } from '../venue-io.mjs';
 import { getAdapter } from './index.mjs';
 import { getAdapterImplementation } from './implementations.mjs';
 import { fetchWithBrowser } from './playwright-official.mjs';
@@ -57,15 +57,15 @@ export async function runAdapter(adapterId, ctx = {}) {
       if (!venueId) return { adapterId, ok: false, error: 'venueId_required' };
       const map = readJson(path.join(VENUE_DIR, `${venueId}.map.json`), {});
       const pois = readJson(path.join(VENUE_DIR, `${venueId}.pois.json`), []);
-      const outDir = ctx.outDir || path.join(OVERRIDE_DIR, `${venueId}.tiles`);
+      const outDir = ctx.outDir || venueSidecar(venueId, 'tiles');
       const written = exportTileGeoJson(outDir, map, pois);
       return { adapterId, ok: true, artifacts: written, meta: { outDir } };
 
     case 'evidence-html':
       if (!venueId) return { adapterId, ok: false, error: 'venueId_required' };
-      const sidecar = readJson(path.join(OVERRIDE_DIR, `${venueId}.attractions.json`), {});
+      const sidecar = readJson(venueSidecar(venueId, 'attractions.json'), {});
       const mapMeta = readJson(path.join(VENUE_DIR, `${venueId}.map.json`), {}).meta || {};
-      const out = ctx.htmlPath || path.join(OVERRIDE_DIR, `${venueId}.evidence.html`);
+      const out = ctx.htmlPath || venueSidecar(venueId, 'evidence.html');
       const html = renderEvidenceHtml({
         venueId,
         venueName: mapMeta.name || venueId,
@@ -78,7 +78,7 @@ export async function runAdapter(adapterId, ctx = {}) {
 
     case 'evidence-graph':
       if (!venueId) return { adapterId, ok: false, error: 'venueId_required' };
-      const sc = readJson(path.join(OVERRIDE_DIR, `${venueId}.attractions.json`), {});
+      const sc = readJson(venueSidecar(venueId, 'attractions.json'), {});
       const graph = graphFromSidecar(sc);
       return { adapterId, ok: true, meta: graph.summary };
 

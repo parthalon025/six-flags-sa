@@ -16,11 +16,14 @@ export async function loadMapillaryData(venueId, { bounds, fetch = false, offlin
 
   const token = process.env.MAPILLARY_TOKEN;
   if (!token) {
-    return cached || {
+    const stub = cached || {
       fetched: null,
       images: [],
       error: 'Set MAPILLARY_TOKEN to fetch Mapillary sequences.',
+      gap: true,
     };
+    writeCache(venueId, 'mapillary', stub);
+    return stub;
   }
   if (!bounds?.north) return cached || { fetched: null, images: [], error: 'bounds_required' };
 
@@ -68,12 +71,13 @@ export async function run(ctx = {}) {
   try {
     const data = await loadMapillaryData(id, { bounds: ctx.bounds, fetch: ctx.fetch ?? true, offline: ctx.offline });
     const hasData = (data.images?.length || 0) > 0;
+    const tokenGap = Boolean(data.error?.includes('MAPILLARY_TOKEN') || data.gap);
     return {
       adapterId: 'mapillary-api',
-      ok: hasData || Boolean(data.error?.includes('MAPILLARY_TOKEN')),
+      ok: hasData || tokenGap,
       claims: mapillaryClaims(data),
-      meta: { count: data.images?.length || 0 },
-      artifacts: hasData ? [mapillaryCacheFile(id)] : [],
+      meta: { count: data.images?.length || 0, gap: tokenGap || undefined },
+      artifacts: [mapillaryCacheFile(id)],
       data,
       error: !hasData ? data.error : undefined,
     };

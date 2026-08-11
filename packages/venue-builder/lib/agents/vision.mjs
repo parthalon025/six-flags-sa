@@ -5,13 +5,12 @@
  * via the evidence graph. SAM 2 / Mapillary remain deferred external workers.
  */
 
-import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { runAdapter } from '../adapters/runner.mjs';
 import { agentReview } from '../venue-llm.mjs';
 import { getAdapter } from '../adapters/index.mjs';
 import { readSources } from '../venue-sources.mjs';
-import { OVERRIDE_DIR, readJson } from '../venue-io.mjs';
+import { readJson, resolveBuilderPath } from '../venue-io.mjs';
 
 export async function runVisionAgent(venueId, opts = {}) {
   const yolo = getAdapter('ultralytics-yolo');
@@ -23,11 +22,12 @@ export async function runVisionAgent(venueId, opts = {}) {
   const traceProposals = [];
 
   for (const ds of traceDatasets) {
-    const file = path.isAbsolute(ds.path) ? ds.path : path.join(OVERRIDE_DIR, path.basename(ds.path));
-    if (existsSync(file)) {
+    const rel = typeof ds === 'string' ? ds : ds?.path;
+    const file = resolveBuilderPath(rel);
+    if (file && existsSync(file)) {
       traceProposals.push({
         source: 'traced',
-        file: ds.path,
+        file: rel,
         featureCount: (readJson(file)?.features || []).length,
         note: 'Traced orthophoto — proposals only until human review',
       });
@@ -35,11 +35,12 @@ export async function runVisionAgent(venueId, opts = {}) {
   }
 
   for (const ds of imageryDatasets) {
-    const file = path.isAbsolute(ds.path) ? ds.path : path.join(OVERRIDE_DIR, path.basename(ds.path));
-    if (existsSync(file)) {
+    const rel = typeof ds === 'string' ? ds : ds?.path;
+    const file = resolveBuilderPath(rel);
+    if (file && existsSync(file)) {
       traceProposals.push({
         source: 'imagery',
-        file: ds.path,
+        file: rel,
         featureCount: (readJson(file)?.features || []).length,
         note: 'Hand-surveyed imagery — proposals only until human review',
       });

@@ -40,8 +40,8 @@
  */
 
 import path from 'node:path';
-import { readdirSync } from 'node:fs';
-import { OVERRIDE_DIR, ROOT, readJson, writeJson } from './venue-io.mjs';
+import { existsSync } from 'node:fs';
+import { listVenuePackages, ROOT, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 
 export const RECIPE_VERSION = 1;
 
@@ -79,7 +79,7 @@ export const SHAPING_FLAGS = [
    what it produces, and they stay out of a recipe because only the flags above
    are ever written into one — not because anything remembers to remove them. */
 
-export const recipeFile = (id) => path.join(OVERRIDE_DIR, `${id}.recipe.json`);
+export const recipeFile = (id) => venueSidecar(id, 'recipe.json');
 
 /** Paths go in relative to the repo, or a recipe only works on the laptop that wrote it. */
 const relativise = (value) => {
@@ -182,12 +182,5 @@ export function writeRecipe(id, recipe) {
 
 /** Every venue on disk that knows how it was built, in a stable order. */
 export function listRecipes() {
-  try {
-    return readdirSync(OVERRIDE_DIR)
-      .filter((f) => f.endsWith('.recipe.json'))
-      .map((f) => f.slice(0, -'.recipe.json'.length))
-      .sort();
-  } catch {
-    return [];
-  }
+  return listVenuePackages().filter((id) => existsSync(recipeFile(id)));
 }

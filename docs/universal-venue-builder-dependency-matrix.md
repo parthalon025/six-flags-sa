@@ -4,9 +4,12 @@ Open-source projects evaluated for the Universal Venue Builder. The goal is to *
 adapters** around mature tools instead of rebuilding capabilities or forking everything
 into one monorepo.
 
-**Living registry:** `scripts/lib/adapters/registry.mjs`  
+**Living registry:** `packages/venue-builder/lib/adapters/registry.mjs`  
 **CLI:** `npm run venues:adapters`  
 **Architecture:** [universal-venue-builder-architecture.md](./universal-venue-builder-architecture.md)
+
+> Path note: adapters used to live under `scripts/lib/adapters`; the runnable
+> registry and implementations are now `packages/venue-builder/lib/adapters/`.
 
 ## Evaluation criteria
 
@@ -169,7 +172,7 @@ Builder-side services may use Valhalla or Tippecanoe; output still lands in `pub
 
 ## Adding a new repository
 
-1. Add a row to `scripts/lib/adapters/registry.mjs`
+1. Add a row to `packages/venue-builder/lib/adapters/registry.mjs`
 2. If it emits evidence, add a `WEIGHTS` key in `evidence.mjs`
 3. Wire `park-capabilities.mjs` if audits should recommend it
 4. Run `npm run venues:adapters -- matrix` and commit doc sync if needed

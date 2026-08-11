@@ -1,14 +1,17 @@
 /**
- * Research agent — official site, browser fetch, ParksAPI inventory, open-source adapters.
+ * Research agent — official site, browser fetch, ParksAPI inventory, open-source adapters,
+ * and optional LLM open research over official pages.
  */
 
+import path from 'node:path';
 import { loadVenuePacket, packetSummary } from '../venue-packet.mjs';
 import { runAdapter } from '../adapters/runner.mjs';
 import { runAdapters } from '../adapters/runner.mjs';
 import { officialUrls } from '../venue-official-site.mjs';
 import { agentReview } from '../venue-llm.mjs';
-import { venueResearchContext } from '../external-research.mjs';
-import { EXTERNAL_ADAPTER_IDS } from '../adapters/implementations.mjs';
+import { venueResearchContext, resolveExternalAdapterIds } from '../external-research.mjs';
+import { runOpenResearch } from '../open-research.mjs';
+import { readJson, VENUE_DIR } from '../venue-io.mjs';
 
 export async function runResearchAgent(venueId, opts = {}) {
   const packet = await loadVenuePacket(venueId, {
@@ -29,7 +32,24 @@ export async function runResearchAgent(venueId, opts = {}) {
   }
   if (opts.syncExternal ?? opts.fetch) {
     const ctx = { ...venueResearchContext(venueId), fetch: opts.fetch ?? true, offline: opts.offline };
-    adapterRuns.push(...await runAdapters(EXTERNAL_ADAPTER_IDS, ctx));
+    const ids = resolveExternalAdapterIds(venueId, opts);
+    adapterRuns.push(...await runAdapters(ids, ctx));
+  }
+
+  let openResearch = null;
+  if (opts.openResearch !== false) {
+    const pois = readJson(path.join(VENUE_DIR, `${venueId}.pois.json`), []) || [];
+    try {
+      openResearch = await runOpenResearch(venueId, pois, {
+        fetch: false,
+        offline: true,
+        browser: false,
+        ai: opts.ai ?? false,
+        applyAliases: opts.applyAliases ?? false,
+      });
+    } catch (err) {
+      openResearch = { error: err.message };
+    }
   }
 
   const summary = packetSummary(packet);
@@ -51,6 +71,17 @@ export async function runResearchAgent(venueId, opts = {}) {
         rcdbMatched: packet.external?.rcdb?.matched,
         claims: packet.external?.claims?.length,
       },
+      openResearch: openResearch?.research
+        ? {
+            mode: openResearch.research.mode,
+            aliases: openResearch.research.aliases?.length,
+            heightCandidates: openResearch.research.heightCandidates?.length,
+            inventoryGaps: openResearch.research.inventoryGaps?.length,
+            parkMaps: openResearch.research.parkMaps?.length,
+            llmParkMapSearch: openResearch.research.llmParkMapSearch,
+            searchQueries: openResearch.research.searchQueries?.slice?.(0, 5),
+          }
+        : null,
       judgements: packet.judgements?.map((j) => ({ key: j.key, count: j.count })),
     });
   }
@@ -61,6 +92,7 @@ export async function runResearchAgent(venueId, opts = {}) {
     summary,
     adapterRuns,
     packet,
+    openResearch,
     llm,
   };
 }

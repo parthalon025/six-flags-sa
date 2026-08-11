@@ -40,9 +40,7 @@ import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, ROUTED_LAYERS, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
   campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, wayAttributes,
 } from '../lib/osm-tags.mjs';
-import {
-  OVERRIDE_DIR, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue,
-} from '../lib/venue-io.mjs';
+import { OVERRIDE_DIR, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
 import {
   argsFromRecipe, listRecipes, readRecipe, recipeFile, recipeFrom, writeRecipe,
 } from '../lib/venue-recipe.mjs';
@@ -1618,7 +1616,7 @@ async function buildOne(args, { previous = null } = {}) {
      on to drop never spends a number. */
   const ledger = readLedger(id);
   if (!ledger) {
-    console.error(`  · keys: no ledger yet — data/venues/${id}.ids.json will be written from this build`);
+    console.error(`  · keys: no ledger yet — data/venues/${id}/ids.json will be written from this build`);
   }
   pois = assignKeys(pois, ledger, { venue: id, keepOsm: true }).pois;
 
@@ -1626,7 +1624,7 @@ async function buildOne(args, { previous = null } = {}) {
   pois = merged.pois;
   const heightsApplied = applyHeightsSidecar(pois, id);
   if (heightsApplied.applied) {
-    console.error(`  · heights sidecar: ${heightsApplied.applied} rule(s) from data/venues/${id}.heights.json`);
+    console.error(`  · heights sidecar: ${heightsApplied.applied} rule(s) from data/venues/${id}/heights.json`);
   }
   if (overrideFile) {
     console.error(
@@ -1739,7 +1737,7 @@ async function buildOne(args, { previous = null } = {}) {
       `${name} would ship ${keys.duplicates.length} duplicate primary key(s): ${shown}` +
         (keys.duplicates.length > 5 ? ', …' : '') +
         `. A key addresses one place. Usually an "i" written by hand into ` +
-        `${path.relative(process.cwd(), path.join(OVERRIDE_DIR, `${id}.overrides.json`))} onto a name more than one place wears.`,
+        `${path.relative(process.cwd(), venueSidecar(id, 'overrides.json'))} onto a name more than one place wears.`,
     );
   }
 
@@ -1856,7 +1854,7 @@ async function buildOne(args, { previous = null } = {}) {
   if (audit.owed && !audit.heights && !args['allow-no-heights']) {
     throw new Error(
       `${name} has ${audit.rides} rides and no height rules, so the app would ship without its ` +
-        `Rides tab. Write ${path.relative(process.cwd(), path.join(OVERRIDE_DIR, `${id}.overrides.json`))} ` +
+        `Rides tab. Write ${path.relative(process.cwd(), venueSidecar(id, 'overrides.json'))} ` +
         'and build again — or pass --allow-no-heights if this venue genuinely has none.',
     );
   }

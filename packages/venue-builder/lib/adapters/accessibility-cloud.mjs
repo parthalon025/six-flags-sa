@@ -18,11 +18,14 @@ export async function loadAccessibilityCloudData(venueId, { bounds, fetch = fals
 
   const token = process.env.ACCESSIBILITY_CLOUD_TOKEN;
   if (!token) {
-    return cached || {
+    const stub = cached || {
       fetched: null,
       places: [],
       error: 'Set ACCESSIBILITY_CLOUD_TOKEN to fetch Accessibility Cloud data.',
+      gap: true,
     };
+    writeCache(venueId, 'accessibility-cloud', stub);
+    return stub;
   }
   if (!bounds?.north) {
     return cached || { fetched: null, places: [], error: 'bounds_required' };
@@ -73,12 +76,13 @@ export async function run(ctx = {}) {
   try {
     const data = await loadAccessibilityCloudData(id, { bounds: ctx.bounds, fetch: ctx.fetch ?? true, offline: ctx.offline });
     const hasData = (data.places?.length || 0) > 0;
+    const tokenGap = Boolean(cachedOk(data) || data.gap);
     return {
       adapterId: 'accessibility-cloud',
-      ok: hasData || Boolean(cachedOk(data)),
+      ok: hasData || tokenGap,
       claims: accessibilityClaims(data),
-      meta: { count: data.places?.length || 0 },
-      artifacts: hasData ? [accessibilityCloudCacheFile(id)] : [],
+      meta: { count: data.places?.length || 0, gap: tokenGap || undefined },
+      artifacts: [accessibilityCloudCacheFile(id)],
       data,
       error: !hasData ? data.error : undefined,
     };

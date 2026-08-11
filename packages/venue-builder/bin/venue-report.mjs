@@ -18,8 +18,11 @@ import { pointInRing } from '../lib/geometry.mjs';
 import { checklist, checklistTable, failures } from '../lib/venue-checklist.mjs';
 import { readRecipe } from '../lib/venue-recipe.mjs';
 import { requests } from '../lib/venue-requests.mjs';
+import { venueSidecar, readJson, VENUE_DIR } from '../lib/venue-io.mjs';
+import { collectExternalClaims } from '../lib/external-claims.mjs';
+import { readSources, externalAdaptersFromCatalog, adapterGapNotes } from '../lib/venue-sources.mjs';
+import { adapterCacheFile } from '../lib/adapters/_cache.mjs';
 
-const VENUE_DIR = path.join(process.cwd(), 'public', 'venues');
 const kb = (file) => Math.round(fs.statSync(file).size / 1024);
 
 const manifest = JSON.parse(fs.readFileSync(path.join(VENUE_DIR, 'manifest.json'), 'utf8'));
@@ -27,7 +30,7 @@ const id = process.argv[2];
 
 const readOverridesFor = (venueId) => {
   try {
-    return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'venues', `${venueId}.overrides.json`), 'utf8'));
+    return JSON.parse(fs.readFileSync(venueSidecar(venueId, 'overrides.json'), 'utf8'));
   } catch {
     return null;
   }
@@ -186,6 +189,34 @@ if (outside.length) {
   say(`> ${outside.length} thing(s) here need a source outside OpenStreetMap`
     + `${blocking ? `, ${blocking} of them blocking` : ''}: ${outside.map((r) => r.need).join('; ')}.`);
   say(`> The brief, with the shape of every answer: \`npm run venues:ask -- ${id}\``);
+  say();
+}
+
+/* External research caches → evidence ingest coverage. */
+const { data: catalog } = readSources(id);
+const declared = externalAdaptersFromCatalog(catalog, { fallback: [] });
+const adapterGaps = adapterGapNotes(catalog);
+const ext = collectExternalClaims(id, pois);
+if (declared.length || ext.stats.entranceClaims || ext.stats.metadataClaims) {
+  let synced = 0;
+  for (const adapterId of declared) {
+    if (readJson(adapterCacheFile(id, adapterId), null)) synced += 1;
+  }
+  say('### External research');
+  say();
+  say(`* **${synced}/${declared.length || 0}** declared adapters have on-disk caches`
+    + (Object.keys(adapterGaps).length ? ` (${Object.keys(adapterGaps).length} gap note(s))` : ''));
+  say(`* **${ext.stats.entranceClaims}** entrance claims, **${ext.stats.metadataClaims}** metadata/inventory`
+    + ` — **${ext.stats.attachedToPlaces}** attached to places`);
+  const by = Object.entries(ext.stats.bySource || {}).sort((a, b) => b[1] - a[1]);
+  if (by.length) {
+    say();
+    say('| Source | Claims |');
+    say('| --- | ---: |');
+    for (const [source, n] of by) say(`| ${source} | ${n} |`);
+  }
+  say();
+  say('Sync: `npm run venues:sync-sources -- ' + id + '`. Live waits and weather stay builder-only.');
   say();
 }
 

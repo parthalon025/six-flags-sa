@@ -3,7 +3,7 @@
  */
 
 import path from 'node:path';
-import { OVERRIDE_DIR } from '../venue-io.mjs';
+import { OVERRIDE_DIR, venueSidecar } from '../venue-io.mjs';
 import { runAdapter } from '../adapters/runner.mjs';
 import { trim, SCHEMA_VERSION } from '../attractions.mjs';
 import { inventory, publish, listFile, writeSettled } from '../../bin/attractions.mjs';
@@ -15,7 +15,7 @@ export async function runValidationAgent(venueId, opts = {}) {
     await runAdapter('evidence-graph', { venueId }),
     await runAdapter('evidence-html', {
       venueId,
-      htmlPath: path.join(OVERRIDE_DIR, `${venueId}.evidence.html`),
+      htmlPath: venueSidecar(venueId, 'evidence.html'),
     }),
   ];
 
@@ -40,7 +40,7 @@ export async function runValidationAgent(venueId, opts = {}) {
     llm = await agentReview('validation', {
       evidence: graphMeta,
       published,
-      reviewHtml: path.join(OVERRIDE_DIR, `${venueId}.evidence.html`),
+      reviewHtml: venueSidecar(venueId, 'evidence.html'),
     });
   }
 
@@ -51,6 +51,6 @@ export async function runValidationAgent(venueId, opts = {}) {
     published,
     adapterRuns,
     llm,
-    reviewHtml: path.join(OVERRIDE_DIR, `${venueId}.evidence.html`),
+    reviewHtml: venueSidecar(venueId, 'evidence.html'),
   };
 }

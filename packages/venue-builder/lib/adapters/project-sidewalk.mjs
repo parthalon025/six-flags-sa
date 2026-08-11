@@ -7,11 +7,15 @@ import { cachePath, readCache, writeCache, fetchJson } from './_cache.mjs';
 
 export const projectSidewalkCacheFile = (id) => cachePath(id, 'project-sidewalk');
 
-export async function loadProjectSidewalkData(venueId, { bounds, fetch = false, offline = false } = {}) {
+export async function loadProjectSidewalkData(venueId, { bounds, fetch: doFetch = false, offline = false } = {}) {
   const cached = readCache(venueId, 'project-sidewalk');
   if (offline) return cached || { fetched: null, labels: [], error: 'No cache on disk.' };
-  if (!fetch && cached?.labels?.length) return cached;
-  if (!bounds?.north) return cached || { fetched: null, labels: [], error: 'bounds_required' };
+  if (!doFetch && cached?.labels?.length) return cached;
+  if (!bounds?.north) {
+    const stub = cached || { fetched: null, labels: [], error: 'bounds_required' };
+    writeCache(venueId, 'project-sidewalk', stub);
+    return stub;
+  }
 
   const params = new URLSearchParams({
     lat1: String(bounds.south),
@@ -24,8 +28,14 @@ export async function loadProjectSidewalkData(venueId, { bounds, fetch = false, 
   let geo;
   try {
     geo = await fetchJson(url);
-  } catch {
-    return cached || { fetched: null, labels: [], error: 'Project Sidewalk API unavailable for this bbox.' };
+  } catch (err) {
+    const stub = {
+      fetched: null,
+      labels: [],
+      error: err.message || 'Project Sidewalk API unavailable for this bbox.',
+    };
+    writeCache(venueId, 'project-sidewalk', stub);
+    return stub;
   }
 
   const labels = (geo.features || []).map((f) => ({

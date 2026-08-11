@@ -6,12 +6,12 @@
 
 import path from 'node:path';
 import { existsSync } from 'node:fs';
-import { OVERRIDE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { pairSuggestions } from './venue-judge.mjs';
 import { addressBook } from './venue-ids.mjs';
 
 export const ALIAS_FLOOR = 0.85;
-export const ALIAS_CLAIM_FILE = (id) => path.join(OVERRIDE_DIR, `${id}.alias-claims.json`);
+export const ALIAS_CLAIM_FILE = (id) => venueSidecar(id, 'alias-claims.json');
 
 /**
  * Propose alias claims from official names to bundle ride names.
@@ -65,7 +65,7 @@ export function proposeAliases({ venueId, pois = [], officialNames = [], parksAp
  * Apply alias claims to heights.json rules (alias field on matched rule).
  */
 export function applyAliasClaims(venueId, claims, { dryRun = false } = {}) {
-  const heightsFile = path.join(OVERRIDE_DIR, `${venueId}.heights.json`);
+  const heightsFile = venueSidecar(venueId, 'heights.json');
   if (!existsSync(heightsFile)) return { applied: 0, skipped: claims.length };
   const sidecar = readJson(heightsFile);
   let applied = 0;

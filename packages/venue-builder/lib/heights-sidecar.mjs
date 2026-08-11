@@ -4,11 +4,11 @@
  */
 
 import path from 'node:path';
-import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-io.mjs';
 import { addressBook, resolveOverride } from './venue-ids.mjs';
 import { atLeast } from './evidence.mjs';
 
-const heightsFile = (id) => path.join(OVERRIDE_DIR, `${id}.heights.json`);
+const heightsFile = (id) => venueSidecar(id, 'heights.json');
 
 const heightFromRule = (rule) => rule?.h ?? rule;
 

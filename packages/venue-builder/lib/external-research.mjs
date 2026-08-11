@@ -20,8 +20,10 @@ import { loadGuestTracesData, guestTraceClaims, guestGroundTruthClaims } from '.
 import { loadMapillaryData, mapillaryClaims } from './adapters/mapillary-api.mjs';
 import { loadOrsRouteQa } from './adapters/openrouteservice.mjs';
 import { WIKIDATA_QIDS } from './park-slug-map.mjs';
+import { readSources, externalAdaptersFromCatalog, DEFAULT_EXTERNAL_ADAPTERS } from './venue-sources.mjs';
+import { normalizeExternalClaims } from './external-claims.mjs';
 
-export { EXTERNAL_ADAPTER_IDS };
+export { EXTERNAL_ADAPTER_IDS, DEFAULT_EXTERNAL_ADAPTERS };
 
 /** @param {string} venueId */
 export function venueResearchContext(venueId) {
@@ -37,12 +39,21 @@ export function venueResearchContext(venueId) {
 }
 
 /**
+ * Adapter ids to sync: explicit opts.sources, else sources.json datasets.external, else defaults.
+ */
+export function resolveExternalAdapterIds(venueId, opts = {}) {
+  if (opts.sources?.length) return opts.sources;
+  const { data: catalog } = readSources(venueId);
+  return externalAdaptersFromCatalog(catalog, { fallback: DEFAULT_EXTERNAL_ADAPTERS });
+}
+
+/**
  * @param {string} venueId
  * @param {{ fetch?: boolean, offline?: boolean, sources?: string[], onProgress?: (msg: string) => void }} [opts]
  */
 export async function syncExternalSources(venueId, opts = {}) {
   const { fetch = false, offline = false, onProgress = () => {} } = opts;
-  const requested = opts.sources?.length ? opts.sources : EXTERNAL_ADAPTER_IDS;
+  const requested = resolveExternalAdapterIds(venueId, opts);
   const ctx = { ...venueResearchContext(venueId), fetch, offline };
   const out = {};
 
@@ -80,7 +91,28 @@ export async function loadExternalResearch(venueId, opts = {}) {
   const queueTimes = compareQueueTimesToBundle({ queueTimes: queueTimesRaw, pois });
   const rcdb = compareRcdbToBundle({ rcdb: rcdbRaw, pois });
 
+  const normalised = normalizeExternalClaims(venueId, {
+    pois,
+    external: {
+      parksApiRaw,
+      queueTimesRaw,
+      queueTimesCompare: queueTimes,
+      ropedropRaw,
+      wikidataRaw,
+      accessibilityRaw,
+      sidewalkRaw,
+      mapillaryRaw,
+      rcdbRaw,
+      rcdbCompare: rcdb,
+      ohmRaw,
+      openMeteoRaw,
+      llm: null,
+    },
+  });
+
+  /* Unbound imagery/a11y retained for research packets; fusion uses normalised claims. */
   const claims = [
+    ...normalised.claims,
     ...wikidataClaims(wikidataRaw),
     ...accessibilityClaims(accessibilityRaw),
     ...sidewalkClaims(sidewalkRaw),
@@ -107,5 +139,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
     mapillaryRaw,
     orsRaw,
     claims,
+    normalised,
+    declaredAdapters: resolveExternalAdapterIds(venueId),
   };
 }

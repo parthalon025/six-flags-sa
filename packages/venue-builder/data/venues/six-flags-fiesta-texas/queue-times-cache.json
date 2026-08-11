@@ -1,0 +1,351 @@
+{
+  "fetched": "2026-08-11T19:54:42",
+  "source": "queue-times.com",
+  "parkId": 39,
+  "parkName": "Six Flags Fiesta Texas",
+  "operator": "Six Flags Entertainment Corporation",
+  "rides": [
+    {
+      "name": "Bugs' White Water Rapids",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Crow’s Nest",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "CYBORG™: Cyber Revolution",
+      "land": "Family Rides",
+      "waitTime": 10,
+      "isOpen": true
+    },
+    {
+      "name": "DC™ Super-Villains Swing",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Fiesta Texas Railroad",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Fiesta Texas Railroad - Western",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Grand Carousel",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "GREEN LANTERN™ Emerald Flight",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Hustler",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "METROPOLIS™ Transit Authority",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Pirates of the Deep Sea",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "POISON IVY™ Toxic Spin",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "SHAZAM™: Tower of Eternity",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Spinsanity",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "The Gully Washer",
+      "land": "Family Rides",
+      "waitTime": 20,
+      "isOpen": true
+    },
+    {
+      "name": "THE PENGUIN™: Gotham City Getaway",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Wave Runner",
+      "land": "Family Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "BAT GIRL™: Coaster Chase",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Bucking Broncos",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Circuit Breaker Grand Prix - Electric Go-Karts",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Daffy’s Bus Stop",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Foghorn Leghorn’s Barnyard Railway",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Kinderstein",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Taz's Tornado",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Yosemite Sam Wacky Wagons",
+      "land": "Kids' Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Bahama Blaster",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "BATMAN™ The Ride",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Boomerang Coast To Coaster",
+      "land": "Thrill Rides",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Chupacabra",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Dare Devil Dive Flying Machines",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Dr. Diabolical's Cliffhanger",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Fireball",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Hurricane Force 5",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Iron Rattler",
+      "land": "Thrill Rides",
+      "waitTime": 30,
+      "isOpen": true
+    },
+    {
+      "name": "JOKER™: Carnival of Chaos",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Pandemonium",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Poltergeist",
+      "land": "Thrill Rides",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Road Runner Express",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Scream!",
+      "land": "Thrill Rides",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "SUPERGIRL™ Sky Flight",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "SUPERMAN™ KRYPTON Coaster",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "WONDER WOMAN™ Golden Lasso Coaster",
+      "land": "Thrill Rides",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Bamboo Chutes",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Bermuda Triangle",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Bonzai Pipeline",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Cowabunga",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "HH - Coral Cove",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Lone Star Lagoon",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Paradise Cove",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Riptide Runner",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Splashwater Springs",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Texas Treehouse",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Texas Tumble",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Thunder Rapids Water Coaster",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Tornado",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Vortex",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "White Water Canyon",
+      "land": "Water Rides",
+      "waitTime": 0,
+      "isOpen": false
+    }
+  ]
+}

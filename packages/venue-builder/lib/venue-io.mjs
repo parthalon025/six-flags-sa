@@ -1,10 +1,17 @@
 /* Where a venue lives on disk, and how the app finds out about it.
  *
- * One venue is two files plus a manifest row:
+ * One venue is two *published* files plus a manifest row:
  *
  *   public/venues/<id>.map.json    the drawn geometry, fetched by the browser
  *   public/venues/<id>.pois.json   the places, fetched by the browser
  *   public/venues/manifest.json    every venue's name, centre and bounds
+ *
+ * Builder *input* for each venue lives in its own package directory:
+ *
+ *   packages/venue-builder/data/venues/<id>/
+ *     sources.json, overrides.json, heights.json, recipe.json, ids.json, …
+ *     maps/          official park map images used for georef / testing
+ *     *.geojson      imagery / merge / traced datasets
  *
  * They sit under public/ rather than being imported at build time because that
  * is what makes a venue swappable without a rebuild: the client fetches the one
@@ -14,10 +21,11 @@
  * the POI lists through the bundler.
  */
 
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   APP_ROOT,
+  BUILDER_ROOT,
   INDEX_FILE,
   MANIFEST_FILE,
   MONO_ROOT,
@@ -25,9 +33,50 @@ import {
   VENUE_DIR,
 } from '../src/paths.mjs';
 
-export { APP_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
+export { APP_ROOT, BUILDER_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
 /** @deprecated use MONO_ROOT */
 export const ROOT = MONO_ROOT;
+
+/** Absolute path to one venue's builder package directory. */
+export const venuePkgDir = (id) => path.join(OVERRIDE_DIR, id);
+
+/**
+ * Absolute path to a sidecar inside a venue package.
+ * @param {string} id venue id
+ * @param {string} name file name inside the package (e.g. `sources.json`, `queue-times-cache.json`)
+ */
+export const venueSidecar = (id, name) => path.join(OVERRIDE_DIR, id, name);
+
+/** Relative path from the venue-builder package root (for sources.json datasets). */
+export const venueSidecarRel = (id, name) => path.join('data', 'venues', id, name).replace(/\\/g, '/');
+
+/** Relative path from the venue-builder package root to a map image in the venue package. */
+export const venueMapRel = (id, filename) => venueSidecarRel(id, path.join('maps', filename));
+
+/** List venue package ids that have a directory under data/venues/. */
+export function listVenuePackages() {
+  if (!existsSync(OVERRIDE_DIR)) return [];
+  return readdirSync(OVERRIDE_DIR, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
+    .map((d) => d.name)
+    .sort();
+}
+
+/**
+ * Resolve a path recorded in sources / recipes / traces.
+ * Paths are usually relative to the venue-builder package (`data/venues/...`);
+ * docs and other mono-root assets fall back to MONO_ROOT.
+ */
+export function resolveBuilderPath(relOrAbs) {
+  if (!relOrAbs) return null;
+  const raw = String(relOrAbs);
+  if (path.isAbsolute(raw)) return raw;
+  const fromBuilder = path.join(BUILDER_ROOT, raw);
+  if (existsSync(fromBuilder)) return fromBuilder;
+  const fromMono = path.join(MONO_ROOT, raw);
+  if (existsSync(fromMono)) return fromMono;
+  return fromBuilder;
+}
 
 export const slugify = (s) =>
   String(s)
@@ -162,7 +211,7 @@ function writeIndex(manifest) {
 }
 
 export function readOverrides(id, explicit) {
-  const file = explicit || path.join(OVERRIDE_DIR, `${id}.overrides.json`);
+  const file = explicit || venueSidecar(id, 'overrides.json');
   const data = readJson(file);
   return data ? { file, data } : { file: null, data: null };
 }

@@ -93,7 +93,7 @@
 import path from 'node:path';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { slug } from '../../../apps/party-tracker/lib/venue/ids.js';
-import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-io.mjs';
 
 /** The name group a place belongs to. Also the stem every key is built from. */
 export const baseKeyFor = (name) => slug(name) || 'poi';
@@ -102,7 +102,7 @@ export const baseKeyFor = (name) => slug(name) || 'poi';
 export const osmRef = (el) =>
   el && el.type && el.id != null ? `${String(el.type)[0]}${el.id}` : null;
 
-const ledgerFile = (id) => path.join(OVERRIDE_DIR, `${id}.ids.json`);
+const ledgerFile = (id) => venueSidecar(id, 'ids.json');
 
 /* Codepoint order, not locale order: this file is committed and diffed, and a
    build on a different machine must produce the same bytes. */

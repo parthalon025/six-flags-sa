@@ -89,6 +89,14 @@ export async function run(ctx = {}) {
       data,
     };
   } catch (err) {
-    return { adapterId: 'rcdb', ok: false, error: err.message };
+    const stub = {
+      fetched: null,
+      coasters: [],
+      park: ctx.venueName || id,
+      error: err.message,
+      license: 'unofficial scrape — compare only',
+    };
+    writeCache(id, 'rcdb', stub);
+    return { adapterId: 'rcdb', ok: false, error: err.message, artifacts: [rcdbCacheFile(id)], data: stub };
   }
 }

@@ -12,12 +12,12 @@ import { judgements } from './venue-judge.mjs';
 import { tagCoverageFromMap } from './tag-coverage.mjs';
 import { capabilityFor, KNOWN_OFFICIAL, scaffoldSourcesCatalogue, CAPABILITIES } from './park-capabilities.mjs';
 import { compareOfficialToBundle, officialCacheFile, loadOfficialData, enrichOfficialFromSidecar } from './venue-official-site.mjs';
-import { OVERRIDE_DIR, VENUE_DIR, readJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, VENUE_DIR, readJson, venueSidecar } from './venue-io.mjs';
 
 const RIDE = (p) => p.c === 'coaster' || p.c === 'ride';
 
 function readAttractionsSummary(id) {
-  const data = readJson(path.join(OVERRIDE_DIR, `${id}.attractions.json`));
+  const data = readJson(venueSidecar(id, 'attractions.json'));
   if (!data?.attractions?.length) return { rides: 0, published: 0 };
   const rides = data.attractions.length;
   const published = data.attractions.filter(
@@ -164,8 +164,8 @@ export async function auditAll({ fetchOfficial = false, offline = true } = {}) {
   for (const venue of manifest.venues) {
     const map = readJson(path.join(VENUE_DIR, `${venue.id}.map.json`), {});
     const pois = readJson(path.join(VENUE_DIR, `${venue.id}.pois.json`), []);
-    const overrides = readJson(path.join(OVERRIDE_DIR, `${venue.id}.overrides.json`), null);
-    const heightsSidecar = readJson(path.join(OVERRIDE_DIR, `${venue.id}.heights.json`), null);
+    const overrides = readJson(venueSidecar(venue.id, 'overrides.json'), null);
+    const heightsSidecar = readJson(venueSidecar(venue.id, 'heights.json'), null);
     const { data: catalog } = readSources(venue.id);
     const officialRaw = enrichOfficialFromSidecar(
       await loadOfficialData(venue.id, catalog, { fetch: fetchOfficial, offline }),

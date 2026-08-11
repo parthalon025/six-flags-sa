@@ -8,19 +8,20 @@
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
-import { OVERRIDE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { pairSuggestions } from './venue-judge.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
 import { officialSiteForPark } from './park-official-urls.mjs';
 import { scaffoldSourcesCatalogue } from './park-capabilities.mjs';
+import { ensureExternalDatasets } from './venue-sources.mjs';
 
-export const heightsFile = (id) => path.join(OVERRIDE_DIR, `${id}.heights.json`);
-export const sourcesFile = (id) => path.join(OVERRIDE_DIR, `${id}.sources.json`);
+export const heightsFile = (id) => venueSidecar(id, 'heights.json');
+export const sourcesFile = (id) => venueSidecar(id, 'sources.json');
 
 const defaultCredit = (park) =>
   `Height requirements compiled from ${park.name}'s official website for the current season.`;
 
-/** Ensure sources.json exists and carries an official_site URL. */
+/** Ensure sources.json exists, carries an official_site URL, and declares datasets.external. */
 export function ensureSourcesCatalogue(park) {
   const file = sourcesFile(park.id);
   let catalog = existsSync(file) ? readJson(file) : null;
@@ -28,6 +29,7 @@ export function ensureSourcesCatalogue(park) {
   if (!catalog) {
     catalog = scaffoldSourcesCatalogue(park.id, park);
   }
+  if (!Array.isArray(catalog.sources)) catalog.sources = [];
   if (site && !catalog.sources.some((s) => s.kind === 'official_site')) {
     catalog.sources.push({
       id: `${park.id}-site`,
@@ -39,6 +41,7 @@ export function ensureSourcesCatalogue(park) {
     const row = catalog.sources.find((s) => s.kind === 'official_site');
     if (row && !row.url) row.url = site;
   }
+  ensureExternalDatasets(catalog);
   catalog.generated = new Date().toISOString().slice(0, 10);
   writeJson(file, catalog, true);
   return catalog;

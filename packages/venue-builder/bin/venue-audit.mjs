@@ -9,7 +9,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { VENUE_DIR, readJson } from '../lib/venue-io.mjs';
+import { VENUE_DIR, readJson, venueSidecar } from '../lib/venue-io.mjs';
 import {
   auditAll,
   auditVenue,
@@ -71,8 +71,8 @@ async function main() {
     if (!venue) throw new Error(`No venue "${id}" in manifest.`);
     const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), {});
     const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
-    const overrides = readJson(path.join(OVERRIDE_DIR, `${id}.overrides.json`), null);
-    const heightsSidecar = readJson(path.join(OVERRIDE_DIR, `${id}.heights.json`), null);
+    const overrides = readJson(venueSidecar(id, 'overrides.json'), null);
+    const heightsSidecar = readJson(venueSidecar(id, 'heights.json'), null);
     const { data: catalog } = readSources(id);
     const officialRaw = enrichOfficialFromSidecar(
       await loadOfficialData(id, catalog, { fetch: args.fetch, offline: !args.fetch }),

@@ -2,7 +2,7 @@
  * Venue certification — the twin's birth certificate.
  *
  * Runs report (checklist), compare, route-qa, and ask as pass/fail gates.
- * Emits data/venues/<id>.certification.json with claim, evidence, confidence,
+ * Emits data/venues/<id>/certification.json with claim, evidence, confidence,
  * falsifier, and so-what per check. Below threshold, certification fails and
  * the ask brief is attached for a maintainer to act on.
  */
@@ -14,8 +14,14 @@ import { checklist, failures } from './venue-checklist.mjs';
 import { requests, briefJson } from './venue-requests.mjs';
 import { readRecipe } from './venue-recipe.mjs';
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
-import { OVERRIDE_DIR, VENUE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { VENUE_DIR, readJson, writeJson, venueSidecar, resolveBuilderPath } from './venue-io.mjs';
 import { qaVenueRouting, MAX_ROUTING_ISLANDS, MAX_RIDE_SNAP_METRES } from './venue-route-qa-core.mjs';
+import { readSources, externalAdaptersFromCatalog, adapterGapNotes, TOKEN_GATED_ADAPTERS } from './venue-sources.mjs';
+import { adapterCacheFile } from './adapters/_cache.mjs';
+import { compareParksApiToBundle } from './adapters/parks-api.mjs';
+import { compareQueueTimesToBundle } from './adapters/queue-times.mjs';
+import { collectExternalClaims } from './external-claims.mjs';
+import { isRideable } from '@party-tracker/shared/ontology.js';
 
 export const CERT_VERSION = 1;
 
@@ -26,7 +32,7 @@ function check({ key, claim, pass, evidence, confidence, falsifier, soWhat }) {
 }
 
 function readAttractionsEntrances(id) {
-  const data = readJson(path.join(OVERRIDE_DIR, `${id}.attractions.json`));
+  const data = readJson(venueSidecar(id, 'attractions.json'));
   if (!data?.attractions?.length) return { known: 0, published: 0, rides: 0 };
   const rides = data.attractions.length;
   let published = 0;
@@ -59,7 +65,7 @@ function loadVenue(id) {
     mapKb: fs.existsSync(mapFile) ? Math.round(fs.statSync(mapFile).size / 1024) : null,
     poisKb: fs.existsSync(poisFile) ? Math.round(fs.statSync(poisFile).size / 1024) : null,
   };
-  const overrides = readJson(path.join(OVERRIDE_DIR, `${id}.overrides.json`), null);
+  const overrides = readJson(venueSidecar(id, 'overrides.json'), null);
   const recipe = readRecipe(id);
   return { venue, map, pois, sizes, overrides, recipe };
 }
@@ -229,8 +235,129 @@ export function certifyVenue(id, opts = {}) {
     }),
   );
 
+  /* ---- external sources catalogue ---- */
+  const { data: catalog } = readSources(id);
+  const declared = externalAdaptersFromCatalog(catalog, { fallback: [] });
+  const gapNotes = adapterGapNotes(catalog);
+  const tokenGated = new Set(TOKEN_GATED_ADAPTERS);
+  let cachedExternal = 0;
+  let gapCovered = 0;
+  let missingRequired = [];
+  for (const adapterId of declared) {
+    const cache = readJson(adapterCacheFile(id, adapterId), null);
+    const hasCache = Boolean(cache);
+    const hasGap = Boolean(gapNotes[adapterId]);
+    if (hasCache) cachedExternal += 1;
+    else if (hasGap) gapCovered += 1;
+    else if (tokenGated.has(adapterId)) gapCovered += 1; /* optional secrets — soft gap */
+    else missingRequired.push(adapterId);
+  }
+  const llmResearch = readJson(venueSidecar(id, 'llm-research-cache.json'), null);
+  const officialCache = readJson(venueSidecar(id, 'official-cache.json'), null);
+  const hasOfficialStrategy = Boolean(catalog?.sources?.some((s) => s.kind === 'official_site'));
+  /* Fail when a declared non-optional adapter has neither cache nor gap note.
+     Do not fail solely because token-gated adapters are empty (CI without secrets). */
+  const externalPass = declared.length === 0
+    ? (hasOfficialStrategy || Boolean(officialCache) || Boolean(llmResearch))
+    : missingRequired.length === 0;
+  const externalClaims = collectExternalClaims(id, pois);
+  checks.push(
+    check({
+      key: 'external_sources',
+      claim: 'Declared external adapters have caches or an honest gap note',
+      pass: externalPass,
+      evidence: {
+        numerator: cachedExternal + gapCovered,
+        denominator: Math.max(declared.length, 1),
+        detail: declared.length
+          ? `${cachedExternal}/${declared.length} caches, ${gapCovered} gap(s); `
+            + `claims=${externalClaims.stats.entranceClaims}+${externalClaims.stats.metadataClaims}; `
+            + `attached=${externalClaims.stats.attachedToPlaces}`
+            + (missingRequired.length ? `; missing=${missingRequired.join(',')}` : '')
+          : 'no datasets.external declared',
+        declared,
+        missingRequired,
+        bySource: externalClaims.stats.bySource,
+      },
+      confidence:
+        declared.length && cachedExternal >= Math.ceil(declared.length * 0.5) ? 'high'
+          : missingRequired.length === 0 && (cachedExternal > 0 || gapCovered > 0) ? 'moderate'
+            : hasOfficialStrategy ? 'low'
+              : 'unknown',
+      falsifier: 'sources.json lists a required adapter with no cache and no gaps.adapters note',
+      soWhat: 'Explore-more research sources must either feed the twin or show as an honest gap',
+    }),
+  );
+
+  /* Inventory compare — ask when ParksAPI / Queue-Times under-cover published rides. */
+  const inventoryAsks = [];
+  const rideables = pois.filter(isRideable);
+  const parksApiCache = readJson(adapterCacheFile(id, 'parks-api'), null);
+  if (parksApiCache?.attractions?.length && !gapNotes['parks-api']) {
+    const cmp = compareParksApiToBundle({ parksApi: parksApiCache, pois });
+    const coverage = rideables.length ? cmp.matched / rideables.length : 1;
+    if (coverage < 0.5) {
+      inventoryAsks.push({
+        key: 'parks-api-inventory',
+        need: `ParksAPI matched ${cmp.matched}/${rideables.length} rides — declare gaps or improve aliases`,
+        blocking: false,
+      });
+    }
+  }
+  const qtCache = readJson(adapterCacheFile(id, 'queue-times'), null);
+  if (qtCache?.rides?.length && !gapNotes['queue-times']) {
+    const cmp = compareQueueTimesToBundle({ queueTimes: qtCache, pois });
+    const coverage = rideables.length ? cmp.matched / rideables.length : 1;
+    if (coverage < 0.5) {
+      inventoryAsks.push({
+        key: 'queue-times-inventory',
+        need: `Queue-Times matched ${cmp.matched}/${rideables.length} rides — builder QA only, never wait minutes in pois`,
+        blocking: false,
+      });
+    }
+  }
+
+  /* ---- official park map acquisition (LLM search required when declared) ---- */
+  const wantsParkMapSearch = catalog?.research?.llm_park_map_search !== false
+    && (catalog?.sources || []).some((s) => s.kind === 'official_map');
+  if (wantsParkMapSearch) {
+    const maps = (catalog?.sources || []).filter((s) => s.kind === 'official_map');
+    const localImages = maps.filter((s) => {
+      if (!s.image) return false;
+      const abs = resolveBuilderPath(s.image);
+      return abs && fs.existsSync(abs);
+    }).length;
+    const parkMapHits = Array.isArray(llmResearch?.parkMaps) ? llmResearch.parkMaps.length : 0;
+    const llmMapRan = Boolean(
+      llmResearch?.llmParkMapSearch
+      && !llmResearch.llmParkMapSearch.skipped
+      && !llmResearch.llmParkMapSearch.error,
+    );
+    const parkMapPass = localImages > 0 || parkMapHits > 0 || llmMapRan;
+    checks.push(
+      check({
+        key: 'park_map_research',
+        claim: 'Official park map image is local or LLM park-map search recorded candidates',
+        pass: parkMapPass,
+        evidence: {
+          numerator: localImages + (llmMapRan ? 1 : 0),
+          denominator: Math.max(maps.length, 1),
+          detail: `local_images=${localImages}; parkMap_candidates=${parkMapHits}; llm_park_map_search=${llmMapRan}`,
+          searchQueries: llmResearch?.searchQueries || [],
+        },
+        confidence: localImages > 0 ? 'high' : llmMapRan ? 'moderate' : 'low',
+        falsifier: 'sources.json lists official_map but no image and no LLM park-map search cache',
+        soWhat: 'Guest maps for tracing require LLM search (or a package maps/ image) before georef',
+      }),
+    );
+  }
+
   const certified = checks.every((c) => c.pass);
-  const askBrief = certified ? null : briefJson(venue, reqs);
+  let askBrief = certified && !inventoryAsks.length ? null : briefJson(venue, reqs);
+  if (inventoryAsks.length) {
+    askBrief = askBrief || briefJson(venue, reqs) || { venue: venue.id, requests: [] };
+    askBrief.inventory = inventoryAsks;
+  }
 
   const doc = {
     version: CERT_VERSION,
@@ -242,7 +369,7 @@ export function certifyVenue(id, opts = {}) {
   };
 
   if (opts.write !== false) {
-    const file = path.join(OVERRIDE_DIR, `${id}.certification.json`);
+    const file = venueSidecar(id, 'certification.json');
     writeJson(file, doc, true);
   }
 
@@ -256,7 +383,7 @@ export function certifyAll(opts = {}) {
 }
 
 export function certificationFile(id) {
-  return path.join(OVERRIDE_DIR, `${id}.certification.json`);
+  return venueSidecar(id, 'certification.json');
 }
 
 export function renderCertificationMarkdown(doc) {

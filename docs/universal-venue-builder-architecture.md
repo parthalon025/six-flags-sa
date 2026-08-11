@@ -16,20 +16,57 @@ Related: [dependency matrix](./universal-venue-builder-dependency-matrix.md) ·
 Adapters live in the **builder** world. Their job is to produce **claims** the evidence
 engine can fuse. The phone never imports LangGraph, Valhalla, or YOLO.
 
+**External research path:** `sources.json` `datasets.external` selects adapters
+(validated against `packages/venue-builder/lib/adapters/implementations.mjs`).
+Offline scaffolds default to the safe subset (no MAPILLARY / Accessibility Cloud /
+ORS secrets); declare token-gated adapters when bounds exist.
+`npm run venues:sync-sources` / research agent caches them under
+`data/venues/<id>/` (`*-cache.json`). `normalizeExternalClaims` binds ParksAPI
+locations and Mapillary/a11y points to rides (`feature_id` / place); attractions
+inventory runs `ingestExternalClaims` → `addEvidence` for entrance/exit only.
+Queue-Times, RopeDrop, Open-Meteo, OHM, and RCDB stay inventory/QA/metadata —
+they do not invent wait times, weather, or height rules in the shipped bundle.
+Declared adapters without a cache must carry `gaps.adapters.<id>` (or be
+token-gated); certification fails otherwise.
+
+**Publish kinds:** `queue_entrance` | `ride_exit` with `at` may publish through
+existing `publish()` → `pois[].e` / `out` at `PUBLISH_AT`. `inventory`,
+`metadata`, `imagery` (unbound), and climate never create entrances alone.
+
+**Official pages + LLM open research:** `open-research.mjs` always runs deterministic
+pairing from the official-site cache (heights/aliases/inventory gaps). With `--ai` /
+`VENUE_LLM_API_KEY`, an LLM may propose additional aliases and height *candidates*
+quoted from official text. **LLM park-map search is required** to locate guest-map
+image/PDF assets (`research.llm_park_map_search` in `sources.json`): HTML scrape of
+`official_map` pages plus an LLM pass that ranks assets / proposes follow-up URLs and
+search queries. Results land in `data/venues/<id>/llm-research-cache.json` under
+`parkMaps`. LLM output is never coordinates and never auto-writes heights; weight
+`llm_extract` alone cannot clear the publish floor. Map images live in
+`data/venues/<id>/maps/` inside each venue package.
+
+**Official park maps (including not-to-scale):** Catalogue `kind: "official_map"` with
+`map_kind` (`schematic` | `photo` | `to_scale`) and optional `image`. Scaffold a pixel
+trace with `npm run venues:trace -- --scaffold <id>`, pin control points to OSM corners,
+digitize `entrance` / `exit` / `place` / `path` features, then run
+`npm run venues:trace -- data/venues/<id>/trace.json --wire`. Schematic maps default to
+TPS + 25 m CV budget; every feature carries `error_m`. Rebuild folds routes into the
+walk network and entrances into POIs via `applyTrace`.
+
 ## Adapter contract
 
 ```mermaid
 flowchart LR
   subgraph adapter [External adapter]
     UP[Upstream repo CLI/service]
-    WRAP[wrap layer in scripts/lib/adapters]
+    WRAP[wrap layer in packages/venue-builder/lib/adapters]
   end
   subgraph sidecar [data/venues]
     ATTR[attractions.json]
     SRC[sources.json]
-    CACHE[official-cache.json]
+    CACHE["*-cache.json"]
   end
   subgraph fuse [Evidence]
+    NORM[normalizeExternalClaims]
     EG[evidence-graph.mjs]
     EV[evidence.mjs fuse]
   end
@@ -38,15 +75,16 @@ flowchart LR
     MAP[map.json]
   end
   UP --> WRAP
-  WRAP --> ATTR
   WRAP --> CACHE
+  CACHE --> NORM
+  NORM --> ATTR
   ATTR --> EG
   EG --> EV
   EV --> POIS
   MAP --> POIS
 ```
 
-**Descriptor** — static metadata in `registry.mjs` (license, stage, adopt mode).  
+**Descriptor** — static metadata in `packages/venue-builder/lib/adapters/registry.mjs` (license, stage, adopt mode).  
 **Run** — optional `async run(ctx)` returning `EvidenceClaim[]` and artifact paths.  
 **Stub default** — registered for evaluation with `error: not_implemented`.
 

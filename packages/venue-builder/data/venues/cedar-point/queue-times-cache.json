@@ -1,0 +1,423 @@
+{
+  "fetched": "2026-08-11T19:54:39",
+  "source": "queue-times.com",
+  "parkId": 50,
+  "parkName": "Cedar Point",
+  "operator": "Cedar Fair Entertainment Company",
+  "rides": [
+    {
+      "name": "Blue Streak",
+      "land": "Coasters",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Cedar Creek Mine Ride",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Corkscrew",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "GateKeeper",
+      "land": "Coasters",
+      "waitTime": 15,
+      "isOpen": true
+    },
+    {
+      "name": "Gemini",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Iron Dragon",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Magnum XL-200",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Maverick",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Millennium Force",
+      "land": "Coasters",
+      "waitTime": 15,
+      "isOpen": true
+    },
+    {
+      "name": "Raptor",
+      "land": "Coasters",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Rougarou",
+      "land": "Coasters",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Siren's Curse",
+      "land": "Coasters",
+      "waitTime": 45,
+      "isOpen": true
+    },
+    {
+      "name": "Steel Vengeance",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Top Thrill 2",
+      "land": "Coasters",
+      "waitTime": 60,
+      "isOpen": true
+    },
+    {
+      "name": "Valravn",
+      "land": "Coasters",
+      "waitTime": 30,
+      "isOpen": true
+    },
+    {
+      "name": "Wild Mouse",
+      "land": "Coasters",
+      "waitTime": 20,
+      "isOpen": true
+    },
+    {
+      "name": "Wilderness Run",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Woodstock Express",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "4x4's",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Cadillac Cars",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Cedar Point & Lake Erie Railroad",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Cedar Point and Lake Erie Railroad - Frontier",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Charlie Brown's Wind-Up",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Flying Ace Balloon Race",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Giant Wheel",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Lake Erie Eagles",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Linus' Beetle Bugs",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Midway Carousel",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Peanuts 500",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Peanuts Road Rally",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Sky Ride",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Sky Ride West",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Snoopy's Deep Sea Divers",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Snoopy's Express Railroad",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Balloon Race",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Camp Bus",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Dune Buggies",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Helicopters",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Joe Cool's Dodgem School",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Kiddy Kingdom Carousel",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Kite Eating Tree",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Motorcycles",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Mustangs",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Police Cars",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Red Baron",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Rock, Spin & Turn",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Roto Whip",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Sky Fighters",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Snoopy's Space Race",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Space Age",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Woodstock's Airmail",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Woodstock's Whirlybirds",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Atomic Scrambler",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Calypso",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Cedar Downs Racing Derby",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Dodgem",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Matterhorn",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "maXair",
+      "land": "Thrill",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Ocean Motion",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Pipe Scream",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Power Tower",
+      "land": "Thrill",
+      "waitTime": 15,
+      "isOpen": true
+    },
+    {
+      "name": "Power Tower Shot",
+      "land": "Thrill",
+      "waitTime": 5,
+      "isOpen": true
+    },
+    {
+      "name": "Skyhawk",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "SlingShot",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Super Himalaya",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Thunder Canyon",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Troika",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "Wave Swinger",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    },
+    {
+      "name": "WindSeeker",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": true
+    }
+  ]
+}
