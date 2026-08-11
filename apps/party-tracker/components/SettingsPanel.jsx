@@ -66,10 +66,12 @@ export default function SettingsPanel({
           optional when your expedition wants to stick together: one phone starts one and reads out
           the six-character code; everyone else types it in, scans the square, or opens the link.
           After that each phone shows the others as coloured markers, with how far away they are and
-          how long it takes to walk there. A <b>meet-up</b> is one spot everybody agrees on, and
-          anyone can set it. The phone that started the party <b>hosts</b> it, which only means it
-          keeps the list — if it goes flat another phone picks the list up on its own, and nobody
-          has to do anything. Nothing you do here is visible outside your party.
+          how long it takes to walk there. <b>Side Quests</b> are on-the-ground missions for facts
+          open maps cannot settle — height signs, queue entrances, closed toilets — so other guests
+          benefit. A <b>meet-up</b> is one spot everybody agrees on, and anyone can set it. The phone
+          that started the party <b>hosts</b> it, which only means it keeps the list — if it goes
+          flat another phone picks the list up on its own, and nobody has to do anything. Nothing you
+          do here is visible outside your party.
         </p>
       )}
 

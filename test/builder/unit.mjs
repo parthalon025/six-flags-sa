@@ -6329,12 +6329,41 @@ await check('big-kahunas catalogue declares schematic official map with image', 
   return true;
 });
 
+await check('buildSideQuests lists height and entrance gaps', async () => {
+  const { buildSideQuests } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const { durable, ambient, counts } = buildSideQuests({
+    pois: [
+      { n: 'Wave Pool', c: 'ride' },
+      { n: 'Maui Pipeline', c: 'ride', h: { min: 48 }, e: { lat: 1, lng: 2 } },
+      { n: 'Snack', c: 'food' },
+      { n: 'Loos', c: 'restroom' },
+    ],
+    venueName: "Big Kahuna's",
+  });
+  assert.ok(counts.ambient >= 3);
+  assert.ok(durable.some((q) => q.id === 'height_rule'));
+  assert.ok(durable.some((q) => q.id === 'queue_entrance'));
+  assert.ok(!durable.some((q) => q.id === 'poi_restroom'));
+  return true;
+});
+
+await check('quest seeds map builder ask gaps to Scout types', async () => {
+  const { questSeedsFromRequests } = await import('../../packages/venue-builder/lib/quest-seeds.mjs');
+  const seeds = questSeedsFromRequests('demo', [
+    { key: 'heights', need: 'heights', blocking: true, targets: ['Ride A', 'Ride B'] },
+    { key: 'credits', need: 'credits', blocking: false, targets: [] },
+  ]);
+  assert.equal(seeds.length, 2);
+  assert.ok(seeds.every((s) => s.type === 'height_rule'));
+  assert.equal(questSeedsFromRequests('demo', [{ key: 'credits', need: 'c', blocking: false, targets: [] }]).length, 0);
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
-
-
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));
   process.exitCode = 1;
 }
+

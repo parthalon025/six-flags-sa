@@ -999,6 +999,58 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   animation: popIn var(--t2) var(--easeOut) both, hotTag 1.4s ease-in-out infinite .3s;
 }
 
+/* Side Quests — mission rows inside the sheet */
+.sideQuestRow {
+  align-items: flex-start;
+  gap: 10px;
+}
+.sideQuestGlyph {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+  color: var(--blue);
+}
+.sideQuestTitle {
+  display: block;
+  font-weight: 600;
+  color: var(--label);
+}
+.sideQuestBlurb {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 17px;
+  color: var(--label2);
+  font-weight: 400;
+}
+.sideQuestTargets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sideQuestChip {
+  appearance: none;
+  border: .5px solid var(--sep);
+  background: var(--fill3);
+  color: var(--label);
+  border-radius: var(--rCapsule);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sideQuestChip:active {
+  transform: scale(.97);
+}
+
 /* The tab strip is an iOS segmented control: a filled track, and the selected
    segment carries a raised thumb. No sliding indicator to measure — the thumb
    is the selected button's own background. */

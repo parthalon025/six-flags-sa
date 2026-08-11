@@ -1,4 +1,5 @@
 import { addressBook, resolveOverride } from './venue-ids.mjs';
+import { questSeedsForVenue } from './quest-seeds.mjs';
 
 /**
  * The questions a build cannot answer, written so somebody — or something — can.
@@ -345,7 +346,7 @@ export function renderBrief(venue, reqs) {
 }
 
 /** The same thing as data, for whatever is not a person. */
-export const briefJson = (venue, reqs) => ({
+export const briefJson = (venue, reqs, extras = {}) => ({
   venue: {
     id: venue?.id || null,
     name: venue?.name || null,
@@ -355,4 +356,12 @@ export const briefJson = (venue, reqs) => ({
   overridesFile: `data/venues/${venue?.id}/overrides.json`,
   blocking: reqs.some((r) => r.blocking),
   requests: reqs,
+  /* Gaps open sources cannot settle → Side Quests / Scout missions (E9–E10). */
+  questSeeds: extras.questSeeds
+    || questSeedsForVenue({
+      venueId: venue?.id,
+      reqs,
+      attractions: extras.attractions || null,
+      includeAmbient: extras.includeAmbient !== false,
+    }),
 });

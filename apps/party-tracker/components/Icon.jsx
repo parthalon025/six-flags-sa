@@ -151,6 +151,22 @@ const GLYPHS = {
       <path d="M6.2 15.4 6.7 17.1 8.4 17.6 6.7 18.1 6.2 19.8 5.7 18.1 4 17.6 5.7 17.1Z" fill="currentColor" />
     </>
   ),
+  /* Side Quests — filled flag: missions that need boots on the ground. */
+  'flag.fill': (
+    <>
+      <path
+        d="M5.2 3.4v17.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M6.4 4.2h9.2c.7 0 1.1.8.7 1.4L14.8 8.6l1.5 3c.4.6 0 1.4-.7 1.4H6.4Z"
+        fill="currentColor"
+      />
+    </>
+  ),
   /* Parkbound simplified Waypoint — app/map glyph (not the full lockup). */
   waypoint: (
     <>
