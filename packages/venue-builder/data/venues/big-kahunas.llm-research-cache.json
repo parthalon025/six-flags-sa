@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "fetched": "2026-08-10",
+  "sources": [
+    "official_site"
+  ],
+  "mode": "official",
+  "aliases": [],
+  "heightCandidates": [
+    {
+      "name": "Bombay Blasters",
+      "min": 48,
+      "alone": null,
+      "max": null,
+      "quote": "Over 48\"",
+      "url": "https://bigkahunas.com/destin/attraction/bombay-blasters/",
+      "source": "official_site"
+    },
+    {
+      "name": "Bombs Away Bay",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Fun for all",
+      "url": "https://bigkahunas.com/destin/attraction/bombs-away-bay/",
+      "source": "official_site"
+    },
+    {
+      "name": "Buccaneer Cove",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Kid-friendly",
+      "url": "https://bigkahunas.com/destin/attraction/buccaneer-cove/",
+      "source": "official_site"
+    },
+    {
+      "name": "Cobra Twister",
+      "min": 42,
+      "alone": null,
+      "max": null,
+      "quote": "Over 42\"",
+      "url": "https://bigkahunas.com/destin/attraction/cobra-twister/",
+      "source": "official_site"
+    },
+    {
+      "name": "Crocodile Flats",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Kid-friendly",
+      "url": "https://bigkahunas.com/destin/attraction/crocodile-flats/",
+      "source": "official_site"
+    },
+    {
+      "name": "Fun Fountains",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Fun for all",
+      "url": "https://bigkahunas.com/destin/attraction/fun-fountains/",
+      "source": "official_site"
+    },
+    {
+      "name": "Hammerhead",
+      "min": 42,
+      "alone": null,
+      "max": null,
+      "quote": "Over 42\"",
+      "url": "https://bigkahunas.com/destin/attraction/hammerhead/",
+      "source": "official_site"
+    },
+    {
+      "name": "Honolulu Half Pipe",
+      "min": 48,
+      "alone": null,
+      "max": null,
+      "quote": "Over 48\"",
+      "url": "https://bigkahunas.com/destin/attraction/honolulu-half-pipe/",
+      "source": "official_site"
+    },
+    {
+      "name": "Jumanji",
+      "min": 48,
+      "alone": null,
+      "max": null,
+      "quote": "Over 48\"",
+      "url": "https://bigkahunas.com/destin/attraction/jumanji/",
+      "source": "official_site"
+    },
+    {
+      "name": "Kowabunga Racer",
+      "min": 42,
+      "alone": null,
+      "max": null,
+      "quote": "Over 42\"",
+      "url": "https://bigkahunas.com/destin/attraction/kowabunga-racer/",
+      "source": "official_site"
+    },
+    {
+      "name": "Lazy River",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Fun for all",
+      "url": "https://bigkahunas.com/destin/attraction/lazy-river/",
+      "source": "official_site"
+    },
+    {
+      "name": "Maui Pipeline",
+      "min": 48,
+      "alone": null,
+      "max": null,
+      "quote": "Over 48\"",
+      "url": "https://bigkahunas.com/destin/attraction/maui-pipeline/",
+      "source": "official_site"
+    },
+    {
+      "name": "Monkey River",
+      "min": 42,
+      "alone": null,
+      "max": null,
+      "quote": "Over 42\"",
+      "url": "https://bigkahunas.com/destin/attraction/monkey-river/",
+      "source": "official_site"
+    },
+    {
+      "name": "Pirate’s Escape",
+      "min": 42,
+      "alone": null,
+      "max": null,
+      "quote": "Over 42\"",
+      "url": "https://bigkahunas.com/destin/attraction/pirates-escape/",
+      "source": "official_site"
+    },
+    {
+      "name": "Pleasure Island",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Kid-friendly",
+      "url": "https://bigkahunas.com/destin/attraction/pleasure-island/",
+      "source": "official_site"
+    },
+    {
+      "name": "Raging Rhino River",
+      "min": 42,
+      "alone": null,
+      "max": null,
+      "quote": "Over 42\"",
+      "url": "https://bigkahunas.com/destin/attraction/raging-rhino-river/",
+      "source": "official_site"
+    },
+    {
+      "name": "Tadpole Pond",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Kid-friendly",
+      "url": "https://bigkahunas.com/destin/attraction/tadpole-pond/",
+      "source": "official_site"
+    },
+    {
+      "name": "Thunder River",
+      "min": 44,
+      "alone": null,
+      "max": null,
+      "quote": "Over 44\"",
+      "url": "https://bigkahunas.com/destin/attraction/thunder-river/",
+      "source": "official_site"
+    },
+    {
+      "name": "Tiki River Run",
+      "min": 44,
+      "alone": null,
+      "max": null,
+      "quote": "Over 44\"",
+      "url": "https://bigkahunas.com/destin/attraction/tiki-river-run/",
+      "source": "official_site"
+    },
+    {
+      "name": "Wave Pool",
+      "min": 0,
+      "alone": null,
+      "max": null,
+      "quote": "Fun for all",
+      "url": "https://bigkahunas.com/destin/attraction/wave-pool/",
+      "source": "official_site"
+    }
+  ],
+  "inventoryGaps": [],
+  "notes": [
+    "LLM open research skipped: ai_not_requested"
+  ],
+  "siteCount": 21,
+  "bundleRideCount": 23,
+  "llm": null,
+  "venue": "big-kahunas"
+}

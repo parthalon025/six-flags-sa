@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "fetched": "2026-08-11",
+  "sources": [
+    "official_site"
+  ],
+  "mode": "official",
+  "aliases": [],
+  "heightCandidates": [],
+  "inventoryGaps": [],
+  "notes": [
+    "LLM open research skipped: ai_not_requested"
+  ],
+  "siteCount": 0,
+  "bundleRideCount": 76,
+  "llm": null,
+  "venue": "cedar-point"
+}

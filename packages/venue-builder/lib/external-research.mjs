@@ -19,8 +19,10 @@ import { loadProjectSidewalkData, sidewalkClaims } from './adapters/project-side
 import { loadMapillaryData, mapillaryClaims } from './adapters/mapillary-api.mjs';
 import { loadOrsRouteQa } from './adapters/openrouteservice.mjs';
 import { WIKIDATA_QIDS } from './park-slug-map.mjs';
+import { readSources, externalAdaptersFromCatalog, DEFAULT_EXTERNAL_ADAPTERS } from './venue-sources.mjs';
+import { parksApiEntranceClaims, snapClaimsToRides } from './external-claims.mjs';
 
-export { EXTERNAL_ADAPTER_IDS };
+export { EXTERNAL_ADAPTER_IDS, DEFAULT_EXTERNAL_ADAPTERS };
 
 /** @param {string} venueId */
 export function venueResearchContext(venueId) {
@@ -36,12 +38,21 @@ export function venueResearchContext(venueId) {
 }
 
 /**
+ * Adapter ids to sync: explicit opts.sources, else sources.json datasets.external, else defaults.
+ */
+export function resolveExternalAdapterIds(venueId, opts = {}) {
+  if (opts.sources?.length) return opts.sources;
+  const { data: catalog } = readSources(venueId);
+  return externalAdaptersFromCatalog(catalog, { fallback: DEFAULT_EXTERNAL_ADAPTERS });
+}
+
+/**
  * @param {string} venueId
  * @param {{ fetch?: boolean, offline?: boolean, sources?: string[], onProgress?: (msg: string) => void }} [opts]
  */
 export async function syncExternalSources(venueId, opts = {}) {
   const { fetch = false, offline = false, onProgress = () => {} } = opts;
-  const requested = opts.sources?.length ? opts.sources : EXTERNAL_ADAPTER_IDS;
+  const requested = resolveExternalAdapterIds(venueId, opts);
   const ctx = { ...venueResearchContext(venueId), fetch, offline };
   const out = {};
 
@@ -84,6 +95,10 @@ export async function loadExternalResearch(venueId, opts = {}) {
     ...sidewalkClaims(sidewalkRaw),
     ...mapillaryClaims(mapillaryRaw),
     ...rcdbClaims(rcdbRaw, rcdb),
+    ...parksApiEntranceClaims(parksApiRaw, pois),
+    ...snapClaimsToRides(mapillaryClaims(mapillaryRaw), pois),
+    ...snapClaimsToRides(accessibilityClaims(accessibilityRaw), pois),
+    ...snapClaimsToRides(sidewalkClaims(sidewalkRaw), pois),
   ];
 
   return {
@@ -102,5 +117,6 @@ export async function loadExternalResearch(venueId, opts = {}) {
     mapillaryRaw,
     orsRaw,
     claims,
+    declaredAdapters: resolveExternalAdapterIds(venueId),
   };
 }

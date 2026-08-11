@@ -37,6 +37,21 @@
   ],
   "datasets": {
     "merge": ["data/venues/big-kahunas.merge.geojson"],
-    "imagery": ["data/venues/big-kahunas.imagery.geojson"]
+    "imagery": ["data/venues/big-kahunas.imagery.geojson"],
+    "external": [
+      "parks-api",
+      "queue-times",
+      "wikidata",
+      "rcdb",
+      "open-meteo",
+      "openhistoricalmap",
+      "mapillary-api",
+      "openrouteservice"
+    ]
+  },
+  "research": {
+    "official_pages": true,
+    "llm_open_research": true,
+    "note": "LLM may propose aliases and height candidates from official HTML; code decides. Never invents coordinates."
   }
 }

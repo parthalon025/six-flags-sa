@@ -11,10 +11,27 @@
 
 import path from 'node:path';
 import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
+import { EXTERNAL_ADAPTER_IDS } from './adapters/implementations.mjs';
 
 const ROOT = path.dirname(path.dirname(OVERRIDE_DIR));
 
 export const sourcesFile = (id) => path.join(OVERRIDE_DIR, `${id}.sources.json`);
+
+/**
+ * Default open-data adapters declared for a theme-park venue.
+ * Token-gated adapters stay listed; sync records a gap when secrets are missing.
+ */
+export const DEFAULT_EXTERNAL_ADAPTERS = EXTERNAL_ADAPTER_IDS.filter(
+  (id) => id !== 'ropedrop', // Disney/Universal only; declare per venue when mapped
+);
+
+/** Adapter ids listed in sources.json datasets.external (validated against registry). */
+export function externalAdaptersFromCatalog(catalog, { fallback = DEFAULT_EXTERNAL_ADAPTERS } = {}) {
+  const listed = catalog?.datasets?.external;
+  if (!Array.isArray(listed) || !listed.length) return [...fallback];
+  const known = new Set(EXTERNAL_ADAPTER_IDS);
+  return listed.filter((id) => known.has(String(id)));
+}
 
 const relativise = (value) => {
   const rel = path.relative(ROOT, path.resolve(String(value)));
@@ -66,6 +83,10 @@ export function wireSources(id, args = {}) {
     const wired = collect(out[key], fromCatalog);
     if (wired) out[key] = wired;
   }
+
+  /* datasets.external is consumed by syncExternalSources / research — not by
+     geometry flags — but we surface the resolved list on the catalog view. */
+  out.externalAdapters = externalAdaptersFromCatalog(data);
 
   return { args: out, catalog: data, file };
 }

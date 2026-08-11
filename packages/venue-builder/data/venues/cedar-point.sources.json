@@ -2,7 +2,7 @@
   "version": 1,
   "venue": "cedar-point",
   "_comment": "Source catalogue for Cedar Point. Official listings are JS-rendered; heights sidecar is the ground truth until a cache is built. Fetch with npm run venues:research -- cedar-point --fetch.",
-  "generated": "2026-08-10",
+  "generated": "2026-08-11",
   "sources": [
     {
       "id": "osm",
@@ -31,7 +31,16 @@
       "wikidata",
       "rcdb",
       "open-meteo",
-      "openhistoricalmap"
+      "openhistoricalmap",
+      "mapillary-api",
+      "accessibility-cloud",
+      "project-sidewalk",
+      "openrouteservice"
     ]
+  },
+  "research": {
+    "official_pages": true,
+    "llm_open_research": true,
+    "note": "LLM may propose aliases and height candidates from official HTML; code decides. Never invents coordinates."
   }
 }

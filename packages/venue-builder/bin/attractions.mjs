@@ -52,6 +52,7 @@ import { isRideable } from '@party-tracker/shared/ontology.js';
 import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
 import { renderEvidenceHtml } from '../lib/venue-validate-html.mjs';
 import { exportTileGeoJson } from '../lib/tiles-export.mjs';
+import { collectExternalClaims } from '../lib/external-claims.mjs';
 
 const USAGE = `
 The ride inventory: every attraction, every way into it, and who says so.
@@ -301,6 +302,9 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
     ...candidates(map, pois),
   ];
 
+  const external = collectExternalClaims(id, pois);
+  const externalEntrance = external.entrance || [];
+
   /* One source gets one say per feature, per run, and it is settled here rather
      than by letting `addEvidence` supersede the same source over and over.
      Several detectors sign their work `geometry` — a gate standing near the
@@ -314,7 +318,7 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
   let applied = 0;
   const orphans = new Set();
   const folded = new Map();
-  for (const claim of claims) {
+  for (const claim of [...claims, ...externalEntrance]) {
     const record = recordFor(claim.ride);
     if (!record) {
       orphans.add(claim.ride);
@@ -329,7 +333,17 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
   }
 
   const all = [...records.values()].sort((a, b) => a.name.localeCompare(b.name));
-  return { id, map, pois, records: all, applied, orphans: [...orphans], asOf };
+  return {
+    id,
+    map,
+    pois,
+    records: all,
+    applied,
+    orphans: [...orphans],
+    asOf,
+    externalStats: external.stats,
+    externalMetadata: external.metadata,
+  };
 }
 
 /**
@@ -471,9 +485,15 @@ function main() {
 
   for (const id of ids) {
     const state = inventory(id, args);
-    const { records, pois, applied, orphans, asOf } = state;
+    const { records, pois, applied, orphans, asOf, externalStats } = state;
 
     console.error(`\n${id}: ${records.length} ride(s), ${applied} claim(s) of evidence`);
+    if (externalStats?.entranceClaims) {
+      console.error(
+        `  external: ${externalStats.entranceClaims} entrance claim(s)`
+          + ` (ParksAPI cache ${externalStats.parksApi}, Mapillary ${externalStats.mapillary})`,
+      );
+    }
     for (const orphan of orphans.slice(0, 5)) console.error(`  ? evidence for "${orphan}", which is not a ride here`);
 
     if (args.report) report(state, floor);

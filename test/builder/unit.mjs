@@ -5924,13 +5924,14 @@ await check('AGPL yolo adapter is rejected by runner', async () => {
 const { certifyVenue, CERT_VERSION } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
 const { qaVenueRouting, MAX_ROUTING_ISLANDS } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');
 
-await check('certify emits a birth certificate with six gates', () => {
+await check('certify emits a birth certificate with seven gates', () => {
   const doc = certifyVenue('kings-island', { write: false });
   assert.equal(doc.version, CERT_VERSION);
   assert.equal(doc.venue.id, 'kings-island');
-  assert.equal(doc.checks.length, 6);
+  assert.equal(doc.checks.length, 7);
   assert.ok(doc.checks.every((c) => c.claim && c.evidence && c.confidence && c.falsifier && c.soWhat));
   assert.ok(doc.checks.every((c) => c.evidence.denominator != null));
+  assert.ok(doc.checks.some((c) => c.key === 'external_sources'));
   return true;
 });
 
@@ -6058,6 +6059,114 @@ await check('sync external sources cache-only does not throw', async () => {
   const runs = await syncExternalSources('cedar-point', { fetch: false, sources: ['wikidata', 'open-meteo'] });
   assert.ok(runs.wikidata);
   assert.ok(runs['open-meteo']);
+  return true;
+});
+
+await check('datasets.external from sources.json filters sync list', async () => {
+  const { resolveExternalAdapterIds } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const { externalAdaptersFromCatalog } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const catalog = {
+    datasets: { external: ['parks-api', 'wikidata', 'not-a-real-adapter'] },
+  };
+  const ids = externalAdaptersFromCatalog(catalog);
+  assert.deepEqual(ids, ['parks-api', 'wikidata']);
+  const fromVenue = resolveExternalAdapterIds('cedar-point');
+  assert.ok(fromVenue.includes('parks-api'));
+  assert.ok(fromVenue.includes('wikidata'));
+  assert.ok(!fromVenue.includes('ropedrop'));
+  return true;
+});
+
+await check('ParksAPI location claims attach to rides; metadata never invents entrances', async () => {
+  const {
+    parksApiEntranceClaims,
+    inventoryMetadataClaims,
+    snapClaimsToRides,
+  } = await import('../../packages/venue-builder/lib/external-claims.mjs');
+  const pois = [
+    { n: 'Orion', i: 'orion', c: 'coaster', lat: 39.345, lng: -84.268 },
+    { n: 'Restrooms', i: 'restrooms', c: 'restroom', lat: 39.346, lng: -84.269 },
+  ];
+  const entrance = parksApiEntranceClaims(
+    {
+      fetched: '2026-08-01',
+      attractions: [
+        { name: 'Orion', at: { lat: 39.3451, lng: -84.2681 } },
+        { name: 'Unknown Flume', at: { lat: 39.34, lng: -84.26 } },
+      ],
+    },
+    pois,
+  );
+  assert.equal(entrance.length, 1);
+  assert.equal(entrance[0].ride, 'Orion');
+  assert.equal(entrance[0].source, 'parks_api');
+  assert.equal(entrance[0].type, 'queue_entrance');
+  assert.equal(entrance[0].date, '2026-08-01');
+
+  const meta = inventoryMetadataClaims({
+    queueTimes: { onlyOnApi: ['Phantom Drop'], fetched: '2026-08-02' },
+    rcdbCompare: { pairs: [] },
+    rcdbRaw: {},
+    wikidataRaw: {},
+    llm: { inventoryGaps: [{ name: 'Lost River', note: 'gap' }], fetched: '2026-08-03' },
+  });
+  assert.ok(meta.some((c) => c.source === 'queue_times' && c.kind === 'inventory'));
+  assert.ok(meta.some((c) => c.source === 'llm_extract'));
+  assert.ok(meta.every((c) => c.type == null));
+
+  const snapped = snapClaimsToRides(
+    [{ source: 'mapillary', kind: 'imagery', at: { lat: 39.34505, lng: -84.26805 }, date: '2026-07-01', note: 'img' }],
+    pois,
+  );
+  assert.equal(snapped.length, 1);
+  assert.equal(snapped[0].ride, 'Orion');
+  assert.equal(snapped[0].source, 'mapillary');
+  return true;
+});
+
+await check('open research from official pages is deterministic without LLM', async () => {
+  const { deterministicOfficialResearch, mergeOpenResearch } = await import(
+    '../../packages/venue-builder/lib/open-research.mjs'
+  );
+  const pois = [
+    { n: 'Diamondback', i: 'diamondback', c: 'coaster', lat: 1, lng: 2 },
+    { n: 'Banshee', i: 'banshee', c: 'coaster', lat: 1, lng: 2 },
+  ];
+  const official = {
+    fetched: '2026-08-11',
+    attractions: [
+      { name: 'Diamondback', height: { min: 54, label: 'Over 54"' }, url: 'https://example.test/db' },
+      { name: 'Brand New Coaster', height: { min: 48 } },
+    ],
+  };
+  const det = deterministicOfficialResearch({ official, pois });
+  assert.equal(det.mode, 'deterministic');
+  assert.ok(det.heightCandidates.some((h) => h.name === 'Diamondback' && h.min === 54));
+  assert.ok(det.inventoryGaps.some((g) => g.name === 'Brand New Coaster'));
+  const merged = mergeOpenResearch(det, { skipped: true, reason: 'no_llm_api_key' });
+  assert.equal(merged.mode, 'official');
+  assert.ok(merged.notes.some((n) => /no_llm_api_key/.test(n)));
+  const withLlm = mergeOpenResearch(det, {
+    skipped: false,
+    model: 'test',
+    fetched: '2026-08-11',
+    aliases: [{ official: 'DB', bundle: 'Diamondback', confidence: 'high' }],
+    heightCandidates: [{ name: 'Banshee', min: 52, quote: '52 inches', source: 'llm' }],
+    inventoryGaps: [],
+    notes: ['llm ok'],
+  });
+  assert.equal(withLlm.mode, 'official+llm');
+  assert.ok(withLlm.aliases.some((a) => a.source === 'llm_extract'));
+  assert.ok(withLlm.heightCandidates.some((h) => h.source === 'llm_extract'));
+  return true;
+});
+
+await check('llm_extract weight exists and cannot publish alone', async () => {
+  const { WEIGHTS, fuse, atLeast, PUBLISH_AT } = await import('../../packages/venue-builder/lib/evidence.mjs');
+  assert.equal(WEIGHTS.llm_extract, 1);
+  const fused = fuse([{ source: 'llm_extract', at: { lat: 1, lng: 2 } }]);
+  assert.equal(fused.band, 'unknown');
+  assert.equal(atLeast(fused.band, PUBLISH_AT), false);
   return true;
 });
 

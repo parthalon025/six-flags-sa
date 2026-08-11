@@ -16,6 +16,7 @@ import { readRecipe } from './venue-recipe.mjs';
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
 import { OVERRIDE_DIR, VENUE_DIR, readJson, writeJson } from './venue-io.mjs';
 import { qaVenueRouting, MAX_ROUTING_ISLANDS, MAX_RIDE_SNAP_METRES } from './venue-route-qa-core.mjs';
+import { readSources, externalAdaptersFromCatalog } from './venue-sources.mjs';
 
 export const CERT_VERSION = 1;
 
@@ -226,6 +227,45 @@ export function certifyVenue(id, opts = {}) {
       confidence: blocking.length === 0 ? 'high' : 'low',
       falsifier: 'A blocking gap was papered over instead of recorded',
       soWhat: 'Blocking requests mean a whole app feature is absent without saying so',
+    }),
+  );
+
+  /* ---- external sources catalogue ---- */
+  const { data: catalog } = readSources(id);
+  const declared = externalAdaptersFromCatalog(catalog, { fallback: [] });
+  let cachedExternal = 0;
+  for (const adapterId of declared) {
+    const file = path.join(
+      OVERRIDE_DIR,
+      adapterId === 'parks-api' ? `${id}.parks-api-cache.json` : `${id}.${adapterId}-cache.json`,
+    );
+    if (readJson(file, null)) cachedExternal += 1;
+  }
+  const llmResearch = readJson(path.join(OVERRIDE_DIR, `${id}.llm-research-cache.json`), null);
+  const officialCache = readJson(path.join(OVERRIDE_DIR, `${id}.official-cache.json`), null);
+  const hasOfficialStrategy = Boolean(catalog?.sources?.some((s) => s.kind === 'official_site'));
+  const hasResearchTrail = Boolean(officialCache) || Boolean(llmResearch) || cachedExternal > 0;
+  const externalPass = declared.length === 0 || hasResearchTrail || hasOfficialStrategy;
+  checks.push(
+    check({
+      key: 'external_sources',
+      claim: 'Declared external adapters have caches or open research is recorded',
+      pass: externalPass,
+      evidence: {
+        numerator: cachedExternal + (officialCache ? 1 : 0) + (llmResearch ? 1 : 0),
+        denominator: Math.max(declared.length, 1),
+        detail: declared.length
+          ? `${cachedExternal}/${declared.length} external caches; official=${Boolean(officialCache)}; llm=${Boolean(llmResearch)}`
+          : 'no datasets.external declared',
+        declared,
+      },
+      confidence:
+        declared.length && cachedExternal >= Math.ceil(declared.length * 0.5) ? 'high'
+          : hasResearchTrail ? 'moderate'
+            : hasOfficialStrategy ? 'low'
+              : 'unknown',
+      falsifier: 'sources.json lists adapters that were never synced and no open research ran',
+      soWhat: 'Explore-more research sources must either feed the twin or show as an honest gap',
     }),
   );
 

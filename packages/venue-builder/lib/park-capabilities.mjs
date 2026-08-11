@@ -182,9 +182,27 @@ export function scaffoldSourcesCatalogue(id, venue = {}) {
   return {
     version: 1,
     venue: id,
-    _comment: `Source catalogue for ${name}. Wire datasets as they are surveyed; fetch official listings with npm run venues:research -- ${id} --fetch.`,
+    _comment: `Source catalogue for ${name}. Wire datasets as they are surveyed; fetch official listings with npm run venues:research -- ${id} --fetch. External adapters sync via npm run venues:sync-sources -- ${id}.`,
     generated: today,
     sources,
-    datasets: {},
+    datasets: {
+      external: [
+        'parks-api',
+        'queue-times',
+        'wikidata',
+        'rcdb',
+        'open-meteo',
+        'openhistoricalmap',
+        'mapillary-api',
+        'accessibility-cloud',
+        'project-sidewalk',
+        'openrouteservice',
+      ],
+    },
+    research: {
+      official_pages: true,
+      llm_open_research: true,
+      note: 'LLM may propose aliases and height candidates from official HTML; code decides. Never invents coordinates.',
+    },
   };
 }

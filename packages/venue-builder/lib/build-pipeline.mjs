@@ -180,11 +180,16 @@ export async function runVenuePipeline(park, opts = {}) {
           parksApi: true,
           fetchDetails: true,
           offline: false,
+          openResearch: true,
+          ai: opts.ai ?? false,
+          applyAliases: false,
         });
         logStage('research', {
           officialMatched: research.packet?.official?.matched ?? null,
           siteCount: research.packet?.official?.siteCount ?? null,
           parksApiMatched: research.packet?.parksApi?.matched ?? null,
+          openResearchMode: research.openResearch?.research?.mode ?? null,
+          openResearchGaps: research.openResearch?.research?.inventoryGaps?.length ?? null,
         });
       } catch (err) {
         return { id: park.id, rank: park.rank, status: 'failed', error: `research failed: ${err.message}`, stages };
