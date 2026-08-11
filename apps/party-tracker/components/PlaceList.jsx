@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/Icon';
-import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import {
@@ -14,9 +13,9 @@ import {
   matchesQuery,
 } from '@/lib/park';
 import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
-import { campChips, campDetails, campSearchText } from '@/lib/camping';
-import { entranceMeta } from '@/lib/entrance';
+import { campDetails, campSearchText } from '@/lib/camping';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
+import { PlaceDetailBody } from '@/components/PlaceDetail';
 
 /* The results, the way a phone map shows them: a row of category filters and
    then a list, nearest first. It is the same surface whether you typed
@@ -197,7 +196,6 @@ export default function PlaceList({
     const open = selected && selected.n === p.n;
     const st = statuses.get(p.id) || null;
     const showStatus = Boolean(st && st.label);
-    const camp = open ? campChips(campDetails(p, venue)) : [];
     return (
       <div key={p.id} className={`poiRow ${open ? 'open' : ''} ${v.cls}`}>
         <button
@@ -259,87 +257,15 @@ export default function PlaceList({
           </span>
         </button>
         {open && (
-          <div className="poiDetail">
-            {showStatus && st.detail && (
-              <p className={`poiNote wxWhy ${st.tone}`}>
-                {st.detail}
-                {st.source === 'weather' && ' — a guess from the forecast, not the park'}
-              </p>
-            )}
-            {p.note && <p className="poiNote">{p.note}</p>}
-            {/* What is on the pitch. Chips rather than a sentence: this
-                is a checklist somebody reads against what their caravan
-                needs, not prose. */}
-            {camp.length > 0 && (
-              <ul className="campChips">
-                {camp.map((chip) => (
-                  <li key={chip}>{chip}</li>
-                ))}
-              </ul>
-            )}
-            {p.approx && (
-              <p className="poiNote">Position approximate — not mapped in OpenStreetMap.</p>
-            )}
-            {isRide && (() => {
-              const ent = entranceMeta(p);
-              return (
-                <p className={`poiNote entranceNote ${ent.confirmed ? 'confirmed' : 'approx'}`}>
-                  {ent.confirmed ? 'Queue entrance on map' : ent.hint}
-                </p>
-              );
-            })()}
-            {/* A campground office, a first-aid post, a ticket line. One
-                tap to dial, because the moment you want this number is
-                the moment reading it off a screen and typing it in is
-                exactly what you cannot manage. */}
-            {p.tel && (
-              <a className="poiTel" href={`tel:${p.tel.replace(/[^\d+]/g, '')}`}>
-                <Icon name="phone.fill" size={15} />
-                {p.tel}
-              </a>
-            )}
-            {onReport && isRide && (
-              <div className="joinRow reportRow">
-                {/* Reporting is one tap and instantly retractable. Anything
-                    slower and nobody does it while walking past. */}
-                <button
-                  type="button"
-                  data-report={RIDE_DOWN}
-                  className={`btn small ${st?.report?.status === RIDE_DOWN ? 'on' : ''}`}
-                  onClick={() => onReport(p.id, st?.report?.status === RIDE_DOWN ? null : RIDE_DOWN)}
-                  aria-pressed={st?.report?.status === RIDE_DOWN}
-                >
-                  {st?.report?.status === RIDE_DOWN ? 'Reported down' : 'It\u2019s down'}
-                </button>
-                <button
-                  type="button"
-                  data-report={RIDE_OPEN}
-                  className={`btn small ${st?.report?.status === RIDE_OPEN ? 'on' : ''}`}
-                  onClick={() => onReport(p.id, st?.report?.status === RIDE_OPEN ? null : RIDE_OPEN)}
-                  aria-pressed={st?.report?.status === RIDE_OPEN}
-                >
-                  {st?.report?.status === RIDE_OPEN ? 'Reported running' : 'It\u2019s running'}
-                </button>
-              </div>
-            )}
-            <div className="joinRow">
-              <button
-                type="button"
-                className="btn small primary"
-                onClick={() => onNavigate({ kind: 'poi', label: p.n, lat: p.lat, lng: p.lng })}
-              >
-                Walk me there
-              </button>
-              <button type="button" className="btn small" onClick={() => onSetMeet(p)}>
-                Make this the meet-up
-              </button>
-              {onAddToPlan && (
-                <button type="button" className="btn small" onClick={() => onAddToPlan(p)}>
-                  Save
-                </button>
-              )}
-            </div>
-          </div>
+          <PlaceDetailBody
+            poi={p}
+            status={st}
+            venue={venue}
+            onNavigate={onNavigate}
+            onSetMeet={onSetMeet}
+            onReport={onReport}
+            onAddToPlan={onAddToPlan}
+          />
         )}
       </div>
     );

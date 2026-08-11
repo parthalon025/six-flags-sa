@@ -42,7 +42,8 @@ full feature and layout prose.
   above its marker tries below, right and left before giving up.
 - **Tap a coaster and its own track lights up.** Kings Island's 121 red polylines each
   carry a ride name in the source geometry, so Diamondback's helix stops being one
-  squiggle among many. The tap also puts a callout on the map: name, distance, height rule.
+  squiggle among many. The tap also puts a callout on the map: name, distance, walk time,
+  height rule — and opens a place sheet with the full details and **Walk me there**.
 - **Height requirements, at every park here.** Drag one slider to a rider's height and
   every ride that is out today turns solid alarm red on the map, ringed and struck
   through — not faded, because fading is what a party member we have not heard from looks

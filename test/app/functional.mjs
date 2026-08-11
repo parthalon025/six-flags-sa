@@ -27,6 +27,7 @@ import {
   rosterNames,
   searchPlaces,
   until,
+  tapMapPoi,
 } from './browser.mjs';
 
 const PASS = [];
@@ -236,6 +237,38 @@ await check('clear removes the height filter', async () => {
 });
 
 console.log('\n--- walking directions ---');
+
+await check('tapping a map icon opens place details and Walk me there', async () => {
+  await dismissNavigation(a).catch(() => {});
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  await root(a);
+  // Peek leaves the map readable; a sheet covering the markers would make the
+  // tap land on the panel instead of the pin.
+  const stop = () =>
+    a.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+    );
+  for (let i = 0; i < 4 && (await stop()) !== 'peek'; i += 1) {
+    await a.getByRole('slider', { name: /Resize panel/ }).click();
+    await a.waitForTimeout(350);
+  }
+  const name = await tapMapPoi(a);
+  await until(async () => (await a.locator('[data-place-detail]').count()) > 0, {
+    timeout: 8000,
+    label: 'place detail sheet',
+  });
+  const title = await a.locator('.navHead h2').innerText();
+  if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
+  if (!(await a.locator('[data-place-detail] button:has-text("Walk me there")').count())) {
+    throw new Error('no Walk me there on place detail');
+  }
+  await a.locator('[data-place-detail] button:has-text("Walk me there")').click();
+  await a.waitForTimeout(900);
+  if (!(await a.locator('.routePreview').count())) throw new Error('no route preview from map tap');
+  await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+  await a.waitForTimeout(300);
+  return true;
+});
 
 await check('"walk me there" offers the route before setting off', async () => {
   await go(a, 'Places');

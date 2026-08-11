@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { distance, formatAge, formatDistance, project, unproject } from '@/lib/geo';
+import { distance, formatAge, formatDistance, formatWalk, project, unproject } from '@/lib/geo';
 import { landTint, paletteFor } from '@/lib/theme';
 import Icon from '@/components/Icon';
 import { heightLabel, isRideable } from '@/lib/park';
@@ -1129,6 +1129,10 @@ function ParkMap({
     if (sx < 0 || sy < 0 || sx > size.w || sy > size.h) return null;
     const away = me ? distance(me.lat, me.lng, selected.lat, selected.lng) : null;
     const rideish = isRideable(selected);
+    const bits = [];
+    if (away != null) bits.push(`${formatDistance(away)} · ${formatWalk(away)}`);
+    if (rideish && selected.h) bits.push(heightLabel(selected));
+    else if (selected.a) bits.push(selected.a);
     return {
       // Kept clear of the edges, and flipped under the marker when there is no
       // room for it above.
@@ -1136,8 +1140,7 @@ function ParkMap({
       y: sy,
       below: sy < 150,
       name: selected.n,
-      away: away == null ? null : formatDistance(away),
-      detail: rideish && selected.h ? heightLabel(selected) : selected.a || '',
+      detail: bits.join(' · '),
       state: rideEligibility?.get(selected.n),
     };
   }, [selected, at, me, size.w, size.h, rideEligibility]);
@@ -1592,10 +1595,7 @@ function ParkMap({
           aria-hidden="true"
         >
           <b>{callout.name}</b>
-          <span>
-            {callout.away ? `${callout.away} · ` : ''}
-            {callout.detail}
-          </span>
+          {callout.detail && <span>{callout.detail}</span>}
           {(callout.state === 'no' || callout.state === 'toobig') && (
             <em className="calloutBar">Not this height</em>
           )}
