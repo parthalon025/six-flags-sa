@@ -77,6 +77,30 @@ const {
   positionForMap,
 } = await import('../../apps/party-tracker/lib/gps/smooth.js');
 const { mapDisplayPosition } = await import('../../apps/party-tracker/lib/gps/display.js');
+const {
+  anonymizeSession,
+  metresAlong,
+  parsePrefs,
+  recordPoint,
+  sessionToGeoJSON,
+  sessionsToFeatureCollection,
+  shouldKeepPoint,
+  shouldStartNewSession,
+  validateTraceUpload,
+} = await import('../../apps/party-tracker/lib/gps/movementLog.js');
+const {
+  confirmObservation,
+  confirmOptions,
+  extractTargets,
+  updateDwell,
+  DWELL_MS,
+} = await import('../../apps/party-tracker/lib/gps/groundTruth.js');
+const {
+  guestTraceClaims,
+  guestGroundTruthClaims,
+  proposeWalkwaysFromTraces,
+  proposeEntranceCandidates,
+} = await import('../../packages/venue-builder/lib/adapters/guest-traces.mjs');
 const { arrivalPointForVenue } = await import('../../apps/party-tracker/lib/venue/arrival.js');
 const {
   MAX_SNAP_M,
@@ -1344,6 +1368,262 @@ await check('mapDisplayPosition leaves on-site and manual fixes alone', () => {
   });
   assert.equal(manual.manual, true);
   assert.equal(manual.arrival, undefined);
+  return true;
+});
+
+/* ------------------------------------------------------ gps/movementLog -- */
+
+section('gps/movementLog');
+
+const MOVE_BOUNDS = {
+  north: 39.348,
+  south: 39.339,
+  east: -84.262,
+  west: -84.275,
+};
+
+await check('prefs default off and parse safely', () => {
+  assert.deepEqual(parsePrefs(null), { enabled: false, autoUpload: false });
+  assert.equal(parsePrefs({ enabled: 1, autoUpload: 'yes' }).enabled, true);
+  assert.equal(parsePrefs({ enabled: true, autoUpload: true }).autoUpload, true);
+  return true;
+});
+
+await check('shouldKeepPoint rejects outside, inaccurate, manual, and jitter', () => {
+  const inside = { lat: 39.34395, lng: -84.2673, acc: 10, ts: 1000 };
+  assert.equal(shouldKeepPoint({ point: inside, bounds: MOVE_BOUNDS }).keep, true);
+  assert.equal(
+    shouldKeepPoint({ point: { ...inside, manual: true }, bounds: MOVE_BOUNDS }).reason,
+    'manual',
+  );
+  assert.equal(
+    shouldKeepPoint({ point: { ...inside, lat: 30.0 }, bounds: MOVE_BOUNDS }).reason,
+    'outside',
+  );
+  assert.equal(
+    shouldKeepPoint({ point: { ...inside, acc: 80 }, bounds: MOVE_BOUNDS }).reason,
+    'accuracy',
+  );
+  const near = { lat: 39.34396, lng: -84.2673, acc: 8, ts: 2000 };
+  assert.equal(shouldKeepPoint({ prev: inside, point: near, bounds: MOVE_BOUNDS }).reason, 'too-close');
+  const far = { lat: 39.3442, lng: -84.2673, acc: 8, ts: 3000 };
+  assert.equal(shouldKeepPoint({ prev: inside, point: far, bounds: MOVE_BOUNDS }).keep, true);
+  return true;
+});
+
+await check('session gap and recordPoint build walks', () => {
+  assert.equal(
+    shouldStartNewSession({ ts: 0 }, { ts: 20 * 60 * 1000 }),
+    true,
+  );
+  assert.equal(shouldStartNewSession({ ts: 0 }, { ts: 60_000 }), false);
+
+  let state = { sessions: [], openId: null };
+  const a = { lat: 39.34395, lng: -84.2673, acc: 8, ts: 1_000 };
+  const b = { lat: 39.3442, lng: -84.2673, acc: 8, ts: 5_000 };
+  state = recordPoint(state, {
+    point: a,
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds: MOVE_BOUNDS,
+  });
+  assert.equal(state.recorded, true);
+  assert.equal(state.sessions.length, 1);
+  state = recordPoint(state, {
+    point: b,
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds: MOVE_BOUNDS,
+  });
+  assert.equal(state.sessions[0].points.length, 2);
+  assert.ok(state.sessions[0].metres > 20);
+  assert.ok(metresAlong(state.sessions[0].points) > 20);
+  return true;
+});
+
+await check('anonymise + GeoJSON + upload validation', () => {
+  const session = {
+    id: 'walk-1',
+    venueId: 'kings-island',
+    startedAt: 1000,
+    endedAt: 5000,
+    metres: 40,
+    points: [
+      { lat: 39.34395123, lng: -84.26731234, ts: 1000, acc: 7.4 },
+      { lat: 39.34420123, lng: -84.26731234, ts: 5000, acc: 6.1 },
+    ],
+  };
+  const anon = anonymizeSession(session);
+  assert.equal(anon.points[0].lat, 39.34395);
+  assert.equal(anon.points[0].t, 0);
+  assert.equal(anon.points[1].t, 4000);
+  const feature = sessionToGeoJSON(session);
+  assert.equal(feature.geometry.type, 'LineString');
+  assert.equal(feature.properties.kind, 'guest_trace');
+  const ok = validateTraceUpload(feature);
+  assert.equal(ok.ok, true);
+  assert.equal(ok.traces[0].venueId, 'kings-island');
+  const bad = validateTraceUpload({ type: 'Feature', geometry: { type: 'Point', coordinates: [0, 0] } });
+  assert.equal(bad.ok, false);
+  return true;
+});
+
+await check('guest-traces propose walkways far from existing paths', () => {
+  const collection = {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { sessionId: 'a', metres: 50 },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [-84.27, 39.344],
+            [-84.269, 39.3445],
+          ],
+        },
+      },
+    ],
+  };
+  const nearPath = [
+    {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: [
+          [-84.2701, 39.344],
+          [-84.2691, 39.3445],
+        ],
+      },
+    },
+  ];
+  const near = proposeWalkwaysFromTraces(collection, { existingPaths: nearPath, gapM: 12 });
+  assert.equal(near.features.length, 0, 'near existing path is not a candidate');
+  const far = proposeWalkwaysFromTraces(collection, { existingPaths: [], gapM: 12 });
+  assert.equal(far.features.length, 1);
+  const claims = guestTraceClaims({ fetched: '2026-08-11', collection });
+  assert.equal(claims.length, 1);
+  assert.equal(claims[0].source, 'guest_trace');
+  assert.equal(claims[0].kind, 'path_geometry');
+  return true;
+});
+
+section('gps/groundTruth');
+
+await check('extractTargets surfaces queue entrances, exits and gates', () => {
+  const pois = [
+    {
+      i: 'orion',
+      n: 'Orion',
+      c: 'coaster',
+      lat: 39.344,
+      lng: -84.267,
+      e: [{ lat: 39.3441, lng: -84.2671, src: { confidence: 'moderate' } }],
+      out: { lat: 39.3439, lng: -84.2669 },
+    },
+    { i: 'main-gate', n: 'Main Entrance', c: 'gate', lat: 39.342, lng: -84.268 },
+    { i: 'wc', n: 'Restrooms', c: 'restroom', lat: 39.3435, lng: -84.2675 },
+  ];
+  const targets = extractTargets(pois);
+  assert.ok(targets.some((t) => t.feature === 'queue_entrance' && t.published));
+  assert.ok(targets.some((t) => t.feature === 'ride_exit'));
+  assert.ok(targets.some((t) => t.feature === 'park_entrance'));
+  assert.ok(targets.some((t) => t.feature === 'restroom'));
+  return true;
+});
+
+await check('dwell near a published entrance becomes a ground-truth observation', () => {
+  const target = {
+    key: 'orion:queue_entrance:0',
+    feature: 'queue_entrance',
+    placeId: 'orion',
+    placeName: 'Orion',
+    category: 'coaster',
+    lat: 39.3441,
+    lng: -84.2671,
+    published: true,
+  };
+  const bounds = MOVE_BOUNDS;
+  let state = { sessions: [], openId: null, dwell: null };
+  state = updateDwell(state, {
+    point: { lat: 39.34412, lng: -84.26712, acc: 8, ts: 1000 },
+    targets: [target],
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds,
+  });
+  assert.equal(state.reason, 'dwell-start');
+  state = updateDwell(state, {
+    point: { lat: 39.34411, lng: -84.26713, acc: 8, ts: 20_000 },
+    targets: [target],
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds,
+  });
+  assert.equal(state.reason, 'dwell-progress');
+  state = updateDwell(state, {
+    point: { lat: 39.3441, lng: -84.2671, acc: 6, ts: 1000 + DWELL_MS + 2000 },
+    targets: [target],
+    venueId: 'kings-island',
+    venueName: 'Kings Island',
+    bounds,
+  });
+  assert.equal(state.recorded, true);
+  assert.equal(state.observation.feature, 'queue_entrance');
+  assert.equal(state.observation.mode, 'dwell');
+  assert.ok(Number.isFinite(state.observation.deltaM));
+  return true;
+});
+
+await check('confirmObservation and upload FeatureCollection include Points', () => {
+  const target = {
+    key: 'orion:ride_exit:confirm',
+    feature: 'ride_exit',
+    placeId: 'orion',
+    placeName: 'Orion',
+    category: 'coaster',
+    lat: 39.3439,
+    lng: -84.2669,
+    published: true,
+  };
+  const point = { lat: 39.34392, lng: -84.26691, acc: 5, ts: 5000 };
+  const state = confirmObservation(
+    { sessions: [], openId: null },
+    {
+      point,
+      target,
+      venueId: 'kings-island',
+      venueName: 'Kings Island',
+      bounds: MOVE_BOUNDS,
+    },
+  );
+  assert.equal(state.recorded, true);
+  assert.equal(state.observation.mode, 'confirm');
+  const collection = sessionsToFeatureCollection(state.sessions);
+  assert.ok(collection.features.some((f) => f.properties.kind === 'guest_ground_truth'));
+  const parsed = validateTraceUpload(collection);
+  assert.equal(parsed.ok, true);
+  assert.ok(parsed.traces.some((t) => t.kind === 'guest_ground_truth'));
+  const gtClaims = guestGroundTruthClaims({
+    fetched: '2026-08-11',
+    collection,
+  });
+  assert.equal(gtClaims[0].kind, 'ride_exit');
+  const entrances = proposeEntranceCandidates(collection, { gapM: 0 });
+  assert.ok(entrances.features.length >= 1);
+  const options = confirmOptions(point, [
+    {
+      i: 'orion',
+      n: 'Orion',
+      c: 'coaster',
+      lat: 39.344,
+      lng: -84.267,
+      e: [{ lat: 39.3441, lng: -84.2671 }],
+      out: { lat: 39.3439, lng: -84.2669 },
+    },
+  ]);
+  assert.ok(options.some((o) => o.feature === 'queue_entrance'));
+  assert.ok(options.some((o) => o.feature === 'ride_exit'));
   return true;
 });
 
@@ -5994,7 +6274,7 @@ const { operatorForUrl, parseListingForUrl } = await import('../../packages/venu
 const { proposeAliases } = await import('../../packages/venue-builder/lib/auto-alias.mjs');
 const { recordReview, reviewGatePassed } = await import('../../packages/venue-builder/lib/venue-review.mjs');
 const { mapThemePack, MAP_THEME_PACKS } = await import('../../apps/party-tracker/lib/mapThemeTokens.js');
-const { bboxInView } = await import('../../apps/party-tracker/lib/mapViewport.js');
+const { bboxInView, localViewTransform, float32ScreenError, stableCullView } = await import('../../apps/party-tracker/lib/mapViewport.js');
 
 await check('operator dispatch recognises Six Flags URLs', () => {
   assert.equal(operatorForUrl('https://www.sixflags.com/fiestatexas/attractions'), 'six-flags');
@@ -6032,6 +6312,98 @@ await check('viewport culling keeps on-screen features', () => {
   const view = { x: 0, y: 0, scale: 2, cx: 200, cy: 400, width: 400, height: 800 };
   const inView = bboxInView({ minX: -10, minY: -10, maxX: 10, maxY: 10 }, view, { cos: 1, sin: 0 });
   assert.equal(inView, true);
+  return true;
+});
+
+await check('local SVG origin keeps max-zoom pan within a pixel of float64', () => {
+  const ox = -9_378_000;
+  const oy = 4_760_000;
+  const point = { x: ox + 120.37, y: oy + 85.91 };
+  const scale = 6;
+  const cx = 180;
+  const cy = 320;
+  let worstAbs = 0;
+  let worstLocal = 0;
+  for (let i = 0; i < 200; i += 1) {
+    const view = { x: ox + i * 0.37, y: oy + i * 0.19 };
+    worstAbs = Math.max(worstAbs, float32ScreenError(point, view, scale, cx, cy, 0, 0));
+    worstLocal = Math.max(
+      worstLocal,
+      float32ScreenError(point, view, scale, cx, cy, ox, oy),
+    );
+  }
+  assert.ok(worstAbs > 1, `absolute mercator should shimmer (got ${worstAbs}px)`);
+  assert.ok(worstLocal < 0.05, `local origin should stay sharp (got ${worstLocal}px)`);
+  const t = localViewTransform({
+    cx,
+    cy,
+    rotation: 15,
+    scale,
+    viewX: ox + 40,
+    viewY: oy - 12,
+    originX: ox,
+    originY: oy,
+  });
+  assert.ok(t.includes('translate(-40'), t);
+  assert.ok(t.includes('12)'), t);
+  return true;
+});
+
+await check('retina pixel-snap keeps local translate on a device-pixel grid', () => {
+  const ox = -9_378_000;
+  const oy = 4_760_000;
+  const scale = 6;
+  const pr = 3;
+  const t = localViewTransform({
+    cx: 180,
+    cy: 320,
+    scale,
+    viewX: ox + 40.07,
+    viewY: oy - 12.04,
+    originX: ox,
+    originY: oy,
+    pixelRatio: pr,
+  });
+  // 40.07 * 6 * 3 = 721.26 → round 721 → 721 / 18 = 40.0555…
+  assert.match(t, /translate\(-40\.055/);
+  return true;
+});
+
+await check('pinch session suppresses fling after both fingers lift', () => {
+  // Mirrors ParkMap's pinchSession ref: set while two pointers are down, cleared
+  // only when the pointer map is empty, so the final finger-up cannot fling.
+  let pinchSession = false;
+  const pointers = new Set();
+  const onDown = (id) => {
+    pointers.add(id);
+    if (pointers.size === 2) pinchSession = true;
+  };
+  const onUp = (id) => {
+    pointers.delete(id);
+    if (pointers.size > 0) return { fling: false, pending: true };
+    const wasPinch = pinchSession;
+    pinchSession = false;
+    return { fling: !wasPinch, pending: false };
+  };
+  onDown(1);
+  onDown(2);
+  assert.equal(onUp(1).fling, false);
+  assert.equal(pinchSession, true);
+  const last = onUp(2);
+  assert.equal(last.fling, false);
+  assert.equal(pinchSession, false);
+  onDown(3);
+  assert.equal(onUp(3).fling, true);
+  return true;
+});
+
+await check('stable cull view only moves when the camera crosses a cell', () => {
+  const a = stableCullView({ x: 1000, y: 2000, scale: 6 });
+  const b = stableCullView({ x: 1000 + 5 / 6, y: 2000, scale: 6 });
+  assert.equal(a.x, b.x);
+  assert.equal(a.y, b.y);
+  const c = stableCullView({ x: 1000 + 200 / 6, y: 2000, scale: 6 });
+  assert.ok(a.x !== c.x || a.y !== c.y, 'a large pan should enter a new cull cell');
   return true;
 });
 

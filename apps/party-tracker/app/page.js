@@ -19,6 +19,7 @@ import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
+import useMovementLog from '@/components/useMovementLog';
 import { BRAND } from '@/lib/brand';
 import {
   SHEET_GAP,
@@ -56,6 +57,7 @@ const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false }
 const HeightPanel = dynamic(() => import('@/components/HeightPanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
 const SideQuestsPanel = dynamic(() => import('@/components/SideQuestsPanel'), { ssr: false });
+const MovementHistoryPanel = dynamic(() => import('@/components/MovementHistoryPanel'), { ssr: false });
 const Diagnostics = dynamic(() => import('@/components/Diagnostics'), { ssr: false });
 const DirectionsPanel = dynamic(() => import('@/components/DirectionsPanel'), { ssr: false });
 const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: false });
@@ -78,6 +80,7 @@ const VIEW_TITLES = {
   categories: 'On the map',
   venues: 'Which park',
   diagnostics: 'Diagnostics',
+  movement: 'Walk history',
 };
 
 /* The tab bar, left to right. Parkbound's primary areas: Explore, Party,
@@ -187,6 +190,7 @@ export default function Page() {
     confirmed: venueConfirmed,
     pinned: venuePinned,
   } = useVenue();
+  const movement = useMovementLog({ position, venue, pois: POIS });
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
@@ -2411,7 +2415,13 @@ export default function Page() {
                 appVersion={appUpdate.version}
                 appBuilt={appUpdate.built}
                 updateStatus={appUpdate.status}
+                movementEnabled={movement.enabled}
+                movementPending={movement.totals.pending}
               />
+            )}
+
+            {view === 'movement' && (
+              <MovementHistoryPanel movement={movement} venueName={venue?.name} />
             )}
 
             {view === 'categories' && (
