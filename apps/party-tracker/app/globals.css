@@ -1151,6 +1151,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   min-height: 36px; padding: 8px 16px; font-size: 15px; width: auto; margin: 0;
   border-radius: var(--rCapsule);
 }
+/* Icon-only actions keep the 44px thumb target without the label width. */
+.btn.iconOnly {
+  width: 44px; min-width: 44px; padding: 0;
+  display: grid; place-items: center;
+}
+.btn.iconOnly .icn { display: block; }
 .btnQuiet {
   display: block; width: 100%; min-height: 44px; padding: 11px;
   color: var(--blue); font-size: 17px; letter-spacing: -.4px;
@@ -1174,6 +1180,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .joinRow { display: flex; gap: 10px; align-items: stretch; }
 .joinRow .btn { width: auto; margin: 0; padding: 13px 18px; }
+.joinRow .btn.iconOnly { width: 44px; min-width: 44px; padding: 0; }
 .joinRow .btn:disabled {
   opacity: 1;
   background: var(--fill3);
@@ -1255,6 +1262,34 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .poiDist { font-size: 15px; color: var(--label2); font-variant-numeric: tabular-nums; }
 .poiDetail { padding: 0 16px 14px 38px; animation: fadeIn var(--t2) var(--easeOut) both; }
 .poiNote { font-size: 15px; color: var(--label2); margin: 0 0 10px; line-height: 20px; }
+
+/* Full place sheet from a map tap — same answers as an expanded list row, with
+   room for the name and walk time above the actions. */
+.placeDetail { padding: 4px 4px 12px; }
+.placeDetailHead {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 4px 12px 10px;
+}
+.placeDetailHead .dot {
+  width: 12px; height: 12px; border-radius: 50%; margin-top: 6px; flex: none;
+}
+.placeDetailText { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.placeDetailName {
+  font-size: 22px; font-weight: 700; letter-spacing: -.4px; line-height: 1.2;
+}
+.placeDetailText > span {
+  font-size: 15px; color: var(--label2); letter-spacing: -.08px; line-height: 1.3;
+}
+.placeDetailMeta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 0 12px 12px 36px;
+}
+.placeDetailWalk {
+  display: inline-flex; flex-direction: column; line-height: 1.15;
+}
+.placeDetailWalk b { font-size: 17px; font-weight: 600; letter-spacing: -.24px; }
+.placeDetailWalk em { font-style: normal; font-size: 13px; color: var(--label2); }
+.placeDetail .poiDetail { padding-left: 36px; padding-right: 12px; }
 /* The parked-car pin. Same drop-in as the meet-up's, so the two read as the
    same kind of thing — a spot somebody chose — in two different colours. */
 .carPin { animation: popIn var(--t2) var(--easeOut) both; }
@@ -2232,16 +2267,17 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .glanceCard.walking { background: color-mix(in srgb, var(--blue) 12%, var(--grouped2)); }
 .glanceGo {
   position: relative;
-  min-width: 40px; min-height: 26px;
-  padding: 4px 10px;
+  width: 36px; min-width: 36px; min-height: 36px;
+  padding: 0;
   border-radius: var(--rCapsule); border: none;
+  display: grid; place-items: center;
   background: color-mix(in srgb, var(--blue) 14%, var(--fill3));
-  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
   color: var(--blue);
   transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
 }
 .glanceGo:active { opacity: .55; }
 .glanceGo.on { background: var(--blue); color: var(--onTint); }
+.glanceGo .icn { display: block; }
 
 /* ---- the full step list in the sheet ---- */
 .stepList { list-style: none; margin: 0 0 10px; padding: 0; }

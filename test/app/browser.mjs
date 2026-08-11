@@ -356,6 +356,40 @@ export async function rideHeightVerdict(page, rideName) {
   return row.locator('.verdict:not(.statusPill)').innerText();
 }
 
+/**
+ * Tap a drawn map icon by name. Pointer capture lives on the map wrapper, so
+ * the hit has to land as a real mouse click at the marker's screen point —
+ * clicking the `<g>` itself never reaches ParkMap's picker.
+ */
+export async function tapMapPoi(page, name = null) {
+  const hit = await page.evaluate((want) => {
+    const wrap = document.querySelector('.mapWrap');
+    const sheet = document.querySelector('.sheet');
+    if (!wrap) return null;
+    const sheetTop = sheet ? sheet.getBoundingClientRect().top : Infinity;
+    const markers = [...document.querySelectorAll('g.poiMarker')];
+    const pick = markers.find((g) => {
+      const title = g.querySelector('title')?.textContent || '';
+      if (want && title !== want) return false;
+      const r = g.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) return false;
+      const y = r.top + r.height / 2;
+      return y > 40 && y < sheetTop - 24;
+    });
+    if (!pick) return null;
+    const r = pick.getBoundingClientRect();
+    return {
+      x: r.left + r.width / 2,
+      y: r.top + r.height / 2,
+      name: pick.querySelector('title')?.textContent || '',
+    };
+  }, name);
+  if (!hit) throw new Error(name ? `no visible map marker for ${name}` : 'no visible map marker');
+  await page.mouse.click(hit.x, hit.y);
+  await page.waitForTimeout(400);
+  return hit.name;
+}
+
 /** Set the roster name through Me, as a visitor would, and come back to Explore. */
 export async function setName(page, name) {
   await closeGate(page);
