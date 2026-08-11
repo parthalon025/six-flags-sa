@@ -130,15 +130,29 @@ export default function PartyPanel({
   }, [arming]);
 
   if (!code) {
+    const named = Boolean(name.trim());
     return (
       <div>
         <div className="label">Your Party</div>
         <p className="fine">
-          One phone starts the party and hosts it. Everyone else joins by scanning the QR,
-          opening the link, or typing the six-character code. Positions are sealed with a key
-          that never reaches a server, and if the host walks off another phone takes over on
-          its own. Your dot is only shared while you are on the map — off site, your phone
-          stops sending your position.
+          Explore toilets, food and rides on your own first — a party is optional when the
+          family wants to stick together. One phone starts it and hosts; everyone else joins by
+          scanning the QR, opening the link, or typing the six-character code.
+        </p>
+        <div className="label">Your Name</div>
+        <input
+          className="field"
+          maxLength={14}
+          placeholder="Name"
+          aria-label="Your name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => onName?.(name)}
+        />
+        <p className="fine" style={{ marginTop: 0 }}>
+          {named
+            ? 'What the others see beside your dot.'
+            : 'Add a name first — a roster of Guests is hard to read. You can still continue as Guest.'}
         </p>
         <button
           type="button"
@@ -151,20 +165,6 @@ export default function PartyPanel({
         >
           {busy ? 'Starting…' : 'Start a party'}
         </button>
-        <div className="label">Your Name</div>
-        <input
-          className="field"
-          maxLength={14}
-          placeholder="Name"
-          aria-label="Your name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => onName?.(name)}
-        />
-        <p className="fine" style={{ marginTop: 0 }}>
-          What the others see beside your dot. Without one everybody joins as “Guest”, and a
-          roster of Guests is no roster at all.
-        </p>
         <div className="label">Join an Existing One</div>
         <div className="joinRow">
           <input
@@ -192,7 +192,7 @@ export default function PartyPanel({
         <p className="fine" style={{ marginTop: 0 }}>
           {entry.length > 0 && entry.length < 6
             ? `Six characters — ${6 - entry.length} to go.`
-            : 'Codes never use I, O, 0 or 1, so they can be read out loud without confusion.'}
+            : 'Codes never use I, O, 0 or 1, so they can be read out loud without confusion. Typing the code works for about 10 minutes while the host has Party open; the invite link and QR always work.'}
         </p>
         <button type="button" className="btn" onClick={() => setScanning((v) => !v)}>
           {scanning ? 'Stop the camera' : 'Scan a party QR'}
@@ -296,8 +296,9 @@ export default function PartyPanel({
         <>
           <InviteQr invite={invite} />
           <p className="fine">
-            The other phone points its camera at this. The key that decrypts the party rides in
-            the link&apos;s fragment, which browsers never send to a server.
+            The other phone points its camera at this. Typing the six-character code works for
+            about 10 minutes while this phone is hosting with Party open; the invite link and QR
+            always carry the key and keep working.
           </p>
         </>
       ) : null}
@@ -313,7 +314,7 @@ export default function PartyPanel({
           </button>
           <p className="fine">
             {pushNeedsInstall
-              ? 'On an iPhone this needs the app on your Home Screen first — Day → Install on this phone.'
+              ? 'On an iPhone this needs the app on your Home Screen first — Me → Install on this phone.'
               : 'Right now a locked phone in a bag shows nothing at all when somebody needs you.'}
           </p>
         </>
@@ -474,7 +475,7 @@ export default function PartyPanel({
           </div>
           <div className="joinRow">
             <button type="button" className="btn small primary" onClick={onNavigateMeet}>
-              Go
+              Walk me there
             </button>
             <button type="button" className="btn small" onClick={() => onFocus(meet)}>
               On the map

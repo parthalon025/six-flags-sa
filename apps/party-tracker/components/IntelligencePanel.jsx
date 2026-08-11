@@ -112,7 +112,7 @@ export default function IntelligencePanel({
 
       {log.length > 0 && (
         <>
-          <div className="label">Your Day</div>
+          <div className="label">Today</div>
           {/* Trail language for the day summary — glyph + dotted path (brand sheet Image 3). */}
           <div className="dayTrail" aria-hidden="true">
             <svg className="dayTrailPath" viewBox="0 0 120 24" preserveAspectRatio="none">
