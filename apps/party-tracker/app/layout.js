@@ -2,6 +2,7 @@ import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 /* Self-hosted by Next — same-origin, so park wifi and the service worker can
    keep it after the first load. Used for PARKBOUND, attraction names, and big
@@ -58,6 +59,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
