@@ -5,8 +5,8 @@ alwaysApply: true
 
 # Vercel previews — don't spam builds
 
-Every pushed branch can trigger a Vercel preview. Treat that as a cost, not a
-default debugging step.
+This project is limited to **100 Vercel deployments per day**. Every pushed branch
+can consume one. Treat previews as a scarce budget, not a default debugging step.
 
 ## Do not push unless there is code to land
 
