@@ -3873,9 +3873,9 @@ await check('heightsSidecarFromOfficial pairs official listings to bundle rides'
 
 const { runVenuePipeline, STAGES } = await import('../../packages/venue-builder/lib/build-pipeline.mjs');
 
-await check('unified build pipeline lists all seven stages', () => {
+await check('unified build pipeline lists all eight stages', () => {
   assert.deepEqual(STAGES, [
-    'sources', 'geometry', 'research', 'heights', 'rebuild', 'attractions', 'agent',
+    'sources', 'geometry', 'research', 'heights', 'rebuild', 'attractions', 'agent', 'certify',
   ]);
   return true;
 });
@@ -5888,6 +5888,60 @@ await check('AGPL yolo adapter is rejected by runner', async () => {
   const r = await runAdapter('ultralytics-yolo', { venueId: 'cedar-point' });
   assert.equal(r.ok, false);
   assert.equal(r.error, 'license_rejected');
+  return true;
+});
+
+/* -------------------------------- venue certification (Wave 1) -- */
+
+const { certifyVenue, CERT_VERSION } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
+const { qaVenueRouting, MAX_ROUTING_ISLANDS } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');
+
+await check('certify emits a birth certificate with six gates', () => {
+  const doc = certifyVenue('kings-island', { write: false });
+  assert.equal(doc.version, CERT_VERSION);
+  assert.equal(doc.venue.id, 'kings-island');
+  assert.equal(doc.checks.length, 6);
+  assert.ok(doc.checks.every((c) => c.claim && c.evidence && c.confidence && c.falsifier && c.soWhat));
+  assert.ok(doc.checks.every((c) => c.evidence.denominator != null));
+  return true;
+});
+
+await check('kings-island passes certification', () => {
+  const doc = certifyVenue('kings-island', { write: false });
+  assert.equal(doc.certified, true);
+  assert.ok(doc.certifiedAt);
+  assert.equal(doc.ask, null);
+  const route = doc.checks.find((c) => c.key === 'route');
+  assert.equal(route.pass, true);
+  return true;
+});
+
+await check('route QA enforces the Kings Island island standard', () => {
+  const r = qaVenueRouting('kings-island');
+  assert.ok(r.components <= MAX_ROUTING_ISLANDS);
+  assert.equal(r.ridesFarFromNetwork, 0);
+  assert.equal(r.pass, true);
+  return true;
+});
+
+await check('cedar point fails route gate when a ride is off the network', () => {
+  const doc = certifyVenue('cedar-point', { write: false });
+  const route = doc.checks.find((c) => c.key === 'route');
+  assert.equal(route.pass, false);
+  assert.ok(route.evidence.farRides?.length >= 1);
+  return true;
+});
+
+await check('certify writes data/venues/<id>.certification.json', () => {
+  const file = path.join(
+    new URL('../../packages/venue-builder/data/venues/', import.meta.url).pathname,
+    'kings-island.certification.json',
+  );
+  try { fs.unlinkSync(file); } catch { /* fresh */ }
+  const doc = certifyVenue('kings-island');
+  assert.ok(fs.existsSync(file));
+  const onDisk = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(onDisk.certified, doc.certified);
   return true;
 });
 

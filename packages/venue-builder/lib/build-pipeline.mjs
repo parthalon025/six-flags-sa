@@ -9,6 +9,7 @@
  *   5. rebuild   — build-venue --rebuild (imagery, trace, merge wired from sources)
  *   6. attractions — entrance inventory and evidence sidecar
  *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
+ *   8. certify   — report + compare + route-qa + ask; writes certification.json
  */
 
 import path from 'node:path';
@@ -20,6 +21,7 @@ import { recipeFile } from './venue-recipe.mjs';
 import { ensureSourcesCatalogue, syncHeightsFromOfficial } from './heights-from-official.mjs';
 import { runResearchAgent } from './agents/research.mjs';
 import { runBuildOrchestrator } from './agents/orchestrator.mjs';
+import { certifyVenue } from './venue-certify.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -33,6 +35,7 @@ export const STAGES = [
   'rebuild',
   'attractions',
   'agent',
+  'certify',
 ];
 
 function sleep(seconds) {
@@ -95,6 +98,7 @@ export async function runVenuePipeline(park, opts = {}) {
     browser = true,
     attractions = true,
     agent = true,
+    certify = true,
     skip = [],
   } = opts;
 
@@ -121,6 +125,9 @@ export async function runVenuePipeline(park, opts = {}) {
     }
     if (!skip.includes('agent') && agent) {
       console.log(`#   agent → QA, GIS, vision, validation --apply`);
+    }
+    if (!skip.includes('certify') && certify) {
+      console.log(`#   certify → report + compare + route-qa + ask`);
     }
     return { id: park.id, rank: park.rank, status: 'dry-run', stages };
   }
@@ -254,6 +261,30 @@ export async function runVenuePipeline(park, opts = {}) {
       }
     } catch (err) {
       return { id: park.id, rank: park.rank, status: 'failed', error: `build-agent failed: ${err.message}`, stages };
+    }
+  }
+
+  if (!skip.includes('certify') && certify) {
+    console.error('  · certify: report + compare + route-qa + ask');
+    try {
+      const cert = certifyVenue(park.id);
+      logStage('certify', {
+        certified: cert.certified,
+        failed: cert.checks.filter((c) => !c.pass).map((c) => c.key),
+      });
+      if (!cert.certified) {
+        const failed = cert.checks.filter((c) => !c.pass).map((c) => c.key).join(', ');
+        return {
+          id: park.id,
+          rank: park.rank,
+          status: 'uncertified',
+          error: `certification failed: ${failed}`,
+          certification: cert,
+          stages,
+        };
+      }
+    } catch (err) {
+      return { id: park.id, rank: park.rank, status: 'failed', error: `certify failed: ${err.message}`, stages };
     }
   }
 

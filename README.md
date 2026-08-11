@@ -511,6 +511,7 @@ npm run venues:build -- --bbox 30.38729,-86.4742,30.39112,-86.47061 --name "Big 
 npm run venues:build -- --help
 
 npm run venues:report cedar-point     # what a built venue actually contains
+npm run venues:certify -- kings-island  # birth certificate: report + compare + route-qa + ask
 ```
 
 ### Building the same park again

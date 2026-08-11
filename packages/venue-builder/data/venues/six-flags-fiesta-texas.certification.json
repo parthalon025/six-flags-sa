@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "venue": {
+    "id": "six-flags-fiesta-texas",
+    "name": "Six Flags Fiesta Texas",
+    "locality": "San Antonio, Texas"
+  },
+  "certified": true,
+  "certifiedAt": "2026-08-11T15:06:24.982Z",
+  "checks": [
+    {
+      "key": "checklist",
+      "claim": "Required completeness items pass",
+      "pass": true,
+      "evidence": {
+        "numerator": 4,
+        "denominator": 4,
+        "detail": "4/4 required items ok"
+      },
+      "confidence": "high",
+      "falsifier": "Any required checklist item is missing",
+      "soWhat": "Half-built venues draw a map but hide whole app features silently"
+    },
+    {
+      "key": "compare",
+      "claim": "Built bundle matches manifest counts and has a recipe",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "manifest and disk agree",
+        "counts": {
+          "pois": 161,
+          "rides": 71,
+          "heights": 60,
+          "campsites": 0,
+          "paths": 975,
+          "hasHeightsTab": true
+        }
+      },
+      "confidence": "high",
+      "falsifier": "POI, ride, height, or path counts drift from manifest",
+      "soWhat": "The app reads manifest numbers; drift breaks trust in coverage badges"
+    },
+    {
+      "key": "route",
+      "claim": "Path graph has ≤2 islands and every ride snaps to the network",
+      "pass": true,
+      "evidence": {
+        "numerator": 71,
+        "denominator": 71,
+        "detail": "1 component(s), 0 ride(s) >35 m from network",
+        "components": 1,
+        "largestComponent": 4,
+        "farRides": []
+      },
+      "confidence": "high",
+      "falsifier": "OpenStreetMap path gaps strand rides on routing islands",
+      "soWhat": "Offline routing cannot reach a ride that is not on the walk network"
+    },
+    {
+      "key": "heights",
+      "claim": "Height rules present or declared absent",
+      "pass": true,
+      "evidence": {
+        "numerator": 60,
+        "denominator": 71,
+        "detail": "60 of 71 rides carry height rules",
+        "declaredAbsent": false
+      },
+      "confidence": "moderate",
+      "falsifier": "A park with rides ships without height filter coverage",
+      "soWhat": "Guests cannot filter by rider height offline without these rules"
+    },
+    {
+      "key": "entrances",
+      "claim": "Queue entrances published at ≥moderate or recorded as proposals",
+      "pass": true,
+      "evidence": {
+        "numerator": 0,
+        "denominator": 71,
+        "known": 71,
+        "detail": "0 published / 71 known / 71 rides inventoried"
+      },
+      "confidence": "low",
+      "falsifier": "No entrance evidence was inventoried for rideable attractions",
+      "soWhat": "Routing to a ride uses queue entrance coordinates when published"
+    },
+    {
+      "key": "ask",
+      "claim": "No blocking external requests remain",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "1 non-blocking request(s)",
+        "blocking": []
+      },
+      "confidence": "high",
+      "falsifier": "A blocking gap was papered over instead of recorded",
+      "soWhat": "Blocking requests mean a whole app feature is absent without saying so"
+    }
+  ],
+  "ask": null
+}

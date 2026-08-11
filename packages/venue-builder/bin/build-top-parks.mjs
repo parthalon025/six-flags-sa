@@ -3,7 +3,7 @@
  * Batch-build the top 100 US theme parks through the unified venue pipeline.
  *
  * Each park runs the same stages as a hand-built venue:
- *   sources → geometry → research → heights → rebuild → attractions → agent
+ *   sources → geometry → research → heights → rebuild → attractions → agent → certify
  *
  * Imagery, trace, and merge datasets wired in sources.json are picked up on rebuild.
  *
@@ -34,6 +34,7 @@ Build the top 100 US theme parks through the unified venue pipeline.
   --no-browser          skip Playwright for JS-rendered park sites
   --no-attractions      skip attractions inventory
   --no-agent            skip build-agent (QA, GIS, vision, validation)
+  --no-certify          skip certification gate
   --json                structured summary on stdout
 `;
 
@@ -50,6 +51,7 @@ function parseArgs(argv) {
     browser: true,
     attractions: true,
     agent: true,
+    certify: true,
     json: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -65,6 +67,7 @@ function parseArgs(argv) {
     else if (a === '--no-browser') out.browser = false;
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
+    else if (a === '--no-certify') out.certify = false;
     else if (a === '--json') out.json = true;
     else if (!a.startsWith('--')) out._.push(a);
     else throw new Error(`Unknown flag: ${a}`);
@@ -102,6 +105,7 @@ async function main() {
     browser: args.browser,
     attractions: args.attractions,
     agent: args.agent,
+    certify: args.certify,
     rebuildOnly: args.skipExisting,
     skip: args.allowNoHeights ? ['research', 'heights', 'rebuild', 'agent'] : [],
   };
@@ -119,6 +123,7 @@ async function main() {
   }
 
   const built = results.filter((r) => r.status === 'built' || r.status === 'dry-run');
+  const uncertified = results.filter((r) => r.status === 'uncertified');
   const failed = results.filter((r) => r.status === 'failed');
   const skipped = catalog.parks.length - parks.length;
 
@@ -126,6 +131,7 @@ async function main() {
     catalog: catalog.parks.length,
     selected: parks.length,
     built: built.length,
+    uncertified: uncertified.length,
     failed: failed.length,
     skippedExisting: args.skipExisting ? skipped : 0,
     results,
@@ -134,7 +140,12 @@ async function main() {
   if (args.json) {
     console.log(JSON.stringify(summary, null, 2));
   } else {
-    console.log(`\n==== ${built.length} built, ${failed.length} failed, ${skipped} skipped (already on disk) ====`);
+    console.log(`\n==== ${built.length} built, ${uncertified.length} uncertified, ${failed.length} failed, ${skipped} skipped (already on disk) ====`);
+    if (uncertified.length) {
+      for (const row of uncertified) {
+        console.log(`  ${row.id}: ${row.error || 'uncertified'}`);
+      }
+    }
     if (failed.length) {
       for (const row of failed) {
         console.log(`  ${row.id}: ${row.error || 'failed'}`);
@@ -142,7 +153,7 @@ async function main() {
     }
   }
 
-  process.exit(failed.length ? 1 : 0);
+  process.exit(failed.length || uncertified.length ? 1 : 0);
 }
 
 main().catch((err) => {
