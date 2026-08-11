@@ -36,6 +36,7 @@
     "venues:adapters": "node packages/venue-builder/venue-adapters.mjs",
     "venues:route-qa": "node packages/venue-builder/venue-route-qa.mjs",
     "venues:build-agent": "node packages/venue-builder/venue-build-agent.mjs",
+    "venues:build-top100": "node packages/venue-builder/bin/build-top-parks.mjs",
     "test": "npm run test:builder && npm run test:app",
     "test:builder": "node test/builder/unit.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",

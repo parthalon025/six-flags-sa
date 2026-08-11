@@ -3805,6 +3805,39 @@ await check('official compare flags site-only and bundle-only rides', () => {
   return true;
 });
 
+/* -------------------------------------------- top 100 US theme parks catalog */
+
+const {
+  loadCatalog,
+  withIds: catalogWithIds,
+  selectParks,
+} = await import('../../packages/venue-builder/lib/top-parks-catalog.mjs');
+
+await check('the top-100 US theme park catalog has 100 unique venues', () => {
+  const catalog = loadCatalog();
+  assert.equal(catalog.parks.length, 100);
+  const ids = catalogWithIds(catalog.parks).map((p) => p.id);
+  assert.equal(new Set(ids).size, 100);
+  for (const park of catalog.parks) {
+    assert.ok(park.rank >= 1 && park.rank <= 100, `${park.name}: rank out of range`);
+    assert.ok(park.place?.length > 10, `${park.name}: place query too short`);
+    assert.ok(park.locality?.includes(','), `${park.name}: locality should be "City, State"`);
+  }
+  return true;
+});
+
+await check('selectParks can filter by rank range and skip existing recipes', () => {
+  const catalog = loadCatalog();
+  const slice = selectParks(catalog.parks, { from: 14, to: 15, skipExisting: false });
+  assert.equal(slice.length, 2);
+  assert.equal(slice[0].id, 'cedar-point');
+  assert.equal(slice[1].id, 'kings-island');
+  const remaining = selectParks(catalog.parks, { skipExisting: true });
+  assert.ok(remaining.length < 100);
+  assert.ok(remaining.every((p) => !['cedar-point', 'kings-island', 'six-flags-fiesta-texas', 'big-kahunas'].includes(p.id)));
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {
