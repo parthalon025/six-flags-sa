@@ -5,8 +5,18 @@ alwaysApply: true
 
 # Vercel previews — don't spam builds
 
-Every pushed branch can trigger a Vercel preview. Treat that as a cost, not a
-default debugging step.
+This project is limited to **100 Vercel deployments per day** on the account.
+Every pushed branch that builds can consume one. Treat previews as a scarce budget,
+not a default debugging step.
+
+## Agent cap: 25 previews without asking
+
+Do **not** push a branch or open a PR that will trigger a Vercel preview if doing
+so would exceed **25 preview deployments in the current UTC day** without explicit
+user authorization. When in doubt, or when the day’s preview count is unknown, ask
+before pushing.
+
+Reserve the remaining daily budget (~75) for production and user-authorized work.
 
 ## Do not push unless there is code to land
 
