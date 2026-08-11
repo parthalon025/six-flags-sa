@@ -743,10 +743,12 @@ export default function Page() {
           .catch((err) => showToast(err?.message || 'Could not open that invite.'));
         return;
       }
-      const memberName = identityRef.current?.name || 'Guest';
-      Promise.resolve(rt.resume({ memberName })).catch((err) =>
-        showToast(err?.message || 'Could not reopen the party.'),
-      );
+      if (rt.hasLiveParty?.()) {
+        const memberName = identityRef.current?.name || 'Guest';
+        Promise.resolve(rt.resume({ memberName })).catch((err) =>
+          showToast(err?.message || 'Could not reopen the party.'),
+        );
+      }
     })();
     return () => {
       destroyed = true;
@@ -755,6 +757,25 @@ export default function Page() {
       rt?.destroy();
     };
   }, [showToast, selectTab]);
+
+  /* Reopen a saved but dormant session when Party is opened. Live sessions
+     resume on mount above and keep syncing on every tab. */
+  const resumeInFlight = useRef(false);
+
+  useEffect(() => {
+    if (tab !== 'party') return undefined;
+    if (!runtimeApi || party?.active || party?.phase === 'connecting') return undefined;
+    if (!runtime.current?.hasSavedParty?.()) return undefined;
+    if (resumeInFlight.current) return undefined;
+    resumeInFlight.current = true;
+    const memberName = identityRef.current?.name || 'Guest';
+    Promise.resolve(runtime.current.resume({ memberName }))
+      .catch((err) => showToast(err?.message || 'Could not reopen the party.'))
+      .finally(() => {
+        resumeInFlight.current = false;
+      });
+    return undefined;
+  }, [tab, runtimeApi, party?.active, party?.phase, showToast]);
 
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
