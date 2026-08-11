@@ -95,6 +95,17 @@ export function saveSession(session) {
   }
 }
 
+/** True when this phone was in an active party and should reopen sync on load. */
+export function isLiveSession(session) {
+  return Boolean(session?.partyId && session?.keyString && session.live === true);
+}
+
+/** Stamp and store a session that should keep syncing across tabs and reloads. */
+export function persistLiveSession(session) {
+  if (!session) return;
+  saveSession({ ...session, live: true });
+}
+
 export function loadSession() {
   if (typeof window === 'undefined') return null;
   try {
