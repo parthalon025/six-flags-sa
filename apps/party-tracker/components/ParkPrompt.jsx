@@ -112,7 +112,7 @@ export default function ParkPrompt({
         <p className="gateFine">
           {data ? `${venue.name} has ${data}. ` : ''}
           Everything downloads once and stays on this phone, so the map still works in a
-          queue with no signal. Switch parks any time under Day → Which park.
+          queue with no signal. Switch parks any time under Me → Which park.
         </p>
       </div>
     </div>

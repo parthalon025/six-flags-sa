@@ -101,6 +101,15 @@ export async function openPhone(
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   if (url.includes('/join')) {
+    // Name-before-join: /join asks what the family should call this phone.
+    const joinName = page.locator('.gateCard input[aria-label="Your name"]');
+    try {
+      await joinName.waitFor({ state: 'visible', timeout: 15000 });
+      if (name) await joinName.fill(name);
+      await page.locator('.gateCard .btn.primary').click();
+    } catch {
+      /* legacy handoff without the name card */
+    }
     await page.waitForURL((u) => !String(u).includes('/join'), { timeout: 30000 }).catch(() => {});
   }
   await hydrated(page);
@@ -113,7 +122,7 @@ export async function openPhone(
           const paths = await page.locator('.mapSvg path').count();
           if (paths < 100) return false;
           if ((await page.locator('.mePulse').count()) > 0) return true;
-          const brand = await page.locator('.brand span').innerText().catch(() => '');
+          const brand = await page.locator('.brandStatus').innerText().catch(() => '');
           return /near/i.test(brand);
         },
         { timeout: 40000, label: 'GPS fix and gates dismissed' },
@@ -164,15 +173,20 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
 }
 
 /**
- * Dismiss the first-run intro splash if it is up.
+ * Legacy IntroSplash used #intro-splash-title; the welcome gate uses BrandLockup
+ * on the same card as nearest-park. No separate dismiss step when unified.
  */
 export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   const deadline = Date.now() + timeout;
   do {
-    const splash = page.locator('#intro-splash-title');
-    if (await splash.count()) {
+    const legacy = page.locator('#intro-splash-title');
+    if (await legacy.count()) {
       await page.locator('.gate:has(#intro-splash-title) .btn.primary').click().catch(() => {});
       await page.waitForTimeout(600);
+      return true;
+    }
+    const welcome = page.locator('.gate .brandLockupName');
+    if (await welcome.count()) {
       return true;
     }
     if (timeout === 0) break;

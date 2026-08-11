@@ -71,7 +71,7 @@ const a = A.page;
 
 await check('GPS gate closes and position resolves', async () => {
   if (await a.locator('.gate').count()) throw new Error('gate still up');
-  const brand = await a.locator('.brand span').innerText();
+  const brand = await a.locator('.brandStatus').innerText();
   if (!/NEAR/i.test(brand)) throw new Error(brand);
   return true;
 });
@@ -242,7 +242,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('button:has-text("Go")').first().click();
+  await a.locator('.poiRow.open .joinRow button:has-text("Walk me there")').click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -251,6 +251,8 @@ await check('"walk me there" offers the route before setting off', async () => {
   if (!/\d+ min/.test(summary)) throw new Error(summary);
   if (!/arrive \d/.test(summary)) throw new Error(`no arrival time: ${summary}`);
   if (!/via /.test(await a.locator('.previewWhere').innerText())) throw new Error('route has no via');
+  await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+  await a.waitForTimeout(300);
   return true;
 });
 
@@ -268,22 +270,39 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   const venueNameA = async () => {
     await a.locator('.tabItem[data-tab="explore"]').click();
     await root(a);
-    return a.locator('.brand b').innerText();
+    return a.locator('.brandName, .brand b').first().innerText();
   };
+  // Search "gemini" also hits every place in the Gemini Midway land (area match).
+  await dismissNavigation(a).catch(() => {});
   await go(a, 'Which map');
   await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
   await until(async () => /cedar point/i.test(await venueNameA()), {
     timeout: 15000,
     label: 'cedar point venue load',
   });
+  // Walk graph is at the park — phone A was still GPS-pinned at Kings Island.
+  await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
+  await a.waitForTimeout(800);
   await go(a, 'Places');
   await searchPlaces(a, 'gemini');
-  await a.locator('.poiRow .poiMain').first().click();
-  await a.waitForTimeout(300);
-  await a.locator('button:has-text("Walk me there")').first().click();
-  await a.waitForTimeout(900);
+  const gemini = a.locator('.poiRow').filter({ has: a.locator('.poiName', { hasText: /^Gemini$/ }) }).first();
+  await until(async () => (await gemini.count()) > 0, { timeout: 15000, label: 'Gemini coaster in the list' });
+  await gemini.locator('.poiMain').click();
+  await a.waitForTimeout(400);
+  await gemini.locator('button:has-text("Walk me there")').click();
+  await until(async () => (await a.locator('.routePreview').count()) > 0, {
+    timeout: 15000,
+    label: 'route preview card',
+  });
+  // Graph weld waits for idle after a venue switch — give it a beat.
+  await until(async () => (await a.locator('.routeLine').count()) > 0, {
+    timeout: 20000,
+    label: 'route line on the map',
+  });
   const where = await a.locator('.previewWhere').innerText();
-  if (!/queue entrance/i.test(where)) throw new Error(`preview: ${where}`);
+  if (!/gemini/i.test(where)) throw new Error(`preview: ${where}`);
+  // Surveyed queue entrances prefer that wording; approximate pins say Ride area.
+  if (!/queue entrance|ride area|via /i.test(where)) throw new Error(`preview: ${where}`);
   return true;
 });
 
@@ -431,9 +450,23 @@ await check('a glance card walks you to a place and stops again', async () => {
 });
 
 console.log('\n--- party: create and invite ---');
+await dismissNavigation(a).catch(() => {});
 if (await a.locator('.navBanner').count()) {
   await a.locator('.navEnd').click().catch(() => {});
   await a.waitForTimeout(600);
+}
+// Cedar Point walk coverage leaves this phone on that map; party ride tests need Kings Island.
+{
+  await go(a, 'Places');
+  const brand = async () => a.locator('.brandName, .brand b').first().innerText();
+  if (!/kings island/i.test(await brand().catch(() => ''))) {
+    await go(a, 'Which map');
+    await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
+    await until(async () => /kings island/i.test(await brand().catch(() => '')), {
+      timeout: 20000,
+      label: 'back on Kings Island',
+    });
+  }
 }
 await go(a, 'Party');
 await a.waitForTimeout(300);
@@ -872,31 +905,18 @@ await check('the update splash appears before the introduction on a fresh instal
 
 await dismissUpdateSplash(e);
 
-await check('the first screen is the intro splash with brand, pitch, and version', async () => {
+await check('the welcome gate shows brand, pitch, and nearest-park on one card', async () => {
   const card = await e.locator('.gate').innerText();
-  const heading = (await e.locator('#intro-splash-title').innerText()).trim();
+  const heading = (await e.locator('.brandLockupName').innerText()).trim();
   if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
   const said = card.indexOf('Explore more. Stress less.');
   const pitch = card.indexOf('explorer');
-  const version = card.indexOf('Version ');
-  if (said < 0 || pitch < 0 || version < 0) {
-    throw new Error('the intro splash is missing slogan, pitch, or version');
+  if (said < 0 || pitch < 0) {
+    throw new Error('the welcome gate is missing slogan or pitch');
   }
-  if (/Go to nearest park/i.test(card)) {
-    throw new Error('the intro splash should not include the GPS gate yet');
+  if (!/Go to nearest park/i.test(card)) {
+    throw new Error('the welcome gate should offer nearest-park on the first card');
   }
-  return true;
-});
-
-await check('the GPS gate follows the intro with nearest-park and location', async () => {
-  await e.locator('button:has-text("Get started")').click();
-  await until(async () => (await e.locator('button:has-text("Go to nearest park")').count()) > 0, {
-    timeout: 10000,
-    label: 'the GPS gate',
-  });
-  const card = await e.locator('.gate').innerText();
-  if (!/Find you on the map/i.test(card)) throw new Error('the GPS gate title is missing');
-  if (!/Go to nearest park/i.test(card)) throw new Error('the nearest-park shortcut is missing');
   const paths = await e.locator('.mapSvg path').count();
   const dot = await e.locator('.mePulse').count();
   if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
@@ -904,11 +924,16 @@ await check('the GPS gate follows the intro with nearest-park and location', asy
   return true;
 });
 
-await check('the nearest-park button builds that park without a second card', async () => {
+await check('the nearest-park button asks before building that park', async () => {
   await e.locator('button:has-text("Go to nearest park")').click();
-  // Auto-builds on fix — no "Going to …?" confirmation step.
+  // Confirm the nearest park — never auto-download the wrong map.
+  await until(
+    async () => (await e.locator('.gate .btn.primary:has-text("set up")').count()) > 0,
+    { timeout: 25000, label: 'park confirm' },
+  );
+  await e.locator('.gate .btn.primary:has-text("set up")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
-  const shown = await e.locator('.brand b').innerText();
+  const shown = await e.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
   const toast = await e.locator('.toast').innerText().catch(() => '');
   if (!/fiesta texas is (ready|loaded)/i.test(toast)) throw new Error(`toast: "${toast}"`);

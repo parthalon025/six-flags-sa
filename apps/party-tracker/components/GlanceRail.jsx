@@ -295,7 +295,9 @@ function GlanceRail({
       return (
         <div className="glanceDigest quiet">
           <span>
-            {me ? 'Start or join a party' : 'Turn on location for distance and direction'}
+            {me
+              ? 'Pull up for toilets, food and rides'
+              : 'Turn on location for nearest toilets and food'}
           </span>
         </div>
       );
@@ -318,7 +320,7 @@ function GlanceRail({
   if (!me) {
     return (
       <div className="glanceEmpty">
-        <span>Turn on location to see distance and direction to your party.</span>
+        <span>Turn on location to see the nearest toilet, food and how far to walk.</span>
       </div>
     );
   }
@@ -326,9 +328,12 @@ function GlanceRail({
   if (cards.length === 0) {
     return (
       <div className="glanceEmpty">
-        <button type="button" className="btn small" onClick={onOpenParty}>
-          Start or join a party
-        </button>
+        <span>Search above for toilet, food or a ride — or pull the sheet up to browse.</span>
+        {onOpenParty ? (
+          <button type="button" className="btn small" onClick={onOpenParty}>
+            Party with family
+          </button>
+        ) : null}
       </div>
     );
   }
@@ -379,7 +384,7 @@ function GlanceRail({
                     onClick={() => onNavigate(walking ? null : c.nav)}
                     aria-label={walking ? `Stop walking to ${c.title}` : `Walk me to ${c.title}`}
                   >
-                    {walking ? 'Stop' : 'Go'}
+                    {walking ? 'Stop' : 'Walk me there'}
                   </button>
                 )}
                 {shed && (

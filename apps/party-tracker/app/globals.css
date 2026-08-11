@@ -601,6 +601,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .topbarBrand, .topbarActions {
   display: flex; align-items: center; gap: 9px; pointer-events: auto;
 }
+.topbarActions {
+  /* Keep map chrome on the right even when .topbarBrand is display:none on
+     phones — otherwise the theme/bearing buttons sit under the weather chip. */
+  margin-left: auto;
+}
 .topbarBrand {
   /* Phones: keep the map clear. Desktop/wide: primary lockup top-left. */
   display: none;
@@ -1876,6 +1881,36 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .installCard .btn { margin: 0; }
 .steps { margin: 0 0 4px; padding-left: 20px; font-size: 15px; line-height: 24px; color: var(--label2); }
 .steps b { color: var(--label); font-weight: 600; }
+
+/* Welcome gate: GPS enable + Add to Home Screen as one phone-setup stack. */
+.gatePhoneSetup {
+  display: flex; flex-direction: column; gap: 10px;
+  margin: 0 0 12px;
+}
+.gatePhoneSetup .btn { width: 100%; }
+.gatePhoneSetup .btn.primary { margin: 0; }
+.gateInstallPitch {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 14px;
+  background: var(--grouped2);
+  border-radius: var(--r2);
+}
+.gateInstallHook,
+.installHook {
+  margin: 0;
+  font-size: 15px; line-height: 21px; letter-spacing: -.24px;
+  color: var(--label);
+  font-weight: 600;
+}
+.gateInstallHint {
+  margin: 0;
+  font-size: 14px; line-height: 20px; letter-spacing: -.2px;
+  color: var(--label2);
+}
+.gateInstallHint b { color: var(--label); font-weight: 600; }
+.gateInstallSkip { margin: 0; align-self: center; }
+.gateInstallSteps { margin: 0; padding-left: 18px; }
+.installCard .installHook { margin: 0 0 10px; }
 
 /* ---- mobile-only hardening ---- */
 html { -webkit-text-size-adjust: 100%; }

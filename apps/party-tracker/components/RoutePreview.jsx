@@ -46,7 +46,7 @@ export default function RoutePreview({
           </span>
         </div>
         <button type="button" className="previewGo" onClick={onStart}>
-          Start
+          Start walking
         </button>
       </div>
 
