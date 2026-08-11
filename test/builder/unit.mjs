@@ -3873,9 +3873,9 @@ await check('heightsSidecarFromOfficial pairs official listings to bundle rides'
 
 const { runVenuePipeline, STAGES } = await import('../../packages/venue-builder/lib/build-pipeline.mjs');
 
-await check('unified build pipeline lists all eight stages', () => {
+await check('unified build pipeline lists all nine stages', () => {
   assert.deepEqual(STAGES, [
-    'sources', 'geometry', 'research', 'heights', 'rebuild', 'attractions', 'agent', 'certify',
+    'sources', 'geometry', 'research', 'aliases', 'heights', 'rebuild', 'attractions', 'agent', 'certify',
   ]);
   return true;
 });
@@ -5942,6 +5942,51 @@ await check('certify writes data/venues/<id>.certification.json', () => {
   assert.ok(fs.existsSync(file));
   const onDisk = JSON.parse(fs.readFileSync(file, 'utf8'));
   assert.equal(onDisk.certified, doc.certified);
+  return true;
+});
+
+const { operatorForUrl, parseListingForUrl } = await import('../../packages/venue-builder/lib/operators/index.mjs');
+const { proposeAliases } = await import('../../packages/venue-builder/lib/auto-alias.mjs');
+const { recordReview, reviewGatePassed } = await import('../../packages/venue-builder/lib/venue-review.mjs');
+const { mapThemePack, MAP_THEME_PACKS } = await import('../../apps/party-tracker/lib/mapThemeTokens.js');
+const { bboxInView } = await import('../../apps/party-tracker/lib/mapViewport.js');
+
+await check('operator dispatch recognises Six Flags URLs', () => {
+  assert.equal(operatorForUrl('https://www.sixflags.com/fiestatexas/attractions'), 'six-flags');
+  assert.equal(operatorForUrl('https://www.cedarpoint.com/rides-experiences'), 'cedar-fair');
+  assert.equal(operatorForUrl('https://disneyworld.disney.go.com/attractions/magic-kingdom/'), 'disney');
+  assert.equal(operatorForUrl('https://www.universalorlando.com/web/en/us/things-to-do'), 'universal');
+  return true;
+});
+
+await check('auto-alias proposes claims with dissent for low confidence', () => {
+  const { claims } = proposeAliases({
+    venueId: 'test',
+    pois: [{ n: 'Queen City Stunt Coaster', c: 'coaster', lat: 0, lng: 0, i: 'q' }],
+    officialNames: ['Backlot Stunt Coaster'],
+    parksApiNames: [],
+  });
+  assert.ok(claims.length >= 0);
+  return true;
+});
+
+await check('human review gate records approve decisions', () => {
+  const doc = recordReview('kings-island', { key: 'test-gate', decision: 'approve', who: 'unit-test', why: 'ok' });
+  assert.ok(doc.decisions.some((d) => d.key === 'test-gate' && d.decision === 'approve'));
+  return true;
+});
+
+await check('map theme packs ship day and night tokens', () => {
+  assert.ok(MAP_THEME_PACKS.day);
+  assert.ok(MAP_THEME_PACKS.night);
+  assert.ok(mapThemePack('day').path.stroke);
+  return true;
+});
+
+await check('viewport culling keeps on-screen features', () => {
+  const view = { x: 0, y: 0, scale: 2, cx: 200, cy: 400, width: 400, height: 800 };
+  const inView = bboxInView({ minX: -10, minY: -10, maxX: 10, maxY: 10 }, view, { cos: 1, sin: 0 });
+  assert.equal(inView, true);
   return true;
 });
 

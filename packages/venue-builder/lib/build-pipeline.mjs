@@ -22,6 +22,10 @@ import { ensureSourcesCatalogue, syncHeightsFromOfficial } from './heights-from-
 import { runResearchAgent } from './agents/research.mjs';
 import { runBuildOrchestrator } from './agents/orchestrator.mjs';
 import { certifyVenue } from './venue-certify.mjs';
+import { proposeAliases, applyAliasClaims } from './auto-alias.mjs';
+import { loadParksApiData } from './adapters/parks-api.mjs';
+import { readSources } from './venue-sources.mjs';
+import { loadOfficialData } from './venue-official-site.mjs';
 
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
@@ -31,6 +35,7 @@ export const STAGES = [
   'sources',
   'geometry',
   'research',
+  'aliases',
   'heights',
   'rebuild',
   'attractions',
@@ -95,6 +100,7 @@ export async function runVenuePipeline(park, opts = {}) {
     dryRun = false,
     retries = 3,
     allowNoHeights = false,
+    applyAliases = true,
     browser = true,
     attractions = true,
     agent = true,
@@ -114,6 +120,7 @@ export async function runVenuePipeline(park, opts = {}) {
       await runBuildWithRetries('geometry', buildArgsFor(park, ['--allow-no-heights']), { dryRun: true });
     }
     if (!skip.includes('research')) console.log(`#   research → official cache + ParksAPI`);
+    if (!skip.includes('aliases') && applyAliases) console.log(`#   aliases → official name claims`);
     if (!skip.includes('heights') && !allowNoHeights) {
       console.log(`#   heights → data/venues/${park.id}.heights.json`);
     }
@@ -181,6 +188,29 @@ export async function runVenuePipeline(park, opts = {}) {
         });
       } catch (err) {
         return { id: park.id, rank: park.rank, status: 'failed', error: `research failed: ${err.message}`, stages };
+      }
+    }
+
+    if (!skip.includes('aliases') && applyAliases) {
+      const pois = readBuiltPois(park.id);
+      if (pois?.length) {
+        console.error('  · aliases: official name pairing');
+        try {
+          const { data: catalog } = readSources(park.id);
+          const official = await loadOfficialData(park.id, catalog, { fetch: false, offline: true });
+          const parksApi = await loadParksApiData(park.id, { fetch: false, offline: true });
+          const { claims } = proposeAliases({
+            venueId: park.id,
+            pois,
+            officialNames: (official?.attractions || []).map((a) => a.name),
+            parksApiNames: (parksApi?.attractions || []).map((a) => a.name),
+          });
+          const { applied } = applyAliasClaims(park.id, claims);
+          logStage('aliases', { claims: claims.length, applied });
+        } catch (err) {
+          console.error(`    alias pass skipped: ${err.message}`);
+          logStage('aliases', { skipped: err.message });
+        }
       }
     }
 

@@ -859,6 +859,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .app[data-dragging] .mapFurniture,
 .app[data-dragging] .toast,
 .app[data-dragging] .mapScrim.bottom { transition: none; }
+.app[data-dragging] .mapWrap { pointer-events: none; }
 
 /* touch-action: none, because a drag on the handle is the sheet's gesture and
    not the browser's — without it the first few pixels are eaten by a pull to

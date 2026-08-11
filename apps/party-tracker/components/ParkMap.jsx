@@ -120,9 +120,46 @@ function worldPaths(list, close) {
   (list || []).forEach((f, i) => {
     const r = Array.isArray(f) ? f : f?.r;
     const d = worldPathFromRing(r, close);
-    if (d) out.push({ i, d, n: f?.n });
+    if (!d) return;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const pt of r || []) {
+      const [x, y] = project(pt[1], pt[0]);
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+    const bbox = Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
+    out.push({ i, d, n: f?.n, bbox });
   });
   return out;
+}
+
+/** Frustum test in mercator space — skip paths off-screen at high zoom. */
+function featureInView(f, view, cx, cy, spin, w, h, pad = 0.2) {
+  if (!f?.bbox) return true;
+  const { minX, minY, maxX, maxY } = f.bbox;
+  const corners = [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
+  let sMinX = Infinity;
+  let sMinY = Infinity;
+  let sMaxX = -Infinity;
+  let sMaxY = -Infinity;
+  for (const [x, y] of corners) {
+    const u = (x - view.x) * view.scale;
+    const v = (view.y - y) * view.scale;
+    const sx = u * spin.cos - v * spin.sin + cx;
+    const sy = u * spin.sin + v * spin.cos + cy;
+    sMinX = Math.min(sMinX, sx);
+    sMinY = Math.min(sMinY, sy);
+    sMaxX = Math.max(sMaxX, sx);
+    sMaxY = Math.max(sMaxY, sy);
+  }
+  const padX = w * pad;
+  const padY = h * pad;
+  return !(sMaxX < -padX || sMinX > w + padX || sMaxY < -padY || sMinY > h + padY);
 }
 
 /* Map geometry is [lng, lat] because that is how the file stores it; a route
@@ -175,6 +212,8 @@ function ParkMap({
   fitKey = null,
   /** Fold the category key while route preview or walking HUD is up. */
   mapKeyHidden = false,
+  /** Optional map perf HUD callback (Diagnostics M0). */
+  onMapStats = null,
 }) {
   const palette = paletteFor(theme);
   // The venue's own district tints, where it has hand-picked any.
@@ -691,6 +730,34 @@ function ParkMap({
     [cx, cy, rotation, z, view.x, view.y],
   );
 
+  const drawWorld = useMemo(() => {
+    if (!world) return null;
+    if (!showDetail || z < 1.2) return world;
+    const cull = (list) => list.filter((f) => featureInView(f, view, cx, cy, spin, size.w, size.h));
+    return {
+      ...world,
+      path: cull(world.path),
+      building: cull(world.building),
+      service: showService ? cull(world.service) : world.service,
+    };
+  }, [world, view, cx, cy, spin, size.w, size.h, showDetail, showService, z]);
+
+  useEffect(() => {
+    if (!onMapStats || !world) return;
+    const pathTotal = world.path.length;
+    const pathDrawn = drawWorld?.path.length ?? pathTotal;
+    onMapStats({
+      pathTotal,
+      pathDrawn,
+      buildingTotal: world.building.length,
+      buildingDrawn: drawWorld?.building.length ?? world.building.length,
+      zoom: z,
+      zoomBand: zPlan,
+    });
+  }, [onMapStats, world, drawWorld, z, zPlan]);
+
+  const mapLayers = drawWorld || world;
+
   /* Coaster track carries the ride's name in the source geometry, so the red
      polylines need not stay anonymous: tapping Diamondback can light up
      Diamondback's track rather than leaving you to guess which squiggle it is. */
@@ -1165,25 +1232,25 @@ function ParkMap({
 
           {showService && (
             <g className="lyr-service lyr-detail">
-              {world.service.map((f) => (
+              {mapLayers.service.map((f) => (
                 <path key={`sv${f.i}`} d={f.d} />
               ))}
             </g>
           )}
           <g className="lyr-pathcase">
-            {world.path.map((f) => (
+            {mapLayers.path.map((f) => (
               <path key={`pc${f.i}`} d={f.d} />
             ))}
           </g>
           <g className="lyr-path">
-            {world.path.map((f) => (
+            {mapLayers.path.map((f) => (
               <path key={`ph${f.i}`} d={f.d} />
             ))}
           </g>
 
           {showDetail && (
             <g className="lyr-building lyr-detail">
-              {world.building.map((f) => (
+              {mapLayers.building.map((f) => (
                 <path key={`bldg${f.i}`} d={f.d} />
               ))}
             </g>

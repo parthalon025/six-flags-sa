@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "decisions": [
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-11T15:26:44.050Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-11T15:27:37.582Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-11T15:27:44.498Z"
+    }
+  ],
+  "updated": "2026-08-11T15:27:44.498Z"
+}

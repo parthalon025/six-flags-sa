@@ -17,6 +17,7 @@
 
 import { loadCatalog, selectParks } from '../lib/top-parks-catalog.mjs';
 import { runVenuePipeline } from '../lib/build-pipeline.mjs';
+import { openVenueDraftPr } from '../lib/venue-pr.mjs';
 
 const USAGE = `
 Build the top 100 US theme parks through the unified venue pipeline.
@@ -35,6 +36,7 @@ Build the top 100 US theme parks through the unified venue pipeline.
   --no-attractions      skip attractions inventory
   --no-agent            skip build-agent (QA, GIS, vision, validation)
   --no-certify          skip certification gate
+  --pr                  open a draft PR per built park (requires gh auth)
   --json                structured summary on stdout
 `;
 
@@ -52,6 +54,7 @@ function parseArgs(argv) {
     attractions: true,
     agent: true,
     certify: true,
+    openPr: false,
     json: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
@@ -68,6 +71,7 @@ function parseArgs(argv) {
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
     else if (a === '--no-certify') out.certify = false;
+    else if (a === '--pr') out.openPr = true;
     else if (a === '--json') out.json = true;
     else if (!a.startsWith('--')) out._.push(a);
     else throw new Error(`Unknown flag: ${a}`);
@@ -116,6 +120,16 @@ async function main() {
     results.push(result);
     if (result.status === 'failed') {
       console.error(`  ! ${park.id} failed: ${result.error || 'unknown error'} — continuing`);
+    }
+    if (args.openPr && result.status === 'built' && !args.dryRun) {
+      try {
+        const pr = openVenueDraftPr(park.id, { runId: Date.now() });
+        result.pr = pr;
+        if (pr.prUrl) console.error(`  → draft PR: ${pr.prUrl}`);
+        else if (pr.skipped) console.error(`  → PR skipped: ${pr.reason}`);
+      } catch (err) {
+        console.error(`  ! PR failed for ${park.id}: ${err.message}`);
+      }
     }
     if (i < parks.length - 1 && !args.dryRun && args.delay > 0) {
       await sleep(args.delay);

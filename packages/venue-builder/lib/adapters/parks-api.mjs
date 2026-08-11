@@ -9,16 +9,13 @@ import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { OVERRIDE_DIR, readJson } from '../venue-io.mjs';
 import { nameSimilarity, pairSuggestions } from '../venue-judge.mjs';
+import { parkEntityIds } from '../parks-api-entities.mjs';
 
 const API = 'https://api.themeparks.wiki/v1';
 const UA = 'six-flags-sa-venue-research/1.0 (+https://github.com/parthalon025/six-flags-sa)';
 
-/** Venue id → themeparks.wiki park entity id. */
-export const PARK_ENTITY_IDS = {
-  'cedar-point': 'c8299e1a-0098-4677-8ead-dd0da204f8dc',
-  'kings-island': 'a0df8d87-7f72-4545-a58d-eb8aa76f914b',
-  'six-flags-fiesta-texas': '8be1e984-1e5f-40d0-a750-ce8e4dc2e87c',
-};
+/** Venue id → themeparks.wiki park entity id (loaded from entity map + overrides). */
+export const PARK_ENTITY_IDS = parkEntityIds();
 
 export const parksApiCacheFile = (id) => path.join(OVERRIDE_DIR, `${id}.parks-api-cache.json`);
 

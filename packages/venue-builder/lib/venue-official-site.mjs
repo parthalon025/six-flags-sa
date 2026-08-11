@@ -12,6 +12,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
 import { nameSimilarity, pairSuggestions } from './venue-judge.mjs';
 import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
+import { parseListingForUrl } from './operators/index.mjs';
 
 const UA = 'six-flags-sa-venue-research/1.0 (+https://github.com/parthalon025/six-flags-sa)';
 
@@ -158,11 +159,11 @@ export async function loadOfficialData(id, catalog, opts = {}) {
   for (const src of urls.site) {
     try {
       let html = await fetchUrl(src.url);
-      let parsed = parseAttractionListing(html);
+      let parsed = parseListingForUrl(html, src.url);
       if (opts.browser && !parsed.length) {
         const { fetchWithBrowser } = await import('./adapters/playwright-official.mjs');
         html = await fetchWithBrowser(src.url);
-        parsed = parseAttractionListing(html);
+        parsed = parseListingForUrl(html, src.url);
       }
       pages.push({ id: src.id, url: src.url, kind: 'official_site', via: parsed.length && opts.browser ? 'browser' : 'fetch' });
       for (const row of parsed) {
