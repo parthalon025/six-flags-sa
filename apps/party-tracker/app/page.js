@@ -11,7 +11,7 @@ import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
 import WeatherBanner from '@/components/WeatherBanner';
-import UpdateSplash from '@/components/UpdateSplash';
+import IntroSplash from '@/components/IntroSplash';
 import BrandLockup from '@/components/BrandLockup';
 import BrandMark from '@/components/BrandMark';
 import useSheetDrag from '@/components/useSheetDrag';
@@ -19,7 +19,6 @@ import useGeolocation from '@/components/useGeolocation';
 import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
-import { markReleaseNotesSeen, pendingReleaseNotes } from '@/lib/releaseNotes';
 import { BRAND } from '@/lib/brand';
 import {
   SHEET_GAP,
@@ -201,9 +200,11 @@ export default function Page() {
      and a returning one the introduction. Nothing in the intake draws until
      this is a boolean. */
   const [introSeen, setIntroSeen] = useState(null);
-  /** Release-note blocks for the installed build, or [] once dismissed / none. */
-  const [updateNotes, setUpdateNotes] = useState(null);
-  const showUpdateSplash = updateNotes !== null && updateNotes.length > 0;
+  /** Session-only — the logo splash yields to the welcome gate without marking intro seen. */
+  const [logoSplashDismissed, setLogoSplashDismissed] = useState(false);
+  const showIntroSplash = introSeen === false && !logoSplashDismissed;
+  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
+  const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
 
   const [identity, setIdentity] = useState(null); // {id, name}
   const [party, setParty] = useState(null); // the runtime's snapshot
@@ -543,10 +544,6 @@ export default function Page() {
   }, [parkChoice, manifest, position]);
 
   useEffect(() => {
-    setUpdateNotes(pendingReleaseNotes());
-  }, []);
-
-  useEffect(() => {
     let seen = false;
     try {
       seen = localStorage.getItem(INTRO_KEY) === '1';
@@ -569,7 +566,7 @@ export default function Page() {
 
   const askingPark = Boolean(parkChoice);
   /** Inline park question on the gate (GPS path), including after "nearest park". */
-  const showParkPrompt = !showUpdateSplash && gateOpen && askingPark;
+  const showParkPrompt = !showIntroSplash && gateOpen && askingPark;
   const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore) && !nearestIntent;
 
   useEffect(() => {
@@ -2511,13 +2508,10 @@ export default function Page() {
         </div>
       )}
 
-      {showUpdateSplash && (
-        <UpdateSplash
-          notes={updateNotes}
-          onContinue={() => {
-            markReleaseNotesSeen(appUpdate.version);
-            setUpdateNotes([]);
-          }}
+      {showIntroSplash && (
+        <IntroSplash
+          version={appUpdate.version}
+          onContinue={() => setLogoSplashDismissed(true)}
         />
       )}
 
@@ -2540,15 +2534,23 @@ export default function Page() {
       )}
 
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
-      {gateOpen && introSeen !== null && !showExplorePrompt && !showUpdateSplash && (
+      {gateOpen && introSeen !== null && !showExplorePrompt && !showIntroSplash && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
-          welcome={nearestIntent || (introSeen === false && geo.status === 'idle' && !parkChoice)}
+          welcome={
+            nearestIntent ||
+            showWelcomeGate ||
+            (introSeen === false && geo.status === 'idle' && !parkChoice)
+          }
           nearestIntent={nearestIntent}
           parkChoice={
-            askingPark && (!parkChoice?.explore || nearestIntent) ? parkChoice : null
+            showWelcomeGate
+              ? null
+              : askingPark && (!parkChoice?.explore || nearestIntent)
+                ? parkChoice
+                : null
           }
           parkOptions={parkOptions}
           setupBusy={venueStatus === 'loading'}

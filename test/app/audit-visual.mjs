@@ -150,10 +150,10 @@ await ctx2.addInitScript(() => {
 });
 const page2 = await ctx2.newPage();
 await page2.goto(BASE, { waitUntil: 'domcontentloaded' });
-await dismissUpdateSplash(page2);
+await dismissIntroSplash(page2);
 await page2.waitForTimeout(500);
 await shot(page2, '15-intro-splash');
-await dismissIntroSplash(page2);
+await dismissUpdateSplash(page2);
 await page2.waitForTimeout(500);
 await shot(page2, '16-gps-gate');
 

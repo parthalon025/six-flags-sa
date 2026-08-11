@@ -173,20 +173,15 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
 }
 
 /**
- * Legacy IntroSplash used #intro-splash-title; the welcome gate uses BrandLockup
- * on the same card as nearest-park. No separate dismiss step when unified.
+ * Dismiss the logo intro splash if it is up. Polls because React may not have painted it yet.
  */
 export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   const deadline = Date.now() + timeout;
   do {
-    const legacy = page.locator('#intro-splash-title');
-    if (await legacy.count()) {
+    const intro = page.locator('#intro-splash-title');
+    if (await intro.count()) {
       await page.locator('.gate:has(#intro-splash-title) .btn.primary').click().catch(() => {});
       await page.waitForTimeout(600);
-      return true;
-    }
-    const welcome = page.locator('.gate .brandLockupName');
-    if (await welcome.count()) {
       return true;
     }
     if (timeout === 0) break;
@@ -202,8 +197,8 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
  * so an intake bug fails its own assertion rather than every test behind it.
  */
 export async function closeGate(page) {
-  await dismissUpdateSplash(page);
   await dismissIntroSplash(page);
+  await dismissUpdateSplash(page);
   const nearest = page.locator('button:has-text("Go to nearest park")');
   const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("set up")');
@@ -214,6 +209,7 @@ export async function closeGate(page) {
   else if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
+    await dismissIntroSplash(page, { timeout: 250 });
     await dismissUpdateSplash(page, { timeout: 250 });
     const paths = await page.locator('.mapSvg path').count();
     const gates = await page.locator('.gate').count();

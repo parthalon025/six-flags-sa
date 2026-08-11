@@ -882,9 +882,7 @@ const e = await intake.newPage();
 await e.goto(BASE, { waitUntil: 'domcontentloaded' });
 await hydrated(e);
 
-await check('the update splash appears before the introduction on a fresh install', async () => {
-  // A brand-new phone on a build with release notes sees the splash first.
-  // Re-open on a context that has not dismissed it yet.
+await check('the logo splash opens first and release notes stay behind the version control', async () => {
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: ['geolocation'],
@@ -893,16 +891,27 @@ await check('the update splash appears before the introduction on a fresh instal
   const p = await fresh.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
   await hydrated(p);
-  await until(async () => (await p.locator('#update-splash-title').count()) > 0, {
+  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
     timeout: 10000,
-    label: 'the update splash',
+    label: 'the logo splash',
   });
-  const title = (await p.locator('#update-splash-title').innerText()).trim();
-  if (!/what's new/i.test(title)) throw new Error(`splash title: "${title}"`);
+  if (await p.locator('#update-splash-title').count()) {
+    throw new Error('the update splash should not open automatically');
+  }
+  const heading = (await p.locator('#intro-splash-title').innerText()).trim();
+  if (heading !== 'PARKBOUND') throw new Error(`logo splash heading: "${heading}"`);
+  await p.locator('.gateVersionBtn').click();
+  await until(async () => (await p.locator('#intro-notes-title').count()) > 0, {
+    timeout: 10000,
+    label: 'release notes from the version control',
+  });
+  const notesTitle = (await p.locator('#intro-notes-title').innerText()).trim();
+  if (!/what's new/i.test(notesTitle)) throw new Error(`notes title: "${notesTitle}"`);
   await fresh.close();
   return true;
 });
 
+await dismissIntroSplash(e);
 await dismissUpdateSplash(e);
 
 await check('the welcome gate shows brand, pitch, and nearest-park on one card', async () => {
