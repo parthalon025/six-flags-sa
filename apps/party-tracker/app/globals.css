@@ -442,7 +442,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 /* Geometry lives in mercator metres and is scaled by an SVG transform, so
    stroke widths have to stay in screen pixels — otherwise a pinch thickens
-   every midway into a highway. */
+   every midway into a highway. Hint a compositor layer for finger-pans so the
+   browser updates the SVG transform instead of repainting every path sample
+   (especially at max zoom on phones). Do not set a CSS transform here — it
+   would fight the SVG transform attribute. */
+.mapWorld,
+.routeOverlay {
+  will-change: transform;
+}
 .mapWorld path { vector-effect: non-scaling-stroke; }
 .lyr-park path { fill: var(--ground); stroke: var(--groundEdge); stroke-width: 1.5; }
 .lyr-wood path { fill: var(--wood); stroke: none; }

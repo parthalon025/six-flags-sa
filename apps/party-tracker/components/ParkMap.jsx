@@ -27,6 +27,7 @@ import {
 import { Glyph, PoiMarker } from './MapSymbols';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
+import { localViewTransform, stableCullView } from '@/lib/mapViewport';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
    geometry, projected to Web Mercator metres and painted as SVG. Pan with one
@@ -37,9 +38,11 @@ import MapLegend from './MapLegend';
    campus or a state fair all render through the same code. Layers a venue has
    no examples of arrive empty and draw nothing.
 
-   Static geometry is projected once into mercator metres and moved with an SVG
-   transform; `to(x, y)` is still the one place world metres become screen
-   pixels for anything that has to stay upright (labels, markers, the puck).
+   Static geometry is projected once into mercator metres, rebased onto the
+   venue centre (SVG float32 otherwise shimmers at max zoom), and moved with an
+   SVG transform; `to(x, y)` is still the one place absolute world metres become
+   screen pixels for anything that has to stay upright (labels, markers, the
+   puck).
 
    Everything that moves the viewport goes through animateTo(), so a tap on a
    roster row glides to the person instead of teleporting, and a flick keeps
@@ -104,22 +107,23 @@ const LABEL_SPOTS = (sx, sy, r, halfW, gap) => [
 /* Screen-space paths for overlays that move every frame live in
    pathFromLatLngs below. Venue geometry uses {@link worldPathFromRing}. */
 
-/** Mercator-metre path. Drawn once, then moved by the viewport transform. */
-function worldPathFromRing(ring, close = false) {
+/** Mercator-metre path, rebased to `origin` so SVG transforms stay precise. */
+function worldPathFromRing(ring, close = false, origin = [0, 0]) {
   if (!Array.isArray(ring) || ring.length < 2) return '';
+  const [ox, oy] = origin;
   let d = '';
   for (let i = 0; i < ring.length; i += 1) {
     const [x, y] = project(ring[i][1], ring[i][0]);
-    d += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
+    d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
   }
   return close ? `${d}Z` : d;
 }
 
-function worldPaths(list, close) {
+function worldPaths(list, close, origin = [0, 0]) {
   const out = [];
   (list || []).forEach((f, i) => {
     const r = Array.isArray(f) ? f : f?.r;
-    const d = worldPathFromRing(r, close);
+    const d = worldPathFromRing(r, close, origin);
     if (!d) return;
     let minX = Infinity;
     let minY = Infinity;
@@ -177,14 +181,15 @@ function pathFromLatLngs(points, to) {
 }
 
 /** World-coordinate path from a route's [lat, lng] points. Drawn once in
- *  mercator metres, then transformed by viewTransform like venue geometry.
- *  Use vector-effect="non-scaling-stroke" to maintain stroke width. */
-function worldPathFromLatLngs(points) {
+ *  mercator metres (rebased to `origin`), then transformed by viewTransform
+ *  like venue geometry. Use vector-effect="non-scaling-stroke" for stroke width. */
+function worldPathFromLatLngs(points, origin = [0, 0]) {
   if (!Array.isArray(points) || points.length < 2) return '';
+  const [ox, oy] = origin;
   let d = '';
   for (let i = 0; i < points.length; i += 1) {
     const [x, y] = project(points[i][0], points[i][1]);
-    d += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
+    d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
   }
   return d;
 }
@@ -250,19 +255,46 @@ function ParkMap({
   const pendingView = useRef(null);
   const fling = useRef({ vx: 0, vy: 0, t: 0 });
   const lastTap = useRef({ t: 0, x: 0, y: 0 });
+  // Cached wrap rect for the active gesture — getBoundingClientRect every
+  // touchmove is layout thrash on phones during pinch.
+  const wrapRect = useRef(null);
+  // Sticky across both finger-ups so a pinch cannot hand off to fling.
+  const pinchSession = useRef(false);
   // The laid-out markers, so a tap can be resolved against what was drawn.
   const planRef = useRef({ lands: [], markers: [], labels: [] });
   // Hysteresis for zoom-gated layers and place names — previous pass's answer,
   // so a jittery pinch does not restrobe the map.
   const [layersOn, setLayersOn] = useState({ lands: false, detail: false, service: false });
   const [shownLabels, setShownLabels] = useState(() => new Set());
+  const pixelRatio =
+    typeof window !== 'undefined' && window.devicePixelRatio ? window.devicePixelRatio : 1;
 
   viewRef.current = view;
+
+  const readWrapRect = useCallback((force = false) => {
+    if (!force && wrapRect.current) return wrapRect.current;
+    const node = wrapRef.current;
+    if (!node) return { left: 0, top: 0, width: 0, height: 0 };
+    wrapRect.current = node.getBoundingClientRect();
+    return wrapRect.current;
+  }, []);
 
   /** Push a view change. Gestures may fire faster than paint; coalesce to one
    *  React update per frame while keeping viewRef hot for the next event. */
   const pushView = useCallback((next) => {
     const resolved = typeof next === 'function' ? next(viewRef.current) : next;
+    const prev = viewRef.current;
+    // Wheel/pinch at the scale clamp still rebuilds a new object; skip the
+    // React paint when nothing actually moved. On phones a clamped pinch still
+    // floods move events; bailing here keeps the map from thrashing.
+    if (
+      prev &&
+      Math.abs(resolved.x - prev.x) < 1e-9 &&
+      Math.abs(resolved.y - prev.y) < 1e-9 &&
+      Math.abs(resolved.scale - prev.scale) < 1e-12
+    ) {
+      return;
+    }
     viewRef.current = resolved;
     pendingView.current = resolved;
     if (viewRaf.current) return;
@@ -510,9 +542,12 @@ function ParkMap({
     e.currentTarget.setPointerCapture(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     moved.current = false;
+    // Fresh layout box for this gesture — pinch maths and tap hit-tests share it.
+    readWrapRect(true);
     if (pointers.current.size === 2) {
+      pinchSession.current = true;
       const [a, b] = [...pointers.current.values()];
-      const rect = wrapRef.current.getBoundingClientRect();
+      const rect = readWrapRect();
       gesture.current = {
         mode: 'pinch',
         dist: Math.hypot(a.x - b.x, a.y - b.y),
@@ -524,47 +559,57 @@ function ParkMap({
   };
 
   const onPointerMove = (e) => {
-    const prev = pointers.current.get(e.pointerId);
-    if (!prev) return;
-    const next = { x: e.clientX, y: e.clientY };
-    pointers.current.set(e.pointerId, next);
+    if (!pointers.current.has(e.pointerId)) return;
+    // Touch screens deliver coalesced samples between frames; folding them in
+    // keeps the finger glued to the map and gives fling a truer release velocity.
+    const samples =
+      typeof e.getCoalescedEvents === 'function' && e.getCoalescedEvents().length
+        ? e.getCoalescedEvents()
+        : [e];
 
-    if (pointers.current.size === 2 && gesture.current?.mode === 'pinch') {
-      const [a, b] = [...pointers.current.values()];
-      const dist = Math.hypot(a.x - b.x, a.y - b.y);
-      const ratio = dist / gesture.current.dist;
-      const scale = clampScale(gesture.current.scale * ratio);
-      if (Math.abs(dist - gesture.current.dist) > 4) {
+    for (const sample of samples) {
+      const prev = pointers.current.get(sample.pointerId) || pointers.current.get(e.pointerId);
+      if (!prev) continue;
+      const next = { x: sample.clientX, y: sample.clientY };
+      pointers.current.set(e.pointerId, next);
+
+      if (pointers.current.size === 2 && gesture.current?.mode === 'pinch') {
+        const [a, b] = [...pointers.current.values()];
+        const dist = Math.hypot(a.x - b.x, a.y - b.y);
+        const ratio = dist / gesture.current.dist;
+        const scale = clampScale(gesture.current.scale * ratio);
+        if (Math.abs(dist - gesture.current.dist) > 4) {
+          moved.current = true;
+          onUserPan?.();
+        }
+        const rect = readWrapRect();
+        const midX = (a.x + b.x) / 2 - rect.left;
+        const midY = (a.y + b.y) / 2 - rect.top;
+        const snap = viewRef.current;
+        const world = screenToWorld(midX, midY, snap);
+        pushView(viewForScaleAt(scale, midX, midY, world, snap));
+        continue;
+      }
+
+      const dx = next.x - prev.x;
+      const dy = next.y - prev.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) {
         moved.current = true;
         onUserPan?.();
       }
-      const rect = wrapRef.current.getBoundingClientRect();
-      const midX = (a.x + b.x) / 2 - rect.left;
-      const midY = (a.y + b.y) / 2 - rect.top;
-      const snap = viewRef.current;
-      const world = screenToWorld(midX, midY, snap);
-      pushView(viewForScaleAt(scale, midX, midY, world, snap));
-      return;
+      // Screen-space velocity, kept for the flick. Blended rather than replaced so
+      // one stuttering frame at lift-off cannot cancel the whole throw.
+      fling.current = {
+        vx: fling.current.vx * 0.5 + dx * 0.5,
+        vy: fling.current.vy * 0.5 + dy * 0.5,
+        t: performance.now(),
+      };
+      // A drag is in screen pixels; with the map turned, the world moves along a
+      // different axis than the finger does.
+      const u = dx * spin.cos + dy * spin.sin;
+      const v = -dx * spin.sin + dy * spin.cos;
+      pushView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
     }
-
-    const dx = next.x - prev.x;
-    const dy = next.y - prev.y;
-    if (Math.abs(dx) + Math.abs(dy) > 3) {
-      moved.current = true;
-      onUserPan?.();
-    }
-    // Screen-space velocity, kept for the flick. Blended rather than replaced so
-    // one stuttering frame at lift-off cannot cancel the whole throw.
-    fling.current = {
-      vx: fling.current.vx * 0.5 + dx * 0.5,
-      vy: fling.current.vy * 0.5 + dy * 0.5,
-      t: performance.now(),
-    };
-    // A drag is in screen pixels; with the map turned, the world moves along a
-    // different axis than the finger does.
-    const u = dx * spin.cos + dy * spin.sin;
-    const v = -dx * spin.sin + dy * spin.cos;
-    pushView((s) => ({ ...s, x: s.x - u / s.scale, y: s.y + v / s.scale }));
   };
 
   /** Momentum after a flick: decay the last velocity until it is under a pixel. */
@@ -620,13 +665,18 @@ function ParkMap({
     pointers.current.delete(e.pointerId);
     if (pointers.current.size < 2) gesture.current = null;
     if (pointers.current.size > 0) return;
+    wrapRect.current = null;
+    const wasPinch = pinchSession.current;
+    pinchSession.current = false;
 
-    if (moved.current && gesture.current?.mode !== 'pinch') {
+    // Pinch must not hand off to fling — on phones that reads as the map
+    // leaping after a zoom. pinchSession stays set until every finger is up.
+    if (moved.current && !wasPinch) {
       startFling();
       return;
     }
 
-    const rect = wrapRef.current.getBoundingClientRect();
+    const rect = readWrapRect(true);
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
 
@@ -667,7 +717,7 @@ function ParkMap({
     e.preventDefault();
     onUserPan?.();
     stopAnim();
-    const rect = wrapRef.current.getBoundingClientRect();
+    const rect = readWrapRect(true);
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
     const v = viewRef.current;
@@ -706,54 +756,83 @@ function ParkMap({
     });
   }, [showLands, showDetail, showService]);
 
-  /* Venue geometry in mercator metres, built once per dataset. The viewport
-     is an SVG transform over this group — pan/zoom no longer rewrites ~14k
-     vertex strings every frame. */
+  /* Venue geometry in mercator metres, rebased to the venue centre so SVG
+     float32 transforms stay sharp at max zoom. Built once per dataset/origin. */
+  const worldOrigin = useMemo(
+    () => project(center?.lat ?? 0, center?.lng ?? 0),
+    [center?.lat, center?.lng],
+  );
+
   const world = useMemo(() => {
     if (!data) return null;
+    const origin = worldOrigin;
     return {
-      sea: worldPaths(data.sea, true),
-      park: worldPaths(data.park, true),
+      sea: worldPaths(data.sea, true, origin),
+      park: worldPaths(data.park, true, origin),
       lands: (data.lands || [])
         .map((land, i) => {
-          const d = worldPathFromRing(land.r, true);
+          const d = worldPathFromRing(land.r, true, origin);
           return d ? { i, d, n: land.n } : null;
         })
         .filter(Boolean),
-      wood: worldPaths(data.wood, true),
-      grass: worldPaths(data.grass, true),
-      parking: worldPaths(data.parking, true),
-      water: worldPaths(data.water, true),
-      pool: worldPaths(data.pool, true),
-      boundary: data.boundary ? worldPaths([data.boundary], true) : [],
-      service: worldPaths(data.service, false),
-      path: worldPaths(data.path, false),
-      building: worldPaths(data.building, true),
-      slide: worldPaths(data.slide, false),
+      wood: worldPaths(data.wood, true, origin),
+      grass: worldPaths(data.grass, true, origin),
+      parking: worldPaths(data.parking, true, origin),
+      water: worldPaths(data.water, true, origin),
+      pool: worldPaths(data.pool, true, origin),
+      boundary: data.boundary ? worldPaths([data.boundary], true, origin) : [],
+      service: worldPaths(data.service, false, origin),
+      path: worldPaths(data.path, false, origin),
+      building: worldPaths(data.building, true, origin),
+      slide: worldPaths(data.slide, false, origin),
       coaster: (data.coaster || []).map((f, i) => {
-        const d = worldPathFromRing(Array.isArray(f) ? f : f?.r, false);
+        const d = worldPathFromRing(Array.isArray(f) ? f : f?.r, false, origin);
         return d ? { i, d, n: f?.n } : null;
       }),
     };
-  }, [data]);
+  }, [data, worldOrigin]);
 
   const viewTransform = useMemo(
     () =>
-      `translate(${cx} ${cy}) rotate(${-rotation}) scale(${z} ${-z}) translate(${-view.x} ${-view.y})`,
-    [cx, cy, rotation, z, view.x, view.y],
+      localViewTransform({
+        cx,
+        cy,
+        rotation,
+        scale: z,
+        viewX: view.x,
+        viewY: view.y,
+        originX: worldOrigin[0],
+        originY: worldOrigin[1],
+        pixelRatio,
+      }),
+    [cx, cy, rotation, z, view.x, view.y, worldOrigin, pixelRatio],
   );
+
+  /* Cull heavy layers at high zoom, but snap the cull camera onto a
+     screen-sized grid so membership does not thrash every pan frame. */
+  const cullCellX = Math.round((view.x * Math.max(view.scale, 0.01)) / 160);
+  const cullCellY = Math.round((view.y * Math.max(view.scale, 0.01)) / 160);
+  const cullScaleBand = Math.round(view.scale * 40);
+  const cullView = useMemo(() => {
+    if (!showDetail || z < 1.2) return null;
+    return stableCullView(view);
+    // Quantized cell deps — not raw view — keep the object identity stable
+    // across pan frames inside the same cell.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showDetail, z, cullCellX, cullCellY, cullScaleBand]);
 
   const drawWorld = useMemo(() => {
     if (!world) return null;
-    if (!showDetail || z < 1.2) return world;
-    const cull = (list) => list.filter((f) => featureInView(f, view, cx, cy, spin, size.w, size.h));
+    if (!cullView) return world;
+    const cull = (list) =>
+      list.filter((f) => featureInView(f, cullView, cx, cy, spin, size.w, size.h, 0.55));
     return {
       ...world,
       path: cull(world.path),
       building: cull(world.building),
       service: showService ? cull(world.service) : world.service,
     };
-  }, [world, view, cx, cy, spin, size.w, size.h, showDetail, showService, z]);
+  }, [world, cullView, cx, cy, spin, size.w, size.h, showService]);
 
   useEffect(() => {
     if (!onMapStats || !world) return;
@@ -775,16 +854,16 @@ function ParkMap({
      transformed by viewTransform like venue geometry. Uses non-scaling-stroke
      so stroke widths stay constant across zoom levels. */
   const worldRouteAhead = useMemo(
-    () => worldPathFromLatLngs(routeAhead?.length > 1 ? routeAhead : route?.points),
-    [routeAhead, route?.points],
+    () => worldPathFromLatLngs(routeAhead?.length > 1 ? routeAhead : route?.points, worldOrigin),
+    [routeAhead, route?.points, worldOrigin],
   );
   const worldRouteDone = useMemo(
-    () => (routeDone?.length > 1 ? worldPathFromLatLngs(routeDone) : ''),
-    [routeDone],
+    () => (routeDone?.length > 1 ? worldPathFromLatLngs(routeDone, worldOrigin) : ''),
+    [routeDone, worldOrigin],
   );
   const worldAlternatives = useMemo(
-    () => (alternatives || []).map((alt) => worldPathFromLatLngs(alt.points)),
-    [alternatives],
+    () => (alternatives || []).map((alt) => worldPathFromLatLngs(alt.points, worldOrigin)),
+    [alternatives, worldOrigin],
   );
 
   /* Coaster track carries the ride's name in the source geometry, so the red
@@ -1185,8 +1264,9 @@ function ParkMap({
           </filter>
         </defs>
 
-        {/* Venue geometry in mercator metres — the transform is pan/zoom/rotate.
-            Labels and markers stay outside so they remain upright. */}
+        {/* Venue geometry in local mercator metres — the transform is
+            pan/zoom/rotate around the venue origin. Labels and markers stay
+            outside so they remain upright. */}
         <g className="mapWorld" transform={viewTransform}>
           {/* The lake or sea the venue stands in, under the ground rather than
               over it — a venue on a peninsula is drawn on its land, not beneath
