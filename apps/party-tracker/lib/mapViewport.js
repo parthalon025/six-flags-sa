@@ -1,5 +1,12 @@
 /**
- * Map viewport helpers — frustum culling for heavy SVG layers (Map M0).
+ * Map viewport helpers — frustum culling and SVG transform precision (Map M0).
+ *
+ * Venue geometry is drawn in mercator metres and moved with an SVG transform.
+ * SVG engines often concatenate that transform into float32. Absolute mercator
+ * values sit around 1e7, so metre-scale noise becomes several screen pixels at
+ * max zoom — the map shimmers under float64 labels while you pan. Rebase the
+ * path data (and the matching translate) onto a venue-local origin so matrix
+ * coefficients stay small.
  */
 
 /** Expand a view rect by padding fraction of width/height. */
@@ -56,4 +63,52 @@ export function bboxFromRing(ring) {
     maxY = Math.max(maxY, y);
   }
   return { minX, minY, maxX, maxY };
+}
+
+/**
+ * SVG transform string for venue geometry stored relative to `origin`.
+ * View centre stays in absolute mercator; only the translate is rebased.
+ */
+export function localViewTransform({ cx, cy, rotation = 0, scale, viewX, viewY, originX = 0, originY = 0 }) {
+  const lx = viewX - originX;
+  const ly = viewY - originY;
+  return `translate(${cx} ${cy}) rotate(${-rotation}) scale(${scale} ${-scale}) translate(${-lx} ${-ly})`;
+}
+
+/**
+ * Worst-case float32 screen error for a point under a combined SVG matrix.
+ * Used by tests to prove absolute mercator shimmers and local origin does not.
+ */
+export function float32ScreenError(point, view, scale, cx, cy, originX = 0, originY = 0) {
+  const f32 = (n) => {
+    const buf = new Float32Array(1);
+    buf[0] = n;
+    return buf[0];
+  };
+  const lx = point.x - originX;
+  const ly = point.y - originY;
+  const vx = view.x - originX;
+  const vy = view.y - originY;
+  const exactX = (point.x - view.x) * scale + cx;
+  const exactY = (view.y - point.y) * scale + cy;
+  const A = f32(scale);
+  const E = f32(cx - scale * vx);
+  const F = f32(cy + scale * vy);
+  const sx = f32(f32(A * lx) + E);
+  const sy = f32(f32(f32(-scale) * ly) + F);
+  return Math.hypot(sx - exactX, sy - exactY);
+}
+
+/**
+ * Snap the view used for frustum membership onto a screen-sized grid so pan
+ * frames do not remount path lists every pixel. Returns a stable `{x,y,scale}`.
+ */
+export function stableCullView(view, cellPx = 160) {
+  const scale = view.scale || 1;
+  const cellM = cellPx / Math.max(scale, 0.01);
+  return {
+    x: Math.round(view.x / cellM) * cellM,
+    y: Math.round(view.y / cellM) * cellM,
+    scale: Math.round(scale * 40) / 40,
+  };
 }

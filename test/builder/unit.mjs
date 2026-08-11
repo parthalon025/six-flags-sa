@@ -6257,7 +6257,7 @@ const { operatorForUrl, parseListingForUrl } = await import('../../packages/venu
 const { proposeAliases } = await import('../../packages/venue-builder/lib/auto-alias.mjs');
 const { recordReview, reviewGatePassed } = await import('../../packages/venue-builder/lib/venue-review.mjs');
 const { mapThemePack, MAP_THEME_PACKS } = await import('../../apps/party-tracker/lib/mapThemeTokens.js');
-const { bboxInView } = await import('../../apps/party-tracker/lib/mapViewport.js');
+const { bboxInView, localViewTransform, float32ScreenError, stableCullView } = await import('../../apps/party-tracker/lib/mapViewport.js');
 
 await check('operator dispatch recognises Six Flags URLs', () => {
   assert.equal(operatorForUrl('https://www.sixflags.com/fiestatexas/attractions'), 'six-flags');
@@ -6295,6 +6295,50 @@ await check('viewport culling keeps on-screen features', () => {
   const view = { x: 0, y: 0, scale: 2, cx: 200, cy: 400, width: 400, height: 800 };
   const inView = bboxInView({ minX: -10, minY: -10, maxX: 10, maxY: 10 }, view, { cos: 1, sin: 0 });
   assert.equal(inView, true);
+  return true;
+});
+
+await check('local SVG origin keeps max-zoom pan within a pixel of float64', () => {
+  const ox = -9_378_000;
+  const oy = 4_760_000;
+  const point = { x: ox + 120.37, y: oy + 85.91 };
+  const scale = 6;
+  const cx = 180;
+  const cy = 320;
+  let worstAbs = 0;
+  let worstLocal = 0;
+  for (let i = 0; i < 200; i += 1) {
+    const view = { x: ox + i * 0.37, y: oy + i * 0.19 };
+    worstAbs = Math.max(worstAbs, float32ScreenError(point, view, scale, cx, cy, 0, 0));
+    worstLocal = Math.max(
+      worstLocal,
+      float32ScreenError(point, view, scale, cx, cy, ox, oy),
+    );
+  }
+  assert.ok(worstAbs > 1, `absolute mercator should shimmer (got ${worstAbs}px)`);
+  assert.ok(worstLocal < 0.05, `local origin should stay sharp (got ${worstLocal}px)`);
+  const t = localViewTransform({
+    cx,
+    cy,
+    rotation: 15,
+    scale,
+    viewX: ox + 40,
+    viewY: oy - 12,
+    originX: ox,
+    originY: oy,
+  });
+  assert.ok(t.includes('translate(-40'), t);
+  assert.ok(t.includes('12)'), t);
+  return true;
+});
+
+await check('stable cull view only moves when the camera crosses a cell', () => {
+  const a = stableCullView({ x: 1000, y: 2000, scale: 6 });
+  const b = stableCullView({ x: 1000 + 5 / 6, y: 2000, scale: 6 });
+  assert.equal(a.x, b.x);
+  assert.equal(a.y, b.y);
+  const c = stableCullView({ x: 1000 + 200 / 6, y: 2000, scale: 6 });
+  assert.ok(a.x !== c.x || a.y !== c.y, 'a large pan should enter a new cull cell');
   return true;
 });
 
