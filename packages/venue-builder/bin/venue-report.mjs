@@ -18,6 +18,7 @@ import { pointInRing } from '../lib/geometry.mjs';
 import { checklist, checklistTable, failures } from '../lib/venue-checklist.mjs';
 import { readRecipe } from '../lib/venue-recipe.mjs';
 import { requests } from '../lib/venue-requests.mjs';
+import { venueSidecar } from '../lib/venue-io.mjs';
 
 const VENUE_DIR = path.join(process.cwd(), 'public', 'venues');
 const kb = (file) => Math.round(fs.statSync(file).size / 1024);
@@ -27,7 +28,7 @@ const id = process.argv[2];
 
 const readOverridesFor = (venueId) => {
   try {
-    return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'data', 'venues', `${venueId}.overrides.json`), 'utf8'));
+    return JSON.parse(fs.readFileSync(venueSidecar(venueId, 'overrides.json'), 'utf8'));
   } catch {
     return null;
   }

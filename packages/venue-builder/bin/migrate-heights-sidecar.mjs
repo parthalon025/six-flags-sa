@@ -5,7 +5,7 @@
  */
 
 import path from 'node:path';
-import { OVERRIDE_DIR, readJson, writeJson } from '../lib/venue-io.mjs';
+import { OVERRIDE_DIR, readJson, writeJson, venueSidecar } from '../lib/venue-io.mjs';
 
 const VENUES = [
   'big-kahunas',
@@ -24,8 +24,8 @@ const CREDITS = {
 const today = new Date().toISOString().slice(0, 10);
 
 for (const id of VENUES) {
-  const overridesPath = path.join(OVERRIDE_DIR, `${id}.overrides.json`);
-  const heightsPath = path.join(OVERRIDE_DIR, `${id}.heights.json`);
+  const overridesPath = venueSidecar(id, 'overrides.json');
+  const heightsPath = venueSidecar(id, 'heights.json');
   const overrides = readJson(overridesPath);
   if (!overrides?.pois) {
     console.error(`skip ${id}: no overrides`);

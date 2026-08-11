@@ -1,0 +1,112 @@
+{
+  "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/kings-island.heights.json.",
+  "expect": {
+    "walkable_km_min": 95
+  },
+  "drop": [
+    "Age or Weight",
+    "Arcade"
+  ],
+  "lands": {
+    "_comment": "Hand-picked tints for this park's themed areas, one narrow lightness band per theme so ten of them side by side still look like one map. They live with the park rather than in lib/theme.js because they are facts about Kings Island, not about the renderer — and because two parks can use the same district name. Cedar Point's water park was called Soak City until 2017, which is also the name of Kings Island's, and a table in shared code cannot tell them apart. Any district not listed gets a colour derived from its own name. Oktoberfest is deliberately not listed: it is drawn, and it has always taken a generated colour, which is what a district nobody hand-picked is supposed to look like.",
+    "night": {
+      "International Street": {
+        "fill": "#2A271D",
+        "stroke": "#3C382A",
+        "label": "#BBAD81"
+      },
+      "Coney Mall": {
+        "fill": "#2A231D",
+        "stroke": "#3C312A",
+        "label": "#BB9981"
+      },
+      "Rivertown": {
+        "fill": "#1D2A1D",
+        "stroke": "#2A3C2A",
+        "label": "#81BB81"
+      },
+      "Action Zone": {
+        "fill": "#1D252A",
+        "stroke": "#2A353C",
+        "label": "#81A3BB"
+      },
+      "Area 72": {
+        "fill": "#231D2A",
+        "stroke": "#312A3C",
+        "label": "#9981BB"
+      },
+      "Planet Snoopy": {
+        "fill": "#2A281D",
+        "stroke": "#3C3A2A",
+        "label": "#BBB381"
+      },
+      "Camp Snoopy": {
+        "fill": "#252A1D",
+        "stroke": "#353C2A",
+        "label": "#A3BB81"
+      },
+      "Adventure Port": {
+        "fill": "#1D2A28",
+        "stroke": "#2A3C3A",
+        "label": "#81BBB3"
+      },
+      "Soak City": {
+        "fill": "#1D272A",
+        "stroke": "#2A383C",
+        "label": "#81ADBB"
+      }
+    },
+    "day": {
+      "International Street": {
+        "fill": "#F1EEE4",
+        "stroke": "#E0DBCC",
+        "label": "#7E6F44"
+      },
+      "Coney Mall": {
+        "fill": "#F1EAE4",
+        "stroke": "#E0D5CC",
+        "label": "#7E5C44"
+      },
+      "Rivertown": {
+        "fill": "#E4F1E4",
+        "stroke": "#CCE0CC",
+        "label": "#447E44"
+      },
+      "Action Zone": {
+        "fill": "#E4ECF1",
+        "stroke": "#CCD8E0",
+        "label": "#44667E"
+      },
+      "Area 72": {
+        "fill": "#EAE4F1",
+        "stroke": "#D5CCE0",
+        "label": "#5C447E"
+      },
+      "Planet Snoopy": {
+        "fill": "#F1EFE4",
+        "stroke": "#E0DECC",
+        "label": "#7E7644"
+      },
+      "Camp Snoopy": {
+        "fill": "#ECF1E4",
+        "stroke": "#D8E0CC",
+        "label": "#667E44"
+      },
+      "Adventure Port": {
+        "fill": "#E4F1EF",
+        "stroke": "#CCE0DE",
+        "label": "#447E76"
+      },
+      "Soak City": {
+        "fill": "#E4EEF1",
+        "stroke": "#CCDBE0",
+        "label": "#446F7E"
+      }
+    }
+  },
+  "pois": {
+    "Xtreme Skyflyer": {
+      "note": "Upcharge attraction - height and weight checked at the ride"
+    }
+  }
+}

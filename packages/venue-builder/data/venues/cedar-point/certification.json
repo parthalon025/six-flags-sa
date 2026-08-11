@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "venue": {
+    "id": "cedar-point",
+    "name": "Cedar Point",
+    "locality": "Sandusky, Ohio"
+  },
+  "certified": false,
+  "certifiedAt": null,
+  "checks": [
+    {
+      "key": "checklist",
+      "claim": "Required completeness items pass",
+      "pass": true,
+      "evidence": {
+        "numerator": 4,
+        "denominator": 4,
+        "detail": "4/4 required items ok"
+      },
+      "confidence": "high",
+      "falsifier": "Any required checklist item is missing",
+      "soWhat": "Half-built venues draw a map but hide whole app features silently"
+    },
+    {
+      "key": "compare",
+      "claim": "Built bundle matches manifest counts and has a recipe",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "manifest and disk agree",
+        "counts": {
+          "pois": 429,
+          "rides": 76,
+          "heights": 74,
+          "campsites": 146,
+          "paths": 1125,
+          "hasHeightsTab": true
+        }
+      },
+      "confidence": "high",
+      "falsifier": "POI, ride, height, or path counts drift from manifest",
+      "soWhat": "The app reads manifest numbers; drift breaks trust in coverage badges"
+    },
+    {
+      "key": "route",
+      "claim": "Path graph has ≤2 islands and every ride snaps to the network",
+      "pass": false,
+      "evidence": {
+        "numerator": 75,
+        "denominator": 76,
+        "detail": "1 component(s), 1 ride(s) >35 m from network",
+        "components": 1,
+        "largestComponent": 4,
+        "farRides": [
+          {
+            "name": "Siren's Curse",
+            "metres": 45
+          }
+        ]
+      },
+      "confidence": "moderate",
+      "falsifier": "OpenStreetMap path gaps strand rides on routing islands",
+      "soWhat": "Offline routing cannot reach a ride that is not on the walk network"
+    },
+    {
+      "key": "heights",
+      "claim": "Height rules present or declared absent",
+      "pass": true,
+      "evidence": {
+        "numerator": 74,
+        "denominator": 76,
+        "detail": "74 of 76 rides carry height rules",
+        "declaredAbsent": false
+      },
+      "confidence": "moderate",
+      "falsifier": "A park with rides ships without height filter coverage",
+      "soWhat": "Guests cannot filter by rider height offline without these rules"
+    },
+    {
+      "key": "entrances",
+      "claim": "Queue entrances published at ≥moderate or recorded as proposals",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 76,
+        "known": 76,
+        "detail": "1 published / 76 known / 76 rides inventoried"
+      },
+      "confidence": "moderate",
+      "falsifier": "No entrance evidence was inventoried for rideable attractions",
+      "soWhat": "Routing to a ride uses queue entrance coordinates when published"
+    },
+    {
+      "key": "ask",
+      "claim": "No blocking external requests remain",
+      "pass": true,
+      "evidence": {
+        "numerator": 1,
+        "denominator": 1,
+        "detail": "1 non-blocking request(s)",
+        "blocking": []
+      },
+      "confidence": "high",
+      "falsifier": "A blocking gap was papered over instead of recorded",
+      "soWhat": "Blocking requests mean a whole app feature is absent without saying so"
+    }
+  ],
+  "ask": {
+    "venue": {
+      "id": "cedar-point",
+      "name": "Cedar Point",
+      "locality": "Sandusky, Ohio",
+      "kind": "theme-park"
+    },
+    "overridesFile": "data/venues/cedar-point.overrides.json",
+    "blocking": false,
+    "requests": [
+      {
+        "key": "heights",
+        "need": "Ride height requirements",
+        "blocking": false,
+        "why": "2 of 76 rides at Cedar Point (Sandusky, Ohio) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
+        "targets": [
+          "Cedar Point Marina Pool",
+          "Main Arcade"
+        ],
+        "ask": [
+          "Find the published height requirement for each ride listed below at Cedar Point (Sandusky, Ohio).",
+          "Work from the park's own current-season attraction pages first. A park's own words are the source; a fan wiki is a lead to check, not an answer.",
+          "Heights are in inches, as the American parks in this app publish them.",
+          "Write down where each number came from. If a ride is not on the park's site, leave it out entirely and say so — an omission is recoverable and a guess is not.",
+          "Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool all arrive tagged as attractions and none of them has a height on a sign. Say which ones those are rather than inventing a rule for them — that answer is a fix to the category rules in scripts/lib/osm-tags.mjs, which helps every venue, not just this one."
+        ],
+        "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"Cedar Point Marina Pool\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" },\n    \"Main Arcade\": { \"h\": { \"min\": 0, \"alone\": null, \"max\": null } }\n  }\n}",
+        "rules": [
+          "`min` is the floor nobody rides under. `min: 0` is the park saying there is no floor, and the app reads that back as \"No minimum\" — that is the right answer for a lazy river, and it is not the same as `null`, which means nobody has looked yet.",
+          "`alone` is the height below which a supervising rider has to come along. `max` is a ceiling, which most rides have none of.",
+          "Keys must match the place name in the bundle exactly, character for character. The list below is those names.",
+          "If the park publishes a rule for an attraction whose name is *not* in that list, put it under `_unmapped` in data/venues/cedar-point.overrides.json instead of under `pois`. An override keyed to a name nothing answers to is a correction that silently did not happen, and there is a test that fails on it. It moves up into `pois` the day OpenStreetMap gains that name.",
+          "If the park's name for a ride differs from the name in the list, key the entry by the park's name and add `\"alias\": \"<the name in the list>\"`.",
+          "Weight limits, life-jacket exceptions, \"must ride with an adult\", single-tube versus double — real rules this model has no field for — go in `note`, in the park's own terms. Never round one off into a height."
+        ]
+      }
+    ]
+  }
+}

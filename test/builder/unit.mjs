@@ -2204,10 +2204,18 @@ await check('a height rule reads low to high, in inches a person could be', () =
 
 await check('every override is filed under a name the venue actually has', () => {
   const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.overrides.json'));
+  const packages = fs.readdirSync(dir).filter((name) => {
+    try {
+      return fs.statSync(new URL(name, dir)).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+  const files = packages
+    .map((id) => ({ id, file: `${id}/overrides.json` }))
+    .filter(({ file }) => fs.existsSync(new URL(file, dir)));
   assert.ok(files.length, 'no overrides files to check');
-  files.forEach((file) => {
-    const id = file.slice(0, -'.overrides.json'.length);
+  files.forEach(({ id, file }) => {
     const overrides = JSON.parse(fs.readFileSync(new URL(file, dir)));
     /* Through the resolver the build itself uses, rather than a second copy of
        its rules living here: a name, then the name the park renamed it from,
@@ -2343,7 +2351,7 @@ await check('every venue on disk knows how it was built', () => {
      line, and the only way back is to reconstruct it out of a merged pull
      request. */
   const missing = readVenues()
-    .filter((v) => !fs.existsSync(new URL(`../../packages/venue-builder/data/venues/${v.id}.recipe.json`, import.meta.url)));
+    .filter((v) => !fs.existsSync(new URL(`../../packages/venue-builder/data/venues/${v.id}/recipe.json`, import.meta.url)));
   assert.deepEqual(
     missing.map((v) => v.id),
     [],
@@ -2355,7 +2363,7 @@ await check('every venue on disk knows how it was built', () => {
 await check('a recipe on disk is one this builder still understands', () => {
   readVenues().forEach((v) => {
     const recipe = JSON.parse(
-      fs.readFileSync(new URL(`../../packages/venue-builder/data/venues/${v.id}.recipe.json`, import.meta.url)),
+      fs.readFileSync(new URL(`../../packages/venue-builder/data/venues/${v.id}/recipe.json`, import.meta.url)),
     );
     assert.equal(recipe.id, v.id, `${v.id}: recipe is filed under the wrong id`);
     const back = argsFromRecipe(recipe);
@@ -2466,7 +2474,7 @@ await check('the brief carries the conventions somebody would otherwise get wron
   assert.match(brief, /`min: 0`/, 'no floor is not the same as nobody looked');
   assert.match(brief, /alias/, 'how a renamed ride is bridged');
   assert.match(brief, /Never estimate a coordinate/);
-  assert.match(brief, /data\/venues\/somewhere\.overrides\.json/, 'the one file it all lands in');
+  assert.match(brief, /data\/venues\/somewhere\/overrides\.json/, 'the one file it all lands in');
   // The name it must be keyed by, exactly as the bundle spells it.
   assert.match(brief, /"Lazy River"/);
   return true;
@@ -3188,15 +3196,17 @@ function inventoryOf(pois, attractions) {
   const files = [
     path.join(VENUE_DIR, `${FIXTURE_ID}.map.json`),
     path.join(VENUE_DIR, `${FIXTURE_ID}.pois.json`),
-    path.join(OVERRIDE_DIR, `${FIXTURE_ID}.attractions.json`),
+    path.join(OVERRIDE_DIR, FIXTURE_ID, 'attractions.json'),
   ];
   try {
+    fs.mkdirSync(path.dirname(files[2]), { recursive: true });
     fs.writeFileSync(files[0], JSON.stringify({ meta: { id: FIXTURE_ID }, path: [] }));
     fs.writeFileSync(files[1], JSON.stringify(pois));
     fs.writeFileSync(files[2], JSON.stringify({ version: 1, venue: FIXTURE_ID, attractions }));
     return inventory(FIXTURE_ID);
   } finally {
     for (const file of files) fs.rmSync(file, { force: true });
+    fs.rmSync(path.join(OVERRIDE_DIR, FIXTURE_ID), { recursive: true, force: true });
   }
 }
 
@@ -3642,9 +3652,12 @@ await check('imagery rides are added only when the name is not already here', ()
 
 await check('big-kahunas carries a source catalogue the builder understands', () => {
   const { file, data } = readSources('big-kahunas');
-  assert.ok(file?.endsWith('big-kahunas.sources.json'));
+  assert.ok(file?.endsWith('big-kahunas/sources.json') || file?.endsWith('big-kahunas\\sources.json'));
   assert.ok(data.datasets?.merge?.length);
   assert.ok(data.datasets?.imagery?.length);
+  const map = (data.sources || []).find((s) => s.kind === 'official_map');
+  assert.ok(map?.image?.includes('big-kahunas/maps/2026-parkmap'));
+  assert.ok(fs.existsSync(new URL(`../../packages/venue-builder/${map.image}`, import.meta.url)));
   return true;
 });
 
@@ -3852,7 +3865,7 @@ await check('every catalog park has an official website URL for height research'
 
 await check('heightsSidecarFromOfficial pairs official listings to bundle rides', () => {
   const official = JSON.parse(
-    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/big-kahunas.official-cache.json', import.meta.url)),
+    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/big-kahunas/official-cache.json', import.meta.url)),
   );
   const pois = [
     { n: 'Maui Pipeline', c: 'ride' },
@@ -5924,27 +5937,29 @@ await check('AGPL yolo adapter is rejected by runner', async () => {
 const { certifyVenue, CERT_VERSION } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
 const { qaVenueRouting, MAX_ROUTING_ISLANDS } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');
 
-await check('certify emits a birth certificate with seven gates', () => {
+await check('certify emits a birth certificate with eight gates', () => {
   const doc = certifyVenue('kings-island', { write: false });
   assert.equal(doc.version, CERT_VERSION);
   assert.equal(doc.venue.id, 'kings-island');
-  assert.equal(doc.checks.length, 7);
+  assert.equal(doc.checks.length, 8);
   assert.ok(doc.checks.every((c) => c.claim && c.evidence && c.confidence && c.falsifier && c.soWhat));
   assert.ok(doc.checks.every((c) => c.evidence.denominator != null));
   assert.ok(doc.checks.some((c) => c.key === 'external_sources'));
+  assert.ok(doc.checks.some((c) => c.key === 'park_map_research'));
   return true;
 });
 
-await check('kings-island passes certification', () => {
+await check('kings-island passes certification except outstanding park-map image', () => {
   const doc = certifyVenue('kings-island', { write: false });
-  assert.equal(doc.certified, true);
-  assert.ok(doc.certifiedAt);
-  assert.equal(doc.ask, null);
   const route = doc.checks.find((c) => c.key === 'route');
   assert.equal(route.pass, true);
+  const parkMap = doc.checks.find((c) => c.key === 'park_map_research');
+  assert.equal(parkMap.pass, false, 'no local maps/ image and no LLM park-map search cache yet');
+  const others = doc.checks.filter((c) => c.key !== 'park_map_research');
+  assert.ok(others.every((c) => c.pass), others.filter((c) => !c.pass).map((c) => c.key).join(', '));
+  assert.equal(doc.certified, false);
   return true;
 });
-
 await check('route QA enforces the Kings Island island standard', () => {
   const r = qaVenueRouting('kings-island');
   assert.ok(r.components <= MAX_ROUTING_ISLANDS);
@@ -5961,10 +5976,11 @@ await check('cedar point fails route gate when a ride is off the network', () =>
   return true;
 });
 
-await check('certify writes data/venues/<id>.certification.json', () => {
+await check('certify writes data/venues/<id>/certification.json', () => {
   const file = path.join(
     new URL('../../packages/venue-builder/data/venues/', import.meta.url).pathname,
-    'kings-island.certification.json',
+    'kings-island',
+    'certification.json',
   );
   try { fs.unlinkSync(file); } catch { /* fresh */ }
   const doc = certifyVenue('kings-island');
@@ -6158,6 +6174,77 @@ await check('open research from official pages is deterministic without LLM', as
   assert.equal(withLlm.mode, 'official+llm');
   assert.ok(withLlm.aliases.some((a) => a.source === 'llm_extract'));
   assert.ok(withLlm.heightCandidates.some((h) => h.source === 'llm_extract'));
+  return true;
+});
+
+await check('LLM park-map search extracts HTML assets and merges as required', async () => {
+  const {
+    extractParkMapAssetUrls,
+    deterministicParkMapCandidates,
+    mergeParkMapResearch,
+    parkMapSearchRequired,
+    mergeOpenResearch,
+    deterministicOfficialResearch,
+  } = await import('../../packages/venue-builder/lib/open-research.mjs');
+
+  assert.equal(parkMapSearchRequired({ research: { llm_park_map_search: true } }), true);
+  assert.equal(parkMapSearchRequired({ research: { llm_park_map_search: false } }), false);
+  assert.equal(parkMapSearchRequired({ research: { llm_open_research: true } }), true);
+
+  const html = `
+    <html><body>
+      <a href="/maps/2026-park-map.webp">Download map</a>
+      <img src="https://cdn.example.test/hero.jpg" />
+      <img src="https://cdn.example.test/guest-park-map-2026.png" alt="Park map" />
+    </body></html>`;
+  const assets = extractParkMapAssetUrls(html, 'https://example.test/park-map/');
+  assert.ok(assets.some((a) => /park-map-2026\.png/.test(a.imageUrl)));
+  assert.ok(assets.some((a) => /2026-park-map\.webp/.test(a.imageUrl)));
+
+  const catalog = {
+    sources: [{
+      kind: 'official_map',
+      id: 'map',
+      map_kind: 'schematic',
+      url: 'https://example.test/park-map/',
+      image: 'data/venues/big-kahunas/maps/2026-parkmap.webp',
+    }],
+  };
+  const detMaps = deterministicParkMapCandidates({
+    catalog,
+    official: { pages: [] },
+    htmlByUrl: { 'https://example.test/park-map/': html },
+  });
+  assert.ok(detMaps.parkMaps.length >= 2);
+
+  const mergedMaps = mergeParkMapResearch(detMaps, {
+    skipped: false,
+    model: 'test',
+    fetched: '2026-08-11',
+    parkMaps: [{
+      pageUrl: 'https://example.test/park-map/',
+      imageUrl: 'https://cdn.example.test/guest-park-map-2026.png',
+      year: 2026,
+      mapKind: 'schematic',
+      confidence: 'high',
+      imagePath: 'data/venues/demo/maps/2026-parkmap.png',
+      reason: 'season guest map',
+    }],
+    followUpUrls: [],
+    searchQueries: ['Big Kahuna Destin park map 2026'],
+    notes: ['found'],
+  });
+  assert.ok(mergedMaps.llmParkMapSearch?.model === 'test');
+  assert.ok(mergedMaps.searchQueries.includes('Big Kahuna Destin park map 2026'));
+  assert.ok(mergedMaps.parkMaps.some((m) => m.source === 'llm_park_map_search'));
+
+  const det = deterministicOfficialResearch({
+    official: { fetched: '2026-08-11', attractions: [] },
+    pois: [],
+  });
+  const full = mergeOpenResearch(det, { skipped: true, reason: 'ai_not_requested' }, mergedMaps);
+  assert.ok(full.parkMaps.length);
+  assert.ok(full.sources.includes('llm_park_map_search'));
   return true;
 });
 

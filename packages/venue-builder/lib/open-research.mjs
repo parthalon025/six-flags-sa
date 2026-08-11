@@ -3,21 +3,40 @@
  *
  * Official HTML (and the structured attractions already parsed from it) is the
  * authoritative input. An LLM may propose aliases, height *candidates* with
- * quoted prose, and inventory gaps — never coordinates, never silent truth.
+ * quoted prose, inventory gaps, and — required for map acquisition — park-map
+ * asset search. Never coordinates, never silent truth.
  *
- * Output: data/venues/<id>.llm-research-cache.json (builder sidecar only).
+ * Output: data/venues/<id>/llm-research-cache.json (builder sidecar only).
  */
 
-import path from 'node:path';
-import { OVERRIDE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { llmConfig, chatCompletion } from './venue-llm.mjs';
 import { loadOfficialData, officialCacheFile } from './venue-official-site.mjs';
 import { readSources } from './venue-sources.mjs';
 import { pairSuggestions } from './venue-judge.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
 import { applyAliasClaims, proposeAliases } from './auto-alias.mjs';
+import {
+  deterministicParkMapCandidates,
+  fetchParkMapPages,
+  llmSearchParkMaps,
+  mergeParkMapResearch,
+  parkMapSearchRequired,
+  applyParkMapCandidatesToSources,
+  downloadParkMapImage,
+} from './park-map-research.mjs';
 
-export const llmResearchCacheFile = (id) => path.join(OVERRIDE_DIR, `${id}.llm-research-cache.json`);
+export const llmResearchCacheFile = (id) => venueSidecar(id, 'llm-research-cache.json');
+
+export {
+  extractParkMapAssetUrls,
+  deterministicParkMapCandidates,
+  llmSearchParkMaps,
+  mergeParkMapResearch,
+  parkMapSearchRequired,
+  applyParkMapCandidatesToSources,
+  downloadParkMapImage,
+} from './park-map-research.mjs';
 
 const EXTRACT_SYSTEM = `You extract structured research candidates from an official theme-park website listing.
 Rules:
@@ -166,10 +185,11 @@ export async function llmExtractOfficialResearch({ official, pois, opts = {} }) 
 }
 
 /**
- * Merge deterministic official research with optional LLM extraction.
+ * Merge deterministic official research with optional LLM extraction + park maps.
  * Height candidates from LLM are tagged llm_extract and never auto-applied to heights.json.
+ * Park-map LLM search is required for map acquisition when requested.
  */
-export function mergeOpenResearch(deterministic, llm) {
+export function mergeOpenResearch(deterministic, llm, parkMap = null) {
   const out = {
     version: 1,
     fetched: deterministic.fetched,
@@ -178,10 +198,14 @@ export function mergeOpenResearch(deterministic, llm) {
     aliases: [...(deterministic.aliases || [])],
     heightCandidates: [...(deterministic.heightCandidates || [])],
     inventoryGaps: [...(deterministic.inventoryGaps || [])],
+    parkMaps: [],
+    followUpUrls: [],
+    searchQueries: [],
     notes: [...(deterministic.notes || [])],
     siteCount: deterministic.siteCount,
     bundleRideCount: deterministic.bundleRideCount,
     llm: null,
+    llmParkMapSearch: null,
   };
 
   if (llm && !llm.skipped && !llm.error) {
@@ -203,15 +227,29 @@ export function mergeOpenResearch(deterministic, llm) {
     out.notes.push(`LLM open research error: ${llm.error}`);
   }
 
+  if (parkMap) {
+    out.parkMaps = parkMap.parkMaps || [];
+    out.followUpUrls = parkMap.followUpUrls || [];
+    out.searchQueries = parkMap.searchQueries || [];
+    out.llmParkMapSearch = parkMap.llmParkMapSearch;
+    out.notes.push(...(parkMap.notes || []));
+    if (parkMap.llmParkMapSearch && !parkMap.llmParkMapSearch.skipped && !parkMap.llmParkMapSearch.error) {
+      out.sources.push('llm_park_map_search');
+      if (out.mode === 'official') out.mode = 'official+llm';
+      else if (out.mode === 'official+llm') out.mode = 'official+llm';
+    }
+  }
+
   return out;
 }
 
 /**
- * Run open research for a venue: load official cache/pages, optional LLM, write sidecar.
+ * Run open research for a venue: load official cache/pages, optional LLM,
+ * required LLM park-map search when AI is on, write sidecar.
  *
  * @param {string} venueId
  * @param {object[]} pois
- * @param {{ fetch?: boolean, browser?: boolean, ai?: boolean, applyAliases?: boolean, offline?: boolean }} opts
+ * @param {{ fetch?: boolean, browser?: boolean, ai?: boolean, applyAliases?: boolean, applyMaps?: boolean, fetchMaps?: boolean, offline?: boolean }} opts
  */
 export async function runOpenResearch(venueId, pois, opts = {}) {
   const { data: catalog } = readSources(venueId);
@@ -233,7 +271,32 @@ export async function runOpenResearch(venueId, pois, opts = {}) {
     llm = { skipped: true, reason: 'ai_not_requested' };
   }
 
-  const merged = mergeOpenResearch(deterministic, llm);
+  /* Park-map acquisition: HTML scrape + LLM search (required when research asks for it). */
+  const needMapSearch = parkMapSearchRequired(catalog);
+  let htmlByUrl = {};
+  if (needMapSearch && !opts.offline && (opts.fetch || opts.fetchMaps || opts.ai)) {
+    const fetched = await fetchParkMapPages(catalog, { offline: opts.offline });
+    htmlByUrl = fetched.htmlByUrl || {};
+  }
+  const detMaps = deterministicParkMapCandidates({ catalog, official, htmlByUrl });
+  let llmMaps = null;
+  if (needMapSearch && opts.ai) {
+    llmMaps = await llmSearchParkMaps({
+      venueId,
+      venueName: official?.venue || catalog?.venue || venueId,
+      catalog,
+      candidates: detMaps.parkMaps,
+      htmlByUrl,
+      opts,
+    });
+  } else if (needMapSearch) {
+    llmMaps = { skipped: true, reason: 'ai_not_requested', required: true };
+  }
+  const parkMap = needMapSearch
+    ? mergeParkMapResearch(detMaps, llmMaps)
+    : { parkMaps: detMaps.parkMaps, followUpUrls: [], searchQueries: [], notes: [], llmParkMapSearch: null };
+
+  const merged = mergeOpenResearch(deterministic, llm, parkMap);
   merged.venue = venueId;
   writeJson(llmResearchCacheFile(venueId), merged, true);
 
@@ -255,10 +318,32 @@ export async function runOpenResearch(venueId, pois, opts = {}) {
     }
   }
 
+  let mapsApplied = null;
+  let downloaded = null;
+  if (opts.fetchMaps) {
+    const remote = (merged.parkMaps || []).find(
+      (m) => m.imageUrl && m.confidence !== 'low' && m.source === 'llm_park_map_search',
+    ) || (merged.parkMaps || []).find((m) => m.imageUrl && m.mapish);
+    if (remote?.imageUrl) {
+      downloaded = await downloadParkMapImage(venueId, remote.imageUrl, {
+        year: remote.year || undefined,
+      });
+      if (opts.applyMaps !== false) {
+        mapsApplied = applyParkMapCandidatesToSources(venueId, [
+          { ...remote, imagePath: downloaded.rel, confidence: 'high' },
+        ], { force: Boolean(opts.forceMapImage) });
+      }
+    }
+  } else if (opts.applyMaps) {
+    mapsApplied = applyParkMapCandidatesToSources(venueId, merged.parkMaps || []);
+  }
+
   return {
     file: llmResearchCacheFile(venueId),
     research: merged,
     aliasesApplied,
+    mapsApplied,
+    downloaded,
     officialFetched: official?.fetched || null,
     siteCount: official?.attractions?.length || 0,
   };

@@ -5,6 +5,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { MANIFEST_FILE, OVERRIDE_DIR, VENUE_DIR } from '../src/paths.mjs';
+import { venueSidecar } from '../lib/venue-io.mjs';
 
 const hasHeights = (pois) => pois.some((p) => p.h);
 
@@ -89,7 +90,7 @@ export function compareVenue(venue) {
   tol(heights, expected.heights, 'height count', 2);
   tol(paths, venue.coverage?.ways, 'path count', 0);
 
-  const recipeFile = path.join(OVERRIDE_DIR, `${id}.recipe.json`);
+  const recipeFile = venueSidecar(id, 'recipe.json');
   if (!existsSync(recipeFile)) {
     issues.push('no recipe on disk — cannot rebuild');
     stats.ok = false;

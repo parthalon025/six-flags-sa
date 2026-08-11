@@ -1,0 +1,8 @@
+{
+  "_comment": "Corrections and hand-added places, re-applied on every rebuild. Height rules live in data/venues/six-flags-fiesta-texas.heights.json.",
+  "credits": "Height requirements were compiled from the park's own Guest Safety and Accessibility Guide and from published 2026 height charts.",
+  "pois": {},
+  "_unsourced": {
+    "_comment": "Rides OpenStreetMap carries that the park's site does not list at all, so no height rule could be sourced and none is invented: Cowabunga, RipQurl, Stingray Racer, Tube Shoot, Vortex and Wipeout all return 404 on sixflags.com. They are most likely retired, or a mapper's name for a segment of a slide the park sells under another name — the same situation as the Goliath track the suite already knows about. Coral Cove, Paradise Cove and Splash Water Springs have park pages that post no height at all, which may mean there is no requirement or may mean nobody wrote it down; absence is not a rule, so they keep \"check at the ride\". Coca-Cola VIP Lounge and Schi-Kugel Arcade are not rides."
+  }
+}

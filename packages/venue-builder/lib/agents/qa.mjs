@@ -4,7 +4,7 @@
 
 import path from 'node:path';
 import { auditVenue } from '../venue-audit.mjs';
-import { readJson, VENUE_DIR, OVERRIDE_DIR } from '../venue-io.mjs';
+import { readJson, VENUE_DIR, OVERRIDE_DIR, venueSidecar } from '../venue-io.mjs';
 import { readSources } from '../venue-sources.mjs';
 import { enrichOfficialFromSidecar, loadOfficialData } from '../venue-official-site.mjs';
 import * as routing from '../../../../apps/party-tracker/lib/routing.js';
@@ -17,8 +17,8 @@ export async function runQaAgent(venueId, opts = {}) {
 
   const map = readJson(path.join(VENUE_DIR, `${venueId}.map.json`), {});
   const pois = readJson(path.join(VENUE_DIR, `${venueId}.pois.json`), []);
-  const overrides = readJson(path.join(OVERRIDE_DIR, `${venueId}.overrides.json`), null);
-  const heightsSidecar = readJson(path.join(OVERRIDE_DIR, `${venueId}.heights.json`), null);
+  const overrides = readJson(venueSidecar(venueId, 'overrides.json'), null);
+  const heightsSidecar = readJson(venueSidecar(venueId, 'heights.json'), null);
   const { data: catalog } = readSources(venueId);
 
   const officialRaw = enrichOfficialFromSidecar(

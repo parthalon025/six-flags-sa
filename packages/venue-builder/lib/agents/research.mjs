@@ -77,6 +77,9 @@ export async function runResearchAgent(venueId, opts = {}) {
             aliases: openResearch.research.aliases?.length,
             heightCandidates: openResearch.research.heightCandidates?.length,
             inventoryGaps: openResearch.research.inventoryGaps?.length,
+            parkMaps: openResearch.research.parkMaps?.length,
+            llmParkMapSearch: openResearch.research.llmParkMapSearch,
+            searchQueries: openResearch.research.searchQueries?.slice?.(0, 5),
           }
         : null,
       judgements: packet.judgements?.map((j) => ({ key: j.key, count: j.count })),

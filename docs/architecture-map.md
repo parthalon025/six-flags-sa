@@ -228,7 +228,7 @@ flowchart TB
 ### Inputs vs outputs
 
 ```text
-data/venues/<id>.*          ← edit these
+data/venues/<id>/           ← edit these (one package per venue)
         │
         ▼  npm run venues:build | rebuild | overrides | attractions
         │

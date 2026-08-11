@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "_comment": "Height rules beside the venue bundle. Re-applied on every build after overrides. A below-floor rule publishes as reported, not confirmed — never dropped.",
+  "venue": "big-kahunas",
+  "generated": "2026-08-10",
+  "publish_at": "moderate",
+  "rules": {
+    "Big Kahuna's Tropical Mini Golf": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "note": "Three 18-hole courses over in the Adventure Park.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Bombay Blasters": {
+      "h": { "min": 48, "alone": null, "max": null },
+      "note": "Twin speed slides. 300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Bombs Away Bay": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Buccaneer Cove": {
+      "h": { "min": null, "alone": 42, "max": null },
+      "note": "Built for children under 48\". Under 42\" needs a grown-up and a life jacket.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Cobra Twister": {
+      "h": { "min": 42, "alone": null, "max": null },
+      "note": "300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Crocodile Flats": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "note": "Shallow children's pool with three small slides.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Fun Fountains": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Hammerhead": {
+      "h": { "min": 42, "alone": null, "max": null },
+      "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Honolulu Half Pipe": {
+      "h": { "min": 48, "alone": null, "max": null },
+      "note": "Surf simulator. 300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Humunga River": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Jumanji": {
+      "h": { "min": 48, "alone": null, "max": null },
+      "note": "Five storeys. 300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Kowabunga Racer": {
+      "h": { "min": 42, "alone": null, "max": null },
+      "note": "Head-first mat racer. The park files it under Over 42\".",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Lazy River": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Maui Pipeline": {
+      "h": { "min": 48, "alone": null, "max": null },
+      "note": "300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Monkey River": {
+      "h": { "min": 42, "alone": null, "max": null },
+      "note": "Under 42\" can ride in a USCG-approved life jacket, lent free at the slide. 300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Pirate's Escape": {
+      "h": { "min": 42, "alone": null, "max": null },
+      "note": "300 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Pleasure Island": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "note": "Shallow children's pool with small slides and a spraying umbrella.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Raging Rhino River": {
+      "h": { "min": 42, "alone": null, "max": null },
+      "note": "250 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Skycoaster": {
+      "h": { "min": 42, "alone": null, "max": null },
+      "note": "Adventure Park, and a separate ticket. 800 lb combined for a flight of three.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Tadpole Pond": {
+      "h": { "min": 0, "alone": null, "max": null },
+      "note": "Toddler area. The park asks that a parent is in the water with them.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Tiki River Run": {
+      "h": { "min": 44, "alone": null, "max": null },
+      "alias": "Tiki River Run (Right Slide)",
+      "note": "250 lb in a single tube, 400 lb in a double.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Thunder River": {
+      "h": { "min": 44, "alone": null, "max": null },
+      "note": "250 lb maximum.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    },
+    "Wave Pool": {
+      "h": { "min": null, "alone": 48, "max": null },
+      "note": "Under 42\" must wear a flotation device.",
+      "evidence": [{ "source": "official_site", "date": "2026-08-10", "note": "Height requirements from the park operator for the 2026 season." }]
+    }
+  }
+}

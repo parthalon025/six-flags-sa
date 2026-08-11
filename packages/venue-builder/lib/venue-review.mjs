@@ -5,9 +5,9 @@
  */
 
 import path from 'node:path';
-import { OVERRIDE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 
-export const REVIEW_FILE = (id) => path.join(OVERRIDE_DIR, `${id}.review.json`);
+export const REVIEW_FILE = (id) => venueSidecar(id, 'review.json');
 
 /**
  * Record an approval or rejection for a claim key.

@@ -1,13 +1,12 @@
 /**
  * Shared cache helpers for external research adapters.
- * All caches live under data/venues/ as builder input sidecars.
+ * All caches live under data/venues/<id>/ as builder input sidecars.
  */
 
-import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { OVERRIDE_DIR, readJson } from '../venue-io.mjs';
+import { readJson, venueSidecar } from '../venue-io.mjs';
 
-export const cachePath = (venueId, suffix) => path.join(OVERRIDE_DIR, `${venueId}.${suffix}-cache.json`);
+export const cachePath = (venueId, suffix) => venueSidecar(venueId, `${suffix}-cache.json`);
 
 export function readCache(venueId, suffix) {
   return readJson(cachePath(venueId, suffix));

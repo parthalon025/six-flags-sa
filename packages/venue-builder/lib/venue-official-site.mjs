@@ -9,14 +9,14 @@
 
 import path from 'node:path';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-io.mjs';
 import { nameSimilarity, pairSuggestions } from './venue-judge.mjs';
 import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
 import { parseListingForUrl } from './operators/index.mjs';
 
 const UA = 'six-flags-sa-venue-research/1.0 (+https://github.com/parthalon025/six-flags-sa)';
 
-export const officialCacheFile = (id) => path.join(OVERRIDE_DIR, `${id}.official-cache.json`);
+export const officialCacheFile = (id) => venueSidecar(id, 'official-cache.json');
 
 /** Decode a handful of HTML entities without a parser dependency. */
 function decodeHtml(s) {

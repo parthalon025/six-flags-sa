@@ -1,7 +1,7 @@
 /**
  * The venue's source catalogue — what besides OpenStreetMap this build uses.
  *
- * Every venue can carry `data/venues/<id>.sources.json` beside its overrides.
+ * Every venue can carry `data/venues/<id>/sources.json` inside its package.
  * The builder reads it to wire merge, trace, and imagery datasets into the run,
  * and to assemble the credit line the app prints under the height slider.
  *
@@ -10,12 +10,12 @@
  */
 
 import path from 'node:path';
-import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, venueSidecar } from './venue-io.mjs';
 import { EXTERNAL_ADAPTER_IDS } from './adapters/implementations.mjs';
 
 const ROOT = path.dirname(path.dirname(OVERRIDE_DIR));
 
-export const sourcesFile = (id) => path.join(OVERRIDE_DIR, `${id}.sources.json`);
+export const sourcesFile = (id) => venueSidecar(id, 'sources.json');
 
 /**
  * Default open-data adapters declared for a theme-park venue.

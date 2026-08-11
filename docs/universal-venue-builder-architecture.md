@@ -17,7 +17,7 @@ Adapters live in the **builder** world. Their job is to produce **claims** the e
 engine can fuse. The phone never imports LangGraph, Valhalla, or YOLO.
 
 **External research path:** `sources.json` `datasets.external` selects adapters.
-`npm run venues:sync-sources` / research agent caches them under `data/venues/<id>.*-cache.json`.
+`npm run venues:sync-sources` / research agent caches them under `data/venues/<id>/` (`*-cache.json`).
 `external-claims.mjs` binds ParksAPI locations and Mapillary/a11y points to rides;
 `attractions` inventory feeds matched entrance claims through `addEvidence`.
 Queue-Times, RopeDrop, Open-Meteo, and RCDB stay inventory/QA — they do not invent
@@ -26,14 +26,19 @@ wait times or height rules in the shipped bundle.
 **Official pages + LLM open research:** `open-research.mjs` always runs deterministic
 pairing from the official-site cache (heights/aliases/inventory gaps). With `--ai` /
 `VENUE_LLM_API_KEY`, an LLM may propose additional aliases and height *candidates*
-quoted from official text. LLM output is never coordinates and never auto-writes
-heights; weight `llm_extract` alone cannot clear the publish floor.
+quoted from official text. **LLM park-map search is required** to locate guest-map
+image/PDF assets (`research.llm_park_map_search` in `sources.json`): HTML scrape of
+`official_map` pages plus an LLM pass that ranks assets / proposes follow-up URLs and
+search queries. Results land in `data/venues/<id>/llm-research-cache.json` under
+`parkMaps`. LLM output is never coordinates and never auto-writes heights; weight
+`llm_extract` alone cannot clear the publish floor. Map images live in
+`data/venues/<id>/maps/` inside each venue package.
 
 **Official park maps (including not-to-scale):** Catalogue `kind: "official_map"` with
 `map_kind` (`schematic` | `photo` | `to_scale`) and optional `image`. Scaffold a pixel
 trace with `npm run venues:trace -- --scaffold <id>`, pin control points to OSM corners,
 digitize `entrance` / `exit` / `place` / `path` features, then run
-`npm run venues:trace -- data/venues/<id>.trace.json --wire`. Schematic maps default to
+`npm run venues:trace -- data/venues/<id>/trace.json --wire`. Schematic maps default to
 TPS + 25 m CV budget; every feature carries `error_m`. Rebuild folds routes into the
 walk network and entrances into POIs via `applyTrace`.
 

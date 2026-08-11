@@ -8,14 +8,14 @@
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
-import { OVERRIDE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { OVERRIDE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { pairSuggestions } from './venue-judge.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
 import { officialSiteForPark } from './park-official-urls.mjs';
 import { scaffoldSourcesCatalogue } from './park-capabilities.mjs';
 
-export const heightsFile = (id) => path.join(OVERRIDE_DIR, `${id}.heights.json`);
-export const sourcesFile = (id) => path.join(OVERRIDE_DIR, `${id}.sources.json`);
+export const heightsFile = (id) => venueSidecar(id, 'heights.json');
+export const sourcesFile = (id) => venueSidecar(id, 'sources.json');
 
 const defaultCredit = (park) =>
   `Height requirements compiled from ${park.name}'s official website for the current season.`;

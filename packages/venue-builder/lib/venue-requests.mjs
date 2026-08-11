@@ -12,7 +12,7 @@ import { addressBook, resolveOverride } from './venue-ids.mjs';
  *
  * The checklist in venue-checklist.mjs already knows every one of these gaps and
  * says so in a `fix` line, and that line is written for a person sitting at a
- * terminal in this repo: "write data/venues/<id>.overrides.json". Which is the
+ * terminal in this repo: "write data/venues/<id>/overrides.json". Which is the
  * right sentence for the person who just ran the build and the wrong one for the
  * work that actually has to happen next — reading a park's own pages, one
  * attraction at a time, and turning prose into a keyed JSON file that obeys half
@@ -57,7 +57,7 @@ const RIDE = (p) => p.c === 'coaster' || p.c === 'ride';
 export function requests({ venue, map = {}, pois = [], overrides = null } = {}) {
   const id = venue?.id || 'venue';
   const where = venue?.locality ? `${venue.name} (${venue.locality})` : venue?.name || id;
-  const file = `data/venues/${id}.overrides.json`;
+  const file = `data/venues/${id}/overrides.json`;
   const out = [];
 
   const rides = pois.filter(RIDE);
@@ -244,7 +244,7 @@ export function requests({ venue, map = {}, pois = [], overrides = null } = {}) 
       targets: [],
       ask: ['Give the town and state or region this venue is in, as "Sandusky, Ohio".'],
       schema: null,
-      rules: [`Passed as \`--locality\`, and recorded in data/venues/${id}.recipe.json so the next `
+      rules: [`Passed as \`--locality\`, and recorded in data/venues/${id}/recipe.json so the next `
         + 'rebuild keeps it.'],
     });
   }
@@ -283,7 +283,7 @@ function heightSchema(names) {
 export function renderBrief(venue, reqs) {
   const id = venue?.id || 'venue';
   const name = venue?.name || id;
-  const file = `data/venues/${id}.overrides.json`;
+  const file = `data/venues/${id}/overrides.json`;
 
   if (!reqs.length) {
     return `# ${name}\n\nNothing here needs a source outside OpenStreetMap.\n`;
@@ -352,7 +352,7 @@ export const briefJson = (venue, reqs) => ({
     locality: venue?.locality || null,
     kind: venue?.kind || null,
   },
-  overridesFile: `data/venues/${venue?.id}.overrides.json`,
+  overridesFile: `data/venues/${venue?.id}/overrides.json`,
   blocking: reqs.some((r) => r.blocking),
   requests: reqs,
 });

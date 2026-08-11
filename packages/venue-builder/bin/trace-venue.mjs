@@ -10,7 +10,7 @@
  * everybody uses and nobody has drawn. Half the toilets. All of that is on the
  * map the park hands out at the gate, and none of it has been reachable.
  *
- *   node scripts/trace-venue.mjs data/venues/big-kahunas.trace.json
+ *   node scripts/trace-venue.mjs data/venues/big-kahunas/trace.json
  *   node scripts/trace-venue.mjs <file> --model affine --max-error 6
  *   node scripts/trace-venue.mjs <file> --report        # the fit, as markdown
  *
@@ -19,7 +19,7 @@
  *
  *   {
  *     "venue": "big-kahunas",
- *     "image": "docs/big-kahunas-2026-parkmap.png",
+ *     "image": "data/venues/big-kahunas/maps/2026-parkmap.webp",
  *     "source": "Big Kahuna's own 2026 park map",
  *     "controls": [
  *       { "n": "Wave pool, NE corner", "px": [1204, 880], "lat": 30.38871, "lng": -86.47262 }
@@ -62,6 +62,7 @@ import {
   ensureTraceDatasetWired,
   MAP_KINDS,
 } from '../lib/official-map.mjs';
+import { venueSidecarRel } from '../lib/venue-io.mjs';
 
 const USAGE = `
 Georeference a park's own map and pull features off it — including maps that are
@@ -78,10 +79,10 @@ not to scale (illustrated / schematic handouts).
   --map-kind <k>     ${MAP_KINDS.join(' | ')} — overrides trace.map_kind
   --anyway           write regardless; error stamped on every feature
   --wire             after a successful write, add datasets.trace to sources.json
-  --out <file>       where to write (default: data/venues/<venue>.traced.geojson)
+  --out <file>       where to write (default: data/venues/<id>/traced.geojson)
   --report           print the fit as markdown rather than a terminal summary
   --dry-run          fit and report, write nothing
-  --scaffold <id>    create data/venues/<id>.trace.json from official_map in sources.json
+  --scaffold <id>    create data/venues/<id>/trace.json from official_map in sources.json
 
 Control points pin the picture to the ground. Features:
   entrance | exit | place | route | path   (path is an alias for route / walking lines)
@@ -339,7 +340,7 @@ function main() {
 
   const out = args.out
     ? String(args.out)
-    : path.join('data', 'venues', `${trace.venue}.traced.geojson`);
+    : venueSidecarRel(trace.venue, 'traced.geojson');
   const gj = toGeoJson(trace, fitted, features, accuracy, policy);
 
   if (args['dry-run']) {

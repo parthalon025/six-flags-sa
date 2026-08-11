@@ -2,7 +2,7 @@
  * Venue certification — the twin's birth certificate.
  *
  * Runs report (checklist), compare, route-qa, and ask as pass/fail gates.
- * Emits data/venues/<id>.certification.json with claim, evidence, confidence,
+ * Emits data/venues/<id>/certification.json with claim, evidence, confidence,
  * falsifier, and so-what per check. Below threshold, certification fails and
  * the ask brief is attached for a maintainer to act on.
  */
@@ -14,7 +14,7 @@ import { checklist, failures } from './venue-checklist.mjs';
 import { requests, briefJson } from './venue-requests.mjs';
 import { readRecipe } from './venue-recipe.mjs';
 import { PUBLISH_AT, atLeast } from './evidence.mjs';
-import { OVERRIDE_DIR, VENUE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { VENUE_DIR, readJson, writeJson, venueSidecar, resolveBuilderPath } from './venue-io.mjs';
 import { qaVenueRouting, MAX_ROUTING_ISLANDS, MAX_RIDE_SNAP_METRES } from './venue-route-qa-core.mjs';
 import { readSources, externalAdaptersFromCatalog } from './venue-sources.mjs';
 
@@ -27,7 +27,7 @@ function check({ key, claim, pass, evidence, confidence, falsifier, soWhat }) {
 }
 
 function readAttractionsEntrances(id) {
-  const data = readJson(path.join(OVERRIDE_DIR, `${id}.attractions.json`));
+  const data = readJson(venueSidecar(id, 'attractions.json'));
   if (!data?.attractions?.length) return { known: 0, published: 0, rides: 0 };
   const rides = data.attractions.length;
   let published = 0;
@@ -60,7 +60,7 @@ function loadVenue(id) {
     mapKb: fs.existsSync(mapFile) ? Math.round(fs.statSync(mapFile).size / 1024) : null,
     poisKb: fs.existsSync(poisFile) ? Math.round(fs.statSync(poisFile).size / 1024) : null,
   };
-  const overrides = readJson(path.join(OVERRIDE_DIR, `${id}.overrides.json`), null);
+  const overrides = readJson(venueSidecar(id, 'overrides.json'), null);
   const recipe = readRecipe(id);
   return { venue, map, pois, sizes, overrides, recipe };
 }
@@ -235,14 +235,13 @@ export function certifyVenue(id, opts = {}) {
   const declared = externalAdaptersFromCatalog(catalog, { fallback: [] });
   let cachedExternal = 0;
   for (const adapterId of declared) {
-    const file = path.join(
-      OVERRIDE_DIR,
-      adapterId === 'parks-api' ? `${id}.parks-api-cache.json` : `${id}.${adapterId}-cache.json`,
-    );
-    if (readJson(file, null)) cachedExternal += 1;
+    const name = adapterId === 'parks-api'
+      ? 'parks-api-cache.json'
+      : `${adapterId}-cache.json`;
+    if (readJson(venueSidecar(id, name), null)) cachedExternal += 1;
   }
-  const llmResearch = readJson(path.join(OVERRIDE_DIR, `${id}.llm-research-cache.json`), null);
-  const officialCache = readJson(path.join(OVERRIDE_DIR, `${id}.official-cache.json`), null);
+  const llmResearch = readJson(venueSidecar(id, 'llm-research-cache.json'), null);
+  const officialCache = readJson(venueSidecar(id, 'official-cache.json'), null);
   const hasOfficialStrategy = Boolean(catalog?.sources?.some((s) => s.kind === 'official_site'));
   const hasResearchTrail = Boolean(officialCache) || Boolean(llmResearch) || cachedExternal > 0;
   const externalPass = declared.length === 0 || hasResearchTrail || hasOfficialStrategy;
@@ -269,6 +268,41 @@ export function certifyVenue(id, opts = {}) {
     }),
   );
 
+  /* ---- official park map acquisition (LLM search required when declared) ---- */
+  const wantsParkMapSearch = catalog?.research?.llm_park_map_search !== false
+    && (catalog?.sources || []).some((s) => s.kind === 'official_map');
+  if (wantsParkMapSearch) {
+    const maps = (catalog?.sources || []).filter((s) => s.kind === 'official_map');
+    const localImages = maps.filter((s) => {
+      if (!s.image) return false;
+      const abs = resolveBuilderPath(s.image);
+      return abs && fs.existsSync(abs);
+    }).length;
+    const parkMapHits = Array.isArray(llmResearch?.parkMaps) ? llmResearch.parkMaps.length : 0;
+    const llmMapRan = Boolean(
+      llmResearch?.llmParkMapSearch
+      && !llmResearch.llmParkMapSearch.skipped
+      && !llmResearch.llmParkMapSearch.error,
+    );
+    const parkMapPass = localImages > 0 || parkMapHits > 0 || llmMapRan;
+    checks.push(
+      check({
+        key: 'park_map_research',
+        claim: 'Official park map image is local or LLM park-map search recorded candidates',
+        pass: parkMapPass,
+        evidence: {
+          numerator: localImages + (llmMapRan ? 1 : 0),
+          denominator: Math.max(maps.length, 1),
+          detail: `local_images=${localImages}; parkMap_candidates=${parkMapHits}; llm_park_map_search=${llmMapRan}`,
+          searchQueries: llmResearch?.searchQueries || [],
+        },
+        confidence: localImages > 0 ? 'high' : llmMapRan ? 'moderate' : 'low',
+        falsifier: 'sources.json lists official_map but no image and no LLM park-map search cache',
+        soWhat: 'Guest maps for tracing require LLM search (or a package maps/ image) before georef',
+      }),
+    );
+  }
+
   const certified = checks.every((c) => c.pass);
   const askBrief = certified ? null : briefJson(venue, reqs);
 
@@ -282,7 +316,7 @@ export function certifyVenue(id, opts = {}) {
   };
 
   if (opts.write !== false) {
-    const file = path.join(OVERRIDE_DIR, `${id}.certification.json`);
+    const file = venueSidecar(id, 'certification.json');
     writeJson(file, doc, true);
   }
 
@@ -296,7 +330,7 @@ export function certifyAll(opts = {}) {
 }
 
 export function certificationFile(id) {
-  return path.join(OVERRIDE_DIR, `${id}.certification.json`);
+  return venueSidecar(id, 'certification.json');
 }
 
 export function renderCertificationMarkdown(doc) {

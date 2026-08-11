@@ -44,7 +44,7 @@ import {
 } from '../lib/attractions.mjs';
 import { candidates, needEntranceMost } from '../lib/candidates.mjs';
 import { PUBLISH_AT } from '../lib/evidence.mjs';
-import { OVERRIDE_DIR, readJson, VENUE_DIR } from '../lib/venue-io.mjs';
+import { OVERRIDE_DIR, readJson, VENUE_DIR, venueSidecar } from '../lib/venue-io.mjs';
 // The app's own reading of "these two strings are the same ride", so the join
 // here and the builder's cannot drift apart.
 import { purgeRetiredEvidence } from '../lib/retired-sources.mjs';
@@ -71,7 +71,7 @@ The ride inventory: every attraction, every way into it, and who says so.
   --dry-run           work it out, write nothing
 `;
 
-const listFile = (id) => path.join(OVERRIDE_DIR, `${id}.attractions.json`);
+const listFile = (id) => venueSidecar(id, 'attractions.json');
 const today = () => new Date().toISOString().slice(0, 10);
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -424,7 +424,7 @@ function report(state, floor) {
 
   const publishing = records.filter((r) => Object.keys(publishable(r, floor)).length);
   say(`**${publishing.length}** of ${records.length} clear \`${floor}\` and reach the app. `
-    + `The rest stay proposals in \`data/venues/${id}.attractions.json\` for somebody to approve.\n`);
+    + `The rest stay proposals in \`data/venues/${id}/attractions.json\` for somebody to approve.\n`);
 
   const conflicts = records.filter((r) => r.features.queue_entrance.conflict);
   if (conflicts.length) {

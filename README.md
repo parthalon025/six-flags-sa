@@ -522,7 +522,7 @@ npm run venues:build -- --pipeline --place "Cedar Point, Sandusky, Ohio" --local
 
 ### Building the same park again
 
-Every build writes `data/venues/<id>.recipe.json` beside the venue's overrides — the box,
+Every build writes `data/venues/<id>/recipe.json` inside the venue package — the box,
 the pad, the tolerance, the merges, everything that shaped what came out. `--rebuild` reads
 it back:
 
@@ -720,7 +720,7 @@ coordinates anybody actually walks to.
 
 ```
 npm run venues:attractions -- cedar-point --report
-npm run venues:attractions -- cedar-point --trace data/venues/cedar-point.traced.geojson
+npm run venues:attractions -- cedar-point --trace data/venues/cedar-point/traced.geojson
 npm run venues:attractions -- --all
 npm run venues:attractions -- cedar-point --geojson entrances.geojson
 ```
@@ -818,10 +818,12 @@ of it was reachable: `--merge` takes points that are already surveyed, which is 
 a picture's are not. `trace-venue.mjs` ties the picture to the ground.
 
 ```
-npm run venues:trace -- data/venues/big-kahunas.trace.json
+npm run venues:research -- big-kahunas --ai   # required LLM park-map search → llm-research-cache.json
+npm run venues:trace -- --scaffold big-kahunas
+npm run venues:trace -- data/venues/big-kahunas/trace.json
 npm run venues:trace -- <file> --model tps --max-error 6
 npm run venues:trace -- <file> --report          # the fit, as markdown
-npm run venues:build -- --rebuild big-kahunas --trace data/venues/big-kahunas.traced.geojson
+npm run venues:build -- --rebuild big-kahunas --trace data/venues/big-kahunas/traced.geojson
 ```
 
 The input is one JSON file: **control points** — places you can identify in the picture *and*
@@ -831,7 +833,7 @@ of it, both in pixels.
 ```json
 {
   "venue": "big-kahunas",
-  "image": "docs/big-kahunas-2026-parkmap.png",
+  "image": "data/venues/big-kahunas/maps/2026-parkmap.webp",
   "controls": [{ "n": "Wave pool, NE corner", "px": [1204, 880], "lat": 30.38871, "lng": -86.47262 }],
   "features": [
     { "kind": "entrance", "of": "Jumanji", "px": [990, 640] },
@@ -1204,8 +1206,10 @@ public/
   manifest.webmanifest        home-screen install
 data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
 data/venues/<id>.ids.json        the key issued to each place, and every number already spent
-data/venues/<id>.recipe.json     the box, pad and flags that built it — replayed by --rebuild
-data/venues/<id>.trace.json      control points and features clicked off the park's own map
+data/venues/<id>/                 one package per venue (builder input)
+data/venues/<id>/recipe.json      the box, pad and flags that built it — replayed by --rebuild
+data/venues/<id>/trace.json       control points and features clicked off the park's own map
+data/venues/<id>/maps/            official park map images (LLM park-map search helps acquire these)
 data/venues/<id>.attractions.json  per-ride features, their evidence and confidence
 Dockerfile  docker-compose.yml
 ```

@@ -7,7 +7,7 @@
 
 import path from 'node:path';
 import { writeFileSync, mkdirSync } from 'node:fs';
-import { OVERRIDE_DIR, readJson } from '../venue-io.mjs';
+import { OVERRIDE_DIR, readJson, venueSidecar } from '../venue-io.mjs';
 import { nameSimilarity, pairSuggestions } from '../venue-judge.mjs';
 import { parkEntityIds } from '../parks-api-entities.mjs';
 
@@ -17,7 +17,7 @@ const UA = 'six-flags-sa-venue-research/1.0 (+https://github.com/parthalon025/si
 /** Venue id → themeparks.wiki park entity id (loaded from entity map + overrides). */
 export const PARK_ENTITY_IDS = parkEntityIds();
 
-export const parksApiCacheFile = (id) => path.join(OVERRIDE_DIR, `${id}.parks-api-cache.json`);
+export const parksApiCacheFile = (id) => venueSidecar(id, 'parks-api-cache.json');
 
 async function apiGet(pathname) {
   const res = await fetch(`${API}${pathname}`, {

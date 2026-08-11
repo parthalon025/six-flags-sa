@@ -15,7 +15,7 @@
 
 import path from 'node:path';
 import { existsSync } from 'node:fs';
-import { OVERRIDE_DIR, readJson, writeJson } from './venue-io.mjs';
+import { readJson, writeJson, venueSidecar, venueSidecarRel } from './venue-io.mjs';
 import { readSources } from './venue-sources.mjs';
 
 export const MAP_KINDS = ['to_scale', 'photo', 'schematic'];
@@ -92,8 +92,8 @@ export function officialMapsForVenue(venueId) {
   return officialMapsFromCatalog(data);
 }
 
-export const traceTemplateFile = (id) => path.join(OVERRIDE_DIR, `${id}.trace.json`);
-export const tracedGeoJsonFile = (id) => path.join(OVERRIDE_DIR, `${id}.traced.geojson`);
+export const traceTemplateFile = (id) => venueSidecar(id, 'trace.json');
+export const tracedGeoJsonFile = (id) => venueSidecar(id, 'traced.geojson');
 
 /**
  * Scaffold an empty pixel-trace file for an official map (controls/features blank).
@@ -104,7 +104,7 @@ export function scaffoldOfficialMapTrace(venueId, opts = {}) {
   const pick = opts.mapId ? maps.find((m) => m.id === opts.mapId) : maps[0];
   if (!pick) {
     throw new Error(
-      `No official_map in data/venues/${venueId}.sources.json — add kind "official_map" with image and map_kind.`,
+      `No official_map in data/venues/${venueId}/sources.json — add kind "official_map" with image and map_kind.`,
     );
   }
   const policy = pick.policy;
@@ -122,7 +122,7 @@ export function scaffoldOfficialMapTrace(venueId, opts = {}) {
       + '(building corner, path junction, pool end). Spread to the park corners. '
       + `For ${pick.mapKind} maps prefer ≥${policy.minControls} controls. `
       + 'Features: entrance/exit (of: ride name), place (n + c), route/path (walking lines). '
-      + `Run: npm run venues:trace -- data/venues/${venueId}.trace.json`,
+      + `Run: npm run venues:trace -- data/venues/${venueId}/trace.json`,
     controls: [],
     features: [],
   };
@@ -159,11 +159,11 @@ export function ensureTraceDatasetWired(venueId) {
   if (!existsSync(traced)) return { wired: false, reason: 'no_traced_geojson' };
   const { file, data } = readSources(venueId);
   if (!data) return { wired: false, reason: 'no_sources' };
-  const rel = `data/venues/${venueId}.traced.geojson`;
+  const rel = venueSidecarRel(venueId, 'traced.geojson');
   data.datasets = data.datasets || {};
   const list = Array.isArray(data.datasets.trace) ? [...data.datasets.trace] : [];
   if (!list.includes(rel)) list.push(rel);
   data.datasets.trace = list;
-  writeJson(path.join(OVERRIDE_DIR, `${venueId}.sources.json`), data, true);
+  writeJson(venueSidecar(venueId, 'sources.json'), data, true);
   return { wired: true, file: rel, catalog: file };
 }
