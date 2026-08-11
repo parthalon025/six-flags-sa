@@ -145,8 +145,15 @@ function analyze(boxes) {
     if (b.kind === '.fabs' || b.kind === '.zoomPad' || b.kind === '.topbarActions' || b.kind === '.sheet') {
       return false;
     }
+    // Modal overlays intentionally cover the app chrome behind them.
+    if (b.kind === '.gate' || b.kind === '.splash' || b.kind === '.intro' || b.kind === '.updateSplash') {
+      return false;
+    }
     return true;
   });
+
+  const isOverlayChrome = (b) =>
+    b.kind === '.gate' || b.path.includes('.gate') || b.path.includes('.splash') || b.path.includes('.updateSplash');
 
   for (let i = 0; i < leaves.length; i++) {
     for (let j = i + 1; j < leaves.length; j++) {
@@ -155,6 +162,7 @@ function analyze(boxes) {
       if (isAncestorPair(a, b)) continue;
       // Same interactive counted twice via chrome + interactive
       if (a.path === b.path) continue;
+      if (isOverlayChrome(a) || isOverlayChrome(b)) continue;
       const hit = intersection(a, b);
       if (!hit) continue;
       const overlapArea = area(hit);
@@ -168,6 +176,26 @@ function analyze(boxes) {
       const aSheet = a.path.includes('.sheet');
       const bSheet = b.path.includes('.sheet');
       if (aSheet && bSheet) continue;
+
+      // Legend rows scrolled inside .mapKeyBody still report full layout boxes;
+      // overlaps with the sheet / toggle from clipped overflow are noise.
+      const aKeyRow = a.path.includes('.mapKey') && a.kind === 'interactive';
+      const bKeyRow = b.path.includes('.mapKey') && b.kind === 'interactive';
+      if (aKeyRow || bKeyRow) {
+        const other = aKeyRow ? b : a;
+        if (
+          other.path.includes('.sheet') ||
+          other.kind === '.searchRow' ||
+          other.kind === '.brand' ||
+          other.kind === '.grab' ||
+          other.kind === '.glanceRail' ||
+          other.kind === '.mapKeyToggle' ||
+          other.kind === '.scaleBar' ||
+          other.kind === '.tabBar'
+        ) {
+          continue;
+        }
+      }
 
       findings.push({
         type: 'overlap',
@@ -331,11 +359,16 @@ if (await wx.count()) {
   await page.waitForTimeout(400);
 }
 
+// Map key — only when the sheet leaves enough map visible
+await sheetStop(page, 'peek');
 const keyToggle = page.locator('.mapKeyToggle');
 if (await keyToggle.count()) {
   await keyToggle.click();
   await page.waitForTimeout(500);
   report.push(await auditState(page, '13-map-key'));
+  // Close before later flows so the open legend does not pollute them.
+  await keyToggle.click();
+  await page.waitForTimeout(400);
 }
 
 // Compass / bearing
