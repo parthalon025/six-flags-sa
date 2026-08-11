@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **six-flags-sa** (4285 symbols, 10845 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **six-flags-sa** (4292 symbols, 10852 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -77,6 +77,24 @@ Each issue must include:
 5. **Suggested fix** — optional, if you have a concrete direction
 
 After filing, mention the issue number in your task summary and continue with your assigned work.
+
+## Vercel previews — don't spam builds
+
+Every pushed branch can trigger a Vercel preview. Treat that as a cost, not a default debugging step.
+
+### Default: verify locally
+
+- Prove app changes with `npm run build -w @party-tracker/app`, `npm run start -w @party-tracker/app`, and the relevant test suite.
+- Do **not** push a branch or open a PR for read-only investigation, Q&A, or tasks with no code to land.
+- Do **not** push WIP commits just to "see it on Vercel" when local build + Playwright is enough.
+
+### When a preview IS warranted
+
+Push/open a PR only when the task genuinely needs deployed behavior — PWA/service-worker flow, Vercel routing or serverless runtime, production env vars, CDN headers, or a bug that does not reproduce locally.
+
+### Safety net
+
+`vercel.json` runs `scripts/vercel-ignore.sh`, which skips Vercel builds when a commit only touches docs, tests, builder tooling, or other non-runtime paths. Avoid unnecessary PR branches anyway; the ignore step is not permission to spam pushes.
 
 ## Builder ↔ app contract
 
