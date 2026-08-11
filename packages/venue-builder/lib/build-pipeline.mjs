@@ -320,3 +320,120 @@ export async function runVenuePipeline(park, opts = {}) {
 
   return { id: park.id, rank: park.rank, status: 'built', stages };
 }
+
+/**
+ * Run the universal builder over many catalog parks — a loop over runVenuePipeline.
+ *
+ * @param {object[]} parks catalog rows from selectParks()
+ * @param {object} opts same options as runVenuePipeline, plus batchDelay, openPr, catalogSize
+ */
+export async function runVenueBatch(parks, opts = {}) {
+  const {
+    batchDelay = 5,
+    openPr = false,
+    catalogSize = parks.length,
+    dryRun = false,
+    ...pipelineOpts
+  } = opts;
+
+  const results = [];
+  for (const [i, park] of parks.entries()) {
+    const result = await runVenuePipeline(park, { ...pipelineOpts, dryRun });
+    results.push(result);
+
+    if (openPr && result.status === 'built' && !dryRun) {
+      try {
+        const { openVenueDraftPr } = await import('./venue-pr.mjs');
+        const pr = openVenueDraftPr(park.id, { runId: Date.now() });
+        result.pr = pr;
+        if (pr.prUrl) console.error(`  → draft PR: ${pr.prUrl}`);
+        else if (pr.skipped) console.error(`  → PR skipped: ${pr.reason}`);
+      } catch (err) {
+        console.error(`  ! PR failed for ${park.id}: ${err.message}`);
+      }
+    }
+
+    if (i < parks.length - 1 && !dryRun && batchDelay > 0) {
+      await sleep(batchDelay);
+    }
+  }
+
+  const built = results.filter((r) => r.status === 'built' || r.status === 'dry-run');
+  const uncertified = results.filter((r) => r.status === 'uncertified');
+  const failed = results.filter((r) => r.status === 'failed');
+
+  return {
+    catalog: catalogSize,
+    selected: parks.length,
+    built: built.length,
+    uncertified: uncertified.length,
+    failed: failed.length,
+    skippedExisting: catalogSize - parks.length,
+    results,
+    ok: failed.length === 0 && uncertified.length === 0,
+  };
+}
+
+/** Parse batch/catalog flags shared by the universal builder CLI. */
+export function parseCatalogArgs(argv) {
+  const out = {
+    _: [],
+    catalog: false,
+    pipeline: false,
+    from: null,
+    to: null,
+    skipExisting: true,
+    dryRun: false,
+    delay: 5,
+    retries: 3,
+    allowNoHeights: false,
+    browser: true,
+    attractions: true,
+    agent: true,
+    certify: true,
+    applyAliases: true,
+    openPr: false,
+    json: false,
+  };
+  const withValue = new Set(['--from', '--to', '--delay', '--retries']);
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--catalog') out.catalog = true;
+    else if (a === '--pipeline') out.pipeline = true;
+    else if (a === '--from') out.from = Number(argv[++i]);
+    else if (a === '--to') out.to = Number(argv[++i]);
+    else if (a === '--skip-existing') out.skipExisting = true;
+    else if (a === '--no-skip-existing') out.skipExisting = false;
+    else if (a === '--dry-run') out.dryRun = true;
+    else if (a === '--delay') out.delay = Number(argv[++i]);
+    else if (a === '--retries') out.retries = Number(argv[++i]);
+    else if (a === '--allow-no-heights') out.allowNoHeights = true;
+    else if (a === '--no-browser') out.browser = false;
+    else if (a === '--no-attractions') out.attractions = false;
+    else if (a === '--no-agent') out.agent = false;
+    else if (a === '--no-certify') out.certify = false;
+    else if (a === '--no-aliases') out.applyAliases = false;
+    else if (a === '--pr') out.openPr = true;
+    else if (a === '--json') out.json = true;
+    else if (!a.startsWith('--')) out._.push(a);
+    else if (withValue.has(a) && argv[i + 1] && !argv[i + 1].startsWith('--')) i += 1;
+    else if (a.includes('=')) { /* inline value — skip */ }
+    /* else: build-venue flags (--place, --bbox, …) — ignore here */
+  }
+  return out;
+}
+
+export function pipelineOptsFromCatalogArgs(args) {
+  return {
+    dryRun: args.dryRun,
+    retries: args.retries,
+    allowNoHeights: args.allowNoHeights,
+    applyAliases: args.applyAliases,
+    browser: args.browser,
+    attractions: args.attractions,
+    agent: args.agent,
+    certify: args.certify,
+    rebuildOnly: args.skipExisting,
+    skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
+  };
+}

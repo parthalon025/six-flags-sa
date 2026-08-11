@@ -36,8 +36,6 @@
     "venues:adapters": "node packages/venue-builder/venue-adapters.mjs",
     "venues:route-qa": "node packages/venue-builder/venue-route-qa.mjs",
     "venues:build-agent": "node packages/venue-builder/venue-build-agent.mjs",
-    "venues:build-top100": "node packages/venue-builder/bin/build-top-parks.mjs",
-    "venues:pipeline": "node packages/venue-builder/bin/build-top-parks.mjs",
     "venues:certify": "node packages/venue-builder/bin/venue-certify.mjs",
     "venues:discover-parks-api": "node packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node packages/venue-builder/bin/geocode-catalog.mjs",

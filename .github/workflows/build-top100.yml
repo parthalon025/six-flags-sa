@@ -1,8 +1,10 @@
-# Batch-build top US theme parks through the unified pipeline.
+# Batch-build catalog parks through the universal venue builder.
 #
-# Actions → Build top parks → Run workflow.
+# Actions → Build catalog parks → Run workflow.
+# Uses the same build-venue.mjs entry point as a single-park build — --catalog
+# is just a loop over runVenuePipeline.
 
-name: Build top parks
+name: Build catalog parks
 
 on:
   workflow_dispatch:
@@ -30,7 +32,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: build-top-parks-${{ inputs.venue_id || inputs.from || 'all' }}
+  group: build-catalog-${{ inputs.venue_id || inputs.from || 'all' }}
   cancel-in-progress: false
 
 jobs:
@@ -50,7 +52,7 @@ jobs:
       - name: Discover ParksAPI entity ids
         run: npm run venues:discover-parks-api
 
-      - name: Build parks
+      - name: Build catalog parks
         id: build
         env:
           FROM: ${{ inputs.from }}
@@ -58,13 +60,13 @@ jobs:
           VENUE: ${{ inputs.venue_id }}
         run: |
           set -euo pipefail
-          args=(--pr --json)
+          args=(--catalog --pr --json)
           if [ -n "${VENUE:-}" ]; then args+=("$VENUE")
           else
             [ -n "${FROM:-}" ] && args+=(--from "$FROM")
             [ -n "${TO:-}" ] && args+=(--to "$TO")
           fi
-          npm run venues:build-top100 -- "${args[@]}" | tee build-top100.json
+          npm run venues:build -- "${args[@]}" | tee build-catalog.json
 
       - name: Certify gate
         if: ${{ inputs.allow_uncertified != true }}

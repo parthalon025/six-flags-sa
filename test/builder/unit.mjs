@@ -3871,7 +3871,8 @@ await check('heightsSidecarFromOfficial pairs official listings to bundle rides'
   return true;
 });
 
-const { runVenuePipeline, STAGES } = await import('../../packages/venue-builder/lib/build-pipeline.mjs');
+const { runVenuePipeline, runVenueBatch, STAGES, parseCatalogArgs, pipelineOptsFromCatalogArgs } =
+  await import('../../packages/venue-builder/lib/build-pipeline.mjs');
 
 await check('unified build pipeline lists all nine stages', () => {
   assert.deepEqual(STAGES, [
@@ -3893,6 +3894,33 @@ await check('unified build pipeline dry-run covers research and agent', async ()
   );
   assert.equal(result.status, 'dry-run');
   assert.equal(result.id, 'magic-kingdom');
+  return true;
+});
+
+await check('catalog batch is a loop over the universal builder', async () => {
+  const parks = [{
+    id: 'magic-kingdom',
+    rank: 1,
+    name: 'Magic Kingdom',
+    place: 'Magic Kingdom theme park, Florida',
+    locality: 'Lake Buena Vista, Florida',
+  }];
+  const summary = await runVenueBatch(parks, { dryRun: true, catalogSize: 100 });
+  assert.equal(summary.selected, 1);
+  assert.equal(summary.built, 1);
+  assert.equal(summary.results[0].status, 'dry-run');
+  return true;
+});
+
+await check('parseCatalogArgs recognises --catalog and --pipeline flags', () => {
+  const args = parseCatalogArgs(['--catalog', '--from', '1', '--to', '5', '--pr']);
+  assert.equal(args.catalog, true);
+  assert.equal(args.from, 1);
+  assert.equal(args.to, 5);
+  assert.equal(args.openPr, true);
+  const pipe = parseCatalogArgs(['--pipeline', '--no-certify']);
+  assert.equal(pipe.pipeline, true);
+  assert.equal(pipe.certify, false);
   return true;
 });
 

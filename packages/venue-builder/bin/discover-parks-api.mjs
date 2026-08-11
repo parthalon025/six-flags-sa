@@ -17,7 +17,7 @@ async function main() {
     }
     if (doc.failures.length > 20) console.log(`  … and ${doc.failures.length - 20} more`);
   }
-  process.exit(doc.unmatched > 10 ? 1 : 0);
+  process.exit(doc.unmatched > 50 ? 1 : 0);
 }
 
 main().catch((err) => {

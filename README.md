@@ -512,6 +512,8 @@ npm run venues:build -- --help
 
 npm run venues:report cedar-point     # what a built venue actually contains
 npm run venues:certify -- kings-island  # birth certificate: report + compare + route-qa + ask
+npm run venues:build -- --catalog --from 1 --to 10   # batch: loop the universal builder
+npm run venues:build -- --pipeline --place "Cedar Point, Sandusky, Ohio" --locality "Sandusky, Ohio"
 ```
 
 ### Building the same park again
