@@ -10,6 +10,7 @@ import { useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
+import { WORDS } from '@/lib/brand';
 
 /**
  * The open face of a place: notes, camp checklist, phone, ride status, and the
@@ -86,10 +87,11 @@ export function PlaceDetailBody({
       <div className="joinRow">
         <button
           type="button"
-          className="btn small primary"
+          className="btn small primary iconOnly"
           onClick={() => onNavigate({ kind: 'poi', label: poi.n, lat: poi.lat, lng: poi.lng })}
+          aria-label={WORDS.navigation}
         >
-          Walk me there
+          <Icon name="location.fill" size={18} />
         </button>
         <button type="button" className="btn small" onClick={() => onSetMeet(poi)}>
           Make this the meet-up
@@ -115,8 +117,8 @@ const VERDICT = {
 
 /**
  * Full place sheet opened from a map icon: who it is, how far, what is known
- * about it, and Walk me there — the same answers the list expands to, without
- * requiring the visitor to find the row first.
+ * about it, and a compact navigate control — the same answers the list expands
+ * to, without requiring the visitor to find the row first.
  */
 export default function PlaceDetail({
   poi,

@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useMemo, useRef } from 'react';
 import Icon from '@/components/Icon';
-import { LIVE } from '@/lib/brand';
+import { LIVE, WORDS } from '@/lib/brand';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { recommendNow } from '@/lib/live';
 import { navKeyOf as keyOfNav } from '@/lib/routing';
@@ -382,9 +382,9 @@ function GlanceRail({
                     type="button"
                     className={`glanceGo ${walking ? 'on' : ''}`}
                     onClick={() => onNavigate(walking ? null : c.nav)}
-                    aria-label={walking ? `Stop walking to ${c.title}` : `Walk me to ${c.title}`}
+                    aria-label={walking ? `Stop walking to ${c.title}` : `${WORDS.navigation} — ${c.title}`}
                   >
-                    {walking ? 'Stop' : 'Walk me there'}
+                    <Icon name={walking ? 'xmark' : 'location.fill'} size={walking ? 14 : 15} />
                   </button>
                 )}
                 {shed && (

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
+import Icon from '@/components/Icon';
+import { WORDS } from '@/lib/brand';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { usePois } from '@/lib/venue/useVenue';
 
@@ -474,8 +476,13 @@ export default function PartyPanel({
             )}
           </div>
           <div className="joinRow">
-            <button type="button" className="btn small primary" onClick={onNavigateMeet}>
-              Walk me there
+            <button
+              type="button"
+              className="btn small primary iconOnly"
+              onClick={onNavigateMeet}
+              aria-label={WORDS.navigation}
+            >
+              <Icon name="location.fill" size={18} />
             </button>
             <button type="button" className="btn small" onClick={() => onFocus(meet)}>
               On the map

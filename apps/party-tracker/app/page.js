@@ -1668,7 +1668,7 @@ export default function Page() {
   );
 
   /** List row: select / toggle in place. The expanded row already carries
-   *  details and Walk me there; no need to push another screen. */
+   *  details and a navigate control; no need to push another screen. */
   const handleSelect = useCallback(
     (poi) => {
       // The same pin twice is a toggle. Nobody taps the thing that is already

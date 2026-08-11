@@ -238,7 +238,7 @@ await check('clear removes the height filter', async () => {
 
 console.log('\n--- walking directions ---');
 
-await check('tapping a map icon opens place details and Walk me there', async () => {
+await check('tapping a map icon opens place details and navigation', async () => {
   await dismissNavigation(a).catch(() => {});
   await a.locator('.tabItem[data-tab="explore"]').click();
   await root(a);
@@ -259,10 +259,9 @@ await check('tapping a map icon opens place details and Walk me there', async ()
   });
   const title = await a.locator('.navHead h2').innerText();
   if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
-  if (!(await a.locator('[data-place-detail] button:has-text("Walk me there")').count())) {
-    throw new Error('no Walk me there on place detail');
-  }
-  await a.locator('[data-place-detail] button:has-text("Walk me there")').click();
+  const go = a.locator('[data-place-detail] button[aria-label="Walk me there"]');
+  if (!(await go.count())) throw new Error('no navigate control on place detail');
+  await go.click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no route preview from map tap');
   await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
@@ -275,7 +274,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('.poiRow.open .joinRow button:has-text("Walk me there")').click();
+  await a.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]').click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -322,7 +321,7 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   await until(async () => (await gemini.count()) > 0, { timeout: 15000, label: 'Gemini coaster in the list' });
   await gemini.locator('.poiMain').click();
   await a.waitForTimeout(400);
-  await gemini.locator('button:has-text("Walk me there")').click();
+  await gemini.locator('button[aria-label="Walk me there"]').click();
   await until(async () => (await a.locator('.routePreview').count()) > 0, {
     timeout: 15000,
     label: 'route preview card',
