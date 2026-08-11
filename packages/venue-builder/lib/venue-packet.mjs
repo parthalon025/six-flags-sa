@@ -16,6 +16,7 @@ import {
   loadParksApiData,
   compareParksApiToBundle,
 } from './adapters/parks-api.mjs';
+import { loadExternalResearch } from './external-research.mjs';
 
 export async function loadVenuePacket(id, opts = {}) {
   const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
@@ -60,6 +61,8 @@ export async function loadVenuePacket(id, opts = {}) {
   });
   const parksApi = compareParksApiToBundle({ parksApi: parksApiRaw, pois });
 
+  const external = await loadExternalResearch(id, { pois });
+
   return {
     venue,
     map,
@@ -75,6 +78,7 @@ export async function loadVenuePacket(id, opts = {}) {
     official,
     parksApi,
     parksApiRaw,
+    external,
   };
 }
 
@@ -88,6 +92,9 @@ export function packetSummary(packet) {
     publishedEntrances: published,
     officialMatched: packet.official?.matched ?? 0,
     parksApiMatched: packet.parksApi?.matched ?? 0,
+    queueTimesMatched: packet.external?.queueTimes?.matched ?? 0,
+    rcdbMatched: packet.external?.rcdb?.matched ?? 0,
+    externalClaims: packet.external?.claims?.length ?? 0,
     weaknesses: packet.judgements?.length ?? 0,
     requests: packet.requests?.length ?? 0,
   };

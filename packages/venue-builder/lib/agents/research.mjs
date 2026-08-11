@@ -1,11 +1,14 @@
 /**
- * Research agent — official site, browser fetch, ParksAPI inventory.
+ * Research agent — official site, browser fetch, ParksAPI inventory, open-source adapters.
  */
 
 import { loadVenuePacket, packetSummary } from '../venue-packet.mjs';
 import { runAdapter } from '../adapters/runner.mjs';
+import { runAdapters } from '../adapters/runner.mjs';
 import { officialUrls } from '../venue-official-site.mjs';
 import { agentReview } from '../venue-llm.mjs';
+import { venueResearchContext } from '../external-research.mjs';
+import { EXTERNAL_ADAPTER_IDS } from '../adapters/implementations.mjs';
 
 export async function runResearchAgent(venueId, opts = {}) {
   const packet = await loadVenuePacket(venueId, {
@@ -22,7 +25,11 @@ export async function runResearchAgent(venueId, opts = {}) {
     adapterRuns.push(await runAdapter('playwright', { url: urls.site[0].url }));
   }
   if (opts.parksApi || opts.fetch) {
-    adapterRuns.push(await runAdapter('parks-api', { venueId }));
+    adapterRuns.push(await runAdapter('parks-api', { venueId, fetch: opts.fetch ?? true }));
+  }
+  if (opts.syncExternal ?? opts.fetch) {
+    const ctx = { ...venueResearchContext(venueId), fetch: opts.fetch ?? true, offline: opts.offline };
+    adapterRuns.push(...await runAdapters(EXTERNAL_ADAPTER_IDS, ctx));
   }
 
   const summary = packetSummary(packet);
@@ -38,6 +45,11 @@ export async function runResearchAgent(venueId, opts = {}) {
       parksApi: {
         matched: packet.parksApi?.matched,
         onlyOnApi: packet.parksApi?.onlyOnApi?.slice(0, 8),
+      },
+      external: {
+        queueTimesMatched: packet.external?.queueTimes?.matched,
+        rcdbMatched: packet.external?.rcdb?.matched,
+        claims: packet.external?.claims?.length,
       },
       judgements: packet.judgements?.map((j) => ({ key: j.key, count: j.count })),
     });
