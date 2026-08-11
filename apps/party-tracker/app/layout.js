@@ -1,6 +1,7 @@
 import './globals.css';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import { BRAND } from '@/lib/brand';
+import { Analytics } from '@vercel/analytics/next';
 
 /* Self-hosted by Next — same-origin, so park wifi and the service worker can
    keep it after the first load. Used for PARKBOUND, attraction names, and big
@@ -54,7 +55,10 @@ export default function RootLayout({ children }) {
         <link rel="preload" href="/venues/kings-island.pois.json" as="fetch" crossOrigin="anonymous" />
         <style>{`:root { --display: var(--font-display), 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }`}</style>
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
