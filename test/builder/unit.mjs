@@ -3838,6 +3838,39 @@ await check('selectParks can filter by rank range and skip existing recipes', ()
   return true;
 });
 
+const { OFFICIAL_SITES, officialSiteForPark } = await import('../../packages/venue-builder/lib/park-official-urls.mjs');
+const { heightsSidecarFromOfficial } = await import('../../packages/venue-builder/lib/heights-from-official.mjs');
+
+await check('every catalog park has an official website URL for height research', () => {
+  const catalog = loadCatalog();
+  const parks = catalogWithIds(catalog.parks);
+  const missing = parks.filter((p) => !officialSiteForPark(p));
+  assert.equal(missing.length, 0, `missing official URLs: ${missing.map((p) => p.id).join(', ')}`);
+  assert.equal(Object.keys(OFFICIAL_SITES).length, 100);
+  return true;
+});
+
+await check('heightsSidecarFromOfficial pairs official listings to bundle rides', () => {
+  const official = JSON.parse(
+    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/big-kahunas.official-cache.json', import.meta.url)),
+  );
+  const pois = [
+    { n: 'Maui Pipeline', c: 'ride' },
+    { n: 'Bombay Blasters', c: 'ride' },
+    { n: 'Restrooms', c: 'restroom' },
+  ];
+  const { sidecar, matched } = heightsSidecarFromOfficial(
+    { id: 'big-kahunas', name: "Big Kahuna's" },
+    pois,
+    official,
+  );
+  assert.ok(matched >= 2);
+  assert.equal(sidecar.venue, 'big-kahunas');
+  assert.equal(sidecar.rules['Maui Pipeline'].h.min, 48);
+  assert.equal(sidecar.rules['Bombay Blasters'].h.min, 48);
+  return true;
+});
+
 /* --------------------------------------------------------- the campground -- */
 
 await check('the campground is drawn, and its sites are places you can find', () => {
