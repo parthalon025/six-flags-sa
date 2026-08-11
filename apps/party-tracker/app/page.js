@@ -59,6 +59,7 @@ const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr:
 const MovementHistoryPanel = dynamic(() => import('@/components/MovementHistoryPanel'), { ssr: false });
 const Diagnostics = dynamic(() => import('@/components/Diagnostics'), { ssr: false });
 const DirectionsPanel = dynamic(() => import('@/components/DirectionsPanel'), { ssr: false });
+const PlaceDetail = dynamic(() => import('@/components/PlaceDetail'), { ssr: false });
 const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: false });
 const IntelligencePanel = dynamic(() => import('@/components/IntelligencePanel'), { ssr: false });
 const CompassTape = dynamic(() => import('@/components/CompassTape'), { ssr: false });
@@ -76,6 +77,7 @@ const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
    rather than a back button. */
 const VIEW_TITLES = {
   route: 'Trail',
+  place: 'Place',
   categories: 'On the map',
   venues: 'Which park',
   diagnostics: 'Diagnostics',
@@ -397,6 +399,21 @@ export default function Page() {
     const { tab: at, stacks: cur } = navRef.current;
     const onIt = cur[at] || EMPTY_STACK;
     if (!onIt.length) return;
+    const leaving = onIt[onIt.length - 1];
+    const next = { tab: at, stacks: { ...cur, [at]: onIt.slice(0, -1) } };
+    applyNav(next, 'fromLeft');
+    window.history.replaceState({ ...window.history.state, tracker: next }, '');
+    // Leaving the place sheet puts the pin down too — otherwise the callout
+    // and the Next Stop card stay on for a place you just backed out of.
+    if (leaving === 'place') setSelected(null);
+  }, [applyNav]);
+
+  /** Climb off the place detail screen without a slide, before a route preview
+   *  or an empty-map dismiss takes over the sheet. */
+  const dismissPlaceView = useCallback(() => {
+    const { tab: at, stacks: cur } = navRef.current;
+    const onIt = cur[at] || EMPTY_STACK;
+    if (onIt[onIt.length - 1] !== 'place') return;
     const next = { tab: at, stacks: { ...cur, [at]: onIt.slice(0, -1) } };
     applyNav(next, 'fromLeft');
     window.history.replaceState({ ...window.history.state, tracker: next }, '');
@@ -1423,6 +1440,7 @@ export default function Page() {
     if (!venue?.id) return;
     stopNav();
     setSelected(null);
+    dismissPlaceView();
     // Only a change of venue, not the first one to load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venue?.id]);
@@ -1452,13 +1470,14 @@ export default function Page() {
       lastRoute.current = null;
       setPick(0);
       setSelected(null);
+      dismissPlaceView();
       setToast(null);
       setNav(target);
       setNavPhase('preview');
       setFollow(false);
       shrinkSheet(stops.peek);
     },
-    [position, showToast, stopNav, shrinkSheet, stops],
+    [position, showToast, stopNav, shrinkSheet, stops, dismissPlaceView],
   );
 
   const beginWalking = useCallback(() => {
@@ -1643,10 +1662,13 @@ export default function Page() {
          "never mind" — and until now this one had no way of saying it at all, so
          a place you tapped once stayed on the rail until you tapped another. */
       if (selected) setSelected(null);
+      dismissPlaceView();
     },
-    [armMeet, setMeetPoint, geo.status, geo.setManual, selected],
+    [armMeet, setMeetPoint, geo.status, geo.setManual, selected, dismissPlaceView],
   );
 
+  /** List row: select / toggle in place. The expanded row already carries
+   *  details and a navigate control; no need to push another screen. */
   const handleSelect = useCallback(
     (poi) => {
       // The same pin twice is a toggle. Nobody taps the thing that is already
@@ -1665,6 +1687,42 @@ export default function Page() {
       }
     },
     [selected, position, showToast],
+  );
+
+  /**
+   * Map icon: open the place sheet so the visitor can read what it is and
+   * start a walk — the list's expand is not on screen when they are looking
+   * at the map, and a toast alone is not a place page.
+   */
+  const handleSelectFromMap = useCallback(
+    (poi) => {
+      if (selected && selected.lat === poi.lat && selected.lng === poi.lng) {
+        setSelected(null);
+        dismissPlaceView();
+        return;
+      }
+      setSelected(poi);
+      setFollow(false);
+      setFocusPoint({ lat: poi.lat, lng: poi.lng });
+
+      const { stacks: cur } = navRef.current;
+      const exploreStack = cur.explore || EMPTY_STACK;
+      const placeOpen = exploreStack[exploreStack.length - 1] === 'place';
+      const nextStacks = {
+        ...cur,
+        explore: placeOpen ? exploreStack : [...exploreStack, 'place'],
+      };
+      if (tabRef.current !== 'explore') {
+        goForward({ tab: 'explore', stacks: nextStacks }, 'fromLeft');
+        growSheet(stops.half);
+      } else if (!placeOpen) {
+        push('place', 'explore');
+        return;
+      } else {
+        growSheet(stops.half);
+      }
+    },
+    [selected, dismissPlaceView, goForward, push, growSheet, stops.half],
   );
 
   const onUserPan = useCallback(() => setFollow(false), []);
@@ -1811,7 +1869,7 @@ export default function Page() {
         meet={meet}
         car={car}
         selected={selected}
-        onSelectPoi={handleSelect}
+        onSelectPoi={handleSelectFromMap}
         onMapTap={handleMapTap}
         armMeet={armMeet}
         follow={follow}
@@ -2094,7 +2152,7 @@ export default function Page() {
                 <Icon name="chevron.left" size={19} />
                 Back
               </button>
-              <h2>{VIEW_TITLES[view] || ''}</h2>
+              <h2>{view === 'place' && selected?.n ? selected.n : VIEW_TITLES[view] || ''}</h2>
               <span className="navHeadPad" aria-hidden="true" />
             </header>
           ) : tab === 'explore' ? (
@@ -2264,6 +2322,33 @@ export default function Page() {
                 onStop={stopNav}
                 onFocus={focusOn}
                 onClose={() => shrinkSheet(stops.peek)}
+              />
+            )}
+
+            {view === 'place' && (
+              <PlaceDetail
+                poi={selected}
+                me={position}
+                height={mapHeight}
+                withAdult={withAdult}
+                theme={theme}
+                weather={weatherFeed.weather}
+                rides={partyRides}
+                members={others}
+                now={clock}
+                onNavigate={startNav}
+                onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
+                onReport={party?.active ? reportRide : null}
+                onAddToPlan={
+                  party?.active
+                    ? (p) => {
+                        import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
+                          addPlaceToPlan(p);
+                          showToast(`Added ${p.n} to plan`);
+                        });
+                      }
+                    : null
+                }
               />
             )}
 
