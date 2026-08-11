@@ -112,7 +112,7 @@
       "evidence": {
         "numerator": 10,
         "denominator": 10,
-        "detail": "7/10 caches, 3 gap(s); claims=61+38; attached=82",
+        "detail": "10/10 caches, 0 gap(s); claims=61+38; attached=82",
         "declared": [
           "parks-api",
           "queue-times",

@@ -272,12 +272,12 @@ export async function runVenuePipeline(park, opts = {}) {
   }
 
   if (!skip.includes('attractions') && attractions) {
-    console.error('  · attractions: inventory');
-    if (!runNode(ATTRACTIONS_BIN, [park.id, '--report'])) {
-      return { id: park.id, rank: park.rank, status: 'failed', error: 'attractions inventory failed', stages };
+      console.error('  · attractions: inventory + external evidence ingest');
+      if (!runNode(ATTRACTIONS_BIN, [park.id, '--report'])) {
+        return { id: park.id, rank: park.rank, status: 'failed', error: 'attractions inventory failed', stages };
+      }
+      logStage('attractions', { ran: true, externalIngest: true });
     }
-    logStage('attractions', { ran: true });
-  }
 
   if (!skip.includes('agent') && agent) {
     console.error('  · agent: QA, GIS, vision, validation');
