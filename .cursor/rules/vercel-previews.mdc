@@ -5,34 +5,25 @@ alwaysApply: true
 
 # Vercel previews — don't spam builds
 
-Every pushed branch can trigger a Vercel preview on this repo. Agents should treat
-that as a cost, not a default debugging step.
+Every pushed branch can trigger a Vercel preview. Treat that as a cost, not a
+default debugging step.
 
-## Default: verify locally
+## Do not push unless there is code to land
 
-- Prove app changes with `npm run build -w @party-tracker/app`, `npm run start -w
-  @party-tracker/app`, and the relevant test suite (`npm run test:app`,
-  `npm run test:functional`, etc.).
-- Do **not** push a branch or open a PR for read-only investigation, Q&A, or tasks
-  with no code to land.
-- Do **not** push intermediate WIP commits just to "see it on Vercel" when local
-  build + Playwright (or manual browser against `127.0.0.1:3000`) is enough.
+- No branch or PR for read-only investigation, Q&A, or tasks with nothing to merge.
+- No WIP pushes just to "see it on Vercel" when `npm run build -w @party-tracker/app`
+  and local Playwright/manual checks suffice.
 
 ## When a preview IS warranted
 
-Push/open a PR that may hit Vercel only when the task genuinely needs deployed
-behavior, for example:
+Push/open a PR only when deployed behavior is genuinely required — PWA/service
+worker, Vercel routing or serverless runtime, production env vars, CDN headers, or
+a defect that does not reproduce on local `npm run build && npm start`. Say in the
+PR why a preview is needed.
 
-- PWA install or service-worker update/reload flow
-- Vercel routing, headers, or serverless/API runtime behavior
-- Production-only environment variables or CDN cache headers
-- A defect that does not reproduce on `npm run build && npm start`
+## Which commits build on Vercel
 
-Say in the PR why a preview is needed when you open one for that reason.
-
-## Safety net (already on main)
-
-`vercel.json` sets `"ignoreCommand": "bash scripts/vercel-ignore.sh"`. That skips
-Vercel builds when a commit only touches docs, tests, builder tooling, or other
-non-runtime paths — even if a branch exists. Agents should still avoid opening
-unnecessary PR branches; the ignore step is not permission to spam pushes.
+**Do not restate this in agent docs** — `scripts/vercel-ignore.sh` (wired in
+`vercel.json`) decides whether a commit needs a Vercel build. Read that script if
+you need the path list. Avoid unnecessary branches anyway; the ignore step is not
+permission to spam pushes.

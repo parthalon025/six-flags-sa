@@ -1,0 +1,29 @@
+---
+description: Prefer repo scripts and workflows over duplicating the same steps in agent docs.
+alwaysApply: true
+---
+
+# Scripts over instructions
+
+If a repo script, npm script, or GitHub workflow already performs or enforces a
+step, **do not duplicate that procedure** in `AGENTS.md`, `CLAUDE.md`, or extra
+cursor rules.
+
+- **Fix or extend the script** when automation is wrong or incomplete.
+- **Agent docs are for judgment** the automation cannot make — when to push, when a
+  preview is worth it, builder-vs-app tradeoffs, etc.
+- **One pointer beats a paragraph:** link the script or `npm run …` command instead
+  of restating its logic.
+
+Examples already handled by scripts (read the file, do not re-document the internals):
+
+| Concern | Use this |
+|---------|----------|
+| Skip Vercel builds for non-app diffs | `scripts/vercel-ignore.sh` via `vercel.json` `ignoreCommand` |
+| Stamp app version on dev/build | `apps/party-tracker/scripts/inject-version.mjs` (`predev` / `prebuild`) |
+| Bump semver after merge to `main` | `.github/workflows/bump-version.yml` → `scripts/bump-version.mjs` |
+| Regenerate venue output | `npm run venues:build` / `venues:rebuild` (see builder-app-contract rule) |
+| Refresh GitNexus index | `npm run gitnexus:startup` / `gitnexus:sync` |
+
+When adding new policy, ask: *can a script or workflow own this?* If yes, write
+that first and keep agent instructions to when and why to invoke it.
