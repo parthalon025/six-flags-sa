@@ -42,7 +42,8 @@ full feature and layout prose.
   above its marker tries below, right and left before giving up.
 - **Tap a coaster and its own track lights up.** Kings Island's 121 red polylines each
   carry a ride name in the source geometry, so Diamondback's helix stops being one
-  squiggle among many. The tap also puts a callout on the map: name, distance, height rule.
+  squiggle among many. The tap also puts a callout on the map: name, distance, walk time,
+  height rule — and opens a place sheet with the full details and a navigate control.
 - **Height requirements, at every park here.** Drag one slider to a rider's height and
   every ride that is out today turns solid alarm red on the map, ringed and struck
   through — not faded, because fading is what a party member we have not heard from looks
@@ -98,12 +99,14 @@ full feature and layout prose.
   have told it where the car is. Tap a card to fly to it. A card that appears at the head of
   the rail brings the rail back to the start, because a scroll-snap container that gains one
   otherwise keeps the card it was snapped to and lands the new one off the left edge, unseen.
-- **Four tabs at the bottom, and a sheet you pull.** Explore, Party, Plan and Day sit in
-  a tab bar at the foot of the sheet, so the whole app is one thumb-reach away and never
-  moves — and each tab keeps its own navigation stack, so leaving one and coming back
-  finds it where you left it. Tapping the tab you are already on unwinds it to its root.
-  Screens slide in from the side they came from. The map itself is the canvas underneath —
-  shut the sheet to live in it.
+- **Five tabs at the bottom, and a sheet you pull.** Explore, Party, Side Quests, Plan and
+  Me sit in a tab bar at the foot of the sheet, so the whole app is one thumb-reach away
+  and never moves — and each tab keeps its own navigation stack, so leaving one and coming
+  back finds it where you left it. Tapping the tab you are already on unwinds it to its
+  root. Screens slide in from the side they came from. The map itself is the canvas
+  underneath — shut the sheet to live in it. Opt-in **Walk history** (path log, ground-truth
+  pins, upload) is not a tab: it lives under **Me → Walk history**.
+
 - **The sheet stops where you let go of it, and shows what fits there.** The handle
   follows your finger and the sheet stays at whatever height you leave it at — not one of
   four the app picked. Only the ends of the travel are magnetic, so shut and full stay
@@ -146,7 +149,7 @@ full feature and layout prose.
   ground, dark type, deeper marker colours — meant to be readable on a phone in direct
   July sun. Dark is the low-glare version for after the lights come on. It follows the
   phone's own appearance setting until you pick one, then remembers your choice. Toggle
-  with the moon button floating over the map, or on the Day tab.
+  with the moon button floating over the map, or under Me.
 - **What's open when the weather turns.** The park publishes no live feed this app can
   read, so it builds one from the two sources it actually has. Your party reports what it
   walks past — one tap, "it's down" or "it's running", propagated over the same peer mesh
@@ -166,7 +169,7 @@ full feature and layout prose.
 - **Switches maps on its own, to where the party is.** Once you are in a party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  under Day → Which park and it stops second-guessing you.
+  under Me → Which park and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
@@ -522,7 +525,7 @@ npm run venues:build -- --pipeline --place "Cedar Point, Sandusky, Ohio" --local
 
 ### Building the same park again
 
-Every build writes `data/venues/<id>.recipe.json` beside the venue's overrides — the box,
+Every build writes `data/venues/<id>/recipe.json` inside the venue package — the box,
 the pad, the tolerance, the merges, everything that shaped what came out. `--rebuild` reads
 it back:
 
@@ -720,7 +723,7 @@ coordinates anybody actually walks to.
 
 ```
 npm run venues:attractions -- cedar-point --report
-npm run venues:attractions -- cedar-point --trace data/venues/cedar-point.traced.geojson
+npm run venues:attractions -- cedar-point --trace data/venues/cedar-point/traced.geojson
 npm run venues:attractions -- --all
 npm run venues:attractions -- cedar-point --geojson entrances.geojson
 ```
@@ -818,10 +821,12 @@ of it was reachable: `--merge` takes points that are already surveyed, which is 
 a picture's are not. `trace-venue.mjs` ties the picture to the ground.
 
 ```
-npm run venues:trace -- data/venues/big-kahunas.trace.json
+npm run venues:research -- big-kahunas --ai   # required LLM park-map search → llm-research-cache.json
+npm run venues:trace -- --scaffold big-kahunas
+npm run venues:trace -- data/venues/big-kahunas/trace.json
 npm run venues:trace -- <file> --model tps --max-error 6
 npm run venues:trace -- <file> --report          # the fit, as markdown
-npm run venues:build -- --rebuild big-kahunas --trace data/venues/big-kahunas.traced.geojson
+npm run venues:build -- --rebuild big-kahunas --trace data/venues/big-kahunas/traced.geojson
 ```
 
 The input is one JSON file: **control points** — places you can identify in the picture *and*
@@ -831,7 +836,7 @@ of it, both in pixels.
 ```json
 {
   "venue": "big-kahunas",
-  "image": "docs/big-kahunas-2026-parkmap.png",
+  "image": "data/venues/big-kahunas/maps/2026-parkmap.webp",
   "controls": [{ "n": "Wave pool, NE corner", "px": [1204, 880], "lat": 30.38871, "lng": -86.47262 }],
   "features": [
     { "kind": "entrance", "of": "Jumanji", "px": [990, 640] },
@@ -945,9 +950,18 @@ npm run venues:report -- cedar-point  # one venue, in full
 
 npm run venues:adapters               # external OSS dependency matrix (wrap targets)
 npm run venues:adapters -- matrix     # markdown table for docs
+npm run venues:sync-sources -- cedar-point          # cache datasets.external (offline/cache)
+npm run venues:sync-sources -- cedar-point --fetch  # refresh adapters from the network
 npm run venues:build-agent -- cedar-point --offline   # multi-agent orchestrator (no network)
 npm run venues:build-agent -- cedar-point --ai --apply  # LLM agents + publish entrances
 ```
+
+Declare open-data adapters in `data/venues/<id>/sources.json` under `datasets.external`
+(ids from `npm run venues:adapters`). Offline scaffolds omit token-gated adapters
+(Mapillary, Accessibility Cloud, OpenRouteService); list them when bounds exist.
+Adapters that do not apply (e.g. RopeDrop on Cedar Fair) belong in `gaps.adapters`.
+Research caches feed `normalizeExternalClaims` → attractions evidence; live waits and
+weather stay builder-only and never land in `pois.json`.
 
 Guest walk uploads (`Me → Walk history`, opt-in) post anonymised LineStrings and ground-truth
 Points (queue entrances, ride exits, park gates, amenities) to `/api/contributions/traces`. The
@@ -963,7 +977,7 @@ its campground dropped entirely by a tag rule; Fiesta Texas had no way in on the
 until the checklist said so, which turned out to be a rule that had never heard of
 `barrier=toll_booth`.
 
-So the list lives in `scripts/lib/venue-checklist.mjs`, each item knowing whether it applies
+So the list lives in `packages/venue-builder/lib/venue-checklist.mjs`, each item knowing whether it applies
 to this venue, whether it passed, and what to type if it did not. `npm run test:unit` holds
 the required half of it. Items that do not apply are never failures — a town centre has no
 ride heights and a campus has no campground.
@@ -1161,15 +1175,17 @@ components/
   MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
   MapLegend.jsx               the on-map key, which is also the category filter
   GlanceRail.jsx              the live card rail in the collapsed sheet
-  TabBar.jsx                  the four bottom tabs, badges and all
+  TabBar.jsx                  Explore / Party / Side Quests / Plan / Me, badges and all
   useSheetDrag.js             the sheet under a finger: follow, then stay put
   PartyPanel.jsx              roster, QR, join, status, meet-up
+  SideQuestsPanel.jsx         on-the-ground missions for gaps open data cannot settle
   QrScanner.jsx               camera join; says so plainly where unsupported
   Diagnostics.jsx             active transport, probe results, queue depth
   PlaceList.jsx               place search, live status and reporting
+  PlaceDetail.jsx             map-tap place sheet: details + navigate control
   HeightPanel.jsx             the rider-height filter and what it unlocks
-  SettingsPanel.jsx           name, appearance, which map, and the long tail
-  MovementHistoryPanel.jsx    opt-in walk log, history, upload / GeoJSON export
+  SettingsPanel.jsx           Me root: name, appearance, park, Walk history row, long tail
+  MovementHistoryPanel.jsx    Me → Walk history: opt-in log, upload / GeoJSON export
   WeatherBanner.jsx           the park-wide headline; renders nothing on a clear day
   useWeather.js               polls the forecast, caches it, survives losing signal
   useMovementLog.js           records in-park GPS into IndexedDB when opted in
@@ -1215,8 +1231,10 @@ public/
   manifest.webmanifest        home-screen install
 data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
 data/venues/<id>.ids.json        the key issued to each place, and every number already spent
-data/venues/<id>.recipe.json     the box, pad and flags that built it — replayed by --rebuild
-data/venues/<id>.trace.json      control points and features clicked off the park's own map
+data/venues/<id>/                 one package per venue (builder input)
+data/venues/<id>/recipe.json      the box, pad and flags that built it — replayed by --rebuild
+data/venues/<id>/trace.json       control points and features clicked off the park's own map
+data/venues/<id>/maps/            official park map images (LLM park-map search helps acquire these)
 data/venues/<id>.attractions.json  per-ride features, their evidence and confidence
 Dockerfile  docker-compose.yml
 ```

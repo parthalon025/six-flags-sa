@@ -7,61 +7,74 @@
  * a park maintainer can reach for when an audit flags a weakness.
  */
 
+import { DEFAULT_EXTERNAL_ADAPTERS } from './venue-sources.mjs';
+
 export const CAPABILITIES = [
   {
     id: 'recipe',
     weakness: 'build-not-reproducible',
     tool: 'npm run venues:rebuild -- <id>',
-    file: 'data/venues/<id>.recipe.json',
+    file: 'data/venues/<id>/recipe.json',
     note: 'Every build records how it was shaped; replay without reconstructing flags from a PR.',
   },
   {
     id: 'sources-catalogue',
     weakness: 'no-source-catalogue',
     tool: 'npm run venues:audit -- --scaffold-sources <id>',
-    file: 'data/venues/<id>.sources.json',
+    file: 'data/venues/<id>/sources.json',
     note: 'Wire merge, trace, imagery datasets and official URLs beside overrides.',
   },
   {
     id: 'official-site',
     weakness: 'no-official-cache',
     tool: 'npm run venues:research -- <id> --fetch',
-    file: 'data/venues/<id>.official-cache.json',
+    file: 'data/venues/<id>/official-cache.json',
     note: 'Compare park website attraction names and height categories to the bundle.',
   },
   {
     id: 'heights-sidecar',
     weakness: 'missing-heights',
     tool: 'npm run venues:ask -- <id>',
-    file: 'data/venues/<id>.heights.json',
+    file: 'data/venues/<id>/heights.json',
     note: 'Height rules with evidence; re-applied on every rebuild.',
   },
   {
     id: 'imagery',
     weakness: 'osm-gap-rides',
-    tool: 'survey → data/venues/<id>.imagery.geojson',
+    tool: 'survey → data/venues/<id>/imagery.geojson',
     file: 'datasets.imagery in sources.json',
     note: 'Signed orthophoto positions for named track OSM does not place.',
   },
   {
     id: 'trace',
     weakness: 'missing-poi',
-    tool: 'npm run venues:trace -- data/venues/<id>.trace.json',
-    file: 'data/venues/<id>.traced.geojson',
-    note: 'Georeferenced park map; refuses fits worse than 10 m RMS.',
+    tool: 'npm run venues:trace -- --scaffold <id>  →  fill controls  →  npm run venues:trace -- data/venues/<id>/trace.json --wire',
+    file: 'data/venues/<id>/trace.json → <id>/traced.geojson',
+    note:
+      'Georeference official park maps (including not-to-scale / schematic) with TPS; '
+      + 'entrances, exits, places, and walking paths fold into the rebuild with ±error_m provenance.',
+  },
+  {
+    id: 'park-map-llm-search',
+    weakness: 'missing-poi',
+    tool: 'npm run venues:research -- <id> --ai  (LLM park-map search)  →  maps/ + venues:trace --scaffold',
+    file: 'data/venues/<id>/llm-research-cache.json (parkMaps) + data/venues/<id>/maps/',
+    note:
+      'Required to acquire guest-map image/PDF URLs from official_map pages; never invents coordinates. '
+      + 'Wire image into sources.json then georeference with venues:trace.',
   },
   {
     id: 'attractions',
     weakness: 'low-entrance-confidence',
     tool: 'npm run venues:attractions -- <id> --report',
-    file: 'data/venues/<id>.attractions.json',
+    file: 'data/venues/<id>/attractions.json',
     note: 'Queue entrances need moderate evidence; geometry alone never publishes.',
   },
   {
     id: 'lands',
     weakness: 'no-districts',
     tool: 'overrides.lands or OSM land-use polygons',
-    file: 'data/venues/<id>.overrides.json',
+    file: 'data/venues/<id>/overrides.json',
     note: 'Named districts for low-zoom map readability.',
   },
   {
@@ -89,7 +102,7 @@ export const CAPABILITIES = [
     id: 'evidence-graph',
     weakness: 'low-entrance-confidence',
     tool: 'npm run venues:attractions -- <id> --report',
-    file: 'data/venues/<id>.attractions.json + scripts/lib/evidence-graph.mjs',
+    file: 'data/venues/<id>/attractions.json + scripts/lib/evidence-graph.mjs',
     note: 'Converging claims per feature; fusion publishes only validated coordinates.',
   },
   {
@@ -103,14 +116,14 @@ export const CAPABILITIES = [
     id: 'mapillary-evidence',
     weakness: 'low-entrance-confidence',
     tool: 'adapter: mapillary-tools (wrap) — future imagery ingest',
-    file: 'data/venues/<id>.attractions.json',
+    file: 'data/venues/<id>/attractions.json',
     note: 'Street-level sequences as mapillary evidence source.',
   },
   {
     id: 'parks-api-metadata',
     weakness: 'missing-hours',
     tool: 'adapter: parks-api (wrap)',
-    file: 'data/venues/<id>.attractions.json',
+    file: 'data/venues/<id>/attractions.json',
     note: 'Park inventories and hours concepts into sidecar; not live wait times on phone.',
   },
 ];
@@ -175,16 +188,37 @@ export function scaffoldSourcesCatalogue(id, venue = {}) {
     sources.push({
       id: `${id}-map`,
       kind: 'official_map',
+      map_kind: 'schematic',
       url: known.map,
-      used_for: 'Food, restroom, and ride labels; trace control points when georeferenced.',
+      used_for:
+        'Food, restroom, and ride labels; walking paths and queue entrances when georeferenced '
+        + '(illustrated / not-to-scale handouts use TPS — npm run venues:trace -- --scaffold '
+        + `${id}).`,
     });
   }
   return {
     version: 1,
     venue: id,
-    _comment: `Source catalogue for ${name}. Wire datasets as they are surveyed; fetch official listings with npm run venues:research -- ${id} --fetch.`,
+    _comment: `Source catalogue for ${name}. Wire datasets as they are surveyed; fetch official listings with npm run venues:research -- ${id} --fetch. External adapters sync via npm run venues:sync-sources -- ${id}. Offline scaffolds omit token-gated adapters; declare mapillary/a11y/ORS when bounds exist.`,
     generated: today,
     sources,
-    datasets: {},
+    datasets: {
+      /* Safe offline subset — no MAPILLARY_TOKEN / ACCESSIBILITY_CLOUD_TOKEN / ORS_API_KEY. */
+      external: [...DEFAULT_EXTERNAL_ADAPTERS],
+    },
+    gaps: {
+      adapters: {
+        ropedrop: 'RopeDrop open data covers Disney/Universal parks only — not applicable here.',
+      },
+    },
+    research: {
+      official_pages: true,
+      llm_open_research: true,
+      llm_park_map_search: true,
+      note:
+        'LLM may propose aliases and height candidates from official HTML; code decides. '
+        + 'LLM park-map search is required to locate guest-map image/PDF assets for tracing. '
+        + 'Never invents coordinates.',
+    },
   };
 }

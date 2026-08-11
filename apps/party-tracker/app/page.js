@@ -56,9 +56,11 @@ const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
 const HeightPanel = dynamic(() => import('@/components/HeightPanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
+const SideQuestsPanel = dynamic(() => import('@/components/SideQuestsPanel'), { ssr: false });
 const MovementHistoryPanel = dynamic(() => import('@/components/MovementHistoryPanel'), { ssr: false });
 const Diagnostics = dynamic(() => import('@/components/Diagnostics'), { ssr: false });
 const DirectionsPanel = dynamic(() => import('@/components/DirectionsPanel'), { ssr: false });
+const PlaceDetail = dynamic(() => import('@/components/PlaceDetail'), { ssr: false });
 const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: false });
 const IntelligencePanel = dynamic(() => import('@/components/IntelligencePanel'), { ssr: false });
 const CompassTape = dynamic(() => import('@/components/CompassTape'), { ssr: false });
@@ -76,27 +78,28 @@ const initialsFor = (n) => (n || '?').trim().slice(0, 2).toUpperCase();
    rather than a back button. */
 const VIEW_TITLES = {
   route: 'Trail',
+  place: 'Place',
   categories: 'On the map',
   venues: 'Which park',
   diagnostics: 'Diagnostics',
   movement: 'Walk history',
 };
 
-/* The tab bar, left to right. Parkbound's primary areas: Explore, Party, Plan,
-   Day. The map itself is the canvas underneath — shut the sheet to live in it.
-   The order is the whole of the animation's direction logic: moving right along
-   the bar slides the next screen in from the right, and moving left slides it
-   back. */
-const TAB_ORDER = ['explore', 'party', 'rides', 'settings'];
+/* The tab bar, left to right. Parkbound's primary areas: Explore, Party,
+   Side Quests, Plan, Me. The map itself is the canvas underneath — shut the
+   sheet to live in it. The order is the whole of the animation's direction
+   logic: moving right along the bar slides the next screen in from the right,
+   and moving left slides it back. */
+const TAB_ORDER = ['explore', 'party', 'quests', 'rides', 'settings'];
 
 /* A tab root gets a large title instead of the search field. Explore is the
    exception — its title is the search field, because searching a map is the
    thing you came to that screen to do. */
-const ROOT_TITLES = { party: 'Party', rides: 'Plan', settings: 'Me' };
+const ROOT_TITLES = { party: 'Party', quests: 'Side Quests', rides: 'Plan', settings: 'Me' };
 
 const EMPTY_STACK = [];
 /** The navigation state the app opens on, and the one back returns it to. */
-const HOME_STACKS = { explore: [], party: [], rides: [], settings: [] };
+const HOME_STACKS = { explore: [], party: [], quests: [], rides: [], settings: [] };
 
 /* What draws before anybody touches the key. Shops and car parks are off
    because they are the two categories a park has most of and a visitor asks
@@ -397,6 +400,21 @@ export default function Page() {
     const { tab: at, stacks: cur } = navRef.current;
     const onIt = cur[at] || EMPTY_STACK;
     if (!onIt.length) return;
+    const leaving = onIt[onIt.length - 1];
+    const next = { tab: at, stacks: { ...cur, [at]: onIt.slice(0, -1) } };
+    applyNav(next, 'fromLeft');
+    window.history.replaceState({ ...window.history.state, tracker: next }, '');
+    // Leaving the place sheet puts the pin down too — otherwise the callout
+    // and the Next Stop card stay on for a place you just backed out of.
+    if (leaving === 'place') setSelected(null);
+  }, [applyNav]);
+
+  /** Climb off the place detail screen without a slide, before a route preview
+   *  or an empty-map dismiss takes over the sheet. */
+  const dismissPlaceView = useCallback(() => {
+    const { tab: at, stacks: cur } = navRef.current;
+    const onIt = cur[at] || EMPTY_STACK;
+    if (onIt[onIt.length - 1] !== 'place') return;
     const next = { tab: at, stacks: { ...cur, [at]: onIt.slice(0, -1) } };
     applyNav(next, 'fromLeft');
     window.history.replaceState({ ...window.history.state, tracker: next }, '');
@@ -1423,6 +1441,7 @@ export default function Page() {
     if (!venue?.id) return;
     stopNav();
     setSelected(null);
+    dismissPlaceView();
     // Only a change of venue, not the first one to load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venue?.id]);
@@ -1452,13 +1471,14 @@ export default function Page() {
       lastRoute.current = null;
       setPick(0);
       setSelected(null);
+      dismissPlaceView();
       setToast(null);
       setNav(target);
       setNavPhase('preview');
       setFollow(false);
       shrinkSheet(stops.peek);
     },
-    [position, showToast, stopNav, shrinkSheet, stops],
+    [position, showToast, stopNav, shrinkSheet, stops, dismissPlaceView],
   );
 
   const beginWalking = useCallback(() => {
@@ -1643,10 +1663,13 @@ export default function Page() {
          "never mind" — and until now this one had no way of saying it at all, so
          a place you tapped once stayed on the rail until you tapped another. */
       if (selected) setSelected(null);
+      dismissPlaceView();
     },
-    [armMeet, setMeetPoint, geo.status, geo.setManual, selected],
+    [armMeet, setMeetPoint, geo.status, geo.setManual, selected, dismissPlaceView],
   );
 
+  /** List row: select / toggle in place. The expanded row already carries
+   *  details and a navigate control; no need to push another screen. */
   const handleSelect = useCallback(
     (poi) => {
       // The same pin twice is a toggle. Nobody taps the thing that is already
@@ -1665,6 +1688,42 @@ export default function Page() {
       }
     },
     [selected, position, showToast],
+  );
+
+  /**
+   * Map icon: open the place sheet so the visitor can read what it is and
+   * start a walk — the list's expand is not on screen when they are looking
+   * at the map, and a toast alone is not a place page.
+   */
+  const handleSelectFromMap = useCallback(
+    (poi) => {
+      if (selected && selected.lat === poi.lat && selected.lng === poi.lng) {
+        setSelected(null);
+        dismissPlaceView();
+        return;
+      }
+      setSelected(poi);
+      setFollow(false);
+      setFocusPoint({ lat: poi.lat, lng: poi.lng });
+
+      const { stacks: cur } = navRef.current;
+      const exploreStack = cur.explore || EMPTY_STACK;
+      const placeOpen = exploreStack[exploreStack.length - 1] === 'place';
+      const nextStacks = {
+        ...cur,
+        explore: placeOpen ? exploreStack : [...exploreStack, 'place'],
+      };
+      if (tabRef.current !== 'explore') {
+        goForward({ tab: 'explore', stacks: nextStacks }, 'fromLeft');
+        growSheet(stops.half);
+      } else if (!placeOpen) {
+        push('place', 'explore');
+        return;
+      } else {
+        growSheet(stops.half);
+      }
+    },
+    [selected, dismissPlaceView, goForward, push, growSheet, stops.half],
   );
 
   const onUserPan = useCallback(() => setFollow(false), []);
@@ -1702,6 +1761,13 @@ export default function Page() {
    */
   const rootSubtitle = useMemo(() => {
     if (tab === 'party') return active ? `${visibleOnMap} on the map` : 'Not started';
+    if (tab === 'quests') {
+      const rides = POIS.filter((p) => p.c === 'coaster' || p.c === 'ride');
+      const gaps = rides.filter((p) => !p.h || !p.e).length;
+      return gaps
+        ? `${gaps} gap${gaps === 1 ? '' : 's'} guests can fill`
+        : 'Live reports while you walk';
+    }
     if (tab === 'rides') {
       if (height == null) return 'No rider height set';
       return rideableCount != null
@@ -1710,7 +1776,7 @@ export default function Page() {
     }
     if (tab === 'settings') return identity?.name ? `${identity.name} · ${BRAND.slogan}` : BRAND.slogan;
     return '';
-  }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name]);
+  }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name, POIS]);
 
   /* ---------- the tab bar ---------- */
 
@@ -1730,6 +1796,11 @@ export default function Page() {
         badge: helpNow ? '!' : active ? visibleOnMap : null,
         badgeLabel: helpNow ? 'someone needs help' : active ? `${visibleOnMap} on the map` : null,
         alert: helpNow,
+      },
+      {
+        id: 'quests',
+        label: 'Side Quests',
+        icon: 'flag.fill',
       },
     ];
     // Height rules only exist where a venue publishes them, so neither does the
@@ -1811,7 +1882,7 @@ export default function Page() {
         meet={meet}
         car={car}
         selected={selected}
-        onSelectPoi={handleSelect}
+        onSelectPoi={handleSelectFromMap}
         onMapTap={handleMapTap}
         armMeet={armMeet}
         follow={follow}
@@ -2094,7 +2165,7 @@ export default function Page() {
                 <Icon name="chevron.left" size={19} />
                 Back
               </button>
-              <h2>{VIEW_TITLES[view] || ''}</h2>
+              <h2>{view === 'place' && selected?.n ? selected.n : VIEW_TITLES[view] || ''}</h2>
               <span className="navHeadPad" aria-hidden="true" />
             </header>
           ) : tab === 'explore' ? (
@@ -2267,6 +2338,33 @@ export default function Page() {
               />
             )}
 
+            {view === 'place' && (
+              <PlaceDetail
+                poi={selected}
+                me={position}
+                height={mapHeight}
+                withAdult={withAdult}
+                theme={theme}
+                weather={weatherFeed.weather}
+                rides={partyRides}
+                members={others}
+                now={clock}
+                onNavigate={startNav}
+                onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
+                onReport={party?.active ? reportRide : null}
+                onAddToPlan={
+                  party?.active
+                    ? (p) => {
+                        import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
+                          addPlaceToPlan(p);
+                          showToast(`Added ${p.n} to plan`);
+                        });
+                      }
+                    : null
+                }
+              />
+            )}
+
             {view === null && tab === 'party' && (
               <>
               <PartyPanel
@@ -2349,6 +2447,17 @@ export default function Page() {
                 />
               )}
               </>
+            )}
+
+            {view === null && tab === 'quests' && (
+              <SideQuestsPanel
+                venueName={venue?.name}
+                pois={POIS}
+                onSelectPlace={(p) => {
+                  handleSelect(p);
+                  selectTab('explore');
+                }}
+              />
             )}
 
             {view === null && tab === 'rides' && (

@@ -21,13 +21,13 @@ out center tags;
 `.trim();
 }
 
-export async function loadOhmData(venueId, { bounds, fetch = false, offline = false } = {}) {
+export async function loadOhmData(venueId, { bounds, fetch: doFetch = false, offline = false } = {}) {
   const cached = readCache(venueId, 'openhistoricalmap');
   if (offline) return cached || { fetched: null, features: [], error: 'No cache on disk.' };
-  if (!fetch && cached?.features?.length) return cached;
+  if (!doFetch && cached?.features?.length) return cached;
   if (!bounds?.north) return cached || { fetched: null, features: [], error: 'bounds_required' };
 
-  const res = await fetch(OVERPASS, {
+  const res = await globalThis.fetch(OVERPASS, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'parkbound-venue-builder/1.0' },
     body: `data=${encodeURIComponent(overpassQuery(bounds))}`,
@@ -68,6 +68,12 @@ export async function run(ctx = {}) {
       data,
     };
   } catch (err) {
-    return { adapterId: 'openhistoricalmap', ok: false, error: err.message };
+    const stub = {
+      fetched: null,
+      features: [],
+      error: err.message,
+    };
+    writeCache(id, 'openhistoricalmap', stub);
+    return { adapterId: 'openhistoricalmap', ok: false, error: err.message, artifacts: [ohmCacheFile(id)], data: stub };
   }
 }

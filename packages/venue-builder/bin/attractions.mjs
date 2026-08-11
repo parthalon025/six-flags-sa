@@ -44,7 +44,7 @@ import {
 } from '../lib/attractions.mjs';
 import { candidates, needEntranceMost } from '../lib/candidates.mjs';
 import { PUBLISH_AT } from '../lib/evidence.mjs';
-import { OVERRIDE_DIR, readJson, VENUE_DIR } from '../lib/venue-io.mjs';
+import { OVERRIDE_DIR, readJson, VENUE_DIR, venueSidecar } from '../lib/venue-io.mjs';
 // The app's own reading of "these two strings are the same ride", so the join
 // here and the builder's cannot drift apart.
 import { purgeRetiredEvidence } from '../lib/retired-sources.mjs';
@@ -52,6 +52,7 @@ import { isRideable } from '@party-tracker/shared/ontology.js';
 import { normaliseRideName } from '@party-tracker/shared/mapSymbols.js';
 import { renderEvidenceHtml } from '../lib/venue-validate-html.mjs';
 import { exportTileGeoJson } from '../lib/tiles-export.mjs';
+import { collectExternalClaims, ingestExternalClaims } from '../lib/external-claims.mjs';
 
 const USAGE = `
 The ride inventory: every attraction, every way into it, and who says so.
@@ -70,7 +71,7 @@ The ride inventory: every attraction, every way into it, and who says so.
   --dry-run           work it out, write nothing
 `;
 
-const listFile = (id) => path.join(OVERRIDE_DIR, `${id}.attractions.json`);
+const listFile = (id) => venueSidecar(id, 'attractions.json');
 const today = () => new Date().toISOString().slice(0, 10);
 
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -301,6 +302,8 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
     ...candidates(map, pois),
   ];
 
+  const external = collectExternalClaims(id, pois);
+
   /* One source gets one say per feature, per run, and it is settled here rather
      than by letting `addEvidence` supersede the same source over and over.
      Several detectors sign their work `geometry` — a gate standing near the
@@ -328,8 +331,35 @@ function inventory(id, args, { map: mapIn, pois: poisIn, existing } = {}) {
     for (const claim of perSource.values()) addEvidence(record, claim.type, claim, { asOf });
   }
 
+  /* External research caches → evidence ingest. Entrance/exit with `at` publish
+     through addEvidence; accessibility lands as place notes; inventory/metadata
+     become asks / evidence-graph nodes and never invent pois[].e alone. */
+  const externalIngest = ingestExternalClaims([...records.values()], external.claims, {
+    asOf,
+    addEvidence,
+    recordFor: (key) => {
+      if (!key) return null;
+      if (records.has(key)) return records.get(key);
+      return recordFor(key);
+    },
+  });
+  applied += externalIngest.applied;
+  for (const o of externalIngest.orphans) orphans.add(o);
+
   const all = [...records.values()].sort((a, b) => a.name.localeCompare(b.name));
-  return { id, map, pois, records: all, applied, orphans: [...orphans], asOf };
+  return {
+    id,
+    map,
+    pois,
+    records: all,
+    applied,
+    orphans: [...orphans],
+    asOf,
+    externalStats: external.stats,
+    externalMetadata: external.metadata,
+    externalAsks: externalIngest.asks,
+    externalGraphNodes: externalIngest.graphNodes,
+  };
 }
 
 /**
@@ -410,7 +440,7 @@ function report(state, floor) {
 
   const publishing = records.filter((r) => Object.keys(publishable(r, floor)).length);
   say(`**${publishing.length}** of ${records.length} clear \`${floor}\` and reach the app. `
-    + `The rest stay proposals in \`data/venues/${id}.attractions.json\` for somebody to approve.\n`);
+    + `The rest stay proposals in \`data/venues/${id}/attractions.json\` for somebody to approve.\n`);
 
   const conflicts = records.filter((r) => r.features.queue_entrance.conflict);
   if (conflicts.length) {
@@ -471,9 +501,15 @@ function main() {
 
   for (const id of ids) {
     const state = inventory(id, args);
-    const { records, pois, applied, orphans, asOf } = state;
+    const { records, pois, applied, orphans, asOf, externalStats } = state;
 
     console.error(`\n${id}: ${records.length} ride(s), ${applied} claim(s) of evidence`);
+    if (externalStats?.entranceClaims) {
+      console.error(
+        `  external: ${externalStats.entranceClaims} entrance claim(s)`
+          + ` (ParksAPI cache ${externalStats.parksApi}, Mapillary ${externalStats.mapillary})`,
+      );
+    }
     for (const orphan of orphans.slice(0, 5)) console.error(`  ? evidence for "${orphan}", which is not a ride here`);
 
     if (args.report) report(state, floor);

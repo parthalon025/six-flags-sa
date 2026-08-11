@@ -1,0 +1,435 @@
+{
+  "fetched": "2026-08-11T19:54:41",
+  "source": "queue-times.com",
+  "parkId": 60,
+  "parkName": "Kings Island",
+  "operator": "Cedar Fair Entertainment Company",
+  "rides": [
+    {
+      "name": "Adventure Express",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Banshee",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Diamondback",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Flight of Fear",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Invertigo",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Mystic Timbers",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Orion®",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Queen City Stunt Coaster",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "The Bat",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "The Beast",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "The Racer (Blue)",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "The Racer (Red)",
+      "land": "Coasters",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Cargo Loco",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Congo Falls",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Dodgem",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Eiffel Tower",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Grand Carousel",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "K.I. & Miami Valley Railroad",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "K.I. and Miami Valley Railroad - Soak City Station",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Kings Mills Antique Autos",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Monster",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Phantom Theater: Opening Nightmare",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Scrambler",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Shake, Rattle & Roll",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Sol Spin",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Viking Fury",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "White Water Canyon",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Zephyr",
+      "land": "Family",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Beagle Scout Acres",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Character Carousel",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Charlie Brown's Rushing River Log Ride",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Charlie Brown's Wind Up",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Franklin's Flyers",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Joe Cool's Dodgem School",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Kite Eating Tree",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Linus Launcher",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Linus' Beetle Bugs",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "PEANUTS™ 500",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "PEANUTS™ Off-Road Rally",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Sally's Sea Plane",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Snoopy vs. Red Baron",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Snoopy's Junction",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Snoopy's Soap Box Racers",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Snoopy's Space Buggies",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Surf Dog",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "The Great Pumpkin Coaster",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Woodstock Express",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Woodstock Whirlybirds",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Woodstock's Air Rail",
+      "land": "Kids",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Delirium",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Drop Tower",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "WindSeeker",
+      "land": "Thrill",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Bluegill Lagoon",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Breakers Bay",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Coconut Cove",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Mondo Monsoon",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Paradise Plunge",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Pineapple Pipeline",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Rendezvous Run",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Riverbank Slide Out",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "RiverRacers",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Salamander Sliders",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Splash Landing",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Splash River",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Tadpool",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Thunder Falls",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Tidal Wave Bay",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Tropical Plunge",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Tropical Plunge - Tube Slides",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Tropical Twister",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    },
+    {
+      "name": "Zoom Flume",
+      "land": "Water Park",
+      "waitTime": 0,
+      "isOpen": false
+    }
+  ]
+}

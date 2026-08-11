@@ -1,0 +1,1188 @@
+{
+  "fetched": "2026-08-11",
+  "parkId": "8be1e984-1e5f-40d0-a750-ce8e4dc2e87c",
+  "parkName": "Six Flags Fiesta Texas",
+  "source": "api.themeparks.wiki",
+  "attractions": [
+    {
+      "id": "70c4318d-b289-4410-bb1d-257e12ab0dec",
+      "name": "Spring Blast Firework Show",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00303",
+      "at": {
+        "lat": 29.59787549122808,
+        "lng": -98.61023099999997
+      }
+    },
+    {
+      "id": "6f955c8f-723d-490d-8898-c16454af169a",
+      "name": "Baila Esta Cumbia",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00302",
+      "at": {
+        "lat": 29.59787549122808,
+        "lng": -98.61023099999997
+      }
+    },
+    {
+      "id": "f4c17e79-85ba-4139-a81b-41d73aacd86a",
+      "name": "Metro Park Pub",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00029",
+      "at": {
+        "lat": 29.596759,
+        "lng": -98.610766
+      }
+    },
+    {
+      "id": "9c38ff8b-7e08-498d-b466-9db701a93661",
+      "name": "Coca Cola Freestyle",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00035",
+      "at": {
+        "lat": 29.598007,
+        "lng": -98.612859
+      }
+    },
+    {
+      "id": "9c0ceb56-17aa-4ef8-8ed7-6695cc172488",
+      "name": "AZTEK THE ULTIMATE™ Nachos",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00028",
+      "at": {
+        "lat": 29.596609,
+        "lng": -98.61047
+      }
+    },
+    {
+      "id": "e5e6f8b4-ecde-4ce9-9432-324246b2abac",
+      "name": "Pit Stop",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00018",
+      "at": {
+        "lat": 29.596823,
+        "lng": -98.609076
+      }
+    },
+    {
+      "id": "79d3033e-c464-47f7-869d-2a22dcff405a",
+      "name": "Thirsty Buffalo Saloon",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00034",
+      "at": {
+        "lat": 29.597675,
+        "lng": -98.61273
+      }
+    },
+    {
+      "id": "da297622-eaae-408b-b9f1-5fdb71762a9c",
+      "name": "Canyon Smokehouse",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00041",
+      "at": {
+        "lat": 29.59839,
+        "lng": -98.612679
+      }
+    },
+    {
+      "id": "883a75d5-6416-4fdf-a85e-1c7fbafb3ec7",
+      "name": "Sangerfest Halle",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00025",
+      "at": {
+        "lat": 29.597619,
+        "lng": -98.609447
+      }
+    },
+    {
+      "id": "9fd174d3-3cca-48ea-8d0b-f105c41deeaa",
+      "name": "Forever Hollywood",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00266",
+      "at": {
+        "lat": 29.598872,
+        "lng": -98.609774
+      }
+    },
+    {
+      "id": "f2287bba-d83a-455c-a620-69ee1ec32599",
+      "name": "White Water Canyon",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00089",
+      "at": {
+        "lat": 29.599462,
+        "lng": -98.611138
+      }
+    },
+    {
+      "id": "5ffae9c0-d1bb-4f0e-a57f-0e1dd2033dc0",
+      "name": "Yosemite Sam Wacky Wagons",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00038",
+      "at": {
+        "lat": 29.598179,
+        "lng": -98.612851
+      }
+    },
+    {
+      "id": "85d66e57-4a85-4725-bdb0-76640c744338",
+      "name": "Taz's Tornado",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00060",
+      "at": {
+        "lat": 29.596229,
+        "lng": -98.608117
+      }
+    },
+    {
+      "id": "e521a7bd-be2c-4083-8083-1af68acd1883",
+      "name": "JOKER™: Carnival of Chaos",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00054",
+      "at": {
+        "lat": 29.596138,
+        "lng": -98.610263
+      }
+    },
+    {
+      "id": "0bd3a3cb-83b4-4cfa-a9d4-e40dad21fe43",
+      "name": "Spinsanity",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00066",
+      "at": {
+        "lat": 29.595776,
+        "lng": -98.607958
+      }
+    },
+    {
+      "id": "dbcfa37b-8c79-4a80-a72c-7af1c41dab07",
+      "name": "Dr. Diabolical's Cliffhanger",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00039",
+      "at": {
+        "lat": 29.598239,
+        "lng": -98.612264
+      }
+    },
+    {
+      "id": "0c4c42aa-019a-4590-916a-72eb5f223a8b",
+      "name": "Kinderstein",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00043",
+      "at": {
+        "lat": 29.597256,
+        "lng": -98.609736
+      }
+    },
+    {
+      "id": "2eac4a5a-54fe-48f9-9b17-0bd76a436612",
+      "name": "METROPOLIS™ Transit Authority",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00092",
+      "at": {
+        "lat": 29.596956,
+        "lng": -98.609955
+      }
+    },
+    {
+      "id": "c3c1dec6-8ea4-4b73-8fea-fbe3c0003ad9",
+      "name": "Scream!",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00057",
+      "at": {
+        "lat": 29.596331,
+        "lng": -98.608427
+      }
+    },
+    {
+      "id": "95d79f09-58a2-4bd9-acb3-2a43ba2d2da0",
+      "name": "POISON IVY™ Toxic Spin",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00049",
+      "at": {
+        "lat": 29.596779,
+        "lng": -98.610058
+      }
+    },
+    {
+      "id": "b38a0961-e73b-4173-b444-cbfa35e80966",
+      "name": "Bamboo Chutes",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00072",
+      "at": {
+        "lat": 29.600828,
+        "lng": -98.610449
+      }
+    },
+    {
+      "id": "5a056854-6d1d-4b21-8479-a777eeb6d7ef",
+      "name": "Cowabunga",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00079",
+      "at": {
+        "lat": 29.600385,
+        "lng": -98.611608
+      }
+    },
+    {
+      "id": "8b208510-c646-4c59-bbcb-36ca9c27b28b",
+      "name": "Circuit Breaker Grand Prix - Electric Go-Karts",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00069",
+      "at": {
+        "lat": 29.595702,
+        "lng": -98.607435
+      }
+    },
+    {
+      "id": "bd399bd7-563c-4a3b-abae-ab327bac9692",
+      "name": "Bermuda Triangle",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00073",
+      "at": {
+        "lat": 29.599878,
+        "lng": -98.61075
+      }
+    },
+    {
+      "id": "e82e4e73-bf3d-43f0-bd89-109e5844cb28",
+      "name": "Texas Tumble",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00084",
+      "at": {
+        "lat": 29.599801,
+        "lng": -98.611541
+      }
+    },
+    {
+      "id": "23538235-1e3a-4ab6-be7d-b5d9712608d5",
+      "name": "Tornado",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00086",
+      "at": {
+        "lat": 29.600556,
+        "lng": -98.610385
+      }
+    },
+    {
+      "id": "cb65dfd7-6373-4cc1-9b24-6977e6536df3",
+      "name": "Poltergeist",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00058",
+      "at": {
+        "lat": 29.596856,
+        "lng": -98.608997
+      }
+    },
+    {
+      "id": "f9e581af-0f27-40a9-a2d2-c1d1ebc44b3c",
+      "name": "Boomerang Coast To Coaster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00034",
+      "at": {
+        "lat": 29.598495,
+        "lng": -98.610739
+      }
+    },
+    {
+      "id": "db3967dd-6ea1-4133-88e5-e0a9344a9f86",
+      "name": "CYBORG™: Cyber Revolution",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00091",
+      "at": {
+        "lat": 29.596893,
+        "lng": -98.610293
+      }
+    },
+    {
+      "id": "4267a3fb-ff7f-4a49-8d66-12a442eeddbb",
+      "name": "Looney Tunes Meet & Greet",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00293",
+      "at": {
+        "lat": 29.597457,
+        "lng": -98.609884
+      }
+    },
+    {
+      "id": "bff9f91f-62be-4813-87d4-cb70c4058ba3",
+      "name": "DC™ Characters Meet & Greet",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00294",
+      "at": {
+        "lat": 29.597021,
+        "lng": -98.610482
+      }
+    },
+    {
+      "id": "1620d643-3088-41cc-8276-2bb8d33ccf20",
+      "name": "Chop Six",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00039",
+      "at": {
+        "lat": 29.597925,
+        "lng": -98.612909
+      }
+    },
+    {
+      "id": "890ddb1c-d2ac-42cf-81f1-cd94370308af",
+      "name": "BLUE SNOWMAN SOFT SERVE",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00003",
+      "at": {
+        "lat": 29.595507,
+        "lng": -98.608775
+      }
+    },
+    {
+      "id": "8e6beb87-9d2d-4f1a-a117-5323f55ab772",
+      "name": "Primo’s Pizzeria",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00016",
+      "at": {
+        "lat": 29.59573,
+        "lng": -98.609097
+      }
+    },
+    {
+      "id": "ff8dc5cd-bb11-40dd-8319-542af7278add",
+      "name": "Coca-Cola® Ahh",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00046",
+      "at": {
+        "lat": 29.600009,
+        "lng": -98.611742
+      }
+    },
+    {
+      "id": "d0875b0b-275c-461a-b743-62d20214bbea",
+      "name": "Captain Jack’s Snack Shack",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00032",
+      "at": {
+        "lat": 29.598994,
+        "lng": -98.611248
+      }
+    },
+    {
+      "id": "1cc7595c-4aa8-4f8c-9ac9-636f8c1797da",
+      "name": "Cocktails On The Corner",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00021",
+      "at": {
+        "lat": 29.595711,
+        "lng": -98.608963
+      }
+    },
+    {
+      "id": "4ee77496-596a-4851-a175-c90bc9e30e41",
+      "name": "Sonido9",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00301",
+      "at": {
+        "lat": 29.598651,
+        "lng": -98.610289
+      }
+    },
+    {
+      "id": "ab28e826-1776-49fb-8149-d81f9cad6ae6",
+      "name": "Bubble Pop!",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00260",
+      "at": {
+        "lat": 29.596564,
+        "lng": -98.60846
+      }
+    },
+    {
+      "id": "357d91e7-92d8-4d94-b72f-83ea08706d4a",
+      "name": "Mariachi los Soberanos",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00262",
+      "at": {
+        "lat": 29.598666,
+        "lng": -98.610262
+      }
+    },
+    {
+      "id": "3a4d5bd9-9870-4513-9dec-09d62ef8b478",
+      "name": "Rockville Beach Party",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00290",
+      "at": {
+        "lat": 29.595777,
+        "lng": -98.608563
+      }
+    },
+    {
+      "id": "860f8d2f-c7bb-4b20-ad12-039c3cdcb923",
+      "name": "Bonzai Pipeline",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00075",
+      "at": {
+        "lat": 29.60034,
+        "lng": -98.611597
+      }
+    },
+    {
+      "id": "ccfdb982-60c5-4803-bec7-20e9751b88a8",
+      "name": "Coca-Cola® VIP Lounge",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00007",
+      "at": {
+        "lat": 29.59899,
+        "lng": -98.610305
+      }
+    },
+    {
+      "id": "5e9d9661-31b4-425c-8347-aa4c1f993ba3",
+      "name": "GREEN LANTERN™ Emerald Flight",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00046",
+      "at": {
+        "lat": 29.596793,
+        "lng": -98.610404
+      }
+    },
+    {
+      "id": "6efdee3e-de8c-42f1-85ef-394f87380ba1",
+      "name": "Dr. Butterskotch's Original Elixir",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00040",
+      "at": {
+        "lat": 29.598671,
+        "lng": -98.612167
+      }
+    },
+    {
+      "id": "6f03fa19-8375-40cc-8126-6861f18b713a",
+      "name": "Six Flags Roller Coaster Coffee",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00024",
+      "at": {
+        "lat": 29.597674,
+        "lng": -98.609722
+      }
+    },
+    {
+      "id": "5a14db73-26f0-4a3e-bccd-6e6ff6352511",
+      "name": "Fatburger® - Fiesta Bay Boardwalk",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00005",
+      "at": {
+        "lat": 29.59582,
+        "lng": -98.607635
+      }
+    },
+    {
+      "id": "531fbc5d-c821-4278-a771-44c6ccb9e41f",
+      "name": "Johnny Rockets Express - DC™ Universe",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00027",
+      "at": {
+        "lat": 29.596364,
+        "lng": -98.610455
+      }
+    },
+    {
+      "id": "da35ff7a-8460-421b-af45-7839fd746509",
+      "name": "The Gully Washer",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00042",
+      "at": {
+        "lat": 29.597294,
+        "lng": -98.612418
+      }
+    },
+    {
+      "id": "05df69ee-6c7a-40cd-84e4-02446d2d2e70",
+      "name": "Tidal Wave Café",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00043",
+      "at": {
+        "lat": 29.599828,
+        "lng": -98.61
+      }
+    },
+    {
+      "id": "7cfdc074-a4b6-4b4e-bcc1-a4509ba931b7",
+      "name": "Road Runner Express",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00035",
+      "at": {
+        "lat": 29.598691,
+        "lng": -98.612333
+      }
+    },
+    {
+      "id": "c70615a8-fe19-4cb0-a639-58b1ed740ecd",
+      "name": "PLANET KRYPTON™ Cafe",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00022",
+      "at": {
+        "lat": 29.596612,
+        "lng": -98.610281
+      }
+    },
+    {
+      "id": "f40bb179-d544-4ca7-81a9-78f7dd77f10b",
+      "name": "Chupacabra",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00033",
+      "at": {
+        "lat": 29.599048,
+        "lng": -98.608755
+      }
+    },
+    {
+      "id": "e9e94a4a-4ca5-45b7-9b30-662103a6ec34",
+      "name": "Iron Rattler",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00040",
+      "at": {
+        "lat": 29.598475,
+        "lng": -98.612654
+      }
+    },
+    {
+      "id": "3d2e3960-653a-44ee-bb0c-233e41cb5f3f",
+      "name": "Grand Carousel",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00044",
+      "at": {
+        "lat": 29.597338,
+        "lng": -98.609573
+      }
+    },
+    {
+      "id": "fa0991c0-dd3d-4421-b216-87b7b2b4ae4d",
+      "name": "Dare Devil Dive Flying Machines",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00041",
+      "at": {
+        "lat": 29.597662,
+        "lng": -98.613029
+      }
+    },
+    {
+      "id": "fcfc447a-9b55-472b-b4f6-1886b9783f8f",
+      "name": "WONDER WOMAN™ Golden Lasso Coaster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00056",
+      "at": {
+        "lat": 29.595402,
+        "lng": -98.608857
+      }
+    },
+    {
+      "id": "fba770c6-31db-477a-bf1b-5b8a11a3801e",
+      "name": "Hustler",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00061",
+      "at": {
+        "lat": 29.596145,
+        "lng": -98.608934
+      }
+    },
+    {
+      "id": "d35aeed2-499f-481d-a390-eccaa78affee",
+      "name": "Fiesta Texas Railroad",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00070",
+      "at": {
+        "lat": 29.598042,
+        "lng": -98.610094
+      }
+    },
+    {
+      "id": "3da87f9b-c11a-4ba2-ae41-c3c045de253d",
+      "name": "Bugs' White Water Rapids",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00045",
+      "at": {
+        "lat": 29.597217,
+        "lng": -98.610271
+      }
+    },
+    {
+      "id": "4101ee57-a425-4bb8-9dba-7ccc1a5d73ee",
+      "name": "Mockingbird Funnel Cakes",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00009",
+      "at": {
+        "lat": 29.599016,
+        "lng": -98.609682
+      }
+    },
+    {
+      "id": "a8f0074f-bf9b-40b0-a7c2-ee59054dba28",
+      "name": "La Cantina",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00011",
+      "at": {
+        "lat": 29.5985,
+        "lng": -98.610885
+      }
+    },
+    {
+      "id": "b65d5dd2-3a47-4c95-b61e-f07f8c4699bb",
+      "name": "Bee Bops",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00014",
+      "at": {
+        "lat": 29.596138,
+        "lng": -98.608658
+      }
+    },
+    {
+      "id": "1ef402e8-e911-49c9-926f-ad709c6d2b59",
+      "name": "THE PENGUIN™: Gotham City Getaway",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00050",
+      "at": {
+        "lat": 29.596723,
+        "lng": -98.609903
+      }
+    },
+    {
+      "id": "ce00b8df-d67c-44f7-bb2d-97dd7cdba51d",
+      "name": "Park Row Refresh Station",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00048",
+      "at": {
+        "lat": 29.59603,
+        "lng": -98.609383
+      }
+    },
+    {
+      "id": "bbb618b2-9275-444a-bbf9-a13cf51b1c98",
+      "name": "Lone Star Lagoon",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00077",
+      "at": {
+        "lat": 29.600247,
+        "lng": -98.609817
+      }
+    },
+    {
+      "id": "42122951-a18a-4b55-aed2-9249f14c85f7",
+      "name": "Hurricane Force 5",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00064",
+      "at": {
+        "lat": 29.596015,
+        "lng": -98.607169
+      }
+    },
+    {
+      "id": "030c89d9-9d1e-455a-af05-45711c03e450",
+      "name": "Daffy’s Bus Stop",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00059",
+      "at": {
+        "lat": 29.596119,
+        "lng": -98.608197
+      }
+    },
+    {
+      "id": "1a53b26a-2c68-4e38-a4b9-8285fa395803",
+      "name": "Wave Runner",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00062",
+      "at": {
+        "lat": 29.596088,
+        "lng": -98.607791
+      }
+    },
+    {
+      "id": "049107d2-4727-4c4b-b62f-d10d3b1a13a8",
+      "name": "Pirates of the Deep Sea",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00063",
+      "at": {
+        "lat": 29.596215,
+        "lng": -98.607525
+      }
+    },
+    {
+      "id": "b426e5eb-ee09-4efa-a5e6-d98f44cd5f3e",
+      "name": "DC™ Super-Villains Swing",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00053",
+      "at": {
+        "lat": 29.596263,
+        "lng": -98.610178
+      }
+    },
+    {
+      "id": "0fd7cf0e-fd11-4f0d-9a4b-cf9f06ec5192",
+      "name": "Crow’s Nest",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00065",
+      "at": {
+        "lat": 29.596093,
+        "lng": -98.607403
+      }
+    },
+    {
+      "id": "37a6a558-d76a-4492-97d5-83bca4c533bc",
+      "name": "Riptide Runner",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00080",
+      "at": {
+        "lat": 29.599842,
+        "lng": -98.610719
+      }
+    },
+    {
+      "id": "19b3dc32-5d5d-46fa-af4c-97dbc3e407e4",
+      "name": "Hot Roasted Corn",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00012",
+      "at": {
+        "lat": 29.598741,
+        "lng": -98.610061
+      }
+    },
+    {
+      "id": "83f511f3-a952-41fd-8718-3d95373d36ce",
+      "name": "BATMAN™ The Ride",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00055",
+      "at": {
+        "lat": 29.596034,
+        "lng": -98.609499
+      }
+    },
+    {
+      "id": "936c7242-d131-4757-977b-1dca01b2126a",
+      "name": "Fireball",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00067",
+      "at": {
+        "lat": 29.595484,
+        "lng": -98.608015
+      }
+    },
+    {
+      "id": "2e2e4839-6205-4f13-a426-23ab1b508bc4",
+      "name": "Pandemonium",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00068",
+      "at": {
+        "lat": 29.595602,
+        "lng": -98.607696
+      }
+    },
+    {
+      "id": "bc452fd1-4a06-4412-9fee-623f428fd3f6",
+      "name": "Texas Treehouse",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00083",
+      "at": {
+        "lat": 29.600207,
+        "lng": -98.6122
+      }
+    },
+    {
+      "id": "21b3c252-0d8b-4fbf-8e51-94c59d664467",
+      "name": "Frozen Lemonade Kiosk",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00008",
+      "at": {
+        "lat": 29.598508,
+        "lng": -98.610574
+      }
+    },
+    {
+      "id": "c4961383-c5f6-433a-a4eb-fedda9dbc3fd",
+      "name": "SHAZAM™: Tower of Eternity",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00090",
+      "at": {
+        "lat": 29.596779,
+        "lng": -98.609963
+      }
+    },
+    {
+      "id": "43ed81c4-d53b-4b69-9cc7-8faf0d6ea03c",
+      "name": "FUNNEL*LISCIOUS",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00017",
+      "at": {
+        "lat": 29.595864,
+        "lng": -98.609646
+      }
+    },
+    {
+      "id": "72414d90-b588-46a3-9bef-bb568782bc9d",
+      "name": "Fiesta Texas Railroad - Western",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00093",
+      "at": {
+        "lat": 29.597514,
+        "lng": -98.612954
+      }
+    },
+    {
+      "id": "d2fee433-fa4d-4f7e-8b8c-e5a5a51883a7",
+      "name": "Bahama Blaster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00071",
+      "at": {
+        "lat": 29.600995,
+        "lng": -98.610612
+      }
+    },
+    {
+      "id": "ed700b84-b5e6-4323-8faf-95a40acefaee",
+      "name": "HH - Coral Cove",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00076",
+      "at": {
+        "lat": 29.600382,
+        "lng": -98.611379
+      }
+    },
+    {
+      "id": "b2225648-51d2-48b7-9e31-f2699e9d49b7",
+      "name": "Los Fest Refill",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00010",
+      "at": {
+        "lat": 29.599195,
+        "lng": -98.609451
+      }
+    },
+    {
+      "id": "e2287400-9299-4433-abec-be5ac6a3dcd3",
+      "name": "Dippin' Dots - Waterpark",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00019",
+      "at": {
+        "lat": 29.596274,
+        "lng": -98.608506
+      }
+    },
+    {
+      "id": "23d3e534-fa27-4d60-bedf-fe2e36c3708a",
+      "name": "Rockville Refresh",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00020",
+      "at": {
+        "lat": 29.59588,
+        "lng": -98.609454
+      }
+    },
+    {
+      "id": "fb22fd0a-27b9-4992-b0c2-bd8ec7148458",
+      "name": "Dippin' Dots - Waterpark",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00026",
+      "at": {
+        "lat": 29.596986,
+        "lng": -98.610639
+      }
+    },
+    {
+      "id": "da7b8fba-3773-4417-9173-11b7429ef536",
+      "name": "Dippin' Dots - Waterpark",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00038",
+      "at": {
+        "lat": 29.597397,
+        "lng": -98.612618
+      }
+    },
+    {
+      "id": "6bf811e2-913c-4c03-9e3b-16cbf5e0ed0b",
+      "name": "Dippin' Dots - Waterpark",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00042",
+      "at": {
+        "lat": 29.598568,
+        "lng": -98.612292
+      }
+    },
+    {
+      "id": "432d17a7-162e-4e02-9371-5009e8c4879c",
+      "name": "WP-Tidal Wave Cabana",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00045",
+      "at": {
+        "lat": 29.599828,
+        "lng": -98.61
+      }
+    },
+    {
+      "id": "e9414a89-6a45-4c5a-8ef9-39a3bff6981b",
+      "name": "Soft Frozen Lemonade - Western",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00036",
+      "at": {
+        "lat": 29.597342,
+        "lng": -98.612027
+      }
+    },
+    {
+      "id": "5e8529d2-4fce-4887-8e8b-50cb5da2be97",
+      "name": "Dippin' Dots - Waterpark",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00047",
+      "at": {
+        "lat": 29.600123,
+        "lng": -98.61
+      }
+    },
+    {
+      "id": "237e105a-0d95-4a08-9a60-39ec394b5123",
+      "name": "WP-Tiki Bar - Water Park",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00044",
+      "at": {
+        "lat": 29.600632,
+        "lng": -98.610366
+      }
+    },
+    {
+      "id": "9d0ff1ad-35e7-46d1-b59d-335a9df98783",
+      "name": "Paradise Cove",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00078",
+      "at": {
+        "lat": 29.600719,
+        "lng": -98.610446
+      }
+    },
+    {
+      "id": "e333fa73-4094-449a-b1b6-05aad70a2a5d",
+      "name": "SUPERGIRL™ Sky Flight",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00051",
+      "at": {
+        "lat": 29.596814,
+        "lng": -98.610816
+      }
+    },
+    {
+      "id": "68337a8e-9a0b-43b7-8603-cc1c61f87064",
+      "name": "SUPERMAN™ KRYPTON Coaster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00052",
+      "at": {
+        "lat": 29.596574,
+        "lng": -98.610611
+      }
+    },
+    {
+      "id": "06f3f0aa-81fa-40e7-a1e6-50e8f949e06c",
+      "name": "Splashwater Springs",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00081",
+      "at": {
+        "lat": 29.600228,
+        "lng": -98.611824
+      }
+    },
+    {
+      "id": "d13a3ea6-1e78-4dc6-b0ab-40dacfc5cecd",
+      "name": "Thunder Rapids Water Coaster",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00085",
+      "at": {
+        "lat": 29.600782,
+        "lng": -98.60944
+      }
+    },
+    {
+      "id": "4bc77ef4-147e-4c86-b773-e9de9b123b7a",
+      "name": "BAT GIRL™: Coaster Chase",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00048",
+      "at": {
+        "lat": 29.596615,
+        "lng": -98.610034
+      }
+    },
+    {
+      "id": "0d0a5404-39d9-40f1-ba79-a649d779dfe3",
+      "name": "Vortex",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00082",
+      "at": {
+        "lat": 29.60079,
+        "lng": -98.611566
+      }
+    },
+    {
+      "id": "0ec26b25-408f-4c9e-825b-24b637feb013",
+      "name": "Foghorn Leghorn’s Barnyard Railway",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00037",
+      "at": {
+        "lat": 29.598274,
+        "lng": -98.612844
+      }
+    },
+    {
+      "id": "5e669d1a-f15e-4fba-a125-aab20881615d",
+      "name": "Bucking Broncos",
+      "entityType": "ATTRACTION",
+      "externalId": "RIDE-914-00036",
+      "at": {
+        "lat": 29.598319,
+        "lng": -98.612683
+      }
+    },
+    {
+      "id": "24e187c4-7f79-44fe-8cbb-ae6919bcc014",
+      "name": "Old Blues Barbeque",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00030",
+      "at": {
+        "lat": 29.598736,
+        "lng": -98.611466
+      }
+    },
+    {
+      "id": "42ecd424-0b01-47da-9d93-d9c355c045b2",
+      "name": "esix Gaming Liquid Cooled Bar",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00006",
+      "at": {
+        "lat": 29.59899,
+        "lng": -98.610305
+      }
+    },
+    {
+      "id": "af07bf6c-8d41-4095-b24e-ef820fb1b4a0",
+      "name": "Pete's Eats",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00015",
+      "at": {
+        "lat": 29.596794,
+        "lng": -98.608614
+      }
+    },
+    {
+      "id": "01015a4c-4513-46cc-a635-eb5ad74aa2fc",
+      "name": "Windmill Ice House",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00033",
+      "at": {
+        "lat": 29.59731,
+        "lng": -98.612195
+      }
+    },
+    {
+      "id": "d979826f-8340-4d47-9492-ac74d84f6fc5",
+      "name": "Star-Spangled Nights 360 Fireworks",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00265",
+      "at": {
+        "lat": 29.598012,
+        "lng": -98.610354
+      }
+    },
+    {
+      "id": "57c64faa-1728-465e-997e-0bf8575fdad7",
+      "name": "Flag Raising Ceremony",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00307",
+      "at": {
+        "lat": 29.59787549122808,
+        "lng": -98.61023099999997
+      }
+    },
+    {
+      "id": "5075354b-69b2-4810-9c28-fdf8a0734c9c",
+      "name": "Rockville 4th of July Block Party",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00308",
+      "at": {
+        "lat": 29.595863,
+        "lng": -98.608927
+      }
+    },
+    {
+      "id": "c8aa0a2e-d568-443b-9a10-d6ab7ef188bc",
+      "name": "Star-Spangled Nights Fireworks presented by M&M’S®",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00264",
+      "at": {
+        "lat": 29.598012,
+        "lng": -98.610354
+      }
+    },
+    {
+      "id": "25898afc-3356-4a2b-927c-d2b7b0d601c7",
+      "name": "FT 92 Fan Event",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00305",
+      "at": {
+        "lat": 29.598875,
+        "lng": -98.609775
+      }
+    },
+    {
+      "id": "7aeb34e0-a1c3-4a50-86e0-269bf2dbb8d0",
+      "name": "Blockbuster Blasts",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00288",
+      "at": {
+        "lat": 29.598012,
+        "lng": -98.610354
+      }
+    },
+    {
+      "id": "67b31f8f-4705-43c7-a5e9-ee365cf2b81c",
+      "name": "The Sound System",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00289",
+      "at": {
+        "lat": 29.597582,
+        "lng": -98.609674
+      }
+    },
+    {
+      "id": "a72baabb-6dec-4185-a1e7-f120c4e532a0",
+      "name": "Coaster Car Dedication",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00306",
+      "at": {
+        "lat": 29.59787549122808,
+        "lng": -98.61023099999997
+      }
+    },
+    {
+      "id": "643204bb-85f6-4cdb-9726-b050c076a3ae",
+      "name": "Township of Crackaxle Independence Day Celebration",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00309",
+      "at": {
+        "lat": 29.597613,
+        "lng": -98.612916
+      }
+    },
+    {
+      "id": "dc3b9005-0f67-4081-9ed2-31b01b099ebc",
+      "name": "FiestaLuz",
+      "entityType": "SHOW",
+      "externalId": "SHOW-914-00304",
+      "at": {
+        "lat": 29.598012,
+        "lng": -98.610354
+      }
+    },
+    {
+      "id": "d2005b2c-3416-451f-88a0-de4f3d70e9cc",
+      "name": "La Cocina de Cobre",
+      "entityType": "RESTAURANT",
+      "externalId": "RESTAURANT-914-00031",
+      "at": {
+        "lat": 29.597665,
+        "lng": -98.612369
+      }
+    }
+  ]
+}

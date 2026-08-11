@@ -1,0 +1,18 @@
+{
+  "fetched": "2026-08-11",
+  "source": "wikidata.org",
+  "license": "CC0",
+  "search": "Cedar Point",
+  "entity": {
+    "qid": "Q859230",
+    "label": "Cedar Point",
+    "website": "https://www.sixflags.com/cedarpoint",
+    "coordinates": {
+      "lat": 41.48,
+      "lng": -82.6825
+    },
+    "inception": "1870-00-00",
+    "operator": {},
+    "wikipedia": null
+  }
+}

@@ -228,7 +228,7 @@ flowchart TB
 ### Inputs vs outputs
 
 ```text
-data/venues/<id>.*          ← edit these
+data/venues/<id>/           ← edit these (one package per venue)
         │
         ▼  npm run venues:build | rebuild | overrides | attractions
         │
@@ -340,7 +340,7 @@ Self-host everything with `npm run sync` (`server/index.mjs`) or Docker.
 
 | You want to… | Edit | Then |
 | --- | --- | --- |
-| Fix a height / alias / district tint | `data/venues/<id>.overrides.json` or `.heights.json` | `venues:overrides` or rebuild |
+| Fix a height / alias / district tint | `data/venues/<id>/overrides.json` or `heights.json` | `venues:overrides` or rebuild |
 | Fix tag → layer/category mapping | `scripts/lib/osm-tags.mjs` | rebuild affected venues |
 | Fix fusion / publish threshold | `scripts/lib/evidence.mjs` | `venues:attractions` |
 | Change map drawing / symbols | `components/ParkMap.jsx`, `lib/mapSymbols.js` | app tests |

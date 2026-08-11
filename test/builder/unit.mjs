@@ -2484,10 +2484,18 @@ await check('a height rule reads low to high, in inches a person could be', () =
 
 await check('every override is filed under a name the venue actually has', () => {
   const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.overrides.json'));
+  const packages = fs.readdirSync(dir).filter((name) => {
+    try {
+      return fs.statSync(new URL(name, dir)).isDirectory();
+    } catch {
+      return false;
+    }
+  });
+  const files = packages
+    .map((id) => ({ id, file: `${id}/overrides.json` }))
+    .filter(({ file }) => fs.existsSync(new URL(file, dir)));
   assert.ok(files.length, 'no overrides files to check');
-  files.forEach((file) => {
-    const id = file.slice(0, -'.overrides.json'.length);
+  files.forEach(({ id, file }) => {
     const overrides = JSON.parse(fs.readFileSync(new URL(file, dir)));
     /* Through the resolver the build itself uses, rather than a second copy of
        its rules living here: a name, then the name the park renamed it from,
@@ -2623,7 +2631,7 @@ await check('every venue on disk knows how it was built', () => {
      line, and the only way back is to reconstruct it out of a merged pull
      request. */
   const missing = readVenues()
-    .filter((v) => !fs.existsSync(new URL(`../../packages/venue-builder/data/venues/${v.id}.recipe.json`, import.meta.url)));
+    .filter((v) => !fs.existsSync(new URL(`../../packages/venue-builder/data/venues/${v.id}/recipe.json`, import.meta.url)));
   assert.deepEqual(
     missing.map((v) => v.id),
     [],
@@ -2635,7 +2643,7 @@ await check('every venue on disk knows how it was built', () => {
 await check('a recipe on disk is one this builder still understands', () => {
   readVenues().forEach((v) => {
     const recipe = JSON.parse(
-      fs.readFileSync(new URL(`../../packages/venue-builder/data/venues/${v.id}.recipe.json`, import.meta.url)),
+      fs.readFileSync(new URL(`../../packages/venue-builder/data/venues/${v.id}/recipe.json`, import.meta.url)),
     );
     assert.equal(recipe.id, v.id, `${v.id}: recipe is filed under the wrong id`);
     const back = argsFromRecipe(recipe);
@@ -2746,7 +2754,7 @@ await check('the brief carries the conventions somebody would otherwise get wron
   assert.match(brief, /`min: 0`/, 'no floor is not the same as nobody looked');
   assert.match(brief, /alias/, 'how a renamed ride is bridged');
   assert.match(brief, /Never estimate a coordinate/);
-  assert.match(brief, /data\/venues\/somewhere\.overrides\.json/, 'the one file it all lands in');
+  assert.match(brief, /data\/venues\/somewhere\/overrides\.json/, 'the one file it all lands in');
   // The name it must be keyed by, exactly as the bundle spells it.
   assert.match(brief, /"Lazy River"/);
   return true;
@@ -3468,15 +3476,17 @@ function inventoryOf(pois, attractions) {
   const files = [
     path.join(VENUE_DIR, `${FIXTURE_ID}.map.json`),
     path.join(VENUE_DIR, `${FIXTURE_ID}.pois.json`),
-    path.join(OVERRIDE_DIR, `${FIXTURE_ID}.attractions.json`),
+    path.join(OVERRIDE_DIR, FIXTURE_ID, 'attractions.json'),
   ];
   try {
+    fs.mkdirSync(path.dirname(files[2]), { recursive: true });
     fs.writeFileSync(files[0], JSON.stringify({ meta: { id: FIXTURE_ID }, path: [] }));
     fs.writeFileSync(files[1], JSON.stringify(pois));
     fs.writeFileSync(files[2], JSON.stringify({ version: 1, venue: FIXTURE_ID, attractions }));
     return inventory(FIXTURE_ID);
   } finally {
     for (const file of files) fs.rmSync(file, { force: true });
+    fs.rmSync(path.join(OVERRIDE_DIR, FIXTURE_ID), { recursive: true, force: true });
   }
 }
 
@@ -3922,9 +3932,12 @@ await check('imagery rides are added only when the name is not already here', ()
 
 await check('big-kahunas carries a source catalogue the builder understands', () => {
   const { file, data } = readSources('big-kahunas');
-  assert.ok(file?.endsWith('big-kahunas.sources.json'));
+  assert.ok(file?.endsWith('big-kahunas/sources.json') || file?.endsWith('big-kahunas\\sources.json'));
   assert.ok(data.datasets?.merge?.length);
   assert.ok(data.datasets?.imagery?.length);
+  const map = (data.sources || []).find((s) => s.kind === 'official_map');
+  assert.ok(map?.image?.includes('big-kahunas/maps/2026-parkmap'));
+  assert.ok(fs.existsSync(new URL(`../../packages/venue-builder/${map.image}`, import.meta.url)));
   return true;
 });
 
@@ -4132,7 +4145,7 @@ await check('every catalog park has an official website URL for height research'
 
 await check('heightsSidecarFromOfficial pairs official listings to bundle rides', () => {
   const official = JSON.parse(
-    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/big-kahunas.official-cache.json', import.meta.url)),
+    fs.readFileSync(new URL('../../packages/venue-builder/data/venues/big-kahunas/official-cache.json', import.meta.url)),
   );
   const pois = [
     { n: 'Maui Pipeline', c: 'ride' },
@@ -6204,26 +6217,29 @@ await check('AGPL yolo adapter is rejected by runner', async () => {
 const { certifyVenue, CERT_VERSION } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
 const { qaVenueRouting, MAX_ROUTING_ISLANDS } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');
 
-await check('certify emits a birth certificate with six gates', () => {
+await check('certify emits a birth certificate with eight gates', () => {
   const doc = certifyVenue('kings-island', { write: false });
   assert.equal(doc.version, CERT_VERSION);
   assert.equal(doc.venue.id, 'kings-island');
-  assert.equal(doc.checks.length, 6);
+  assert.equal(doc.checks.length, 8);
   assert.ok(doc.checks.every((c) => c.claim && c.evidence && c.confidence && c.falsifier && c.soWhat));
   assert.ok(doc.checks.every((c) => c.evidence.denominator != null));
+  assert.ok(doc.checks.some((c) => c.key === 'external_sources'));
+  assert.ok(doc.checks.some((c) => c.key === 'park_map_research'));
   return true;
 });
 
-await check('kings-island passes certification', () => {
+await check('kings-island passes certification except outstanding park-map image', () => {
   const doc = certifyVenue('kings-island', { write: false });
-  assert.equal(doc.certified, true);
-  assert.ok(doc.certifiedAt);
-  assert.equal(doc.ask, null);
   const route = doc.checks.find((c) => c.key === 'route');
   assert.equal(route.pass, true);
+  const parkMap = doc.checks.find((c) => c.key === 'park_map_research');
+  assert.equal(parkMap.pass, false, 'no local maps/ image and no LLM park-map search cache yet');
+  const others = doc.checks.filter((c) => c.key !== 'park_map_research');
+  assert.ok(others.every((c) => c.pass), others.filter((c) => !c.pass).map((c) => c.key).join(', '));
+  assert.equal(doc.certified, false);
   return true;
 });
-
 await check('route QA enforces the Kings Island island standard', () => {
   const r = qaVenueRouting('kings-island');
   assert.ok(r.components <= MAX_ROUTING_ISLANDS);
@@ -6240,10 +6256,11 @@ await check('cedar point fails route gate when a ride is off the network', () =>
   return true;
 });
 
-await check('certify writes data/venues/<id>.certification.json', () => {
+await check('certify writes data/venues/<id>/certification.json', () => {
   const file = path.join(
     new URL('../../packages/venue-builder/data/venues/', import.meta.url).pathname,
-    'kings-island.certification.json',
+    'kings-island',
+    'certification.json',
   );
   try { fs.unlinkSync(file); } catch { /* fresh */ }
   const doc = certifyVenue('kings-island');
@@ -6257,7 +6274,7 @@ const { operatorForUrl, parseListingForUrl } = await import('../../packages/venu
 const { proposeAliases } = await import('../../packages/venue-builder/lib/auto-alias.mjs');
 const { recordReview, reviewGatePassed } = await import('../../packages/venue-builder/lib/venue-review.mjs');
 const { mapThemePack, MAP_THEME_PACKS } = await import('../../apps/party-tracker/lib/mapThemeTokens.js');
-const { bboxInView } = await import('../../apps/party-tracker/lib/mapViewport.js');
+const { bboxInView, localViewTransform, float32ScreenError, stableCullView } = await import('../../apps/party-tracker/lib/mapViewport.js');
 
 await check('operator dispatch recognises Six Flags URLs', () => {
   assert.equal(operatorForUrl('https://www.sixflags.com/fiestatexas/attractions'), 'six-flags');
@@ -6295,6 +6312,98 @@ await check('viewport culling keeps on-screen features', () => {
   const view = { x: 0, y: 0, scale: 2, cx: 200, cy: 400, width: 400, height: 800 };
   const inView = bboxInView({ minX: -10, minY: -10, maxX: 10, maxY: 10 }, view, { cos: 1, sin: 0 });
   assert.equal(inView, true);
+  return true;
+});
+
+await check('local SVG origin keeps max-zoom pan within a pixel of float64', () => {
+  const ox = -9_378_000;
+  const oy = 4_760_000;
+  const point = { x: ox + 120.37, y: oy + 85.91 };
+  const scale = 6;
+  const cx = 180;
+  const cy = 320;
+  let worstAbs = 0;
+  let worstLocal = 0;
+  for (let i = 0; i < 200; i += 1) {
+    const view = { x: ox + i * 0.37, y: oy + i * 0.19 };
+    worstAbs = Math.max(worstAbs, float32ScreenError(point, view, scale, cx, cy, 0, 0));
+    worstLocal = Math.max(
+      worstLocal,
+      float32ScreenError(point, view, scale, cx, cy, ox, oy),
+    );
+  }
+  assert.ok(worstAbs > 1, `absolute mercator should shimmer (got ${worstAbs}px)`);
+  assert.ok(worstLocal < 0.05, `local origin should stay sharp (got ${worstLocal}px)`);
+  const t = localViewTransform({
+    cx,
+    cy,
+    rotation: 15,
+    scale,
+    viewX: ox + 40,
+    viewY: oy - 12,
+    originX: ox,
+    originY: oy,
+  });
+  assert.ok(t.includes('translate(-40'), t);
+  assert.ok(t.includes('12)'), t);
+  return true;
+});
+
+await check('retina pixel-snap keeps local translate on a device-pixel grid', () => {
+  const ox = -9_378_000;
+  const oy = 4_760_000;
+  const scale = 6;
+  const pr = 3;
+  const t = localViewTransform({
+    cx: 180,
+    cy: 320,
+    scale,
+    viewX: ox + 40.07,
+    viewY: oy - 12.04,
+    originX: ox,
+    originY: oy,
+    pixelRatio: pr,
+  });
+  // 40.07 * 6 * 3 = 721.26 → round 721 → 721 / 18 = 40.0555…
+  assert.match(t, /translate\(-40\.055/);
+  return true;
+});
+
+await check('pinch session suppresses fling after both fingers lift', () => {
+  // Mirrors ParkMap's pinchSession ref: set while two pointers are down, cleared
+  // only when the pointer map is empty, so the final finger-up cannot fling.
+  let pinchSession = false;
+  const pointers = new Set();
+  const onDown = (id) => {
+    pointers.add(id);
+    if (pointers.size === 2) pinchSession = true;
+  };
+  const onUp = (id) => {
+    pointers.delete(id);
+    if (pointers.size > 0) return { fling: false, pending: true };
+    const wasPinch = pinchSession;
+    pinchSession = false;
+    return { fling: !wasPinch, pending: false };
+  };
+  onDown(1);
+  onDown(2);
+  assert.equal(onUp(1).fling, false);
+  assert.equal(pinchSession, true);
+  const last = onUp(2);
+  assert.equal(last.fling, false);
+  assert.equal(pinchSession, false);
+  onDown(3);
+  assert.equal(onUp(3).fling, true);
+  return true;
+});
+
+await check('stable cull view only moves when the camera crosses a cell', () => {
+  const a = stableCullView({ x: 1000, y: 2000, scale: 6 });
+  const b = stableCullView({ x: 1000 + 5 / 6, y: 2000, scale: 6 });
+  assert.equal(a.x, b.x);
+  assert.equal(a.y, b.y);
+  const c = stableCullView({ x: 1000 + 200 / 6, y: 2000, scale: 6 });
+  assert.ok(a.x !== c.x || a.y !== c.y, 'a large pan should enter a new cull cell');
   return true;
 });
 
@@ -6341,12 +6450,399 @@ await check('sync external sources cache-only does not throw', async () => {
   return true;
 });
 
+await check('datasets.external from sources.json filters sync list', async () => {
+  const { resolveExternalAdapterIds } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const {
+    externalAdaptersFromCatalog,
+    DEFAULT_EXTERNAL_ADAPTERS,
+    TOKEN_GATED_ADAPTERS,
+    ensureExternalDatasets,
+  } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const catalog = {
+    datasets: { external: ['parks-api', 'wikidata', 'not-a-real-adapter'] },
+  };
+  const ids = externalAdaptersFromCatalog(catalog);
+  assert.deepEqual(ids, ['parks-api', 'wikidata']);
+  const fromVenue = resolveExternalAdapterIds('cedar-point');
+  assert.ok(fromVenue.includes('parks-api'));
+  assert.ok(fromVenue.includes('wikidata'));
+  assert.ok(!fromVenue.includes('ropedrop'));
+  assert.ok(TOKEN_GATED_ADAPTERS.includes('mapillary-api'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('mapillary-api'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('ropedrop'));
+  const scaffolded = ensureExternalDatasets({});
+  assert.deepEqual(scaffolded.datasets.external, [...DEFAULT_EXTERNAL_ADAPTERS]);
+  return true;
+});
+
+await check('ParksAPI location claims attach to rides; metadata never invents entrances', async () => {
+  const {
+    parksApiEntranceClaims,
+    inventoryMetadataClaims,
+    snapClaimsToRides,
+    normalizeExternalClaims,
+    ingestExternalClaims,
+    toEvidenceClaim,
+  } = await import('../../packages/venue-builder/lib/external-claims.mjs');
+  const { addEvidence, attractionFor } = await import('../../packages/venue-builder/lib/attractions.mjs');
+  const pois = [
+    { n: 'Orion', i: 'orion', c: 'coaster', lat: 39.345, lng: -84.268 },
+    { n: 'Restrooms', i: 'restrooms', c: 'restroom', lat: 39.346, lng: -84.269 },
+  ];
+  const entrance = parksApiEntranceClaims(
+    {
+      fetched: '2026-08-01',
+      attractions: [
+        { name: 'Orion', at: { lat: 39.3451, lng: -84.2681 } },
+        { name: 'Unknown Flume', at: { lat: 39.34, lng: -84.26 } },
+      ],
+    },
+    pois,
+  );
+  assert.equal(entrance.length, 1);
+  assert.equal(entrance[0].ride, 'Orion');
+  assert.equal(entrance[0].feature_id, 'orion');
+  assert.equal(entrance[0].source, 'parks_api');
+  assert.equal(entrance[0].type, 'queue_entrance');
+  assert.equal(entrance[0].date, '2026-08-01');
+
+  const meta = inventoryMetadataClaims({
+    queueTimes: { onlyOnApi: ['Phantom Drop'], fetched: '2026-08-02' },
+    rcdbCompare: { pairs: [] },
+    rcdbRaw: {},
+    wikidataRaw: {},
+    llm: { inventoryGaps: [{ name: 'Lost River', note: 'gap' }], fetched: '2026-08-03' },
+    openMeteoRaw: { fetched: '2026-08-04', hourly: { time: [] } },
+    ohmRaw: { fetched: '2026-01-01', features: [{ type: 'node', id: 1, tags: { historic: 'yes' }, lat: 1, lng: 2 }] },
+    ropedropRaw: { slug: null, error: 'Disney/Universal only' },
+  });
+  assert.ok(meta.some((c) => c.source === 'queue_times' && c.kind === 'inventory'));
+  assert.ok(meta.some((c) => c.source === 'llm_extract'));
+  assert.ok(meta.some((c) => c.source === 'open_meteo' && c.kind === 'metadata'));
+  assert.ok(meta.some((c) => c.source === 'openhistoricalmap'));
+  assert.ok(meta.some((c) => c.source === 'ropedrop'));
+  assert.ok(meta.every((c) => c.type == null));
+  assert.ok(meta.every((c) => !c.note?.toLowerCase().includes('wait_time') || c.kind === 'metadata'));
+
+  const snapped = snapClaimsToRides(
+    [{ source: 'mapillary', kind: 'imagery', at: { lat: 39.34505, lng: -84.26805 }, date: '2026-07-01', note: 'img' }],
+    pois,
+  );
+  assert.equal(snapped.length, 1);
+  assert.equal(snapped[0].ride, 'Orion');
+  assert.equal(snapped[0].source, 'mapillary');
+
+  const record = attractionFor(pois[0], 'test-park');
+  const contract = toEvidenceClaim(entrance[0]);
+  assert.ok(contract.feature_id);
+  const ingest = ingestExternalClaims([record], [
+    contract,
+    { source: 'open_meteo', kind: 'metadata', note: 'climate', date: '2026-08-04' },
+    { source: 'queue_times', kind: 'inventory', note: 'missing ride X', date: '2026-08-02' },
+  ], {
+    asOf: '2099-01-01',
+    addEvidence,
+    recordFor: (key) => (key === 'Orion' || key === 'orion' ? record : null),
+  });
+  assert.equal(ingest.applied, 1);
+  assert.equal(record.features.queue_entrance.evidence[0].date, '2026-08-01', 'must not launder observation date to asOf');
+  assert.ok(ingest.asks.length >= 1);
+  assert.ok(ingest.graphNodes.length >= 1);
+  assert.equal(record.features.queue_entrance.evidence.some((e) => e.source === 'open_meteo'), false);
+
+  const normalised = normalizeExternalClaims('test-park', {
+    pois,
+    external: {
+      parksApiRaw: {
+        fetched: '2026-08-01',
+        attractions: [{ name: 'Orion', at: { lat: 39.3451, lng: -84.2681 } }],
+      },
+      openMeteoRaw: { fetched: '2026-08-04', hourly: {} },
+    },
+  });
+  assert.ok(normalised.entrance.length >= 1);
+  assert.ok(normalised.metadata.some((c) => c.source === 'open_meteo'));
+  assert.ok(normalised.claims.every((c) => c.kind));
+  return true;
+});
+
+await check('Queue-Times and RopeDrop never write wait minutes into pois claims', async () => {
+  const { inventoryMetadataClaims, ingestExternalClaims } = await import(
+    '../../packages/venue-builder/lib/external-claims.mjs'
+  );
+  const { addEvidence, attractionFor } = await import('../../packages/venue-builder/lib/attractions.mjs');
+  const claims = inventoryMetadataClaims({
+    queueTimes: {
+      onlyOnApi: ['Foobar'],
+      fetched: '2026-08-02',
+      rides: [{ name: 'Foobar', waitTime: 45 }],
+    },
+    ropedropRaw: {
+      slug: 'magic-kingdom',
+      fetched: '2026-08-02T12:00:00',
+      waitTimes: { rides: [{ name: 'Space Mountain', wait: 30 }] },
+    },
+  });
+  assert.ok(claims.every((c) => c.type == null));
+  assert.ok(claims.every((c) => c.kind === 'inventory' || c.kind === 'metadata'));
+  assert.ok(!JSON.stringify(claims).includes('"waitTime"'));
+  const record = attractionFor({ n: 'Orion', i: 'orion', c: 'coaster', lat: 1, lng: 2 }, 't');
+  const result = ingestExternalClaims([record], claims, {
+    addEvidence,
+    recordFor: () => record,
+  });
+  assert.equal(result.applied, 0);
+  assert.equal(record.features.queue_entrance.evidence.length, 0);
+  return true;
+});
+
+await check('cert external_sources denominators honour gaps and token soft-pass', async () => {
+  const { adapterGapNotes, TOKEN_GATED_ADAPTERS, externalAdaptersFromCatalog } = await import(
+    '../../packages/venue-builder/lib/venue-sources.mjs'
+  );
+  const { certifyVenue } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
+  assert.ok(TOKEN_GATED_ADAPTERS.includes('mapillary-api'));
+  const gaps = adapterGapNotes({
+    gaps: { adapters: { ropedrop: 'Disney only', 'parks-api': 'no entity' } },
+  });
+  assert.equal(gaps.ropedrop, 'Disney only');
+  assert.equal(gaps['parks-api'], 'no entity');
+  const declared = externalAdaptersFromCatalog({
+    datasets: { external: ['parks-api', 'mapillary-api', 'wikidata'] },
+  });
+  assert.deepEqual(declared, ['parks-api', 'mapillary-api', 'wikidata']);
+  const doc = certifyVenue('big-kahunas', { write: false });
+  const ext = doc.checks.find((c) => c.key === 'external_sources');
+  assert.ok(ext, 'external_sources gate present');
+  assert.ok(ext.evidence.denominator >= 1);
+  assert.equal(ext.pass, true, ext.evidence.detail);
+  return true;
+});
+
+await check('open research from official pages is deterministic without LLM', async () => {
+  const { deterministicOfficialResearch, mergeOpenResearch } = await import(
+    '../../packages/venue-builder/lib/open-research.mjs'
+  );
+  const pois = [
+    { n: 'Diamondback', i: 'diamondback', c: 'coaster', lat: 1, lng: 2 },
+    { n: 'Banshee', i: 'banshee', c: 'coaster', lat: 1, lng: 2 },
+  ];
+  const official = {
+    fetched: '2026-08-11',
+    attractions: [
+      { name: 'Diamondback', height: { min: 54, label: 'Over 54"' }, url: 'https://example.test/db' },
+      { name: 'Brand New Coaster', height: { min: 48 } },
+    ],
+  };
+  const det = deterministicOfficialResearch({ official, pois });
+  assert.equal(det.mode, 'deterministic');
+  assert.ok(det.heightCandidates.some((h) => h.name === 'Diamondback' && h.min === 54));
+  assert.ok(det.inventoryGaps.some((g) => g.name === 'Brand New Coaster'));
+  const merged = mergeOpenResearch(det, { skipped: true, reason: 'no_llm_api_key' });
+  assert.equal(merged.mode, 'official');
+  assert.ok(merged.notes.some((n) => /no_llm_api_key/.test(n)));
+  const withLlm = mergeOpenResearch(det, {
+    skipped: false,
+    model: 'test',
+    fetched: '2026-08-11',
+    aliases: [{ official: 'DB', bundle: 'Diamondback', confidence: 'high' }],
+    heightCandidates: [{ name: 'Banshee', min: 52, quote: '52 inches', source: 'llm' }],
+    inventoryGaps: [],
+    notes: ['llm ok'],
+  });
+  assert.equal(withLlm.mode, 'official+llm');
+  assert.ok(withLlm.aliases.some((a) => a.source === 'llm_extract'));
+  assert.ok(withLlm.heightCandidates.some((h) => h.source === 'llm_extract'));
+  return true;
+});
+
+await check('LLM park-map search extracts HTML assets and merges as required', async () => {
+  const {
+    extractParkMapAssetUrls,
+    deterministicParkMapCandidates,
+    mergeParkMapResearch,
+    parkMapSearchRequired,
+    mergeOpenResearch,
+    deterministicOfficialResearch,
+  } = await import('../../packages/venue-builder/lib/open-research.mjs');
+
+  assert.equal(parkMapSearchRequired({ research: { llm_park_map_search: true } }), true);
+  assert.equal(parkMapSearchRequired({ research: { llm_park_map_search: false } }), false);
+  assert.equal(parkMapSearchRequired({ research: { llm_open_research: true } }), true);
+
+  const html = `
+    <html><body>
+      <a href="/maps/2026-park-map.webp">Download map</a>
+      <img src="https://cdn.example.test/hero.jpg" />
+      <img src="https://cdn.example.test/guest-park-map-2026.png" alt="Park map" />
+    </body></html>`;
+  const assets = extractParkMapAssetUrls(html, 'https://example.test/park-map/');
+  assert.ok(assets.some((a) => /park-map-2026\.png/.test(a.imageUrl)));
+  assert.ok(assets.some((a) => /2026-park-map\.webp/.test(a.imageUrl)));
+
+  const catalog = {
+    sources: [{
+      kind: 'official_map',
+      id: 'map',
+      map_kind: 'schematic',
+      url: 'https://example.test/park-map/',
+      image: 'data/venues/big-kahunas/maps/2026-parkmap.webp',
+    }],
+  };
+  const detMaps = deterministicParkMapCandidates({
+    catalog,
+    official: { pages: [] },
+    htmlByUrl: { 'https://example.test/park-map/': html },
+  });
+  assert.ok(detMaps.parkMaps.length >= 2);
+
+  const mergedMaps = mergeParkMapResearch(detMaps, {
+    skipped: false,
+    model: 'test',
+    fetched: '2026-08-11',
+    parkMaps: [{
+      pageUrl: 'https://example.test/park-map/',
+      imageUrl: 'https://cdn.example.test/guest-park-map-2026.png',
+      year: 2026,
+      mapKind: 'schematic',
+      confidence: 'high',
+      imagePath: 'data/venues/demo/maps/2026-parkmap.png',
+      reason: 'season guest map',
+    }],
+    followUpUrls: [],
+    searchQueries: ['Big Kahuna Destin park map 2026'],
+    notes: ['found'],
+  });
+  assert.ok(mergedMaps.llmParkMapSearch?.model === 'test');
+  assert.ok(mergedMaps.searchQueries.includes('Big Kahuna Destin park map 2026'));
+  assert.ok(mergedMaps.parkMaps.some((m) => m.source === 'llm_park_map_search'));
+
+  const det = deterministicOfficialResearch({
+    official: { fetched: '2026-08-11', attractions: [] },
+    pois: [],
+  });
+  const full = mergeOpenResearch(det, { skipped: true, reason: 'ai_not_requested' }, mergedMaps);
+  assert.ok(full.parkMaps.length);
+  assert.ok(full.sources.includes('llm_park_map_search'));
+  return true;
+});
+
+await check('llm_extract weight exists and cannot publish alone', async () => {
+  const { WEIGHTS, fuse, atLeast, PUBLISH_AT } = await import('../../packages/venue-builder/lib/evidence.mjs');
+  assert.equal(WEIGHTS.llm_extract, 1);
+  const fused = fuse([{ source: 'llm_extract', at: { lat: 1, lng: 2 } }]);
+  assert.equal(fused.band, 'unknown');
+  assert.equal(atLeast(fused.band, PUBLISH_AT), false);
+  return true;
+});
+
+await check('schematic official maps get TPS policy and wider error budget', async () => {
+  const {
+    georefPolicyFor,
+    normalizeMapKind,
+    officialMapsFromCatalog,
+    resolveTraceGeorefOptions,
+  } = await import('../../packages/venue-builder/lib/official-map.mjs');
+  assert.equal(normalizeMapKind('not-to-scale'), 'schematic');
+  const schematic = georefPolicyFor('schematic');
+  assert.equal(schematic.preferredModel, 'tps');
+  assert.equal(schematic.maxErrorM, 25);
+  assert.ok(schematic.minControls >= 8);
+  const tight = georefPolicyFor('to_scale');
+  assert.equal(tight.maxErrorM, 10);
+  const maps = officialMapsFromCatalog({
+    sources: [
+      {
+        kind: 'official_map',
+        id: 'park-map',
+        map_kind: 'schematic',
+        image: 'docs/map.webp',
+        url: 'https://example.test/map',
+      },
+    ],
+  });
+  assert.equal(maps.length, 1);
+  assert.equal(maps[0].mapKind, 'schematic');
+  const policy = resolveTraceGeorefOptions(
+    { map_kind: 'schematic', image: 'docs/map.webp' },
+    {},
+  );
+  assert.equal(policy.preferredModel, 'tps');
+  assert.equal(policy.maxErrorM, 25);
+  const overridden = resolveTraceGeorefOptions(
+    { map_kind: 'schematic' },
+    { maxErrorM: 40, model: 'affine' },
+  );
+  assert.equal(overridden.maxErrorM, 40);
+  assert.equal(overridden.preferredModel, 'affine');
+  return true;
+});
+
+await check('trace validate accepts path as walking-route alias', async () => {
+  const { validate } = await import('../../packages/venue-builder/bin/trace-venue.mjs');
+  const features = validate({
+    venue: 'demo',
+    controls: [
+      { px: [0, 0], lat: 30, lng: -86 },
+      { px: [10, 10], lat: 30.01, lng: -86.01 },
+    ],
+    features: [
+      { kind: 'path', n: 'Boardwalk', px: [[1, 1], [2, 2], [3, 3]] },
+      { kind: 'entrance', of: 'Wave Pool', px: [4, 4] },
+    ],
+  });
+  assert.equal(features[0].kind, 'route');
+  assert.equal(features[1].kind, 'entrance');
+  return true;
+});
+
+await check('big-kahunas catalogue declares schematic official map with image', async () => {
+  const { readSources } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const { officialMapsFromCatalog } = await import('../../packages/venue-builder/lib/official-map.mjs');
+  const { data } = readSources('big-kahunas');
+  const maps = officialMapsFromCatalog(data);
+  assert.ok(maps.length >= 1);
+  assert.equal(maps[0].mapKind, 'schematic');
+  assert.ok(maps[0].image);
+  assert.equal(maps[0].policy.preferredModel, 'tps');
+  return true;
+});
+
+await check('buildSideQuests lists height and entrance gaps', async () => {
+  const { buildSideQuests } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const { durable, ambient, counts } = buildSideQuests({
+    pois: [
+      { n: 'Wave Pool', c: 'ride' },
+      { n: 'Maui Pipeline', c: 'ride', h: { min: 48 }, e: { lat: 1, lng: 2 } },
+      { n: 'Snack', c: 'food' },
+      { n: 'Loos', c: 'restroom' },
+    ],
+    venueName: "Big Kahuna's",
+  });
+  assert.ok(counts.ambient >= 3);
+  assert.ok(durable.some((q) => q.id === 'height_rule'));
+  assert.ok(durable.some((q) => q.id === 'queue_entrance'));
+  assert.ok(!durable.some((q) => q.id === 'poi_restroom'));
+  return true;
+});
+
+await check('quest seeds map builder ask gaps to Scout types', async () => {
+  const { questSeedsFromRequests } = await import('../../packages/venue-builder/lib/quest-seeds.mjs');
+  const seeds = questSeedsFromRequests('demo', [
+    { key: 'heights', need: 'heights', blocking: true, targets: ['Ride A', 'Ride B'] },
+    { key: 'credits', need: 'credits', blocking: false, targets: [] },
+  ]);
+  assert.equal(seeds.length, 2);
+  assert.ok(seeds.every((s) => s.type === 'height_rule'));
+  assert.equal(questSeedsFromRequests('demo', [{ key: 'credits', need: 'c', blocking: false, targets: [] }]).length, 0);
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
-
-
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));
   process.exitCode = 1;
 }
+

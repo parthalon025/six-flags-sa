@@ -1,0 +1,4237 @@
+{
+  "version": 1,
+  "_comment": "Every ride at this venue, every feature of it, and the evidence behind each coordinate. Beside the venue bundle rather than in it: the bundle is overwritten by every rebuild and this is the accumulated evidence, which is the expensive part. Only features that clear \"moderate\" confidence are copied into the bundle the app reads. Refresh with: npm run venues:attractions -- cedar-point",
+  "venue": "cedar-point",
+  "generated": "2026-08-11",
+  "publish_at": "moderate",
+  "attractions": [
+    {
+      "id": "4x4-s",
+      "name": "4x4's",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.48067,
+        "lng": -82.681151
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48066,
+            "lng": -82.68099
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48086,
+                "lng": -82.68126
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 23 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48066,
+                "lng": -82.68099
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"4x4's\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 31.6,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 31.6
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "4x4-s"
+    },
+    {
+      "id": "atomic-scrambler",
+      "name": "Atomic Scrambler",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.482149,
+        "lng": -82.680887
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.482149,
+            "lng": -82.680777
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48199,
+                "lng": -82.68098
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.482149,
+                "lng": -82.680777
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Atomic Scrambler\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 24.4,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 24.4
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "atomic-scrambler"
+    },
+    {
+      "id": "balloon-race",
+      "name": "Balloon Race",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485084,
+        "lng": -82.687777
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.482151,
+            "lng": -82.681236
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48512,
+                "lng": -82.68781
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.482151,
+                "lng": -82.681236
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Flying Ace Balloon Race\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 639,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 639
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "balloon-race"
+    },
+    {
+      "id": "blue-streak",
+      "name": "Blue Streak",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.479864,
+        "lng": -82.68261
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.47951,
+            "lng": -82.68225
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.47992,
+                "lng": -82.68261
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.47951,
+                "lng": -82.68225
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Blue Streak\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 54.4,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 54.4
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "blue-streak"
+    },
+    {
+      "id": "breakwater-bay",
+      "name": "Breakwater Bay",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.489013,
+        "lng": -82.686239
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48902,
+            "lng": -82.68605
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48902,
+                "lng": -82.68605
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "breakwater-bay"
+    },
+    {
+      "id": "cadillac-cars",
+      "name": "Cadillac Cars",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481059,
+        "lng": -82.682536
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48112,
+            "lng": -82.68253
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48118,
+                "lng": -82.68259
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 14 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48112,
+                "lng": -82.68253
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Cadillac Cars\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "cadillac-cars"
+    },
+    {
+      "id": "cedar-creek-mine-ride",
+      "name": "Cedar Creek Mine Ride",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.484787,
+        "lng": -82.690393
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48523,
+            "lng": -82.69084
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48472,
+                "lng": -82.69041
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48523,
+                "lng": -82.69084
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Cedar Creek Mine Ride\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 66.8,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 66.8
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "cedar-creek-mine-ride"
+    },
+    {
+      "id": "cedar-downs-racing-derby",
+      "name": "Cedar Downs Racing Derby",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480643,
+        "lng": -82.682288
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.480653,
+            "lng": -82.682066
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48081,
+                "lng": -82.68225
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.480653,
+                "lng": -82.682066
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Cedar Downs Racing Derby\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 23.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 23.2
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "cedar-downs-racing-derby"
+    },
+    {
+      "id": "cedar-point-marina-pool",
+      "name": "Cedar Point Marina Pool",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.478132,
+        "lng": -82.681931
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.47794,
+            "lng": -82.68212
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.47794,
+                "lng": -82.68212
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 26 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "cedar-point-marina-pool"
+    },
+    {
+      "id": "charlie-brown-s-wind-up",
+      "name": "Charlie Brown's Wind Up",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485281,
+        "lng": -82.687933
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.485196,
+            "lng": -82.687894
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48528,
+                "lng": -82.68801
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.485196,
+                "lng": -82.687894
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Charlie Brown's Wind-Up\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "charlie-brown-s-wind-up"
+    },
+    {
+      "id": "corkscrew",
+      "name": "Corkscrew",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.48365,
+        "lng": -82.68532
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48349,
+            "lng": -82.68541
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4836,
+                "lng": -82.68535
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48349,
+                "lng": -82.68541
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Corkscrew\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "corkscrew"
+    },
+    {
+      "id": "dodgem",
+      "name": "Dodgem",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481183,
+        "lng": -82.680402
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.482003,
+            "lng": -82.680998
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.481,
+                "lng": -82.68033
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 21 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.482003,
+                "lng": -82.680998
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Joe Cool's Dodgem School\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 124.1,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 124.1
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "dodgem"
+    },
+    {
+      "id": "dune-buggies",
+      "name": "Dune Buggies",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481118,
+        "lng": -82.680681
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48111,
+            "lng": -82.68069
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48129,
+                "lng": -82.68072
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48111,
+                "lng": -82.68069
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Dune Buggies\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 20.1,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 20.1
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "dune-buggies"
+    },
+    {
+      "id": "gatekeeper",
+      "name": "Gatekeeper",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.480934,
+        "lng": -82.679178
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.480646,
+            "lng": -82.67952
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48085,
+                "lng": -82.67912
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.480646,
+                "lng": -82.67952
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Coca-Cola® Freestyle - GateKeeper\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 40.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 40.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "gatekeeper"
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.486382,
+        "lng": -82.689591
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.486212,
+            "lng": -82.689509
+          },
+          "confidence": "moderate",
+          "score": 7,
+          "sources": [
+            "geometry",
+            "osm_named_queue",
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48631,
+                "lng": -82.68957
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "osm_named_queue",
+              "at": {
+                "lat": 41.486212,
+                "lng": -82.689509
+              },
+              "date": "2026-08-11",
+              "note": "where \"Gemini Standby Queue\" begins — a named queue tagged one-way towards the ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48621,
+                "lng": -82.68951
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Gemini Standby Queue\", named for this ride but with no one-way to say which end you join, the outermost of 3 lanes mapped for this ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.485589,
+                "lng": -82.688021
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Coca-Cola® Freestyle - Gemini\""
+            }
+          ],
+          "from": "osm_named_queue",
+          "spread_m": 141.9,
+          "dissent": [
+            {
+              "source": "parks_api",
+              "metres": 141.9
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        },
+        "station": {
+          "at": {
+            "lat": 41.48643,
+            "lng": -82.68944
+          },
+          "confidence": "unknown",
+          "score": 2,
+          "sources": [
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48643,
+                "lng": -82.68944
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Gemini Standby Queue\", where the queue reaches the ride"
+            }
+          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "gemini"
+    },
+    {
+      "id": "giant-wheel",
+      "name": "Giant Wheel",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481592,
+        "lng": -82.679874
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.481658,
+            "lng": -82.67981
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48168,
+                "lng": -82.68001
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 15 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.481658,
+                "lng": -82.67981
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Giant Wheel\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "giant-wheel"
+    },
+    {
+      "id": "great-lakes-cove",
+      "name": "Great Lakes Cove",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.488202,
+        "lng": -82.686852
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48809,
+            "lng": -82.68714
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48809,
+                "lng": -82.68714
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 27 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "great-lakes-cove"
+    },
+    {
+      "id": "helicopters",
+      "name": "Helicopters",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480726,
+        "lng": -82.680862
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48071,
+            "lng": -82.68087
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4808,
+                "lng": -82.68093
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48071,
+                "lng": -82.68087
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Helicopters\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "helicopters"
+    },
+    {
+      "id": "iron-dragon",
+      "name": "Iron Dragon",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.48214,
+        "lng": -82.685184
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48203,
+            "lng": -82.68462
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4822,
+                "lng": -82.68518
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48203,
+                "lng": -82.68462
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Iron Dragon\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 50.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 50.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "iron-dragon"
+    },
+    {
+      "id": "kiddy-kingdom-carrousel",
+      "name": "Kiddy Kingdom Carrousel",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480922,
+        "lng": -82.680852
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48086,
+            "lng": -82.681
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48086,
+                "lng": -82.681
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 14 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "kiddy-kingdom-carrousel"
+    },
+    {
+      "id": "kite-eating-tree",
+      "name": "Kite Eating Tree",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481512,
+        "lng": -82.681588
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.481589,
+            "lng": -82.681523
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48154,
+                "lng": -82.68149
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.481589,
+                "lng": -82.681523
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Kite Eating Tree\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "kite-eating-tree"
+    },
+    {
+      "id": "lake-erie-eagles",
+      "name": "Lake Erie Eagles",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485888,
+        "lng": -82.687924
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.485849,
+            "lng": -82.687979
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48594,
+                "lng": -82.68799
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.485849,
+                "lng": -82.687979
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Lake Erie Eagles\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "lake-erie-eagles"
+    },
+    {
+      "id": "lake-eerie-nor-easter",
+      "place": "lake-eerie-nor-easter",
+      "name": "Lake Erie Nor'easter",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.488522,
+        "lng": -82.687185
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48847,
+            "lng": -82.68715
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48847,
+                "lng": -82.68715
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 6 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "lakeslide-landing",
+      "name": "Lakeslide Landing",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.487347,
+        "lng": -82.686762
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48718,
+            "lng": -82.68683
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48718,
+                "lng": -82.68683
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "lakeslide-landing"
+    },
+    {
+      "id": "lemmy-s-lagoon",
+      "name": "Lemmy's Lagoon",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.48724,
+        "lng": -82.686544
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48731,
+            "lng": -82.68634
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48731,
+                "lng": -82.68634
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "lemmy-s-lagoon"
+    },
+    {
+      "id": "lily-pad-walk",
+      "name": "Lily Pad Walk",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.488058,
+        "lng": -82.686919
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48793,
+            "lng": -82.68697
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48793,
+                "lng": -82.68697
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 15 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "lily-pad-walk"
+    },
+    {
+      "id": "magnum-xl-200",
+      "name": "Magnum XL-200",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.485405,
+        "lng": -82.686087
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48488,
+            "lng": -82.68626
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48547,
+                "lng": -82.68608
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48488,
+                "lng": -82.68626
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Magnum XL-200\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 66.9,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 66.9
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "magnum-xl-200"
+    },
+    {
+      "id": "main-arcade",
+      "name": "Main Arcade",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481178,
+        "lng": -82.68136
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48132,
+            "lng": -82.68166
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48132,
+                "lng": -82.68166
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 30 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "main-arcade"
+    },
+    {
+      "id": "matterhorn",
+      "name": "Matterhorn",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.48192,
+        "lng": -82.680678
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.481969,
+            "lng": -82.680546
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48178,
+                "lng": -82.68082
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.481969,
+                "lng": -82.680546
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Matterhorn\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 31,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 31
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "matterhorn"
+    },
+    {
+      "id": "maverick",
+      "name": "Maverick",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.485281,
+        "lng": -82.692555
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48554,
+            "lng": -82.69236
+          },
+          "confidence": "low",
+          "score": 5,
+          "sources": [
+            "osm_queue_name",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48531,
+                "lng": -82.6924
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 13 m from the ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48553,
+                "lng": -82.69237
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Maverick Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 4 lanes mapped for this ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48554,
+                "lng": -82.69236
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Maverick\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 25.6,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 25.6
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        },
+        "station": {
+          "at": {
+            "lat": 41.48535,
+            "lng": -82.69243
+          },
+          "confidence": "unknown",
+          "score": 2,
+          "sources": [
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48535,
+                "lng": -82.69243
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Maverick Fastlane Queue\", where the queue reaches the ride"
+            }
+          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "maverick"
+    },
+    {
+      "id": "maxair",
+      "name": "maXair",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480855,
+        "lng": -82.680144
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48103,
+            "lng": -82.68008
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4809,
+                "lng": -82.68025
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 10 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48103,
+                "lng": -82.68008
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"maXair\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 20.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 20.2
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "maxair"
+    },
+    {
+      "id": "midway-carousel",
+      "name": "Midway Carousel",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.47878,
+        "lng": -82.679598
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.478763,
+            "lng": -82.679654
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.47872,
+                "lng": -82.67978
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 17 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.478763,
+                "lng": -82.679654
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Midway Carousel\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "midway-carousel"
+    },
+    {
+      "id": "millennium-force",
+      "name": "Millennium Force",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.481656,
+        "lng": -82.688132
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48195,
+            "lng": -82.686529
+          },
+          "confidence": "moderate",
+          "score": 9,
+          "sources": [
+            "osm_named_queue",
+            "osm_queue_name",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48166,
+                "lng": -82.68798
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 13 m from the ride"
+            },
+            {
+              "source": "osm_named_queue",
+              "at": {
+                "lat": 41.48195,
+                "lng": -82.686529
+              },
+              "date": "2026-08-11",
+              "note": "where \"Millennium Force Standby Queue\" begins — a named queue tagged one-way towards the ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48183,
+                "lng": -82.68644
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Millennium Force Standby Queue\", named for this ride but with no one-way to say which end you join, the outermost of 5 lanes mapped for this ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48194,
+                "lng": -82.68651
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Millennium Force\""
+            }
+          ],
+          "from": "osm_named_queue",
+          "spread_m": 125.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 125.2
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        },
+        "station": {
+          "at": {
+            "lat": 41.48195,
+            "lng": -82.68653
+          },
+          "confidence": "unknown",
+          "score": 2,
+          "sources": [
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48195,
+                "lng": -82.68653
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Millennium Force Standby Queue\", where the queue reaches the ride"
+            }
+          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "millennium-force"
+    },
+    {
+      "id": "monster",
+      "name": "Monster",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485731,
+        "lng": -82.687627
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.4857,
+            "lng": -82.68775
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4857,
+                "lng": -82.68775
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "monster"
+    },
+    {
+      "id": "motorcycles",
+      "name": "Motorcycles",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480591,
+        "lng": -82.680946
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48058,
+            "lng": -82.68096
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4808,
+                "lng": -82.68093
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 23 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48058,
+                "lng": -82.68096
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Motorcycles\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 24.4,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 24.4
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "motorcycles"
+    },
+    {
+      "id": "mustangs",
+      "name": "Mustangs",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.4805,
+        "lng": -82.68108
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48076,
+            "lng": -82.68138
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48035,
+                "lng": -82.68114
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 17 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48076,
+                "lng": -82.68138
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Mustangs\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 49.5,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 49.5
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "mustangs"
+    },
+    {
+      "id": "ocean-motion",
+      "name": "Ocean Motion",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.479093,
+        "lng": -82.679126
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.47921,
+            "lng": -82.67938
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.47911,
+                "lng": -82.67913
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.47921,
+                "lng": -82.67938
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Ocean Motion\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 23.6,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 23.6
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "ocean-motion"
+    },
+    {
+      "id": "peanuts-500",
+      "name": "Peanuts 500",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485715,
+        "lng": -82.689105
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.485644,
+            "lng": -82.689055
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4857,
+                "lng": -82.68915
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.485644,
+                "lng": -82.689055
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Peanuts 500\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "peanuts-500"
+    },
+    {
+      "id": "perch-plunge",
+      "name": "Perch Plunge",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.487591,
+        "lng": -82.684741
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48756,
+            "lng": -82.68477
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48756,
+                "lng": -82.68477
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "perch-plunge"
+    },
+    {
+      "id": "pipe-scream",
+      "name": "Pipe Scream",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.48554,
+        "lng": -82.688
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48578,
+            "lng": -82.688576
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48565,
+                "lng": -82.68794
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 13 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48578,
+                "lng": -82.688576
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Pipe Scream\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 54.9,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 54.9
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "pipe-scream"
+    },
+    {
+      "id": "point-plummet",
+      "name": "Point Plummet",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.48645,
+        "lng": -82.685865
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48648,
+            "lng": -82.68583
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48648,
+                "lng": -82.68583
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "point-plummet"
+    },
+    {
+      "id": "police-cars",
+      "name": "Police Cars",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480831,
+        "lng": -82.681182
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48082,
+            "lng": -82.68119
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48086,
+                "lng": -82.68126
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48082,
+                "lng": -82.68119
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Police Cars\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "police-cars"
+    },
+    {
+      "id": "portside-plunge",
+      "name": "Portside Plunge",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.486371,
+        "lng": -82.68588
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.4864,
+            "lng": -82.68586
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4864,
+                "lng": -82.68586
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "portside-plunge"
+    },
+    {
+      "id": "power-tower",
+      "name": "Power Tower",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.482825,
+        "lng": -82.684575
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.483064,
+            "lng": -82.685063
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48284,
+                "lng": -82.68458
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.483064,
+                "lng": -82.685063
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Power Tower\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 47.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 47.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "power-tower"
+    },
+    {
+      "id": "raptor",
+      "name": "Raptor",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.479188,
+        "lng": -82.681726
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.479552,
+            "lng": -82.68093
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.47916,
+                "lng": -82.68176
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.479552,
+                "lng": -82.68093
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Raptor\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 81.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 81.7
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "raptor"
+    },
+    {
+      "id": "red-baron",
+      "name": "Red Baron",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485158,
+        "lng": -82.688533
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48516,
+            "lng": -82.688586
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48519,
+                "lng": -82.68858
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48516,
+                "lng": -82.688586
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Red Baron\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "red-baron"
+    },
+    {
+      "id": "riptide-raceway",
+      "name": "Riptide Raceway",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.487897,
+        "lng": -82.685108
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48789,
+            "lng": -82.68506
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48789,
+                "lng": -82.68506
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "riptide-raceway"
+    },
+    {
+      "id": "rock-spin-turn",
+      "name": "Rock, Spin, & Turn",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480911,
+        "lng": -82.681086
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48091,
+            "lng": -82.6811
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48099,
+                "lng": -82.68108
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 9 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48091,
+                "lng": -82.6811
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Rock, Spin & Turn\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "rock-spin-turn"
+    },
+    {
+      "id": "roto-whip",
+      "name": "Roto Whip",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481077,
+        "lng": -82.680819
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48107,
+            "lng": -82.68083
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48105,
+                "lng": -82.68096
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 12 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48107,
+                "lng": -82.68083
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Roto Whip\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "roto-whip"
+    },
+    {
+      "id": "rougarou",
+      "name": "Rougarou",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.482755,
+        "lng": -82.686793
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.482338,
+            "lng": -82.686767
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "osm_named_queue"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48279,
+                "lng": -82.68675
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "osm_named_queue",
+              "at": {
+                "lat": 41.482338,
+                "lng": -82.686767
+              },
+              "date": "2026-08-11",
+              "note": "where \"Rougarou Standby Queue\" begins — a named queue tagged one-way towards the ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48262,
+                "lng": -82.68701
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Rougarou Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 2 lanes mapped for this ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48238,
+                "lng": -82.68651
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Rougarou\""
+            }
+          ],
+          "from": "osm_named_queue",
+          "spread_m": 21.9,
+          "dissent": [
+            {
+              "source": "parks_api",
+              "metres": 21.9
+            },
+            {
+              "source": "osm_queue_name",
+              "metres": 37.2
+            },
+            {
+              "source": "geometry",
+              "metres": 50
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        },
+        "station": {
+          "at": {
+            "lat": 41.48237,
+            "lng": -82.68653
+          },
+          "confidence": "unknown",
+          "score": 2,
+          "sources": [
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48237,
+                "lng": -82.68653
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Rougarou Fastlane Queue\", where the queue reaches the ride"
+            }
+          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "rougarou"
+    },
+    {
+      "id": "runaway-rapids",
+      "name": "Runaway Rapids",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.488126,
+        "lng": -82.685948
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48812,
+            "lng": -82.68621
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48812,
+                "lng": -82.68621
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 22 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "runaway-rapids"
+    },
+    {
+      "id": "siren-s-curse",
+      "name": "Siren's Curse",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.480929,
+        "lng": -82.685183
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48166,
+            "lng": -82.68513
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48057,
+                "lng": -82.68547
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 46 m from the ride (Perimeter Road)"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48166,
+                "lng": -82.68513
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Siren's Curse\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 123.8,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 123.8
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "siren-s-curse"
+    },
+    {
+      "id": "sky-fighters",
+      "name": "Sky Fighters",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481011,
+        "lng": -82.680616
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.481,
+            "lng": -82.68062
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48085,
+                "lng": -82.68068
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 19 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.481,
+                "lng": -82.68062
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Sky Fighters\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "sky-fighters"
+    },
+    {
+      "id": "skyhawk",
+      "name": "Skyhawk",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.484388,
+        "lng": -82.690788
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48435,
+            "lng": -82.69099
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4845,
+                "lng": -82.69077
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 12 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48435,
+                "lng": -82.69099
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Skyhawk\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 24.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 24.7
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "skyhawk"
+    },
+    {
+      "id": "slingshot",
+      "name": "SlingShot",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.486255,
+        "lng": -82.689952
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48611,
+            "lng": -82.68985
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4863,
+                "lng": -82.69013
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48611,
+                "lng": -82.68985
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"SlingShot\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 31.4,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 31.4
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "slingshot"
+    },
+    {
+      "id": "snake-river-falls",
+      "name": "Snake River Falls",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.484121,
+        "lng": -82.691042
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.484261,
+            "lng": -82.691029
+          },
+          "confidence": "low",
+          "score": 6,
+          "sources": [
+            "osm_named_queue",
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48408,
+                "lng": -82.69107
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "osm_named_queue",
+              "at": {
+                "lat": 41.484261,
+                "lng": -82.691029
+              },
+              "date": "2026-08-11",
+              "note": "where \"Snake River Falls Fastlane Queue / Snake River Falls Standby Queue\" begins — a named queue tagged one-way towards the ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48416,
+                "lng": -82.69097
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Snake River Falls Fastlane Queue\", named for this ride but with no one-way to say which end you join, the outermost of 2 lanes mapped for this ride"
+            }
+          ],
+          "from": "osm_named_queue",
+          "spread_m": 20.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 20.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        },
+        "station": {
+          "at": {
+            "lat": 41.48426,
+            "lng": -82.69103
+          },
+          "confidence": "unknown",
+          "score": 2,
+          "sources": [
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48426,
+                "lng": -82.69103
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Snake River Falls Fastlane Queue\", where the queue reaches the ride"
+            }
+          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "snake-river-falls"
+    },
+    {
+      "id": "snoopy-bounce",
+      "name": "Snoopy Bounce",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485817,
+        "lng": -82.688798
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48578,
+            "lng": -82.68878
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48578,
+                "lng": -82.68878
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "snoopy-bounce"
+    },
+    {
+      "id": "snoopy-s-deep-sea-divers",
+      "name": "Snoopy's Deep Sea Divers",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481838,
+        "lng": -82.681277
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48187,
+            "lng": -82.68138
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48168,
+                "lng": -82.68125
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 18 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48187,
+                "lng": -82.68138
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Snoopy's Deep Sea Divers\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 23.6,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 23.6
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "snoopy-s-deep-sea-divers"
+    },
+    {
+      "id": "snoopy-s-express-railroad",
+      "name": "Snoopy's Express Railroad",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481655,
+        "lng": -82.681335
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.481724,
+            "lng": -82.681249
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48168,
+                "lng": -82.68125
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.481724,
+                "lng": -82.681249
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Snoopy's Express Railroad\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "snoopy-s-express-railroad"
+    },
+    {
+      "id": "snoopy-s-space-race",
+      "name": "Snoopy's Space Race",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.482053,
+        "lng": -82.681261
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.481926,
+            "lng": -82.681167
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48218,
+                "lng": -82.68121
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 15 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.481926,
+                "lng": -82.681167
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Snoopy's Space Race\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 28.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 28.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "snoopy-s-space-race"
+    },
+    {
+      "id": "space-age",
+      "name": "Space Age",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.480762,
+        "lng": -82.681364
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48049,
+            "lng": -82.68109
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48079,
+                "lng": -82.68145
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 8 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48049,
+                "lng": -82.68109
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Space Age\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 44.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 44.7
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "space-age"
+    },
+    {
+      "id": "splash2o",
+      "name": "SplasH2O",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.488399,
+        "lng": -82.687767
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48846,
+            "lng": -82.688
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48846,
+                "lng": -82.688
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 21 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "splash2o"
+    },
+    {
+      "id": "steel-vengeance",
+      "name": "Steel Vengeance",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.486115,
+        "lng": -82.693365
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.486555,
+            "lng": -82.691916
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "osm_named_queue"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48597,
+                "lng": -82.69333
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 16 m from the ride"
+            },
+            {
+              "source": "osm_named_queue",
+              "at": {
+                "lat": 41.486555,
+                "lng": -82.691916
+              },
+              "date": "2026-08-11",
+              "note": "where \"Steel Vengeance Extended Queue\" begins — a named queue tagged one-way towards the ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48656,
+                "lng": -82.69238
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Steel Vengeance Queue\", named for this ride but with no one-way to say which end you join"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48659,
+                "lng": -82.69222
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Steel Vengeance\""
+            }
+          ],
+          "from": "osm_named_queue",
+          "spread_m": 25.6,
+          "dissent": [
+            {
+              "source": "parks_api",
+              "metres": 25.6
+            },
+            {
+              "source": "osm_queue_name",
+              "metres": 38.7
+            },
+            {
+              "source": "geometry",
+              "metres": 134.5
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        },
+        "station": {
+          "at": {
+            "lat": 41.48619,
+            "lng": -82.69341
+          },
+          "confidence": "unknown",
+          "score": 2,
+          "sources": [
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48619,
+                "lng": -82.69341
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Steel Vengeance Queue\", where the queue reaches the ride"
+            }
+          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "steel-vengeance"
+    },
+    {
+      "id": "storm-surge",
+      "name": "Storm Surge",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.487502,
+        "lng": -82.687199
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48749,
+            "lng": -82.68715
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48749,
+                "lng": -82.68715
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 4 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "storm-surge"
+    },
+    {
+      "id": "thunder-canyon",
+      "name": "Thunder Canyon",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.483808,
+        "lng": -82.692503
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.4833,
+            "lng": -82.69121
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4838,
+                "lng": -82.69249
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 1 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.4833,
+                "lng": -82.69121
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Thunder Canyon\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 120.2,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 120.2
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "thunder-canyon"
+    },
+    {
+      "id": "top-thrill-2",
+      "name": "Top Thrill 2",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.48283,
+        "lng": -82.685335
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.484023,
+            "lng": -82.686051
+          },
+          "confidence": "moderate",
+          "score": 9,
+          "sources": [
+            "osm_named_queue",
+            "osm_queue_name",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48293,
+                "lng": -82.68531
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            },
+            {
+              "source": "osm_named_queue",
+              "at": {
+                "lat": 41.484023,
+                "lng": -82.686051
+              },
+              "date": "2026-08-11",
+              "note": "where \"Top Thrill 2 Fastlane Queue / Top Thrill 2 Standby Queue\" begins — a named queue tagged one-way towards the ride"
+            },
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.48404,
+                "lng": -82.68606
+              },
+              "date": "2026-08-09",
+              "note": "the park end of \"Top Thrill 2 Standby Queue\", named for this ride but with no one-way to say which end you join, the outermost of 2 lanes mapped for this ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.4841,
+                "lng": -82.68615
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Top Thrill 2\""
+            }
+          ],
+          "from": "osm_named_queue",
+          "spread_m": 135.7,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 135.7
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        },
+        "station": {
+          "at": {
+            "lat": 41.4828,
+            "lng": -82.68539
+          },
+          "confidence": "unknown",
+          "score": 2,
+          "sources": [
+            "osm_queue_name"
+          ],
+          "evidence": [
+            {
+              "source": "osm_queue_name",
+              "at": {
+                "lat": 41.4828,
+                "lng": -82.68539
+              },
+              "date": "2026-08-09",
+              "note": "the far end of \"Top Thrill 2 Standby Queue\", where the queue reaches the ride"
+            }
+          ],
+          "from": "osm_queue_name",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "top-thrill-2"
+    },
+    {
+      "id": "valravn",
+      "name": "Valravn",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.480269,
+        "lng": -82.683282
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48041,
+            "lng": -82.68301
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48024,
+                "lng": -82.68323
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 5 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48041,
+                "lng": -82.68301
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Valravn\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 26.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 26.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "valravn"
+    },
+    {
+      "id": "watterin-hole",
+      "place": "watterin-hole",
+      "name": "Waterin' Hole",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.487096,
+        "lng": -82.684437
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48694,
+            "lng": -82.6844
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48694,
+                "lng": -82.6844
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 18 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null
+    },
+    {
+      "id": "wave-swinger",
+      "name": "Wave Swinger",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.484403,
+        "lng": -82.692129
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.4844,
+            "lng": -82.69218
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.4845,
+                "lng": -82.69215
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 11 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.4844,
+                "lng": -82.69218
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Wave Swinger\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "wave-swinger"
+    },
+    {
+      "id": "wild-mouse",
+      "name": "Wild Mouse",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.482065,
+        "lng": -82.680455
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.482387,
+            "lng": -82.680515
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48213,
+                "lng": -82.68014
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 27 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.482387,
+                "lng": -82.680515
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Wild Mouse\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 42.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 42.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "wild-mouse"
+    },
+    {
+      "id": "wild-walleye",
+      "name": "Wild Walleye",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.487347,
+        "lng": -82.685017
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48741,
+            "lng": -82.685
+          },
+          "confidence": "unknown",
+          "score": 1,
+          "sources": [
+            "geometry"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48741,
+                "lng": -82.685
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 7 m from the ride"
+            }
+          ],
+          "from": "geometry",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-09",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "wild-walleye"
+    },
+    {
+      "id": "wilderness-run",
+      "name": "Wilderness Run",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.485632,
+        "lng": -82.688568
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.485335,
+            "lng": -82.68847
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48565,
+                "lng": -82.68855
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.485335,
+                "lng": -82.68847
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Wilderness Run\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 35.5,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 35.5
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "wilderness-run"
+    },
+    {
+      "id": "windseeker",
+      "name": "WindSeeker",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.482798,
+        "lng": -82.680689
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.482783,
+            "lng": -82.68069
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48284,
+                "lng": -82.68083
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 13 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.482783,
+                "lng": -82.68069
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"WindSeeker\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "windseeker"
+    },
+    {
+      "id": "woodstock-express",
+      "name": "Woodstock Express",
+      "venue": "cedar-point",
+      "type": "roller_coaster",
+      "at": {
+        "lat": 41.485339,
+        "lng": -82.689132
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48539,
+            "lng": -82.689084
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48532,
+                "lng": -82.68914
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48539,
+                "lng": -82.689084
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Woodstock Express\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "woodstock-express"
+    },
+    {
+      "id": "woodstock-s-airmail",
+      "name": "Woodstock's Airmail",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.485305,
+        "lng": -82.68817
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.485329,
+            "lng": -82.688127
+          },
+          "confidence": "low",
+          "score": 4,
+          "sources": [
+            "geometry",
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48529,
+                "lng": -82.68819
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 2 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.485329,
+                "lng": -82.688127
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Woodstock's Airmail\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": null,
+          "dissent": [],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "woodstock-s-airmail"
+    },
+    {
+      "id": "woodstock-s-whirlybirds",
+      "name": "Woodstock's Whirlybirds",
+      "venue": "cedar-point",
+      "type": "attraction",
+      "at": {
+        "lat": 41.481691,
+        "lng": -82.681918
+      },
+      "features": {
+        "queue_entrance": {
+          "at": {
+            "lat": 41.48177,
+            "lng": -82.681807
+          },
+          "confidence": "unknown",
+          "score": 3,
+          "sources": [
+            "parks_api"
+          ],
+          "evidence": [
+            {
+              "source": "geometry",
+              "at": {
+                "lat": 41.48176,
+                "lng": -82.68223
+              },
+              "date": "2026-08-09",
+              "note": "the walkable network at its closest, 27 m from the ride"
+            },
+            {
+              "source": "parks_api",
+              "at": {
+                "lat": 41.48177,
+                "lng": -82.681807
+              },
+              "date": "2026-08-11",
+              "note": "ParksAPI location for \"Woodstock's Whirlybirds\""
+            }
+          ],
+          "from": "parks_api",
+          "spread_m": 35.3,
+          "dissent": [
+            {
+              "source": "geometry",
+              "metres": 35.3
+            }
+          ],
+          "conflict": false,
+          "newest_evidence": "2026-08-11",
+          "stale": false
+        }
+      },
+      "last_verified": null,
+      "place": "woodstock-s-whirlybirds"
+    }
+  ]
+}

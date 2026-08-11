@@ -1,0 +1,18 @@
+{
+  "fetched": "2026-08-11",
+  "source": "wikidata.org",
+  "license": "CC0",
+  "search": "Big Kahuna's",
+  "entity": {
+    "qid": "Q4905920",
+    "label": "Big Kahuna's",
+    "website": "http://www.bigkahunas.com",
+    "coordinates": {
+      "lat": 30.388961,
+      "lng": -86.47164
+    },
+    "inception": null,
+    "operator": {},
+    "wikipedia": null
+  }
+}

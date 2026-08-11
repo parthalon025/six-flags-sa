@@ -18,11 +18,14 @@ export async function loadOrsRouteQa(venueId, { samples = [], fetch = false, off
 
   const key = process.env.ORS_API_KEY;
   if (!key) {
-    return cached || {
+    const stub = cached || {
       fetched: null,
       routes: [],
       error: 'Set ORS_API_KEY for OpenRouteService route QA.',
+      gap: true,
     };
+    writeCache(venueId, 'openrouteservice', stub);
+    return stub;
   }
   if (!samples.length) {
     return cached || { fetched: null, routes: [], error: 'no_samples' };
@@ -69,11 +72,12 @@ export async function run(ctx = {}) {
   if (!id) return { adapterId: 'openrouteservice', ok: false, error: 'venueId_required' };
   try {
     const data = await loadOrsRouteQa(id, { samples: ctx.samples || [], fetch: ctx.fetch ?? true, offline: ctx.offline });
+    const tokenGap = Boolean(data.error?.includes('ORS_API_KEY') || data.gap);
     return {
       adapterId: 'openrouteservice',
-      ok: (data.routes?.length || 0) > 0 || Boolean(data.error?.includes('ORS_API_KEY')),
-      meta: { routes: data.routes?.length || 0 },
-      artifacts: data.routes?.length ? [orsCacheFile(id)] : [],
+      ok: (data.routes?.length || 0) > 0 || tokenGap,
+      meta: { routes: data.routes?.length || 0, gap: tokenGap || undefined },
+      artifacts: [orsCacheFile(id)],
       data,
       error: data.error,
     };

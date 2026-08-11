@@ -382,15 +382,9 @@ function GlanceRail({
                     type="button"
                     className={`glanceGo ${walking ? 'on' : ''}`}
                     onClick={() => onNavigate(walking ? null : c.nav)}
-                    aria-label={
-                      walking
-                        ? `Stop walking to ${c.title}`
-                        : `${WORDS.navigation} — ${c.title}`
-                    }
+                    aria-label={walking ? `Stop walking to ${c.title}` : `${WORDS.navigation} — ${c.title}`}
                   >
-                    {/* Short label on purpose: the actions column is 44px and
-                        the brand phrase overflowed onto the walk time beside it. */}
-                    {walking ? 'Stop' : 'Go'}
+                    <Icon name={walking ? 'xmark' : 'location.fill'} size={walking ? 14 : 15} />
                   </button>
                 )}
                 {shed && (

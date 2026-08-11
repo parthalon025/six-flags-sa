@@ -3,7 +3,7 @@
  */
 
 import path from 'node:path';
-import { readJson, VENUE_DIR, OVERRIDE_DIR } from './venue-io.mjs';
+import { readJson, VENUE_DIR, OVERRIDE_DIR, venueSidecar } from './venue-io.mjs';
 import { requests } from './venue-requests.mjs';
 import { readSources } from './venue-sources.mjs';
 import { judgements, sourcingPlan } from './venue-judge.mjs';
@@ -25,10 +25,10 @@ export async function loadVenuePacket(id, opts = {}) {
 
   const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), {});
   const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
-  const overrides = readJson(path.join(OVERRIDE_DIR, `${id}.overrides.json`), null);
-  const heightsSidecar = readJson(path.join(OVERRIDE_DIR, `${id}.heights.json`), null);
-  const recipe = readJson(path.join(OVERRIDE_DIR, `${id}.recipe.json`), null);
-  const attractions = readJson(path.join(OVERRIDE_DIR, `${id}.attractions.json`), null);
+  const overrides = readJson(venueSidecar(id, 'overrides.json'), null);
+  const heightsSidecar = readJson(venueSidecar(id, 'heights.json'), null);
+  const recipe = readJson(venueSidecar(id, 'recipe.json'), null);
+  const attractions = readJson(venueSidecar(id, 'attractions.json'), null);
   const { data: catalog } = readSources(id, recipe?.flags?.sources || null);
 
   const layers = {

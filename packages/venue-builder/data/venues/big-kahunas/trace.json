@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "image": "data/venues/big-kahunas/maps/2026-parkmap.webp",
+  "source": "https://bigkahunas.com/destin/park-map/",
+  "map_kind": "schematic",
+  "model": "tps",
+  "smoothing": 0.25,
+  "max_error_m": 25,
+  "_comment": "Control points: identify the same place in the picture AND in OpenStreetMap (building corner, path junction, pool end). Spread to the park corners. For schematic maps prefer \u22658 controls. Features: entrance/exit (of: ride name), place (n + c), route/path (walking lines). Run: npm run venues:trace -- data/venues/big-kahunas/trace.json",
+  "controls": [],
+  "features": []
+}

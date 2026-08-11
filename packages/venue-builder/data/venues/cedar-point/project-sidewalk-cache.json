@@ -1,0 +1,5 @@
+{
+  "fetched": null,
+  "labels": [],
+  "error": "https://sidewalk-sea.cs.washington.edu/v2/access/attributes?lat1=41.4753&lng1=-82.69661&lat2=41.4926&lng2=-82.67521&filetype=geojson returned 404"
+}

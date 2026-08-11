@@ -30,12 +30,13 @@ Research assistant for venue builds — judgement, sourcing, optional AI review.
 
   --json        structured output instead of markdown
   --ai          ask VENUE_LLM_API_KEY (OpenAI-compatible) to review the packet
-  --fetch       fetch official park website data (cached to data/venues/<id>.official-cache.json)
+  --fetch       fetch official park website data (cached to data/venues/<id>/official-cache.json)
   --browser     use Playwright when fetch returns empty HTML (SPA park sites)
   --fetch-details  also fetch each attraction page for height prose (slower)
-  --parks-api   fetch ThemeParks.wiki inventory (cached to data/venues/<id>.parks-api-cache.json)
+  --parks-api   fetch ThemeParks.wiki inventory (cached to data/venues/<id>/parks-api-cache.json)
   --sync-sources  fetch all open-source external adapters (see npm run venues:sync-sources -- --list)
   --offline     use only the on-disk official cache; do not hit the network
+  --ai          LLM review + required LLM park-map search (VENUE_LLM_API_KEY); writes llm-research-cache.json
   --no-brief    skip the venues:ask brief; only judgements and sourcing
 `;
 
@@ -78,7 +79,7 @@ async function loadVenue(id, opts = {}) {
 function renderSourcing(sourcing) {
   const lines = ['## Sourcing plan', ''];
   if (!sourcing.catalogued.length) {
-    lines.push('No `data/venues/<id>.sources.json` on disk — consider cataloguing orthophoto, park map, and official site URLs before hand-editing geometry.', '');
+    lines.push('No `data/venues/<id>/sources.json` on disk — consider cataloguing orthophoto, park map, and official site URLs before hand-editing geometry.', '');
   } else {
     lines.push(`Catalogued kinds: ${sourcing.catalogued.join(', ')}`, '');
     for (const s of sourcing.sources) {

@@ -54,6 +54,8 @@ export const WEIGHTS = {
   open_meteo: 1,
   openhistoricalmap: 2,
   forum: 1,
+  /** LLM extraction from official pages — proposals only; never alone enough to publish. */
+  llm_extract: 1,
   geometry: 1,
 };
 

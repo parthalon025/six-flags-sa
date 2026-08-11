@@ -9,7 +9,8 @@ const BASE = 'https://raw.githubusercontent.com/RopeDropNews/theme-park-open-dat
 
 /** Venue id → RopeDrop park slug (Disney/Universal only). */
 export const ROPEDROP_SLUGS = {
-  // Extend as Disney/Universal venues ship.
+  // Extend as Disney/Universal venues ship. Empty slug for Cedar Fair / SF /
+  // waterpark venues is intentional — declare gaps.adapters.ropedrop in sources.json.
 };
 
 export const ropedropCacheFile = (id) => cachePath(id, 'ropedrop');
