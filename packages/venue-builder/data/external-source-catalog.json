@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "description": "Open-source external adapters wired into the venue builder. Sync with npm run venues:sync-sources -- <id> --fetch.",
+  "adapters": [
+    {
+      "id": "parks-api",
+      "cache": "data/venues/<id>.parks-api-cache.json",
+      "env": [],
+      "notes": "ThemeParks.wiki REST API"
+    },
+    {
+      "id": "queue-times",
+      "cache": "data/venues/<id>.queue-times-cache.json",
+      "env": [],
+      "notes": "Wait times cross-check"
+    },
+    {
+      "id": "ropedrop",
+      "cache": "data/venues/<id>.ropedrop-cache.json",
+      "env": [],
+      "notes": "Disney/Universal only — set slug in lib/adapters/ropedrop.mjs"
+    },
+    {
+      "id": "wikidata",
+      "cache": "data/venues/<id>.wikidata-cache.json",
+      "env": [],
+      "notes": "Q-ids in lib/park-slug-map.mjs"
+    },
+    {
+      "id": "rcdb",
+      "cache": "data/venues/<id>.rcdb-cache.json",
+      "env": [],
+      "notes": "Compare-only coaster stats"
+    },
+    {
+      "id": "accessibility-cloud",
+      "cache": "data/venues/<id>.accessibility-cloud-cache.json",
+      "env": ["ACCESSIBILITY_CLOUD_TOKEN"],
+      "notes": "Wheelchair ratings near venue"
+    },
+    {
+      "id": "project-sidewalk",
+      "cache": "data/venues/<id>.project-sidewalk-cache.json",
+      "env": [],
+      "notes": "US sidewalk labels where API has coverage"
+    },
+    {
+      "id": "open-meteo",
+      "cache": "data/venues/<id>.open-meteo-cache.json",
+      "env": [],
+      "notes": "Weather forecast at venue center"
+    },
+    {
+      "id": "openhistoricalmap",
+      "cache": "data/venues/<id>.openhistoricalmap-cache.json",
+      "env": [],
+      "notes": "Historic OSM features in bounds"
+    },
+    {
+      "id": "mapillary-api",
+      "cache": "data/venues/<id>.mapillary-cache.json",
+      "env": ["MAPILLARY_TOKEN"],
+      "notes": "Street imagery metadata"
+    },
+    {
+      "id": "openrouteservice",
+      "cache": "data/venues/<id>.openrouteservice-cache.json",
+      "env": ["ORS_API_KEY"],
+      "notes": "Foot route QA samples"
+    }
+  ]
+}
