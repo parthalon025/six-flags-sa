@@ -867,7 +867,19 @@ export function findRoute(graph, from, to, opts = {}) {
   const snapFrom = snapToGraph(graph, from.lat, from.lng, maxSnap, snapOpts);
   const snapTo = snapToGraph(graph, to.lat, to.lng, maxSnap, snapOpts);
   if (!snapFrom || !snapTo) {
-    if (opts.excludeSeg) return { mode: 'blocked', points: [], metres: 0, seconds: 0, steps: [] };
+    // `blocked` is only for profiles that *excluded* the only nearby segments
+    // (E3.2). A missing snap because the walker is off this park's network —
+    // e.g. GPS still at the previous venue while the CP graph is loading —
+    // must fall through to a straight line, not a zero-metre blank route.
+    // profileOpts always attaches excludeSeg (even when it never excludes), so
+    // we re-snap without it to tell the two cases apart.
+    if (opts.excludeSeg) {
+      const rawFrom = snapFrom || snapToGraph(graph, from.lat, from.lng, maxSnap);
+      const rawTo = snapTo || snapToGraph(graph, to.lat, to.lng, maxSnap);
+      if ((rawFrom && !snapFrom) || (rawTo && !snapTo)) {
+        return { mode: 'blocked', points: [], metres: 0, seconds: 0, steps: [] };
+      }
+    }
     return directRoute(graph, from, to, opts);
   }
 

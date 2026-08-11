@@ -313,8 +313,12 @@ await check('cedar point route preview names surveyed queue entrances', async ()
     label: 'cedar point venue load',
   });
   // Walk graph is at the park — phone A was still GPS-pinned at Kings Island.
-  await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
-  await a.waitForTimeout(800);
+  // Push the fix a few times so the watch settles before we ask for a route
+  // (a stale KI fix + CP graph used to yield a blank zero-metre route).
+  for (let i = 0; i < 4; i += 1) {
+    await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
+    await a.waitForTimeout(400);
+  }
   await go(a, 'Places');
   await searchPlaces(a, 'gemini');
   const gemini = a.locator('.poiRow').filter({ has: a.locator('.poiName', { hasText: /^Gemini$/ }) }).first();
@@ -326,11 +330,36 @@ await check('cedar point route preview names surveyed queue entrances', async ()
     timeout: 15000,
     label: 'route preview card',
   });
-  // Graph weld waits for idle after a venue switch — give it a beat.
-  await until(async () => (await a.locator('.routeLine').count()) > 0, {
-    timeout: 20000,
-    label: 'route line on the map',
-  });
+  // Graph weld waits for idle after a venue switch — give it a beat, and wait
+  // until a real on-path walk is drawn (not a blank blocked route or a
+  // straight-line fall-back while GPS is still catching up).
+  await until(
+    async () => {
+      // Keep nudging GPS toward Cedar Point while the graph/weld catches up.
+      await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
+      if ((await a.locator('.routeLine.direct').count()) > 0) {
+        await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+        await a.waitForTimeout(300);
+        await go(a, 'Places');
+        await searchPlaces(a, 'gemini');
+        const row = a.locator('.poiRow').filter({ has: a.locator('.poiName', { hasText: /^Gemini$/ }) }).first();
+        if (await row.count()) {
+          await row.locator('.poiMain').click();
+          await a.waitForTimeout(200);
+          await row.locator('button[aria-label="Walk me there"]').click().catch(() => {});
+          await a.waitForTimeout(600);
+        }
+      }
+      if ((await a.locator('.routeLine').count()) < 1) return false;
+      if ((await a.locator('.routeLine.direct').count()) > 0) return false;
+      const main = await a.locator('.previewMain').innerText().catch(() => '');
+      return !/\b0\s*ft\b/i.test(main);
+    },
+    {
+      timeout: 45000,
+      label: 'route line on the map',
+    },
+  );
   const where = await a.locator('.previewWhere').innerText();
   if (!/gemini/i.test(where)) throw new Error(`preview: ${where}`);
   // Surveyed queue entrances prefer that wording; approximate pins say Ride area.
@@ -488,18 +517,23 @@ if (await a.locator('.navBanner').count()) {
   await a.waitForTimeout(600);
 }
 // Cedar Point walk coverage leaves this phone on that map; party ride tests need Kings Island.
-{
+await check('back on Kings Island before party tests', async () => {
+  await dismissNavigation(a).catch(() => {});
+  if (await a.locator('.navBanner').count()) {
+    await a.locator('.navEnd').click().catch(() => {});
+    await a.waitForTimeout(600);
+  }
   await go(a, 'Places');
   const brand = async () => a.locator('.brandName, .brand b').first().innerText();
-  if (!/kings island/i.test(await brand().catch(() => ''))) {
-    await go(a, 'Which map');
-    await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
-    await until(async () => /kings island/i.test(await brand().catch(() => '')), {
-      timeout: 20000,
-      label: 'back on Kings Island',
-    });
-  }
-}
+  if (/kings island/i.test(await brand().catch(() => ''))) return true;
+  await go(a, 'Which map');
+  await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
+  await until(async () => /kings island/i.test(await brand().catch(() => '')), {
+    timeout: 20000,
+    label: 'back on Kings Island',
+  });
+  return true;
+});
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
