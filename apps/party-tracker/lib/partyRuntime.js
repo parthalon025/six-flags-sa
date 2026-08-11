@@ -1055,10 +1055,32 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     await teardown();
   }
 
+  /**
+   * Stop the mailbox poll loop and timers without leaving the party.
+   *
+   * The saved session stays on disk so a later `resume()` can pick up where
+   * this phone left off. Used when the visitor is not on the Party screen and
+   * the relay does not need to be kept warm.
+   */
+  async function suspend() {
+    if (destroyed || (!session && !service())) return getSnapshot();
+    await teardown({ announce: false });
+    emit();
+    return getSnapshot();
+  }
+
+  /** True when local storage still holds enough to `resume()`. */
+  function hasSavedParty() {
+    const saved = loadSession();
+    return Boolean(saved?.partyId && saved?.keyString);
+  }
+
   return {
     createParty,
     joinParty,
     resume,
+    suspend,
+    hasSavedParty,
     leave,
     allowJoins,
     submit,
