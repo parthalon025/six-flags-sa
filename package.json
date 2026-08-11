@@ -42,6 +42,7 @@
     "test": "npm run test:builder && npm run test:app",
     "test:builder": "node test/builder/unit.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",
+    "test:validate-ui": "node test/app/validate-ui.mjs",
     "test:unit": "node test/builder/unit.mjs",
     "test:functional": "node test/app/functional.mjs",
     "test:compare": "node test/builder/compare.mjs",

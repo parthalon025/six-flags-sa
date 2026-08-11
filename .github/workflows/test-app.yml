@@ -36,8 +36,8 @@ jobs:
           curl -sf http://127.0.0.1:3000/api/health
           curl -sf http://127.0.0.1:3000/api/admin/venues | head -c 200
 
-      - name: App functional suite
-        run: npm run test:app
+      - name: UI validation (e2e + grandma)
+        run: npm run test:validate-ui
 
       - name: Visual inspection shots
         continue-on-error: true

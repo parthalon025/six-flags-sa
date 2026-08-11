@@ -6,7 +6,7 @@ This monorepo separates the **party tracker app** from the **venue builder** pip
 apps/party-tracker/     Next.js PWA — map, party sync, directions
 packages/shared/        Contracts both sides share (ontology, wayFlags, mapSymbols)
 packages/venue-builder/ OSM → venue bundle CLI, data, and inspection UI
-test/app/               Playwright behavioural suites (functional, grandma, visual)
+test/app/               Playwright behavioural suites (functional, grandma, validate-ui, visual)
 test/builder/           Node unit tests + manifest compare suite
 ```
 
