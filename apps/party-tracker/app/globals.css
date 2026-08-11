@@ -1607,8 +1607,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: opacity var(--t1) var(--easeOut);
 }
 /* Open map key owns the left column — park the height badge rather than
-   covering the legend or fighting the theme controls on the right. */
+   covering the legend or fighting the theme controls on the right.
+   animation:none is required: badgeIn uses fill-mode both, which otherwise
+   keeps opacity/transform at the end keyframe and ignores these rules. */
 .app:has(.mapKey.open) .filterBadge {
+  animation: none;
   opacity: 0; pointer-events: none; transform: translateY(-6px);
 }
 .filterBadge:active { opacity: .6; }
@@ -1695,9 +1698,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   box-shadow: 0 0 0 2px var(--glassTintDeep);
 }
 
-/* Step two: the card it opens into, where the banner used to live. */
+/* Step two: the card it opens into, where the banner used to live.
+   Right inset clears the theme/compass column and the zoom pad — on a short
+   phone at peek the pad climbs into this band, and a full-bleed card put the
+   ✕ on top of zoom-in. */
 .wxCard {
-  position: absolute; z-index: 39; left: 10px; right: 10px; top: calc(var(--top) + 58px);
+  position: absolute; z-index: 39; left: 10px; right: 68px; top: calc(var(--top) + 58px);
   display: flex; align-items: flex-start; gap: 8px;
   padding: 10px 8px 10px 14px; border-radius: var(--r4); border: none;
   background: var(--glassTintDeep);
@@ -1733,7 +1739,12 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 /* The height badge shares this corner. It steps below whichever of the two is
    there — under the chip normally, under the open card when it is open. */
 .wxChip ~ .filterBadge { top: calc(var(--top) + 66px); }
-.wxCard ~ .filterBadge { top: calc(var(--top) + 128px); }
+/* Card height grows when the line wraps on a narrow phone; parking the badge
+   avoids chasing a moving bottom edge. Same animation:none note as map-key. */
+.app:has(.wxCard) .filterBadge {
+  animation: none;
+  opacity: 0; pointer-events: none; transform: translateY(-6px);
+}
 
 /* A forecast is a guess and is drawn as one — outlined, not filled, so a row
    never reads with the same weight as something a person actually saw. */
