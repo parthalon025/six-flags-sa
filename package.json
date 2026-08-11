@@ -45,7 +45,9 @@
     "test:visual": "node test/app/visual.mjs",
     "test:theme": "node test/app/theme.mjs",
     "test:ux": "node test/app/ux.mjs",
-    "test:grandma": "node test/app/grandma.mjs"
+    "test:grandma": "node test/app/grandma.mjs",
+    "gitnexus:startup": "node scripts/gitnexus-sync.mjs startup",
+    "gitnexus:sync": "node scripts/gitnexus-sync.mjs finish"
   },
   "dependencies": {
     "next": "^16.3.0",
