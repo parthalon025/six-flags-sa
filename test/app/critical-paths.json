@@ -92,40 +92,45 @@
     {
       "id": "grandma-core",
       "slice": "Navigate",
-      "user_action": "First-time visitor can complete toilet → food → walk",
+      "user_action": "First-time visitor can complete toilet \u2192 food \u2192 walk",
       "suite": "grandma",
       "check_includes": "toilet"
-    }
-  ],
-  "upcoming": [
+    },
     {
       "id": "ep-soft-gate",
       "slice": "EP",
       "user_action": "Anonymous soft-gate blocks Start a party; sign-in unlocks it",
       "suite": "functional",
-      "check": "anonymous soft-gate blocks Start a party",
-      "when": "PR #83 lands"
+      "check": "anonymous soft-gate blocks Start a party"
     },
     {
-      "id": "e5-eligibility",
-      "slice": "E5",
-      "user_action": "See structured eligibility reason on a ride",
+      "id": "ep5-sharing",
+      "slice": "Party",
+      "user_action": "Choose Off / Approx / Precise location sharing in a party",
       "suite": "functional",
-      "when": "PR #90 lands — add named check with the epic"
-    },
-    {
-      "id": "e81-next-best",
-      "slice": "E8",
-      "user_action": "Next-best GO NOW + Why?",
-      "suite": "functional",
-      "when": "PR #91 lands — add named check with the epic"
+      "check": "location sharing Off/Approx/Precise is available in the party"
     },
     {
       "id": "e91-side-quests",
       "slice": "Adventure",
       "user_action": "Submit or discover a Side Quest nearby",
       "suite": "functional",
-      "when": "PR #88 lands — add named check with the epic"
+      "check": "Side Quest submit queues locally"
+    },
+    {
+      "id": "e5-eligibility",
+      "slice": "E5",
+      "user_action": "See structured eligibility reason on a ride",
+      "suite": "functional",
+      "check": "ride detail shows a structured eligibility reason"
+    },
+    {
+      "id": "e81-next-best",
+      "slice": "E8",
+      "user_action": "Next-best GO NOW + Why?",
+      "suite": "functional",
+      "check": "GO NOW card carries a Why? explanation"
     }
-  ]
+  ],
+  "upcoming": []
 }

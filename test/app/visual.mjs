@@ -11,7 +11,7 @@
  *   npm run test:visual
  */
 
-import { dismissUpdateSplash, dismissIntroSplash, go, launch, openPhone, until } from './browser.mjs';
+import { dismissUpdateSplash, dismissIntroSplash, go, launch, openPhone, until, signIn } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -131,6 +131,7 @@ async function main() {
   await shot(page, 'height-filtered-list');
 
   // Party flow
+  await signIn(page, 'visual@parkbound.example');
   await go(page, 'Party');
   await page.waitForTimeout(400);
   await page.getByRole('button', { name: 'Start a party' }).click();
@@ -146,6 +147,7 @@ async function main() {
       lng: -84.266981, // Eiffel Tower
       label: 'B',
     });
+    await signIn(page2, 'visual-b@parkbound.example');
     await go(page2, 'Party');
     await openSheet(page2, 'full');
     await page2.locator('input.code').fill(code);

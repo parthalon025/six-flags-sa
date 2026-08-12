@@ -1,9 +1,14 @@
 /**
  * Side Quests — on-the-ground missions for gaps open sources cannot settle.
  *
- * Used by the Side Quests tab. Submission / XP is backlog E9–E10; this only
- * lists what still needs a person in the park.
+ * Used by the Side Quests tab, plus the reporting queue in
+ * lib/adventure/questQueue.js once a guest taps a card to submit one.
  */
+
+import { distance } from './geo.js';
+
+/** A quest with a target this close counts as "right here" while you walk. */
+export const NEARBY_RADIUS_M = 150;
 
 const TIER1 = [
   {
@@ -84,4 +89,53 @@ export function buildSideQuests({ pois = [], venueName = 'this park' } = {}) {
   }
 
   return { durable, ambient: TIER1, counts: { durable: durable.length, ambient: TIER1.length } };
+}
+
+/**
+ * How close a quest's nearest named target is to `position`, in metres, or
+ * null when there is no position or none of its targets resolve to a POI
+ * with a fix — a quest with no targets (the "while you walk" ambient ones)
+ * is always null, never zero.
+ */
+export function nearestTargetDistance(quest, pois = [], position = null) {
+  if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return null;
+  if (!quest?.targets?.length) return null;
+  let best = null;
+  for (const name of quest.targets) {
+    const poi = pois.find((p) => p.n === name);
+    if (!poi || !Number.isFinite(poi.lat) || !Number.isFinite(poi.lng)) continue;
+    const d = distance(position.lat, position.lng, poi.lat, poi.lng);
+    if (best == null || d < best) best = d;
+  }
+  return best;
+}
+
+/**
+ * Quests within `radiusM` sorted to the front, nearest first — the rest keep
+ * their place rather than being dropped. A guest standing at the entrance
+ * queue sees "pin the queue entrance" before "find the toilets" clear across
+ * the park, but the toilets quest is still right there below it.
+ */
+export function sortByProximity(quests = [], pois = [], position = null, radiusM = NEARBY_RADIUS_M) {
+  if (!position) return quests;
+  return quests
+    .map((quest, index) => ({
+      quest,
+      index,
+      distanceM: nearestTargetDistance(quest, pois, position),
+    }))
+    .sort((a, b) => {
+      const aNear = a.distanceM != null && a.distanceM <= radiusM;
+      const bNear = b.distanceM != null && b.distanceM <= radiusM;
+      if (aNear !== bNear) return aNear ? -1 : 1;
+      if (a.distanceM == null && b.distanceM == null) return a.index - b.index;
+      if (a.distanceM == null) return 1;
+      if (b.distanceM == null) return -1;
+      return a.distanceM - b.distanceM || a.index - b.index;
+    })
+    .map(({ quest, distanceM }) => ({
+      ...quest,
+      distanceM,
+      nearby: distanceM != null && distanceM <= radiusM,
+    }));
 }

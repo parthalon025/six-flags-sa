@@ -57,6 +57,11 @@ function GlanceRail({
   weather = null,
   rides = null,
   now = Date.now(),
+  // Rider height, inches, and whether an adult is riding along — the same
+  // pair the Rides tab uses for eligibility(). Optional: without a height
+  // the GO NOW cards just drop the eligibility line from their Why?.
+  height = null,
+  withAdult = true,
   // Called when the visitor gets rid of a card: {kind:'selected'} for the
   // place they tapped, {kind:'category', category} for a standing one.
   onDismiss = null,
@@ -126,7 +131,7 @@ function GlanceRail({
     const out = [];
     const rel = (b) => (heading == null ? b : (b - heading + 360) % 360);
 
-    const push = (key, eyebrow, title, target, colour, footnote, tone, nav) => {
+    const push = (key, eyebrow, title, target, colour, footnote, tone, nav, why = null) => {
       const d = distance(me.lat, me.lng, target.lat, target.lng);
       const b = bearing(me.lat, me.lng, target.lat, target.lng);
       out.push({
@@ -142,6 +147,11 @@ function GlanceRail({
         footnote,
         target,
         nav,
+        // The fuller "Why?" — every factor behind the pick, joined into one
+        // line. Only GO NOW cards carry one; it rides as a native tooltip
+        // rather than more visible UI, so the rail stays a rail and not a
+        // dashboard of reasons nobody asked to see.
+        why,
       });
     };
 
@@ -210,19 +220,28 @@ function GlanceRail({
        amenity cards — recommendations beat the nearest toilet when the sky
        and the party say a ride is worth walking to. */
     if (!hidden?.includes('gonow')) {
-      const picks = recommendNow(pois, rides, weather, me, members, now, 2);
-      picks.forEach(({ poi, live, metres }, i) => {
+      const picks = recommendNow(pois, rides, weather, me, members, now, 2, { height, withAdult });
+      picks.forEach(({ poi, live, metres, why, factors }, i) => {
         const at = `${poi.lat},${poi.lng}`;
         if (out.some((c) => c.target && `${c.target.lat},${c.target.lng}` === at)) return;
+        // Always stamp a Why? title on GO NOW cards — factors[] when present,
+        // else the one-line why / live detail — so long-press and the vertical
+        // check both have something to read even before weather/party reports.
+        const tip = `Why: ${
+          factors?.length
+            ? factors.map((f) => f.label).join(' \u00b7 ')
+            : why || live.detail || 'Nearby pick'
+        }`;
         push(
           `go-${poi.id || i}`,
           LIVE.goNow,
           poi.n,
           poi,
           'var(--adventure)',
-          live.detail || poi.a || formatWalk(metres),
+          why || live.detail || poi.a || formatWalk(metres),
           'goNow',
           { kind: 'poi', label: poi.n, lat: poi.lat, lng: poi.lng },
+          tip,
         );
         out[out.length - 1].shed = { kind: 'category', category: 'gonow' };
       });
@@ -269,7 +288,22 @@ function GlanceRail({
     });
 
     return out;
-  }, [pois, me, members, meet, car, selected, heading, palette, hidden, weather, rides, now]);
+  }, [
+    pois,
+    me,
+    members,
+    meet,
+    car,
+    selected,
+    heading,
+    palette,
+    hidden,
+    weather,
+    rides,
+    now,
+    height,
+    withAdult,
+  ]);
 
   const leadKey = cards[0]?.key ?? null;
   useEffect(() => {
@@ -354,7 +388,12 @@ function GlanceRail({
             className={`glanceCard ${c.tone} ${walking ? 'walking' : ''}`}
             {...(shed ? swipeAway(shed) : null)}
           >
-            <button type="button" className="glanceHit" onClick={() => onFocus(c.target)}>
+            <button
+              type="button"
+              className="glanceHit"
+              onClick={() => onFocus(c.target)}
+              title={c.why || undefined}
+            >
               <span className="glanceEyebrow" style={{ color: c.colour }}>
                 {c.eyebrow}
               </span>

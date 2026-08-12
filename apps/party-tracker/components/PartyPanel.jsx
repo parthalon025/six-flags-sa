@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
 import Icon from '@/components/Icon';
+import SignInCard from '@/components/SignInCard';
 import { WORDS } from '@/lib/brand';
+import { softGateBlocks } from '@/lib/auth/session';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { usePois } from '@/lib/venue/useVenue';
 
@@ -107,6 +109,8 @@ export default function PartyPanel({
   onAllowJoins = null,
   onSuggestReunification = null,
   reunifyBusy = false,
+  session = null,
+  onSession = null,
 }) {
   const [entry, setEntry] = useState('');
   const [name, setName] = useState(myName === 'Guest' ? '' : myName || '');
@@ -132,6 +136,18 @@ export default function PartyPanel({
   }, [arming]);
 
   if (!code) {
+    if (softGateBlocks('party', session)) {
+      return (
+        <div>
+          <div className="label">Your Party</div>
+          <p className="fine">
+            Explore the map on your own anytime. Sign in when the family wants to stick together —
+            start or join a party without gluing everyone to the phone first.
+          </p>
+          <SignInCard session={session} onSession={onSession} />
+        </div>
+      );
+    }
     const named = Boolean(name.trim());
     return (
       <div>

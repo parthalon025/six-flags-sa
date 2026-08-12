@@ -1070,6 +1070,40 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sideQuestChip:active {
   transform: scale(.97);
 }
+.sideQuestNear {
+  color: var(--adventure);
+  font-weight: 500;
+}
+.sideQuestReportBtn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--blue);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -.24px;
+  padding: 0;
+}
+.sideQuestReportBtn:active {
+  opacity: .55;
+}
+.sideQuestForm {
+  margin-top: 10px;
+  width: 100%;
+}
+.sideQuestNote {
+  margin-bottom: 8px;
+  resize: none;
+  font-size: 15px;
+}
+.sideQuestForm .chips {
+  margin-bottom: 10px;
+}
+.sideQuestSubmit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 
 /* The tab strip is an iOS segmented control: a filled track, and the selected
    segment carries a raised thumb. No sliding indicator to measure — the thumb
@@ -1924,6 +1958,21 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .chip.withDot { display: inline-flex; align-items: center; gap: 7px; }
 .chip.withDot i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
 
+/* ---- guest-profile chips: the tap target and the remove target sit side by
+   side rather than nested, since a button cannot contain a button ---- */
+.guestChips { row-gap: 8px; }
+.guestChip { display: inline-flex; align-items: center; flex: none; }
+.guestChip .chip { border-radius: var(--rCapsule) 0 0 var(--rCapsule); padding-right: 8px; }
+.chipRemove {
+  flex: none; min-height: 32px; min-width: 26px; padding: 7px 10px; border: none;
+  border-radius: 0 var(--rCapsule) var(--rCapsule) 0; background: var(--fill3);
+  color: var(--label3); font-size: 15px; line-height: 1;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.chipRemove:active { opacity: .5; }
+.guestChip.on .chipRemove { background: var(--blue); color: var(--onTint); opacity: .85; }
+.chip.chipAdd { color: var(--blue); }
+
 .labelAction {
   font-size: 15px; font-weight: 400; letter-spacing: -.24px; text-transform: none;
   color: var(--blue);
@@ -2628,6 +2677,11 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
   letter-spacing: -.02em;
 }
 .dayMoment span { display: block; font-size: 13px; color: var(--label2); margin-top: 2px; }
+.signInCard {
+  margin: 8px 0 16px;
+  padding: 4px 0 8px;
+}
+.signInCard .btn { margin-top: 8px; width: 100%; }
 .brandMark {
   width: 22px; height: 22px; flex: none; color: var(--adventure);
 }

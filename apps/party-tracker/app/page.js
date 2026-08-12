@@ -47,6 +47,7 @@ import {
 import { useVenue } from '@/lib/venue/useVenue';
 import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
 import { mapDisplayPosition } from '@/lib/gps/display';
+import { softGateBlocks, resolveSession } from '@/lib/auth/session';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -214,6 +215,8 @@ export default function Page() {
   const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
 
   const [identity, setIdentity] = useState(null); // {id, name}
+  /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
+  const [authSession, setAuthSession] = useState(null);
   const [party, setParty] = useState(null); // the runtime's snapshot
   // The snapshot as a ref, for callbacks that must not be rebuilt on every
   // roster tick just to read the party they are sending to.
@@ -640,6 +643,16 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    resolveSession().then((session) => {
+      if (!cancelled) setAuthSession(session);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!identity) return;
     identityRef.current = identity;
     localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height: mapHeight, theme }));
@@ -740,6 +753,9 @@ export default function Page() {
   // One runtime for the life of the page. It owns the session, the transports
   // and whichever half of the protocol this device is running; everything below
   // reads its snapshot and calls its verbs.
+  const pendingInviteRef = useRef(null);
+  const [pendingInvite, setPendingInvite] = useState(null);
+
   useEffect(() => {
     let destroyed = false;
     let rt = null;
@@ -756,18 +772,10 @@ export default function Page() {
           identityRef.current = { ...identityRef.current, name: named };
           setIdentity((i) => ({ ...i, name: named }));
         }
-        const memberName = named || identityRef.current?.name || 'Guest';
-        Promise.resolve(rt.joinParty(pending.payload, { memberName }))
-          .then((snap) => {
-            if (destroyed) return;
-            selectTab('party');
-            showToast(
-              snap?.code
-                ? `You’re in party ${snap.code}${named ? '' : ' — rename under Me'}`
-                : 'You’re in the party',
-            );
-          })
-          .catch((err) => showToast(err?.message || 'Could not open that invite.'));
+        pendingInviteRef.current = pending;
+        setPendingInvite(pending);
+        selectTab('party');
+        showToast('Sign in under Me to finish joining that party');
         return;
       }
       if (rt.hasLiveParty?.()) {
@@ -784,6 +792,38 @@ export default function Page() {
       rt?.destroy();
     };
   }, [showToast, selectTab]);
+
+  /* Soft-gate (EP.3): finish /join only after a profile exists.
+     Join once from the ref so selectTab/showToast identity churn cannot
+     cancel an in-flight invite (that left phone C stuck unsigned-in on CI). */
+  const inviteJoinInFlight = useRef(false);
+  useEffect(() => {
+    const pending = pendingInviteRef.current || pendingInvite;
+    if (!pending?.payload || !runtimeApi) return undefined;
+    if (softGateBlocks('party', authSession)) return undefined;
+    if (inviteJoinInFlight.current) return undefined;
+    inviteJoinInFlight.current = true;
+    const named = (pending.name || '').trim();
+    const memberName = named || identityRef.current?.name || 'Guest';
+    Promise.resolve(runtimeApi.joinParty(pending.payload, { memberName }))
+      .then((snap) => {
+        pendingInviteRef.current = null;
+        setPendingInvite(null);
+        selectTab('party');
+        showToast(
+          snap?.code
+            ? `You’re in party ${snap.code}${named ? '' : ' — rename under Me'}`
+            : 'You’re in the party',
+        );
+      })
+      .catch((err) => {
+        showToast(err?.message || 'Could not open that invite.');
+      })
+      .finally(() => {
+        inviteJoinInFlight.current = false;
+      });
+    return undefined;
+  }, [pendingInvite, authSession, runtimeApi, selectTab, showToast]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
      resume on mount above and keep syncing on every tab. */
@@ -1149,11 +1189,17 @@ export default function Page() {
 
   /* ---------- party actions ---------- */
   const createParty = async () => {
+    if (softGateBlocks('party', authSession)) {
+      showToast('Sign in under Me to start a party');
+      selectTab('settings');
+      return;
+    }
     setBusy(true);
     try {
       const snap = await runtime.current.createParty({
         memberName: identity?.name || 'Guest',
         name: 'Party',
+        userId: identity?.userId || null,
       });
       selectTab('party');
       showToast(
@@ -1166,6 +1212,11 @@ export default function Page() {
   };
 
   const joinParty = async (raw, asName = null) => {
+    if (softGateBlocks('party', authSession)) {
+      showToast('Sign in under Me to join a party');
+      selectTab('settings');
+      return;
+    }
     setBusy(true);
     try {
       // A name typed on the join screen is the freshest thing we know, and it
@@ -1175,7 +1226,10 @@ export default function Page() {
         setIdentity((i) => ({ ...i, name: memberName }));
         identityRef.current = { ...identityRef.current, name: memberName };
       }
-      const snap = await runtime.current.joinParty(raw, { memberName });
+      const snap = await runtime.current.joinParty(raw, {
+        memberName,
+        userId: identityRef.current?.userId || null,
+      });
       selectTab('party');
       showToast(`Joined ${snap.code}`);
     } catch (err) {
@@ -1706,8 +1760,19 @@ export default function Page() {
   const handleSelectFromMap = useCallback(
     (poi) => {
       if (selected && selected.lat === poi.lat && selected.lng === poi.lng) {
-        setSelected(null);
-        dismissPlaceView();
+        const { stacks: cur } = navRef.current;
+        const exploreStack = cur.explore || EMPTY_STACK;
+        const placeOpen = exploreStack[exploreStack.length - 1] === 'place';
+        // Re-tapping the selected pin opens place detail when the sheet is not
+        // already there (list/rail selection alone is not enough for the map
+        // vertical check). Only clear when the place view is already open.
+        if (placeOpen) {
+          setSelected(null);
+          dismissPlaceView();
+          return;
+        }
+        push('place', 'explore');
+        growSheet(stops.half);
         return;
       }
       setSelected(poi);
@@ -2257,6 +2322,8 @@ export default function Page() {
                   weather={weatherFeed.weather}
                   rides={partyRides}
                   now={Date.now()}
+                  height={mapHeight}
+                  withAdult={withAdult}
                 />
               )}
               {/* Where the list would be, when the list will not fit: it is not
@@ -2433,14 +2500,29 @@ export default function Page() {
                 }}
                 onSuggestReunification={suggestReunification}
                 reunifyBusy={reunifyBusy}
+                session={authSession}
+                onSession={(next) => {
+                  setAuthSession(next);
+                  // Keep a park-day name (set under Me / /join). Only fill Guest.
+                  if (next?.displayName) {
+                    setIdentity((i) => {
+                      const cur = (i?.name || '').trim();
+                      if (cur && cur !== 'Guest') return i;
+                      return { ...i, name: next.displayName };
+                    });
+                  }
+                }}
               />
               {active && (
                 <IntelligencePanel
                   rides={partyRides || {}}
                   myGroupId={selfMember?.groupId}
                   sharingPaused={selfMember?.sharingPaused}
+                  shareMode={selfMember?.shareMode || (selfMember?.sharingPaused ? 'off' : 'approx')}
+                  shareUntil={selfMember?.shareUntil || null}
                   onGroupId={(g) => runtime.current?.setGroupId?.(g)}
                   onSharingPaused={(v) => runtime.current?.setSharingPaused?.(v)}
+                  onShareMode={(mode) => runtime.current?.setShareMode?.(mode)}
                   onApplyPlan={(ops) => {
                     for (const op of ops) {
                       if (op.kind === 'set-meet' && op.body?.meet) {
@@ -2461,11 +2543,15 @@ export default function Page() {
             {view === null && tab === 'quests' && (
               <SideQuestsPanel
                 venueName={venue?.name}
+                venueId={venue?.id}
                 pois={POIS}
+                position={position}
                 onSelectPlace={(p) => {
                   handleSelect(p);
                   selectTab('explore');
                 }}
+                session={authSession}
+                onSession={setAuthSession}
               />
             )}
 
@@ -2511,6 +2597,17 @@ export default function Page() {
                 updateStatus={appUpdate.status}
                 movementEnabled={movement.enabled}
                 movementPending={movement.totals.pending}
+                session={authSession}
+                onSession={(next) => {
+                  setAuthSession(next);
+                  if (next?.displayName) {
+                    setIdentity((i) => {
+                      const cur = (i?.name || '').trim();
+                      if (cur && cur !== 'Guest') return i;
+                      return { ...i, name: next.displayName };
+                    });
+                  }
+                }}
               />
             )}
 

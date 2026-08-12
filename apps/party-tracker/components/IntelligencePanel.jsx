@@ -42,9 +42,13 @@ export default function IntelligencePanel({
   onGroupId,
   sharingPaused,
   onSharingPaused,
+  shareMode: shareModeProp = null,
+  shareUntil = null,
+  onShareMode = null,
 }) {
   const [scenario, setScenario] = useState(null);
   const [log, setLog] = useState([]);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     setScenario(loadScenario() || createScenario('Today'));
@@ -54,9 +58,20 @@ export default function IntelligencePanel({
     recent(8).then(setLog).catch(() => setLog([]));
   }, [rides, scenario]);
 
+  useEffect(() => {
+    if (!shareUntil) return undefined;
+    const t = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, [shareUntil]);
+
   if (!scenario) return null;
 
   const steps = visibleSteps(scenario, rides);
+  const shareMode = shareModeProp || (sharingPaused ? 'off' : 'approx');
+  const shareUntilLabel =
+    shareMode === 'precise' && shareUntil && shareUntil > now
+      ? `${Math.max(1, Math.ceil((shareUntil - now) / 60000))} min left`
+      : null;
 
   return (
     <div className="intelPanel">
@@ -74,13 +89,39 @@ export default function IntelligencePanel({
         ))}
       </div>
 
-      <div className="label">You Are Here</div>
+      <div className="label">Where others see you</div>
+      <div className="segmented" role="group" aria-label="Location sharing">
+        {[
+          ['off', 'Off'],
+          ['approx', 'Approx'],
+          ['precise', 'Precise'],
+        ].map(([mode, label]) => (
+          <button
+            key={mode}
+            type="button"
+            className={`tab ${shareMode === mode ? 'on' : ''}`}
+            aria-pressed={shareMode === mode}
+            onClick={() => onShareMode?.(mode)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <p className="fine">
+        {shareMode === 'off'
+          ? 'Your pin is hidden. The map still works for you.'
+          : shareMode === 'precise'
+            ? shareUntilLabel
+              ? `Exact GPS for ${shareUntilLabel}, then back to approx — less creepy by default.`
+              : 'Exact GPS — renews for 30 minutes at a time.'
+            : 'Nearby enough to find each other (~50 m). Default while you walk.'}
+      </p>
       <button
         type="button"
-        className={`btn ${sharingPaused ? 'danger' : ''}`}
-        onClick={() => onSharingPaused?.(!sharingPaused)}
+        className={`btn ${shareMode === 'off' ? 'danger' : ''}`}
+        onClick={() => onSharingPaused?.(shareMode !== 'off')}
       >
-        {sharingPaused ? 'Paused — tap to share again' : 'Pause sharing where I am'}
+        {shareMode === 'off' ? 'Paused — tap for approx sharing' : 'Pause sharing where I am'}
       </button>
 
       <div className="label">Plan (this phone only)</div>

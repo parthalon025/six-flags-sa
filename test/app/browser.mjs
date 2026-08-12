@@ -253,6 +253,8 @@ export async function root(page) {
  *
  *   'Places'         the Explore tab: search, the rail and the list
  *   'Party'          the Party tab
+ *   'Quests',
+ *   'Side Quests'    the Side Quests tab
  *   'Rider height',
  *   'Rides', 'Plan'  the Plan tab, where the venue publishes height rules
  *   'Settings', 'Me',
@@ -265,6 +267,8 @@ const TAB_OF = {
   Places: 'explore',
   Explore: 'explore',
   Party: 'party',
+  Quests: 'quests',
+  'Side Quests': 'quests',
   Rides: 'rides',
   Plan: 'rides',
   'Rider height': 'rides',
@@ -409,6 +413,35 @@ export async function setName(page, name) {
   await page.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
     timeout: 40000,
   });
+}
+
+
+export async function signIn(page, email = 'guest@parkbound.example', { keepName = true } = {}) {
+  await closeGate(page);
+  await go(page, 'Settings');
+  const priorName = keepName
+    ? await page.locator('.field[placeholder="Name"]').inputValue().catch(() => '')
+    : '';
+  const card = page.locator('.signInCard');
+  if ((await card.locator('text=Signed in').count()) > 0) {
+    await page.locator('.tabItem[data-tab="explore"]').click();
+    await page.waitForTimeout(200);
+    return;
+  }
+  await card.locator('input[type="email"]').fill(email);
+  await card.locator('button:has-text("Email me a link")').click();
+  await until(async () => (await card.locator('text=Signed in').count()) > 0, {
+    timeout: 10000,
+    label: 'signed-in card',
+  });
+  // Soft-gate session defaults displayName from the email local-part; restore the
+  // park-day name the harness already chose (Ava/Sam/Justin) when present.
+  if (keepName && priorName && priorName !== 'Guest') {
+    await setName(page, priorName);
+  } else {
+    await page.locator('.tabItem[data-tab="explore"]').click();
+    await page.waitForTimeout(200);
+  }
 }
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */

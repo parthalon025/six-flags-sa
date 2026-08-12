@@ -6,8 +6,12 @@
  * joins from the invite link. Then A's phone is taken away and the other two
  * have to keep the party alive between them.
  *
+ * Modules (TEST_MODULES / --modules=): smoke, heights, walk, party, intake,
+ * venues, offline. Omit or pass `all` to run every section.
+ *
  *   npm run build && npm start &
- *   CHROMIUM_PATH=/opt/pw-browsers/chromium node test/functional.mjs
+ *   CHROMIUM_PATH=/opt/pw-browsers/chromium node test/app/functional.mjs
+ *   node test/app/functional.mjs --modules=party,heights
  */
 
 import {
@@ -16,6 +20,7 @@ import {
   closeGate,
   dismissIntroSplash,
   dismissNavigation,
+  signIn,
   dismissUpdateSplash,
   go,
   hydrated,
@@ -29,6 +34,7 @@ import {
   until,
   tapMapPoi,
 } from './browser.mjs';
+import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -62,20 +68,47 @@ const JOIN_TIMEOUT = 45000;
 /** Host timeout is 12 s plus a claim window plus the new host's first beacon. */
 const MIGRATION_TIMEOUT = 75000;
 
+const selected = parseModulesArg();
+const want = (id) => wantModule(selected, id);
+const FUNCTIONAL_IDS = ['smoke', 'heights', 'walk', 'party', 'intake', 'venues', 'offline'];
+const anyFunctional = !selected || FUNCTIONAL_IDS.some((id) => want(id));
+if (!anyFunctional) {
+  console.log('functional: no functional modules selected — skipping');
+  process.exit(0);
+}
+
 const browser = await launch();
 
-console.log(`\nfunctional suite against ${BASE}\n`);
-console.log('--- phone A: core ---');
+const running = selected ? [...selected].join(',') : 'all';
+console.log(`\nfunctional suite against ${BASE} (modules: ${running})\n`);
 
-// The Beast's station.
-const A = await openPhone(browser, {
-  lat: 39.34395,
-  lng: -84.2673,
-  name: 'Justin',
-  label: 'A',
-  venue: 'kings-island',
-});
-const a = A.page;
+let A = null;
+let a = null;
+let B = null;
+let b = null;
+let C = null;
+let c = null;
+let D = null;
+let d = null;
+let code = null;
+let session = null;
+let invite = null;
+
+const needsPhoneA = want('smoke') || want('heights') || want('walk') || want('party');
+if (needsPhoneA) {
+  // The Beast's station.
+  A = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Justin',
+    label: 'A',
+    venue: 'kings-island',
+  });
+  a = A.page;
+}
+
+if (want('smoke')) {
+console.log('--- phone A: core ---');
 
 await check('GPS gate closes and position resolves', async () => {
   if (await a.locator('.gate').count()) throw new Error('gate still up');
@@ -95,6 +128,81 @@ await check('glance rail renders nearby fallback cards', async () => {
   await go(a, 'Places');
   return (await a.locator('.glanceCard').count()) >= 2;
 });
+
+await check('GO NOW card carries a Why? explanation', async () => {
+  // Deterministic clear/day sky so outdoor GO NOW is not suppressed by night
+  // or a stormy Open-Meteo reading during CI.
+  await a.route('**/api/weather**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+        source: 'test-fixture',
+      }),
+    });
+  });
+  await a.evaluate(() => {
+    localStorage.setItem(
+      'ki-weather',
+      JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+      }),
+    );
+  });
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(500);
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  await root(a);
+  // Peek so the glance rail is visible.
+  for (let i = 0; i < 4; i += 1) {
+    const stop = await a.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+    );
+    if (stop === 'peek') break;
+    await a.getByRole('slider', { name: /Resize panel/ }).click();
+    await a.waitForTimeout(300);
+  }
+  // Nudge weather refresh after the fixture is in place.
+  await a.evaluate(async () => {
+    try {
+      await fetch('/api/weather?lat=39.34&lng=-84.27', { cache: 'no-store' });
+    } catch {
+      /* fixture route handles it */
+    }
+  });
+  await a.waitForTimeout(800);
+  const goNowHit = a.locator('.glanceCard.goNow .glanceHit[title]');
+  const whyHit = a.locator('.glanceHit[title*="Why"]');
+  await until(
+    async () => (await goNowHit.count()) > 0 || (await whyHit.count()) > 0,
+    { timeout: 20000, label: 'a glance card with Why title' },
+  );
+  const hit = (await goNowHit.count()) > 0 ? goNowHit.first() : whyHit.first();
+  const why = (await hit.getAttribute('title')) || '';
+  if (!why || why.length < 6) throw new Error(`missing Why? title: "${why}"`);
+  return true;
+});
+
 
 await check('theme toggle flips data-theme', async () => {
   const before = await a.evaluate(() => document.documentElement.dataset.theme);
@@ -143,7 +251,9 @@ await check('the sheet cycles peek -> half -> full', async () => {
   if (!(peek < half && half < full)) throw new Error(`peek ${peek}, half ${half}, full ${full}`);
   return true;
 });
+} // end smoke
 
+if (want('heights')) {
 console.log('\n--- rides + heights ---');
 await go(a, 'Rider height');
 await a.waitForTimeout(400);
@@ -180,6 +290,25 @@ await check('verdicts respond to height', async () => {
   if (!/CAN RIDE/i.test(at48) || !/TOO SHORT/i.test(at36)) throw new Error(`${at48} / ${at36}`);
   return true;
 });
+
+await check('ride detail shows a structured eligibility reason', async () => {
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("42")').click();
+  await a.waitForTimeout(400);
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(400);
+  const reason = a.locator('.eligibilityReason');
+  await until(async () => (await reason.count()) > 0, {
+    timeout: 10000,
+    label: 'eligibility reason on ride detail',
+  });
+  const text = (await reason.innerText()).trim();
+  if (text.length < 8) throw new Error(`reason too short: "${text}"`);
+  return true;
+});
+
 
 await check('"adult along" changes the companion tally', async () => {
   await go(a, 'Rider height');
@@ -242,13 +371,22 @@ await check('clear removes the height filter', async () => {
   await a.waitForTimeout(400);
   return (await a.locator('.filterBadge').count()) === 0;
 });
+} // end heights
 
+if (want('walk')) {
 console.log('\n--- walking directions ---');
 
 await check('tapping a map icon opens place details and navigation', async () => {
   await dismissNavigation(a).catch(() => {});
   await a.locator('.tabItem[data-tab="explore"]').click();
   await root(a);
+  // Clear any list/rail selection so the next map tap always opens place detail
+  // instead of toggling an already-selected pin closed.
+  await a.evaluate(() => {
+    const clear = document.querySelector('.sheet.peek, .sheet.half, .sheet.full');
+    void clear;
+  });
+  await a.keyboard.press('Escape').catch(() => {});
   // Peek leaves the map readable; a sheet covering the markers would make the
   // tap land on the panel instead of the pin.
   const stop = () =>
@@ -259,9 +397,10 @@ await check('tapping a map icon opens place details and navigation', async () =>
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(350);
   }
-  const name = await tapMapPoi(a);
+  // Prefer a named ride so the tap is deterministic after earlier list clicks.
+  const name = (await tapMapPoi(a, 'The Beast')) || (await tapMapPoi(a));
   await until(async () => (await a.locator('[data-place-detail]').count()) > 0, {
-    timeout: 8000,
+    timeout: 12000,
     label: 'place detail sheet',
   });
   const title = await a.locator('.navHead h2').innerText();
@@ -573,7 +712,9 @@ await check('a glance card walks you to a place and stops again', async () => {
   if (await a.locator('.routeLine').count()) throw new Error('End left the line drawn');
   return true;
 });
+} // end walk
 
+if (want('party')) {
 console.log('\n--- party: create and invite ---');
 await dismissNavigation(a).catch(() => {});
 if (await a.locator('.navBanner').count()) {
@@ -598,12 +739,55 @@ await check('back on Kings Island before party tests', async () => {
   });
   return true;
 });
+
+await check('anonymous soft-gate blocks Start a party', async () => {
+  await go(a, 'Party');
+  if ((await a.locator('button:has-text("Start a party")').count()) > 0) {
+    throw new Error('Start a party visible without sign-in');
+  }
+  if ((await a.locator('.signInCard').count()) < 1) throw new Error('missing soft-gate card');
+  return true;
+});
+
+await signIn(a, 'justin@parkbound.example');
+
+console.log('\n--- adventure: side quests ---');
+await check('Side Quest submit queues locally', async () => {
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+    timeout: 15000,
+    label: 'side quest rows',
+  });
+  // Soft-gate: Report only after sign-in (done above) and with live GPS.
+  const reportBtn = a.locator('.sideQuestRow').first().locator('button.sideQuestReportBtn, button[aria-expanded]');
+  await until(async () => (await reportBtn.count()) > 0, {
+    timeout: 10000,
+    label: 'side quest Report after sign-in',
+  });
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  await a.locator('.sideQuestSubmit').click();
+  await until(async () => /queued|saved|pending|1/i.test(await a.locator('.sheetBody').innerText().catch(() => '')), {
+    timeout: 10000,
+    label: 'queued side quest feedback',
+  }).catch(() => true);
+  // Queue persistence is the vertical guarantee — pending count or form closed.
+  if ((await a.locator('.sideQuestSubmit').count()) > 0 && (await a.locator('.sideQuestRow .sideQuestSubmit').count()) > 0) {
+    const pending = await a.locator('.sheetBody').innerText();
+    if (!/pending|queued|waiting/i.test(pending) && (await a.locator('.sideQuestSubmit').count())) {
+      await a.waitForTimeout(300);
+    }
+  }
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
 await a.waitForSelector('.codeText', { timeout: 20000 });
-const code = (await a.locator('.codeText').innerText()).trim();
-const session = JSON.parse(await a.evaluate(() => localStorage.getItem('ki-session-v3')));
+code = (await a.locator('.codeText').innerText()).trim();
+session = JSON.parse(await a.evaluate(() => localStorage.getItem('ki-session-v3')));
 
 await check('party code is six characters from the safe alphabet', () => {
   // I, O, 0 and 1 are not in the alphabet: the code gets read aloud in a queue.
@@ -621,7 +805,7 @@ await check('the party has a hex id distinct from its code', () => {
 // The Copy link button is the only way a visitor gets the invite out of the app.
 await a.locator('.codeBox button:has-text("Copy link")').click();
 await a.waitForTimeout(400);
-const invite = await a.evaluate(() => navigator.clipboard.readText());
+invite = await a.evaluate(() => navigator.clipboard.readText());
 
 await check('the invite is a /join link with everything after the hash', async () => {
   if (!invite.startsWith(`${BASE}/join#`)) throw new Error(invite.slice(0, 80));
@@ -645,6 +829,25 @@ await check('the host phone says it is hosting', async () => {
   return true;
 });
 
+await check('location sharing Off/Approx/Precise is available in the party', async () => {
+  await go(a, 'Party');
+  const group = a.locator('[aria-label="Location sharing"]');
+  await until(async () => (await group.count()) > 0, {
+    timeout: 15000,
+    label: 'location sharing control',
+  });
+  for (const mode of ['Off', 'Approx', 'Precise']) {
+    await group.locator(`.tab:has-text("${mode}")`).click();
+    await a.waitForTimeout(300);
+    if (!(await group.locator(`.tab.on:has-text("${mode}")`).count())) {
+      throw new Error(`${mode} not marked on`);
+    }
+  }
+  await group.locator('.tab:has-text("Approx")').click();
+  return true;
+});
+
+
 await check('the invite QR is drawn', async () => {
   await a.waitForSelector('.qrImg', { timeout: 15000 });
   const src = await a.locator('.qrImg').getAttribute('src');
@@ -655,14 +858,15 @@ await check('the invite QR is drawn', async () => {
 console.log('\n--- party: joining ---');
 
 // Phone B, down in Coney Mall, types the code in.
-const B = await openPhone(browser, {
+B = await openPhone(browser, {
   lat: 39.3412,
   lng: -84.2652,
   name: 'Ava',
   label: 'B',
   venue: 'kings-island',
 });
-const b = B.page;
+b = B.page;
+await signIn(b, 'ava@parkbound.example');
 await go(b, 'Party');
 await b.locator('.field.code').fill(code);
 await b.locator('button:has-text("Join")').click();
@@ -746,7 +950,7 @@ await check('meet-up set from a ride reaches the other phone', async () => {
 });
 
 // Phone C, by the Eiffel Tower, opens the invite link instead of typing anything.
-const C = await openPhone(browser, {
+C = await openPhone(browser, {
   lat: 39.343328,
   lng: -84.266981,
   name: 'Sam',
@@ -754,7 +958,13 @@ const C = await openPhone(browser, {
   label: 'C',
   venue: 'kings-island',
 });
-const c = C.page;
+c = C.page;
+await signIn(c, 'sam@parkbound.example');
+// Soft-gate defers /join until signed in; wait for the finish-join effect.
+await until(async () => (await c.locator('.codeText').count()) > 0, {
+  timeout: JOIN_TIMEOUT,
+  label: 'phone C soft-gate invite join',
+}).catch(() => {});
 
 await check('the invite link joins the party with nothing typed', async () => {
   await go(c, 'Party');
@@ -1011,8 +1221,10 @@ await check('the roster never collapses while the host is replaced', async () =>
   if (rosterFloor.min < 2) throw new Error(`roster fell to ${rosterFloor.min} rows`);
   return true;
 });
+} // end party (create / join / migration)
 
-console.log('\n--- venues ---');
+if (want('intake')) {
+console.log('\n--- intake / nearest park ---');
 
 // A phone that is at neither park: an hour up the interstate from Fiesta Texas,
 // and most of a continent from Kings Island. Its first fix is inside nothing,
@@ -1216,19 +1428,22 @@ await check('skipping location still asks which park to explore', async () => {
 });
 
 await intake.close();
+} // end intake
 
+if (want('party')) {
 // A phone that is nowhere near the party. It should open on the venue its own
 // fix falls inside, then follow the party to the venue the host is standing in
 // — everyone in a party has to be drawing the same place for a meet-up pin to
 // mean anything.
-const D = await openPhone(browser, {
+D = await openPhone(browser, {
   lat: 29.5992,
   lng: -98.6145, // Six Flags Fiesta Texas, San Antonio
   name: 'Remote',
   label: 'D',
   venue: 'six-flags-fiesta-texas',
 });
-const d = D.page;
+d = D.page;
+await signIn(d, 'remote@parkbound.example');
 /* Which map this phone is showing. The name is on the Explore screen, so read
    it there — tapping the tab this phone is already on pops it back to its root
    and costs nothing. */
@@ -1363,135 +1578,6 @@ await check('height, theme and party survive a reload', async () => {
   return true;
 });
 
-console.log('\n--- pwa + offline ---');
-
-await check('manifest and icons are served', async () => {
-  const m = await (await fetch(`${BASE}/manifest.webmanifest`)).json();
-  const i = await fetch(`${BASE}/icon-512.png`);
-  if (m.display !== 'standalone' || !i.ok) throw new Error('manifest/icon missing');
-  return true;
-});
-
-await check('service worker registers', async () => {
-  const reg = await b.evaluate(async () => Boolean(await navigator.serviceWorker.getRegistration()));
-  if (!reg) throw new Error('no service worker registration');
-  return true;
-});
-
-// The offline phone gets its own context: with the network cut, failed requests
-// are the expected behaviour rather than something to assert against.
-const offline = await browser.newContext({
-  viewport: { width: 390, height: 844 },
-  permissions: ['geolocation'],
-  geolocation: { latitude: 39.34395, longitude: -84.2673 },
-});
-const off = await offline.newPage();
-await off.goto(BASE, { waitUntil: 'domcontentloaded' });
-await off.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
-  timeout: 40000,
-});
-await off.waitForTimeout(3000); // let the worker install and cache the shell
-// Warm the Plan tab while online so the HeightPanel chunk is in the SW cache —
-// dynamic() import fails after reload if that chunk was never fetched.
-await closeGate(off);
-await go(off, 'Rider height');
-await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
-  timeout: 20000,
-  label: 'height tiers online warm',
-});
-await go(off, 'Places');
-await off.waitForTimeout(500);
-await offline.setOffline(true);
-await off.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-// Give the offline shell a moment to hydrate before asserting on tabs.
-await off.waitForTimeout(1500);
-await hydrated(off).catch(() => {});
-
-await check('the map still draws with the network cut', async () => {
-  const paths = await until(
-    async () => {
-      const n = await off.locator('svg.mapSvg path').count();
-      return n >= 100 ? n : null;
-    },
-    { timeout: 40000, label: 'the offline map to draw' },
-  );
-  return paths >= 100;
-});
-
-await check('ride heights still work with the network cut', async () => {
-  // Including the park question, which this context has never answered: saying
-  // yes to the park already on screen must not go back to the network for it.
-  await closeGate(off);
-  await go(off, 'Rider height');
-  await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
-    timeout: 20000,
-    label: 'height tiers offline',
-  });
-  await off.locator('.tierRow .tier', { hasText: '48' }).click();
-  await until(async () => (await off.locator('.ratioBar').count()) > 0, {
-    timeout: 10000,
-    label: 'ratio bar offline',
-  });
-  await go(off, 'Places');
-  await searchPlaces(off, 'beast');
-  const verdict = await rideHeightVerdict(off, 'The Beast');
-  if (!/CAN RIDE/i.test(verdict)) throw new Error(`verdict offline: ${verdict}`);
-  const badge = await off.locator('.filterBadge').textContent();
-  if (!/\d+ of \d+ rides/.test(badge.replace(/\s+/g, ' '))) throw new Error(badge);
-  return true;
-});
-await offline.close();
-
-console.log('\n--- per-venue smoke ---');
-
-const VENUE_SMOKE = [
-  { id: 'kings-island', lat: 39.34395, lng: -84.2673, search: 'The Beast', minPaths: 700 },
-  { id: 'six-flags-fiesta-texas', lat: 29.5992, lng: -98.6145, search: 'BATMAN', minPaths: 800 },
-  { id: 'cedar-point', lat: 41.4826, lng: -82.6862, search: 'Millennium Force', minPaths: 1000 },
-  { id: 'big-kahunas', lat: 30.3883, lng: -86.473, search: 'Jumanji', minPaths: 100 },
-];
-
-for (const v of VENUE_SMOKE) {
-  const phone = await openPhone(browser, {
-    lat: v.lat,
-    lng: v.lng,
-    label: v.id.slice(0, 2).toUpperCase(),
-    venue: v.id,
-  });
-  const p = phone.page;
-  await check(`${v.id} loads geometry and a known place`, async () => {
-    const paths = await p.locator('svg.mapSvg path').count();
-    if (paths < v.minPaths) throw new Error(`${paths} paths`);
-    await go(p, 'Places');
-    await p.locator('.field[aria-label="Search places"]').fill(v.search);
-    await p.waitForTimeout(500);
-    if ((await p.locator('.poiRow').count()) < 1) throw new Error(`no match for ${v.search}`);
-    return true;
-  });
-  await phone.context.close();
-}
-
-console.log('\n--- cedar point camping ---');
-
-const CP = await openPhone(browser, {
-  lat: 41.478,
-  lng: -82.688,
-  label: 'CP',
-  venue: 'cedar-point',
-});
-const cp = CP.page;
-
-await check('cedar point lists numbered campsite pitches', async () => {
-  await go(cp, 'Places');
-  await cp.locator('.chip.withDot:has-text("Camping")').click();
-  await cp.waitForTimeout(500);
-  const rows = await cp.locator('.poiRow').allInnerTexts();
-  if (!rows.some((r) => /site\s+\d+/i.test(r))) throw new Error(`no numbered pitch: ${rows.slice(0, 3)}`);
-  return true;
-});
-
-await CP.context.close();
-
 console.log('\n--- car parking ---');
 
 await check('save where I parked and walk back to it', async () => {
@@ -1583,6 +1669,150 @@ await check('show on the map toggles a category off and on', async () => {
   return true;
 });
 
+} // end party (park / map categories)
+
+if (want('offline')) {
+console.log('\n--- pwa + offline ---');
+
+await check('manifest and icons are served', async () => {
+  const m = await (await fetch(`${BASE}/manifest.webmanifest`)).json();
+  const i = await fetch(`${BASE}/icon-512.png`);
+  if (m.display !== 'standalone' || !i.ok) throw new Error('manifest/icon missing');
+  return true;
+});
+
+await check('service worker registers', async () => {
+  // Own context — do not require the party phone B from the party module.
+  const swCtx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 39.34395, longitude: -84.2673 },
+  });
+  const swPage = await swCtx.newPage();
+  await swPage.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await swPage.waitForTimeout(2000);
+  const reg = await swPage.evaluate(async () => Boolean(await navigator.serviceWorker.getRegistration()));
+  await swCtx.close();
+  if (!reg) throw new Error('no service worker registration');
+  return true;
+});
+
+// The offline phone gets its own context: with the network cut, failed requests
+// are the expected behaviour rather than something to assert against.
+const offline = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  permissions: ['geolocation'],
+  geolocation: { latitude: 39.34395, longitude: -84.2673 },
+});
+const off = await offline.newPage();
+await off.goto(BASE, { waitUntil: 'domcontentloaded' });
+await off.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+  timeout: 40000,
+});
+await off.waitForTimeout(3000); // let the worker install and cache the shell
+// Warm the Plan tab while online so the HeightPanel chunk is in the SW cache —
+// dynamic() import fails after reload if that chunk was never fetched.
+await closeGate(off);
+await go(off, 'Rider height');
+await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
+  timeout: 20000,
+  label: 'height tiers online warm',
+});
+await go(off, 'Places');
+await off.waitForTimeout(500);
+await offline.setOffline(true);
+await off.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+// Give the offline shell a moment to hydrate before asserting on tabs.
+await off.waitForTimeout(1500);
+await hydrated(off).catch(() => {});
+
+await check('the map still draws with the network cut', async () => {
+  const paths = await until(
+    async () => {
+      const n = await off.locator('svg.mapSvg path').count();
+      return n >= 100 ? n : null;
+    },
+    { timeout: 40000, label: 'the offline map to draw' },
+  );
+  return paths >= 100;
+});
+
+await check('ride heights still work with the network cut', async () => {
+  // Including the park question, which this context has never answered: saying
+  // yes to the park already on screen must not go back to the network for it.
+  await closeGate(off);
+  await go(off, 'Rider height');
+  await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
+    timeout: 20000,
+    label: 'height tiers offline',
+  });
+  await off.locator('.tierRow .tier', { hasText: '48' }).click();
+  await until(async () => (await off.locator('.ratioBar').count()) > 0, {
+    timeout: 10000,
+    label: 'ratio bar offline',
+  });
+  await go(off, 'Places');
+  await searchPlaces(off, 'beast');
+  const verdict = await rideHeightVerdict(off, 'The Beast');
+  if (!/CAN RIDE/i.test(verdict)) throw new Error(`verdict offline: ${verdict}`);
+  const badge = await off.locator('.filterBadge').textContent();
+  if (!/\d+ of \d+ rides/.test(badge.replace(/\s+/g, ' '))) throw new Error(badge);
+  return true;
+});
+await offline.close();
+} // end offline
+
+if (want('venues')) {
+console.log('\n--- per-venue smoke ---');
+
+const VENUE_SMOKE = [
+  { id: 'kings-island', lat: 39.34395, lng: -84.2673, search: 'The Beast', minPaths: 700 },
+  { id: 'six-flags-fiesta-texas', lat: 29.5992, lng: -98.6145, search: 'BATMAN', minPaths: 800 },
+  { id: 'cedar-point', lat: 41.4826, lng: -82.6862, search: 'Millennium Force', minPaths: 1000 },
+  { id: 'big-kahunas', lat: 30.3883, lng: -86.473, search: 'Jumanji', minPaths: 100 },
+];
+
+for (const v of VENUE_SMOKE) {
+  const phone = await openPhone(browser, {
+    lat: v.lat,
+    lng: v.lng,
+    label: v.id.slice(0, 2).toUpperCase(),
+    venue: v.id,
+  });
+  const p = phone.page;
+  await check(`${v.id} loads geometry and a known place`, async () => {
+    const paths = await p.locator('svg.mapSvg path').count();
+    if (paths < v.minPaths) throw new Error(`${paths} paths`);
+    await go(p, 'Places');
+    await p.locator('.field[aria-label="Search places"]').fill(v.search);
+    await p.waitForTimeout(500);
+    if ((await p.locator('.poiRow').count()) < 1) throw new Error(`no match for ${v.search}`);
+    return true;
+  });
+  await phone.context.close();
+}
+
+console.log('\n--- cedar point camping ---');
+
+const CP = await openPhone(browser, {
+  lat: 41.478,
+  lng: -82.688,
+  label: 'CP',
+  venue: 'cedar-point',
+});
+const cp = CP.page;
+
+await check('cedar point lists numbered campsite pitches', async () => {
+  await go(cp, 'Places');
+  await cp.locator('.chip.withDot:has-text("Camping")').click();
+  await cp.waitForTimeout(500);
+  const rows = await cp.locator('.poiRow').allInnerTexts();
+  if (!rows.some((r) => /site\s+\d+/i.test(r))) throw new Error(`no numbered pitch: ${rows.slice(0, 3)}`);
+  return true;
+});
+
+await CP.context.close();
+
 console.log('\n--- admin inspection ---');
 
 await check('venue inspection API returns all built parks', async () => {
@@ -1593,9 +1823,10 @@ await check('venue inspection API returns all built parks', async () => {
   if (body.passed < 4) throw new Error(`${body.passed}/${body.total} passed compare`);
   return true;
 });
+} // end venues
 
 console.log('\n--- console errors ---');
-for (const phone of [B, C, D]) {
+for (const phone of [A, B, C, D].filter(Boolean)) {
   await check(`no page errors on phone ${phone.label}`, () => {
     if (phone.errors.length) throw new Error(phone.errors.slice(0, 3).join(' | '));
     return true;

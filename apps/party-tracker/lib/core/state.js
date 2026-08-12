@@ -70,6 +70,7 @@ export function createMember({
   role = ROLE_MEMBER,
   joinOrder = 0,
   groupId = null,
+  userId = null,
   now = Date.now(),
 }) {
   return {
@@ -78,12 +79,18 @@ export function createMember({
     role,
     joinOrder,
     groupId,
+    /** Signed-in profile id (EP.5). Device peer id stays `id`. */
+    userId: userId || null,
     location: null, // { lat, lng, acc, heading, speed, ts }
     battery: null, // { level, charging }
     status: 'On the move',
     target: null, // rideId the member is heading for
     favorites: [],
     sharingPaused: false,
+    /** E4.1: off | approx | precise — approx is the safe default. */
+    shareMode: 'approx',
+    /** Epoch ms when precise (or timed) sharing expires; null = no timer. */
+    shareUntil: null,
     lastSeen: now,
   };
 }
@@ -203,12 +210,17 @@ export function reduce(state, command, now = Date.now()) {
         name: body.name || existing?.name || 'Guest',
         role: from === state.leader ? ROLE_HOST : ROLE_MEMBER,
         joinOrder: existing?.joinOrder ?? nextJoinOrder(state),
+        userId: body.userId || existing?.userId || null,
         now,
       });
       if (existing) {
         member.location = existing.location;
         member.favorites = existing.favorites;
         member.target = existing.target;
+        member.shareMode = existing.shareMode;
+        member.shareUntil = existing.shareUntil;
+        member.sharingPaused = existing.sharingPaused;
+        if (existing.userId) member.userId = existing.userId;
       }
       return withOps(state, [{ type: OP.MEMBER_SET, id: from, member }]);
     }
@@ -221,7 +233,7 @@ export function reduce(state, command, now = Date.now()) {
           { type: OP.MEMBER_MERGE, id: from, patch: { location: null, lastSeen: now } },
         ]);
       }
-      if (me.sharingPaused) return none(state);
+      if (me.sharingPaused || me.shareMode === 'off') return none(state);
       const loc = body.location;
       if (!isValidLocation(loc)) return none(state);
       // Last valid update replaces the previous one; anything older is a
@@ -255,7 +267,25 @@ export function reduce(state, command, now = Date.now()) {
       if (typeof body.patch?.name === 'string') patch.name = body.patch.name.slice(0, 24);
       if (body.patch?.status !== undefined) patch.status = body.patch.status;
       if (body.patch?.groupId !== undefined) patch.groupId = body.patch.groupId || null;
-      if (body.patch?.sharingPaused !== undefined) patch.sharingPaused = Boolean(body.patch.sharingPaused);
+      if (body.patch?.sharingPaused !== undefined) {
+        patch.sharingPaused = Boolean(body.patch.sharingPaused);
+        if (patch.sharingPaused) patch.shareMode = 'off';
+      }
+      if (body.patch?.shareMode !== undefined) {
+        const mode = String(body.patch.shareMode);
+        if (mode === 'off' || mode === 'approx' || mode === 'precise') {
+          patch.shareMode = mode;
+          patch.sharingPaused = mode === 'off';
+        }
+      }
+      if (body.patch?.shareUntil !== undefined) {
+        patch.shareUntil =
+          body.patch.shareUntil == null ? null : Number(body.patch.shareUntil) || null;
+      }
+      // EP.5: bind profile once; never allow swapping userId after bind.
+      if (body.patch?.userId && !me.userId) {
+        patch.userId = String(body.patch.userId).slice(0, 64);
+      }
       if (!Object.keys(patch).length) return none(state);
       patch.lastSeen = now;
       return withOps(state, [{ type: OP.MEMBER_MERGE, id: from, patch }]);

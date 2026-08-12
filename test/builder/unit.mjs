@@ -1215,6 +1215,50 @@ await check('shouldShareLocation allows in-park fixes and blocks off-site ones',
   return true;
 });
 
+{
+  const {
+    effectiveShareMode,
+    locationForShare,
+    shareModePatch,
+    DEFAULT_SHARE_MODE,
+  } = await import('../../apps/party-tracker/lib/gps/sharing.js');
+  const { createMember, coarsenLocation } = await import('../../apps/party-tracker/lib/core/state.js');
+
+  await check('E4.1 share modes: off clears, approx coarsens, precise keeps', () => {
+    const loc = { lat: 39.343828, lng: -84.265811, ts: 1 };
+    assert.equal(locationForShare(loc, 'off'), null);
+    const approx = locationForShare(loc, 'approx');
+    assert.deepEqual(approx, coarsenLocation(loc));
+    assert.notEqual(approx.lat, loc.lat);
+    assert.equal(locationForShare(loc, 'precise').lat, loc.lat);
+    return true;
+  });
+
+  await check('E4.1 precise duration expires back to approx', () => {
+    const now = 1_000_000;
+    const m = createMember({ id: 'x', now });
+    Object.assign(m, shareModePatch('precise', { now, durationMs: 60_000 }));
+    assert.equal(effectiveShareMode(m, now + 1), 'precise');
+    assert.equal(effectiveShareMode(m, now + 60_001), DEFAULT_SHARE_MODE);
+    assert.equal(effectiveShareMode({ ...m, sharingPaused: true }, now), 'off');
+    return true;
+  });
+
+  await check('EP.5 createMember carries userId and refuses swap in reduce', async () => {
+    const { reduce, createParty } = await import('../../apps/party-tracker/lib/core/state.js');
+    let state = createParty({ id: 'p1', leader: 'a', now: 1 });
+    state = reduce(state, { kind: 'join', from: 'a', body: { name: 'Ada', userId: 'usr_ada' } }, 2).state;
+    assert.equal(state.members.a.userId, 'usr_ada');
+    state = reduce(
+      state,
+      { kind: 'patch-member', from: 'a', body: { patch: { userId: 'usr_eve' } } },
+      3,
+    ).state;
+    assert.equal(state.members.a.userId, 'usr_ada');
+    return true;
+  });
+}
+
 await check('isLocationVisible mirrors the sharing rule', () => {
   assert.equal(isLocationVisible(KI_BOUNDS, 39.343828, -84.265811), true);
   assert.equal(isLocationVisible(KI_BOUNDS, 39.35, -84.265811), false);
@@ -2349,7 +2393,7 @@ await check('every named piece of track belongs to a ride we know', () => {
 
 await check('lib/park re-exports place search helpers', () => {
   const src = fs.readFileSync(new URL('../../apps/party-tracker/lib/park.js', import.meta.url), 'utf8');
-  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search'/);
+  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search(\.js)?'/);
   const listSrc = fs.readFileSync(new URL('../../apps/party-tracker/components/PlaceList.jsx', import.meta.url), 'utf8');
   assert.match(listSrc, /from '@\/lib\/park'/);
   assert.doesNotMatch(listSrc, /from '@\/lib\/search'/);
@@ -2500,6 +2544,169 @@ await check('a height rule reads low to high, in inches a person could be', () =
       assert.ok(min != null || alone != null || max != null, `${where}: an empty height rule`);
     });
   });
+  return true;
+});
+
+/* ------------------------------------------- eligibilityWithReasons --- */
+
+const {
+  VERDICT_ADVISORY,
+  VERDICT_COMPANION,
+  VERDICT_ELIGIBLE,
+  VERDICT_NOT,
+  VERDICT_UNKNOWN,
+  eligibilityWithReasons,
+} = await import('../../apps/party-tracker/lib/park.js');
+
+await check('eligibilityWithReasons maps every raw eligibility() answer to a fixed verdict code', () => {
+  const ride = { h: { min: 40, alone: 46, max: 72 } };
+
+  const tooShort = eligibilityWithReasons(ride, 30, false);
+  assert.equal(tooShort.raw, 'no');
+  assert.equal(tooShort.verdict, VERDICT_NOT);
+
+  const needsAdult = eligibilityWithReasons(ride, 42, false);
+  assert.equal(needsAdult.raw, 'no');
+  assert.equal(needsAdult.verdict, VERDICT_NOT);
+
+  const companion = eligibilityWithReasons(ride, 42, true);
+  assert.equal(companion.raw, 'companion');
+  assert.equal(companion.verdict, VERDICT_COMPANION);
+
+  const clear = eligibilityWithReasons(ride, 50, false);
+  assert.equal(clear.raw, 'yes');
+  assert.equal(clear.verdict, VERDICT_ELIGIBLE);
+
+  const tooTall = eligibilityWithReasons(ride, 80, false);
+  assert.equal(tooTall.raw, 'toobig');
+  assert.equal(tooTall.verdict, VERDICT_NOT);
+
+  const advisoryRide = { h: { advisory: 54 } };
+  const advisory = eligibilityWithReasons(advisoryRide, 60, false);
+  assert.equal(advisory.raw, 'advisory');
+  assert.equal(advisory.verdict, VERDICT_ADVISORY);
+
+  const noRule = eligibilityWithReasons({ h: null }, 50, false);
+  assert.equal(noRule.raw, 'unknown');
+  assert.equal(noRule.verdict, VERDICT_UNKNOWN);
+
+  const noHeightSet = eligibilityWithReasons(ride, null, false);
+  assert.equal(noHeightSet.raw, 'unknown');
+  assert.equal(noHeightSet.verdict, VERDICT_UNKNOWN);
+  return true;
+});
+
+await check('eligibilityWithReasons always returns at least one plain-language reason citing the rule', () => {
+  const ride = { h: { min: 40, alone: 46, max: 72 } };
+
+  const tooShort = eligibilityWithReasons(ride, 30, false);
+  assert.ok(tooShort.reasons.length >= 1);
+  assert.match(tooShort.reasons[0], /40"/);
+  assert.match(tooShort.reasons[0], /min/i);
+
+  const needsAdult = eligibilityWithReasons(ride, 42, false);
+  assert.match(needsAdult.reasons[0], /46"/);
+  assert.match(needsAdult.reasons[0], /adult/i);
+
+  const companion = eligibilityWithReasons(ride, 42, true);
+  assert.match(companion.reasons[0], /46"/);
+  assert.match(companion.reasons[0], /adult/i);
+
+  const tooTall = eligibilityWithReasons(ride, 80, false);
+  assert.match(tooTall.reasons[0], /72"/);
+  assert.match(tooTall.reasons[0], /max/i);
+
+  const clear = eligibilityWithReasons(ride, 50, false);
+  assert.match(clear.reasons[0], /40"/);
+
+  const advisoryRide = { h: { advisory: 54 } };
+  const advisory = eligibilityWithReasons(advisoryRide, 60, false);
+  assert.match(advisory.reasons[0], /54"/);
+
+  const noRule = eligibilityWithReasons({ h: null }, 50, false);
+  assert.ok(noRule.reasons.length >= 1);
+
+  const noHeightSet = eligibilityWithReasons(ride, null, false);
+  assert.ok(noHeightSet.reasons.length >= 1);
+  return true;
+});
+
+/* -------------------------------------------------- guest profiles --- */
+
+const {
+  MAX_GUESTS,
+  addGuestProfile,
+  createGuestProfile,
+  findGuestProfile,
+  loadActiveGuestId,
+  loadGuestProfiles,
+  normalizeGuestProfile,
+  removeGuestProfile,
+  saveActiveGuestId,
+  saveGuestProfiles,
+  updateGuestProfile,
+} = await import('../../apps/party-tracker/lib/guestProfiles.js');
+
+await check('guest profiles add, update and remove without mutating the list handed in', () => {
+  const list = [createGuestProfile({ label: 'Ava', heightIn: 44, withAdult: true })];
+  const snapshot = JSON.parse(JSON.stringify(list));
+
+  const added = addGuestProfile(list, { label: 'Ben', heightIn: 40, withAdult: false });
+  assert.equal(added.length, 2);
+  assert.deepEqual(list, snapshot, 'addGuestProfile must not mutate its input');
+
+  const benId = added[1].id;
+  const updated = updateGuestProfile(added, benId, { heightIn: 41 });
+  assert.equal(findGuestProfile(updated, benId).heightIn, 41);
+  // Editing one guest must not touch the other, or the id it was given.
+  assert.equal(findGuestProfile(updated, added[0].id).heightIn, 44);
+  assert.equal(findGuestProfile(updated, benId).id, benId);
+
+  const removed = removeGuestProfile(updated, added[0].id);
+  assert.equal(removed.length, 1);
+  assert.equal(findGuestProfile(removed, added[0].id), null);
+  assert.equal(findGuestProfile(removed, benId).heightIn, 41);
+  return true;
+});
+
+await check('guest profiles cap at MAX_GUESTS and give every one a unique id', () => {
+  let list = [];
+  for (let i = 0; i < MAX_GUESTS + 3; i += 1) {
+    list = addGuestProfile(list, { label: `Guest ${i}`, heightIn: 40 + i, withAdult: i % 2 === 0 });
+  }
+  assert.equal(list.length, MAX_GUESTS, 'a list already at the cap must not grow further');
+  assert.equal(new Set(list.map((g) => g.id)).size, MAX_GUESTS, 'ids must be unique');
+  return true;
+});
+
+await check('normalizeGuestProfile drops junk and coerces the rest to a safe shape', () => {
+  assert.equal(normalizeGuestProfile(null), null);
+  assert.equal(normalizeGuestProfile('nope'), null);
+  assert.equal(normalizeGuestProfile(42), null);
+
+  const coerced = normalizeGuestProfile({ heightIn: 'tall', withAdult: 1, label: '   ' });
+  assert.equal(coerced.heightIn, null, 'a non-numeric height must not survive');
+  assert.equal(coerced.withAdult, true, 'withAdult is coerced to a boolean');
+  assert.equal(coerced.label, 'Guest', 'a blank label falls back rather than staying blank');
+  assert.ok(coerced.id, 'a guest with no id is still given one');
+
+  const kept = normalizeGuestProfile({ id: 'g1', label: 'Ava', heightIn: 44, withAdult: true });
+  assert.deepEqual(kept, { id: 'g1', label: 'Ava', heightIn: 44, withAdult: true });
+  return true;
+});
+
+await check('guest profile storage is a safe no-op without localStorage, never a crash', () => {
+  assert.deepEqual(loadGuestProfiles(), []);
+  assert.equal(loadActiveGuestId(), null);
+  // Heights never touch the party wire — this is the whole point of the
+  // module being a standalone localStorage-backed store — so the save path
+  // has to survive being called from plain Node too, where there is no
+  // localStorage to write to.
+  const saved = saveGuestProfiles([{ label: 'Solo', heightIn: 48, withAdult: false }]);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].heightIn, 48);
+  saveActiveGuestId('g1');
+  saveActiveGuestId(null);
   return true;
 });
 
@@ -5562,6 +5769,60 @@ await check('recommendNow surfaces nearby clear-sky rides', () => {
   return true;
 });
 
+/* ---------------------------------------------- recommendNow — Why? --- */
+
+const BEAST_TALL = { ...BEAST_HERE, h: { min: 42 } };
+
+await check('recommendNow explains a weather-hedged pick with factors[] and a short why', () => {
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const picks = recommendNow([BEAST_HERE], null, FINE, me, [], 5_000_000, 2);
+  const [pick] = picks;
+  assert.ok(Array.isArray(pick.factors) && pick.factors.length >= 2);
+  assert.ok(pick.factors.some((f) => f.key === 'distance'));
+  assert.ok(pick.factors.some((f) => f.key === 'weather'));
+  // The rendered line is the reason, not every fact at once — no dashboard.
+  assert.equal(pick.why, 'Nearby and the sky looks clear');
+  return true;
+});
+
+await check('recommendNow prefers the party\u2019s report over the weather hedge as the why', () => {
+  const now = 5_000_000;
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const picks = recommendNow(
+    [BEAST_HERE],
+    { [BEAST_HERE.id]: { status: RIDE_OPEN, byName: 'Ava', ts: now } },
+    FINE,
+    me,
+    [],
+    now,
+    2,
+  );
+  const [pick] = picks;
+  assert.equal(pick.live.source, 'party');
+  assert.ok(pick.factors.some((f) => f.key === 'status' && f.label.includes('Ava')));
+  assert.ok(pick.why.includes('Ava'));
+  return true;
+});
+
+await check('recommendNow adds an eligibility factor once a rider height is known', () => {
+  const me = { lat: BEAST_TALL.lat, lng: BEAST_TALL.lng };
+  const withoutHeight = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2);
+  assert.ok(!withoutHeight[0].factors.some((f) => f.key === 'eligibility'));
+
+  const tallEnough = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, { height: 48 });
+  const elig = tallEnough[0].factors.find((f) => f.key === 'eligibility');
+  assert.equal(elig.verdict, 'yes');
+  assert.ok(tallEnough[0].why.includes('Tall enough'));
+  return true;
+});
+
+await check('recommendNow never recommends a ride the rider cannot ride', () => {
+  const me = { lat: BEAST_TALL.lat, lng: BEAST_TALL.lng };
+  const tooShort = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, { height: 36 });
+  assert.equal(tooShort.length, 0);
+  return true;
+});
+
 /* ------------------------------------------------------------ venue ids -- */
 
 section('venue/ids');
@@ -6883,6 +7144,161 @@ await check('buildSideQuests lists height and entrance gaps', async () => {
   return true;
 });
 
+section('sideQuests/proximity');
+
+await check('nearestTargetDistance resolves a quest target to a POI fix', async () => {
+  const { nearestTargetDistance } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const pois = [
+    { n: 'Near Ride', lat: 39.0, lng: -84.0 },
+    { n: 'Far Ride', lat: 39.02, lng: -84.0 },
+  ];
+  const quest = { targets: ['Near Ride', 'Far Ride'] };
+  const d = nearestTargetDistance(quest, pois, { lat: 39.0, lng: -84.0 });
+  assert.ok(d != null && d < 5);
+  assert.equal(nearestTargetDistance(quest, pois, null), null);
+  assert.equal(nearestTargetDistance({ targets: [] }, pois, { lat: 39.0, lng: -84.0 }), null);
+  assert.equal(
+    nearestTargetDistance({ targets: ['Missing'] }, pois, { lat: 39.0, lng: -84.0 }),
+    null,
+  );
+  return true;
+});
+
+await check('sortByProximity floats nearby quests to the front without dropping the rest', async () => {
+  const { sortByProximity } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const pois = [
+    { n: 'Close Ride', lat: 39.0, lng: -84.0 },
+    { n: 'Far Ride', lat: 39.02, lng: -84.0 }, // ~2.2km away, well outside 150m
+  ];
+  const quests = [
+    { id: 'far_one', targets: ['Far Ride'] },
+    { id: 'no_target', targets: [] },
+    { id: 'close_one', targets: ['Close Ride'] },
+  ];
+  const sorted = sortByProximity(quests, pois, { lat: 39.0, lng: -84.0 });
+  assert.equal(sorted.length, 3);
+  assert.equal(sorted[0].id, 'close_one');
+  assert.equal(sorted[0].nearby, true);
+  // The others are still present — proximity re-orders, it never hides.
+  assert.ok(sorted.some((q) => q.id === 'far_one'));
+  assert.ok(sorted.some((q) => q.id === 'no_target'));
+  assert.equal(sorted.find((q) => q.id === 'far_one').nearby, false);
+  // With no position, the original order and shape pass through untouched.
+  const untouched = sortByProximity(quests, pois, null);
+  assert.deepEqual(untouched, quests);
+  return true;
+});
+
+section('adventure/questQueue');
+
+await check('createReport builds a pending envelope and rejects missing fields', async () => {
+  const { createReport, STATUS_PENDING } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const report = createReport({
+    questId: 'height_rule',
+    venueId: 'kings-island',
+    kind: 'height_rule',
+    payload: { note: 'sign was covered', status: 'issue' },
+    lat: 39.34,
+    lng: -84.26,
+    now: 1_700_000_000_000,
+  });
+  assert.ok(report.id);
+  assert.equal(report.questId, 'height_rule');
+  assert.equal(report.venueId, 'kings-island');
+  assert.equal(report.placeId, null);
+  assert.equal(report.status, STATUS_PENDING);
+  assert.equal(report.createdAt, 1_700_000_000_000);
+  assert.equal(report.lat, 39.34);
+  assert.equal(report.payload.note, 'sign was covered');
+  // Two reports never collide on id even when minted back to back.
+  const other = createReport({ questId: 'height_rule', kind: 'height_rule' });
+  assert.notEqual(report.id, other.id);
+  assert.throws(() => createReport({ kind: 'height_rule' }));
+  assert.throws(() => createReport({ questId: 'height_rule' }));
+  // No GPS yet is an ordinary state, not an error — never invents a fix.
+  const noFix = createReport({ questId: 'poi_restroom', kind: 'poi_presence' });
+  assert.equal(noFix.lat, null);
+  assert.equal(noFix.lng, null);
+  return true;
+});
+
+await check('nearbyReports keeps only resolvable fixes within radius, nearest first', async () => {
+  const { nearbyReports } = await import('../../apps/party-tracker/lib/adventure/questQueue.js');
+  const me = { lat: 39.0, lng: -84.0 };
+  const reports = [
+    { id: 'a', lat: 39.001, lng: -84.0 }, // ~111m
+    { id: 'b', lat: null, lng: null }, // no fix — never counts as nearby
+    { id: 'c', lat: 39.02, lng: -84.0 }, // ~2.2km — outside 150m
+    { id: 'd', lat: 39.0002, lng: -84.0 }, // ~22m, closest
+  ];
+  const near = nearbyReports(reports, me);
+  assert.deepEqual(near.map((r) => r.id), ['d', 'a']);
+  assert.deepEqual(nearbyReports(reports, null), []);
+  return true;
+});
+
+await check('createQuestQueue enqueues, loads in order, removes and clears', async () => {
+  const { createQuestQueue, createReport } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const queue = createQuestQueue({ storageKey: 'test.questQueue.order' });
+  assert.deepEqual(await queue.load(), []);
+  assert.equal(await queue.pendingCount(), 0);
+
+  const first = createReport({ questId: 'ride_status', kind: 'ride_status', now: 1000 });
+  const second = createReport({ questId: 'queue_band', kind: 'queue_band', now: 2000 });
+  await queue.enqueue(second);
+  await queue.enqueue(first); // enqueued out of order — load() sorts by createdAt
+
+  const loaded = await queue.load();
+  assert.deepEqual(loaded.map((r) => r.id), [first.id, second.id]);
+  assert.equal(await queue.pendingCount(), 2);
+
+  await queue.remove(first.id);
+  assert.deepEqual((await queue.load()).map((r) => r.id), [second.id]);
+
+  await queue.clear();
+  assert.deepEqual(await queue.load(), []);
+  assert.equal(await queue.pendingCount(), 0);
+  return true;
+});
+
+await check('createQuestQueue rejects anything that is not a built report', async () => {
+  const { createQuestQueue } = await import('../../apps/party-tracker/lib/adventure/questQueue.js');
+  const queue = createQuestQueue({ storageKey: 'test.questQueue.guard' });
+  await assert.rejects(() => queue.enqueue({ questId: 'no-id-here' }));
+  return true;
+});
+
+await check('createQuestQueue caps its tail at max — oldest is dropped, not newest', async () => {
+  const { createQuestQueue, createReport } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const queue = createQuestQueue({ storageKey: 'test.questQueue.cap', max: 3 });
+  const reports = [0, 1, 2, 3, 4].map((n) =>
+    createReport({ questId: 'poi_food', kind: 'poi_presence', now: n }),
+  );
+  for (const r of reports) await queue.enqueue(r);
+  const loaded = await queue.load();
+  assert.equal(loaded.length, 3);
+  assert.deepEqual(loaded.map((r) => r.createdAt), [2, 3, 4]);
+  return true;
+});
+
+await check('separate queue instances do not share an in-memory outbox', async () => {
+  const { createQuestQueue, createReport } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const queueA = createQuestQueue({ storageKey: 'test.questQueue.a' });
+  const queueB = createQuestQueue({ storageKey: 'test.questQueue.b' });
+  await queueA.enqueue(createReport({ questId: 'ride_status', kind: 'ride_status' }));
+  assert.equal((await queueA.load()).length, 1);
+  assert.equal((await queueB.load()).length, 0);
+  return true;
+});
+
 await check('quest seeds map builder ask gaps to Scout types', async () => {
   const { questSeedsFromRequests } = await import('../../packages/venue-builder/lib/quest-seeds.mjs');
   const seeds = questSeedsFromRequests('demo', [
@@ -6929,6 +7345,177 @@ await check('shared schemas export ranks and soft-gate helpers', () => {
   return true;
 });
 
+/* -------------------------------- consolidate (E0.5-6) -- */
+
+{
+  const {
+    cadenceFromRecipe,
+    isDue,
+    planContribution,
+    consolidate,
+    DEFAULT_CADENCE,
+  } = await import('../../packages/venue-builder/lib/consolidate.mjs');
+
+  await check('consolidate cadence defaults to weekly', () => {
+    assert.equal(cadenceFromRecipe(null), DEFAULT_CADENCE);
+    assert.equal(cadenceFromRecipe({ consolidate: { cadence: 'daily' } }), 'daily');
+    assert.equal(cadenceFromRecipe({ consolidate: { cadence: 'nope' } }), 'weekly');
+    return true;
+  });
+
+  await check('consolidate isDue respects weekly window and manual', () => {
+    const now = Date.parse('2026-08-11T00:00:00Z');
+    assert.equal(isDue({ cadence: 'weekly', lastConsolidated: null }, now), true);
+    assert.equal(
+      isDue({ cadence: 'weekly', lastConsolidated: '2026-08-10T00:00:00Z' }, now),
+      false,
+    );
+    assert.equal(isDue({ cadence: 'manual', lastConsolidated: null }, now), false);
+    assert.equal(isDue({ cadence: 'manual', lastConsolidated: null }, now, { force: true }), true);
+    return true;
+  });
+
+  await check('consolidate plans height rules and skips ephemeral', () => {
+    const height = planContribution({
+      id: 'c1',
+      status: 'accepted',
+      kind: 'height_rule',
+      venueId: 'kings-island',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.equal(height.action, 'heights');
+    const skip = planContribution({
+      id: 'c2',
+      status: 'accepted',
+      kind: 'experience',
+      venueId: 'kings-island',
+      payload: {},
+    });
+    assert.equal(skip.action, 'skip');
+    return true;
+  });
+
+  await check('consolidate dry-run never writes public/venues', () => {
+    const written = [];
+    const report = consolidate({
+      contributions: [
+        {
+          id: 'c1',
+          status: 'accepted',
+          kind: 'height_rule',
+          venueId: 'kings-island',
+          payload: { placeName: 'The Beast', min: 48 },
+        },
+      ],
+      venueIds: ['kings-island'],
+      force: true,
+      apply: false,
+      writeFile: (f) => written.push(f),
+      readHeights: () => ({ version: 1, venue: 'kings-island', rules: {} }),
+      readOverrides: () => ({ pois: {} }),
+      readRecipe: () => ({ id: 'kings-island', consolidate: { cadence: 'daily' } }),
+    });
+    assert.equal(report.applied.length, 1);
+    assert.equal(written.length, 0);
+    assert.ok(!report.writes.some((w) => /public[/\\]venues/.test(w)));
+    return true;
+  });
+
+  await check('consolidate apply writes only data/venues paths', () => {
+    const written = [];
+    const report = consolidate({
+      contributions: [
+        {
+          id: 'c1',
+          status: 'accepted',
+          kind: 'poi_patch',
+          venueId: 'kings-island',
+          payload: { placeName: 'Demo Toilet', patch: { c: 'restroom' } },
+        },
+      ],
+      venueIds: ['kings-island'],
+      force: true,
+      apply: true,
+      writeFile: (f, body) => {
+        written.push(f);
+        assert.ok(/data[/\\]venues/.test(f), f);
+        assert.ok(!/public[/\\]venues/.test(f), f);
+        assert.ok(body.includes('Demo Toilet') || body.includes('consolidate') || body.includes('lastAt'));
+      },
+      readHeights: () => null,
+      readOverrides: () => ({ pois: {}, drop: [] }),
+      readRecipe: () => ({ id: 'kings-island', consolidate: { cadence: 'daily' } }),
+    });
+    assert.equal(report.applied.length, 1);
+    assert.ok(written.length >= 1);
+    return true;
+  });
+}
+
+await check('soft-gate helper lives on the local session module', async () => {
+  const { softGateBlocks } = await import('../../apps/party-tracker/lib/auth/session.js');
+  assert.equal(softGateBlocks('party', null), true);
+  assert.equal(softGateBlocks('browse', null), false);
+  return true;
+});
+
+{
+  const store = new Map();
+  globalThis.window = {
+    sessionStorage: {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => {
+        store.set(k, String(v));
+      },
+      removeItem: (k) => {
+        store.delete(k);
+      },
+    },
+  };
+  const {
+    softGateBlocks,
+    completeMagicSignIn,
+    readLocalSession,
+    clearLocalSession,
+    signOutLocal,
+  } = await import('../../apps/party-tracker/lib/auth/session.js');
+
+  await check('softGateBlocks party/adventure until signed in', () => {
+    assert.equal(softGateBlocks('party', null), true);
+    assert.equal(softGateBlocks('adventure', { userId: 'usr_x' }), false);
+    assert.equal(softGateBlocks('party', { userId: 'usr_x' }), false);
+    return true;
+  });
+
+  await check('completeMagicSignIn writes a local session', async () => {
+    clearLocalSession();
+    const session = await completeMagicSignIn({ email: 'ada@parkbound.example', displayName: 'Ada' });
+    assert.equal(session.email, 'ada@parkbound.example');
+    assert.ok(session.userId.startsWith('usr_'));
+    assert.equal(readLocalSession()?.displayName, 'Ada');
+    await signOutLocal();
+    assert.equal(readLocalSession(), null);
+    return true;
+  });
+
+  await check('completeMagicSignIn title-cases email local-part display names', async () => {
+    clearLocalSession();
+    const session = await completeMagicSignIn({ email: 'ava@parkbound.example' });
+    assert.equal(session.displayName, 'Ava');
+    await signOutLocal();
+    return true;
+  });
+
+  await check('completeMagicSignIn rejects a bare string without @', async () => {
+    try {
+      await completeMagicSignIn({ email: 'not-an-email' });
+      return false;
+    } catch (err) {
+      assert.match(err.message, /valid email/i);
+      return true;
+    }
+  });
+}
 /* ---------------------------------------------------------------- tally -- */
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

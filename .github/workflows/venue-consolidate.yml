@@ -1,0 +1,56 @@
+# Venue consolidate (E0.5–E0.6)
+
+name: Venue consolidate
+
+on:
+  schedule:
+    # Weekly default cadence (Monday 07:00 UTC) — matches E0.6 default.
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Write data/venues (false = dry-run only)'
+        required: false
+        default: 'false'
+      venue:
+        description: 'Optional single venue id'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  consolidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Consolidate queue (builder inputs only)
+        id: cons
+        run: |
+          set -e
+          ARGS=(--json --queue data/consolidate/queue.json)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.apply }}" = "true" ]; then
+            ARGS+=(--apply --force)
+          else
+            ARGS+=(--dry-run --force)
+          fi
+          if [ -n "${{ inputs.venue }}" ]; then
+            ARGS+=(--venue "${{ inputs.venue }}")
+          fi
+          npm run venues:consolidate -- "${ARGS[@]}" | tee consolidate-report.json
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidate-report
+          path: consolidate-report.json

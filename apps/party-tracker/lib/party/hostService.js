@@ -120,7 +120,7 @@ export function createHostService({
   // going through `reduce` means it gets the same record shape as a joiner.
   state = reduce(
     state,
-    { kind: 'join', from: selfId, body: { name: session?.memberName || 'Host' } },
+    { kind: 'join', from: selfId, body: { name: session?.memberName || 'Host', userId: session?.userId || null } },
     now(),
   ).state;
 
@@ -202,7 +202,10 @@ export function createHostService({
    */
   function joinBody(body) {
     const m = body?.member && typeof body.member === 'object' ? body.member : body || {};
-    return { name: typeof m.name === 'string' ? m.name : undefined };
+    return {
+      name: typeof m.name === 'string' ? m.name : undefined,
+      userId: typeof m.userId === 'string' ? m.userId.slice(0, 64) : m.userId || undefined,
+    };
   }
 
   async function handleSealed(sealed) {
