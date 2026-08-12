@@ -44,6 +44,26 @@ const manifest = loadModulesManifest();
 }
 
 {
+  const sel = selectModulesFromFiles(
+    ['.gitnexus/lbug', '.gitnexus/meta.json', 'AGENTS.md', 'CLAUDE.md'],
+    manifest,
+  );
+  assert(sel.modules.includes('contract'), 'gitnexus still get contract');
+  assert(!sel.modules.includes('party'), 'gitnexus do not pull party');
+  assert(!sel.modules.includes('builder'), 'gitnexus do not pull builder');
+  assert(!sel.fullSuite, 'gitnexus not full suite');
+}
+
+{
+  const sel = selectModulesFromFiles(
+    ['.gitnexus/meta.json', 'apps/party-tracker/components/HeightPanel.jsx'],
+    manifest,
+  );
+  assert(sel.modules.includes('heights'), 'mixed gitnexus + heights still selects heights');
+  assert(!sel.fullSuite, 'mixed gitnexus is not full suite');
+}
+
+{
   const sel = selectModulesFromFiles(['apps/party-tracker/lib/party/client.js'], manifest);
   assert(sel.modules.includes('party'), 'party path → party');
   assert(sel.modules.includes('grandma'), 'party path → grandma via pulls');

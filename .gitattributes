@@ -1,3 +1,7 @@
 # Matt Pocock vendored skills — always LF so lock hashes match CI
 .agents/skills/** text eol=lf
 skills-lock.json text eol=lf
+
+# GitNexus index — LadybugDB is binary; caches are generated. Do not CRLF-convert.
+.gitnexus/lbug binary
+.gitnexus/** linguist-generated
