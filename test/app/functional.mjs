@@ -46,7 +46,14 @@ const check = async (n, fn) => {
     if (r === false) throw new Error('assertion false');
     ok(n);
   } catch (e) {
-    bad(n, e.message.split('\n')[0]);
+    // Keep the first actionable lines (Playwright often puts the locator on line 2–3).
+    const msg = String(e.message || e)
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(' | ');
+    bad(n, msg);
   }
 };
 
@@ -1372,6 +1379,9 @@ await off.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').len
 await off.waitForTimeout(3000); // let the worker install and cache the shell
 await offline.setOffline(true);
 await off.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+// Give the offline shell a moment to hydrate before asserting on tabs.
+await off.waitForTimeout(1500);
+await hydrated(off).catch(() => {});
 
 await check('the map still draws with the network cut', async () => {
   const paths = await until(
@@ -1389,10 +1399,15 @@ await check('ride heights still work with the network cut', async () => {
   // yes to the park already on screen must not go back to the network for it.
   await closeGate(off);
   await go(off, 'Rider height');
-  await off.waitForTimeout(500);
-  await off.locator('.tier:has-text("48")').click();
-  await off.waitForTimeout(500);
-  if (!(await off.locator('.ratioBar').count())) throw new Error('no ratio bar offline');
+  await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
+    timeout: 20000,
+    label: 'height tiers offline',
+  });
+  await off.locator('.tierRow .tier', { hasText: '48' }).click();
+  await until(async () => (await off.locator('.ratioBar').count()) > 0, {
+    timeout: 10000,
+    label: 'ratio bar offline',
+  });
   await go(off, 'Places');
   await searchPlaces(off, 'beast');
   const verdict = await rideHeightVerdict(off, 'The Beast');
@@ -1507,20 +1522,18 @@ await check('show on the map toggles a category off and on', async () => {
     await b.locator('.navEnd').click().catch(() => {});
     await b.waitForTimeout(400);
   }
-  await go(b, 'Me');
-  await until(async () => (await b.locator('.row:has-text("Show on the map")').count()) > 0, {
-    timeout: 10000,
-    label: 'show on the map row',
-  });
-  await b.locator('.row:has-text("Show on the map")').click();
-  await b.waitForTimeout(400);
-  const before = await b.locator('svg.mapSvg path').count();
+  // UI copy is "On the map" (go() still accepts the older "Show on the map" alias).
+  await go(b, 'On the map');
   await until(async () => (await b.locator('.chip:has-text("Coasters")').count()) > 0, {
-    timeout: 10000,
+    timeout: 15000,
     label: 'coasters chip',
   });
+  const before = await b.locator('svg.mapSvg path').count();
   await b.locator('.chip:has-text("Coasters")').click();
-  await b.waitForTimeout(500);
+  await until(async () => (await b.locator('svg.mapSvg path').count()) < before, {
+    timeout: 10000,
+    label: 'coasters hidden on map',
+  });
   const after = await b.locator('svg.mapSvg path').count();
   if (!(after < before)) throw new Error(`paths ${before} -> ${after}`);
   await b.locator('.chip:has-text("Coasters")').click();
