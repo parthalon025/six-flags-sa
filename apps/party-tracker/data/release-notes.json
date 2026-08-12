@@ -120,5 +120,11 @@
     "items": [
       "Align Park Bound with CONTEXT.md glossary"
     ]
+  },
+  "1.1.20": {
+    "title": "What's new",
+    "items": [
+      "Merge branch 'main' of https://github.com/parthalon025/six-flags-sa"
+    ]
   }
 }
