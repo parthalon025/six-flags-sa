@@ -58,8 +58,8 @@
     "gitnexus:startup": "node scripts/gitnexus-sync.mjs startup",
     "gitnexus:sync": "node scripts/gitnexus-sync.mjs finish",
     "skills:check": "node scripts/check-skills-lock.mjs",
-    "skills:update": "npx skills@latest update -p -y && npm run skills:check",
-    "skills:restore": "npx skills@latest experimental_install && npm run skills:check"
+    "skills:update": "npx skills@latest update -p -y && node scripts/check-skills-lock.mjs --write-lock && npm run skills:check",
+    "skills:restore": "npx skills@latest experimental_install && node scripts/check-skills-lock.mjs --write-lock && npm run skills:check"
   },
   "dependencies": {
     "next": "^16.3.0",

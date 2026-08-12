@@ -1,0 +1,3 @@
+# Matt Pocock vendored skills — always LF so lock hashes match CI
+.agents/skills/** text eol=lf
+skills-lock.json text eol=lf

@@ -25,6 +25,8 @@ npm run skills:check
 ## What `skills:check` verifies
 
 - Every entry in `skills-lock.json` exists under `.agents/skills/<name>/`
-- Each folder's content hash matches `computedHash` (same algorithm as the `skills` CLI)
+- Each folder's content hash matches `computedHash` (skills CLI algorithm, **LF-normalized** so Windows and Linux CI agree)
 - Every lock entry sources `mattpocock/skills`
 - No unexpected extra skill folders under `.agents/skills/` beyond the lock
+
+`npm run skills:update` / `skills:restore` rewrite lock hashes after the skills CLI refresh (the upstream CLI may hash CRLF on Windows).

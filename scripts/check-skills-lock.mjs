@@ -2,9 +2,12 @@
 /**
  * Verify `.agents/skills/*` match `skills-lock.json` (skills CLI folder hash).
  * Prevents hand-edit drift from Matt Pocock's pinned skill install.
+ *
+ * Hashes are computed over LF-normalized file bytes so Windows (CRLF working
+ * trees) and Linux CI agree. `skills-lock.json` must store those LF hashes.
  */
 import { createHash } from 'node:crypto';
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,6 +15,13 @@ const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const LOCK_PATH = join(ROOT, 'skills-lock.json');
 const SKILLS_DIR = join(ROOT, '.agents', 'skills');
 const EXPECTED_SOURCE = 'mattpocock/skills';
+
+const rewrite = process.argv.includes('--write-lock');
+
+function toLfBuffer(buf) {
+  const text = buf.toString('utf8').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  return Buffer.from(text, 'utf8');
+}
 
 async function collectFiles(baseDir, currentDir, results) {
   const entries = await readdir(currentDir, { withFileTypes: true });
@@ -22,9 +32,9 @@ async function collectFiles(baseDir, currentDir, results) {
         if (entry.name === '.git' || entry.name === 'node_modules') return;
         await collectFiles(baseDir, fullPath, results);
       } else if (entry.isFile()) {
-        const content = await readFile(fullPath);
+        const raw = await readFile(fullPath);
         const relativePath = relative(baseDir, fullPath).split('\\').join('/');
-        results.push({ relativePath, content });
+        results.push({ relativePath, content: toLfBuffer(raw) });
       }
     }),
   );
@@ -79,6 +89,7 @@ async function main() {
     if (!lockedSet.has(name)) fail(`unexpected skill folder not in lock: ${name}`);
   }
 
+  let rewritten = 0;
   for (const name of lockedNames) {
     const entry = locked[name];
     if (entry.source !== EXPECTED_SOURCE) {
@@ -86,12 +97,26 @@ async function main() {
     }
     const skillDir = join(SKILLS_DIR, name);
     const actual = await computeSkillFolderHash(skillDir);
+    if (rewrite) {
+      if (entry.computedHash !== actual) {
+        entry.computedHash = actual;
+        rewritten += 1;
+      }
+      continue;
+    }
     if (actual !== entry.computedHash) {
       fail(
         `${name}: hash drift (lock ${entry.computedHash.slice(0, 12)}…, disk ${actual.slice(0, 12)}…). ` +
-          `Do not hand-edit; run: npx skills@latest update -p -y`,
+          `Do not hand-edit; run: npm run skills:update`,
       );
     }
+  }
+
+  if (rewrite) {
+    const body = `${JSON.stringify(lock, null, 2)}\n`;
+    await writeFile(LOCK_PATH, body, 'utf8');
+    console.log(`skills-lock rewritten: ${rewritten} hash(es) updated (LF-normalized)`);
+    return;
   }
 
   if (process.exitCode) return;
