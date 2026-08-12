@@ -4068,6 +4068,41 @@ await check('slug-key overrides resolve via addressBook, not display name', asyn
   return true;
 });
 
+await check('KI Xtreme Skyflyer override is ledger-keyed and survives rename', async () => {
+  const { addressBook, assignKeys, resolveOverride } = await import(
+    '../../packages/venue-builder/lib/venue-ids.mjs'
+  );
+  const fs = await import('node:fs');
+  const overrides = JSON.parse(
+    fs.readFileSync(
+      new URL('../../packages/venue-builder/data/venues/kings-island/overrides.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  assert.ok(overrides.pois['xtreme-skyflyer'], 'override must use ledger i');
+  assert.equal(overrides.pois['Xtreme Skyflyer'], undefined);
+  assert.ok(overrides.drop.includes('age-or-weight-2'));
+  assert.ok(!overrides.drop.includes('Age or Weight'));
+
+  const first = assignKeys(
+    [{ n: 'Xtreme Skyflyer', c: 'ride', lat: 39.345873, lng: -84.265853, osm: 'node/1' }],
+    null,
+    { venue: 'kings-island', keepOsm: true },
+  );
+  assert.equal(first.pois[0].i, 'xtreme-skyflyer');
+  const renamed = assignKeys(
+    [{ n: 'Extreme Sky Flyer', c: 'ride', lat: 39.345873, lng: -84.265853, osm: 'node/1' }],
+    first.ledger,
+    { venue: 'kings-island', keepOsm: true },
+  );
+  assert.equal(renamed.pois[0].i, 'xtreme-skyflyer');
+  const book = addressBook(renamed.pois);
+  const hit = resolveOverride(book, 'xtreme-skyflyer', overrides.pois['xtreme-skyflyer']);
+  assert.ok(hit?.length);
+  assert.equal(hit[0].i, 'xtreme-skyflyer');
+  return true;
+});
+
 const { auditVenue, renderAuditMarkdown } = await import('../../packages/venue-builder/lib/venue-audit.mjs');
 const { scaffoldSourcesCatalogue } = await import('../../packages/venue-builder/lib/park-capabilities.mjs');
 const { enrichOfficialFromSidecar } = await import('../../packages/venue-builder/lib/venue-official-site.mjs');
