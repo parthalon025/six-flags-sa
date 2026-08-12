@@ -96,6 +96,34 @@ await check('glance rail renders nearby fallback cards', async () => {
   return (await a.locator('.glanceCard').count()) >= 2;
 });
 
+await check('GO NOW card carries a Why? explanation', async () => {
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(500);
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  await root(a);
+  // Peek so the glance rail is visible.
+  for (let i = 0; i < 4; i += 1) {
+    const stop = await a.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+    );
+    if (stop === 'peek') break;
+    await a.getByRole('slider', { name: /Resize panel/ }).click();
+    await a.waitForTimeout(300);
+  }
+  const goNow = a.locator('.glanceCard').filter({ has: a.locator('.glanceEyebrow', { hasText: /GO NOW|Now/i }) }).first();
+  const anyCard = a.locator('.glanceCard .glanceHit[title]').first();
+  await until(
+    async () => (await goNow.count()) > 0 || (await anyCard.count()) > 0,
+    { timeout: 15000, label: 'a glance card with Why title' },
+  );
+  const hit = (await goNow.count()) > 0 ? goNow.locator('.glanceHit') : anyCard;
+  const why = (await hit.getAttribute('title')) || '';
+  if (!why || why.length < 6) throw new Error(`missing Why? title: "${why}"`);
+  return true;
+});
+
+
 await check('theme toggle flips data-theme', async () => {
   const before = await a.evaluate(() => document.documentElement.dataset.theme);
   await a.locator('button[aria-label*="map"]').first().click();
