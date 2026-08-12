@@ -97,6 +97,44 @@ await check('glance rail renders nearby fallback cards', async () => {
 });
 
 await check('GO NOW card carries a Why? explanation', async () => {
+  // Deterministic clear/day sky so outdoor GO NOW is not suppressed by night
+  // or a stormy Open-Meteo reading during CI.
+  await a.route('**/api/weather**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+        source: 'test-fixture',
+      }),
+    });
+  });
+  await a.evaluate(() => {
+    localStorage.setItem(
+      'ki-weather',
+      JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+      }),
+    );
+  });
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("48")').click();
   await a.waitForTimeout(500);
@@ -111,6 +149,15 @@ await check('GO NOW card carries a Why? explanation', async () => {
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(300);
   }
+  // Nudge weather refresh after the fixture is in place.
+  await a.evaluate(async () => {
+    try {
+      await fetch('/api/weather?lat=39.34&lng=-84.27', { cache: 'no-store' });
+    } catch {
+      /* fixture route handles it */
+    }
+  });
+  await a.waitForTimeout(800);
   const goNowHit = a.locator('.glanceCard.goNow .glanceHit[title]');
   const whyHit = a.locator('.glanceHit[title*="Why"]');
   await until(
