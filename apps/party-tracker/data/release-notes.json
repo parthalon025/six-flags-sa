@@ -96,5 +96,11 @@
     "items": [
       "Align Parkbound brand assets with logo lockup, icon, and map usage (#49)"
     ]
+  },
+  "1.1.16": {
+    "title": "What's new",
+    "items": [
+      "Fix main CI: restore bump-version script and self-host display font. (#101)"
+    ]
   }
 }
