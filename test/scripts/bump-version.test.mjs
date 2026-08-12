@@ -92,7 +92,13 @@ const ignore = readFileSync(join(root, 'scripts/vercel-ignore.sh'), 'utf8');
 assert.match(ignore, /scripts\/lib\/app-paths\.json/);
 
 const bumpYml = readFileSync(join(root, '.github/workflows/bump-version.yml'), 'utf8');
-assert.match(bumpYml, /steps\.bump\.outputs\.skipped/);
-assert.match(bumpYml, /fetch-depth:\s*0/);
+assert.match(bumpYml, /node scripts\/bump-version\.mjs/);
+assert.match(bumpYml, /gitnexus-sync\.mjs finish --commit/);
+
+const appPkg = JSON.parse(readFileSync(join(root, 'apps/party-tracker/package.json'), 'utf8'));
+assert.equal(appPkg.dependencies['@party-tracker/shared'], '*');
+const builderPkg = JSON.parse(readFileSync(join(root, 'packages/venue-builder/package.json'), 'utf8'));
+assert.equal(builderPkg.dependencies['@party-tracker/shared'], '*');
+assert.equal(builderPkg.version, appPkg.version);
 
 console.log('bump-version tests: ok');

@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // lib/**.js is ESM in a package with no "type" field, so Node warns once about
 // reparsing it. Not actionable from a test and it buries the tally, so the
@@ -73,6 +74,7 @@ const { isLocationVisible, shouldShareLocation } = await import('../../apps/part
 const {
   MAX_ACC_M,
   MAX_SPEED_MS,
+  TELEPORT_M,
   createGpsSmoother,
   positionForMap,
 } = await import('../../apps/party-tracker/lib/gps/smooth.js');
@@ -1247,6 +1249,16 @@ await check('manual placement resets the smoother', () => {
   return true;
 });
 
+await check('a park-to-park jump is a teleport, not rejected jitter', () => {
+  const s = createGpsSmoother();
+  s.update({ lat: 39.34395, lng: -84.2673, acc: 12, ts: 0 });
+  const cp = s.update({ lat: 41.4826, lng: -82.6862, acc: 12, ts: 400 });
+  assert.equal(cp.rejected, false);
+  assert.ok(distance(39.34395, -84.2673, cp.lat, cp.lng) > TELEPORT_M);
+  assert.ok(Math.abs(cp.lat - 41.4826) < 0.0001);
+  return true;
+});
+
 /* --------------------------------------------------------- gps/sharing -- */
 
 section('gps/sharing');
@@ -1927,6 +1939,24 @@ await check('off-network snaps with a profile still fall back to a straight line
   assert.equal(r.mode, 'direct');
   assert.ok(r.metres > 1000, `expected a long straight line, got ${r.metres}`);
   assert.ok(r.points.length > 1);
+  return true;
+});
+
+await check('cedar point GPS at the test pin walks to Gemini on the paths', async () => {
+  const { profileOpts } = await import('../../apps/party-tracker/lib/routingProfiles.js');
+  const cp = JSON.parse(
+    fs.readFileSync(
+      new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const g = buildRouteGraph(cp);
+  const from = { lat: 41.4826, lng: -82.6862 };
+  const to = { lat: 41.486212, lng: -82.689509, n: 'Gemini' };
+  const r = findRoute(g, from, to, { ...profileOpts('default', g), destination: 'Gemini' });
+  assert.equal(r.mode, 'path');
+  assert.ok(r.metres > 100, `expected a walk, got ${r.metres} m`);
+  assert.ok(r.points.length > 5, `${r.points.length} points`);
   return true;
 });
 
@@ -4292,7 +4322,7 @@ const {
 
 await check('official listing parser reads attraction names and height categories', () => {
   const html = loadFixtureHtml(
-    new URL('./fixtures/official-site/big-kahunas-listing.html', import.meta.url).pathname,
+    fileURLToPath(new URL('./fixtures/official-site/big-kahunas-listing.html', import.meta.url)),
   );
   const rows = parseAttractionListing(html);
   assert.ok(rows.length >= 20, `expected many attractions, got ${rows.length}`);
@@ -4400,7 +4430,7 @@ await check('cross-park audit flags missing source catalogues', () => {
 
 await check('official compare flags site-only and bundle-only rides', () => {
   const html = loadFixtureHtml(
-    new URL('./fixtures/official-site/big-kahunas-listing.html', import.meta.url).pathname,
+    fileURLToPath(new URL('./fixtures/official-site/big-kahunas-listing.html', import.meta.url)),
   );
   const official = { attractions: parseAttractionListing(html), fetched: '2026-08-10' };
   const pois = [
@@ -5951,6 +5981,23 @@ await check('an unkeyed restroom pair still gets distinct keys from where they s
   return true;
 });
 
+await check('Fiesta Texas restroom titles collide; identityOf does not', () => {
+  const pois = withIds(
+    JSON.parse(
+      fs.readFileSync(
+        new URL('../../apps/party-tracker/public/venues/six-flags-fiesta-texas.pois.json', import.meta.url),
+        'utf8',
+      ),
+    ),
+  );
+  const restrooms = pois.filter((p) => p.n === 'Restrooms');
+  assert.ok(restrooms.length >= 2, `expected repeated Restrooms, got ${restrooms.length}`);
+  assert.equal(new Set(restrooms.map((p) => p.n)).size, 1);
+  assert.equal(new Set(restrooms.map(identityOf)).size, restrooms.length);
+  assert.equal(new Set(pois.map(identityOf)).size, pois.length);
+  return true;
+});
+
 /* ------------------------------------------------------- primary keys ---- */
 
 /* The key a place is issued at build time, and the ledger that remembers it.
@@ -6658,10 +6705,8 @@ await check('cedar point fails route gate when a ride is off the network', () =>
 });
 
 await check('certify writes data/venues/<id>/certification.json', () => {
-  const file = path.join(
-    new URL('../../packages/venue-builder/data/venues/', import.meta.url).pathname,
-    'kings-island',
-    'certification.json',
+  const file = fileURLToPath(
+    new URL('../../packages/venue-builder/data/venues/kings-island/certification.json', import.meta.url),
   );
   try { fs.unlinkSync(file); } catch { /* fresh */ }
   const doc = certifyVenue('kings-island');

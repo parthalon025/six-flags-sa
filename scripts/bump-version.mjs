@@ -25,7 +25,18 @@ const workspacePkgPaths = [
   path.join(root, 'package.json'),
   path.join(appRoot, 'package.json'),
   path.join(root, 'packages/shared/package.json'),
+  path.join(root, 'packages/venue-builder/package.json'),
 ];
+
+function pinWorkspaceDeps(pkg) {
+  for (const key of ['dependencies', 'devDependencies']) {
+    const deps = pkg[key];
+    if (!deps) continue;
+    for (const name of Object.keys(deps)) {
+      if (name.startsWith('@party-tracker/')) deps[name] = '*';
+    }
+  }
+}
 
 function git(args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' });
@@ -87,6 +98,7 @@ for (const pkgPath of workspacePkgPaths) {
   if (!fs.existsSync(pkgPath)) continue;
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
   pkg.version = to;
+  pinWorkspaceDeps(pkg);
   fs.writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
 }
 
@@ -96,9 +108,10 @@ if (fs.existsSync(lockPath)) {
   lock.version = to;
   if (lock.packages?.['']) lock.packages[''].version = to;
   for (const key of ['apps/party-tracker', 'packages/shared', 'packages/venue-builder']) {
-    if (lock.packages?.[key] && typeof lock.packages[key].version === 'string') {
-      lock.packages[key].version = to;
-    }
+    const entry = lock.packages?.[key];
+    if (!entry) continue;
+    if (typeof entry.version === 'string') entry.version = to;
+    pinWorkspaceDeps(entry);
   }
   fs.writeFileSync(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
 }
