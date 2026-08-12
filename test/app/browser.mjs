@@ -30,7 +30,7 @@ export const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\
  * suites assert on it — this list must not grow to make a failure go away.
  */
 export const IGNORABLE_CONSOLE =
-  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\//;
+  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico/;
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {

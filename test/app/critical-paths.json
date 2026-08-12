@@ -1,0 +1,131 @@
+{
+  "$schema_note": "Critical-path e2e contract. Middle ground: not every click, but every user-visible capability we ship must keep a named check. Epics add rows when they land a vertical slice.",
+  "suites": {
+    "functional": "test/app/functional.mjs",
+    "grandma": "test/app/grandma.mjs"
+  },
+  "paths": [
+    {
+      "id": "intake-welcome",
+      "slice": "Navigate",
+      "user_action": "See brand welcome and nearest-park offer",
+      "suite": "functional",
+      "check": "the welcome gate shows brand, pitch, and nearest-park on one card"
+    },
+    {
+      "id": "intake-confirm-park",
+      "slice": "Navigate",
+      "user_action": "Confirm nearest park and load its map",
+      "suite": "functional",
+      "check": "the nearest-park button asks before building that park"
+    },
+    {
+      "id": "heights-filter",
+      "slice": "Navigate",
+      "user_action": "Set rider height and see who can ride",
+      "suite": "functional",
+      "check": "verdicts respond to height"
+    },
+    {
+      "id": "walk-preview-start",
+      "slice": "Navigate",
+      "user_action": "Preview a walk then Start",
+      "suite": "functional",
+      "check": "Start hands the screen over to the walk"
+    },
+    {
+      "id": "walk-progress",
+      "slice": "Navigate",
+      "user_action": "Walk toward destination and see remaining distance drop",
+      "suite": "functional",
+      "check": "walking towards it shortens what is left"
+    },
+    {
+      "id": "cp-queue-entrance",
+      "slice": "Navigate",
+      "user_action": "Route preview names surveyed queue entrances (Cedar Point)",
+      "suite": "functional",
+      "check": "cedar point route preview names surveyed queue entrances"
+    },
+    {
+      "id": "party-create",
+      "slice": "Party",
+      "user_action": "Start a party and get a shareable code",
+      "suite": "functional",
+      "check": "party code is six characters from the safe alphabet"
+    },
+    {
+      "id": "party-join-code",
+      "slice": "Party",
+      "user_action": "Join a party by typing the code",
+      "suite": "functional",
+      "check": "a typed code joins the party"
+    },
+    {
+      "id": "party-join-link",
+      "slice": "Party",
+      "user_action": "Join a party from the invite link",
+      "suite": "functional",
+      "check": "the invite link joins the party with nothing typed"
+    },
+    {
+      "id": "party-help",
+      "slice": "Party",
+      "user_action": "NEED HELP reaches other phones",
+      "suite": "functional",
+      "check": "NEED HELP propagates to the other phone"
+    },
+    {
+      "id": "party-host-migration",
+      "slice": "Party",
+      "user_action": "Host leaves and party survives",
+      "suite": "functional",
+      "check": "a new host is elected without anybody being asked"
+    },
+    {
+      "id": "offline-map",
+      "slice": "Navigate",
+      "user_action": "Map still draws offline",
+      "suite": "functional",
+      "check": "the map still draws with the network cut"
+    },
+    {
+      "id": "grandma-core",
+      "slice": "Navigate",
+      "user_action": "First-time visitor can complete toilet → food → walk",
+      "suite": "grandma",
+      "check_includes": "toilet"
+    }
+  ],
+  "upcoming": [
+    {
+      "id": "ep-soft-gate",
+      "slice": "EP",
+      "user_action": "Anonymous soft-gate blocks Start a party; sign-in unlocks it",
+      "suite": "functional",
+      "check": "anonymous soft-gate blocks Start a party",
+      "when": "PR #83 lands"
+    },
+    {
+      "id": "e5-eligibility",
+      "slice": "E5",
+      "user_action": "See structured eligibility reason on a ride",
+      "suite": "functional",
+      "when": "PR #90 lands — add named check with the epic"
+    },
+    {
+      "id": "e81-next-best",
+      "slice": "E8",
+      "user_action": "Next-best GO NOW + Why?",
+      "suite": "functional",
+      "when": "PR #91 lands — add named check with the epic"
+    },
+    {
+      "id": "e91-side-quests",
+      "slice": "Adventure",
+      "user_action": "Submit or discover a Side Quest nearby",
+      "suite": "functional",
+      "when": "PR #88 lands — add named check with the epic"
+    }
+  ]
+}

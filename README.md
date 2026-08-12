@@ -501,7 +501,12 @@ All the suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser alr
 machine instead of Playwright's own copy.
 
 For UI work, see [docs/ui-enhancement-validation.md](docs/ui-enhancement-validation.md) —
-`npm run test:validate-ui` runs the functional e2e suite and the grandma test together.
+`npm run test:validate-ui` runs the critical-path coverage contract, then the
+functional e2e suite and the grandma test together. The contract
+(`test/app/critical-paths.json`) is the middle ground: not every UI action, but
+every shipped vertical capability (intake, walk, party, offline, grandma toilet
+path) must keep a named check. New epics add a row + check in the same PR —
+build vertically, don’t leave feature PRs without their user-action coverage.
 
 ## Building a map of somewhere else
 

@@ -47,6 +47,7 @@
     "test:builder": "node test/builder/unit.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",
     "test:validate-ui": "node test/app/validate-ui.mjs",
+    "test:coverage-contract": "node test/app/coverage-contract.mjs",
     "test:unit": "node test/builder/unit.mjs",
     "test:functional": "node test/app/functional.mjs",
     "test:compare": "node test/builder/compare.mjs",
