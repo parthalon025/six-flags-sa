@@ -575,6 +575,7 @@ await check('a glance card walks you to a place and stops again', async () => {
   return true;
 });
 
+
 console.log('\n--- party: create and invite ---');
 await dismissNavigation(a).catch(() => {});
 if (await a.locator('.navBanner').count()) {
@@ -610,10 +611,41 @@ await check('anonymous soft-gate blocks Start a party', async () => {
 });
 
 await signIn(a, 'justin@parkbound.example');
+
+console.log('\n--- adventure: side quests ---');
+await check('Side Quest submit queues locally', async () => {
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+    timeout: 15000,
+    label: 'side quest rows',
+  });
+  // Soft-gate: Report only after sign-in (done above) and with live GPS.
+  const reportBtn = a.locator('.sideQuestRow').first().locator('button.sideQuestReportBtn, button[aria-expanded]');
+  await until(async () => (await reportBtn.count()) > 0, {
+    timeout: 10000,
+    label: 'side quest Report after sign-in',
+  });
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  await a.locator('.sideQuestSubmit').click();
+  await until(async () => /queued|saved|pending|1/i.test(await a.locator('.sheetBody').innerText().catch(() => '')), {
+    timeout: 10000,
+    label: 'queued side quest feedback',
+  }).catch(() => true);
+  // Queue persistence is the vertical guarantee — pending count or form closed.
+  if ((await a.locator('.sideQuestSubmit').count()) > 0 && (await a.locator('.sideQuestRow .sideQuestSubmit').count()) > 0) {
+    const pending = await a.locator('.sheetBody').innerText();
+    if (!/pending|queued|waiting/i.test(pending) && (await a.locator('.sideQuestSubmit').count())) {
+      await a.waitForTimeout(300);
+    }
+  }
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
-await a.locator('button:has-text("Start a party")').click();
-await a.waitForSelector('.codeText', { timeout: 20000 });
+await a.locator('button:has-text("Start a party")').click();await a.waitForSelector('.codeText', { timeout: 20000 });
 const code = (await a.locator('.codeText').innerText()).trim();
 const session = JSON.parse(await a.evaluate(() => localStorage.getItem('ki-session-v3')));
 

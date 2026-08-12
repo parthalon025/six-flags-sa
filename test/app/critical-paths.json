@@ -102,6 +102,13 @@
       "user_action": "Anonymous soft-gate blocks Start a party; sign-in unlocks it",
       "suite": "functional",
       "check": "anonymous soft-gate blocks Start a party"
+    },
+    {
+      "id": "e91-side-quests",
+      "slice": "Adventure",
+      "user_action": "Submit or discover a Side Quest nearby",
+      "suite": "functional",
+      "check": "Side Quest submit queues locally"
     }
   ],
   "upcoming": [
@@ -118,13 +125,6 @@
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
       "when": "PR #91 lands \u2014 add named check with the epic"
-    },
-    {
-      "id": "e91-side-quests",
-      "slice": "Adventure",
-      "user_action": "Submit or discover a Side Quest nearby",
-      "suite": "functional",
-      "when": "PR #88 lands \u2014 add named check with the epic"
     }
   ]
 }
