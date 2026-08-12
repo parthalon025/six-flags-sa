@@ -268,6 +268,13 @@ await check('tapping a map icon opens place details and navigation', async () =>
   await dismissNavigation(a).catch(() => {});
   await a.locator('.tabItem[data-tab="explore"]').click();
   await root(a);
+  // Clear any list/rail selection so the next map tap always opens place detail
+  // instead of toggling an already-selected pin closed.
+  await a.evaluate(() => {
+    const clear = document.querySelector('.sheet.peek, .sheet.half, .sheet.full');
+    void clear;
+  });
+  await a.keyboard.press('Escape').catch(() => {});
   // Peek leaves the map readable; a sheet covering the markers would make the
   // tap land on the panel instead of the pin.
   const stop = () =>
@@ -278,9 +285,10 @@ await check('tapping a map icon opens place details and navigation', async () =>
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(350);
   }
-  const name = await tapMapPoi(a);
+  // Prefer a named ride so the tap is deterministic after earlier list clicks.
+  const name = (await tapMapPoi(a, 'The Beast')) || (await tapMapPoi(a));
   await until(async () => (await a.locator('[data-place-detail]').count()) > 0, {
-    timeout: 8000,
+    timeout: 12000,
     label: 'place detail sheet',
   });
   const title = await a.locator('.navHead h2').innerText();

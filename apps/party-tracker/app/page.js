@@ -1706,8 +1706,19 @@ export default function Page() {
   const handleSelectFromMap = useCallback(
     (poi) => {
       if (selected && selected.lat === poi.lat && selected.lng === poi.lng) {
-        setSelected(null);
-        dismissPlaceView();
+        const { stacks: cur } = navRef.current;
+        const exploreStack = cur.explore || EMPTY_STACK;
+        const placeOpen = exploreStack[exploreStack.length - 1] === 'place';
+        // Re-tapping the selected pin opens place detail when the sheet is not
+        // already there (list/rail selection alone is not enough for the map
+        // vertical check). Only clear when the place view is already open.
+        if (placeOpen) {
+          setSelected(null);
+          dismissPlaceView();
+          return;
+        }
+        push('place', 'explore');
+        growSheet(stops.half);
         return;
       }
       setSelected(poi);
