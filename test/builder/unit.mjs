@@ -6881,6 +6881,19 @@ await check('height-chart headers are dropped and arcades reclassified', () => {
   return true;
 });
 
+/* -------------------------------- shared schemas (E0.3) -- */
+
+const { PROFILE_RANKS, CONTRIBUTION_KINDS, FIXTURES, requiresSignedIn } = await import('../../packages/shared/schemas.js');
+await check('shared schemas export ranks and soft-gate helpers', () => {
+  assert.ok(PROFILE_RANKS.includes('visitor'));
+  assert.ok(CONTRIBUTION_KINDS.includes('adventure'));
+  assert.equal(FIXTURES.profile.userId, FIXTURES.user.id);
+  assert.equal(requiresSignedIn(null, 'party'), true);
+  assert.equal(requiresSignedIn('usr_demo', 'party'), false);
+  assert.equal(requiresSignedIn(null, 'browse'), false);
+  return true;
+});
+
 /* ---------------------------------------------------------------- tally -- */
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

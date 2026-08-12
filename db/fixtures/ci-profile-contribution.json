@@ -1,0 +1,28 @@
+{
+  "user": {
+    "id": "usr_demo",
+    "email": "family@example.com",
+    "createdAt": "2026-08-11T00:00:00.000Z"
+  },
+  "profile": {
+    "userId": "usr_demo",
+    "displayName": "Alex",
+    "avatarKey": "explorer-1",
+    "rank": "visitor",
+    "xp": 0,
+    "reputation": 0,
+    "impactHelped": 0,
+    "createdAt": "2026-08-11T00:00:00.000Z",
+    "updatedAt": "2026-08-11T00:00:00.000Z"
+  },
+  "contribution": {
+    "id": "c_demo",
+    "authorId": "usr_demo",
+    "venueId": "kings-island",
+    "placeId": "the-beast",
+    "kind": "experience",
+    "status": "pending",
+    "payload": { "note": "short wait" },
+    "createdAt": "2026-08-11T12:00:00.000Z"
+  }
+}
