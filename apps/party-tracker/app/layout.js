@@ -27,8 +27,23 @@ const display = localFont({
    the app boots, so this stays generic — the loaded venue's name is the first
    thing in the header, which is where anyone actually looks. */
 export const metadata = {
+  metadataBase: new URL(BRAND.canonicalUrl),
   title: `${BRAND.name} · ${BRAND.slogan}`,
   description: BRAND.shortDescription,
+  applicationName: BRAND.name,
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    url: BRAND.canonicalUrl,
+    siteName: BRAND.name,
+    title: `${BRAND.name} · ${BRAND.slogan}`,
+    description: BRAND.shortDescription,
+  },
+  twitter: {
+    card: 'summary',
+    title: `${BRAND.name} · ${BRAND.slogan}`,
+    description: BRAND.shortDescription,
+  },
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
