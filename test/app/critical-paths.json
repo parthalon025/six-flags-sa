@@ -109,6 +109,13 @@
       "user_action": "Choose Off / Approx / Precise location sharing in a party",
       "suite": "functional",
       "check": "location sharing Off/Approx/Precise is available in the party"
+    },
+    {
+      "id": "e91-side-quests",
+      "slice": "Adventure",
+      "user_action": "Submit or discover a Side Quest nearby",
+      "suite": "functional",
+      "check": "Side Quest submit queues locally"
     }
   ],
   "upcoming": [
@@ -125,13 +132,6 @@
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
       "when": "PR #91 lands \u2014 add named check with the epic"
-    },
-    {
-      "id": "e91-side-quests",
-      "slice": "Adventure",
-      "user_action": "Submit or discover a Side Quest nearby",
-      "suite": "functional",
-      "when": "PR #88 lands \u2014 add named check with the epic"
     }
   ]
 }

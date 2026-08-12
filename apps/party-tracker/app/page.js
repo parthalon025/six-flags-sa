@@ -2530,7 +2530,9 @@ export default function Page() {
             {view === null && tab === 'quests' && (
               <SideQuestsPanel
                 venueName={venue?.name}
+                venueId={venue?.id}
                 pois={POIS}
+                position={position}
                 onSelectPlace={(p) => {
                   handleSelect(p);
                   selectTab('explore');
