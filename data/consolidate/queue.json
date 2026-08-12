@@ -1,0 +1,29 @@
+{
+  "_comment": "Steward-accepted durable contributions waiting for consolidate (E0.5). Ephemeral kinds are ignored. Dry-run fixtures only — replace with API export later.",
+  "contributions": [
+    {
+      "id": "c_fixture_height_ki",
+      "authorId": "usr_demo",
+      "venueId": "kings-island",
+      "placeId": "The Beast",
+      "kind": "height_rule",
+      "status": "accepted",
+      "payload": {
+        "placeName": "The Beast",
+        "min": 48,
+        "note": "Fixture consolidate — same posted min; proves heights.json path"
+      },
+      "createdAt": "2026-08-11T12:00:00.000Z"
+    },
+    {
+      "id": "c_fixture_skip_ephemeral",
+      "authorId": "usr_demo",
+      "venueId": "kings-island",
+      "placeId": "The Beast",
+      "kind": "experience",
+      "status": "accepted",
+      "payload": { "note": "short wait" },
+      "createdAt": "2026-08-11T12:00:00.000Z"
+    }
+  ]
+}

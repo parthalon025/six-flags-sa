@@ -6929,6 +6929,113 @@ await check('shared schemas export ranks and soft-gate helpers', () => {
   return true;
 });
 
+/* -------------------------------- consolidate (E0.5-6) -- */
+
+{
+  const {
+    cadenceFromRecipe,
+    isDue,
+    planContribution,
+    consolidate,
+    DEFAULT_CADENCE,
+  } = await import('../../packages/venue-builder/lib/consolidate.mjs');
+
+  await check('consolidate cadence defaults to weekly', () => {
+    assert.equal(cadenceFromRecipe(null), DEFAULT_CADENCE);
+    assert.equal(cadenceFromRecipe({ consolidate: { cadence: 'daily' } }), 'daily');
+    assert.equal(cadenceFromRecipe({ consolidate: { cadence: 'nope' } }), 'weekly');
+    return true;
+  });
+
+  await check('consolidate isDue respects weekly window and manual', () => {
+    const now = Date.parse('2026-08-11T00:00:00Z');
+    assert.equal(isDue({ cadence: 'weekly', lastConsolidated: null }, now), true);
+    assert.equal(
+      isDue({ cadence: 'weekly', lastConsolidated: '2026-08-10T00:00:00Z' }, now),
+      false,
+    );
+    assert.equal(isDue({ cadence: 'manual', lastConsolidated: null }, now), false);
+    assert.equal(isDue({ cadence: 'manual', lastConsolidated: null }, now, { force: true }), true);
+    return true;
+  });
+
+  await check('consolidate plans height rules and skips ephemeral', () => {
+    const height = planContribution({
+      id: 'c1',
+      status: 'accepted',
+      kind: 'height_rule',
+      venueId: 'kings-island',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.equal(height.action, 'heights');
+    const skip = planContribution({
+      id: 'c2',
+      status: 'accepted',
+      kind: 'experience',
+      venueId: 'kings-island',
+      payload: {},
+    });
+    assert.equal(skip.action, 'skip');
+    return true;
+  });
+
+  await check('consolidate dry-run never writes public/venues', () => {
+    const written = [];
+    const report = consolidate({
+      contributions: [
+        {
+          id: 'c1',
+          status: 'accepted',
+          kind: 'height_rule',
+          venueId: 'kings-island',
+          payload: { placeName: 'The Beast', min: 48 },
+        },
+      ],
+      venueIds: ['kings-island'],
+      force: true,
+      apply: false,
+      writeFile: (f) => written.push(f),
+      readHeights: () => ({ version: 1, venue: 'kings-island', rules: {} }),
+      readOverrides: () => ({ pois: {} }),
+      readRecipe: () => ({ id: 'kings-island', consolidate: { cadence: 'daily' } }),
+    });
+    assert.equal(report.applied.length, 1);
+    assert.equal(written.length, 0);
+    assert.ok(!report.writes.some((w) => /public[/\\]venues/.test(w)));
+    return true;
+  });
+
+  await check('consolidate apply writes only data/venues paths', () => {
+    const written = [];
+    const report = consolidate({
+      contributions: [
+        {
+          id: 'c1',
+          status: 'accepted',
+          kind: 'poi_patch',
+          venueId: 'kings-island',
+          payload: { placeName: 'Demo Toilet', patch: { c: 'restroom' } },
+        },
+      ],
+      venueIds: ['kings-island'],
+      force: true,
+      apply: true,
+      writeFile: (f, body) => {
+        written.push(f);
+        assert.ok(/data[/\\]venues/.test(f), f);
+        assert.ok(!/public[/\\]venues/.test(f), f);
+        assert.ok(body.includes('Demo Toilet') || body.includes('consolidate') || body.includes('lastAt'));
+      },
+      readHeights: () => null,
+      readOverrides: () => ({ pois: {}, drop: [] }),
+      readRecipe: () => ({ id: 'kings-island', consolidate: { cadence: 'daily' } }),
+    });
+    assert.equal(report.applied.length, 1);
+    assert.ok(written.length >= 1);
+    return true;
+  });
+}
+
 /* ---------------------------------------------------------------- tally -- */
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

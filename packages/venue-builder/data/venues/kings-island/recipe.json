@@ -28,5 +28,10 @@
   },
   "expect": {
     "walkable_km_min": 95
+  },
+  "consolidate": {
+    "cadence": "daily",
+    "lastAt": null,
+    "_comment": "E0.6 cadence — consolidate graduates accepted edits into this package; never public/venues"
   }
 }
