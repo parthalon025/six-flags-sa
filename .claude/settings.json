@@ -1,0 +1,25 @@
+{
+  "worktree": {
+    "baseRef": "fresh"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/worktree.mjs prune",
+            "timeout": 30,
+            "statusMessage": "Pruning leftover agent branches"
+          },
+          {
+            "type": "command",
+            "command": "node scripts/worktree.mjs status",
+            "timeout": 15,
+            "statusMessage": "Listing agent worktrees"
+          }
+        ]
+      }
+    ]
+  }
+}
