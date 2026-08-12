@@ -27,6 +27,8 @@ npm run gitnexus:sync
 
 This runs `node scripts/gitnexus-sync.mjs finish`, which re-analyzes, removes the inner `.gitignore`, and stages `.gitnexus/`, `AGENTS.md`, and `CLAUDE.md`. **Include those staged files in your commit** so the next agent starts with a current graph.
 
+A commit that only touches those paths does not run Test app or bump the version (`scripts/gitnexus-ci.mjs`). Prefer folding the index into the same commit as the code change rather than a follow-up push.
+
 ## Manual commands
 
 | Command | Purpose |

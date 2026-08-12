@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GITNEXUS_INDEX_PATHS } from './gitnexus-ci.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const mode = process.argv[2] || 'startup';
@@ -17,7 +18,7 @@ const innerGitignore = join(root, '.gitnexus', '.gitignore');
 const gitExclude = join(root, '.git', 'info', 'exclude');
 
 /** Paths GitNexus analyze may refresh and that we commit. */
-const TRACKED = ['.gitnexus/', 'AGENTS.md', 'CLAUDE.md'];
+const TRACKED = GITNEXUS_INDEX_PATHS;
 
 function run(nodeCmd, args) {
   execFileSync(nodeCmd, args, { cwd: root, stdio: 'inherit' });

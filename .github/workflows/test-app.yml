@@ -6,8 +6,27 @@ on:
   pull_request:
 
 jobs:
+  gate:
+    name: Skip GitNexus-only
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Classify commit
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node test/scripts/gitnexus-ci.test.mjs
+          node scripts/gitnexus-ci.mjs
+
   select:
     name: Select modules
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     outputs:
       builder: ${{ steps.mods.outputs.builder }}
@@ -50,6 +69,8 @@ jobs:
 
   module-select-unit:
     name: Module select unit
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

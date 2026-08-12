@@ -108,5 +108,11 @@
     "items": [
       "feat: land stacked epics (#84→#83→#86→#88→#90→#91) + modular CI (#99)"
     ]
+  },
+  "1.1.18": {
+    "title": "What's new",
+    "items": [
+      "ci: skip Test app and version bumps on GitNexus-only commits"
+    ]
   }
 }

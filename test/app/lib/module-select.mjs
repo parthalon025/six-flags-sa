@@ -7,6 +7,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isGitnexusCiNoise } from '../../../scripts/gitnexus-ci.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_MANIFEST = path.join(HERE, '../modules.json');
@@ -99,7 +100,9 @@ export function listModuleIds(manifest, { kind } = {}) {
  * Returns { modules: string[], reasons: Record<string,string>, fullSuite: boolean }
  */
 export function selectModulesFromFiles(files, manifest = loadModulesManifest()) {
-  const normFiles = files.map((f) => f.replace(/\\/g, '/').replace(/^\.\//, ''));
+  const normFiles = files
+    .map((f) => f.replace(/\\/g, '/').replace(/^\.\//, ''))
+    .filter((f) => !isGitnexusCiNoise(f));
   const reasons = {};
   const selected = new Set();
 
