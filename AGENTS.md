@@ -121,3 +121,21 @@ Do not edit `package.json` `version`, `package-lock.json` version fields, `publi
 ### Merge conflicts on version files
 
 When syncing with `main`, if those files conflict, keep `main`'s side. The bump workflow assigns the next version after your PR merges.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `parthalon025/six-flags-sa` (via `gh`). Agent-handoff issues share that tracker and enter the triage label flow. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — root `CONTEXT.md` + `docs/adr/` (legacy long-form under `docs/superpowers/specs/`). See `docs/agents/domain.md`.
+
+### Skills lock
+
+Vendored Matt Pocock skills under `.agents/skills/` are pinned by `skills-lock.json`. Do not hand-edit; upgrade with `npm run skills:update`. See `docs/agents/skills-lock.md`.

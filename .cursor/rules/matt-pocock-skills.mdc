@@ -1,0 +1,12 @@
+---
+description: Matt Pocock skills are lock-pinned; never hand-edit vendored skill trees
+alwaysApply: true
+---
+
+# Matt Pocock skills — no local drift
+
+- Canonical skill files live only in `.agents/skills/` and are pinned by `skills-lock.json`.
+- Never edit `.agents/skills/**` by hand. Upgrade with `npx skills@latest update -p -y`, then `npm run skills:check`.
+- Never commit `agent/` or `.claude/skills/<skill>/` junctions/copies from the installer; keep gitnexus skills under `.claude/skills/gitnexus/` only.
+- Issue tracker, triage labels, and domain layout are configured in `docs/agents/` — engineering skills read those files.
+- Grow domain language via `/grill-with-docs` into root `CONTEXT.md` and `docs/adr/`; do not invent empty stubs.

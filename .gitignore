@@ -11,6 +11,12 @@ out
 # isolated worktrees agents check out while working in parallel
 .claude/worktrees/
 
+# skills.sh agent junctions/copies — canonical trees are .agents/skills + skills-lock.json
+agent/
+.claude/skills/*
+!.claude/skills/gitnexus/
+!.claude/skills/gitnexus/**
+
 .turbo
 
 # Fastlane secrets and local env

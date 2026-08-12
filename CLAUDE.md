@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **six-flags-sa** (4324 symbols, 10904 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **six-flags-sa** (4873 symbols, 11483 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -10,9 +10,8 @@ This project is indexed by GitNexus as **six-flags-sa** (4324 symbols, 10904 rel
 - **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
 - **MUST run `detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows. For regression review, compare against the default branch: `detect_changes({scope: "compare", base_ref: "main"})`.
 - **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `query({search_query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
+- When exploring unfamiliar code, use `query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
 - When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `context({name: "symbolName"})`.
-- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
 
 ## Never Do
 
@@ -120,4 +119,22 @@ Do not edit `package.json` `version`, `package-lock.json` version fields, `publi
 
 ### Merge conflicts on version files
 
-When syncing with `main`, if those files conflict, keep `main`'s side. The bump workflow assigns the next version after your PR merges.
+When syncing with `main`, if those files conflict, fix simple conflicts with main, present the user with each conflict and explanation. The bump workflow assigns the next version after your PR merges.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `parthalon025/six-flags-sa` (via `gh`). Agent-handoff issues share that tracker and enter the triage label flow. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — root `CONTEXT.md` + `docs/adr/` (legacy long-form under `docs/superpowers/specs/`). See `docs/agents/domain.md`.
+
+### Skills lock
+
+Vendored Matt Pocock skills under `.agents/skills/` are pinned by `skills-lock.json`. Do not hand-edit; upgrade with `npm run skills:update`. See `docs/agents/skills-lock.md`.
