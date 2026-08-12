@@ -102,5 +102,11 @@
     "items": [
       "Fix main CI: restore bump-version script and self-host display font. (#101)"
     ]
+  },
+  "1.1.17": {
+    "title": "What's new",
+    "items": [
+      "feat: land stacked epics (#84→#83→#86→#88→#90→#91) + modular CI (#99)"
+    ]
   }
 }
