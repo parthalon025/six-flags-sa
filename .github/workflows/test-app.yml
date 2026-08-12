@@ -6,10 +6,76 @@ on:
   pull_request:
 
 jobs:
-  test:
+  select:
+    name: Select modules
     runs-on: ubuntu-latest
-    # Functional + grandma regularly need ~40m; leave headroom for warm-ups.
-    timeout-minutes: 60
+    outputs:
+      builder: ${{ steps.mods.outputs.builder }}
+      any_ui: ${{ steps.mods.outputs.any_ui }}
+      ui_matrix: ${{ steps.mods.outputs.ui_matrix }}
+      modules: ${{ steps.mods.outputs.modules }}
+      full_suite: ${{ steps.mods.outputs.full_suite }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Resolve changed modules
+        id: mods
+        env:
+          # On push to main always run the full suite.
+          FORCE_ALL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          if [ "$FORCE_ALL" = "true" ]; then
+            node test/app/select-modules.mjs --all --format github
+          else
+            BASE_REF="${{ github.base_ref }}"
+            if [ -n "$BASE_REF" ]; then
+              git fetch origin "$BASE_REF" --depth=1 || true
+              node test/app/select-modules.mjs --base "origin/$BASE_REF" --format github
+            else
+              node test/app/select-modules.mjs --base origin/main --format github
+            fi
+          fi
+
+      - name: Module selection summary
+        run: |
+          echo "modules=${{ steps.mods.outputs.modules }}"
+          echo "builder=${{ steps.mods.outputs.builder }} any_ui=${{ steps.mods.outputs.any_ui }} full=${{ steps.mods.outputs.full_suite }}"
+          echo "ui_matrix=${{ steps.mods.outputs.ui_matrix }}"
+
+  module-select-unit:
+    name: Module select unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node test/app/module-select.test.mjs
+
+  contract:
+    name: Coverage contract
+    needs: select
+    if: needs.select.outputs.modules != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run test:coverage-contract
+
+  builder:
+    name: Builder
+    needs: select
+    if: needs.select.outputs.builder == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -23,23 +89,114 @@ jobs:
       - name: Builder unit + compare
         run: npm run test:builder
 
+  app-build:
+    name: Build app
+    needs: select
+    if: needs.select.outputs.any_ui == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build -w @party-tracker/app
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: party-tracker-next
+          path: |
+            apps/party-tracker/.next
+            apps/party-tracker/public
+          retention-days: 1
+
+  ui:
+    name: UI · ${{ matrix.module }}
+    needs: [select, app-build]
+    if: needs.select.outputs.any_ui == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.select.outputs.ui_matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: party-tracker-next
+          # Restore apps/party-tracker/.next and public at repo paths.
+
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
-      - name: Build and start app
+      - name: Start app
         run: |
-          npm run build -w @party-tracker/app
           npm run start -w @party-tracker/app &
           for i in $(seq 1 90); do
             if curl -sf http://127.0.0.1:3000/api/health; then break; fi
             sleep 2
           done
           curl -sf http://127.0.0.1:3000/api/health
-          curl -sf http://127.0.0.1:3000/api/admin/venues | head -c 200
 
-      - name: UI validation (e2e + grandma)
-        run: npm run test:validate-ui
+      - name: Run module ${{ matrix.module }}
+        run: |
+          MOD='${{ matrix.module }}'
+          if [ "$MOD" = "grandma" ]; then
+            npm run test:grandma
+          else
+            node test/app/functional.mjs --modules="$MOD"
+          fi
+
+  visual:
+    name: Visual shots (soft)
+    needs: [select, app-build]
+    if: needs.select.outputs.any_ui == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Download build
+        uses: actions/download-artifact@v4
+        with:
+          name: party-tracker-next
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Start app
+        run: |
+          npm run start -w @party-tracker/app &
+          for i in $(seq 1 90); do
+            if curl -sf http://127.0.0.1:3000/api/health; then break; fi
+            sleep 2
+          done
+          curl -sf http://127.0.0.1:3000/api/health
 
       - name: Visual inspection shots
-        continue-on-error: true
         run: npm run test:visual

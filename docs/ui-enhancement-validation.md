@@ -65,14 +65,24 @@ A score of **1** is a warning (e.g. "only after opening the panel") — fix befo
 
 ## CI
 
-GitHub Actions job **Test app** runs:
+GitHub Actions workflow **Test app** is modular and change-scoped:
 
-1. Builder unit + compare
-2. Build and start the Next.js app
-3. `npm run test:validate-ui` (functional + grandma)
-4. Visual shots (`test:visual`, non-blocking)
+1. **Select modules** — `test/app/select-modules.mjs` maps the PR diff to modules in `test/app/modules.json` (push to `main` = full suite).
+2. **Coverage contract** — always (fast).
+3. **Builder** — only when venue-builder / venue data paths change.
+4. **UI matrix** — one job per selected module (`smoke`, `heights`, `walk`, `party`, `intake`, `venues`, `offline`, `grandma`), sharing one Next.js build artifact. Jobs run in parallel.
+5. **Visual shots** — soft (`continue-on-error`), when any UI module runs.
 
-UI PRs should not merge with a red **Test app** check.
+Local equivalents:
+
+```bash
+npm run test:modules                  # print modules for this branch vs origin/main
+npm run test:validate-ui:changed      # contract + only matching modules
+npm run test:validate-ui -- --modules=party,grandma
+npm run test:module-select            # unit test for the selector
+```
+
+UI PRs should not merge with a red **Test app** check for the modules they touch.
 
 ## When to add or extend tests
 
@@ -82,6 +92,7 @@ UI PRs should not merge with a red **Test app** check.
 | Party/sync/routing/height logic | Functional check |
 | Glance card layout or rail behaviour | Both — functional for state, grandma for discoverability |
 | Pure CSS that does not change flows | `test:visual` or `test:theme`; run validate-ui if touch targets or contrast changed |
+| A new area of the app | Path globs (and optional `pulls`) in `test/app/modules.json` |
 
 ### Adding a grandma task
 
