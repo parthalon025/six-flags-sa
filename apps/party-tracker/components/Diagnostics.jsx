@@ -40,8 +40,25 @@ const formatBuilt = (raw) => {
   return Number.isNaN(d.getTime()) ? raw : d.toLocaleString();
 };
 
-export default function Diagnostics({ runtime, geo, appVersion, appBuilt, remoteVersion, remoteBuilt, updateStatus }) {
+/** "drawn / total (pct%)" for a node-budget row — "—" when there is nothing to draw yet. */
+const budget = (drawn, total) => {
+  if (!Number.isFinite(total) || total === 0) return '—';
+  const pct = Math.round((100 * (drawn ?? 0)) / total);
+  return `${drawn ?? 0} / ${total} (${pct}%)`;
+};
+
+export default function Diagnostics({
+  runtime,
+  geo,
+  appVersion,
+  appBuilt,
+  remoteVersion,
+  remoteBuilt,
+  updateStatus,
+  mapStats,
+}) {
   const [snap, setSnap] = useState(null);
+  const [map, setMap] = useState(null);
 
   // Polled rather than pushed: most of this changes without any state change
   // the UI would otherwise re-render for (probe timings, queue depth, counters).
@@ -52,6 +69,18 @@ export default function Diagnostics({ runtime, geo, appVersion, appBuilt, remote
     const timer = setInterval(read, REFRESH_MS);
     return () => clearInterval(timer);
   }, [runtime]);
+
+  // Same reasoning as the transport snapshot above: the map reports its
+  // node budget on a ref every pan/zoom frame, and this panel is the only
+  // place that cares, so it polls rather than making the whole page
+  // re-render on every frame the map is being dragged.
+  useEffect(() => {
+    if (!mapStats) return undefined;
+    const read = () => setMap(mapStats.current);
+    read();
+    const timer = setInterval(read, REFRESH_MS);
+    return () => clearInterval(timer);
+  }, [mapStats]);
 
   const transport = snap?.transport || null;
   const probes = transport?.probes || [];
@@ -83,6 +112,30 @@ export default function Diagnostics({ runtime, geo, appVersion, appBuilt, remote
           }
         />
       </div>
+
+      <div className="label">Map</div>
+      {map ? (
+        <div className="diagTable">
+          <Row label="Zoom" value={`${map.zoom?.toFixed(2) ?? '—'}x · band ${map.zoomBand ?? '—'}`} />
+          <Row
+            label="High-zoom cull"
+            value={map.culling ? 'active' : 'off'}
+            tone={map.culling ? 'warn' : 'ok'}
+          />
+          <Row label="Paths drawn" value={budget(map.pathDrawn, map.pathTotal)} />
+          <Row label="Buildings drawn" value={budget(map.buildingDrawn, map.buildingTotal)} />
+          <Row label="Markers drawn" value={budget(map.markerDrawn, map.markerTotal)} />
+        </div>
+      ) : (
+        <p className="fine" style={{ marginTop: 0 }}>
+          Nothing to report until the map has rendered a frame.
+        </p>
+      )}
+      <p className="fine">
+        Node budget: how much of the venue&apos;s geometry actually reached the screen this
+        frame versus how much the venue has. The cull only kicks in at high zoom, once there is
+        enough detail on screen to be worth trimming.
+      </p>
 
       <div className="label">Connection</div>
       <div className="diagTable">

@@ -484,6 +484,14 @@ export default function Page() {
   // Also in state, because the diagnostics panel is a render-time consumer and
   // a ref assigned inside an effect never triggers the render that reads it.
   const [runtimeApi, setRuntimeApi] = useState(null);
+  // Map node-budget stats (drawn vs total paths/buildings/markers) land on a
+  // ref, not state — the map reports on every pan/zoom frame, and Diagnostics
+  // is the only reader, so it polls the ref itself rather than costing the
+  // whole page a re-render for every frame the map is being dragged.
+  const mapStatsRef = useRef(null);
+  const handleMapStats = useCallback((stats) => {
+    mapStatsRef.current = stats;
+  }, []);
 
   const routingRef = useRef(null);
   const getRouting = useCallback(async () => {
@@ -1908,6 +1916,7 @@ export default function Page() {
         fitPoints={previewing ? route?.points : null}
         fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
         mapKeyHidden={previewing || walking}
+        onMapStats={handleMapStats}
       />
 
       {/* Nothing runs across the top of a phone map. The two controls float in
@@ -2621,6 +2630,7 @@ export default function Page() {
                 remoteVersion={appUpdate.remoteVersion}
                 remoteBuilt={appUpdate.remoteBuilt}
                 updateStatus={appUpdate.status}
+                mapStats={mapStatsRef}
               />
             )}
           </div>
