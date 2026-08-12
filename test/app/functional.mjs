@@ -1377,6 +1377,16 @@ await off.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').len
   timeout: 40000,
 });
 await off.waitForTimeout(3000); // let the worker install and cache the shell
+// Warm the Plan tab while online so the HeightPanel chunk is in the SW cache —
+// dynamic() import fails after reload if that chunk was never fetched.
+await closeGate(off);
+await go(off, 'Rider height');
+await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
+  timeout: 20000,
+  label: 'height tiers online warm',
+});
+await go(off, 'Places');
+await off.waitForTimeout(500);
 await offline.setOffline(true);
 await off.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
 // Give the offline shell a moment to hydrate before asserting on tabs.
@@ -1528,16 +1538,29 @@ await check('show on the map toggles a category off and on', async () => {
     timeout: 15000,
     label: 'coasters chip',
   });
-  const before = await b.locator('svg.mapSvg path').count();
-  await b.locator('.chip:has-text("Coasters")').click();
-  await until(async () => (await b.locator('svg.mapSvg path').count()) < before, {
-    timeout: 10000,
-    label: 'coasters hidden on map',
+  // Categories hide POI markers, not the venue geometry paths.
+  const before = await b.locator('svg.mapSvg .poiMarker').count();
+  if (before < 1) throw new Error('no coaster markers before toggle');
+  const chip = b.locator('.chip:has-text("Coasters")');
+  if (!(await chip.getAttribute('class'))?.includes('on')) {
+    throw new Error('Coasters chip should start on');
+  }
+  await chip.click();
+  await until(async () => !(await chip.getAttribute('class'))?.includes('on'), {
+    timeout: 5000,
+    label: 'Coasters chip off',
   });
-  const after = await b.locator('svg.mapSvg path').count();
-  if (!(after < before)) throw new Error(`paths ${before} -> ${after}`);
-  await b.locator('.chip:has-text("Coasters")').click();
-  await b.waitForTimeout(400);
+  await until(async () => (await b.locator('svg.mapSvg .poiMarker').count()) < before, {
+    timeout: 10000,
+    label: 'coaster markers hidden on map',
+  });
+  const after = await b.locator('svg.mapSvg .poiMarker').count();
+  if (!(after < before)) throw new Error(`markers ${before} -> ${after}`);
+  await chip.click();
+  await until(async () => (await chip.getAttribute('class'))?.includes('on'), {
+    timeout: 5000,
+    label: 'Coasters chip on again',
+  });
   await b.locator('button:has-text("Back")').click();
   await b.waitForTimeout(300);
   return true;
