@@ -657,6 +657,25 @@ await check('the host phone says it is hosting', async () => {
   return true;
 });
 
+await check('location sharing Off/Approx/Precise is available in the party', async () => {
+  await go(a, 'Party');
+  const group = a.locator('[aria-label="Location sharing"]');
+  await until(async () => (await group.count()) > 0, {
+    timeout: 15000,
+    label: 'location sharing control',
+  });
+  for (const mode of ['Off', 'Approx', 'Precise']) {
+    await group.locator(`.tab:has-text("${mode}")`).click();
+    await a.waitForTimeout(300);
+    if (!(await group.locator(`.tab.on:has-text("${mode}")`).count())) {
+      throw new Error(`${mode} not marked on`);
+    }
+  }
+  await group.locator('.tab:has-text("Approx")').click();
+  return true;
+});
+
+
 await check('the invite QR is drawn', async () => {
   await a.waitForSelector('.qrImg', { timeout: 15000 });
   const src = await a.locator('.qrImg').getAttribute('src');

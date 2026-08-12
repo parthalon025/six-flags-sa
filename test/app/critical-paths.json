@@ -102,6 +102,13 @@
       "user_action": "Anonymous soft-gate blocks Start a party; sign-in unlocks it",
       "suite": "functional",
       "check": "anonymous soft-gate blocks Start a party"
+    },
+    {
+      "id": "ep5-sharing",
+      "slice": "Party",
+      "user_action": "Choose Off / Approx / Precise location sharing in a party",
+      "suite": "functional",
+      "check": "location sharing Off/Approx/Precise is available in the party"
     }
   ],
   "upcoming": [
