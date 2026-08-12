@@ -1,13 +1,16 @@
 // Storage for the cloud fallback.
 //
-// Two backends, chosen at import time. With UPSTASH_REDIS_REST_URL and
-// UPSTASH_REDIS_REST_TOKEN set we talk to Upstash over REST, which is the only
-// mode that is actually correct on Vercel: consecutive requests land on
-// different instances, so no state may live in the process. Without them we
-// fall back to a module-level Map, which is fine for `npm run dev`, a VPS or
-// any single long-lived Node process — it resets when that process does and it
-// does NOT share state across serverless instances, so a Vercel deployment
-// without Upstash creds will appear to lose parties at random.
+// Two backends, chosen at import time. With Upstash REST creds we talk to Redis
+// over HTTP, which is the only mode that is actually correct on Vercel:
+// consecutive requests land on different instances, so no state may live in the
+// process. Without them we fall back to a module-level Map, which is fine for
+// `npm run dev`, a VPS or any single long-lived Node process — it resets when
+// that process does and it does NOT share state across serverless instances, so
+// a Vercel deployment without Redis creds will appear to lose parties at random.
+//
+// Cred names accepted (either pair is enough):
+//   UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN  — Upstash console
+//   KV_REST_API_URL + KV_REST_API_TOKEN                — Vercel Marketplace
 //
 // The mailbox carries sealed blobs between peers that cannot reach each other
 // directly, held as a sorted set scored by seq so a reader's cursor is a range
@@ -22,8 +25,10 @@ const MAILBOX_TTL_S = Math.round(MAILBOX_TTL_MS / 1000);
 /** Deepest a single party's mailbox goes before the oldest messages fall off. */
 const MAILBOX_DEPTH = 500;
 
-const URL_BASE = process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const URL_BASE =
+  process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
+const TOKEN =
+  process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
 export const usingRedis = Boolean(URL_BASE && TOKEN);
 
 /* --------------------------------------------------------------- counters */

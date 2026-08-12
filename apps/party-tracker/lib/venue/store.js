@@ -14,6 +14,7 @@
    into bare node, where the bundler's '@/…' alias does not exist. */
 import { distance } from '../geo.js';
 import { withIds } from './ids.js';
+import { AnalyticsEvents } from '../analytics.js';
 
 /** A venue picked by hand, in the picker. Hard: nothing moves the map after it. */
 const LS_KEY = 'tracker-venue';
@@ -223,6 +224,7 @@ export async function selectVenue(id, { pin = false } = {}) {
       /* private mode, or a browser with storage switched off */
     }
     if (pin) pinVenue(venue.id);
+    AnalyticsEvents.venueLoaded(venue.id);
     return venue;
   } catch (err) {
     state.status = 'error';

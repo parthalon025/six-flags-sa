@@ -31,6 +31,7 @@ import { createWebRTC } from '@/lib/transport/webrtc';
 import { createBluetooth } from '@/lib/transport/bluetooth';
 import { createCloudRelay } from '@/lib/transport/cloudRelay';
 import { createOfflineQueue } from '@/lib/transport/offlineQueue';
+import { AnalyticsEvents } from '@/lib/analytics';
 import {
   b64urlDecode,
   b64urlEncode,
@@ -875,6 +876,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       if (!allocated.registered) {
         say('No server reachable — share the link or QR, the code will not resolve');
       }
+      AnalyticsEvents.partyCreated(allocated.partyId);
       return snapshot;
     } catch (err) {
       phase = 'error';
@@ -915,7 +917,9 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         role: 'client',
         hostId: null,
       });
-      return await begin(built, 'client', memberName, 'Party', { handshakeCode });
+      const snapshot = await begin(built, 'client', memberName, 'Party', { handshakeCode });
+      AnalyticsEvents.partyJoined(bundle.partyId);
+      return snapshot;
     } catch (err) {
       phase = 'error';
       error = String(err?.message || err);
