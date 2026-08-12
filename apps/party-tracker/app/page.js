@@ -1199,6 +1199,7 @@ export default function Page() {
       const snap = await runtime.current.createParty({
         memberName: identity?.name || 'Guest',
         name: 'Party',
+        userId: identity?.userId || null,
       });
       selectTab('party');
       showToast(
@@ -1225,7 +1226,10 @@ export default function Page() {
         setIdentity((i) => ({ ...i, name: memberName }));
         identityRef.current = { ...identityRef.current, name: memberName };
       }
-      const snap = await runtime.current.joinParty(raw, { memberName });
+      const snap = await runtime.current.joinParty(raw, {
+        memberName,
+        userId: identityRef.current?.userId || null,
+      });
       selectTab('party');
       showToast(`Joined ${snap.code}`);
     } catch (err) {
@@ -2501,8 +2505,11 @@ export default function Page() {
                   rides={partyRides || {}}
                   myGroupId={selfMember?.groupId}
                   sharingPaused={selfMember?.sharingPaused}
+                  shareMode={selfMember?.shareMode || (selfMember?.sharingPaused ? 'off' : 'approx')}
+                  shareUntil={selfMember?.shareUntil || null}
                   onGroupId={(g) => runtime.current?.setGroupId?.(g)}
                   onSharingPaused={(v) => runtime.current?.setSharingPaused?.(v)}
+                  onShareMode={(mode) => runtime.current?.setShareMode?.(mode)}
                   onApplyPlan={(ops) => {
                     for (const op of ops) {
                       if (op.kind === 'set-meet' && op.body?.meet) {

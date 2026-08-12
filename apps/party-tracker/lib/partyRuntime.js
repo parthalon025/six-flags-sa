@@ -61,7 +61,8 @@ import {
   loadSession,
   persistLiveSession,
 } from '@/lib/core/session';
-import { adoptSnapshot, coarsenLocation } from '@/lib/core/state';
+import { adoptSnapshot } from '@/lib/core/state';
+import { effectiveShareMode, locationForShare, shareModePatch } from '@/lib/gps/sharing';
 
 /** The self-hosted Node host in /server, when one is configured. */
 const LAN_BASE = (process.env.NEXT_PUBLIC_SYNC_URL || '').replace(/\/+$/, '');
@@ -679,7 +680,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         host.applyLocal({
           kind: 'join',
           from: session.selfId,
-          body: { name: session.memberName || 'Guest' },
+          body: { name: session.memberName || 'Guest', userId: session.userId || null },
         });
       }
       host.applyLocal({ kind: 'set-leader', body: { leader: session.selfId } });
@@ -827,10 +828,11 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return body?.partyId || null;
   }
 
-  async function begin(built, role, memberName, partyName, { handshakeCode = null } = {}) {
+  async function begin(built, role, memberName, partyName, { handshakeCode = null, userId = null } = {}) {
     session = built;
     session.memberName = memberName || 'Guest';
     session.partyName = partyName || 'Party';
+    session.userId = userId || session.userId || null;
     openManager(role);
     if (handshakeCode) {
       try {
@@ -851,7 +853,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return getSnapshot();
   }
 
-  async function createParty({ name = 'Party', memberName = 'Guest' } = {}) {
+  async function createParty({ name = 'Party', memberName = 'Guest', userId = null } = {}) {
     await teardown();
     phase = 'connecting';
     emit();
@@ -871,7 +873,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         role: 'host',
         hostId: selfId,
       });
-      const snapshot = await begin(built, 'host', memberName, name);
+      const snapshot = await begin(built, 'host', memberName, name, { userId });
       if (!allocated.registered) {
         say('No server reachable — share the link or QR, the code will not resolve');
       }
@@ -885,7 +887,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   }
 
   /** Accepts a whole invite URL, a bare fragment, or a six-character code. */
-  async function joinParty(input, { memberName = 'Guest' } = {}) {
+  async function joinParty(input, { memberName = 'Guest', userId = null } = {}) {
     await teardown();
     phase = 'connecting';
     emit();
@@ -915,7 +917,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         role: 'client',
         hostId: null,
       });
-      return await begin(built, 'client', memberName, 'Party', { handshakeCode });
+      return await begin(built, 'client', memberName, 'Party', { handshakeCode, userId });
     } catch (err) {
       phase = 'error';
       error = String(err?.message || err);
@@ -987,7 +989,16 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return null;
   }
 
-  const pushLocation = (location) => submit(LOCATION, { location: coarsenLocation(location) });
+  const pushLocation = (location) => {
+    const me =
+      (host && session && host.getState?.()?.members?.[session.selfId]) ||
+      (client && session && client.getState?.()?.members?.[session.selfId]) ||
+      null;
+    const mode = effectiveShareMode(me || { shareMode: 'approx', sharingPaused: false });
+    const shaped = locationForShare(location, mode);
+    if (!shaped) return submit(LOCATION, { clear: true });
+    return submit(LOCATION, { location: shaped });
+  };
   const clearLocation = () => submit(LOCATION, { clear: true });
   const setMeet = (meet) => submit(SET_MEET, { meet });
   const setTarget = (rideId) => submit(SET_TARGET, { rideId: rideId || null });
@@ -1016,7 +1027,12 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
 
   const setGroupId = (groupId) => submit(PATCH_MEMBER, { patch: { groupId: groupId || null } });
   const setSharingPaused = (sharingPaused) =>
-    submit(PATCH_MEMBER, { patch: { sharingPaused: Boolean(sharingPaused) } });
+    submit(PATCH_MEMBER, { patch: shareModePatch(sharingPaused ? 'off' : 'approx') });
+  const setShareMode = (mode, opts = {}) => submit(PATCH_MEMBER, { patch: shareModePatch(mode, opts) });
+  const bindUserId = (userId) => {
+    if (session && userId) session.userId = userId;
+    return submit(PATCH_MEMBER, { patch: { userId } });
+  };
 
   async function logAction(kind, detail = {}) {
     try {
@@ -1090,6 +1106,8 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     setMemberName,
     setGroupId,
     setSharingPaused,
+    setShareMode,
+    bindUserId,
     logAction,
     pushLocation,
     clearLocation,

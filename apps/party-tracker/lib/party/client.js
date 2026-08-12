@@ -377,6 +377,7 @@ export function createClient({ session, key, transport, snapshot = null, now = (
     const member = createMember({
       id: selfId,
       name: session?.memberName || 'Guest',
+      userId: session?.userId || null,
       now: now(),
     });
     post(HELLO, { member }, EVERYONE);

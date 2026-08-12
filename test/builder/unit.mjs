@@ -1215,6 +1215,50 @@ await check('shouldShareLocation allows in-park fixes and blocks off-site ones',
   return true;
 });
 
+{
+  const {
+    effectiveShareMode,
+    locationForShare,
+    shareModePatch,
+    DEFAULT_SHARE_MODE,
+  } = await import('../../apps/party-tracker/lib/gps/sharing.js');
+  const { createMember, coarsenLocation } = await import('../../apps/party-tracker/lib/core/state.js');
+
+  await check('E4.1 share modes: off clears, approx coarsens, precise keeps', () => {
+    const loc = { lat: 39.343828, lng: -84.265811, ts: 1 };
+    assert.equal(locationForShare(loc, 'off'), null);
+    const approx = locationForShare(loc, 'approx');
+    assert.deepEqual(approx, coarsenLocation(loc));
+    assert.notEqual(approx.lat, loc.lat);
+    assert.equal(locationForShare(loc, 'precise').lat, loc.lat);
+    return true;
+  });
+
+  await check('E4.1 precise duration expires back to approx', () => {
+    const now = 1_000_000;
+    const m = createMember({ id: 'x', now });
+    Object.assign(m, shareModePatch('precise', { now, durationMs: 60_000 }));
+    assert.equal(effectiveShareMode(m, now + 1), 'precise');
+    assert.equal(effectiveShareMode(m, now + 60_001), DEFAULT_SHARE_MODE);
+    assert.equal(effectiveShareMode({ ...m, sharingPaused: true }, now), 'off');
+    return true;
+  });
+
+  await check('EP.5 createMember carries userId and refuses swap in reduce', async () => {
+    const { reduce, createParty } = await import('../../apps/party-tracker/lib/core/state.js');
+    let state = createParty({ id: 'p1', leader: 'a', now: 1 });
+    state = reduce(state, { kind: 'join', from: 'a', body: { name: 'Ada', userId: 'usr_ada' } }, 2).state;
+    assert.equal(state.members.a.userId, 'usr_ada');
+    state = reduce(
+      state,
+      { kind: 'patch-member', from: 'a', body: { patch: { userId: 'usr_eve' } } },
+      3,
+    ).state;
+    assert.equal(state.members.a.userId, 'usr_ada');
+    return true;
+  });
+}
+
 await check('isLocationVisible mirrors the sharing rule', () => {
   assert.equal(isLocationVisible(KI_BOUNDS, 39.343828, -84.265811), true);
   assert.equal(isLocationVisible(KI_BOUNDS, 39.35, -84.265811), false);
