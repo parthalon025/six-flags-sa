@@ -108,14 +108,17 @@ jobs:
       - name: Build Next.js app
         run: npm run build -w @party-tracker/app
 
+      - name: Pack build for UI jobs
+        run: |
+          tar -C apps/party-tracker -czf party-tracker-next.tgz .next public
+          ls -lh party-tracker-next.tgz
+          tar -tzf party-tracker-next.tgz | head -20
+
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: party-tracker-next
-          include-hidden-files: true
-          path: |
-            apps/party-tracker/.next
-            apps/party-tracker/public
+          path: party-tracker-next.tgz
           retention-days: 1
 
   ui:
@@ -143,8 +146,11 @@ jobs:
         with:
           name: party-tracker-next
 
-      - name: Verify production build
-        run: test -f apps/party-tracker/.next/BUILD_ID && ls apps/party-tracker/.next | head
+      - name: Unpack production build
+        run: |
+          tar -C apps/party-tracker -xzf party-tracker-next.tgz
+          test -f apps/party-tracker/.next/BUILD_ID
+          ls apps/party-tracker/.next | head
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
@@ -189,8 +195,10 @@ jobs:
         with:
           name: party-tracker-next
 
-      - name: Verify production build
-        run: test -f apps/party-tracker/.next/BUILD_ID
+      - name: Unpack production build
+        run: |
+          tar -C apps/party-tracker -xzf party-tracker-next.tgz
+          test -f apps/party-tracker/.next/BUILD_ID
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
