@@ -6883,6 +6883,161 @@ await check('buildSideQuests lists height and entrance gaps', async () => {
   return true;
 });
 
+section('sideQuests/proximity');
+
+await check('nearestTargetDistance resolves a quest target to a POI fix', async () => {
+  const { nearestTargetDistance } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const pois = [
+    { n: 'Near Ride', lat: 39.0, lng: -84.0 },
+    { n: 'Far Ride', lat: 39.02, lng: -84.0 },
+  ];
+  const quest = { targets: ['Near Ride', 'Far Ride'] };
+  const d = nearestTargetDistance(quest, pois, { lat: 39.0, lng: -84.0 });
+  assert.ok(d != null && d < 5);
+  assert.equal(nearestTargetDistance(quest, pois, null), null);
+  assert.equal(nearestTargetDistance({ targets: [] }, pois, { lat: 39.0, lng: -84.0 }), null);
+  assert.equal(
+    nearestTargetDistance({ targets: ['Missing'] }, pois, { lat: 39.0, lng: -84.0 }),
+    null,
+  );
+  return true;
+});
+
+await check('sortByProximity floats nearby quests to the front without dropping the rest', async () => {
+  const { sortByProximity } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const pois = [
+    { n: 'Close Ride', lat: 39.0, lng: -84.0 },
+    { n: 'Far Ride', lat: 39.02, lng: -84.0 }, // ~2.2km away, well outside 150m
+  ];
+  const quests = [
+    { id: 'far_one', targets: ['Far Ride'] },
+    { id: 'no_target', targets: [] },
+    { id: 'close_one', targets: ['Close Ride'] },
+  ];
+  const sorted = sortByProximity(quests, pois, { lat: 39.0, lng: -84.0 });
+  assert.equal(sorted.length, 3);
+  assert.equal(sorted[0].id, 'close_one');
+  assert.equal(sorted[0].nearby, true);
+  // The others are still present — proximity re-orders, it never hides.
+  assert.ok(sorted.some((q) => q.id === 'far_one'));
+  assert.ok(sorted.some((q) => q.id === 'no_target'));
+  assert.equal(sorted.find((q) => q.id === 'far_one').nearby, false);
+  // With no position, the original order and shape pass through untouched.
+  const untouched = sortByProximity(quests, pois, null);
+  assert.deepEqual(untouched, quests);
+  return true;
+});
+
+section('adventure/questQueue');
+
+await check('createReport builds a pending envelope and rejects missing fields', async () => {
+  const { createReport, STATUS_PENDING } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const report = createReport({
+    questId: 'height_rule',
+    venueId: 'kings-island',
+    kind: 'height_rule',
+    payload: { note: 'sign was covered', status: 'issue' },
+    lat: 39.34,
+    lng: -84.26,
+    now: 1_700_000_000_000,
+  });
+  assert.ok(report.id);
+  assert.equal(report.questId, 'height_rule');
+  assert.equal(report.venueId, 'kings-island');
+  assert.equal(report.placeId, null);
+  assert.equal(report.status, STATUS_PENDING);
+  assert.equal(report.createdAt, 1_700_000_000_000);
+  assert.equal(report.lat, 39.34);
+  assert.equal(report.payload.note, 'sign was covered');
+  // Two reports never collide on id even when minted back to back.
+  const other = createReport({ questId: 'height_rule', kind: 'height_rule' });
+  assert.notEqual(report.id, other.id);
+  assert.throws(() => createReport({ kind: 'height_rule' }));
+  assert.throws(() => createReport({ questId: 'height_rule' }));
+  // No GPS yet is an ordinary state, not an error — never invents a fix.
+  const noFix = createReport({ questId: 'poi_restroom', kind: 'poi_presence' });
+  assert.equal(noFix.lat, null);
+  assert.equal(noFix.lng, null);
+  return true;
+});
+
+await check('nearbyReports keeps only resolvable fixes within radius, nearest first', async () => {
+  const { nearbyReports } = await import('../../apps/party-tracker/lib/adventure/questQueue.js');
+  const me = { lat: 39.0, lng: -84.0 };
+  const reports = [
+    { id: 'a', lat: 39.001, lng: -84.0 }, // ~111m
+    { id: 'b', lat: null, lng: null }, // no fix — never counts as nearby
+    { id: 'c', lat: 39.02, lng: -84.0 }, // ~2.2km — outside 150m
+    { id: 'd', lat: 39.0002, lng: -84.0 }, // ~22m, closest
+  ];
+  const near = nearbyReports(reports, me);
+  assert.deepEqual(near.map((r) => r.id), ['d', 'a']);
+  assert.deepEqual(nearbyReports(reports, null), []);
+  return true;
+});
+
+await check('createQuestQueue enqueues, loads in order, removes and clears', async () => {
+  const { createQuestQueue, createReport } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const queue = createQuestQueue({ storageKey: 'test.questQueue.order' });
+  assert.deepEqual(await queue.load(), []);
+  assert.equal(await queue.pendingCount(), 0);
+
+  const first = createReport({ questId: 'ride_status', kind: 'ride_status', now: 1000 });
+  const second = createReport({ questId: 'queue_band', kind: 'queue_band', now: 2000 });
+  await queue.enqueue(second);
+  await queue.enqueue(first); // enqueued out of order — load() sorts by createdAt
+
+  const loaded = await queue.load();
+  assert.deepEqual(loaded.map((r) => r.id), [first.id, second.id]);
+  assert.equal(await queue.pendingCount(), 2);
+
+  await queue.remove(first.id);
+  assert.deepEqual((await queue.load()).map((r) => r.id), [second.id]);
+
+  await queue.clear();
+  assert.deepEqual(await queue.load(), []);
+  assert.equal(await queue.pendingCount(), 0);
+  return true;
+});
+
+await check('createQuestQueue rejects anything that is not a built report', async () => {
+  const { createQuestQueue } = await import('../../apps/party-tracker/lib/adventure/questQueue.js');
+  const queue = createQuestQueue({ storageKey: 'test.questQueue.guard' });
+  await assert.rejects(() => queue.enqueue({ questId: 'no-id-here' }));
+  return true;
+});
+
+await check('createQuestQueue caps its tail at max — oldest is dropped, not newest', async () => {
+  const { createQuestQueue, createReport } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const queue = createQuestQueue({ storageKey: 'test.questQueue.cap', max: 3 });
+  const reports = [0, 1, 2, 3, 4].map((n) =>
+    createReport({ questId: 'poi_food', kind: 'poi_presence', now: n }),
+  );
+  for (const r of reports) await queue.enqueue(r);
+  const loaded = await queue.load();
+  assert.equal(loaded.length, 3);
+  assert.deepEqual(loaded.map((r) => r.createdAt), [2, 3, 4]);
+  return true;
+});
+
+await check('separate queue instances do not share an in-memory outbox', async () => {
+  const { createQuestQueue, createReport } = await import(
+    '../../apps/party-tracker/lib/adventure/questQueue.js'
+  );
+  const queueA = createQuestQueue({ storageKey: 'test.questQueue.a' });
+  const queueB = createQuestQueue({ storageKey: 'test.questQueue.b' });
+  await queueA.enqueue(createReport({ questId: 'ride_status', kind: 'ride_status' }));
+  assert.equal((await queueA.load()).length, 1);
+  assert.equal((await queueB.load()).length, 0);
+  return true;
+});
+
 await check('quest seeds map builder ask gaps to Scout types', async () => {
   const { questSeedsFromRequests } = await import('../../packages/venue-builder/lib/quest-seeds.mjs');
   const seeds = questSeedsFromRequests('demo', [
