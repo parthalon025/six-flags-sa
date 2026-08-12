@@ -43,6 +43,17 @@ This project is indexed by GitNexus as **six-flags-sa** (4771 symbols, 11916 rel
 
 <!-- gitnexus:end -->
 
+## Isolate in a worktree
+
+Implementation, refactors, and parallel agent work run in a git worktree. Create one before the first edit; remove it when the task is done.
+
+- Create: `npm run worktree:create -- <slug>` (Claude Code: `EnterWorktree` or `claude --worktree <slug>`). The script cuts from `origin/main`.
+- Finish: `npm run worktree:remove -- <slug>` after the branch is pushed or the work is discarded — that also deletes the `worktree-*` branch (local, and origin when empty, merged, or discarded). `npm run worktree:prune` drops leftover `worktree-*` branches with no worktree; `--merged` also drops merged worktrees.
+- Keep the main checkout on `main`. Remove only the worktree this session created.
+- On Windows: every Read/Edit/Bash uses the absolute `WORKTREE=` path (dispatched `isolation: worktree` leaves CWD on the primary checkout). Delete only via the script — recursive `rm` follows NTFS junctions and can wipe files outside the worktree.
+
+Read `scripts/worktree.mjs` for the commands.
+
 ## Agent handoff — out-of-scope issues
 
 When you encounter errors, failures, or problems **outside the scope of your current task**, file a GitHub issue for handoff instead of fixing them inline or ignoring them.
