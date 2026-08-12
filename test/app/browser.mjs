@@ -180,9 +180,12 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   do {
     const intro = page.locator('#intro-splash-title');
     if (await intro.count()) {
-      await page.locator('.gate:has(#intro-splash-title) .btn.primary').click().catch(() => {});
+      const primary = page.locator(
+        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
+      );
+      await primary.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
-      return true;
+      if (!(await intro.count())) return true;
     }
     if (timeout === 0) break;
     await page.waitForTimeout(250);
