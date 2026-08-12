@@ -32,5 +32,10 @@
       "heights": 23,
       "shapes": 286
     }
+  },
+  "consolidate": {
+    "cadence": "weekly",
+    "lastAt": null,
+    "_comment": "E0.6 cadence — consolidate graduates accepted edits into this package; never public/venues"
   }
 }

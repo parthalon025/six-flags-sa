@@ -1,15 +1,19 @@
 import './globals.css';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import { BRAND } from '@/lib/brand';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-/* Self-hosted by Next — same-origin, so park wifi and the service worker can
-   keep it after the first load. Used for PARKBOUND, attraction names, and big
-   numbers; body copy stays on the system UI stack. */
-const display = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+/* Self-hosted from a committed woff2 — same-origin, so park wifi and the
+   service worker can keep it after the first load. The file is the latin
+   variable cut of Plus Jakarta Sans (weights 500–800); shipping it in the repo
+   means the production build never reaches out to Google Fonts, so Turbopack
+   can't fail the build when that fetch is blocked in CI. Used for PARKBOUND,
+   attraction names, and big numbers; body copy stays on the system UI stack. */
+const display = localFont({
+  src: './fonts/plus-jakarta-sans-latin.woff2',
+  weight: '500 800',
+  style: 'normal',
   variable: '--font-display',
   display: 'swap',
 });

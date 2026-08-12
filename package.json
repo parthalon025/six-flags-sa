@@ -38,6 +38,7 @@
     "venues:route-qa": "node packages/venue-builder/venue-route-qa.mjs",
     "venues:build-agent": "node packages/venue-builder/venue-build-agent.mjs",
     "venues:certify": "node packages/venue-builder/bin/venue-certify.mjs",
+    "venues:consolidate": "node packages/venue-builder/bin/consolidate.mjs",
     "venues:discover-parks-api": "node packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node packages/venue-builder/bin/geocode-catalog.mjs",
     "venues:drift-watch": "node packages/venue-builder/bin/drift-watch.mjs",

@@ -719,6 +719,15 @@ npm run venues:overrides              # re-apply every overrides file, no networ
 npm run venues:overrides -- cedar-point              # just the one
 ```
 
+Accepted durable guest fixes graduate the same way — into `data/venues/<id>/`, never into
+`public/venues/` by hand (E0.5). Cadence lives on each venue’s `recipe.json`
+(`consolidate.cadence`: `daily` | `weekly` | `manual`; default weekly):
+
+```
+npm run venues:consolidate -- --dry-run --force
+npm run venues:consolidate -- --apply --queue data/consolidate/queue.json
+```
+
 ### The ride inventory: every way into every ride
 
 A place in the bundle is one point, and a ride is not one point. It has a queue that starts
