@@ -8,7 +8,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # Functional + grandma regularly need ~40m; leave headroom for warm-ups.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
