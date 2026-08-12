@@ -1,0 +1,35 @@
+# Keep the Vercel upload lean. Runtime only needs the app workspace + shared
+# package; builder/docs/agent trees are never imported by Next.
+
+agent/
+.agents/
+.claude/
+.gitnexus/
+docs/
+fastlane/
+secrets/
+tmp/
+test/
+coverage/
+.github/
+
+# Root venue builder inputs only — do not match apps/party-tracker/data/
+/data/
+
+# Builder package source is large and unused at runtime; keep package.json so
+# npm workspaces still resolve.
+packages/venue-builder/**
+!packages/venue-builder/package.json
+
+# Repo scripts are not part of the Next build (ignoreCommand is listed below).
+scripts/**
+!scripts/vercel-ignore.sh
+
+*.md
+!apps/party-tracker/**/*.md
+skills-lock.json
+AGENTS.md
+CLAUDE.md
+CONTEXT.md
+INSTALL.md
+README.md

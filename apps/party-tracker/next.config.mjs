@@ -44,6 +44,18 @@ const durable = [
   { key: 'Cache-Control', value: `public, max-age=${HOUR}, s-maxage=${YEAR}, stale-while-revalidate=${DAY}` },
 ];
 
+/** Baseline headers for every response — park PWA on a public CDN. */
+const security = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  // Geolocation is the product; camera/mic stay off. Payment APIs unused.
+  {
+    key: 'Permissions-Policy',
+    value: 'geolocation=(self), camera=(), microphone=(), payment=()',
+  },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
@@ -53,6 +65,7 @@ const nextConfig = {
   reactStrictMode: true,
   async headers() {
     return [
+      { source: '/:path*', headers: security },
       { source: '/venues/:path*', headers: durable },
       { source: '/icon-:size.png', headers: durable },
       { source: '/apple-touch-icon.png', headers: durable },

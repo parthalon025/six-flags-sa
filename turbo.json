@@ -1,5 +1,22 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "KV_REST_API_URL",
+    "KV_REST_API_TOKEN",
+    "KV_REST_API_READ_ONLY_TOKEN",
+    "KV_URL",
+    "REDIS_URL",
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+    "VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+    "METRICS_TOKEN",
+    "GUEST_TRACES_TOKEN",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
