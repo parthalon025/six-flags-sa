@@ -327,6 +327,29 @@ Parallel after #72: **M0 remainder** map zoom perf (cull / HUD / LOD).
 
 ---
 
+## PR chain status (2026-08-11)
+
+**CI unblocker (merge first):** [#92](https://github.com/parthalon025/six-flags-sa/pull/92) — blank `blocked` route after venue switch + functional harness GPS settle. All epic branches below are rebased onto that fix tip.
+
+| Order | Epic | PR | Branch | Notes |
+|-------|------|----|--------|-------|
+| A | Hygiene / north star | [#79](https://github.com/parthalon025/six-flags-sa/pull/79) | `cursor/backlog-hygiene-north-star-1139` | Docs only |
+| B | EP.1 Auth ADR | [#80](https://github.com/parthalon025/six-flags-sa/pull/80) | `cursor/ep1-auth-adr-1139` | |
+| C | E1.1 pipeline integrity | [#81](https://github.com/parthalon025/six-flags-sa/pull/81) | `cursor/e11-pipeline-integrity-1139` | Wave 1 honesty |
+| D | E0.3–4 schemas | [#82](https://github.com/parthalon025/six-flags-sa/pull/82) | `cursor/e0-schemas-store-1139` | |
+| E | EP.2–4 soft-gate + cache | [#83](https://github.com/parthalon025/six-flags-sa/pull/83) | `cursor/ep-signin-offline-cache-1139` | Needs #92 harness |
+| F | E0.5–6 consolidate | [#84](https://github.com/parthalon025/six-flags-sa/pull/84) | `cursor/e0-consolidate-cadence-1139` | |
+| G | E1.2 deterministic ids | [#85](https://github.com/parthalon025/six-flags-sa/pull/85) | `cursor/e12-deterministic-ids-1139` | |
+| H | EP.5 + E4.1 sharing | [#86](https://github.com/parthalon025/six-flags-sa/pull/86) | `cursor/ep5-e41-party-sharing-1139` | |
+| I | E9.1 adventure queue | [#88](https://github.com/parthalon025/six-flags-sa/pull/88) | `cursor/e91-adventure-side-quests-1139` | |
+| J | M0 Diagnostics HUD | [#89](https://github.com/parthalon025/six-flags-sa/pull/89) | `cursor/m0-map-perf-remainder-1139` | |
+| K | E5 eligibility + guests | [#90](https://github.com/parthalon025/six-flags-sa/pull/90) | `cursor/e5-eligibility-v2-1139` | |
+| L | E8.1 next-best + Why? | [#91](https://github.com/parthalon025/six-flags-sa/pull/91) | `cursor/e81-next-best-why-1139` | |
+
+Land **one open epic at a time** after #92 is on `main`. Prefer A→L order. Vercel preview rate-limits on this account are non-blocking for Test app.
+
+Related: [#52](https://github.com/parthalon025/six-flags-sa/issues/52) (older functional flakes; CP blank-route root cause addressed in #92).
+
 ## Tracking
 
 - Keep this file updated when an epic completes (checkboxes or status line).  
