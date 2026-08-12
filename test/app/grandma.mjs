@@ -27,7 +27,7 @@
  *   CHROMIUM_PATH=/opt/pw-browsers/chromium node test/grandma.mjs
  */
 
-import { BASE, launch, until } from './browser.mjs';
+import { BASE, launch, until, closeGate } from './browser.mjs';
 import { readFileSync } from 'node:fs';
 
 const APP_VERSION = JSON.parse(readFileSync(new URL('../../apps/party-tracker/package.json', import.meta.url))).version;
@@ -74,6 +74,7 @@ async function arrive(geo, { venue = null } = {}) {
   });
   // Persona B has to be standing in Fiesta Texas rather than answering an
   // intake question about it, so the choice is seeded rather than driven.
+  // KI host/joiner seed the same way — grandma scores join UX, not intake.
   if (venue) {
     await ctx.addInitScript((id) => {
       localStorage.setItem('tracker-venue-confirmed', id);
@@ -94,21 +95,13 @@ async function arrive(geo, { venue = null } = {}) {
   });
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(2000);
-  // Intro copy is "Get started" (legacy "Continue" kept for older builds).
-  await page
-    .locator(
-      '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started"), .gate .btn.primary:has-text("Continue")',
-    )
-    .first()
-    .click({ force: true })
-    .catch(() => {});
-  await page.waitForTimeout(500);
-  await page.locator('button:has-text("Share my location"), button:has-text("Allow location")').click().catch(() => {});
-  await page.waitForTimeout(2500);
-  await page.locator('.gate .btn.primary:has-text("set up")').click().catch(() => {});
-  await page.waitForFunction(() => !document.querySelector('.gate'), null, { timeout: 30000 }).catch(() => {});
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(1500);
+  await closeGate(page);
+  await until(async () => (await page.locator('.gate').count()) === 0, {
+    timeout: 30000,
+    label: 'grandma gate down',
+  }).catch(() => {});
+  await page.waitForTimeout(800);
   return { page, errors };
 }
 
@@ -291,24 +284,24 @@ await score('B', 'B11', 'a card she removes stays removed, and Me can put it bac
    ============================================================ */
 
 console.log('\n--- A, handed a phone at Kings Island ---');
-const host = await arrive(KI);
+const host = await arrive(KI, { venue: 'kings-island' });
 const h = host.page;
-await h.locator('.tabItem[data-tab="party"]').click();
+await h.locator('.tabItem[data-tab="party"]').click({ force: true });
 await h.waitForTimeout(600);
 await h.locator('.field[aria-label="Your name"]').fill('Grandad');
 await h.locator('.field[aria-label="Your name"]').blur();
 await h.waitForTimeout(400);
-await h.locator('button:has-text("Start a party")').click();
+await h.locator('button:has-text("Start a party")').click({ force: true });
 await h.waitForTimeout(4000);
 const code = (await h.locator('.codeText').innerText().catch(() => '')).trim();
 console.log(`       (the family's party is ${code || 'UNKNOWN'})`);
 
 // Let the host's key window lapse, then leave the Party tab so nothing reopens
 // it by accident — this is the state a party is in an hour into the day.
-await h.locator('.tabItem[data-tab="explore"]').click();
+await h.locator('.tabItem[data-tab="explore"]').click({ force: true });
 await h.waitForTimeout(12000);
 
-const A = await arrive(KI_NEAR);
+const A = await arrive(KI_NEAR, { venue: 'kings-island' });
 const a = A.page;
 
 await score('A', 'A3', 'the code field explains itself', async () => {
