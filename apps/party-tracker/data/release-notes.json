@@ -126,5 +126,11 @@
     "items": [
       "Merge branch 'main' of https://github.com/parthalon025/six-flags-sa"
     ]
+  },
+  "1.1.21": {
+    "title": "What's new",
+    "items": [
+      "fix: align workspace shared package pins with semver bump"
+    ]
   }
 }
