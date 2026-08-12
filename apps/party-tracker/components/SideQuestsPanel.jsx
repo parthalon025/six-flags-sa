@@ -1,21 +1,28 @@
 'use client';
 
 import Icon from '@/components/Icon';
+import SignInCard from '@/components/SignInCard';
+import { softGateBlocks } from '@/lib/auth/session';
 import { buildSideQuests } from '@/lib/sideQuests';
 
 /**
  * Side Quests tab — missions for facts only guests on the ground can settle.
+ * Soft-gate (EP.3): browse the list anonymously; submit needs sign-in (adventure PR).
  */
 
 export default function SideQuestsPanel({
   venueName = null,
   pois = [],
   onSelectPlace = null,
+  session = null,
+  onSession = null,
 }) {
   const { durable, ambient, counts } = buildSideQuests({
     pois,
     venueName: venueName || 'this park',
   });
+  const needsAuth = softGateBlocks('adventure', session);
+  const actionLabel = needsAuth ? 'Sign in' : 'Soon';
 
   return (
     <div className="sideQuests">
@@ -29,6 +36,8 @@ export default function SideQuestsPanel({
           </span>
         </div>
       </div>
+
+      {needsAuth ? <SignInCard session={session} onSession={onSession} /> : null}
 
       <div className="label">
         For {venueName || 'this park'}
@@ -71,7 +80,7 @@ export default function SideQuestsPanel({
                   </span>
                 )}
               </span>
-              <span className="rowValue">Soon</span>
+              <span className="rowValue">{actionLabel}</span>
             </div>
           ))}
         </div>
@@ -88,14 +97,15 @@ export default function SideQuestsPanel({
               <b className="sideQuestTitle">{q.title}</b>
               <span className="sideQuestBlurb">{q.blurb}</span>
             </span>
-            <span className="rowValue">Soon</span>
+            <span className="rowValue">{actionLabel}</span>
           </div>
         ))}
       </div>
 
       <p className="fine block">
-        Reports will sync when Side Quests go live (peer confirm, then overlay). Nothing invents
-        coordinates — you do, standing there.
+        {needsAuth
+          ? 'Sign in to submit when Side Quests go live. Looking around the list never needs an account.'
+          : 'Reports will sync when Side Quests go live (peer confirm, then overlay). Nothing invents coordinates — you do, standing there.'}
       </p>
     </div>
   );

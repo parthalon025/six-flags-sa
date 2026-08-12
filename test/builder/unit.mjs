@@ -6929,6 +6929,62 @@ await check('shared schemas export ranks and soft-gate helpers', () => {
   return true;
 });
 
+await check('soft-gate helper lives on the local session module', async () => {
+  const { softGateBlocks } = await import('../../apps/party-tracker/lib/auth/session.js');
+  assert.equal(softGateBlocks('party', null), true);
+  assert.equal(softGateBlocks('browse', null), false);
+  return true;
+});
+
+{
+  const store = new Map();
+  globalThis.window = {
+    sessionStorage: {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => {
+        store.set(k, String(v));
+      },
+      removeItem: (k) => {
+        store.delete(k);
+      },
+    },
+  };
+  const {
+    softGateBlocks,
+    completeMagicSignIn,
+    readLocalSession,
+    clearLocalSession,
+    signOutLocal,
+  } = await import('../../apps/party-tracker/lib/auth/session.js');
+
+  await check('softGateBlocks party/adventure until signed in', () => {
+    assert.equal(softGateBlocks('party', null), true);
+    assert.equal(softGateBlocks('adventure', { userId: 'usr_x' }), false);
+    assert.equal(softGateBlocks('party', { userId: 'usr_x' }), false);
+    return true;
+  });
+
+  await check('completeMagicSignIn writes a local session', async () => {
+    clearLocalSession();
+    const session = await completeMagicSignIn({ email: 'ada@parkbound.example', displayName: 'Ada' });
+    assert.equal(session.email, 'ada@parkbound.example');
+    assert.ok(session.userId.startsWith('usr_'));
+    assert.equal(readLocalSession()?.displayName, 'Ada');
+    await signOutLocal();
+    assert.equal(readLocalSession(), null);
+    return true;
+  });
+
+  await check('completeMagicSignIn rejects a bare string without @', async () => {
+    try {
+      await completeMagicSignIn({ email: 'not-an-email' });
+      return false;
+    } catch (err) {
+      assert.match(err.message, /valid email/i);
+      return true;
+    }
+  });
+}
 /* ---------------------------------------------------------------- tally -- */
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
