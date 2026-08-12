@@ -111,7 +111,7 @@ If it's unclear whether a file is builder input (edit it) or builder output (reg
 
 ## App version — auto-bumped on merge
 
-The app build semver is **not** bumped in PRs. After every merge to `main`, `.github/workflows/bump-version.yml` runs `scripts/bump-version.mjs` to increment `package.json`, stamp `public/app-version.json` / `public/sw.js`, and add a `data/release-notes.json` line from the PR title. This keeps version bumps off the merge path.
+The app build semver is **not** bumped in PRs. After every merge to `main`, `.github/workflows/bump-version.yml` runs `scripts/bump-version.mjs`: skip if the merge did not touch app paths (`scripts/lib/app-paths.json`); otherwise bump from the PR title’s Conventional Commit type (`fix:` patch, `feat:` minor, `feat!:` / `BREAKING CHANGE:` major). Tag the **PR title**; do not edit version files. `chore:` / `docs:` / `test:` skip even on app files. Untagged app merges still patch.
 
 ### Never bump version in a PR
 

@@ -12,12 +12,6 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   GITNEXUS_INDEX_PATHS,
-  isGitnexusCiNoise,
-  isGitnexusOnlyChange,
-} from '../../scripts/gitnexus-ci.mjs';
-
-import {
-  GITNEXUS_INDEX_PATHS,
   GITNEXUS_REFRESH_MESSAGE,
   isGitnexusCiNoise,
   isGitnexusOnlyChange,
