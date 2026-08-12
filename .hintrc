@@ -1,0 +1,10 @@
+{
+  "hints": {
+    "compat-api/css": [
+      "warning",
+      {
+        "ignore": ["text-size-adjust"]
+      }
+    ]
+  }
+}

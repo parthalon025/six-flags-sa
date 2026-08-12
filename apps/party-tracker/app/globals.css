@@ -629,8 +629,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   padding: 6px 10px;
   border-radius: var(--rCapsule);
   background: color-mix(in srgb, var(--bg2) 78%, transparent);
-  backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
   box-shadow: 0 1px 0 var(--glassRing), 0 8px 24px rgba(16, 35, 63, .12);
 }
 .topbarGlyph, .topbarLockup { display: flex; align-items: center; }
@@ -1126,7 +1126,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    pushes the tab bar off the bottom of the sheet. */
 .sheetBody {
   flex: 1; min-height: 0;
-  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
   /* `contain` stops a scroll chaining out to the page but deliberately leaves
      the browser its own horizontal overscroll gesture — the edge swipe that
      means "back". The app answers that gesture through the history stack
@@ -1171,9 +1171,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   text-transform: none;
   /* Secondary ink, but dark enough for section headers on a white sheet (AA on
      13px). Pure --label2 at 60% opacity fails on outdoor glare. */
-  color: color-mix(in srgb, var(--label) 78%, var(--label2));
+  color: var(--label);
   margin: 24px 0 7px; padding: 0 4px;
   display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+}
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .label { color: color-mix(in srgb, var(--label) 78%, var(--label2)); }
 }
 .label:first-child { margin-top: 8px; }
 .labelRight { text-transform: none; letter-spacing: -.08px; }
@@ -1235,7 +1238,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 
 .chips {
-  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none;
+  display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px;
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
   mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
 }
@@ -1469,8 +1472,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .fine {
   font-size: 13px; line-height: 18px; letter-spacing: -.08px;
-  color: color-mix(in srgb, var(--label) 58%, var(--label2));
+  color: var(--label2);
   margin: 8px 4px 0;
+}
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .fine { color: color-mix(in srgb, var(--label) 58%, var(--label2)); }
 }
 .fine.block { display: block; margin-left: 0; margin-right: 0; }
 .warnText { color: var(--orange); }
@@ -1598,7 +1604,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .glanceRail {
   flex: none; min-height: 104px;
   display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory;
-  padding: 4px 16px 10px; scrollbar-width: none;
+  padding: 4px 16px 10px;
 }
 .glanceRail::-webkit-scrollbar { display: none; }
 .glanceCard {
@@ -1862,8 +1868,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .wxWhy { font-size: 13px; color: var(--label2); line-height: 18px; letter-spacing: -.08px; }
 p.wxWhy { margin: 0 0 8px; }
-p.wxWhy.bad { color: color-mix(in srgb, var(--red) 78%, var(--label)); }
-p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
+p.wxWhy.bad { color: var(--red); }
+p.wxWhy.warn { color: var(--orange); }
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  p.wxWhy.bad { color: color-mix(in srgb, var(--red) 78%, var(--label)); }
+  p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
+}
 /* The height badge shares this corner. Under the chip normally; parked while
    the open card is up (card height grows when the line wraps on a narrow phone). */
 .wxChip ~ .filterBadge { top: calc(var(--top) + 66px); }
@@ -2082,10 +2092,12 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .installCard .installHook { margin: 0 0 10px; }
 
 /* ---- mobile-only hardening ---- */
-html { -webkit-text-size-adjust: 100%; }
-body { touch-action: manipulation; user-select: none; -webkit-user-select: none; }
-input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px; }
-.sheetBody, .glanceRail, .chips { -webkit-overflow-scrolling: touch; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px; }
+@supports (scrollbar-width: none) {
+  .chips, .glanceRail, .previewAlts { scrollbar-width: none; }
+}
 /* The home indicator is cleared by the sheet's own `bottom` at the floating
    stops and by the tab bar's padding at the full stop, so there is deliberately
    no padding on the sheet itself: adding it here would count the inset twice
@@ -2309,7 +2321,7 @@ input, textarea { user-select: text; -webkit-user-select: text; font-size: 16px;
 .entranceHint.approx, .navEntrance.approx, .entranceNote.approx { color: var(--orange); }
 .entranceHint.confirmed, .navEntrance.confirmed, .entranceNote.confirmed { color: var(--green); }
 .navEntrance { margin: 0 12px 4px; font-weight: 600; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; }
-.previewAlts { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; scrollbar-width: none; }
+.previewAlts { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; }
 .previewAlts::-webkit-scrollbar { display: none; }
 .previewAlt {
   flex: none; min-width: 124px; text-align: left; padding: 9px 13px; border-radius: var(--r2);

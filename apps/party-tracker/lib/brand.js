@@ -25,6 +25,9 @@ export const BRAND = {
   promise: 'Parkbound turns a complicated park day into an adventure you can actually enjoy.',
   shortDescription:
     'Find toilets, food and rides on a drawn park map — walk there on guest paths. Start a party when the family wants to stick together.',
+  /** Public production host — invites, OG, and metadataBase use this. */
+  canonicalHost: 'parkbound.kurat0r.ai',
+  canonicalUrl: 'https://parkbound.kurat0r.ai',
 };
 
 /** Where each brand visual belongs — keep call sites honest. */
