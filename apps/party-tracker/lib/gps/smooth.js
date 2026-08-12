@@ -14,6 +14,8 @@ import { withinBounds } from '../venue/store.js';
 
 /** Faster than anyone moves on foot at a park. m/s. */
 export const MAX_SPEED_MS = 12;
+/** A jump this far is a new city, not jitter — reset rather than reject. */
+export const TELEPORT_M = 2500;
 /** Fixes worse than this are not worth updating on. metres. */
 export const MAX_ACC_M = 80;
 /** Squared Mahalanobis distance above which a fix is treated as an outlier. */
@@ -232,6 +234,15 @@ export function createGpsSmoother({
     if (!state) {
       seed({ ...fix, acc });
       return emit(fix, raw, false);
+    }
+
+    if (lastOut) {
+      const jump = distance(lastOut.lat, lastOut.lng, fix.lat, fix.lng);
+      if (jump > TELEPORT_M) {
+        reset();
+        seed({ ...fix, acc });
+        return emit(fix, raw, false);
+      }
     }
 
     const dt = Math.max((fix.ts - state.ts) / 1000, MIN_DT_MS / 1000);

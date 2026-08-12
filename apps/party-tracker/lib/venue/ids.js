@@ -54,6 +54,23 @@ export const keyOf = (poi) =>
 /** The title a place is displayed under. Never an identity — see the header. */
 export const titleOf = (poi) => (poi ? String(poi.n ?? '') : '');
 
+/** Identity for list keys and label hysteresis. Never the printed title alone —
+ *  a park has dozens of "Restrooms", and a React key of the title leaves SVG
+ *  text stuck on screen while the map pans. Prefers the issued key, then the
+ *  withIds fallback, then a coordinate suffix so an unkeyed bundle still
+ *  paints without ghost labels. */
+export const identityOf = (poi) => {
+  if (!poi) return '';
+  const issued = keyOf(poi);
+  if (issued) return issued;
+  if (typeof poi.id === 'string' && poi.id) return poi.id;
+  const title = titleOf(poi);
+  const lat = poi.lat;
+  const lng = poi.lng;
+  if (Number.isFinite(lat) && Number.isFinite(lng)) return `${title}@${lat},${lng}`;
+  return title;
+};
+
 /** @returns a new array of POIs, each with an `id`. Input is not mutated. */
 export function withIds(pois) {
   const list = pois || [];
