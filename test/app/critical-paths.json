@@ -92,40 +92,39 @@
     {
       "id": "grandma-core",
       "slice": "Navigate",
-      "user_action": "First-time visitor can complete toilet → food → walk",
+      "user_action": "First-time visitor can complete toilet \u2192 food \u2192 walk",
       "suite": "grandma",
       "check_includes": "toilet"
-    }
-  ],
-  "upcoming": [
+    },
     {
       "id": "ep-soft-gate",
       "slice": "EP",
       "user_action": "Anonymous soft-gate blocks Start a party; sign-in unlocks it",
       "suite": "functional",
-      "check": "anonymous soft-gate blocks Start a party",
-      "when": "PR #83 lands"
-    },
+      "check": "anonymous soft-gate blocks Start a party"
+    }
+  ],
+  "upcoming": [
     {
       "id": "e5-eligibility",
       "slice": "E5",
       "user_action": "See structured eligibility reason on a ride",
       "suite": "functional",
-      "when": "PR #90 lands — add named check with the epic"
+      "when": "PR #90 lands \u2014 add named check with the epic"
     },
     {
       "id": "e81-next-best",
       "slice": "E8",
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
-      "when": "PR #91 lands — add named check with the epic"
+      "when": "PR #91 lands \u2014 add named check with the epic"
     },
     {
       "id": "e91-side-quests",
       "slice": "Adventure",
       "user_action": "Submit or discover a Side Quest nearby",
       "suite": "functional",
-      "when": "PR #88 lands — add named check with the epic"
+      "when": "PR #88 lands \u2014 add named check with the epic"
     }
   ]
 }
