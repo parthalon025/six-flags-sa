@@ -5,7 +5,7 @@ import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { eligibility, heightLabel, isRideable } from '@/lib/park';
+import { eligibilityWithReasons, heightLabel, isRideable } from '@/lib/park';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
@@ -21,6 +21,8 @@ export function PlaceDetailBody({
   poi,
   status = null,
   venue = null,
+  height = null,
+  withAdult = false,
   onNavigate,
   onSetMeet,
   onReport = null,
@@ -31,6 +33,9 @@ export function PlaceDetailBody({
   const showStatus = Boolean(status?.label);
   const camp = campChips(campDetails(poi, venue));
   const ent = isRide ? entranceMeta(poi) : null;
+  const eligibilityReason = isRide
+    ? eligibilityWithReasons(poi, height, withAdult).reasons?.[0] || null
+    : null;
 
   return (
     <div className="poiDetail">
@@ -40,6 +45,7 @@ export function PlaceDetailBody({
           {status.source === 'weather' && ' — a guess from the forecast, not the park'}
         </p>
       )}
+      {eligibilityReason && <p className="poiNote eligibilityReason">{eligibilityReason}</p>}
       {poi.note && <p className="poiNote">{poi.note}</p>}
       {camp.length > 0 && (
         <ul className="campChips">
@@ -154,7 +160,8 @@ export default function PlaceDetail({
   }
 
   const isRide = isRideable(poi);
-  const verdict = isRide ? eligibility(poi, height, withAdult) : 'unknown';
+  const check = isRide ? eligibilityWithReasons(poi, height, withAdult) : null;
+  const verdict = check ? check.raw : 'unknown';
   const v = VERDICT[verdict];
   const d = me ? distance(me.lat, me.lng, poi.lat, poi.lng) : null;
   const dir = me && d != null ? cardinal(bearing(me.lat, me.lng, poi.lat, poi.lng)) : null;
@@ -225,6 +232,8 @@ export default function PlaceDetail({
         poi={poi}
         status={status}
         venue={venue}
+        height={height}
+        withAdult={withAdult}
         onNavigate={onNavigate}
         onSetMeet={onSetMeet}
         onReport={onReport}

@@ -116,16 +116,16 @@
       "user_action": "Submit or discover a Side Quest nearby",
       "suite": "functional",
       "check": "Side Quest submit queues locally"
-    }
-  ],
-  "upcoming": [
+    },
     {
       "id": "e5-eligibility",
       "slice": "E5",
       "user_action": "See structured eligibility reason on a ride",
       "suite": "functional",
-      "when": "PR #90 lands \u2014 add named check with the epic"
-    },
+      "check": "ride detail shows a structured eligibility reason"
+    }
+  ],
+  "upcoming": [
     {
       "id": "e81-next-best",
       "slice": "E8",

@@ -261,6 +261,8 @@ export default function PlaceList({
             poi={p}
             status={st}
             venue={venue}
+            height={height}
+            withAdult={withAdult}
             onNavigate={onNavigate}
             onSetMeet={onSetMeet}
             onReport={onReport}

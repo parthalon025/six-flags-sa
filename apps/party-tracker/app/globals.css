@@ -1958,6 +1958,21 @@ p.wxWhy.warn { color: color-mix(in srgb, var(--orange) 70%, var(--label)); }
 .chip.withDot { display: inline-flex; align-items: center; gap: 7px; }
 .chip.withDot i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
 
+/* ---- guest-profile chips: the tap target and the remove target sit side by
+   side rather than nested, since a button cannot contain a button ---- */
+.guestChips { row-gap: 8px; }
+.guestChip { display: inline-flex; align-items: center; flex: none; }
+.guestChip .chip { border-radius: var(--rCapsule) 0 0 var(--rCapsule); padding-right: 8px; }
+.chipRemove {
+  flex: none; min-height: 32px; min-width: 26px; padding: 7px 10px; border: none;
+  border-radius: 0 var(--rCapsule) var(--rCapsule) 0; background: var(--fill3);
+  color: var(--label3); font-size: 15px; line-height: 1;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.chipRemove:active { opacity: .5; }
+.guestChip.on .chipRemove { background: var(--blue); color: var(--onTint); opacity: .85; }
+.chip.chipAdd { color: var(--blue); }
+
 .labelAction {
   font-size: 15px; font-weight: 400; letter-spacing: -.24px; text-transform: none;
   color: var(--blue);
