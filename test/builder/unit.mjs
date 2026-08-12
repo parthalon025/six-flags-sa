@@ -2393,11 +2393,7 @@ await check('every named piece of track belongs to a ride we know', () => {
 
 await check('lib/park re-exports place search helpers', () => {
   const src = fs.readFileSync(new URL('../../apps/party-tracker/lib/park.js', import.meta.url), 'utf8');
-<<<<<<< HEAD
-  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search\.js'/);
-=======
   assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search(\.js)?'/);
->>>>>>> origin/cursor/e81-next-best-why-1139
   const listSrc = fs.readFileSync(new URL('../../apps/party-tracker/components/PlaceList.jsx', import.meta.url), 'utf8');
   assert.match(listSrc, /from '@\/lib\/park'/);
   assert.doesNotMatch(listSrc, /from '@\/lib\/search'/);
