@@ -8,6 +8,7 @@ import { recommendNow } from '@/lib/live';
 import { navKeyOf as keyOfNav } from '@/lib/routing';
 import { usePois } from '@/lib/venue/useVenue';
 import { paletteFor } from '@/lib/theme';
+import { placeNav } from '@/lib/venue/ids';
 
 /* The card rail is what you see without opening anything. In a park the
    question is almost always "which way, and how long", so walking time is the
@@ -208,10 +209,7 @@ function GlanceRail({
 
     if (selected) {
       push('sel', 'Next Stop', selected.n, selected, 'var(--beacon)', selected.a, 'selected', {
-        kind: 'poi',
-        label: selected.n,
-        lat: selected.lat,
-        lng: selected.lng,
+        ...placeNav(selected),
       });
       out[out.length - 1].shed = { kind: 'selected' };
     }
@@ -240,7 +238,7 @@ function GlanceRail({
           'var(--adventure)',
           why || live.detail || poi.a || formatWalk(metres),
           'goNow',
-          { kind: 'poi', label: poi.n, lat: poi.lat, lng: poi.lng },
+          placeNav(poi),
           tip,
         );
         out[out.length - 1].shed = { kind: 'category', category: 'gonow' };
@@ -274,12 +272,7 @@ function GlanceRail({
       const at = `${hit.poi.lat},${hit.poi.lng}`;
       if (already.has(at)) return;
       already.add(at);
-      push(`n-${i}`, eyebrow, hit.poi.n, hit.poi, colour, hit.poi.a, 'nearby', {
-        kind: 'poi',
-        label: hit.poi.n,
-        lat: hit.poi.lat,
-        lng: hit.poi.lng,
-      });
+      push(`n-${i}`, eyebrow, hit.poi.n, hit.poi, colour, hit.poi.a, 'nearby', placeNav(hit.poi));
       /* Keyed on the kind of place, not on the place. The toilet behind
          "nearest toilet" changes as she walks, so a dismissal remembered
          against the POI would be undone by the next one thirty seconds

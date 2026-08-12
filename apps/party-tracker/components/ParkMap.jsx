@@ -25,7 +25,7 @@ import {
   textWidth,
 } from '@/lib/mapLabels';
 import { Glyph, PoiMarker } from './MapSymbols';
-import { identityOf } from '@/lib/venue/ids';
+import { identityOf, samePlace } from '@/lib/venue/ids';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
 import { localViewTransform, stableCullView } from '@/lib/mapViewport';
@@ -1020,17 +1020,17 @@ function ParkMap({
     (members || []).forEach((m) => reserve(m.lat, m.lng, 17));
     if (meet) reserve(meet.lat, meet.lng, 16);
 
-    const selectedName = selected?.n ?? null;
     const ranked = [];
     pois.forEach((p, i) => {
       if (!visibleCategories.has(p.c)) return;
       const [sx, sy] = at(p.lat, p.lng);
       if (sx < -60 || sy < -60 || sx > size.w + 60 || sy > size.h + 60) return;
       const sym = symbolFor(p.c);
-      const state = rideEligibility?.get(p.n) || 'unknown';
+      const placeId = identityOf(p);
+      const state = rideEligibility?.get(placeId) || rideEligibility?.get(p.n) || 'unknown';
       const barred = state === 'no' || state === 'toobig';
-      const isSel = selectedName === p.n;
-      const isNav = routeTargetName === p.n;
+      const isSel = samePlace(selected, p);
+      const isNav = Boolean(routeTargetName) && (placeId === routeTargetName || p.n === routeTargetName);
       const rank = sym.rank + (barred ? 0.25 : 0);
       const priority = isSel ? -1000 : isNav ? -900 : rank * 1000 + i;
       ranked.push({ p, sx, sy, sym, state, isSel, isNav, priority });
@@ -1235,7 +1235,7 @@ function ParkMap({
       below: sy < 150,
       name: selected.n,
       detail: bits.join(' · '),
-      state: rideEligibility?.get(selected.n),
+      state: rideEligibility?.get(identityOf(selected)) || rideEligibility?.get(selected.n),
     };
   }, [selected, at, me, size.w, size.h, rideEligibility]);
 

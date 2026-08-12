@@ -45,6 +45,7 @@ import {
   withinBounds,
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
+import { findPlace, identityOf } from '@/lib/venue/ids';
 import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
 import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
@@ -1332,7 +1333,7 @@ export default function Page() {
     const out = new Map();
     POIS.forEach((p) => {
       if (!isRideable(p)) return;
-      out.set(p.n, eligibility(p, mapHeight, withAdult));
+      out.set(identityOf(p), eligibility(p, mapHeight, withAdult));
     });
     return out;
   }, [POIS, mapHeight, withAdult]);
@@ -1449,7 +1450,7 @@ export default function Page() {
        the reroute logic below exists to avoid. The ride keeps its own position
        for the marker and the callout; only the destination moves. */
     if (nav.kind === 'poi') {
-      const poi = POIS.find((p) => p.n === nav.label);
+      const poi = findPlace(POIS, nav);
       const gate = bestEntrance(poi);
       const meta = poi ? entranceMeta(poi) : null;
       if (gate && Number.isFinite(gate.lat)) {
@@ -1966,7 +1967,7 @@ export default function Page() {
         routeStep={walking ? progress?.step ?? null : null}
         routeAhead={routeAhead}
         routeDone={routeDone}
-        routeTargetName={navTarget?.kind === 'poi' ? navTarget.label : null}
+        routeTargetName={navTarget?.kind === 'poi' ? navTarget.placeId || navTarget.label : null}
         alternatives={shownAlternatives}
         onPickAlternative={setPick}
         puck={puck}
@@ -2156,7 +2157,7 @@ export default function Page() {
           profileId={routeProfile}
           onProfile={setRouteProfile}
           profileNote={profileNote}
-          entranceHint={navTarget?.kind === 'poi' ? entranceLine(POIS.find((p) => p.n === navTarget.label)) : null}
+          entranceHint={navTarget?.kind === 'poi' ? entranceLine(findPlace(POIS, navTarget)) : null}
         />
       )}
 

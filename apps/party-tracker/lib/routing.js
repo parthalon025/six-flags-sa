@@ -1191,5 +1191,5 @@ export const navKeyOf = (nav) => {
   if (!nav) return null;
   if (nav.kind === 'member') return `member:${nav.id}`;
   if (nav.kind === 'meet') return 'meet';
-  return `poi:${nav.label}`;
+  return `poi:${nav.placeId || nav.label}`;
 };

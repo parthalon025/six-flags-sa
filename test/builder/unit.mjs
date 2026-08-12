@@ -128,7 +128,7 @@ const {
   parkOutlook,
 } = await import('../../apps/party-tracker/lib/weather.js');
 const { STATUS, statusFor, statusSummary } = await import('../../apps/party-tracker/lib/rideStatus.js');
-const { identityOf, indexById, keyOf, slug, titleOf, withIds } = await import('../../apps/party-tracker/lib/venue/ids.js');
+const { findPlace, identityOf, indexById, keyOf, samePlace, slug, titleOf, withIds } = await import('../../apps/party-tracker/lib/venue/ids.js');
 const {
   Declutter,
   boxAround,
@@ -5998,6 +5998,38 @@ await check('Fiesta Texas restroom titles collide; identityOf does not', () => {
   return true;
 });
 
+await check('samePlace is false for two restrooms that share a title', () => {
+  const [a, b] = withIds([
+    { n: 'Restrooms', i: 'restrooms', lat: 29.598, lng: -98.61 },
+    { n: 'Restrooms', i: 'restrooms-2', lat: 29.599, lng: -98.611 },
+  ]);
+  assert.equal(samePlace(a, a), true);
+  assert.equal(samePlace(a, b), false);
+  assert.equal(a.n, b.n);
+  return true;
+});
+
+await check('findPlace by id hits the intended restroom, not the first title match', () => {
+  const pois = withIds([
+    { n: 'Restrooms', i: 'restrooms', lat: 29.598, lng: -98.61 },
+    { n: 'Restrooms', i: 'restrooms-2', lat: 29.599, lng: -98.611 },
+  ]);
+  const south = findPlace(pois, 'restrooms-2');
+  const viaNav = findPlace(pois, { placeId: 'restrooms-2', label: 'Restrooms' });
+  assert.equal(south.i, 'restrooms-2');
+  assert.equal(viaNav.i, 'restrooms-2');
+  assert.equal(findPlace(pois, 'Orion'), null);
+  return true;
+});
+
+await check('navKeyOf distinguishes two restrooms that share a title', () => {
+  const a = { kind: 'poi', label: 'Restrooms', placeId: 'restrooms', lat: 29.598, lng: -98.61 };
+  const b = { kind: 'poi', label: 'Restrooms', placeId: 'restrooms-2', lat: 29.599, lng: -98.611 };
+  assert.notEqual(navKeyOf(a), navKeyOf(b));
+  assert.equal(navKeyOf({ kind: 'poi', label: 'Orion' }), 'poi:Orion');
+  return true;
+});
+
 /* ------------------------------------------------------- primary keys ---- */
 
 /* The key a place is issued at build time, and the ledger that remembers it.
@@ -7289,6 +7321,22 @@ await check('nearestTargetDistance resolves a quest target to a POI fix', async 
     nearestTargetDistance({ targets: ['Missing'] }, pois, { lat: 39.0, lng: -84.0 }),
     null,
   );
+  return true;
+});
+
+await check('nearestTargetDistance picks the nearby restroom, not the first title match', async () => {
+  const { nearestTargetDistance } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const { identityOf } = await import('../../apps/party-tracker/lib/venue/ids.js');
+  const pois = [
+    { n: 'Restrooms', i: 'restrooms', lat: 39.02, lng: -84.0 },
+    { n: 'Restrooms', i: 'restrooms-2', lat: 39.0, lng: -84.0 },
+  ];
+  const d = nearestTargetDistance(
+    { targets: pois.map(identityOf) },
+    pois,
+    { lat: 39.0, lng: -84.0 },
+  );
+  assert.ok(d != null && d < 5, `expected the south restroom, got ${d}`);
   return true;
 });
 

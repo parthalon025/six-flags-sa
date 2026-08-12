@@ -5,6 +5,7 @@ import Icon from '@/components/Icon';
 import SignInCard from '@/components/SignInCard';
 import { softGateBlocks } from '@/lib/auth/session';
 import { buildSideQuests, sortByProximity } from '@/lib/sideQuests';
+import { findPlace, titleOf } from '@/lib/venue/ids';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
 
 /**
@@ -113,19 +114,22 @@ export default function SideQuestsPanel({
           <span className="sideQuestBlurb">{q.blurb}</span>
           {q.targets?.length > 0 && (
             <span className="sideQuestTargets">
-              {q.targets.slice(0, 4).map((name) => (
+              {q.targets.slice(0, 4).map((target) => {
+                const place = findPlace(pois, target);
+                const label = titleOf(place) || target;
+                return (
                 <button
-                  key={name}
+                  key={target}
                   type="button"
                   className="sideQuestChip"
                   onClick={() => {
-                    const place = pois.find((p) => p.n === name);
                     if (place && onSelectPlace) onSelectPlace(place);
                   }}
                 >
-                  {name}
+                  {label}
                 </button>
-              ))}
+                );
+              })}
               {q.targets.length > 4 ? (
                 <span className="fine">+{q.targets.length - 4} more</span>
               ) : null}
