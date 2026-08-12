@@ -4,6 +4,7 @@
 #
 # 3000 is the web app, 8787 is the party host (mailbox + REST + SSE). Point the
 # app at the host with NEXT_PUBLIC_SYNC_URL when they are not on the same origin.
+# Optional Postgres (E0) for profiles/contributions — no PostGIS.
 
 services:
   party:
@@ -23,8 +24,12 @@ services:
       DATA_FILE: /data/parties.json
       # comma-separated allowlist, or * for anything
       ORIGIN: ${ORIGIN:-*}
+      DATABASE_URL: ${DATABASE_URL:-postgres://parkbound:parkbound@db:5432/parkbound}
     volumes:
       - party-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:8787/api/health']
       interval: 30s
@@ -32,5 +37,25 @@ services:
       retries: 3
       start_period: 15s
 
+  db:
+    image: postgres:16-alpine
+    container_name: parkbound-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: parkbound
+      POSTGRES_PASSWORD: parkbound
+      POSTGRES_DB: parkbound
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - parkbound-db:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U parkbound -d parkbound']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   party-data:
+  parkbound-db:

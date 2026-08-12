@@ -7,6 +7,7 @@
     "./ontology.js": "./ontology.js",
     "./wayFlags.js": "./wayFlags.js",
     "./mapSymbols.js": "./mapSymbols.js",
-    "./ontology.json": "./ontology.json"
+    "./ontology.json": "./ontology.json",
+    "./schemas.js": "./schemas.js"
   }
 }
