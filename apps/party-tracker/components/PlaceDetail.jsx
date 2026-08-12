@@ -5,7 +5,7 @@ import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { eligibility, heightLabel, isRideable } from '@/lib/park';
+import { eligibilityWithReasons, heightLabel, isRideable } from '@/lib/park';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
@@ -154,8 +154,10 @@ export default function PlaceDetail({
   }
 
   const isRide = isRideable(poi);
-  const verdict = isRide ? eligibility(poi, height, withAdult) : 'unknown';
+  const check = isRide ? eligibilityWithReasons(poi, height, withAdult) : null;
+  const verdict = check ? check.raw : 'unknown';
   const v = VERDICT[verdict];
+  const reason = check?.reasons?.[0] || null;
   const d = me ? distance(me.lat, me.lng, poi.lat, poi.lng) : null;
   const dir = me && d != null ? cardinal(bearing(me.lat, me.lng, poi.lat, poi.lng)) : null;
   const showStatus = Boolean(status?.label);
@@ -220,6 +222,8 @@ export default function PlaceDetail({
           </span>
         )}
       </div>
+
+      {reason && <p className="poiNote eligibilityReason">{reason}</p>}
 
       <PlaceDetailBody
         poi={poi}

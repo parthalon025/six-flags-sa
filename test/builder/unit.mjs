@@ -2349,7 +2349,7 @@ await check('every named piece of track belongs to a ride we know', () => {
 
 await check('lib/park re-exports place search helpers', () => {
   const src = fs.readFileSync(new URL('../../apps/party-tracker/lib/park.js', import.meta.url), 'utf8');
-  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search'/);
+  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search\.js'/);
   const listSrc = fs.readFileSync(new URL('../../apps/party-tracker/components/PlaceList.jsx', import.meta.url), 'utf8');
   assert.match(listSrc, /from '@\/lib\/park'/);
   assert.doesNotMatch(listSrc, /from '@\/lib\/search'/);
@@ -2500,6 +2500,169 @@ await check('a height rule reads low to high, in inches a person could be', () =
       assert.ok(min != null || alone != null || max != null, `${where}: an empty height rule`);
     });
   });
+  return true;
+});
+
+/* ------------------------------------------- eligibilityWithReasons --- */
+
+const {
+  VERDICT_ADVISORY,
+  VERDICT_COMPANION,
+  VERDICT_ELIGIBLE,
+  VERDICT_NOT,
+  VERDICT_UNKNOWN,
+  eligibilityWithReasons,
+} = await import('../../apps/party-tracker/lib/park.js');
+
+await check('eligibilityWithReasons maps every raw eligibility() answer to a fixed verdict code', () => {
+  const ride = { h: { min: 40, alone: 46, max: 72 } };
+
+  const tooShort = eligibilityWithReasons(ride, 30, false);
+  assert.equal(tooShort.raw, 'no');
+  assert.equal(tooShort.verdict, VERDICT_NOT);
+
+  const needsAdult = eligibilityWithReasons(ride, 42, false);
+  assert.equal(needsAdult.raw, 'no');
+  assert.equal(needsAdult.verdict, VERDICT_NOT);
+
+  const companion = eligibilityWithReasons(ride, 42, true);
+  assert.equal(companion.raw, 'companion');
+  assert.equal(companion.verdict, VERDICT_COMPANION);
+
+  const clear = eligibilityWithReasons(ride, 50, false);
+  assert.equal(clear.raw, 'yes');
+  assert.equal(clear.verdict, VERDICT_ELIGIBLE);
+
+  const tooTall = eligibilityWithReasons(ride, 80, false);
+  assert.equal(tooTall.raw, 'toobig');
+  assert.equal(tooTall.verdict, VERDICT_NOT);
+
+  const advisoryRide = { h: { advisory: 54 } };
+  const advisory = eligibilityWithReasons(advisoryRide, 60, false);
+  assert.equal(advisory.raw, 'advisory');
+  assert.equal(advisory.verdict, VERDICT_ADVISORY);
+
+  const noRule = eligibilityWithReasons({ h: null }, 50, false);
+  assert.equal(noRule.raw, 'unknown');
+  assert.equal(noRule.verdict, VERDICT_UNKNOWN);
+
+  const noHeightSet = eligibilityWithReasons(ride, null, false);
+  assert.equal(noHeightSet.raw, 'unknown');
+  assert.equal(noHeightSet.verdict, VERDICT_UNKNOWN);
+  return true;
+});
+
+await check('eligibilityWithReasons always returns at least one plain-language reason citing the rule', () => {
+  const ride = { h: { min: 40, alone: 46, max: 72 } };
+
+  const tooShort = eligibilityWithReasons(ride, 30, false);
+  assert.ok(tooShort.reasons.length >= 1);
+  assert.match(tooShort.reasons[0], /40"/);
+  assert.match(tooShort.reasons[0], /min/i);
+
+  const needsAdult = eligibilityWithReasons(ride, 42, false);
+  assert.match(needsAdult.reasons[0], /46"/);
+  assert.match(needsAdult.reasons[0], /adult/i);
+
+  const companion = eligibilityWithReasons(ride, 42, true);
+  assert.match(companion.reasons[0], /46"/);
+  assert.match(companion.reasons[0], /adult/i);
+
+  const tooTall = eligibilityWithReasons(ride, 80, false);
+  assert.match(tooTall.reasons[0], /72"/);
+  assert.match(tooTall.reasons[0], /max/i);
+
+  const clear = eligibilityWithReasons(ride, 50, false);
+  assert.match(clear.reasons[0], /40"/);
+
+  const advisoryRide = { h: { advisory: 54 } };
+  const advisory = eligibilityWithReasons(advisoryRide, 60, false);
+  assert.match(advisory.reasons[0], /54"/);
+
+  const noRule = eligibilityWithReasons({ h: null }, 50, false);
+  assert.ok(noRule.reasons.length >= 1);
+
+  const noHeightSet = eligibilityWithReasons(ride, null, false);
+  assert.ok(noHeightSet.reasons.length >= 1);
+  return true;
+});
+
+/* -------------------------------------------------- guest profiles --- */
+
+const {
+  MAX_GUESTS,
+  addGuestProfile,
+  createGuestProfile,
+  findGuestProfile,
+  loadActiveGuestId,
+  loadGuestProfiles,
+  normalizeGuestProfile,
+  removeGuestProfile,
+  saveActiveGuestId,
+  saveGuestProfiles,
+  updateGuestProfile,
+} = await import('../../apps/party-tracker/lib/guestProfiles.js');
+
+await check('guest profiles add, update and remove without mutating the list handed in', () => {
+  const list = [createGuestProfile({ label: 'Ava', heightIn: 44, withAdult: true })];
+  const snapshot = JSON.parse(JSON.stringify(list));
+
+  const added = addGuestProfile(list, { label: 'Ben', heightIn: 40, withAdult: false });
+  assert.equal(added.length, 2);
+  assert.deepEqual(list, snapshot, 'addGuestProfile must not mutate its input');
+
+  const benId = added[1].id;
+  const updated = updateGuestProfile(added, benId, { heightIn: 41 });
+  assert.equal(findGuestProfile(updated, benId).heightIn, 41);
+  // Editing one guest must not touch the other, or the id it was given.
+  assert.equal(findGuestProfile(updated, added[0].id).heightIn, 44);
+  assert.equal(findGuestProfile(updated, benId).id, benId);
+
+  const removed = removeGuestProfile(updated, added[0].id);
+  assert.equal(removed.length, 1);
+  assert.equal(findGuestProfile(removed, added[0].id), null);
+  assert.equal(findGuestProfile(removed, benId).heightIn, 41);
+  return true;
+});
+
+await check('guest profiles cap at MAX_GUESTS and give every one a unique id', () => {
+  let list = [];
+  for (let i = 0; i < MAX_GUESTS + 3; i += 1) {
+    list = addGuestProfile(list, { label: `Guest ${i}`, heightIn: 40 + i, withAdult: i % 2 === 0 });
+  }
+  assert.equal(list.length, MAX_GUESTS, 'a list already at the cap must not grow further');
+  assert.equal(new Set(list.map((g) => g.id)).size, MAX_GUESTS, 'ids must be unique');
+  return true;
+});
+
+await check('normalizeGuestProfile drops junk and coerces the rest to a safe shape', () => {
+  assert.equal(normalizeGuestProfile(null), null);
+  assert.equal(normalizeGuestProfile('nope'), null);
+  assert.equal(normalizeGuestProfile(42), null);
+
+  const coerced = normalizeGuestProfile({ heightIn: 'tall', withAdult: 1, label: '   ' });
+  assert.equal(coerced.heightIn, null, 'a non-numeric height must not survive');
+  assert.equal(coerced.withAdult, true, 'withAdult is coerced to a boolean');
+  assert.equal(coerced.label, 'Guest', 'a blank label falls back rather than staying blank');
+  assert.ok(coerced.id, 'a guest with no id is still given one');
+
+  const kept = normalizeGuestProfile({ id: 'g1', label: 'Ava', heightIn: 44, withAdult: true });
+  assert.deepEqual(kept, { id: 'g1', label: 'Ava', heightIn: 44, withAdult: true });
+  return true;
+});
+
+await check('guest profile storage is a safe no-op without localStorage, never a crash', () => {
+  assert.deepEqual(loadGuestProfiles(), []);
+  assert.equal(loadActiveGuestId(), null);
+  // Heights never touch the party wire — this is the whole point of the
+  // module being a standalone localStorage-backed store — so the save path
+  // has to survive being called from plain Node too, where there is no
+  // localStorage to write to.
+  const saved = saveGuestProfiles([{ label: 'Solo', heightIn: 48, withAdult: false }]);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].heightIn, 48);
+  saveActiveGuestId('g1');
+  saveActiveGuestId(null);
   return true;
 });
 

@@ -1,12 +1,16 @@
-import { THEMES, CATEGORY_LABELS } from './theme';
+import { THEMES, CATEGORY_LABELS } from './theme.js';
 import { ONTOLOGY } from './ontology.js';
 
 /* Height rules, category colours and the eligibility question. The places
-   themselves belong to whichever venue is loaded — see lib/venue/store.js. */
+   themselves belong to whichever venue is loaded — see lib/venue/store.js.
 
-export { THEMES, paletteFor, landTint } from './theme';
+   Relative imports here carry an explicit .js so this module — and the
+   eligibility logic in particular — can be imported straight into plain Node
+   for the unit suite, without a bundler resolving the extensionless form. */
+
+export { THEMES, paletteFor, landTint } from './theme.js';
 export { isRideable, isQueueable, isReportable, rideable } from './ontology.js';
-export { categoriesFor, matchesQuery, matchedByName } from './search';
+export { categoriesFor, matchesQuery, matchedByName } from './search.js';
 
 // Default (night) colours, kept for anything that renders outside the themed tree.
 export const CATEGORIES = Object.fromEntries(
@@ -50,6 +54,76 @@ export function eligibility(ride, inches, withAdult) {
   if (alone != null && alone !== 'none' && inches < alone) return withAdult ? 'companion' : 'no';
   if (advisory != null && advisory !== 'none' && inches > advisory) return 'advisory';
   return 'yes';
+}
+
+/** Structured verdict codes for eligibilityWithReasons — a fixed vocabulary a
+ *  UI can style once, instead of switching on eligibility()'s raw strings. */
+export const VERDICT_ELIGIBLE = 'ELIGIBLE';
+export const VERDICT_COMPANION = 'COMPANION';
+export const VERDICT_NOT = 'NOT';
+export const VERDICT_ADVISORY = 'ADVISORY';
+export const VERDICT_UNKNOWN = 'UNKNOWN';
+
+const RAW_TO_VERDICT = {
+  yes: VERDICT_ELIGIBLE,
+  companion: VERDICT_COMPANION,
+  no: VERDICT_NOT,
+  toobig: VERDICT_NOT,
+  advisory: VERDICT_ADVISORY,
+  unknown: VERDICT_UNKNOWN,
+};
+
+/**
+ * eligibility(), plus a fixed verdict code and at least one plain-language
+ * reason citing the actual min/alone/max inches on the rule — what a parent
+ * standing at the ride wants to read, not a status string.
+ *
+ * Kept as an addition rather than a replacement: eligibility() still returns
+ * the raw string every existing caller already switches on.
+ *
+ * @returns {{ verdict: string, raw: string, reasons: string[] }}
+ */
+export function eligibilityWithReasons(ride, inches, withAdult) {
+  const raw = eligibility(ride, inches, withAdult);
+  const verdict = RAW_TO_VERDICT[raw] || VERDICT_UNKNOWN;
+  const h = normHeight(ride.h);
+
+  if (!h) return { verdict, raw, reasons: ['No height rule published for this ride yet.'] };
+  if (inches == null) return { verdict, raw, reasons: ['Set a rider height to check this ride.'] };
+
+  const { min, alone, max, advisory } = h;
+  const reasons = [];
+
+  switch (raw) {
+    case 'toobig':
+      reasons.push(`Riders must be ${max}" or under to ride — this rider is over the max.`);
+      break;
+    case 'no':
+      if (min != null && min !== 'none' && inches < min) {
+        reasons.push(`Riders must be at least ${min}" tall to ride — this rider is under the min.`);
+      } else if (alone != null && alone !== 'none' && inches < alone) {
+        reasons.push(`Under ${alone}" needs an adult riding along, and none is assumed here.`);
+      } else {
+        reasons.push('This rider does not meet the height rule for this ride.');
+      }
+      break;
+    case 'companion':
+      reasons.push(`Under ${alone}" rides with an adult — this rider qualifies with one along.`);
+      break;
+    case 'advisory':
+      reasons.push(`Built for riders under ${advisory}" — check with staff before riding.`);
+      break;
+    case 'yes':
+    default:
+      if (min != null && min !== 'none' && min > 0) reasons.push(`Meets the ${min}" minimum to ride.`);
+      else reasons.push('No minimum height to ride.');
+      if (alone != null && alone !== 'none' && inches >= alone) {
+        reasons.push(`Tall enough to ride alone at ${alone}".`);
+      }
+      break;
+  }
+
+  return { verdict, raw, reasons };
 }
 
 export function heightLabel(ride) {
