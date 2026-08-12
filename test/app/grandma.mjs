@@ -85,6 +85,7 @@ async function arrive(geo, { venue = null } = {}) {
   });
   await ctx.addInitScript((version) => {
     localStorage.setItem('tracker-release-notes-seen', version);
+    localStorage.setItem('tracker-intro-seen', '1');
   }, APP_VERSION);
   const page = await ctx.newPage();
   const errors = [];
