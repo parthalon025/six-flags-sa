@@ -112,6 +112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: party-tracker-next
+          include-hidden-files: true
           path: |
             apps/party-tracker/.next
             apps/party-tracker/public
@@ -141,7 +142,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: party-tracker-next
-          # Restore apps/party-tracker/.next and public at repo paths.
+
+      - name: Verify production build
+        run: test -f apps/party-tracker/.next/BUILD_ID && ls apps/party-tracker/.next | head
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
@@ -185,6 +188,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: party-tracker-next
+
+      - name: Verify production build
+        run: test -f apps/party-tracker/.next/BUILD_ID
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
