@@ -411,6 +411,26 @@ export async function setName(page, name) {
   });
 }
 
+
+export async function signIn(page, email = 'guest@parkbound.example') {
+  await closeGate(page);
+  await go(page, 'Settings');
+  const card = page.locator('.signInCard');
+  if ((await card.locator('text=Signed in').count()) > 0) {
+    await page.locator('.tabItem[data-tab="explore"]').click();
+    await page.waitForTimeout(200);
+    return;
+  }
+  await card.locator('input[type="email"]').fill(email);
+  await card.locator('button:has-text("Email me a link")').click();
+  await until(async () => (await card.locator('text=Signed in').count()) > 0, {
+    timeout: 10000,
+    label: 'signed-in card',
+  });
+  await page.locator('.tabItem[data-tab="explore"]').click();
+  await page.waitForTimeout(200);
+}
+
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */
 export async function rosterNames(page) {
   const rows = await page.locator('.memberRow .memberText b').allInnerTexts();

@@ -768,6 +768,7 @@ const C = await openPhone(browser, {
   venue: 'kings-island',
 });
 const c = C.page;
+await signIn(c, 'sam@parkbound.example');
 
 await check('the invite link joins the party with nothing typed', async () => {
   await go(c, 'Party');
