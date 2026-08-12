@@ -144,5 +144,11 @@
     "items": [
       "fix: look up places by id, not the printed title"
     ]
+  },
+  "1.1.24": {
+    "title": "What's new",
+    "items": [
+      "fix: clear editor diagnostics and land leftover glossary notes"
+    ]
   }
 }
