@@ -389,9 +389,11 @@ offered at three of four parks** — not because the code refuses, but because 7
 112 flights of steps. Fiesta Texas is the steps park; Kings Island is the grade-
 separation park. Profiles should be gated per venue from these counts, not from hope.
 
-**Still open in this workstream:** `splitAtCrossings` does not yet read `l`, so the
-grade-separation bug remains; routing profiles and the coverage counter in `meta` are
-not built; and the snap exclusion predicate for `Infinity` penalties is not wired.
+**Path attribute / routing profiles workstream — largely landed.** `meta.coverage` ships from the builder; `splitAtCrossings` skips different layers; snap exclusion and routing profiles (`default` / `no_steps` / `allow_restricted`) live in `routingProfiles.js` and are wired from the app. Residual: carry `oneway` on the graph if needed; wheelchair profile only where coverage exists.
+
+**Historical note (do not treat as current debt):** Earlier drafts said layer-aware crossings and profiles were unbuilt; that is no longer true as of 2026-08.
+
+**Still open in related GIS work:** entrance export coverage uneven across venues (KI/Fiesta thin); admin validation UI; vision/CV workers deferred.
 
 ### Workstream: stable identity
 
