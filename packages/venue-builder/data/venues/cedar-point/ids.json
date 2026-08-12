@@ -125,7 +125,7 @@
     "magnum-xl-200": {"n":"Magnum XL-200","c":"coaster","at":"41.485405,-82.686087"},
     "magnum-xl-200-gate": {"n":"Magnum XL-200 Gate","c":"gate","at":"41.48566,-82.686255"},
     "magnum-xl-200-lockers": {"n":"Magnum XL-200 Lockers","c":"service","at":"41.484996,-82.686284"},
-    "main-arcade": {"n":"Main Arcade","c":"ride","at":"41.481178,-82.68136"},
+    "main-arcade": {"n":"Main Arcade","c":"ride","at":"41.481178,-82.68136","retired":true},
     "main-gate": {"n":"Main Gate","c":"gate","at":"41.478314,-82.67905"},
     "marina-store": {"n":"Marina Store","c":"shop","at":"41.479933,-82.68508"},
     "matterhorn": {"n":"Matterhorn","c":"ride","at":"41.48192,-82.680678"},

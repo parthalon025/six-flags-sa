@@ -25,6 +25,9 @@
     "rules": []
   },
   "credits": "Height requirements were compiled from published 2026 Cedar Point height charts.",
+  "drop": [
+    "Main Arcade"
+  ],
   "pois": {
     "lake-eerie-nor-easter": {
       "n": "Lake Erie Nor'easter"

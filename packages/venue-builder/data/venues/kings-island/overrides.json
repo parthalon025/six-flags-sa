@@ -5,7 +5,8 @@
   },
   "drop": [
     "Age or Weight",
-    "Arcade"
+    "Arcade",
+    "Arcade Games"
   ],
   "lands": {
     "_comment": "Hand-picked tints for this park's themed areas, one narrow lightness band per theme so ten of them side by side still look like one map. They live with the park rather than in lib/theme.js because they are facts about Kings Island, not about the renderer — and because two parks can use the same district name. Cedar Point's water park was called Soak City until 2017, which is also the name of Kings Island's, and a table in shared code cannot tell them apart. Any district not listed gets a colour derived from its own name. Oktoberfest is deliberately not listed: it is drawn, and it has always taken a generated colour, which is what a district nobody hand-picked is supposed to look like.",

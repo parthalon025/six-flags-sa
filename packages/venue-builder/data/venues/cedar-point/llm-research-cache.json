@@ -19,7 +19,7 @@
     "LLM park-map search skipped (required): ai_not_requested"
   ],
   "siteCount": 0,
-  "bundleRideCount": 76,
+  "bundleRideCount": 75,
   "llm": null,
   "llmParkMapSearch": {
     "skipped": true,

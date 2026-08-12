@@ -6238,15 +6238,16 @@ await check('AGPL yolo adapter is rejected by runner', async () => {
 const { certifyVenue, CERT_VERSION } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
 const { qaVenueRouting, MAX_ROUTING_ISLANDS } = await import('../../packages/venue-builder/lib/venue-route-qa-core.mjs');
 
-await check('certify emits a birth certificate with eight gates', () => {
+await check('certify emits a birth certificate with nine gates', () => {
   const doc = certifyVenue('kings-island', { write: false });
   assert.equal(doc.version, CERT_VERSION);
   assert.equal(doc.venue.id, 'kings-island');
-  assert.equal(doc.checks.length, 8);
+  assert.equal(doc.checks.length, 9);
   assert.ok(doc.checks.every((c) => c.claim && c.evidence && c.confidence && c.falsifier && c.soWhat));
   assert.ok(doc.checks.every((c) => c.evidence.denominator != null));
   assert.ok(doc.checks.some((c) => c.key === 'external_sources'));
   assert.ok(doc.checks.some((c) => c.key === 'park_map_research'));
+  assert.ok(doc.checks.some((c) => c.key === 'false-rides'));
   return true;
 });
 
@@ -6856,6 +6857,27 @@ await check('quest seeds map builder ask gaps to Scout types', async () => {
   assert.equal(seeds.length, 2);
   assert.ok(seeds.every((s) => s.type === 'height_rule'));
   assert.equal(questSeedsFromRequests('demo', [{ key: 'credits', need: 'c', blocking: false, targets: [] }]).length, 0);
+  return true;
+});
+
+/* -------------------------------- false rides (E1.1) -- */
+
+const { scrubFalseRides, looksLikeFalseRide } = await import('../../packages/venue-builder/lib/non-ride-names.mjs');
+
+await check('height-chart headers are dropped and arcades reclassified', () => {
+  assert.equal(looksLikeFalseRide({ n: 'Age or Weight', c: 'ride' }), true);
+  assert.equal(looksLikeFalseRide({ n: 'The Beast', c: 'coaster' }), false);
+  const { pois, dropped, reclassified } = scrubFalseRides([
+    { n: 'Age or Weight', c: 'ride', i: 'age-or-weight' },
+    { n: 'Arcade Games', c: 'ride', i: 'arcade-games', h: { min: 0 } },
+    { n: 'The Beast', c: 'coaster', i: 'the-beast' },
+  ]);
+  assert.deepEqual(dropped, ['Age or Weight']);
+  assert.deepEqual(reclassified, ['Arcade Games']);
+  assert.equal(pois.length, 2);
+  assert.equal(pois.find((p) => p.n === 'Arcade Games').c, 'service');
+  assert.equal(pois.find((p) => p.n === 'Arcade Games').h, undefined);
+  assert.equal(pois.find((p) => p.n === 'The Beast').c, 'coaster');
   return true;
 });
 

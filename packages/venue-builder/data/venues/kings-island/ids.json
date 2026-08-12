@@ -10,7 +10,7 @@
     "antique-photos": {"n":"Antique Photos","c":"shop","at":"39.341072,-84.267249"},
     "arcade": {"n":"Arcade","c":"ride","at":"39.341998,-84.264502","retired":true},
     "arcade-2": {"n":"Arcade","c":"ride","at":"39.340962,-84.266469","retired":true},
-    "arcade-games": {"n":"Arcade Games","c":"ride","at":"39.342906,-84.264725"},
+    "arcade-games": {"n":"Arcade Games","c":"ride","at":"39.342906,-84.264725","retired":true},
     "aruba-tuba": {"n":"Aruba Tuba","c":"ride","at":"39.338326,-84.274013"},
     "auntie-anne-s": {"n":"Auntie Anne's","c":"food","at":"39.344173,-84.26736"},
     "auntie-anne-s-2": {"n":"Auntie Anne's","c":"food","at":"39.341059,-84.267108"},

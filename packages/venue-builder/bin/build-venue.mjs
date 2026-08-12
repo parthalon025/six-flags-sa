@@ -55,6 +55,7 @@ import { PUBLISH_AT } from '../lib/evidence.mjs';
 import { applyHeightsSidecar } from '../lib/heights-sidecar.mjs';
 import { tagCoverageFromMap } from '../lib/tag-coverage.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
+import { scrubFalseRides } from '../lib/non-ride-names.mjs';
 import { applyTrace } from '../lib/venue-trace.mjs';
 import { wireSources, osmGaps, resolveCredits } from '../lib/venue-sources.mjs';
 import { judgements } from '../lib/venue-judge.mjs';
@@ -886,7 +887,10 @@ function applyOverrides(pois, overrides) {
     else next.push({ ...extra });
   }
 
-  return { pois: next, applied, unmatched };
+  /* Height-chart headers and arcades must not ship as Rideable — drop or
+     reclassify after hand overrides so a missing drop entry cannot regress. */
+  const scrubbed = scrubFalseRides(next);
+  return { pois: scrubbed.pois, applied, unmatched, scrubbed };
 }
 
 /**

@@ -3,7 +3,7 @@
   "venue": "big-kahunas",
   "keys": {
     "big-kahuna-s-backyard": {"n":"Big Kahuna's Backyard","c":"food","at":"30.388482,-86.472952"},
-    "big-kahuna-s-tropical-mini-golf": {"n":"Big Kahuna's Tropical Mini Golf","c":"ride","at":"30.388012,-86.472376","osm":"w679973001"},
+    "big-kahuna-s-tropical-mini-golf": {"n":"Big Kahuna's Tropical Mini Golf","c":"ride","at":"30.388012,-86.472376"},
     "bombay-blasters": {"n":"Bombay Blasters","c":"ride","at":"30.387618,-86.473198"},
     "bombs-away-bay": {"n":"Bombs Away Bay","c":"ride","at":"30.38762,-86.47348"},
     "buccaneer-cove": {"n":"Buccaneer Cove","c":"ride","at":"30.387893,-86.473961"},
@@ -38,6 +38,6 @@
     "tiki-river-run-right-slide-3": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286","retired":true},
     "tiki-river-run-right-slide-4": {"n":"Tiki River Run","c":"ride","at":"30.38795,-86.47286","retired":true},
     "tiki-river-run-right-slide-5": {"n":"Tiki River Run (Right Slide)","c":"ride","at":"30.38795,-86.47286"},
-    "wave-pool": {"n":"Wave Pool","c":"ride","at":"30.387829,-86.473478","osm":"w679972995"}
+    "wave-pool": {"n":"Wave Pool","c":"ride","at":"30.387829,-86.473478"}
   }
 }
