@@ -8,10 +8,11 @@
  */
 
 import { LIVE } from './brand.js';
-import { distance } from './geo.js';
+import { distance, formatWalk } from './geo.js';
 import { isRideable } from './ontology.js';
 import { exposureFor } from './weather.js';
 import { statusFor } from './rideStatus.js';
+import { eligibility } from './park.js';
 
 /** Walk this close and an open ride becomes GO NOW (~6–7 min). */
 export const GO_NOW_M = 480;
@@ -136,13 +137,77 @@ export function liveFor(poi, report, weather, now = Date.now(), opts = {}) {
   return { ...base, live: base.label ? base.key : 'none' };
 }
 
+/* -------------------------------------------------------------- Why? --- */
+
+/* One line each — "why" is a sentence a visitor can check against the park,
+   never a number nobody can verify. Height is the one factor that needs a
+   verdict rather than a fact already sitting in `live`, so it borrows
+   eligibility() straight from lib/park.js instead of re-deriving the rule. */
+const ELIGIBLE_WHY = {
+  yes: 'Tall enough to ride',
+  companion: 'Rides with an adult along',
+  advisory: 'Built for smaller riders — worth a look',
+};
+
+function distanceFactor(metres) {
+  return { key: 'distance', label: `${formatWalk(metres)} walk` };
+}
+
+/** The party's report or the sky's forecast — whichever `liveFor` used to say GO NOW. */
+function statusFactor(live) {
+  if (!live.detail) return null;
+  return { key: live.source === 'weather' ? 'weather' : 'status', label: live.detail };
+}
+
 /**
- * Ranked GO NOW picks for the Explore rail — what should I do right now?
+ * Height eligibility as a factor, or null when there's nothing to say —
+ * no height rule on the ride, or no rider height set yet.
  *
- * @returns {Array<{ poi, live, metres }>}
+ * @returns {{key:'eligibility', label:string|null, verdict:string}|null}
  */
-export function recommendNow(pois, rides, weather, me, members = [], now = Date.now(), limit = 2) {
+function eligibilityFactor(poi, height, withAdult) {
+  if (height == null || !poi?.h) return null;
+  const verdict = eligibility(poi, height, withAdult);
+  return { key: 'eligibility', label: ELIGIBLE_WHY[verdict] ?? null, verdict };
+}
+
+/** The short version of factors[] — the strongest reason first, distance only
+ *  when nothing else beat it. Never every factor at once: that's a dashboard. */
+function composeWhy(factors) {
+  const reason = factors.find((f) => f.key === 'status' || f.key === 'weather');
+  const elig = factors.find((f) => f.key === 'eligibility');
+  const bits = [reason, elig].filter(Boolean).map((f) => f.label);
+  if (bits.length === 0) {
+    const dist = factors.find((f) => f.key === 'distance');
+    if (dist) bits.push(dist.label);
+  }
+  return bits.join(' · ');
+}
+
+/**
+ * Ranked GO NOW picks for the Explore rail — what should I do right now,
+ * and why? Every pick carries `factors[]`, the plain-language evidence the
+ * ranking is built from (how far, what the party or the sky says, whether
+ * the rider is tall enough), and `why`, the one-line version of the
+ * strongest of them. Nothing here asks an LLM — every factor is a fact the
+ * app already holds, so the answer never outruns what it can defend.
+ *
+ * @param {number|null} [opts.height]    rider height in inches, if known
+ * @param {boolean} [opts.withAdult]     whether an adult is riding along
+ * @returns {Array<{ poi, live, metres, factors, why }>}
+ */
+export function recommendNow(
+  pois,
+  rides,
+  weather,
+  me,
+  members = [],
+  now = Date.now(),
+  limit = 2,
+  opts = {},
+) {
   if (!me || !Number.isFinite(me.lat) || !Number.isFinite(me.lng)) return [];
+  const { height = null, withAdult = true } = opts || {};
 
   const scored = [];
   for (const poi of pois || []) {
@@ -151,11 +216,21 @@ export function recommendNow(pois, rides, weather, me, members = [], now = Date.
     const membersNear = membersAt(poi, members);
     const live = liveFor(poi, rides?.[poi.id] ?? null, weather, now, { metres, membersNear });
     if (live.live !== 'goNow' && live.key !== 'goNow') continue;
-    // Prefer party-confirmed opens, then nearer rides.
-    const rank = live.source === 'party' ? 0 : 1;
-    scored.push({ poi, live, metres, rank });
+
+    const elig = eligibilityFactor(poi, height, withAdult);
+    // A rider who cannot ride it at all is never the next best thing to do.
+    if (elig && (elig.verdict === 'no' || elig.verdict === 'toobig')) continue;
+
+    const factors = [distanceFactor(metres), statusFactor(live), elig].filter((f) => f?.label);
+
+    // Prefer party-confirmed opens, then nearer rides — the same order the
+    // old rank/metres sort gave, just carried by one score so factors[] and
+    // the ranking always tell the same story.
+    const score = (live.source === 'party' ? 1000 : 0) - metres;
+
+    scored.push({ poi, live, metres, factors, why: composeWhy(factors), score });
   }
 
-  scored.sort((a, b) => a.rank - b.rank || a.metres - b.metres);
-  return scored.slice(0, limit);
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(({ score: _score, ...pick }) => pick);
 }

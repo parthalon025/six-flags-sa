@@ -2322,6 +2322,8 @@ export default function Page() {
                   weather={weatherFeed.weather}
                   rides={partyRides}
                   now={Date.now()}
+                  height={mapHeight}
+                  withAdult={withAdult}
                 />
               )}
               {/* Where the list would be, when the list will not fit: it is not

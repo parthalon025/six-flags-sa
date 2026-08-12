@@ -97,6 +97,81 @@ await check('glance rail renders nearby fallback cards', async () => {
   return (await a.locator('.glanceCard').count()) >= 2;
 });
 
+await check('GO NOW card carries a Why? explanation', async () => {
+  // Deterministic clear/day sky so outdoor GO NOW is not suppressed by night
+  // or a stormy Open-Meteo reading during CI.
+  await a.route('**/api/weather**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+        source: 'test-fixture',
+      }),
+    });
+  });
+  await a.evaluate(() => {
+    localStorage.setItem(
+      'ki-weather',
+      JSON.stringify({
+        observed: {
+          code: 0,
+          tempF: 78,
+          gustMph: 6,
+          windMph: 4,
+          precipIn: 0,
+          precipChance: 5,
+          isDay: true,
+        },
+        at: Date.now(),
+      }),
+    );
+  });
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("48")').click();
+  await a.waitForTimeout(500);
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  await root(a);
+  // Peek so the glance rail is visible.
+  for (let i = 0; i < 4; i += 1) {
+    const stop = await a.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+    );
+    if (stop === 'peek') break;
+    await a.getByRole('slider', { name: /Resize panel/ }).click();
+    await a.waitForTimeout(300);
+  }
+  // Nudge weather refresh after the fixture is in place.
+  await a.evaluate(async () => {
+    try {
+      await fetch('/api/weather?lat=39.34&lng=-84.27', { cache: 'no-store' });
+    } catch {
+      /* fixture route handles it */
+    }
+  });
+  await a.waitForTimeout(800);
+  const goNowHit = a.locator('.glanceCard.goNow .glanceHit[title]');
+  const whyHit = a.locator('.glanceHit[title*="Why"]');
+  await until(
+    async () => (await goNowHit.count()) > 0 || (await whyHit.count()) > 0,
+    { timeout: 20000, label: 'a glance card with Why title' },
+  );
+  const hit = (await goNowHit.count()) > 0 ? goNowHit.first() : whyHit.first();
+  const why = (await hit.getAttribute('title')) || '';
+  if (!why || why.length < 6) throw new Error(`missing Why? title: "${why}"`);
+  return true;
+});
+
+
 await check('theme toggle flips data-theme', async () => {
   const before = await a.evaluate(() => document.documentElement.dataset.theme);
   await a.locator('button[aria-label*="map"]').first().click();

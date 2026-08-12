@@ -2393,7 +2393,11 @@ await check('every named piece of track belongs to a ride we know', () => {
 
 await check('lib/park re-exports place search helpers', () => {
   const src = fs.readFileSync(new URL('../../apps/party-tracker/lib/park.js', import.meta.url), 'utf8');
+<<<<<<< HEAD
   assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search\.js'/);
+=======
+  assert.match(src, /export \{ categoriesFor, matchesQuery, matchedByName \} from '\.\/search(\.js)?'/);
+>>>>>>> origin/cursor/e81-next-best-why-1139
   const listSrc = fs.readFileSync(new URL('../../apps/party-tracker/components/PlaceList.jsx', import.meta.url), 'utf8');
   assert.match(listSrc, /from '@\/lib\/park'/);
   assert.doesNotMatch(listSrc, /from '@\/lib\/search'/);
@@ -5766,6 +5770,60 @@ await check('recommendNow surfaces nearby clear-sky rides', () => {
   const picks = recommendNow([BEAST_HERE], null, FINE, me, [], 5_000_000, 2);
   assert.ok(picks.length >= 1);
   assert.equal(picks[0].live.label, LIVE.goNow);
+  return true;
+});
+
+/* ---------------------------------------------- recommendNow — Why? --- */
+
+const BEAST_TALL = { ...BEAST_HERE, h: { min: 42 } };
+
+await check('recommendNow explains a weather-hedged pick with factors[] and a short why', () => {
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const picks = recommendNow([BEAST_HERE], null, FINE, me, [], 5_000_000, 2);
+  const [pick] = picks;
+  assert.ok(Array.isArray(pick.factors) && pick.factors.length >= 2);
+  assert.ok(pick.factors.some((f) => f.key === 'distance'));
+  assert.ok(pick.factors.some((f) => f.key === 'weather'));
+  // The rendered line is the reason, not every fact at once — no dashboard.
+  assert.equal(pick.why, 'Nearby and the sky looks clear');
+  return true;
+});
+
+await check('recommendNow prefers the party\u2019s report over the weather hedge as the why', () => {
+  const now = 5_000_000;
+  const me = { lat: BEAST_HERE.lat, lng: BEAST_HERE.lng };
+  const picks = recommendNow(
+    [BEAST_HERE],
+    { [BEAST_HERE.id]: { status: RIDE_OPEN, byName: 'Ava', ts: now } },
+    FINE,
+    me,
+    [],
+    now,
+    2,
+  );
+  const [pick] = picks;
+  assert.equal(pick.live.source, 'party');
+  assert.ok(pick.factors.some((f) => f.key === 'status' && f.label.includes('Ava')));
+  assert.ok(pick.why.includes('Ava'));
+  return true;
+});
+
+await check('recommendNow adds an eligibility factor once a rider height is known', () => {
+  const me = { lat: BEAST_TALL.lat, lng: BEAST_TALL.lng };
+  const withoutHeight = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2);
+  assert.ok(!withoutHeight[0].factors.some((f) => f.key === 'eligibility'));
+
+  const tallEnough = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, { height: 48 });
+  const elig = tallEnough[0].factors.find((f) => f.key === 'eligibility');
+  assert.equal(elig.verdict, 'yes');
+  assert.ok(tallEnough[0].why.includes('Tall enough'));
+  return true;
+});
+
+await check('recommendNow never recommends a ride the rider cannot ride', () => {
+  const me = { lat: BEAST_TALL.lat, lng: BEAST_TALL.lng };
+  const tooShort = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, { height: 36 });
+  assert.equal(tooShort.length, 0);
   return true;
 });
 

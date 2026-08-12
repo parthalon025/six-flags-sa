@@ -123,15 +123,14 @@
       "user_action": "See structured eligibility reason on a ride",
       "suite": "functional",
       "check": "ride detail shows a structured eligibility reason"
-    }
-  ],
-  "upcoming": [
+    },
     {
       "id": "e81-next-best",
       "slice": "E8",
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
-      "when": "PR #91 lands \u2014 add named check with the epic"
+      "check": "GO NOW card carries a Why? explanation"
     }
-  ]
+  ],
+  "upcoming": []
 }
