@@ -4,16 +4,21 @@ import { BRAND } from '@/lib/brand';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-/* Self-hosted from a committed woff2 — same-origin, so park wifi and the
-   service worker can keep it after the first load. The file is the latin
-   variable cut of Plus Jakarta Sans (weights 500–800); shipping it in the repo
-   means the production build never reaches out to Google Fonts, so Turbopack
-   can't fail the build when that fetch is blocked in CI. Used for PARKBOUND,
-   attraction names, and big numbers; body copy stays on the system UI stack. */
+/* Checked into public/fonts so CI and park wifi never depend on fetching
+   Google at build or first paint. Variable face covers 500–800. */
 const display = localFont({
-  src: './fonts/plus-jakarta-sans-latin.woff2',
-  weight: '500 800',
-  style: 'normal',
+  src: [
+    {
+      path: '../public/fonts/plus-jakarta-sans-latin.woff2',
+      weight: '500 800',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/plus-jakarta-sans-latin-ext.woff2',
+      weight: '500 800',
+      style: 'normal',
+    },
+  ],
   variable: '--font-display',
   display: 'swap',
 });
