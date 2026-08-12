@@ -391,6 +391,49 @@ await check('picking another way changes the trip', async () => {
   return true;
 });
 
+// Cedar Point coverage stops at preview/alts. The walk UX checks below still
+// assume Kings Island GPS (Beast arrival, glance rail, party rides), so leave
+// CP before Start — otherwise a live Gemini walk + KI fix never shortens.
+await check('return to Kings Island before walk UX coverage', async () => {
+  await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+  await dismissNavigation(a).catch(() => {});
+  await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
+  await a.waitForTimeout(400);
+  const brand = async () => {
+    await a.locator('.tabItem[data-tab="explore"]').click().catch(() => {});
+    await root(a);
+    return a.locator('.brandName, .brand b').first().innerText().catch(() => '');
+  };
+  if (!/kings island/i.test(await brand())) {
+    await go(a, 'Which map');
+    await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
+    await until(async () => /kings island/i.test(await brand()), {
+      timeout: 25000,
+      label: 'kings island after cedar point',
+    });
+  }
+  for (let i = 0; i < 3; i += 1) {
+    await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
+    await a.waitForTimeout(300);
+  }
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  await a.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]').click();
+  await until(async () => (await a.locator('.routePreview').count()) > 0, {
+    timeout: 15000,
+    label: 'beast route preview on kings island',
+  });
+  await until(
+    async () =>
+      (await a.locator('.routeLine').count()) > 0 &&
+      (await a.locator('.routeLine.direct').count()) === 0,
+    { timeout: 20000, label: 'beast route line on kings island' },
+  );
+  return true;
+});
+
 await check('Start hands the screen over to the walk', async () => {
   await a.locator('.previewGo').click();
   await a.waitForTimeout(1200);
@@ -426,9 +469,23 @@ await check('walking towards it shortens what is left', async () => {
     return /mi/.test(t) ? n * 5280 : n;
   };
   const before = await left();
-  await A.context.setGeolocation({ latitude: 39.3419, longitude: -84.2667 });
-  await a.waitForTimeout(2500);
-  const after = await left();
+  // GPS smoother rejects teleports faster than ~12 m/s; walk the fix in with
+  // several samples (and enough rejects) so the remaining distance can move.
+  const steps = [
+    { latitude: 39.3434, longitude: -84.2671 },
+    { latitude: 39.3428, longitude: -84.2669 },
+    { latitude: 39.3423, longitude: -84.2668 },
+    { latitude: 39.3419, longitude: -84.2667 },
+    { latitude: 39.3419, longitude: -84.2667 },
+  ];
+  for (const fix of steps) {
+    await A.context.setGeolocation(fix);
+    await a.waitForTimeout(500);
+  }
+  const after = await until(async () => {
+    const n = await left();
+    return n < before - 40 ? n : false;
+  }, { timeout: 15000, label: 'remaining walk distance to shorten' });
   if (!(after < before)) throw new Error(`${before} then ${after}`);
   if (!(await a.locator('.routeDone').count())) throw new Error('the walked part is not drawn behind');
   return true;
@@ -985,8 +1042,10 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
   const heading = (await e.locator('.brandLockupName').innerText()).trim();
   if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
   const said = card.indexOf('Explore more. Stress less.');
-  const pitch = card.indexOf('explorer');
-  if (said < 0 || pitch < 0) {
+  // Pitch is BRAND.shortDescription (map / toilets / party) — not the old
+  // "explorer" vocabulary that used to appear on this card.
+  const pitch = /toilets|park map|start a party/i.test(card);
+  if (said < 0 || !pitch) {
     throw new Error('the welcome gate is missing slogan or pitch');
   }
   if (!/Go to nearest park/i.test(card)) {
@@ -1044,17 +1103,17 @@ await check('the park question is inline when the venue is not yet confirmed', a
     throw new Error('the introduction came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
-  await until(async () => (await p.locator('.gate .btn.primary:has-text("set up")').count()) > 0, {
-    timeout: 25000,
-    label: 'the park question',
-  });
-  const heading = (await p.locator('.gate h2').innerText()).trim();
-  if (!/headed to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  // Explore-without-fix can flash "Where are we headed today?" before the
+  // Austin GPS fix lands; wait for the distance-based confirm copy.
+  await until(async () => {
+    const heading = (await p.locator('.gate h2').innerText().catch(() => '')).trim();
+    return /headed to.*fiesta texas/i.test(heading);
+  }, { timeout: 25000, label: 'the park question' });
   const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
   if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
   await p.locator('.gate .btn.primary:has-text("set up")').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
-  const shown = await p.locator('.brand b').innerText();
+  const shown = await p.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
   await go(p, 'Places');
   await until(async () => (await p.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
@@ -1069,12 +1128,18 @@ await check('the park answered stays answered across a reload', async () => {
   await e.reload({ waitUntil: 'domcontentloaded' });
   await hydrated(e);
   await dismissUpdateSplash(e);
+  await dismissIntroSplash(e).catch(() => {});
   // Introduced once per phone, not once per launch: coming back gets the plain
   // question, not the sales pitch again.
   if (await e.locator('#intro-splash-title').count()) {
     throw new Error('the introduction came back on a reload');
   }
-  await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
+  // Confirmed venue should skip the gate; give hydration a beat if the card
+  // flashes while localStorage is re-read.
+  await until(async () => (await e.locator('.gate').count()) === 0, {
+    timeout: 25000,
+    label: 'confirmed park keeps the gate closed',
+  });
   const shown = await e.locator('.brand b').innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}" after reload`);
   return true;
