@@ -327,6 +327,16 @@ Parallel after #72: **M0 remainder** map zoom perf (cull / HUD / LOD).
 
 ---
 
+## Delivery rule — build vertically
+
+Ship **one end-to-end slice at a time** (user action → code → named critical-path check), not horizontal layers across unfinished epics.
+
+1. Merge CI unblocker [#92](https://github.com/parthalon025/six-flags-sa/pull/92) first.
+2. Land **one** open epic PR (A→L order below).
+3. Each feature epic that adds a user action must add/update a row in `test/app/critical-paths.json` and a matching `await check(...)` in the same PR.
+
+Critical-path contract: `npm run test:coverage-contract` (also runs inside `test:validate-ui`).
+
 ## PR chain status (2026-08-11)
 
 **CI unblocker (merge first):** [#92](https://github.com/parthalon025/six-flags-sa/pull/92) — blank `blocked` route after venue switch + functional harness GPS settle / return-to-KI before walk UX. Rebased onto latest `main` (incl. #93/#94 Vercel preview policy). All epic branches below are rebased onto that fix tip.
