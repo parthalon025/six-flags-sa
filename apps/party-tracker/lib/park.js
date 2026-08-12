@@ -1,12 +1,12 @@
-import { THEMES, CATEGORY_LABELS } from './theme';
+import { THEMES, CATEGORY_LABELS } from './theme.js';
 import { ONTOLOGY } from './ontology.js';
 
 /* Height rules, category colours and the eligibility question. The places
    themselves belong to whichever venue is loaded — see lib/venue/store.js. */
 
-export { THEMES, paletteFor, landTint } from './theme';
+export { THEMES, paletteFor, landTint } from './theme.js';
 export { isRideable, isQueueable, isReportable, rideable } from './ontology.js';
-export { categoriesFor, matchesQuery, matchedByName } from './search';
+export { categoriesFor, matchesQuery, matchedByName } from './search.js';
 
 // Default (night) colours, kept for anything that renders outside the themed tree.
 export const CATEGORIES = Object.fromEntries(

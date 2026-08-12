@@ -12,7 +12,7 @@
  * one that earns its keep, because none of "toilet", "lunch", "exit", "nurse"
  * or "cash machine" appear in any label.
  */
-import { CATEGORY_LABELS } from '@/lib/theme';
+import { CATEGORY_LABELS } from './theme.js';
 
 /* Deliberately plain and deliberately not exhaustive: these are words for a
    park, not OpenStreetMap's vocabulary. Ordinary misspellings are not handled
