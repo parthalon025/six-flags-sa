@@ -71,7 +71,7 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 
 | ID | Item | Ships | Done when | Status |
 |----|------|-------|-----------|--------|
-| EP.1 | Auth provider choice + ADR | Email magic link and/or OAuth; session model | ADR documents provider, token storage, offline session | open |
+| EP.1 | Auth provider choice + ADR | Auth.js; magic link + optional Google; soft gate | ADR: [`adr-auth-profiles.md`](./adr-auth-profiles.md) | done |
 | EP.2 | Profile schema | `users`, `profiles` (display name, avatar key, created_at) | Migrations + shared types | open |
 | EP.3 | Sign-in / sign-up UX | Soft gate: browse map anonymously; party/contribute/adventure need sign-in | Functional tests; no anonymous contribution path | open |
 | EP.4 | Offline profile cache | Profile + rank/passport snapshot in IndexedDB after login | Map still draws offline; identity available for local queues | open |
