@@ -334,27 +334,28 @@ Ship **one end-to-end slice at a time** (user action → code → named critical
 1. Merge CI unblocker [#92](https://github.com/parthalon025/six-flags-sa/pull/92) first.
 2. Land **one** open epic PR (A→L order below).
 3. Each feature epic that adds a user action must add/update a row in `test/app/critical-paths.json` and a matching `await check(...)` in the same PR.
+4. **Stack dependent slices** so CI stays green before the prior PR merges: soft-gate includes schemas; party-sharing and Side Quests include soft-gate (+ `signIn` in the harness). After the dependency lands on `main`, rebase drops the duplicate commits.
 
 Critical-path contract: `npm run test:coverage-contract` (also runs inside `test:validate-ui`).
 
-## PR chain status (2026-08-11)
+## PR chain status (2026-08-12)
 
-**CI unblocker (merge first):** [#92](https://github.com/parthalon025/six-flags-sa/pull/92) — blank `blocked` route after venue switch + functional harness GPS settle / return-to-KI before walk UX. Rebased onto latest `main` (incl. #93/#94 Vercel preview policy). All epic branches below are rebased onto that fix tip.
+**CI unblocker (merge first):** [#92](https://github.com/parthalon025/six-flags-sa/pull/92) — blank `blocked` route after venue switch + functional harness GPS settle / return-to-KI before walk UX + middle-ground `critical-paths.json` contract. All epic branches below sit on that tip (or a stacked successor).
 
-| Order | Epic | PR | Branch | Notes |
-|-------|------|----|--------|-------|
-| A | Hygiene / north star | [#79](https://github.com/parthalon025/six-flags-sa/pull/79) | `cursor/backlog-hygiene-north-star-1139` | Docs only |
-| B | EP.1 Auth ADR | [#80](https://github.com/parthalon025/six-flags-sa/pull/80) | `cursor/ep1-auth-adr-1139` | |
-| C | E1.1 pipeline integrity | [#81](https://github.com/parthalon025/six-flags-sa/pull/81) | `cursor/e11-pipeline-integrity-1139` | Wave 1 honesty |
-| D | E0.3–4 schemas | [#82](https://github.com/parthalon025/six-flags-sa/pull/82) | `cursor/e0-schemas-store-1139` | |
-| E | EP.2–4 soft-gate + cache | [#83](https://github.com/parthalon025/six-flags-sa/pull/83) | `cursor/ep-signin-offline-cache-1139` | Needs #92 harness |
-| F | E0.5–6 consolidate | [#84](https://github.com/parthalon025/six-flags-sa/pull/84) | `cursor/e0-consolidate-cadence-1139` | |
-| G | E1.2 deterministic ids | [#85](https://github.com/parthalon025/six-flags-sa/pull/85) | `cursor/e12-deterministic-ids-1139` | |
-| H | EP.5 + E4.1 sharing | [#86](https://github.com/parthalon025/six-flags-sa/pull/86) | `cursor/ep5-e41-party-sharing-1139` | |
-| I | E9.1 adventure queue | [#88](https://github.com/parthalon025/six-flags-sa/pull/88) | `cursor/e91-adventure-side-quests-1139` | |
-| J | M0 Diagnostics HUD | [#89](https://github.com/parthalon025/six-flags-sa/pull/89) | `cursor/m0-map-perf-remainder-1139` | |
-| K | E5 eligibility + guests | [#90](https://github.com/parthalon025/six-flags-sa/pull/90) | `cursor/e5-eligibility-v2-1139` | |
-| L | E8.1 next-best + Why? | [#91](https://github.com/parthalon025/six-flags-sa/pull/91) | `cursor/e81-next-best-why-1139` | |
+| Order | Epic | PR | Branch | Vertical check / stack |
+|-------|------|----|--------|------------------------|
+| A | Hygiene / north star | [#79](https://github.com/parthalon025/six-flags-sa/pull/79) | `cursor/backlog-hygiene-north-star-1139` | Docs |
+| B | EP.1 Auth ADR | [#80](https://github.com/parthalon025/six-flags-sa/pull/80) | `cursor/ep1-auth-adr-1139` | Docs |
+| C | E1.1 pipeline integrity | [#81](https://github.com/parthalon025/six-flags-sa/pull/81) | `cursor/e11-pipeline-integrity-1139` | Data/unit |
+| D | E0.3–4 schemas | [#82](https://github.com/parthalon025/six-flags-sa/pull/82) | `cursor/e0-schemas-store-1139` | Infra/unit (`schemas.js`) |
+| E | EP.2–4 soft-gate + cache | [#83](https://github.com/parthalon025/six-flags-sa/pull/83) | `cursor/ep-signin-offline-cache-1139` | `anonymous soft-gate blocks Start a party` — **stacked on #82** |
+| F | E0.5–6 consolidate | [#84](https://github.com/parthalon025/six-flags-sa/pull/84) | `cursor/e0-consolidate-cadence-1139` | Ops/unit |
+| G | E1.2 deterministic ids | [#85](https://github.com/parthalon025/six-flags-sa/pull/85) | `cursor/e12-deterministic-ids-1139` | Data/unit |
+| H | EP.5 + E4.1 sharing | [#86](https://github.com/parthalon025/six-flags-sa/pull/86) | `cursor/ep5-e41-party-sharing-1139` | `location sharing Off/Approx/Precise…` — **stacked on #83** |
+| I | E9.1 adventure queue | [#88](https://github.com/parthalon025/six-flags-sa/pull/88) | `cursor/e91-adventure-side-quests-1139` | `Side Quest submit queues locally` — **stacked on #83** (sign-in before submit) |
+| J | M0 Diagnostics HUD | [#89](https://github.com/parthalon025/six-flags-sa/pull/89) | `cursor/m0-map-perf-remainder-1139` | Perf/unit |
+| K | E5 eligibility + guests | [#90](https://github.com/parthalon025/six-flags-sa/pull/90) | `cursor/e5-eligibility-v2-1139` | `ride detail shows a structured eligibility reason` |
+| L | E8.1 next-best + Why? | [#91](https://github.com/parthalon025/six-flags-sa/pull/91) | `cursor/e81-next-best-why-1139` | `GO NOW card carries a Why? explanation` |
 
 Land **one open epic at a time** after #92 is on `main`. Prefer A→L order. Vercel preview rate-limits on this account are non-blocking for Test app.
 
