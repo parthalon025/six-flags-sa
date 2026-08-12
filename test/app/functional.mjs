@@ -981,8 +981,22 @@ await check('the party code survives the migration', async () => {
 });
 
 await check('the surviving phones agree on who is hosting', async () => {
-  const labels = await Promise.all(
-    [b, c].map((page) => page.locator('.label:has-text("Hosting") .labelRight').innerText()),
+  const labels = await until(
+    async () => {
+      const texts = await Promise.all(
+        [b, c].map((page) =>
+          page
+            .locator('.label:has-text("Hosting") .labelRight')
+            .innerText()
+            .catch(() => ''),
+        ),
+      );
+      const claimants = texts.filter((t) => /this phone/i.test(t)).length;
+      const follower = texts.find((t) => t && !/this phone/i.test(t));
+      if (claimants === 1 && follower && /Ava|Sam/i.test(follower)) return texts;
+      return null;
+    },
+    { timeout: 30000, label: 'follower hosting label to name Ava or Sam' },
   );
   const claimants = labels.filter((t) => /this phone/i.test(t)).length;
   if (claimants !== 1) throw new Error(`hosting labels: ${labels.join(' | ')}`);
