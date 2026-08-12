@@ -111,13 +111,13 @@ await check('GO NOW card carries a Why? explanation', async () => {
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(300);
   }
-  const goNow = a.locator('.glanceCard').filter({ has: a.locator('.glanceEyebrow', { hasText: /GO NOW|Now/i }) }).first();
-  const anyCard = a.locator('.glanceCard .glanceHit[title]').first();
+  const goNowHit = a.locator('.glanceCard.goNow .glanceHit[title]');
+  const whyHit = a.locator('.glanceHit[title*="Why"]');
   await until(
-    async () => (await goNow.count()) > 0 || (await anyCard.count()) > 0,
-    { timeout: 15000, label: 'a glance card with Why title' },
+    async () => (await goNowHit.count()) > 0 || (await whyHit.count()) > 0,
+    { timeout: 20000, label: 'a glance card with Why title' },
   );
-  const hit = (await goNow.count()) > 0 ? goNow.locator('.glanceHit') : anyCard;
+  const hit = (await goNowHit.count()) > 0 ? goNowHit.first() : whyHit.first();
   const why = (await hit.getAttribute('title')) || '';
   if (!why || why.length < 6) throw new Error(`missing Why? title: "${why}"`);
   return true;

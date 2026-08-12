@@ -224,9 +224,14 @@ function GlanceRail({
       picks.forEach(({ poi, live, metres, why, factors }, i) => {
         const at = `${poi.lat},${poi.lng}`;
         if (out.some((c) => c.target && `${c.target.lat},${c.target.lng}` === at)) return;
-        // `why` is the one-line reason; the tooltip behind it is every factor
-        // that went into the pick, for whoever taps and holds to ask "why?"
-        const tip = factors?.length ? `Why: ${factors.map((f) => f.label).join(' \u00b7 ')}` : null;
+        // Always stamp a Why? title on GO NOW cards — factors[] when present,
+        // else the one-line why / live detail — so long-press and the vertical
+        // check both have something to read even before weather/party reports.
+        const tip = `Why: ${
+          factors?.length
+            ? factors.map((f) => f.label).join(' \u00b7 ')
+            : why || live.detail || 'Nearby pick'
+        }`;
         push(
           `go-${poi.id || i}`,
           LIVE.goNow,
