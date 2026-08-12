@@ -1,7 +1,7 @@
-# Every merge to main gets a new patch version so phones can see the number move
-# and auto-update has a semver to compare. The same job then refreshes the
-# GitNexus index (GITHUB_TOKEN pushes cannot trigger a second workflow).
-# Skips its own bump / index commits so it does not loop.
+# After a merge to main, bump app semver from Conventional Commits when the
+# merge touched the app; then refresh the GitNexus index (GITHUB_TOKEN pushes
+# cannot trigger a second workflow). Skips its own bump / index commits so it
+# does not loop.
 
 name: Post-merge main
 
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Skip GitNexus-only commits
         id: gate
@@ -68,12 +68,13 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
-      - name: Bump patch version
+      - name: Bump version
         if: steps.gate.outputs.run == 'true'
+        id: bump
         run: node scripts/bump-version.mjs "${{ steps.note.outputs.note }}"
 
       - name: Commit version bump
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs.run == 'true' && steps.bump.outputs.skipped != 'true'
         run: |
           set -euo pipefail
           git add \

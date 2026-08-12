@@ -14,16 +14,13 @@ set -e
 echo "Checking if Vercel build is needed..."
 echo "Current commit: ${VERCEL_GIT_COMMIT_SHA:-HEAD}"
 
-# Paths that should trigger a Vercel build when changed
-APP_PATHS=(
-  "apps/party-tracker/"
-  "packages/shared/"
-  "public/"
-  "vercel.json"
-  "turbo.json"
-  "package.json"
-  "package-lock.json"
-)
+# Paths that should trigger a Vercel build when changed.
+# Single source: scripts/lib/app-paths.json (also used by the version bump skip).
+if [ ! -f scripts/lib/app-paths.json ]; then
+  echo "Missing scripts/lib/app-paths.json — proceeding with build."
+  exit 1
+fi
+mapfile -t APP_PATHS < <(node -e "JSON.parse(require('fs').readFileSync('scripts/lib/app-paths.json','utf8')).forEach((p)=>console.log(p))")
 
 # Get the list of changed files. If VERCEL_GIT_PREVIOUS_SHA is not set,
 # compare against HEAD~1 (the parent commit).

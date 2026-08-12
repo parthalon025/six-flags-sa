@@ -41,9 +41,13 @@ page.
    `public/app-version.json` / `public/sw.js`, and version-keyed release notes
    alone on feature branches — bumping them in the PR causes merge conflicts
    with the auto-bump commits on `main`.
-2. **Merge to `main`.** GitHub Actions bumps the patch version in `package.json`,
-   updates `package-lock.json`, stamps `public/app-version.json` / `public/sw.js`,
-   and adds a release-notes line from the PR title (or a generic fallback).
+2. **Merge to `main`.** GitHub Actions runs `scripts/bump-version.mjs`. It skips
+   when the merge did not touch app paths (`scripts/lib/app-paths.json`).
+   Otherwise it bumps from the PR title’s Conventional Commit type (`fix:`
+   patch, `feat:` minor, breaking → major), updates `package-lock.json`, stamps
+   `public/app-version.json` / `public/sw.js`, and adds a release-notes line
+   from the PR title (or a generic fallback). Tag the PR title; `chore:` /
+   `docs:` / `test:` skip even on app files. Untagged app merges still patch.
 3. For richer release notes, put the headline in the PR title or edit
    `data/release-notes.json` on `main` after the bump commit — the workflow only
    adds an entry when the new version is missing.

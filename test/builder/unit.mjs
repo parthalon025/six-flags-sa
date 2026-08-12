@@ -6390,7 +6390,7 @@ await check('a short phone still reaches the list', () => {
 
 /* ------------------------------------------------------------- app version */
 
-const { APP_BUILT, APP_VERSION, bumpPatchVersion, compareVersions, isNewerBuild, isNewerVersion, parseVersion } = await import('../../apps/party-tracker/lib/version.js');
+const { APP_BUILT, APP_VERSION, bumpPatchVersion, bumpVersion, compareVersions, isNewerBuild, isNewerVersion, parseVersion, releaseKindFromMessages } = await import('../../apps/party-tracker/lib/version.js');
 
 await check('APP_VERSION is a semver string', () => {
   assert.ok(parseVersion(APP_VERSION), `not semver: ${APP_VERSION}`);
@@ -6416,6 +6416,16 @@ await check('isNewerVersion is strict', () => {
 await check('bumpPatchVersion increments the patch segment', () => {
   assert.equal(bumpPatchVersion('1.1.0'), '1.1.1');
   assert.equal(bumpPatchVersion('2.0.9'), '2.0.10');
+  return true;
+});
+
+await check('bumpVersion follows Conventional Commits digits', () => {
+  assert.equal(bumpVersion('1.1.16', 'minor'), '1.2.0');
+  assert.equal(bumpVersion('1.1.16', 'major'), '2.0.0');
+  assert.equal(bumpVersion('1.1.16', 'none'), '1.1.16');
+  assert.equal(releaseKindFromMessages(['feat: add Plan']), 'minor');
+  assert.equal(releaseKindFromMessages(['fix: typo']), 'patch');
+  assert.equal(releaseKindFromMessages(['docs: notes']), 'none');
   return true;
 });
 

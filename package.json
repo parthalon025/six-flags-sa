@@ -53,7 +53,7 @@
     "test:modules": "node test/app/select-modules.mjs",
     "test:module-select": "node test/app/module-select.test.mjs",
     "test:coverage-contract": "node test/app/coverage-contract.mjs",
-    "test:unit": "node test/builder/unit.mjs && node test/scripts/gitnexus-ci.test.mjs",
+    "test:unit": "node test/builder/unit.mjs && node test/scripts/gitnexus-ci.test.mjs && node test/scripts/bump-version.test.mjs",
     "test:functional": "node test/app/functional.mjs",
     "test:compare": "node test/builder/compare.mjs",
     "test:visual": "node test/app/visual.mjs",
