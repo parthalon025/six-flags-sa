@@ -329,7 +329,7 @@ Parallel after #72: **M0 remainder** map zoom perf (cull / HUD / LOD).
 
 ## PR chain status (2026-08-11)
 
-**CI unblocker (merge first):** [#92](https://github.com/parthalon025/six-flags-sa/pull/92) — blank `blocked` route after venue switch + functional harness GPS settle. All epic branches below are rebased onto that fix tip.
+**CI unblocker (merge first):** [#92](https://github.com/parthalon025/six-flags-sa/pull/92) — blank `blocked` route after venue switch + functional harness GPS settle / return-to-KI before walk UX. Rebased onto latest `main` (incl. #93/#94 Vercel preview policy). All epic branches below are rebased onto that fix tip.
 
 | Order | Epic | PR | Branch | Notes |
 |-------|------|----|--------|-------|
