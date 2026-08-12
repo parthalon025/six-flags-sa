@@ -1813,6 +1813,27 @@ await check('carrying the attributes moves no route at all', () => {
 
 section('routing/routes');
 
+await check('off-network snaps with a profile still fall back to a straight line', async () => {
+  // profileOpts always attaches excludeSeg. A walker still GPS-pinned at Kings
+  // Island while the Cedar Point graph is the active one used to return a
+  // zero-metre `blocked` route — nothing for the map to draw.
+  const { profileOpts } = await import('../../apps/party-tracker/lib/routingProfiles.js');
+  const cp = JSON.parse(
+    fs.readFileSync(
+      new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url),
+      'utf8',
+    ),
+  );
+  const g = buildRouteGraph(cp);
+  const from = { lat: 39.34395, lng: -84.2673 };
+  const to = { lat: 41.486212, lng: -82.689509 };
+  const r = findRoute(g, from, to, profileOpts('default', g));
+  assert.equal(r.mode, 'direct');
+  assert.ok(r.metres > 1000, `expected a long straight line, got ${r.metres}`);
+  assert.ok(r.points.length > 1);
+  return true;
+});
+
 await check('a route follows the paths and is longer than the crow flies', () => {
   const from = poi('The Beast');
   const to = poi('Orion');

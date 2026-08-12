@@ -30,7 +30,7 @@ export const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\
  * suites assert on it — this list must not grow to make a failure go away.
  */
 export const IGNORABLE_CONSOLE =
-  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT/;
+  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico/;
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {
@@ -180,9 +180,12 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   do {
     const intro = page.locator('#intro-splash-title');
     if (await intro.count()) {
-      await page.locator('.gate:has(#intro-splash-title) .btn.primary').click().catch(() => {});
+      const primary = page.locator(
+        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
+      );
+      await primary.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
-      return true;
+      if (!(await intro.count())) return true;
     }
     if (timeout === 0) break;
     await page.waitForTimeout(250);

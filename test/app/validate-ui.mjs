@@ -65,6 +65,11 @@ try {
     console.log('ok');
   }
 
+  // Critical-path contract: required named checks still exist (middle ground —
+  // not every click, but every shipped vertical capability).
+  await runSuite('Critical-path coverage contract', 'coverage-contract.mjs');
+  suites.push('coverage-contract');
+
   if (runFunctional) {
     await runSuite('E2E functional suite (three-phone behavioural)', 'functional.mjs');
     suites.push('functional');

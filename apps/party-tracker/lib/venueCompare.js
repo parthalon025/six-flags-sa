@@ -87,7 +87,9 @@ export function compareVenue(venue) {
   tol(heights, expected.heights, 'height count', 2);
   tol(paths, venue.coverage?.ways, 'path count', 0);
 
-  if (!existsSync(path.join(OVERRIDE_DIR(), `${id}.recipe.json`))) {
+  // Sidecars live under packages/venue-builder/data/venues/<id>/recipe.json
+  // (not <id>.recipe.json at the venues root).
+  if (!existsSync(path.join(OVERRIDE_DIR(), id, 'recipe.json'))) {
     issues.push('no recipe on disk — cannot rebuild');
     stats.ok = false;
   }

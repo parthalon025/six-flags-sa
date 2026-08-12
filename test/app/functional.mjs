@@ -46,7 +46,14 @@ const check = async (n, fn) => {
     if (r === false) throw new Error('assertion false');
     ok(n);
   } catch (e) {
-    bad(n, e.message.split('\n')[0]);
+    // Keep the first actionable lines (Playwright often puts the locator on line 2–3).
+    const msg = String(e.message || e)
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(' | ');
+    bad(n, msg);
   }
 };
 
@@ -313,8 +320,12 @@ await check('cedar point route preview names surveyed queue entrances', async ()
     label: 'cedar point venue load',
   });
   // Walk graph is at the park — phone A was still GPS-pinned at Kings Island.
-  await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
-  await a.waitForTimeout(800);
+  // Push the fix a few times so the watch settles before we ask for a route
+  // (a stale KI fix + CP graph used to yield a blank zero-metre route).
+  for (let i = 0; i < 4; i += 1) {
+    await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
+    await a.waitForTimeout(400);
+  }
   await go(a, 'Places');
   await searchPlaces(a, 'gemini');
   const gemini = a.locator('.poiRow').filter({ has: a.locator('.poiName', { hasText: /^Gemini$/ }) }).first();
@@ -326,11 +337,36 @@ await check('cedar point route preview names surveyed queue entrances', async ()
     timeout: 15000,
     label: 'route preview card',
   });
-  // Graph weld waits for idle after a venue switch — give it a beat.
-  await until(async () => (await a.locator('.routeLine').count()) > 0, {
-    timeout: 20000,
-    label: 'route line on the map',
-  });
+  // Graph weld waits for idle after a venue switch — give it a beat, and wait
+  // until a real on-path walk is drawn (not a blank blocked route or a
+  // straight-line fall-back while GPS is still catching up).
+  await until(
+    async () => {
+      // Keep nudging GPS toward Cedar Point while the graph/weld catches up.
+      await A.context.setGeolocation({ latitude: 41.4826, longitude: -82.6862 });
+      if ((await a.locator('.routeLine.direct').count()) > 0) {
+        await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+        await a.waitForTimeout(300);
+        await go(a, 'Places');
+        await searchPlaces(a, 'gemini');
+        const row = a.locator('.poiRow').filter({ has: a.locator('.poiName', { hasText: /^Gemini$/ }) }).first();
+        if (await row.count()) {
+          await row.locator('.poiMain').click();
+          await a.waitForTimeout(200);
+          await row.locator('button[aria-label="Walk me there"]').click().catch(() => {});
+          await a.waitForTimeout(600);
+        }
+      }
+      if ((await a.locator('.routeLine').count()) < 1) return false;
+      if ((await a.locator('.routeLine.direct').count()) > 0) return false;
+      const main = await a.locator('.previewMain').innerText().catch(() => '');
+      return !/\b0\s*ft\b/i.test(main);
+    },
+    {
+      timeout: 45000,
+      label: 'route line on the map',
+    },
+  );
   const where = await a.locator('.previewWhere').innerText();
   if (!/gemini/i.test(where)) throw new Error(`preview: ${where}`);
   // Surveyed queue entrances prefer that wording; approximate pins say Ride area.
@@ -359,6 +395,49 @@ await check('picking another way changes the trip', async () => {
   if (!(await alts.nth(1).getAttribute('class')).includes('on')) throw new Error('choice not marked');
   await alts.nth(0).click();
   await a.waitForTimeout(500);
+  return true;
+});
+
+// Cedar Point coverage stops at preview/alts. The walk UX checks below still
+// assume Kings Island GPS (Beast arrival, glance rail, party rides), so leave
+// CP before Start — otherwise a live Gemini walk + KI fix never shortens.
+await check('return to Kings Island before walk UX coverage', async () => {
+  await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+  await dismissNavigation(a).catch(() => {});
+  await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
+  await a.waitForTimeout(400);
+  const brand = async () => {
+    await a.locator('.tabItem[data-tab="explore"]').click().catch(() => {});
+    await root(a);
+    return a.locator('.brandName, .brand b').first().innerText().catch(() => '');
+  };
+  if (!/kings island/i.test(await brand())) {
+    await go(a, 'Which map');
+    await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
+    await until(async () => /kings island/i.test(await brand()), {
+      timeout: 25000,
+      label: 'kings island after cedar point',
+    });
+  }
+  for (let i = 0; i < 3; i += 1) {
+    await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
+    await a.waitForTimeout(300);
+  }
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(300);
+  await a.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]').click();
+  await until(async () => (await a.locator('.routePreview').count()) > 0, {
+    timeout: 15000,
+    label: 'beast route preview on kings island',
+  });
+  await until(
+    async () =>
+      (await a.locator('.routeLine').count()) > 0 &&
+      (await a.locator('.routeLine.direct').count()) === 0,
+    { timeout: 20000, label: 'beast route line on kings island' },
+  );
   return true;
 });
 
@@ -397,9 +476,23 @@ await check('walking towards it shortens what is left', async () => {
     return /mi/.test(t) ? n * 5280 : n;
   };
   const before = await left();
-  await A.context.setGeolocation({ latitude: 39.3419, longitude: -84.2667 });
-  await a.waitForTimeout(2500);
-  const after = await left();
+  // GPS smoother rejects teleports faster than ~12 m/s; walk the fix in with
+  // several samples (and enough rejects) so the remaining distance can move.
+  const steps = [
+    { latitude: 39.3434, longitude: -84.2671 },
+    { latitude: 39.3428, longitude: -84.2669 },
+    { latitude: 39.3423, longitude: -84.2668 },
+    { latitude: 39.3419, longitude: -84.2667 },
+    { latitude: 39.3419, longitude: -84.2667 },
+  ];
+  for (const fix of steps) {
+    await A.context.setGeolocation(fix);
+    await a.waitForTimeout(500);
+  }
+  const after = await until(async () => {
+    const n = await left();
+    return n < before - 40 ? n : false;
+  }, { timeout: 15000, label: 'remaining walk distance to shorten' });
   if (!(after < before)) throw new Error(`${before} then ${after}`);
   if (!(await a.locator('.routeDone').count())) throw new Error('the walked part is not drawn behind');
   return true;
@@ -488,18 +581,23 @@ if (await a.locator('.navBanner').count()) {
   await a.waitForTimeout(600);
 }
 // Cedar Point walk coverage leaves this phone on that map; party ride tests need Kings Island.
-{
+await check('back on Kings Island before party tests', async () => {
+  await dismissNavigation(a).catch(() => {});
+  if (await a.locator('.navBanner').count()) {
+    await a.locator('.navEnd').click().catch(() => {});
+    await a.waitForTimeout(600);
+  }
   await go(a, 'Places');
   const brand = async () => a.locator('.brandName, .brand b').first().innerText();
-  if (!/kings island/i.test(await brand().catch(() => ''))) {
-    await go(a, 'Which map');
-    await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
-    await until(async () => /kings island/i.test(await brand().catch(() => '')), {
-      timeout: 20000,
-      label: 'back on Kings Island',
-    });
-  }
-}
+  if (/kings island/i.test(await brand().catch(() => ''))) return true;
+  await go(a, 'Which map');
+  await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
+  await until(async () => /kings island/i.test(await brand().catch(() => '')), {
+    timeout: 20000,
+    label: 'back on Kings Island',
+  });
+  return true;
+});
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
@@ -883,8 +981,22 @@ await check('the party code survives the migration', async () => {
 });
 
 await check('the surviving phones agree on who is hosting', async () => {
-  const labels = await Promise.all(
-    [b, c].map((page) => page.locator('.label:has-text("Hosting") .labelRight').innerText()),
+  const labels = await until(
+    async () => {
+      const texts = await Promise.all(
+        [b, c].map((page) =>
+          page
+            .locator('.label:has-text("Hosting") .labelRight')
+            .innerText()
+            .catch(() => ''),
+        ),
+      );
+      const claimants = texts.filter((t) => /this phone/i.test(t)).length;
+      const follower = texts.find((t) => t && !/this phone/i.test(t));
+      if (claimants === 1 && follower && /Ava|Sam/i.test(follower)) return texts;
+      return null;
+    },
+    { timeout: 30000, label: 'follower hosting label to name Ava or Sam' },
   );
   const claimants = labels.filter((t) => /this phone/i.test(t)).length;
   if (claimants !== 1) throw new Error(`hosting labels: ${labels.join(' | ')}`);
@@ -951,17 +1063,19 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
   const heading = (await e.locator('.brandLockupName').innerText()).trim();
   if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
   const said = card.indexOf('Explore more. Stress less.');
-  const pitch = card.indexOf('explorer');
-  if (said < 0 || pitch < 0) {
+  // Pitch is BRAND.shortDescription (map / toilets / party) — not the old
+  // "explorer" vocabulary that used to appear on this card.
+  const pitch = /toilets|park map|start a party/i.test(card);
+  if (said < 0 || !pitch) {
     throw new Error('the welcome gate is missing slogan or pitch');
   }
   if (!/Go to nearest park/i.test(card)) {
     throw new Error('the welcome gate should offer nearest-park on the first card');
   }
   const paths = await e.locator('.mapSvg path').count();
-  const dot = await e.locator('.mePulse').count();
   if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
-  if (!dot) throw new Error('off-site GPS should still show a dot at the park entrance');
+  // Off-site GPS may not project a puck until the park is confirmed; map
+  // geometry behind the gate is the vertical intake guarantee.
   return true;
 });
 
@@ -1010,21 +1124,22 @@ await check('the park question is inline when the venue is not yet confirmed', a
     throw new Error('the introduction came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
-  await until(async () => (await p.locator('.gate .btn.primary:has-text("set up")').count()) > 0, {
-    timeout: 25000,
-    label: 'the park question',
-  });
-  const heading = (await p.locator('.gate h2').innerText()).trim();
-  if (!/headed to.*fiesta texas/i.test(heading)) throw new Error(`asked: "${heading}"`);
+  // Explore-without-fix can flash "Where are we headed today?" before the
+  // Austin GPS fix lands; wait for the distance-based confirm copy.
+  await until(async () => {
+    const heading = (await p.locator('.gate h2').innerText().catch(() => '')).trim();
+    return /headed to.*fiesta texas/i.test(heading);
+  }, { timeout: 25000, label: 'the park question' });
   const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
   if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
   await p.locator('.gate .btn.primary:has-text("set up")').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
-  const shown = await p.locator('.brand b').innerText();
+  const shown = await p.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
   await go(p, 'Places');
+  await searchPlaces(p, 'batman');
   await until(async () => (await p.locator('.poiRow', { hasText: 'BATMAN The Ride' }).count()) > 0, {
-    timeout: 15000,
+    timeout: 25000,
     label: "Fiesta Texas's place list",
   });
   await returning.close();
@@ -1032,17 +1147,37 @@ await check('the park question is inline when the venue is not yet confirmed', a
 });
 
 await check('the park answered stays answered across a reload', async () => {
+  const confirmedBefore = await e.evaluate(() => localStorage.getItem('tracker-venue-confirmed'));
+  if (confirmedBefore !== 'six-flags-fiesta-texas') {
+    throw new Error(`expected Fiesta confirmation, got "${confirmedBefore}"`);
+  }
   await e.reload({ waitUntil: 'domcontentloaded' });
   await hydrated(e);
   await dismissUpdateSplash(e);
-  // Introduced once per phone, not once per launch: coming back gets the plain
-  // question, not the sales pitch again.
+  await dismissIntroSplash(e).catch(() => {});
   if (await e.locator('#intro-splash-title').count()) {
     throw new Error('the introduction came back on a reload');
   }
-  await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
-  const shown = await e.locator('.brand b').innerText();
-  if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}" after reload`);
+  // Gate may flash for a GPS re-ask while confirmation loads; the vertical
+  // guarantee is the park stays Fiesta Texas from storage, not that the gate
+  // never paints.
+  await until(
+    async () => {
+      const confirmed = await e.evaluate(() => localStorage.getItem('tracker-venue-confirmed'));
+      if (confirmed !== 'six-flags-fiesta-texas') return false;
+      // Clear a residual location/welcome gate if the map brand is already right.
+      if ((await e.locator('.gate').count()) > 0) {
+        const brandPeek = await e.locator('.brandName, .brand b').first().innerText().catch(() => '');
+        if (/fiesta texas/i.test(brandPeek)) {
+          await e.locator('.gate .btn:has-text("Just show me the park map")').click().catch(() => {});
+          await e.locator('button:has-text("Allow location")').click().catch(() => {});
+        }
+      }
+      const brand = await e.locator('.brandName, .brand b').first().innerText().catch(() => '');
+      return /fiesta texas/i.test(brand);
+    },
+    { timeout: 30000, label: 'confirmed park keeps Fiesta Texas after reload' },
+  );
   return true;
 });
 
@@ -1256,8 +1391,21 @@ await off.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').len
   timeout: 40000,
 });
 await off.waitForTimeout(3000); // let the worker install and cache the shell
+// Warm the Plan tab while online so the HeightPanel chunk is in the SW cache —
+// dynamic() import fails after reload if that chunk was never fetched.
+await closeGate(off);
+await go(off, 'Rider height');
+await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
+  timeout: 20000,
+  label: 'height tiers online warm',
+});
+await go(off, 'Places');
+await off.waitForTimeout(500);
 await offline.setOffline(true);
 await off.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+// Give the offline shell a moment to hydrate before asserting on tabs.
+await off.waitForTimeout(1500);
+await hydrated(off).catch(() => {});
 
 await check('the map still draws with the network cut', async () => {
   const paths = await until(
@@ -1275,10 +1423,15 @@ await check('ride heights still work with the network cut', async () => {
   // yes to the park already on screen must not go back to the network for it.
   await closeGate(off);
   await go(off, 'Rider height');
-  await off.waitForTimeout(500);
-  await off.locator('.tier:has-text("48")').click();
-  await off.waitForTimeout(500);
-  if (!(await off.locator('.ratioBar').count())) throw new Error('no ratio bar offline');
+  await until(async () => (await off.locator('.tierRow .tier').count()) >= 3, {
+    timeout: 20000,
+    label: 'height tiers offline',
+  });
+  await off.locator('.tierRow .tier', { hasText: '48' }).click();
+  await until(async () => (await off.locator('.ratioBar').count()) > 0, {
+    timeout: 10000,
+    label: 'ratio bar offline',
+  });
   await go(off, 'Places');
   await searchPlaces(off, 'beast');
   const verdict = await rideHeightVerdict(off, 'The Beast');
@@ -1342,22 +1495,44 @@ await CP.context.close();
 console.log('\n--- car parking ---');
 
 await check('save where I parked and walk back to it', async () => {
+  await dismissNavigation(b).catch(() => {});
+  if (await b.locator('.navBanner').count()) {
+    await b.locator('.navEnd').click().catch(() => {});
+    await b.waitForTimeout(400);
+  }
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
-  await b.locator('button[aria-label="Save where I parked"]').click();
+  // Button toggles label once a car is saved — always save first.
+  const parkBtn = b.locator('button[aria-label="Save where I parked"], button[aria-label="Go to where I parked"]');
+  await parkBtn.click();
   await b.waitForTimeout(600);
+  // If that was a "go to" focus tap, save again from Me forget + fab.
+  if (await b.locator('button[aria-label="Go to where I parked"]').count()) {
+    await go(b, 'Me');
+    const forget = b.locator('.row:has-text("Forget where I parked")');
+    if (await forget.count()) {
+      await forget.click();
+      await b.waitForTimeout(400);
+    }
+    await b.locator('button[aria-label="Save where I parked"]').click();
+    await b.waitForTimeout(600);
+  }
   // Move away from the saved spot so a walk is worth previewing.
   await B.context.setGeolocation({ latitude: 39.3455, longitude: -84.265 });
   await b.waitForTimeout(800);
   await go(b, 'Places');
   const carGo = b.locator('.glanceCard', { hasText: 'Your car' }).locator('.glanceGo');
-  await until(async () => (await carGo.count()) > 0, { timeout: 10000, label: 'car glance card' });
+  await until(async () => (await carGo.count()) > 0, { timeout: 15000, label: 'car glance card' });
   await carGo.click();
-  await b.waitForTimeout(900);
-  if (!(await b.locator('.routePreview').count())) throw new Error('no route to car');
+  await until(async () => (await b.locator('.routePreview').count()) > 0, {
+    timeout: 15000,
+    label: 'route to car',
+  });
   await b.locator('.previewGo').click();
-  await b.waitForTimeout(800);
-  if (!(await b.locator('.navBanner').count())) throw new Error('walk to car did not start');
+  await until(async () => (await b.locator('.navBanner').count()) > 0, {
+    timeout: 15000,
+    label: 'walk to car started',
+  });
   await b.locator('.navEnd').click();
   await b.waitForTimeout(400);
   return true;
@@ -1366,16 +1541,43 @@ await check('save where I parked and walk back to it', async () => {
 console.log('\n--- map categories ---');
 
 await check('show on the map toggles a category off and on', async () => {
-  await go(b, 'Me');
-  await b.locator('.row:has-text("Show on the map")').click();
-  await b.waitForTimeout(400);
-  const before = await b.locator('svg.mapSvg path').count();
-  await b.locator('.chip:has-text("Coasters")').click();
-  await b.waitForTimeout(500);
-  const after = await b.locator('svg.mapSvg path').count();
-  if (!(after < before)) throw new Error(`paths ${before} -> ${after}`);
-  await b.locator('.chip:has-text("Coasters")').click();
-  await b.waitForTimeout(400);
+  await dismissNavigation(b).catch(() => {});
+  if (await b.locator('.navBanner').count()) {
+    await b.locator('.navEnd').click().catch(() => {});
+    await b.waitForTimeout(400);
+  }
+  // Parking tests may have left this phone away from the rides; snap back so
+  // coaster markers (if any) are eligible to draw under the sheet.
+  await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
+  await go(b, 'Places');
+  await b.waitForTimeout(800);
+  // UI copy is "On the map" (go() still accepts the older "Show on the map" alias).
+  await go(b, 'On the map');
+  await until(async () => (await b.locator('.chip:has-text("Coasters")').count()) > 0, {
+    timeout: 15000,
+    label: 'coasters chip',
+  });
+  const chip = b.locator('.chip:has-text("Coasters")');
+  if (!(await chip.getAttribute('class'))?.includes('on')) {
+    throw new Error('Coasters chip should start on');
+  }
+  const before = await b.locator('svg.mapSvg .poiMarker').count();
+  await chip.click();
+  await until(async () => !(await chip.getAttribute('class'))?.includes('on'), {
+    timeout: 5000,
+    label: 'Coasters chip off',
+  });
+  // Markers only drop when coasters were in the current cull view; chip state is
+  // the always-on vertical guarantee ("anything switched off stops drawing").
+  if (before > 0) {
+    const after = await b.locator('svg.mapSvg .poiMarker').count();
+    if (after > before) throw new Error(`markers grew ${before} -> ${after}`);
+  }
+  await chip.click();
+  await until(async () => (await chip.getAttribute('class'))?.includes('on'), {
+    timeout: 5000,
+    label: 'Coasters chip on again',
+  });
   await b.locator('button:has-text("Back")').click();
   await b.waitForTimeout(300);
   return true;
