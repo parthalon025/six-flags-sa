@@ -78,6 +78,8 @@ Each issue must include:
 
 After filing, mention the issue number in your task summary and continue with your assigned work.
 
+Concurrent Cloud Agent tasks share `/workspace`. Do not `git checkout` there — use `npm run worktree:create` (`scripts/worktree.mjs`) so another task cannot clobber uncommitted files. Apply the `agent-handoff` label when filing.
+
 ## Builder ↔ app contract
 
 The venue builder (`scripts/build-venue.mjs` and its helpers in `scripts/lib/`, plus `scripts/attractions.mjs`, `scripts/trace-venue.mjs`, `scripts/venue-*.mjs`) is the only thing allowed to write `public/venues/*.map.json`, `public/venues/*.pois.json`, `public/venues/manifest.json` and the generated `lib/venueIndex.js`. Everything the app reads at runtime comes out of that pipeline.

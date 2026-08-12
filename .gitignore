@@ -10,6 +10,7 @@ out
 
 # isolated worktrees agents check out while working in parallel
 .claude/worktrees/
+.worktrees/
 
 # skills.sh agent junctions/copies — canonical trees are .agents/skills + skills-lock.json
 agent/

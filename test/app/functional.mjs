@@ -206,11 +206,11 @@ await check('GO NOW card carries a Why? explanation', async () => {
 
 await check('theme toggle flips data-theme', async () => {
   const before = await a.evaluate(() => document.documentElement.dataset.theme);
-  await a.locator('button[aria-label*="map"]').first().click();
+  await a.getByRole('button', { name: /Switch to (night|daylight) map/ }).click();
   await a.waitForTimeout(300);
   const after = await a.evaluate(() => document.documentElement.dataset.theme);
   if (before === after) throw new Error('theme did not change');
-  await a.locator('button[aria-label*="map"]').first().click();
+  await a.getByRole('button', { name: /Switch to (night|daylight) map/ }).click();
   await a.waitForTimeout(300);
   return true;
 });
