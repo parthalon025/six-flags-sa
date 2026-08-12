@@ -1,15 +1,24 @@
 import './globals.css';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import { BRAND } from '@/lib/brand';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-/* Self-hosted by Next — same-origin, so park wifi and the service worker can
-   keep it after the first load. Used for PARKBOUND, attraction names, and big
-   numbers; body copy stays on the system UI stack. */
-const display = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+/* Checked into public/fonts so CI and park wifi never depend on fetching
+   Google at build or first paint. Variable face covers 500–800. */
+const display = localFont({
+  src: [
+    {
+      path: '../public/fonts/plus-jakarta-sans-latin.woff2',
+      weight: '500 800',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/plus-jakarta-sans-latin-ext.woff2',
+      weight: '500 800',
+      style: 'normal',
+    },
+  ],
   variable: '--font-display',
   display: 'swap',
 });

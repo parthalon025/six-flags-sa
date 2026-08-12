@@ -21,9 +21,10 @@ coverage/
 packages/venue-builder/**
 !packages/venue-builder/package.json
 
-# Repo scripts are not part of the Next build (ignoreCommand is listed below).
+# Repo scripts are not part of the Next build (ignoreCommand + bump stay).
 scripts/**
 !scripts/vercel-ignore.sh
+!scripts/bump-version.mjs
 
 *.md
 !apps/party-tracker/**/*.md
