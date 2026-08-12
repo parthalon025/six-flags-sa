@@ -15,8 +15,11 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Paths `gitnexus:sync` stages. `scripts/gitnexus-sync.mjs` imports this list. */
+/** Paths the post-merge refresh stages. `scripts/gitnexus-sync.mjs` imports this list. */
 export const GITNEXUS_INDEX_PATHS = ['.gitnexus/', 'AGENTS.md', 'CLAUDE.md'];
+
+/** Commit subject used by `gitnexus-sync.mjs finish --commit`. */
+export const GITNEXUS_REFRESH_MESSAGE = 'chore: refresh gitnexus index';
 
 export function isGitnexusCiNoise(file) {
   const norm = String(file || '')

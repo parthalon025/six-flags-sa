@@ -16,7 +16,15 @@ import {
   isGitnexusOnlyChange,
 } from '../../scripts/gitnexus-ci.mjs';
 
+import {
+  GITNEXUS_INDEX_PATHS,
+  GITNEXUS_REFRESH_MESSAGE,
+  isGitnexusCiNoise,
+  isGitnexusOnlyChange,
+} from '../../scripts/gitnexus-ci.mjs';
+
 assert.deepEqual(GITNEXUS_INDEX_PATHS, ['.gitnexus/', 'AGENTS.md', 'CLAUDE.md']);
+assert.equal(GITNEXUS_REFRESH_MESSAGE, 'chore: refresh gitnexus index');
 
 assert.equal(isGitnexusCiNoise('.gitnexus/meta.json'), true);
 assert.equal(isGitnexusCiNoise('.gitnexus/lbug'), true);

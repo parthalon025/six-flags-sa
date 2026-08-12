@@ -23,7 +23,8 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Stamp app version on dev/build | `apps/party-tracker/scripts/inject-version.mjs` (`predev` / `prebuild`) |
 | Bump semver after merge to `main` | `.github/workflows/bump-version.yml` → `scripts/bump-version.mjs` |
 | Regenerate venue output | `npm run venues:build` / `venues:rebuild` (see builder-app-contract rule) |
-| Refresh GitNexus index | `npm run gitnexus:startup` / `gitnexus:sync` |
+| Refresh GitNexus index on `main` | `.github/workflows/bump-version.yml` → `scripts/gitnexus-sync.mjs finish --commit` |
+| Session GitNexus graph | `npm run gitnexus:startup` (do not commit; see gitnexus-sync rule) |
 
 When adding new policy, ask: *can a script or workflow own this?* If yes, write
 that first and keep agent instructions to when and why to invoke it.

@@ -1,0 +1,43 @@
+# Manual retry when the post-merge GitNexus refresh in bump-version.yml fails.
+# Automatic refresh lives there because GITHUB_TOKEN pushes do not trigger
+# a second workflow.
+
+name: Refresh GitNexus index
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gitnexus-refresh-main
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install GitNexus CLI
+        run: npm install -g gitnexus
+
+      - name: Refresh GitNexus index
+        run: node scripts/gitnexus-sync.mjs finish --commit
+
+      - name: Push
+        run: git push
