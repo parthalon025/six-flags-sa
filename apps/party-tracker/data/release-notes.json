@@ -138,5 +138,11 @@
     "items": [
       "fix: close open GitHub handoff issues"
     ]
+  },
+  "1.1.23": {
+    "title": "What's new",
+    "items": [
+      "fix: look up places by id, not the printed title"
+    ]
   }
 }
