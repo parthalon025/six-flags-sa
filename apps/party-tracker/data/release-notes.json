@@ -150,5 +150,11 @@
     "items": [
       "fix: clear editor diagnostics and land leftover glossary notes"
     ]
+  },
+  "1.2.0": {
+    "title": "What's new",
+    "items": [
+      "feat: fold eligibility onto the party roster"
+    ]
   }
 }
