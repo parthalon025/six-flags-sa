@@ -114,5 +114,11 @@
     "items": [
       "ci: skip Test app and version bumps on GitNexus-only commits"
     ]
+  },
+  "1.1.19": {
+    "title": "What's new",
+    "items": [
+      "Align Park Bound with CONTEXT.md glossary"
+    ]
   }
 }
