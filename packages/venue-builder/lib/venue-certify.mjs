@@ -22,6 +22,7 @@ import { compareParksApiToBundle } from './adapters/parks-api.mjs';
 import { compareQueueTimesToBundle } from './adapters/queue-times.mjs';
 import { collectExternalClaims } from './external-claims.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
+import { looksLikeFalseRide } from './non-ride-names.mjs';
 
 export const CERT_VERSION = 1;
 
@@ -186,6 +187,26 @@ export function certifyVenue(id, opts = {}) {
       confidence: heightsConfidence,
       falsifier: 'A park with rides ships without height filter coverage',
       soWhat: 'Guests cannot filter by rider height offline without these rules',
+    }),
+  );
+
+  /* ---- false rides (chart headers / arcades) ---- */
+  const falseRides = rides.filter((p) => looksLikeFalseRide(p));
+  checks.push(
+    check({
+      key: 'false-rides',
+      claim: 'No height-chart headers or arcades ship as Rideable',
+      pass: falseRides.length === 0,
+      evidence: {
+        numerator: rides.length - falseRides.length,
+        denominator: rides.length,
+        detail: falseRides.length
+          ? falseRides.map((p) => p.n).join('; ')
+          : 'no false rides in bundle',
+      },
+      confidence: falseRides.length === 0 ? 'high' : 'low',
+      falsifier: 'OSM or height-chart ingest files amenity names as rides',
+      soWhat: 'Families see "Check at the ride" for places they cannot queue for',
     }),
   );
 

@@ -30,8 +30,8 @@
         "denominator": 1,
         "detail": "manifest and disk agree",
         "counts": {
-          "pois": 165,
-          "rides": 69,
+          "pois": 164,
+          "rides": 68,
           "heights": 65,
           "campsites": 0,
           "paths": 764,
@@ -47,8 +47,8 @@
       "claim": "Path graph has ≤2 islands and every ride snaps to the network",
       "pass": true,
       "evidence": {
-        "numerator": 69,
-        "denominator": 69,
+        "numerator": 68,
+        "denominator": 68,
         "detail": "1 component(s), 0 ride(s) >35 m from network",
         "components": 1,
         "largestComponent": 4,
@@ -64,13 +64,26 @@
       "pass": true,
       "evidence": {
         "numerator": 56,
-        "denominator": 69,
-        "detail": "56 of 69 rides carry height rules",
+        "denominator": 68,
+        "detail": "56 of 68 rides carry height rules",
         "declaredAbsent": false
       },
       "confidence": "moderate",
       "falsifier": "A park with rides ships without height filter coverage",
       "soWhat": "Guests cannot filter by rider height offline without these rules"
+    },
+    {
+      "key": "false-rides",
+      "claim": "No height-chart headers or arcades ship as Rideable",
+      "pass": true,
+      "evidence": {
+        "numerator": 68,
+        "denominator": 68,
+        "detail": "no false rides in bundle"
+      },
+      "confidence": "high",
+      "falsifier": "OSM or height-chart ingest files amenity names as rides",
+      "soWhat": "Families see \"Check at the ride\" for places they cannot queue for"
     },
     {
       "key": "entrances",
@@ -107,7 +120,7 @@
       "evidence": {
         "numerator": 10,
         "denominator": 10,
-        "detail": "10/10 caches, 0 gap(s); claims=55+45; attached=74",
+        "detail": "10/10 caches, 0 gap(s); claims=55+44; attached=73",
         "declared": [
           "parks-api",
           "queue-times",
@@ -123,7 +136,7 @@
         "missingRequired": [],
         "bySource": {
           "parks_api": 55,
-          "queue_times": 44,
+          "queue_times": 43,
           "open_meteo": 1
         }
       },
@@ -160,10 +173,9 @@
         "key": "heights",
         "need": "Ride height requirements",
         "blocking": false,
-        "why": "13 of 69 rides at Kings Island (Mason, Ohio) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
+        "why": "12 of 68 rides at Kings Island (Mason, Ohio) carry no rule, so each of them reads \"check at the ride\" and none of them can be filtered out for a child who is too small.",
         "targets": [
           "3 Point Challange",
-          "Arcade Games",
           "Bank Ball",
           "Beagle Scout Acres",
           "Goblet Toss",
@@ -183,7 +195,7 @@
           "Write down where each number came from. If a ride is not on the park's site, leave it out entirely and say so — an omission is recoverable and a guess is not.",
           "Some of the list will not be rides. A midway game, an arcade, a lounge and a splash pool all arrive tagged as attractions and none of them has a height on a sign. Say which ones those are rather than inventing a rule for them — that answer is a fix to the category rules in scripts/lib/osm-tags.mjs, which helps every venue, not just this one."
         ],
-        "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"3 Point Challange\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" },\n    \"Arcade Games\": { \"h\": { \"min\": 0, \"alone\": null, \"max\": null } }\n  }\n}",
+        "schema": "{\n  \"credits\": \"Height requirements were compiled from … for the 2026 season.\",\n  \"pois\": {\n    \"3 Point Challange\": { \"h\": { \"min\": 48, \"alone\": null, \"max\": null }, \"note\": \"300 lb maximum.\" },\n    \"Bank Ball\": { \"h\": { \"min\": 0, \"alone\": null, \"max\": null } }\n  }\n}",
         "rules": [
           "`min` is the floor nobody rides under. `min: 0` is the park saying there is no floor, and the app reads that back as \"No minimum\" — that is the right answer for a lazy river, and it is not the same as `null`, which means nobody has looked yet.",
           "`alone` is the height below which a supervising rider has to come along. `max` is a ceiling, which most rides have none of.",
@@ -206,17 +218,6 @@
           "graduation": "overrides_heights",
           "sourceGap": "heights",
           "target": "3 Point Challange",
-          "blocking": false,
-          "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
-          "need": "Ride height requirements"
-        },
-        {
-          "venueId": "kings-island",
-          "type": "height_rule",
-          "tier": 2,
-          "graduation": "overrides_heights",
-          "sourceGap": "heights",
-          "target": "Arcade Games",
           "blocking": false,
           "whyOpenSourceFails": "Height rules are park policy prose, not OSM geometry. Official pages help; signs on the day win.",
           "need": "Ride height requirements"
@@ -401,14 +402,14 @@
         }
       ],
       "counts": {
-        "durable": 13,
+        "durable": 12,
         "ambient": 5
       }
     },
     "inventory": [
       {
         "key": "parks-api-inventory",
-        "need": "ParksAPI matched 32/69 rides — declare gaps or improve aliases",
+        "need": "ParksAPI matched 32/68 rides — declare gaps or improve aliases",
         "blocking": false
       }
     ]
