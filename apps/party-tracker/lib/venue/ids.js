@@ -71,6 +71,44 @@ export const identityOf = (poi) => {
   return title;
 };
 
+/** True when two records are the same Place, not merely the same title. */
+export const samePlace = (a, b) => Boolean(a && b && identityOf(a) && identityOf(a) === identityOf(b));
+
+/**
+ * Resolve a place from a list. `ref` may be an issued id, a title, or a
+ * place-like / nav object (`placeId`, `i`, `id`, `n`, `label`). Identity
+ * wins; title is only the fallback for older payloads that carried a label
+ * and no id.
+ */
+export function findPlace(pois, ref) {
+  const list = pois || [];
+  if (ref == null || ref === '') return null;
+  const id =
+    typeof ref === 'string'
+      ? ref
+      : ref.placeId || identityOf(ref) || '';
+  if (id) {
+    const byId = list.find((p) => identityOf(p) === id || p.i === id || p.id === id);
+    if (byId) return byId;
+  }
+  const title = typeof ref === 'string' ? ref : titleOf(ref) || ref.label || '';
+  if (!title) return null;
+  return list.find((p) => p.n === title) || null;
+}
+
+/** Nav payload for walking to a place. Carries `placeId` so two restrooms
+ *  with the same title do not resolve to the first one in the file. */
+export function placeNav(poi) {
+  if (!poi) return null;
+  return {
+    kind: 'poi',
+    label: titleOf(poi),
+    lat: poi.lat,
+    lng: poi.lng,
+    placeId: identityOf(poi),
+  };
+};
+
 /** @returns a new array of POIs, each with an `id`. Input is not mutated. */
 export function withIds(pois) {
   const list = pois || [];

@@ -11,6 +11,7 @@ import { campChips, campDetails } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { WORDS } from '@/lib/brand';
+import { placeNav } from '@/lib/venue/ids';
 
 /**
  * The open face of a place: notes, camp checklist, phone, ride status, and the
@@ -94,7 +95,7 @@ export function PlaceDetailBody({
         <button
           type="button"
           className="btn small primary iconOnly"
-          onClick={() => onNavigate({ kind: 'poi', label: poi.n, lat: poi.lat, lng: poi.lng })}
+          onClick={() => onNavigate(placeNav(poi))}
           aria-label={WORDS.navigation}
         >
           <Icon name="location.fill" size={18} />

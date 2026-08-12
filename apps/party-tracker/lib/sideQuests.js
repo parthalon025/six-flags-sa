@@ -6,6 +6,7 @@
  */
 
 import { distance } from './geo.js';
+import { findPlace, identityOf } from './venue/ids.js';
 
 /** A quest with a target this close counts as "right here" while you walk. */
 export const NEARBY_RADIUS_M = 150;
@@ -37,10 +38,11 @@ const TIER1 = [
  */
 export function buildSideQuests({ pois = [], venueName = 'this park' } = {}) {
   const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
-  const noHeight = rides.filter((p) => !p.h).map((p) => p.n).filter(Boolean);
-  const noEntrance = rides.filter((p) => !p.e).map((p) => p.n).filter(Boolean);
+  const noHeight = rides.filter((p) => !p.h);
+  const noEntrance = rides.filter((p) => !p.e);
   const hasRestroom = pois.some((p) => p.c === 'restroom');
   const hasFood = pois.some((p) => p.c === 'food');
+  const targetIds = (list) => list.slice(0, 8).map((p) => identityOf(p) || p.n).filter(Boolean);
 
   const durable = [];
 
@@ -50,7 +52,7 @@ export function buildSideQuests({ pois = [], venueName = 'this park' } = {}) {
       type: 'height_rule',
       title: 'Confirm height on the sign',
       blurb: `${noHeight.length} ride${noHeight.length === 1 ? '' : 's'} at ${venueName} still say “check at the ride”.`,
-      targets: noHeight.slice(0, 8),
+      targets: targetIds(noHeight),
       icon: 'flag.fill',
     });
   }
@@ -61,7 +63,7 @@ export function buildSideQuests({ pois = [], venueName = 'this park' } = {}) {
       type: 'geometry_nudge',
       title: 'Pin the queue entrance',
       blurb: 'Stand where the line starts and drop a pin — OSM rarely has this.',
-      targets: noEntrance.slice(0, 8),
+      targets: targetIds(noEntrance),
       icon: 'mappin.and.ellipse',
     });
   }
@@ -102,7 +104,7 @@ export function nearestTargetDistance(quest, pois = [], position = null) {
   if (!quest?.targets?.length) return null;
   let best = null;
   for (const name of quest.targets) {
-    const poi = pois.find((p) => p.n === name);
+    const poi = findPlace(pois, name);
     if (!poi || !Number.isFinite(poi.lat) || !Number.isFinite(poi.lng)) continue;
     const d = distance(position.lat, position.lng, poi.lat, poi.lng);
     if (best == null || d < best) best = d;

@@ -13,6 +13,7 @@ import {
   matchesQuery,
 } from '@/lib/park';
 import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
+import { samePlace } from '@/lib/venue/ids';
 import { campDetails, campSearchText } from '@/lib/camping';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
 import { PlaceDetailBody } from '@/components/PlaceDetail';
@@ -193,7 +194,7 @@ export default function PlaceList({
     const verdict = isRide ? eligibility(p, height, withAdult) : 'unknown';
     const v = VERDICT[verdict];
     const d = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
-    const open = selected && selected.n === p.n;
+    const open = selected && samePlace(selected, p);
     const st = statuses.get(p.id) || null;
     const showStatus = Boolean(st && st.label);
     return (
