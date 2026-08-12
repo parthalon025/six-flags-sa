@@ -129,7 +129,7 @@ export default function MapLegend({
                         colour={palette.categories.coaster}
                         barredInk={palette.barred}
                         r={7.4}
-                        state="no"
+                        state="not"
                       />
                     </svg>
                     <b>Too short today</b>

@@ -1,97 +1,38 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { HEIGHT_TIERS, eligibility, isRideable } from '@/lib/park';
+import { useMemo } from 'react';
+import { HEIGHT_TIERS, isRideable } from '@/lib/park';
+import { fold } from '@/lib/eligibility';
+import { identityOf } from '@/lib/venue/ids';
 import { usePois } from '@/lib/venue/useVenue';
-import {
-  MAX_GUESTS,
-  addGuestProfile,
-  findGuestProfile,
-  loadActiveGuestId,
-  loadGuestProfiles,
-  removeGuestProfile,
-  saveActiveGuestId,
-  saveGuestProfiles,
-  updateGuestProfile,
-} from '@/lib/guestProfiles';
 
 /* The height requirement is the thing a family checks twenty times a day, so it
    gets a screen of its own rather than a block at the top of a list: tap a
    tier, read the bar, and everything a rider can't get on fades out on the map
    and drops out of the list behind you.
 
-   A party is usually more than one rider, so this also keeps a small roster
-   of guest profiles (label + height + whether an adult is assumed along) in
-   localStorage — never on the party wire, since a child's height is nobody
-   else's business. Selecting a guest just drives the same height/withAdult
-   state this panel always had, so the map, the list and the tally below
-   need no separate "which guest" plumbing of their own. */
+   This panel edits this phone's own height / With adult. Map, list and glance
+   Eligibility is a fold over the Party roster (or this local height when there
+   is no Party) — not a second guest-chip roster. */
 
 const TIERS = HEIGHT_TIERS;
 
+const sliderPerson = (height, withAdult) => [
+  { id: 'self', name: 'You', height, withAdult: withAdult === true },
+];
+
 export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, venue }) {
   const POIS = usePois();
-  const [guests, setGuests] = useState([]);
-  const [activeId, setActiveId] = useState(null);
-  const [guestsLoaded, setGuestsLoaded] = useState(false);
-
-  useEffect(() => {
-    setGuests(loadGuestProfiles());
-    setActiveId(loadActiveGuestId());
-    setGuestsLoaded(true);
-  }, []);
-
-  const selectGuest = (id) => {
-    const nextId = id === activeId ? null : id;
-    setActiveId(nextId);
-    saveActiveGuestId(nextId);
-    const g = findGuestProfile(guests, nextId);
-    if (g) {
-      onHeight(g.heightIn);
-      onWithAdult(g.withAdult);
-    }
-  };
-
-  const addGuest = () => {
-    const next = addGuestProfile(guests, {
-      label: `Guest ${guests.length + 1}`,
-      heightIn: height,
-      withAdult,
-    });
-    if (next.length === guests.length) return; // already at MAX_GUESTS
-    setGuests(saveGuestProfiles(next));
-    selectGuest(next[next.length - 1].id);
-  };
-
-  const removeGuest = (id) => {
-    setGuests(saveGuestProfiles(removeGuestProfile(guests, id)));
-    if (id === activeId) {
-      setActiveId(null);
-      saveActiveGuestId(null);
-    }
-  };
-
-  // Hand-adjusting the tier, slider or "adult along" chip while a guest is
-  // selected keeps that guest's saved profile in sync, so switching to
-  // another guest and back does not lose the change.
-  useEffect(() => {
-    if (!guestsLoaded || !activeId) return;
-    const g = findGuestProfile(guests, activeId);
-    if (!g || (g.heightIn === height && g.withAdult === withAdult)) return;
-    setGuests(saveGuestProfiles(updateGuestProfile(guests, activeId, { heightIn: height, withAdult })));
-    // Only the values themselves should re-sync — re-running this because the
-    // guest list object changed would fight the edit it just made.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [height, withAdult]);
 
   const counts = useMemo(() => {
     if (height == null) return null;
+    const view = fold(sliderPerson(height, withAdult), POIS);
     const tally = { yes: 0, companion: 0, no: 0 };
     POIS.forEach((p) => {
       if (!isRideable(p)) return;
-      const v = eligibility(p, height, withAdult);
-      if (v === 'yes') tally.yes += 1;
-      else if (v === 'companion') tally.companion += 1;
+      const k = view.at(identityOf(p)).kind;
+      if (k === 'eligible') tally.yes += 1;
+      else if (k === 'companion') tally.companion += 1;
       else tally.no += 1;
     });
     return tally;
@@ -103,12 +44,14 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
     if (height == null) return null;
     const next = TIERS.find((t) => t > height);
     if (!next) return null;
+    const now = fold(sliderPerson(height, withAdult), POIS);
+    const then = fold(sliderPerson(next, withAdult), POIS);
     let gained = 0;
     POIS.forEach((p) => {
       if (!isRideable(p)) return;
-      const now = eligibility(p, height, withAdult);
-      const then = eligibility(p, next, withAdult);
-      if ((now === 'no' || now === 'toobig') && (then === 'yes' || then === 'companion')) {
+      const id = identityOf(p);
+      const later = then.at(id).kind;
+      if (now.at(id).blocks && (later === 'eligible' || later === 'companion')) {
         gained += 1;
       }
     });
@@ -117,45 +60,6 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
 
   return (
     <div>
-      {guestsLoaded && (
-        <>
-          <div className="label">Guests</div>
-          <div className="chips guestChips wrap">
-            {guests.map((g) => (
-              <span key={g.id} className={`guestChip ${g.id === activeId ? 'on' : ''}`}>
-                <button
-                  type="button"
-                  className={`chip ${g.id === activeId ? 'on' : ''}`}
-                  onClick={() => selectGuest(g.id)}
-                  aria-pressed={g.id === activeId}
-                >
-                  {g.label}
-                  {g.heightIn != null ? ` · ${g.heightIn}"` : ''}
-                </button>
-                <button
-                  type="button"
-                  className="chipRemove"
-                  onClick={() => removeGuest(g.id)}
-                  aria-label={`Remove ${g.label}`}
-                >
-                  &times;
-                </button>
-              </span>
-            ))}
-            {guests.length < MAX_GUESTS && (
-              <button type="button" className="chip chipAdd" onClick={addGuest}>
-                + Add guest
-              </button>
-            )}
-          </div>
-          <p className="fine" style={{ marginTop: 0 }}>
-            {guests.length > 0
-              ? 'Tap a guest to load their height below, or tap it again to go back to a one-off height. Guests stay on this phone — never sent to the party.'
-              : 'Add a guest to save their height and reload it later. Guests stay on this phone — never sent to the party.'}
-          </p>
-        </>
-      )}
-
       <div className="label">
         Rider Height
         {height != null && (

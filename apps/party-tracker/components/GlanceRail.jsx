@@ -58,11 +58,9 @@ function GlanceRail({
   weather = null,
   rides = null,
   now = Date.now(),
-  // Rider height, inches, and whether an adult is riding along — the same
-  // pair the Rides tab uses for eligibility(). Optional: without a height
-  // the GO NOW cards just drop the eligibility line from their Why?.
-  height = null,
-  withAdult = true,
+  // Fold from fold(people, places). Optional: without it the GO NOW cards
+  // just drop the eligibility line from their Why?.
+  eligibility = null,
   // Called when the visitor gets rid of a card: {kind:'selected'} for the
   // place they tapped, {kind:'category', category} for a standing one.
   onDismiss = null,
@@ -218,7 +216,7 @@ function GlanceRail({
        amenity cards — recommendations beat the nearest toilet when the sky
        and the party say a ride is worth walking to. */
     if (!hidden?.includes('gonow')) {
-      const picks = recommendNow(pois, rides, weather, me, members, now, 2, { height, withAdult });
+      const picks = recommendNow(pois, rides, weather, me, members, now, 2, { eligibility });
       picks.forEach(({ poi, live, metres, why, factors }, i) => {
         const at = `${poi.lat},${poi.lng}`;
         if (out.some((c) => c.target && `${c.target.lat},${c.target.lng}` === at)) return;
@@ -294,8 +292,7 @@ function GlanceRail({
     weather,
     rides,
     now,
-    height,
-    withAdult,
+    eligibility,
   ]);
 
   const leadKey = cards[0]?.key ?? null;

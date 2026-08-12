@@ -68,7 +68,7 @@ function shapeOf(shape, r) {
  * `state` is height eligibility, and it is drawn rather than dimmed: opacity
  * already means "we have not heard from this person lately" over on the party
  * markers, and one channel cannot carry two meanings on the same map.
- *   'no' | 'toobig' — solid alarm red, ringed, struck through. Not today.
+ *   'not'           — solid alarm red, ringed, struck through. Not today.
  *   'companion'     — a plus badge. Rideable with a grown-up.
  *
  * The barred marker used to be the hollow one: category ink on a near-background
@@ -89,7 +89,7 @@ export const PoiMarker = memo(function PoiMarker({
 }) {
   const sym = symbolFor(category);
   const { d, gx, gy, gs } = shapeOf(sym.shape, r);
-  const barred = state === 'no' || state === 'toobig';
+  const barred = state === 'not';
   const solid = sym.shape !== 'chip';
 
   const fill = barred ? barredInk : solid ? colour : 'var(--markerChip)';
