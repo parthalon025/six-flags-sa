@@ -6975,6 +6975,14 @@ await check('soft-gate helper lives on the local session module', async () => {
     return true;
   });
 
+  await check('completeMagicSignIn title-cases email local-part display names', async () => {
+    clearLocalSession();
+    const session = await completeMagicSignIn({ email: 'ava@parkbound.example' });
+    assert.equal(session.displayName, 'Ava');
+    await signOutLocal();
+    return true;
+  });
+
   await check('completeMagicSignIn rejects a bare string without @', async () => {
     try {
       await completeMagicSignIn({ email: 'not-an-email' });

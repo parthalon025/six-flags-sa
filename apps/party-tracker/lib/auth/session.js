@@ -41,6 +41,18 @@ export function softGateBlocks(action, session) {
  * Dev / first-ship magic-link completion: exchange email for a local session
  * and cache the profile offline. Replace body with Auth.js callbacks later.
  */
+function titleCaseName(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return 'Guest';
+  return s
+    .split(/([\s._-]+)/)
+    .map((part) => (/^[\s._-]+$/.test(part) ? part.replace(/[._-]/g, ' ') : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()))
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40) || 'Guest';
+}
+
 export async function completeMagicSignIn({ email, displayName }) {
   const clean = String(email || '').trim().toLowerCase();
   if (!clean || !clean.includes('@')) throw new Error('Enter a valid email');
@@ -48,7 +60,7 @@ export async function completeMagicSignIn({ email, displayName }) {
   const session = {
     userId,
     email: clean,
-    displayName: String(displayName || clean.split('@')[0] || 'Guest').slice(0, 40),
+    displayName: titleCaseName(displayName || clean.split('@')[0] || 'Guest'),
     rank: 'visitor',
   };
   writeLocalSession(session);

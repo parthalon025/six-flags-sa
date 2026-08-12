@@ -793,17 +793,20 @@ export default function Page() {
     };
   }, [showToast, selectTab]);
 
-  /* Soft-gate (EP.3): finish /join only after a profile exists. */
+  /* Soft-gate (EP.3): finish /join only after a profile exists.
+     Join once from the ref so selectTab/showToast identity churn cannot
+     cancel an in-flight invite (that left phone C stuck unsigned-in on CI). */
+  const inviteJoinInFlight = useRef(false);
   useEffect(() => {
-    const pending = pendingInvite;
+    const pending = pendingInviteRef.current || pendingInvite;
     if (!pending?.payload || !runtimeApi) return undefined;
     if (softGateBlocks('party', authSession)) return undefined;
-    let cancelled = false;
+    if (inviteJoinInFlight.current) return undefined;
+    inviteJoinInFlight.current = true;
     const named = (pending.name || '').trim();
     const memberName = named || identityRef.current?.name || 'Guest';
     Promise.resolve(runtimeApi.joinParty(pending.payload, { memberName }))
       .then((snap) => {
-        if (cancelled) return;
         pendingInviteRef.current = null;
         setPendingInvite(null);
         selectTab('party');
@@ -814,11 +817,12 @@ export default function Page() {
         );
       })
       .catch((err) => {
-        if (!cancelled) showToast(err?.message || 'Could not open that invite.');
+        showToast(err?.message || 'Could not open that invite.');
+      })
+      .finally(() => {
+        inviteJoinInFlight.current = false;
       });
-    return () => {
-      cancelled = true;
-    };
+    return undefined;
   }, [pendingInvite, authSession, runtimeApi, selectTab, showToast]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
@@ -2482,8 +2486,13 @@ export default function Page() {
                 session={authSession}
                 onSession={(next) => {
                   setAuthSession(next);
+                  // Keep a park-day name (set under Me / /join). Only fill Guest.
                   if (next?.displayName) {
-                    setIdentity((i) => ({ ...i, name: next.displayName }));
+                    setIdentity((i) => {
+                      const cur = (i?.name || '').trim();
+                      if (cur && cur !== 'Guest') return i;
+                      return { ...i, name: next.displayName };
+                    });
                   }
                 }}
               />
@@ -2570,7 +2579,11 @@ export default function Page() {
                 onSession={(next) => {
                   setAuthSession(next);
                   if (next?.displayName) {
-                    setIdentity((i) => ({ ...i, name: next.displayName }));
+                    setIdentity((i) => {
+                      const cur = (i?.name || '').trim();
+                      if (cur && cur !== 'Guest') return i;
+                      return { ...i, name: next.displayName };
+                    });
                   }
                 }}
               />

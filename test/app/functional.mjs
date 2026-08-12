@@ -769,6 +769,11 @@ const C = await openPhone(browser, {
 });
 const c = C.page;
 await signIn(c, 'sam@parkbound.example');
+// Soft-gate defers /join until signed in; wait for the finish-join effect.
+await until(async () => (await c.locator('.codeText').count()) > 0, {
+  timeout: JOIN_TIMEOUT,
+  label: 'phone C soft-gate invite join',
+}).catch(() => {});
 
 await check('the invite link joins the party with nothing typed', async () => {
   await go(c, 'Party');
