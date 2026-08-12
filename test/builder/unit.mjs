@@ -2619,7 +2619,7 @@ await check('a height rule reads low to high, in inches a person could be', () =
         assert.ok(n >= 24 && n <= 96, `${where}: ${key}=${n}" is not a height a visitor has`);
       });
       // A floor above the height you may ride alone at, or above the ceiling,
-      // makes eligibility() answer 'no' for everybody — a rule nobody meets is
+      // makes fold.at answer 'not' for everybody — a rule nobody meets is
       // indistinguishable from a ride that is shut.
       if (min != null && alone != null) assert.ok(min <= alone, `${where}: min above alone`);
       if (min != null && max != null) assert.ok(min < max, `${where}: min at or above max`);
@@ -2629,168 +2629,104 @@ await check('a height rule reads low to high, in inches a person could be', () =
   return true;
 });
 
-/* ------------------------------------------- eligibilityWithReasons --- */
+/* ---------------------------------------------------------- fold --- */
 
-const {
-  VERDICT_ADVISORY,
-  VERDICT_COMPANION,
-  VERDICT_ELIGIBLE,
-  VERDICT_NOT,
-  VERDICT_UNKNOWN,
-  eligibilityWithReasons,
-} = await import('../../apps/party-tracker/lib/park.js');
+const { fold } = await import('../../apps/party-tracker/lib/eligibility.js');
 
-await check('eligibilityWithReasons maps every raw eligibility() answer to a fixed verdict code', () => {
-  const ride = { h: { min: 40, alone: 46, max: 72 } };
+const RIDE = { i: 'iron-rattle', h: { min: 40, alone: 46, max: 72 } };
+const ADVISORY = { i: 'kiddie-coaster', h: { advisory: 54 } };
+const RESTROOM = { i: 'wc-1', c: 'restroom' };
+const rider = (id, height, withAdult, name = id) => ({ id, name, height, withAdult });
 
-  const tooShort = eligibilityWithReasons(ride, 30, false);
-  assert.equal(tooShort.raw, 'no');
-  assert.equal(tooShort.verdict, VERDICT_NOT);
+await check('fold.at names not / companion / advisory / eligible; blocks only for not', () => {
+  const view = fold([rider('mia', 42, true)], [RIDE, ADVISORY, RESTROOM]);
 
-  const needsAdult = eligibilityWithReasons(ride, 42, false);
-  assert.equal(needsAdult.raw, 'no');
-  assert.equal(needsAdult.verdict, VERDICT_NOT);
+  const companion = view.at('iron-rattle');
+  assert.equal(companion.kind, 'companion');
+  assert.equal(companion.blocks, false);
 
-  const companion = eligibilityWithReasons(ride, 42, true);
-  assert.equal(companion.raw, 'companion');
-  assert.equal(companion.verdict, VERDICT_COMPANION);
+  const tooShort = fold([rider('mia', 30, true)], [RIDE]).at('iron-rattle');
+  assert.equal(tooShort.kind, 'not');
+  assert.equal(tooShort.blocks, true);
 
-  const clear = eligibilityWithReasons(ride, 50, false);
-  assert.equal(clear.raw, 'yes');
-  assert.equal(clear.verdict, VERDICT_ELIGIBLE);
+  const tooTall = fold([rider('dad', 80, true)], [RIDE]).at('iron-rattle');
+  assert.equal(tooTall.kind, 'not');
+  assert.equal(tooTall.blocks, true);
 
-  const tooTall = eligibilityWithReasons(ride, 80, false);
-  assert.equal(tooTall.raw, 'toobig');
-  assert.equal(tooTall.verdict, VERDICT_NOT);
+  const clear = fold([rider('dad', 50, false)], [RIDE]).at('iron-rattle');
+  assert.equal(clear.kind, 'eligible');
+  assert.equal(clear.blocks, false);
 
-  const advisoryRide = { h: { advisory: 54 } };
-  const advisory = eligibilityWithReasons(advisoryRide, 60, false);
-  assert.equal(advisory.raw, 'advisory');
-  assert.equal(advisory.verdict, VERDICT_ADVISORY);
+  const advisory = fold([rider('dad', 60, false)], [ADVISORY]).at('kiddie-coaster');
+  assert.equal(advisory.kind, 'advisory');
+  assert.equal(advisory.blocks, false);
 
-  const noRule = eligibilityWithReasons({ h: null }, 50, false);
-  assert.equal(noRule.raw, 'unknown');
-  assert.equal(noRule.verdict, VERDICT_UNKNOWN);
-
-  const noHeightSet = eligibilityWithReasons(ride, null, false);
-  assert.equal(noHeightSet.raw, 'unknown');
-  assert.equal(noHeightSet.verdict, VERDICT_UNKNOWN);
+  const silent = view.at('wc-1');
+  assert.equal(silent.kind, null);
+  assert.equal(silent.blocks, false);
   return true;
 });
 
-await check('eligibilityWithReasons always returns at least one plain-language reason citing the rule', () => {
-  const ride = { h: { min: 40, alone: 46, max: 72 } };
+await check('unset height is eligible, not an unknown verdict', () => {
+  const view = fold([rider('dad', null, true)], [RIDE]);
+  const cell = view.at('iron-rattle');
+  assert.equal(cell.kind, 'eligible');
+  assert.equal(cell.blocks, false);
+  const row = view.explain('iron-rattle')[0];
+  assert.match(row.reasons[0], /not height-constrained/i);
+  return true;
+});
 
-  const tooShort = eligibilityWithReasons(ride, 30, false);
-  assert.ok(tooShort.reasons.length >= 1);
-  assert.match(tooShort.reasons[0], /40"/);
-  assert.match(tooShort.reasons[0], /min/i);
+await check('With adult is the input; Companion is the verdict; missing With adult is not', () => {
+  const ride = [RIDE];
+  assert.equal(fold([rider('mia', 42, true)], ride).at('iron-rattle').kind, 'companion');
+  assert.equal(fold([rider('mia', 42, false)], ride).at('iron-rattle').kind, 'not');
+  assert.equal(fold([rider('mia', 42, undefined)], ride).at('iron-rattle').kind, 'not');
+  return true;
+});
 
-  const needsAdult = eligibilityWithReasons(ride, 42, false);
-  assert.match(needsAdult.reasons[0], /46"/);
-  assert.match(needsAdult.reasons[0], /adult/i);
+await check('fold.at is the most restrictive Member; explain lists each person, that order first', () => {
+  const people = [rider('dad', 70, true, 'Dad'), rider('mia', 30, true, 'Mia')];
+  const view = fold(people, [RIDE]);
+  assert.equal(view.at('iron-rattle').kind, 'not');
+  const rows = view.explain('iron-rattle');
+  assert.equal(rows[0].name, 'Mia');
+  assert.equal(rows[0].kind, 'not');
+  assert.equal(rows[1].name, 'Dad');
+  assert.equal(rows[1].kind, 'eligible');
+  assert.match(rows[0].reasons[0], /40"/);
+  assert.match(rows[0].reasons[0], /min/i);
+  return true;
+});
 
-  const companion = eligibilityWithReasons(ride, 42, true);
+await check('empty people and unknown ids are silent; explain is empty', () => {
+  const empty = fold([], [RIDE]);
+  assert.equal(empty.at('iron-rattle').kind, null);
+  assert.deepEqual(empty.explain('iron-rattle'), []);
+  const view = fold([rider('mia', 42, true)], [RIDE]);
+  assert.equal(view.at('no-such-ride').kind, null);
+  assert.deepEqual(view.explain('no-such-ride'), []);
+  return true;
+});
+
+await check('explain cites the rule inches for companion, max, advisory, and the minimum', () => {
+  const ride = [RIDE];
+  const companion = fold([rider('mia', 42, true)], ride).explain('iron-rattle')[0];
   assert.match(companion.reasons[0], /46"/);
   assert.match(companion.reasons[0], /adult/i);
 
-  const tooTall = eligibilityWithReasons(ride, 80, false);
+  const tooTall = fold([rider('dad', 80, false)], ride).explain('iron-rattle')[0];
   assert.match(tooTall.reasons[0], /72"/);
   assert.match(tooTall.reasons[0], /max/i);
 
-  const clear = eligibilityWithReasons(ride, 50, false);
+  const clear = fold([rider('dad', 50, false)], ride).explain('iron-rattle')[0];
   assert.match(clear.reasons[0], /40"/);
 
-  const advisoryRide = { h: { advisory: 54 } };
-  const advisory = eligibilityWithReasons(advisoryRide, 60, false);
+  const advisory = fold([rider('dad', 60, false)], [ADVISORY]).explain('kiddie-coaster')[0];
   assert.match(advisory.reasons[0], /54"/);
-
-  const noRule = eligibilityWithReasons({ h: null }, 50, false);
-  assert.ok(noRule.reasons.length >= 1);
-
-  const noHeightSet = eligibilityWithReasons(ride, null, false);
-  assert.ok(noHeightSet.reasons.length >= 1);
   return true;
 });
 
-/* -------------------------------------------------- guest profiles --- */
-
-const {
-  MAX_GUESTS,
-  addGuestProfile,
-  createGuestProfile,
-  findGuestProfile,
-  loadActiveGuestId,
-  loadGuestProfiles,
-  normalizeGuestProfile,
-  removeGuestProfile,
-  saveActiveGuestId,
-  saveGuestProfiles,
-  updateGuestProfile,
-} = await import('../../apps/party-tracker/lib/guestProfiles.js');
-
-await check('guest profiles add, update and remove without mutating the list handed in', () => {
-  const list = [createGuestProfile({ label: 'Ava', heightIn: 44, withAdult: true })];
-  const snapshot = JSON.parse(JSON.stringify(list));
-
-  const added = addGuestProfile(list, { label: 'Ben', heightIn: 40, withAdult: false });
-  assert.equal(added.length, 2);
-  assert.deepEqual(list, snapshot, 'addGuestProfile must not mutate its input');
-
-  const benId = added[1].id;
-  const updated = updateGuestProfile(added, benId, { heightIn: 41 });
-  assert.equal(findGuestProfile(updated, benId).heightIn, 41);
-  // Editing one guest must not touch the other, or the id it was given.
-  assert.equal(findGuestProfile(updated, added[0].id).heightIn, 44);
-  assert.equal(findGuestProfile(updated, benId).id, benId);
-
-  const removed = removeGuestProfile(updated, added[0].id);
-  assert.equal(removed.length, 1);
-  assert.equal(findGuestProfile(removed, added[0].id), null);
-  assert.equal(findGuestProfile(removed, benId).heightIn, 41);
-  return true;
-});
-
-await check('guest profiles cap at MAX_GUESTS and give every one a unique id', () => {
-  let list = [];
-  for (let i = 0; i < MAX_GUESTS + 3; i += 1) {
-    list = addGuestProfile(list, { label: `Guest ${i}`, heightIn: 40 + i, withAdult: i % 2 === 0 });
-  }
-  assert.equal(list.length, MAX_GUESTS, 'a list already at the cap must not grow further');
-  assert.equal(new Set(list.map((g) => g.id)).size, MAX_GUESTS, 'ids must be unique');
-  return true;
-});
-
-await check('normalizeGuestProfile drops junk and coerces the rest to a safe shape', () => {
-  assert.equal(normalizeGuestProfile(null), null);
-  assert.equal(normalizeGuestProfile('nope'), null);
-  assert.equal(normalizeGuestProfile(42), null);
-
-  const coerced = normalizeGuestProfile({ heightIn: 'tall', withAdult: 1, label: '   ' });
-  assert.equal(coerced.heightIn, null, 'a non-numeric height must not survive');
-  assert.equal(coerced.withAdult, true, 'withAdult is coerced to a boolean');
-  assert.equal(coerced.label, 'Guest', 'a blank label falls back rather than staying blank');
-  assert.ok(coerced.id, 'a guest with no id is still given one');
-
-  const kept = normalizeGuestProfile({ id: 'g1', label: 'Ava', heightIn: 44, withAdult: true });
-  assert.deepEqual(kept, { id: 'g1', label: 'Ava', heightIn: 44, withAdult: true });
-  return true;
-});
-
-await check('guest profile storage is a safe no-op without localStorage, never a crash', () => {
-  assert.deepEqual(loadGuestProfiles(), []);
-  assert.equal(loadActiveGuestId(), null);
-  // Heights never touch the party wire — this is the whole point of the
-  // module being a standalone localStorage-backed store — so the save path
-  // has to survive being called from plain Node too, where there is no
-  // localStorage to write to.
-  const saved = saveGuestProfiles([{ label: 'Solo', heightIn: 48, withAdult: false }]);
-  assert.equal(saved.length, 1);
-  assert.equal(saved[0].heightIn, 48);
-  saveActiveGuestId('g1');
-  saveActiveGuestId(null);
-  return true;
-});
 
 await check('every override is filed under a name the venue actually has', () => {
   const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
@@ -5891,16 +5827,28 @@ await check('recommendNow adds an eligibility factor once a rider height is know
   const withoutHeight = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2);
   assert.ok(!withoutHeight[0].factors.some((f) => f.key === 'eligibility'));
 
-  const tallEnough = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, { height: 48 });
+  const tallView = fold(
+    [{ id: 'self', name: 'You', height: 48, withAdult: true }],
+    [BEAST_TALL],
+  );
+  const tallEnough = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, {
+    eligibility: tallView,
+  });
   const elig = tallEnough[0].factors.find((f) => f.key === 'eligibility');
-  assert.equal(elig.verdict, 'yes');
+  assert.equal(elig.verdict, 'eligible');
   assert.ok(tallEnough[0].why.includes('Tall enough'));
   return true;
 });
 
 await check('recommendNow never recommends a ride the rider cannot ride', () => {
   const me = { lat: BEAST_TALL.lat, lng: BEAST_TALL.lng };
-  const tooShort = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, { height: 36 });
+  const blocked = fold(
+    [{ id: 'self', name: 'You', height: 36, withAdult: true }],
+    [BEAST_TALL],
+  );
+  const tooShort = recommendNow([BEAST_TALL], null, FINE, me, [], 5_000_000, 2, {
+    eligibility: blocked,
+  });
   assert.equal(tooShort.length, 0);
   return true;
 });

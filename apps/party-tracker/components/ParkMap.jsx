@@ -210,7 +210,7 @@ function ParkMap({
   follow,
   onUserPan,
   heading,
-  rideEligibility,
+  eligibility,
   visibleCategories,
   onToggleCategory,
   focusPoint,
@@ -1027,8 +1027,8 @@ function ParkMap({
       if (sx < -60 || sy < -60 || sx > size.w + 60 || sy > size.h + 60) return;
       const sym = symbolFor(p.c);
       const placeId = identityOf(p);
-      const state = rideEligibility?.get(placeId) || rideEligibility?.get(p.n) || 'unknown';
-      const barred = state === 'no' || state === 'toobig';
+      const state = eligibility?.at(placeId)?.kind || 'unknown';
+      const barred = state === 'not';
       const isSel = samePlace(selected, p);
       const isNav = Boolean(routeTargetName) && (placeId === routeTargetName || p.n === routeTargetName);
       const rank = sym.rank + (barred ? 0.25 : 0);
@@ -1071,7 +1071,7 @@ function ParkMap({
         isNav: item.isNav,
         r,
         labelSpot,
-        faded: item.state === 'no' || item.state === 'toobig',
+        faded: item.state === 'not',
       });
     });
 
@@ -1086,7 +1086,7 @@ function ParkMap({
     showLands,
     landAxes,
     visibleCategories,
-    rideEligibility,
+    eligibility,
     selected,
     routeTargetName,
     members,
@@ -1235,9 +1235,9 @@ function ParkMap({
       below: sy < 150,
       name: selected.n,
       detail: bits.join(' · '),
-      state: rideEligibility?.get(identityOf(selected)) || rideEligibility?.get(selected.n),
+      state: eligibility?.at(identityOf(selected))?.kind,
     };
-  }, [selected, at, me, size.w, size.h, rideEligibility]);
+  }, [selected, at, me, size.w, size.h, eligibility]);
 
   if (!data) {
     return (
@@ -1711,7 +1711,7 @@ function ParkMap({
         >
           <b>{callout.name}</b>
           {callout.detail && <span>{callout.detail}</span>}
-          {(callout.state === 'no' || callout.state === 'toobig') && (
+          {(callout.state === 'not') && (
             <em className="calloutBar">Not this height</em>
           )}
           {callout.state === 'companion' && <em className="calloutAdult">Needs a grown-up</em>}
@@ -1760,7 +1760,13 @@ function ParkMap({
           palette={palette}
           visibleCategories={visibleCategories}
           onToggleCategory={onToggleCategory}
-          heightFilterOn={!!rideEligibility}
+          heightFilterOn={Boolean(
+            eligibility &&
+              pois.some((p) => {
+                const k = eligibility.at(identityOf(p)).kind;
+                return k && k !== 'eligible';
+              }),
+          )}
           presentCategories={presentCategories}
           hidden={mapKeyHidden}
         />

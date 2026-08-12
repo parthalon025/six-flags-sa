@@ -6,14 +6,13 @@ import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import {
   categoriesFor,
-  eligibility,
   heightLabel,
   isRideable,
   matchedByName,
   matchesQuery,
 } from '@/lib/park';
 import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
-import { samePlace } from '@/lib/venue/ids';
+import { identityOf, samePlace } from '@/lib/venue/ids';
 import { campDetails, campSearchText } from '@/lib/camping';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
 import { PlaceDetailBody } from '@/components/PlaceDetail';
@@ -29,18 +28,15 @@ import { PlaceDetailBody } from '@/components/PlaceDetail';
    independent of heights, so it shows on a venue that publishes none. */
 
 const VERDICT = {
-  yes: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
+  eligible: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
   advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
-  no: { label: 'Too short', cls: 'bad', icon: 'xmark' },
-  toobig: { label: 'Too tall', cls: 'bad', icon: 'xmark' },
-  unknown: { label: '', cls: '', icon: null },
+  not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
 };
 
 export default function PlaceList({
   me,
-  height,
-  withAdult,
+  eligibility,
   query,
   filter,
   onFilter,
@@ -117,9 +113,8 @@ export default function PlaceList({
     let out = POIS.filter((p) => {
       if (filter !== 'all' && p.c !== filter) return false;
       if (!matchesQuery(p, q, queryCats, campFacets)) return false;
-      if (onlyRideable && height != null && isRideable(p)) {
-        const v = eligibility(p, height, withAdult);
-        if (v === 'no' || v === 'toobig') return false;
+      if (onlyRideable && isRideable(p) && eligibility?.at(identityOf(p))?.blocks) {
+        return false;
       }
       if (onlyRunning) {
         // Hides what is probably not running. Deliberately keeps `watch` —
@@ -149,7 +144,7 @@ export default function PlaceList({
        that removes fewer places than the cap hides then looks like it did
        nothing at all. */
     return out.slice(0, 400);
-  }, [POIS, query, queryCats, campFacets, filter, onlyRideable, onlyRunning, statuses, height, withAdult, me]);
+  }, [POIS, query, queryCats, campFacets, filter, onlyRideable, onlyRunning, statuses, eligibility, me]);
 
   const useVirtual = list.length > 50;
   const visibleStart = Math.floor(scrollTop / ROW_H);
@@ -191,8 +186,8 @@ export default function PlaceList({
 
   const renderRow = (p) => {
     const isRide = isRideable(p);
-    const verdict = isRide ? eligibility(p, height, withAdult) : 'unknown';
-    const v = VERDICT[verdict];
+    const kind = isRide ? eligibility?.at(identityOf(p))?.kind : null;
+    const v = (kind && VERDICT[kind]) || { label: '', cls: '', icon: null };
     const d = me ? distance(me.lat, me.lng, p.lat, p.lng) : null;
     const open = selected && samePlace(selected, p);
     const st = statuses.get(p.id) || null;
@@ -262,8 +257,7 @@ export default function PlaceList({
             poi={p}
             status={st}
             venue={venue}
-            height={height}
-            withAdult={withAdult}
+            eligibility={eligibility}
             onNavigate={onNavigate}
             onSetMeet={onSetMeet}
             onReport={onReport}

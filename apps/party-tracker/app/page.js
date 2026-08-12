@@ -31,7 +31,8 @@ import {
   sheetPlan,
   sheetStops,
 } from '@/lib/sheet';
-import { CATEGORIES, eligibility, hasHeights, isRideable } from '@/lib/park';
+import { CATEGORIES, hasHeights, isRideable } from '@/lib/park';
+import { fold } from '@/lib/eligibility';
 import { statusSummary } from '@/lib/rideStatus';
 import { profilesForCoverage, profileOpts } from '@/lib/routingProfiles';
 import {
@@ -1324,19 +1325,36 @@ export default function Page() {
   };
 
   /* ---------- derived ---------- */
-  /* The map is told the verdict, not just the refusals. Fading a ride out was
-     ambiguous — it looked exactly like a party member we had not heard from —
-     so ParkMap now draws "too short" and "needs a grown-up" as symbols, and
-     that needs the whole answer rather than a set of names to dim. */
-  const rideEligibility = useMemo(() => {
-    if (mapHeight == null) return null;
-    const out = new Map();
-    POIS.forEach((p) => {
-      if (!isRideable(p)) return;
-      out.set(identityOf(p), eligibility(p, mapHeight, withAdult));
-    });
-    return out;
-  }, [POIS, mapHeight, withAdult]);
+  /* Map, list and glance share one Fold: the most restrictive Member in this
+     phone's Subgroup, or the whole Party if untagged. Solo browse uses the
+     local height. Empty people → silent cells, no marks. */
+  const eligibilityPeople = useMemo(() => {
+    if (party?.active && roster.length) {
+      const me = roster.find((m) => m.id === party.selfId);
+      const tag = me?.groupId;
+      const set = tag ? roster.filter((m) => m.groupId === tag) : roster;
+      return set.map((m) => ({
+        id: m.id,
+        name: m.name,
+        height: Number.isFinite(m.height) ? m.height : null,
+        withAdult: m.withAdult !== false,
+      }));
+    }
+    if (mapHeight == null) return [];
+    return [
+      {
+        id: 'self',
+        name: identity?.name || 'You',
+        height: mapHeight,
+        withAdult: withAdult === true,
+      },
+    ];
+  }, [party?.active, party?.selfId, roster, mapHeight, withAdult, identity?.name]);
+
+  const eligibilityView = useMemo(
+    () => fold(eligibilityPeople, POIS),
+    [eligibilityPeople, POIS],
+  );
 
   const totalRides = useMemo(
     () => POIS.filter(isRideable).length,
@@ -1355,13 +1373,13 @@ export default function Page() {
   const presentCategories = useMemo(() => new Set(POIS.map((p) => p.c)), [POIS]);
 
   const rideableCount = useMemo(() => {
-    if (mapHeight == null) return null;
+    if (!eligibilityPeople.length) return null;
     return POIS.filter((p) => {
       if (!isRideable(p)) return false;
-      const v = eligibility(p, mapHeight, withAdult);
-      return v === 'yes' || v === 'companion';
+      const k = eligibilityView.at(identityOf(p)).kind;
+      return k === 'eligible' || k === 'companion';
     }).length;
-  }, [POIS, mapHeight, withAdult]);
+  }, [POIS, eligibilityPeople.length, eligibilityView]);
 
   /** The party's ride reports, or an empty map when there is no party. */
   const partyRides = party?.rides ?? null;
@@ -1958,7 +1976,7 @@ export default function Page() {
         follow={follow}
         onUserPan={onUserPan}
         heading={heading}
-        rideEligibility={rideEligibility}
+        eligibility={eligibilityView}
         visibleCategories={categories}
         onToggleCategory={toggleCategory}
         focusPoint={focusPoint}
@@ -2319,8 +2337,7 @@ export default function Page() {
                   weather={weatherFeed.weather}
                   rides={partyRides}
                   now={Date.now()}
-                  height={mapHeight}
-                  withAdult={withAdult}
+                  eligibility={eligibilityView}
                 />
               )}
               {/* Where the list would be, when the list will not fit: it is not
@@ -2365,8 +2382,7 @@ export default function Page() {
                 )}
                 <PlaceList
                   me={position}
-                  height={mapHeight}
-                  withAdult={withAdult}
+                  eligibility={eligibilityView}
                   query={query}
                   filter={filter}
                   onFilter={setFilter}
@@ -2421,8 +2437,7 @@ export default function Page() {
               <PlaceDetail
                 poi={selected}
                 me={position}
-                height={mapHeight}
-                withAdult={withAdult}
+                eligibility={eligibilityView}
                 theme={theme}
                 weather={weatherFeed.weather}
                 rides={partyRides}

@@ -5,13 +5,13 @@ import Icon from '@/components/Icon';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
-import { eligibilityWithReasons, heightLabel, isRideable } from '@/lib/park';
+import { heightLabel, isRideable } from '@/lib/park';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { WORDS } from '@/lib/brand';
-import { placeNav } from '@/lib/venue/ids';
+import { identityOf, placeNav } from '@/lib/venue/ids';
 
 /**
  * The open face of a place: notes, camp checklist, phone, ride status, and the
@@ -22,8 +22,7 @@ export function PlaceDetailBody({
   poi,
   status = null,
   venue = null,
-  height = null,
-  withAdult = false,
+  eligibility = null,
   onNavigate,
   onSetMeet,
   onReport = null,
@@ -34,9 +33,7 @@ export function PlaceDetailBody({
   const showStatus = Boolean(status?.label);
   const camp = campChips(campDetails(poi, venue));
   const ent = isRide ? entranceMeta(poi) : null;
-  const eligibilityReason = isRide
-    ? eligibilityWithReasons(poi, height, withAdult).reasons?.[0] || null
-    : null;
+  const rows = isRide && eligibility ? eligibility.explain(identityOf(poi)) : [];
 
   return (
     <div className="poiDetail">
@@ -46,7 +43,15 @@ export function PlaceDetailBody({
           {status.source === 'weather' && ' — a guess from the forecast, not the park'}
         </p>
       )}
-      {eligibilityReason && <p className="poiNote eligibilityReason">{eligibilityReason}</p>}
+      {rows.map((row) => {
+        const text = row.reasons?.[0];
+        if (!text) return null;
+        return (
+          <p key={row.id} className="poiNote eligibilityReason">
+            {rows.length > 1 ? `${row.name}: ${text}` : text}
+          </p>
+        );
+      })}
       {poi.note && <p className="poiNote">{poi.note}</p>}
       {camp.length > 0 && (
         <ul className="campChips">
@@ -114,12 +119,10 @@ export function PlaceDetailBody({
 }
 
 const VERDICT = {
-  yes: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
+  eligible: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
   advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
-  no: { label: 'Too short', cls: 'bad', icon: 'xmark' },
-  toobig: { label: 'Too tall', cls: 'bad', icon: 'xmark' },
-  unknown: { label: '', cls: '', icon: null },
+  not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
 };
 
 /**
@@ -130,8 +133,7 @@ const VERDICT = {
 export default function PlaceDetail({
   poi,
   me,
-  height,
-  withAdult,
+  eligibility = null,
   theme,
   weather = null,
   rides = null,
@@ -161,9 +163,8 @@ export default function PlaceDetail({
   }
 
   const isRide = isRideable(poi);
-  const check = isRide ? eligibilityWithReasons(poi, height, withAdult) : null;
-  const verdict = check ? check.raw : 'unknown';
-  const v = VERDICT[verdict];
+  const kind = isRide ? eligibility?.at(identityOf(poi))?.kind : null;
+  const v = (kind && VERDICT[kind]) || { label: '', cls: '', icon: null };
   const d = me ? distance(me.lat, me.lng, poi.lat, poi.lng) : null;
   const dir = me && d != null ? cardinal(bearing(me.lat, me.lng, poi.lat, poi.lng)) : null;
   const showStatus = Boolean(status?.label);
@@ -233,8 +234,7 @@ export default function PlaceDetail({
         poi={poi}
         status={status}
         venue={venue}
-        height={height}
-        withAdult={withAdult}
+        eligibility={eligibility}
         onNavigate={onNavigate}
         onSetMeet={onSetMeet}
         onReport={onReport}
