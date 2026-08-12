@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
 import BrandMark from '@/components/BrandMark';
+import SignInCard from '@/components/SignInCard';
 
 /* Settings, arranged the way Settings is: short groups of rows, a value on the
    right of the row that has one, and a chevron on the rows that lead somewhere.
@@ -36,6 +37,8 @@ export default function SettingsPanel({
   updateStatus = 'idle',
   movementEnabled = false,
   movementPending = 0,
+  session = null,
+  onSession = null,
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
@@ -87,6 +90,8 @@ export default function SettingsPanel({
         onBlur={(e) => onNameCommit(e.target.value)}
       />
       <p className="fine">Shown on the map and roster when you join a party. Solo guests can leave this blank.</p>
+
+      <SignInCard session={session} onSession={onSession} />
 
       <div className="label">Map Appearance</div>
       <div className="segmented" role="group" aria-label="Map appearance">

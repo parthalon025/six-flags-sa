@@ -16,6 +16,7 @@ import {
   closeGate,
   dismissIntroSplash,
   dismissNavigation,
+  signIn,
   dismissUpdateSplash,
   go,
   hydrated,
@@ -598,6 +599,17 @@ await check('back on Kings Island before party tests', async () => {
   });
   return true;
 });
+
+await check('anonymous soft-gate blocks Start a party', async () => {
+  await go(a, 'Party');
+  if ((await a.locator('button:has-text("Start a party")').count()) > 0) {
+    throw new Error('Start a party visible without sign-in');
+  }
+  if ((await a.locator('.signInCard').count()) < 1) throw new Error('missing soft-gate card');
+  return true;
+});
+
+await signIn(a, 'justin@parkbound.example');
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
@@ -663,6 +675,7 @@ const B = await openPhone(browser, {
   venue: 'kings-island',
 });
 const b = B.page;
+await signIn(b, 'ava@parkbound.example');
 await go(b, 'Party');
 await b.locator('.field.code').fill(code);
 await b.locator('button:has-text("Join")').click();
@@ -755,6 +768,12 @@ const C = await openPhone(browser, {
   venue: 'kings-island',
 });
 const c = C.page;
+await signIn(c, 'sam@parkbound.example');
+// Soft-gate defers /join until signed in; wait for the finish-join effect.
+await until(async () => (await c.locator('.codeText').count()) > 0, {
+  timeout: JOIN_TIMEOUT,
+  label: 'phone C soft-gate invite join',
+}).catch(() => {});
 
 await check('the invite link joins the party with nothing typed', async () => {
   await go(c, 'Party');
@@ -1229,6 +1248,7 @@ const D = await openPhone(browser, {
   venue: 'six-flags-fiesta-texas',
 });
 const d = D.page;
+await signIn(d, 'remote@parkbound.example');
 /* Which map this phone is showing. The name is on the Explore screen, so read
    it there — tapping the tab this phone is already on pops it back to its root
    and costs nothing. */

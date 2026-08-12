@@ -305,6 +305,9 @@ const host = await arrive(KI, { venue: 'kings-island' });
 const h = host.page;
 await h.locator('.tabItem[data-tab="party"]').click({ force: true });
 await h.waitForTimeout(600);
+await h.locator('.signInCard input[type="email"]').fill('grandad@parkbound.example');
+await h.locator('.signInCard button:has-text("Email me a link")').click();
+await h.waitForTimeout(800);
 await h.locator('.field[aria-label="Your name"]').fill('Grandad');
 await h.locator('.field[aria-label="Your name"]').blur();
 await h.waitForTimeout(400);
@@ -324,6 +327,11 @@ const a = A.page;
 await score('A', 'A3', 'the code field explains itself', async () => {
   await a.locator('.tabItem[data-tab="party"]').click();
   await a.waitForTimeout(600);
+  if (await a.locator('.signInCard input[type="email"]').count()) {
+    await a.locator('.signInCard input[type="email"]').fill('grandma@parkbound.example');
+    await a.locator('.signInCard button:has-text("Email me a link")').click();
+    await a.waitForTimeout(900);
+  }
   const idle = await a.locator('.sheet').innerText();
   if (!/read out loud/i.test(idle)) return { score: 0, note: 'says nothing about the alphabet' };
   await a.locator('.field.code').fill('ABC2');
@@ -336,6 +344,11 @@ await score('A', 'A3', 'the code field explains itself', async () => {
 await score('A', 'A1', 'can still join by code an hour into the day', async () => {
   await a.locator('.tabItem[data-tab="party"]').click();
   await a.waitForTimeout(600);
+  if (await a.locator('.signInCard input[type="email"]').count()) {
+    await a.locator('.signInCard input[type="email"]').fill('grandma@parkbound.example');
+    await a.locator('.signInCard button:has-text("Email me a link")').click();
+    await a.waitForTimeout(900);
+  }
   await a.locator('.field[aria-label="Your name"]').fill('Grandma');
   await a.locator('.field.code').fill(code);
   await a.locator('button:has-text("Join")').first().click();

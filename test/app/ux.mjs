@@ -1,4 +1,4 @@
-import { BASE, go, launch } from './browser.mjs';
+import { BASE, go, launch, signIn } from './browser.mjs';
 const B = BASE;
 const b = await launch();
 const c = await b.newContext({ viewport:{width:390,height:844}, deviceScaleFactor:2,
@@ -20,6 +20,7 @@ await p.waitForTimeout(600);
 await p.screenshot({ path:'test/shots/20-rides-redesign.png' });
 
 // create a party, inject a second member server-side, then look at the rail
+await signIn(p, 'ux@parkbound.example');
 await go(p, 'Party');
 await p.locator('button:has-text("Start a party")').click();
 await p.waitForTimeout(1800);
