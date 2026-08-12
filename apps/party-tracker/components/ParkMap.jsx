@@ -834,20 +834,6 @@ function ParkMap({
     };
   }, [world, cullView, cx, cy, spin, size.w, size.h, showService]);
 
-  useEffect(() => {
-    if (!onMapStats || !world) return;
-    const pathTotal = world.path.length;
-    const pathDrawn = drawWorld?.path.length ?? pathTotal;
-    onMapStats({
-      pathTotal,
-      pathDrawn,
-      buildingTotal: world.building.length,
-      buildingDrawn: drawWorld?.building.length ?? world.building.length,
-      zoom: z,
-      zoomBand: zPlan,
-    });
-  }, [onMapStats, world, drawWorld, z, zPlan]);
-
   const mapLayers = drawWorld || world;
 
   /* Route paths in world coordinates — drawn once per route change, then
@@ -1086,7 +1072,7 @@ function ParkMap({
       });
     });
 
-    return { landWinners, markerItems, nextShown };
+    return { landWinners, markerItems, markerTotal: ranked.length, nextShown };
   }, [
     data,
     pois,
@@ -1191,6 +1177,32 @@ function ParkMap({
   }, [layoutPlan, at, to, screenDir, size.w, size.h, bottomInset]);
 
   planRef.current = plan;
+
+  /* Node-budget telemetry for the diagnostics panel: how much of the venue's
+     paths/buildings/markers actually reached the screen versus how much
+     exists, plus whether the high-zoom cull is currently in play. Pushed on
+     a ref by the caller (see page.js), not state, so watching this never
+     costs the rest of the app a re-render. */
+  useEffect(() => {
+    if (!onMapStats || !world) return;
+    const pathTotal = world.path.length;
+    const pathDrawn = drawWorld?.path.length ?? pathTotal;
+    const buildingTotal = world.building.length;
+    const buildingDrawn = drawWorld?.building.length ?? buildingTotal;
+    const markerTotal = layoutPlan.markerTotal ?? plan.markers.length;
+    const markerDrawn = plan.markers.length;
+    onMapStats({
+      pathTotal,
+      pathDrawn,
+      buildingTotal,
+      buildingDrawn,
+      markerTotal,
+      markerDrawn,
+      zoom: z,
+      zoomBand: zPlan,
+      culling: Boolean(cullView),
+    });
+  }, [onMapStats, world, drawWorld, layoutPlan, plan, z, zPlan, cullView]);
 
   useEffect(() => {
     setShownLabels((prev) => {
