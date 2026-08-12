@@ -95,7 +95,14 @@ async function arrive(geo, { venue = null } = {}) {
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2000);
-  await page.locator('.gate .btn.primary:has-text("Continue")').click().catch(() => {});
+  // Intro copy is "Get started" (legacy "Continue" kept for older builds).
+  await page
+    .locator(
+      '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started"), .gate .btn.primary:has-text("Continue")',
+    )
+    .first()
+    .click({ force: true })
+    .catch(() => {});
   await page.waitForTimeout(500);
   await page.locator('button:has-text("Share my location"), button:has-text("Allow location")').click().catch(() => {});
   await page.waitForTimeout(2500);
