@@ -645,7 +645,8 @@ await check('Side Quest submit queues locally', async () => {
 
 await go(a, 'Party');
 await a.waitForTimeout(300);
-await a.locator('button:has-text("Start a party")').click();await a.waitForSelector('.codeText', { timeout: 20000 });
+await a.locator('button:has-text("Start a party")').click();
+await a.waitForSelector('.codeText', { timeout: 20000 });
 const code = (await a.locator('.codeText').innerText()).trim();
 const session = JSON.parse(await a.evaluate(() => localStorage.getItem('ki-session-v3')));
 

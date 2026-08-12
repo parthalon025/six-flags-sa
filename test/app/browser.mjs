@@ -253,6 +253,8 @@ export async function root(page) {
  *
  *   'Places'         the Explore tab: search, the rail and the list
  *   'Party'          the Party tab
+ *   'Quests',
+ *   'Side Quests'    the Side Quests tab
  *   'Rider height',
  *   'Rides', 'Plan'  the Plan tab, where the venue publishes height rules
  *   'Settings', 'Me',
@@ -265,6 +267,8 @@ const TAB_OF = {
   Places: 'explore',
   Explore: 'explore',
   Party: 'party',
+  Quests: 'quests',
+  'Side Quests': 'quests',
   Rides: 'rides',
   Plan: 'rides',
   'Rider height': 'rides',
