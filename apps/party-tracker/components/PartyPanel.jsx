@@ -3,9 +3,7 @@
 import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
 import Icon from '@/components/Icon';
-import SignInCard from '@/components/SignInCard';
 import { WORDS } from '@/lib/brand';
-import { softGateBlocks } from '@/lib/auth/session';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { usePois } from '@/lib/venue/useVenue';
 
@@ -111,6 +109,7 @@ export default function PartyPanel({
   reunifyBusy = false,
   session = null,
   onSession = null,
+  onAddDeviceLess = null,
 }) {
   const [entry, setEntry] = useState('');
   const [name, setName] = useState(myName === 'Guest' ? '' : myName || '');
@@ -119,6 +118,8 @@ export default function PartyPanel({
   const [arming, setArming] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [showQr, setShowQr] = useState(true);
+  const [guestName, setGuestName] = useState('');
+  const [guestHeight, setGuestHeight] = useState('');
   const pois = usePois();
   /* The join window counts down while the screen is being looked at, so the
      number has to move on its own rather than only when a position lands. */
@@ -136,18 +137,6 @@ export default function PartyPanel({
   }, [arming]);
 
   if (!code) {
-    if (softGateBlocks('party', session)) {
-      return (
-        <div>
-          <div className="label">Your Party</div>
-          <p className="fine">
-            Explore the map on your own anytime. Sign in when the family wants to stick together —
-            start or join a party without gluing everyone to the phone first.
-          </p>
-          <SignInCard session={session} onSession={onSession} />
-        </div>
-      );
-    }
     const named = Boolean(name.trim());
     return (
       <div>
@@ -361,12 +350,12 @@ export default function PartyPanel({
             const b = d != null ? bearing(me.lat, me.lng, m.lat, m.lng) : null;
             const near = located ? nearestPlace(pois, m.lat, m.lng) : null;
             const stale = Date.now() - m.ts > 300000;
-            const paused = m.sharingPaused;
+            const batt = Number.isFinite(m.battery?.level) ? Math.round(m.battery.level * 100) : null;
             return (
               <button
                 type="button"
                 key={m.id}
-                className={`memberRow ${stale && !paused ? 'stale' : ''} ${paused ? 'paused' : ''}`}
+                className={`memberRow ${stale ? 'stale' : ''}`}
                 onClick={() => !isMe && located && onFocus(m)}
               >
                 <span className="pip" style={{ background: isMe ? 'var(--adventure)' : m.colour }}>
@@ -375,7 +364,7 @@ export default function PartyPanel({
                     className={`partyDot ${
                       m.status === 'NEED HELP'
                         ? 'separated'
-                        : stale || paused
+                        : stale
                           ? 'onTheWay'
                           : meet && located
                             ? 'meetHere'
@@ -384,7 +373,7 @@ export default function PartyPanel({
                     title={
                       m.status === 'NEED HELP'
                         ? 'Separated'
-                        : stale || paused
+                        : stale
                           ? 'On the way'
                           : meet && located
                             ? 'Meet here'
@@ -399,15 +388,23 @@ export default function PartyPanel({
                     {isMe && <em className="chipTag">you</em>}
                     {m.id === hostId && <em className="chipTag">host</em>}
                     {m.groupId && <em className="chipTag">party {m.groupId}</em>}
-                    {paused && <em className="chipTag">paused</em>}
+                    {m.deviceLess && <em className="chipTag">no phone</em>}
+                    {Number.isFinite(m.height) && <em className="chipTag">{m.height}&quot;</em>}
+                    {batt != null && (
+                      <em className="chipTag">
+                        {batt}%{m.battery?.charging ? '⚡' : ''}
+                      </em>
+                    )}
                     {m.status === 'NEED HELP' && <em className="chipTag hot">help</em>}
                   </b>
                   <span>
-                    {offSite
-                      ? 'Off site · not on the map'
-                      : near
-                        ? near.p.n
-                        : 'No fix yet'}{' '}
+                    {m.deviceLess
+                      ? 'No phone'
+                      : offSite
+                        ? 'Last known · not live'
+                        : near
+                          ? near.p.n
+                          : 'No fix yet'}{' '}
                     · {m.status} · {formatAge(Date.now() - m.ts)}
                   </span>
                 </span>
@@ -429,6 +426,50 @@ export default function PartyPanel({
             );
           })}
         </div>
+      )}
+
+      {onAddDeviceLess && (
+        <>
+          <div className="label">Add someone without a phone</div>
+          <p className="fine" style={{ marginTop: 0 }}>
+            A device-less Member still counts for Eligibility. Height stays on the roster.
+          </p>
+          <div className="joinRow">
+            <input
+              className="field"
+              maxLength={14}
+              placeholder="Name"
+              aria-label="Device-less member name"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+            />
+            <input
+              className="field"
+              inputMode="numeric"
+              placeholder='Height "'
+              aria-label="Height in inches"
+              value={guestHeight}
+              onChange={(e) => setGuestHeight(e.target.value)}
+              style={{ maxWidth: 88 }}
+            />
+            <button
+              type="button"
+              className="btn small primary"
+              disabled={!guestName.trim()}
+              onClick={() => {
+                const inches = Number(guestHeight);
+                onAddDeviceLess({
+                  name: guestName.trim(),
+                  height: Number.isFinite(inches) && inches > 0 ? inches : null,
+                });
+                setGuestName('');
+                setGuestHeight('');
+              }}
+            >
+              Add
+            </button>
+          </div>
+        </>
       )}
 
       <div className="label">Broadcast Status</div>

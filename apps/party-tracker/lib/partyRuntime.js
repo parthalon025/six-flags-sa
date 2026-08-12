@@ -48,6 +48,8 @@ import {
   PATCH_MEMBER,
   PING,
   SET_MEET,
+  SET_PLAN,
+  ADD_MEMBER,
   SET_RIDE_STATUS,
   SET_TARGET,
   VICTORY,
@@ -209,6 +211,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       // a list because every reader looks one ride up at a time.
       rides: state?.rides ?? {},
       meet: state?.meet ?? null,
+      plan: state?.plan ?? [],
       transport: activeName(),
       queued: queued(),
       // When this host stops answering key-requests, as a timestamp. 0 when
@@ -998,9 +1001,10 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       (host && session && host.getState?.()?.members?.[session.selfId]) ||
       (client && session && client.getState?.()?.members?.[session.selfId]) ||
       null;
-    const mode = effectiveShareMode(me || { shareMode: 'approx', sharingPaused: false });
-    const shaped = locationForShare(location, mode);
-    if (!shaped) return submit(LOCATION, { clear: true });
+    const mode = effectiveShareMode(me || { shareMode: 'approx' });
+    const sendMode = mode === 'off' ? 'approx' : mode;
+    const shaped = locationForShare(location, sendMode);
+    if (!shaped) return null;
     return submit(LOCATION, { location: shaped });
   };
   const clearLocation = () => submit(LOCATION, { clear: true });
@@ -1030,13 +1034,17 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   }
 
   const setGroupId = (groupId) => submit(PATCH_MEMBER, { patch: { groupId: groupId || null } });
-  const setSharingPaused = (sharingPaused) =>
-    submit(PATCH_MEMBER, { patch: shareModePatch(sharingPaused ? 'off' : 'approx') });
-  const setShareMode = (mode, opts = {}) => submit(PATCH_MEMBER, { patch: shareModePatch(mode, opts) });
+  const setShareMode = (mode, opts = {}) => {
+    if (mode === 'off') return null;
+    return submit(PATCH_MEMBER, { patch: shareModePatch(mode, opts) });
+  };
   const bindUserId = (userId) => {
     if (session && userId) session.userId = userId;
     return submit(PATCH_MEMBER, { patch: { userId } });
   };
+  const setPlan = (plan) => submit(SET_PLAN, { plan: Array.isArray(plan) ? plan : [] });
+  const addMember = (body) => submit(ADD_MEMBER, body || {});
+  const setMemberFacts = (patch) => submit(PATCH_MEMBER, { patch: patch || {} });
 
   async function logAction(kind, detail = {}) {
     try {
@@ -1109,9 +1117,11 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     setStatus,
     setMemberName,
     setGroupId,
-    setSharingPaused,
     setShareMode,
     bindUserId,
+    setPlan,
+    addMember,
+    setMemberFacts,
     logAction,
     pushLocation,
     clearLocation,

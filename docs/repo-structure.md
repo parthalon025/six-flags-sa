@@ -1,6 +1,6 @@
 # Repository structure
 
-This monorepo separates the **party tracker app** from the **venue builder** pipeline.
+This monorepo separates the **Park Bound** app from the **venue builder** pipeline.
 
 ```
 apps/party-tracker/     Next.js PWA — map, party sync, directions

@@ -25,7 +25,8 @@ Long-form decision write-ups also live under `docs/superpowers/specs/` (pre–Ma
 ├── docs/
 │   ├── adr/
 │   │   ├── 0001-auth-profiles.md
-│   │   └── 0002-dual-layer-park-truth.md
+│   │   ├── 0002-dual-layer-park-truth.md
+│   │   └── 0003-family-party-mesh.md
 │   ├── agents/          ← skill config (this folder)
 │   └── superpowers/     ← human specs / expanded history (not the ADR root)
 ├── apps/

@@ -179,21 +179,21 @@ Every important field retains sources, confidence, dissent. Preferred hierarchy:
 
 Normalize aliases to stable ids (`kings-island:orion`). Display names are not primary keys.
 
-### User profiles (required)
+### User profiles (soft gate)
 
-**Signed-in user profiles are required** for Park Bound product use (map session, party, contributions, planner personalization, and explorer progress). Anonymous throwaway sessions are not a supported product mode.
+Canonical language: root `CONTEXT.md`. **Party** join/host is name-first. A **Profile** is required for **Contributions**, **Side Quest** submit, saving **Managed Guests**, and cross-day **Plan** sync.
 
 | Concern | Requirement |
 |---------|-------------|
-| Identity | Stable `user_id` backed by an account (email/OAuth/device-linked signup TBD in implementation) |
+| Identity | Stable `user_id` on a **Profile** (email/OAuth) — optional until a gated action |
 | Profile | Display name, avatar/cosmetics hooks, explorer level, reputation, impact, per-park passport |
-| Party | Party members resolve to (or are linked from) user profiles; roles attach to profile membership |
-| Eligibility | Height/age/accessibility live on profile (or linked guest profiles the user manages) |
-| Contributions | All reports, confirms, and quests attribute to `user_id`; no anonymous global score |
+| Party | **Invite** admits a **Member** by display name; a **Member** may bind a **Profile** later |
+| Eligibility | Height and **With adult** live on the **Member** (and on **Managed Guests** under a **Profile**) |
+| Contributions | All **Contributions** and **Side Quest** submits attribute to `user_id`; no anonymous global score |
 | Offline | Profile + entitlements cache on device after sign-in; sync when online; sealed party crypto unchanged |
-| Privacy | Location sharing remains explicit; profile existence ≠ continuous location broadcast |
+| Location | Device **Members** always share **Location** inside the **Venue**; no pause. Last-known + trail stay for the **Party** |
 
-Child accounts / guardian-managed profiles are in scope for the party roles model (`Child` under an `Adult`/`Owner`).
+Device-less kids are **Members** with height, not a `Child` party role. Durable save is **Managed Guest** under a **Profile**.
 
 ---
 

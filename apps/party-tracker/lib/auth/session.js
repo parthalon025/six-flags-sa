@@ -1,6 +1,7 @@
 /**
  * Soft-gate session helpers (EP.2–EP.3).
- * Auth.js-shaped client API: anonymous may browse; party/contribute/adventure/planner need userId.
+ * Auth.js-shaped client API: anonymous may browse and join a Party by name;
+ * contribute / Side Quest submit / planner sync need userId.
  */
 
 import { requiresSignedIn } from '@party-tracker/shared/schemas.js';

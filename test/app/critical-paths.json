@@ -99,16 +99,16 @@
     {
       "id": "ep-soft-gate",
       "slice": "EP",
-      "user_action": "Anonymous soft-gate blocks Start a party; sign-in unlocks it",
+      "user_action": "Anonymous can start a Party by name; Profile still gates Side Quest submit",
       "suite": "functional",
-      "check": "anonymous soft-gate blocks Start a party"
+      "check": "anonymous can start a party by name"
     },
     {
       "id": "ep5-sharing",
       "slice": "Party",
-      "user_action": "Choose Off / Approx / Precise location sharing in a party",
+      "user_action": "Add a device-less Member with height to the Party roster",
       "suite": "functional",
-      "check": "location sharing Off/Approx/Precise is available in the party"
+      "check": "device-less Members can be added to the roster"
     },
     {
       "id": "e91-side-quests",

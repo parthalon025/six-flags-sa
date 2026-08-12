@@ -30,7 +30,7 @@ Park maps drift: restrooms close, paths get mis-tagged, heights are wrong, rides
 - Offline map draw stays service-worker / JSON based.
 - Only the builder may write `public/venues/*.json` and `lib/venueIndex.js`.
 - Hand corrections for a venue live in `data/venues/<id>.*` then rebuild.
-- **User profiles are required** (product decision 2026-08-10): map/party/contribute/XP all attribute to a signed-in profile; cache profile offline after login.
+- **User profiles** are required for **Contributions**, **Side Quest** submit, and saving **Managed Guests**. **Party** join/host is name-first; a **Member** may bind a **Profile** later. Cache profile offline after login.
 - Party mesh remains the realtime coordination fabric; members bind to `user_id`.
 
 ---

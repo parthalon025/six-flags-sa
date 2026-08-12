@@ -25,6 +25,7 @@ import {
   textWidth,
 } from '@/lib/mapLabels';
 import { Glyph, PoiMarker } from './MapSymbols';
+import { identityOf } from '@/lib/venue/ids';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
 import { localViewTransform, stableCullView } from '@/lib/mapViewport';
@@ -1041,7 +1042,8 @@ function ParkMap({
       const pinned = item.isSel || item.isNav;
       if (!grid.claim(boxAround(item.sx, item.sy, r + 1.5, r + 1.5), pinned)) return;
 
-      const wasShown = shownLabels.has(item.p.n);
+      const placeId = identityOf(item.p);
+      const wasShown = shownLabels.has(placeId);
       const wanted =
         (pinned && !item.isSel) || labelWantedAtZoom(item.sym.rank, zPlan, wasShown);
       let labelSpot = -1;
@@ -1055,13 +1057,14 @@ function ParkMap({
           if (box.x0 < 2 || box.y0 < 2 || box.x1 > size.w - 2 || box.y1 > floor - 2) continue;
           if (!grid.claim(box, false)) continue;
           labelSpot = si;
-          nextShown.add(item.p.n);
+          nextShown.add(placeId);
           break;
         }
       }
 
       markerItems.push({
         p: item.p,
+        placeId,
         sym: item.sym,
         state: item.state,
         isSel: item.isSel,
@@ -1164,7 +1167,7 @@ function ParkMap({
       const box = boxAround(spot.bx, spot.by, halfW, 7);
       if (!wholly(box)) return;
       labels.push({
-        key: item.p.n,
+        key: item.placeId,
         text: item.p.n,
         x: spot.x,
         y: spot.y,
@@ -1483,7 +1486,7 @@ function ParkMap({
         {/* places */}
         {plan.markers.map((m) => (
           <g
-            key={`${m.p.n}-${m.p.lat}-${m.p.lng}`}
+            key={m.placeId}
             className="poiMarker"
             transform={`translate(${m.sx.toFixed(1)} ${m.sy.toFixed(1)})`}
             style={{ cursor: 'pointer' }}
@@ -1576,10 +1579,30 @@ function ParkMap({
 
         {/* party members */}
         {members.map((m) => {
+          if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) return null;
           const [sx, sy] = at(m.lat, m.lng);
           const { age, stale, help, facing } = partyMarkerState(m, now);
+          const trail = Array.isArray(m.trail) ? m.trail.filter((p) => Number.isFinite(p?.lat) && Number.isFinite(p?.lng)) : [];
+          const trailD = trail
+            .map((p, i) => {
+              const [x, y] = at(p.lat, p.lng);
+              return `${i === 0 ? 'M' : 'L'}${x} ${y}`;
+            })
+            .join(' ');
           return (
             <g key={m.id} className="memMarker">
+              {trailD && (
+                <path
+                  d={trailD}
+                  fill="none"
+                  stroke={m.colour}
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity="0.45"
+                  pointerEvents="none"
+                />
+              )}
               {help && <circle cx={sx} cy={sy} r={20} className="helpRing" />}
               {/* Which way they are facing, so a roster row and a map marker
                   tell the same story. */}

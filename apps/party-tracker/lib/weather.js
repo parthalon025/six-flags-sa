@@ -9,8 +9,9 @@
  *
  * The output is deliberately hedged. This module never claims a ride *is*
  * closed — only that a park operating normally would probably have stopped it.
- * The park's own app and the ride's own gate are the truth; a forecast is a
- * head start on the walk you were about to waste.
+ * Hourly forecast feeds predictions for a Plan; a Ride report is what marks
+ * an Attraction down. The park's own app and the ride's own gate are the truth;
+ * a forecast is a head start on the walk you were about to waste.
  */
 
 /* ------------------------------------------------------------- traits ---- */

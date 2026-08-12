@@ -1,5 +1,7 @@
 # The park intelligence proposal, weighed against what is here
 
+> **Canonical domain language is root `CONTEXT.md`.** This review is historical. Accepted contradictions vs this document: heights travel on the party mesh; an in-bounds **Location** trail is kept for the family; **Party** join is name-first.
+
 A proposal arrived to turn this app into a park intelligence platform: a normalized
 park database in PostGIS, a Valhalla routing service, a rules engine, an evidence
 pipeline with confidence scoring, a weather engine, a wait-time model, a planner, and

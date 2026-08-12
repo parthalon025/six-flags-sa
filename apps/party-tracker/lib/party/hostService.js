@@ -26,6 +26,8 @@ import {
   RESYNC,
   SET_FAVORITE,
   SET_MEET,
+  SET_PLAN,
+  ADD_MEMBER,
   SET_RIDE_STATUS,
   SET_TARGET,
   SNAPSHOT,
@@ -55,6 +57,8 @@ const COMMAND_FOR = {
   [SET_TARGET]: 'set-target',
   [SET_RIDE_STATUS]: 'set-ride-status',
   [SET_MEET]: 'set-meet',
+  [SET_PLAN]: 'set-plan',
+  [ADD_MEMBER]: 'add-member',
   [BYE]: 'leave',
 };
 
@@ -205,6 +209,8 @@ export function createHostService({
     return {
       name: typeof m.name === 'string' ? m.name : undefined,
       userId: typeof m.userId === 'string' ? m.userId.slice(0, 64) : m.userId || undefined,
+      height: Number.isFinite(m.height) ? m.height : undefined,
+      withAdult: m.withAdult === false ? false : undefined,
     };
   }
 

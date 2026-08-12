@@ -1,4 +1,4 @@
-# Architecture map — Party Tracker
+# Architecture map — Park Bound
 
 A visual tour for new developers. Read this before diving into files.
 For the full prose map of every directory, see [Layout in README](../README.md#layout).

@@ -234,7 +234,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
         </p>
       )}
 
-      <div className="label">Assume There Is</div>
+      <div className="label">With adult</div>
       <div className="chips">
         <button
           type="button"
@@ -242,7 +242,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
           onClick={() => onWithAdult(!withAdult)}
           aria-pressed={withAdult}
         >
-          Adult along
+          With adult
         </button>
       </div>
 

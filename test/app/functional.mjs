@@ -309,17 +309,16 @@ await check('ride detail shows a structured eligibility reason', async () => {
   return true;
 });
 
-
-await check('"adult along" changes the companion tally', async () => {
+await check('"with adult" changes the companion tally', async () => {
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(300);
   const withAdult = await a.locator('.ratioKey .warn b').innerText();
-  await a.locator('.chip:has-text("Adult along")').click();
+  await a.locator('.chip:has-text("With adult")').click();
   await a.waitForTimeout(400);
   const without = await a.locator('.ratioKey .warn b').innerText();
   if (withAdult === without) throw new Error(`companion count unchanged: ${withAdult}`);
-  await a.locator('.chip:has-text("Adult along")').click();
+  await a.locator('.chip:has-text("With adult")').click();
   await a.waitForTimeout(300);
   return true;
 });
@@ -740,12 +739,11 @@ await check('back on Kings Island before party tests', async () => {
   return true;
 });
 
-await check('anonymous soft-gate blocks Start a party', async () => {
+await check('anonymous can start a party by name', async () => {
   await go(a, 'Party');
-  if ((await a.locator('button:has-text("Start a party")').count()) > 0) {
-    throw new Error('Start a party visible without sign-in');
+  if ((await a.locator('button:has-text("Start a party")').count()) < 1) {
+    throw new Error('Start a party missing without sign-in');
   }
-  if ((await a.locator('.signInCard').count()) < 1) throw new Error('missing soft-gate card');
   return true;
 });
 
@@ -829,21 +827,20 @@ await check('the host phone says it is hosting', async () => {
   return true;
 });
 
-await check('location sharing Off/Approx/Precise is available in the party', async () => {
+await check('device-less Members can be added to the roster', async () => {
   await go(a, 'Party');
-  const group = a.locator('[aria-label="Location sharing"]');
-  await until(async () => (await group.count()) > 0, {
+  const nameField = a.locator('input[aria-label="Device-less member name"]');
+  await until(async () => (await nameField.count()) > 0, {
     timeout: 15000,
-    label: 'location sharing control',
+    label: 'device-less member form',
   });
-  for (const mode of ['Off', 'Approx', 'Precise']) {
-    await group.locator(`.tab:has-text("${mode}")`).click();
-    await a.waitForTimeout(300);
-    if (!(await group.locator(`.tab.on:has-text("${mode}")`).count())) {
-      throw new Error(`${mode} not marked on`);
-    }
-  }
-  await group.locator('.tab:has-text("Approx")').click();
+  await nameField.fill('Mia');
+  await a.locator('input[aria-label="Height in inches"]').fill('40');
+  await a.locator('button:has-text("Add")').click();
+  await until(async () => /Mia/i.test(await a.locator('.roster').innerText().catch(() => '')), {
+    timeout: 10000,
+    label: 'Mia on roster',
+  });
   return true;
 });
 

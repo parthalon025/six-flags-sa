@@ -126,7 +126,7 @@ const {
   parkOutlook,
 } = await import('../../apps/party-tracker/lib/weather.js');
 const { STATUS, statusFor, statusSummary } = await import('../../apps/party-tracker/lib/rideStatus.js');
-const { indexById, keyOf, slug, titleOf, withIds } = await import('../../apps/party-tracker/lib/venue/ids.js');
+const { identityOf, indexById, keyOf, slug, titleOf, withIds } = await import('../../apps/party-tracker/lib/venue/ids.js');
 const {
   Declutter,
   boxAround,
@@ -229,6 +229,7 @@ await check('createParty starts empty at version 0', () => {
   assert.equal(p.version, 0);
   assert.deepEqual(p.members, {});
   assert.equal(p.meet, null);
+  assert.deepEqual(p.plan, []);
   return true;
 });
 
@@ -319,6 +320,57 @@ await check('clearing a location drops it from the roster', () => {
 
   const again = reduce(cleared.state, { kind: 'location', from: PEER, body: { clear: true } }, now + 2);
   assert.equal(again.ops.length, 0, 'clearing an already-clear location is a no-op');
+  return true;
+});
+
+await check('location updates keep an in-bounds trail and ignore pause', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  assert.equal(state.members[PEER].sharingPaused, undefined);
+  assert.equal(state.members[PEER].withAdult, true);
+  assert.deepEqual(state.plan, []);
+  state = reduce(
+    state,
+    { kind: 'location', from: PEER, body: { location: { lat: 39.3, lng: -84.26, ts: now + 1 } } },
+    now,
+  ).state;
+  state = reduce(
+    state,
+    { kind: 'location', from: PEER, body: { location: { lat: 39.31, lng: -84.27, ts: now + 2 } } },
+    now,
+  ).state;
+  assert.equal(state.members[PEER].trail.length, 2);
+  const paused = reduce(
+    state,
+    { kind: 'patch-member', from: PEER, body: { patch: { sharingPaused: true } } },
+    now,
+  );
+  assert.equal(paused.ops.length, 0);
+  return true;
+});
+
+await check('set-plan is shared last-write-wins and add-member creates a device-less seat', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  const plan = [
+    { id: 'beast', placeId: 'beast', label: 'The Beast' },
+    { id: 'orion', placeId: 'orion', label: 'Orion' },
+  ];
+  state = reduce(state, { kind: 'set-plan', from: PEER, body: { plan } }, now).state;
+  assert.equal(state.plan.length, 2);
+  assert.equal(publicSnapshot(state).plan[0].placeId, 'beast');
+  state = reduce(
+    state,
+    {
+      kind: 'add-member',
+      from: HOST,
+      body: { id: 'mia', name: 'Mia', height: 40, withAdult: true },
+    },
+    now,
+  ).state;
+  assert.equal(state.members.mia.deviceLess, true);
+  assert.equal(state.members.mia.height, 40);
+  assert.equal(state.members.mia.location, null);
   return true;
 });
 
@@ -5878,6 +5930,27 @@ await check('a place is addressable by id and by name', () => {
   return true;
 });
 
+await check('two restrooms do not share a list key just because they share a title', () => {
+  // Park map labels used the printed title as the React key. A park has dozens
+  // of "Restrooms"; colliding keys leave SVG text stuck on screen while you pan.
+  const [a, b] = withIds([
+    { n: 'Restrooms', lat: 32.761, lng: -97.07, c: 'restroom' },
+    { n: 'Restrooms', lat: 32.762, lng: -97.071, c: 'restroom' },
+  ]);
+  assert.notEqual(identityOf(a), identityOf(b));
+  assert.notEqual(identityOf(a), titleOf(a));
+  assert.equal(titleOf(a), titleOf(b));
+  return true;
+});
+
+await check('an unkeyed restroom pair still gets distinct keys from where they stand', () => {
+  const a = { n: 'Restrooms', lat: 32.761, lng: -97.07, c: 'restroom' };
+  const b = { n: 'Restrooms', lat: 32.762, lng: -97.071, c: 'restroom' };
+  assert.notEqual(identityOf(a), identityOf(b));
+  assert.notEqual(identityOf(a), 'Restrooms');
+  return true;
+});
+
 /* ------------------------------------------------------- primary keys ---- */
 
 /* The key a place is issued at build time, and the ledger that remembers it.
@@ -7339,8 +7412,9 @@ await check('shared schemas export ranks and soft-gate helpers', () => {
   assert.ok(PROFILE_RANKS.includes('visitor'));
   assert.ok(CONTRIBUTION_KINDS.includes('adventure'));
   assert.equal(FIXTURES.profile.userId, FIXTURES.user.id);
-  assert.equal(requiresSignedIn(null, 'party'), true);
+  assert.equal(requiresSignedIn(null, 'party'), false);
   assert.equal(requiresSignedIn('usr_demo', 'party'), false);
+  assert.equal(requiresSignedIn(null, 'contribute'), true);
   assert.equal(requiresSignedIn(null, 'browse'), false);
   return true;
 });
@@ -7454,7 +7528,7 @@ await check('shared schemas export ranks and soft-gate helpers', () => {
 
 await check('soft-gate helper lives on the local session module', async () => {
   const { softGateBlocks } = await import('../../apps/party-tracker/lib/auth/session.js');
-  assert.equal(softGateBlocks('party', null), true);
+  assert.equal(softGateBlocks('party', null), false);
   assert.equal(softGateBlocks('browse', null), false);
   return true;
 });
@@ -7480,8 +7554,9 @@ await check('soft-gate helper lives on the local session module', async () => {
     signOutLocal,
   } = await import('../../apps/party-tracker/lib/auth/session.js');
 
-  await check('softGateBlocks party/adventure until signed in', () => {
-    assert.equal(softGateBlocks('party', null), true);
+  await check('softGateBlocks contribute/adventure until signed in; party is name-first', () => {
+    assert.equal(softGateBlocks('party', null), false);
+    assert.equal(softGateBlocks('contribute', null), true);
     assert.equal(softGateBlocks('adventure', { userId: 'usr_x' }), false);
     assert.equal(softGateBlocks('party', { userId: 'usr_x' }), false);
     return true;
