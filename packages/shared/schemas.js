@@ -118,7 +118,7 @@ export const CONTRIBUTION_KINDS = /** @type {const} */ ([
   'geometry',
   'height',
   'amenity',
-  'adventure',
+  'adventure', // Side Quest payload kind on the wire — domain name is Side Quest
 ]);
 
 export const CONTRIBUTION_STATUSES = /** @type {const} */ ([
@@ -159,12 +159,13 @@ export const FIXTURES = {
 };
 
 /**
- * Soft-gate helpers — anonymous may browse; these actions need a profile.
+ * Soft-gate helpers — anonymous may browse and join a Party by name.
+ * Contributions, Side Quest submit, and cross-day Plan sync need a Profile.
  * @param {string | null | undefined} userId
  * @param {'party'|'contribute'|'adventure'|'planner'} action
  */
 export function requiresSignedIn(userId, action) {
-  const gated = new Set(['party', 'contribute', 'adventure', 'planner']);
+  const gated = new Set(['contribute', 'adventure', 'planner']);
   if (!gated.has(action)) return false;
   return !userId;
 }

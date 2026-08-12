@@ -2,7 +2,7 @@
 
 **Status:** Accepted — 2026-08-11  
 **Backlog:** EP.1 → EP.2–EP.5  
-**North star:** Explore more, stress less — profiles exist so family prefs, party trust, and adventure progress survive the park day without forcing a hard wall before the map.
+**North star:** Explore more, stress less — profiles exist so family prefs, party trust, and **Side Quest** progress survive the park day without forcing a hard wall before the map.
 
 ## Decision
 
@@ -12,7 +12,7 @@ Use **Auth.js (NextAuth v5)** on the existing Next.js party-tracker app.
 |--------|--------|
 | Providers | Email **magic link** (primary) + optional **Google OAuth** |
 | Session | JWT session cookies (HTTP-only, Secure, SameSite=Lax) |
-| Soft gate | Anonymous users may **browse the map**; party join, contributions, adventure sync, and planner sync require a signed-in profile |
+| Soft gate | Anonymous users may **browse the map** and join/host a **Party** by name; **Contributions**, **Side Quest** submit, and cross-day **Plan** sync require a signed-in **Profile** |
 | Offline | After login, cache `user_id`, display name, avatar key, rank/passport snapshot in **IndexedDB**; map/routing still work fully offline from venue JSON |
 | Server store | Plain Postgres (no PostGIS) for users/profiles — see E0.2–E0.4 |
 
@@ -30,14 +30,14 @@ Anonymous          Signed-in
 ─────────          ─────────
 View map           View map
 Pick venue         Pick venue
-Local height UI    Profile + managed guest heights
-                   Join / host party (members bind user_id)
-                   Submit Side Quests / adventure
+Join / host Party  Join / host Party (Member may bind Profile)
+Local height UI    Profile + Managed Guest heights
+                   Submit Side Quests / Contributions
                    Sync contribution + observation queues
-                   Next-best planner personalization
+                   Plan personalization / sync across days
 ```
 
-Anonymous contribution and anonymous adventure sync are **forbidden**. Local draft queues may exist but upload rejects without `user_id`.
+Anonymous contribution and anonymous **Side Quest** submit are **forbidden**. Local draft queues may exist but upload rejects without `user_id`. Name-first **Party** join is allowed.
 
 ## Offline session
 
@@ -63,6 +63,6 @@ Anonymous contribution and anonymous adventure sync are **forbidden**. Local dra
 
 ## Consequences
 
-- EP.3 functional tests must cover: anonymous map OK; party/contribute blocked until signed in.
+- EP.3 functional tests must cover: anonymous map OK; party join by name OK; contribute blocked until signed in.
 - Consolidate and living-map paths always attribute to `authorId` → profile.
-- Adventure (E9/E10) scores against the same profile — no parallel guest XP identity.
+- **Side Quests** (E9/E10) score against the same profile — no parallel guest XP identity.

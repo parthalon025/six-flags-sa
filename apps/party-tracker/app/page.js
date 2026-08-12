@@ -46,8 +46,9 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
+import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
-import { softGateBlocks, resolveSession } from '@/lib/auth/session';
+import { resolveSession } from '@/lib/auth/session';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -800,7 +801,6 @@ export default function Page() {
   useEffect(() => {
     const pending = pendingInviteRef.current || pendingInvite;
     if (!pending?.payload || !runtimeApi) return undefined;
-    if (softGateBlocks('party', authSession)) return undefined;
     if (inviteJoinInFlight.current) return undefined;
     inviteJoinInFlight.current = true;
     const named = (pending.name || '').trim();
@@ -941,10 +941,7 @@ export default function Page() {
       if (!fix) return;
       const inside = shouldShareLocation(venue?.bounds, fix.lat, fix.lng);
       if (!inside) {
-        if (locationSharingRef.current) {
-          runtime.current?.clearLocation();
-          locationSharingRef.current = false;
-        }
+        locationSharingRef.current = false;
         return;
       }
       // `now` is passed explicitly because the gate falls back to the fix's own
@@ -954,7 +951,6 @@ export default function Page() {
       // position which never landed can never come round.
       const decision = shouldBroadcast({ heading, now: Date.now() });
       if (!decision.send) return;
-      if (selfMember?.sharingPaused) return;
       locationSharingRef.current = true;
       runtime.current?.pushLocation({
         lat: fix.lat,
@@ -968,7 +964,7 @@ export default function Page() {
     tick();
     const id = setInterval(tick, GATE_TICK_MS);
     return () => clearInterval(id);
-  }, [active, position, heading, shouldBroadcast, venue?.bounds, selfMember?.sharingPaused]);
+  }, [active, position, heading, shouldBroadcast, venue?.bounds]);
 
   useEffect(() => {
     if (!active) locationSharingRef.current = false;
@@ -1189,11 +1185,6 @@ export default function Page() {
 
   /* ---------- party actions ---------- */
   const createParty = async () => {
-    if (softGateBlocks('party', authSession)) {
-      showToast('Sign in under Me to start a party');
-      selectTab('settings');
-      return;
-    }
     setBusy(true);
     try {
       const snap = await runtime.current.createParty({
@@ -1205,6 +1196,10 @@ export default function Page() {
       showToast(
         `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
       );
+      import('@/components/IntelligencePanel').then(({ planItemsFromScenario }) => {
+        const items = planItemsFromScenario();
+        if (items.length) runtime.current?.setPlan(items);
+      });
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
     }
@@ -1212,11 +1207,6 @@ export default function Page() {
   };
 
   const joinParty = async (raw, asName = null) => {
-    if (softGateBlocks('party', authSession)) {
-      showToast('Sign in under Me to join a party');
-      selectTab('settings');
-      return;
-    }
     setBusy(true);
     try {
       // A name typed on the join screen is the freshest thing we know, and it
@@ -1232,6 +1222,12 @@ export default function Page() {
       });
       selectTab('party');
       showToast(`Joined ${snap.code}`);
+      import('@/components/IntelligencePanel').then(({ planItemsFromScenario }) => {
+        const items = planItemsFromScenario();
+        if (items.length && !(runtime.current?.getSnapshot()?.plan || []).length) {
+          runtime.current?.setPlan(items);
+        }
+      });
     } catch (err) {
       const msg = err?.message || 'Could not join that party.';
       showToast(
@@ -2386,16 +2382,22 @@ export default function Page() {
                   // Reporting needs somewhere to send it. Outside a party the list
                   // still shows the forecast, minus the buttons.
                   onReport={party?.active ? reportRide : null}
-                  onAddToPlan={
-                    party?.active
-                      ? (p) => {
-                          import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
-                            addPlaceToPlan(p);
-                            showToast(`Added ${p.n} to plan`);
-                          });
-                        }
-                      : null
-                  }
+                  onAddToPlan={(p) => {
+                    const item = { id: p.i || p.id, placeId: p.i || p.id, label: p.n };
+                    if (party?.active) {
+                      const current = party.plan || [];
+                      if (current.some((s) => s.placeId === item.placeId)) {
+                        showToast(`${p.n} is already on the Plan`);
+                        return;
+                      }
+                      runtime.current?.setPlan([...current, item]);
+                    } else {
+                      import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
+                        addPlaceToPlan(p);
+                      });
+                    }
+                    showToast(`Added ${p.n} to plan`);
+                  }}
                   now={clock}
                 />
               </>
@@ -2428,16 +2430,22 @@ export default function Page() {
                 onNavigate={startNav}
                 onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
                 onReport={party?.active ? reportRide : null}
-                onAddToPlan={
-                  party?.active
-                    ? (p) => {
-                        import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
-                          addPlaceToPlan(p);
-                          showToast(`Added ${p.n} to plan`);
-                        });
-                      }
-                    : null
-                }
+                onAddToPlan={(p) => {
+                  const item = { id: p.i || p.id, placeId: p.i || p.id, label: p.n };
+                  if (party?.active) {
+                    const current = party.plan || [];
+                    if (current.some((s) => s.placeId === item.placeId)) {
+                      showToast(`${p.n} is already on the Plan`);
+                      return;
+                    }
+                    runtime.current?.setPlan([...current, item]);
+                  } else {
+                    import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
+                      addPlaceToPlan(p);
+                    });
+                  }
+                  showToast(`Added ${p.n} to plan`);
+                }}
               />
             )}
 
@@ -2512,27 +2520,26 @@ export default function Page() {
                     });
                   }
                 }}
+                onAddDeviceLess={({ name, height: inches }) => {
+                  runtime.current?.addMember({
+                    id: newMemberId(),
+                    name,
+                    height: inches,
+                    withAdult: true,
+                  });
+                  showToast(`Added ${name}`);
+                }}
               />
               {active && (
                 <IntelligencePanel
                   rides={partyRides || {}}
+                  plan={party?.plan || []}
                   myGroupId={selfMember?.groupId}
-                  sharingPaused={selfMember?.sharingPaused}
-                  shareMode={selfMember?.shareMode || (selfMember?.sharingPaused ? 'off' : 'approx')}
-                  shareUntil={selfMember?.shareUntil || null}
                   onGroupId={(g) => runtime.current?.setGroupId?.(g)}
-                  onSharingPaused={(v) => runtime.current?.setSharingPaused?.(v)}
-                  onShareMode={(mode) => runtime.current?.setShareMode?.(mode)}
-                  onApplyPlan={(ops) => {
-                    for (const op of ops) {
-                      if (op.kind === 'set-meet' && op.body?.meet) {
-                        setMeetPoint(op.body.meet.lat, op.body.meet.lng, op.body.meet.label);
-                      }
-                      if (op.kind === 'set-target' && op.body?.rideId) {
-                        runtime.current?.setTarget(op.body.rideId);
-                      }
-                    }
-                    showToast('Plan applied to the party');
+                  onSetPlan={(next) => runtime.current?.setPlan(next)}
+                  onWalkStop={(s) => {
+                    const poi = POIS.find((p) => p.i === s.placeId || p.id === s.placeId);
+                    if (poi) startNav(poi);
                   }}
                   onUndoMeet={clearMeet}
                 />
@@ -2559,8 +2566,14 @@ export default function Page() {
               <HeightPanel
                 height={height}
                 withAdult={withAdult}
-                onHeight={setHeight}
-                onWithAdult={setWithAdult}
+                onHeight={(h) => {
+                  setHeight(h);
+                  if (party?.active) runtime.current?.setMemberFacts({ height: h });
+                }}
+                onWithAdult={(v) => {
+                  setWithAdult(v);
+                  if (party?.active) runtime.current?.setMemberFacts({ withAdult: v });
+                }}
                 venue={venue}
               />
             )}

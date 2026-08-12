@@ -305,9 +305,11 @@ const host = await arrive(KI, { venue: 'kings-island' });
 const h = host.page;
 await h.locator('.tabItem[data-tab="party"]').click({ force: true });
 await h.waitForTimeout(600);
-await h.locator('.signInCard input[type="email"]').fill('grandad@parkbound.example');
-await h.locator('.signInCard button:has-text("Email me a link")').click();
-await h.waitForTimeout(800);
+if (await h.locator('.signInCard input[type="email"]').count()) {
+  await h.locator('.signInCard input[type="email"]').fill('grandad@parkbound.example');
+  await h.locator('.signInCard button:has-text("Email me a link")').click();
+  await h.waitForTimeout(800);
+}
 await h.locator('.field[aria-label="Your name"]').fill('Grandad');
 await h.locator('.field[aria-label="Your name"]').blur();
 await h.waitForTimeout(400);

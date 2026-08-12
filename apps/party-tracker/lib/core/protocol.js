@@ -29,6 +29,8 @@ export const SET_FAVORITE = 'set-favorite'; // { rideId, favorite }
 export const SET_TARGET = 'set-target'; // { rideId | null }
 export const SET_RIDE_STATUS = 'set-ride-status'; // { rideId, status: 'open'|'down'|null, note? }
 export const SET_MEET = 'set-meet'; // { meet | null }
+export const SET_PLAN = 'set-plan'; // { plan: [{ id, placeId, label }] }
+export const ADD_MEMBER = 'add-member'; // device-less seat: { id, name, height?, withAdult? }
 export const BYE = 'bye'; // leave: {}
 export const RESYNC = 'resync'; // { haveVersion }
 
@@ -46,7 +48,7 @@ export const VICTORY = 'victory'; // { snapshot } — new host asserts itself
 
 export const CLIENT_KINDS = new Set([
   HELLO, LOCATION, HEARTBEAT, PATCH_MEMBER, SET_FAVORITE, SET_TARGET, SET_RIDE_STATUS, SET_MEET,
-  BYE, RESYNC,
+  SET_PLAN, ADD_MEMBER, BYE, RESYNC,
 ]);
 
 export const HOST_KINDS = new Set([WELCOME, SNAPSHOT, PATCH, PING, ERROR]);

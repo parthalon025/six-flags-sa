@@ -42,6 +42,10 @@ export const RIDE_STALE_AFTER_MS = 30 * 60 * 1000;
 
 /** Most a member may star. See `set-favorite` for why there is a ceiling. */
 export const FAVORITES_MAX = 20;
+/** Last-known dots kept on a Member for the family trail. */
+export const TRAIL_MAX = 24;
+/** Shared Plan stops. Same ceiling as personal favorites — the list rides in every snapshot. */
+export const PLAN_MAX = 20;
 
 export const ROLE_HOST = 'host';
 export const ROLE_MEMBER = 'member';
@@ -57,6 +61,7 @@ export function createParty({ id, name = 'Party', leader, now = Date.now(), tran
     members: {},
     rides: {},
     meet: null,
+    plan: [],
     // Reserved. No command emits SETTINGS_MERGE yet, so this is empty by
     // design: it is the slot the first genuinely party-wide setting drops
     // into, and OP.SETTINGS_MERGE is the mechanism that will replicate it.
@@ -72,6 +77,9 @@ export function createMember({
   groupId = null,
   userId = null,
   now = Date.now(),
+  height = null,
+  withAdult = true,
+  deviceLess = false,
 }) {
   return {
     id,
@@ -86,10 +94,12 @@ export function createMember({
     status: 'On the move',
     target: null, // rideId the member is heading for
     favorites: [],
-    sharingPaused: false,
-    /** E4.1: off | approx | precise — approx is the safe default. */
+    height: Number.isFinite(height) ? height : null,
+    withAdult: withAdult !== false,
+    deviceLess: Boolean(deviceLess),
+    trail: [],
+    /** E4.1 coarsening: approx | precise. `off` is ignored — Location is mandatory. */
     shareMode: 'approx',
-    /** Epoch ms when precise (or timed) sharing expires; null = no timer. */
     shareUntil: null,
     lastSeen: now,
   };
@@ -120,6 +130,7 @@ export function adoptSnapshot(target, snap) {
     members: snap.members,
     rides: snap.rides,
     meet: snap.meet,
+    plan: Array.isArray(snap.plan) ? snap.plan : [],
     settings: snap.settings,
   };
 }
@@ -135,6 +146,7 @@ export const OP = {
   RIDE_MERGE: 'ride.merge', // { id, patch }
   RIDE_DEL: 'ride.del', // { id }
   MEET_SET: 'meet.set', // { meet }
+  PLAN_SET: 'plan.set', // { plan }
   LEADER_SET: 'leader.set', // { leader }
   SETTINGS_MERGE: 'settings.merge', // { patch }
 };
@@ -169,6 +181,9 @@ export function applyOps(state, ops) {
         break;
       case OP.MEET_SET:
         clone().meet = op.meet;
+        break;
+      case OP.PLAN_SET:
+        clone().plan = op.plan;
         break;
       case OP.LEADER_SET:
         clone().leader = op.leader;
@@ -212,14 +227,17 @@ export function reduce(state, command, now = Date.now()) {
         joinOrder: existing?.joinOrder ?? nextJoinOrder(state),
         userId: body.userId || existing?.userId || null,
         now,
+        height: body.height ?? existing?.height,
+        withAdult: body.withAdult ?? existing?.withAdult,
+        deviceLess: existing?.deviceLess,
       });
       if (existing) {
         member.location = existing.location;
         member.favorites = existing.favorites;
         member.target = existing.target;
+        member.trail = existing.trail || [];
         member.shareMode = existing.shareMode;
         member.shareUntil = existing.shareUntil;
-        member.sharingPaused = existing.sharingPaused;
         if (existing.userId) member.userId = existing.userId;
       }
       return withOps(state, [{ type: OP.MEMBER_SET, id: from, member }]);
@@ -233,14 +251,14 @@ export function reduce(state, command, now = Date.now()) {
           { type: OP.MEMBER_MERGE, id: from, patch: { location: null, lastSeen: now } },
         ]);
       }
-      if (me.sharingPaused || me.shareMode === 'off') return none(state);
       const loc = body.location;
       if (!isValidLocation(loc)) return none(state);
       // Last valid update replaces the previous one; anything older is a
       // reordered packet and is ignored.
       if (me.location && loc.ts <= me.location.ts) return none(state);
+      const trail = [...(me.trail || []), loc].slice(-TRAIL_MAX);
       return withOps(state, [
-        { type: OP.MEMBER_MERGE, id: from, patch: { location: loc, lastSeen: now } },
+        { type: OP.MEMBER_MERGE, id: from, patch: { location: loc, trail, lastSeen: now } },
       ]);
     }
 
@@ -267,15 +285,14 @@ export function reduce(state, command, now = Date.now()) {
       if (typeof body.patch?.name === 'string') patch.name = body.patch.name.slice(0, 24);
       if (body.patch?.status !== undefined) patch.status = body.patch.status;
       if (body.patch?.groupId !== undefined) patch.groupId = body.patch.groupId || null;
-      if (body.patch?.sharingPaused !== undefined) {
-        patch.sharingPaused = Boolean(body.patch.sharingPaused);
-        if (patch.sharingPaused) patch.shareMode = 'off';
+      if (body.patch?.height !== undefined) {
+        patch.height = Number.isFinite(body.patch.height) ? body.patch.height : null;
       }
+      if (body.patch?.withAdult !== undefined) patch.withAdult = Boolean(body.patch.withAdult);
       if (body.patch?.shareMode !== undefined) {
         const mode = String(body.patch.shareMode);
-        if (mode === 'off' || mode === 'approx' || mode === 'precise') {
+        if (mode === 'approx' || mode === 'precise') {
           patch.shareMode = mode;
-          patch.sharingPaused = mode === 'off';
         }
       }
       if (body.patch?.shareUntil !== undefined) {
@@ -357,6 +374,29 @@ export function reduce(state, command, now = Date.now()) {
       return withOps(state, [{ type: OP.MEET_SET, meet }]);
     }
 
+    case 'set-plan': {
+      if (!me) return none(state);
+      const plan = normalizePlan(body.plan);
+      if (JSON.stringify(plan) === JSON.stringify(state.plan || [])) return none(state);
+      return withOps(state, [{ type: OP.PLAN_SET, plan }]);
+    }
+
+    case 'add-member': {
+      if (!me) return none(state);
+      const id = typeof body.id === 'string' ? body.id.slice(0, 32) : '';
+      if (!id || state.members[id]) return none(state);
+      const member = createMember({
+        id,
+        name: typeof body.name === 'string' ? body.name.slice(0, 24) || 'Guest' : 'Guest',
+        joinOrder: nextJoinOrder(state),
+        now,
+        height: body.height,
+        withAdult: body.withAdult !== false,
+        deviceLess: true,
+      });
+      return withOps(state, [{ type: OP.MEMBER_SET, id, member }]);
+    }
+
     case 'leave': {
       if (!me) return none(state);
       return withOps(state, [{ type: OP.MEMBER_DEL, id: from }]);
@@ -383,6 +423,7 @@ export function reduce(state, command, now = Date.now()) {
 export function evict(state, now = Date.now(), ttl = MEMBER_TTL_MS) {
   const ops = [];
   for (const [id, m] of Object.entries(state.members)) {
+    if (m.deviceLess) continue;
     if (now - m.lastSeen > ttl) ops.push({ type: OP.MEMBER_DEL, id });
   }
   return ops.length ? withOps(state, ops) : none(state);
@@ -432,7 +473,7 @@ export function isValidLocation(loc) {
   );
 }
 
-/** Strip anything a peer has no business seeing. Location history is never kept. */
+/** Strip anything a peer has no business seeing. Family trail dots stay — they are party-scoped. */
 export function publicSnapshot(state) {
   return {
     id: state.id,
@@ -444,6 +485,22 @@ export function publicSnapshot(state) {
     members: state.members,
     rides: state.rides,
     meet: state.meet,
+    plan: state.plan || [],
     settings: state.settings,
   };
+}
+
+function normalizePlan(plan) {
+  if (!Array.isArray(plan)) return [];
+  const out = [];
+  for (const step of plan.slice(0, PLAN_MAX)) {
+    const placeId = typeof step?.placeId === 'string' ? step.placeId.slice(0, 80) : '';
+    if (!placeId) continue;
+    out.push({
+      id: typeof step.id === 'string' ? step.id.slice(0, 80) : placeId,
+      placeId,
+      label: typeof step.label === 'string' ? step.label.slice(0, 80) : placeId,
+    });
+  }
+  return out;
 }

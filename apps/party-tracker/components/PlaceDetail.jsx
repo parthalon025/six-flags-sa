@@ -104,7 +104,7 @@ export function PlaceDetailBody({
         </button>
         {onAddToPlan && (
           <button type="button" className="btn small" onClick={() => onAddToPlan(poi)}>
-            Save
+            Add to Plan
           </button>
         )}
       </div>

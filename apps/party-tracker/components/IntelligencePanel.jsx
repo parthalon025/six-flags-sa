@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import BrandMark from '@/components/BrandMark';
-import { loadScenario, saveScenario, createScenario, addStep, clearScenario, visibleSteps, mergeScenario } from '@/lib/scenario';
+import { loadScenario, saveScenario, createScenario, addStep, clearScenario, visibleSteps } from '@/lib/scenario';
 import { recent } from '@/lib/actionLog';
 
 const GROUPS = ['', 'A', 'B', 'C'];
 
-/** Turn raw action-log kinds into Parkbound adventure moments. */
+/** Turn raw action-log kinds into Park Bound day moments. */
 function momentLabel(entry) {
   const place = entry.detail?.label || entry.detail?.name || '';
   switch (entry.kind) {
@@ -34,21 +34,26 @@ function momentLabel(entry) {
   }
 }
 
+function toPlanItem(place) {
+  const placeId = place.i || place.id || place.placeId;
+  return {
+    id: placeId,
+    placeId,
+    label: place.n || place.label || placeId,
+  };
+}
+
 export default function IntelligencePanel({
   rides = {},
-  onApplyPlan,
+  plan = [],
+  onSetPlan,
+  onWalkStop,
   onUndoMeet,
   myGroupId,
   onGroupId,
-  sharingPaused,
-  onSharingPaused,
-  shareMode: shareModeProp = null,
-  shareUntil = null,
-  onShareMode = null,
 }) {
   const [scenario, setScenario] = useState(null);
   const [log, setLog] = useState([]);
-  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     setScenario(loadScenario() || createScenario('Today'));
@@ -56,22 +61,36 @@ export default function IntelligencePanel({
 
   useEffect(() => {
     recent(8).then(setLog).catch(() => setLog([]));
-  }, [rides, scenario]);
-
-  useEffect(() => {
-    if (!shareUntil) return undefined;
-    const t = setInterval(() => setNow(Date.now()), 30000);
-    return () => clearInterval(t);
-  }, [shareUntil]);
+  }, [rides, scenario, plan]);
 
   if (!scenario) return null;
 
-  const steps = visibleSteps(scenario, rides);
-  const shareMode = shareModeProp || (sharingPaused ? 'off' : 'approx');
-  const shareUntilLabel =
-    shareMode === 'precise' && shareUntil && shareUntil > now
-      ? `${Math.max(1, Math.ceil((shareUntil - now) / 60000))} min left`
-      : null;
+  const shared = Array.isArray(plan) && plan.length > 0;
+  const steps = shared
+    ? plan.map((s) => {
+        const report = s.placeId ? rides[s.placeId] : null;
+        const down = report?.status === 'down';
+        return { ...s, down, reason: down ? report.note || 'Reported down' : null };
+      })
+    : visibleSteps(scenario, rides);
+
+  function move(i, dir) {
+    const next = [...steps];
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j], next[i]];
+    const items = next.map((s) => ({
+      id: s.id || s.placeId,
+      placeId: s.placeId,
+      label: s.label || s.placeId,
+    }));
+    if (onSetPlan) onSetPlan(items);
+    else {
+      const sc = { ...scenario, steps: items.map((s) => ({ ...s, kind: 'target' })) };
+      saveScenario(sc);
+      setScenario(sc);
+    }
+  }
 
   return (
     <div className="intelPanel">
@@ -89,72 +108,52 @@ export default function IntelligencePanel({
         ))}
       </div>
 
-      <div className="label">Where others see you</div>
-      <div className="segmented" role="group" aria-label="Location sharing">
-        {[
-          ['off', 'Off'],
-          ['approx', 'Approx'],
-          ['precise', 'Precise'],
-        ].map(([mode, label]) => (
-          <button
-            key={mode}
-            type="button"
-            className={`tab ${shareMode === mode ? 'on' : ''}`}
-            aria-pressed={shareMode === mode}
-            onClick={() => onShareMode?.(mode)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-      <p className="fine">
-        {shareMode === 'off'
-          ? 'Your pin is hidden. The map still works for you.'
-          : shareMode === 'precise'
-            ? shareUntilLabel
-              ? `Exact GPS for ${shareUntilLabel}, then back to approx — less creepy by default.`
-              : 'Exact GPS — renews for 30 minutes at a time.'
-            : 'Nearby enough to find each other (~50 m). Default while you walk.'}
-      </p>
-      <button
-        type="button"
-        className={`btn ${shareMode === 'off' ? 'danger' : ''}`}
-        onClick={() => onSharingPaused?.(shareMode !== 'off')}
-      >
-        {shareMode === 'off' ? 'Paused — tap for approx sharing' : 'Pause sharing where I am'}
-      </button>
-
-      <div className="label">Plan (this phone only)</div>
+      <div className="label">{shared || onSetPlan ? 'Plan (shared)' : 'Plan (this phone)'}</div>
       {steps.length === 0 ? (
-        <p className="fine">No steps yet. Save a place from Explore to build your trail.</p>
+        <p className="fine">No stops yet. Star a place from Explore to build today&apos;s Plan.</p>
       ) : (
         <ul className="planList">
-          {steps.map((s) => (
-            <li key={s.id} className={s.down ? 'struck' : ''}>
-              {s.label || s.placeId}
-              {s.down ? ` — ${s.reason}` : ''}
+          {steps.map((s, i) => (
+            <li key={s.id || `${s.placeId}-${i}`} className={s.down ? 'struck' : ''}>
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => onWalkStop?.(s)}
+              >
+                {s.label || s.placeId}
+                {s.down ? ` — ${s.reason}` : ''}
+              </button>
+              <span className="planMove">
+                <button type="button" className="btn small" disabled={i === 0} onClick={() => move(i, -1)} aria-label="Move up">
+                  ↑
+                </button>
+                <button type="button" className="btn small" disabled={i === steps.length - 1} onClick={() => move(i, 1)} aria-label="Move down">
+                  ↓
+                </button>
+              </span>
             </li>
           ))}
         </ul>
       )}
-      <div className="joinRow">
-        <button
-          type="button"
-          className="btn small primary"
-          disabled={!steps.some((s) => !s.down)}
-          onClick={() => onApplyPlan?.(mergeScenario(scenario, rides))}
-        >
-          Apply plan to party
-        </button>
-        <button type="button" className="btn small" onClick={() => { clearScenario(); setScenario(createScenario('Today')); }}>
-          Clear plan
-        </button>
-      </div>
+      {steps.length > 0 && (
+        <div className="joinRow">
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => {
+              clearScenario();
+              setScenario(createScenario('Today'));
+              onSetPlan?.([]);
+            }}
+          >
+            Clear plan
+          </button>
+        </div>
+      )}
 
       {log.length > 0 && (
         <>
           <div className="label">Today</div>
-          {/* Trail language for the day summary — glyph + dotted path (brand sheet Image 3). */}
           <div className="dayTrail" aria-hidden="true">
             <svg className="dayTrailPath" viewBox="0 0 120 24" preserveAspectRatio="none">
               <path
@@ -194,4 +193,13 @@ export function addPlaceToPlan(place) {
   });
   saveScenario(next);
   return next;
+}
+
+/** Local draft stops, for promoting into a Party Plan on join. */
+export function planItemsFromScenario() {
+  const sc = loadScenario();
+  if (!sc?.steps?.length) return [];
+  return sc.steps
+    .filter((s) => s.placeId)
+    .map((s) => toPlanItem(s));
 }

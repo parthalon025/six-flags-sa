@@ -11,7 +11,7 @@
 **Two ways to enjoy the same day:**
 
 1. **Navigate** — map, party, heights, meet, next-best walk (calm foundation).
-2. **Adventure** — in-park quests, discovery, passport/fog, party expeditions (second fun layer). Adventure may optionally improve map data; its job is enjoyment in the park, not phone chores.
+2. **Side Quests** — in-park missions (Pokémon GO + Waze as one loop). **Gaps** seed map-improving quests; live asks become **Ride reports**. Enjoyment and map improvement are the same loop.
 
 **Design test for every PR:** Does this help a family enjoy the park more with less stress, or does it glue eyes to the phone?
 
@@ -73,9 +73,9 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 |----|------|-------|-----------|--------|
 | EP.1 | Auth provider choice + ADR | Auth.js; magic link + optional Google; soft gate | ADR: [`adr-auth-profiles.md`](./adr-auth-profiles.md) | done |
 | EP.2 | Profile schema | `users`, `profiles` (display name, avatar key, created_at) | Migrations + shared types | open |
-| EP.3 | Sign-in / sign-up UX | Soft gate: browse map anonymously; party/contribute/adventure need sign-in | Functional tests; no anonymous contribution path | open |
+| EP.3 | Sign-in / sign-up UX | Soft gate: browse map and join/host a **Party** by name; contribute / **Side Quest** submit need a **Profile** | Functional tests; no anonymous contribution path | open |
 | EP.4 | Offline profile cache | Profile + rank/passport snapshot in IndexedDB after login | Map still draws offline; identity available for local queues | open |
-| EP.5 | Party ↔ profile link | Party members bind to `user_id` (invite still works; join requires signed-in profile) | Protocol/tests updated | open |
+| EP.5 | Party ↔ profile link | **Member** may bind to a **Profile** later (invite is name-first; join does not require sign-in) | Protocol/tests updated | open |
 | EP.6 | Managed guest profiles | Height/age for kids under guardian profile | Eligibility-ready; privacy rules documented | open |
 
 **Ordering note:** EP.1–EP.4 should land before E9 (living map) and before E10 (XP). Prefer EP before or alongside E4 party privacy so sharing controls attach to real users.
@@ -206,7 +206,7 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 | E9.5 | Graduate to overrides | PR/operator apply → rebuild | Builder remains sole `public/venues` writer | open |
 | E9.6 | Graduate to OSM | Organised editing compliance | Phase after E9.5 | open |
 
-Adventure rules: nearby quests while walking; few pins; party-local competition; impact outranks vanity XP; optional map confirms are a side effect, not the only point.
+**Side Quest** rules: nearby quests while walking; few pins; party-local competition; impact outranks vanity XP. Gap quests → **Contribution**; live quests → **Ride report**.
 
 Detail: [`2026-08-10-gamified-map-contributions-design.md`](./2026-08-10-gamified-map-contributions-design.md).
 
@@ -295,7 +295,7 @@ Detail: [`2026-08-10-gamified-map-contributions-design.md`](./2026-08-10-gamifie
 
 ## Suggested first implementation order (immediate)
 
-Do **not** start at full gamification packs or CV. Adventure v1 rides after navigate foundation.
+Do **not** start at full gamification packs or CV. **Side Quest** v1 rides after navigate foundation.
 
 1. **E0.1** — ADR batch consolidate (**done**)  
 2. **EP.1** — Auth/profile ADR (required profiles; Auth.js + soft gate)  
