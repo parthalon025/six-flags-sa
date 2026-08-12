@@ -181,6 +181,25 @@ await check('verdicts respond to height', async () => {
   return true;
 });
 
+await check('ride detail shows a structured eligibility reason', async () => {
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("42")').click();
+  await a.waitForTimeout(400);
+  await go(a, 'Places');
+  await searchPlaces(a, 'beast');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(400);
+  const reason = a.locator('.eligibilityReason');
+  await until(async () => (await reason.count()) > 0, {
+    timeout: 10000,
+    label: 'eligibility reason on ride detail',
+  });
+  const text = (await reason.innerText()).trim();
+  if (text.length < 8) throw new Error(`reason too short: "${text}"`);
+  return true;
+});
+
+
 await check('"adult along" changes the companion tally', async () => {
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
