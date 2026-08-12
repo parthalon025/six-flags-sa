@@ -1,0 +1,28 @@
+name: Skills lock
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.agents/skills/**'
+      - 'skills-lock.json'
+      - 'scripts/check-skills-lock.mjs'
+      - '.github/workflows/skills-lock.yml'
+  pull_request:
+    paths:
+      - '.agents/skills/**'
+      - 'skills-lock.json'
+      - 'scripts/check-skills-lock.mjs'
+      - '.github/workflows/skills-lock.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify skills-lock hashes
+        run: npm run skills:check

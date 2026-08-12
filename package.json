@@ -56,7 +56,10 @@
     "test:ux": "node test/app/ux.mjs",
     "test:grandma": "node test/app/grandma.mjs",
     "gitnexus:startup": "node scripts/gitnexus-sync.mjs startup",
-    "gitnexus:sync": "node scripts/gitnexus-sync.mjs finish"
+    "gitnexus:sync": "node scripts/gitnexus-sync.mjs finish",
+    "skills:check": "node scripts/check-skills-lock.mjs",
+    "skills:update": "npx skills@latest update -p -y && npm run skills:check",
+    "skills:restore": "npx skills@latest experimental_install && npm run skills:check"
   },
   "dependencies": {
     "next": "^16.3.0",
