@@ -10,6 +10,7 @@ epics when scheduled.
 **Related docs:**
 - Master spec: [`../superpowers/specs/2026-08-10-park-bound-master-spec.md`](../superpowers/specs/2026-08-10-park-bound-master-spec.md)
 - Gamified contributions research: [`2026-08-10-gamified-map-contributions.md`](2026-08-10-gamified-map-contributions.md)
+- NMS missions vs Side Quests: [`2026-08-13-nms-missions-side-quests.md`](2026-08-13-nms-missions-side-quests.md) (later rewards: **Map skin** + **Location icon**)
 - Living-map design: [`../superpowers/specs/2026-08-10-gamified-map-contributions-design.md`](../superpowers/specs/2026-08-10-gamified-map-contributions-design.md)
 - ADR: [`../superpowers/specs/adr-dual-layer-park-truth.md`](../superpowers/specs/adr-dual-layer-park-truth.md)
 
@@ -283,6 +284,8 @@ Makes "which way am I facing" disappear.
 
 ## 6. The flywheel: skins as quest rewards
 
+**Lock (2026-08-13):** later editions grant **Map skins** and **Location icons** on the Profile — earned like Titles, never bought with XP. The skin is this phone’s Venue map; the icon is the Location pin the Party watches. Not a HUD quest marker. Not this Field Research ship.
+
 Make cosmetic skins the **geocaching reward currency**: reveal 25% of a park's fog →
 unlock the pixel skin; validate 10 reports → the vintage souvenir map; complete every
 coaster credit at Cedar Point → a spinnable 3D Steel Vengeance.
@@ -294,10 +297,9 @@ matter); the map data improves with every step; the better map makes the game ri
 GAMEPLAY → DATA → BETTER MAP → BETTER GAMEPLAY ↺
 ```
 
-Monetisation-friendly version: skins earnable *or* purchasable, while quests and
-party features stay free — nobody pays to make your data better, but plenty will pay
-two dollars to skip the grind for the RCT map. Party tracking stays free forever:
-it's the network-effect feature, and paywalling it kills group adoption.
+Party tracking stays free forever: it's the network-effect feature, and paywalling it
+kills group adoption. The 2026-08-10 “pay two dollars to skip the grind” idea is **not**
+locked — XP is never spent; real-money cosmetics would need their own grill.
 
 ---
 

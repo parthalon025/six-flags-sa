@@ -45,7 +45,7 @@ A missing or unconfirmed fact the builder ships on a **Venue** (`*.gaps.json`) t
 _Avoid_: Bug, missing POI (too vague); Contribution (the answer, not the hole)
 
 **XP**:
-A **Profile** progress score earned by completing **Side Quests**. Lives only on the **Profile** — not on a **Member**, **Party**, or anonymous phone. Never spent. Crossing a threshold grants a **Title** (a sub-name on the **Profile**). Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0. A name-first **Ride report** can exist without **XP**; **XP** still needs the **Profile**. Not a public leaderboard.
+A **Profile** progress score earned by completing **Side Quests**. Lives only on the **Profile** — not on a **Member**, **Party**, or anonymous phone. Never spent. Crossing a threshold grants a **Title** now; later editions also grant **Map skins** and **Location icons**. Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0. A name-first **Ride report** can exist without **XP**; **XP** still needs the **Profile**. Not a public leaderboard.
 _Avoid_: experience (that **Contribution** kind); points (generic); Member XP; party score
 
 **Title**:
@@ -55,6 +55,14 @@ _Avoid_: nickname; handle; level; badge (use **Title**); Rank (internal ladder k
 **Rank**:
 Internal ladder key on a **Profile** that selects the **Title** (`visitor` · `scout` · `ranger` · `cartographer` · `steward`). Guests see the **Title**, not the key. Cartographer later unlocks full-ontology Create (Wayfarer) — not this Field Research loop.
 _Avoid_: showing Rank ids in UI (show **Title**); leaderboard; level
+
+**Map skin**:
+An earned cosmetic treatment of this **Profile**’s **Venue** map — palette and optional marker glyphs. Restyles; never moves geometry. Later editions. Trail and Park Midnight stay the unearned defaults. Not a second map, not a spendable shop item.
+_Avoid_: theme (engineering); wallpaper; renderer; GPS overlay
+
+**Location icon**:
+An earned cosmetic on a **Member**’s **Location** pin so the **Party** can spot them. Lives on the **Profile**. Later editions. Not a **Place** glyph rewrite, not a **Side Quest** HUD marker, not a quest pin.
+_Avoid_: GPS icon (GPS is the implementation; the pin is **Location**); badge (use **Title** for the name; this is the pin)
 
 **Ride report**:
 An ephemeral, **Party**-scoped signal about a ride’s live ops (e.g. open/down). Name-first — a display name is enough. Visible to **Members** immediately, expires with the party day, never consolidates into shipped venue JSON. Walking near the **Attraction** and seeing it is enough; queue-pin GPS is not required. Park-wide fan-out is an **Observation**, not automatic.
@@ -156,6 +164,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - A **Contribution** appears on the submitting **Party**’s **Overlay** immediately; park-wide **Overlay** needs a second independent **Party** that walked near
 - Confirm / deny of an **Overlay** claim are statistical (no public counts, names, or percent)
 - **XP** and **Title** are **Profile** fields; **XP** is never spent; the **Title** is the visible sub-name when a threshold is crossed
+- Later editions grant **Map skins** and **Location icons** onto the **Profile** the same way — earned, never bought with **XP**. A **Map skin** restyles this phone’s **Venue** map. A **Location icon** draws on that **Member**’s **Location** pin for the **Party**
 - Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0 **XP**
 - A **Ride report** belongs to a **Party** and refers to an **Attraction**; it is not a **Contribution**
 - A **Ride report** may optionally fan out into an **Observation**; an **Observation** is not a **Contribution**
@@ -208,6 +217,9 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 > **Dev:** "When I hit 50 XP, do I level up to level 2?"
 > **Domain expert:** "You earn a **Title** — a sub-name on the **Profile**. Alice stays Alice; now **Scout** sits under the name. Not a roster rename, not a **Member** field."
 >
+> **Dev:** "Do we spend XP on a Quicksilver shop?"
+> **Domain expert:** "Never. Later editions grant **Map skins** and **Location icons** the same way **Titles** land — earned on the **Profile**. The skin is your map; the icon is your pin on the **Location** map the **Party** watches. Not a HUD quest marker."
+>
 > **Dev:** "Can I pick Coaster when I'm finding restrooms?"
 > **Domain expert:** "Not on that card. Restroom, food, and gate only. Creating any ontology type is a later **Cartographer** loop, not this Field Research card."
 >
@@ -245,6 +257,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Adventure vs Contribution — resolved: product name is **Side Quest**; enjoyment and map improvement are one loop (Pokémon GO + Waze). **Gaps** seed gap quests → **Contribution** (Profile-gated, at-the-**Place**); live quests → **Ride report** (name-first, nearby enough to have seen it) / **Observation** (park-wide). `_Avoid_: Adventure`.
 - Who invents **Gaps** — resolved: the builder, once, into `*.gaps.json`. The phone ranks by **Location** and does not invent durable **Gaps** from POI heuristics. Missing/empty file → empty durable list, not a failed **Venue** load.
 - **XP** vs leaderboard — resolved: **XP** grants **Title** rewards (sub-names on the **Profile**: Scout, Ranger, Cartographer, Steward). Visitor has no **Title** yet. **XP** and **Title** live on the **Profile** only (not **Member**, **Party**, or anonymous phone). No all-time global leaderboard this ship. Cards stay meaning-first; earning a **Title** may toast.
+- Future edition rewards — resolved: after **Titles**, later editions grant **Map skins** (this **Profile**’s map treatment) and **Location icons** (cosmetic on the **Location** pin the **Party** watches). Same earn path as **Titles**: **XP** is never spent. Not a Quicksilver shop, not a HUD quest pin, not phone-invented geometry. Accessibility still needs shape + colour + glyph redundancy. Not this Field Research ship.
 - Field Research vs Create (Q13) — resolved: this ship is Field Research chips (height / queue / path / restroom / food / gate / camping). Full-ontology Create is a later **Cartographer** / Wayfarer loop, not an “Other…” on Find-the-restrooms.
 - Plan vs next-best card vs personal favorites — resolved: **Plan** is a party-shared, drag-ordered list of starred **Places** (pre-arrival OK). The pre-party list is a draft of that same **Plan**, not a Scenario and not a second term. Promote on create, join, or resume only when the shared **Plan** is empty; then clear the draft. Leave does not resurrect it. Not multi-stop nav. Any device-holding **Member** may edit; **Host** applies last write. Per-**Member** favorites in code are not the **Plan**. **Member** target remains “heading there now.”
 - Location pause / history — resolved: **Location** is **Party** situational awareness, not a hide. No pause; no deliberate blur to spare the roster. Live position plus **Place** name only when they are at that **Place** (**Attraction** queue or station; restroom / food at the **Place**) — not nearest while walking past. Never two **Place** names; on conflict, the most recognizable **Place** to a person; two equal **Attractions** use the slot he is standing in. Not “most likely,” “probably,” or “near” on the roster. One **Party** truth: **Location** plus **Venue** slots, and the **Place** travels with **Location** — not a check-in, not each phone guessing. The phone updates the **Venue** at app start when a connection is available. Join does not finish without **Location**. Live **Location** only inside **Venue** bounds. When live stops (outside bounds or OS revoke), last-known + trail stay visible to the **Party** and are marked stale — last known location of that **Member** at that **Place** when they were at one; not wiped. Trail is path dots only; **Place** name only on the live or last-known pin. OS revoke after join: stay a **Member**, wall to turn it back on — not an eject. Battery visible; IMU not shared; signal/network are **Host** election only. Contradicts park-intelligence “never keep location history” — accepted for family trail dots.

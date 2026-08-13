@@ -230,13 +230,13 @@ Detail: [`2026-08-10-gamified-map-contributions-design.md`](./2026-08-10-gamifie
 ## E11 — Explorer packs (cosmetics)
 
 **Depends on:** E10  
-**Goal:** Earned cosmetics; transparent; no loot-box gambling.
+**Goal:** Earned cosmetics; transparent; no loot-box gambling. Canonical later rewards: **Map skin** (this Profile’s Venue map) and **Location icon** (cosmetic on the Location pin the Party watches). XP is never spent. See `CONTEXT.md` and [`docs/research/2026-08-13-nms-missions-side-quests.md`](../../research/2026-08-13-nms-missions-side-quests.md) §9.
 
 | ID | Item | Ships | Done when |
 |----|------|-------|-----------|
-| E11.1 | Pack catalog + earn rules | Adventure/Cartographer/… | Documented earn paths |
-| E11.2 | Map skins / markers | Unlockable themes | Offline assets cached |
-| E11.3 | Party expeditions | Shared missions | Party XP + shared badge |
+| E11.1 | Pack catalog + earn rules | Map skin / Location icon packs | Documented earn paths |
+| E11.2 | Map skins / Location icons | Unlockable themes + pin cosmetics | Offline assets cached; shape+colour+glyph held |
+| E11.3 | Party expeditions | Shared missions | Shared milestone page; XP stays on Profile |
 
 ---
 
