@@ -141,5 +141,50 @@ assert.equal(isNativePlatform(), true);
   assert.equal(cur.coords.latitude, 3);
 }
 
+{
+  // The PWA and Playwright have no native bridge. Importing @capacitor/core
+  // still runs initCapacitorGlobal, which overwrites window.Capacitor and
+  // pulls the plugin graph into the web client — UI suites then lose Search
+  // places. Skip the import unless the shell already injected a native bridge.
+  const prevWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  const prevNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  const prevCap = Object.getOwnPropertyDescriptor(globalThis, 'Capacitor');
+  const sentinel = { isNativePlatform: () => false, sentinel: true };
+  globalThis.window = globalThis;
+  globalThis.Capacitor = sentinel;
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: {
+      geolocation: {
+        watchPosition(ok) {
+          ok({ coords: { latitude: 9, longitude: 8, accuracy: 3 } });
+          return 1;
+        },
+        clearWatch() {},
+        getCurrentPosition(ok) {
+          ok({ coords: { latitude: 9, longitude: 8, accuracy: 3 } });
+        },
+      },
+      vibrate() {},
+    },
+  });
+  _resetPluginsForTests();
+  try {
+    assert.equal(isNativePlatform(), false);
+    await watchPosition(() => {}, () => {}, {});
+    await haptic(8);
+    await getCurrentPosition({});
+    assert.equal(globalThis.Capacitor, sentinel, 'web path must not import @capacitor/core');
+  } finally {
+    _resetPluginsForTests();
+    if (prevWindow) Object.defineProperty(globalThis, 'window', prevWindow);
+    else delete globalThis.window;
+    if (prevNav) Object.defineProperty(globalThis, 'navigator', prevNav);
+    else delete globalThis.navigator;
+    if (prevCap) Object.defineProperty(globalThis, 'Capacitor', prevCap);
+    else delete globalThis.Capacitor;
+  }
+}
+
 reset();
 console.log('native.test.mjs ok');

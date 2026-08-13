@@ -8,14 +8,23 @@
  */
 
 let plugins = null;
+let loading = null;
 
 /** @param {object | null} next */
 export function _setPluginsForTests(next) {
   plugins = next;
+  loading = null;
 }
 
 export function _resetPluginsForTests() {
   plugins = null;
+  loading = null;
+}
+
+function browserWindow() {
+  if (typeof globalThis !== 'undefined' && globalThis.window) return globalThis.window;
+  if (typeof window !== 'undefined') return window;
+  return null;
 }
 
 function nativeFrom(p) {
@@ -26,14 +35,18 @@ function nativeFrom(p) {
   }
 }
 
-export function isNativePlatform() {
-  if (plugins && typeof plugins === 'object') return nativeFrom(plugins);
-  if (typeof window === 'undefined') return false;
+/** True only when the iOS/Android shell has already injected the bridge. */
+function nativeBridgePresent() {
   try {
-    return Boolean(window.Capacitor?.isNativePlatform?.());
+    return Boolean(browserWindow()?.Capacitor?.isNativePlatform?.());
   } catch {
     return false;
   }
+}
+
+export function isNativePlatform() {
+  if (plugins && typeof plugins === 'object') return nativeFrom(plugins);
+  return nativeBridgePresent();
 }
 
 async function loadPlugins() {
@@ -41,7 +54,17 @@ async function loadPlugins() {
   if (plugins && typeof plugins === 'object') {
     return nativeFrom(plugins) ? plugins : null;
   }
-  if (typeof window === 'undefined') {
+  if (!loading) {
+    loading = loadPluginsUncached();
+  }
+  return loading;
+}
+
+async function loadPluginsUncached() {
+  // The PWA, Playwright, and SSR have no bridge. Importing @capacitor/core
+  // still runs initCapacitorGlobal and pulls plugin chunks into the web client.
+  // The store shell injects window.Capacitor before page JS (ADR-0005).
+  if (!nativeBridgePresent()) {
     plugins = 'web';
     return null;
   }
