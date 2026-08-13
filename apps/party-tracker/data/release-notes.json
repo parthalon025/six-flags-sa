@@ -186,5 +186,11 @@
     "items": [
       "feat: ship Gaps across the builder-phone seam (#139)"
     ]
+  },
+  "1.6.1": {
+    "title": "What's new",
+    "items": [
+      "fix: treat main as production in Vercel ignore and stamp deploy SHA (#144)"
+    ]
   }
 }
