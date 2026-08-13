@@ -36,6 +36,7 @@ import {
   addressedTo,
 } from '../core/protocol.js';
 import { adoptSnapshot, createParty, evict, evictRides, publicSnapshot, reduce } from '../core/state.js';
+import { betterHost } from './election.js';
 import { open, seal } from '../core/crypto.js';
 import { createEmitter } from '../transport/types.js';
 
@@ -59,6 +60,7 @@ const COMMAND_FOR = {
   [SET_MEET]: 'set-meet',
   [SET_PLAN]: 'set-plan',
   [ADD_MEMBER]: 'add-member',
+  [REMOVE_MEMBER]: 'remove-member',
   [BYE]: 'leave',
 };
 
@@ -84,6 +86,8 @@ export function createHostService({
   let running = false;
   let pingTimer = null;
   let evictTimer = null;
+  /** Device-holding Member this host has asked to take over, or null. */
+  let yieldedTo = null;
   // Outbound frames are serialised: `seal` is async, and two overlapping seals
   // can hand the transport a lower seq after a higher one, which the receiver's
   // dedupe would then discard as a replay.
@@ -187,12 +191,27 @@ export function createHostService({
     post(PATCH, EVERYONE, { version: result.state.version, ops: result.ops });
   }
 
+  function maybeYield() {
+    const to = betterHost(state.members, selfId);
+    if (!to) {
+      yieldedTo = null;
+      return;
+    }
+    if (yieldedTo === to) return;
+    yieldedTo = to;
+    emitter.emit('yield', { to });
+    post(PING, EVERYONE, stamp({ version: state.version, yieldTo: to }));
+  }
+
   function commit(result) {
     if (!result) return;
     const changed = result.state !== state;
     state = result.state;
     broadcastPatch(result);
-    if (changed) emitter.emit('change', state);
+    if (changed) {
+      emitter.emit('change', state);
+      maybeYield();
+    }
   }
 
   /* -------------------------------------------------------------- inbound -- */
@@ -211,6 +230,7 @@ export function createHostService({
       userId: typeof m.userId === 'string' ? m.userId.slice(0, 64) : m.userId || undefined,
       height: Number.isFinite(m.height) ? m.height : undefined,
       withAdult: m.withAdult === false ? false : undefined,
+      battery: m.battery !== undefined ? m.battery : undefined,
     };
   }
 
@@ -281,10 +301,15 @@ export function createHostService({
     const result = reduce(state, { kind: 'join', from: f.from, body: joinBody(f.body) }, now());
     const changed = result.state !== state;
     state = result.state;
-    // WELCOME first: it carries the joiner's own arrival, so the PATCH that
-    // follows is one they already hold and will ignore rather than treat as a
-    // gap. The rest of the party needs the PATCH.
-    post(WELCOME, f.from, { snapshot: publicSnapshot(state), youId: f.from });
+    // Stamp yieldTo on WELCOME before any PING. A yield PING that beats WELCOME
+    // would promote a joiner that has not adopted the roster yet.
+    const to = betterHost(state.members, selfId);
+    yieldedTo = to || null;
+    post(WELCOME, f.from, {
+      snapshot: publicSnapshot(state),
+      youId: f.from,
+      ...(yieldedTo ? { yieldTo: yieldedTo } : {}),
+    });
     broadcastPatch(result);
     if (changed) emitter.emit('change', state);
     return undefined;
@@ -333,7 +358,10 @@ export function createHostService({
     pingTimer = setIntervalFn(() => {
       // Carries the version so a client that quietly missed a patch notices
       // without waiting for the next one.
-      post(PING, EVERYONE, stamp({ version: state.version }));
+      post(PING, EVERYONE, stamp({
+        version: state.version,
+        ...(yieldedTo ? { yieldTo: yieldedTo } : {}),
+      }));
     }, PING_INTERVAL_MS);
     evictTimer = setIntervalFn(() => {
       // Two sweeps on one timer, committed separately: each bumps the version

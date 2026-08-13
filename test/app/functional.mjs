@@ -821,9 +821,8 @@ await check('the invite is a /join link with everything after the hash', async (
   return true;
 });
 
-await check('the host phone says it is hosting', async () => {
-  const label = await a.locator('.label:has-text("Hosting") .labelRight').innerText();
-  if (!/this phone/i.test(label)) throw new Error(label);
+await check('this phone is serving the party mesh', async () => {
+  await a.waitForSelector('[data-hosting="self"]', { timeout: 15000 });
   return true;
 });
 
@@ -840,6 +839,16 @@ await check('device-less Members can be added to the roster', async () => {
   await until(async () => /Mia/i.test(await a.locator('.roster').innerText().catch(() => '')), {
     timeout: 10000,
     label: 'Mia on roster',
+  });
+  return true;
+});
+
+await check('a phone can remove a device-less Member from the roster', async () => {
+  const row = a.locator('.memberRow', { hasText: 'Mia' });
+  await row.locator('button:has-text("Remove")').click();
+  await until(async () => !(await rosterNames(a)).includes('Mia'), {
+    timeout: 10000,
+    label: 'Mia gone from roster',
   });
   return true;
 });
@@ -893,15 +902,14 @@ await check('the roster converges on both phones', async () => {
   return true;
 });
 
-await check('the joining phone knows which phone is hosting', async () => {
-  const label = await until(
-    async () => {
-      const t = await b.locator('.label:has-text("Hosting") .labelRight').innerText();
-      return /justin/i.test(t) ? t : null;
-    },
-    { timeout: JOIN_TIMEOUT, label: 'phone B to name the host' },
+await check('the joining phone is not serving the party mesh', async () => {
+  await until(
+    async () => ((await b.locator('[data-hosting="peer"]').count()) > 0 ? true : null),
+    { timeout: JOIN_TIMEOUT, label: 'phone B as mesh peer' },
   );
-  if (/this phone/i.test(label)) throw new Error('two phones both think they host');
+  if ((await a.locator('[data-hosting="self"]').count()) < 1) {
+    throw new Error('two phones both think they host, or neither does');
+  }
   return true;
 });
 
@@ -1162,13 +1170,7 @@ await check('a new host is elected without anybody being asked', async () => {
   const hosting = await until(
     async () => {
       const flags = await Promise.all(
-        [b, c].map(async (page) => {
-          const t = await page
-            .locator('.label:has-text("Hosting") .labelRight')
-            .innerText()
-            .catch(() => '');
-          return /this phone/i.test(t);
-        }),
+        [b, c].map(async (page) => (await page.locator('[data-hosting="self"]').count()) > 0),
       );
       return flags.some(Boolean) ? flags : null;
     },
@@ -1188,27 +1190,23 @@ await check('the party code survives the migration', async () => {
 });
 
 await check('the surviving phones agree on who is hosting', async () => {
-  const labels = await until(
+  const flags = await until(
     async () => {
-      const texts = await Promise.all(
-        [b, c].map((page) =>
-          page
-            .locator('.label:has-text("Hosting") .labelRight')
-            .innerText()
-            .catch(() => ''),
-        ),
+      const roles = await Promise.all(
+        [b, c].map(async (page) => ({
+          self: (await page.locator('[data-hosting="self"]').count()) > 0,
+          peer: (await page.locator('[data-hosting="peer"]').count()) > 0,
+        })),
       );
-      const claimants = texts.filter((t) => /this phone/i.test(t)).length;
-      const follower = texts.find((t) => t && !/this phone/i.test(t));
-      if (claimants === 1 && follower && /Ava|Sam/i.test(follower)) return texts;
+      const claimants = roles.filter((r) => r.self).length;
+      const followers = roles.filter((r) => r.peer && !r.self).length;
+      if (claimants === 1 && followers === 1) return roles;
       return null;
     },
-    { timeout: 30000, label: 'follower hosting label to name Ava or Sam' },
+    { timeout: 30000, label: 'exactly one surviving phone serving the mesh' },
   );
-  const claimants = labels.filter((t) => /this phone/i.test(t)).length;
-  if (claimants !== 1) throw new Error(`hosting labels: ${labels.join(' | ')}`);
-  const follower = labels.find((t) => !/this phone/i.test(t));
-  if (!/Ava|Sam/i.test(follower)) throw new Error(`follower names "${follower}"`);
+  const claimants = flags.filter((r) => r.self).length;
+  if (claimants !== 1) throw new Error(`mesh roles: ${JSON.stringify(flags)}`);
   return true;
 });
 
@@ -1511,9 +1509,7 @@ console.log('\n--- leaving ---');
 
 await check('leaving removes the member from the other phone’s roster', async () => {
   // Whoever is not hosting leaves, so the departure has a host to reach.
-  const bHosts = /this phone/i.test(
-    await b.locator('.label:has-text("Hosting") .labelRight').innerText(),
-  );
+  const bHosts = (await b.locator('[data-hosting="self"]').count()) > 0;
   const leaver = bHosts ? { page: c, name: 'Sam' } : { page: b, name: 'Ava' };
   const stays = bHosts ? b : c;
 

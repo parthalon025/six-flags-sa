@@ -4,14 +4,15 @@ import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import SignInCard from '@/components/SignInCard';
 import { softGateBlocks } from '@/lib/auth/session';
-import { buildSideQuests, sortByProximity } from '@/lib/sideQuests';
+import { buildSideQuests, isLiveQuest, rideReportFromLiveQuest, sortByProximity } from '@/lib/sideQuests';
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
 
 /**
  * Side Quests tab — missions for facts only guests on the ground can settle.
  *
- * Soft-gate (EP.3): browse the list anonymously; submit needs sign-in.
+ * Soft-gate (EP.3): browse the list anonymously. Gap Side Quest submit needs
+ * sign-in. Live Ride reports (walk near and mark it) are name-first.
  * A tap opens a small note + status form; Submit queues the report on this
  * phone (lib/adventure/questQueue.js). When `position` is known, quests near
  * it float to the top and the form can attach where the guest is standing.
@@ -31,9 +32,11 @@ export default function SideQuestsPanel({
   onSelectPlace = null,
   session = null,
   onSession = null,
+  onRideReport = null,
 }) {
   const queue = defaultQuestQueue();
-  const needsAuth = softGateBlocks('adventure', session);
+  const gapNeedsAuth = softGateBlocks('adventure', session);
+  const questBlocked = (quest) => (isLiveQuest(quest) ? false : gapNeedsAuth);
   const { durable: rawDurable, ambient, counts } = buildSideQuests({
     pois,
     venueName: venueName || 'this park',
@@ -57,7 +60,7 @@ export default function SideQuestsPanel({
   }, [queue, lastSubmittedId]);
 
   function toggleQuest(quest) {
-    if (needsAuth) return;
+    if (questBlocked(quest)) return;
     if (openQuestId === quest.id) {
       setOpenQuestId(null);
       return;
@@ -68,7 +71,7 @@ export default function SideQuestsPanel({
   }
 
   async function submit(quest) {
-    if (needsAuth) return;
+    if (questBlocked(quest)) return;
     const report = createReport({
       questId: quest.id,
       venueId,
@@ -78,14 +81,17 @@ export default function SideQuestsPanel({
       lng: position?.lng ?? null,
     });
     await queue.enqueue(report);
+    const live = rideReportFromLiveQuest(quest, { status, pois, position });
+    if (live && onRideReport) onRideReport(live.rideId, live.status);
     setOpenQuestId(null);
     setLastSubmittedId(report.id);
   }
 
   const renderQuest = (q) => {
     const open = openQuestId === q.id;
+    const blocked = questBlocked(q);
     let action;
-    if (needsAuth) {
+    if (blocked) {
       action = <span className="rowValue">Sign in</span>;
     } else if (position) {
       action = (
@@ -135,7 +141,7 @@ export default function SideQuestsPanel({
               ) : null}
             </span>
           )}
-          {open && !needsAuth && (
+          {open && !blocked && (
             <div className="sideQuestForm">
               <textarea
                 className="field sideQuestNote"
@@ -187,7 +193,7 @@ export default function SideQuestsPanel({
         </div>
       </div>
 
-      {needsAuth ? <SignInCard session={session} onSession={onSession} /> : null}
+      {gapNeedsAuth ? <SignInCard session={session} onSession={onSession} /> : null}
 
       <div className="label">
         For {venueName || 'this park'}
@@ -215,9 +221,9 @@ export default function SideQuestsPanel({
       <div className="rowList">{ambient.map(renderQuest)}</div>
 
       <p className="fine block">
-        {needsAuth
-          ? 'Sign in to submit a Side Quest. Looking around the list never needs an account.'
-          : 'Reports queue on this phone and sync when Side Quests go live (peer confirm, then overlay). Nothing invents coordinates — you do, standing there.'}
+        {gapNeedsAuth
+          ? 'Sign in to submit a gap Side Quest. Live ride reports are name-first. Looking around the list never needs an account.'
+          : 'Walk near, see it, mark it. Gap quests need a Profile to keep. Reports queue on this phone.'}
       </p>
     </div>
   );

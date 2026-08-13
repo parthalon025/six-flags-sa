@@ -6,6 +6,7 @@ import Icon from '@/components/Icon';
 import { WORDS } from '@/lib/brand';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { usePois } from '@/lib/venue/useVenue';
+import { heightIsStale } from '@party-tracker/shared/schemas.js';
 
 /* What you are doing. NEED HELP is deliberately not in this list: it was the
    same size and shape as "Eating", one row below it, and it buzzes every other
@@ -86,7 +87,6 @@ export default function PartyPanel({
   meet,
   me,
   myId,
-  hostId,
   hosting,
   status,
   onStatus,
@@ -110,6 +110,12 @@ export default function PartyPanel({
   session = null,
   onSession = null,
   onAddDeviceLess = null,
+  onTagDeviceLess = null,
+  onRemoveDeviceLess = null,
+  myGroupId = null,
+  guests = [],
+  onSeedGuest = null,
+  onSaveGuest = null,
 }) {
   const [entry, setEntry] = useState('');
   const [name, setName] = useState(myName === 'Guest' ? '' : myName || '');
@@ -120,6 +126,7 @@ export default function PartyPanel({
   const [showQr, setShowQr] = useState(true);
   const [guestName, setGuestName] = useState('');
   const [guestHeight, setGuestHeight] = useState('');
+  const [staleGuest, setStaleGuest] = useState(null);
   const pois = usePois();
   /* The join window counts down while the screen is being looked at, so the
      number has to move on its own rather than only when a position lands. */
@@ -143,7 +150,7 @@ export default function PartyPanel({
         <div className="label">Your Party</div>
         <p className="fine">
           Explore toilets, food and rides on your own first — a party is optional when the
-          family wants to stick together. One phone starts it and hosts; everyone else joins by
+          family wants to stick together. One phone starts it; everyone else joins by
           scanning the QR, opening the link, or typing the six-character code.
         </p>
         <div className="label">Your Name</div>
@@ -199,7 +206,7 @@ export default function PartyPanel({
         <p className="fine" style={{ marginTop: 0 }}>
           {entry.length > 0 && entry.length < 6
             ? `Six characters — ${6 - entry.length} to go.`
-            : 'Codes never use I, O, 0 or 1, so they can be read out loud without confusion. Typing the code works for about 10 minutes while the host has Party open; the invite link and QR always work.'}
+            : 'Codes never use I, O, 0 or 1, so they can be read out loud without confusion. Typing the code works for about 10 minutes while Party is open; the invite link and QR always work.'}
         </p>
         <button type="button" className="btn" onClick={() => setScanning((v) => !v)}>
           {scanning ? 'Stop the camera' : 'Scan a party QR'}
@@ -225,7 +232,6 @@ export default function PartyPanel({
     return distance(me.lat, me.lng, a.lat, a.lng) - distance(me.lat, me.lng, b.lat, b.lng);
   });
 
-  const hostName = members.find((m) => m.id === hostId)?.name;
   /* Rounded up, so the last fifty seconds read "1 min left" rather than "0". */
   const joinsLeft = joinsOpenUntil > now ? Math.ceil((joinsOpenUntil - now) / 60000) : 0;
 
@@ -253,7 +259,7 @@ export default function PartyPanel({
   };
 
   return (
-    <div>
+    <div data-hosting={hosting ? 'self' : 'peer'}>
       <div className="label">
         Party Code
         {hosting && onAllowJoins ? (
@@ -282,7 +288,7 @@ export default function PartyPanel({
       {arming === 'leave' ? (
         <p className="fine warnText">
           {hosting
-            ? 'This phone is holding the roster. Leaving hands it to another phone in the party.'
+            ? 'Leaving hands the live roster to another phone in the party.'
             : 'You will drop off everyone else’s map. Re-joining needs the code or the link again.'}
         </p>
       ) : null}
@@ -304,7 +310,7 @@ export default function PartyPanel({
           <InviteQr invite={invite} />
           <p className="fine">
             The other phone points its camera at this. Typing the six-character code works for
-            about 10 minutes while this phone is hosting with Party open; the invite link and QR
+            about 10 minutes while Party is open on this phone; the invite link and QR
             always carry the key and keep working.
           </p>
         </>
@@ -327,16 +333,6 @@ export default function PartyPanel({
         </>
       ) : null}
 
-      <div className="label">
-        Hosting
-        <span className="labelRight">{hosting ? 'this phone' : hostName || 'another phone'}</span>
-      </div>
-      <p className="fine" style={{ marginTop: 0 }}>
-        {hosting
-          ? 'This phone holds the roster and answers everyone else. If it drops off, the best-placed phone takes over by itself.'
-          : `${hostName || 'Another phone'} holds the roster. If it drops off, this one may take over automatically.`}
-      </p>
-
       <div className="label">Roster</div>
       {sorted.length === 0 ? (
         <p className="fine">Waiting for the first position to land.</p>
@@ -351,12 +347,14 @@ export default function PartyPanel({
             const near = located ? nearestPlace(pois, m.lat, m.lng) : null;
             const stale = Date.now() - m.ts > 300000;
             const batt = Number.isFinite(m.battery?.level) ? Math.round(m.battery.level * 100) : null;
+            const Row = m.deviceLess ? 'div' : 'button';
             return (
-              <button
-                type="button"
+              <Row
+                {...(m.deviceLess
+                  ? {}
+                  : { type: 'button', onClick: () => !isMe && located && onFocus(m) })}
                 key={m.id}
                 className={`memberRow ${stale ? 'stale' : ''}`}
-                onClick={() => !isMe && located && onFocus(m)}
               >
                 <span className="pip" style={{ background: isMe ? 'var(--adventure)' : m.colour }}>
                   {m.initials}
@@ -386,7 +384,6 @@ export default function PartyPanel({
                   <b>
                     {m.name}
                     {isMe && <em className="chipTag">you</em>}
-                    {m.id === hostId && <em className="chipTag">host</em>}
                     {m.groupId && <em className="chipTag">party {m.groupId}</em>}
                     {m.deviceLess && <em className="chipTag">no phone</em>}
                     {Number.isFinite(m.height) && <em className="chipTag">{m.height}&quot;</em>}
@@ -407,6 +404,28 @@ export default function PartyPanel({
                           : 'No fix yet'}{' '}
                     · {m.status} · {formatAge(Date.now() - m.ts)}
                   </span>
+                  {m.deviceLess && (onTagDeviceLess || onRemoveDeviceLess) ? (
+                    <span className="joinRow" style={{ marginTop: 6 }}>
+                      {onTagDeviceLess && !(myGroupId && m.groupId === myGroupId) ? (
+                        <button
+                          type="button"
+                          className="btn small"
+                          onClick={() => onTagDeviceLess(m.id)}
+                        >
+                          With me
+                        </button>
+                      ) : null}
+                      {onRemoveDeviceLess ? (
+                        <button
+                          type="button"
+                          className="btn small"
+                          onClick={() => onRemoveDeviceLess(m.id)}
+                        >
+                          Remove
+                        </button>
+                      ) : null}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="memberRange">
                   {isMe ? (
@@ -422,7 +441,7 @@ export default function PartyPanel({
                     </>
                   )}
                 </span>
-              </button>
+              </Row>
             );
           })}
         </div>
@@ -434,6 +453,54 @@ export default function PartyPanel({
           <p className="fine" style={{ marginTop: 0 }}>
             A device-less Member still counts for Eligibility. Height stays on the roster.
           </p>
+          {session?.userId && guests.length > 0 ? (
+            <div className="chips wrap" style={{ marginBottom: 8 }}>
+              {guests.map((g) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  className="chip"
+                  onClick={() => {
+                    if (heightIsStale(g) && !staleGuest) {
+                      setStaleGuest(g);
+                      return;
+                    }
+                    onSeedGuest?.(g);
+                    setStaleGuest(null);
+                  }}
+                >
+                  {g.displayName}
+                  {Number.isFinite(g.heightIn) ? ` · ${g.heightIn}"` : ''}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {staleGuest ? (
+            <p className="fine warnText">
+              {staleGuest.displayName} may have grown — last height {staleGuest.heightIn}&quot;.
+              <button
+                type="button"
+                className="labelAction"
+                onClick={() => {
+                  onSeedGuest?.(staleGuest);
+                  setStaleGuest(null);
+                }}
+              >
+                Keep it
+              </button>
+              <button
+                type="button"
+                className="labelAction"
+                onClick={() => {
+                  setGuestName(staleGuest.displayName);
+                  setGuestHeight(String(staleGuest.heightIn || ''));
+                  setStaleGuest(null);
+                }}
+              >
+                I&apos;ll update
+              </button>
+            </p>
+          ) : null}
           <div className="joinRow">
             <input
               className="field"
@@ -458,10 +525,18 @@ export default function PartyPanel({
               disabled={!guestName.trim()}
               onClick={() => {
                 const inches = Number(guestHeight);
+                const height = Number.isFinite(inches) && inches > 0 ? inches : null;
                 onAddDeviceLess({
                   name: guestName.trim(),
-                  height: Number.isFinite(inches) && inches > 0 ? inches : null,
+                  height,
                 });
+                if (session?.userId && onSaveGuest) {
+                  onSaveGuest({
+                    displayName: guestName.trim(),
+                    heightIn: height,
+                    heightConfirmedAt: new Date().toISOString(),
+                  });
+                }
                 setGuestName('');
                 setGuestHeight('');
               }}

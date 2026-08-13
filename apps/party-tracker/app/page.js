@@ -47,10 +47,12 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { findPlace, identityOf } from '@/lib/venue/ids';
-import { isLocationVisible, shouldShareLocation } from '@/lib/gps/sharing';
+import { isLocationVisible, locationReadyToJoin, locationRevokedInParty, shouldShareLocation } from '@/lib/gps/sharing';
 import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { resolveSession } from '@/lib/auth/session';
+import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
+import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
@@ -220,6 +222,7 @@ export default function Page() {
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
   const [authSession, setAuthSession] = useState(null);
+  const [managedGuests, setManagedGuests] = useState([]);
   const [party, setParty] = useState(null); // the runtime's snapshot
   // The snapshot as a ref, for callbacks that must not be rebuilt on every
   // roster tick just to read the party they are sending to.
@@ -656,6 +659,20 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    if (!authSession?.userId) {
+      setManagedGuests([]);
+      return undefined;
+    }
+    let cancelled = false;
+    listManagedGuests().then((list) => {
+      if (!cancelled) setManagedGuests(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authSession]);
+
+  useEffect(() => {
     if (!identity) return;
     identityRef.current = identity;
     localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height: mapHeight, theme }));
@@ -778,7 +795,6 @@ export default function Page() {
         pendingInviteRef.current = pending;
         setPendingInvite(pending);
         selectTab('party');
-        showToast('Sign in under Me to finish joining that party');
         return;
       }
       if (rt.hasLiveParty?.()) {
@@ -796,13 +812,13 @@ export default function Page() {
     };
   }, [showToast, selectTab]);
 
-  /* Soft-gate (EP.3): finish /join only after a profile exists.
-     Join once from the ref so selectTab/showToast identity churn cannot
-     cancel an in-flight invite (that left phone C stuck unsigned-in on CI). */
+  /* Join is name-first. Finish /join once location is live so the invite
+     cannot land a Member with no fix. Retry when GPS arrives. */
   const inviteJoinInFlight = useRef(false);
   useEffect(() => {
     const pending = pendingInviteRef.current || pendingInvite;
     if (!pending?.payload || !runtimeApi) return undefined;
+    if (!locationReadyToJoin(geo.status)) return undefined;
     if (inviteJoinInFlight.current) return undefined;
     inviteJoinInFlight.current = true;
     const named = (pending.name || '').trim();
@@ -825,7 +841,7 @@ export default function Page() {
         inviteJoinInFlight.current = false;
       });
     return undefined;
-  }, [pendingInvite, authSession, runtimeApi, selectTab, showToast]);
+  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
      resume on mount above and keep syncing on every tab. */
@@ -848,6 +864,7 @@ export default function Page() {
 
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
+  const locationLocked = active && locationRevokedInParty(geo.status);
 
   /**
    * The roster, flattened for the map, the rail and the tape — all of which
@@ -938,6 +955,7 @@ export default function Page() {
    */
   useEffect(() => {
     if (!active || !position) return undefined;
+    if (locationRevokedInParty(geo.status)) return undefined;
     const tick = () => {
       const fix = positionRef.current;
       if (!fix) return;
@@ -966,11 +984,21 @@ export default function Page() {
     tick();
     const id = setInterval(tick, GATE_TICK_MS);
     return () => clearInterval(id);
-  }, [active, position, heading, shouldBroadcast, venue?.bounds]);
+  }, [active, position, heading, shouldBroadcast, venue?.bounds, geo.status]);
+
+  useEffect(() => {
+    if (!active || !geo.battery) return;
+    runtime.current?.pushBattery(geo.battery);
+  }, [active, geo.battery]);
 
   useEffect(() => {
     if (!active) locationSharingRef.current = false;
   }, [active]);
+
+  useEffect(() => {
+    if (!active || !locationRevokedInParty(geo.status)) return;
+    runtime.current?.clearLocation?.();
+  }, [active, geo.status]);
 
   // NEED HELP has to interrupt, once per person per episode.
   useEffect(() => {
@@ -1187,6 +1215,11 @@ export default function Page() {
 
   /* ---------- party actions ---------- */
   const createParty = async () => {
+    if (!locationReadyToJoin(geo.status)) {
+      showToast('Turn on Location to join a party.');
+      setGateOpen(true);
+      return;
+    }
     setBusy(true);
     try {
       const snap = await runtime.current.createParty({
@@ -1209,6 +1242,11 @@ export default function Page() {
   };
 
   const joinParty = async (raw, asName = null) => {
+    if (!locationReadyToJoin(geo.status)) {
+      showToast('Turn on Location to join a party.');
+      setGateOpen(true);
+      return;
+    }
     setBusy(true);
     try {
       // A name typed on the join screen is the freshest thing we know, and it
@@ -2480,7 +2518,6 @@ export default function Page() {
                 meet={meet}
                 me={position}
                 myId={party?.selfId ?? null}
-                hostId={party?.hostId ?? null}
                 hosting={Boolean(party?.hosting)}
                 status={status}
                 onStatus={(s) => {
@@ -2542,14 +2579,49 @@ export default function Page() {
                     });
                   }
                 }}
+                guests={managedGuests}
+                onSeedGuest={(g) => {
+                  const seeded = seedFromManagedGuest(g, { skipPrompt: true });
+                  runtime.current?.addMember({
+                    id: newMemberId(),
+                    name: seeded.name,
+                    height: seeded.height,
+                    withAdult: true,
+                    groupId: selfMember?.groupId || null,
+                  });
+                  showToast(`Added ${seeded.name}`);
+                }}
+                onSaveGuest={async (guest) => {
+                  try {
+                    await upsertManagedGuest(guest);
+                    setManagedGuests(await listManagedGuests());
+                  } catch {
+                    /* Profile required — the roster add still happened. */
+                  }
+                }}
                 onAddDeviceLess={({ name, height: inches }) => {
                   runtime.current?.addMember({
                     id: newMemberId(),
                     name,
                     height: inches,
                     withAdult: true,
+                    groupId: selfMember?.groupId || null,
                   });
                   showToast(`Added ${name}`);
+                }}
+                myGroupId={selfMember?.groupId || null}
+                onTagDeviceLess={(id) => {
+                  const mine = selfMember?.groupId;
+                  if (!mine) {
+                    runtime.current?.setGroupId('us');
+                    runtime.current?.setMemberFacts({ groupId: 'us' }, id);
+                  } else {
+                    runtime.current?.setMemberFacts({ groupId: mine }, id);
+                  }
+                }}
+                onRemoveDeviceLess={(id) => {
+                  runtime.current?.removeMember(id);
+                  showToast('Removed from this party');
                 }}
               />
               {active && (
@@ -2581,6 +2653,7 @@ export default function Page() {
                 }}
                 session={authSession}
                 onSession={setAuthSession}
+                onRideReport={party?.active ? reportRide : null}
               />
             )}
 
@@ -2804,8 +2877,21 @@ export default function Page() {
         />
       )}
 
+      {locationLocked && (
+        <GpsGate
+          partyLock
+          venueName={venue?.name}
+          status={geo.status}
+          error={geo.error}
+          onRequest={() => {
+            geo.request();
+            geo.enableCompass();
+          }}
+        />
+      )}
+
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
-      {gateOpen && introSeen !== null && !showExplorePrompt && !showIntroSplash && (
+      {gateOpen && introSeen !== null && !showExplorePrompt && !showIntroSplash && !locationLocked && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}

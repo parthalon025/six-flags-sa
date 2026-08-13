@@ -209,7 +209,7 @@ export function applyOps(state, ops) {
  * Rules, in the spec's terms:
  *   - The host always wins: this function is only ever run on the host.
  *   - A later timestamp replaces an earlier one; a stale update is dropped.
- *   - Nobody can edit anybody else's record.
+ *   - A phone cannot edit another phone. Device-less seats are parent-editable.
  */
 export function reduce(state, command, now = Date.now()) {
   const { kind, from, body } = command;
@@ -231,6 +231,7 @@ export function reduce(state, command, now = Date.now()) {
         withAdult: body.withAdult ?? existing?.withAdult,
         deviceLess: existing?.deviceLess,
       });
+      if (body.battery !== undefined) member.battery = body.battery;
       if (existing) {
         member.location = existing.location;
         member.favorites = existing.favorites;
@@ -281,6 +282,13 @@ export function reduce(state, command, now = Date.now()) {
 
     case 'patch-member': {
       if (!me) return none(state);
+      const targetId = typeof body.id === 'string' && body.id !== from ? body.id : null;
+      if (targetId) {
+        if (!deviceLessSeat(state, from, targetId)) return none(state);
+        const patch = deviceLessPatch(body);
+        if (!Object.keys(patch).length) return none(state);
+        return withOps(state, [{ type: OP.MEMBER_MERGE, id: targetId, patch }]);
+      }
       const patch = {};
       if (typeof body.patch?.name === 'string') patch.name = body.patch.name.slice(0, 24);
       if (body.patch?.status !== undefined) patch.status = body.patch.status;
@@ -363,6 +371,7 @@ export function reduce(state, command, now = Date.now()) {
         byName: me.name,
         ts: now,
         note: typeof body.note === 'string' ? body.note.slice(0, 60) : null,
+        partyId: state.id,
       };
       return withOps(state, [{ type: OP.RIDE_MERGE, id: rideId, patch }]);
     }
@@ -393,8 +402,16 @@ export function reduce(state, command, now = Date.now()) {
         height: body.height,
         withAdult: body.withAdult !== false,
         deviceLess: true,
+        groupId: body.groupId || null,
       });
       return withOps(state, [{ type: OP.MEMBER_SET, id, member }]);
+    }
+
+    case 'remove-member': {
+      if (!me) return none(state);
+      const id = typeof body.id === 'string' ? body.id : '';
+      if (!deviceLessSeat(state, from, id)) return none(state);
+      return withOps(state, [{ type: OP.MEMBER_DEL, id }]);
     }
 
     case 'leave': {
@@ -461,6 +478,25 @@ const none = (state) => ({ state, ops: [] });
 
 const nextJoinOrder = (state) =>
   Object.values(state.members).reduce((max, m) => Math.max(max, m.joinOrder + 1), 0);
+
+/** A device-holding Member may edit this device-less seat — not another phone. */
+function deviceLessSeat(state, from, id) {
+  const actor = state.members[from];
+  if (!actor || actor.deviceLess) return null;
+  const target = typeof id === 'string' ? state.members[id] : null;
+  if (!target?.deviceLess) return null;
+  return target;
+}
+
+function deviceLessPatch(body) {
+  const src = body?.patch || {};
+  const patch = {};
+  if (typeof src.name === 'string') patch.name = src.name.slice(0, 24);
+  if (src.groupId !== undefined) patch.groupId = src.groupId || null;
+  if (src.height !== undefined) patch.height = Number.isFinite(src.height) ? src.height : null;
+  if (src.withAdult !== undefined) patch.withAdult = Boolean(src.withAdult);
+  return patch;
+}
 
 export function isValidLocation(loc) {
   return Boolean(

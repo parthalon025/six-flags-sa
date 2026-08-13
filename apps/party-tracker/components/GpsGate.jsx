@@ -5,6 +5,12 @@ import InstallCard from '@/components/InstallCard';
 import { BRAND } from '@/lib/brand';
 import { formatDistance } from '@/lib/geo';
 
+const PARTY_LOCK = {
+  title: 'Turn Location back on',
+  body: 'You are still in the party. Other phones will not see your live dot until Location is on.',
+  action: 'Allow location',
+};
+
 const COPY = {
   idle: {
     title: 'Find you on the map',
@@ -138,12 +144,19 @@ export default function GpsGate({
   setupBusy = false,
   setupError = null,
   nearestIntent = false,
+  partyLock = false,
 }) {
-  const copy = COPY[status] || COPY.idle;
+  const copy = partyLock
+    ? {
+        title: PARTY_LOCK.title,
+        body: `${PARTY_LOCK.body} ${COPY[status]?.body || COPY.denied.body}`,
+        action: COPY[status]?.action || PARTY_LOCK.action,
+      }
+    : COPY[status] || COPY.idle;
   const parkVenue = parkChoice?.venue;
-  const showParkQuestion = Boolean(parkVenue);
-  const welcomeIdle = welcome && status === 'idle' && !nearestIntent && !showParkQuestion;
-  const welcomeSearching = welcome && nearestIntent && status === 'asking' && !showParkQuestion;
+  const showParkQuestion = Boolean(parkVenue) && !partyLock;
+  const welcomeIdle = welcome && status === 'idle' && !nearestIntent && !showParkQuestion && !partyLock;
+  const welcomeSearching = welcome && nearestIntent && status === 'asking' && !showParkQuestion && !partyLock;
   const showPhoneSetup = !showParkQuestion;
 
   let primaryLabel = copy.action;
@@ -163,7 +176,7 @@ export default function GpsGate({
   return (
     <div className="gate">
       <div className="gateCard">
-        {welcome && !showParkQuestion ? (
+        {welcome && !showParkQuestion && !partyLock ? (
           <>
             <div className="gateEyebrow">Welcome</div>
             <BrandLockup size="lg" stacked showTagline className="gateBrandLockup" />
@@ -216,11 +229,11 @@ export default function GpsGate({
             >
               {primaryLabel}
             </button>
-            {welcome && !nearestIntent && <InstallCard compact />}
+            {welcome && !nearestIntent && !partyLock && <InstallCard compact />}
           </div>
         )}
 
-        {!showParkQuestion && (
+        {!showParkQuestion && !partyLock && (
           <>
             <button type="button" className="btn" onClick={onManual}>
               Explore parks
@@ -231,7 +244,7 @@ export default function GpsGate({
           </>
         )}
 
-        {showParkQuestion && (
+        {showParkQuestion && !partyLock && (
           <button type="button" className="btnQuiet" onClick={onDismiss}>
             Skip for now — just show me the map
           </button>

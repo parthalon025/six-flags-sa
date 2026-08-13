@@ -7,14 +7,15 @@
  * time on every viewer, so a position that never left the wire cannot be shown
  * even if the bounds check on the sender was skipped.
  *
- * E4.1 precision: off | approx (~50 m) | precise. Duration timers auto-revert
+ * E4.1 precision: approx (~50 m) | precise. Duration timers auto-revert
  * to the safe default (approx) when they expire — never stay precise forever.
+ * Location is mandatory; there is no off / pause mode.
  */
 
 import { withinBounds } from '../venue/store.js';
 import { coarsenLocation } from '../core/state.js';
 
-export const SHARE_MODES = Object.freeze(['off', 'approx', 'precise']);
+export const SHARE_MODES = Object.freeze(['approx', 'precise']);
 /** Safe default while in a party — family can find you without raw GPS. */
 export const DEFAULT_SHARE_MODE = 'approx';
 /** Precise sharing never lasts longer than this unless renewed. */
@@ -38,38 +39,51 @@ export function isLocationVisible(bounds, lat, lng) {
 
 /**
  * Resolve effective share mode for a member at `now`.
- * `sharingPaused` remains the legacy off switch.
+ * Location is mandatory — unknown/expired precise falls back to approx.
  */
 export function effectiveShareMode(member, now = Date.now()) {
-  if (!member) return 'off';
-  if (member.sharingPaused) return 'off';
+  if (!member) return DEFAULT_SHARE_MODE;
   let mode = SHARE_MODES.includes(member.shareMode) ? member.shareMode : DEFAULT_SHARE_MODE;
   if (member.shareUntil && now >= member.shareUntil) {
-    // Duration expired — drop precise back to approx; off stays off.
     if (mode === 'precise') mode = DEFAULT_SHARE_MODE;
   }
   return mode;
 }
 
 /**
- * Shape a fix for the wire under the chosen mode. Returns null for off.
+ * Shape a fix for the wire under the chosen mode.
  */
 export function locationForShare(loc, mode) {
-  if (!loc || mode === 'off') return null;
+  if (!loc) return null;
   if (mode === 'precise') return { ...loc };
   return coarsenLocation(loc);
 }
 
 /**
+ * Join does not finish without Location — a live GPS fix or a manual pin.
+ */
+export function locationReadyToJoin(status) {
+  return status === 'live' || status === 'manual';
+}
+
+/**
+ * After join, OS revoke: stay a Member, drop the live dot, wall to turn it
+ * back on. Not an eject and not a silent pause.
+ */
+export function locationRevokedInParty(status) {
+  return status === 'denied' || status === 'unsupported' || status === 'insecure';
+}
+
+/**
  * Build a share-mode patch. Precise always gets a duration (capped).
- * @param {'off'|'approx'|'precise'} mode
+ * `off` is ignored — Location is mandatory.
+ * @param {'approx'|'precise'|string} mode
  * @param {{ durationMs?: number, now?: number }} [opts]
  */
 export function shareModePatch(mode, { durationMs = PRECISE_MAX_MS, now = Date.now() } = {}) {
   const next = SHARE_MODES.includes(mode) ? mode : DEFAULT_SHARE_MODE;
   const patch = {
     shareMode: next,
-    sharingPaused: next === 'off',
     shareUntil: null,
   };
   if (next === 'precise') {

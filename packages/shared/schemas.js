@@ -159,13 +159,45 @@ export const FIXTURES = {
 };
 
 /**
- * Soft-gate helpers — anonymous may browse and join a Party by name.
- * Contributions, Side Quest submit, and cross-day Plan sync need a Profile.
+ * Soft-gate helpers — anonymous may browse, join a Party by name, and file
+ * in-party Ride reports. Contributions, gap Side Quest submit, park-wide
+ * Observation / Overlay, and cross-day Plan sync need a Profile.
  * @param {string | null | undefined} userId
- * @param {'party'|'contribute'|'adventure'|'planner'} action
+ * @param {'party'|'contribute'|'adventure'|'planner'|'ride-report'} action
  */
 export function requiresSignedIn(userId, action) {
+  if (action === 'ride-report' || action === 'party' || action === 'browse') return false;
   const gated = new Set(['contribute', 'adventure', 'planner']);
   if (!gated.has(action)) return false;
   return !userId;
+}
+
+/** ~6 months — a height from last season is old enough to prompt at seed. */
+export const HEIGHT_STALE_MS = 180 * 24 * 60 * 60 * 1000;
+
+/**
+ * True when a Managed Guest has inches that have not been confirmed recently.
+ * No height means nothing to prompt about.
+ */
+export function heightIsStale(guest, now = Date.now()) {
+  if (!guest || !Number.isFinite(guest.heightIn)) return false;
+  const raw = guest.heightConfirmedAt;
+  if (raw == null || raw === '') return true;
+  const ts = typeof raw === 'number' ? raw : Date.parse(raw);
+  if (!Number.isFinite(ts)) return true;
+  return now - ts >= HEIGHT_STALE_MS;
+}
+
+/**
+ * Seed a device-less Member from a Managed Guest.
+ * Skip keeps last inches even when stale.
+ */
+export function seedFromManagedGuest(guest, { now = Date.now(), skipPrompt = false } = {}) {
+  const stale = heightIsStale(guest, now);
+  return {
+    name: String(guest?.displayName || 'Guest').slice(0, 24),
+    height: Number.isFinite(guest?.heightIn) ? guest.heightIn : null,
+    stale,
+    skipPrompt: Boolean(skipPrompt),
+  };
 }
