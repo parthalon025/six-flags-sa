@@ -68,10 +68,12 @@ A score of **1** is a warning (e.g. "only after opening the panel") — fix befo
 GitHub Actions workflow **Test app** is modular and change-scoped:
 
 1. **Select modules** — `test/app/select-modules.mjs` maps the PR diff to modules in `test/app/modules.json` (push to `main` = full suite).
-2. **Coverage contract** — always (fast).
-3. **Builder** — only when venue-builder / venue data paths change.
-4. **UI matrix** — one job per selected module (`smoke`, `heights`, `walk`, `party`, `intake`, `venues`, `offline`, `grandma`), sharing one Next.js build artifact. Jobs run in parallel.
-5. **Visual shots** — soft (`continue-on-error`), when any UI module runs.
+2. **Lint** — ESLint on party-tracker, when app JS/JSX, `eslint.config.mjs`, or ESLint deps change.
+3. **Coverage contract** — when a UI module runs, or when contract files change.
+4. **Builder** — only when venue-builder / venue data paths change.
+5. **UI matrix** — one job per selected module (`smoke`, `heights`, `walk`, `party`, `intake`, `venues`, `offline`, `grandma`), sharing one Next.js build artifact. Jobs run in parallel.
+6. **Visual shots** — soft (`continue-on-error`), when any UI module runs.
+7. **CI** — aggregator: skipped jobs are fine; a required job failure fails the check.
 
 Local equivalents:
 

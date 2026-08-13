@@ -37,9 +37,9 @@ const manifest = loadModulesManifest();
 
 {
   const sel = selectModulesFromFiles(['docs/readme-only.md'], manifest);
-  assert(sel.modules.includes('contract'), 'docs still get contract');
-  assert(!sel.modules.includes('party'), 'docs do not pull party');
-  assert(!sel.modules.includes('builder'), 'docs do not pull builder');
+  assert(sel.modules.length === 0, 'docs select nothing');
+  assert(!sel.modules.includes('contract'), 'docs do not run contract');
+  assert(!sel.modules.includes('lint'), 'docs do not run lint');
   assert(!sel.fullSuite, 'docs not full suite');
 }
 
@@ -48,9 +48,9 @@ const manifest = loadModulesManifest();
     ['.gitnexus/lbug', '.gitnexus/meta.json', 'AGENTS.md', 'CLAUDE.md'],
     manifest,
   );
-  assert(sel.modules.includes('contract'), 'gitnexus still get contract');
+  assert(sel.modules.length === 0, 'gitnexus-only select nothing');
+  assert(!sel.modules.includes('contract'), 'gitnexus do not run contract');
   assert(!sel.modules.includes('party'), 'gitnexus do not pull party');
-  assert(!sel.modules.includes('builder'), 'gitnexus do not pull builder');
   assert(!sel.fullSuite, 'gitnexus not full suite');
 }
 
@@ -67,7 +67,8 @@ const manifest = loadModulesManifest();
   const sel = selectModulesFromFiles(['apps/party-tracker/lib/party/client.js'], manifest);
   assert(sel.modules.includes('party'), 'party path → party');
   assert(sel.modules.includes('grandma'), 'party path → grandma via pulls');
-  assert(sel.modules.includes('contract'), 'always contract');
+  assert(sel.modules.includes('contract'), 'UI module pulls contract');
+  assert(sel.modules.includes('lint'), 'party JS runs lint');
   assert(!sel.modules.includes('walk'), 'party path skips walk');
 }
 
@@ -82,6 +83,8 @@ const manifest = loadModulesManifest();
   assert(sel.fullSuite, 'workflow edit → full suite');
   assert(sel.modules.includes('grandma'), 'full includes grandma');
   assert(sel.modules.includes('builder'), 'full includes builder');
+  assert(sel.modules.includes('lint'), 'full includes lint');
+  assert(sel.modules.includes('selector'), 'full includes selector');
 }
 
 {
@@ -94,6 +97,8 @@ const manifest = loadModulesManifest();
 {
   const sel = selectModulesFromFiles(['apps/party-tracker/components/HeightPanel.jsx'], manifest);
   assert(sel.modules.includes('heights'), 'height panel → heights');
+  assert(sel.modules.includes('contract'), 'height panel pulls contract');
+  assert(sel.modules.includes('lint'), 'height panel runs lint');
   assert(!sel.modules.includes('party'), 'height panel skips party');
   assert(!sel.modules.includes('grandma'), 'height panel does not pull grandma');
 }
@@ -110,8 +115,51 @@ const manifest = loadModulesManifest();
   const gh = toGithubOutputs(sel, manifest);
   assert(gh.builder === 'false', 'github builder false');
   assert(gh.any_ui === 'true', 'github any_ui');
+  assert(gh.lint === 'true', 'github lint');
+  assert(gh.contract === 'true', 'github contract');
+  assert(gh.selector === 'false', 'github selector skipped');
   const matrix = JSON.parse(gh.ui_matrix);
   assert(matrix.includes('party'), 'matrix has party');
+}
+
+{
+  const sel = selectModulesFromFiles(['eslint.config.mjs'], manifest);
+  assert(sel.modules.includes('lint'), 'eslint config → lint');
+  assert(!sel.modules.includes('party'), 'eslint config skips UI');
+  assert(!sel.modules.includes('contract'), 'eslint config skips contract');
+  const gh = toGithubOutputs(sel, manifest);
+  assert(gh.lint === 'true', 'eslint config github lint');
+  assert(gh.any_ui === 'false', 'eslint config no UI matrix');
+}
+
+{
+  const sel = selectModulesFromFiles(['test/app/module-select.test.mjs'], manifest);
+  assert(sel.modules.includes('selector'), 'selector test → selector unit');
+  assert(!sel.modules.includes('smoke'), 'selector test does not default the UI suite');
+  assert(!sel.fullSuite, 'selector test is not full suite');
+}
+
+{
+  const sel = selectModulesFromFiles(['packages/shared/ontology.js'], manifest);
+  assert(sel.modules.includes('smoke'), 'shared package → UI default');
+  assert(sel.modules.includes('contract'), 'shared package pulls contract');
+  assert(!sel.modules.includes('lint'), 'shared package is not eslint-covered');
+}
+
+{
+  const sel = selectModulesFromFiles(['test/app/critical-paths.json'], manifest);
+  assert(sel.modules.includes('contract'), 'contract file → contract');
+  assert(!sel.modules.includes('party'), 'contract file skips UI');
+}
+
+{
+  const sel = selectModulesFromFiles(['docs/readme-only.md'], manifest);
+  const gh = toGithubOutputs(sel, manifest);
+  assert(gh.modules === '', 'docs github modules empty');
+  assert(gh.lint === 'false', 'docs github lint false');
+  assert(gh.contract === 'false', 'docs github contract false');
+  assert(gh.any_ui === 'false', 'docs github any_ui false');
+  assert(gh.ui_matrix === '[]', 'docs github empty matrix');
 }
 
 if (failed) {
