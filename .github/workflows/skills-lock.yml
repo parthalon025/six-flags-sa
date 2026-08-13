@@ -24,5 +24,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify skills-lock hashes
+      - name: Verify no vendored Matt Pocock skills
         run: npm run skills:check
