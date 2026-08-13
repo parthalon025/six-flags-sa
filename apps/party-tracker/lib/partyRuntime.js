@@ -67,7 +67,7 @@ import {
   persistLiveSession,
 } from '@/lib/core/session';
 import { adoptSnapshot } from '@/lib/core/state';
-import { effectiveShareMode, locationForShare, shareModePatch } from '@/lib/gps/sharing';
+import { shareModePatch } from '@/lib/location';
 
 /** The self-hosted Node host in /server, when one is configured. */
 const LAN_BASE = (process.env.NEXT_PUBLIC_SYNC_URL || '').replace(/\/+$/, '');
@@ -1004,16 +1004,9 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return submit(HEARTBEAT, { battery });
   };
   const pushLocation = (location) => {
-    const me =
-      (host && session && host.getState?.()?.members?.[session.selfId]) ||
-      (client && session && client.getState?.()?.members?.[session.selfId]) ||
-      null;
-    const mode = effectiveShareMode(me || { shareMode: 'approx' });
-    const shaped = locationForShare(location, mode);
-    if (!shaped) return null;
-    return submit(LOCATION, { location: shaped });
+    if (!location) return null;
+    return submit(LOCATION, { location });
   };
-  const clearLocation = () => submit(LOCATION, { clear: true });
   const setMeet = (meet) => submit(SET_MEET, { meet });
   const setTarget = (rideId) => submit(SET_TARGET, { rideId: rideId || null });
 
@@ -1040,10 +1033,8 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   }
 
   const setGroupId = (groupId) => submit(PATCH_MEMBER, { patch: { groupId: groupId || null } });
-  const setShareMode = (mode, opts = {}) => {
-    if (mode === 'off') return null;
-    return submit(PATCH_MEMBER, { patch: shareModePatch(mode, opts) });
-  };
+  const setShareMode = (mode, opts = {}) =>
+    submit(PATCH_MEMBER, { patch: shareModePatch(mode, opts) });
   const bindUserId = (userId) => {
     if (session && userId) session.userId = userId;
     return submit(PATCH_MEMBER, { patch: { userId } });
@@ -1134,7 +1125,6 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     logAction,
     pushLocation,
     pushBattery,
-    clearLocation,
     getSnapshot,
     stats,
     destroy,

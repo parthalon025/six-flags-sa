@@ -70,13 +70,22 @@ const { createElection, scoreCandidate, shouldYield, betterHost } = await import
 const { CADENCE, MOTION, cadenceFor, classifyMotion, createBroadcastGate } = await import(
   '../../apps/party-tracker/lib/gps/adaptive.js'
 );
-const { isLocationVisible, shouldShareLocation } = await import('../../apps/party-tracker/lib/gps/sharing.js');
 const {
   AT_PLACE_M,
   attachPlace,
+  capture,
+  coarsenLocation,
+  DEFAULT_SHARE_MODE,
+  effectiveShareMode,
   isLocationLive,
+  isLocationVisible,
   locationCopy,
+  locationForShare,
+  nextTrail,
   placeAt,
+  shareModePatch,
+  shouldShareLocation,
+  view: locationView,
 } = await import('../../apps/party-tracker/lib/location.js');
 const {
   MAX_ACC_M,
@@ -323,7 +332,7 @@ await check('a nonsense location never reaches the roster', () => {
   return true;
 });
 
-await check('clearing a location drops it from the roster', () => {
+await check('clearing a location does not wipe last-known', () => {
   const now = 1_000_000;
   let state = seeded(now);
   const fresh = { lat: 39.3, lng: -84.26, acc: 8, ts: now + 5000 };
@@ -331,11 +340,8 @@ await check('clearing a location drops it from the roster', () => {
   assert.ok(state.members[PEER].location);
 
   const cleared = reduce(state, { kind: 'location', from: PEER, body: { clear: true } }, now + 1);
-  assert.equal(cleared.ops.length, 1);
-  assert.equal(cleared.state.members[PEER].location, null);
-
-  const again = reduce(cleared.state, { kind: 'location', from: PEER, body: { clear: true } }, now + 2);
-  assert.equal(again.ops.length, 0, 'clearing an already-clear location is a no-op');
+  assert.equal(cleared.ops.length, 0);
+  assert.equal(cleared.state.members[PEER].location.lat, fresh.lat);
   return true;
 });
 
@@ -356,6 +362,17 @@ await check('location updates keep an in-bounds trail and ignore pause', () => {
     now,
   ).state;
   assert.equal(state.members[PEER].trail.length, 2);
+  const stale = reduce(
+    state,
+    {
+      kind: 'location',
+      from: PEER,
+      body: { location: { lat: 39.3, lng: -84.26, ts: now + 3, live: false } },
+    },
+    now,
+  ).state;
+  assert.equal(stale.members[PEER].trail.length, 2, 'stale last-known must not grow the trail');
+  assert.equal(stale.members[PEER].location.live, false);
   const paused = reduce(
     state,
     { kind: 'patch-member', from: PEER, body: { patch: { sharingPaused: true } } },
@@ -1386,28 +1403,20 @@ await check('shouldShareLocation allows in-park fixes and blocks off-site ones',
 });
 
 {
-  const {
-    effectiveShareMode,
-    locationForShare,
-    shareModePatch,
-    DEFAULT_SHARE_MODE,
-  } = await import('../../apps/party-tracker/lib/gps/sharing.js');
-  const { createMember, coarsenLocation } = await import('../../apps/party-tracker/lib/core/state.js');
-
-  await check('E4.1 share modes: approx coarsens, precise keeps', () => {
+  await check('E4.1 share modes: approx coarsens, precise keeps; off is not a mode', () => {
     const loc = { lat: 39.343828, lng: -84.265811, ts: 1 };
     const approx = locationForShare(loc, 'approx');
     assert.deepEqual(approx, coarsenLocation(loc));
     assert.notEqual(approx.lat, loc.lat);
     assert.equal(locationForShare(loc, 'precise').lat, loc.lat);
+    assert.equal(shareModePatch('off').shareMode, DEFAULT_SHARE_MODE);
     assert.deepEqual(locationForShare(loc, 'off'), coarsenLocation(loc));
     return true;
   });
 
   await check('E4.1 precise duration expires back to approx', () => {
     const now = 1_000_000;
-    const m = createMember({ id: 'x', now });
-    Object.assign(m, shareModePatch('precise', { now, durationMs: 60_000 }));
+    const m = { id: 'x', ...shareModePatch('precise', { now, durationMs: 60_000 }) };
     assert.equal(effectiveShareMode(m, now + 1), 'precise');
     assert.equal(effectiveShareMode(m, now + 60_001), DEFAULT_SHARE_MODE);
     assert.equal(effectiveShareMode({ ...m, sharingPaused: true }, now), 'precise');
@@ -1501,6 +1510,79 @@ await check('attachPlace stamps Place on the fix so it travels with Location', (
   assert.equal(loc.place.name, 'Orion');
   const walking = attachPlace({ lat: 39.348, lng: -84.27, ts: 2, place: loc.place }, [ORION]);
   assert.equal(walking.place, undefined);
+  return true;
+});
+
+await check('capture is live in-bounds and coarsens on approx', () => {
+  const out = capture({
+    fix: { lat: 39.343828, lng: -84.265811, ts: 1, acc: 8 },
+    bounds: KI_BOUNDS,
+    places: [ORION],
+    member: { shareMode: 'approx' },
+    now: 1,
+  });
+  assert.equal(out.location.live, true);
+  assert.notEqual(out.location.lat, 39.343828);
+  return true;
+});
+
+await check('capture out-of-bounds keeps last-known stale and does not resend', () => {
+  const last = { lat: 39.343828, lng: -84.265811, ts: 1, live: true };
+  const out = capture({
+    fix: { lat: 39.35, lng: -84.265811, ts: 2 },
+    bounds: KI_BOUNDS,
+    last,
+    now: 3,
+  });
+  assert.equal(out.location.live, false);
+  assert.equal(out.location.lat, last.lat);
+  assert.equal(
+    capture({
+      fix: { lat: 39.35, lng: -84.265811, ts: 4 },
+      bounds: KI_BOUNDS,
+      last: out.location,
+      now: 5,
+    }),
+    null,
+  );
+  assert.equal(capture({ fix: { lat: 39.35, lng: -84.265811, ts: 6 }, bounds: KI_BOUNDS, now: 7 }), null);
+  return true;
+});
+
+await check('capture precise expires to approx coarsening', () => {
+  const now = 1_000_000;
+  const member = shareModePatch('precise', { now, durationMs: 60_000 });
+  const live = capture({
+    fix: { lat: 39.343828, lng: -84.265811, ts: now },
+    bounds: KI_BOUNDS,
+    member,
+    now: now + 1,
+  });
+  assert.equal(live.location.lat, 39.343828);
+  const later = capture({
+    fix: { lat: 39.343828, lng: -84.265811, ts: now + 60_001 },
+    bounds: KI_BOUNDS,
+    member,
+    now: now + 60_001,
+  });
+  assert.notEqual(later.location.lat, 39.343828);
+  return true;
+});
+
+await check('nextTrail grows only on live Location', () => {
+  const live = { lat: 39.34, lng: -84.26, ts: 1, live: true };
+  const stale = { lat: 39.34, lng: -84.26, ts: 2, live: false };
+  const t1 = nextTrail([], live);
+  assert.equal(t1.length, 1);
+  assert.equal(nextTrail(t1, stale).length, 1);
+  return true;
+});
+
+await check('view keeps last-known visible off-site and not live', () => {
+  const member = { location: { lat: 39.35, lng: -84.265811, live: false } };
+  const seen = locationView(member, KI_BOUNDS);
+  assert.equal(seen.visible, true);
+  assert.equal(seen.live, false);
   return true;
 });
 
