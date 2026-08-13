@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import BrandMark from '@/components/BrandMark';
 import { recent } from '@/lib/actionLog';
-import { reorder, withDown } from '@/lib/plan';
+import { reorder, unstar, withDown } from '@/lib/plan';
 
 const GROUPS = ['', 'A', 'B', 'C'];
 
@@ -97,6 +97,14 @@ export default function IntelligencePanel({
                 </button>
                 <button type="button" className="btn small" disabled={i === steps.length - 1} onClick={() => move(i, 1)} aria-label="Move down">
                   ↓
+                </button>
+                <button
+                  type="button"
+                  className="btn small"
+                  onClick={() => onSetPlan?.(unstar(plan, s.placeId))}
+                  aria-label="Remove from Plan"
+                >
+                  ×
                 </button>
               </span>
             </li>

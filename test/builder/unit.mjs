@@ -3142,6 +3142,15 @@ await check('Plan.promote copies a pre-arrival draft into an empty shared Plan o
   return true;
 });
 
+await check('join or resume still drops the draft when the shared Plan already has stops', () => {
+  const store = memoryStore();
+  saveDraft([diamondback], store);
+  assert.equal(promote(loadDraft(store), [orion]), null);
+  clearDraft(store);
+  assert.deepEqual(loadDraft(store), []);
+  return true;
+});
+
 await check('Plan.withDown strikes reported-down rides instead of dropping them', () => {
   const plan = normalizePlanItems([diamondback, orion]);
   const rows = withDown(plan, { diamondback: { status: 'down', note: 'Weather hold' } });

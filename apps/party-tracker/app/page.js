@@ -234,6 +234,13 @@ export default function Page() {
   useEffect(() => {
     setPlanDraft(loadDraft());
   }, []);
+  const adoptDraft = useCallback(() => {
+    const shared = runtime.current?.getSnapshot()?.plan || [];
+    const items = promote(loadDraft(), shared);
+    if (items) runtime.current?.setPlan(items);
+    clearDraft();
+    setPlanDraft([]);
+  }, []);
   const [status, setStatus] = useState('On the move');
   const [busy, setBusy] = useState(false);
 
@@ -805,9 +812,11 @@ export default function Page() {
       }
       if (rt.hasLiveParty?.()) {
         const memberName = identityRef.current?.name || 'Guest';
-        Promise.resolve(rt.resume({ memberName })).catch((err) =>
-          showToast(err?.message || 'Could not reopen the party.'),
-        );
+        Promise.resolve(rt.resume({ memberName }))
+          .then(() => adoptDraft())
+          .catch((err) =>
+            showToast(err?.message || 'Could not reopen the party.'),
+          );
       }
     })();
     return () => {
@@ -816,7 +825,7 @@ export default function Page() {
       setRuntimeApi(null);
       rt?.destroy();
     };
-  }, [showToast, selectTab]);
+  }, [showToast, selectTab, adoptDraft]);
 
   /* Join is name-first. Finish /join once location is live so the invite
      cannot land a Member with no fix. Retry when GPS arrives. */
@@ -839,6 +848,7 @@ export default function Page() {
             ? `You’re in party ${snap.code}${named ? '' : ' — rename under Me'}`
             : 'You’re in the party',
         );
+        adoptDraft();
       })
       .catch((err) => {
         showToast(err?.message || 'Could not open that invite.');
@@ -847,7 +857,7 @@ export default function Page() {
         inviteJoinInFlight.current = false;
       });
     return undefined;
-  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status]);
+  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
      resume on mount above and keep syncing on every tab. */
@@ -861,12 +871,13 @@ export default function Page() {
     resumeInFlight.current = true;
     const memberName = identityRef.current?.name || 'Guest';
     Promise.resolve(runtime.current.resume({ memberName }))
+      .then(() => adoptDraft())
       .catch((err) => showToast(err?.message || 'Could not reopen the party.'))
       .finally(() => {
         resumeInFlight.current = false;
       });
     return undefined;
-  }, [tab, runtimeApi, party?.active, party?.phase, showToast]);
+  }, [tab, runtimeApi, party?.active, party?.phase, showToast, adoptDraft]);
 
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
@@ -1297,10 +1308,7 @@ export default function Page() {
       showToast(
         `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
       );
-      const items = promote(planDraft, []);
-      if (items) runtime.current?.setPlan(items);
-      clearDraft();
-      setPlanDraft([]);
+      adoptDraft();
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
     }
@@ -1328,11 +1336,7 @@ export default function Page() {
       });
       selectTab('party');
       showToast(`Joined ${snap.code}`);
-      const shared = runtime.current?.getSnapshot()?.plan || [];
-      const items = promote(planDraft, shared);
-      if (items) runtime.current?.setPlan(items);
-      clearDraft();
-      setPlanDraft([]);
+      adoptDraft();
     } catch (err) {
       const msg = err?.message || 'Could not join that party.';
       showToast(
