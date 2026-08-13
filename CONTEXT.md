@@ -17,7 +17,7 @@ A live group coordinating at a **Venue** — shared roster, presence, meet point
 _Avoid_: Session, room, lobby
 
 **Host**:
-The phone that holds the authoritative **Party** state (mesh authority). Invisible — no badge, vote, or toast. Always the best phone (battery, signal, network, performance). Rechecked on join, on failover, and continuously, with a margin so it does not flap on 1%.
+The phone that holds the authoritative **Party** state (mesh authority). Invisible — no badge, vote, or toast. Always the best phone (battery, signal, network, performance). Rechecked on join, on failover, and continuously, with a margin so it does not flap on 1%. Applies **Plan** last-write and **Overlay** last **Contribution** per **Place** + type so **Members** share one Party truth.
 _Avoid_: Owner, Adult (family labels — not how Host is chosen); leader (UI)
 
 **Member**:
@@ -93,7 +93,7 @@ An **Eligibility** verdict: this **Attraction** is allowed only with an adult.
 _Avoid_: With adult (the input fact); Adult (a family/account role, not defined yet)
 
 **Overlay**:
-The phone’s pending/accepted **Contribution** layer drawn on the shipped **Venue** map. True immediately on this phone — a **Party** is not required. That is the same **Overlay**, not a second layer: joining or hosting shares authored facts with **Members** immediately (union by **Place** + type). For one **Place** + type, the latest **Contribution** is what is drawn — one fact, not a stack. Earlier claims stay as evidence; confirm / deny stay statistical (no public counts, names, or percent). Same-**Party** overwrite is not the second independent **Party**. Leave drops **Overlay** you only saw because you were in that **Party**; **Contributions** you authored stay on this phone. Strangers see it only after the same bar as park-wide **Observation**: a second independent **Party** that walked near. Not party roster state and not persistent map until consolidate graduates it into builder inputs.
+The phone’s pending/accepted **Contribution** layer drawn on the shipped **Venue** map. True immediately on this phone — a **Party** is not required. That is the same **Overlay**, not a second layer: joining or hosting unions authored facts with **Members** by **Place** + type. For one **Place** + type, the latest **Contribution** is what is drawn — one fact, not a stack. In a **Party**, the **Host** applies that last write so every **Member** draws the same fact; solo, this phone is the only replica until join. Earlier claims stay as evidence; confirm / deny stay statistical (no public counts, names, or percent). Same-**Party** overwrite is not the second independent **Party**. Leave drops **Overlay** you only saw because you were in that **Party**; **Contributions** you authored stay on this phone. Strangers see it only after the same bar as park-wide **Observation**: a second independent **Party** that walked near. Not party roster state and not persistent map until consolidate graduates it into builder inputs.
 _Avoid_: Ride report (ops chatter); Observation (live series, not map structure); draft Overlay (solo is the same Overlay)
 
 **Plan**:
@@ -118,6 +118,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - The phone updates the active **Venue** when the app starts and a connection is available (cell or Wi-Fi)
 - A **Party** coordinates at one active **Venue** at a time
 - A **Party** has exactly one **Host** at a time; **Host** is not user-facing
+- The **Host** applies **Plan** last-write and **Overlay** last **Contribution** per **Place** + type; every **Member** draws the same **Overlay** fact
 - An **Invite** admits a person as a **Member**; joining rechecks whether the **Host** is still the best phone
 - **Host** fitness also rechecks on failover and continuously, with a margin so it does not flap
 - Join on a device does not finish until **Location** is on
@@ -156,6 +157,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - A **Contribution** appears on this phone’s **Overlay** immediately; a **Party** is not required
 - Joining or hosting unions authored **Overlay** with **Members** by **Place** + type; it does not replace the Party’s whole **Overlay** the way a non-empty **Plan** refuses a draft
 - For one **Place** + type, the latest **Contribution** is what is drawn; earlier claims stay as evidence, not a second pin
+- In a **Party**, the **Host** applies that last write so every **Member** draws the same **Overlay**; solo, this phone is the only replica until join
 - Same-**Party** overwrite is not the second independent **Party**
 - Leave drops **Overlay** you only saw because you were in that **Party**; **Contributions** you authored stay on this phone
 - Park-wide **Overlay** needs a second independent **Party** that walked near
@@ -202,7 +204,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 > **Domain expert:** "No — it's on this phone's map now. A **Party** is not required. When you join, the family sees those facts immediately (union by **Place** + type, not a **Plan**-style replace-the-list). If you leave, you keep what you authored; you lose **Overlay** you only saw because you were in their **Party**."
 >
 > **Dev:** "Dad pinned Orion at 48 inches, then Mom pinned 42. Two heights?"
-> **Domain expert:** "One. The map draws the latest **Contribution** for that **Place** + type — 42. Dad's 48 stays in the evidence pile. Confirm / deny do not print 2 vs 1 on the pin. Their clump tapping again is not the second **Party**."
+> **Domain expert:** "One. The map draws the latest **Contribution** for that **Place** + type — 42. The **Host** applies it, so Dad and Grandma see 42 together — not each phone guessing. Dad's 48 stays in the evidence pile. Confirm / deny do not print 2 vs 1 on the pin. Their clump tapping again is not the second **Party**."
 >
 > **Dev:** "Is 'Ride up or down?' a **Contribution**?"
 > **Domain expert:** "It's a live **Side Quest**. Completing it is a **Ride report** for the **Party** — no **Profile** needed. A height-sign **Side Quest** is the other kind — that one _is_ a **Contribution** and stays Profile-gated. Think Pokémon GO for the walk-up missions, Waze for the live reports — same tab."
@@ -252,7 +254,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Code `eligibility()` returns `unknown` when inches is null — **resolved**: unset height means not height-constrained (can ride anything), not an unknown verdict. Adults who never set height do not fade the map. A child added with no height also does not constrain the group until someone enters one.
 - Code `withAdult` global toggle vs per-person accompaniment — **resolved**: domain fact is per-**Member** **With adult**; unset means accompanied for every **Member**; explicit false is rare on a device-holding **Member**. No map-wide “alone” clump switch — leave the **Meet** via **Subgroup**. **Companion** is only the Eligibility verdict.
 - Map Eligibility vs one global height — **resolved**: map / list / glance show the most restrictive **Member** in this phone’s set (matching **Subgroup** tags including device-less, or whole **Party** if this phone is untagged). Untagged device-less do not shadow a tagged phone. Place detail lists each **Member** in that set. Device-holding **Members** are the decision makers; device-less are limiters only. Not an “active rider” picker. Height / **With adult** / tag / remove are phone-driven; the local guest-chip store is not a second roster. **Managed Guests** do not constrain the map until seeded as device-less **Members**.
-- Party-local vs park-wide map edits — resolved: **Overlay** is immediately true on this phone (a **Party** is not required) and to **Members** once you join or host (union by **Place** + type). For one **Place** + type, the latest **Contribution** is drawn; earlier claims stay as evidence; same-**Party** overwrite is not the second independent **Party**. Leave drops **Overlay** you only saw via that **Party**; authored **Contributions** stay. Park-wide **Overlay** uses the same bar as **Observation** — a second independent **Party** that walked near. Same-**Party** taps stay in-party. Ride-down: **Party** trusts the **Ride report** immediately (walk near, see it, mark it — not queue-pin GPS); park-wide needs a **Profile** plus that second **Party**, short TTL, easy contradict, reputation for spam on the **Profile**.
+- Party-local vs park-wide map edits — resolved: **Overlay** is immediately true on this phone (a **Party** is not required) and to **Members** once you join or host (union by **Place** + type). For one **Place** + type, the latest **Contribution** is drawn; the **Host** applies that last write so every **Member** draws the same fact (solo, this phone is the replica). Earlier claims stay as evidence; same-**Party** overwrite is not the second independent **Party**. Leave drops **Overlay** you only saw via that **Party**; authored **Contributions** stay. Park-wide **Overlay** uses the same bar as **Observation** — a second independent **Party** that walked near. Same-**Party** taps stay in-party. Ride-down: **Party** trusts the **Ride report** immediately (walk near, see it, mark it — not queue-pin GPS); park-wide needs a **Profile** plus that second **Party**, short TTL, easy contradict, reputation for spam on the **Profile**.
 - Adventure vs Contribution — resolved: product name is **Side Quest**; enjoyment and map improvement are one loop (Pokémon GO + Waze). **Gaps** seed gap quests → **Contribution** (Profile-gated, at-the-**Place**); live quests → **Ride report** (name-first, nearby enough to have seen it) / **Observation** (park-wide). `_Avoid_: Adventure`.
 - Who invents **Gaps** — resolved: the builder, once, into `*.gaps.json`. The phone ranks by **Location** and does not invent durable **Gaps** from POI heuristics. Missing/empty file → empty durable list, not a failed **Venue** load.
 - **XP** vs leaderboard — resolved: **XP** grants **Title** rewards (sub-names on the **Profile**: Scout, Ranger, Cartographer, Steward). Visitor has no **Title** yet. **XP** and **Title** live on the **Profile** only (not **Member**, **Party**, or anonymous phone). No all-time global leaderboard this ship. Cards stay meaning-first; earning a **Title** may toast.
