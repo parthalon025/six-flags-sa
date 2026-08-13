@@ -1,13 +1,13 @@
 {
   "repoPath": "/home/runner/work/six-flags-sa/six-flags-sa",
-  "lastCommit": "0ebdb8535ed6ae67a7a45434c231e3edb2901529",
-  "indexedAt": "2026-08-13T14:00:37.635Z",
+  "lastCommit": "956a300ec5703e332f2c861b9307e349b8ac2fae",
+  "indexedAt": "2026-08-13T14:53:10.667Z",
   "branch": "main",
   "remoteUrl": "https://github.com/parthalon025/six-flags-sa",
   "stats": {
-    "files": 423,
-    "nodes": 4841,
-    "edges": 12091,
+    "files": 425,
+    "nodes": 4861,
+    "edges": 12129,
     "communities": 304,
     "processes": 300,
     "embeddings": 0
@@ -40,14 +40,15 @@
     "Gemfile": "b0d51e73ecfaf32e3de998cb625583d2cb8c35c9999a45c8938b7a231c1b97d5",
     "Dockerfile": "5d2ae8a4a6d067694bb18290e973a1070cc29dcda21a0575ea2826b9315ab762",
     "CONTEXT.md": "bba93ea504638aba0a1b06713b72d5d33794c912dcf1ed644a5fd974d0bfde7f",
-    "CLAUDE.md": "d437746e862bdad51581572bfb45358ccf23a3022ba0adc8b94f6f61c554190a",
-    "AGENTS.md": "cf20c0edc79b23facadf64b035b43bf66038488eb00dbba3beafbeaa7083a65b",
+    "CLAUDE.md": "5563f0e61225301ef094a0aa65343e878c779673967ed64d377ee0a3ac2ea544",
+    "AGENTS.md": "6f88fec20cae37d3452460ce2cc9053065432fd41a293a125fc9a3ddcbdcf798",
     "scripts/worktree.mjs": "7a1d2fee133df1327c07e5fb8e948d2819aab7afbd238291c3f7eeff7d33b92a",
     "scripts/warm-cdn.mjs": "5e90c04d005e62f4578d3cabe1296da028ebbd381bcf0425f5c2bff226106a92",
     "scripts/vercel-ignore.sh": "43a77d37f7d2a01ecb953881527e91864963b802e2524ba62c952bb3d62fc162",
+    "scripts/install-global-skills.mjs": "90362385711235e73d5e84455fb2724dc9d5f27f629da9fad389577a6efb6e2c",
     "scripts/gitnexus-sync.mjs": "b30ef0d2ec7167af8e62cf9b42abd1bf52d4ae52f9ef8808c887902cd7a89c82",
     "scripts/gitnexus-ci.mjs": "a430673f537cf5dad21cce433393f25f1da6ad1a6c02592ecf17600652b9a054",
-    "scripts/check-skills-lock.mjs": "4cda3834e6e34b22a5a204f96d41591147c745411ef468e3bc2c236466f10e8a",
+    "scripts/check-skills-lock.mjs": "4e3a85a38976ba97450008d823b9f826411c1a75fc5a414d2c3707ca82d87cb5",
     "scripts/bump-version.mjs": "922d3248983ea731284aff3565adc56a8ee59f4d27a19702c3f564133ec2c3ad",
     "scripts/build-icons.mjs": "d1901bf96fa040239790e11304115d8bf3d0b9e2d53e092509ba22a4ffb66c4b",
     "packages/README.md": "b02106e11945a964671511adaddd5a9a00be03350398e59256babafc44319d4e",
@@ -66,6 +67,7 @@
     "docs/THIRD_PARTY_LICENSES.md": "29c02443cd9a05b86d3402d41eb619c50a15ec6a9c2ed358d90fa1e31244a7b2",
     "docs/HANDOFF-self-contained.md": "b4eb9e181216cbd99d90462238fceaa0572254bb705217312dcc9e19f202a1ce",
     "test/scripts/worktree.test.mjs": "0162ea4a0745579f8e3749aba0357ebeccae7078d914390d436d2950cd5f7138",
+    "test/scripts/install-global-skills.test.mjs": "034bb5ad329d30d9df10ef4d0e38476ee63952f0c005e8d9984788d0bd01bc75",
     "test/scripts/gitnexus-ci.test.mjs": "9ceecf131b10bfc131de9a4e12704c3a697c9ffd355435b2b1236944861dfcce",
     "test/scripts/bump-version.test.mjs": "5a17d2a03af3f182d0ddb78c3131bda80c67d1bb304d79a49a7f792ade7ff063",
     "test/builder/unit.mjs": "427eb729a49e03e4b376958a0c27a6c4831efb8d033f67bef3768b34afcbcea7",
@@ -105,7 +107,7 @@
     "docs/research/2026-08-10-native-app-ar-map-styles-session.md": "112b0c5bf2f4fdf2f2f2adcabe4729d76c180d98e69f5f8c53e66569b1b5a72d",
     "docs/research/2026-08-10-gamified-map-contributions.md": "a155ca156bfe7f7fb5ff978d9bfc7d9573f304d70d71ae893c805b5a415f4ee4",
     "docs/agents/triage-labels.md": "4f53c9b40ce2651e3611aa090eaedbd6dbc9b71ef8c5f7e65eac0d8263190d0d",
-    "docs/agents/skills-lock.md": "5ef10fb3d29eb47d0415dfeacab77531ceab2e171c02bc892041a007daebdc15",
+    "docs/agents/skills-lock.md": "7127d52baba47e3fdfbf255861a543b6b36fc7aee492747fd84daae551cbbd2d",
     "docs/agents/issue-tracker.md": "2e067e8a4d6c84c3008908bdb8f59b08150436df550e2559d05bb09f3fafd06e",
     "docs/agents/domain.md": "45d73171bc0ad97e64f25e18ca2e874ea76fd7854d0b4a59c101db73ef995f7f",
     "docs/adr/0007-park-wide-second-party.md": "f7c68d739d3211d35d09611d6fc5ff0014c8114b08d0e2cfd10c366e605ef7b4",
@@ -189,7 +191,6 @@
     "apps/party-tracker/public/sw.js": "67c2c6df09f7f33880e74ba5aaf638b674ffdc820574bcb114b73ab7740e6e32",
     "apps/party-tracker/public/manifest.webmanifest": "ad83077606c96f8fca3ce253afc3df6a78345b3c8e50dbac59e4222ddb79e538",
     "apps/party-tracker/public/app-version.json": "99cc3fb4a34fb1969b1abcff2e7f929ba912c7a1d27721599130df38820520a9",
-    "apps/party-tracker/data/release-notes.json": "8d4059edc6d139fe71eb08d981c5a7124a7798254a29d31170432c6fb338c333",
     "apps/party-tracker/lib/weather.js": "1de62a0ef57bc42a5525ff93f2e34608d50890d4ffe105c73e0123755c1ff1df",
     "apps/party-tracker/lib/wayFlags.js": "cdd00835d5585a940541bab01aca63652b7097747dc32cb5a292250e55430876",
     "apps/party-tracker/lib/version.js": "c000340c068649d9ec62baf2e9c368cf3325b45f01bfd94f8f96dc5daad75f47",
@@ -225,6 +226,7 @@
     "apps/party-tracker/lib/appUpdate.js": "5217b2aff65f5c35a4de42c54d91d4b3f8aa8c908852f2eeff7298688236a8c4",
     "apps/party-tracker/lib/analytics.js": "e0a71ef1a0950680f425120b7bfc4ace371b1cf451309c6df76e0c311077c265",
     "apps/party-tracker/lib/actionLog.js": "71102a951ca678fced95925bb613a9ec7cd9612d2637ace457406dd52de6da76",
+    "apps/party-tracker/data/release-notes.json": "8d4059edc6d139fe71eb08d981c5a7124a7798254a29d31170432c6fb338c333",
     "apps/party-tracker/components/useWeather.js": "70e4a64e8f6180466e75151efd7d87313165c42f9bd8ce4aaa2c4c54c833f491",
     "apps/party-tracker/components/useVoiceGuidance.js": "d19568626f201751e11304f28d5a3afb1ba24d1b617e9a321bc0368628aaa790",
     "apps/party-tracker/components/useSheetDrag.js": "fc7ec22c785e893345bcbb018fd00496e238c4f5ff6883992558602b32e41b4d",
@@ -455,6 +457,6 @@
     "apps/party-tracker/app/api/admin/venues/route.js": "a90580d0daabd951e9612b7e77a4adfa36403bbec7bcc71fe30433bb9b96dd9b"
   },
   "cacheKeys": [
-    "b5b7343adeaac1b80933ced665316d46cb5bb68bffc97735287db962b97d8297"
+    "e5677ea8069100814cbdd9de0f04a1cfa128c503763336ce3dc837ba14e5344e"
   ]
 }
