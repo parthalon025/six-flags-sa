@@ -32,7 +32,7 @@ import {
   sheetStops,
 } from '@/lib/sheet';
 import { CATEGORIES, hasHeights, isRideable } from '@/lib/park';
-import { fold } from '@/lib/eligibility';
+import { fromFacts, peopleFor } from '@/lib/eligibility';
 import { statusSummary } from '@/lib/rideStatus';
 import { profilesForCoverage, profileOpts } from '@/lib/routingProfiles';
 import {
@@ -1325,35 +1325,41 @@ export default function Page() {
   };
 
   /* ---------- derived ---------- */
-  /* Map, list and glance share one Fold: the most restrictive Member in this
-     phone's Subgroup, or the whole Party if untagged. Solo browse uses the
-     local height. Empty people → silent cells, no marks. */
-  const eligibilityPeople = useMemo(() => {
+  /* Map, list and glance share one Eligibility view. Callers pass Party or
+     solo facts only — Subgroup set selection and With adult live in the
+     module. Empty people → silent cells, no marks. */
+  const eligibilityFacts = useMemo(() => {
     if (party?.active && roster.length) {
-      const me = roster.find((m) => m.id === party.selfId);
-      const tag = me?.groupId;
-      const set = tag ? roster.filter((m) => m.groupId === tag) : roster;
-      return set.map((m) => ({
-        id: m.id,
-        name: m.name,
-        height: Number.isFinite(m.height) ? m.height : null,
-        withAdult: m.withAdult !== false,
-      }));
+      return {
+        party: {
+          selfId: party.selfId,
+          members: roster.map((m) => ({
+            id: m.id,
+            name: m.name,
+            height: Number.isFinite(m.height) ? m.height : null,
+            withAdult: m.withAdult,
+            groupId: m.groupId || null,
+          })),
+        },
+      };
     }
-    if (mapHeight == null) return [];
-    return [
-      {
-        id: 'self',
-        name: identity?.name || 'You',
+    return {
+      solo: {
         height: mapHeight,
-        withAdult: withAdult === true,
+        withAdult,
+        name: identity?.name || 'You',
       },
-    ];
+    };
   }, [party?.active, party?.selfId, roster, mapHeight, withAdult, identity?.name]);
 
+  const eligibilityPeople = useMemo(
+    () => peopleFor(eligibilityFacts),
+    [eligibilityFacts],
+  );
+
   const eligibilityView = useMemo(
-    () => fold(eligibilityPeople, POIS),
-    [eligibilityPeople, POIS],
+    () => fromFacts(eligibilityFacts, POIS),
+    [eligibilityFacts, POIS],
   );
 
   const totalRides = useMemo(

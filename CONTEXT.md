@@ -65,15 +65,15 @@ The shared rendezvous point on the **Venue** map for a **Party** (at most one). 
 _Avoid_: Waypoint, marker, pin (generic map chrome — use **Meet** for this job)
 
 **Subgroup**:
-A soft partition tag on a **Member** within one **Party** (self-selected; not a nested party or separate roster).
+A soft partition tag on a **Member** within one **Party** (not a nested party or separate roster). Device-holding **Members** choose their own tag; they may also tag device-less **Members** onto a clump. Split the family by tag, then rejoin at the one **Meet**.
 _Avoid_: Nested Party, split-party (as a third entity — split is **Subgroup** + scheduled rejoin at the one **Meet**)
 
 **Eligibility**:
-The deterministic verdict of whether a person (by height and **With adult**) can do an **Attraction**. Computed from **Member** / **Managed Guest** facts × **Attraction** rules — not a stored party role and not a **Contribution**. A person with no height is not height-constrained (can ride anything); missing height is not an unknown verdict. Map, list, and glance show the most restrictive person in the set (not eligible, then **Companion**, then advisory, then eligible). Place detail lists each person.
+The deterministic verdict of whether a person (by height and **With adult**) can do an **Attraction**. Computed from **Member** / **Managed Guest** facts × **Attraction** rules — not a stored party role and not a **Contribution**. A person with no height is not height-constrained (can ride anything); missing height is not an unknown verdict. Map, list, and glance show the most restrictive person in this phone’s set (not eligible, then **Companion**, then advisory, then eligible); place detail lists each person in that same set. The set is this phone’s **Subgroup** (matching tags only — including device-less), or the whole **Party** if this phone is untagged. Untagged device-less **Members** do not shadow a tagged phone — tag them when you split. Verdicts serve device-holding **Members** (the app’s decision makers); device-less people are limiters on those phones, not app users. Leaving someone at the **Meet** is a **Subgroup** / set change, not a **With adult** change. An unattended device-less rider is out of scope.
 _Avoid_: Permission, role, filter (those are other jobs)
 
 **With adult**:
-A per-**Member** fact: whether this person is accompanied by a grown-up right now. Default true for device-less kids. Not a family role.
+A per-**Member** fact: whether this person is accompanied by a grown-up right now. Unset means accompanied (every **Member**, not only device-less). Explicit false is rare and belongs on a device-holding **Member** (e.g. a teen alone) — not a map-wide “alone” switch for a clump. Not a family role.
 _Avoid_: Companion (that word is the Eligibility verdict)
 
 **Companion**:
@@ -114,7 +114,8 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - A **Member** optionally binds to one **Profile**; an unbound **Member** is identified by display name until attached
 - A **Member** may carry zero or one **Subgroup** tag
 - A **Member** may carry a **height**; unset height means not height-constrained. Device-less **Members** are valid roster seats
-- A **Member** may carry **With adult** (default true for device-less kids)
+- A **Member** may carry **With adult** (unset means accompanied for every **Member**)
+- Device-holding **Members** are the app’s decision makers — they set **Subgroup** tags (including on device-less **Members**), height, and **With adult**; device-less **Members** do not decide via the app
 - A **Profile** may own zero or more **Managed Guests**; a **Managed Guest** can seed a device-less **Member**
 - A **Managed Guest** does not constrain map / list / glance Eligibility until seeded as a device-less **Member**
 - A **Venue** contains many **Places**; some **Places** are **Attractions**
@@ -132,8 +133,9 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - A **Ride report** may optionally fan out into an **Observation**; an **Observation** is not a **Contribution**
 - Park-wide **Observation** of ride-down requires a **Profile** plus a second independent **Party** or nearby confirm; contradict is first-class
 - **Eligibility** is computed per person × **Attraction**; it is not stored as party truth
-- Map / list / glance Eligibility is the most restrictive **Member** in this phone’s **Subgroup**, or the whole **Party** if this **Member** has no **Subgroup**
+- Map / list / glance Eligibility is the most restrictive **Member** in this phone’s set: matching **Subgroup** tags (including device-less), or the whole **Party** if this phone is untagged. Untagged device-less **Members** are not in a tagged phone’s set
 - Place detail Eligibility lists each **Member** in that same set, with reasons
+- Leaving someone at the **Meet** changes **Subgroup** / set membership; it does not clear **With adult**
 - **Companion** is an **Eligibility** verdict, not a person or a **Member** flag
 - **Weather** is **Venue**-day context (now + hourly forecast for the day, used to predict ride data); it is not a **Ride report**
 
@@ -155,7 +157,10 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 > **Domain expert:** "Neither — that's **Eligibility**, computed from Mia's height and **With adult**. If the ride needs a grown-up, the verdict is **Companion**."
 >
 > **Dev:** "Whose Eligibility does the map show — mine or the whole family?"
-> **Domain expert:** "The toughest person with you. If you're tagged in a **Subgroup**, that's that clump; otherwise the whole **Party**. Tap the ride to see each **Member**. Unset height means they're not worried — they don't constrain the group."
+> **Domain expert:** "The toughest person with you on this phone. Untagged phone → whole **Party**. Tagged phone → matching tags only — tag Mia onto your clump when you split, or she won't constrain your map. Unset height means they're not worried. Phones decide; phoneless kids are limiters, not app users."
+>
+> **Dev:** "I left Mia at the **Meet** — do I flip **With adult** off?"
+> **Domain expert:** "No — take her out of your **Subgroup**. If she's riding unattended she doesn't need the app. **With adult** stays the dumb default (accompanied) unless a phone person is truly alone."
 >
 > **Dev:** "If we mark a restroom closed, do other families see it right away?"
 > **Domain expert:** "Our **Party** does — it's on our **Overlay**. Other visitors wait for evidence. A ride going down is time-sensitive, but that's a **Ride report**, not an **Overlay** fact."
@@ -186,8 +191,8 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - ADR-0001 soft-gates party behind **Profile** — resolved: party is name-first; ADR-0001 and EP.3/EP.5 revised 2026-08-12. **Side Quests** remain Profile-gated.
 - "submember" / kids without phones / height on Member or Subgroup — **resolved**: kids without phones are device-less **Members** with height on the roster (family product; shared party visibility OK). Durable save lives as **Managed Guest** under a **Profile** only (no anonymous guest DB), with a growth/reconfirm prompt when height is stale. Height is not a **Subgroup** property. Contradicts park-intelligence “heights not on the wire” — accepted trade-off for family use.
 - Code `eligibility()` returns `unknown` when inches is null — **resolved**: unset height means not height-constrained (can ride anything), not an unknown verdict. Adults who never set height do not fade the map. A child added with no height also does not constrain the group until someone enters one.
-- Code `withAdult` global toggle vs per-person accompaniment — resolved: domain fact is per-**Member** **With adult**; **Companion** is only the Eligibility verdict.
-- Map Eligibility vs one global height — **resolved**: map / list / glance show the most restrictive **Member** in this phone’s **Subgroup** (or the whole **Party** if untagged). Place detail lists each **Member**. Not an “active rider” picker. HeightPanel edits **Member** height / **With adult**; the local guest-chip store is not a second roster. **Managed Guests** do not constrain the map until seeded as device-less **Members**.
+- Code `withAdult` global toggle vs per-person accompaniment — **resolved**: domain fact is per-**Member** **With adult**; unset means accompanied for every **Member**; explicit false is rare on a device-holding **Member**. No map-wide “alone” clump switch — leave the **Meet** via **Subgroup**. **Companion** is only the Eligibility verdict.
+- Map Eligibility vs one global height — **resolved**: map / list / glance show the most restrictive **Member** in this phone’s set (matching **Subgroup** tags including device-less, or whole **Party** if this phone is untagged). Untagged device-less do not shadow a tagged phone. Place detail lists each **Member** in that set. Device-holding **Members** are the decision makers; device-less are limiters only. Not an “active rider” picker. Height / **With adult** edits are phone-driven; the local guest-chip store is not a second roster. **Managed Guests** do not constrain the map until seeded as device-less **Members**.
 - Party-local vs park-wide map edits — resolved: **Overlay** is immediately true to the submitting **Party**; park-wide needs evidence. Ride-down: **Party** trusts the **Ride report** immediately; park-wide **Observation** needs a second independent **Party** or nearby confirm, short TTL, easy contradict, reputation for spam.
 - Adventure vs Contribution — resolved: product name is **Side Quest**; enjoyment and map improvement are one loop (Pokémon GO + Waze). **Gaps** seed gap quests → **Contribution**; live quests → **Ride report** / **Observation**. Gap quests are at-the-**Place**; live quests are nearby-enough. `_Avoid_: Adventure`.
 - Plan vs next-best card vs personal favorites — resolved: **Plan** is a party-shared, drag-ordered list of starred **Places** (pre-arrival OK). Not multi-stop nav. Any device-holding **Member** may edit; **Host** applies last write. Per-**Member** favorites in code are not the **Plan**. **Member** target remains “heading there now.”

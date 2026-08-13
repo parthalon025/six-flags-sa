@@ -2631,12 +2631,19 @@ await check('a height rule reads low to high, in inches a person could be', () =
 
 /* ---------------------------------------------------------- fold --- */
 
-const { fold } = await import('../../apps/party-tracker/lib/eligibility.js');
+const { fold, fromFacts, view } = await import('../../apps/party-tracker/lib/eligibility.js');
 
 const RIDE = { i: 'iron-rattle', h: { min: 40, alone: 46, max: 72 } };
 const ADVISORY = { i: 'kiddie-coaster', h: { advisory: 54 } };
 const RESTROOM = { i: 'wc-1', c: 'restroom' };
 const rider = (id, height, withAdult, name = id) => ({ id, name, height, withAdult });
+const member = (id, { height = null, withAdult, name = id, groupId = null } = {}) => ({
+  id,
+  name,
+  height,
+  withAdult,
+  groupId,
+});
 
 await check('fold.at names not / companion / advisory / eligible; blocks only for not', () => {
   const view = fold([rider('mia', 42, true)], [RIDE, ADVISORY, RESTROOM]);
@@ -2677,11 +2684,105 @@ await check('unset height is eligible, not an unknown verdict', () => {
   return true;
 });
 
-await check('With adult is the input; Companion is the verdict; missing With adult is not', () => {
+await check('With adult is the input; Companion is the verdict; unset With adult means accompanied', () => {
   const ride = [RIDE];
   assert.equal(fold([rider('mia', 42, true)], ride).at('iron-rattle').kind, 'companion');
   assert.equal(fold([rider('mia', 42, false)], ride).at('iron-rattle').kind, 'not');
-  assert.equal(fold([rider('mia', 42, undefined)], ride).at('iron-rattle').kind, 'not');
+  assert.equal(fold([rider('mia', 42, undefined)], ride).at('iron-rattle').kind, 'companion');
+  return true;
+});
+
+await check('view/fromFacts: whole Party when this phone is untagged', () => {
+  const facts = {
+    party: {
+      selfId: 'dad',
+      members: [
+        member('dad', { height: 70, groupId: null }),
+        member('mia', { height: 30, groupId: null }),
+        member('mom', { height: 65, groupId: null }),
+      ],
+    },
+  };
+  const v = fromFacts(facts, [RIDE]);
+  assert.equal(v.at('iron-rattle').kind, 'not');
+  const rows = v.explain('iron-rattle');
+  assert.equal(rows.length, 3);
+  assert.equal(rows[0].name, 'mia');
+  return true;
+});
+
+await check('view/fromFacts: tagged phone uses matching Subgroup only; untagged kid does not shadow', () => {
+  const facts = {
+    party: {
+      selfId: 'dad',
+      members: [
+        member('dad', { height: 70, groupId: 'kids-line' }),
+        member('mia', { height: 30, groupId: null }),
+        member('mom', { height: 65, groupId: null }),
+        member('sam', { height: 42, groupId: 'kids-line' }),
+      ],
+    },
+  };
+  const v = fromFacts(facts, [RIDE]);
+  // Mia (untagged, short) out; Sam companion; Dad eligible → companion wins
+  assert.equal(v.at('iron-rattle').kind, 'companion');
+  const ids = v.explain('iron-rattle').map((r) => r.id);
+  assert.deepEqual(ids.sort(), ['dad', 'sam'].sort());
+  assert.ok(!ids.includes('mia'));
+  assert.ok(!ids.includes('mom'));
+  return true;
+});
+
+await check('view/fromFacts: tagged device-less kid in the clump constrains the phone', () => {
+  const facts = {
+    party: {
+      selfId: 'dad',
+      members: [
+        member('dad', { height: 70, groupId: 'kids-line' }),
+        member('mia', { height: 30, groupId: 'kids-line' }),
+        member('mom', { height: 65, groupId: 'moms-half' }),
+      ],
+    },
+  };
+  assert.equal(fromFacts(facts, [RIDE]).at('iron-rattle').kind, 'not');
+  const ids = fromFacts(facts, [RIDE]).explain('iron-rattle').map((r) => r.id);
+  assert.deepEqual(ids.sort(), ['dad', 'mia'].sort());
+  return true;
+});
+
+await check('view/fromFacts: solo height; no height means silent; unset With adult accompanied', () => {
+  assert.equal(fromFacts({ solo: { height: null } }, [RIDE]).at('iron-rattle').kind, null);
+  assert.equal(
+    fromFacts({ solo: { height: 42, name: 'You' } }, [RIDE]).at('iron-rattle').kind,
+    'companion',
+  );
+  assert.equal(
+    fromFacts({ solo: { height: 42, withAdult: false } }, [RIDE]).at('iron-rattle').kind,
+    'not',
+  );
+  assert.equal(
+    view({ solo: { height: 42 } }, [RIDE]).at('iron-rattle').kind,
+    'companion',
+  );
+  return true;
+});
+
+await check('view/fromFacts: height preview overrides one Member without changing the set', () => {
+  const facts = {
+    party: {
+      selfId: 'dad',
+      members: [
+        member('dad', { height: 70, groupId: 'kids-line' }),
+        member('mia', { height: 30, groupId: 'kids-line' }),
+      ],
+    },
+    preview: { memberId: 'mia', height: 50 },
+  };
+  assert.equal(fromFacts(facts, [RIDE]).at('iron-rattle').kind, 'eligible');
+  const without = {
+    party: facts.party,
+  };
+  assert.equal(fromFacts(without, [RIDE]).at('iron-rattle').kind, 'not');
   return true;
 });
 

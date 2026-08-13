@@ -58,7 +58,7 @@ function GlanceRail({
   weather = null,
   rides = null,
   now = Date.now(),
-  // Fold from fold(people, places). Optional: without it the GO NOW cards
+  // Eligibility from fromFacts(facts, places). Optional: without it the GO NOW cards
   // just drop the eligibility line from their Why?.
   eligibility = null,
   // Called when the visitor gets rid of a card: {kind:'selected'} for the
