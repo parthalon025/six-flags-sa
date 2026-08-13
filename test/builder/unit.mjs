@@ -161,7 +161,7 @@ const {
   STALE_AFTER_MS,
   GLYPHS,
   SYMBOLS,
-} = await import('../../apps/party-tracker/lib/mapSymbols.js');
+} = await import('../../packages/shared/mapSymbols.js');
 const {
   venueChoiceFor,
   intakeChoiceFor,
@@ -1459,7 +1459,7 @@ await check('isLocationVisible keeps last-known even off-site; live is in-bounds
 section('location');
 
 const ORION = { i: 'orion', n: 'Orion', lat: 39.345, lng: -84.266, c: 'coaster' };
-const RESTROOM = { i: 'rr-1', n: 'Restroom', lat: 39.34505, lng: -84.26605, c: 'restroom' };
+const AT_RESTROOM = { i: 'rr-1', n: 'Restroom', lat: 39.34505, lng: -84.26605, c: 'restroom' };
 const BAT = { i: 'the-bat', n: 'The Bat', lat: 39.3452, lng: -84.266, c: 'coaster' };
 const FOOD = { i: 'funnel', n: 'Funnel Cakes', lat: 39.34, lng: -84.27, c: 'food' };
 
@@ -1470,7 +1470,7 @@ await check('placeAt names a Place only at a slot, not walking past', () => {
 });
 
 await check('placeAt never returns two names; recognizable Place wins over restroom', () => {
-  const at = placeAt([ORION, RESTROOM], ORION.lat, ORION.lng);
+  const at = placeAt([ORION, AT_RESTROOM], ORION.lat, ORION.lng);
   assert.equal(at.name, 'Orion');
   return true;
 });
