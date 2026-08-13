@@ -42,6 +42,16 @@ assert.equal(
   'docs-only production must still build so the live alias tracks main',
 );
 assert.equal(
+  decideVercelBuild({ files: ['docs/adr/0001-auth-profiles.md'], gitRef: 'main' }).build,
+  true,
+  'docs-only main ref must build when VERCEL_ENV is unset in ignore',
+);
+assert.equal(
+  decideVercelBuild({ files: ['.gitnexus/meta.json', 'AGENTS.md'], gitRef: 'main' }).build,
+  false,
+  'gitnexus-only main must skip',
+);
+assert.equal(
   decideVercelBuild({ files: ['.gitnexus/meta.json', 'AGENTS.md'], env: 'production' }).build,
   false,
   'gitnexus-only production must skip',
@@ -91,6 +101,7 @@ assert.doesNotMatch(
 );
 assert.match(lib, /\^1/, 'must diff against the first parent');
 assert.match(lib, /VERCEL_ENV/, 'production env must participate in the ignore decision');
+assert.match(lib, /VERCEL_GIT_COMMIT_REF/, 'main ref must participate when env is unset');
 
 const sw = readFileSync(join(root, 'apps/party-tracker/public/sw.js'), 'utf8');
 assert.match(

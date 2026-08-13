@@ -17,11 +17,16 @@ import { fileURLToPath } from 'node:url';
 import { isGitnexusOnlyChange } from '../gitnexus-ci.mjs';
 import { isAppChange } from './app-paths.mjs';
 
-export function decideVercelBuild({ files, env } = {}) {
+/** Production live alias, or the `main` ref when VERCEL_ENV is unset in ignore. */
+export function isProductionIgnore({ env, gitRef } = {}) {
+  return env === 'production' || gitRef === 'main';
+}
+
+export function decideVercelBuild({ files, env, gitRef } = {}) {
   if (files == null) {
     return { build: true, reason: 'unknown-changed-files — proceeding with build' };
   }
-  if (env === 'production' && files.length && !isGitnexusOnlyChange(files)) {
+  if (isProductionIgnore({ env, gitRef }) && files.length && !isGitnexusOnlyChange(files)) {
     return { build: true, reason: 'production — always build so the live alias tracks main', files };
   }
   if (isAppChange(files)) {
@@ -49,13 +54,15 @@ export function listFirstParentFiles(commitSha = 'HEAD') {
 export function runIgnoreCli({
   commitSha = process.env.VERCEL_GIT_COMMIT_SHA || 'HEAD',
   env = process.env.VERCEL_ENV,
+  gitRef = process.env.VERCEL_GIT_COMMIT_REF,
   log = console.log,
 } = {}) {
   log(`Checking if Vercel build is needed...`);
   log(`Current commit: ${commitSha}`);
-  if (env) log(`Vercel env: ${env}`);
+  log(`Vercel env: ${env || '(unset)'}`);
+  log(`Git ref: ${gitRef || '(unset)'}`);
   const files = listFirstParentFiles(commitSha);
-  const decision = decideVercelBuild({ files, env });
+  const decision = decideVercelBuild({ files, env, gitRef });
   if (files) {
     log('Changed files vs first parent:');
     for (const file of files.slice(0, 20)) log(file);

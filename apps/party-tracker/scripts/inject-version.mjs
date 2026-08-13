@@ -8,6 +8,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -16,10 +17,25 @@ const version = pkg.version || '0.0.0';
 
 const { PROTOCOL_VERSION } = await import('../lib/core/protocol.js');
 
+function gitSha() {
+  const fromEnv = process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA;
+  if (fromEnv) return String(fromEnv).trim();
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: root,
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+const sha = gitSha();
 const versionDoc = {
   version,
   protocol: PROTOCOL_VERSION,
   built: new Date().toISOString(),
+  ...(sha ? { sha } : {}),
 };
 
 fs.writeFileSync(
@@ -44,4 +60,4 @@ if (!sw.includes(marker) && !sw.includes(`const CACHE = 'tracker-${version}';`))
 }
 fs.writeFileSync(swPath, sw);
 
-console.log(`inject-version: stamped ${version} (protocol ${PROTOCOL_VERSION})`);
+console.log(`inject-version: stamped ${version} (protocol ${PROTOCOL_VERSION}${sha ? `, sha ${sha.slice(0, 7)}` : ''})`);
