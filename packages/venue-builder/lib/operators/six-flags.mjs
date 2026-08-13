@@ -2,7 +2,7 @@
  * Six Flags official site listing parser.
  */
 
-import { parseAttractionListing, categoryToHeight } from '../venue-official-site.mjs';
+import { parseAttractionListing, categoryToHeight } from './generic.mjs';
 
 function decodeHtml(s) {
   return String(s || '')

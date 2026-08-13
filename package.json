@@ -15,7 +15,8 @@
     "dev": "npm run dev -w @party-tracker/app",
     "build": "npm run build -w @party-tracker/app",
     "start": "npm run start -w @party-tracker/app",
-    "lint": "npm run lint -w @party-tracker/app",
+    "lint": "npm run lint:boundaries && npm run lint -w @party-tracker/app",
+    "lint:boundaries": "depcruise packages",
     "sync": "npm run sync -w @party-tracker/app",
     "dev:all": "npm run dev:all -w @party-tracker/app",
     "phone": "npm run phone -w @party-tracker/app",
@@ -75,6 +76,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "dependency-cruiser": "^18.2.0",
     "playwright": "^1.62.1",
     "turbo": "^2.10.9"
   }

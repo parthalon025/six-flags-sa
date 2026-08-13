@@ -9,6 +9,7 @@ Visual tour: [architecture-map.md](./architecture-map.md).
 apps/party-tracker/     Next.js PWA — map, party sync, directions
 packages/shared/        Contracts both sides share (ontology, wayFlags, mapSymbols)
 packages/venue-builder/ OSM → venue bundle CLI, data, and inspection UI
+packages/example/       Copy-me deep-module template (safe to delete)
 scripts/                Repo automation (version bump, worktrees, GitNexus) — not the venue builder
 test/app/               Playwright behavioural suites (functional, grandma, validate-ui, visual)
 test/builder/           Node unit tests + manifest compare suite
@@ -26,6 +27,7 @@ docs/adr/  CONTEXT.md   Domain language (Matt layout)
 | `npm run venues:inspect` | Standalone builder inspection UI (port 3921) |
 | `npm run test:builder` | Builder unit + compare tests |
 | `npm run test:app` | Three-phone functional suite |
+| `npm run lint:boundaries` | dependency-cruiser: import only through package entry points |
 | `npm run test` | Both builder and app suites |
 
 ## Venue inspection
