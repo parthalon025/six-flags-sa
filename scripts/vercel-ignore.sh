@@ -5,62 +5,25 @@
 # Exit 0 = Skip build (no relevant changes)
 # Exit 1 = Proceed with build (app-related changes detected)
 #
-# This script checks if the current commit includes changes to files that
-# affect the deployed app. Changes to documentation, tests, build tools,
-# or other non-runtime code skip the Vercel build.
+# Diff THIS commit against its first parent. Do not use VERCEL_GIT_PREVIOUS_SHA:
+# that is often a PR preview with the same tree as the merge, so production
+# would skip and the live alias would stay on a stale deploy.
+#
+# Decision lives in scripts/lib/vercel-ignore.mjs (same app-paths as the bump).
 
+set +e
+node scripts/lib/vercel-ignore.mjs
+code=$?
 set -e
 
-echo "Checking if Vercel build is needed..."
-echo "Current commit: ${VERCEL_GIT_COMMIT_SHA:-HEAD}"
-
-# Paths that should trigger a Vercel build when changed.
-# Single source: scripts/lib/app-paths.json (also used by the version bump skip).
-if [ ! -f scripts/lib/app-paths.json ]; then
-  echo "Missing scripts/lib/app-paths.json — proceeding with build."
-  exit 1
-fi
-# Vercel's bash has no /dev/fd, so skip process substitution (`mapfile < <(...)`).
-APP_PATHS=()
-while IFS= read -r line; do
-  [ -n "$line" ] && APP_PATHS+=("$line")
-done <<EOF
-$(node -e "JSON.parse(require('fs').readFileSync('scripts/lib/app-paths.json','utf8')).forEach((p)=>console.log(p))")
-EOF
-
-# Get the list of changed files. If VERCEL_GIT_PREVIOUS_SHA is not set,
-# compare against HEAD~1 (the parent commit).
-if [ -n "$VERCEL_GIT_PREVIOUS_SHA" ]; then
-  echo "Previous deployment: $VERCEL_GIT_PREVIOUS_SHA"
-  CHANGED_FILES=$(git diff --name-only "$VERCEL_GIT_PREVIOUS_SHA" "$VERCEL_GIT_COMMIT_SHA" 2>/dev/null || echo "")
-else
-  echo "No previous deployment SHA, comparing against parent commit"
-  CHANGED_FILES=$(git diff --name-only HEAD~1 2>/dev/null || echo "")
-fi
-
-if [ -z "$CHANGED_FILES" ]; then
-  echo "No changed files detected, skipping build"
+if [ "$code" -eq 0 ]; then
+  echo "Skipping build."
   exit 0
 fi
-
-echo "Changed files:"
-echo "$CHANGED_FILES" | head -20
-TOTAL_CHANGED=$(echo "$CHANGED_FILES" | wc -l)
-if [ "$TOTAL_CHANGED" -gt 20 ]; then
-  echo "... and $((TOTAL_CHANGED - 20)) more"
+if [ "$code" -eq 1 ]; then
+  echo "Proceeding with build."
+  exit 1
 fi
-echo ""
 
-# Check if any changed file matches an app path
-for file in $CHANGED_FILES; do
-  for path in "${APP_PATHS[@]}"; do
-    if [[ "$file" == "$path"* ]] || [[ "$file" == "$path" ]]; then
-      echo "App-related change detected: $file"
-      echo "Proceeding with build."
-      exit 1
-    fi
-  done
-done
-
-echo "No app-related changes detected. Skipping build."
-exit 0
+echo "Ignore decision failed (exit $code) — proceeding with build."
+exit 1

@@ -2688,6 +2688,11 @@ await check('lib/park re-exports place search helpers', () => {
   const listSrc = fs.readFileSync(new URL('../../apps/party-tracker/components/PlaceList.jsx', import.meta.url), 'utf8');
   assert.match(listSrc, /from '@\/lib\/park'/);
   assert.doesNotMatch(listSrc, /from '@\/lib\/search'/);
+  assert.match(
+    listSrc,
+    /export default function PlaceList\(\{[^}]*\bheight = null/,
+    'PlaceList must declare height — a leftover free `height` crashes Explore with ReferenceError',
+  );
   return true;
 });
 

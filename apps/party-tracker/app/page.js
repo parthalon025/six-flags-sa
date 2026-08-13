@@ -2455,6 +2455,7 @@ export default function Page() {
                 <PlaceList
                   me={position}
                   eligibility={eligibilityView}
+                  height={mapHeight}
                   query={query}
                   filter={filter}
                   onFilter={setFilter}

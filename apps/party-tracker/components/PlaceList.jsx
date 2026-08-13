@@ -37,6 +37,7 @@ const VERDICT = {
 export default function PlaceList({
   me,
   eligibility,
+  height = null,
   query,
   filter,
   onFilter,

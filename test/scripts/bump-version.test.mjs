@@ -92,7 +92,7 @@ assert.equal(
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ignore = readFileSync(join(root, 'scripts/vercel-ignore.sh'), 'utf8');
-assert.match(ignore, /scripts\/lib\/app-paths\.json/);
+assert.match(ignore, /scripts\/lib\/vercel-ignore\.mjs/);
 
 const bumpYml = readFileSync(join(root, '.github/workflows/bump-version.yml'), 'utf8');
 assert.match(bumpYml, /steps\.bump\.outputs\.skipped/);
