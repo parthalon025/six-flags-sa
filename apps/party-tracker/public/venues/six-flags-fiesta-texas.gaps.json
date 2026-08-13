@@ -1,0 +1,286 @@
+{
+  "version": 1,
+  "venue": "six-flags-fiesta-texas",
+  "gaps": [
+    {
+      "type": "height",
+      "target": "coca-cola-vip-lounge"
+    },
+    {
+      "type": "height",
+      "target": "coral-cove"
+    },
+    {
+      "type": "height",
+      "target": "cowabunga"
+    },
+    {
+      "type": "height",
+      "target": "paradise-cove"
+    },
+    {
+      "type": "height",
+      "target": "ripqurl"
+    },
+    {
+      "type": "height",
+      "target": "splash-water-springs"
+    },
+    {
+      "type": "height",
+      "target": "stingray-racer"
+    },
+    {
+      "type": "height",
+      "target": "tube-shoot"
+    },
+    {
+      "type": "height",
+      "target": "vortex"
+    },
+    {
+      "type": "height",
+      "target": "wipeout"
+    },
+    {
+      "type": "queue",
+      "target": "bahama-blaster"
+    },
+    {
+      "type": "queue",
+      "target": "bamboo-chutes"
+    },
+    {
+      "type": "queue",
+      "target": "bat-girl-coaster-chase"
+    },
+    {
+      "type": "queue",
+      "target": "batman-the-ride"
+    },
+    {
+      "type": "queue",
+      "target": "bermuda-triagle"
+    },
+    {
+      "type": "queue",
+      "target": "bermuda-triangle-riptide-runner-slide-pool"
+    },
+    {
+      "type": "queue",
+      "target": "bonzai-pipelines"
+    },
+    {
+      "type": "queue",
+      "target": "boomerang-coast-to-coast"
+    },
+    {
+      "type": "queue",
+      "target": "bucking-broncos"
+    },
+    {
+      "type": "queue",
+      "target": "bugs-white-water-rapids"
+    },
+    {
+      "type": "queue",
+      "target": "chupacabra"
+    },
+    {
+      "type": "queue",
+      "target": "coca-cola-vip-lounge"
+    },
+    {
+      "type": "queue",
+      "target": "coral-cove"
+    },
+    {
+      "type": "queue",
+      "target": "cowabunga"
+    },
+    {
+      "type": "queue",
+      "target": "crow-s-nest"
+    },
+    {
+      "type": "queue",
+      "target": "cyborg-cyber-revolution"
+    },
+    {
+      "type": "queue",
+      "target": "daffy-s-bus-stop"
+    },
+    {
+      "type": "queue",
+      "target": "dare-devil-dive-flying-machines"
+    },
+    {
+      "type": "queue",
+      "target": "dc-super-villains-swing"
+    },
+    {
+      "type": "queue",
+      "target": "dr-diabolical-s-cliffhanger"
+    },
+    {
+      "type": "queue",
+      "target": "fireball"
+    },
+    {
+      "type": "queue",
+      "target": "foghorn-leghorn-s-barnyard-railway"
+    },
+    {
+      "type": "queue",
+      "target": "goliath"
+    },
+    {
+      "type": "queue",
+      "target": "green-lantern-emerald-flight"
+    },
+    {
+      "type": "queue",
+      "target": "gully-washer"
+    },
+    {
+      "type": "queue",
+      "target": "gully-washer-2"
+    },
+    {
+      "type": "queue",
+      "target": "hurricane-force-5"
+    },
+    {
+      "type": "queue",
+      "target": "hustler"
+    },
+    {
+      "type": "queue",
+      "target": "iron-rattler"
+    },
+    {
+      "type": "queue",
+      "target": "kid-flash-cosmic-coaster"
+    },
+    {
+      "type": "queue",
+      "target": "kiddee-koaster"
+    },
+    {
+      "type": "queue",
+      "target": "kinderstein"
+    },
+    {
+      "type": "queue",
+      "target": "lone-star-lagoon"
+    },
+    {
+      "type": "queue",
+      "target": "metropolis-transit-authority"
+    },
+    {
+      "type": "queue",
+      "target": "pandemonium"
+    },
+    {
+      "type": "queue",
+      "target": "paradise-cove"
+    },
+    {
+      "type": "queue",
+      "target": "pirates-of-the-deep-sea"
+    },
+    {
+      "type": "queue",
+      "target": "poison-ivy-toxic-spin"
+    },
+    {
+      "type": "queue",
+      "target": "poltergeist"
+    },
+    {
+      "type": "queue",
+      "target": "poltergeist-2"
+    },
+    {
+      "type": "queue",
+      "target": "ripqurl"
+    },
+    {
+      "type": "queue",
+      "target": "riptide-runner"
+    },
+    {
+      "type": "queue",
+      "target": "road-runner-express"
+    },
+    {
+      "type": "queue",
+      "target": "scream"
+    },
+    {
+      "type": "queue",
+      "target": "shazam-tower-of-eternity"
+    },
+    {
+      "type": "queue",
+      "target": "spinsanity"
+    },
+    {
+      "type": "queue",
+      "target": "splash-water-springs"
+    },
+    {
+      "type": "queue",
+      "target": "stingray-racer"
+    },
+    {
+      "type": "queue",
+      "target": "supergirl-sky-flight"
+    },
+    {
+      "type": "queue",
+      "target": "superman-krypton-coaster"
+    },
+    {
+      "type": "queue",
+      "target": "taz-s-tornado"
+    },
+    {
+      "type": "queue",
+      "target": "texas-treehouse"
+    },
+    {
+      "type": "queue",
+      "target": "texas-treehouse-slide-pool"
+    },
+    {
+      "type": "queue",
+      "target": "texas-tumble-tube-shoot"
+    },
+    {
+      "type": "queue",
+      "target": "the-grand-carousel"
+    },
+    {
+      "type": "queue",
+      "target": "the-joker-carnival-of-chaos"
+    },
+    {
+      "type": "queue",
+      "target": "thunder-rapids-water-coaster"
+    },
+    {
+      "type": "queue",
+      "target": "tornado"
+    },
+    {
+      "type": "queue",
+      "target": "tornado-slide-pool"
+    },
+    {
+      "type": "path",
+      "target": null
+    }
+  ]
+}

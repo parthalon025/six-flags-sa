@@ -602,11 +602,11 @@ name — those files are edited against a park's published height chart — with
 available as the escape hatch for the entries a name cannot address on its own, such as one
 of twenty-six places called "Restrooms".
 
-Each build writes `apps/party-tracker/public/venues/<id>.map.json` and `apps/party-tracker/public/venues/<id>.pois.json`, then
-rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. The client
+Each build writes `apps/party-tracker/public/venues/<id>.map.json`, `apps/party-tracker/public/venues/<id>.pois.json`, and `apps/party-tracker/public/venues/<id>.gaps.json`, then
+rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Gaps are facts the builder cannot settle (height, queue, path, restroom, food, gate, camping); the phone ranks them by Location and does not invent them from POI fields. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
 manifest reaches a phone that already has the app installed, and the service worker caches
-whichever one gets opened.
+whichever one gets opened. A missing Gaps file is an empty list — it must not fail the park load.
 
 Which one loads, in priority order: a venue picked by hand, then the venue the party's
 host phone is standing in, then the venue you said yes to at intake, then the venue this

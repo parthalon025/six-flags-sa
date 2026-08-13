@@ -8,6 +8,7 @@
     "./wayFlags.js": "./wayFlags.js",
     "./mapSymbols.js": "./mapSymbols.js",
     "./ontology.json": "./ontology.json",
-    "./schemas.js": "./schemas.js"
+    "./schemas.js": "./schemas.js",
+    "./questScore.js": "./questScore.js"
   }
 }

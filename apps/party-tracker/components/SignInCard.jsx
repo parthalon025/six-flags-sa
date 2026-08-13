@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { completeMagicSignIn, signOutLocal } from '@/lib/auth/session';
+import { rankReward } from '@party-tracker/shared/questScore.js';
 
 /**
  * Soft-gate sign-in (EP.3) — magic-link shaped; map stays usable without it.
@@ -13,6 +14,7 @@ export default function SignInCard({ session = null, onSession = null }) {
   const [err, setErr] = useState(null);
 
   if (session?.userId) {
+    const title = rankReward(session.rank || 'visitor').title;
     return (
       <div className="signInCard">
         <div className="label">Signed in</div>
@@ -20,6 +22,9 @@ export default function SignInCard({ session = null, onSession = null }) {
           {session.displayName || session.email}
           {session.fromCache ? ' · offline profile' : ''}
         </p>
+        {title ? (
+          <p className="fine block signInTitle">{title}</p>
+        ) : null}
         <button
           type="button"
           className="btn ghost"
@@ -38,8 +43,8 @@ export default function SignInCard({ session = null, onSession = null }) {
     <div className="signInCard">
       <div className="label">Sign in to save family heights</div>
       <p className="fine block">
-        Browse the map and join a party by name anytime. Sign in to save Managed Guests, submit gap
-        Side Quests, and fan out park-wide Observations.
+        Browse the map and join a party by name anytime. Sign in to keep XP on your Profile, save
+        Managed Guests, submit gap Side Quests, and fan out park-wide Observations.
       </p>
       <div className="label">Email</div>
       <input

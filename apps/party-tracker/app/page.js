@@ -194,16 +194,17 @@ const navKeyOf = (nav) => {
 export default function Page() {
   const geo = useGeolocation();
   const { position, heading, shouldBroadcast } = geo;
-  const {
-    venue,
-    map: mapData,
-    pois: POIS,
-    manifest,
-    status: venueStatus,
-    error: venueError,
-    confirmed: venueConfirmed,
-    pinned: venuePinned,
-  } = useVenue();
+    const {
+      venue,
+      map: mapData,
+      pois: POIS,
+      gaps: venueGaps,
+      manifest,
+      status: venueStatus,
+      error: venueError,
+      confirmed: venueConfirmed,
+      pinned: venuePinned,
+    } = useVenue();
   const movement = useMovementLog({ position, venue, pois: POIS });
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
@@ -1955,10 +1956,9 @@ export default function Page() {
   const rootSubtitle = useMemo(() => {
     if (tab === 'party') return active ? `${visibleOnMap} on the map` : 'Not started';
     if (tab === 'quests') {
-      const rides = POIS.filter((p) => p.c === 'coaster' || p.c === 'ride');
-      const gaps = rides.filter((p) => !p.h || !p.e).length;
-      return gaps
-        ? `${gaps} gap${gaps === 1 ? '' : 's'} guests can fill`
+      const n = Array.isArray(venueGaps) ? venueGaps.length : 0;
+      return n
+        ? `${n} gap${n === 1 ? '' : 's'} guests can fill`
         : 'Live reports while you walk';
     }
     if (tab === 'rides') {
@@ -1969,7 +1969,7 @@ export default function Page() {
     }
     if (tab === 'settings') return identity?.name ? `${identity.name} · ${BRAND.slogan}` : BRAND.slogan;
     return '';
-  }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name, POIS]);
+  }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name, venueGaps]);
 
   /* ---------- the tab bar ---------- */
 
@@ -2677,6 +2677,9 @@ export default function Page() {
                 venueName={venue?.name}
                 venueId={venue?.id}
                 pois={POIS}
+                gaps={venueGaps || []}
+                map={mapData}
+                bounds={venue?.bounds}
                 position={position}
                 onSelectPlace={(p) => {
                   handleSelect(p);

@@ -25,7 +25,7 @@ Anyone on the live **Party** roster (including the **Host**). Roster presence, n
 _Avoid_: User (for roster presence); submember (use device-less **Member**); Child / Guest (as party roles)
 
 **Profile**:
-A durable signed-in Park Bound identity (prefs, progress, attribution). A **Member** may bind to a **Profile** at join or later. May save family people (names, heights) so they need not be re-entered each visit.
+A durable signed-in Park Bound identity (prefs, progress, **Title**, attribution). A **Member** may bind to a **Profile** at join or later. May save family people (names, heights) so they need not be re-entered each visit.
 _Avoid_: User (prefer **Profile** for the product-facing person; `user_id` stays an implementation id)
 
 **Managed Guest**:
@@ -41,8 +41,20 @@ An on-the-ground mission to settle a fact only a visitor can confirm — Pokémo
 _Avoid_: Adventure; quest (generic); Contribution (the durable payload, not the mission)
 
 **Gap**:
-A missing or unconfirmed fact on a **Venue** that open sources / the builder cannot settle (no height, no queue entrance, …). **Gaps** seed **Side Quests**.
+A missing or unconfirmed fact the builder ships on a **Venue** (`*.gaps.json`) that open sources cannot settle. Types this ship: height, queue, path, restroom, food, gate, camping. Atomic on the wire (one **Gap** per unique **Place** key `i`, or `null` for a missing **Place** / camping / venue-wide missing walkway). Shared display names do not fork: two **Places** with unique `i` are two **Gaps**; an ambiguous title is skipped. The builder invents **Gaps** once; the phone ranks them by **Location** and must not invent them from POI heuristics. Missing `gaps.json` is an empty list, not a failed **Venue** load. The phone may group cards (e.g. “Find the restrooms” with progress). **Gaps** seed **Side Quests**.
 _Avoid_: Bug, missing POI (too vague); Contribution (the answer, not the hole)
+
+**XP**:
+A **Profile** progress score earned by completing **Side Quests**. Lives only on the **Profile** — not on a **Member**, **Party**, or anonymous phone. Never spent. Crossing a threshold grants a **Title** (a sub-name on the **Profile**). Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0. A name-first **Ride report** can exist without **XP**; **XP** still needs the **Profile**. Not a public leaderboard.
+_Avoid_: experience (that **Contribution** kind); points (generic); Member XP; party score
+
+**Title**:
+The earned sub-name on a **Profile** granted when **XP** crosses a threshold: Scout (50), Ranger (250), Cartographer (1000), Steward (3000). Shown under the display name — Alice stays Alice, with **Scout** beneath. Visitor (signed in, below 50) has no **Title** yet. Not a roster rename, not a **Member** field, not a party badge.
+_Avoid_: nickname; handle; level; badge (use **Title**); Rank (internal ladder key only)
+
+**Rank**:
+Internal ladder key on a **Profile** that selects the **Title** (`visitor` · `scout` · `ranger` · `cartographer` · `steward`). Guests see the **Title**, not the key. Cartographer later unlocks full-ontology Create (Wayfarer) — not this Field Research loop.
+_Avoid_: showing Rank ids in UI (show **Title**); leaderboard; level
 
 **Ride report**:
 An ephemeral, **Party**-scoped signal about a ride’s live ops (e.g. open/down). Name-first — a display name is enough. Visible to **Members** immediately, expires with the party day, never consolidates into shipped venue JSON. Walking near the **Attraction** and seeing it is enough; queue-pin GPS is not required. Park-wide fan-out is an **Observation**, not automatic.
@@ -137,11 +149,14 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Any device-holding **Member** may star, unstar, or reorder the **Plan**; the **Host** applies it (last write wins)
 - Per-**Member** favorites in code are personal stars, not the **Plan**
 - A **Contribution** requires a **Profile** and targets a **Venue** (and usually a **Place** within it)
-- A **Venue** has zero or more **Gaps**; **Gaps** seed **Side Quests**
-- Completing a gap **Side Quest** produces a **Contribution**
-- Completing a live **Side Quest** produces a **Ride report** (name-first); it is not a **Contribution**
-- A gap **Side Quest** requires proximity to the **Place**; a live **Side Quest** requires walking near enough to have seen it (not queue-pin GPS)
+- A **Venue** has zero or more **Gaps**; the builder ships them; **Gaps** seed **Side Quests**
+- Completing a gap **Side Quest** produces a **Contribution** and, when the **Profile** walked near (or is inside **Venue** bounds for camping / add-**Place**, or inside bounds and off the mapped walkable layer for **path**), awards **XP** onto that **Profile**
+- Completing a live **Side Quest** produces a **Ride report** (name-first); it is not a **Contribution**; **XP** for a live report needs a **Profile** and lands on that **Profile**
+- A gap **Side Quest** requires proximity to the **Place**; a live **Side Quest** requires walking near enough to have seen it (not queue-pin GPS); a **path** **Side Quest** requires walking where the map has no walkway yet
 - A **Contribution** appears on the submitting **Party**’s **Overlay** immediately; park-wide **Overlay** needs a second independent **Party** that walked near
+- Confirm / deny of an **Overlay** claim are statistical (no public counts, names, or percent)
+- **XP** and **Title** are **Profile** fields; **XP** is never spent; the **Title** is the visible sub-name when a threshold is crossed
+- Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0 **XP**
 - A **Ride report** belongs to a **Party** and refers to an **Attraction**; it is not a **Contribution**
 - A **Ride report** may optionally fan out into an **Observation**; an **Observation** is not a **Contribution**
 - Park-wide **Observation** requires a **Profile** plus a second independent **Party** that walked near; same-**Party** taps stay in-party; contradict is first-class
@@ -181,6 +196,21 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 > **Dev:** "Is 'Ride up or down?' a **Contribution**?"
 > **Domain expert:** "It's a live **Side Quest**. Completing it is a **Ride report** for the **Party** — no **Profile** needed. A height-sign **Side Quest** is the other kind — that one _is_ a **Contribution** and stays Profile-gated. Think Pokémon GO for the walk-up missions, Waze for the live reports — same tab."
 >
+> **Dev:** "Can the phone invent a height **Side Quest** from rides that lack `h`?"
+> **Domain expert:** "No. The builder ships **Gaps**. If `gaps.json` is missing, the durable list is empty. Live **Side Quests** while you walk still exist."
+>
+> **Dev:** "Do I see +25 XP on the restroom card?"
+> **Domain expert:** "No. The card says help other guests. **XP** lands on your **Profile**; **Scout** is the **Title** you see under your name. Same (`venue`, type, **Place**) again is 0 — no farming."
+>
+> **Dev:** "Can Mia on the roster earn Scout without signing in?"
+> **Domain expert:** "No. **XP** is tied to the **Profile**, not the **Member**. A name on the roster is not a ledger. A **Ride report** can still go out by display name; that report earns **XP** only after a **Profile** is attached."
+>
+> **Dev:** "When I hit 50 XP, do I level up to level 2?"
+> **Domain expert:** "You earn a **Title** — a sub-name on the **Profile**. Alice stays Alice; now **Scout** sits under the name. Not a roster rename, not a **Member** field."
+>
+> **Dev:** "Can I pick Coaster when I'm finding restrooms?"
+> **Domain expert:** "Not on that card. Restroom, food, and gate only. Creating any ontology type is a later **Cartographer** loop, not this Field Research card."
+>
 > **Dev:** "If we star Diamondback at breakfast, is that a **Meet**?"
 > **Domain expert:** "No — that's the **Plan**. Star the **Places**, drag them into the day's order. A **Meet** is where we regroup. Tapping a stop walks _there_, not a chained multi-stop route."
 >
@@ -213,5 +243,8 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Map Eligibility vs one global height — **resolved**: map / list / glance show the most restrictive **Member** in this phone’s set (matching **Subgroup** tags including device-less, or whole **Party** if this phone is untagged). Untagged device-less do not shadow a tagged phone. Place detail lists each **Member** in that set. Device-holding **Members** are the decision makers; device-less are limiters only. Not an “active rider” picker. Height / **With adult** / tag / remove are phone-driven; the local guest-chip store is not a second roster. **Managed Guests** do not constrain the map until seeded as device-less **Members**.
 - Party-local vs park-wide map edits — resolved: **Overlay** is immediately true to the submitting **Party**; park-wide **Overlay** uses the same bar as **Observation** — a second independent **Party** that walked near. Same-**Party** taps stay in-party. Ride-down: **Party** trusts the **Ride report** immediately (walk near, see it, mark it — not queue-pin GPS); park-wide needs a **Profile** plus that second **Party**, short TTL, easy contradict, reputation for spam on the **Profile**.
 - Adventure vs Contribution — resolved: product name is **Side Quest**; enjoyment and map improvement are one loop (Pokémon GO + Waze). **Gaps** seed gap quests → **Contribution** (Profile-gated, at-the-**Place**); live quests → **Ride report** (name-first, nearby enough to have seen it) / **Observation** (park-wide). `_Avoid_: Adventure`.
+- Who invents **Gaps** — resolved: the builder, once, into `*.gaps.json`. The phone ranks by **Location** and does not invent durable **Gaps** from POI heuristics. Missing/empty file → empty durable list, not a failed **Venue** load.
+- **XP** vs leaderboard — resolved: **XP** grants **Title** rewards (sub-names on the **Profile**: Scout, Ranger, Cartographer, Steward). Visitor has no **Title** yet. **XP** and **Title** live on the **Profile** only (not **Member**, **Party**, or anonymous phone). No all-time global leaderboard this ship. Cards stay meaning-first; earning a **Title** may toast.
+- Field Research vs Create (Q13) — resolved: this ship is Field Research chips (height / queue / path / restroom / food / gate / camping). Full-ontology Create is a later **Cartographer** / Wayfarer loop, not an “Other…” on Find-the-restrooms.
 - Plan vs next-best card vs personal favorites — resolved: **Plan** is a party-shared, drag-ordered list of starred **Places** (pre-arrival OK). The pre-party list is a draft of that same **Plan**, not a Scenario and not a second term. Promote on create, join, or resume only when the shared **Plan** is empty; then clear the draft. Leave does not resurrect it. Not multi-stop nav. Any device-holding **Member** may edit; **Host** applies last write. Per-**Member** favorites in code are not the **Plan**. **Member** target remains “heading there now.”
 - Location pause / history — resolved: **Location** is **Party** situational awareness, not a hide. No pause; no deliberate blur to spare the roster. Live position plus **Place** name only when they are at that **Place** (**Attraction** queue or station; restroom / food at the **Place**) — not nearest while walking past. Never two **Place** names; on conflict, the most recognizable **Place** to a person; two equal **Attractions** use the slot he is standing in. Not “most likely,” “probably,” or “near” on the roster. One **Party** truth: **Location** plus **Venue** slots, and the **Place** travels with **Location** — not a check-in, not each phone guessing. The phone updates the **Venue** at app start when a connection is available. Join does not finish without **Location**. Live **Location** only inside **Venue** bounds. When live stops (outside bounds or OS revoke), last-known + trail stay visible to the **Party** and are marked stale — last known location of that **Member** at that **Place** when they were at one; not wiped. Trail is path dots only; **Place** name only on the live or last-known pin. OS revoke after join: stay a **Member**, wall to turn it back on — not an eject. Battery visible; IMU not shared; signal/network are **Host** election only. Contradicts park-intelligence “never keep location history” — accepted for family trail dots.

@@ -30,7 +30,7 @@ async function precacheDefaultVenue(cache) {
     const manifest = await fetch('/venues/manifest.json').then((r) => r.json());
     const venue = manifest.venues?.find((v) => v.id === manifest.default) || manifest.venues?.[0];
     if (!venue) return;
-    await Promise.all([venue.map, venue.pois].map((u) => cache.add(u).catch(() => {})));
+    await Promise.all([venue.map, venue.pois, venue.gaps].filter(Boolean).map((u) => cache.add(u).catch(() => {})));
   } catch {
     /* offline at install time: the runtime handler will catch it later */
   }
