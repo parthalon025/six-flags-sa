@@ -10,8 +10,8 @@ Related: [dependency matrix](./universal-venue-builder-dependency-matrix.md) ·
 
 | Runtime | Truth | Constraints |
 | --- | --- | --- |
-| **Builder** (Node scripts, optional Python/GPU workers) | Sidecars in `data/venues/`, fused output in `public/venues/` | Network OK; may call Overpass, browsers, CV |
-| **Phone** (PWA) | `map.json` + `pois.json` precached | No required server; five production npm deps |
+| **Builder** (`packages/venue-builder/`, optional Python/GPU workers) | Sidecars in `packages/venue-builder/data/venues/`, fused output in `apps/party-tracker/public/venues/` | Network OK; may call Overpass, browsers, CV |
+| **Phone** (`apps/party-tracker/` PWA) | `map.json` + `pois.json` precached | No required server; five production npm deps |
 
 Adapters live in the **builder** world. Their job is to produce **claims** the evidence
 engine can fuse. The phone never imports LangGraph, Valhalla, or YOLO.
@@ -21,7 +21,7 @@ engine can fuse. The phone never imports LangGraph, Valhalla, or YOLO.
 Offline scaffolds default to the safe subset (no MAPILLARY / Accessibility Cloud /
 ORS secrets); declare token-gated adapters when bounds exist.
 `npm run venues:sync-sources` / research agent caches them under
-`data/venues/<id>/` (`*-cache.json`). `normalizeExternalClaims` binds ParksAPI
+`packages/venue-builder/data/venues/<id>/` (`*-cache.json`). `normalizeExternalClaims` binds ParksAPI
 locations and Mapillary/a11y points to rides (`feature_id` / place); attractions
 inventory runs `ingestExternalClaims` → `addEvidence` for entrance/exit only.
 Queue-Times, RopeDrop, Open-Meteo, OHM, and RCDB stay inventory/QA/metadata —

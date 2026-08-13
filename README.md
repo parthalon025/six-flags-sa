@@ -14,7 +14,7 @@ live party coordination, walking trails, and a drawn park map.
 **New to the codebase?** Start with the
 [architecture map](docs/architecture-map.md) — system diagram, venue build
 pipeline, phone layers, and party mesh visuals — then come back here for the
-full feature and layout prose.
+full feature prose.
 
 - **Drawn map, not tiles.** Real OpenStreetMap geometry projected to Web Mercator and
   painted as SVG: midways, buildings, water, slides, and every coaster's actual track
@@ -205,7 +205,7 @@ npm run dev          # http://localhost:3000
 ## Walking directions
 
 Routes are worked out on the phone, from the same venue file the map is drawn from —
-`public/venues/<id>.map.json`, whichever one is loaded. There is no routing service, no
+`apps/party-tracker/public/venues/<id>.map.json`, whichever one is loaded. There is no routing service, no
 API key and no network call: the file already carries every midway, queue and service
 road as an OpenStreetMap polyline, and `lib/routing.js` welds those polylines into a
 graph and runs A* across it. Nothing in it is specific to one venue, so a map built by
@@ -515,7 +515,7 @@ the ones that match the PR’s changed paths — see `npm run test:modules` /
 
 ## Building a map of somewhere else
 
-`scripts/build-venue.mjs` turns a place into the two files the app loads. It asks
+`npm run venues:build` turns a place into the two files the app loads. It asks
 OpenStreetMap for the geometry over a bounding box, sorts it into the layers the renderer
 draws, and writes a POI list beside it.
 
@@ -535,7 +535,7 @@ npm run venues:build -- --pipeline --place "Cedar Point, Sandusky, Ohio" --local
 
 ### Building the same park again
 
-Every build writes `data/venues/<id>/recipe.json` inside the venue package — the box,
+Every build writes `packages/venue-builder/data/venues/<id>/recipe.json` inside the venue package — the box,
 the pad, the tolerance, the merges, everything that shaped what came out. `--rebuild` reads
 it back:
 
@@ -592,17 +592,17 @@ report on the wire, a favourite and a nav target are addressed by. `n` is its **
 what a visitor reads. A park renaming a ride changes the title and must not change the key,
 because an edit is filed under the key and an edit whose key moved is not moved, it is
 lost. Keys are issued once, at build time, from a ledger committed at
-`data/venues/<id>.ids.json`; a rebuild matches each place back to the number it already had
+`packages/venue-builder/data/venues/<id>/ids.json`; a rebuild matches each place back to the number it already had
 by its OpenStreetMap element, then by position within its name group, and anything the
 rebuild cannot claim is retired rather than freed so its number is never handed to a
 different place. The reasoning, including why the OpenStreetMap id is provenance rather
-than identity, is in `scripts/lib/venue-ids.mjs`. Overrides stay filed under the display
+than identity, is in `packages/venue-builder/lib/venue-ids.mjs`. Overrides stay filed under the display
 name — those files are edited against a park's published height chart — with the key
 available as the escape hatch for the entries a name cannot address on its own, such as one
 of twenty-six places called "Restrooms".
 
-Each build writes `public/venues/<id>.map.json` and `public/venues/<id>.pois.json`, then
-rebuilds `public/venues/manifest.json` and the generated `lib/venueIndex.js`. The client
+Each build writes `apps/party-tracker/public/venues/<id>.map.json` and `apps/party-tracker/public/venues/<id>.pois.json`, then
+rebuilds `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. The client
 *fetches* those files rather than importing them, which is the point: a venue added to the
 manifest reaches a phone that already has the app installed, and the service worker caches
 whichever one gets opened.
@@ -683,7 +683,7 @@ and a park that tags its signs gets its Rides tab for free the day it is added. 
 with the hand-compiled figures on all fifty rides where both existed, and filled two gaps
 the charts had left.
 
-The rest live in `data/venues/<id>.overrides.json`, keyed by name, applied *after* the
+The rest live in `packages/venue-builder/data/venues/<id>/overrides.json`, keyed by name, applied *after* the
 tags so a hand-written correction still beats a stale one — along with any name
 corrections, aliases and hand-added places. The build prints the overrides it could not
 match so a rename doesn't go quietly missing.
@@ -724,8 +724,8 @@ npm run venues:overrides              # re-apply every overrides file, no networ
 npm run venues:overrides -- cedar-point              # just the one
 ```
 
-Accepted durable guest fixes graduate the same way — into `data/venues/<id>/`, never into
-`public/venues/` by hand (E0.5). Cadence lives on each venue’s `recipe.json`
+Accepted durable guest fixes graduate the same way — into `packages/venue-builder/data/venues/<id>/`, never into
+`apps/party-tracker/public/venues/` by hand (E0.5). Cadence lives on each venue’s `recipe.json`
 (`consolidate.cadence`: `daily` | `weekly` | `manual`; default weekly):
 
 ```
@@ -742,7 +742,7 @@ coordinates anybody actually walks to.
 
 ```
 npm run venues:attractions -- cedar-point --report
-npm run venues:attractions -- cedar-point --trace data/venues/cedar-point/traced.geojson
+npm run venues:attractions -- cedar-point --trace packages/venue-builder/data/venues/cedar-point/traced.geojson
 npm run venues:attractions -- --all
 npm run venues:attractions -- cedar-point --geojson entrances.geojson
 ```
@@ -795,7 +795,7 @@ Two rules that took a wrong turn first:
   last in the file used to win. They are reconciled to the end that reaches furthest into the
   park — the one somebody walking up actually meets.
 
-The evidence lives in `data/venues/<id>.attractions.json`, beside the bundle rather than in
+The evidence lives in `packages/venue-builder/data/venues/<id>/attractions.json`, beside the bundle rather than in
 it: the bundle is overwritten by every rebuild and the evidence is the expensive part. Only
 what clears the bar is copied in, as `e` and `out` on the place, stamped `fused` so that the
 next run can tell the pipeline's own conclusion apart from the evidence behind it.
@@ -810,7 +810,7 @@ evidence, so a bundle that dropped them could no longer re-derive what it was as
 conclusion that eats its premises is not derived, it is self-perpetuating. Only the previous
 run's own `fused` entry is replaced, which is what makes publishing twice leave one entry.
 
-**It runs inside the build.** `public/venues/<id>.pois.json` has two writers — the builder,
+**It runs inside the build.** `apps/party-tracker/public/venues/<id>.pois.json` has two writers — the builder,
 wholesale from OpenStreetMap, and this — and for a while only the builder ran in the
 **Build a venue** workflow, so every rebuild silently reverted the published entrances and
 the sidecar was the one artifact on the graph with nothing scheduled at all. The workflow now
@@ -842,10 +842,10 @@ a picture's are not. `trace-venue.mjs` ties the picture to the ground.
 ```
 npm run venues:research -- big-kahunas --ai   # required LLM park-map search → llm-research-cache.json
 npm run venues:trace -- --scaffold big-kahunas
-npm run venues:trace -- data/venues/big-kahunas/trace.json
+npm run venues:trace -- packages/venue-builder/data/venues/big-kahunas/trace.json
 npm run venues:trace -- <file> --model tps --max-error 6
 npm run venues:trace -- <file> --report          # the fit, as markdown
-npm run venues:build -- --rebuild big-kahunas --trace data/venues/big-kahunas/traced.geojson
+npm run venues:build -- --rebuild big-kahunas --trace packages/venue-builder/data/venues/big-kahunas/traced.geojson
 ```
 
 The input is one JSON file: **control points** — places you can identify in the picture *and*
@@ -855,7 +855,7 @@ of it, both in pixels.
 ```json
 {
   "venue": "big-kahunas",
-  "image": "data/venues/big-kahunas/maps/2026-parkmap.webp",
+  "image": "packages/venue-builder/data/venues/big-kahunas/maps/2026-parkmap.webp",
   "controls": [{ "n": "Wave pool, NE corner", "px": [1204, 880], "lat": 30.38871, "lng": -86.47262 }],
   "features": [
     { "kind": "entrance", "of": "Jumanji", "px": [990, 640] },
@@ -975,7 +975,7 @@ npm run venues:build-agent -- cedar-point --offline   # multi-agent orchestrator
 npm run venues:build-agent -- cedar-point --ai --apply  # LLM agents + publish entrances
 ```
 
-Declare open-data adapters in `data/venues/<id>/sources.json` under `datasets.external`
+Declare open-data adapters in `packages/venue-builder/data/venues/<id>/sources.json` under `datasets.external`
 (ids from `npm run venues:adapters`). Offline scaffolds omit token-gated adapters
 (Mapillary, Accessibility Cloud, OpenRouteService); list them when bounds exist.
 Adapters that do not apply (e.g. RopeDrop on Cedar Fair) belong in `gaps.adapters`.
@@ -984,7 +984,7 @@ weather stay builder-only and never land in `pois.json`.
 
 Guest walk uploads (`Me → Walk history`, opt-in) post anonymised LineStrings and ground-truth
 Points (queue entrances, ride exits, park gates, amenities) to `/api/contributions/traces`. The
-`guest-traces` adapter reads the Redis queue (or a dumped `data/venues/<id>.guest-traces-cache.json`)
+`guest-traces` adapter reads the Redis queue (or a dumped `packages/venue-builder/data/venues/<id>/guest-traces-cache.json`)
 and proposes walkway / entrance candidates where guests disagree with the published graph — research
 only; it never writes `public/venues`.
 
@@ -1073,7 +1073,7 @@ ones, and where both exist the entrance follows exactly, with nothing estimated:
 - **`oneway`.** A queue runs one way, towards the ride. Chain one ride's queue ways together
   and the vertex that is never any way's end is where the queue begins.
 
-`entrancesFromQueues()` in `scripts/build-venue.mjs` does that and hangs the result on the
+`entrancesFromQueues()` in `packages/venue-builder/bin/build-venue.mjs` does that and hangs the result on the
 ride as `e`, a list of `{lat, lng, n}` — a list, because a standby queue and a Fastlane
 queue are two ways in, merged only when they start within 8 m of each other, which at
 Top Thrill 2 and Snake River Falls they do.
@@ -1123,7 +1123,7 @@ browser.
   every attraction under the park's own Over 42"/44"/48" headings. For Six Flags Fiesta
   Texas, from the park's Guest Safety and Accessibility Guide, topped up for the water park
   from its own per-attraction pages, which post a Min and Max Height each. They live in
-  `data/venues/<id>.overrides.json`; a venue built from OpenStreetMap alone has
+  `packages/venue-builder/data/venues/<id>/overrides.json`; a venue built from OpenStreetMap alone has
   none until somebody writes them. They change between seasons and the ride operator measures
   at the gate and has the final say, so the app says as much on the rider-height screen.
 - **Weather** — Open-Meteo, at the active venue's centre from the manifest, so switching
@@ -1144,116 +1144,23 @@ The park's own printed map artwork is copyrighted and is deliberately not used h
 
 ## Layout
 
-Visual overview first: [docs/architecture-map.md](docs/architecture-map.md).
-The tree below is the same map as prose.
+Visual overview: [docs/architecture-map.md](docs/architecture-map.md).
+Package seams: [packages/README.md](packages/README.md).
+Short tree: [docs/repo-structure.md](docs/repo-structure.md).
 
 ```
-lib/core/                     the domain — pure, no I/O, runs anywhere
-  state.js                    party/member/ride model, op reducer, versioning
-  protocol.js                 message kinds, frames, duplicate suppression
-  crypto.js                   AES-GCM sealing; party id bound as additionalData
-  session.js                  the join credential; invites, key in the fragment
-  ids.js                      party codes, member ids, tokens
-lib/transport/                the pipe — moves sealed blobs, holds no key
-  types.js                    the contract every transport is built with
-  registry.js                 probing, rank order, failover, replay
-  webrtc.js  signaling.js     star topology, host at the centre
-  localHttp.js  cloudRelay.js  mailboxClient.js
-  bluetooth.js                honest capability probe; see its header
-  offlineQueue.js             durable outbox, replayed on reconnect
-lib/party/                    the halves of the protocol
-  hostService.js              authoritative state, broadcasts patches
-  client.js                   thin replica, submits commands, requests resyncs
-  election.js                 scoring, leader election, host migration
-lib/gps/adaptive.js           motion classification, cadence, broadcast gating
-lib/gps/movementLog.js        opt-in walk sessions, anonymise, upload validation
-lib/guestTraces.js            server queue for guest LineStrings (builder research)
-lib/partyRuntime.js           the seam: session, transports, host service or client
-lib/geo.js                    distance, bearing, Mercator projection
-lib/routing.js                path graph, repair passes, A*, turn-by-turn
-lib/park.js  lib/theme.js     POI helpers and height eligibility; day/night palettes
-lib/weather.js                exposure traits and the outlook rules — no ride names
-lib/rideStatus.js             merges a party report with a forecast into one verdict
-lib/mapSymbols.js             the symbol vocabulary: shapes, glyphs, ranks, ink
-lib/mapLabels.js              decluttering grid, district-name geometry, scale bar
-lib/venue/store.js            which venue is loaded; manifest, geometry, places
-lib/venue/ids.js              the one place-id rule, shared by browser and hosts
-lib/sheet.js                  the sheet's heights, and what fits at each of them
-lib/venue/useVenue.js         the hook components read it through
-lib/venueIndex.js             generated: static POI imports for the API routes
-lib/serverStore.js            memory / Upstash backend for the cloud fallback
-app/
-  page.js                     client state, the tabs and the sheet
-  join/page.js                invite landing; reads the fragment, never the query
-  api/mailbox/…               the relay
-  api/…                       party, members, location, rides, health, metrics
-  api/contributions/traces    guest walk uploads (POST) + operator export (GET)
-  api/weather/                the only outbound call in the app; cached, fails soft
-components/
-  ParkMap.jsx                 SVG renderer, pan + pinch zoom, label layout
-  MapSymbols.jsx              marker silhouettes and glyphs, shared with the key
-  MapLegend.jsx               the on-map key, which is also the category filter
-  GlanceRail.jsx              the live card rail in the collapsed sheet
-  TabBar.jsx                  Explore / Party / Side Quests / Plan / Me, badges and all
-  useSheetDrag.js             the sheet under a finger: follow, then stay put
-  PartyPanel.jsx              roster, QR, join, status, meet-up
-  SideQuestsPanel.jsx         on-the-ground missions for gaps open data cannot settle
-  QrScanner.jsx               camera join; says so plainly where unsupported
-  Diagnostics.jsx             active transport, probe results, queue depth
-  PlaceList.jsx               place search, live status and reporting
-  PlaceDetail.jsx             map-tap place sheet: details + navigate control
-  HeightPanel.jsx             the rider-height filter and what it unlocks
-  SettingsPanel.jsx           Me root: name, appearance, park, Walk history row, long tail
-  MovementHistoryPanel.jsx    Me → Walk history: opt-in log, upload / GeoJSON export
-  WeatherBanner.jsx           the park-wide headline; renders nothing on a clear day
-  useWeather.js               polls the forecast, caches it, survives losing signal
-  useMovementLog.js           records in-park GPS into IndexedDB when opted in
-  GpsGate.jsx                 permission dialog with per-failure guidance
-  ParkPrompt.jsx              which park, asked from the first fix and built on yes
-  InstallCard.jsx             add-to-home-screen, Android prompt or iOS steps
-  CompassTape.jsx             bearing HUD
-  NavBanner.jsx               the maneuver strip: this turn, and the one after
-  NavBar.jsx                  arrival time, distance left, mute, compass, End
-  RoutePreview.jsx            the trip and its alternatives, before you set off
-  DirectionsPanel.jsx         the whole step list, greying out behind you
-  useVoiceGuidance.js         spoken maneuvers, once each
-  useGeolocation.js           adaptive watchPosition, compass, battery
-server/index.mjs              zero-dependency host: mailbox, REST, SSE, metrics
-scripts/
-  build-venue.mjs             OpenStreetMap → a venue the app can load
-  venue-report.mjs            what a built venue contains, as markdown
-  lib/osm-tags.mjs            the tag → layer and tag → category rules
-  lib/geometry.mjs            simplification, clipping, area, centroid, point-in-polygon
-  lib/venue-io.mjs            where venues live; manifest and index generation
-  lib/venue-ids.mjs           the primary key of a place, and the ledger that remembers it
-  attractions.mjs             the ride inventory: every way into every ride, and who says so
-  lib/evidence.mjs            what a source is worth, how claims fuse, when one has expired
-  lib/candidates.mjs          plausible entrances proposed from the shape of the park
-  trace-venue.mjs             a park's own map, georeferenced → entrances, routes, places
-  lib/georef.mjs              the transforms, and honest error by cross-validation
-  lib/venue-trace.mjs         where a traced feature lands in a venue
-  lib/venue-recipe.mjs        how a venue was built, so it can be built that way again
-  lib/venue-requests.mjs      what a build cannot answer, as a brief somebody can
-  lib/venue-checklist.mjs     what a location has to carry before it is finished
-  phone.mjs                   one command to a QR you can scan
-  setup.sh                    toolchain check, install, build
-test/
-  unit.mjs                    the pure layers, no browser
-  functional.mjs              three phones, one browser, real behaviour
-  browser.mjs                 shared plumbing; honours CHROMIUM_PATH and BASE_URL
-  visual.mjs  theme.mjs  ux.mjs
-public/
-  sw.js                       offline cache: shell, map and places; never the roster
-  venues/manifest.json        every venue this build ships
-  venues/<id>.map.json        drawn map layers (~260-300 KB each)
-  venues/<id>.pois.json       the places, with heights where a venue has them
-  manifest.webmanifest        home-screen install
-data/venues/<id>.overrides.json  heights, areas, corrections — re-applied on rebuild
-data/venues/<id>.ids.json        the key issued to each place, and every number already spent
-data/venues/<id>/                 one package per venue (builder input)
-data/venues/<id>/recipe.json      the box, pad and flags that built it — replayed by --rebuild
-data/venues/<id>/trace.json       control points and features clicked off the park's own map
-data/venues/<id>/maps/            official park map images (LLM park-map search helps acquire these)
-data/venues/<id>.attractions.json  per-ride features, their evidence and confidence
-Dockerfile  docker-compose.yml
+apps/party-tracker/          phone PWA (Next.js)
+  app/  components/  lib/    UI, domain, party mesh
+  public/venues/             generated map + POI JSON (do not hand-edit)
+packages/shared/             contracts both runtimes import (ontology, wayFlags, mapSymbols)
+packages/venue-builder/      OSM → venue bundle
+  bin/                       CLIs (`npm run venues:*`)
+  lib/                       implementation (private)
+  data/venues/<id>/          builder input — overrides, recipe, heights, attractions
+scripts/                     repo automation (version bump, worktrees, GitNexus)
+test/app/  test/builder/
+docs/adr/  CONTEXT.md        domain language (Matt layout)
 ```
+
+Phone-layer file names (under `apps/party-tracker/`) are in the architecture map, not restated here.
+

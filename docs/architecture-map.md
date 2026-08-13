@@ -1,8 +1,8 @@
 # Architecture map — Park Bound
 
 A visual tour for new developers. Read this before diving into files.
-For the full prose map of every directory, see [Layout in README](../README.md#layout).
-For adapter / evidence detail, see [universal venue builder architecture](./universal-venue-builder-architecture.md).
+Short tree: [docs/repo-structure.md](./repo-structure.md). Package seams: [packages/README.md](../packages/README.md).
+Adapter / evidence detail: [universal venue builder architecture](./universal-venue-builder-architecture.md).
 
 ---
 
@@ -12,8 +12,8 @@ Two runtimes, one contract:
 
 | Runtime | Lives in | May use the network? | Ships to phones? |
 | --- | --- | --- | --- |
-| **Builder** | `scripts/`, `data/venues/` | Yes — Overpass, Nominatim, research | No |
-| **Phone (PWA)** | `app/`, `components/`, `lib/`, `public/` | Optional — party mesh, weather | Yes |
+| **Builder** | `packages/venue-builder/` | Yes — Overpass, Nominatim, research | No |
+| **Phone (PWA)** | `apps/party-tracker/` | Optional — party mesh, weather | Yes |
 
 The builder writes JSON. The phone fetches JSON. Nothing in the phone imports
 builder code, LangGraph, Valhalla, or YOLO.
@@ -21,28 +21,28 @@ builder code, LangGraph, Valhalla, or YOLO.
 ```mermaid
 flowchart TB
   subgraph edit ["Hand-edited input"]
-    OV["data/venues/&lt;id&gt;.overrides.json"]
-    HT[".heights.json"]
-    RC[".recipe.json"]
-    IDS[".ids.json"]
-    ATTR[".attractions.json"]
-    SRC[".sources.json"]
+    OV["packages/venue-builder/data/venues/&lt;id&gt;/overrides.json"]
+    HT["heights.json"]
+    RC["recipe.json"]
+    IDS["ids.json"]
+    ATTR["attractions.json"]
+    SRC["sources.json"]
   end
 
-  subgraph build ["Builder — Node scripts"]
-    BV["build-venue.mjs"]
-    AT["attractions.mjs"]
-    TR["trace-venue.mjs"]
+  subgraph build ["Builder — packages/venue-builder"]
+    BV["bin/build-venue.mjs"]
+    AT["bin/attractions.mjs"]
+    TR["bin/trace-venue.mjs"]
   end
 
   subgraph ship ["Generated output — do not hand-edit"]
-    MAP["public/venues/&lt;id&gt;.map.json"]
-    POIS["public/venues/&lt;id&gt;.pois.json"]
+    MAP["apps/party-tracker/public/venues/&lt;id&gt;.map.json"]
+    POIS["apps/party-tracker/public/venues/&lt;id&gt;.pois.json"]
     MAN["manifest.json"]
-    VIX["lib/venueIndex.js"]
+    VIX["apps/party-tracker/lib/venueIndex.js"]
   end
 
-  subgraph phone ["Phone PWA"]
+  subgraph phone ["Phone PWA — apps/party-tracker"]
     STORE["lib/venue/store.js"]
     PM["ParkMap.jsx"]
     PAGE["app/page.js"]
@@ -60,8 +60,8 @@ flowchart TB
   PAGE --> PR
 ```
 
-**Rule of thumb:** wrong ride / height / tag → fix `data/venues/` or `scripts/`,
-then regenerate. Never patch `public/venues/*.json` by hand.
+**Rule of thumb:** wrong ride / height / tag → fix `packages/venue-builder/data/venues/` or `packages/venue-builder/lib/`,
+then regenerate. Never patch `apps/party-tracker/public/venues/*.json` by hand.
 
 ---
 
@@ -76,13 +76,13 @@ flowchart LR
   end
 
   subgraph optional ["Optional infrastructure"]
-    RELAY["Mailbox / WebRTC signaling<br/>app/api/mailbox"]
+    RELAY["Mailbox / WebRTC signaling<br/>apps/party-tracker/app/api/mailbox"]
     SYNC["server/index.mjs<br/>LAN host"]
     WX["Weather API<br/>app/api/weather"]
   end
 
   subgraph static ["Precached on device"]
-    SW["public/sw.js"]
+    SW["apps/party-tracker/public/sw.js"]
     VEN["venues/*.map.json<br/>venues/*.pois.json"]
     SHELL["Next.js shell"]
   end
@@ -106,6 +106,8 @@ goes in that cache.
 ---
 
 ## Phone app — layers
+
+Paths in this section are under `apps/party-tracker/`. Shared contracts (`ontology`, `wayFlags`, `mapSymbols`) live in `packages/shared/` and are re-exported from `lib/`.
 
 ```mermaid
 flowchart TB
@@ -228,14 +230,14 @@ flowchart TB
 ### Inputs vs outputs
 
 ```text
-data/venues/<id>/           ← edit these (one package per venue)
+packages/venue-builder/data/venues/<id>/   ← edit these (one package per venue)
         │
         ▼  npm run venues:build | rebuild | overrides | attractions
         │
-public/venues/<id>.map.json ← generated (geometry layers)
-public/venues/<id>.pois.json← generated (places + published entrances)
-public/venues/manifest.json ← generated
-lib/venueIndex.js           ← generated (API route static imports)
+apps/party-tracker/public/venues/<id>.map.json  ← generated (geometry layers)
+apps/party-tracker/public/venues/<id>.pois.json ← generated (places + published entrances)
+apps/party-tracker/public/venues/manifest.json  ← generated
+apps/party-tracker/lib/venueIndex.js            ← generated (API route static imports)
 ```
 
 ### Companion scripts
@@ -265,13 +267,13 @@ flowchart LR
   TRACE["trace-venue GeoJSON"] --> CL
   M --> FUSE["evidence.mjs fuse"]
   CL --> FUSE
-  FUSE --> SIDE["data/venues/&lt;id&gt;.attractions.json<br/>sidecar — not on phone"]
+  FUSE --> SIDE["packages/venue-builder/data/venues/&lt;id&gt;/attractions.json<br/>sidecar — not on phone"]
   FUSE --> BAND{"band ≥ PUBLISH_AT?"}
   BAND -->|yes| OUT["coords on pois.json"]
   BAND -->|no| HOLD["stays in sidecar only"]
 ```
 
-Weights and source keys live in `scripts/lib/evidence.mjs`. Adapter wraps that
+Weights and source keys live in `packages/venue-builder/lib/evidence.mjs`. Adapter wraps that
 emit claims without becoming phone dependencies are documented in
 [universal-venue-builder-architecture.md](./universal-venue-builder-architecture.md).
 
@@ -297,7 +299,7 @@ sequenceDiagram
 ```
 
 Transport preference (failover): **WebRTC → local HTTP → cloud relay →
-Bluetooth capability probe**. See `lib/transport/registry.js`.
+Bluetooth capability probe**. See `apps/party-tracker/lib/transport/registry.js`.
 
 ---
 
@@ -340,12 +342,12 @@ Self-host everything with `npm run sync` (`server/index.mjs`) or Docker.
 
 | You want to… | Edit | Then |
 | --- | --- | --- |
-| Fix a height / alias / district tint | `data/venues/<id>/overrides.json` or `heights.json` | `venues:overrides` or rebuild |
-| Fix tag → layer/category mapping | `scripts/lib/osm-tags.mjs` | rebuild affected venues |
-| Fix fusion / publish threshold | `scripts/lib/evidence.mjs` | `venues:attractions` |
-| Change map drawing / symbols | `components/ParkMap.jsx`, `lib/mapSymbols.js` | app tests |
-| Change party protocol | `lib/core/*`, `lib/party/*` | unit + functional tests |
-| Change sheet / tabs UX | `app/page.js`, `lib/sheet.js` | UX / visual tests |
+| Fix a height / alias / district tint | `packages/venue-builder/data/venues/<id>/overrides.json` or `heights.json` | `venues:overrides` or rebuild |
+| Fix tag → layer/category mapping | `packages/venue-builder/lib/osm-tags.mjs` | rebuild affected venues |
+| Fix fusion / publish threshold | `packages/venue-builder/lib/evidence.mjs` | `venues:attractions` |
+| Change map drawing / symbols | `apps/party-tracker/components/ParkMap.jsx`, `packages/shared/mapSymbols.js` | app tests |
+| Change party protocol | `apps/party-tracker/lib/core/*`, `lib/party/*` | unit + functional tests |
+| Change sheet / tabs UX | `apps/party-tracker/app/page.js`, `lib/sheet.js` | UX / visual tests |
 | Add a whole new park | Actions → Build a venue, or `venues:build` | report + PR |
 
 ---
@@ -353,8 +355,8 @@ Self-host everything with `npm run sync` (`server/index.mjs`) or Docker.
 ## Suggested first hour
 
 1. `npm run setup` (or install + `npm test:unit`) — see [INSTALL.md](../INSTALL.md).
-2. Skim this map, then [README Layout](../README.md#layout).
-3. Open `public/venues/manifest.json` and one `*.pois.json` — that is what the phone sees.
+2. Skim this map, then [packages/README.md](../packages/README.md) and [repo-structure.md](./repo-structure.md).
+3. Open `apps/party-tracker/public/venues/manifest.json` and one `*.pois.json` — that is what the phone sees.
 4. Trace one tap: place card → `bestEntrance` → `routing.js` → `ParkMap` route layer.
 5. Trace one party message: `partyRuntime` → `seal` → transport → `hostService` / `client`.
 6. Rebuild one small venue dry-run: `npm run venues:rebuild -- big-kahunas --dry-run`.
@@ -364,6 +366,8 @@ Self-host everything with `npm run sync` (`server/index.mjs`) or Docker.
 ## Related docs
 
 - [README — Building a map of somewhere else](../README.md#building-a-map-of-somewhere-else)
+- [Packages — deep-module seams](../packages/README.md)
+- [Repository structure](./repo-structure.md)
 - [Universal venue builder architecture](./universal-venue-builder-architecture.md)
 - [Dependency / adapter matrix](./universal-venue-builder-dependency-matrix.md)
 - [Self-contained party handoff](./HANDOFF-self-contained.md)
