@@ -47,8 +47,12 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { findPlace, identityOf } from '@/lib/venue/ids';
-import { locationReadyToJoin, locationRevokedInParty, shouldShareLocation } from '@/lib/gps/sharing';
-import { attachPlace, isLocationLive, isLocationVisible } from '@/lib/location';
+import {
+  capture,
+  locationReadyToJoin,
+  locationRevokedInParty,
+  view as locationView,
+} from '@/lib/location';
 import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { resolveSession } from '@/lib/auth/session';
@@ -528,7 +532,8 @@ export default function Page() {
   }, []);
   const identityRef = useRef(null);
   const positionRef = useRef(null);
-  const locationSharingRef = useRef(false);
+  const locationSharingRef = useRef(null);
+  const meRef = useRef(null);
   const helpSeen = useRef(new Set());
 
   /* ---------- boot ---------- */
@@ -737,6 +742,7 @@ export default function Page() {
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
+  meRef.current = (party?.members || []).find((m) => m.id === party?.selfId) || null;
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -874,20 +880,19 @@ export default function Page() {
   const roster = useMemo(
     () =>
       (party?.members || []).map((m) => {
-        const lat = m.location?.lat;
-        const lng = m.location?.lng;
+        const seen = locationView(m, venue?.bounds);
         return {
           ...m,
-          lat,
-          lng,
+          lat: seen.lat,
+          lng: seen.lng,
           acc: m.location?.acc ?? null,
           heading: Number.isFinite(m.location?.heading) ? m.location.heading : null,
           ts: m.location?.ts ?? m.lastSeen,
           colour: colourFor(m.id),
           initials: initialsFor(m.name),
-          visible: isLocationVisible(venue?.bounds, lat, lng),
-          live: m.location?.live !== false && isLocationLive(venue?.bounds, lat, lng),
-          place: m.location?.place || null,
+          visible: seen.visible,
+          live: seen.live,
+          place: seen.place,
         };
       }),
     [party, venue?.bounds],
@@ -955,6 +960,7 @@ export default function Page() {
    * The battery lever. Every fix goes through the adaptive gate before it goes
    * anywhere near a radio, and the gate — not this component — decides whether
    * it moved far enough, turned far enough, or has simply been quiet too long.
+   * Location.capture decides live vs stale, Place, and coarsening.
    */
   useEffect(() => {
     if (!active || !position) return undefined;
@@ -962,48 +968,31 @@ export default function Page() {
     const tick = () => {
       const fix = positionRef.current;
       if (!fix) return;
-      const inside = shouldShareLocation(venue?.bounds, fix.lat, fix.lng);
-      if (!inside) {
-        if (locationSharingRef.current) {
-          const last = locationSharingRef.current;
-          const stale = attachPlace(
-            {
-              lat: last?.lat ?? fix.lat,
-              lng: last?.lng ?? fix.lng,
-              acc: last?.acc ?? fix.acc ?? null,
-              heading: last?.heading ?? null,
-              speed: null,
-              ts: Date.now(),
-              live: false,
-            },
-            POIS,
-          );
-          runtime.current?.pushLocation(stale);
-        }
-        locationSharingRef.current = false;
-        return;
-      }
+      const headingFix = {
+        ...fix,
+        heading: Number.isFinite(fix.heading) ? fix.heading : heading ?? null,
+      };
       // `now` is passed explicitly because the gate falls back to the fix's own
       // timestamp as its clock, and a phone that is standing still keeps being
       // handed the same cached fix — so that clock stops, every later tick is
       // rate-limited against it, and the heartbeat that exists to re-offer a
       // position which never landed can never come round.
-      const decision = shouldBroadcast({ heading, now: Date.now() });
-      if (!decision.send) return;
-      const next = attachPlace(
-        {
-          lat: fix.lat,
-          lng: fix.lng,
-          acc: fix.acc ?? null,
-          heading: Number.isFinite(fix.heading) ? fix.heading : heading ?? null,
-          speed: Number.isFinite(fix.speed) ? fix.speed : null,
-          ts: fix.ts,
-          live: true,
-        },
-        POIS,
-      );
-      locationSharingRef.current = next;
-      runtime.current?.pushLocation(next);
+      const now = Date.now();
+      const result = capture({
+        fix: headingFix,
+        bounds: venue?.bounds,
+        places: POIS,
+        member: meRef.current,
+        last: locationSharingRef.current,
+        now,
+      });
+      if (!result) return;
+      if (result.location.live !== false) {
+        const decision = shouldBroadcast({ heading, now });
+        if (!decision.send) return;
+      }
+      locationSharingRef.current = result.location;
+      runtime.current?.pushLocation(result.location);
     };
     tick();
     const id = setInterval(tick, GATE_TICK_MS);
@@ -1016,16 +1005,19 @@ export default function Page() {
   }, [active, geo.battery]);
 
   useEffect(() => {
-    if (!active) locationSharingRef.current = false;
+    if (!active) locationSharingRef.current = null;
   }, [active]);
 
   useEffect(() => {
     if (!active || !locationRevokedInParty(geo.status)) return;
-    const last = locationSharingRef.current || null;
-    if (last && Number.isFinite(last.lat)) {
-      runtime.current?.pushLocation(attachPlace({ ...last, ts: Date.now(), live: false }, POIS));
-    }
-    locationSharingRef.current = false;
+    const result = capture({
+      last: locationSharingRef.current,
+      places: POIS,
+      now: Date.now(),
+      revoked: true,
+    });
+    if (result) runtime.current?.pushLocation(result.location);
+    if (result) locationSharingRef.current = result.location;
   }, [active, geo.status, POIS]);
 
   // NEED HELP has to interrupt, once per person per episode.

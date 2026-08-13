@@ -13,6 +13,8 @@
  * missed a patch and asks for a resync, so gaps repair themselves.
  */
 
+import { nextTrail } from '../location.js';
+
 /** How long a member can go unheard from before the roster drops them. */
 export const MEMBER_TTL_MS = 45 * 60 * 1000;
 /** How long a party survives with nobody in it. */
@@ -42,7 +44,7 @@ export const RIDE_STALE_AFTER_MS = 30 * 60 * 1000;
 
 /** Most a member may star. See `set-favorite` for why there is a ceiling. */
 export const FAVORITES_MAX = 20;
-/** Last-known dots kept on a Member for the family trail. */
+/** Last-known dots kept on a Member for the family trail. Policy lives in Location.nextTrail. */
 export const TRAIL_MAX = 24;
 /** Shared Plan stops. Same ceiling as personal favorites — the list rides in every snapshot. */
 export const PLAN_MAX = 20;
@@ -105,17 +107,6 @@ export function createMember({
   };
 }
 
-/** Coarsen a fix before it leaves the phone (~50 m grid). */
-export function coarsenLocation(loc, metres = 50) {
-  if (!loc) return loc;
-  const latStep = metres / 110540;
-  const lngStep = metres / (111320 * Math.cos(loc.lat * (Math.PI / 180)));
-  return {
-    ...loc,
-    lat: Math.round(loc.lat / latStep) * latStep,
-    lng: Math.round(loc.lng / lngStep) * lngStep,
-  };
-}
 
 /** Copy every replicated collection from a snapshot — add new ones here only. */
 export function adoptSnapshot(target, snap) {
@@ -246,18 +237,14 @@ export function reduce(state, command, now = Date.now()) {
 
     case 'location': {
       if (!me) return none(state);
-      if (body.clear === true) {
-        if (!me.location) return none(state);
-        return withOps(state, [
-          { type: OP.MEMBER_MERGE, id: from, patch: { location: null, lastSeen: now } },
-        ]);
-      }
+      // clear/wipe is not a product fact — last-known and the trail stay.
+      if (body.clear === true) return none(state);
       const loc = body.location;
       if (!isValidLocation(loc)) return none(state);
       // Last valid update replaces the previous one; anything older is a
       // reordered packet and is ignored.
       if (me.location && loc.ts <= me.location.ts) return none(state);
-      const trail = [...(me.trail || []), loc].slice(-TRAIL_MAX);
+      const trail = nextTrail(me.trail, loc);
       return withOps(state, [
         { type: OP.MEMBER_MERGE, id: from, patch: { location: loc, trail, lastSeen: now } },
       ]);
