@@ -33,9 +33,7 @@ import {
   OVERRIDE_DIR,
   VENUE_DIR,
 } from '../src/paths.mjs';
-import { requests } from './venue-requests.mjs';
-import { questSeedsForVenue } from './quest-seeds.mjs';
-import { shippedGapsDocument } from './ship-gaps.mjs';
+import { shippedGapsForVenue } from './ship-gaps.mjs';
 
 export { APP_ROOT, BUILDER_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
 /** @deprecated use MONO_ROOT */
@@ -104,21 +102,19 @@ export const writeJson = (file, value, pretty) => {
 };
 
 /**
- * Gaps this venue ships. Reads builder sidecars (overrides, attractions);
- * does not invent live ops. Phone-safe: one `{ type, target }` per fact.
+ * Gaps this venue ships. Reads builder sidecars (attractions) and walkable
+ * geometry; does not invent live ops. Phone-safe: one `{ type, target }` per fact.
  */
-export function gapsDocumentFor({ meta, pois }) {
+export function gapsDocumentFor({ meta, pois, map }) {
   const id = meta?.id;
-  const overrides = id ? readOverrides(id).data : null;
   const attractions = id ? readJson(venueSidecar(id, 'attractions.json')) : null;
-  const reqs = requests({ venue: meta, map: {}, pois: pois || [], overrides });
-  const seeds = questSeedsForVenue({
+  return shippedGapsForVenue({
     venueId: id,
-    reqs,
+    meta,
+    pois: pois || [],
+    map: map || {},
     attractions,
-    includeAmbient: false,
   });
-  return shippedGapsDocument({ venueId: id, seeds: seeds.durable, pois: pois || [] });
 }
 
 export const serializeVenue = ({ meta, map, pois, gaps }) => ({
@@ -134,7 +130,7 @@ export function writeVenue({ meta, map, pois, gaps }) {
   // worth a readable diff. Gaps are the same readable shape as places. Written
   // through the same serialiser the drift check reads with, so the two can
   // never disagree about what a venue looks like.
-  const shipped = gaps ?? gapsDocumentFor({ meta, pois });
+  const shipped = gaps ?? gapsDocumentFor({ meta, pois, map });
   const bytes = serializeVenue({ meta, map, pois, gaps: shipped });
   mkdirSync(VENUE_DIR, { recursive: true });
   writeFileSync(path.join(VENUE_DIR, `${id}.map.json`), bytes.map);
@@ -167,7 +163,7 @@ export function reindex({ preferredDefault } = {}) {
       console.warn(`  ! ${id}.map.json has no meta block — skipped`);
       continue;
     }
-    const shipped = gapsDocumentFor({ meta: map.meta, pois });
+    const shipped = gapsDocumentFor({ meta: map.meta, pois, map });
     writeJson(path.join(VENUE_DIR, `${id}.gaps.json`), shipped, true);
     venues.push({
       ...map.meta,

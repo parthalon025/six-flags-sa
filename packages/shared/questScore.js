@@ -1,9 +1,12 @@
 /**
  * Side Quest XP → Rank rewards.
  *
- * XP is never spent. Completing a Side Quest (walked-near, Profile attached)
- * awards XP; the visible reward is Rank (Status). Repeat of the same
- * (venue, type, target) by the same Profile is 0. No public leaderboard here.
+ * XP and Rank are Profile fields — not Member, Party, or anonymous-phone
+ * state. Completing a Side Quest (walked-near, Profile attached) awards XP
+ * onto that Profile; the visible reward is Rank (Status). XP is never spent.
+ * Repeat of the same (venue, type, target) by the same Profile is 0. A
+ * name-first Ride report can exist without XP; XP still needs the Profile.
+ * No public leaderboard here.
  */
 
 /** @typedef {'visitor'|'scout'|'ranger'|'cartographer'|'steward'} ProfileRank */
@@ -51,6 +54,16 @@ export function rankFromXp(xp) {
 
 export function rankReward(rank) {
   return RANK_REWARDS[rank] || RANK_REWARDS.visitor;
+}
+
+/** Coarse ~40 m cell so a generic path walk does not farm-block the whole park. */
+export const PATH_SCORE_CELL_M = 40;
+
+export function pathScoreCell(lat, lng, metres = PATH_SCORE_CELL_M) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+  const latM = lat * 110540;
+  const lngM = lng * 111320 * Math.cos((lat * Math.PI) / 180);
+  return `${Math.round(latM / metres)}:${Math.round(lngM / metres)}`;
 }
 
 /** Stable key for "already answered this Gap / live ride". */

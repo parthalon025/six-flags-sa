@@ -277,6 +277,10 @@
     {
       "type": "queue",
       "target": "tornado-slide-pool"
+    },
+    {
+      "type": "path",
+      "target": null
     }
   ]
 }

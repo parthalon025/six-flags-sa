@@ -2678,6 +2678,7 @@ export default function Page() {
                 venueId={venue?.id}
                 pois={POIS}
                 gaps={venueGaps || []}
+                map={mapData}
                 bounds={venue?.bounds}
                 position={position}
                 onSelectPlace={(p) => {

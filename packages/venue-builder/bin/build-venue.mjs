@@ -1359,7 +1359,7 @@ function driftFrom({ id, meta, map, pois, existingMeta }) {
     meta: nextMeta,
     map,
     pois,
-    gaps: gapsDocumentFor({ meta: nextMeta, pois }),
+    gaps: gapsDocumentFor({ meta: nextMeta, pois, map }),
   });
   const mapChanged = candidate.map !== before.map;
   const poisChanged = candidate.pois !== before.pois;

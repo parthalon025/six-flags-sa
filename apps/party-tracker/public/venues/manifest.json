@@ -37,7 +37,7 @@
         "pois": 32,
         "rides": 23,
         "heights": 23,
-        "gaps": 23
+        "gaps": 24
       }
     },
     {
@@ -90,7 +90,7 @@
         "pois": 428,
         "rides": 75,
         "heights": 74,
-        "gaps": 60
+        "gaps": 62
       }
     },
     {
@@ -224,7 +224,7 @@
         "pois": 164,
         "rides": 68,
         "heights": 65,
-        "gaps": 71
+        "gaps": 72
       }
     },
     {
@@ -262,7 +262,7 @@
         "pois": 160,
         "rides": 70,
         "heights": 60,
-        "gaps": 69
+        "gaps": 70
       }
     }
   ]

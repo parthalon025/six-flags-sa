@@ -285,6 +285,10 @@
     {
       "type": "queue",
       "target": "the-zephyr"
+    },
+    {
+      "type": "path",
+      "target": null
     }
   ]
 }

@@ -93,6 +93,10 @@
     {
       "type": "queue",
       "target": "wave-pool"
+    },
+    {
+      "type": "path",
+      "target": null
     }
   ]
 }

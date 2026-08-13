@@ -13,6 +13,7 @@ import {
   buildSideQuests,
   isGapQuest,
   isLiveQuest,
+  isOnWalkway,
   nearestTargetDistance,
   rideReportFromLiveQuest,
   sortByProximity,
@@ -20,7 +21,7 @@ import {
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
-import { rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
+import { pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
 
 /**
  * Side Quests tab — missions for facts only guests on the ground can settle.
@@ -48,6 +49,7 @@ export default function SideQuestsPanel({
   venueId = null,
   pois = [],
   gaps = [],
+  map = null,
   bounds = null,
   position = null,
   onSelectPlace = null,
@@ -79,16 +81,20 @@ export default function SideQuestsPanel({
     scoredKeys,
   });
   const inside = inVenue(bounds, position);
-  const withCampingNear = rawDurable.map((q) =>
-    q.rankLast && inside ? { ...q, nearby: true } : q,
-  );
-  const durable = position ? sortByProximity(withCampingNear, pois, position) : withCampingNear;
+  const offPath = inside && !isOnWalkway(map, position);
+  const withLocationHints = rawDurable.map((q) => {
+    if (q.rankLast && inside) return { ...q, nearby: true };
+    if (q.type === 'path' && offPath) return { ...q, nearby: true };
+    return q;
+  });
+  const durable = position ? sortByProximity(withLocationHints, pois, position) : withLocationHints;
 
   const [openQuestId, setOpenQuestId] = useState(null);
   const [note, setNote] = useState('');
   const [status, setStatus] = useState(STATUS_OPTIONS[0].value);
   const [heightIn, setHeightIn] = useState(null);
   const [atLine, setAtLine] = useState(false);
+  const [atWalkway, setAtWalkway] = useState(false);
   const [placeName, setPlaceName] = useState('');
   const [hookup, setHookup] = useState(null);
   const [selectedTarget, setSelectedTarget] = useState(null);
@@ -110,6 +116,7 @@ export default function SideQuestsPanel({
     setStatus(STATUS_OPTIONS[0].value);
     setHeightIn(null);
     setAtLine(false);
+    setAtWalkway(false);
     setPlaceName('');
     setHookup(null);
     setSelectedTarget(null);
@@ -134,6 +141,7 @@ export default function SideQuestsPanel({
     if (isLiveQuest(quest)) return Boolean(status);
     if (quest.type === 'height') return Number.isFinite(heightIn) && selectedTarget;
     if (quest.type === 'queue') return atLine && (selectedTarget || !quest.targets?.length);
+    if (quest.type === 'path') return atWalkway;
     if (ADD_PLACE_TYPES.includes(quest.type)) return Boolean(placeName.trim());
     if (quest.type === 'camping') return Boolean(hookup);
     return false;
@@ -141,6 +149,14 @@ export default function SideQuestsPanel({
 
   function walkedNearFor(quest) {
     if (quest.type === 'camping' || ADD_PLACE_TYPES.includes(quest.type)) return inside;
+    if (quest.type === 'path') {
+      if (!inside || isOnWalkway(map, position)) return false;
+      if (selectedTarget) {
+        const d = nearestTargetDistance({ targets: [selectedTarget] }, pois, position);
+        return d != null && d <= NEARBY_RADIUS_M;
+      }
+      return true;
+    }
     if (isLiveQuest(quest)) {
       const d = nearestTargetDistance(
         { targets: quest.targets?.length ? quest.targets : pois.filter((p) => p.c === 'coaster' || p.c === 'ride').map((p) => p.i) },
@@ -160,6 +176,7 @@ export default function SideQuestsPanel({
     if (isLiveQuest(quest)) return { note: note.trim(), status };
     if (quest.type === 'height') return { heightIn, target: selectedTarget, note: note.trim() || undefined };
     if (quest.type === 'queue') return { atLine: true, target: selectedTarget, note: note.trim() || undefined };
+    if (quest.type === 'path') return { atWalkway: true, target: selectedTarget, note: note.trim() || undefined };
     if (ADD_PLACE_TYPES.includes(quest.type)) {
       return { name: placeName.trim(), category: quest.type, note: note.trim() || undefined };
     }
@@ -185,7 +202,10 @@ export default function SideQuestsPanel({
     const live = rideReportFromLiveQuest(quest, { status, pois, position });
     if (live && onRideReport) onRideReport(live.rideId, live.status);
     const action = isLiveQuest(quest) ? 'live' : 'first';
-    const key = scoreKey(venueId, isLiveQuest(quest) ? kind : quest.type, live?.rideId || target);
+    const scoreTarget = quest.type === 'path' && !target
+      ? pathScoreCell(position?.lat, position?.lng)
+      : (live?.rideId || target);
+    const key = scoreKey(venueId, isLiveQuest(quest) ? kind : quest.type, scoreTarget);
     const scored = await awardQuestXp({
       action,
       key,
@@ -256,6 +276,20 @@ export default function SideQuestsPanel({
             onClick={() => setAtLine(true)}
           >
             I&apos;m at the line
+          </button>
+        </div>
+      );
+    }
+    if (quest.type === 'path') {
+      return (
+        <div className="chips">
+          <button
+            type="button"
+            className={`chip ${atWalkway ? 'on' : ''}`}
+            aria-pressed={atWalkway}
+            onClick={() => setAtWalkway(true)}
+          >
+            I&apos;m on a walkway
           </button>
         </div>
       );

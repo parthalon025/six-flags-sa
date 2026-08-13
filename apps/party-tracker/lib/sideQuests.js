@@ -107,6 +107,14 @@ const GAP_CARD = {
     blurb: () => 'Stand where the line starts and drop a pin — OSM rarely has this.',
     icon: 'mappin.and.ellipse',
   },
+  path: {
+    title: 'Walk a missing path',
+    blurb: (n, venueName) =>
+      n > 1
+        ? `Rides at ${venueName} sit off the walkable map, and cut-throughs OSM missed still need a walk.`
+        : 'Walk a cut-through OSM missed so others can follow.',
+    icon: 'location.north.fill',
+  },
   restroom: {
     title: 'Find the restrooms',
     blurb: () => 'This map has no restroom yet. Mark one you can see.',
@@ -130,7 +138,7 @@ const GAP_CARD = {
   },
 };
 
-const GAP_TYPE_ORDER = ['height', 'queue', 'restroom', 'food', 'gate', 'camping'];
+const GAP_TYPE_ORDER = ['height', 'queue', 'path', 'restroom', 'food', 'gate', 'camping'];
 
 function groupShippedGaps({ gaps, venueName, venueId, scoredKeys }) {
   const scored = new Set(Array.isArray(scoredKeys) ? scoredKeys : []);
@@ -148,7 +156,9 @@ function groupShippedGaps({ gaps, venueName, venueId, scoredKeys }) {
     if (!items?.length) continue;
     const meta = GAP_CARD[type];
     const targets = items.map((g) => g.target).filter(Boolean);
-    const done = items.filter((g) => scored.has(`${venueId}:${type}:${g.target ?? ''}`)).length;
+    const countable = type === 'path' ? items.filter((g) => g.target) : items;
+    const progressItems = countable.length ? countable : items;
+    const done = progressItems.filter((g) => scored.has(`${venueId}:${type}:${g.target ?? ''}`)).length;
     durable.push({
       id: `gap:${type}`,
       type,
@@ -156,12 +166,73 @@ function groupShippedGaps({ gaps, venueName, venueId, scoredKeys }) {
       blurb: meta.blurb(items.length, venueName),
       targets,
       items,
-      progress: { done, total: items.length },
+      progress: { done, total: progressItems.length },
       icon: meta.icon,
       rankLast: Boolean(meta.rankLast),
     });
   }
   return durable;
+}
+
+/** Guest traces already treat walks this close as “on the mapped path”. */
+export const ON_WALKWAY_METRES = 12;
+
+function metresBetween(aLat, aLng, bLat, bLng) {
+  const kx = 111320 * Math.cos((aLat * Math.PI) / 180);
+  return Math.hypot((bLng - aLng) * kx, (bLat - aLat) * 110540);
+}
+
+function distPointToSegment(lat, lng, aLat, aLng, bLat, bLng) {
+  const kx = 111320 * Math.cos((lat * Math.PI) / 180);
+  const ky = 110540;
+  const px = lng * kx;
+  const py = lat * ky;
+  const ax = aLng * kx;
+  const ay = aLat * ky;
+  const bx = bLng * kx;
+  const by = bLat * ky;
+  const dx = bx - ax;
+  const dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 > 0 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+function walkableRings(map) {
+  const rings = [];
+  for (const layer of [map?.path, map?.service]) {
+    for (const way of layer || []) {
+      if (Array.isArray(way?.r) && way.r.length) rings.push(way.r);
+    }
+  }
+  return rings;
+}
+
+/** Metres from a GPS fix to the nearest walkable path/service segment. */
+export function metresToWalkable(map, lat, lng) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const rings = walkableRings(map);
+  if (!rings.length) return Infinity;
+  let best = Infinity;
+  for (const ring of rings) {
+    for (let i = 0; i < ring.length; i += 1) {
+      const a = ring[i];
+      const b = ring[i + 1];
+      if (!a || a.length < 2) continue;
+      const d = b && b.length >= 2
+        ? distPointToSegment(lat, lng, a[1], a[0], b[1], b[0])
+        : metresBetween(lat, lng, a[1], a[0]);
+      if (d < best) best = d;
+    }
+  }
+  return best;
+}
+
+/** True when GPS is already on a mapped walkway (no path Gap XP). */
+export function isOnWalkway(map, position, gapM = ON_WALKWAY_METRES) {
+  if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return false;
+  const d = metresToWalkable(map, position.lat, position.lng);
+  return Number.isFinite(d) && d <= gapM;
 }
 
 /** Closed chips for a height-sign Gap. `0` is “no minimum”, not “nobody looked”. */
@@ -218,8 +289,8 @@ export function sortByProximity(quests = [], pois = [], position = null, radiusM
       if (Boolean(a.quest.rankLast) !== Boolean(b.quest.rankLast)) {
         return a.quest.rankLast ? 1 : -1;
       }
-      const aNear = a.distanceM != null && a.distanceM <= radiusM;
-      const bNear = b.distanceM != null && b.distanceM <= radiusM;
+      const aNear = (a.distanceM != null && a.distanceM <= radiusM) || Boolean(a.quest.nearby);
+      const bNear = (b.distanceM != null && b.distanceM <= radiusM) || Boolean(b.quest.nearby);
       if (aNear !== bNear) return aNear ? -1 : 1;
       if (a.distanceM == null && b.distanceM == null) return a.index - b.index;
       if (a.distanceM == null) return 1;
@@ -229,6 +300,6 @@ export function sortByProximity(quests = [], pois = [], position = null, radiusM
     .map(({ quest, distanceM }) => ({
       ...quest,
       distanceM,
-      nearby: distanceM != null && distanceM <= radiusM,
+      nearby: (distanceM != null && distanceM <= radiusM) || Boolean(quest.nearby),
     }));
 }

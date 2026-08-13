@@ -120,6 +120,7 @@ export async function resolveSession() {
 
 /**
  * Award Side Quest XP onto the cached Profile. Rank-up is the reward.
+ * Session xp/rank are a display mirror of that Profile, not a Member ledger.
  * @param {object} event scoreSideQuest event fields
  */
 export async function awardQuestXp(event) {
@@ -130,25 +131,29 @@ export async function awardQuestXp(event) {
   } catch {
     cache = null;
   }
-  const base = {
-    xp: Number(cache?.xp ?? live?.xp) || 0,
-    rank: cache?.rank || live?.rank || 'visitor',
-    reputation: Number(cache?.reputation) || 0,
-    scoredKeys: Array.isArray(cache?.scoredKeys) ? cache.scoredKeys : [],
-    awardedByKey: cache?.awardedByKey && typeof cache.awardedByKey === 'object' ? cache.awardedByKey : {},
-    lastQuestDay: cache?.lastQuestDay || null,
-  };
-  const hasProfile = Boolean(live?.userId || cache?.userId);
+  const userId = live?.userId || cache?.userId || null;
+  const hasProfile = Boolean(userId);
+  const base = hasProfile
+    ? {
+      xp: Number(cache?.xp ?? live?.xp) || 0,
+      rank: cache?.rank || live?.rank || 'visitor',
+      reputation: Number(cache?.reputation) || 0,
+      scoredKeys: Array.isArray(cache?.scoredKeys) ? cache.scoredKeys : [],
+      awardedByKey: cache?.awardedByKey && typeof cache.awardedByKey === 'object' ? cache.awardedByKey : {},
+      lastQuestDay: cache?.lastQuestDay || null,
+    }
+    : { xp: 0, scoredKeys: [] };
   const result = scoreSideQuest(base, { ...event, hasProfile });
+  if (!userId) return result;
   const nextSnap = {
     ...(cache || {}),
-    userId: cache?.userId || live?.userId,
+    userId,
     displayName: cache?.displayName || live?.displayName,
     email: cache?.email || live?.email,
     ...result.profile,
   };
   try {
-    if (nextSnap.userId) await writeProfileCache(nextSnap);
+    await writeProfileCache(nextSnap);
   } catch {
     /* private mode */
   }

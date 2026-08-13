@@ -24,19 +24,20 @@ async function check(name, fn) {
 console.log('\ngaps + quest score\n');
 
 const {
+  pathScoreCell,
   rankFromXp,
   rankReward,
   scoreKey,
   scoreSideQuest,
   XP_AWARDS,
 } = await import('../../packages/shared/questScore.js');
-const { shippedGapsDocument, shippedTypeForSeed, resolveGapTargets } = await import(
+const { shippedGapsDocument, shippedTypeForSeed, resolveGapTarget } = await import(
   '../../packages/venue-builder/lib/ship-gaps.mjs'
 );
 const { questSeedsFromRequests, questSeedsFromEntrances } = await import(
   '../../packages/venue-builder/lib/quest-seeds.mjs'
 );
-const { buildSideQuests, sortByProximity } = await import('../../apps/party-tracker/lib/sideQuests.js');
+const { buildSideQuests, isOnWalkway, sortByProximity } = await import('../../apps/party-tracker/lib/sideQuests.js');
 const { normalizeGapsDocument, gapsUrlFor } = await import('../../apps/party-tracker/lib/venue/store.js');
 
 await check('rankFromXp follows the Scout / Ranger / Cartographer / Steward ladder', () => {
@@ -92,6 +93,34 @@ await check('four first Gaps on a Saturday reach Scout', () => {
   assert.equal(profile.rank, 'scout');
   assert.equal(last.rankUp, true);
   assert.equal(last.previousRank, 'visitor');
+  return true;
+});
+
+await check('XP stays on the Profile: no Profile means no XP and no scoredKeys write', () => {
+  const now = Date.parse('2026-08-13T16:00:00.000Z');
+  const blank = { xp: 0, scoredKeys: [] };
+  const none = scoreSideQuest(blank, {
+    action: 'first',
+    key: 'ki:height:beast',
+    hasProfile: false,
+    walkedNear: true,
+    now,
+  });
+  assert.equal(none.deltaXp, 0);
+  assert.equal(none.reason, 'no_profile');
+  assert.equal(none.profile.xp, 0);
+  assert.deepEqual(none.profile.scoredKeys, []);
+  const alice = scoreSideQuest(
+    { xp: 0, scoredKeys: [] },
+    { action: 'first', key: 'ki:height:beast', hasProfile: true, walkedNear: true, now },
+  );
+  const bob = scoreSideQuest(
+    { xp: 0, scoredKeys: [] },
+    { action: 'first', key: 'ki:height:beast', hasProfile: true, walkedNear: true, now },
+  );
+  assert.equal(alice.reason, 'first');
+  assert.equal(bob.reason, 'first');
+  assert.equal(alice.deltaXp, bob.deltaXp);
   return true;
 });
 
@@ -166,7 +195,7 @@ await check('shipped Gaps drop credits/aliases and resolve height names to Place
 });
 
 await check('low-confidence queue entrance ships as a queue Gap even when a pin exists', () => {
-  const pois = [{ n: 'Mini Golf', i: 'mini-golf', c: 'ride', e: { lat: 1, lng: 2 } }];
+  const pois = [{ n: 'Mini Golf', i: 'mini-golf', c: 'ride', e: { lat: 1, lng: 2 }, h: { min: 0 } }];
   const seeds = questSeedsFromEntrances('park', {
     attractions: [
       {
@@ -182,12 +211,65 @@ await check('low-confidence queue entrance ships as a queue Gap even when a pin 
   return true;
 });
 
-await check('resolveGapTargets expands a shared title to every Place key', () => {
+await check('two Places with the same title and unique i each get a height Gap', () => {
   const pois = [
     { n: 'Poltergeist', i: 'poltergeist', c: 'coaster' },
     { n: 'Poltergeist', i: 'poltergeist-2', c: 'coaster' },
+    { n: 'Iron Rattler', i: 'iron-rattler', c: 'coaster', h: { min: 48 } },
   ];
-  assert.deepEqual(resolveGapTargets(pois, 'Poltergeist').sort(), ['poltergeist', 'poltergeist-2']);
+  const doc = shippedGapsDocument({ venueId: 'fiesta-texas', seeds: [], pois });
+  assert.deepEqual(
+    doc.gaps.filter((g) => g.type === 'height'),
+    [
+      { type: 'height', target: 'poltergeist' },
+      { type: 'height', target: 'poltergeist-2' },
+    ],
+  );
+  return true;
+});
+
+await check('resolveGapTarget matches a Place key; an ambiguous title does not fork', () => {
+  const pois = [
+    { n: 'Poltergeist', i: 'poltergeist', c: 'coaster', h: { min: 48 } },
+    { n: 'Poltergeist', i: 'poltergeist-2', c: 'coaster', h: { min: 48 } },
+    { n: 'Iron Rattler', i: 'iron-rattler', c: 'coaster', h: { min: 48 } },
+  ];
+  assert.equal(resolveGapTarget(pois, 'poltergeist'), 'poltergeist');
+  assert.equal(resolveGapTarget(pois, 'Iron Rattler'), 'iron-rattler');
+  assert.equal(resolveGapTarget(pois, 'Poltergeist'), null);
+  const doc = shippedGapsDocument({
+    venueId: 'fiesta-texas',
+    seeds: [{ type: 'height_rule', sourceGap: 'heights', target: 'Poltergeist' }],
+    pois,
+  });
+  assert.equal(doc.gaps.filter((g) => g.type === 'height').length, 0);
+  return true;
+});
+
+await check('path Gaps cover stranded rides and a venue-wide missing walkway', () => {
+  const pois = [
+    { n: 'Near', i: 'near-ride', c: 'ride', lat: 39.0, lng: -84.0, h: { min: 0 } },
+    { n: 'Far', i: 'far-ride', c: 'ride', lat: 39.01, lng: -84.0, h: { min: 0 } },
+  ];
+  const map = { path: [{ r: [[-84.0, 39.0], [-84.001, 39.0]] }], service: [] };
+  const doc = shippedGapsDocument({ venueId: 'park', seeds: [], pois, map });
+  const paths = doc.gaps.filter((g) => g.type === 'path');
+  assert.ok(paths.some((g) => g.target === 'far-ride'));
+  assert.ok(!paths.some((g) => g.target === 'near-ride'));
+  assert.ok(paths.some((g) => g.target === null));
+  return true;
+});
+
+await check('a park with a clean walk graph still ships a venue-wide path Gap', () => {
+  const pois = [{ n: 'Near', i: 'near-ride', c: 'ride', lat: 39.0, lng: -84.0, h: { min: 0 } }];
+  const map = { path: [{ r: [[-84.0, 39.0], [-84.001, 39.0]] }] };
+  const doc = shippedGapsDocument({ venueId: 'park', seeds: [], pois, map });
+  assert.deepEqual(
+    doc.gaps.filter((g) => g.type === 'path'),
+    [{ type: 'path', target: null }],
+  );
+  assert.equal(isOnWalkway(map, { lat: 39.0, lng: -84.0 }), true);
+  assert.equal(isOnWalkway(map, { lat: 39.01, lng: -84.0 }), false);
   return true;
 });
 
@@ -217,18 +299,27 @@ await check('phone groups atomic Gaps into cards with progress and camping last'
     gaps: [
       { type: 'height', target: 'the-beast' },
       { type: 'height', target: 'diamondback' },
+      { type: 'path', target: 'the-beast' },
+      { type: 'path', target: null },
       { type: 'camping', target: null },
     ],
   });
-  assert.equal(durable.length, 2);
+  assert.equal(durable.length, 3);
   const height = durable.find((q) => q.type === 'height');
+  const path = durable.find((q) => q.type === 'path');
   const camping = durable.find((q) => q.type === 'camping');
   assert.equal(height.id, 'gap:height');
   assert.equal(height.progress.done, 1);
   assert.equal(height.progress.total, 2);
   assert.deepEqual(height.targets, ['the-beast', 'diamondback']);
+  assert.equal(path.id, 'gap:path');
+  assert.equal(path.title, 'Walk a missing path');
+  assert.deepEqual(path.targets, ['the-beast']);
   assert.equal(camping.rankLast, true);
   assert.equal(durable[durable.length - 1].type, 'camping');
+  const types = durable.map((q) => q.type);
+  assert.ok(types.indexOf('path') > types.indexOf('height'));
+  assert.ok(types.indexOf('path') < types.indexOf('camping'));
   return true;
 });
 
@@ -252,12 +343,52 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
   assert.deepEqual(
     normalizeGapsDocument({
       version: 1,
-      gaps: [{ type: 'height', target: 'a' }, { type: 'wizard', target: 'nope' }, null],
+      gaps: [
+        { type: 'height', target: 'a' },
+        { type: 'path', target: null },
+        { type: 'wizard', target: 'nope' },
+        null,
+      ],
     }),
-    [{ type: 'height', target: 'a' }],
+    [
+      { type: 'height', target: 'a' },
+      { type: 'path', target: null },
+    ],
   );
   assert.equal(gapsUrlFor({ id: 'kings-island' }), '/venues/kings-island.gaps.json');
   assert.equal(gapsUrlFor({ id: 'kings-island', gaps: '/venues/custom.gaps.json' }), '/venues/custom.gaps.json');
+  return true;
+});
+
+await check('null-target path XP keys by a coarse Location cell so one walk does not farm-block the park', () => {
+  const here = pathScoreCell(39.345, -84.269);
+  const across = pathScoreCell(39.355, -84.28);
+  assert.ok(here);
+  assert.notEqual(here, across);
+  const now = Date.parse('2026-08-13T16:00:00.000Z');
+  const first = scoreSideQuest(
+    { xp: 0, scoredKeys: [] },
+    { action: 'first', key: scoreKey('ki', 'path', here), hasProfile: true, walkedNear: true, now },
+  );
+  assert.equal(first.reason, 'first');
+  const sameCell = scoreSideQuest(first.profile, {
+    action: 'first',
+    key: scoreKey('ki', 'path', here),
+    hasProfile: true,
+    walkedNear: true,
+    now,
+  });
+  assert.equal(sameCell.reason, 'repeat');
+  assert.equal(sameCell.deltaXp, 0);
+  const otherCell = scoreSideQuest(first.profile, {
+    action: 'first',
+    key: scoreKey('ki', 'path', across),
+    hasProfile: true,
+    walkedNear: true,
+    now,
+  });
+  assert.equal(otherCell.reason, 'first');
+  assert.ok(otherCell.deltaXp > 0);
   return true;
 });
 
