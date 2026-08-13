@@ -97,5 +97,31 @@ assert.match(ignore, /scripts\/lib\/app-paths\.json/);
 const bumpYml = readFileSync(join(root, '.github/workflows/bump-version.yml'), 'utf8');
 assert.match(bumpYml, /steps\.bump\.outputs\.skipped/);
 assert.match(bumpYml, /fetch-depth:\s*0/);
+assert.match(
+  bumpYml,
+  /packages\/venue-builder\/package\.json/,
+  'bump commit must stage venue-builder or npm ci 404s the stale shared pin',
+);
+
+const workspacePkgs = [
+  'package.json',
+  'apps/party-tracker/package.json',
+  'packages/shared/package.json',
+  'packages/venue-builder/package.json',
+].map((rel) => ({
+  rel,
+  pkg: JSON.parse(readFileSync(join(root, rel), 'utf8')),
+}));
+const rootVersion = workspacePkgs[0].pkg.version;
+const sharedVersion = workspacePkgs.find((p) => p.rel === 'packages/shared/package.json').pkg.version;
+for (const { rel, pkg } of workspacePkgs) {
+  assert.equal(pkg.version, rootVersion, `${rel} version must match root ${rootVersion}`);
+  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+    const pin = pkg[section]?.['@party-tracker/shared'];
+    if (typeof pin === 'string' && !pin.startsWith('workspace:')) {
+      assert.equal(pin, sharedVersion, `${rel} ${section} pin must match shared ${sharedVersion}`);
+    }
+  }
+}
 
 console.log('bump-version tests: ok');
