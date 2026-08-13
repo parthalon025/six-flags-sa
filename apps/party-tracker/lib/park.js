@@ -2,7 +2,7 @@ import { THEMES, CATEGORY_LABELS } from './theme.js';
 import { ONTOLOGY } from './ontology.js';
 
 /* Height labels, category colours, search. Eligibility itself lives in
-   lib/eligibility.js — fold(people, places) — so this file is not a junk
+   lib/eligibility.js — fromFacts(facts, places) — so this file is not a junk
    drawer for verdicts.
 
    Relative imports here carry an explicit .js so this module can be imported

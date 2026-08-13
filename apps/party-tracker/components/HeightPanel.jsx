@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { HEIGHT_TIERS, isRideable } from '@/lib/park';
-import { fold } from '@/lib/eligibility';
+import { fromFacts } from '@/lib/eligibility';
 import { identityOf } from '@/lib/venue/ids';
 import { usePois } from '@/lib/venue/useVenue';
 
@@ -12,25 +12,25 @@ import { usePois } from '@/lib/venue/useVenue';
    and drops out of the list behind you.
 
    This panel edits this phone's own height / With adult. Map, list and glance
-   Eligibility is a fold over the Party roster (or this local height when there
-   is no Party) — not a second guest-chip roster. */
+   Eligibility comes from fromFacts(Party|solo) — not a second guest-chip roster.
+   Tier taps use solo facts so preview counts share one With adult encoding. */
 
 const TIERS = HEIGHT_TIERS;
 
-const sliderPerson = (height, withAdult) => [
-  { id: 'self', name: 'You', height, withAdult: withAdult === true },
-];
+const soloFacts = (height, withAdult) => ({
+  solo: { height, withAdult, name: 'You' },
+});
 
 export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, venue }) {
   const POIS = usePois();
 
   const counts = useMemo(() => {
     if (height == null) return null;
-    const view = fold(sliderPerson(height, withAdult), POIS);
+    const elig = fromFacts(soloFacts(height, withAdult), POIS);
     const tally = { yes: 0, companion: 0, no: 0 };
     POIS.forEach((p) => {
       if (!isRideable(p)) return;
-      const k = view.at(identityOf(p)).kind;
+      const k = elig.at(identityOf(p)).kind;
       if (k === 'eligible') tally.yes += 1;
       else if (k === 'companion') tally.companion += 1;
       else tally.no += 1;
@@ -44,8 +44,8 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
     if (height == null) return null;
     const next = TIERS.find((t) => t > height);
     if (!next) return null;
-    const now = fold(sliderPerson(height, withAdult), POIS);
-    const then = fold(sliderPerson(next, withAdult), POIS);
+    const now = fromFacts(soloFacts(height, withAdult), POIS);
+    const then = fromFacts(soloFacts(next, withAdult), POIS);
     let gained = 0;
     POIS.forEach((p) => {
       if (!isRideable(p)) return;

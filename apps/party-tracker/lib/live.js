@@ -193,7 +193,7 @@ function composeWhy(factors) {
  * strongest of them. Nothing here asks an LLM — every factor is a fact the
  * app already holds, so the answer never outruns what it can defend.
  *
- * @param {object} [opts.eligibility]    Fold from fold(people, places)
+ * @param {object} [opts.eligibility]    fromFacts(facts, places) / fold(people, places)
  * @returns {Array<{ poi, live, metres, factors, why }>}
  */
 export function recommendNow(

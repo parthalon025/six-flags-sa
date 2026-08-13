@@ -2,10 +2,11 @@ import { identityOf } from './venue/ids.js';
 
 /* Eligibility as one fold over this phone's people × the venue's places.
  *
- * Map, list and glance ask `at(id)` — the most restrictive Member in the set.
- * Place detail asks `explain(id)` — each person, with reasons, most
- * restrictive first. Glance copy stays in live.js; this module only names
- * the kind.
+ * Callers pass Party or solo facts via `view` — they do not pick the
+ * Subgroup set. Map, list and glance ask `at(id)` — the most restrictive
+ * Member in the set. Place detail asks `explain(id)` — each person, with
+ * reasons, most restrictive first. Height-slider preview is a temporary
+ * override on one Member inside the same set.
  *
  * Relative `.js` imports so the unit suite can load this in plain Node. */
 
@@ -41,10 +42,77 @@ const inchesOf = (person) => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** Unset With adult means accompanied — one encoding for Party and solo. */
+export function accompanied(withAdult) {
+  return withAdult !== false;
+}
+
+function normalizePerson(raw, index) {
+  const height = inchesOf(raw);
+  return {
+    id: raw?.id != null ? String(raw.id) : String(index),
+    name: raw?.name || 'Rider',
+    height,
+    withAdult: accompanied(raw?.withAdult),
+  };
+}
+
+/**
+ * Pick this phone's Eligibility people from Party or solo facts.
+ * Tagged phone → matching Subgroup tags only (including device-less).
+ * Untagged phone → whole Party. Solo with no height → empty (silent).
+ */
+export function peopleFor(facts) {
+  if (!facts || typeof facts !== 'object') return [];
+
+  let list = [];
+  if (facts.party) {
+    const members = Array.isArray(facts.party.members) ? facts.party.members : [];
+    const selfId = facts.party.selfId;
+    const me = members.find((m) => m?.id === selfId);
+    const tag = me?.groupId || null;
+    const set = tag ? members.filter((m) => m?.groupId === tag) : members;
+    list = set.map((m, i) => normalizePerson(m, i));
+  } else if (facts.solo) {
+    const solo = facts.solo;
+    if (solo.height == null || solo.height === '') return [];
+    const n = Number(solo.height);
+    if (!Number.isFinite(n)) return [];
+    list = [
+      normalizePerson(
+        {
+          id: 'self',
+          name: solo.name || 'You',
+          height: n,
+          withAdult: solo.withAdult,
+        },
+        0,
+      ),
+    ];
+  }
+
+  const preview = facts.preview;
+  if (preview && preview.memberId != null) {
+    const id = String(preview.memberId);
+    list = list.map((p) => {
+      if (p.id !== id) return p;
+      const height =
+        preview.height == null || preview.height === ''
+          ? null
+          : Number.isFinite(Number(preview.height))
+            ? Number(preview.height)
+            : p.height;
+      return { ...p, height };
+    });
+  }
+
+  return list;
+}
+
 /**
  * One person against one already-normalised height rule.
  * Unset / non-finite height is eligible — not height-constrained.
- * `withAdult` is only true when the caller passed `=== true`.
+ * With adult uses `accompanied` (unset = true).
  */
 function judge(h, person) {
   const inches = inchesOf(person);
@@ -52,7 +120,7 @@ function judge(h, person) {
     return { kind: 'eligible', reasons: ['No height set — not height-constrained.'] };
   }
 
-  const withAdult = person?.withAdult === true;
+  const withAdult = accompanied(person?.withAdult);
   const { min, alone, max, advisory } = h;
 
   if (max != null && max !== 'none' && inches > max) {
@@ -141,3 +209,15 @@ export function fold(people, places) {
     },
   };
 }
+
+/**
+ * Eligibility from Party or solo facts. Callers do not filter Subgroup.
+ * @param {{ party?: { selfId: string, members: object[] }, solo?: { height?: number|null, withAdult?: boolean, name?: string }, preview?: { memberId: string, height?: number|null } }} facts
+ * @param {Array<object>} places
+ */
+export function fromFacts(facts, places) {
+  return fold(peopleFor(facts), places);
+}
+
+/** @deprecated use fromFacts — kept as alias for clarity in older call sites */
+export const view = fromFacts;
