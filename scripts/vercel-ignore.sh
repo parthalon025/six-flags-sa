@@ -20,7 +20,13 @@ if [ ! -f scripts/lib/app-paths.json ]; then
   echo "Missing scripts/lib/app-paths.json — proceeding with build."
   exit 1
 fi
-mapfile -t APP_PATHS < <(node -e "JSON.parse(require('fs').readFileSync('scripts/lib/app-paths.json','utf8')).forEach((p)=>console.log(p))")
+# Vercel's bash has no /dev/fd, so skip process substitution (`mapfile < <(...)`).
+APP_PATHS=()
+while IFS= read -r line; do
+  [ -n "$line" ] && APP_PATHS+=("$line")
+done <<EOF
+$(node -e "JSON.parse(require('fs').readFileSync('scripts/lib/app-paths.json','utf8')).forEach((p)=>console.log(p))")
+EOF
 
 # Get the list of changed files. If VERCEL_GIT_PREVIOUS_SHA is not set,
 # compare against HEAD~1 (the parent commit).
