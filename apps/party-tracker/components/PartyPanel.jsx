@@ -5,6 +5,7 @@ import QrScanner from '@/components/QrScanner';
 import Icon from '@/components/Icon';
 import { WORDS } from '@/lib/brand';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
+import { locationCopy, placeAt } from '@/lib/location';
 import { usePois } from '@/lib/venue/useVenue';
 import { heightIsStale } from '@party-tracker/shared/schemas.js';
 
@@ -23,14 +24,8 @@ const STATUSES = [
 const HELP = 'NEED HELP';
 const CALM = 'On the move';
 
-function nearestPlace(pois, lat, lng) {
-  let best = null;
-  pois.forEach((p) => {
-    if (p.c === 'parking') return;
-    const d = distance(lat, lng, p.lat, p.lng);
-    if (!best || d < best.d) best = { p, d };
-  });
-  return best;
+function meetPlaceName(pois, lat, lng) {
+  return placeAt(pois, lat, lng)?.name || null;
 }
 
 /**
@@ -341,11 +336,18 @@ export default function PartyPanel({
           {sorted.map((m) => {
             const isMe = m.id === myId;
             const located = m.visible;
-            const offSite = Number.isFinite(m.lat) && m.visible === false;
+            const live = located && m.live !== false;
+            const offSite = !located;
             const d = me && located && !isMe ? distance(me.lat, me.lng, m.lat, m.lng) : null;
             const b = d != null ? bearing(me.lat, me.lng, m.lat, m.lng) : null;
-            const near = located ? nearestPlace(pois, m.lat, m.lng) : null;
-            const stale = Date.now() - m.ts > 300000;
+            const stale = located && !live;
+            const where = located
+              ? locationCopy({
+                  name: m.name,
+                  place: m.place || m.location?.place || placeAt(pois, m.lat, m.lng),
+                  live,
+                })
+              : null;
             const batt = Number.isFinite(m.battery?.level) ? Math.round(m.battery.level * 100) : null;
             const Row = m.deviceLess ? 'div' : 'button';
             return (
@@ -397,12 +399,9 @@ export default function PartyPanel({
                   <span>
                     {m.deviceLess
                       ? 'No phone'
-                      : offSite
-                        ? 'Last known · not live'
-                        : near
-                          ? near.p.n
-                          : 'No fix yet'}{' '}
-                    · {m.status} · {formatAge(Date.now() - m.ts)}
+                      : [where || (located ? null : 'No fix yet'), m.status, formatAge(Date.now() - m.ts)]
+                          .filter(Boolean)
+                          .join(' · ')}
                   </span>
                   {m.deviceLess && (onTagDeviceLess || onRemoveDeviceLess) ? (
                     <span className="joinRow" style={{ marginTop: 6 }}>
@@ -597,7 +596,9 @@ export default function PartyPanel({
           <div>
             <b>{meet.label}</b>
             <span className="fine block">
-              {nearestPlace(pois, meet.lat, meet.lng)?.p.n} · set by {meet.by}
+              {meetPlaceName(pois, meet.lat, meet.lng) ||
+                `${meet.lat.toFixed(4)}, ${meet.lng.toFixed(4)}`}{' '}
+              · set by {meet.by}
             </span>
             {me && (
               <span className="meetRange">

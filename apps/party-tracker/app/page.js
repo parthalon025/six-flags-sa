@@ -47,7 +47,8 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { findPlace, identityOf } from '@/lib/venue/ids';
-import { isLocationVisible, locationReadyToJoin, locationRevokedInParty, shouldShareLocation } from '@/lib/gps/sharing';
+import { locationReadyToJoin, locationRevokedInParty, shouldShareLocation } from '@/lib/gps/sharing';
+import { attachPlace, isLocationLive, isLocationVisible } from '@/lib/location';
 import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { resolveSession } from '@/lib/auth/session';
@@ -885,6 +886,8 @@ export default function Page() {
           colour: colourFor(m.id),
           initials: initialsFor(m.name),
           visible: isLocationVisible(venue?.bounds, lat, lng),
+          live: m.location?.live !== false && isLocationLive(venue?.bounds, lat, lng),
+          place: m.location?.place || null,
         };
       }),
     [party, venue?.bounds],
@@ -961,6 +964,22 @@ export default function Page() {
       if (!fix) return;
       const inside = shouldShareLocation(venue?.bounds, fix.lat, fix.lng);
       if (!inside) {
+        if (locationSharingRef.current) {
+          const last = locationSharingRef.current;
+          const stale = attachPlace(
+            {
+              lat: last?.lat ?? fix.lat,
+              lng: last?.lng ?? fix.lng,
+              acc: last?.acc ?? fix.acc ?? null,
+              heading: last?.heading ?? null,
+              speed: null,
+              ts: Date.now(),
+              live: false,
+            },
+            POIS,
+          );
+          runtime.current?.pushLocation(stale);
+        }
         locationSharingRef.current = false;
         return;
       }
@@ -971,20 +990,25 @@ export default function Page() {
       // position which never landed can never come round.
       const decision = shouldBroadcast({ heading, now: Date.now() });
       if (!decision.send) return;
-      locationSharingRef.current = true;
-      runtime.current?.pushLocation({
-        lat: fix.lat,
-        lng: fix.lng,
-        acc: fix.acc ?? null,
-        heading: Number.isFinite(fix.heading) ? fix.heading : heading ?? null,
-        speed: Number.isFinite(fix.speed) ? fix.speed : null,
-        ts: fix.ts,
-      });
+      const next = attachPlace(
+        {
+          lat: fix.lat,
+          lng: fix.lng,
+          acc: fix.acc ?? null,
+          heading: Number.isFinite(fix.heading) ? fix.heading : heading ?? null,
+          speed: Number.isFinite(fix.speed) ? fix.speed : null,
+          ts: fix.ts,
+          live: true,
+        },
+        POIS,
+      );
+      locationSharingRef.current = next;
+      runtime.current?.pushLocation(next);
     };
     tick();
     const id = setInterval(tick, GATE_TICK_MS);
     return () => clearInterval(id);
-  }, [active, position, heading, shouldBroadcast, venue?.bounds, geo.status]);
+  }, [active, position, heading, shouldBroadcast, venue?.bounds, geo.status, POIS]);
 
   useEffect(() => {
     if (!active || !geo.battery) return;
@@ -997,8 +1021,12 @@ export default function Page() {
 
   useEffect(() => {
     if (!active || !locationRevokedInParty(geo.status)) return;
-    runtime.current?.clearLocation?.();
-  }, [active, geo.status]);
+    const last = locationSharingRef.current || null;
+    if (last && Number.isFinite(last.lat)) {
+      runtime.current?.pushLocation(attachPlace({ ...last, ts: Date.now(), live: false }, POIS));
+    }
+    locationSharingRef.current = false;
+  }, [active, geo.status, POIS]);
 
   // NEED HELP has to interrupt, once per person per episode.
   useEffect(() => {
