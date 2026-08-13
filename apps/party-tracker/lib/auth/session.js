@@ -5,12 +5,12 @@
  */
 
 import { requiresSignedIn } from '@party-tracker/shared/schemas.js';
-import { rankFromXp, scoreSideQuest } from '@party-tracker/shared/questScore.js';
+import { rankFromXp, scoreSideQuest, titleFromXp } from '@party-tracker/shared/questScore.js';
 import { clearProfileCache, readProfileCache, writeProfileCache } from './profileCache.js';
 
 const SESSION_KEY = 'parkbound.session';
 
-/** @returns {{ userId: string, email: string, displayName: string, rank?: string, xp?: number } | null} */
+/** @returns {{ userId: string, email: string, displayName: string, rank?: string, title?: string | null, xp?: number } | null} */
 export function readLocalSession() {
   if (typeof window === 'undefined') return null;
   try {
@@ -68,11 +68,13 @@ export async function completeMagicSignIn({ email, displayName }) {
   }
   const xp = Number(keep?.xp) || 0;
   const rank = keep?.rank || rankFromXp(xp);
+  const title = keep?.title ?? titleFromXp(xp);
   const session = {
     userId,
     email: clean,
     displayName: titleCaseName(displayName || clean.split('@')[0] || 'Guest'),
     rank,
+    title,
     xp,
   };
   writeLocalSession(session);
@@ -83,6 +85,7 @@ export async function completeMagicSignIn({ email, displayName }) {
       email: session.email,
       avatarKey: keep?.avatarKey ?? null,
       rank,
+      title,
       xp,
       reputation: Number(keep?.reputation) || 0,
       impactHelped: Number(keep?.impactHelped) || 0,
@@ -113,6 +116,7 @@ export async function resolveSession() {
     email: cached.email || null,
     displayName: cached.displayName,
     rank: cached.rank || rankFromXp(cached.xp),
+    title: cached.title ?? titleFromXp(cached.xp),
     xp: Number(cached.xp) || 0,
     fromCache: true,
   };
@@ -158,7 +162,12 @@ export async function awardQuestXp(event) {
     /* private mode */
   }
   if (live?.userId) {
-    writeLocalSession({ ...live, xp: result.profile.xp, rank: result.profile.rank });
+    writeLocalSession({
+      ...live,
+      xp: result.profile.xp,
+      rank: result.profile.rank,
+      title: result.profile.title,
+    });
   }
   return result;
 }

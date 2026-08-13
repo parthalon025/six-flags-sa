@@ -1080,7 +1080,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   color: var(--label2);
 }
 .sideQuestReward { color: var(--blue); }
-.signInRank { margin-top: 2px; }
+.signInRank, .signInTitle { margin-top: 2px; font-weight: 600; }
 .sideQuestNear {
   color: var(--adventure);
   font-weight: 500;

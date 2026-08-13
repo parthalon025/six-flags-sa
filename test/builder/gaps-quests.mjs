@@ -29,6 +29,7 @@ const {
   rankReward,
   scoreKey,
   scoreSideQuest,
+  titleFromXp,
   XP_AWARDS,
 } = await import('../../packages/shared/questScore.js');
 const { shippedGapsDocument, shippedTypeForSeed, resolveGapTarget } = await import(
@@ -49,6 +50,19 @@ await check('rankFromXp follows the Scout / Ranger / Cartographer / Steward ladd
   assert.equal(rankFromXp(1000), 'cartographer');
   assert.equal(rankFromXp(3000), 'steward');
   assert.equal(rankReward('scout').label, 'Scout');
+  return true;
+});
+
+await check('XP thresholds grant Titles as Profile sub-names; Visitor has none yet', () => {
+  assert.equal(titleFromXp(0), null);
+  assert.equal(titleFromXp(49), null);
+  assert.equal(rankReward('visitor').title, null);
+  assert.equal(titleFromXp(50), 'Scout');
+  assert.equal(titleFromXp(249), 'Scout');
+  assert.equal(titleFromXp(250), 'Ranger');
+  assert.equal(titleFromXp(1000), 'Cartographer');
+  assert.equal(titleFromXp(3000), 'Steward');
+  assert.equal(rankReward('scout').title, 'Scout');
   return true;
 });
 
@@ -91,8 +105,10 @@ await check('four first Gaps on a Saturday reach Scout', () => {
   }
   assert.equal(profile.xp, 12 * 4 + 5);
   assert.equal(profile.rank, 'scout');
+  assert.equal(profile.title, 'Scout');
   assert.equal(last.rankUp, true);
   assert.equal(last.previousRank, 'visitor');
+  assert.equal(rankReward(last.previousRank).title, null);
   return true;
 });
 

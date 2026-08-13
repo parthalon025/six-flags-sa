@@ -14,6 +14,7 @@ export default function SignInCard({ session = null, onSession = null }) {
   const [err, setErr] = useState(null);
 
   if (session?.userId) {
+    const title = rankReward(session.rank || 'visitor').title;
     return (
       <div className="signInCard">
         <div className="label">Signed in</div>
@@ -21,11 +22,8 @@ export default function SignInCard({ session = null, onSession = null }) {
           {session.displayName || session.email}
           {session.fromCache ? ' · offline profile' : ''}
         </p>
-        {session.rank || Number.isFinite(session.xp) ? (
-          <p className="fine block signInRank">
-            {rankReward(session.rank || 'visitor').label}
-            {Number.isFinite(session.xp) ? ` · ${session.xp} XP` : ''}
-          </p>
+        {title ? (
+          <p className="fine block signInTitle">{title}</p>
         ) : null}
         <button
           type="button"

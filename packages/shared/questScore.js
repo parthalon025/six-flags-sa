@@ -1,11 +1,11 @@
 /**
- * Side Quest XP → Rank rewards.
+ * Side Quest XP → Title rewards.
  *
- * XP and Rank are Profile fields — not Member, Party, or anonymous-phone
- * state. Completing a Side Quest (walked-near, Profile attached) awards XP
- * onto that Profile; the visible reward is Rank (Status). XP is never spent.
- * Repeat of the same (venue, type, target) by the same Profile is 0. A
- * name-first Ride report can exist without XP; XP still needs the Profile.
+ * XP lives on the Profile. Crossing a threshold grants a Title — a sub-name
+ * under the display name (Scout, Ranger, Cartographer, Steward). Visitor has
+ * no Title yet. Titles are not Member, Party, or roster names. XP is never
+ * spent. Repeat of the same (venue, type, target) by the same Profile is 0.
+ * A name-first Ride report can exist without XP; XP still needs the Profile.
  * No public leaderboard here.
  */
 
@@ -20,11 +20,11 @@ export const RANK_LADDER = Object.freeze([
 ]);
 
 export const RANK_REWARDS = Object.freeze({
-  visitor: { label: 'Visitor', unlock: 'Signed-in Profile' },
-  scout: { label: 'Scout', unlock: 'Status: Scout' },
-  ranger: { label: 'Ranger', unlock: 'Status: Ranger' },
-  cartographer: { label: 'Cartographer', unlock: 'Status: Cartographer' },
-  steward: { label: 'Steward', unlock: 'Status: Steward' },
+  visitor: { title: null, label: 'Visitor', unlock: 'Signed-in Profile' },
+  scout: { title: 'Scout', label: 'Scout', unlock: 'Title: Scout' },
+  ranger: { title: 'Ranger', label: 'Ranger', unlock: 'Title: Ranger' },
+  cartographer: { title: 'Cartographer', label: 'Cartographer', unlock: 'Title: Cartographer' },
+  steward: { title: 'Steward', label: 'Steward', unlock: 'Title: Steward' },
 });
 
 export const XP_AWARDS = Object.freeze({
@@ -54,6 +54,11 @@ export function rankFromXp(xp) {
 
 export function rankReward(rank) {
   return RANK_REWARDS[rank] || RANK_REWARDS.visitor;
+}
+
+/** Earned Title sub-name, or null until Scout. */
+export function titleFromXp(xp) {
+  return rankReward(rankFromXp(xp)).title;
 }
 
 /** Coarse ~40 m cell so a generic path walk does not farm-block the whole park. */
@@ -137,10 +142,12 @@ export function scoreSideQuest(profile = {}, event = {}) {
   }
 
   const rank = rankFromXp(xp);
+  const title = rankReward(rank).title;
   return {
     profile: {
       xp,
       rank,
+      title,
       reputation,
       scoredKeys,
       awardedByKey,

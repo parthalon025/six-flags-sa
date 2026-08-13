@@ -214,8 +214,8 @@ export default function SideQuestsPanel({
     });
     setScoredKeys(scored.profile.scoredKeys || []);
     if (scored.rankUp) {
-      const label = rankReward(scored.profile.rank).label;
-      setRewardLine(`You're a ${label} now.`);
+      const title = rankReward(scored.profile.rank).title;
+      if (title) setRewardLine(`You're a ${title} now.`);
     }
     const nextSession = readLocalSession();
     if (nextSession) onSession?.(nextSession);

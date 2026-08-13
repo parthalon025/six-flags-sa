@@ -19,6 +19,7 @@
  * @property {string} displayName
  * @property {string} [avatarKey]
  * @property {ProfileRank} rank
+ * @property {string | null} [title]
  * @property {number} xp
  * @property {number} reputation
  * @property {number} impactHelped
