@@ -180,5 +180,11 @@
     "items": [
       "feat: keep last-known Location and Place name for the Party"
     ]
+  },
+  "1.6.0": {
+    "title": "What's new",
+    "items": [
+      "feat: ship Gaps across the builder-phone seam (#139)"
+    ]
   }
 }
