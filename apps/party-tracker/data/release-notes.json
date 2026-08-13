@@ -162,5 +162,11 @@
     "items": [
       "feat: put Eligibility Subgroup set selection in the module"
     ]
+  },
+  "1.4.0": {
+    "title": "What's new",
+    "items": [
+      "feat: align party mesh with invisible Host and second-Party truth"
+    ]
   }
 }
