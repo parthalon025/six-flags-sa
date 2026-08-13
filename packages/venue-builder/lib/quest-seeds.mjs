@@ -106,6 +106,7 @@ export function questSeedsFromEntrances(venueId, attractionsSidecar) {
   for (const a of list) {
     const name = a.name || a.n;
     if (!name) continue;
+    const placeKey = a.place || a.id || name;
     const feat = a.features?.queue_entrance;
     if (!feat) {
       seeds.push({
@@ -114,7 +115,7 @@ export function questSeedsFromEntrances(venueId, attractionsSidecar) {
         tier: 2,
         graduation: 'attractions_evidence',
         sourceGap: 'entrance_missing',
-        target: name,
+        target: placeKey,
         blocking: false,
         whyOpenSourceFails:
           'Queue entrances are rarely tagged in OSM; guests standing in line are the reliable source.',
@@ -130,7 +131,7 @@ export function questSeedsFromEntrances(venueId, attractionsSidecar) {
         tier: 2,
         graduation: 'attractions_evidence',
         sourceGap: 'entrance_low_confidence',
-        target: name,
+        target: placeKey,
         blocking: false,
         whyOpenSourceFails:
           'Geometry inference and illustrated maps are approximate; peer-confirmed guest pins raise confidence.',

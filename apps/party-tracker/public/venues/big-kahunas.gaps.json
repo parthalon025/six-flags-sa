@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "gaps": [
+    {
+      "type": "queue",
+      "target": "big-kahuna-s-tropical-mini-golf"
+    },
+    {
+      "type": "queue",
+      "target": "bombay-blasters"
+    },
+    {
+      "type": "queue",
+      "target": "bombs-away-bay"
+    },
+    {
+      "type": "queue",
+      "target": "buccaneer-cove"
+    },
+    {
+      "type": "queue",
+      "target": "cobra-twister"
+    },
+    {
+      "type": "queue",
+      "target": "crocodile-flats"
+    },
+    {
+      "type": "queue",
+      "target": "fun-fountains"
+    },
+    {
+      "type": "queue",
+      "target": "hammerhead"
+    },
+    {
+      "type": "queue",
+      "target": "honolulu-half-pipe"
+    },
+    {
+      "type": "queue",
+      "target": "humunga-river"
+    },
+    {
+      "type": "queue",
+      "target": "jumanji"
+    },
+    {
+      "type": "queue",
+      "target": "kowabunga-racer"
+    },
+    {
+      "type": "queue",
+      "target": "lazy-river"
+    },
+    {
+      "type": "queue",
+      "target": "maui-pipeline"
+    },
+    {
+      "type": "queue",
+      "target": "monkey-river"
+    },
+    {
+      "type": "queue",
+      "target": "pirate-s-escape"
+    },
+    {
+      "type": "queue",
+      "target": "pleasure-island"
+    },
+    {
+      "type": "queue",
+      "target": "raging-rhino-river"
+    },
+    {
+      "type": "queue",
+      "target": "skycoaster"
+    },
+    {
+      "type": "queue",
+      "target": "tadpole-pond"
+    },
+    {
+      "type": "queue",
+      "target": "thunder-river"
+    },
+    {
+      "type": "queue",
+      "target": "tiki-river-run-right-slide-5"
+    },
+    {
+      "type": "queue",
+      "target": "wave-pool"
+    }
+  ]
+}

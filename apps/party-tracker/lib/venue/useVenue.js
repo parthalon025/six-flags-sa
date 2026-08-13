@@ -3,7 +3,7 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { getSnapshot, subscribe } from './store';
 
-/** The whole venue snapshot: {manifest, venue, map, pois, status, error, pinned}. */
+/** The whole venue snapshot: {manifest, venue, map, pois, gaps, status, error, pinned}. */
 export function useVenue() {
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

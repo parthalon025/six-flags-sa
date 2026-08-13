@@ -7824,20 +7824,25 @@ await check('a live ride-status quest becomes an in-party Ride report for the ne
   return true;
 });
 
-await check('buildSideQuests lists height and entrance gaps', async () => {
+await check('buildSideQuests groups shipped Gaps and ignores POI holes', async () => {
   const { buildSideQuests } = await import('../../apps/party-tracker/lib/sideQuests.js');
-  const { durable, ambient, counts } = buildSideQuests({
-    pois: [
-      { n: 'Wave Pool', c: 'ride' },
-      { n: 'Maui Pipeline', c: 'ride', h: { min: 48 }, e: { lat: 1, lng: 2 } },
-      { n: 'Snack', c: 'food' },
-      { n: 'Loos', c: 'restroom' },
-    ],
+  const pois = [
+    { n: 'Wave Pool', i: 'wave-pool', c: 'ride' },
+    { n: 'Maui Pipeline', i: 'maui-pipeline', c: 'ride', h: { min: 48 }, e: { lat: 1, lng: 2 } },
+    { n: 'Snack', c: 'food' },
+    { n: 'Loos', c: 'restroom' },
+  ];
+  const empty = buildSideQuests({ pois, venueName: "Big Kahuna's" });
+  assert.equal(empty.durable.length, 0);
+  assert.ok(empty.counts.ambient >= 3);
+  const { durable, counts } = buildSideQuests({
+    pois,
     venueName: "Big Kahuna's",
+    gaps: [{ type: 'height', target: 'wave-pool' }, { type: 'queue', target: 'wave-pool' }],
   });
   assert.ok(counts.ambient >= 3);
-  assert.ok(durable.some((q) => q.id === 'height_rule'));
-  assert.ok(durable.some((q) => q.id === 'queue_entrance'));
+  assert.ok(durable.some((q) => q.id === 'gap:height'));
+  assert.ok(durable.some((q) => q.id === 'gap:queue'));
   assert.ok(!durable.some((q) => q.id === 'poi_restroom'));
   return true;
 });

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { completeMagicSignIn, signOutLocal } from '@/lib/auth/session';
+import { rankReward } from '@party-tracker/shared/questScore.js';
 
 /**
  * Soft-gate sign-in (EP.3) — magic-link shaped; map stays usable without it.
@@ -20,6 +21,12 @@ export default function SignInCard({ session = null, onSession = null }) {
           {session.displayName || session.email}
           {session.fromCache ? ' · offline profile' : ''}
         </p>
+        {session.rank || Number.isFinite(session.xp) ? (
+          <p className="fine block signInRank">
+            {rankReward(session.rank || 'visitor').label}
+            {Number.isFinite(session.xp) ? ` · ${session.xp} XP` : ''}
+          </p>
+        ) : null}
         <button
           type="button"
           className="btn ghost"

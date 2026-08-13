@@ -127,6 +127,11 @@ say();
 say(checklistTable(checklist(venue, map, pois, { mapKb: kb(mapFile), poisKb: kb(poisFile) })));
 say();
 say(`* **${pois.length}** places, **${venue.counts.rides}** of them rides, **${venue.counts.heights}** with height rules`);
+const gapsFile = path.join(VENUE_DIR, `${id}.gaps.json`);
+const shippedGaps = readJson(gapsFile);
+if (Array.isArray(shippedGaps?.gaps)) {
+  say(`* **${shippedGaps.gaps.length}** shipped Gaps for Side Quests`);
+}
 say(`* **${drawn}** drawn shapes across ${layers.length} layers — map **${kb(mapFile)} KB**, places **${kb(poisFile)} KB**`);
 say(`* centre \`${venue.center.lat}, ${venue.center.lng}\`${venue.locality ? ` — ${venue.locality}` : ''}`);
 /* How it was built, which used to be answerable only out of a merged pull

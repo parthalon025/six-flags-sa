@@ -1,9 +1,10 @@
 /* Where a venue lives on disk, and how the app finds out about it.
  *
- * One venue is two *published* files plus a manifest row:
+ * One venue is three *published* files plus a manifest row:
  *
  *   public/venues/<id>.map.json    the drawn geometry, fetched by the browser
  *   public/venues/<id>.pois.json   the places, fetched by the browser
+ *   public/venues/<id>.gaps.json   Gaps the builder invented; the phone ranks them
  *   public/venues/manifest.json    every venue's name, centre and bounds
  *
  * Builder *input* for each venue lives in its own package directory:
@@ -32,6 +33,9 @@ import {
   OVERRIDE_DIR,
   VENUE_DIR,
 } from '../src/paths.mjs';
+import { requests } from './venue-requests.mjs';
+import { questSeedsForVenue } from './quest-seeds.mjs';
+import { shippedGapsDocument } from './ship-gaps.mjs';
 
 export { APP_ROOT, BUILDER_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
 /** @deprecated use MONO_ROOT */
@@ -100,31 +104,46 @@ export const writeJson = (file, value, pretty) => {
 };
 
 /**
- * The exact bytes a venue is written as.
- *
- * Split out from the writing so that a build can ask "would this change what is
- * already on disk?" and get an answer worth trusting. Comparing parsed objects
- * would answer a different and less useful question — the file is what ships,
- * and the file is what the service worker caches.
+ * Gaps this venue ships. Reads builder sidecars (overrides, attractions);
+ * does not invent live ops. Phone-safe: one `{ type, target }` per fact.
  */
-export const serializeVenue = ({ meta, map, pois }) => ({
+export function gapsDocumentFor({ meta, pois }) {
+  const id = meta?.id;
+  const overrides = id ? readOverrides(id).data : null;
+  const attractions = id ? readJson(venueSidecar(id, 'attractions.json')) : null;
+  const reqs = requests({ venue: meta, map: {}, pois: pois || [], overrides });
+  const seeds = questSeedsForVenue({
+    venueId: id,
+    reqs,
+    attractions,
+    includeAmbient: false,
+  });
+  return shippedGapsDocument({ venueId: id, seeds: seeds.durable, pois: pois || [] });
+}
+
+export const serializeVenue = ({ meta, map, pois, gaps }) => ({
   map: JSON.stringify({ meta, ...map }),
   pois: `${JSON.stringify(pois, null, 2)}\n`,
+  gaps: `${JSON.stringify(gaps ?? { version: 1, venue: meta?.id || null, gaps: [] }, null, 2)}\n`,
 });
 
-export function writeVenue({ meta, map, pois }) {
+export function writeVenue({ meta, map, pois, gaps }) {
   const id = meta.id;
   // The map file is the big one and nobody reads it by hand, so it goes out
   // minified. The POI list is small, gets edited when a name is wrong, and is
-  // worth a readable diff. Written through the same serialiser the drift check
-  // reads with, so the two can never disagree about what a venue looks like.
-  const bytes = serializeVenue({ meta, map, pois });
+  // worth a readable diff. Gaps are the same readable shape as places. Written
+  // through the same serialiser the drift check reads with, so the two can
+  // never disagree about what a venue looks like.
+  const shipped = gaps ?? gapsDocumentFor({ meta, pois });
+  const bytes = serializeVenue({ meta, map, pois, gaps: shipped });
   mkdirSync(VENUE_DIR, { recursive: true });
   writeFileSync(path.join(VENUE_DIR, `${id}.map.json`), bytes.map);
   writeFileSync(path.join(VENUE_DIR, `${id}.pois.json`), bytes.pois);
+  writeFileSync(path.join(VENUE_DIR, `${id}.gaps.json`), bytes.gaps);
   return {
     map: path.join(VENUE_DIR, `${id}.map.json`),
     pois: path.join(VENUE_DIR, `${id}.pois.json`),
+    gaps: path.join(VENUE_DIR, `${id}.gaps.json`),
   };
 }
 
@@ -148,14 +167,18 @@ export function reindex({ preferredDefault } = {}) {
       console.warn(`  ! ${id}.map.json has no meta block — skipped`);
       continue;
     }
+    const shipped = gapsDocumentFor({ meta: map.meta, pois });
+    writeJson(path.join(VENUE_DIR, `${id}.gaps.json`), shipped, true);
     venues.push({
       ...map.meta,
       map: `/venues/${id}.map.json`,
       pois: `/venues/${id}.pois.json`,
+      gaps: `/venues/${id}.gaps.json`,
       counts: {
         pois: pois.length,
         rides: pois.filter((p) => p.c === 'coaster' || p.c === 'ride').length,
         heights: pois.filter((p) => p.h).length,
+        gaps: shipped.gaps.length,
       },
     });
   }

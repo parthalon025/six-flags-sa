@@ -40,7 +40,7 @@ import {
   LAYERS, LINE_LAYERS, POI_RULES, LAYER_RULES, ROUTED_LAYERS, UNNAMED_AREA_CATEGORIES, UNNAMED_LABELS,
   campDetailsFromTags, classify, isCampground, isCampPitch, isLand, isVenueOutline, wayAttributes,
 } from '../lib/osm-tags.mjs';
-import { OVERRIDE_DIR, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
+import { OVERRIDE_DIR, gapsDocumentFor, readJson, readOverrides, reindex, serializeVenue, slugify, VENUE_DIR, writeVenue, venueSidecar } from '../lib/venue-io.mjs';
 import {
   argsFromRecipe, listRecipes, readRecipe, recipeFile, recipeFrom, writeRecipe,
 } from '../lib/venue-recipe.mjs';
@@ -1349,18 +1349,28 @@ function driftFrom({ id, meta, map, pois, existingMeta }) {
   const before = {
     map: read(path.join(VENUE_DIR, `${id}.map.json`)),
     pois: read(path.join(VENUE_DIR, `${id}.pois.json`)),
+    gaps: read(path.join(VENUE_DIR, `${id}.gaps.json`)),
   };
   if (before.map == null || before.pois == null) {
-    return { existed: false, changed: true, mapChanged: true, poisChanged: true };
+    return { existed: false, changed: true, mapChanged: true, poisChanged: true, gapsChanged: true };
   }
+  const nextMeta = existingMeta?.generated ? { ...meta, generated: existingMeta.generated } : meta;
   const candidate = serializeVenue({
-    meta: existingMeta?.generated ? { ...meta, generated: existingMeta.generated } : meta,
+    meta: nextMeta,
     map,
     pois,
+    gaps: gapsDocumentFor({ meta: nextMeta, pois }),
   });
   const mapChanged = candidate.map !== before.map;
   const poisChanged = candidate.pois !== before.pois;
-  return { existed: true, changed: mapChanged || poisChanged, mapChanged, poisChanged };
+  const gapsChanged = candidate.gaps !== (before.gaps ?? '');
+  return {
+    existed: true,
+    changed: mapChanged || poisChanged || gapsChanged,
+    mapChanged,
+    poisChanged,
+    gapsChanged,
+  };
 }
 
 async function runCatalogBatch(argv) {
@@ -1945,6 +1955,7 @@ async function buildOne(args, { previous = null } = {}) {
 
   console.error(`\nWrote ${written.map.replace(process.cwd() + '/', '')}`);
   console.error(`Wrote ${written.pois.replace(process.cwd() + '/', '')}`);
+  if (written.gaps) console.error(`Wrote ${written.gaps.replace(process.cwd() + '/', '')}`);
 
   /* How this was built, beside the file that holds everything else somebody
      decided about this venue. Written last, so a build that threw does not

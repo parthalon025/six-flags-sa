@@ -93,7 +93,7 @@ Concurrent Cloud Agent tasks share `/workspace`. Do not `git checkout` there —
 
 ## Builder ↔ app contract
 
-The venue builder (`packages/venue-builder/`, invoked as `npm run venues:*`) is the only thing allowed to write `apps/party-tracker/public/venues/*.map.json`, `apps/party-tracker/public/venues/*.pois.json`, `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Everything the app reads at runtime comes out of that pipeline.
+The venue builder (`packages/venue-builder/`, invoked as `npm run venues:*`) is the only thing allowed to write `apps/party-tracker/public/venues/*.map.json`, `apps/party-tracker/public/venues/*.pois.json`, `apps/party-tracker/public/venues/*.gaps.json`, `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Everything the app reads at runtime comes out of that pipeline.
 
 ### Builder output is wrong → fix the builder, not the output
 

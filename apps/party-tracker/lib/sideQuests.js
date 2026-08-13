@@ -73,64 +73,112 @@ const TIER1 = [
 ];
 
 /**
- * Build durable side-quest cards from the loaded venue POIs.
- * @param {{ pois?: object[], venueName?: string }} opts
+ * Build durable side-quest cards from Gaps the builder shipped.
+ * The phone does not invent height / queue / amenity Gaps from POI fields.
+ * Missing or empty `gaps` means no durable cards — live ambient quests remain.
+ *
+ * @param {{ pois?: object[], gaps?: object[], venueName?: string, venueId?: string, scoredKeys?: string[] }} opts
  */
-export function buildSideQuests({ pois = [], venueName = 'this park' } = {}) {
-  const rides = pois.filter((p) => p.c === 'coaster' || p.c === 'ride');
-  const noHeight = rides.filter((p) => !p.h);
-  const noEntrance = rides.filter((p) => !p.e);
-  const hasRestroom = pois.some((p) => p.c === 'restroom');
-  const hasFood = pois.some((p) => p.c === 'food');
-  const targetIds = (list) => list.slice(0, 8).map((p) => identityOf(p) || p.n).filter(Boolean);
-
-  const durable = [];
-
-  if (noHeight.length) {
-    durable.push({
-      id: 'height_rule',
-      type: 'height_rule',
-      title: 'Confirm height on the sign',
-      blurb: `${noHeight.length} ride${noHeight.length === 1 ? '' : 's'} at ${venueName} still say “check at the ride”.`,
-      targets: targetIds(noHeight),
-      icon: 'flag.fill',
-    });
-  }
-
-  if (noEntrance.length) {
-    durable.push({
-      id: 'queue_entrance',
-      type: 'geometry_nudge',
-      title: 'Pin the queue entrance',
-      blurb: 'Stand where the line starts and drop a pin — OSM rarely has this.',
-      targets: targetIds(noEntrance),
-      icon: 'mappin.and.ellipse',
-    });
-  }
-
-  if (!hasRestroom) {
-    durable.push({
-      id: 'poi_restroom',
-      type: 'poi_presence',
-      title: 'Find the toilets',
-      blurb: 'This map has no restroom yet. Mark one you can see.',
-      targets: [],
-      icon: 'flag.fill',
-    });
-  }
-
-  if (!hasFood) {
-    durable.push({
-      id: 'poi_food',
-      type: 'poi_presence',
-      title: 'Find somewhere to eat',
-      blurb: 'No food places on this map yet. Mark a stand or restaurant.',
-      targets: [],
-      icon: 'flag.fill',
-    });
-  }
-
+export function buildSideQuests({
+  pois = [],
+  gaps = null,
+  venueName = 'this park',
+  venueId = '',
+  scoredKeys = [],
+} = {}) {
+  const durable = groupShippedGaps({
+    gaps: Array.isArray(gaps) ? gaps : [],
+    venueName,
+    venueId,
+    scoredKeys,
+  });
   return { durable, ambient: TIER1, counts: { durable: durable.length, ambient: TIER1.length } };
+}
+
+const GAP_CARD = {
+  height: {
+    title: 'Confirm height on the sign',
+    blurb: (n, venueName) =>
+      `${n} ride${n === 1 ? '' : 's'} at ${venueName} still say “check at the ride”.`,
+    icon: 'flag.fill',
+  },
+  queue: {
+    title: 'Pin the queue entrance',
+    blurb: () => 'Stand where the line starts and drop a pin — OSM rarely has this.',
+    icon: 'mappin.and.ellipse',
+  },
+  restroom: {
+    title: 'Find the restrooms',
+    blurb: () => 'This map has no restroom yet. Mark one you can see.',
+    icon: 'flag.fill',
+  },
+  food: {
+    title: 'Find somewhere to eat',
+    blurb: () => 'No food places on this map yet. Mark a stand or restaurant.',
+    icon: 'flag.fill',
+  },
+  gate: {
+    title: 'Find a way in',
+    blurb: () => 'Mark a gate or entrance so others can find it.',
+    icon: 'mappin.and.ellipse',
+  },
+  camping: {
+    title: 'What the campground has laid on',
+    blurb: () => 'Hookups and pad facts are not in OSM — confirm what is actually here.',
+    icon: 'flag.fill',
+    rankLast: true,
+  },
+};
+
+const GAP_TYPE_ORDER = ['height', 'queue', 'restroom', 'food', 'gate', 'camping'];
+
+function groupShippedGaps({ gaps, venueName, venueId, scoredKeys }) {
+  const scored = new Set(Array.isArray(scoredKeys) ? scoredKeys : []);
+  const byType = new Map();
+  for (const gap of gaps) {
+    const type = gap?.type;
+    if (!GAP_CARD[type]) continue;
+    const target = gap.target ?? null;
+    if (!byType.has(type)) byType.set(type, []);
+    byType.get(type).push({ type, target });
+  }
+  const durable = [];
+  for (const type of GAP_TYPE_ORDER) {
+    const items = byType.get(type);
+    if (!items?.length) continue;
+    const meta = GAP_CARD[type];
+    const targets = items.map((g) => g.target).filter(Boolean);
+    const done = items.filter((g) => scored.has(`${venueId}:${type}:${g.target ?? ''}`)).length;
+    durable.push({
+      id: `gap:${type}`,
+      type,
+      title: meta.title,
+      blurb: meta.blurb(items.length, venueName),
+      targets,
+      items,
+      progress: { done, total: items.length },
+      icon: meta.icon,
+      rankLast: Boolean(meta.rankLast),
+    });
+  }
+  return durable;
+}
+
+/** Closed chips for a height-sign Gap. `0` is “no minimum”, not “nobody looked”. */
+export const HEIGHT_INCH_CHIPS = [36, 40, 42, 44, 48, 52, 54];
+
+export const CAMPING_HOOKUPS = [
+  { value: 'none', label: 'No hookups' },
+  { value: 'water', label: 'Water' },
+  { value: 'electric', label: 'Electric' },
+  { value: 'full', label: 'Full hookup' },
+];
+
+/** Add-Place chips this ship (Field Research). Full ontology Create is later Cartographer. */
+export const ADD_PLACE_TYPES = ['restroom', 'food', 'gate'];
+
+export function isGapQuest(quest) {
+  return Boolean(quest?.id?.startsWith('gap:') || GAP_CARD[quest?.type]);
 }
 
 /**
@@ -167,6 +215,9 @@ export function sortByProximity(quests = [], pois = [], position = null, radiusM
       distanceM: nearestTargetDistance(quest, pois, position),
     }))
     .sort((a, b) => {
+      if (Boolean(a.quest.rankLast) !== Boolean(b.quest.rankLast)) {
+        return a.quest.rankLast ? 1 : -1;
+      }
       const aNear = a.distanceM != null && a.distanceM <= radiusM;
       const bNear = b.distanceM != null && b.distanceM <= radiusM;
       if (aNear !== bNear) return aNear ? -1 : 1;

@@ -1067,9 +1067,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.sideQuestChip.on {
+  background: var(--blue);
+  color: var(--onTint);
+  border-color: transparent;
+}
 .sideQuestChip:active {
   transform: scale(.97);
 }
+.sideQuestProgress {
+  font-weight: 500;
+  color: var(--label2);
+}
+.sideQuestReward { color: var(--blue); }
+.signInRank { margin-top: 2px; }
 .sideQuestNear {
   color: var(--adventure);
   font-weight: 500;

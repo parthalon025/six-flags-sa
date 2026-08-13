@@ -1,0 +1,246 @@
+{
+  "version": 1,
+  "venue": "cedar-point",
+  "gaps": [
+    {
+      "type": "height",
+      "target": "cedar-point-marina-pool"
+    },
+    {
+      "type": "queue",
+      "target": "4x4-s"
+    },
+    {
+      "type": "queue",
+      "target": "atomic-scrambler"
+    },
+    {
+      "type": "queue",
+      "target": "balloon-race"
+    },
+    {
+      "type": "queue",
+      "target": "blue-streak"
+    },
+    {
+      "type": "queue",
+      "target": "breakwater-bay"
+    },
+    {
+      "type": "queue",
+      "target": "cadillac-cars"
+    },
+    {
+      "type": "queue",
+      "target": "cedar-creek-mine-ride"
+    },
+    {
+      "type": "queue",
+      "target": "cedar-downs-racing-derby"
+    },
+    {
+      "type": "queue",
+      "target": "cedar-point-marina-pool"
+    },
+    {
+      "type": "queue",
+      "target": "charlie-brown-s-wind-up"
+    },
+    {
+      "type": "queue",
+      "target": "corkscrew"
+    },
+    {
+      "type": "queue",
+      "target": "dodgem"
+    },
+    {
+      "type": "queue",
+      "target": "dune-buggies"
+    },
+    {
+      "type": "queue",
+      "target": "gatekeeper"
+    },
+    {
+      "type": "queue",
+      "target": "giant-wheel"
+    },
+    {
+      "type": "queue",
+      "target": "great-lakes-cove"
+    },
+    {
+      "type": "queue",
+      "target": "helicopters"
+    },
+    {
+      "type": "queue",
+      "target": "iron-dragon"
+    },
+    {
+      "type": "queue",
+      "target": "kiddy-kingdom-carrousel"
+    },
+    {
+      "type": "queue",
+      "target": "kite-eating-tree"
+    },
+    {
+      "type": "queue",
+      "target": "lake-eerie-nor-easter"
+    },
+    {
+      "type": "queue",
+      "target": "lake-erie-eagles"
+    },
+    {
+      "type": "queue",
+      "target": "lakeslide-landing"
+    },
+    {
+      "type": "queue",
+      "target": "lemmy-s-lagoon"
+    },
+    {
+      "type": "queue",
+      "target": "lily-pad-walk"
+    },
+    {
+      "type": "queue",
+      "target": "magnum-xl-200"
+    },
+    {
+      "type": "queue",
+      "target": "matterhorn"
+    },
+    {
+      "type": "queue",
+      "target": "maverick"
+    },
+    {
+      "type": "queue",
+      "target": "maxair"
+    },
+    {
+      "type": "queue",
+      "target": "midway-carousel"
+    },
+    {
+      "type": "queue",
+      "target": "monster"
+    },
+    {
+      "type": "queue",
+      "target": "motorcycles"
+    },
+    {
+      "type": "queue",
+      "target": "mustangs"
+    },
+    {
+      "type": "queue",
+      "target": "ocean-motion"
+    },
+    {
+      "type": "queue",
+      "target": "peanuts-500"
+    },
+    {
+      "type": "queue",
+      "target": "perch-plunge"
+    },
+    {
+      "type": "queue",
+      "target": "pipe-scream"
+    },
+    {
+      "type": "queue",
+      "target": "point-plummet"
+    },
+    {
+      "type": "queue",
+      "target": "police-cars"
+    },
+    {
+      "type": "queue",
+      "target": "portside-plunge"
+    },
+    {
+      "type": "queue",
+      "target": "power-tower"
+    },
+    {
+      "type": "queue",
+      "target": "raptor"
+    },
+    {
+      "type": "queue",
+      "target": "red-baron"
+    },
+    {
+      "type": "queue",
+      "target": "riptide-raceway"
+    },
+    {
+      "type": "queue",
+      "target": "rock-spin-turn"
+    },
+    {
+      "type": "queue",
+      "target": "roto-whip"
+    },
+    {
+      "type": "queue",
+      "target": "rougarou"
+    },
+    {
+      "type": "queue",
+      "target": "runaway-rapids"
+    },
+    {
+      "type": "queue",
+      "target": "siren-s-curse"
+    },
+    {
+      "type": "queue",
+      "target": "sky-fighters"
+    },
+    {
+      "type": "queue",
+      "target": "skyhawk"
+    },
+    {
+      "type": "queue",
+      "target": "slingshot"
+    },
+    {
+      "type": "queue",
+      "target": "snake-river-falls"
+    },
+    {
+      "type": "queue",
+      "target": "snoopy-bounce"
+    },
+    {
+      "type": "queue",
+      "target": "snoopy-s-deep-sea-divers"
+    },
+    {
+      "type": "queue",
+      "target": "snoopy-s-express-railroad"
+    },
+    {
+      "type": "queue",
+      "target": "snoopy-s-space-race"
+    },
+    {
+      "type": "queue",
+      "target": "space-age"
+    },
+    {
+      "type": "queue",
+      "target": "splash2o"
+    }
+  ]
+}

@@ -3,19 +3,32 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import SignInCard from '@/components/SignInCard';
-import { softGateBlocks } from '@/lib/auth/session';
-import { buildSideQuests, isLiveQuest, rideReportFromLiveQuest, sortByProximity } from '@/lib/sideQuests';
+import { awardQuestXp, readLocalSession, softGateBlocks } from '@/lib/auth/session';
+import { readProfileCache } from '@/lib/auth/profileCache';
+import {
+  ADD_PLACE_TYPES,
+  CAMPING_HOOKUPS,
+  HEIGHT_INCH_CHIPS,
+  NEARBY_RADIUS_M,
+  buildSideQuests,
+  isGapQuest,
+  isLiveQuest,
+  nearestTargetDistance,
+  rideReportFromLiveQuest,
+  sortByProximity,
+} from '@/lib/sideQuests';
 import { findPlace, titleOf } from '@/lib/venue/ids';
+import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
+import { rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
 
 /**
  * Side Quests tab — missions for facts only guests on the ground can settle.
  *
  * Soft-gate (EP.3): browse the list anonymously. Gap Side Quest submit needs
  * sign-in. Live Ride reports (walk near and mark it) are name-first.
- * A tap opens a small note + status form; Submit queues the report on this
- * phone (lib/adventure/questQueue.js). When `position` is known, quests near
- * it float to the top and the form can attach where the guest is standing.
+ * Closed chips are the fact; the optional note is not. XP lands on the Profile;
+ * Rank-up is the reward — cards stay meaning-first.
  */
 
 const STATUS_OPTIONS = [
@@ -24,10 +37,18 @@ const STATUS_OPTIONS = [
   { value: 'issue', label: 'Problem here' },
 ];
 
+function inVenue(bounds, position) {
+  if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return false;
+  if (!bounds) return true;
+  return withinBounds(bounds, position.lat, position.lng);
+}
+
 export default function SideQuestsPanel({
   venueName = null,
   venueId = null,
   pois = [],
+  gaps = [],
+  bounds = null,
   position = null,
   onSelectPlace = null,
   session = null,
@@ -37,15 +58,40 @@ export default function SideQuestsPanel({
   const queue = defaultQuestQueue();
   const gapNeedsAuth = softGateBlocks('adventure', session);
   const questBlocked = (quest) => (isLiveQuest(quest) ? false : gapNeedsAuth);
+  const [scoredKeys, setScoredKeys] = useState([]);
+  const [rewardLine, setRewardLine] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    readProfileCache().then((snap) => {
+      if (alive && Array.isArray(snap?.scoredKeys)) setScoredKeys(snap.scoredKeys);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [session?.userId]);
+
   const { durable: rawDurable, ambient, counts } = buildSideQuests({
     pois,
+    gaps,
     venueName: venueName || 'this park',
+    venueId: venueId || '',
+    scoredKeys,
   });
-  const durable = position ? sortByProximity(rawDurable, pois, position) : rawDurable;
+  const inside = inVenue(bounds, position);
+  const withCampingNear = rawDurable.map((q) =>
+    q.rankLast && inside ? { ...q, nearby: true } : q,
+  );
+  const durable = position ? sortByProximity(withCampingNear, pois, position) : withCampingNear;
 
   const [openQuestId, setOpenQuestId] = useState(null);
   const [note, setNote] = useState('');
   const [status, setStatus] = useState(STATUS_OPTIONS[0].value);
+  const [heightIn, setHeightIn] = useState(null);
+  const [atLine, setAtLine] = useState(false);
+  const [placeName, setPlaceName] = useState('');
+  const [hookup, setHookup] = useState(null);
+  const [selectedTarget, setSelectedTarget] = useState(null);
   const [pending, setPending] = useState(0);
   const [lastSubmittedId, setLastSubmittedId] = useState(null);
 
@@ -59,6 +105,16 @@ export default function SideQuestsPanel({
     };
   }, [queue, lastSubmittedId]);
 
+  function resetForm() {
+    setNote('');
+    setStatus(STATUS_OPTIONS[0].value);
+    setHeightIn(null);
+    setAtLine(false);
+    setPlaceName('');
+    setHookup(null);
+    setSelectedTarget(null);
+  }
+
   function toggleQuest(quest) {
     if (questBlocked(quest)) return;
     if (openQuestId === quest.id) {
@@ -66,25 +122,174 @@ export default function SideQuestsPanel({
       return;
     }
     setOpenQuestId(quest.id);
-    setNote('');
-    setStatus(STATUS_OPTIONS[0].value);
+    resetForm();
+    const nearTarget = (quest.targets || []).find((t) => {
+      const d = nearestTargetDistance({ targets: [t] }, pois, position);
+      return d != null && d <= NEARBY_RADIUS_M;
+    });
+    setSelectedTarget(nearTarget || (quest.targets?.length === 1 ? quest.targets[0] : null));
+  }
+
+  function factReady(quest) {
+    if (isLiveQuest(quest)) return Boolean(status);
+    if (quest.type === 'height') return Number.isFinite(heightIn) && selectedTarget;
+    if (quest.type === 'queue') return atLine && (selectedTarget || !quest.targets?.length);
+    if (ADD_PLACE_TYPES.includes(quest.type)) return Boolean(placeName.trim());
+    if (quest.type === 'camping') return Boolean(hookup);
+    return false;
+  }
+
+  function walkedNearFor(quest) {
+    if (quest.type === 'camping' || ADD_PLACE_TYPES.includes(quest.type)) return inside;
+    if (isLiveQuest(quest)) {
+      const d = nearestTargetDistance(
+        { targets: quest.targets?.length ? quest.targets : pois.filter((p) => p.c === 'coaster' || p.c === 'ride').map((p) => p.i) },
+        pois,
+        position,
+      );
+      return d != null && d <= NEARBY_RADIUS_M;
+    }
+    if (selectedTarget) {
+      const d = nearestTargetDistance({ targets: [selectedTarget] }, pois, position);
+      return d != null && d <= NEARBY_RADIUS_M;
+    }
+    return Boolean(quest.nearby);
+  }
+
+  function payloadFor(quest) {
+    if (isLiveQuest(quest)) return { note: note.trim(), status };
+    if (quest.type === 'height') return { heightIn, target: selectedTarget, note: note.trim() || undefined };
+    if (quest.type === 'queue') return { atLine: true, target: selectedTarget, note: note.trim() || undefined };
+    if (ADD_PLACE_TYPES.includes(quest.type)) {
+      return { name: placeName.trim(), category: quest.type, note: note.trim() || undefined };
+    }
+    if (quest.type === 'camping') return { hookup, note: note.trim() || undefined };
+    return { note: note.trim() };
   }
 
   async function submit(quest) {
     if (questBlocked(quest)) return;
+    if (!factReady(quest)) return;
+    const kind = quest.type || quest.id;
+    const target = selectedTarget || (ADD_PLACE_TYPES.includes(quest.type) || quest.type === 'camping' ? null : quest.targets?.[0] || null);
     const report = createReport({
       questId: quest.id,
       venueId,
-      kind: quest.type || quest.id,
-      payload: { note: note.trim(), status },
+      placeId: target,
+      kind,
+      payload: payloadFor(quest),
       lat: position?.lat ?? null,
       lng: position?.lng ?? null,
     });
     await queue.enqueue(report);
     const live = rideReportFromLiveQuest(quest, { status, pois, position });
     if (live && onRideReport) onRideReport(live.rideId, live.status);
+    const action = isLiveQuest(quest) ? 'live' : 'first';
+    const key = scoreKey(venueId, isLiveQuest(quest) ? kind : quest.type, live?.rideId || target);
+    const scored = await awardQuestXp({
+      action,
+      key,
+      walkedNear: walkedNearFor(quest),
+      now: Date.now(),
+    });
+    setScoredKeys(scored.profile.scoredKeys || []);
+    if (scored.rankUp) {
+      const label = rankReward(scored.profile.rank).label;
+      setRewardLine(`You're a ${label} now.`);
+    }
+    const nextSession = readLocalSession();
+    if (nextSession) onSession?.(nextSession);
     setOpenQuestId(null);
     setLastSubmittedId(report.id);
+  }
+
+  function renderForm(quest) {
+    if (isLiveQuest(quest)) {
+      return (
+        <div className="chips">
+          {STATUS_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`chip ${status === opt.value ? 'on' : ''}`}
+              aria-pressed={status === opt.value}
+              onClick={() => setStatus(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+    if (quest.type === 'height') {
+      return (
+        <div className="chips wrap">
+          {HEIGHT_INCH_CHIPS.map((n) => (
+            <button
+              key={n}
+              type="button"
+              className={`chip ${heightIn === n ? 'on' : ''}`}
+              aria-pressed={heightIn === n}
+              onClick={() => setHeightIn(n)}
+            >
+              {n}&quot;
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`chip ${heightIn === 0 ? 'on' : ''}`}
+            aria-pressed={heightIn === 0}
+            onClick={() => setHeightIn(0)}
+          >
+            No min
+          </button>
+        </div>
+      );
+    }
+    if (quest.type === 'queue') {
+      return (
+        <div className="chips">
+          <button
+            type="button"
+            className={`chip ${atLine ? 'on' : ''}`}
+            aria-pressed={atLine}
+            onClick={() => setAtLine(true)}
+          >
+            I&apos;m at the line
+          </button>
+        </div>
+      );
+    }
+    if (ADD_PLACE_TYPES.includes(quest.type)) {
+      return (
+        <input
+          className="field"
+          maxLength={48}
+          placeholder="Name on the sign"
+          aria-label="Place name"
+          value={placeName}
+          onChange={(e) => setPlaceName(e.target.value)}
+        />
+      );
+    }
+    if (quest.type === 'camping') {
+      return (
+        <div className="chips wrap">
+          {CAMPING_HOOKUPS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={`chip ${hookup === opt.value ? 'on' : ''}`}
+              aria-pressed={hookup === opt.value}
+              onClick={() => setHookup(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+    return null;
   }
 
   const renderQuest = (q) => {
@@ -107,6 +312,10 @@ export default function SideQuestsPanel({
     } else {
       action = <span className="rowValue">Soon</span>;
     }
+    const progress =
+      isGapQuest(q) && q.progress?.total > 1
+        ? ` · ${q.progress.done}/${q.progress.total}`
+        : '';
     return (
       <div key={q.id} className="row sideQuestRow" role="listitem">
         <span className="sideQuestGlyph" aria-hidden="true">
@@ -115,6 +324,7 @@ export default function SideQuestsPanel({
         <span className="rowText">
           <b className="sideQuestTitle">
             {q.title}
+            {progress ? <span className="sideQuestProgress">{progress}</span> : null}
             {q.nearby && <span className="sideQuestNear"> · nearby</span>}
           </b>
           <span className="sideQuestBlurb">{q.blurb}</span>
@@ -123,12 +333,15 @@ export default function SideQuestsPanel({
               {q.targets.slice(0, 4).map((target) => {
                 const place = findPlace(pois, target);
                 const label = titleOf(place) || target;
+                const selected = selectedTarget === target && open;
                 return (
                 <button
                   key={target}
                   type="button"
-                  className="sideQuestChip"
+                  className={`sideQuestChip ${selected ? 'on' : ''}`}
+                  aria-pressed={open ? selected : undefined}
                   onClick={() => {
+                    if (open) setSelectedTarget(target);
                     if (place && onSelectPlace) onSelectPlace(place);
                   }}
                 >
@@ -143,6 +356,7 @@ export default function SideQuestsPanel({
           )}
           {open && !blocked && (
             <div className="sideQuestForm">
+              {renderForm(q)}
               <textarea
                 className="field sideQuestNote"
                 rows={2}
@@ -152,22 +366,10 @@ export default function SideQuestsPanel({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
               />
-              <div className="chips">
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    className={`chip ${status === opt.value ? 'on' : ''}`}
-                    aria-pressed={status === opt.value}
-                    onClick={() => setStatus(opt.value)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
               <button
                 type="button"
                 className="btn small primary sideQuestSubmit"
+                disabled={!factReady(q)}
                 onClick={() => submit(q)}
               >
                 <Icon name="checkmark" size={16} /> Submit
@@ -194,6 +396,7 @@ export default function SideQuestsPanel({
       </div>
 
       {gapNeedsAuth ? <SignInCard session={session} onSession={onSession} /> : null}
+      {rewardLine ? <p className="fine block sideQuestReward">{rewardLine}</p> : null}
 
       <div className="label">
         For {venueName || 'this park'}

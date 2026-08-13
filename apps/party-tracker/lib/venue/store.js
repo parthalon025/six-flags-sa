@@ -32,6 +32,7 @@ const state = {
   venue: null, // the manifest row for the active venue
   map: null, // drawn geometry
   pois: [], // places
+  gaps: [], // builder-shipped Gaps; empty if the file is missing
   status: 'idle', // idle | loading | ready | error
   error: null,
   /** True once the visitor has chosen a venue by hand — stops auto-switching. */
@@ -194,6 +195,33 @@ async function fetchJson(url, { refresh = false } = {}) {
   return res.json();
 }
 
+/** Missing Gaps must not fail venue load — 404 / network → null. */
+async function fetchOptionalJson(url, { refresh = false } = {}) {
+  try {
+    const res = await fetch(url, venueFetchInit(refresh));
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+const SHIPPED_GAP_TYPES = new Set(['height', 'queue', 'restroom', 'food', 'gate', 'camping']);
+
+export function gapsUrlFor(venue) {
+  if (venue?.gaps) return venue.gaps;
+  if (venue?.id) return `/venues/${venue.id}.gaps.json`;
+  return null;
+}
+
+/** Phone-safe Gap list. Unknown types and a missing document are []. */
+export function normalizeGapsDocument(data) {
+  const rows = Array.isArray(data) ? data : Array.isArray(data?.gaps) ? data.gaps : [];
+  return rows.filter(
+    (g) => g && typeof g.type === 'string' && SHIPPED_GAP_TYPES.has(g.type) && (g.target == null || typeof g.target === 'string'),
+  ).map((g) => ({ type: g.type, target: g.target ?? null }));
+}
+
 export async function loadManifest({ refresh = false } = {}) {
   if (state.manifest && !refresh) return state.manifest;
   try {
@@ -208,9 +236,10 @@ export async function loadManifest({ refresh = false } = {}) {
 }
 
 /**
- * Load a venue's geometry and places and make it active. Both files are
+ * Load a venue's geometry, places, and Gaps and make it active. Files are
  * fetched, not imported, which is the whole point: a venue added to the
  * manifest is available to a phone that already has the app installed.
+ * A missing Gaps file is an empty list — it must not fail the park load.
  */
 export async function selectVenue(id, { pin = false, refresh = false } = {}) {
   const manifest = await loadManifest({ refresh });
@@ -224,7 +253,7 @@ export async function selectVenue(id, { pin = false, refresh = false } = {}) {
 
   const previous =
     state.status === 'ready'
-      ? { venue: state.venue, map: state.map, pois: state.pois }
+      ? { venue: state.venue, map: state.map, pois: state.pois, gaps: state.gaps }
       : null;
 
   if (!already) {
@@ -233,9 +262,11 @@ export async function selectVenue(id, { pin = false, refresh = false } = {}) {
     emit();
   }
   try {
-    const [map, pois] = await Promise.all([
+    const gapsUrl = gapsUrlFor(venue);
+    const [map, pois, gapsDoc] = await Promise.all([
       fetchJson(venue.map, { refresh }),
       fetchJson(venue.pois, { refresh }),
+      gapsUrl ? fetchOptionalJson(gapsUrl, { refresh }) : Promise.resolve(null),
     ]);
     state.venue = venue;
     state.map = map;
@@ -243,6 +274,7 @@ export async function selectVenue(id, { pin = false, refresh = false } = {}) {
     // addressed by id and crosses to other phones and to the host, so the
     // browser has to number a venue's repeats exactly the way they do.
     state.pois = withIds(pois);
+    state.gaps = normalizeGapsDocument(gapsDoc);
     state.status = 'ready';
     state.error = null;
     emit();
@@ -262,6 +294,7 @@ export async function selectVenue(id, { pin = false, refresh = false } = {}) {
       state.venue = previous.venue;
       state.map = previous.map;
       state.pois = previous.pois;
+      state.gaps = previous.gaps || [];
       state.status = 'ready';
       state.error = null;
       emit();

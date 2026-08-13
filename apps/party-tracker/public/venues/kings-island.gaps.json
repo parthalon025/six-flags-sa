@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "gaps": [
+    {
+      "type": "height",
+      "target": "3-point-challange"
+    },
+    {
+      "type": "height",
+      "target": "bank-ball"
+    },
+    {
+      "type": "height",
+      "target": "beagle-scout-acres"
+    },
+    {
+      "type": "height",
+      "target": "goblet-toss"
+    },
+    {
+      "type": "height",
+      "target": "hang-time"
+    },
+    {
+      "type": "height",
+      "target": "high-striker"
+    },
+    {
+      "type": "height",
+      "target": "racer-blue"
+    },
+    {
+      "type": "height",
+      "target": "racer-red"
+    },
+    {
+      "type": "height",
+      "target": "ring-toss"
+    },
+    {
+      "type": "height",
+      "target": "rope-ladder"
+    },
+    {
+      "type": "height",
+      "target": "shoot-down"
+    },
+    {
+      "type": "height",
+      "target": "xtreme-skyflyer"
+    },
+    {
+      "type": "queue",
+      "target": "3-point-challange"
+    },
+    {
+      "type": "queue",
+      "target": "adventure-express"
+    },
+    {
+      "type": "queue",
+      "target": "aruba-tuba"
+    },
+    {
+      "type": "queue",
+      "target": "backlot-stunt-coaster"
+    },
+    {
+      "type": "queue",
+      "target": "bank-ball"
+    },
+    {
+      "type": "queue",
+      "target": "banshee"
+    },
+    {
+      "type": "queue",
+      "target": "beagle-scout-acres"
+    },
+    {
+      "type": "queue",
+      "target": "boo-blasters-on-boo-hill"
+    },
+    {
+      "type": "queue",
+      "target": "breakers-bay"
+    },
+    {
+      "type": "queue",
+      "target": "cargo-loco"
+    },
+    {
+      "type": "queue",
+      "target": "castaway-cove"
+    },
+    {
+      "type": "queue",
+      "target": "character-carousel"
+    },
+    {
+      "type": "queue",
+      "target": "charlie-brown-s-rushing-river-log-ride"
+    },
+    {
+      "type": "queue",
+      "target": "charlie-brown-s-wind-up"
+    },
+    {
+      "type": "queue",
+      "target": "coconut-cove"
+    },
+    {
+      "type": "queue",
+      "target": "congo-falls"
+    },
+    {
+      "type": "queue",
+      "target": "delirium"
+    },
+    {
+      "type": "queue",
+      "target": "diamondback"
+    },
+    {
+      "type": "queue",
+      "target": "dodgem"
+    },
+    {
+      "type": "queue",
+      "target": "drop-tower-scream-zone"
+    },
+    {
+      "type": "queue",
+      "target": "flight-of-fear"
+    },
+    {
+      "type": "queue",
+      "target": "franklin-s-flyers"
+    },
+    {
+      "type": "queue",
+      "target": "goblet-toss"
+    },
+    {
+      "type": "queue",
+      "target": "hang-time"
+    },
+    {
+      "type": "queue",
+      "target": "high-striker"
+    },
+    {
+      "type": "queue",
+      "target": "invertigo"
+    },
+    {
+      "type": "queue",
+      "target": "joe-cool-s-dodgen-school"
+    },
+    {
+      "type": "queue",
+      "target": "kings-mills-antique-autos"
+    },
+    {
+      "type": "queue",
+      "target": "kite-eating-tree"
+    },
+    {
+      "type": "queue",
+      "target": "linus-beetle-bugs"
+    },
+    {
+      "type": "queue",
+      "target": "linus-launcher"
+    },
+    {
+      "type": "queue",
+      "target": "lookout-lagoon"
+    },
+    {
+      "type": "queue",
+      "target": "mystic-timbers"
+    },
+    {
+      "type": "queue",
+      "target": "orion"
+    },
+    {
+      "type": "queue",
+      "target": "peanuts-500"
+    },
+    {
+      "type": "queue",
+      "target": "peanuts-off-road-rally"
+    },
+    {
+      "type": "queue",
+      "target": "pipeline-paradise"
+    },
+    {
+      "type": "queue",
+      "target": "racer-blue"
+    },
+    {
+      "type": "queue",
+      "target": "racer-red"
+    },
+    {
+      "type": "queue",
+      "target": "ring-toss"
+    },
+    {
+      "type": "queue",
+      "target": "rope-ladder"
+    },
+    {
+      "type": "queue",
+      "target": "sally-s-sea-plane"
+    },
+    {
+      "type": "queue",
+      "target": "shake-rattle-roll"
+    },
+    {
+      "type": "queue",
+      "target": "shoot-down"
+    },
+    {
+      "type": "queue",
+      "target": "snoopy-s-junction"
+    },
+    {
+      "type": "queue",
+      "target": "snoopy-s-red-baron"
+    },
+    {
+      "type": "queue",
+      "target": "snoopy-s-space-buggies"
+    },
+    {
+      "type": "queue",
+      "target": "soap-box-racers"
+    },
+    {
+      "type": "queue",
+      "target": "sol-spin"
+    },
+    {
+      "type": "queue",
+      "target": "splash-river"
+    },
+    {
+      "type": "queue",
+      "target": "surf-dog"
+    },
+    {
+      "type": "queue",
+      "target": "the-bat"
+    },
+    {
+      "type": "queue",
+      "target": "the-beast"
+    },
+    {
+      "type": "queue",
+      "target": "the-grand-carousel"
+    },
+    {
+      "type": "queue",
+      "target": "the-great-pumpkin-coaster"
+    },
+    {
+      "type": "queue",
+      "target": "the-monster"
+    },
+    {
+      "type": "queue",
+      "target": "the-racer"
+    },
+    {
+      "type": "queue",
+      "target": "the-scrambler"
+    },
+    {
+      "type": "queue",
+      "target": "the-zephyr"
+    }
+  ]
+}
