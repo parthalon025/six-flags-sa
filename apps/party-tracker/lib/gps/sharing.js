@@ -1,11 +1,9 @@
 /**
  * When a party member's GPS may be shared. Canonical, and pure.
  *
- * A fix outside the loaded venue's bounds is not broadcast and is not drawn on
- * other phones — someone at home or in a hotel should not appear on the party
- * map. The check runs at capture time on the sharing phone and again at display
- * time on every viewer, so a position that never left the wire cannot be shown
- * even if the bounds check on the sender was skipped.
+ * A fix outside the loaded venue's bounds is not broadcast as live Location.
+ * Last-known and the in-bounds trail stay visible to the Party and are marked
+ * stale. The live check runs at capture time on the sharing phone.
  *
  * E4.1 precision: approx (~50 m) | precise. Duration timers auto-revert
  * to the safe default (approx) when they expire — never stay precise forever.
@@ -32,9 +30,9 @@ export function shouldShareLocation(bounds, lat, lng) {
   return withinBounds(bounds, lat, lng);
 }
 
-/** Whether another member's last fix should appear on the map or roster. */
-export function isLocationVisible(bounds, lat, lng) {
-  return shouldShareLocation(bounds, lat, lng);
+/** Last-known is visible to the Party whenever we have a pin. */
+export function isLocationVisible(_bounds, lat, lng) {
+  return Number.isFinite(lat) && Number.isFinite(lng);
 }
 
 /**

@@ -1582,27 +1582,24 @@ function ParkMap({
           if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) return null;
           const [sx, sy] = at(m.lat, m.lng);
           const { age, stale, help, facing } = partyMarkerState(m, now);
+          const placeName = m.place?.name || null;
           const trail = Array.isArray(m.trail) ? m.trail.filter((p) => Number.isFinite(p?.lat) && Number.isFinite(p?.lng)) : [];
-          const trailD = trail
-            .map((p, i) => {
-              const [x, y] = at(p.lat, p.lng);
-              return `${i === 0 ? 'M' : 'L'}${x} ${y}`;
-            })
-            .join(' ');
           return (
             <g key={m.id} className="memMarker">
-              {trailD && (
-                <path
-                  d={trailD}
-                  fill="none"
-                  stroke={m.colour}
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  opacity="0.45"
-                  pointerEvents="none"
-                />
-              )}
+              {trail.map((p, i) => {
+                const [x, y] = at(p.lat, p.lng);
+                return (
+                  <circle
+                    key={`${m.id}-t${i}`}
+                    cx={x}
+                    cy={y}
+                    r={2.4}
+                    fill={m.colour}
+                    opacity="0.45"
+                    pointerEvents="none"
+                  />
+                );
+              })}
               {help && <circle cx={sx} cy={sy} r={20} className="helpRing" />}
               {/* Which way they are facing, so a roster row and a map marker
                   tell the same story. */}
@@ -1633,8 +1630,13 @@ function ParkMap({
               <text x={sx} y={sy + 27} className="memName">
                 {m.name}
               </text>
-              {stale && (
+              {placeName ? (
                 <text x={sx} y={sy + 37} className="memAge">
+                  {placeName}
+                </text>
+              ) : null}
+              {stale && (
+                <text x={sx} y={sy + (placeName ? 47 : 37)} className="memAge">
                   {formatAge(age)}
                 </text>
               )}

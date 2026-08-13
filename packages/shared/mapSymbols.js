@@ -194,7 +194,8 @@ export const STALE_AFTER_MS = 300000;
 export function partyMarkerState(member, now) {
   const ts = member?.ts;
   const age = Number.isFinite(ts) ? now - ts : Infinity;
-  const stale = age > STALE_AFTER_MS;
+  const liveStopped = member?.live === false;
+  const stale = liveStopped || age > STALE_AFTER_MS;
   return {
     age,
     stale,

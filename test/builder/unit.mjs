@@ -72,6 +72,13 @@ const { CADENCE, MOTION, cadenceFor, classifyMotion, createBroadcastGate } = awa
 );
 const { isLocationVisible, shouldShareLocation } = await import('../../apps/party-tracker/lib/gps/sharing.js');
 const {
+  AT_PLACE_M,
+  attachPlace,
+  isLocationLive,
+  locationCopy,
+  placeAt,
+} = await import('../../apps/party-tracker/lib/location.js');
+const {
   MAX_ACC_M,
   MAX_SPEED_MS,
   TELEPORT_M,
@@ -155,8 +162,15 @@ const {
   GLYPHS,
   SYMBOLS,
 } = await import('../../apps/party-tracker/lib/mapSymbols.js');
-const { venueChoiceFor, intakeChoiceFor, venueForPosition, venuesByDistance, withinBounds } =
-  await import('../../apps/party-tracker/lib/venue/store.js');
+const {
+  venueChoiceFor,
+  intakeChoiceFor,
+  venueForPosition,
+  venuesByDistance,
+  withinBounds,
+  shouldRefreshVenueAtBoot,
+  venueFetchInit,
+} = await import('../../apps/party-tracker/lib/venue/store.js');
 const { CATEGORY_LABELS, landTint } = await import('../../apps/party-tracker/lib/theme.js');
 const {
   SHEET_CHROME_PX,
@@ -1433,9 +1447,94 @@ await check('shouldShareLocation allows in-park fixes and blocks off-site ones',
   });
 }
 
-await check('isLocationVisible mirrors the sharing rule', () => {
+await check('isLocationVisible keeps last-known even off-site; live is in-bounds only', () => {
   assert.equal(isLocationVisible(KI_BOUNDS, 39.343828, -84.265811), true);
-  assert.equal(isLocationVisible(KI_BOUNDS, 39.35, -84.265811), false);
+  assert.equal(isLocationVisible(KI_BOUNDS, 39.35, -84.265811), true);
+  assert.equal(isLocationVisible(KI_BOUNDS, NaN, -84.265811), false);
+  assert.equal(isLocationLive(KI_BOUNDS, 39.343828, -84.265811), true);
+  assert.equal(isLocationLive(KI_BOUNDS, 39.35, -84.265811), false);
+  return true;
+});
+
+section('location');
+
+const ORION = { i: 'orion', n: 'Orion', lat: 39.345, lng: -84.266, c: 'coaster' };
+const RESTROOM = { i: 'rr-1', n: 'Restroom', lat: 39.34505, lng: -84.26605, c: 'restroom' };
+const BAT = { i: 'the-bat', n: 'The Bat', lat: 39.3452, lng: -84.266, c: 'coaster' };
+const FOOD = { i: 'funnel', n: 'Funnel Cakes', lat: 39.34, lng: -84.27, c: 'food' };
+
+await check('placeAt names a Place only at a slot, not walking past', () => {
+  assert.equal(placeAt([ORION], 39.345, -84.266)?.name, 'Orion');
+  assert.equal(placeAt([ORION], 39.348, -84.27), null);
+  return true;
+});
+
+await check('placeAt never returns two names; recognizable Place wins over restroom', () => {
+  const at = placeAt([ORION, RESTROOM], ORION.lat, ORION.lng);
+  assert.equal(at.name, 'Orion');
+  return true;
+});
+
+await check('placeAt uses the slot the body is in when two Attractions are equal', () => {
+  const at = placeAt([ORION, BAT], BAT.lat, BAT.lng);
+  assert.equal(at.name, 'The Bat');
+  return true;
+});
+
+await check('locationCopy is last known of name at Place when stale; no hedging', () => {
+  assert.equal(
+    locationCopy({ name: 'Dad', place: { id: 'orion', name: 'Orion' }, live: true }),
+    'Dad · Orion',
+  );
+  assert.equal(
+    locationCopy({ name: 'Dad', place: { id: 'orion', name: 'Orion' }, live: false }),
+    'last known location of Dad at Orion',
+  );
+  assert.equal(locationCopy({ name: 'Dad', live: false }), 'last known location of Dad');
+  const text = `${locationCopy({ name: 'Dad', place: { name: 'Orion' }, live: false })}`;
+  assert.equal(/most likely|probably|\bnear\b/i.test(text), false);
+  return true;
+});
+
+await check('attachPlace stamps Place on the fix so it travels with Location', () => {
+  const loc = attachPlace({ lat: ORION.lat, lng: ORION.lng, ts: 1 }, [ORION, FOOD]);
+  assert.equal(loc.place.name, 'Orion');
+  const walking = attachPlace({ lat: 39.348, lng: -84.27, ts: 2, place: loc.place }, [ORION]);
+  assert.equal(walking.place, undefined);
+  return true;
+});
+
+await check('AT_PLACE_M is tight enough that midway walking is not at the Place', () => {
+  assert.ok(AT_PLACE_M <= 40);
+  return true;
+});
+
+await check('venue boot refreshes only when online; offline keeps the cache', () => {
+  assert.equal(shouldRefreshVenueAtBoot(true), true);
+  assert.equal(shouldRefreshVenueAtBoot(false), false);
+  assert.deepEqual(venueFetchInit(true), { cache: 'no-store' });
+  assert.deepEqual(venueFetchInit(false), {});
+  return true;
+});
+
+await check('location place survives the mesh reducer', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  const loc = { lat: 39.345, lng: -84.266, ts: now + 1, place: { id: 'orion', name: 'Orion' }, live: true };
+  state = reduce(state, { kind: 'location', from: PEER, body: { location: loc } }, now).state;
+  assert.equal(state.members[PEER].location.place.name, 'Orion');
+  state = reduce(
+    state,
+    {
+      kind: 'location',
+      from: PEER,
+      body: { location: { ...loc, ts: now + 2, live: false } },
+    },
+    now + 2,
+  ).state;
+  assert.equal(state.members[PEER].location.live, false);
+  assert.equal(state.members[PEER].location.place.name, 'Orion');
+  assert.ok(state.members[PEER].trail.length >= 1);
   return true;
 });
 
@@ -4793,6 +4892,11 @@ await check('a party marker says its age in its own ink', () => {
   // No heading is not a heading of zero.
   assert.equal(partyMarkerState({ ts: now, heading: null }, now).facing, null);
   assert.equal(partyMarkerState({ ts: now, heading: 0 }, now).facing, 0);
+
+  // Live updates stopped — last-known is stale even if the timestamp is fresh.
+  const revoked = partyMarkerState({ ts: now, heading: 90, live: false }, now);
+  assert.equal(revoked.stale, true);
+  assert.equal(revoked.facing, null);
   return true;
 });
 

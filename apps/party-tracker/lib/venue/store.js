@@ -174,18 +174,37 @@ const readLocal = (key) => {
 const savedChoice = () => readLocal(LS_KEY);
 const savedConfirmation = () => readLocal(LS_CONFIRMED);
 
-async function fetchJson(url) {
-  const res = await fetch(url);
+/** True when boot should refetch Venue files past the HTTP cache. */
+export function shouldRefreshVenueAtBoot(online) {
+  if (typeof online === 'boolean') return online;
+  try {
+    return typeof navigator === 'undefined' || navigator.onLine !== false;
+  } catch {
+    return true;
+  }
+}
+
+export function venueFetchInit(refresh) {
+  return refresh ? { cache: 'no-store' } : {};
+}
+
+async function fetchJson(url, { refresh = false } = {}) {
+  const res = await fetch(url, venueFetchInit(refresh));
   if (!res.ok) throw new Error('Could not download that park\u2019s map.');
   return res.json();
 }
 
-export async function loadManifest() {
-  if (state.manifest) return state.manifest;
-  const manifest = await fetchJson('/venues/manifest.json');
-  state.manifest = manifest;
-  emit();
-  return manifest;
+export async function loadManifest({ refresh = false } = {}) {
+  if (state.manifest && !refresh) return state.manifest;
+  try {
+    const manifest = await fetchJson('/venues/manifest.json', { refresh });
+    state.manifest = manifest;
+    emit();
+    return manifest;
+  } catch (err) {
+    if (state.manifest) return state.manifest;
+    throw err;
+  }
 }
 
 /**
@@ -193,20 +212,31 @@ export async function loadManifest() {
  * fetched, not imported, which is the whole point: a venue added to the
  * manifest is available to a phone that already has the app installed.
  */
-export async function selectVenue(id, { pin = false } = {}) {
-  const manifest = await loadManifest();
+export async function selectVenue(id, { pin = false, refresh = false } = {}) {
+  const manifest = await loadManifest({ refresh });
   const venue = manifest.venues.find((v) => v.id === id) || manifest.venues[0];
   if (!venue) throw new Error('This build ships no venues. Run npm run venues:build.');
-  if (state.venue?.id === venue.id && state.status === 'ready') {
+  const already = state.venue?.id === venue.id && state.status === 'ready';
+  if (already && !refresh) {
     if (pin) pinVenue(venue.id);
     return venue;
   }
 
-  state.status = 'loading';
-  state.error = null;
-  emit();
+  const previous =
+    state.status === 'ready'
+      ? { venue: state.venue, map: state.map, pois: state.pois }
+      : null;
+
+  if (!already) {
+    state.status = 'loading';
+    state.error = null;
+    emit();
+  }
   try {
-    const [map, pois] = await Promise.all([fetchJson(venue.map), fetchJson(venue.pois)]);
+    const [map, pois] = await Promise.all([
+      fetchJson(venue.map, { refresh }),
+      fetchJson(venue.pois, { refresh }),
+    ]);
     state.venue = venue;
     state.map = map;
     // Ids are attached here rather than left to each reader: a ride report is
@@ -214,6 +244,7 @@ export async function selectVenue(id, { pin = false } = {}) {
     // browser has to number a venue's repeats exactly the way they do.
     state.pois = withIds(pois);
     state.status = 'ready';
+    state.error = null;
     emit();
     // Whatever ends up on screen is what this phone opens on next time, chosen
     // or not. Written here rather than at the call sites so no future way of
@@ -227,6 +258,16 @@ export async function selectVenue(id, { pin = false } = {}) {
     AnalyticsEvents.venueLoaded(venue.id);
     return venue;
   } catch (err) {
+    if (previous) {
+      state.venue = previous.venue;
+      state.map = previous.map;
+      state.pois = previous.pois;
+      state.status = 'ready';
+      state.error = null;
+      emit();
+      if (pin) pinVenue(previous.venue.id);
+      return previous.venue;
+    }
     state.status = 'error';
     state.error = err?.message || 'Could not load that venue.';
     emit();
@@ -294,6 +335,10 @@ export async function confirmVenue(id) {
  * Boot: the last venue this phone had on screen — picked by hand, said yes to,
  * or simply the one it was looking at.
  *
+ * When the phone is online, boot refetches the manifest and venue JSON past
+ * the HTTP cache so a new Place or bound lands without waiting for a new
+ * install. Offline keeps the last good map.
+ *
  * The GPS fix has not landed at this point, so this is deliberately not clever.
  * It answers "last"; `retargetForPosition` answers "nearest" a second later,
  * and between them there is no venue this deployment prefers. The manifest's
@@ -303,7 +348,8 @@ export async function confirmVenue(id) {
  * San Antonio opened the app and was shown a park in Ohio.
  */
 export async function bootVenue() {
-  const manifest = await loadManifest();
+  const refresh = shouldRefreshVenueAtBoot();
+  const manifest = await loadManifest({ refresh });
   const has = (id) => Boolean(id) && manifest.venues.some((v) => v.id === id);
   const picked = savedChoice();
   const confirmed = savedConfirmation();
@@ -317,6 +363,7 @@ export async function bootVenue() {
       (has(last) && last) ||
       manifest.default ||
       manifest.venues[0]?.id,
+    { refresh },
   );
 }
 
