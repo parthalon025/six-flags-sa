@@ -3042,6 +3042,133 @@ await check('explain cites the rule inches for companion, max, advisory, and the
   return true;
 });
 
+/* ---------------------------------------------------------- plan --- */
+
+const {
+  PLAN_MAX: PLAN_CEILING,
+  itemFromPlace,
+  normalize: normalizePlanItems,
+  star,
+  unstar,
+  reorder,
+  withDown,
+  loadDraft,
+  saveDraft,
+  clearDraft,
+  promote,
+  view: planView,
+  DRAFT_KEY,
+} = await import('../../apps/party-tracker/lib/plan.js');
+
+section('plan');
+
+function memoryStore(init = {}) {
+  const data = { ...init };
+  return {
+    getItem: (k) => (Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null),
+    setItem: (k, v) => {
+      data[k] = String(v);
+    },
+    removeItem: (k) => {
+      delete data[k];
+    },
+  };
+}
+
+const diamondback = { i: 'diamondback', n: 'Diamondback' };
+const orion = { i: 'orion', n: 'Orion' };
+const beast = { i: 'beast', n: 'The Beast' };
+
+await check('Plan.star adds a Place once and caps at PLAN_MAX', () => {
+  const one = star([], diamondback);
+  assert.deepEqual(one, [{ id: 'diamondback', placeId: 'diamondback', label: 'Diamondback' }]);
+  assert.deepEqual(star(one, diamondback), one);
+  let full = [];
+  for (let i = 0; i < PLAN_CEILING + 3; i++) full = star(full, { i: `ride-${i}`, n: `Ride ${i}` });
+  assert.equal(full.length, PLAN_CEILING);
+  assert.equal(full[0].placeId, 'ride-0');
+  assert.ok(!full.some((s) => s.placeId === `ride-${PLAN_CEILING}`));
+  return true;
+});
+
+await check('Plan.reorder swaps neighbors and ignores out-of-range moves', () => {
+  const plan = normalizePlanItems([diamondback, orion, beast]);
+  assert.deepEqual(
+    reorder(plan, 0, 1).map((s) => s.placeId),
+    ['orion', 'diamondback', 'beast'],
+  );
+  assert.deepEqual(
+    reorder(plan, 2, -1).map((s) => s.placeId),
+    ['diamondback', 'beast', 'orion'],
+  );
+  assert.deepEqual(
+    reorder(plan, 0, -1).map((s) => s.placeId),
+    ['diamondback', 'orion', 'beast'],
+  );
+  assert.deepEqual(unstar(plan, 'orion').map((s) => s.placeId), ['diamondback', 'beast']);
+  return true;
+});
+
+await check('Plan.view is the draft before a Party and the shared list once inside', () => {
+  const draft = star([], diamondback);
+  assert.deepEqual(
+    planView({ draft }).map((s) => s.placeId),
+    ['diamondback'],
+  );
+  assert.deepEqual(
+    planView({ party: { active: true, plan: [orion] }, draft }).map((s) => s.placeId),
+    ['orion'],
+  );
+  assert.deepEqual(planView({ party: { active: true, plan: [] }, draft }), []);
+  return true;
+});
+
+await check('Plan.promote copies a pre-arrival draft into an empty shared Plan only', () => {
+  const store = memoryStore();
+  saveDraft([diamondback, orion], store);
+  const draft = loadDraft(store);
+  assert.deepEqual(
+    draft.map((s) => s.placeId),
+    ['diamondback', 'orion'],
+  );
+  assert.deepEqual(
+    promote(draft, []).map((s) => s.placeId),
+    ['diamondback', 'orion'],
+  );
+  assert.equal(promote(draft, [beast]), null);
+  assert.equal(promote([], []), null);
+  clearDraft(store);
+  assert.deepEqual(loadDraft(store), []);
+  return true;
+});
+
+await check('Plan.withDown strikes reported-down rides instead of dropping them', () => {
+  const plan = normalizePlanItems([diamondback, orion]);
+  const rows = withDown(plan, { diamondback: { status: 'down', note: 'Weather hold' } });
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].down, true);
+  assert.equal(rows[0].reason, 'Weather hold');
+  assert.equal(rows[1].down, false);
+  assert.equal(itemFromPlace(diamondback).placeId, 'diamondback');
+  assert.equal(DRAFT_KEY, 'party-plan-draft-v1');
+  return true;
+});
+
+await check('Plan.loadDraft promotes a leftover scenario blob into the draft Plan', () => {
+  const store = memoryStore({
+    'party-scenario-v1': JSON.stringify({
+      id: 'sc-1',
+      label: 'Today',
+      steps: [{ kind: 'target', placeId: 'diamondback', label: 'Diamondback' }],
+    }),
+  });
+  const items = loadDraft(store);
+  assert.deepEqual(items.map((s) => s.placeId), ['diamondback']);
+  assert.ok(store.getItem(DRAFT_KEY));
+  assert.equal(store.getItem('party-scenario-v1'), null);
+  return true;
+});
+
 
 await check('every override is filed under a name the venue actually has', () => {
   const dir = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
