@@ -1,0 +1,21 @@
+{
+  "appId": "com.parkbound.app",
+  "appName": "Park Bound",
+  "webDir": "native/www",
+  "server": {
+    "url": "https://parkbound.kurat0r.ai",
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true
+    },
+    "StatusBar": {
+      "style": "DARK"
+    },
+    "Keyboard": {
+      "resize": "body"
+    }
+  }
+}

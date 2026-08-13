@@ -88,8 +88,8 @@ def app_store_connect_api_key
 end
 
 def build_web_app
-  UI.header("Building web app (#{web_app_path})")
-  Dir.chdir(web_app_path) do
+  UI.header("Building web app from repo root")
+  Dir.chdir(repo_root) do
     sh("npm", "ci")
     sh("npm", "run", "build")
   end

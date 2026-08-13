@@ -40,13 +40,12 @@ bundle exec fastlane install_plugins
 
 ### Native shells
 
-Park Bound ships as a **Next.js PWA** (`apps/party-tracker`). Official store binaries are Capacitor shells around that app — [ADR-0005](../docs/adr/0005-store-capacitor-shell.md). Fastlane expects `ios/` and `android/` once those projects exist. Do not static-export the Next app (`out/`); `/api/*` stays on the deployed origin.
+Park Bound ships as a **Next.js PWA** (`apps/party-tracker`). Official store binaries are Capacitor shells around that app — [ADR-0005](../docs/adr/0005-store-capacitor-shell.md). Native projects live at `ios/` and `android/`. `npx cap sync` copies `native/www` and plugin registrations. The WebView loads `https://parkbound.kurat0r.ai` so `/api/*` stays on the deployed origin (do not static-export the Next app).
 
 ```bash
-npm install @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
-npx cap init Parkbound com.parkbound.app
-npx cap add ios
-npx cap add android
+npx cap sync
+npx cap open android   # Windows
+npx cap open ios       # macOS / Xcode
 ```
 
 Adjust `WEB_APP_PATH`, `IOS_WORKSPACE_PATH`, and `ANDROID_PROJECT_PATH` in `.env` if your layout differs.
