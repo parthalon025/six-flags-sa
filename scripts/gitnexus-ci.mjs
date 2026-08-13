@@ -21,6 +21,20 @@ export const GITNEXUS_INDEX_PATHS = ['.gitnexus/', 'AGENTS.md', 'CLAUDE.md'];
 /** Commit subject used by `gitnexus-sync.mjs finish --commit`. */
 export const GITNEXUS_REFRESH_MESSAGE = 'chore: refresh gitnexus index';
 
+/** Author the post-merge workflow sets before `bump-version` / gitnexus commits. */
+export const GITNEXUS_BOT_AUTHOR = 'github-actions[bot]';
+
+/**
+ * Fold the GitNexus refresh into an unpushed version-bump commit so Vercel
+ * sees one HEAD with app files instead of a gitnexus-only tip that skips.
+ */
+export function shouldAmendGitnexusIntoBump({ subject, author } = {}) {
+  return (
+    String(subject || '').startsWith('chore: bump version to') &&
+    String(author || '') === GITNEXUS_BOT_AUTHOR
+  );
+}
+
 export function isGitnexusCiNoise(file) {
   const norm = String(file || '')
     .replace(/\\/g, '/')

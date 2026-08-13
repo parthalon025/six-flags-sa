@@ -9,7 +9,8 @@
 # that is often a PR preview with the same tree as the merge, so production
 # would skip and the live alias would stay on a stale deploy.
 #
-# Decision lives in scripts/lib/vercel-ignore.mjs (same app-paths as the bump).
+# Production always builds except GitNexus-only tips. Previews still skip when
+# no app paths changed. Decision lives in scripts/lib/vercel-ignore.mjs.
 
 set +e
 node scripts/lib/vercel-ignore.mjs

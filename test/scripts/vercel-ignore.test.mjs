@@ -32,9 +32,29 @@ assert.equal(
   'docs-only commit must skip',
 );
 assert.equal(
+  decideVercelBuild({ files: ['docs/adr/0001-auth-profiles.md'], env: 'preview' }).build,
+  false,
+  'docs-only preview must skip',
+);
+assert.equal(
+  decideVercelBuild({ files: ['docs/adr/0001-auth-profiles.md'], env: 'production' }).build,
+  true,
+  'docs-only production must still build so the live alias tracks main',
+);
+assert.equal(
+  decideVercelBuild({ files: ['.gitnexus/meta.json', 'AGENTS.md'], env: 'production' }).build,
+  false,
+  'gitnexus-only production must skip',
+);
+assert.equal(
   decideVercelBuild({ files: [] }).build,
   false,
   'empty first-parent diff (identical trees) must skip only when that IS this commit',
+);
+assert.equal(
+  decideVercelBuild({ files: [], env: 'production' }).build,
+  false,
+  'empty production diff must still skip',
 );
 assert.equal(
   decideVercelBuild({ files: null }).build,
@@ -70,6 +90,7 @@ assert.doesNotMatch(
   'ignore decision must not diff against the last preview SHA',
 );
 assert.match(lib, /\^1/, 'must diff against the first parent');
+assert.match(lib, /VERCEL_ENV/, 'production env must participate in the ignore decision');
 
 const sw = readFileSync(join(root, 'apps/party-tracker/public/sw.js'), 'utf8');
 assert.match(

@@ -1,7 +1,7 @@
 # After a merge to main, bump app semver from Conventional Commits when the
-# merge touched the app; then refresh the GitNexus index (GITHUB_TOKEN pushes
-# cannot trigger a second workflow). Skips its own bump / index commits so it
-# does not loop.
+# merge touched the app; then refresh the GitNexus index into that same bump
+# commit when possible (GITHUB_TOKEN pushes cannot trigger a second workflow).
+# Skips its own bump / index commits so it does not loop.
 
 name: Post-merge main
 

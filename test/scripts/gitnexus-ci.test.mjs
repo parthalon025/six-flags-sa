@@ -13,8 +13,10 @@ import { fileURLToPath } from 'node:url';
 import {
   GITNEXUS_INDEX_PATHS,
   GITNEXUS_REFRESH_MESSAGE,
+  GITNEXUS_BOT_AUTHOR,
   isGitnexusCiNoise,
   isGitnexusOnlyChange,
+  shouldAmendGitnexusIntoBump,
 } from '../../scripts/gitnexus-ci.mjs';
 
 assert.deepEqual(GITNEXUS_INDEX_PATHS, ['.gitnexus/', 'AGENTS.md', 'CLAUDE.md']);
@@ -52,6 +54,30 @@ assert.equal(
   isGitnexusOnlyChange(['.gitnexus/meta.json', 'package.json']),
   false,
 );
+
+assert.equal(
+  shouldAmendGitnexusIntoBump({
+    subject: 'chore: bump version to 1.6.0',
+    author: GITNEXUS_BOT_AUTHOR,
+  }),
+  true,
+);
+assert.equal(
+  shouldAmendGitnexusIntoBump({
+    subject: 'chore: bump version to 1.6.0',
+    author: 'Cursor Agent',
+  }),
+  false,
+  'do not amend a local bump commit',
+);
+assert.equal(
+  shouldAmendGitnexusIntoBump({
+    subject: GITNEXUS_REFRESH_MESSAGE,
+    author: GITNEXUS_BOT_AUTHOR,
+  }),
+  false,
+);
+assert.equal(shouldAmendGitnexusIntoBump({}), false);
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const tmp = mkdtempSync(join(tmpdir(), 'gitnexus-ci-'));

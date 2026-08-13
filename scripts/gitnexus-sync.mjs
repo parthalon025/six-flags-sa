@@ -4,12 +4,20 @@
  *
  *   node scripts/gitnexus-sync.mjs startup           # session start (do not commit)
  *   node scripts/gitnexus-sync.mjs finish --commit   # post-merge / CI only
+ *
+ * On finish --commit, an unpushed `chore: bump version to …` by
+ * github-actions[bot] is amended so Vercel sees one production HEAD with app
+ * files instead of a gitnexus-only tip that the ignore step skips.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GITNEXUS_INDEX_PATHS, GITNEXUS_REFRESH_MESSAGE } from './gitnexus-ci.mjs';
+import {
+  GITNEXUS_INDEX_PATHS,
+  GITNEXUS_REFRESH_MESSAGE,
+  shouldAmendGitnexusIntoBump,
+} from './gitnexus-ci.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -95,8 +103,15 @@ console.log(changes);
 
 if (mode === 'finish' && doCommit) {
   git(['add', '-f', '.gitnexus/', 'AGENTS.md', 'CLAUDE.md']);
-  git(['commit', '-m', GITNEXUS_REFRESH_MESSAGE]);
-  console.log(`[gitnexus-sync] committed ${GITNEXUS_REFRESH_MESSAGE}`);
+  const subject = git(['log', '-1', '--format=%s']);
+  const author = git(['log', '-1', '--format=%an']);
+  if (shouldAmendGitnexusIntoBump({ subject, author })) {
+    git(['commit', '--amend', '--no-edit']);
+    console.log('[gitnexus-sync] amended index into unpushed version bump');
+  } else {
+    git(['commit', '-m', GITNEXUS_REFRESH_MESSAGE]);
+    console.log(`[gitnexus-sync] committed ${GITNEXUS_REFRESH_MESSAGE}`);
+  }
 } else {
   console.log('[gitnexus-sync] leave these changes unstaged — the post-merge workflow commits the index on main');
 }

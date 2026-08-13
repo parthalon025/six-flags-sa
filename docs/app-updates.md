@@ -52,7 +52,12 @@ page.
    `data/release-notes.json` on `main` after the bump commit — the workflow only
    adds an entry when the new version is missing.
 4. Build and deploy as usual — inject also runs on `prebuild` / `predev` and
-   stamps a fresh `built` time.
+   stamps a fresh `built` time. Vercel **production** always builds for a `main`
+   push that is not GitNexus-index-only (`scripts/lib/vercel-ignore.mjs`), so
+   docs merges still move the live alias. Previews still skip when no app paths
+   changed. The post-merge workflow amends the GitNexus refresh into the
+   unpushed version-bump commit so Vercel does not see a gitnexus-only HEAD and
+   skip the bump.
 5. Phones online within ~5 minutes (or on tab focus) should update; offline
    phones stay on the last good build until they have connectivity.
 
