@@ -13,6 +13,9 @@
 # no app paths changed. Decision lives in scripts/lib/vercel-ignore.mjs.
 
 set +e
+echo "VERCEL_ENV=${VERCEL_ENV-}"
+echo "VERCEL_GIT_COMMIT_REF=${VERCEL_GIT_COMMIT_REF-}"
+echo "VERCEL_GIT_COMMIT_SHA=${VERCEL_GIT_COMMIT_SHA-}"
 node scripts/lib/vercel-ignore.mjs
 code=$?
 set -e
