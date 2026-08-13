@@ -156,5 +156,11 @@
     "items": [
       "feat: fold eligibility onto the party roster"
     ]
+  },
+  "1.3.0": {
+    "title": "What's new",
+    "items": [
+      "feat: put Eligibility Subgroup set selection in the module"
+    ]
   }
 }
