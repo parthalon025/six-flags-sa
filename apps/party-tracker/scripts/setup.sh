@@ -32,9 +32,8 @@ command -v node >/dev/null 2>&1 || die \
   "Node is not installed. Get the LTS build from https://nodejs.org and reopen your terminal."
 
 NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]')
-NODE_MINOR=$(node -p 'process.versions.node.split(".")[1]')
-if [ "$NODE_MAJOR" -lt 18 ] || { [ "$NODE_MAJOR" -eq 18 ] && [ "$NODE_MINOR" -lt 18 ]; }; then
-  die "Node $(node -v) is too old — Next.js 15 needs 18.18 or newer. Install the LTS from https://nodejs.org."
+if [ "$NODE_MAJOR" -lt 22 ]; then
+  die "Node $(node -v) is too old — Parkbound needs Node 22 or newer. Install the LTS from https://nodejs.org."
 fi
 say "Node $(node -v)"
 

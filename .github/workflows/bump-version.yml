@@ -39,7 +39,7 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.gate.outputs.run == 'true'
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Git identity
         if: steps.gate.outputs.run == 'true'
