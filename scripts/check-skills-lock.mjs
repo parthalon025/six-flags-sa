@@ -46,7 +46,7 @@ async function main() {
     if (dirs.length > 0) {
       fail(
         `.agents/skills must not vendor skills (found: ${dirs.join(', ')}). ` +
-          `Install globally: npx skills add mattpocock/skills -g -y --skill '*'`,
+          `Install globally: node scripts/install-global-skills.mjs`,
       );
     }
   }
