@@ -85,8 +85,8 @@ The phone’s pending/accepted **Contribution** layer drawn on the shipped **Ven
 _Avoid_: Ride report (ops chatter); Observation (live series, not map structure)
 
 **Plan**:
-The **Party**’s shared, ordered list of **Places** they intend to visit today. Star/pin before the gates; drag-and-drop to set order. Shared with all **Members**. Not multi-stop navigation — walking a stop is ordinary single-destination nav. Not a **Side Quest** and not a saved vacation file.
-_Avoid_: Scenario (engineering name for a local draft); itinerary (travel-agent language); favorite (personal Member stars in code — not the shared Plan)
+The **Party**’s shared, ordered list of **Places** they intend to visit today. A draft on this phone before join is the same **Plan**, not a second list — not multi-stop navigation, not a **Meet**, not a **Side Quest**, and not a saved vacation file.
+_Avoid_: Scenario (do not productize the draft); itinerary (travel-agent language); favorite (personal Member stars in code — not the shared Plan)
 
 **Invite**:
 How a person becomes a **Member** of a **Party** — a shareable join link or code. Not an account, not a **Profile**, not a ticket. Name-only is enough; a **Profile** may attach later. Joining triggers a **Host** fitness recheck. Join on a device does not finish until **Location** is on.
@@ -132,8 +132,10 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - A **Venue** contains many **Places**; some **Places** are **Attractions**
 - A **Party** has zero or one **Meet**
 - A **Party** has zero or one **Plan** for the active **Venue**; a **Plan** is shared with all **Members**
-- A **Plan** may be built before arriving at the **Venue**
+- A **Plan** may be built before arriving at the **Venue**; that draft is the same **Plan**, held on this phone until join, host, or resume
+- Create, join, or resume promotes the draft only when the shared **Plan** is empty, then clears it; a shared **Plan** that already has stops is not overwritten; leave does not resurrect the draft
 - Any device-holding **Member** may star, unstar, or reorder the **Plan**; the **Host** applies it (last write wins)
+- Per-**Member** favorites in code are personal stars, not the **Plan**
 - A **Contribution** requires a **Profile** and targets a **Venue** (and usually a **Place** within it)
 - A **Venue** has zero or more **Gaps**; **Gaps** seed **Side Quests**
 - Completing a gap **Side Quest** produces a **Contribution**
@@ -182,6 +184,9 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 > **Dev:** "If we star Diamondback at breakfast, is that a **Meet**?"
 > **Domain expert:** "No — that's the **Plan**. Star the **Places**, drag them into the day's order. A **Meet** is where we regroup. Tapping a stop walks _there_, not a chained multi-stop route."
 >
+> **Dev:** "Is the breakfast list on this phone a Scenario, or a second Plan?"
+> **Domain expert:** "It's the **Plan** — a draft until you join or resume. If the **Party** already has stops, don't overwrite them. Leave does not bring the draft back. Favorites on a **Member** are personal stars, not today's order."
+>
 > **Dev:** "It's supposed to storm at 3 — is Diamondback down?"
 > **Domain expert:** "That's **Weather** — hourly forecast feeding a prediction. We don't mark the ride down until someone files a **Ride report**."
 
@@ -208,5 +213,5 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Map Eligibility vs one global height — **resolved**: map / list / glance show the most restrictive **Member** in this phone’s set (matching **Subgroup** tags including device-less, or whole **Party** if this phone is untagged). Untagged device-less do not shadow a tagged phone. Place detail lists each **Member** in that set. Device-holding **Members** are the decision makers; device-less are limiters only. Not an “active rider” picker. Height / **With adult** / tag / remove are phone-driven; the local guest-chip store is not a second roster. **Managed Guests** do not constrain the map until seeded as device-less **Members**.
 - Party-local vs park-wide map edits — resolved: **Overlay** is immediately true to the submitting **Party**; park-wide **Overlay** uses the same bar as **Observation** — a second independent **Party** that walked near. Same-**Party** taps stay in-party. Ride-down: **Party** trusts the **Ride report** immediately (walk near, see it, mark it — not queue-pin GPS); park-wide needs a **Profile** plus that second **Party**, short TTL, easy contradict, reputation for spam on the **Profile**.
 - Adventure vs Contribution — resolved: product name is **Side Quest**; enjoyment and map improvement are one loop (Pokémon GO + Waze). **Gaps** seed gap quests → **Contribution** (Profile-gated, at-the-**Place**); live quests → **Ride report** (name-first, nearby enough to have seen it) / **Observation** (park-wide). `_Avoid_: Adventure`.
-- Plan vs next-best card vs personal favorites — resolved: **Plan** is a party-shared, drag-ordered list of starred **Places** (pre-arrival OK). Not multi-stop nav. Any device-holding **Member** may edit; **Host** applies last write. Per-**Member** favorites in code are not the **Plan**. **Member** target remains “heading there now.”
+- Plan vs next-best card vs personal favorites — resolved: **Plan** is a party-shared, drag-ordered list of starred **Places** (pre-arrival OK). The pre-party list is a draft of that same **Plan**, not a Scenario and not a second term. Promote on create, join, or resume only when the shared **Plan** is empty; then clear the draft. Leave does not resurrect it. Not multi-stop nav. Any device-holding **Member** may edit; **Host** applies last write. Per-**Member** favorites in code are not the **Plan**. **Member** target remains “heading there now.”
 - Location pause / history — resolved: **Location** is **Party** situational awareness, not a hide. No pause; no deliberate blur to spare the roster. Live position plus **Place** name only when they are at that **Place** (**Attraction** queue or station; restroom / food at the **Place**) — not nearest while walking past. Never two **Place** names; on conflict, the most recognizable **Place** to a person; two equal **Attractions** use the slot he is standing in. Not “most likely,” “probably,” or “near” on the roster. One **Party** truth: **Location** plus **Venue** slots, and the **Place** travels with **Location** — not a check-in, not each phone guessing. The phone updates the **Venue** at app start when a connection is available. Join does not finish without **Location**. Live **Location** only inside **Venue** bounds. When live stops (outside bounds or OS revoke), last-known + trail stay visible to the **Party** and are marked stale — last known location of that **Member** at that **Place** when they were at one; not wiped. Trail is path dots only; **Place** name only on the live or last-known pin. OS revoke after join: stay a **Member**, wall to turn it back on — not an eject. Battery visible; IMU not shared; signal/network are **Host** election only. Contradicts park-intelligence “never keep location history” — accepted for family trail dots.

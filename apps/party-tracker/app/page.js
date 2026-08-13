@@ -33,6 +33,7 @@ import {
 } from '@/lib/sheet';
 import { CATEGORIES, hasHeights, isRideable } from '@/lib/park';
 import { fromFacts, peopleFor } from '@/lib/eligibility';
+import { clearDraft, loadDraft, promote, saveDraft, star, view as planView } from '@/lib/plan';
 import { statusSummary } from '@/lib/rideStatus';
 import { profilesForCoverage, profileOpts } from '@/lib/routingProfiles';
 import {
@@ -233,6 +234,17 @@ export default function Page() {
   // roster tick just to read the party they are sending to.
   const partyRef = useRef(null);
   const [localMeet, setLocalMeet] = useState(null); // a meet-up marked before joining anything
+  const [planDraft, setPlanDraft] = useState([]);
+  useEffect(() => {
+    setPlanDraft(loadDraft());
+  }, []);
+  const adoptDraft = useCallback(() => {
+    const shared = runtime.current?.getSnapshot()?.plan || [];
+    const items = promote(loadDraft(), shared);
+    if (items) runtime.current?.setPlan(items);
+    clearDraft();
+    setPlanDraft([]);
+  }, []);
   const [status, setStatus] = useState('On the move');
   const [busy, setBusy] = useState(false);
 
@@ -806,9 +818,11 @@ export default function Page() {
       }
       if (rt.hasLiveParty?.()) {
         const memberName = identityRef.current?.name || 'Guest';
-        Promise.resolve(rt.resume({ memberName })).catch((err) =>
-          showToast(err?.message || 'Could not reopen the party.'),
-        );
+        Promise.resolve(rt.resume({ memberName }))
+          .then(() => adoptDraft())
+          .catch((err) =>
+            showToast(err?.message || 'Could not reopen the party.'),
+          );
       }
     })();
     return () => {
@@ -817,7 +831,7 @@ export default function Page() {
       setRuntimeApi(null);
       rt?.destroy();
     };
-  }, [showToast, selectTab]);
+  }, [showToast, selectTab, adoptDraft]);
 
   /* Join is name-first. Finish /join once location is live so the invite
      cannot land a Member with no fix. Retry when GPS arrives. */
@@ -840,6 +854,7 @@ export default function Page() {
             ? `You’re in party ${snap.code}${named ? '' : ' — rename under Me'}`
             : 'You’re in the party',
         );
+        adoptDraft();
       })
       .catch((err) => {
         showToast(err?.message || 'Could not open that invite.');
@@ -848,7 +863,7 @@ export default function Page() {
         inviteJoinInFlight.current = false;
       });
     return undefined;
-  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status]);
+  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
      resume on mount above and keep syncing on every tab. */
@@ -862,16 +877,50 @@ export default function Page() {
     resumeInFlight.current = true;
     const memberName = identityRef.current?.name || 'Guest';
     Promise.resolve(runtime.current.resume({ memberName }))
+      .then(() => adoptDraft())
       .catch((err) => showToast(err?.message || 'Could not reopen the party.'))
       .finally(() => {
         resumeInFlight.current = false;
       });
     return undefined;
-  }, [tab, runtimeApi, party?.active, party?.phase, showToast]);
+  }, [tab, runtimeApi, party?.active, party?.phase, showToast, adoptDraft]);
 
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
   const locationLocked = active && locationRevokedInParty(geo.status);
+  const planItems = useMemo(
+    () => planView({ party: active ? party : null, draft: planDraft }),
+    [active, party, planDraft],
+  );
+
+  const commitPlan = useCallback(
+    (next) => {
+      if (active) {
+        runtime.current?.setPlan(next);
+        return;
+      }
+      setPlanDraft(saveDraft(next));
+    },
+    [active],
+  );
+
+  const addToPlan = useCallback(
+    (p) => {
+      const current = planView({ party: active ? partyRef.current : null, draft: planDraft });
+      const next = star(current, p);
+      if (next.length === current.length) {
+        showToast(
+          current.some((s) => s.placeId === (p.i || p.id))
+            ? `${p.n} is already on the Plan`
+            : 'Plan is full',
+        );
+        return;
+      }
+      commitPlan(next);
+      showToast(`Added ${p.n} to plan`);
+    },
+    [active, planDraft, commitPlan, showToast],
+  );
 
   /**
    * The roster, flattened for the map, the rail and the tape — all of which
@@ -1251,10 +1300,7 @@ export default function Page() {
       showToast(
         `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
       );
-      import('@/components/IntelligencePanel').then(({ planItemsFromScenario }) => {
-        const items = planItemsFromScenario();
-        if (items.length) runtime.current?.setPlan(items);
-      });
+      adoptDraft();
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
     }
@@ -1282,12 +1328,7 @@ export default function Page() {
       });
       selectTab('party');
       showToast(`Joined ${snap.code}`);
-      import('@/components/IntelligencePanel').then(({ planItemsFromScenario }) => {
-        const items = planItemsFromScenario();
-        if (items.length && !(runtime.current?.getSnapshot()?.plan || []).length) {
-          runtime.current?.setPlan(items);
-        }
-      });
+      adoptDraft();
     } catch (err) {
       const msg = err?.message || 'Could not join that party.';
       showToast(
@@ -2464,22 +2505,7 @@ export default function Page() {
                   // Reporting needs somewhere to send it. Outside a party the list
                   // still shows the forecast, minus the buttons.
                   onReport={party?.active ? reportRide : null}
-                  onAddToPlan={(p) => {
-                    const item = { id: p.i || p.id, placeId: p.i || p.id, label: p.n };
-                    if (party?.active) {
-                      const current = party.plan || [];
-                      if (current.some((s) => s.placeId === item.placeId)) {
-                        showToast(`${p.n} is already on the Plan`);
-                        return;
-                      }
-                      runtime.current?.setPlan([...current, item]);
-                    } else {
-                      import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
-                        addPlaceToPlan(p);
-                      });
-                    }
-                    showToast(`Added ${p.n} to plan`);
-                  }}
+                  onAddToPlan={addToPlan}
                   now={clock}
                 />
               </>
@@ -2511,22 +2537,7 @@ export default function Page() {
                 onNavigate={startNav}
                 onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
                 onReport={party?.active ? reportRide : null}
-                onAddToPlan={(p) => {
-                  const item = { id: p.i || p.id, placeId: p.i || p.id, label: p.n };
-                  if (party?.active) {
-                    const current = party.plan || [];
-                    if (current.some((s) => s.placeId === item.placeId)) {
-                      showToast(`${p.n} is already on the Plan`);
-                      return;
-                    }
-                    runtime.current?.setPlan([...current, item]);
-                  } else {
-                    import('@/components/IntelligencePanel').then(({ addPlaceToPlan }) => {
-                      addPlaceToPlan(p);
-                    });
-                  }
-                  showToast(`Added ${p.n} to plan`);
-                }}
+                onAddToPlan={addToPlan}
               />
             )}
 
@@ -2645,20 +2656,19 @@ export default function Page() {
                   showToast('Removed from this party');
                 }}
               />
-              {active && (
-                <IntelligencePanel
-                  rides={partyRides || {}}
-                  plan={party?.plan || []}
-                  myGroupId={selfMember?.groupId}
-                  onGroupId={(g) => runtime.current?.setGroupId?.(g)}
-                  onSetPlan={(next) => runtime.current?.setPlan(next)}
-                  onWalkStop={(s) => {
-                    const poi = POIS.find((p) => p.i === s.placeId || p.id === s.placeId);
-                    if (poi) startNav(poi);
-                  }}
-                  onUndoMeet={clearMeet}
-                />
-              )}
+              <IntelligencePanel
+                rides={partyRides || {}}
+                plan={planItems}
+                inParty={active}
+                myGroupId={selfMember?.groupId}
+                onGroupId={(g) => runtime.current?.setGroupId?.(g)}
+                onSetPlan={commitPlan}
+                onWalkStop={(s) => {
+                  const poi = POIS.find((p) => p.i === s.placeId || p.id === s.placeId);
+                  if (poi) startNav(poi);
+                }}
+                onUndoMeet={clearMeet}
+              />
               </>
             )}
 
