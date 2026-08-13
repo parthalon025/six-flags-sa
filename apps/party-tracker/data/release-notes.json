@@ -174,5 +174,11 @@
     "items": [
       "fix: unblock Vercel install and /join prerender"
     ]
+  },
+  "1.5.0": {
+    "title": "What's new",
+    "items": [
+      "feat: keep last-known Location and Place name for the Party"
+    ]
   }
 }
