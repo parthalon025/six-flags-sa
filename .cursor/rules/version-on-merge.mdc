@@ -15,8 +15,10 @@ runs `scripts/bump-version.mjs`, which:
 - `chore:` / `docs:` / `test:` / `refactor:` / `perf:` / `ci:` / `style:` skip
   even if app files moved
 - untagged sentence titles still patch when app files changed
-- stamps `public/app-version.json` and `public/sw.js` when it does bump
-- adds a `data/release-notes.json` entry from the PR title (or a generic fallback)
+- stamps `apps/party-tracker/public/app-version.json` and
+  `apps/party-tracker/public/sw.js` when it does bump
+- adds an `apps/party-tracker/data/release-notes.json` entry from the PR title
+  (or a generic fallback)
 
 Tag the **PR title** (`feat:`, `fix:`, `feat!:`). Do not edit version files.
 
@@ -29,9 +31,9 @@ Do **not** edit these in feature branches:
 
 - `package.json` `version`
 - `package-lock.json` version fields
-- `public/app-version.json`
-- `public/sw.js` service-worker cache name
-- `data/release-notes.json` entries for versions that do not exist on `main` yet
+- `apps/party-tracker/public/app-version.json`
+- `apps/party-tracker/public/sw.js` service-worker cache name
+- `apps/party-tracker/data/release-notes.json` entries for versions that do not exist on `main` yet
 
 `predev` / `prebuild` may rewrite stamped files locally from the current
 `package.json` version — that is fine. Do not commit those stamp-only changes
@@ -47,5 +49,5 @@ merge.
 ## Custom release notes
 
 The workflow seeds release notes from the PR title. For richer bullets, either
-put the headline in the PR title or edit `data/release-notes.json` on `main`
+put the headline in the PR title or edit `apps/party-tracker/data/release-notes.json` on `main`
 after the bump commit lands — do not guess a future version number in the PR.

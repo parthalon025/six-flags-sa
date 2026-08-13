@@ -25,6 +25,8 @@ packages/venue-builder/**
 scripts/**
 !scripts/vercel-ignore.sh
 !scripts/bump-version.mjs
+!scripts/lib/
+!scripts/lib/app-paths.json
 
 *.md
 !apps/party-tracker/**/*.md

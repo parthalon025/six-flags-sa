@@ -30,8 +30,14 @@ Long-form decision write-ups also live under `docs/superpowers/specs/` (pre–Ma
 │   ├── agents/          ← skill config (this folder)
 │   └── superpowers/     ← human specs / expanded history (not the ADR root)
 ├── apps/
-└── packages/
+│   └── party-tracker/   ← phone PWA
+├── packages/
+│   ├── shared/          ← contracts both runtimes import
+│   └── venue-builder/   ← OSM → venue bundle
+└── scripts/             ← repo automation (not the venue builder)
 ```
+
+Package seams: [packages/README.md](../../packages/README.md). Visual tour: [architecture-map.md](../architecture-map.md).
 
 ## Use the glossary's vocabulary
 

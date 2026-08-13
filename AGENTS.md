@@ -93,16 +93,16 @@ Concurrent Cloud Agent tasks share `/workspace`. Do not `git checkout` there —
 
 ## Builder ↔ app contract
 
-The venue builder (`scripts/build-venue.mjs` and its helpers in `scripts/lib/`, plus `scripts/attractions.mjs`, `scripts/trace-venue.mjs`, `scripts/venue-*.mjs`) is the only thing allowed to write `public/venues/*.map.json`, `public/venues/*.pois.json`, `public/venues/manifest.json` and the generated `lib/venueIndex.js`. Everything the app reads at runtime comes out of that pipeline.
+The venue builder (`packages/venue-builder/`, invoked as `npm run venues:*`) is the only thing allowed to write `apps/party-tracker/public/venues/*.map.json`, `apps/party-tracker/public/venues/*.pois.json`, `apps/party-tracker/public/venues/manifest.json` and the generated `apps/party-tracker/lib/venueIndex.js`. Everything the app reads at runtime comes out of that pipeline.
 
 ### Builder output is wrong → fix the builder, not the output
 
-If a generated file under `public/venues/` or `lib/venueIndex.js` is wrong — a missing ride, a wrong height, a bad tag mapping, a stale manifest entry — never hand-edit the generated JSON/JS to patch it. Fix it at the source instead:
+If a generated file under `apps/party-tracker/public/venues/` or `apps/party-tracker/lib/venueIndex.js` is wrong — a missing ride, a wrong height, a bad tag mapping, a stale manifest entry — never hand-edit the generated JSON/JS to patch it. Fix it at the source instead:
 
-- A tag rule, inference or pipeline bug → fix the builder code (`scripts/build-venue.mjs`, `scripts/attractions.mjs`, `scripts/lib/*.mjs`).
-- A one-off correction for a single venue (height, area, alias, hand-added place, district tint, recipe/box/sources) → fix that venue's own input file under `data/venues/<id>.*.json` (`overrides.json`, `sources.json`, `recipe.json`, `ids.json`, `attractions.json`, `heights.json`).
+- A tag rule, inference or pipeline bug → fix the builder code (`packages/venue-builder/bin/`, `packages/venue-builder/lib/`).
+- A one-off correction for a single venue (height, area, alias, hand-added place, district tint, recipe/box/sources) → fix that venue's own input under `packages/venue-builder/data/venues/<id>/` (`overrides.json`, `sources.json`, `recipe.json`, `ids.json`, `attractions.json`, `heights.json`).
 
-Then regenerate the output with the matching script — `npm run venues:build`, `venues:rebuild`, `venues:overrides`, `venues:reindex` or `venues:attractions` — instead of editing the regenerated file by hand. `data/venues/` is builder input and is meant to be hand-edited; `public/venues/*.json` and `lib/venueIndex.js` are builder output and are not.
+Then regenerate with `npm run venues:build`, `venues:rebuild`, `venues:overrides`, `venues:reindex` or `venues:attractions`. `packages/venue-builder/data/venues/` is builder input and is meant to be hand-edited; `apps/party-tracker/public/venues/*.json` and `apps/party-tracker/lib/venueIndex.js` are builder output and are not.
 
 ### Prove the fix works in the app
 
@@ -113,7 +113,7 @@ A fix isn't done when the regenerated JSON looks right on its own. After rebuild
 
 ### App change touches the builder's contract → validate against the builder
 
-Going the other way: if an app change reads a new or changed shape from `public/venues/*.json`, `manifest.json` or `lib/venueIndex.js` (a new field, a renamed key, a new required invariant), don't assume the builder already produces it. Before shipping:
+Going the other way: if an app change reads a new or changed shape from `apps/party-tracker/public/venues/*.json`, `manifest.json` or `apps/party-tracker/lib/venueIndex.js` (a new field, a renamed key, a new required invariant), don't assume the builder already produces it. Before shipping:
 
 - Confirm the builder actually emits that shape for every shipped venue, or update the builder so it does.
 - Rerun `npm run venues:build`/`venues:rebuild` (or at minimum `npm run venues:report`) for the affected venues to check the contract holds across all of them, not just the one you tested with.
@@ -129,7 +129,7 @@ The app build semver is **not** bumped in PRs. After every merge to `main`, `.gi
 
 ### Never bump version in a PR
 
-Do not edit `package.json` `version`, `package-lock.json` version fields, `public/app-version.json`, `public/sw.js`, or future `data/release-notes.json` keys in feature branches.
+Do not edit `package.json` `version`, `package-lock.json` version fields, `apps/party-tracker/public/app-version.json`, `apps/party-tracker/public/sw.js`, or future `apps/party-tracker/data/release-notes.json` keys in feature branches.
 
 ### Merge conflicts on version files
 
@@ -148,6 +148,10 @@ Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-
 ### Domain docs
 
 Single-context — root `CONTEXT.md` + `docs/adr/` (legacy long-form under `docs/superpowers/specs/`). See `docs/agents/domain.md`.
+
+### Packages
+
+Packages are deep modules — see [packages/README.md](./packages/README.md) before adding or importing one. Layout: [docs/repo-structure.md](./docs/repo-structure.md).
 
 ### Skills lock
 

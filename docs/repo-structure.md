@@ -2,12 +2,17 @@
 
 This monorepo separates the **Park Bound** app from the **venue builder** pipeline.
 
+Packages are deep modules — import only through entry points. See [packages/README.md](../packages/README.md).
+Visual tour: [architecture-map.md](./architecture-map.md).
+
 ```
 apps/party-tracker/     Next.js PWA — map, party sync, directions
 packages/shared/        Contracts both sides share (ontology, wayFlags, mapSymbols)
 packages/venue-builder/ OSM → venue bundle CLI, data, and inspection UI
+scripts/                Repo automation (version bump, worktrees, GitNexus) — not the venue builder
 test/app/               Playwright behavioural suites (functional, grandma, validate-ui, visual)
 test/builder/           Node unit tests + manifest compare suite
+docs/adr/  CONTEXT.md   Domain language (Matt layout)
 ```
 
 ## Commands

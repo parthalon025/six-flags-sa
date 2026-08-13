@@ -1,7 +1,6 @@
 [
   "apps/party-tracker/",
   "packages/shared/",
-  "public/",
   "vercel.json",
   "turbo.json",
   "package.json",
