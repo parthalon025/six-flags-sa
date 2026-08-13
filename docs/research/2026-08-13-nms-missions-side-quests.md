@@ -24,10 +24,11 @@ What is worth taking from NMS is **not** the Mission Board. It is the later reco
 4. **A same-day community pulse** to one real place, with a **catch-up stack of three** so Saturday-only guests are not punished (Nexus Quicksilver + weekend events).
 5. **Optional-order seasonal milestones** (Expeditions), with catch-up later because hard clocks were the part Hello Games themselves had to walk back (Expeditions Revisited).
 6. **Titles as cosmetics**, not content gates for the field loop.
+7. **Later edition rewards are Map skins and Location icons** — the Quicksilver-shop analog without a spendable currency. Skins restyle this Profile’s map; icons sit on the Location pin the Party watches. Not HUD quest markers.
 
 Do **not** import: standing-gated empty boards, encrypted hidden objectives, real-time wait gates, a spendable shop, HUD clutter, abandon penalties, combat, or a Nexus that warps you to the job. Those solve a solitary galaxy. They fight a family Saturday at Kings Island.
 
-This note is not permission to add a mission board, a Quicksilver shop, standing grind, or a HUD quest pin. Any of those needs a new grill and ADR.
+This note is not permission to add a mission board, a Quicksilver shop, standing grind, or a HUD quest pin. Any of those needs a new grill and ADR. Later **Map skins** / **Location icons** are locked as the cosmetic surface; they still need their own grill before build.
 
 ---
 
@@ -43,6 +44,7 @@ The review assumes the shipped Side Quest contract and does not reopen it:
 - Cards stay meaning-first. No “+12 XP” on the card.
 - Field Research now; Cartographer Create (Wayfarer) later.
 - Park-wide Overlay still needs a second independent **Party**.
+- Later editions grant **Map skins** and **Location icons** on the Profile (earned, never bought with XP). Not this ship.
 
 Cross-links: Waze / StreetComplete / Wayfarer already cover *validation and score*. This note covers *mission shape, attention, and togetherness*.
 
@@ -68,6 +70,8 @@ There is **no return-to-giver**. Submit is at the spot, queued offline, scored w
 There is **no community pulse**. The list is the builder’s backlog for this Venue, not “today everyone photograph Rivertown queues.”
 
 There is **no seasonal page**. Titles accrue across visits on the Profile. Cartographer later unlocks Create; Field Research is not standing-gated.
+
+There is **no Map skin or Location icon** this ship. Trail / Park Midnight are unearned map packs. Future editions grant skins (this Profile’s map) and icons (this Member’s Location pin) the same way Titles land.
 
 That is already closer to StreetComplete + Waze than to an MMO board. The NMS question is whether later Hello Games systems can tighten *attention* and *sameness of day* without turning Gaps into fetch templates.
 
@@ -109,7 +113,9 @@ That is already closer to StreetComplete + Waze than to an MMO board. The NMS qu
 | `apps/party-tracker/lib/sideQuests.js` | Grouped Gap cards + live ambient; no pin. |
 | `apps/party-tracker/components/SideQuestsPanel.jsx` | One open card; Location ranking; meaning-first submit. |
 | `packages/shared/questScore.js` | Profile XP, Titles, path score cell, repeat = 0. |
-| ADR-0009 / `CONTEXT.md` | Locks above. |
+| `apps/party-tracker/lib/mapThemeTokens.js` | Unearned Trail / Park Midnight packs. Skins restyle, never reposition. |
+| `packages/shared/mapSymbols.js` | Shape + colour + glyph. Later Location icons must keep this. |
+| ADR-0009 / `CONTEXT.md` | Locks above, including later Map skin / Location icon. |
 
 ---
 
@@ -203,6 +209,17 @@ Expedition rewards include titles and patches (PlayStation Blog, Sean Murray, 31
 
 Park Bound already matches the good end-state: **XP never spent**, **Title under the display name**, Field Research not standing-gated, Cartographer later for Create. Do not copy Atlas Rises “empty board until you grind standing.” A Saturday visitor who just signed in must see height Gaps.
 
+### 9. Cosmetics, not a currency shop
+
+NMS’s Nexus shop spends Quicksilver on appearance: suits, banners, jetpacks. Murray told Ars there would be no microtransactions; the shop is earned. The thing players actually stare at for hours is the avatar and the ship.
+
+Park Bound’s ten-hour stare is the **Venue map** and the **Location** pins the Party uses to find each other. Later editions therefore grant:
+
+- **Map skin** — this Profile’s map treatment (palette + optional marker glyphs). Restyles; never moves geometry. Trail / Park Midnight stay the unearned defaults (`mapThemeTokens.js`). Catalogue sketches live in [`2026-08-10-native-app-ar-map-styles-session.md`](./2026-08-10-native-app-ar-map-styles-session.md) §5–6 and backlog E11.2.
+- **Location icon** — cosmetic on this Member’s Location pin so the Party can spot them. That is the Nexus “see their spacesuit” beat, without a Tower. Not a Side Quest HUD marker (Omega / Target Sweep warn against that).
+
+Same earn path as Titles: XP is never spent. The August 10 session’s “pay two dollars to skip the grind” is **not** locked — Party stays free; cosmetics are earned. Accessibility: every skin and icon keeps shape + colour + glyph redundancy (`mapSymbols.js`).
+
 ---
 
 ## Comparison matrix
@@ -218,7 +235,7 @@ Park Bound already matches the good end-state: **XP never spent**, **Title under
 | Togetherness | Nexus pinch point; weekend one planet; Expeditions same start | Party mesh; park-wide needs 2nd Party | Party = fireteam. **Steal a day-pulse**, not a hub. |
 | Catch-up | QS dailies stack to 3; Expeditions Revisited reruns | Repeat = 0 forever on that Gap (good); no “today’s extra” | **Steal stack-of-3 for pulses only**, not for unique Gaps. |
 | Time gates | Settlement hours; Archive timers later removed; season clocks painful | None on Gaps | Do not add wait gates. Calendar pulses only. |
-| Rewards | Units, nanites, Quicksilver shop, patches, titles | Profile XP → Title sub-name; meaning-first cards | Keep never-spend. No shop. |
+| Rewards | Units, nanites, Quicksilver shop, patches, titles | Profile XP → Title now; later **Map skin** + **Location icon** | Steal cosmetics, not the shop. |
 | Gating | Standing unlocked harder board missions | Visitor sees Gaps; submit needs Profile | Keep. |
 | Hidden objectives | Encrypted Nexus missions | Meaning-first, chips are the fact | Do not hide the ask. |
 | Failure | Abandon / fail timed board missions | Overturned Contribution claws XP / reputation | Keep quality clawback; no abandon penalty for walking away. |
@@ -238,10 +255,10 @@ Omega’s patch notes exist because the log kept replacing what the player chose
 Hello Games replaced follow-the-dot with local search because the dot made every planet feel the same. For restroom / food / gate / null-target path: “You’re in the park — look, then mark.” For height / queue: the Place exists; ranking gets you close; the chip still requires the sign or the line. Do not add AR visor chrome.
 
 **3. Same-day community pulse + catch-up of three.**  
-Nexus dailies stack to 3 so missing Tuesday is not death; weekends send everyone to one planet. A park analog: “Today’s pulse: queue pins in Rivertown” (or height signs, or missing paths). Personal credit still lands on the Profile. A community meter can unlock a cosmetic Title flourish or Overlay confidence — it must not replace the second-Party bar for park-wide live ops. Catch-up: last three pulses remain completable. Unique Gaps stay unique (repeat still 0).
+Nexus dailies stack to 3 so missing Tuesday is not death; weekends send everyone to one planet. A park analog: “Today’s pulse: queue pins in Rivertown” (or height signs, or missing paths). Personal credit still lands on the Profile. A community meter can help unlock a **Map skin** or **Location icon** — it must not replace the second-Party bar for park-wide live ops. Catch-up: last three pulses remain completable. Unique Gaps stay unique (repeat still 0).
 
 **4. Optional-order seasonal milestone page, with redux.**  
-Expeditions: any-order milestones, phase cosmetics, pin to log. Hello Games called this the most popular way to play *and* had to rerun seasons because clocks locked people out. A “Kings Island mapping weekend” that you can finish the next visit is the transfer. Do not expire Field Research.
+Expeditions: any-order milestones, phase cosmetics, pin to log. Hello Games called this the most popular way to play *and* had to rerun seasons because clocks locked people out. A “Kings Island mapping weekend” that you can finish the next visit is the transfer. Do not expire Field Research. Phase rewards are **Map skins** and **Location icons**, not a shop.
 
 **5. Park-native extra verbs, still meaning-first.**  
 NEXT’s photography / identify, plus Hello Games’ actual community research (photograph fauna on this planet). Candidate: optional photo of the height sign as evidence, not as XP bait. Confirm/deny of someone else’s Contribution is already in `questScore` (+2) — surface it. Do not add kill, raid, or fetch-from-A-to-B.
@@ -261,7 +278,7 @@ Omega: when several systems want the HUD, let the player cycle; always keep the 
 | Encrypted hidden objectives | Families need to know the ask. Meaning-first chips. |
 | Return-to-giver / warp-to-mission | The park is walked. Nexus warp is a video-game skip. |
 | Real-time wait gates (settlement / archives) | Hello Games removed archive timers. Park days already have queues. |
-| Spendable Quicksilver shop | XP is never spent. SAPS (status, later Create power) already planned. |
+| Spendable Quicksilver shop | XP is never spent. Later editions grant **Map skins** and **Location icons** instead — cosmetics, not a currency. |
 | HUD quest marker as the loop | They added Target Sweep to undo it. Location rank is enough. |
 | Auto-switch current mission | Omega’s bug list. |
 | Combat / hunting / pirate raids | Wrong verb family. |
@@ -276,6 +293,7 @@ Omega: when several systems want the HUD, let the player cycle; always keep the 
 - **Meaning-first cards.** Encrypted missions and “+400 QS” are the opposite.
 - **Profile-tied XP, never spent, no global leaderboard.**
 - **Titles under the name.** Alice stays Alice.
+- **Later: Map skins + Location icons**, not a spendable shop. The skin is your map; the icon is your pin.
 - **Party as the fireteam** without a Destiny Tower to walk to.
 - **Second independent Party** for park-wide truth — stricter than Nexus “anyone in the shard counts.”
 
@@ -283,7 +301,7 @@ Omega: when several systems want the HUD, let the player cycle; always keep the 
 
 ## Risks if we copy the wrong layer
 
-**Overjustification.** The August 10 research already warns: extrinsic boards kill the intrinsic “I saw the sign.” NMS’s shop and standing grind are that failure mode. Pulses must still read as helping other guests.
+**Overjustification.** The August 10 research already warns: extrinsic boards kill the intrinsic “I saw the sign.” NMS’s shop and standing grind are that failure mode. Pulses must still read as helping other guests. Map skins and Location icons are the reward *after* the fact, not copy on the card.
 
 **Template gravity.** Once you have a pulse generator, it is tempting to emit “any three heights” forever. That is the Mission Board. Pulses should *point at existing Gaps*, not invent parallel tasks.
 
@@ -305,7 +323,8 @@ If product wants a follow-up, grill in this order:
 2. **Pulse** — calendar highlight of existing Gaps + stack-of-3 catch-up; community meter does not replace second-Party Overlay.
 3. **Sweep copy** — find-a-Place types; no visor.
 4. **Seasonal optional-order page** — redux allowed; no hard lockout.
-5. Only then: photo-as-evidence, never photo-as-XP.
+5. **Map skin + Location icon** — earn rules, Party-visible pin vs personal map, accessibility (shape + colour + glyph). Not a HUD quest pin.
+6. Only then: photo-as-evidence, never photo-as-XP.
 
 Out of scope until a separate grill: Create/Wayfarer (Cartographer), spendable rewards, HUD pins, any phone-side Gap invention.
 
@@ -315,4 +334,4 @@ Out of scope until a separate grill: Create/Wayfarer (Cartographer), spendable r
 
 Murray was right in 2016 that fetch boards waste a world whose point is *being there*. Atlas Rises added the board anyway; Beyond and Expeditions then spent years building the thing people actually liked: **everyone here, optional order, look around, finish on site, cosmetics for showing up, catch-up if you miss a day.**
 
-Park Bound Side Quests already are “being there” for a real map. The useful NMS imports are **pin, local search, day-pulse with catch-up, and seasonal optional-order** — all aimed at Gaps the builder already shipped. The Mission Board, the shop, the standing gate, the hidden objective, and the timer are how a galaxy got boring. A park cannot afford that.
+Park Bound Side Quests already are “being there” for a real map. The useful NMS imports are **pin, local search, day-pulse with catch-up, and seasonal optional-order** — all aimed at Gaps the builder already shipped. The shop analog is **Map skins** and **Location icons**, earned like Titles, never bought with XP. The Mission Board, the spendable currency, the standing gate, the hidden objective, and the timer are how a galaxy got boring. A park cannot afford that.
