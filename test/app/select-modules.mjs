@@ -103,7 +103,7 @@ if (format === 'json') {
   for (const id of selection.modules) {
     console.log(`  - ${id}: ${selection.reasons[id] || ''}`);
   }
-  console.log(`builder=${parts.builder} functional=${parts.functional.join(',') || '-'} grandma=${parts.grandma}`);
+  console.log(`builder=${parts.builder} lint=${parts.lint} selector=${parts.selector} functional=${parts.functional.join(',') || '-'} grandma=${parts.grandma}`);
 }
 
 if (args.includes('--write')) {

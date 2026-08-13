@@ -509,8 +509,9 @@ path) must keep a named check. New epics add a row + check in the same PR —
 build vertically, don’t leave feature PRs without their user-action coverage.
 
 CI splits that suite into **modules** (`test/app/modules.json`) and only runs
-the ones that match the PR’s changed paths — see `npm run test:modules` /
-`npm run test:validate-ui:changed`. Push to `main` and edits to the workflow or
+the ones that match the PR’s changed paths — including lint — see
+`npm run test:modules` / `npm run test:validate-ui:changed`. Docs-only diffs
+skip the expensive jobs. Push to `main` and edits to the workflow or
 `functional.mjs` still run the full matrix.
 
 ## Building a map of somewhere else

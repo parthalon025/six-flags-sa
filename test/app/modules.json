@@ -13,15 +13,41 @@
     "test/app/validate-ui.mjs",
     "test/app/browser.mjs",
     "test/app/modules.json",
-    "test/app/lib/module-select.mjs"
+    "test/app/lib/module-select.mjs",
+    "test/app/select-modules.mjs",
+    "test/app/visual.mjs",
+    "test/app/theme.mjs",
+    "test/app/ux.mjs"
   ],
   "modules": [
+    {
+      "id": "lint",
+      "title": "ESLint (party-tracker)",
+      "kind": "lint",
+      "paths": [
+        "apps/party-tracker/**/*.js",
+        "apps/party-tracker/**/*.jsx",
+        "apps/party-tracker/**/*.mjs",
+        "apps/party-tracker/package.json",
+        "eslint.config.mjs"
+      ]
+    },
+    {
+      "id": "selector",
+      "title": "Module-select unit",
+      "kind": "selector",
+      "paths": [
+        "test/app/module-select.test.mjs"
+      ]
+    },
     {
       "id": "contract",
       "title": "Critical-path coverage contract",
       "kind": "contract",
-      "always": true,
-      "script": "coverage-contract.mjs"
+      "paths": [
+        "test/app/critical-paths.json",
+        "test/app/coverage-contract.mjs"
+      ]
     },
     {
       "id": "builder",
@@ -158,7 +184,7 @@
     }
   ],
   "uiDefaultWhenAppTouches": {
-    "paths": ["apps/party-tracker/**", "test/app/**"],
+    "paths": ["apps/party-tracker/**", "packages/shared/**"],
     "modules": ["smoke", "heights", "walk", "party", "intake", "venues", "offline", "grandma"]
   }
 }

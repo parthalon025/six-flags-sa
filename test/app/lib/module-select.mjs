@@ -162,10 +162,15 @@ export function selectModulesFromFiles(files, manifest = loadModulesManifest()) 
     }
   }
 
-  // Contract always.
-  if (!selected.has('contract')) {
+  // Coverage contract rides with any UI module (functional / grandma).
+  const byId = new Map(manifest.modules.map((m) => [m.id, m]));
+  const uiSelected = [...selected].some((id) => {
+    const kind = byId.get(id)?.kind;
+    return kind === 'functional' || kind === 'grandma';
+  });
+  if (uiSelected && !selected.has('contract')) {
     selected.add('contract');
-    reasons.contract = 'always';
+    reasons.contract = 'pulled by UI module';
   }
 
   return { modules: [...selected], reasons, fullSuite: false };
@@ -176,6 +181,8 @@ export function partitionModules(moduleIds, manifest = loadModulesManifest()) {
   const out = {
     contract: false,
     builder: false,
+    lint: false,
+    selector: false,
     functional: [],
     grandma: false,
     unknown: [],
@@ -188,6 +195,8 @@ export function partitionModules(moduleIds, manifest = loadModulesManifest()) {
     }
     if (m.kind === 'contract') out.contract = true;
     else if (m.kind === 'builder') out.builder = true;
+    else if (m.kind === 'lint') out.lint = true;
+    else if (m.kind === 'selector') out.selector = true;
     else if (m.kind === 'functional') out.functional.push(id);
     else if (m.kind === 'grandma') out.grandma = true;
   }
@@ -202,10 +211,12 @@ export function toGithubOutputs(selection, manifest = loadModulesManifest()) {
   return {
     builder: parts.builder ? 'true' : 'false',
     contract: parts.contract ? 'true' : 'false',
+    lint: parts.lint ? 'true' : 'false',
+    selector: parts.selector ? 'true' : 'false',
     any_ui: uiMatrix.length ? 'true' : 'false',
     ui_matrix: JSON.stringify(uiMatrix),
     functional_modules: parts.functional.join(',') || '',
-    modules: selection.modules.join(','),
+    modules: selection.modules.join(',') || '',
     full_suite: selection.fullSuite ? 'true' : 'false',
   };
 }
