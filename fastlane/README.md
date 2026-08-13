@@ -40,11 +40,11 @@ bundle exec fastlane install_plugins
 
 ### Native shells
 
-Parkbound ships today as a **Next.js PWA** (`apps/party-tracker`). Fastlane expects Capacitor-style native projects:
+Park Bound ships as a **Next.js PWA** (`apps/party-tracker`). Official store binaries are Capacitor shells around that app — [ADR-0005](../docs/adr/0005-store-capacitor-shell.md). Fastlane expects `ios/` and `android/` once those projects exist. Do not static-export the Next app (`out/`); `/api/*` stays on the deployed origin.
 
 ```bash
 npm install @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
-npx cap init Parkbound com.parkbound.app --web-dir apps/party-tracker/out
+npx cap init Parkbound com.parkbound.app
 npx cap add ios
 npx cap add android
 ```

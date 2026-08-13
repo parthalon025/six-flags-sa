@@ -1,8 +1,10 @@
 # Session brief: Native app, AR, gamified geocaching, and unique map styles
 
 **Date:** 2026-08-10
-**Status:** Idea capture from a product conversation — planning only, nothing here is
-implemented. Build items should be broken out into
+**Status:** Idea capture from a product conversation. Store-distribution decision
+is canonical in [`../adr/0005-store-capacitor-shell.md`](../adr/0005-store-capacitor-shell.md)
+(Capacitor shells, PWA remains). Remaining AR / widget / map-style items should be
+broken out into
 [`../superpowers/specs/park-bound-implementation-backlog.md`](../superpowers/specs/park-bound-implementation-backlog.md)
 epics when scheduled.
 **Related docs:**
