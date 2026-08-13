@@ -155,4 +155,4 @@ Packages are deep modules — see [packages/README.md](./packages/README.md) bef
 
 ### Skills lock
 
-Vendored Matt Pocock skills under `.agents/skills/` are pinned by `skills-lock.json`. Do not hand-edit; upgrade with `npm run skills:update`. See `docs/agents/skills-lock.md`.
+Matt Pocock skills are global (`~/.agents/skills`). This repo must not vendor them. `npm run skills:check` asserts `.agents/skills` and `skills-lock.json` are absent. See `docs/agents/skills-lock.md`.

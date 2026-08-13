@@ -1,9 +1,9 @@
-# Agent skills (vendored)
+# Agent skills
 
-Files under `skills/` are **vendored from [mattpocock/skills](https://github.com/mattpocock/skills)** and pinned by the repo-root `skills-lock.json`.
+Matt Pocock skills are **global** (`~/.agents/skills`), not vendored here.
 
-- Do **not** edit these files by hand.
-- Upgrade with `npx skills@latest update -p -y`, then `npm run skills:check`.
-- Restore with `npx skills@latest experimental_install`.
+Do not add a `skills/` tree or `skills-lock.json` in this repo. `npm run skills:check` asserts that.
+
+GitNexus skills for this project live under `.claude/skills/gitnexus/`.
 
 See `docs/agents/skills-lock.md`.

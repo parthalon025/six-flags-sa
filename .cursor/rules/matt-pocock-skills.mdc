@@ -1,12 +1,13 @@
 ---
-description: Matt Pocock skills are lock-pinned; never hand-edit vendored skill trees
+description: Matt Pocock skills are global-only; never vendor them in this repo
 alwaysApply: true
 ---
 
-# Matt Pocock skills — no local drift
+# Matt Pocock skills — global only
 
-- Canonical skill files live only in `.agents/skills/` and are pinned by `skills-lock.json`.
-- Never edit `.agents/skills/**` by hand. Upgrade with `npx skills@latest update -p -y`, then `npm run skills:check`.
-- Never commit `agent/` or `.claude/skills/<skill>/` junctions/copies from the installer; keep gitnexus skills under `.claude/skills/gitnexus/` only.
+- Canonical skill files live in `~/.agents/skills` (user-global). Do not vendor them under `.agents/skills/` in this repo.
+- Never add `skills-lock.json` here. Upgrade globally with `npx skills add mattpocock/skills -g -y --skill '*'`.
+- Never commit `agent/` or `.claude/skills/<matt-skill>/` junctions/copies from the installer; keep gitnexus skills under `.claude/skills/gitnexus/` only.
+- `npm run skills:check` asserts this repo has no vendored Matt trees. See `docs/agents/skills-lock.md`.
 - Issue tracker, triage labels, and domain layout are configured in `docs/agents/` — engineering skills read those files.
 - Grow domain language via `/grill-with-docs` into root `CONTEXT.md` and `docs/adr/`; do not invent empty stubs.

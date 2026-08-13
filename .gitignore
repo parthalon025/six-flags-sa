@@ -12,8 +12,9 @@ out
 .claude/worktrees/
 .worktrees/
 
-# skills.sh agent junctions/copies — canonical trees are .agents/skills + skills-lock.json
+# skills.sh agent junctions/copies — Matt skills are global (~/.agents/skills)
 agent/
+.agents/skills/
 .claude/skills/*
 !.claude/skills/gitnexus/
 !.claude/skills/gitnexus/**
