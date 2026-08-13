@@ -26,6 +26,15 @@
 	<string>Park Bound shares your Location with your party while you are at the venue so everyone can see where you are on the map.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Park Bound keeps Location on while you are at the venue so your party can still see you when the phone is in a pocket.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Park Bound keeps Location on while you are at the venue so your party can still see you when the phone is in a pocket.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Park Bound uses the camera only to scan a party invite QR code.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UILaunchStoryboardName</key>

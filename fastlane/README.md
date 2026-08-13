@@ -21,6 +21,17 @@ Store metadata uses **distinct trees** for each platform (`metadata/ios/` vs `me
 
 ## Prerequisites
 
+Generate the Android upload keystore (no paid accounts required):
+
+```bash
+npm run store:prepare
+```
+
+That writes `secrets/parkbound-upload.keystore` (gitignored) and prints the
+cert fingerprint for Play App Links. After Apple Developer ($99) and Google
+Play ($25), copy `.env.example` → `.env`, add Firebase plists, set
+`IOS_TEAM_ID` and `ANDROID_CERT_SHA256` on Vercel, then run the lanes below.
+
 ### Toolchain
 
 | Tool | Version | Purpose |
@@ -146,7 +157,14 @@ Add per-release Android changelogs at:
 fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
 ```
 
-Add screenshots under `fastlane/screenshots/ios/` and `fastlane/screenshots/android/`, then set `IOS_SKIP_SCREENSHOTS=false` or `ANDROID_SKIP_SCREENSHOTS=false`.
+Generate listing art and screenshots (no paid accounts):
+
+```bash
+npm run store:icons
+npm run store:screenshots
+```
+
+Glance at the PNGs, then set `IOS_SKIP_SCREENSHOTS=false`, `ANDROID_SKIP_SCREENSHOTS=false`, and `ANDROID_SKIP_IMAGES=false`. Paste `fastlane/store-declarations.json` into App Store privacy nutrition and Play Data safety.
 
 ## CI integration
 

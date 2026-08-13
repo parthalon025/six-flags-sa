@@ -1,4 +1,4 @@
-Parkbound is an explorer’s companion for a group at a big, crowded park.
+Park Bound is an explorer’s companion for a group at a big, crowded park.
 
 • Drawn park map — real geometry painted as SVG, not generic map tiles
 • Live party tracking — share location with your group via QR, link, or code

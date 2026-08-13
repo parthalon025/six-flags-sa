@@ -21,7 +21,7 @@ import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND } from '@/lib/brand';
-import { haptic } from '@/lib/native';
+import { haptic, listenInviteUrls, registerPush, shouldRegisterPush } from '@/lib/native';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -713,6 +713,27 @@ export default function Page() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    let stop = () => {};
+    void listenInviteUrls((url) => {
+      try {
+        const parsed = new URL(url);
+        if (!parsed.pathname.startsWith('/join')) return;
+        if (window.location.href === url) return;
+        window.location.assign(url);
+      } catch {
+        /* ignore malformed shell URLs */
+      }
+    }).then((unsub) => {
+      if (typeof unsub === 'function') stop = unsub;
+    });
+    return () => stop();
+  }, []);
+
+  useEffect(() => {
+    if (shouldRegisterPush(party)) void registerPush();
+  }, [party?.active]);
 
   useEffect(() => {
     const measure = () => {

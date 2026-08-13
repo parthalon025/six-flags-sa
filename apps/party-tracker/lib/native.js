@@ -2,9 +2,9 @@
  * Capacitor native APIs with web fallbacks.
  *
  * Store binaries (ADR-0005) go through here so Location, haptics, share,
- * battery, and network work the same on a PWA and in the shell. Background
- * Location still needs a dedicated plugin before App Store / Play submit —
- * @capacitor/geolocation is foreground-only.
+ * battery, and network work the same on a PWA and in the shell. Native
+ * watches prefer @capacitor-community/background-geolocation so a pocketed
+ * Host still updates the Party.
  */
 
 let plugins = null;
@@ -74,13 +74,16 @@ async function loadPluginsUncached() {
       plugins = 'web';
       return null;
     }
-    const [geo, haptics, share, clipboard, device, network] = await Promise.all([
+    const [geo, haptics, share, clipboard, device, network, bg, push, app] = await Promise.all([
       import('@capacitor/geolocation'),
       import('@capacitor/haptics'),
       import('@capacitor/share'),
       import('@capacitor/clipboard'),
       import('@capacitor/device'),
       import('@capacitor/network'),
+      import('@capacitor-community/background-geolocation'),
+      import('@capacitor/push-notifications'),
+      import('@capacitor/app'),
     ]);
     plugins = {
       Capacitor,
@@ -90,6 +93,9 @@ async function loadPluginsUncached() {
       Clipboard: clipboard.Clipboard,
       Device: device.Device,
       Network: network.Network,
+      BackgroundGeolocation: bg.BackgroundGeolocation ?? bg.default,
+      PushNotifications: push.PushNotifications,
+      App: app.App,
     };
     return plugins;
   } catch {
@@ -160,6 +166,57 @@ export async function readBattery() {
   }
 }
 
+function toGeoPosition(loc) {
+  if (!loc) return loc;
+  if (loc.coords && Number.isFinite(loc.coords.latitude)) return loc;
+  return {
+    coords: {
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      accuracy: loc.accuracy,
+      altitude: loc.altitude ?? null,
+      heading: loc.bearing ?? loc.heading ?? null,
+      speed: loc.speed ?? null,
+    },
+    timestamp: loc.time ?? loc.timestamp ?? Date.now(),
+  };
+}
+
+/** Push is for Party alerts — never prompt at launch (App Review 5.1.1). */
+export function shouldRegisterPush(party) {
+  return Boolean(party?.active);
+}
+
+export async function registerPush({ onToken, onNotification } = {}) {
+  const p = await loadPlugins();
+  const Push = p?.PushNotifications;
+  if (!Push?.register) return 'web';
+  const perm = await Push.requestPermissions();
+  if (perm?.receive && perm.receive !== 'granted') return 'denied';
+  await Push.register();
+  await Push.addListener?.('registration', (t) => {
+    onToken?.(t?.value || t?.token || '');
+  });
+  if (onNotification) {
+    await Push.addListener?.('pushNotificationReceived', onNotification);
+  }
+  return 'native';
+}
+
+export async function listenInviteUrls(onUrl) {
+  const p = await loadPlugins();
+  const App = p?.App;
+  if (!App) return () => {};
+  const launch = await App.getLaunchUrl?.();
+  if (launch?.url) onUrl(launch.url);
+  const sub = await App.addListener?.('appUrlOpen', (ev) => {
+    if (ev?.url) onUrl(ev.url);
+  });
+  return () => {
+    void sub?.remove?.();
+  };
+}
+
 export async function connectionQuality() {
   const p = await loadPlugins();
   if (p?.Network?.getStatus) {
@@ -182,23 +239,45 @@ export async function connectionQuality() {
 
 export async function watchPosition(onOk, onErr, options) {
   const p = await loadPlugins();
+  if (p?.BackgroundGeolocation?.addWatcher) {
+    const id = await p.BackgroundGeolocation.addWatcher(
+      {
+        backgroundMessage:
+          'Park Bound keeps Location on so your party can see you on the map.',
+        backgroundTitle: 'Park Bound',
+        requestPermissions: true,
+        stale: false,
+        distanceFilter: options?.distanceFilter ?? 15,
+      },
+      (loc, err) => {
+        if (err) onErr?.(err);
+        else onOk?.(toGeoPosition(loc));
+      },
+    );
+    return { native: true, background: true, id };
+  }
   if (p?.Geolocation?.watchPosition) {
     const id = await p.Geolocation.watchPosition(options, (pos, err) => {
       if (err) onErr?.(err);
       else onOk?.(pos);
     });
-    return { native: true, id };
+    return { native: true, background: false, id };
   }
   if (typeof navigator === 'undefined' || !navigator.geolocation) {
     onErr?.({ code: 2, message: 'unsupported' });
-    return { native: false, id: null };
+    return { native: false, background: false, id: null };
   }
   const id = navigator.geolocation.watchPosition(onOk, onErr, options);
-  return { native: false, id };
+  return { native: false, background: false, id };
 }
 
 export async function clearWatch(handle) {
   if (!handle || handle.id == null) return;
+  if (handle.background) {
+    const p = await loadPlugins();
+    await p?.BackgroundGeolocation?.removeWatcher?.({ id: handle.id });
+    return;
+  }
   if (handle.native) {
     const p = await loadPlugins();
     await p?.Geolocation?.clearWatch?.({ id: handle.id });

@@ -65,11 +65,16 @@ export async function openPhone(
     label = 'phone',
     venue = null,
     requireGps = true,
+    viewport = { width: 390, height: 844 },
+    deviceScaleFactor = 2,
+    isMobile = true,
   } = {},
 ) {
   const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
-    deviceScaleFactor: 2,
+    viewport,
+    deviceScaleFactor,
+    hasTouch: true,
+    isMobile,
     permissions: ['geolocation', 'clipboard-read', 'clipboard-write'],
     geolocation: { latitude: lat, longitude: lng },
     colorScheme,

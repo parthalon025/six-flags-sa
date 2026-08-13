@@ -20,6 +20,7 @@ Full documentation split out of the root README. Start with [Features](features.
 | [Data sources](data-sources.md) | OpenStreetMap, heights, weather, and attributions. |
 | [Repository layout](layout.md) | Where code and generated venue output live. |
 | [Contributing](contributing.md) | Issues, PRs, builder contract, and README screenshots. |
+| [Store binaries](../../fastlane/README.md) | Capacitor iOS/Android shells and Fastlane upload. |
 
 ## See also
 

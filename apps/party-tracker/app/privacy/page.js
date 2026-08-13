@@ -26,11 +26,15 @@ export default function PrivacyPage() {
         visit.
       </p>
       <p>
-        The installed app (App Store / Google Play) uses the same rules, with native Location so
-        a pocketed phone can keep the party map alive.
+        The installed app (App Store / Google Play) uses the same rules, with native
+        Location — including background Location while you are at the venue — so a
+        pocketed phone can keep the party map alive. Push notifies the party of NEED
+        HELP and meet updates. The camera is used only to scan a party invite QR.
       </p>
       <p>
-        Questions: open an issue on the{' '}
+        Questions: email{' '}
+        <a href="mailto:parkbound@kurat0r.ai">parkbound@kurat0r.ai</a>
+        {' '}or open an issue on the{' '}
         <a href="https://github.com/parthalon025/six-flags-sa/issues">project tracker</a>.
       </p>
     </main>

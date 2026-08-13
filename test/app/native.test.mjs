@@ -13,8 +13,11 @@ import {
   getCurrentPosition,
   haptic,
   isNativePlatform,
+  listenInviteUrls,
   readBattery,
+  registerPush,
   shareInvite,
+  shouldRegisterPush,
   watchPosition,
 } from '../../apps/party-tracker/lib/native.js';
 
@@ -24,6 +27,10 @@ function reset() {
 
 reset();
 assert.equal(isNativePlatform(), false);
+assert.equal(shouldRegisterPush(null), false);
+assert.equal(shouldRegisterPush({}), false);
+assert.equal(shouldRegisterPush({ active: false, partyId: 'p1' }), false);
+assert.equal(shouldRegisterPush({ active: true, partyId: 'p1' }), true);
 
 _setPluginsForTests({
   Capacitor: { isNativePlatform: () => true },
@@ -139,6 +146,73 @@ assert.equal(isNativePlatform(), true);
   assert.deepEqual(watches[1], ['clear', 'native-watch']);
   const cur = await getCurrentPosition({ enableHighAccuracy: true });
   assert.equal(cur.coords.latitude, 3);
+}
+
+{
+  const removed = [];
+  const fixes = [];
+  _setPluginsForTests({
+    Capacitor: { isNativePlatform: () => true },
+    BackgroundGeolocation: {
+      addWatcher: async (opts, cb) => {
+        cb({ latitude: 29.6, longitude: -98.6, accuracy: 12, bearing: 90, speed: 0.4, time: 1 });
+        return 'bg-watch';
+      },
+      removeWatcher: async ({ id }) => {
+        removed.push(id);
+      },
+    },
+    Geolocation: {
+      watchPosition: async () => {
+        throw new Error('foreground watch must not run when background Location is available');
+      },
+    },
+  });
+  const handle = await watchPosition((pos) => fixes.push(pos), () => {}, { background: true });
+  assert.equal(handle.native, true);
+  assert.equal(handle.background, true);
+  assert.equal(handle.id, 'bg-watch');
+  assert.equal(fixes[0].coords.latitude, 29.6);
+  assert.equal(fixes[0].coords.heading, 90);
+  await clearWatch(handle);
+  assert.deepEqual(removed, ['bg-watch']);
+}
+
+{
+  const tokens = [];
+  _setPluginsForTests({
+    Capacitor: { isNativePlatform: () => true },
+    PushNotifications: {
+      requestPermissions: async () => ({ receive: 'granted' }),
+      register: async () => {},
+      addListener: async (event, cb) => {
+        if (event === 'registration') cb({ value: 'apns-or-fcm-token' });
+        return { remove: async () => {} };
+      },
+    },
+  });
+  const result = await registerPush({ onToken: (t) => tokens.push(t) });
+  assert.equal(result, 'native');
+  assert.deepEqual(tokens, ['apns-or-fcm-token']);
+}
+
+{
+  const opened = [];
+  _setPluginsForTests({
+    Capacitor: { isNativePlatform: () => true },
+    App: {
+      getLaunchUrl: async () => ({ url: 'https://parkbound.kurat0r.ai/join#abc' }),
+      addListener: async (event, cb) => {
+        if (event === 'appUrlOpen') cb({ url: 'https://parkbound.kurat0r.ai/join#def' });
+        return { remove: async () => {} };
+      },
+    },
+  });
+  await listenInviteUrls((url) => opened.push(url));
+  assert.deepEqual(opened, [
+    'https://parkbound.kurat0r.ai/join#abc',
+    'https://parkbound.kurat0r.ai/join#def',
+  ]);
 }
 
 {
