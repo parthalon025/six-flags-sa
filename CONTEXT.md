@@ -93,8 +93,8 @@ How a person becomes a **Member** of a **Party** — a shareable join link or co
 _Avoid_: Login, calendar invite, ticket
 
 **Location**:
-A device-holding **Member**’s position for the **Party**. Mandatory (no pause). Join does not finish without it. Live only inside **Venue** bounds. When live updates stop (outside bounds or OS revoke), last-known and the in-bounds trail stay visible to all **Members** and are marked stale. OS revoke after join: stay a **Member** and wall on turning it back on — not an eject. Device-less **Members** have no **Location**. Battery (and charging) is visible to the **Party**; IMU is not; radio scores stay **Host** internals.
-_Avoid_: GPS (implementation); pause/share-off (not in this product)
+A device-holding **Member**’s position so the **Party** has situational awareness — where each other are. Mandatory (no pause). Not a hide, and not deliberately blurred to spare the roster. Join does not finish without it. Live only inside **Venue** bounds. When live updates stop (outside bounds or OS revoke), last-known and the in-bounds trail stay visible to all **Members** and are marked stale. OS revoke after join: stay a **Member** and wall on turning it back on — not an eject. Device-less **Members** have no **Location**. Battery (and charging) is visible to the **Party**; IMU is not; radio scores stay **Host** internals.
+_Avoid_: GPS (implementation); pause/share-off (not in this product); privacy blur (Location is awareness, not a hide)
 
 **Weather**:
 **Venue**-day context: current conditions plus an hourly forecast for that day, used to predict ride data (holds, likely closures). Not party state and not a **Contribution**. Predictions inform a **Plan**; they do not mark an **Attraction** down — that is a **Ride report**.
@@ -108,7 +108,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - An **Invite** admits a person as a **Member**; joining rechecks whether the **Host** is still the best phone
 - **Host** fitness also rechecks on failover and continuously, with a margin so it does not flap
 - Join on a device does not finish until **Location** is on
-- A device-holding **Member** always shares **Location** with the **Party** while inside the **Venue**; there is no pause
+- A device-holding **Member** always shares **Location** with the **Party** while inside the **Venue** so the **Party** can see where they are; there is no pause and no deliberate blur to hide them
 - If **Location** is revoked after join, they stay a **Member**; live updates stop, last-known and the in-bounds trail stay visible and marked stale, and the app walls on turning it back on
 - Outside **Venue** bounds, live **Location** stops; last-known and the in-bounds trail stay visible to the **Party** and are marked stale
 - Device-less **Members** have no **Location**
@@ -150,7 +150,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 > **Domain expert:** "No — name is enough. Opening the **Invite** does not finish until **Location** is on, and we recheck whether a better phone should be **Host**. You never see a **Host** — the best phone just has it."
 >
 > **Dev:** "Can I pause sharing so the party doesn't see me?"
-> **Domain expert:** "No — a device **Member** always shares **Location** in the **Venue**. Leave the bounds or lose the sensor and live updates stop; last-known and the trail stay for the **Party**, marked stale. If iOS kills Location later, you're still in the **Party**, we wall on turning it back on, and they still see where you were."
+> **Domain expert:** "No — **Location** is how the **Party** knows where you are, not a hide. Leave the bounds or lose the sensor and live updates stop; last-known and the trail stay for the **Party**, marked stale. If iOS kills Location later, you're still in the **Party**, we wall on turning it back on, and they still see where you were."
 >
 > **Dev:** "If someone marks Diamondback down, is that a **Contribution**?"
 > **Domain expert:** "No — that's a **Ride report** for the **Party**, trusted immediately, name-first. Walk near, see it, mark it — you don't have to stand in the queue. Other families only see it as an **Observation** after a second **Party** walks by. Your own clump tapping again does not count. A **Contribution** is something we'd keep and feed back into the builder."
@@ -203,4 +203,4 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Party-local vs park-wide map edits — resolved: **Overlay** is immediately true to the submitting **Party**; park-wide **Overlay** uses the same bar as **Observation** — a second independent **Party** that walked near. Same-**Party** taps stay in-party. Ride-down: **Party** trusts the **Ride report** immediately (walk near, see it, mark it — not queue-pin GPS); park-wide needs a **Profile** plus that second **Party**, short TTL, easy contradict, reputation for spam on the **Profile**.
 - Adventure vs Contribution — resolved: product name is **Side Quest**; enjoyment and map improvement are one loop (Pokémon GO + Waze). **Gaps** seed gap quests → **Contribution** (Profile-gated, at-the-**Place**); live quests → **Ride report** (name-first, nearby enough to have seen it) / **Observation** (park-wide). `_Avoid_: Adventure`.
 - Plan vs next-best card vs personal favorites — resolved: **Plan** is a party-shared, drag-ordered list of starred **Places** (pre-arrival OK). Not multi-stop nav. Any device-holding **Member** may edit; **Host** applies last write. Per-**Member** favorites in code are not the **Plan**. **Member** target remains “heading there now.”
-- Location pause / history — resolved: no pause for device-holding **Members**. Join does not finish without **Location**. Live **Location** only inside **Venue** bounds. When live stops (outside bounds or OS revoke), last-known + trail stay visible to the **Party** and are marked stale — not wiped. OS revoke after join: stay a **Member**, wall to turn it back on — not an eject. Battery visible; IMU not shared; signal/network are **Host** election only. Contradicts park-intelligence “never keep location history” — accepted for family trail dots.
+- Location pause / history — resolved: **Location** is **Party** situational awareness, not a hide. No pause; no deliberate blur to spare the roster. Join does not finish without **Location**. Live **Location** only inside **Venue** bounds. When live stops (outside bounds or OS revoke), last-known + trail stay visible to the **Party** and are marked stale — not wiped. OS revoke after join: stay a **Member**, wall to turn it back on — not an eject. Battery visible; IMU not shared; signal/network are **Host** election only. Contradicts park-intelligence “never keep location history” — accepted for family trail dots.
