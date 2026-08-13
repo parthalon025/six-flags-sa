@@ -79,3 +79,33 @@ export async function clearProfileCache() {
     return false;
   }
 }
+
+/** @returns {Array<{ id: string, displayName: string, heightIn?: number, heightConfirmedAt?: string }>} */
+export async function listManagedGuests() {
+  const snap = await readProfileCache();
+  return Array.isArray(snap?.guests) ? snap.guests : [];
+}
+
+/**
+ * Save or replace a Managed Guest on the cached Profile. Does not touch the
+ * live Party roster.
+ */
+export async function upsertManagedGuest(guest) {
+  const snap = await readProfileCache();
+  if (!snap?.userId) throw new Error('A Profile is required to save a Managed Guest');
+  const id = String(guest?.id || `g_${Date.now().toString(36)}`);
+  const next = {
+    id,
+    displayName: String(guest?.displayName || 'Guest').slice(0, 24),
+    heightIn: Number.isFinite(guest?.heightIn) ? guest.heightIn : null,
+    heightConfirmedAt: guest?.heightConfirmedAt || new Date().toISOString(),
+  };
+  const guests = listWithout(snap.guests, id);
+  guests.push(next);
+  await writeProfileCache({ ...snap, guests });
+  return next;
+}
+
+function listWithout(guests, id) {
+  return (Array.isArray(guests) ? guests : []).filter((g) => g?.id !== id);
+}

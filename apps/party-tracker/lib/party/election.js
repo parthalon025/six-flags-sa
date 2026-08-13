@@ -32,6 +32,9 @@ const W_NETWORK = 1e6;
 const W_PERFORMANCE = 1e3;
 const W_JOIN_ORDER = 1;
 
+/** Score delta of one 1% battery step after quantise (`W_BATTERY * 0.01`). */
+const BATTERY_STEP = W_BATTERY / 100;
+
 const clamp01 = (n) => (Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0);
 /** 1% steps: finer than any of these signals is actually measured. */
 const quantise = (n) => Math.round(clamp01(n) * 100) / 100;
@@ -76,6 +79,45 @@ export function outranks(a, b) {
   if (a.score !== b.score) return a.score > b.score;
   if (a.joinOrder !== b.joinOrder) return a.joinOrder < b.joinOrder;
   return a.id < b.id;
+}
+
+/** How many 1% battery steps a challenger must beat the incumbent by before a silent steal. */
+export const STEAL_STEPS = 5;
+
+/**
+ * True when the challenger should take Host: strictly better, and by enough
+ * that a 1% battery wobble does not flap the mesh.
+ */
+export function shouldYield(incumbent, challenger) {
+  if (!incumbent || !challenger) return false;
+  if (!outranks(challenger, incumbent)) return false;
+  return challenger.score - incumbent.score >= STEAL_STEPS * BATTERY_STEP;
+}
+
+/**
+ * Id of a device-holding Member who should take Host from `leaderId`, or null.
+ * Uses battery (and join order) from the roster — radio scores stay off the wire.
+ */
+export function betterHost(members, leaderId) {
+  const list = Object.values(members || {}).filter((m) => m && !m.deviceLess && m.id);
+  if (!list.length) return null;
+  const claim = (m) => ({
+    id: m.id,
+    // Missing battery is middling (same as a client with no Battery API), not
+    // a zero that would lose Host to any phone that can read a percent.
+    score: scoreCandidate({ battery: m.battery ?? 0.5, joinOrder: m.joinOrder }),
+    joinOrder: Number.isFinite(m.joinOrder) ? m.joinOrder : 1e6,
+  });
+  const leader = list.find((m) => m.id === leaderId);
+  const incumbent = leader
+    ? claim(leader)
+    : { id: leaderId, score: 0, joinOrder: 1e6 };
+  let best = incumbent;
+  for (const m of list) {
+    const next = claim(m);
+    if (shouldYield(best, next)) best = next;
+  }
+  return best.id !== leaderId ? best.id : null;
 }
 
 const num = (v, fallback) => (Number.isFinite(v) ? v : fallback);
@@ -359,11 +401,10 @@ export function createElection({
     if (!theirs.id) return;
     const mine = myClaim || selfClaim();
 
-    if (promoted && outranks(mine, theirs)) {
-      // Already hosting and strictly better: re-assert once instead of yielding.
-      // The total order guarantees only one peer can take this branch, so the
-      // exchange terminates rather than ping-ponging.
-      if (now() - lastVictorySentAt >= reassertGapMs) sendVictory();
+    if (promoted && !shouldYield(mine, theirs)) {
+      // Already hosting and not beaten by a clear margin: re-assert if we
+      // still outrank, otherwise hold. A 1% lead is not a steal.
+      if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
       return;
     }
 

@@ -11,11 +11,51 @@ import { findPlace, identityOf } from './venue/ids.js';
 /** A quest with a target this close counts as "right here" while you walk. */
 export const NEARBY_RADIUS_M = 150;
 
+/** Live Side Quests (Ride reports) are name-first. Gap quests stay Profile-gated. */
+export function isLiveQuest(quest) {
+  const id = quest?.id || quest?.type;
+  return id === 'ride_status' || id === 'queue_band';
+}
+
+/**
+ * In-party Ride report from a live "Ride up or down?" tap.
+ * Queue-band stays a quest note — it is wait, not open/down.
+ * Same-Party taps stay in-party; park-wide needs parkWideReport().
+ */
+export function rideReportFromLiveQuest(quest, { status, pois = [], position = null } = {}) {
+  const id = quest?.id || quest?.type;
+  if (id !== 'ride_status') return null;
+  const rideId = nearestRideId(pois, position, quest?.targets);
+  if (!rideId) return null;
+  return { rideId, status: status === 'issue' ? 'down' : 'open' };
+}
+
+function nearestRideId(pois, position, targets) {
+  if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return null;
+  const rides = (pois || []).filter(
+    (p) => p && (p.c === 'coaster' || p.c === 'ride') && Number.isFinite(p.lat) && Number.isFinite(p.lng),
+  );
+  let pool = rides;
+  if (Array.isArray(targets) && targets.length) {
+    const wanted = new Set(targets);
+    const named = rides.filter(
+      (p) => wanted.has(identityOf(p)) || wanted.has(p.n) || wanted.has(p.id) || wanted.has(p.i),
+    );
+    if (named.length) pool = named;
+  }
+  let best = null;
+  for (const p of pool) {
+    const d = distance(position.lat, position.lng, p.lat, p.lng);
+    if (!best || d < best.d) best = { p, d };
+  }
+  return best ? identityOf(best.p) : null;
+}
+
 const TIER1 = [
   {
     id: 'ride_status',
     title: 'Ride up or down?',
-    blurb: 'Tell nearby parties if a ride is boarding, delayed, or shut.',
+    blurb: 'Walk near, see it, mark it — you do not have to stand in the queue.',
     icon: 'figure.rollercoaster',
   },
   {

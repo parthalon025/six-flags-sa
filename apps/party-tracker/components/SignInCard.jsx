@@ -36,10 +36,10 @@ export default function SignInCard({ session = null, onSession = null }) {
 
   return (
     <div className="signInCard">
-      <div className="label">Sign in for party &amp; adventure</div>
+      <div className="label">Sign in to save family heights</div>
       <p className="fine block">
-        Browse the map anytime. Sign in to join a party, submit Side Quests, and keep family heights
-        across the day.
+        Browse the map and join a party by name anytime. Sign in to save Managed Guests, submit gap
+        Side Quests, and fan out park-wide Observations.
       </p>
       <div className="label">Email</div>
       <input

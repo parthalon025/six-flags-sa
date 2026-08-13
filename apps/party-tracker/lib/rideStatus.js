@@ -13,7 +13,7 @@
  * Pure, like weather.js — no React, no clock of its own, no park knowledge.
  */
 
-import { RIDE_DOWN, RIDE_OPEN, RIDE_STALE_AFTER_MS } from './core/state.js';
+import { RIDE_DOWN, RIDE_OPEN, RIDE_REPORT_TTL_MS, RIDE_STALE_AFTER_MS } from './core/state.js';
 import { formatAge } from './geo.js';
 import { OUTLOOK, outlookFor } from './weather.js';
 
@@ -135,4 +135,30 @@ export function statusSummary(pois, rides, weather, now = Date.now()) {
   }
 
   return { reportedDown, atRisk };
+}
+
+/**
+ * Strangers see a ride as down only after two independent Parties reported it.
+ * Same-Party taps stay in-party — the caller already has that Party's rides.
+ *
+ * @param {Array<{ partyId?: string, status?: string, ts?: number, byName?: string }>} sightings
+ * @param {{ now?: number, ttl?: number }} [opts]
+ */
+export function parkWideReport(sightings, { now = Date.now(), ttl = RIDE_REPORT_TTL_MS } = {}) {
+  const fresh = (sightings || []).filter(
+    (s) => s && Number.isFinite(s.ts) && now - s.ts <= ttl,
+  );
+  const downs = fresh.filter((s) => s.status === RIDE_DOWN);
+  const parties = new Set(downs.map((s) => s.partyId).filter(Boolean));
+  if (parties.size < 2) {
+    return { visible: false, status: null, parties: parties.size, byName: null, ts: null };
+  }
+  const latest = downs.reduce((a, b) => (b.ts > a.ts ? b : a));
+  return {
+    visible: true,
+    status: RIDE_DOWN,
+    parties: parties.size,
+    byName: latest.byName || null,
+    ts: latest.ts,
+  };
 }

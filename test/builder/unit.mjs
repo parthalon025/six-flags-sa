@@ -66,7 +66,7 @@ const {
 const { generateKey, importKey, exportKey, open, seal } = await import('../../apps/party-tracker/lib/core/crypto.js');
 const { createSession, decodeInvite, encodeInvite } = await import('../../apps/party-tracker/lib/core/session.js');
 const { CODE_ALPHABET, newPartyCode, normalizeCode } = await import('../../apps/party-tracker/lib/core/ids.js');
-const { createElection, scoreCandidate } = await import('../../apps/party-tracker/lib/party/election.js');
+const { createElection, scoreCandidate, shouldYield, betterHost } = await import('../../apps/party-tracker/lib/party/election.js');
 const { CADENCE, MOTION, cadenceFor, classifyMotion, createBroadcastGate } = await import(
   '../../apps/party-tracker/lib/gps/adaptive.js'
 );
@@ -373,6 +373,59 @@ await check('set-plan is shared last-write-wins and add-member creates a device-
   assert.equal(state.members.mia.deviceLess, true);
   assert.equal(state.members.mia.height, 40);
   assert.equal(state.members.mia.location, null);
+  return true;
+});
+
+await check('a phone can tag height and With adult on a device-less Member', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    { kind: 'add-member', from: HOST, body: { id: 'mia', name: 'Mia', height: 40 } },
+    now,
+  ).state;
+  state = reduce(
+    state,
+    {
+      kind: 'patch-member',
+      from: PEER,
+      body: { id: 'mia', patch: { groupId: 'thrill', height: 42, withAdult: false } },
+    },
+    now + 1,
+  ).state;
+  assert.equal(state.members.mia.groupId, 'thrill');
+  assert.equal(state.members.mia.height, 42);
+  assert.equal(state.members.mia.withAdult, false);
+  assert.equal(state.members[PEER].groupId, null, 'the phone did not retag itself');
+  return true;
+});
+
+await check('a phone can remove a device-less Member from the roster', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    { kind: 'add-member', from: HOST, body: { id: 'mia', name: 'Mia', height: 40 } },
+    now,
+  ).state;
+  const out = reduce(state, { kind: 'remove-member', from: PEER, body: { id: 'mia' } }, now + 1);
+  assert.equal(out.state.members.mia, undefined);
+  assert.ok(out.state.members[PEER], 'the phone stayed');
+  return true;
+});
+
+await check('a phone cannot remove or retag another phone', () => {
+  const now = 1_000_000;
+  const state = seeded(now);
+  const gone = reduce(state, { kind: 'remove-member', from: PEER, body: { id: HOST } }, now);
+  assert.equal(gone.ops.length, 0);
+  assert.ok(gone.state.members[HOST]);
+  const tagged = reduce(
+    state,
+    { kind: 'patch-member', from: PEER, body: { id: HOST, patch: { groupId: 'thrill' } } },
+    now,
+  );
+  assert.equal(tagged.state.members[HOST].groupId, null);
   return true;
 });
 
@@ -946,6 +999,45 @@ await check('a charging phone scores as a full battery', () => {
   return true;
 });
 
+await check('Host steal needs a clear margin, not a 1% lead', () => {
+  const incumbent = { id: 'sam', score: with_({ battery: 0.4 }), joinOrder: 0 };
+  const twitchy = { id: 'alex', score: with_({ battery: 0.41 }), joinOrder: 1 };
+  const clear = { id: 'alex', score: with_({ battery: 0.5 }), joinOrder: 1 };
+  assert.equal(shouldYield(incumbent, twitchy), false);
+  assert.equal(shouldYield(incumbent, clear), true);
+  assert.equal(shouldYield(incumbent, incumbent), false);
+  return true;
+});
+
+await check('betterHost picks a device-holding Member who beats the leader by a margin', () => {
+  const members = {
+    sam: { id: 'sam', battery: 0.12, joinOrder: 0, deviceLess: false },
+    alex: { id: 'alex', battery: 0.9, joinOrder: 1, deviceLess: false },
+    mia: { id: 'mia', battery: 1, joinOrder: 2, deviceLess: true },
+  };
+  assert.equal(betterHost(members, 'sam'), 'alex');
+  assert.equal(betterHost(members, 'alex'), null);
+  return true;
+});
+
+await check('a stronger phone joining the roster is who betterHost names', () => {
+  const now = 1_000_000;
+  let state = createParty({ id: 'p1', leader: HOST, now });
+  state = reduce(state, { kind: 'join', from: HOST, body: { name: 'Sam', battery: { level: 0.2 } } }, now).state;
+  state = reduce(state, { kind: 'join', from: PEER, body: { name: 'Alex', battery: { level: 0.9 } } }, now).state;
+  assert.equal(betterHost(state.members, HOST), PEER);
+  return true;
+});
+
+await check('unknown battery is middling so only a clearly stronger phone steals Host', () => {
+  const unknown = { id: 'sam', battery: null, joinOrder: 0, deviceLess: false };
+  const similar = { id: 'alex', battery: 0.5, joinOrder: 1, deviceLess: false };
+  const strong = { id: 'alex', battery: 0.9, joinOrder: 1, deviceLess: false };
+  assert.equal(betterHost({ sam: unknown, alex: similar }, 'sam'), null);
+  assert.equal(betterHost({ sam: unknown, alex: strong }, 'sam'), 'alex');
+  return true;
+});
+
 await check('hostile or missing inputs score finite and low', () => {
   for (const c of [undefined, {}, { battery: NaN }, { battery: 'full', signal: 'great' }, { joinOrder: -3 }]) {
     const s = scoreCandidate(c);
@@ -1288,13 +1380,13 @@ await check('shouldShareLocation allows in-park fixes and blocks off-site ones',
   } = await import('../../apps/party-tracker/lib/gps/sharing.js');
   const { createMember, coarsenLocation } = await import('../../apps/party-tracker/lib/core/state.js');
 
-  await check('E4.1 share modes: off clears, approx coarsens, precise keeps', () => {
+  await check('E4.1 share modes: approx coarsens, precise keeps', () => {
     const loc = { lat: 39.343828, lng: -84.265811, ts: 1 };
-    assert.equal(locationForShare(loc, 'off'), null);
     const approx = locationForShare(loc, 'approx');
     assert.deepEqual(approx, coarsenLocation(loc));
     assert.notEqual(approx.lat, loc.lat);
     assert.equal(locationForShare(loc, 'precise').lat, loc.lat);
+    assert.deepEqual(locationForShare(loc, 'off'), coarsenLocation(loc));
     return true;
   });
 
@@ -1304,7 +1396,25 @@ await check('shouldShareLocation allows in-park fixes and blocks off-site ones',
     Object.assign(m, shareModePatch('precise', { now, durationMs: 60_000 }));
     assert.equal(effectiveShareMode(m, now + 1), 'precise');
     assert.equal(effectiveShareMode(m, now + 60_001), DEFAULT_SHARE_MODE);
-    assert.equal(effectiveShareMode({ ...m, sharingPaused: true }, now), 'off');
+    assert.equal(effectiveShareMode({ ...m, sharingPaused: true }, now), 'precise');
+    return true;
+  });
+
+  await check('join needs live or manual Location; OS revoke is a wall, not an eject', async () => {
+    const { locationReadyToJoin, locationRevokedInParty } = await import(
+      '../../apps/party-tracker/lib/gps/sharing.js'
+    );
+    assert.equal(locationReadyToJoin('live'), true);
+    assert.equal(locationReadyToJoin('manual'), true);
+    assert.equal(locationReadyToJoin('idle'), false);
+    assert.equal(locationReadyToJoin('asking'), false);
+    assert.equal(locationReadyToJoin('denied'), false);
+    assert.equal(locationRevokedInParty('denied'), true);
+    assert.equal(locationRevokedInParty('unsupported'), true);
+    assert.equal(locationRevokedInParty('insecure'), true);
+    assert.equal(locationRevokedInParty('live'), false);
+    assert.equal(locationRevokedInParty('manual'), false);
+    assert.equal(locationRevokedInParty('asking'), false);
     return true;
   });
 
@@ -5296,6 +5406,7 @@ await check('a member can report a ride down', () => {
     byName: 'Ava',
     ts: now,
     note: null,
+    partyId: 'p1',
   });
   return true;
 });
@@ -5797,6 +5908,21 @@ await check('the summary keeps reports and guesses apart', () => {
 await check('the summary survives no weather and no party', () => {
   const sum = statusSummary([BEAST], null, null, 5_000_000);
   assert.deepEqual(sum, { reportedDown: 0, atRisk: 0 });
+  return true;
+});
+
+await check('park-wide down needs two independent Parties; same-Party taps stay in-party', async () => {
+  const { parkWideReport } = await import('../../apps/party-tracker/lib/rideStatus.js');
+  const now = 5_000_000;
+  const a = { partyId: 'p-sam', status: RIDE_DOWN, ts: now, byName: 'Sam' };
+  const again = { partyId: 'p-sam', status: RIDE_DOWN, ts: now + 1000, byName: 'Alex' };
+  const b = { partyId: 'p-other', status: RIDE_DOWN, ts: now + 2000, byName: 'Riley' };
+  assert.equal(parkWideReport([a], { now }).visible, false);
+  assert.equal(parkWideReport([a, again], { now }).visible, false);
+  const wide = parkWideReport([a, b], { now });
+  assert.equal(wide.visible, true);
+  assert.equal(wide.status, RIDE_DOWN);
+  assert.equal(wide.parties, 2);
   return true;
 });
 
@@ -7335,6 +7461,42 @@ await check('big-kahunas catalogue declares schematic official map with image', 
   return true;
 });
 
+await check('live Side Quests are Ride reports; gap quests stay Profile-gated', async () => {
+  const { isLiveQuest } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  assert.equal(isLiveQuest({ id: 'ride_status' }), true);
+  assert.equal(isLiveQuest({ id: 'queue_band' }), true);
+  assert.equal(isLiveQuest({ type: 'ride_status' }), true);
+  assert.equal(isLiveQuest({ id: 'height_rule' }), false);
+  assert.equal(isLiveQuest({ id: 'amenity_outage' }), false);
+  return true;
+});
+
+await check('a live ride-status quest becomes an in-party Ride report for the nearest Attraction', async () => {
+  const { rideReportFromLiveQuest } = await import('../../apps/party-tracker/lib/sideQuests.js');
+  const pois = [
+    { id: 'beast', n: 'The Beast', c: 'coaster', lat: 39.344, lng: -84.268 },
+    { id: 'snack', n: 'Snack', c: 'food', lat: 39.344, lng: -84.268 },
+  ];
+  const position = { lat: 39.3441, lng: -84.268 };
+  assert.deepEqual(
+    rideReportFromLiveQuest({ id: 'ride_status' }, { status: 'issue', pois, position }),
+    { rideId: 'beast', status: 'down' },
+  );
+  assert.deepEqual(
+    rideReportFromLiveQuest({ id: 'ride_status' }, { status: 'confirmed', pois, position }),
+    { rideId: 'beast', status: 'open' },
+  );
+  assert.equal(
+    rideReportFromLiveQuest({ id: 'queue_band' }, { status: 'issue', pois, position }),
+    null,
+  );
+  assert.equal(
+    rideReportFromLiveQuest({ id: 'height_rule' }, { status: 'issue', pois, position }),
+    null,
+  );
+  return true;
+});
+
 await check('buildSideQuests lists height and entrance gaps', async () => {
   const { buildSideQuests } = await import('../../apps/party-tracker/lib/sideQuests.js');
   const { durable, ambient, counts } = buildSideQuests({
@@ -7568,6 +7730,26 @@ await check('shared schemas export ranks and soft-gate helpers', () => {
   assert.equal(requiresSignedIn('usr_demo', 'party'), false);
   assert.equal(requiresSignedIn(null, 'contribute'), true);
   assert.equal(requiresSignedIn(null, 'browse'), false);
+  assert.equal(requiresSignedIn(null, 'ride-report'), false);
+  assert.equal(requiresSignedIn(null, 'adventure'), true);
+  return true;
+});
+
+await check('stale Managed Guest height prompts; skip keeps last inches', async () => {
+  const { HEIGHT_STALE_MS, heightIsStale, seedFromManagedGuest } = await import(
+    '../../packages/shared/schemas.js'
+  );
+  const now = Date.parse('2026-08-12T00:00:00.000Z');
+  const fresh = { displayName: 'Mia', heightIn: 40, heightConfirmedAt: now - 10 * 24 * 60 * 60 * 1000 };
+  const stale = { displayName: 'Mia', heightIn: 40, heightConfirmedAt: now - HEIGHT_STALE_MS - 1 };
+  const never = { displayName: 'Mia', heightIn: 42 };
+  assert.equal(heightIsStale(fresh, now), false);
+  assert.equal(heightIsStale(stale, now), true);
+  assert.equal(heightIsStale(never, now), true);
+  const skipped = seedFromManagedGuest(stale, { now, skipPrompt: true });
+  assert.equal(skipped.height, 40);
+  assert.equal(skipped.stale, true);
+  assert.equal(skipped.name, 'Mia');
   return true;
 });
 
@@ -7706,10 +7888,12 @@ await check('soft-gate helper lives on the local session module', async () => {
     signOutLocal,
   } = await import('../../apps/party-tracker/lib/auth/session.js');
 
-  await check('softGateBlocks contribute/adventure until signed in; party is name-first', () => {
+  await check('softGateBlocks contribute/adventure until signed in; party and ride reports are name-first', () => {
     assert.equal(softGateBlocks('party', null), false);
     assert.equal(softGateBlocks('contribute', null), true);
+    assert.equal(softGateBlocks('adventure', null), true);
     assert.equal(softGateBlocks('adventure', { userId: 'usr_x' }), false);
+    assert.equal(softGateBlocks('ride-report', null), false);
     assert.equal(softGateBlocks('party', { userId: 'usr_x' }), false);
     return true;
   });

@@ -26,7 +26,11 @@ Long-form decision write-ups also live under `docs/superpowers/specs/` (pre–Ma
 │   ├── adr/
 │   │   ├── 0001-auth-profiles.md
 │   │   ├── 0002-dual-layer-park-truth.md
-│   │   └── 0003-family-party-mesh.md
+│   │   ├── 0003-family-party-mesh.md
+│   │   ├── 0004-eligibility-set.md
+│   │   ├── 0005-store-capacitor-shell.md
+│   │   ├── 0006-invisible-host.md
+│   │   └── 0007-park-wide-second-party.md
 │   ├── agents/          ← skill config (this folder)
 │   └── superpowers/     ← human specs / expanded history (not the ADR root)
 ├── apps/

@@ -67,6 +67,7 @@ export function createClient({ session, key, transport, snapshot = null, now = (
   let lastResyncAt = 0;
   let heartbeatTimer = null;
   let battery = null;
+  let takingHost = false;
   let outbound = Promise.resolve(); // serialised: see hostService.js
 
   // A shaped replica from the start so the UI never has to null-check. Until
@@ -230,6 +231,10 @@ export function createClient({ session, key, transport, snapshot = null, now = (
         case WELCOME:
           noteHost(f.from);
           adopt(f.body?.snapshot, 'welcome');
+          if (f.body?.yieldTo === selfId && !takingHost) {
+            takingHost = true;
+            emitter.emit('promote', { snapshot: publicSnapshot(state) });
+          }
           break;
         case SNAPSHOT:
           noteHost(f.from);
@@ -244,6 +249,10 @@ export function createClient({ session, key, transport, snapshot = null, now = (
           // The beacon carries the host's version, so a patch that never
           // arrived is caught within one beacon instead of silently persisting.
           if (adopted && Number(f.body?.version) > state.version) requestResync('ping-ahead');
+          if (f.body?.yieldTo === selfId && !takingHost) {
+            takingHost = true;
+            emitter.emit('promote', { snapshot: publicSnapshot(state) });
+          }
           break;
         case ERROR_KIND:
           emitter.emit('host-error', f.body || {});
@@ -381,7 +390,7 @@ export function createClient({ session, key, transport, snapshot = null, now = (
       now: now(),
     });
     post(HELLO, { member }, EVERYONE);
-    readBattery().catch(() => null);
+    heartbeat();
     heartbeatTimer = setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
     election.start();
   }

@@ -44,17 +44,19 @@ import {
 import { newMemberId, newPartyCode, normalizeCode } from '@/lib/core/ids';
 import {
   CLAIM,
+  HEARTBEAT,
   LOCATION,
   PATCH_MEMBER,
   PING,
   SET_MEET,
   SET_PLAN,
   ADD_MEMBER,
+  REMOVE_MEMBER,
   SET_RIDE_STATUS,
   SET_TARGET,
   VICTORY,
 } from '@/lib/core/protocol';
-import { outranks, readRank } from '@/lib/party/election';
+import { readRank, shouldYield } from '@/lib/party/election';
 import {
   clearSession,
   createSession,
@@ -647,7 +649,7 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     // won on gets the benefit of the doubt, because one host too few repairs
     // itself in a timeout and one host too many never does.
     const theirs = readRank(frame, { score: Infinity, joinOrder: -1 });
-    if (outranks(theirs, { ...mine, id: session.selfId })) {
+    if (shouldYield({ ...mine, id: session.selfId }, theirs)) {
       stepDown(theirs.id, frame.body?.snapshot ?? null);
       return;
     }
@@ -688,6 +690,10 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
         });
       }
       host.applyLocal({ kind: 'set-leader', body: { leader: session.selfId } });
+      // Tell the previous Host we are serving so it can stand down. A yieldTo
+      // on WELCOME/PING is how a joiner knew to promote; VICTORY is how the
+      // old Host hears that the steal finished.
+      host.assert();
     }
     persistSession();
   }
@@ -711,7 +717,6 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       // host is what has just gone. Choose again before the claim goes out, or
       // the election is held down a channel with nobody on the other end.
       link?.reselect();
-      say('Host went quiet — the party is picking a new one');
     });
     client.on('promote', ({ snapshot, score, joinOrder }) =>
       promote(snapshot, { score, joinOrder }),
@@ -729,7 +734,6 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     client = null;
     leaving.stop(); // timers and election off; its BYE is addressed to the host that just vanished
     startHost(snapshot, rank);
-    say('Hosting this party from this phone now');
     emit();
   }
 
@@ -751,7 +755,6 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     const better =
       snapshot && Number(snapshot.version) >= Number(held?.version ?? -1) ? snapshot : held;
     startClient(better || null);
-    say('Another phone took over hosting');
     emit();
   }
 
@@ -996,14 +999,17 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return null;
   }
 
+  const pushBattery = (battery) => {
+    if (!battery) return null;
+    return submit(HEARTBEAT, { battery });
+  };
   const pushLocation = (location) => {
     const me =
       (host && session && host.getState?.()?.members?.[session.selfId]) ||
       (client && session && client.getState?.()?.members?.[session.selfId]) ||
       null;
     const mode = effectiveShareMode(me || { shareMode: 'approx' });
-    const sendMode = mode === 'off' ? 'approx' : mode;
-    const shaped = locationForShare(location, sendMode);
+    const shaped = locationForShare(location, mode);
     if (!shaped) return null;
     return submit(LOCATION, { location: shaped });
   };
@@ -1044,7 +1050,9 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   };
   const setPlan = (plan) => submit(SET_PLAN, { plan: Array.isArray(plan) ? plan : [] });
   const addMember = (body) => submit(ADD_MEMBER, body || {});
-  const setMemberFacts = (patch) => submit(PATCH_MEMBER, { patch: patch || {} });
+  const removeMember = (id) => submit(REMOVE_MEMBER, { id });
+  const setMemberFacts = (patch, memberId = null) =>
+    submit(PATCH_MEMBER, memberId ? { id: memberId, patch: patch || {} } : { patch: patch || {} });
 
   async function logAction(kind, detail = {}) {
     try {
@@ -1121,9 +1129,11 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     bindUserId,
     setPlan,
     addMember,
+    removeMember,
     setMemberFacts,
     logAction,
     pushLocation,
+    pushBattery,
     clearLocation,
     getSnapshot,
     stats,
