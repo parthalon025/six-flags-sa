@@ -168,5 +168,11 @@
     "items": [
       "feat: align party mesh with invisible Host and second-Party truth"
     ]
+  },
+  "1.4.1": {
+    "title": "What's new",
+    "items": [
+      "fix: unblock Vercel install and /join prerender"
+    ]
   }
 }
