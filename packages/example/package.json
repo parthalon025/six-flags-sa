@@ -1,0 +1,8 @@
+{
+  "name": "@party-tracker/example",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  }
+}

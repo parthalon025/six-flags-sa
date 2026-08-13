@@ -2,7 +2,7 @@
  * Operator-family listing parsers — dispatch by official site URL.
  */
 
-import { parseAttractionListing } from '../venue-official-site.mjs';
+import { parseAttractionListing } from './generic.mjs';
 import { parseSixFlagsListing } from './six-flags.mjs';
 import { parseCedarFairListing } from './cedar-fair.mjs';
 import { parseDisneyListing } from './disney.mjs';

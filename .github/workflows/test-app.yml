@@ -80,6 +80,21 @@ jobs:
           node-version: '22'
       - run: node test/app/module-select.test.mjs
 
+  boundaries:
+    name: Package boundaries
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint:boundaries
+
   contract:
     name: Coverage contract
     needs: select
