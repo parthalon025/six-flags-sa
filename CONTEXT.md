@@ -93,8 +93,8 @@ An **Eligibility** verdict: this **Attraction** is allowed only with an adult.
 _Avoid_: With adult (the input fact); Adult (a family/account role, not defined yet)
 
 **Overlay**:
-The phone’s pending/accepted **Contribution** layer drawn on the shipped **Venue** map. True immediately to the submitting **Party**. Strangers see it only after the same bar as park-wide **Observation**: a second independent **Party** that walked near. Not party roster state and not persistent map until consolidate graduates it into builder inputs.
-_Avoid_: Ride report (ops chatter); Observation (live series, not map structure)
+The phone’s pending/accepted **Contribution** layer drawn on the shipped **Venue** map. True immediately on this phone — a **Party** is not required. That is the same **Overlay**, not a second layer: joining or hosting shares authored facts with **Members** immediately (merge by **Place** + type). Leave drops **Overlay** you only saw because you were in that **Party**; **Contributions** you authored stay on this phone. Strangers see it only after the same bar as park-wide **Observation**: a second independent **Party** that walked near. Not party roster state and not persistent map until consolidate graduates it into builder inputs.
+_Avoid_: Ride report (ops chatter); Observation (live series, not map structure); draft Overlay (solo is the same Overlay)
 
 **Plan**:
 The **Party**’s shared, ordered list of **Places** they intend to visit today. A draft on this phone before join is the same **Plan**, not a second list — not multi-stop navigation, not a **Meet**, not a **Side Quest**, and not a saved vacation file.
@@ -153,7 +153,10 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Completing a gap **Side Quest** produces a **Contribution** and, when the **Profile** walked near (or is inside **Venue** bounds for camping / add-**Place**, or inside bounds and off the mapped walkable layer for **path**), awards **XP** onto that **Profile**
 - Completing a live **Side Quest** produces a **Ride report** (name-first); it is not a **Contribution**; **XP** for a live report needs a **Profile** and lands on that **Profile**
 - A gap **Side Quest** requires proximity to the **Place**; a live **Side Quest** requires walking near enough to have seen it (not queue-pin GPS); a **path** **Side Quest** requires walking where the map has no walkway yet
-- A **Contribution** appears on the submitting **Party**’s **Overlay** immediately; park-wide **Overlay** needs a second independent **Party** that walked near
+- A **Contribution** appears on this phone’s **Overlay** immediately; a **Party** is not required
+- Joining or hosting shares authored **Overlay** with **Members** immediately (merge by **Place** + type); it does not overwrite the Party’s **Overlay** the way a non-empty **Plan** refuses a draft
+- Leave drops **Overlay** you only saw because you were in that **Party**; **Contributions** you authored stay on this phone
+- Park-wide **Overlay** needs a second independent **Party** that walked near
 - Confirm / deny of an **Overlay** claim are statistical (no public counts, names, or percent)
 - **XP** and **Title** are **Profile** fields; **XP** is never spent; the **Title** is the visible sub-name when a threshold is crossed
 - Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0 **XP**
@@ -193,6 +196,9 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 > **Dev:** "If we mark a restroom closed, do other families see it right away?"
 > **Domain expert:** "Our **Party** does — it's on our **Overlay**. Other visitors wait for a second independent **Party** that walked near — same bar as a park-wide **Observation**. A ride going down is time-sensitive, but that's a **Ride report**, not an **Overlay** fact."
 >
+> **Dev:** "I confirmed the height sign before anyone joined. Does **Overlay** wait for a **Party**?"
+> **Domain expert:** "No — it's on this phone's map now. A **Party** is not required. When you join, the family sees those facts immediately (merge by **Place** + type, not a **Plan**-style overwrite). If you leave, you keep what you authored; you lose **Overlay** you only saw because you were in their **Party**."
+>
 > **Dev:** "Is 'Ride up or down?' a **Contribution**?"
 > **Domain expert:** "It's a live **Side Quest**. Completing it is a **Ride report** for the **Party** — no **Profile** needed. A height-sign **Side Quest** is the other kind — that one _is_ a **Contribution** and stays Profile-gated. Think Pokémon GO for the walk-up missions, Waze for the live reports — same tab."
 >
@@ -225,7 +231,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Browse map / pick **Venue**: no **Profile** required
 - Join or host a **Party**: display name enough; **Profile** optional (attach later); **Location** required to finish join
 - Save **Managed Guests** (name/height for next visit): **Profile** required
-- Gap **Side Quest** / **Contribution** submit: **Profile** required
+- Gap **Side Quest** / **Contribution** submit: **Profile** required; this phone’s **Overlay** does not need a **Party**
 - In-party **Ride report**: display name enough
 - Park-wide **Observation** / **Overlay**: **Profile** required, plus a second independent **Party**
 - **Plan** personalization / sync across days: **Profile** required; building a **Plan** inside a **Party** does not
@@ -241,7 +247,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Code `eligibility()` returns `unknown` when inches is null — **resolved**: unset height means not height-constrained (can ride anything), not an unknown verdict. Adults who never set height do not fade the map. A child added with no height also does not constrain the group until someone enters one.
 - Code `withAdult` global toggle vs per-person accompaniment — **resolved**: domain fact is per-**Member** **With adult**; unset means accompanied for every **Member**; explicit false is rare on a device-holding **Member**. No map-wide “alone” clump switch — leave the **Meet** via **Subgroup**. **Companion** is only the Eligibility verdict.
 - Map Eligibility vs one global height — **resolved**: map / list / glance show the most restrictive **Member** in this phone’s set (matching **Subgroup** tags including device-less, or whole **Party** if this phone is untagged). Untagged device-less do not shadow a tagged phone. Place detail lists each **Member** in that set. Device-holding **Members** are the decision makers; device-less are limiters only. Not an “active rider” picker. Height / **With adult** / tag / remove are phone-driven; the local guest-chip store is not a second roster. **Managed Guests** do not constrain the map until seeded as device-less **Members**.
-- Party-local vs park-wide map edits — resolved: **Overlay** is immediately true to the submitting **Party**; park-wide **Overlay** uses the same bar as **Observation** — a second independent **Party** that walked near. Same-**Party** taps stay in-party. Ride-down: **Party** trusts the **Ride report** immediately (walk near, see it, mark it — not queue-pin GPS); park-wide needs a **Profile** plus that second **Party**, short TTL, easy contradict, reputation for spam on the **Profile**.
+- Party-local vs park-wide map edits — resolved: **Overlay** is immediately true on this phone (a **Party** is not required) and to **Members** once you join or host (merge by **Place** + type). Leave drops **Overlay** you only saw via that **Party**; authored **Contributions** stay. Park-wide **Overlay** uses the same bar as **Observation** — a second independent **Party** that walked near. Same-**Party** taps stay in-party. Ride-down: **Party** trusts the **Ride report** immediately (walk near, see it, mark it — not queue-pin GPS); park-wide needs a **Profile** plus that second **Party**, short TTL, easy contradict, reputation for spam on the **Profile**.
 - Adventure vs Contribution — resolved: product name is **Side Quest**; enjoyment and map improvement are one loop (Pokémon GO + Waze). **Gaps** seed gap quests → **Contribution** (Profile-gated, at-the-**Place**); live quests → **Ride report** (name-first, nearby enough to have seen it) / **Observation** (park-wide). `_Avoid_: Adventure`.
 - Who invents **Gaps** — resolved: the builder, once, into `*.gaps.json`. The phone ranks by **Location** and does not invent durable **Gaps** from POI heuristics. Missing/empty file → empty durable list, not a failed **Venue** load.
 - **XP** vs leaderboard — resolved: **XP** grants **Title** rewards (sub-names on the **Profile**: Scout, Ranger, Cartographer, Steward). Visitor has no **Title** yet. **XP** and **Title** live on the **Profile** only (not **Member**, **Party**, or anonymous phone). No all-time global leaderboard this ship. Cards stay meaning-first; earning a **Title** may toast.
