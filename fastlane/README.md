@@ -27,7 +27,7 @@ Store metadata uses **distinct trees** for each platform (`metadata/ios/` vs `me
 |------|---------|---------|
 | Ruby | 3.2+ | Fastlane runtime |
 | Bundler | 2.x | Lock gem versions |
-| Node.js | 20.9+ | Build the Next.js web app |
+| Node.js | 22+ | Build the Next.js web app |
 | Xcode | 15+ | iOS archive & signing (macOS CI runner) |
 | Android SDK | API 34+ | Android App Bundle build |
 
