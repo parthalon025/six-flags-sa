@@ -210,5 +210,11 @@
     "items": [
       "feat: wire Clerk profile signup in party-tracker"
     ]
+  },
+  "1.9.0": {
+    "title": "What's new",
+    "items": [
+      "feat: add Capacitor iOS and Android store shells"
+    ]
   }
 }
