@@ -1,7 +1,6 @@
 # After a merge to main, bump app semver from Conventional Commits when the
-# merge touched the app; then refresh the GitNexus index into that same bump
-# commit when possible (GITHUB_TOKEN pushes cannot trigger a second workflow).
-# Skips its own bump / index commits so it does not loop.
+# merge touched the app. Skips its own bump commits so it does not loop.
+# GitNexus is session-local (`.gitnexus/` is gitignored) and is not committed.
 
 name: Post-merge main
 
@@ -89,22 +88,6 @@ jobs:
           VERSION=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
           git commit -m "chore: bump version to $VERSION"
 
-      - name: Install GitNexus CLI
-        if: steps.gate.outputs.run == 'true'
-        run: npm install -g gitnexus
-
-      - name: Refresh GitNexus index
-        id: gitnexus
-        if: steps.gate.outputs.run == 'true'
-        continue-on-error: true
-        run: node scripts/gitnexus-sync.mjs finish --commit
-
       - name: Push
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs.run == 'true' && steps.bump.outputs.skipped != 'true'
         run: git push
-
-      - name: Fail if GitNexus refresh failed
-        if: steps.gate.outputs.run == 'true' && steps.gitnexus.outcome == 'failure'
-        run: |
-          echo "Version bump was pushed; GitNexus refresh failed. Retry via Actions → Refresh GitNexus index."
-          exit 1

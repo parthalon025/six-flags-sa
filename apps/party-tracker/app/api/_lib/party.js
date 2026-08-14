@@ -6,11 +6,15 @@
 
 import { reduce } from '@/lib/core/state';
 import { readParty, writeParty } from '@/lib/serverStore';
-import { badRequest, isId, json, notFound, serverError } from './http';
+import { rateLimit } from '@/lib/rateLimit';
+import { badRequest, isId, json, notFound, serverError, tooManyRequests } from './http';
 
 export async function commandRoute({ partyId, memberId, kind, body = {} }) {
   if (!isId(partyId)) return badRequest('Bad partyId');
   if (!isId(memberId)) return badRequest('Bad memberId');
+
+  const quota = await rateLimit('partyMutate', partyId);
+  if (!quota.ok) return tooManyRequests(quota.retryAfter);
 
   let party;
   try {

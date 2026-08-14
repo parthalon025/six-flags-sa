@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -24,6 +24,7 @@
     "icons:build": "node scripts/build-icons.mjs",
     "venues:build": "node packages/venue-builder/bin/build-venue.mjs",
     "venues:rebuild": "node packages/venue-builder/bin/build-venue.mjs --rebuild",
+    "venues:resimplify": "node packages/venue-builder/bin/resimplify-decorative.mjs",
     "venues:ask": "node packages/venue-builder/bin/build-venue.mjs --ask",
     "venues:trace": "node packages/venue-builder/bin/trace-venue.mjs",
     "venues:attractions": "node packages/venue-builder/bin/attractions.mjs",

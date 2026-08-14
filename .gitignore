@@ -32,3 +32,6 @@ build/ios
 build/android
 
 .vercel
+
+# GitNexus graph — session-local; never commit (conflicts + raw index)
+.gitnexus/

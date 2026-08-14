@@ -71,7 +71,7 @@ export async function redisCommand(command) {
 const redis = redisCommand;
 
 /** Several commands, one round trip. Individual command errors are surfaced. */
-async function pipeline(commands) {
+export async function redisPipeline(commands) {
   const res = await fetch(`${URL_BASE}/pipeline`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
@@ -85,6 +85,30 @@ async function pipeline(commands) {
   const rows = await res.json();
   return rows.map((row) => row?.result ?? null);
 }
+
+/** @deprecated internal alias — prefer redisPipeline */
+const pipeline = redisPipeline;
+
+/**
+ * Upstash EVAL — one RTT for scripts that need a prior command's result
+ * (mailbox append needs INCR seq before ZADD member).
+ */
+async function redisEval(script, keys = [], args = []) {
+  return redisCommand(['EVAL', script, String(keys.length), ...keys, ...args]);
+}
+
+/** Append mailbox message in one Redis RTT (INCR + ZADD + trim + expires). */
+const APPEND_MAILBOX_LUA = `
+local seq = redis.call('INCR', KEYS[1])
+local payload = cjson.decode(ARGV[1])
+payload['seq'] = seq
+local msg = cjson.encode(payload)
+redis.call('ZADD', KEYS[2], seq, msg)
+redis.call('ZREMRANGEBYRANK', KEYS[2], 0, -tonumber(ARGV[2]) - 1)
+redis.call('EXPIRE', KEYS[2], tonumber(ARGV[3]))
+redis.call('EXPIRE', KEYS[1], tonumber(ARGV[4]))
+return seq
+`;
 
 const partyKey = (id) => `ki:party:${id}`;
 const codeKey = (code) => `ki:code:${code}`;
@@ -194,11 +218,13 @@ export async function deleteParty(id) {
       ['DEL', partyKey(id)],
       ['DEL', boxKey(id)],
       ['DEL', seqKey(id)],
+      ['DEL', subsKey(id)],
       ...(party?.code ? [['DEL', codeKey(party.code)]] : []),
     ]);
   } else {
     mem.parties.delete(id);
     mem.boxes.delete(id);
+    mem.subs.delete(id);
     if (party?.code) mem.codes.delete(party.code);
   }
   if (party) bump('parties_deleted');
@@ -328,23 +354,20 @@ export async function appendMailbox(id, { from, to, kind, data }) {
   const ts = Date.now();
 
   if (usingRedis) {
-    const seq = Number(await redis(['INCR', seqKey(id)]));
-    const msg = JSON.stringify({ seq, ts, from, to, kind, data });
-    await pipeline([
-      // seq is the score, so the set is ordered by exactly the thing readers
-      // page on and ZRANGEBYSCORE can answer a cursor query directly. seq is
-      // also inside the member, which is what keeps two byte-identical
-      // messages from collapsing into one entry the way a set otherwise would.
-      ['ZADD', boxKey(id), String(seq), msg],
-      // Rank is score order, so dropping everything below the last
-      // MAILBOX_DEPTH by rank drops the oldest — LTRIM's replacement.
-      ['ZREMRANGEBYRANK', boxKey(id), '0', String(-MAILBOX_DEPTH - 1)],
-      ['EXPIRE', boxKey(id), String(MAILBOX_TTL_S)],
-      // The seq counter outlives the messages on purpose: if it expired and
-      // restarted at 1, every client's cursor would be ahead of the mailbox and
-      // they would silently drop everything until it caught up.
-      ['EXPIRE', seqKey(id), String(PARTY_TTL_S)],
-    ]);
+    // One EVAL RTT: seq must land inside the member JSON before ZADD, so a
+    // plain pipeline cannot chain INCR → ZADD without a second hop.
+    const seq = Number(
+      await redisEval(
+        APPEND_MAILBOX_LUA,
+        [seqKey(id), boxKey(id)],
+        [
+          JSON.stringify({ ts, from, to, kind, data }),
+          String(MAILBOX_DEPTH),
+          String(MAILBOX_TTL_S),
+          String(PARTY_TTL_S),
+        ],
+      ),
+    );
     return seq;
   }
 

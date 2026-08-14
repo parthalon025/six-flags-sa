@@ -72,53 +72,12 @@ import { shareModePatch } from '@/lib/location';
 /** The self-hosted Node host in /server, when one is configured. */
 const LAN_BASE = (process.env.NEXT_PUBLIC_SYNC_URL || '').replace(/\/+$/, '');
 
-/**
- * Where /join parks an invite for the map page to open. Session storage, not
- * local: an invite is consumed once, by the tab that was handed the link.
- */
-export const PENDING_INVITE_KEY = 'ki-pending-invite';
-
-/** Read and clear the invite /join left behind, if there is one.
- *  Payload shapes:
- *    - legacy string: raw invite hash or code
- *    - JSON `{ payload, name }`: invite plus optional display name from /join
- */
-export function takePendingInvite() {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.sessionStorage.getItem(PENDING_INVITE_KEY);
-    if (!raw) return null;
-    window.sessionStorage.removeItem(PENDING_INVITE_KEY);
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && parsed.payload) {
-        return {
-          payload: String(parsed.payload),
-          name: typeof parsed.name === 'string' ? parsed.name.trim() : '',
-        };
-      }
-    } catch {
-      /* legacy bare string */
-    }
-    return { payload: raw, name: '' };
-  } catch {
-    return null;
-  }
-}
-
-/** Stash an invite for the map page to open once (optionally with a name). */
-export function stashPendingInvite(payload, name = '') {
-  if (typeof window === 'undefined' || !payload) return false;
-  try {
-    window.sessionStorage.setItem(
-      PENDING_INVITE_KEY,
-      JSON.stringify({ payload: String(payload), name: String(name || '').trim() }),
-    );
-    return true;
-  } catch {
-    return false;
-  }
-}
+// Invite stash lives in party/inviteStash.js so /join does not import this module.
+export {
+  PENDING_INVITE_KEY,
+  takePendingInvite,
+  stashPendingInvite,
+} from './party/inviteStash.js';
 
 const origin = () => (typeof window === 'undefined' ? '' : window.location.origin);
 

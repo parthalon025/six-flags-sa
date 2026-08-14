@@ -15,7 +15,8 @@
     "locality": "Mason, Ohio",
     "kind": "theme-park",
     "pad": 0,
-    "default": true
+    "default": true,
+    "decorativeTolerance": 3
   },
   "built": {
     "at": "2026-08-09",

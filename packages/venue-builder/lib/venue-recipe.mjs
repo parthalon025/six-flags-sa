@@ -62,6 +62,7 @@ export const SHAPING_FLAGS = [
   'overrides',
   'pad',
   'tolerance',
+  'decorativeTolerance',
   'dedupe',
   'merge',
   'merge-metres',

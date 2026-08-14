@@ -14,7 +14,8 @@
     "name": "Cedar Point",
     "locality": "Sandusky, Ohio",
     "kind": "theme-park",
-    "pad": 0
+    "pad": 0,
+    "decorativeTolerance": 4
   },
   "built": {
     "at": "2026-08-09",

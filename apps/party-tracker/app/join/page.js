@@ -17,7 +17,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeInvite } from '@/lib/core/session';
 import { normalizeCode } from '@/lib/core/ids';
-import { stashPendingInvite } from '@/lib/partyRuntime';
+import { stashPendingInvite } from '@/lib/party/inviteStash';
 
 function JoinFlow() {
   const router = useRouter();
