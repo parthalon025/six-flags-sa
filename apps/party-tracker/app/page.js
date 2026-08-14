@@ -69,6 +69,17 @@ import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { navKeyOf } from '@/lib/navKey';
+import {
+  applyContribution as applyOverlayFact,
+  applyOverlayToPlaces,
+  completionLine,
+  completionsForPlace,
+  createHttpUploadAdapter,
+  emptyOverlay,
+  loadOverlay,
+  saveOverlay,
+  unionOverlays,
+} from '@/lib/overlay';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -195,7 +206,7 @@ export default function Page() {
     const {
       venue,
       map: mapData,
-      pois: POIS,
+      pois: shippedPois,
       gaps: venueGaps,
       manifest,
       status: venueStatus,
@@ -203,7 +214,7 @@ export default function Page() {
       confirmed: venueConfirmed,
       pinned: venuePinned,
     } = useVenue();
-  const movement = useMovementLog({ position, venue, pois: POIS });
+  const movement = useMovementLog({ position, venue, pois: shippedPois });
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
@@ -239,6 +250,28 @@ export default function Page() {
   // The snapshot as a ref, for callbacks that must not be rebuilt on every
   // roster tick just to read the party they are sending to.
   const partyRef = useRef(null);
+  const [localOverlay, setLocalOverlay] = useState(emptyOverlay);
+  const overlayRef = useRef(emptyOverlay());
+  useEffect(() => {
+    const loaded = loadOverlay();
+    overlayRef.current = loaded;
+    setLocalOverlay(loaded);
+  }, []);
+  const displayOverlay = useMemo(
+    () =>
+      unionOverlays(
+        localOverlay,
+        party?.active ? party.overlay || emptyOverlay() : emptyOverlay(),
+      ),
+    [localOverlay, party?.active, party?.overlay],
+  );
+  overlayRef.current = localOverlay;
+  const painted = useMemo(
+    () => applyOverlayToPlaces(shippedPois, displayOverlay),
+    [shippedPois, displayOverlay],
+  );
+  const POIS = painted.places;
+  const overlayPins = painted.pins;
   const [localMeet, setLocalMeet] = useState(null); // a meet-up marked before joining anything
   const [planDraft, setPlanDraft] = useState([]);
   useEffect(() => {
@@ -251,6 +284,25 @@ export default function Page() {
     clearDraft();
     setPlanDraft([]);
   }, []);
+  const shareOverlay = useCallback(() => {
+    const authored = overlayRef.current || emptyOverlay();
+    for (const c of authored.completions || []) {
+      runtime.current?.applyContribution?.(c);
+    }
+  }, []);
+  const handleContribution = useCallback((contribution) => {
+    setLocalOverlay((prev) => {
+      const next = applyOverlayFact(prev, contribution);
+      overlayRef.current = next;
+      return saveOverlay(next);
+    });
+    if (partyRef.current?.active) runtime.current?.applyContribution?.(contribution);
+    createHttpUploadAdapter().enqueue(contribution).catch(() => {});
+  }, []);
+  const overlayCompletionsFor = useCallback(
+    (place) => completionsForPlace(displayOverlay, identityOf(place)).map(completionLine),
+    [displayOverlay],
+  );
   const [status, setStatus] = useState('On the move');
   const [busy, setBusy] = useState(false);
 
@@ -880,7 +932,10 @@ export default function Page() {
       if (rt.hasLiveParty?.()) {
         const memberName = identityRef.current?.name || 'Guest';
         Promise.resolve(rt.resume({ memberName }))
-          .then(() => adoptDraft())
+          .then(() => {
+            adoptDraft();
+            shareOverlay();
+          })
           .catch((err) =>
             showToast(err?.message || 'Could not reopen the party.'),
           );
@@ -892,7 +947,7 @@ export default function Page() {
       setRuntimeApi(null);
       rt?.destroy();
     };
-  }, [showToast, selectTab, adoptDraft]);
+  }, [showToast, selectTab, adoptDraft, shareOverlay]);
 
   /* Join is name-first. Finish /join once location is live so the invite
      cannot land a Member with no fix. Retry when GPS arrives. */
@@ -916,6 +971,7 @@ export default function Page() {
             : 'You’re in the party',
         );
         adoptDraft();
+        shareOverlay();
       })
       .catch((err) => {
         showToast(err?.message || 'Could not open that invite.');
@@ -924,7 +980,7 @@ export default function Page() {
         inviteJoinInFlight.current = false;
       });
     return undefined;
-  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft]);
+  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft, shareOverlay]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
      resume on mount above and keep syncing on every tab. */
@@ -938,13 +994,16 @@ export default function Page() {
     resumeInFlight.current = true;
     const memberName = identityRef.current?.name || 'Guest';
     Promise.resolve(runtime.current.resume({ memberName }))
-      .then(() => adoptDraft())
+      .then(() => {
+        adoptDraft();
+        shareOverlay();
+      })
       .catch((err) => showToast(err?.message || 'Could not reopen the party.'))
       .finally(() => {
         resumeInFlight.current = false;
       });
     return undefined;
-  }, [tab, runtimeApi, party?.active, party?.phase, showToast, adoptDraft]);
+  }, [tab, runtimeApi, party?.active, party?.phase, showToast, adoptDraft, shareOverlay]);
 
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
@@ -1365,6 +1424,7 @@ export default function Page() {
         `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
       );
       adoptDraft();
+      shareOverlay();
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
     }
@@ -1393,6 +1453,7 @@ export default function Page() {
       selectTab('party');
       showToast(`Joined ${snap.code}`);
       adoptDraft();
+      shareOverlay();
     } catch (err) {
       const msg = err?.message || 'Could not join that party.';
       showToast(
@@ -1588,7 +1649,7 @@ export default function Page() {
     let live = true;
     const build = async () => {
       const routing = await getRouting();
-      if (live) setGraph(routing.buildRouteGraphCached(venue?.id, mapData, POIS));
+      if (live) setGraph(routing.buildRouteGraphCached(venue?.id, mapData, shippedPois));
     };
     const idle = typeof window !== 'undefined' ? window.requestIdleCallback : null;
     const handle = idle ? idle(() => { build(); }, { timeout: 3000 }) : setTimeout(build, 400);
@@ -1597,7 +1658,7 @@ export default function Page() {
       if (idle) window.cancelIdleCallback?.(handle);
       else clearTimeout(handle);
     };
-  }, [mapData, venue?.id, POIS, getRouting]);
+  }, [mapData, venue?.id, shippedPois, getRouting]);
 
   // A destination is held by reference, not by coordinates: a party member
   // walks around while you are walking to them, and a meet-up can be moved or
@@ -1936,6 +1997,14 @@ export default function Page() {
     [selected, position, showToast],
   );
 
+  useEffect(() => {
+    if (!selected) return;
+    const next = findPlace(POIS, selected);
+    if (!next) return;
+    const heightChanged = JSON.stringify(next.h) !== JSON.stringify(selected.h);
+    if (next.overlay !== selected.overlay || heightChanged) setSelected(next);
+  }, [POIS, selected]);
+
   /**
    * Map icon: open the place sheet so the visitor can read what it is and
    * start a walk — the list's expand is not on screen when they are looking
@@ -2166,6 +2235,7 @@ export default function Page() {
         fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
         mapKeyHidden={previewing || walking}
         onMapStats={handleMapStats}
+        overlayPins={overlayPins}
       />
 
       {/* Nothing runs across the top of a phone map. The two controls float in
@@ -2571,6 +2641,8 @@ export default function Page() {
                   onReport={party?.active ? reportRide : null}
                   onAddToPlan={addToPlan}
                   now={clock}
+                  overlayCompletionsFor={overlayCompletionsFor}
+                  pois={POIS}
                 />
               </>
             )}
@@ -2602,6 +2674,7 @@ export default function Page() {
                 onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
                 onReport={party?.active ? reportRide : null}
                 onAddToPlan={addToPlan}
+                overlayCompletions={selected ? overlayCompletionsFor(selected) : []}
               />
             )}
 
@@ -2752,6 +2825,8 @@ export default function Page() {
                 session={authSession}
                 onSession={setAuthSession}
                 onRideReport={party?.active ? reportRide : null}
+                onContribution={handleContribution}
+                overlay={localOverlay}
               />
             )}
 

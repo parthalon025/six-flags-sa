@@ -56,9 +56,12 @@ export default function PlaceList({
   onAddToPlan = null,
   now = Date.now(),
   members = null, // party members for BUSY clustering
+  overlayCompletionsFor = null,
+  pois: poisOverride = null,
 }) {
   const palette = paletteFor(theme);
-  const POIS = usePois();
+  const venuePois = usePois();
+  const POIS = poisOverride || venuePois;
   // The venue, for the half of a campsite's details that belong to the whole
   // campground rather than to one pitch.
   const venue = useVenueSelector((s) => s.venue);
@@ -263,6 +266,7 @@ export default function PlaceList({
             onSetMeet={onSetMeet}
             onReport={onReport}
             onAddToPlan={onAddToPlan}
+            overlayCompletions={overlayCompletionsFor ? overlayCompletionsFor(p) : []}
           />
         )}
       </div>
