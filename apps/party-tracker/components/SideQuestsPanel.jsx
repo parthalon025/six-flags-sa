@@ -58,6 +58,7 @@ export default function SideQuestsPanel({
   session = null,
   onSession = null,
   onRideReport = null,
+  onWorldProgress = null,
   onContribution = null,
   overlay = null,
 }) {
@@ -267,6 +268,7 @@ export default function SideQuestsPanel({
     }
     const nextSession = readLocalSession();
     if (nextSession) onSession?.(nextSession);
+    onWorldProgress?.({ quest, report });
     setOpenQuestId(null);
     setLastSubmittedId(report.id);
   }

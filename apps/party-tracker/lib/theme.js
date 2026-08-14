@@ -65,7 +65,27 @@ export const THEMES = {
   day: { categories: DAY_CATEGORIES, barred: DAY_BARRED },
 };
 
-export const paletteFor = (theme) => THEMES[theme] || THEMES.night;
+const DAY_TONES = new Set([
+  'day',
+  'postcard',
+  'handbill',
+  'ticket-stub',
+  'frost',
+  'rain-day',
+  'junior',
+  'sticker-book',
+  'water-slick',
+  'chalk-lot',
+  'sunrise',
+  'woodblock',
+  'block-park',
+  'redline',
+]);
+
+export const paletteFor = (theme) => {
+  if (THEMES[theme]) return THEMES[theme];
+  return DAY_TONES.has(theme) ? THEMES.day : THEMES.night;
+};
 
 /* District tints.
  *
@@ -110,8 +130,9 @@ const GENERATED = {
  *   what a venue nobody has hand-tuned looks like and is fine.
  */
 export function landTint(name, theme, venue = null) {
-  const named = venue?.lands?.[theme] || venue?.lands?.night || null;
+  const named = venue?.lands?.[theme] || venue?.lands?.night || venue?.lands?.day || null;
   if (name && named && named[name]) return named[name];
-  const make = GENERATED[theme] || GENERATED.night;
+  const band = theme === 'day' || DAY_TONES.has(theme) ? 'day' : 'night';
+  const make = GENERATED[band] || GENERATED.night;
   return make(hueOf(name || 'land'));
 }
