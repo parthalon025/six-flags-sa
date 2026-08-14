@@ -537,7 +537,18 @@ export default function Page() {
   // Keyed to whichever venue is loaded, not to a module constant: switching
   // parks has to move the forecast with the map, and a phone that opened on
   // Kings Island from a sofa in Texas must not read San Antonio's sky.
-  const weatherFeed = useWeather(venue?.center ?? null);
+  const [uiReady, setUiReady] = useState(false);
+  useEffect(() => {
+    const idle = window.requestIdleCallback;
+    const handle = idle
+      ? idle(() => setUiReady(true), { timeout: 1200 })
+      : setTimeout(() => setUiReady(true), 80);
+    return () => {
+      if (idle) window.cancelIdleCallback?.(handle);
+      else clearTimeout(handle);
+    };
+  }, []);
+  const weatherFeed = useWeather(venue?.center ?? null, uiReady);
   const [clock, setClock] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setClock(Date.now()), 60 * 1000);
@@ -551,14 +562,18 @@ export default function Page() {
 
   /* ---------- boot ---------- */
   useEffect(() => {
+    if (!uiReady) return undefined;
     if ('serviceWorker' in navigator) {
       // Registration and update checks live in useAppUpdate / lib/appUpdate.js.
-      navigator.serviceWorker.addEventListener('message', (e) => {
+      const onMessage = (e) => {
         if (e.data?.type !== 'notification-open') return;
         if (e.data.focus) setTab('party');
-      });
+      };
+      navigator.serviceWorker.addEventListener('message', onMessage);
+      return () => navigator.serviceWorker.removeEventListener('message', onMessage);
     }
-  }, []);
+    return undefined;
+  }, [uiReady]);
 
   // The venue is the map, the places and the bounds. Which one loads is the
   // visitor's last choice, or the deployment's default; the first GPS fix gets
@@ -1195,6 +1210,7 @@ export default function Page() {
   const quietSeen = useRef(new Set());
 
   useEffect(() => {
+    if (!uiReady) return;
     try {
       const saved = JSON.parse(localStorage.getItem(PUSH_PREFS_KEY) || 'null');
       if (saved) setPushPrefs((p) => ({ ...p, ...saved }));
@@ -1202,23 +1218,25 @@ export default function Page() {
       /* nothing saved */
     }
     setPushState(notifier.permission());
-  }, []);
+  }, [uiReady]);
 
   useEffect(() => {
+    if (!uiReady) return;
     localStorage.setItem(PUSH_PREFS_KEY, JSON.stringify(pushPrefs));
-  }, [pushPrefs]);
+  }, [uiReady, pushPrefs]);
 
   // The worker reads this off disk when a push wakes it, so it has to be
   // written before one can arrive — and cleared on leaving, which is what makes
   // a push from a party you have left unreadable on this phone.
   useEffect(() => {
+    if (!uiReady) return;
     notifier.rememberParty(
       party?.active && party?.partyId && party?.keyString
         ? { partyId: party.partyId, keyString: party.keyString, selfId: party.selfId }
         : null,
       pushPrefs,
     );
-  }, [party?.active, party?.partyId, party?.keyString, party?.selfId, pushPrefs]);
+  }, [uiReady, party?.active, party?.partyId, party?.keyString, party?.selfId, pushPrefs]);
 
   const pushNote = useCallback(
     (note, urgent = false) => {
