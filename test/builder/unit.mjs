@@ -7011,6 +7011,24 @@ await check('the boot script stamps data-intro from the same storage key the app
   return true;
 });
 
+const { clerkConfigured } = await import('../../apps/party-tracker/lib/clerkConfigured.js');
+
+await check('Clerk stays off when the API keys are not on this box', () => {
+  const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const prevSec = process.env.CLERK_SECRET_KEY;
+  delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  delete process.env.CLERK_SECRET_KEY;
+  try {
+    assert.equal(clerkConfigured(), false);
+  } finally {
+    if (prevPub == null) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = prevPub;
+    if (prevSec == null) delete process.env.CLERK_SECRET_KEY;
+    else process.env.CLERK_SECRET_KEY = prevSec;
+  }
+  return true;
+});
+
 /* ------------------------------------------------------------- app version */
 
 const { APP_BUILT, APP_VERSION, bumpPatchVersion, bumpVersion, compareVersions, isNewerBuild, isNewerVersion, parseVersion, releaseKindFromMessages } = await import('../../apps/party-tracker/lib/version.js');

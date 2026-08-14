@@ -2,6 +2,7 @@ import './globals.css';
 import localFont from 'next/font/local';
 import { ClerkProvider } from '@clerk/nextjs';
 import { BRAND } from '@/lib/brand';
+import { clerkConfigured } from '@/lib/clerkConfigured';
 import { INTRO_SEEN_BOOT_SCRIPT } from '@/lib/introGate';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -84,14 +85,18 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_BOOT_SCRIPT }} />
       </head>
       <body>
-        <ClerkProvider
-          signInUrl="/sign-in"
-          signUpUrl="/sign-up"
-          signInFallbackRedirectUrl="/"
-          signUpFallbackRedirectUrl="/"
-        >
-          {children}
-        </ClerkProvider>
+        {clerkConfigured() ? (
+          <ClerkProvider
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+            signInFallbackRedirectUrl="/"
+            signUpFallbackRedirectUrl="/"
+          >
+            {children}
+          </ClerkProvider>
+        ) : (
+          children
+        )}
         <Analytics />
         {/* RUM is for ops, not park-day UX — sample so most phones skip the script. */}
         <SpeedInsights sampleRate={0.1} />
