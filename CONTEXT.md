@@ -25,8 +25,8 @@ Anyone on the live **Party** roster (including the **Host**). Roster presence, n
 _Avoid_: User (for roster presence); submember (use device-less **Member**); Child / Guest (as party roles)
 
 **Profile**:
-A durable signed-in Park Bound identity (prefs, progress, **Title**, attribution). A **Member** may bind to a **Profile** at join or later. May save family people (names, heights) so they need not be re-entered each visit.
-_Avoid_: User (prefer **Profile** for the product-facing person; `user_id` stays an implementation id)
+A durable signed-in Park Bound identity (prefs, progress, **Title**, attribution) — the paid unlock for that identity. Download and name-only **Members** stay free. A **Member** may bind to a **Profile** at join or later. May save family people (names, heights) so they need not be re-entered each visit.
+_Avoid_: User (prefer **Profile** for the product-facing person; `user_id` stays an implementation id); account (use **Profile**); Member (roster presence, not the paid identity)
 
 **Managed Guest**:
 A saved person under a **Profile** (typically a child) — name, height, and when height was last confirmed — used to seed device-less **Members**. Saving requires a **Profile**. Seeding with a stale height prompts that they may have grown; skip keeps last inches. Removing a device-less **Member** does not delete the **Managed Guest**.
@@ -257,13 +257,14 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 
 ## Soft gate
 
-- Browse map / pick **Venue**: no **Profile** required
+- Browse map / pick **Venue**: no **Profile** required (free without a **Profile**)
 - Join or host a **Party**: display name enough; **Profile** optional (attach later); **Location** required to finish join
 - Save **Managed Guests** (name/height for next visit): **Profile** required
 - Gap **Side Quest** / **Contribution** submit: **Profile** required; this phone’s **Overlay** does not need a **Party**; without a **Profile**, stash locally until sign-in (do not discard on dismissed OAuth)
 - In-party **Ride report**: display name enough
 - Park-wide **Observation** / **Overlay**: **Profile** required, plus a second independent **Party**
 - **Plan** personalization / sync across days: **Profile** required; building a **Plan** inside a **Party** does not
+- Paid unlock: **Profile** only — not **Member**, not “user”, not a second product name for the same identity
 
 ## Flagged ambiguities
 
@@ -273,6 +274,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Code role `member` (non-host) vs domain **Member** — resolved: domain **Member** always means roster person; includes Host.
 - ADR-0001 soft-gates party behind **Profile** — resolved: party is name-first; EP.3/EP.5 revised 2026-08-12. Gap **Side Quests** / **Contributions** remain Profile-gated with local stash until sign-in. In-party **Ride reports** are name-first; park-wide **Observation** / **Overlay** need a **Profile** plus a second independent **Party**.
 - Auth provider — resolved 2026-08-14: **Clerk** (Google + Apple only) per ADR-0010; supersedes Auth.js ADR-0001. Native OAuth in Capacitor store shell; Postgres **Profile** row minted on sign-in callback, not webhook-only.
+- Paid identity — resolved 2026-08-14: download is free; the paid unlock is a **Profile** (not **Member**, not User). Name-only **Members** / browse / Party stay free. Price and store SKUs live outside this glossary.
 - "submember" / kids without phones / height on Member or Subgroup — **resolved**: kids without phones are device-less **Members** with height on the roster (family product; shared party visibility OK). Device-holding **Members** may tag them, set height / **With adult**, and remove them from the roster (does not delete the **Managed Guest**). Durable save lives as **Managed Guest** under a **Profile** only (no anonymous guest DB). Stale height prompts at seed; skip keeps last inches. Height is not a **Subgroup** property. Contradicts park-intelligence “heights not on the wire” — accepted trade-off for family use.
 - Code `eligibility()` returns `unknown` when inches is null — **resolved**: unset height means not height-constrained (can ride anything), not an unknown verdict. Adults who never set height do not fade the map. A child added with no height also does not constrain the group until someone enters one.
 - Code `withAdult` global toggle vs per-person accompaniment — **resolved**: domain fact is per-**Member** **With adult**; unset means accompanied for every **Member**; explicit false is rare on a device-holding **Member**. No map-wide “alone” clump switch — leave the **Meet** via **Subgroup**. **Companion** is only the Eligibility verdict.

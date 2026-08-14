@@ -161,23 +161,20 @@ def sync_android_version
   UI.user_error!("Android Gradle file not found under #{android_project_path}/app/") unless updated
 end
 
-def ensure_review_phone!
+def write_review_phone!
   review_dir = File.expand_path(File.join("fastlane", "metadata", "ios", "review_information"), repo_root)
   phone_path = File.join(review_dir, "phone_number.txt")
   phone = ENV["APP_STORE_REVIEW_PHONE"]
 
   if phone && !phone.strip.empty?
     File.write(phone_path, "#{phone.strip}\n")
-    return
+    return true
   end
 
-  return if File.exist?(phone_path) && !File.read(phone_path).strip.empty?
-
-  UI.user_error!(
-    "App Review contact phone is required. Set APP_STORE_REVIEW_PHONE (E.164, e.g. +12125551234) " \
-    "or add fastlane/metadata/ios/review_information/phone_number.txt"
-  )
+  File.exist?(phone_path) && !File.read(phone_path).strip.empty?
 end
+
+def ios_output_directory
   File.join(repo_root, "build", "ios")
 end
 
@@ -203,23 +200,18 @@ platform :ios do
   lane :metadata do
     api_key = connect_api_key
     version = ENV.fetch("IOS_APP_VERSION", app_version)
-    ensure_review_phone!
 
-    deliver_options = {
+    deliver_base = {
       api_key: api_key,
+      api_key_path: nil,
       app_identifier: ENV.fetch("IOS_BUNDLE_IDENTIFIER"),
       app_version: version,
       skip_binary_upload: true,
-      skip_metadata: false,
-      skip_screenshots: ENV.fetch("IOS_SKIP_SCREENSHOTS", "true") == "true",
       submit_for_review: false,
       automatic_release: false,
       force: true,
+      run_precheck_before_submit: false,
       precheck_include_in_app_purchases: false,
-      app_rating_config_path: File.expand_path(
-        File.join("fastlane", "metadata", "ios", "age_rating.json"),
-        repo_root
-      ),
       metadata_path: File.expand_path(File.join("fastlane", "metadata", "ios"), repo_root),
       screenshots_path: File.expand_path(File.join("fastlane", "screenshots", "ios"), repo_root),
       app_previews_path: File.expand_path(File.join("fastlane", "app_previews"), repo_root),
@@ -235,7 +227,33 @@ platform :ios do
       }
     }
 
-    deliver(deliver_options)
+    unless ENV.fetch("IOS_SKIP_SCREENSHOTS", "true") == "true"
+      deliver(
+        deliver_base.merge(
+          skip_metadata: true,
+          skip_screenshots: false
+        )
+      )
+    end
+
+    unless ENV.fetch("IOS_SKIP_METADATA", "false") == "true"
+      if write_review_phone!
+        metadata_options = deliver_base.merge(
+          skip_metadata: false,
+          skip_screenshots: true,
+          app_rating_config_path: File.expand_path(
+            File.join("fastlane", "metadata", "ios", "age_rating.json"),
+            repo_root
+          )
+        )
+        metadata_options.delete(:api_key_path)
+        deliver(metadata_options)
+      else
+        UI.important(
+          "Skipping metadata upload — set APP_STORE_REVIEW_PHONE (E.164) for App Review contact"
+        )
+      end
+    end
   end
 
   desc "Build and upload a TestFlight beta"

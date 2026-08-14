@@ -79,7 +79,7 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 - [ ] **App version** in Connect matches `apps/party-tracker/package.json` (metadata upload uses that semver)
 - [ ] **Privacy URL live** — deploy app with `/privacy` (added in `apps/party-tracker/app/privacy/page.js`)
 - [x] **App Preview** — iPhone 6.9" slot (`IPHONE_67`, 886×1920, 15–30s). Encode with `npm run store:app-preview`; metadata workflow uploads `fastlane/app_previews/`
-- [ ] **Screenshots** — iPhone 6.5" (1284×2778) minimum; add under `fastlane/screenshots/ios/` then set `IOS_SKIP_SCREENSHOTS=false`
+- [ ] **Screenshots** — `npm run store:screenshots` → `fastlane/screenshots/ios/` (workflow uploads with `IOS_SKIP_SCREENSHOTS=false`)
 - [ ] **TestFlight or App Store build** — IPA from macOS CI or cloud Mac (`fastlane ios beta`)
 - [ ] **App Privacy** questionnaire completed in Connect using `APP_PRIVACY.md`
 - [ ] **Review phone number** in Connect
