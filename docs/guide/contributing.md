@@ -8,13 +8,18 @@ Before opening a pull request, read the [architecture map](../architecture-map.m
 through the [venue builder](../../packages/venue-builder/) — see `AGENTS.md` for the builder ↔ app
 contract.
 
-Screenshots in this README live under `docs/images/readme/`. Regenerate them after major UI
-changes with the dev server running:
+Screenshots and the walkthrough video live under `docs/images/readme/` and are listed in
+`docs/images/readme/shots.json`. Recapture them when you change a screen they show
+(map, heights, walking, party):
 
 ```bash
-npm run dev
-node test/app/audit-visual.mjs   # writes test/audit/*.png — copy picks into docs/images/readme/
+npm run start          # or npm run dev
+npm run readme:shots   # stills + walkthrough.mp4
+npm run readme:shots:check
 ```
+
+CI runs the check against `origin/main`. A PR that edits a listed source file without
+updating the matching PNG or video fails until you recapture.
 
 ---
 [← README](../../README.md) · [Guide index](index.md)

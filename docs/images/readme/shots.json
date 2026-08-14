@@ -1,0 +1,105 @@
+{
+  "dir": "docs/images/readme",
+  "shots": [
+    {
+      "file": "map-day.png",
+      "title": "Drawn SVG map",
+      "caption": "Real OpenStreetMap geometry — midways, water, buildings, and every coaster's track — not map tiles.",
+      "alt": "Daylight Kings Island map drawn as SVG with coaster tracks, district names, and place markers",
+      "guide": "docs/guide/features.md",
+      "sources": [
+        "apps/party-tracker/components/ParkMap.jsx",
+        "apps/party-tracker/lib/mapLabels.js",
+        "apps/party-tracker/lib/mapSymbols.js",
+        "apps/party-tracker/lib/mapThemeTokens.js",
+        "apps/party-tracker/lib/mapViewport.js",
+        "apps/party-tracker/app/globals.css"
+      ]
+    },
+    {
+      "file": "map-night.png",
+      "title": "Night map",
+      "caption": "Low-glare palette for after dark. Follows the phone until you pick one.",
+      "alt": "Night-theme Kings Island map with the same SVG geometry in a low-glare palette",
+      "guide": "docs/guide/features.md",
+      "sources": [
+        "apps/party-tracker/components/ParkMap.jsx",
+        "apps/party-tracker/lib/theme.js",
+        "apps/party-tracker/lib/mapThemeTokens.js",
+        "apps/party-tracker/app/globals.css"
+      ]
+    },
+    {
+      "file": "ride-callout.png",
+      "title": "Tap a coaster",
+      "caption": "The ride's own track lights up. Callout: name, walk time, height rule.",
+      "alt": "The Beast selected on the map with its track highlighted and a place callout showing walk time",
+      "guide": "docs/guide/features.md",
+      "sources": [
+        "apps/party-tracker/components/ParkMap.jsx",
+        "apps/party-tracker/components/PlaceDetail.jsx",
+        "apps/party-tracker/lib/mapLabels.js"
+      ]
+    },
+    {
+      "file": "height-filter.png",
+      "title": "Height requirements",
+      "caption": "One slider. Rides that are out today turn alarm red — ringed and struck through.",
+      "alt": "Kings Island map with rides below a 46 inch height filter marked in alarm red",
+      "guide": "docs/guide/features.md",
+      "sources": [
+        "apps/party-tracker/components/HeightPanel.jsx",
+        "apps/party-tracker/components/ParkMap.jsx",
+        "apps/party-tracker/lib/ontology.js"
+      ]
+    },
+    {
+      "file": "walking.png",
+      "title": "Walking directions",
+      "caption": "Turn-by-turn on the phone from the venue file. No routing API, no key.",
+      "alt": "Walking route preview on the Kings Island map with time, arrival, and path drawn",
+      "guide": "docs/guide/walking-directions.md",
+      "sources": [
+        "apps/party-tracker/components/RoutePreview.jsx",
+        "apps/party-tracker/components/NavBanner.jsx",
+        "apps/party-tracker/components/NavBar.jsx",
+        "apps/party-tracker/lib/routing.js",
+        "apps/party-tracker/lib/routingProfiles.js"
+      ]
+    },
+    {
+      "file": "party.png",
+      "title": "Live party",
+      "caption": "Range, bearing, and walking time for each person — hosted on a phone in the group.",
+      "alt": "Party map with two member markers and a glance rail showing walking times",
+      "guide": "docs/guide/party.md",
+      "sources": [
+        "apps/party-tracker/components/PartyPanel.jsx",
+        "apps/party-tracker/components/GlanceRail.jsx",
+        "apps/party-tracker/components/ParkMap.jsx",
+        "apps/party-tracker/lib/party/**",
+        "apps/party-tracker/lib/live.js"
+      ]
+    }
+  ],
+  "videos": [
+    {
+      "file": "walkthrough.mp4",
+      "poster": "walkthrough-poster.png",
+      "title": "Capability walkthrough",
+      "caption": "Drawn map, tap-to-highlight a coaster, height filter, walking directions, and a live party — Kings Island.",
+      "guide": "docs/guide/walkthrough.md",
+      "sources": [
+        "apps/party-tracker/components/ParkMap.jsx",
+        "apps/party-tracker/components/PlaceDetail.jsx",
+        "apps/party-tracker/components/HeightPanel.jsx",
+        "apps/party-tracker/components/RoutePreview.jsx",
+        "apps/party-tracker/components/PartyPanel.jsx",
+        "apps/party-tracker/components/GlanceRail.jsx",
+        "apps/party-tracker/lib/routing.js",
+        "apps/party-tracker/lib/theme.js",
+        "apps/party-tracker/app/globals.css"
+      ]
+    }
+  ]
+}
