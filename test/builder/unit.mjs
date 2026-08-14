@@ -8367,6 +8367,8 @@ await check('soft-gate helper lives on the local session module', async () => {
     assert.equal(softGateBlocks('contribute', null), true);
     assert.equal(softGateBlocks('adventure', null), true);
     assert.equal(softGateBlocks('adventure', { userId: 'usr_x' }), false);
+    assert.equal(softGateBlocks('world', null), true);
+    assert.equal(softGateBlocks('world', { userId: 'usr_x' }), false);
     assert.equal(softGateBlocks('ride-report', null), false);
     assert.equal(softGateBlocks('party', { userId: 'usr_x' }), false);
     return true;

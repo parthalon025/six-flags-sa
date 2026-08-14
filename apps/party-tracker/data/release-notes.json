@@ -234,5 +234,11 @@
     "items": [
       "fix: opaque first-run gate so splash does not ghost the map"
     ]
+  },
+  "1.11.2": {
+    "title": "What's new",
+    "items": [
+      "fix: lean Maps-style place sheet with shared action icons"
+    ]
   }
 }

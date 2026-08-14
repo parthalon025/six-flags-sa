@@ -363,6 +363,9 @@ function ParkMap({
   mapKeyHidden = false,
   /** Optional map perf HUD callback (Diagnostics M0). */
   onMapStats = null,
+  marks = [],
+  selfKit = null,
+  onThankMark = null,
   /** Queue pins and path crumbs from Overlay — not extra ride Places. */
   overlayPins = [],
 }) {
@@ -1619,6 +1622,34 @@ function ParkMap({
             );
           })()}
 
+        {/* Marks left at Places — under Members so live GPS stays on top. */}
+        {(marks || []).map((mark) => {
+          const pt =
+            Number.isFinite(mark.lat) && Number.isFinite(mark.lng)
+              ? mark
+              : (pois || []).find((p) => p.i === mark.placeId || p.id === mark.placeId);
+          if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng)) return null;
+          const [sx, sy] = at(pt.lat, pt.lng);
+          const letter = String(mark.type || 'm').charAt(0).toUpperCase();
+          return (
+            <g
+              key={mark.id}
+              className="worldMark"
+              opacity={mark.opacity ?? 1}
+              onClick={(e) => {
+                e.stopPropagation();
+                onThankMark?.(mark);
+              }}
+            >
+              <title>{mark.phrase || mark.type}</title>
+              <circle cx={sx} cy={sy} r={8} fill="var(--sun)" stroke="var(--markerEdge)" strokeWidth="1.4" />
+              <text x={sx} y={sy + 3.5} className="worldMarkLetter">
+                {letter}
+              </text>
+            </g>
+          );
+        })}
+
         {/* party members */}
         {members.map((m) => {
           if (!Number.isFinite(m.lat) || !Number.isFinite(m.lng)) return null;
@@ -1682,6 +1713,14 @@ function ParkMap({
                   {formatAge(age)}
                 </text>
               )}
+              {m.kit && (
+                <g className="kitBadge" pointerEvents="none">
+                  <circle cx={sx + 11} cy={sy - 11} r={7.5} fill="var(--bg2)" stroke={m.colour} strokeWidth="1.4" />
+                  <text x={sx + 11} y={sy - 8} className="kitLetter">
+                    {String(m.kit).replace(/-/g, ' ').trim().charAt(0).toUpperCase()}
+                  </text>
+                </g>
+              )}
             </g>
           );
         })}
@@ -1729,6 +1768,14 @@ function ParkMap({
                   stroke="var(--puckRing)"
                   strokeWidth="3"
                 />
+                {selfKit && (
+                  <g className="kitBadge" pointerEvents="none">
+                    <circle cx={sx + 10} cy={sy - 10} r={7} fill="var(--bg2)" stroke="var(--blue)" strokeWidth="1.4" />
+                    <text x={sx + 10} y={sy - 7} className="kitLetter">
+                      {String(selfKit).replace(/-/g, ' ').trim().charAt(0).toUpperCase()}
+                    </text>
+                  </g>
+                )}
               </g>
             );
           })()}

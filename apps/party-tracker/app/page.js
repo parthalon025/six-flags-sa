@@ -72,6 +72,17 @@ import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/g
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { navKeyOf } from '@/lib/navKey';
 import {
+  applyMapSkin,
+  applyThanksToProgress,
+  createProgress,
+  emptyWorld,
+  mergeWorlds,
+  recordSideQuest,
+  visibleMarks,
+  wearMap,
+} from '@/lib/world';
+import { loadWorld, saveWorld } from '@/lib/worldStore';
+import {
   applyContribution as applyOverlayFact,
   applyOverlayToPlaces,
   completionLine,
@@ -393,6 +404,10 @@ export default function Page() {
   }, []);
   const [focusPoint, setFocusPoint] = useState(null);
   const [theme, setTheme] = useState('night');
+  const [worldProgress, setWorldProgress] = useState(() => createProgress());
+  const [acceptedOffer, setAcceptedOffer] = useState(null);
+  const [parkWorld, setParkWorld] = useState(() => emptyWorld());
+  const worldHydrated = useRef(false);
   const [nav, setNav] = useState(null); // where we are walking to, by reference
   const [navPhase, setNavPhase] = useState('idle'); // idle -> preview -> go
   const [routesList, setRoutes] = useState([]); // the choice, best first
@@ -818,6 +833,38 @@ export default function Page() {
   }, [theme]);
 
   useEffect(() => {
+    let cancelled = false;
+    if (worldHydrated.current) {
+      setWorldProgress((p) => ({ ...p, userId: authSession?.userId || p.userId }));
+      return undefined;
+    }
+    loadWorld({ userId: authSession?.userId || null }).then((saved) => {
+      if (cancelled) return;
+      worldHydrated.current = true;
+      setWorldProgress(saved.progress);
+      setAcceptedOffer(saved.acceptedOffer);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authSession?.userId]);
+
+  useEffect(() => {
+    if (!worldHydrated.current) return;
+    saveWorld({ progress: worldProgress, acceptedOffer });
+  }, [worldProgress, acceptedOffer]);
+
+  useEffect(() => {
+    if (party?.active && authSession?.userId) runtime.current?.bindUserId?.(authSession.userId);
+  }, [party?.active, authSession?.userId]);
+
+  useEffect(() => {
+    if (!party?.active) return;
+    if (worldProgress.kit) runtime.current?.setKit?.(worldProgress.kit);
+    if (worldProgress.wearSkin) runtime.current?.setWearSkin?.(worldProgress.wearSkin);
+  }, [party?.active, worldProgress.kit, worldProgress.wearSkin]);
+
+  useEffect(() => {
     let stop = () => {};
     void listenInviteUrls((url) => {
       try {
@@ -1083,6 +1130,7 @@ export default function Page() {
           visible: seen.visible,
           live: seen.live,
           place: seen.place,
+          kit: m.kit || null,
         };
       }),
     [party, venue?.bounds],
@@ -1114,6 +1162,143 @@ export default function Page() {
   const visibleOnMap = useMemo(() => roster.filter((m) => m.visible).length, [roster]);
 
   const meet = party?.meet ?? localMeet;
+
+  const partyMembersById = useMemo(
+    () => Object.fromEntries((party?.members || []).map((m) => [m.id, m])),
+    [party?.members],
+  );
+  const partyWorld = party?.world || null;
+  const mergedWorld = useMemo(() => mergeWorlds(partyWorld, parkWorld), [partyWorld, parkWorld]);
+  const mapWear = useMemo(
+    () =>
+      wearMap({
+        progress: worldProgress,
+        partyMembers: partyMembersById,
+        selfId: party?.selfId || null,
+        acceptedOffer,
+        world: partyWorld,
+        venue,
+        palette: theme,
+      }),
+    [worldProgress, partyMembersById, party?.selfId, acceptedOffer, partyWorld, venue, theme],
+  );
+  const worldMarksOnMap = useMemo(
+    () => visibleMarks({ world: mergedWorld, viewerPartyId: party?.partyId || null }),
+    [mergedWorld, party?.partyId],
+  );
+
+  useEffect(() => {
+    applyMapSkin(document.documentElement, mapWear);
+  }, [mapWear]);
+
+  useEffect(() => {
+    if (!venue?.id) {
+      setParkWorld(emptyWorld());
+      return undefined;
+    }
+    const partyId = party?.partyId || '';
+    let cancelled = false;
+    fetch(`/api/world/${encodeURIComponent(venue.id)}?partyId=${encodeURIComponent(partyId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data?.world) {
+          setParkWorld(data.world);
+          setWorldProgress((p) => applyThanksToProgress(p, data.world, p.userId));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [venue?.id, party?.partyId, party?.version]);
+
+  const publishMark = useCallback(
+    (mark) => {
+      if (!mark?.type) return;
+      runtime.current?.dropWorldMark?.({
+        id: mark.id,
+        type: mark.type,
+        placeId: mark.placeId,
+        lat: mark.lat,
+        lng: mark.lng,
+        venueId: mark.venueId || venue?.id,
+        phrase: mark.phrase,
+      });
+      const profileId = authSession?.userId;
+      if (!profileId || !venue?.id) return;
+      fetch(`/api/world/${encodeURIComponent(venue.id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mark',
+          profileId,
+          partyId: party?.partyId || null,
+          id: mark.id,
+          type: mark.type,
+          placeId: mark.placeId,
+          lat: mark.lat,
+          lng: mark.lng,
+          phrase: mark.phrase,
+          now: mark.createdAt,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.world) setParkWorld(data.world);
+        })
+        .catch(() => {});
+    },
+    [authSession?.userId, venue?.id, party?.partyId],
+  );
+
+  const thankAMark = useCallback(
+    (mark) => {
+      if (!mark?.id || !authSession?.userId) return;
+      runtime.current?.thankWorldMark?.(mark.id);
+      if (!venue?.id) return;
+      fetch(`/api/world/${encodeURIComponent(venue.id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'thanks',
+          profileId: authSession.userId,
+          partyId: party?.partyId || null,
+          targetId: mark.id,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.world) {
+            setParkWorld(data.world);
+            setWorldProgress((p) => applyThanksToProgress(p, data.world, p.userId));
+          }
+        })
+        .catch(() => {});
+    },
+    [authSession?.userId, venue?.id, party?.partyId],
+  );
+
+  const recordWorldQuest = useCallback(
+    ({ quest, report }) => {
+      const { progress: next, marks } = recordSideQuest(
+        { ...worldProgress, userId: authSession?.userId || worldProgress.userId },
+        {
+          questId: quest?.id || report?.questId,
+          kind: quest?.type || report?.kind,
+          venueId: report?.venueId || venue?.id,
+          placeId: report?.placeId || quest?.targets?.[0] || null,
+          lat: report?.lat,
+          lng: report?.lng,
+          partyId: party?.partyId || null,
+          venueKind: venue?.kind,
+          venuePlaceCount: POIS?.length || null,
+        },
+      );
+      setWorldProgress(next);
+      for (const mark of marks) publishMark(mark);
+    },
+    [worldProgress, authSession?.userId, venue?.id, venue?.kind, party?.partyId, POIS, publishMark],
+  );
 
   /**
    * Where the party is, according to the phone hosting it.
@@ -2241,7 +2426,7 @@ export default function Page() {
         visibleCategories={categories}
         onToggleCategory={toggleCategory}
         focusPoint={focusPoint}
-        theme={theme}
+        theme={mapWear}
         route={navTarget ? route : null}
         routeStep={walking ? progress?.step ?? null : null}
         routeAhead={routeAhead}
@@ -2258,6 +2443,9 @@ export default function Page() {
         fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
         mapKeyHidden={previewing || walking}
         onMapStats={handleMapStats}
+        marks={worldMarksOnMap}
+        selfKit={worldProgress.kit || selfMember?.kit || null}
+        onThankMark={thankAMark}
         overlayPins={overlayPins}
       />
 
@@ -2848,6 +3036,7 @@ export default function Page() {
                 session={authSession}
                 onSession={setAuthSession}
                 onRideReport={party?.active ? reportRide : null}
+                onWorldProgress={recordWorldQuest}
                 onContribution={handleContribution}
                 overlay={localOverlay}
               />
@@ -2911,6 +3100,35 @@ export default function Page() {
                       return { ...i, name: next.displayName };
                     });
                   }
+                }}
+                worldProgress={worldProgress}
+                world={mergedWorld}
+                acceptedOffer={acceptedOffer}
+                selfId={party?.selfId || null}
+                venue={venue}
+                onWearOwn={(skinId) => {
+                  setAcceptedOffer(null);
+                  setWorldProgress((p) => ({ ...p, wearSkin: skinId }));
+                  runtime.current?.setWearSkin?.(skinId);
+                }}
+                onAcceptOffer={(offer) => setAcceptedOffer(offer)}
+                onClearWear={() => setAcceptedOffer(null)}
+                onOfferSkin={(skinId) => runtime.current?.offerSkin?.(skinId)}
+                onWithdrawOffer={(skinId) => runtime.current?.withdrawOffer?.(skinId)}
+                onEquipKit={(kit) => {
+                  setWorldProgress((p) => ({ ...p, kit }));
+                  runtime.current?.setKit?.(kit);
+                }}
+                onDropMark={(fields) => {
+                  const now = Date.now();
+                  publishMark({
+                    ...fields,
+                    placeId: selected?.i || selected?.id || fields.placeId || null,
+                    venueId: venue?.id,
+                    createdAt: now,
+                    authorId: authSession?.userId,
+                    authorPartyId: party?.partyId || null,
+                  });
                 }}
               />
             )}

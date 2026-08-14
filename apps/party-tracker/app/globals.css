@@ -540,6 +540,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   text-anchor: middle;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; pointer-events: none;
 }
+.kitLetter, .worldMarkLetter {
+  font-family: var(--ui); font-size: 9px; font-weight: 700; fill: var(--label);
+  text-anchor: middle; pointer-events: none;
+}
+.worldMark { cursor: pointer; }
+.worldSkinActions { display: flex; gap: 8px; padding: 0 16px 8px; }
+.worldSkinRow .row { border-bottom: none; }
 .meetPin {
   transform-box: fill-box; transform-origin: 50% 100%;
   animation: pinDrop var(--t3) var(--ease) both;

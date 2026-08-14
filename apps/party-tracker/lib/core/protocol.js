@@ -33,6 +33,10 @@ export const SET_PLAN = 'set-plan'; // { plan: [{ id, placeId, label }] }
 export const APPLY_CONTRIBUTION = 'apply-contribution'; // Overlay: { contribution }
 export const ADD_MEMBER = 'add-member'; // device-less seat: { id, name, height?, withAdult?, groupId? }
 export const REMOVE_MEMBER = 'remove-member'; // drop a device-less seat: { id }
+export const WORLD_OFFER = 'world-offer'; // { skinId }
+export const WORLD_WITHDRAW = 'world-withdraw'; // { skinId? }
+export const WORLD_MARK = 'world-mark'; // { type, placeId, lat, lng, venueId, phrase? }
+export const WORLD_THANKS = 'world-thanks'; // { targetId, profileId }
 export const BYE = 'bye'; // leave: {}
 export const RESYNC = 'resync'; // { haveVersion }
 
@@ -50,7 +54,7 @@ export const VICTORY = 'victory'; // { snapshot } — new host asserts itself
 
 export const CLIENT_KINDS = new Set([
   HELLO, LOCATION, HEARTBEAT, PATCH_MEMBER, SET_FAVORITE, SET_TARGET, SET_RIDE_STATUS, SET_MEET,
-  SET_PLAN, APPLY_CONTRIBUTION, ADD_MEMBER, REMOVE_MEMBER, BYE, RESYNC,
+  SET_PLAN, APPLY_CONTRIBUTION, ADD_MEMBER, REMOVE_MEMBER, WORLD_OFFER, WORLD_WITHDRAW, WORLD_MARK, WORLD_THANKS, BYE, RESYNC,
 ]);
 
 export const HOST_KINDS = new Set([WELCOME, SNAPSHOT, PATCH, PING, ERROR]);
