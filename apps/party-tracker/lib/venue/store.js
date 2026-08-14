@@ -175,14 +175,17 @@ const readLocal = (key) => {
 const savedChoice = () => readLocal(LS_KEY);
 const savedConfirmation = () => readLocal(LS_CONFIRMED);
 
-/** True when boot should refetch Venue files past the HTTP cache. */
+/**
+ * True when boot should refetch venue files past the HTTP/SW cache.
+ *
+ * Online used to force `cache: 'no-store'`, which defeated the service worker
+ * and re-downloaded ~100KB+ of map JSON on every park-wifi launch. Deploys
+ * invalidate via a new SW cache name; keep the boolean override for tests and
+ * an explicit "refresh map" path.
+ */
 export function shouldRefreshVenueAtBoot(online) {
   if (typeof online === 'boolean') return online;
-  try {
-    return typeof navigator === 'undefined' || navigator.onLine !== false;
-  } catch {
-    return true;
-  }
+  return false;
 }
 
 export function venueFetchInit(refresh) {

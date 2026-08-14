@@ -18,7 +18,7 @@
 // existence check on the mailbox write path, MAILBOX_DEPTH, and the TTLs that
 // make every key in the store temporary.
 
-import { redisCommand, usingRedis } from './serverStore.js';
+import { usingRedis, redisPipeline } from './serverStore.js';
 
 /** Requests, window in ms. Tuned for shared park wifi, not for a lab. */
 export const LIMITS = {
@@ -49,6 +49,9 @@ export const LIMITS = {
   // Guest walk uploads — keyed by IP, generous for park wifi NAT, still caps
   // a runaway client dumping fabricated LineStrings into the research queue.
   guestTraceUpload: { limit: 120, windowMs: 60 * 60 * 1000 },
+  // Cloud REST heartbeats / location patches — keyed by party. Generous for a
+  // walking party of six; stops a runaway client rewriting Redis every tick.
+  partyMutate: { limit: 600, windowMs: 60 * 1000 },
 };
 
 const mem =
@@ -75,13 +78,14 @@ function memoryHit(bucketKey, windowMs, now) {
 }
 
 async function redisHit(bucketKey, windowMs) {
-  const count = Number(await redisCommand(['INCR', bucketKey]));
-  // Only the request that opened the window pays for the EXPIRE, so the steady
-  // state is one command per request rather than two.
-  if (count === 1) {
-    await redisCommand(['EXPIRE', bucketKey, String(Math.ceil(windowMs / 1000) + 1)]);
-  }
-  return count;
+  // One pipeline RTT: the bucket key already embeds the window id, so refreshing
+  // EXPIRE on every hit is harmless and cheaper than a conditional second hop.
+  const ttl = Math.ceil(windowMs / 1000) + 1;
+  const [count] = await redisPipeline([
+    ['INCR', bucketKey],
+    ['EXPIRE', bucketKey, String(ttl)],
+  ]);
+  return Number(count);
 }
 
 /**

@@ -127,6 +127,7 @@ Build a venue bundle from OpenStreetMap.
   --overrides <file>        heights and corrections (default: data/venues/<id>.overrides.json)
   --pad <metres>            grow the bounding box (default: 120)
   --tolerance <metres>      geometry simplification (default: 1.2)
+  --decorativeTolerance <m> coarser simplify for grass/wood/park fills (default: max(tolerance*2.5, 3))
   --default                 make this the venue the app opens on
   --dry-run                 print what would be written, write nothing
   --dump <file>             save the raw Overpass response for inspection
@@ -375,7 +376,9 @@ export function buildLayers(elements, opts) {
       const fills = closed && !LINE_LAYERS.has(layer);
       const bounded = fills ? clipToBounds(raw, opts.clip) : raw;
       if (bounded.length < 2) continue;
-      const ring = round(simplify(bounded, opts.tolerance));
+      const ring = round(
+        simplify(bounded, fills ? opts.toleranceFor?.(layer) ?? opts.tolerance : opts.tolerance),
+      );
       if (ring.length < 2) continue;
 
       if (isLand(tags) && closed) {
@@ -1525,6 +1528,9 @@ async function buildOne(args, { previous = null } = {}) {
   const name = String(args.name || place?.name || 'Venue');
   const id = slugify(String(args.id || name));
   const tolerance = Number(args.tolerance ?? 1.2);
+  // Decorative fills (grass/wood/…) may use a coarser tolerance than walkable
+  // paths — Cedar Point grass alone was ~250KB of JSON phones parse on park wifi.
+  const decorativeTolerance = Number(args.decorativeTolerance ?? Math.max(tolerance * 2.5, 3));
 
   /* Read before the meta is assembled, because a rebuild has to be able to fall
      back to what the last one decided. */
@@ -1557,8 +1563,10 @@ async function buildOne(args, { previous = null } = {}) {
     console.error(`  · sources: ${wired.file.replace(process.cwd() + '/', '')}`);
   }
 
+  const DECORATIVE = new Set(['grass', 'wood', 'park', 'sea', 'parking', 'sand']);
   const { layers, anchors, areaCandidates, allLands, boundary, campRings } = buildLayers(elements, {
     tolerance,
+    toleranceFor: (layer) => (DECORATIVE.has(layer) ? decorativeTolerance : tolerance),
     minArea: 12,
     venueArea,
     venueName: name,

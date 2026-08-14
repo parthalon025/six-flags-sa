@@ -75,7 +75,10 @@ function createPoller({ base, partyId, peerId, key }) {
 
   const recalcCool = () => {
     const values = [...coolPrefs.values()];
-    coolMs = values.length ? Math.min(...values) : DEFAULT_COOL_MS;
+    // Max, not min: when WebRTC has linked and signaling paces to 10s, a cloud
+    // cool of 2.5s must not keep the shared poller hot. During negotiation both
+    // sit near 2–2.5s so max stays in that band.
+    coolMs = values.length ? Math.max(...values) : DEFAULT_COOL_MS;
   };
 
   const delay = () => {
@@ -112,8 +115,13 @@ function createPoller({ base, partyId, peerId, key }) {
       seen = seq;
       if (seq > cursor) cursor = seq;
     }
-    busy();
     const kind = msg.kind || 'signal';
+    // WebRTC negotiation (`signal`) needs a hot poll. Sealed party frames are
+    // almost always `envelope`, including host PINGs every 4s — treating those
+    // as activity pinned cool cadence at POLL_HOT_MS forever on the cloud
+    // relay. Delivery still happens on the next cool tick; send/post and
+    // explicit busy() keep the hot window for real back-and-forth.
+    if (kind === 'signal') busy();
     const set = handlers.get(kind);
     if (set) {
       for (const fn of [...set]) {

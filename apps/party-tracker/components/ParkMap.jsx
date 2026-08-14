@@ -195,6 +195,136 @@ function worldPathFromLatLngs(points, origin = [0, 0]) {
   return d;
 }
 
+/** Venue geometry has no live-location inputs. Keeping it behind its own memo
+ * boundary lets GPS and heading paints reconcile only the moving overlays. */
+const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
+  world,
+  mapLayers,
+  showDetail,
+  showService,
+  lowZoom,
+  theme,
+  venue,
+}) {
+  return (
+    <>
+      <g className="lyr-sea">
+        {world.sea.map((f) => (
+          <path key={`se${f.i}`} d={f.d} />
+        ))}
+      </g>
+
+      <g className="lyr-park">
+        {world.park.map((f) => (
+          <path key={`pk${f.i}`} d={f.d} />
+        ))}
+      </g>
+
+      <g className="lyr-land">
+        {world.lands.map((land) => {
+          const tint = landTint(land.n, theme, venue);
+          return (
+            <path
+              key={`ld${land.i}`}
+              d={land.d}
+              fill={tint.fill}
+              stroke={tint.stroke}
+              strokeWidth="1"
+            />
+          );
+        })}
+      </g>
+
+      <g className="lyr-wood">
+        {world.wood.map((f) => (
+          <path key={`wd${f.i}`} d={f.d} />
+        ))}
+      </g>
+      {showDetail && (
+        <g className="lyr-grass lyr-detail">
+          {world.grass.map((f) => (
+            <path key={`gr${f.i}`} d={f.d} />
+          ))}
+        </g>
+      )}
+      <g className="lyr-parking">
+        {world.parking.map((f) => (
+          <path key={`pa${f.i}`} d={f.d} />
+        ))}
+      </g>
+      <g className="lyr-water">
+        {world.water.map((f) => (
+          <path key={`wa${f.i}`} d={f.d} />
+        ))}
+      </g>
+      <g className="lyr-watersheen">
+        {world.water.map((f) => (
+          <path key={`wash${f.i}`} d={f.d} />
+        ))}
+      </g>
+      <g className="lyr-pool">
+        {world.pool.map((f) => (
+          <path key={`po${f.i}`} d={f.d} />
+        ))}
+      </g>
+
+      <g className="lyr-boundary">
+        {world.boundary.map((f) => (
+          <path key={`bd${f.i}`} d={f.d} />
+        ))}
+      </g>
+
+      {showService && (
+        <g className="lyr-service lyr-detail">
+          {mapLayers.service.map((f) => (
+            <path key={`sv${f.i}`} d={f.d} />
+          ))}
+        </g>
+      )}
+      {!lowZoom && (
+        <g className="lyr-pathcase">
+          {mapLayers.path.map((f) => (
+            <path key={`pc${f.i}`} d={f.d} />
+          ))}
+        </g>
+      )}
+      <g className="lyr-path">
+        {mapLayers.path.map((f) => (
+          <path key={`ph${f.i}`} d={f.d} />
+        ))}
+      </g>
+
+      {showDetail && (
+        <g className="lyr-building lyr-detail">
+          {mapLayers.building.map((f) => (
+            <path key={`bldg${f.i}`} d={f.d} />
+          ))}
+        </g>
+      )}
+
+      <g className="lyr-slide">
+        {world.slide.map((f) => (
+          <path key={`sl${f.i}`} d={f.d} />
+        ))}
+      </g>
+      {showDetail && (
+        <>
+          <g className="lyr-coastershadow">
+            {world.coaster.map((f) => (
+              <path key={`cs${f.i}`} d={f.d} />
+            ))}
+          </g>
+          <g className="lyr-coaster">
+            {world.coaster.map((f) => (
+              <path key={`co${f.i}`} d={f.d} />
+            ))}
+          </g>
+        </>
+      )}
+    </>
+  );
+});
+
 function ParkMap({
   data,
   center,
@@ -747,6 +877,7 @@ function ParkMap({
   const showLands = layerVisible(zPlan, 0.34, 0.28, layersOn.lands);
   const showDetail = layerVisible(zPlan, 0.7, 0.62, layersOn.detail);
   const showService = layerVisible(zPlan, 1.4, 1.28, layersOn.service);
+  const lowZoom = !showDetail || zPlan < 0.85;
 
   useEffect(() => {
     setLayersOn((prev) => {
@@ -809,31 +940,33 @@ function ParkMap({
     [cx, cy, rotation, z, view.x, view.y, worldOrigin, pixelRatio],
   );
 
-  /* Cull heavy layers at high zoom, but snap the cull camera onto a
+  /* Cull path-heavy venues even in overview, but snap the cull camera onto a
      screen-sized grid so membership does not thrash every pan frame. */
   const cullCellX = Math.round((view.x * Math.max(view.scale, 0.01)) / 160);
   const cullCellY = Math.round((view.y * Math.max(view.scale, 0.01)) / 160);
   const cullScaleBand = Math.round(view.scale * 40);
+  const cullEnabled = world?.path.length > 80 || (showDetail && z >= 1.2);
   const cullView = useMemo(() => {
-    if (!showDetail || z < 1.2) return null;
+    if (!cullEnabled) return null;
     return stableCullView(view);
     // Quantized cell deps — not raw view — keep the object identity stable
     // across pan frames inside the same cell.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showDetail, z, cullCellX, cullCellY, cullScaleBand]);
+  }, [cullEnabled, cullCellX, cullCellY, cullScaleBand]);
 
   const drawWorld = useMemo(() => {
     if (!world) return null;
     if (!cullView) return world;
+    const cullPad = lowZoom ? 1.2 : 0.55;
     const cull = (list) =>
-      list.filter((f) => featureInView(f, cullView, cx, cy, spin, size.w, size.h, 0.55));
+      list.filter((f) => featureInView(f, cullView, cx, cy, spin, size.w, size.h, cullPad));
     return {
       ...world,
       path: cull(world.path),
       building: cull(world.building),
       service: showService ? cull(world.service) : world.service,
     };
-  }, [world, cullView, cx, cy, spin, size.w, size.h, showService]);
+  }, [world, cullView, lowZoom, cx, cy, spin, size.w, size.h, showService]);
 
   const mapLayers = drawWorld || world;
 
@@ -1283,125 +1416,15 @@ function ParkMap({
             pan/zoom/rotate around the venue origin. Labels and markers stay
             outside so they remain upright. */}
         <g className="mapWorld" transform={viewTransform}>
-          {/* The lake or sea the venue stands in, under the ground rather than
-              over it — a venue on a peninsula is drawn on its land, not beneath
-              the water around it. Venues built before this layer existed simply
-              have nothing here. */}
-          <g className="lyr-sea">
-            {world.sea.map((f) => (
-              <path key={`se${f.i}`} d={f.d} />
-            ))}
-          </g>
-
-          <g className="lyr-park">
-            {world.park.map((f) => (
-              <path key={`pk${f.i}`} d={f.d} />
-            ))}
-          </g>
-
-          <g className="lyr-land">
-            {world.lands.map((land) => {
-              const tint = landTint(land.n, theme, venue);
-              return (
-                <path
-                  key={`ld${land.i}`}
-                  d={land.d}
-                  fill={tint.fill}
-                  stroke={tint.stroke}
-                  strokeWidth="1"
-                />
-              );
-            })}
-          </g>
-
-          <g className="lyr-wood">
-            {world.wood.map((f) => (
-              <path key={`wd${f.i}`} d={f.d} />
-            ))}
-          </g>
-          {showDetail && (
-            <g className="lyr-grass lyr-detail">
-              {world.grass.map((f) => (
-                <path key={`gr${f.i}`} d={f.d} />
-              ))}
-            </g>
-          )}
-          <g className="lyr-parking">
-            {world.parking.map((f) => (
-              <path key={`pa${f.i}`} d={f.d} />
-            ))}
-          </g>
-          <g className="lyr-water">
-            {world.water.map((f) => (
-              <path key={`wa${f.i}`} d={f.d} />
-            ))}
-          </g>
-          <g className="lyr-watersheen">
-            {world.water.map((f) => (
-              <path key={`wash${f.i}`} d={f.d} />
-            ))}
-          </g>
-          <g className="lyr-pool">
-            {world.pool.map((f) => (
-              <path key={`po${f.i}`} d={f.d} />
-            ))}
-          </g>
-
-          {/* Where the park stops. Drawn over the ground and under everything you
-              walk on, so it reads as the edge of the place rather than another
-              thing in it — the answer to "is the car park still inside?", which
-              is otherwise a guess from the colour of the fill. */}
-          <g className="lyr-boundary">
-            {world.boundary.map((f) => (
-              <path key={`bd${f.i}`} d={f.d} />
-            ))}
-          </g>
-
-          {showService && (
-            <g className="lyr-service lyr-detail">
-              {mapLayers.service.map((f) => (
-                <path key={`sv${f.i}`} d={f.d} />
-              ))}
-            </g>
-          )}
-          <g className="lyr-pathcase">
-            {mapLayers.path.map((f) => (
-              <path key={`pc${f.i}`} d={f.d} />
-            ))}
-          </g>
-          <g className="lyr-path">
-            {mapLayers.path.map((f) => (
-              <path key={`ph${f.i}`} d={f.d} />
-            ))}
-          </g>
-
-          {showDetail && (
-            <g className="lyr-building lyr-detail">
-              {mapLayers.building.map((f) => (
-                <path key={`bldg${f.i}`} d={f.d} />
-              ))}
-            </g>
-          )}
-
-          <g className="lyr-slide">
-            {world.slide.map((f) => (
-              <path key={`sl${f.i}`} d={f.d} />
-            ))}
-          </g>
-          {showDetail && (
-            <>
-              <g className="lyr-coastershadow">
-                {world.coaster.map((f) => (
-                  <path key={`cs${f.i}`} d={f.d} />
-                ))}
-              </g>
-              <g className="lyr-coaster">
-                {world.coaster.map((f) => (
-                  <path key={`co${f.i}`} d={f.d} />
-                ))}
-              </g>
-            </>
-          )}
+          <ParkMapStaticWorld
+            world={world}
+            mapLayers={mapLayers}
+            showDetail={showDetail}
+            showService={showService}
+            lowZoom={lowZoom}
+            theme={theme}
+            venue={venue}
+          />
 
           {/* the selected ride's own track, so the red spaghetti has an owner */}
           {litTrack.length > 0 && (

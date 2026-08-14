@@ -7,14 +7,11 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 /* Checked into public/fonts so CI and park wifi never depend on fetching
    Google at build or first paint. Variable face covers 500–800. */
 const display = localFont({
+  // Latin only on the critical path — brand copy is English; latin-ext adds
+  // ~22KB to every first paint for parks that never need it.
   src: [
     {
       path: '../public/fonts/plus-jakarta-sans-latin.woff2',
-      weight: '500 800',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/plus-jakarta-sans-latin-ext.woff2',
       weight: '500 800',
       style: 'normal',
     },
@@ -75,15 +72,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={display.variable}>
       <head>
+        {/* Manifest only — last venue is often not Kings Island; preloading KI
+            map+pois wastes park-wifi bandwidth for returning guests elsewhere. */}
         <link rel="preload" href="/venues/manifest.json" as="fetch" crossOrigin="anonymous" />
-        <link rel="preload" href="/venues/kings-island.map.json" as="fetch" crossOrigin="anonymous" />
-        <link rel="preload" href="/venues/kings-island.pois.json" as="fetch" crossOrigin="anonymous" />
         <style>{`:root { --display: var(--font-display), 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }`}</style>
       </head>
       <body>
         {children}
         <Analytics />
-        <SpeedInsights />
+        {/* RUM is for ops, not park-day UX — sample so most phones skip the script. */}
+        <SpeedInsights sampleRate={0.1} />
       </body>
     </html>
   );

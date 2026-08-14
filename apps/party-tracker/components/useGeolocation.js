@@ -246,11 +246,27 @@ export default function useGeolocation() {
       return;
     }
     disableCompass();
+    // Orientation fires tens of times a second; committing every sample into
+    // React state re-renders the whole explore shell (map + sheet). Hold the
+    // live value in a ref and publish at most ~8 Hz or when the needle moves.
+    let lastPublished = null;
+    let lastAt = 0;
+    const HEADING_MIN_DEG = 2.5;
+    const HEADING_MIN_MS = 125;
     const onOri = (e) => {
       let h = null;
       if (e.webkitCompassHeading != null) h = e.webkitCompassHeading;
       else if (e.alpha != null && e.absolute !== false) h = (360 - e.alpha) % 360;
-      if (h != null && !Number.isNaN(h)) setHeading(h);
+      if (h == null || Number.isNaN(h)) return;
+      const now = Date.now();
+      const delta =
+        lastPublished == null
+          ? Infinity
+          : Math.min(Math.abs(h - lastPublished), 360 - Math.abs(h - lastPublished));
+      if (delta < HEADING_MIN_DEG && now - lastAt < HEADING_MIN_MS) return;
+      lastPublished = h;
+      lastAt = now;
+      setHeading(h);
     };
     onOriRef.current = onOri;
     window.addEventListener('deviceorientationabsolute', onOri, true);
