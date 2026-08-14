@@ -748,8 +748,8 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
     if (isSignedIn) clearGuestChoice();
   }, [isSignedIn]);
 
-  const pastAuthGate = isSignedIn || guestMode;
-  const showAuthGate = clerkLoaded && !isSignedIn && !guestMode;
+  const pastAuthGate = isSignedIn || guestMode || !clerkBrowserConfigured();
+  const showAuthGate = clerkBrowserConfigured() && clerkLoaded && !isSignedIn && !guestMode;
   const showIntroSplash = pastAuthGate && introSeen === false && !logoSplashDismissed;
   /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
   const showWelcomeGate = pastAuthGate && introSeen === false && logoSplashDismissed && !nearestIntent;
