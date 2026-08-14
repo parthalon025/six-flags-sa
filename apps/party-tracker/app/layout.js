@@ -3,7 +3,7 @@ import localFont from 'next/font/local';
 import { ClerkProvider } from '@clerk/nextjs';
 import { clerkAppearance } from '@/lib/auth/clerkAppearance';
 import { BRAND } from '@/lib/brand';
-import { clerkConfigured } from '@/lib/clerkConfigured';
+import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 import { INTRO_SEEN_BOOT_SCRIPT } from '@/lib/introGate';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -86,7 +86,7 @@ export default function RootLayout({ children }) {
         <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_BOOT_SCRIPT }} />
       </head>
       <body>
-        {clerkConfigured() ? (
+        {clerkBrowserConfigured() ? (
           <ClerkProvider
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
