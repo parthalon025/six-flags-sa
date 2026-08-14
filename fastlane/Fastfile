@@ -215,9 +215,6 @@ platform :ios do
       }
     }
 
-    apple_id = ENV["APP_STORE_APPLE_ID"]
-    deliver_options[:apple_id] = apple_id if apple_id && !apple_id.strip.empty?
-
     deliver(deliver_options)
   end
 
