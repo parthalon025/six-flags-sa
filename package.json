@@ -45,6 +45,7 @@
     "consolidate:export": "node scripts/run-consolidate-from-export.mjs --queue data/databricks/bronze/consolidate-export.json",
     "databricks:setup": "node scripts/databricks-workspace-setup.mjs",
     "databricks:free-setup": "node scripts/databricks-free-setup.mjs",
+    "clerk:setup": "node scripts/clerk-setup.mjs",
     "databricks:e2e": "node scripts/databricks-e2e.mjs",
     "venues:discover-parks-api": "node packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node packages/venue-builder/bin/geocode-catalog.mjs",
@@ -74,9 +75,16 @@
     "worktree:list": "node scripts/worktree.mjs list",
     "worktree:status": "node scripts/worktree.mjs status",
     "worktree:prune": "node scripts/worktree.mjs prune",
-    "skills:check": "node scripts/check-skills-lock.mjs"
+    "skills:check": "node scripts/check-skills-lock.mjs",
+    "cap:sync": "npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
+    "@capacitor/ios": "^7.4.2",
     "dependency-cruiser": "^18.2.0",
     "playwright": "^1.62.1",
     "turbo": "^2.10.9"

@@ -19,6 +19,8 @@ fastlane/
 
 Store metadata uses **distinct trees** for each platform (`metadata/ios/` vs `metadata/android/`).
 
+Identifiers for App Store Connect / Play Console live in [`store-identifiers.json`](store-identifiers.json) (SKU, bundle ID, package name).
+
 ## Prerequisites
 
 ### Toolchain
@@ -44,7 +46,7 @@ Park Bound ships as a **Next.js PWA** (`apps/party-tracker`). Official store bin
 
 ```bash
 npm install @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
-npx cap init Parkbound com.parkbound.app
+npx cap init Parkbound ai.kurat0r.parkbound
 npx cap add ios
 npx cap add android
 ```
@@ -91,7 +93,7 @@ Required variables:
 
 | Variable | Description |
 |----------|-------------|
-| `IOS_BUNDLE_IDENTIFIER` | Xcode bundle ID (`com.parkbound.app`) |
+| `IOS_BUNDLE_IDENTIFIER` | Xcode bundle ID (`ai.kurat0r.parkbound`) |
 | `IOS_TEAM_ID` | Apple Developer Team ID |
 | `IOS_ITC_TEAM_ID` | App Store Connect Team ID |
 | `APP_STORE_CONNECT_API_KEY_ID` | 10-character Key ID |
@@ -138,7 +140,10 @@ bundle exec fastlane production
 
 Edit listing copy under:
 
-- `fastlane/metadata/ios/en-US/` — `name.txt`, `subtitle.txt`, `description.txt`, `keywords.txt`, etc.
+- `fastlane/metadata/ios/en-US/` — `name.txt`, `subtitle.txt`, `description.txt`, `keywords.txt`, `promotional_text.txt`, `release_notes.txt`, URL fields
+- `fastlane/metadata/ios/review_information/` — App Review notes and contact email
+- `fastlane/metadata/ios/copyright.txt` — copyright line
+- Section → Connect field map: `fastlane/metadata/ios/SECTIONS.md`
 - `fastlane/metadata/android/en-US/` — `title.txt`, `short_description.txt`, `full_description.txt`
 
 Add per-release Android changelogs at:
@@ -148,6 +153,32 @@ fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
 ```
 
 Add screenshots under `fastlane/screenshots/ios/` and `fastlane/screenshots/android/`, then set `IOS_SKIP_SCREENSHOTS=false` or `ANDROID_SKIP_SCREENSHOTS=false`.
+
+### Push metadata from GitHub (no Mac)
+
+Workflow: [`.github/workflows/ios-app-store-metadata.yml`](../.github/workflows/ios-app-store-metadata.yml)
+
+Runs on **ubuntu** — uploads `fastlane/metadata/ios/` via `bundle exec fastlane ios metadata` (no Xcode build).
+
+**Repository secrets** (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|--------|--------|
+| `APP_STORE_CONNECT_API_KEY_ID` | e.g. `45W483PCTK` |
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID from App Store Connect → Integrations |
+| `APP_STORE_CONNECT_API_KEY` | Base64-encoded `.p8` file (`base64 -w0 AuthKey.p8` on Linux; `[Convert]::ToBase64String([IO.File]::ReadAllBytes('AuthKey.p8'))` on PowerShell) |
+| `APP_STORE_APPLE_ID` | Optional numeric app ID (e.g. `269608486`) |
+
+**Repository variable** (optional): `IOS_APP_VERSION` — App Store Connect version to update (default `1.0`). The version must already exist in Connect before metadata upload.
+
+Trigger manually: **Actions → iOS App Store metadata → Run workflow**. Pushes to `main` that touch `fastlane/metadata/ios/**` also run this workflow.
+
+Local (any OS with Ruby):
+
+```bash
+export FASTLANE_METADATA_ONLY=true
+bundle exec fastlane ios metadata
+```
 
 ## CI integration
 

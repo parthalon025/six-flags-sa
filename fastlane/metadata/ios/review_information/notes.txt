@@ -1,0 +1,15 @@
+Park Bound loads the live web app from parkbound.kurat0r.ai inside the native shell.
+
+Guest review (no account): tap Continue as guest → allow Location → pick Kings Island (or any shipped Venue) → use the map and guest paths.
+
+Profile review: sign in with Apple or Google from the startup gate or Me tab. No email/password login.
+
+Party review: on a second device, create or join with a six-character code, or use Invite (QR/link) from Me. Location permission is required to finish joining — that is intentional for in-park coordination.
+
+Side Quests / Contributions require a signed-in Profile. Live ride reports in a Party work with a display name only.
+
+Third-party content: drawn maps and Place data are built from public park sources and on-the-ground Contributions; we have rights to ship our rendered Venue outputs.
+
+Encryption: HTTPS only — qualifies for standard export exemption (no custom cryptography).
+
+Contact parthalon025@gmail.com if anything is unclear.

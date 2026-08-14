@@ -1,0 +1,59 @@
+name: iOS App Store metadata
+
+# Upload listing copy to App Store Connect via fastlane deliver — no Xcode build.
+# Runs on ubuntu (API-only). Add GitHub secrets (see fastlane/README.md), then:
+#   Actions → iOS App Store metadata → Run workflow
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "fastlane/metadata/ios/**"
+      - "fastlane/Fastfile"
+      - ".github/workflows/ios-app-store-metadata.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-app-store-metadata-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deliver-metadata:
+    name: Upload metadata to App Store Connect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Install gems
+        run: bundle install
+
+      - name: Write App Store Connect API key
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: |
+          mkdir -p secrets
+          echo "$APP_STORE_CONNECT_API_KEY" | base64 -d > secrets/AuthKey.p8
+          test -s secrets/AuthKey.p8
+
+      - name: Upload metadata
+        env:
+          CI: true
+          FASTLANE_METADATA_ONLY: "true"
+          IOS_BUNDLE_IDENTIFIER: ai.kurat0r.parkbound
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_PATH: ./secrets/AuthKey.p8
+          APP_STORE_APPLE_ID: ${{ secrets.APP_STORE_APPLE_ID }}
+          IOS_APP_VERSION: ${{ vars.IOS_APP_VERSION }}
+          IOS_SKIP_SCREENSHOTS: "true"
+        run: |
+          export IOS_APP_VERSION="${IOS_APP_VERSION:-1.0}"
+          bundle exec fastlane ios metadata

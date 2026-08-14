@@ -1,6 +1,7 @@
 import './globals.css';
 import localFont from 'next/font/local';
 import { ClerkProvider } from '@clerk/nextjs';
+import { clerkAppearance } from '@/lib/auth/clerkAppearance';
 import { BRAND } from '@/lib/brand';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -84,6 +85,7 @@ export default function RootLayout({ children }) {
           signUpUrl="/sign-up"
           signInFallbackRedirectUrl="/"
           signUpFallbackRedirectUrl="/"
+          appearance={clerkAppearance}
         >
           {children}
         </ClerkProvider>

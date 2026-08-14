@@ -1,0 +1,21 @@
+{
+  "appId": "ai.kurat0r.parkbound",
+  "appName": "Parkbound",
+  "webDir": "apps/party-tracker/public",
+  "server": {
+    "url": "https://parkbound.kurat0r.ai",
+    "androidScheme": "https",
+    "allowNavigation": [
+      "parkbound.kurat0r.ai",
+      "*.kurat0r.ai",
+      "accounts.parkbound.kurat0r.ai",
+      "clerk.parkbound.kurat0r.ai"
+    ]
+  },
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}

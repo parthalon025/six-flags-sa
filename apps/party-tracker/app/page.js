@@ -58,7 +58,10 @@ import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
+import { useAuth } from '@clerk/nextjs';
 import AuthBridge from '@/components/AuthBridge';
+import AuthGate from '@/components/AuthGate';
+import { clearGuestChoice, markGuestChoice, readGuestChoice } from '@/lib/auth/guestChoice';
 import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
@@ -216,13 +219,13 @@ export default function Page() {
   const [introSeen, setIntroSeen] = useState(null);
   /** Session-only — the logo splash yields to the welcome gate without marking intro seen. */
   const [logoSplashDismissed, setLogoSplashDismissed] = useState(false);
-  const showIntroSplash = introSeen === false && !logoSplashDismissed;
-  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
-  const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
 
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
   const [authSession, setAuthSession] = useState(null);
+  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+  /** Session-only guest bypass for the startup auth gate. */
+  const [guestMode, setGuestMode] = useState(false);
   const [managedGuests, setManagedGuests] = useState([]);
 
   const handleBindProfile = useCallback((userId) => {
@@ -638,9 +641,28 @@ export default function Page() {
     }
   }, []);
 
+  useEffect(() => {
+    setGuestMode(readGuestChoice());
+  }, []);
+
+  useEffect(() => {
+    if (isSignedIn) clearGuestChoice();
+  }, [isSignedIn]);
+
+  const pastAuthGate = isSignedIn || guestMode;
+  const showAuthGate = clerkLoaded && !isSignedIn && !guestMode;
+  const showIntroSplash = pastAuthGate && introSeen === false && !logoSplashDismissed;
+  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
+  const showWelcomeGate = pastAuthGate && introSeen === false && logoSplashDismissed && !nearestIntent;
+
+  const continueAsGuest = useCallback(() => {
+    markGuestChoice();
+    setGuestMode(true);
+  }, []);
+
   const askingPark = Boolean(parkChoice);
   /** Inline park question on the gate (GPS path), including after "nearest park". */
-  const showParkPrompt = !showIntroSplash && gateOpen && askingPark;
+  const showParkPrompt = pastAuthGate && !showAuthGate && !showIntroSplash && gateOpen && askingPark;
   const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore) && !nearestIntent;
 
   useEffect(() => {
@@ -2906,7 +2928,9 @@ export default function Page() {
         </div>
       )}
 
-      {showIntroSplash && (
+      {showAuthGate && <AuthGate onGuest={continueAsGuest} />}
+
+      {showIntroSplash && !showAuthGate && (
         <IntroSplash
           version={appUpdate.version}
           onContinue={() => setLogoSplashDismissed(true)}
@@ -2945,7 +2969,7 @@ export default function Page() {
       )}
 
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
-      {gateOpen && introSeen !== null && !showExplorePrompt && !showIntroSplash && !locationLocked && (
+      {gateOpen && introSeen !== null && !showAuthGate && !showExplorePrompt && !showIntroSplash && !locationLocked && (
         <GpsGate
           venueName={venue?.name}
           status={geo.status}
