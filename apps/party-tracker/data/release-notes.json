@@ -192,5 +192,11 @@
     "items": [
       "fix: treat main as production in Vercel ignore and stamp deploy SHA (#144)"
     ]
+  },
+  "1.6.2": {
+    "title": "What's new",
+    "items": [
+      "perf: park-wifi & cloud-relay P0 fixes + full-stack audit"
+    ]
   }
 }
