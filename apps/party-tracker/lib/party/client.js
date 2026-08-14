@@ -35,6 +35,7 @@ import { adoptSnapshot, applyOps, createMember, createParty, publicSnapshot } fr
 import { open, seal } from '../core/crypto.js';
 import { createEmitter } from '../transport/types.js';
 import { createElection } from './election.js';
+import { connectionQuality as nativeConnectionQuality, readBattery as readNativeBattery } from '../native.js';
 
 const HEARTBEAT_INTERVAL_MS = 20 * 1000;
 /** A gap repairs with one snapshot; asking again before it lands just costs data. */
@@ -68,6 +69,7 @@ export function createClient({ session, key, transport, snapshot = null, now = (
   let heartbeatTimer = null;
   let battery = null;
   let takingHost = false;
+  let signalCache = 0.5;
   let outbound = Promise.resolve(); // serialised: see hostService.js
 
   // A shaped replica from the start so the UI never has to null-check. Until
@@ -294,29 +296,18 @@ export function createClient({ session, key, transport, snapshot = null, now = (
   const nav = () => (typeof navigator === 'undefined' ? null : navigator);
 
   async function readBattery() {
-    const n = nav();
-    // getBattery is gone from most browsers now; its absence is normal, not an
-    // error, and simply means this phone competes on its other numbers.
-    if (!n || typeof n.getBattery !== 'function') return null;
     try {
-      const b = await n.getBattery();
-      battery = { level: Number(b?.level ?? 0), charging: Boolean(b?.charging) };
+      const [next, quality] = await Promise.all([readNativeBattery(), nativeConnectionQuality()]);
+      if (next) battery = next;
+      if (Number.isFinite(quality)) signalCache = quality;
     } catch {
-      battery = null;
+      /* native and web both failed — keep last values */
     }
     return battery;
   }
 
   function connectionQuality() {
-    const n = nav();
-    const conn = n?.connection || n?.mozConnection || n?.webkitConnection || null;
-    if (!conn) return 0.5; // unknown: neither favour nor punish this phone
-    const byType = { 'slow-2g': 0.1, '2g': 0.25, '3g': 0.6, '4g': 1 };
-    if (typeof conn.effectiveType === 'string' && byType[conn.effectiveType] !== undefined) {
-      return byType[conn.effectiveType];
-    }
-    if (Number.isFinite(conn.downlink)) return Math.min(1, conn.downlink / 10);
-    return 0.5;
+    return signalCache;
   }
 
   function devicePerformance() {

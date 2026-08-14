@@ -1,0 +1,51 @@
+{
+  "auth_email": {
+    "used_for_sign_in": false,
+    "used_for_sign_up": false,
+    "sign_in_strategies": [],
+    "verification_strategies": [],
+    "required_for_sign_up": false,
+    "verify_at_sign_up": false
+  },
+  "auth_password": {
+    "enabled": false,
+    "required": false
+  },
+  "auth_phone": {
+    "used_for_sign_in": false,
+    "used_for_sign_up": false,
+    "used_for_second_factor": false,
+    "sign_in_strategies": [],
+    "verification_strategies": [],
+    "second_factor_strategies": [],
+    "required_for_sign_up": false,
+    "verify_at_sign_up": false
+  },
+  "auth_username": {
+    "used_for_sign_in": false,
+    "used_for_sign_up": false,
+    "required_for_sign_up": false
+  },
+  "auth_passkey": {
+    "show_sign_in_button": false,
+    "used_for_sign_in": false
+  },
+  "organization_settings": {
+    "enabled": false
+  },
+  "paths": {
+    "sign_in": "/sign-in",
+    "sign_up": "/sign-up"
+  },
+  "session_settings": {
+    "multi_session_enabled": false,
+    "maximum_lifetime": {
+      "enabled": true,
+      "duration_seconds": 604800
+    },
+    "inactivity_timeout": {
+      "enabled": false,
+      "duration_seconds": 0
+    }
+  }
+}

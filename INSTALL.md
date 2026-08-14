@@ -9,7 +9,7 @@ It opens on Kings Island, and Six Flags Fiesta Texas is in the **Day** tab under
 **Which park**. It switches on its own: to whichever one your first GPS fix lands
 inside, and then to wherever the phone hosting your party is, so everyone in a
 party sees the same map. To add anywhere else, see *Building a map of somewhere
-else* in [README.md](README.md).
+else* in [docs/guide/venue-builder.md](docs/guide/venue-builder.md).
 
 ## The two fast ways
 
@@ -283,4 +283,5 @@ npm run phone                     # run it on a real phone, via QR
 npm test                          # the full functional audit
 ```
 
-`README.md` covers the architecture, the transport layer and the API surface.
+[docs/guide/index.md](docs/guide/index.md) covers features, the transport layer, API surface,
+and venue building. [Architecture map](docs/architecture-map.md) is the visual overview.

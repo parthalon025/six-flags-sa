@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
 import Icon from '@/components/Icon';
 import { GLYPHS, WORDS } from '@/lib/brand';
+import { shareInvite } from '@/lib/native';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { locationCopy, placeAt } from '@/lib/location';
 import { usePois } from '@/lib/venue/useVenue';
@@ -234,23 +235,10 @@ export default function PartyPanel({
      right thing to open. Clipboard is the fallback, and either way it says so —
      a copy that reports nothing is indistinguishable from one that failed, and
      the failure used to be swallowed entirely. */
-  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
   const share = async () => {
-    const text = invite || code;
-    if (canShare) {
-      try {
-        await navigator.share({ title: 'Join my party', text: `Party code ${code}`, url: invite || undefined });
-        return;
-      } catch {
-        /* dismissed, or refused — fall through to the clipboard */
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      onCopied?.('Invite link copied');
-    } catch {
-      onCopied?.('Could not copy — read the code out instead');
-    }
+    const result = await shareInvite({ code, url: invite || undefined });
+    if (result === 'copied') onCopied?.('Invite link copied');
+    else if (result === 'failed') onCopied?.('Could not copy — read the code out instead');
   };
 
   return (
@@ -270,7 +258,7 @@ export default function PartyPanel({
       <div className="codeBox">
         <span className="codeText">{code}</span>
         <button type="button" onClick={share}>
-          {canShare ? 'Send invite' : 'Copy link'}
+          Send invite
         </button>
         <button
           type="button"

@@ -1,0 +1,33 @@
+# Bronze ingest — Postgres contributions + guest traces API (serverless)
+resources:
+  jobs:
+    parkbound_ingest:
+      name: parkbound-ingest-${bundle.target}
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: UTC
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+      tasks:
+        - task_key: ingest_postgres
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/parkbound_job.py
+            parameters:
+              - --module
+              - ingest.postgres
+              - --catalog
+              - ${var.catalog}
+        - task_key: ingest_guest_traces
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/parkbound_job.py
+            parameters:
+              - --module
+              - ingest.guest_traces
+              - --catalog
+              - ${var.catalog}
+              - --app-base
+              - ${var.app_base_url}

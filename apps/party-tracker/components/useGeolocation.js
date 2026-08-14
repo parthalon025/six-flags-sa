@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MOTION, cadenceFor, classifyMotion, createBroadcastGate } from '@/lib/gps/adaptive';
 import { createGpsSmoother } from '@/lib/gps/smooth';
+import {
+  clearWatch as clearNativeWatch,
+  getCurrentPosition as getNativePosition,
+  readBattery as readNativeBattery,
+  watchPosition as watchNativePosition,
+} from '@/lib/native';
 
 /**
  * States: 'idle' | 'asking' | 'live' | 'denied' | 'unsupported' | 'insecure' | 'manual'
@@ -29,7 +35,8 @@ export default function useGeolocation() {
   const [motion, setMotion] = useState(MOTION.STANDING);
   const [cadenceMs, setCadenceMs] = useState(() => cadenceFor(MOTION.STANDING, {}));
 
-  const watchId = useRef(null);
+  const watchHandle = useRef(null);
+  const armGen = useRef(0);
   const recent = useRef([]);
   const lastSpeed = useRef(null);
   const isBackground = useRef(false);
@@ -59,21 +66,30 @@ export default function useGeolocation() {
   }, []);
 
   const arm = useCallback((nextMotion, ms) => {
-    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) return;
-    if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+    const gen = ++armGen.current;
     armed.current = { motion: nextMotion, ms };
-    watchId.current = navigator.geolocation.watchPosition(
-      (pos) => onFix.current?.(pos),
-      (err) => onErr.current?.(err),
-      {
-        // A backgrounded phone gets coarse fixes: nothing is on screen to be
-        // wrong, and the GPS chip is what drains the battery.
-        enableHighAccuracy: nextMotion !== MOTION.BACKGROUND,
-        timeout: Math.min(Math.max(ms * 2, 25000), 60000),
-        // Accepting a cached fix up to one cadence old is most of the saving.
-        maximumAge: ms,
-      },
-    );
+    const opts = {
+      // A backgrounded phone gets coarse fixes: nothing is on screen to be
+      // wrong, and the GPS chip is what drains the battery.
+      enableHighAccuracy: nextMotion !== MOTION.BACKGROUND,
+      timeout: Math.min(Math.max(ms * 2, 25000), 60000),
+      // Accepting a cached fix up to one cadence old is most of the saving.
+      maximumAge: ms,
+    };
+    void (async () => {
+      await clearNativeWatch(watchHandle.current);
+      if (gen !== armGen.current) return;
+      const handle = await watchNativePosition(
+        (pos) => onFix.current?.(pos),
+        (err) => onErr.current?.(err),
+        opts,
+      );
+      if (gen !== armGen.current) {
+        await clearNativeWatch(handle);
+        return;
+      }
+      watchHandle.current = handle;
+    })();
   }, []);
 
   /** Re-classify motion and, if the band really moved, re-tune the watch. */
@@ -86,7 +102,7 @@ export default function useGeolocation() {
     const ms = cadenceFor(next, { battery: batteryRef.current });
     setMotion(next);
     setCadenceMs(ms);
-    if (watchId.current == null) return;
+    if (watchHandle.current == null && armGen.current === 0) return;
     const same =
       next === armed.current.motion && Math.abs(ms - (armed.current.ms ?? 0)) < REARM_SLACK_MS;
     if (!same) arm(next, ms);
@@ -124,10 +140,11 @@ export default function useGeolocation() {
   );
 
   const fail = useCallback((err) => {
-    if (err.code === 1) {
+    const code = err?.code;
+    if (code === 1) {
       setStatus('denied');
       setError('Location permission was denied.');
-    } else if (err.code === 2) {
+    } else if (code === 2) {
       setError('No GPS fix yet. Step out from under cover and try again.');
     } else {
       setError('Location request timed out.');
@@ -148,11 +165,9 @@ export default function useGeolocation() {
     setError(null);
     // The first fix is always the expensive accurate one — the whole screen is
     // waiting on it. The watch that follows is the one that gets rationed.
-    navigator.geolocation.getCurrentPosition(
-      (pos) => onFix.current?.(pos),
-      (err) => onErr.current?.(err),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    );
+    void getNativePosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })
+      .then((pos) => onFix.current?.(pos))
+      .catch((err) => onErr.current?.(err));
     const next = classifyMotion({
       speed: lastSpeed.current,
       recent: recent.current,
@@ -170,7 +185,7 @@ export default function useGeolocation() {
 
   useEffect(
     () => () => {
-      if (watchId.current != null) navigator.geolocation.clearWatch(watchId.current);
+      void clearNativeWatch(watchHandle.current);
     },
     [],
   );
@@ -187,38 +202,23 @@ export default function useGeolocation() {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, [retune]);
 
-  // Battery, when the browser still has it. Leader election scores on charge,
-  // so it is worth asking; almost everything but Chrome will say no.
+  // Battery for Host election. Native Device plugin on store builds; web
+  // getBattery where it still exists (Chrome). Poll because the plugin has
+  // no change events.
   useEffect(() => {
     let cancelled = false;
-    let source = null;
-    const read = () => {
-      if (cancelled || !source) return;
-      const next = { level: source.level, charging: source.charging };
+    const tick = async () => {
+      const next = await readNativeBattery();
+      if (cancelled || !next) return;
       batteryRef.current = next;
       setBattery(next);
       retune();
     };
-    (async () => {
-      try {
-        const pending = navigator.getBattery?.();
-        if (!pending) return;
-        source = await pending;
-        if (cancelled) {
-          source = null;
-          return;
-        }
-        read();
-        source.addEventListener('levelchange', read);
-        source.addEventListener('chargingchange', read);
-      } catch {
-        source = null; // Removed or blocked by policy: degrade quietly.
-      }
-    })();
+    tick();
+    const timer = setInterval(tick, 60_000);
     return () => {
       cancelled = true;
-      source?.removeEventListener('levelchange', read);
-      source?.removeEventListener('chargingchange', read);
+      clearInterval(timer);
     };
   }, [retune]);
 

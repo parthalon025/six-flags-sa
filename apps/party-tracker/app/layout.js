@@ -1,6 +1,10 @@
 import './globals.css';
 import localFont from 'next/font/local';
+import { ClerkProvider } from '@clerk/nextjs';
+import { clerkAppearance } from '@/lib/auth/clerkAppearance';
 import { BRAND } from '@/lib/brand';
+import { clerkConfigured } from '@/lib/clerkConfigured';
+import { INTRO_SEEN_BOOT_SCRIPT } from '@/lib/introGate';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -76,9 +80,25 @@ export default function RootLayout({ children }) {
             map+pois wastes park-wifi bandwidth for returning guests elsewhere. */}
         <link rel="preload" href="/venues/manifest.json" as="fetch" crossOrigin="anonymous" />
         <style>{`:root { --display: var(--font-display), 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }`}</style>
+        {/* Raw tag so this runs while the parser is still in <head>. next/script
+            beforeInteractive is queued on __next_s and paints too late to hide
+            the SSR hold for returning phones. */}
+        <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_BOOT_SCRIPT }} />
       </head>
       <body>
-        {children}
+        {clerkConfigured() ? (
+          <ClerkProvider
+            signInUrl="/sign-in"
+            signUpUrl="/sign-up"
+            signInFallbackRedirectUrl="/"
+            signUpFallbackRedirectUrl="/"
+            appearance={clerkAppearance}
+          >
+            {children}
+          </ClerkProvider>
+        ) : (
+          children
+        )}
         <Analytics />
         {/* RUM is for ops, not park-day UX — sample so most phones skip the script. */}
         <SpeedInsights sampleRate={0.1} />

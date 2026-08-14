@@ -1379,6 +1379,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    same kind of thing — a spot somebody chose — in two different colours. */
 .carPin { animation: popIn var(--t2) var(--easeOut) both; }
 
+.overlayCompletions { list-style: none; margin: 0 0 10px; padding: 0; }
+.overlayCompletion { margin: 0 0 6px; }
+.overlayPin circle {
+  fill: var(--adventure);
+  stroke: var(--markerEdge, #1a1a1a);
+  stroke-width: 1.4;
+}
+.overlayPin-path circle {
+  fill: var(--aqua);
+  opacity: 0.85;
+  stroke-width: 1.2;
+}
+.overlayPin-queue circle {
+  fill: var(--adventure);
+}
+
 /* Hookups and pad details, as a checklist rather than a sentence. Wrapping
    rather than scrolling: this is read against what the caravan needs, and a
    requirement that scrolled off the right is a requirement nobody checked. */
@@ -1542,6 +1558,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: rgba(0, 0, 0, .40);
   display: flex; align-items: flex-end;
   animation: fadeIn var(--t2) var(--easeOut) both;
+}
+/* First-run: opaque, no fade. A transparent fade-in over the live map ghosts
+   PARKBOUND (sheet lockup + splash lockup) and looks like a broken load. */
+.gate.gateFirstRun {
+  background: var(--bg);
+  animation: none;
+}
+.gate.gateFirstRun .gateCard {
+  animation: none;
+}
+/* The hold lives in the home SSR HTML because introSeen is null on the server.
+   A head script stamps data-intro before first paint: returning phones skip
+   the cover; first visits hide the map/sheet until that same stamp says seen. */
+html[data-intro="seen"] [data-intro-hold] {
+  display: none;
+}
+html:not([data-intro="seen"]) .app > :not(.gate) {
+  visibility: hidden;
 }
 .gateCard {
   width: 100%; background: var(--bg2);
@@ -2732,6 +2766,25 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   padding: 4px 0 8px;
 }
 .signInCard .btn { margin-top: 8px; width: 100%; }
+.signInActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+.signInActions .btn { margin-top: 0; width: auto; flex: 1 1 auto; }
+.signInActionsStack { flex-direction: column; align-items: stretch; }
+.signInActionsStack .btn { width: 100%; flex: none; }
+.authGateGuest { margin-top: 12px; width: 100%; }
+.authGateCard .signInActionsStack { margin-bottom: 0; }
+.clerkAuthPage {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
 .brandMark {
   width: 22px; height: 22px; flex: none; color: var(--adventure);
 }
@@ -2741,6 +2794,62 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 .trailLine.active {
   stroke: var(--adventure); stroke-width: 4; stroke-dasharray: none;
+}
+
+/* Standalone legal pages (privacy policy for store URL). */
+.privacyPage {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--label);
+  padding: 24px 20px 48px;
+}
+.privacyPage-inner {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+.privacyPage-kicker {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.privacyPage-kicker a {
+  color: var(--aqua);
+  text-decoration: none;
+  font-weight: 600;
+}
+.privacyPage h1 {
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  letter-spacing: -.03em;
+  margin: 0 0 12px;
+}
+.privacyPage-lede {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--label2);
+  margin: 0 0 28px;
+}
+.privacyPage section {
+  margin-bottom: 24px;
+}
+.privacyPage h2 {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.privacyPage p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--label2);
+}
+.privacyPage a {
+  color: var(--aqua);
+}
+.privacyPage-muted {
+  font-size: 13px;
+  margin-top: 8px;
+  opacity: 0.75;
 }
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes

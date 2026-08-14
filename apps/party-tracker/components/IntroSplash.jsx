@@ -16,7 +16,7 @@ export default function IntroSplash({ version = APP_VERSION, onContinue }) {
 
   if (showNotes) {
     return (
-      <div className="gate" role="dialog" aria-labelledby="intro-notes-title">
+      <div className="gate gateFirstRun" role="dialog" aria-labelledby="intro-notes-title">
         <div className="gateCard">
           <div className="gateEyebrow">{BRAND.nameUpper}</div>
           <h2 id="intro-notes-title">What&apos;s new</h2>
@@ -43,7 +43,7 @@ export default function IntroSplash({ version = APP_VERSION, onContinue }) {
   }
 
   return (
-    <div className="gate" role="dialog" aria-labelledby="intro-splash-title">
+    <div className="gate gateFirstRun" role="dialog" aria-labelledby="intro-splash-title">
       <div className="gateCard introSplashCard">
         <div className="gateEyebrow">Welcome</div>
         <BrandLockup

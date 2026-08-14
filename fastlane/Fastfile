@@ -19,12 +19,33 @@ default_platform(:ios)
 # Shared helpers
 # ---------------------------------------------------------------------------
 
-def load_deployment_env!
+def load_dotenv!
   env_file = File.expand_path("../.env", __dir__)
-  if File.exist?(env_file)
-    require "dotenv"
-    Dotenv.load(env_file)
-  end
+  return unless File.exist?(env_file)
+
+  require "dotenv"
+  Dotenv.load(env_file)
+end
+
+def load_ios_connect_env!
+  load_dotenv!
+
+  required = %w[
+    IOS_BUNDLE_IDENTIFIER
+    APP_STORE_CONNECT_API_KEY_ID
+    APP_STORE_CONNECT_ISSUER_ID
+    APP_STORE_CONNECT_API_KEY_PATH
+  ]
+
+  missing = required.select { |key| ENV[key].nil? || ENV[key].strip.empty? }
+  UI.user_error!("Missing required environment variables: #{missing.join(', ')}") unless missing.empty?
+
+  key_path = File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH"), repo_root)
+  UI.user_error!("App Store Connect API key not found at #{key_path}") unless File.exist?(key_path)
+end
+
+def load_deployment_env!
+  load_dotenv!
 
   required = %w[
     IOS_BUNDLE_IDENTIFIER
@@ -75,7 +96,7 @@ def app_version
   JSON.parse(File.read(package_json))["version"]
 end
 
-def app_store_connect_api_key
+def connect_api_key
   api_key_path = File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH"), repo_root)
 
   app_store_connect_api_key(
@@ -140,6 +161,19 @@ def sync_android_version
   UI.user_error!("Android Gradle file not found under #{android_project_path}/app/") unless updated
 end
 
+def write_review_phone!
+  review_dir = File.expand_path(File.join("fastlane", "metadata", "ios", "review_information"), repo_root)
+  phone_path = File.join(review_dir, "phone_number.txt")
+  phone = ENV["APP_STORE_REVIEW_PHONE"]
+
+  if phone && !phone.strip.empty?
+    File.write(phone_path, "#{phone.strip}\n")
+    return true
+  end
+
+  File.exist?(phone_path) && !File.read(phone_path).strip.empty?
+end
+
 def ios_output_directory
   File.join(repo_root, "build", "ios")
 end
@@ -149,8 +183,12 @@ def android_output_directory
 end
 
 before_all do
-  load_deployment_env!
-  setup_ci if ENV["CI"]
+  if ENV["FASTLANE_METADATA_ONLY"] == "true"
+    load_ios_connect_env!
+  else
+    load_deployment_env!
+    setup_ci if ENV["CI"]
+  end
 end
 
 # ---------------------------------------------------------------------------
@@ -158,6 +196,66 @@ end
 # ---------------------------------------------------------------------------
 
 platform :ios do
+  desc "Upload App Store Connect listing metadata only (no build)"
+  lane :metadata do
+    api_key = connect_api_key
+    version = ENV.fetch("IOS_APP_VERSION", app_version)
+
+    deliver_base = {
+      api_key: api_key,
+      api_key_path: nil,
+      app_identifier: ENV.fetch("IOS_BUNDLE_IDENTIFIER"),
+      app_version: version,
+      skip_binary_upload: true,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      run_precheck_before_submit: false,
+      precheck_include_in_app_purchases: false,
+      metadata_path: File.expand_path(File.join("fastlane", "metadata", "ios"), repo_root),
+      screenshots_path: File.expand_path(File.join("fastlane", "screenshots", "ios"), repo_root),
+      app_previews_path: File.expand_path(File.join("fastlane", "app_previews"), repo_root),
+      preview_frame_time_code: ENV.fetch("IOS_PREVIEW_FRAME_TIME_CODE", "00:00:05:00"),
+      overwrite_preview_videos: ENV.fetch("IOS_OVERWRITE_PREVIEWS", "true") == "true",
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: true,
+        export_compliance_encryption_updated: false,
+        export_compliance_is_exempt: true,
+        content_rights_contains_third_party_content: true,
+        content_rights_has_rights: true
+      }
+    }
+
+    unless ENV.fetch("IOS_SKIP_SCREENSHOTS", "true") == "true"
+      deliver(
+        deliver_base.merge(
+          skip_metadata: true,
+          skip_screenshots: false
+        )
+      )
+    end
+
+    unless ENV.fetch("IOS_SKIP_METADATA", "false") == "true"
+      if write_review_phone!
+        metadata_options = deliver_base.merge(
+          skip_metadata: false,
+          skip_screenshots: true,
+          app_rating_config_path: File.expand_path(
+            File.join("fastlane", "metadata", "ios", "age_rating.json"),
+            repo_root
+          )
+        )
+        metadata_options.delete(:api_key_path)
+        deliver(metadata_options)
+      else
+        UI.important(
+          "Skipping metadata upload — set APP_STORE_REVIEW_PHONE (E.164) for App Review contact"
+        )
+      end
+    end
+  end
+
   desc "Build and upload a TestFlight beta"
   lane :beta do
     build_web_app
@@ -167,7 +265,7 @@ platform :ios do
 
     sync_ios_version
 
-    api_key = app_store_connect_api_key
+    api_key = connect_api_key
 
     build_app(
       workspace: ios_workspace_path,
@@ -199,7 +297,7 @@ platform :ios do
 
     sync_ios_version
 
-    api_key = app_store_connect_api_key
+    api_key = connect_api_key
 
     build_app(
       workspace: ios_workspace_path,
@@ -226,6 +324,9 @@ platform :ios do
       precheck_include_in_app_purchases: false,
       metadata_path: File.join(__dir__, "metadata", "ios"),
       screenshots_path: File.join(__dir__, "screenshots", "ios"),
+      app_previews_path: File.expand_path(File.join("fastlane", "app_previews"), repo_root),
+      preview_frame_time_code: ENV.fetch("IOS_PREVIEW_FRAME_TIME_CODE", "00:00:05:00"),
+      overwrite_preview_videos: ENV.fetch("IOS_OVERWRITE_PREVIEWS", "true") == "true",
       submission_information: {
         add_id_info_uses_idfa: false
       }

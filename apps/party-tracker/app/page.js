@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
@@ -21,6 +21,8 @@ import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND, GLYPHS, WORDS } from '@/lib/brand';
+import { INTRO_KEY, firstRunOverlay } from '@/lib/introGate';
+import { haptic, listenInviteUrls, registerPush, shouldRegisterPush } from '@/lib/native';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -59,12 +61,27 @@ import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
+import { useAuth } from '@clerk/nextjs';
+import AuthBridge from '@/components/AuthBridge';
+import AuthGate from '@/components/AuthGate';
+import { clearGuestChoice, markGuestChoice, readGuestChoice } from '@/lib/auth/guestChoice';
 import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { navKeyOf } from '@/lib/navKey';
+import {
+  applyContribution as applyOverlayFact,
+  applyOverlayToPlaces,
+  completionLine,
+  completionsForPlace,
+  createHttpUploadAdapter,
+  emptyOverlay,
+  loadOverlay,
+  saveOverlay,
+  unionOverlays,
+} from '@/lib/overlay';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -136,10 +153,8 @@ const PUSH_PREFS_KEY = 'tracker-push-prefs';
    not have the same places, and hiding food at one should not hide it at the
    other. */
 const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
-/* Whether this phone has been told what the app is. Its own key rather than a
-   field on the identity record, because it is answered before anyone has typed
-   a name and has to survive the identity being rewritten. */
-const INTRO_KEY = 'tracker-intro-seen';
+/* Whether this phone has been told what the app is lives in INTRO_KEY
+   (`lib/introGate.js`) so the before-paint boot script cannot drift. */
 /* Where the car is, per venue. Per venue because the car parks are not the
    same one and a stale pin two states away is worse than no pin: it would put
    a card on the rail confidently pointing at Ohio. */
@@ -191,7 +206,7 @@ export default function Page() {
     const {
       venue,
       map: mapData,
-      pois: POIS,
+      pois: shippedPois,
       gaps: venueGaps,
       manifest,
       status: venueStatus,
@@ -199,7 +214,7 @@ export default function Page() {
       confirmed: venueConfirmed,
       pinned: venuePinned,
     } = useVenue();
-  const movement = useMovementLog({ position, venue, pois: POIS });
+  const movement = useMovementLog({ position, venue, pois: shippedPois });
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
@@ -219,15 +234,58 @@ export default function Page() {
   const showIntroSplash = introSeen === false && !logoSplashDismissed;
   /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
   const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
+  const introOverlay = firstRunOverlay({ introSeen, logoSplashDismissed });
+  /** Stay opaque for the whole first-run intake — flipping this when they tap
+   *  nearest-park would re-attach fadeIn and flash the map through the gate. */
+  const [firstRunSession, setFirstRunSession] = useState(false);
+  useEffect(() => {
+    if (introSeen === false) setFirstRunSession(true);
+  }, [introSeen]);
+  useLayoutEffect(() => {
+    if (introSeen === true) document.documentElement.setAttribute('data-intro', 'seen');
+    else if (introSeen === false) document.documentElement.setAttribute('data-intro', 'new');
+  }, [introSeen]);
 
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
   const [authSession, setAuthSession] = useState(null);
+  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+  /** Session-only guest bypass for the startup auth gate. */
+  const [guestMode, setGuestMode] = useState(false);
   const [managedGuests, setManagedGuests] = useState([]);
+
+  const handleBindProfile = useCallback((userId) => {
+    if (!userId) return;
+    setIdentity((i) => (i ? { ...i, userId } : i));
+    if (identityRef.current) identityRef.current = { ...identityRef.current, userId };
+    runtime.current?.bindUserId?.(userId);
+  }, []);
   const [party, setParty] = useState(null); // the runtime's snapshot
   // The snapshot as a ref, for callbacks that must not be rebuilt on every
   // roster tick just to read the party they are sending to.
   const partyRef = useRef(null);
+  const [localOverlay, setLocalOverlay] = useState(emptyOverlay);
+  const overlayRef = useRef(emptyOverlay());
+  useEffect(() => {
+    const loaded = loadOverlay();
+    overlayRef.current = loaded;
+    setLocalOverlay(loaded);
+  }, []);
+  const displayOverlay = useMemo(
+    () =>
+      unionOverlays(
+        localOverlay,
+        party?.active ? party.overlay || emptyOverlay() : emptyOverlay(),
+      ),
+    [localOverlay, party?.active, party?.overlay],
+  );
+  overlayRef.current = localOverlay;
+  const painted = useMemo(
+    () => applyOverlayToPlaces(shippedPois, displayOverlay),
+    [shippedPois, displayOverlay],
+  );
+  const POIS = painted.places;
+  const overlayPins = painted.pins;
   const [localMeet, setLocalMeet] = useState(null); // a meet-up marked before joining anything
   const [planDraft, setPlanDraft] = useState([]);
   useEffect(() => {
@@ -240,6 +298,25 @@ export default function Page() {
     clearDraft();
     setPlanDraft([]);
   }, []);
+  const shareOverlay = useCallback(() => {
+    const authored = overlayRef.current || emptyOverlay();
+    for (const c of authored.completions || []) {
+      runtime.current?.applyContribution?.(c);
+    }
+  }, []);
+  const handleContribution = useCallback((contribution) => {
+    setLocalOverlay((prev) => {
+      const next = applyOverlayFact(prev, contribution);
+      overlayRef.current = next;
+      return saveOverlay(next);
+    });
+    if (partyRef.current?.active) runtime.current?.applyContribution?.(contribution);
+    createHttpUploadAdapter().enqueue(contribution).catch(() => {});
+  }, []);
+  const overlayCompletionsFor = useCallback(
+    (place) => completionsForPlace(displayOverlay, identityOf(place)).map(completionLine),
+    [displayOverlay],
+  );
   const [status, setStatus] = useState('On the move');
   const [busy, setBusy] = useState(false);
 
@@ -387,7 +464,7 @@ export default function Page() {
       // A little confirmation under the thumb. The screen has already changed
       // by the time a phone this size has finished animating, and on a bright
       // midway the tap is often felt before it is seen.
-      navigator.vibrate?.(8);
+      void haptic(8);
     },
     [applyNav],
   );
@@ -638,9 +715,28 @@ export default function Page() {
     }
   }, []);
 
+  useEffect(() => {
+    setGuestMode(readGuestChoice());
+  }, []);
+
+  useEffect(() => {
+    if (isSignedIn) clearGuestChoice();
+  }, [isSignedIn]);
+
+  const pastAuthGate = isSignedIn || guestMode;
+  const showAuthGate = clerkLoaded && !isSignedIn && !guestMode;
+  const showIntroSplash = pastAuthGate && introSeen === false && !logoSplashDismissed;
+  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
+  const showWelcomeGate = pastAuthGate && introSeen === false && logoSplashDismissed && !nearestIntent;
+
+  const continueAsGuest = useCallback(() => {
+    markGuestChoice();
+    setGuestMode(true);
+  }, []);
+
   const askingPark = Boolean(parkChoice);
   /** Inline park question on the gate (GPS path), including after "nearest park". */
-  const showParkPrompt = !showIntroSplash && gateOpen && askingPark;
+  const showParkPrompt = pastAuthGate && !showAuthGate && !showIntroSplash && gateOpen && askingPark;
   const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore) && !nearestIntent;
 
   useEffect(() => {
@@ -720,6 +816,27 @@ export default function Page() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    let stop = () => {};
+    void listenInviteUrls((url) => {
+      try {
+        const parsed = new URL(url);
+        if (!parsed.pathname.startsWith('/join')) return;
+        if (window.location.href === url) return;
+        window.location.assign(url);
+      } catch {
+        /* ignore malformed shell URLs */
+      }
+    }).then((unsub) => {
+      if (typeof unsub === 'function') stop = unsub;
+    });
+    return () => stop();
+  }, []);
+
+  useEffect(() => {
+    if (shouldRegisterPush(party)) void registerPush();
+  }, [party?.active]);
 
   useEffect(() => {
     const measure = () => {
@@ -836,7 +953,10 @@ export default function Page() {
       if (rt.hasLiveParty?.()) {
         const memberName = identityRef.current?.name || 'Guest';
         Promise.resolve(rt.resume({ memberName }))
-          .then(() => adoptDraft())
+          .then(() => {
+            adoptDraft();
+            shareOverlay();
+          })
           .catch((err) =>
             showToast(err?.message || 'Could not reopen the party.'),
           );
@@ -848,7 +968,7 @@ export default function Page() {
       setRuntimeApi(null);
       rt?.destroy();
     };
-  }, [showToast, selectTab, adoptDraft]);
+  }, [showToast, selectTab, adoptDraft, shareOverlay]);
 
   /* Join is name-first. Finish /join once location is live so the invite
      cannot land a Member with no fix. Retry when GPS arrives. */
@@ -872,6 +992,7 @@ export default function Page() {
             : 'You’re in the party',
         );
         adoptDraft();
+        shareOverlay();
       })
       .catch((err) => {
         showToast(err?.message || 'Could not open that invite.');
@@ -880,7 +1001,7 @@ export default function Page() {
         inviteJoinInFlight.current = false;
       });
     return undefined;
-  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft]);
+  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft, shareOverlay]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
      resume on mount above and keep syncing on every tab. */
@@ -894,13 +1015,16 @@ export default function Page() {
     resumeInFlight.current = true;
     const memberName = identityRef.current?.name || 'Guest';
     Promise.resolve(runtime.current.resume({ memberName }))
-      .then(() => adoptDraft())
+      .then(() => {
+        adoptDraft();
+        shareOverlay();
+      })
       .catch((err) => showToast(err?.message || 'Could not reopen the party.'))
       .finally(() => {
         resumeInFlight.current = false;
       });
     return undefined;
-  }, [tab, runtimeApi, party?.active, party?.phase, showToast, adoptDraft]);
+  }, [tab, runtimeApi, party?.active, party?.phase, showToast, adoptDraft, shareOverlay]);
 
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
@@ -1095,7 +1219,7 @@ export default function Page() {
         const me = positionRef.current;
         const d = me && Number.isFinite(m.lat) ? distance(me.lat, me.lng, m.lat, m.lng) : null;
         showToast(`${m.name} needs help - ${formatDistance(d)}`);
-        navigator.vibrate?.([120, 70, 120]);
+        void haptic([120, 70, 120]);
       }
       if (m.status !== 'NEED HELP') helpSeen.current.delete(m.id);
     });
@@ -1321,6 +1445,7 @@ export default function Page() {
         `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
       );
       adoptDraft();
+      shareOverlay();
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
     }
@@ -1349,6 +1474,7 @@ export default function Page() {
       selectTab('party');
       showToast(`Joined ${snap.code}`);
       adoptDraft();
+      shareOverlay();
     } catch (err) {
       const msg = err?.message || 'Could not join that party.';
       showToast(
@@ -1544,7 +1670,7 @@ export default function Page() {
     let live = true;
     const build = async () => {
       const routing = await getRouting();
-      if (live) setGraph(routing.buildRouteGraphCached(venue?.id, mapData, POIS));
+      if (live) setGraph(routing.buildRouteGraphCached(venue?.id, mapData, shippedPois));
     };
     const idle = typeof window !== 'undefined' ? window.requestIdleCallback : null;
     const handle = idle ? idle(() => { build(); }, { timeout: 3000 }) : setTimeout(build, 400);
@@ -1553,7 +1679,7 @@ export default function Page() {
       if (idle) window.cancelIdleCallback?.(handle);
       else clearTimeout(handle);
     };
-  }, [mapData, venue?.id, POIS, getRouting]);
+  }, [mapData, venue?.id, shippedPois, getRouting]);
 
   // A destination is held by reference, not by coordinates: a party member
   // walks around while you are walking to them, and a meet-up can be moved or
@@ -1687,7 +1813,7 @@ export default function Page() {
     setNavPhase('go');
     setFollow(true);
     shrinkSheet(stops.peek);
-    navigator.vibrate?.(30);
+    void haptic(30);
   }, [shrinkSheet, stops]);
 
   // The person or pin we were walking to is gone. Say so once instead of
@@ -1832,7 +1958,7 @@ export default function Page() {
     if (arrived.current === key) return;
     arrived.current = key;
     showToast(`You're at ${navTarget.label}`);
-    navigator.vibrate?.(90);
+    void haptic(90);
     stopNav();
   }, [walking, progress?.arrived, navTarget, showToast, stopNav]);
 
@@ -1891,6 +2017,14 @@ export default function Page() {
     },
     [selected, position, showToast],
   );
+
+  useEffect(() => {
+    if (!selected) return;
+    const next = findPlace(POIS, selected);
+    if (!next) return;
+    const heightChanged = JSON.stringify(next.h) !== JSON.stringify(selected.h);
+    if (next.overlay !== selected.overlay || heightChanged) setSelected(next);
+  }, [POIS, selected]);
 
   /**
    * Map icon: open the place sheet so the visitor can read what it is and
@@ -2084,6 +2218,10 @@ export default function Page() {
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
+      {introOverlay === 'hold' && (
+        <div className="gate gateFirstRun" data-intro-hold="1" aria-hidden="true" />
+      )}
+      <AuthBridge onSession={setAuthSession} onBindUserId={handleBindProfile} />
       <ParkMap
         data={mapData}
         center={venue?.center}
@@ -2120,6 +2258,7 @@ export default function Page() {
         fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
         mapKeyHidden={previewing || walking}
         onMapStats={handleMapStats}
+        overlayPins={overlayPins}
       />
 
       {/* Nothing runs across the top of a phone map. The two controls float in
@@ -2525,6 +2664,8 @@ export default function Page() {
                   onReport={party?.active ? reportRide : null}
                   onAddToPlan={addToPlan}
                   now={clock}
+                  overlayCompletionsFor={overlayCompletionsFor}
+                  pois={POIS}
                 />
               </>
             )}
@@ -2556,6 +2697,7 @@ export default function Page() {
                 onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
                 onReport={party?.active ? reportRide : null}
                 onAddToPlan={addToPlan}
+                overlayCompletions={selected ? overlayCompletionsFor(selected) : []}
               />
             )}
 
@@ -2706,6 +2848,8 @@ export default function Page() {
                 session={authSession}
                 onSession={setAuthSession}
                 onRideReport={party?.active ? reportRide : null}
+                onContribution={handleContribution}
+                overlay={localOverlay}
               />
             )}
 
@@ -2904,7 +3048,9 @@ export default function Page() {
         </div>
       )}
 
-      {showIntroSplash && (
+      {showAuthGate && <AuthGate onGuest={continueAsGuest} />}
+
+      {showIntroSplash && !showAuthGate && (
         <IntroSplash
           version={appUpdate.version}
           onContinue={() => setLogoSplashDismissed(true)}
@@ -2943,8 +3089,9 @@ export default function Page() {
       )}
 
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
-      {gateOpen && introSeen !== null && !showExplorePrompt && !showIntroSplash && !locationLocked && (
+      {gateOpen && introSeen !== null && !showAuthGate && !showExplorePrompt && !showIntroSplash && !locationLocked && (
         <GpsGate
+          firstRun={firstRunSession}
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}
