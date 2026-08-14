@@ -5,12 +5,13 @@ import { useState } from 'react';
 import BrandLockup from '@/components/BrandLockup';
 import { BRAND } from '@/lib/brand';
 import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
+import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 /**
  * First screen when the app opens without a Profile — sign in (Google / Apple)
  * or continue as a guest. Map and Party stay name-first after guest continues.
  */
 export default function AuthGate(props) {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return null;
+  if (!clerkBrowserConfigured()) return null;
   return <AuthGateLive {...props} />;
 }
 

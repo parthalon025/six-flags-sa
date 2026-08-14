@@ -7,13 +7,14 @@ import { writeProfileCache, readProfileCache } from '@/lib/auth/profileCache';
 import { flushContributionStash } from '@/lib/auth/contributionStash';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { rankFromXp, titleFromXp } from '@party-tracker/shared/questScore.js';
+import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 
 /**
  * Mirrors Clerk session into the offline Profile cache the app already uses.
  * Minting the Postgres row happens in POST /api/profile/sync (ADR-0010).
  */
 export default function AuthBridge(props) {
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return null;
+  if (!clerkBrowserConfigured()) return null;
   return <AuthBridgeLive {...props} />;
 }
 
