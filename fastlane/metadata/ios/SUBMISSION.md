@@ -65,12 +65,17 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 
 | Field | Suggested |
 |-------|-----------|
-| Price | Free |
+| Price (download) | **Free** |
+| Profile IAP | **$10.00 / year** — product `parkbound_profile_annual`, display name **Profile** (auto-renewable). Guest map / Party-by-name stay free. |
 | Availability | United States (expand later) |
 | Pre-order | No |
+| Store commission | App Store Small Business Program — **submitted 2026-08-14** (team `CDHJC4MH4G`); 15% starts 15 days after end of fiscal month of approval |
 
 ## Still required before you tap Submit
 
+- [x] **App Store Small Business Program** — enrollment submitted 2026-08-14 (Account Holder Justin McFarland / team `CDHJC4MH4G`); await Apple email; 15% rate starts 15 days after fiscal month of approval
+- [x] **Paid Apps Agreement** — signed; status **Processing** (banking also processing ~24h). Confirm **Active** before first IAP sale
+- [ ] **Profile IAP** — Free download; create auto-renewable **Profile** at **$10.00/yr** (`parkbound_profile_annual` in `store-identifiers.json`) once Paid Apps Agreement is Active
 - [ ] **App version** in Connect matches `apps/party-tracker/package.json` (metadata upload uses that semver)
 - [ ] **Privacy URL live** — deploy app with `/privacy` (added in `apps/party-tracker/app/privacy/page.js`)
 - [ ] **Screenshots** — iPhone 6.5" (1284×2778) minimum; add under `fastlane/screenshots/ios/` then set `IOS_SKIP_SCREENSHOTS=false`
