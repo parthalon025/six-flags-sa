@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
@@ -21,6 +21,7 @@ import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND } from '@/lib/brand';
+import { INTRO_KEY, firstRunOverlay } from '@/lib/introGate';
 import { haptic, listenInviteUrls, registerPush, shouldRegisterPush } from '@/lib/native';
 import {
   SHEET_GAP,
@@ -151,10 +152,8 @@ const PUSH_PREFS_KEY = 'tracker-push-prefs';
    not have the same places, and hiding food at one should not hide it at the
    other. */
 const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
-/* Whether this phone has been told what the app is. Its own key rather than a
-   field on the identity record, because it is answered before anyone has typed
-   a name and has to survive the identity being rewritten. */
-const INTRO_KEY = 'tracker-intro-seen';
+/* Whether this phone has been told what the app is lives in INTRO_KEY
+   (`lib/introGate.js`) so the before-paint boot script cannot drift. */
 /* Where the car is, per venue. Per venue because the car parks are not the
    same one and a stale pin two states away is worse than no pin: it would put
    a card on the rail confidently pointing at Ohio. */
@@ -231,6 +230,20 @@ export default function Page() {
   const [introSeen, setIntroSeen] = useState(null);
   /** Session-only — the logo splash yields to the welcome gate without marking intro seen. */
   const [logoSplashDismissed, setLogoSplashDismissed] = useState(false);
+  const showIntroSplash = introSeen === false && !logoSplashDismissed;
+  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
+  const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
+  const introOverlay = firstRunOverlay({ introSeen, logoSplashDismissed });
+  /** Stay opaque for the whole first-run intake — flipping this when they tap
+   *  nearest-park would re-attach fadeIn and flash the map through the gate. */
+  const [firstRunSession, setFirstRunSession] = useState(false);
+  useEffect(() => {
+    if (introSeen === false) setFirstRunSession(true);
+  }, [introSeen]);
+  useLayoutEffect(() => {
+    if (introSeen === true) document.documentElement.setAttribute('data-intro', 'seen');
+    else if (introSeen === false) document.documentElement.setAttribute('data-intro', 'new');
+  }, [introSeen]);
 
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
@@ -2198,6 +2211,9 @@ export default function Page() {
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
+      {introOverlay === 'hold' && (
+        <div className="gate gateFirstRun" data-intro-hold="1" aria-hidden="true" />
+      )}
       <AuthBridge onSession={setAuthSession} onBindUserId={handleBindProfile} />
       <ParkMap
         data={mapData}
@@ -3068,6 +3084,7 @@ export default function Page() {
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
       {gateOpen && introSeen !== null && !showAuthGate && !showExplorePrompt && !showIntroSplash && !locationLocked && (
         <GpsGate
+          firstRun={firstRunSession}
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}

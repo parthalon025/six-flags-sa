@@ -7028,6 +7028,66 @@ await check('a short phone still reaches the list', () => {
   return true;
 });
 
+/* ------------------------------------------------------------- first-run gate */
+
+const { firstRunOverlay, INTRO_KEY, INTRO_SEEN_BOOT_SCRIPT } = await import('../../apps/party-tracker/lib/introGate.js');
+
+await check('unknown intro state covers the map instead of painting the live app', () => {
+  assert.equal(firstRunOverlay({ introSeen: null, logoSplashDismissed: false }), 'hold');
+  return true;
+});
+
+await check('a returning phone skips the first-run overlay', () => {
+  assert.equal(firstRunOverlay({ introSeen: true, logoSplashDismissed: false }), 'none');
+  return true;
+});
+
+await check('a first visit opens the logo splash, then the welcome gate, without a hold in between', () => {
+  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: false }), 'splash');
+  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: true }), 'welcome');
+  return true;
+});
+
+await check('the first-run gate is opaque and does not fade in over the live map', () => {
+  const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  const block = css.match(/\.gate\.gateFirstRun\s*\{[^}]+\}/);
+  assert.ok(block, 'missing .gate.gateFirstRun rule');
+  assert.match(block[0], /animation:\s*none/);
+  assert.match(block[0], /background:\s*var\(--bg\)/);
+  assert.match(css, /html\[data-intro="seen"\]\s+\[data-intro-hold\]/);
+  assert.match(css, /html:not\(\[data-intro="seen"\]\)\s+\.app\s*>\s*:not\(\.gate\)/);
+  return true;
+});
+
+await check('the boot script stamps data-intro from the same storage key the app reads', () => {
+  assert.equal(INTRO_KEY, 'tracker-intro-seen');
+  assert.match(INTRO_SEEN_BOOT_SCRIPT, /tracker-intro-seen/);
+  assert.match(INTRO_SEEN_BOOT_SCRIPT, /data-intro/);
+  const layout = fs.readFileSync(new URL('../../apps/party-tracker/app/layout.js', import.meta.url), 'utf8');
+  assert.match(layout, /INTRO_SEEN_BOOT_SCRIPT/);
+  assert.match(layout, /dangerouslySetInnerHTML/);
+  assert.doesNotMatch(layout, /beforeInteractive/);
+  return true;
+});
+
+const { clerkConfigured } = await import('../../apps/party-tracker/lib/clerkConfigured.js');
+
+await check('Clerk stays off when the API keys are not on this box', () => {
+  const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const prevSec = process.env.CLERK_SECRET_KEY;
+  delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  delete process.env.CLERK_SECRET_KEY;
+  try {
+    assert.equal(clerkConfigured(), false);
+  } finally {
+    if (prevPub == null) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = prevPub;
+    if (prevSec == null) delete process.env.CLERK_SECRET_KEY;
+    else process.env.CLERK_SECRET_KEY = prevSec;
+  }
+  return true;
+});
+
 /* ------------------------------------------------------------- app version */
 
 const { APP_BUILT, APP_VERSION, bumpPatchVersion, bumpVersion, compareVersions, isNewerBuild, isNewerVersion, parseVersion, releaseKindFromMessages } = await import('../../apps/party-tracker/lib/version.js');

@@ -1285,6 +1285,77 @@ await check('the roster never collapses while the host is replaced', async () =>
 if (want('intake')) {
 console.log('\n--- intake / nearest park ---');
 
+await check('first-run covers the map before the splash paints', async () => {
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await fresh.addInitScript(() => {
+    localStorage.removeItem('tracker-intro-seen');
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await until(async () => (await p.locator('.gate').count()) > 0, {
+    timeout: 8000,
+    label: 'a gate on first paint',
+  });
+  const gate = p.locator('.gate').first();
+  const painted = await until(
+    async () => {
+      const klass = (await gate.getAttribute('class')) || '';
+      if (!/\bgateFirstRun\b/.test(klass)) return null;
+      const { bg, anim } = await gate.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { bg: s.backgroundColor, anim: s.animationName };
+      });
+      if (!bg) return null;
+      return { klass, bg, anim };
+    },
+    { timeout: 8000, label: 'opaque first-run styles' },
+  );
+  if (painted.anim && painted.anim !== 'none') throw new Error(`first-run gate animated (${painted.anim})`);
+  if (/0,\s*0,\s*0/.test(painted.bg) && /0\.(3|4)/.test(painted.bg)) {
+    throw new Error(`first-run gate is translucent (${painted.bg})`);
+  }
+  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+    timeout: 10000,
+    label: 'logo splash after the hold',
+  });
+  const sheetHidden = await p.locator('.app > .sheet').evaluate((el) => getComputedStyle(el).visibility);
+  if (sheetHidden !== 'hidden') throw new Error(`first-run sheet leaked (${sheetHidden})`);
+  await fresh.close();
+  return true;
+});
+
+await check('a returning phone skips the hold and does not hide the map', async () => {
+  const back = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await back.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+  });
+  const p = await back.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await until(
+    async () => {
+      if ((await p.locator('html').getAttribute('data-intro')) !== 'seen') return false;
+      const hold = p.locator('[data-intro-hold]');
+      if (!(await hold.count())) return true;
+      const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
+      return display === 'none';
+    },
+    { timeout: 8000, label: 'html[data-intro=seen] hides the SSR hold' },
+  );
+  if (await p.locator('#intro-splash-title').count()) {
+    throw new Error('returning phone still got the logo splash');
+  }
+  await back.close();
+  return true;
+});
+
 // A phone that is at neither park: an hour up the interstate from Fiesta Texas,
 // and most of a continent from Kings Island. Its first fix is inside nothing,
 // which is exactly the case where guessing is worst and asking is best.

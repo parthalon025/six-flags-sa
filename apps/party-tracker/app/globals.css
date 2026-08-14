@@ -1535,6 +1535,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   display: flex; align-items: flex-end;
   animation: fadeIn var(--t2) var(--easeOut) both;
 }
+/* First-run: opaque, no fade. A transparent fade-in over the live map ghosts
+   PARKBOUND (sheet lockup + splash lockup) and looks like a broken load. */
+.gate.gateFirstRun {
+  background: var(--bg);
+  animation: none;
+}
+.gate.gateFirstRun .gateCard {
+  animation: none;
+}
+/* The hold lives in the home SSR HTML because introSeen is null on the server.
+   A head script stamps data-intro before first paint: returning phones skip
+   the cover; first visits hide the map/sheet until that same stamp says seen. */
+html[data-intro="seen"] [data-intro-hold] {
+  display: none;
+}
+html:not([data-intro="seen"]) .app > :not(.gate) {
+  visibility: hidden;
+}
 .gateCard {
   width: 100%; background: var(--bg2);
   border-radius: var(--r2) var(--r2) 0 0; padding: 22px 20px calc(24px + var(--bot));

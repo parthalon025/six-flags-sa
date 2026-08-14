@@ -12,7 +12,12 @@ import { rankFromXp, titleFromXp } from '@party-tracker/shared/questScore.js';
  * Mirrors Clerk session into the offline Profile cache the app already uses.
  * Minting the Postgres row happens in POST /api/profile/sync (ADR-0010).
  */
-export default function AuthBridge({ onSession, onBindUserId = null }) {
+export default function AuthBridge(props) {
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return null;
+  return <AuthBridgeLive {...props} />;
+}
+
+function AuthBridgeLive({ onSession, onBindUserId = null }) {
   const { isSignedIn, userId: clerkUserId } = useAuth();
   const { user, isLoaded } = useUser();
   const lastSync = useRef(null);

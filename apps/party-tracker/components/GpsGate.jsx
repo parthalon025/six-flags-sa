@@ -145,6 +145,7 @@ export default function GpsGate({
   setupError = null,
   nearestIntent = false,
   partyLock = false,
+  firstRun = false,
 }) {
   const copy = partyLock
     ? {
@@ -174,7 +175,7 @@ export default function GpsGate({
   }
 
   return (
-    <div className="gate">
+    <div className={firstRun ? 'gate gateFirstRun' : 'gate'}>
       <div className="gateCard">
         {welcome && !showParkQuestion && !partyLock ? (
           <>
