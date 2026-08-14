@@ -1,15 +1,28 @@
-Park Bound is a drawn map of the park you’re standing in — not a generic street map with a pin dropped on the gate.
+Your park day, less complicated.
 
-Pick a Venue. Toilets, food, and rides are Places you can open and walk to on guest paths. Height rules show who in your group can ride. After the first visit, the map and a lot of the day still work offline.
+Park Bound gives you a detailed map built for the park you are visiting. Find rides, food, restrooms, and the paths that get you there.
 
-Start a Party when the family wants to stick together. Share an Invite — QR, link, or six-character code. Everyone on the roster sees Location while you’re inside the park: where each phone is, and which Place they’re at when they’re actually there. Set a Meet when someone says “we’ll regroup at the fountain.”
+FIND WHAT YOU NEED
+• See nearby rides, food, and restrooms
+• Search the map and follow park paths
+• Keep using the map offline after your first visit
 
-Mark what you’re seeing while you walk — a ride running, a long line, something closed — so your Party knows before they get there.
+PLAN FOR EVERY RIDER
+• Choose a rider height to see which rides work for them
+• Build a shared Plan for the day
+• Check ride details before you walk across the park
 
-Side Quests send you to a spot on the ground to confirm what the shipped map still needs: a height sign, a restroom that isn’t drawn yet, a path that’s missing. That work can improve the Venue for the next visit.
+STAY WITH YOUR GROUP
+• Start a Party with a QR code, link, or six-character code
+• When you join a Party, everyone shares their location inside the park so the group can find each other
+• Set a Meet for when it is time to regroup
+• Share ride updates with your Party
 
-The app is free to download. You don’t need a Profile to browse the map or join a Party by name — continue as a guest. A Profile (sign in with Apple or Google) saves progress and Managed Guests on this phone and across devices.
+HELP MAKE THE MAP BETTER
+Side Quests let you confirm things only a visitor can see: a height sign, a missing restroom, or a path. Your updates help improve future visits.
 
-Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s are ready now. More Venues follow the same builder.
+Start as a guest — no sign-in is needed to explore the map or join a Party. Sign in with Apple or Google when you want to save your progress and family rider details.
 
-Explore more. Stress less.
+Available now: Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s.
+
+Park Bound is free to download. Explore more. Stress less.

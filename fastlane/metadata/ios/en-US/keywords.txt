@@ -1,1 +1,1 @@
-theme park,map,party,navigation,family,offline,kings island,cedar point,height,restroom
+theme park,park map,rides,roller coaster,family,restrooms,food,offline,kings island,cedar point
