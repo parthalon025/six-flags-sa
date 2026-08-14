@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
@@ -20,12 +20,14 @@ import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
-import { BRAND } from '@/lib/brand';
+import { BRAND, GLYPHS, WORDS } from '@/lib/brand';
+import { INTRO_KEY, firstRunOverlay } from '@/lib/introGate';
 import { haptic, listenInviteUrls, registerPush, shouldRegisterPush } from '@/lib/native';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
   SHEET_PEEK_PX,
+  SHEET_PLACE_PX,
   nextSheetStop,
   sheetCrowdsMap,
   sheetForm,
@@ -69,6 +71,17 @@ import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { navKeyOf } from '@/lib/navKey';
+import {
+  applyMapSkin,
+  applyThanksToProgress,
+  createProgress,
+  emptyWorld,
+  mergeWorlds,
+  recordSideQuest,
+  visibleMarks,
+  wearMap,
+} from '@/lib/world';
+import { loadWorld, saveWorld } from '@/lib/worldStore';
 import {
   applyContribution as applyOverlayFact,
   applyOverlayToPlaces,
@@ -151,10 +164,8 @@ const PUSH_PREFS_KEY = 'tracker-push-prefs';
    not have the same places, and hiding food at one should not hide it at the
    other. */
 const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
-/* Whether this phone has been told what the app is. Its own key rather than a
-   field on the identity record, because it is answered before anyone has typed
-   a name and has to survive the identity being rewritten. */
-const INTRO_KEY = 'tracker-intro-seen';
+/* Whether this phone has been told what the app is lives in INTRO_KEY
+   (`lib/introGate.js`) so the before-paint boot script cannot drift. */
 /* Where the car is, per venue. Per venue because the car parks are not the
    same one and a stale pin two states away is worse than no pin: it would put
    a card on the rail confidently pointing at Ohio. */
@@ -231,6 +242,20 @@ export default function Page() {
   const [introSeen, setIntroSeen] = useState(null);
   /** Session-only — the logo splash yields to the welcome gate without marking intro seen. */
   const [logoSplashDismissed, setLogoSplashDismissed] = useState(false);
+  const showIntroSplash = introSeen === false && !logoSplashDismissed;
+  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
+  const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
+  const introOverlay = firstRunOverlay({ introSeen, logoSplashDismissed });
+  /** Stay opaque for the whole first-run intake — flipping this when they tap
+   *  nearest-park would re-attach fadeIn and flash the map through the gate. */
+  const [firstRunSession, setFirstRunSession] = useState(false);
+  useEffect(() => {
+    if (introSeen === false) setFirstRunSession(true);
+  }, [introSeen]);
+  useLayoutEffect(() => {
+    if (introSeen === true) document.documentElement.setAttribute('data-intro', 'seen');
+    else if (introSeen === false) document.documentElement.setAttribute('data-intro', 'new');
+  }, [introSeen]);
 
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
@@ -360,6 +385,12 @@ export default function Page() {
     [stops],
   );
   const shrinkSheet = useCallback((px) => setSheetPx((h) => Math.min(h, px)), []);
+  /* A map-tapped place is a collapsed Maps card, not half the screen. Set
+     rather than grow: a sheet already at peek would otherwise stay tall. */
+  const fitPlaceSheet = useCallback(
+    () => setSheetPx(Math.min(stops.full, SHEET_PLACE_PX)),
+    [stops.full],
+  );
 
   // Shared by the sheet's chips and the map's own key, which are two views of
   // the same switch.
@@ -373,6 +404,10 @@ export default function Page() {
   }, []);
   const [focusPoint, setFocusPoint] = useState(null);
   const [theme, setTheme] = useState('night');
+  const [worldProgress, setWorldProgress] = useState(() => createProgress());
+  const [acceptedOffer, setAcceptedOffer] = useState(null);
+  const [parkWorld, setParkWorld] = useState(() => emptyWorld());
+  const worldHydrated = useRef(false);
   const [nav, setNav] = useState(null); // where we are walking to, by reference
   const [navPhase, setNavPhase] = useState('idle'); // idle -> preview -> go
   const [routesList, setRoutes] = useState([]); // the choice, best first
@@ -460,9 +495,10 @@ export default function Page() {
         { tab: id, stacks: { ...cur, [id]: [...onIt, next] } },
         'fromRight',
       );
-      growSheet(stops.half);
+      if (next === 'place') fitPlaceSheet();
+      else growSheet(stops.half);
     },
-    [goForward, growSheet, stops],
+    [goForward, growSheet, fitPlaceSheet, stops],
   );
 
   /**
@@ -797,6 +833,38 @@ export default function Page() {
   }, [theme]);
 
   useEffect(() => {
+    let cancelled = false;
+    if (worldHydrated.current) {
+      setWorldProgress((p) => ({ ...p, userId: authSession?.userId || p.userId }));
+      return undefined;
+    }
+    loadWorld({ userId: authSession?.userId || null }).then((saved) => {
+      if (cancelled) return;
+      worldHydrated.current = true;
+      setWorldProgress(saved.progress);
+      setAcceptedOffer(saved.acceptedOffer);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [authSession?.userId]);
+
+  useEffect(() => {
+    if (!worldHydrated.current) return;
+    saveWorld({ progress: worldProgress, acceptedOffer });
+  }, [worldProgress, acceptedOffer]);
+
+  useEffect(() => {
+    if (party?.active && authSession?.userId) runtime.current?.bindUserId?.(authSession.userId);
+  }, [party?.active, authSession?.userId]);
+
+  useEffect(() => {
+    if (!party?.active) return;
+    if (worldProgress.kit) runtime.current?.setKit?.(worldProgress.kit);
+    if (worldProgress.wearSkin) runtime.current?.setWearSkin?.(worldProgress.wearSkin);
+  }, [party?.active, worldProgress.kit, worldProgress.wearSkin]);
+
+  useEffect(() => {
     let stop = () => {};
     void listenInviteUrls((url) => {
       try {
@@ -1062,6 +1130,7 @@ export default function Page() {
           visible: seen.visible,
           live: seen.live,
           place: seen.place,
+          kit: m.kit || null,
         };
       }),
     [party, venue?.bounds],
@@ -1093,6 +1162,143 @@ export default function Page() {
   const visibleOnMap = useMemo(() => roster.filter((m) => m.visible).length, [roster]);
 
   const meet = party?.meet ?? localMeet;
+
+  const partyMembersById = useMemo(
+    () => Object.fromEntries((party?.members || []).map((m) => [m.id, m])),
+    [party?.members],
+  );
+  const partyWorld = party?.world || null;
+  const mergedWorld = useMemo(() => mergeWorlds(partyWorld, parkWorld), [partyWorld, parkWorld]);
+  const mapWear = useMemo(
+    () =>
+      wearMap({
+        progress: worldProgress,
+        partyMembers: partyMembersById,
+        selfId: party?.selfId || null,
+        acceptedOffer,
+        world: partyWorld,
+        venue,
+        palette: theme,
+      }),
+    [worldProgress, partyMembersById, party?.selfId, acceptedOffer, partyWorld, venue, theme],
+  );
+  const worldMarksOnMap = useMemo(
+    () => visibleMarks({ world: mergedWorld, viewerPartyId: party?.partyId || null }),
+    [mergedWorld, party?.partyId],
+  );
+
+  useEffect(() => {
+    applyMapSkin(document.documentElement, mapWear);
+  }, [mapWear]);
+
+  useEffect(() => {
+    if (!venue?.id) {
+      setParkWorld(emptyWorld());
+      return undefined;
+    }
+    const partyId = party?.partyId || '';
+    let cancelled = false;
+    fetch(`/api/world/${encodeURIComponent(venue.id)}?partyId=${encodeURIComponent(partyId)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data?.world) {
+          setParkWorld(data.world);
+          setWorldProgress((p) => applyThanksToProgress(p, data.world, p.userId));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [venue?.id, party?.partyId, party?.version]);
+
+  const publishMark = useCallback(
+    (mark) => {
+      if (!mark?.type) return;
+      runtime.current?.dropWorldMark?.({
+        id: mark.id,
+        type: mark.type,
+        placeId: mark.placeId,
+        lat: mark.lat,
+        lng: mark.lng,
+        venueId: mark.venueId || venue?.id,
+        phrase: mark.phrase,
+      });
+      const profileId = authSession?.userId;
+      if (!profileId || !venue?.id) return;
+      fetch(`/api/world/${encodeURIComponent(venue.id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'mark',
+          profileId,
+          partyId: party?.partyId || null,
+          id: mark.id,
+          type: mark.type,
+          placeId: mark.placeId,
+          lat: mark.lat,
+          lng: mark.lng,
+          phrase: mark.phrase,
+          now: mark.createdAt,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.world) setParkWorld(data.world);
+        })
+        .catch(() => {});
+    },
+    [authSession?.userId, venue?.id, party?.partyId],
+  );
+
+  const thankAMark = useCallback(
+    (mark) => {
+      if (!mark?.id || !authSession?.userId) return;
+      runtime.current?.thankWorldMark?.(mark.id);
+      if (!venue?.id) return;
+      fetch(`/api/world/${encodeURIComponent(venue.id)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'thanks',
+          profileId: authSession.userId,
+          partyId: party?.partyId || null,
+          targetId: mark.id,
+        }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data?.world) {
+            setParkWorld(data.world);
+            setWorldProgress((p) => applyThanksToProgress(p, data.world, p.userId));
+          }
+        })
+        .catch(() => {});
+    },
+    [authSession?.userId, venue?.id, party?.partyId],
+  );
+
+  const recordWorldQuest = useCallback(
+    ({ quest, report }) => {
+      const { progress: next, marks } = recordSideQuest(
+        { ...worldProgress, userId: authSession?.userId || worldProgress.userId },
+        {
+          questId: quest?.id || report?.questId,
+          kind: quest?.type || report?.kind,
+          venueId: report?.venueId || venue?.id,
+          placeId: report?.placeId || quest?.targets?.[0] || null,
+          lat: report?.lat,
+          lng: report?.lng,
+          partyId: party?.partyId || null,
+          venueKind: venue?.kind,
+          venuePlaceCount: POIS?.length || null,
+        },
+      );
+      setWorldProgress(next);
+      for (const mark of marks) publishMark(mark);
+    },
+    [worldProgress, authSession?.userId, venue?.id, venue?.kind, party?.partyId, POIS, publishMark],
+  );
 
   /**
    * Where the party is, according to the phone hosting it.
@@ -2025,7 +2231,6 @@ export default function Page() {
           return;
         }
         push('place', 'explore');
-        growSheet(stops.half);
         return;
       }
       setSelected(poi);
@@ -2041,15 +2246,15 @@ export default function Page() {
       };
       if (tabRef.current !== 'explore') {
         goForward({ tab: 'explore', stacks: nextStacks }, 'fromLeft');
-        growSheet(stops.half);
+        fitPlaceSheet();
       } else if (!placeOpen) {
         push('place', 'explore');
         return;
       } else {
-        growSheet(stops.half);
+        fitPlaceSheet();
       }
     },
-    [selected, dismissPlaceView, goForward, push, growSheet, stops.half],
+    [selected, dismissPlaceView, goForward, push, fitPlaceSheet],
   );
 
   const onUserPan = useCallback(() => setFollow(false), []);
@@ -2130,7 +2335,7 @@ export default function Page() {
     ];
     // Height rules only exist where a venue publishes them, so neither does the
     // Plan tab that reads them (itinerary + rider height).
-    if (heights) out.push({ id: 'rides', label: 'Plan', icon: 'figure.rollercoaster' });
+    if (heights) out.push({ id: 'rides', label: 'Plan', icon: GLYPHS.plan });
     // Once there is a name, the tab wears it. "Guest" is the placeholder
     // nobody typed, and "GU" on a tab is not a person — so that one keeps the
     // Me glyph until the visitor says who they are.
@@ -2198,6 +2403,9 @@ export default function Page() {
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
+      {introOverlay === 'hold' && (
+        <div className="gate gateFirstRun" data-intro-hold="1" aria-hidden="true" />
+      )}
       <AuthBridge onSession={setAuthSession} onBindUserId={handleBindProfile} />
       <ParkMap
         data={mapData}
@@ -2218,7 +2426,7 @@ export default function Page() {
         visibleCategories={categories}
         onToggleCategory={toggleCategory}
         focusPoint={focusPoint}
-        theme={theme}
+        theme={mapWear}
         route={navTarget ? route : null}
         routeStep={walking ? progress?.step ?? null : null}
         routeAhead={routeAhead}
@@ -2235,6 +2443,9 @@ export default function Page() {
         fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
         mapKeyHidden={previewing || walking}
         onMapStats={handleMapStats}
+        marks={worldMarksOnMap}
+        selfKit={worldProgress.kit || selfMember?.kit || null}
+        onThankMark={thankAMark}
         overlayPins={overlayPins}
       />
 
@@ -2374,9 +2585,9 @@ export default function Page() {
                 showToast('Tap the map to drop the meet-up point');
               }
             }}
-            aria-label="Set meet-up"
+            aria-label={WORDS.meetup}
           >
-            <Icon name="mappin.and.ellipse" />
+            <Icon name={GLYPHS.meetup} />
           </button>
         )}
         {/* Panning away during a walk parks the camera where you left it, and
@@ -2488,10 +2699,10 @@ export default function Page() {
           data-motion={motion}
         >
           {view ? (
-            <header className="navHead">
-              <button type="button" className="navBack" onClick={pop}>
+            <header className={`navHead${view === 'place' ? ' placeNav' : ''}`}>
+              <button type="button" className="navBack" onClick={pop} aria-label="Back">
                 <Icon name="chevron.left" size={19} />
-                Back
+                {view === 'place' ? null : 'Back'}
               </button>
               <h2>{view === 'place' && selected?.n ? selected.n : VIEW_TITLES[view] || ''}</h2>
               <span className="navHeadPad" aria-hidden="true" />
@@ -2605,7 +2816,7 @@ export default function Page() {
             </header>
           )}
 
-          <div className="sheetBody">
+          <div className={`sheetBody${view === 'place' ? ' placeBody' : ''}`}>
             {view === null && tab === 'explore' && plan.list && (
               <>
                 {/* The one row left on this screen. Everywhere else it used to
@@ -2825,6 +3036,7 @@ export default function Page() {
                 session={authSession}
                 onSession={setAuthSession}
                 onRideReport={party?.active ? reportRide : null}
+                onWorldProgress={recordWorldQuest}
                 onContribution={handleContribution}
                 overlay={localOverlay}
               />
@@ -2888,6 +3100,35 @@ export default function Page() {
                       return { ...i, name: next.displayName };
                     });
                   }
+                }}
+                worldProgress={worldProgress}
+                world={mergedWorld}
+                acceptedOffer={acceptedOffer}
+                selfId={party?.selfId || null}
+                venue={venue}
+                onWearOwn={(skinId) => {
+                  setAcceptedOffer(null);
+                  setWorldProgress((p) => ({ ...p, wearSkin: skinId }));
+                  runtime.current?.setWearSkin?.(skinId);
+                }}
+                onAcceptOffer={(offer) => setAcceptedOffer(offer)}
+                onClearWear={() => setAcceptedOffer(null)}
+                onOfferSkin={(skinId) => runtime.current?.offerSkin?.(skinId)}
+                onWithdrawOffer={(skinId) => runtime.current?.withdrawOffer?.(skinId)}
+                onEquipKit={(kit) => {
+                  setWorldProgress((p) => ({ ...p, kit }));
+                  runtime.current?.setKit?.(kit);
+                }}
+                onDropMark={(fields) => {
+                  const now = Date.now();
+                  publishMark({
+                    ...fields,
+                    placeId: selected?.i || selected?.id || fields.placeId || null,
+                    venueId: venue?.id,
+                    createdAt: now,
+                    authorId: authSession?.userId,
+                    authorPartyId: party?.partyId || null,
+                  });
                 }}
               />
             )}
@@ -3068,6 +3309,7 @@ export default function Page() {
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
       {gateOpen && introSeen !== null && !showAuthGate && !showExplorePrompt && !showIntroSplash && !locationLocked && (
         <GpsGate
+          firstRun={firstRunSession}
           venueName={venue?.name}
           status={geo.status}
           error={geo.error}

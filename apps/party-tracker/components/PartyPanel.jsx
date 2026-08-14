@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import QrScanner from '@/components/QrScanner';
 import Icon from '@/components/Icon';
-import { WORDS } from '@/lib/brand';
+import { GLYPHS, WORDS } from '@/lib/brand';
 import { shareInvite } from '@/lib/native';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { locationCopy, placeAt } from '@/lib/location';
@@ -603,7 +603,7 @@ export default function PartyPanel({
               onClick={onNavigateMeet}
               aria-label={WORDS.navigation}
             >
-              <Icon name="location.fill" size={18} />
+              <Icon name={GLYPHS.walk} size={18} />
             </button>
             <button type="button" className="btn small" onClick={() => onFocus(meet)}>
               On the map

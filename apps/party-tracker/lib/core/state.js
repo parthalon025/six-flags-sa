@@ -14,6 +14,16 @@
  */
 
 import { nextTrail } from '../location.js';
+import {
+  dropMark,
+  emptyWorld,
+  isAllowedSign,
+  isSkin,
+  MARK_TYPES,
+  offerSkin,
+  thankMark,
+  withdrawOffer,
+} from '../world.js';
 import { applyContribution, emptyOverlay, normalizeContribution, normalizeOverlay } from '../overlay.js';
 
 /** How long a member can go unheard from before the roster drops them. */
@@ -66,9 +76,8 @@ export function createParty({ id, name = 'Party', leader, now = Date.now(), tran
     meet: null,
     plan: [],
     overlay: emptyOverlay(),
-    // Reserved. No command emits SETTINGS_MERGE yet, so this is empty by
-    // design: it is the slot the first genuinely party-wide setting drops
-    // into, and OP.SETTINGS_MERGE is the mechanism that will replicate it.
+    // Party-wide settings. Collaborative world (Offers, Marks, Thanks) lives
+    // under `settings.world` and replicates through OP.SETTINGS_MERGE.
     settings: {},
   };
 }
@@ -106,6 +115,8 @@ export function createMember({
     shareMode: 'approx',
     shareUntil: null,
     lastSeen: now,
+    kit: null,
+    wearSkin: null,
   };
 }
 
@@ -237,6 +248,8 @@ export function reduce(state, command, now = Date.now()) {
         member.trail = existing.trail || [];
         member.shareMode = existing.shareMode;
         member.shareUntil = existing.shareUntil;
+        member.kit = existing.kit || null;
+        member.wearSkin = existing.wearSkin || null;
         if (existing.userId) member.userId = existing.userId;
       }
       return withOps(state, [{ type: OP.MEMBER_SET, id: from, member }]);
@@ -304,6 +317,12 @@ export function reduce(state, command, now = Date.now()) {
       // EP.5: bind profile once; never allow swapping userId after bind.
       if (body.patch?.userId && !me.userId) {
         patch.userId = String(body.patch.userId).slice(0, 64);
+      }
+      if (body.patch?.kit !== undefined) {
+        patch.kit = body.patch.kit ? String(body.patch.kit).slice(0, 40) : null;
+      }
+      if (body.patch?.wearSkin !== undefined) {
+        patch.wearSkin = body.patch.wearSkin ? String(body.patch.wearSkin).slice(0, 40) : null;
       }
       if (!Object.keys(patch).length) return none(state);
       patch.lastSeen = now;
@@ -423,7 +442,72 @@ export function reduce(state, command, now = Date.now()) {
 
     case 'leave': {
       if (!me) return none(state);
-      return withOps(state, [{ type: OP.MEMBER_DEL, id: from }]);
+      const ops = [{ type: OP.MEMBER_DEL, id: from }];
+      const cur = state.settings?.world;
+      if ((cur?.offers || []).some((o) => o.fromMemberId === from)) {
+        ops.push({
+          type: OP.SETTINGS_MERGE,
+          patch: { world: withdrawOffer(cur, { fromMemberId: from }) },
+        });
+      }
+      return withOps(state, ops);
+    }
+
+    case 'world-offer': {
+      if (!me?.userId || !isSkin(body.skinId)) return none(state);
+      const cur = state.settings?.world || emptyWorld();
+      const next = offerSkin({
+        world: cur,
+        fromMemberId: from,
+        fromProfileId: me.userId,
+        skinId: body.skinId,
+        now,
+        force: true,
+      });
+      if (next.offers.length === (cur.offers || []).length) return none(state);
+      return withOps(state, [{ type: OP.SETTINGS_MERGE, patch: { world: next } }]);
+    }
+
+    case 'world-withdraw': {
+      if (!me) return none(state);
+      const cur = state.settings?.world || emptyWorld();
+      const next = withdrawOffer(cur, { fromMemberId: from, skinId: body.skinId });
+      if (next.offers.length === (cur.offers || []).length) return none(state);
+      return withOps(state, [{ type: OP.SETTINGS_MERGE, patch: { world: next } }]);
+    }
+
+    case 'world-mark': {
+      if (!me?.userId) return none(state);
+      const type = String(body.type || '');
+      if (!MARK_TYPES.includes(type)) return none(state);
+      if (type === 'sign' && body.phrase && !isAllowedSign(body.phrase)) return none(state);
+      const cur = state.settings?.world || emptyWorld();
+      const next = dropMark(cur, {
+        id: typeof body.id === 'string' ? body.id.slice(0, 80) : null,
+        type,
+        placeId: body.placeId,
+        lat: body.lat,
+        lng: body.lng,
+        authorId: me.userId,
+        authorPartyId: state.id,
+        venueId: body.venueId,
+        phrase: body.phrase,
+        now,
+      });
+      return withOps(state, [{ type: OP.SETTINGS_MERGE, patch: { world: next } }]);
+    }
+
+    case 'world-thanks': {
+      if (!me?.userId || !body.targetId) return none(state);
+      const cur = state.settings?.world || emptyWorld();
+      const next = thankMark(cur, {
+        profileId: me.userId,
+        partyId: state.id,
+        targetId: body.targetId,
+        now,
+      });
+      if (next.thanks.length === (cur.thanks || []).length) return none(state);
+      return withOps(state, [{ type: OP.SETTINGS_MERGE, patch: { world: next } }]);
     }
 
     case 'set-leader': {

@@ -187,6 +187,7 @@ const {
   SHEET_LIST_AT_PX,
   SHEET_MAGNET_PX,
   SHEET_PEEK_PX,
+  SHEET_PLACE_PX,
   nextSheetStop,
   sheetCrowdsMap,
   settleSheet,
@@ -6322,9 +6323,18 @@ const {
   recommendNow,
   GO_NOW_M,
 } = await import('../../apps/party-tracker/lib/live.js');
-const { LIVE } = await import('../../apps/party-tracker/lib/brand.js');
+const { GLYPHS: CHROME_GLYPHS, LIVE, WORDS } = await import('../../apps/party-tracker/lib/brand.js');
 
 const BEAST_HERE = { ...BEAST, lat: 39.3441, lng: -84.268 };
+
+await check('meet-up and Plan share the glyphs used on the map and the tab bar', () => {
+  assert.equal(CHROME_GLYPHS.meetup, 'mappin.and.ellipse');
+  assert.equal(CHROME_GLYPHS.plan, 'figure.rollercoaster');
+  assert.equal(CHROME_GLYPHS.walk, 'location.fill');
+  assert.equal(WORDS.meetup, 'Set meet-up');
+  assert.equal(WORDS.addToPlan, 'Add to Plan');
+  return true;
+});
 
 await check('a nearby open report is GO NOW', () => {
   const now = 5_000_000;
@@ -6863,6 +6873,19 @@ await check('the stops come out where the CSS puts them', () => {
   return true;
 });
 
+await check('a map-tapped place card stays leaner than peek and half', () => {
+  // Google Maps' collapsed card: name, one line of facts, icon actions.
+  // It must not open at the half stop (half the screen) — the map stays
+  // the thing you look at, and pulling up is how you read the rest.
+  assert.equal(SHEET_PLACE_PX < STOPS.peek, true);
+  assert.equal(SHEET_PLACE_PX < STOPS.half, true);
+  assert.equal(SHEET_PLACE_PX > SHEET_CHROME_PX, true);
+  // Title+actions on one row, facts on the next: no spare nav row, no
+  // empty band between the icons and the tab bar.
+  assert.equal(SHEET_PLACE_PX, SHEET_CHROME_PX + 40 + 18 + 8);
+  return true;
+});
+
 await check('a release away from every stop stays exactly where it was let go', () => {
   // The whole point of the rewrite: 360px is nowhere near a stop, so the sheet
   // is left at 360px rather than jumping to peek or half.
@@ -7025,6 +7048,66 @@ await check('a short phone still reaches the list', () => {
   assert.ok(small.half < SHEET_LIST_AT_PX);
   assert.ok(small.full >= SHEET_LIST_AT_PX, 'no height on this phone shows the list');
   assert.equal(sheetPlan(SHEET_LIST_AT_PX).list, true);
+  return true;
+});
+
+/* ------------------------------------------------------------- first-run gate */
+
+const { firstRunOverlay, INTRO_KEY, INTRO_SEEN_BOOT_SCRIPT } = await import('../../apps/party-tracker/lib/introGate.js');
+
+await check('unknown intro state covers the map instead of painting the live app', () => {
+  assert.equal(firstRunOverlay({ introSeen: null, logoSplashDismissed: false }), 'hold');
+  return true;
+});
+
+await check('a returning phone skips the first-run overlay', () => {
+  assert.equal(firstRunOverlay({ introSeen: true, logoSplashDismissed: false }), 'none');
+  return true;
+});
+
+await check('a first visit opens the logo splash, then the welcome gate, without a hold in between', () => {
+  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: false }), 'splash');
+  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: true }), 'welcome');
+  return true;
+});
+
+await check('the first-run gate is opaque and does not fade in over the live map', () => {
+  const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  const block = css.match(/\.gate\.gateFirstRun\s*\{[^}]+\}/);
+  assert.ok(block, 'missing .gate.gateFirstRun rule');
+  assert.match(block[0], /animation:\s*none/);
+  assert.match(block[0], /background:\s*var\(--bg\)/);
+  assert.match(css, /html\[data-intro="seen"\]\s+\[data-intro-hold\]/);
+  assert.match(css, /html:not\(\[data-intro="seen"\]\)\s+\.app\s*>\s*:not\(\.gate\)/);
+  return true;
+});
+
+await check('the boot script stamps data-intro from the same storage key the app reads', () => {
+  assert.equal(INTRO_KEY, 'tracker-intro-seen');
+  assert.match(INTRO_SEEN_BOOT_SCRIPT, /tracker-intro-seen/);
+  assert.match(INTRO_SEEN_BOOT_SCRIPT, /data-intro/);
+  const layout = fs.readFileSync(new URL('../../apps/party-tracker/app/layout.js', import.meta.url), 'utf8');
+  assert.match(layout, /INTRO_SEEN_BOOT_SCRIPT/);
+  assert.match(layout, /dangerouslySetInnerHTML/);
+  assert.doesNotMatch(layout, /beforeInteractive/);
+  return true;
+});
+
+const { clerkConfigured } = await import('../../apps/party-tracker/lib/clerkConfigured.js');
+
+await check('Clerk stays off when the API keys are not on this box', () => {
+  const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const prevSec = process.env.CLERK_SECRET_KEY;
+  delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  delete process.env.CLERK_SECRET_KEY;
+  try {
+    assert.equal(clerkConfigured(), false);
+  } finally {
+    if (prevPub == null) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = prevPub;
+    if (prevSec == null) delete process.env.CLERK_SECRET_KEY;
+    else process.env.CLERK_SECRET_KEY = prevSec;
+  }
   return true;
 });
 
@@ -8284,6 +8367,8 @@ await check('soft-gate helper lives on the local session module', async () => {
     assert.equal(softGateBlocks('contribute', null), true);
     assert.equal(softGateBlocks('adventure', null), true);
     assert.equal(softGateBlocks('adventure', { userId: 'usr_x' }), false);
+    assert.equal(softGateBlocks('world', null), true);
+    assert.equal(softGateBlocks('world', { userId: 'usr_x' }), false);
     assert.equal(softGateBlocks('ride-report', null), false);
     assert.equal(softGateBlocks('party', { userId: 'usr_x' }), false);
     return true;

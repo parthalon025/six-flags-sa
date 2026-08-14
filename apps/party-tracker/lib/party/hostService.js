@@ -35,6 +35,10 @@ import {
   SNAPSHOT,
   VICTORY,
   WELCOME,
+  WORLD_MARK,
+  WORLD_OFFER,
+  WORLD_THANKS,
+  WORLD_WITHDRAW,
   addressedTo,
 } from '../core/protocol.js';
 import { adoptSnapshot, createParty, evict, evictRides, publicSnapshot, reduce } from '../core/state.js';
@@ -64,6 +68,10 @@ const COMMAND_FOR = {
   [APPLY_CONTRIBUTION]: 'apply-contribution',
   [ADD_MEMBER]: 'add-member',
   [REMOVE_MEMBER]: 'remove-member',
+  [WORLD_OFFER]: 'world-offer',
+  [WORLD_WITHDRAW]: 'world-withdraw',
+  [WORLD_MARK]: 'world-mark',
+  [WORLD_THANKS]: 'world-thanks',
   [BYE]: 'leave',
 };
 

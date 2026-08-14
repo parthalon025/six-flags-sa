@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.10.0",
+  "version": "1.11.2",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -54,14 +54,14 @@
     "venues:pipeline": "node packages/venue-builder/bin/build-top-parks.mjs",
     "cdn:warm": "node scripts/warm-cdn.mjs",
     "test": "npm run test:builder && npm run test:app",
-    "test:builder": "node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/compare.mjs",
+    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",
     "test:validate-ui": "node test/app/validate-ui.mjs",
     "test:validate-ui:changed": "node test/app/validate-ui.mjs --changed",
     "test:modules": "node test/app/select-modules.mjs",
     "test:module-select": "node test/app/module-select.test.mjs",
     "test:coverage-contract": "node test/app/coverage-contract.mjs",
-    "test:unit": "node test/builder/unit.mjs && node test/app/overlay.test.mjs && node test/builder/gaps-quests.mjs && node test/scripts/gitnexus-ci.test.mjs && node test/scripts/bump-version.test.mjs && node test/scripts/vercel-ignore.test.mjs && node test/scripts/worktree.test.mjs && node test/app/host-service-import.test.mjs && node test/app/native.test.mjs && node test/app/store-links.test.mjs",
+    "test:unit": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/app/overlay.test.mjs && node test/builder/gaps-quests.mjs && node test/scripts/gitnexus-ci.test.mjs && node test/scripts/bump-version.test.mjs && node test/scripts/vercel-ignore.test.mjs && node test/scripts/worktree.test.mjs && node test/scripts/store-app-preview.test.mjs && node test/app/host-service-import.test.mjs && node test/app/native.test.mjs && node test/app/store-links.test.mjs",
     "test:functional": "node test/app/functional.mjs",
     "test:compare": "node test/builder/compare.mjs",
     "test:visual": "node test/app/visual.mjs",
@@ -84,6 +84,7 @@
     "store:prepare": "node scripts/store-prepare.mjs",
     "store:icons": "node scripts/build-icons.mjs",
     "store:screenshots": "node scripts/store-screenshots.mjs",
+    "store:app-preview": "node scripts/store-app-preview.mjs",
     "store:scaffold-metadata": "node scripts/scaffold-app-store-metadata.mjs"
   },
   "devDependencies": {
