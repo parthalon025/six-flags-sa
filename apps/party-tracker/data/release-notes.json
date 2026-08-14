@@ -258,5 +258,11 @@
     "items": [
       "fix: stop intro boot check matching beforeInteractive comments"
     ]
+  },
+  "1.11.6": {
+    "title": "What's new",
+    "items": [
+      "fix: skip SignInCard Clerk hooks without publishable key (#170)"
+    ]
   }
 }
