@@ -78,7 +78,7 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 - [ ] **Profile IAP** — Free download; create auto-renewable **Profile** at **$10.00/yr** (`parkbound_profile_annual` in `store-identifiers.json`) once Paid Apps Agreement is Active
 - [ ] **App version** in Connect matches `apps/party-tracker/package.json` (metadata upload uses that semver)
 - [ ] **Privacy URL live** — deploy app with `/privacy` (added in `apps/party-tracker/app/privacy/page.js`)
-- [ ] **Screenshots** — iPhone 6.5" (1284×2778) minimum; add under `fastlane/screenshots/ios/` then set `IOS_SKIP_SCREENSHOTS=false`
+- [ ] **Screenshots** — `npm run store:screenshots` → `fastlane/screenshots/ios/` (workflow uploads with `IOS_SKIP_SCREENSHOTS=false`)
 - [ ] **TestFlight or App Store build** — IPA from macOS CI or cloud Mac (`fastlane ios beta`)
 - [ ] **App Privacy** questionnaire completed in Connect using `APP_PRIVACY.md`
 - [ ] **Review phone number** in Connect

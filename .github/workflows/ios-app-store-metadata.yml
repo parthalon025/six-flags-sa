@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - "fastlane/metadata/ios/**"
+      - "fastlane/screenshots/ios/**"
       - "fastlane/Fastfile"
       - "Gemfile"
       - ".github/workflows/ios-app-store-metadata.yml"
@@ -55,7 +56,7 @@ jobs:
           APP_STORE_APPLE_ID: ${{ secrets.APP_STORE_APPLE_ID }}
           APP_STORE_REVIEW_PHONE: ${{ secrets.APP_STORE_REVIEW_PHONE }}
           IOS_APP_VERSION: ${{ vars.IOS_APP_VERSION }}
-          IOS_SKIP_SCREENSHOTS: "true"
+          IOS_SKIP_SCREENSHOTS: "false"
         run: |
           export IOS_APP_VERSION="${IOS_APP_VERSION:-$(node -p "require('./apps/party-tracker/package.json').version")}"
           bundle exec fastlane ios metadata

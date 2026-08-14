@@ -104,10 +104,6 @@ function iosPath(prefix, slideId) {
   return join(root, 'fastlane', 'screenshots', 'ios', 'en-US', `${prefix}-${slideId}.png`);
 }
 
-function androidPath(dir, slideId) {
-  return join(root, dir, `${slideId}.png`);
-}
-
 async function captureSlides(page, composePage, { marketing }) {
   /** @type {Map<string, Buffer>} */
   const raws = new Map();
@@ -198,12 +194,12 @@ try {
   try {
     const androidShots = await captureSlides(droidPage, composePage, { marketing: false });
     const androidDirs = [
-      join('fastlane', 'metadata', 'android', 'en-US', 'images', 'phoneScreenshots'),
-      join('fastlane', 'metadata', 'android', 'en-US', 'images', 'sevenInchScreenshots'),
+      'fastlane/metadata/android/en-US/images/phoneScreenshots',
+      'fastlane/metadata/android/en-US/images/sevenInchScreenshots',
     ];
     for (const dir of androidDirs) {
       for (const slide of SLIDES) {
-        writePng(androidPath(join(root, dir), slide.id), androidShots.get(slide.id));
+        writePng(join(root, dir, `${slide.id}.png`), androidShots.get(slide.id));
       }
     }
   } finally {
