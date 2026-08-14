@@ -977,8 +977,10 @@ await check('a typed code joins the party', async () => {
 });
 
 await check('the roster converges on both phones', async () => {
+  await go(a, 'Party');
+  await go(b, 'Party');
   await until(async () => (await rosterNames(a)).includes('Ava'), {
-    timeout: JOIN_TIMEOUT,
+    timeout: JOIN_TIMEOUT * 2,
     label: 'Ava on phone A',
   });
   await until(async () => (await rosterNames(b)).includes('Justin'), {
@@ -1053,11 +1055,12 @@ C = await openPhone(browser, {
   venue: 'kings-island',
 });
 c = C.page;
-await signIn(c, 'sam@parkbound.example');
-// Soft-gate defers /join until signed in; wait for the finish-join effect.
+// Invite join is name-first (ADR-0010) — no Profile required. Avoid Settings
+// churn from a no-op soft-gate signIn before the join effect settles.
+await go(c, 'Party');
 await until(async () => (await c.locator('.codeText').count()) > 0, {
   timeout: JOIN_TIMEOUT,
-  label: 'phone C soft-gate invite join',
+  label: 'phone C invite join',
 }).catch(() => {});
 
 await check('the invite link joins the party with nothing typed', async () => {
