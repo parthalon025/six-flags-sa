@@ -11,7 +11,7 @@
  *   npm run test:visual
  */
 
-import { dismissUpdateSplash, dismissIntroSplash, go, launch, openPhone, until, signIn } from './browser.mjs';
+import { dismissUpdateSplash, dismissIntroSplash, go, launch, openPhone, until, signIn, IGNORABLE_CONSOLE } from './browser.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -62,12 +62,11 @@ async function main() {
 
   const errors = [];
   const page = await context.newPage();
-  const ignorable = /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)/;
   page.on('console', (m) => {
     // A blocked resource logs "Failed to load resource: …" with no URL in the
     // text — the URL is on the message location, so test both.
     const where = `${m.text()} ${m.location()?.url ?? ''}`;
-    if (m.type() === 'error' && !ignorable.test(where)) errors.push(m.text());
+    if (m.type() === 'error' && !IGNORABLE_CONSOLE.test(where)) errors.push(m.text());
   });
   page.on('pageerror', (e) => errors.push(String(e)));
 
