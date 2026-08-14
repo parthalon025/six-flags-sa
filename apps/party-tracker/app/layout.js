@@ -1,7 +1,9 @@
 import './globals.css';
 import localFont from 'next/font/local';
+import Script from 'next/script';
 import { ClerkProvider } from '@clerk/nextjs';
 import { BRAND } from '@/lib/brand';
+import { INTRO_SEEN_BOOT_SCRIPT } from '@/lib/introGate';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -77,6 +79,11 @@ export default function RootLayout({ children }) {
             map+pois wastes park-wifi bandwidth for returning guests elsewhere. */}
         <link rel="preload" href="/venues/manifest.json" as="fetch" crossOrigin="anonymous" />
         <style>{`:root { --display: var(--font-display), 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }`}</style>
+        <Script
+          id="intro-seen-boot"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: INTRO_SEEN_BOOT_SCRIPT }}
+        />
       </head>
       <body>
         <ClerkProvider
