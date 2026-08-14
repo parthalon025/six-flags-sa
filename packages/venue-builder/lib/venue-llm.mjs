@@ -8,7 +8,9 @@
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { llmResearchCacheFile } from './open-research.mjs';
+import { venueSidecar } from './venue-io.mjs';
+
+const llmResearchCacheFile = (id) => venueSidecar(id, 'llm-research-cache.json');
 
 const DEFAULT_OPENAI_BASE = 'https://api.openai.com/v1';
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
