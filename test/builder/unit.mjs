@@ -7127,7 +7127,9 @@ await check('the boot script stamps data-intro from the same storage key the app
   const layout = fs.readFileSync(new URL('../../apps/party-tracker/app/layout.js', import.meta.url), 'utf8');
   assert.match(layout, /INTRO_SEEN_BOOT_SCRIPT/);
   assert.match(layout, /dangerouslySetInnerHTML/);
-  assert.doesNotMatch(layout, /beforeInteractive/);
+  // Reject next/script strategy usage, not a comment that names beforeInteractive.
+  assert.doesNotMatch(layout, /strategy\s*=\s*['"]beforeInteractive['"]/);
+  assert.doesNotMatch(layout, /from\s+['"]next\/script['"]/);
   return true;
 });
 
