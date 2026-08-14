@@ -9,7 +9,13 @@ import { clearGuestChoice } from '@/lib/auth/guestChoice';
  * Soft-gate sign-in (EP.3) — Google / Apple only via Clerk OAuth.
  * Map and Party stay usable without a Profile; no email or password UI.
  */
-export default function SignInCard({ session = null, onSession = null }) {
+export default function SignInCard(props) {
+  // Match AuthBridge / AuthGate: without a publishable key there is no ClerkProvider.
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return null;
+  return <SignInCardLive {...props} />;
+}
+
+function SignInCardLive({ session = null, onSession = null }) {
   const { signOut } = useClerk();
   const { isLoaded, signIn } = useSignIn();
   const [busy, setBusy] = useState(null);
@@ -47,7 +53,8 @@ export default function SignInCard({ session = null, onSession = null }) {
               clearGuestChoice();
               await signOut();
               onSession?.(null);
-            }}          >
+            }}
+          >
             Sign out
           </button>
         </div>

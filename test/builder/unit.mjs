@@ -7171,6 +7171,21 @@ await check('Clerk provider can mount with only the publishable key', () => {
   return true;
 });
 
+await check('Clerk-hook components stay off when the publishable key is missing', () => {
+  // Same seam as AuthBridge / AuthGate: no provider without a key, so hooks must not run.
+  const guard =
+    /if\s*\(\s*!process\.env\.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY\s*\)\s*return\s+null\s*;/;
+  for (const rel of [
+    'components/AuthBridge.jsx',
+    'components/AuthGate.jsx',
+    'components/SignInCard.jsx',
+  ]) {
+    const src = fs.readFileSync(new URL(`../../apps/party-tracker/${rel}`, import.meta.url), 'utf8');
+    assert.match(src, guard, `${rel} must skip Clerk hooks without a publishable key`);
+  }
+  return true;
+});
+
 /* ------------------------------------------------------------- app version */
 
 const { APP_BUILT, APP_VERSION, bumpPatchVersion, bumpVersion, compareVersions, isNewerBuild, isNewerVersion, parseVersion, releaseKindFromMessages } = await import('../../apps/party-tracker/lib/version.js');
