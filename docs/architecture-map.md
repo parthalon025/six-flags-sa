@@ -365,7 +365,7 @@ Self-host everything with `npm run sync` (`server/index.mjs`) or Docker.
 
 ## Related docs
 
-- [README — Building a map of somewhere else](../README.md#building-a-map-of-somewhere-else)
+- [README — Venue builder](../guide/venue-builder.md)
 - [Packages — deep-module seams](../packages/README.md)
 - [Repository structure](./repo-structure.md)
 - [Universal venue builder architecture](./universal-venue-builder-architecture.md)

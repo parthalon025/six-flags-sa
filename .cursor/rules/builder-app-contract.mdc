@@ -56,7 +56,7 @@ invariant), don't assume the builder already produces it. Before shipping:
 - Rerun `npm run venues:build`/`venues:rebuild` (or at minimum `npm run venues:report`) for
   the affected venues to check the contract holds across all of them, not just the one you
   tested with.
-- Update the builder section of `README.md` if the on-disk contract changed, so the next
+- Update [docs/guide/venue-builder.md](../../docs/guide/venue-builder.md) if the on-disk contract changed, so the next
   person building a venue sees the same shape the app now expects.
 
 ## Ask before guessing

@@ -102,7 +102,6 @@ assert.match(
   /packages\/venue-builder\/package\.json/,
   'bump commit must stage venue-builder or npm ci 404s the stale shared pin',
 );
-assert.match(bumpYml, /README\.md/, 'bump commit must stage README version line');
 
 const workspacePkgs = [
   'package.json',
@@ -114,9 +113,6 @@ const workspacePkgs = [
   pkg: JSON.parse(readFileSync(join(root, rel), 'utf8')),
 }));
 const rootVersion = workspacePkgs[0].pkg.version;
-const readme = readFileSync(join(root, 'README.md'), 'utf8');
-const readmeVersion = readme.match(/^> \*\*Version ([\d.]+)\*\*/m)?.[1];
-assert.equal(readmeVersion, rootVersion, 'README version must match root package.json');
 const sharedVersion = workspacePkgs.find((p) => p.rel === 'packages/shared/package.json').pkg.version;
 for (const { rel, pkg } of workspacePkgs) {
   assert.equal(pkg.version, rootVersion, `${rel} version must match root ${rootVersion}`);
