@@ -255,6 +255,7 @@ await check('createParty starts empty at version 0', () => {
   assert.deepEqual(p.members, {});
   assert.equal(p.meet, null);
   assert.deepEqual(p.plan, []);
+  assert.deepEqual(p.overlay, { drawn: {}, completions: [] });
   return true;
 });
 
@@ -404,6 +405,64 @@ await check('set-plan is shared last-write-wins and add-member creates a device-
   assert.equal(state.members.mia.deviceLess, true);
   assert.equal(state.members.mia.height, 40);
   assert.equal(state.members.mia.location, null);
+  return true;
+});
+
+await check('apply-contribution last-write draws Overlay; earlier stays as completion', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    {
+      kind: 'apply-contribution',
+      from: PEER,
+      body: {
+        contribution: {
+          id: 'c1',
+          type: 'height',
+          placeId: 'orion',
+          authorId: PEER,
+          authorName: 'Ava',
+          payload: { heightIn: 48 },
+          createdAt: now,
+        },
+      },
+    },
+    now,
+  ).state;
+  assert.equal(state.overlay.drawn['height:orion'].payload.heightIn, 48);
+  state = reduce(
+    state,
+    {
+      kind: 'apply-contribution',
+      from: HOST,
+      body: {
+        contribution: {
+          id: 'c2',
+          type: 'height',
+          placeId: 'orion',
+          authorId: HOST,
+          authorName: 'Justin',
+          payload: { heightIn: 42 },
+          createdAt: now + 1,
+        },
+      },
+    },
+    now + 1,
+  ).state;
+  assert.equal(state.overlay.drawn['height:orion'].payload.heightIn, 42);
+  assert.equal(state.overlay.completions.length, 2);
+  assert.equal(publicSnapshot(state).overlay.drawn['height:orion'].payload.heightIn, 42);
+  const live = reduce(
+    state,
+    {
+      kind: 'apply-contribution',
+      from: PEER,
+      body: { contribution: { id: 'x', type: 'ride_status', payload: { status: 'down' } } },
+    },
+    now + 2,
+  );
+  assert.equal(live.ops.length, 0);
   return true;
 });
 
