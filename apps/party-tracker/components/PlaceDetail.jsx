@@ -64,6 +64,7 @@ export function PlaceDetailBody({
   onSetMeet,
   onReport = null,
   onAddToPlan = null,
+  showActions = true,
 }) {
   if (!poi) return null;
   const isRide = isRideable(poi);
@@ -74,12 +75,14 @@ export function PlaceDetailBody({
 
   return (
     <div className="poiDetail">
-      <PlaceActions
-        poi={poi}
-        onNavigate={onNavigate}
-        onSetMeet={onSetMeet}
-        onAddToPlan={onAddToPlan}
-      />
+      {showActions && (
+        <PlaceActions
+          poi={poi}
+          onNavigate={onNavigate}
+          onSetMeet={onSetMeet}
+          onAddToPlan={onAddToPlan}
+        />
+      )}
       {showStatus && status.detail && (
         <p className={`poiNote wxWhy ${status.tone}`}>
           {status.detail}
@@ -210,53 +213,56 @@ export default function PlaceDetail({
         />
         <div className="placeDetailText">
           <b className="placeDetailName">{poi.n}</b>
-          {subtitle ? <span>{subtitle}</span> : null}
+          <span className="placeDetailLine">
+            {subtitle}
+            {d != null && (
+              <>
+                {subtitle ? ' · ' : ''}
+                <b>{formatWalk(d)}</b>
+                {` ${formatDistance(d)}${dir ? ` ${dir}` : ''}`}
+              </>
+            )}
+            {showStatus && (
+              <span
+                className={[
+                  'liveBadge',
+                  'statusPill',
+                  status.live === 'goNow' || status.key === 'goNow' ? 'goNow' : '',
+                  status.live === 'busy' || status.key === 'busy' ? 'busy' : '',
+                  status.live === 'later' || status.key === 'later' || status.key === 'watch'
+                    ? 'later'
+                    : '',
+                  status.live === 'open' || status.key === 'open' ? 'open' : '',
+                  status.live === 'paused' ||
+                  status.key === 'down' ||
+                  status.key === 'hold' ||
+                  status.key === 'paused'
+                    ? 'paused'
+                    : '',
+                  status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
+                  status.source === 'weather' ? 'guess' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
+                {status.label}
+              </span>
+            )}
+            {v.label && (
+              <span className={`verdict ${v.cls}`}>
+                <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
+                {v.label}
+              </span>
+            )}
+          </span>
         </div>
-      </div>
-
-      <div className="placeDetailMeta">
-        {d != null && (
-          <span className="placeDetailWalk">
-            <b>{formatWalk(d)}</b>
-            <em>
-              {formatDistance(d)}
-              {dir ? ` ${dir}` : ''}
-            </em>
-          </span>
-        )}
-        {showStatus && (
-          <span
-            className={[
-              'liveBadge',
-              'statusPill',
-              status.live === 'goNow' || status.key === 'goNow' ? 'goNow' : '',
-              status.live === 'busy' || status.key === 'busy' ? 'busy' : '',
-              status.live === 'later' || status.key === 'later' || status.key === 'watch'
-                ? 'later'
-                : '',
-              status.live === 'open' || status.key === 'open' ? 'open' : '',
-              status.live === 'paused' ||
-              status.key === 'down' ||
-              status.key === 'hold' ||
-              status.key === 'paused'
-                ? 'paused'
-                : '',
-              status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
-              status.source === 'weather' ? 'guess' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
-            {status.label}
-          </span>
-        )}
-        {v.label && (
-          <span className={`verdict ${v.cls}`}>
-            <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
-            {v.label}
-          </span>
-        )}
+        <PlaceActions
+          poi={poi}
+          onNavigate={onNavigate}
+          onSetMeet={onSetMeet}
+          onAddToPlan={onAddToPlan}
+        />
       </div>
 
       <PlaceDetailBody
@@ -268,6 +274,7 @@ export default function PlaceDetail({
         onSetMeet={onSetMeet}
         onReport={onReport}
         onAddToPlan={onAddToPlan}
+        showActions={false}
       />
     </div>
   );

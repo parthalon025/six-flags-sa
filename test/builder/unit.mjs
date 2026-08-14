@@ -6821,6 +6821,9 @@ await check('a map-tapped place card stays leaner than peek and half', () => {
   assert.equal(SHEET_PLACE_PX < STOPS.peek, true);
   assert.equal(SHEET_PLACE_PX < STOPS.half, true);
   assert.equal(SHEET_PLACE_PX > SHEET_CHROME_PX, true);
+  // Title+actions on one row, facts on the next: no spare nav row, no
+  // empty band between the icons and the tab bar.
+  assert.equal(SHEET_PLACE_PX, SHEET_CHROME_PX + 40 + 18 + 8);
   return true;
 });
 

@@ -2489,7 +2489,7 @@ export default function Page() {
             </header>
           )}
 
-          <div className="sheetBody">
+          <div className={`sheetBody${view === 'place' ? ' placeBody' : ''}`}>
             {view === null && tab === 'explore' && plan.list && (
               <>
                 {/* The one row left on this screen. Everywhere else it used to
