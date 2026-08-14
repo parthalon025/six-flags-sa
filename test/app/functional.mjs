@@ -396,8 +396,17 @@ await check('tapping a map icon opens place details and navigation', async () =>
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(350);
   }
+  await until(() => a.locator('svg.mapSvg path').count().then((n) => n >= 800), {
+    timeout: 20000,
+    label: 'park geometry',
+  });
   // Prefer a named ride so the tap is deterministic after earlier list clicks.
-  const name = (await tapMapPoi(a, 'The Beast')) || (await tapMapPoi(a));
+  let name;
+  try {
+    name = await tapMapPoi(a, 'The Beast', { timeout: 8000 });
+  } catch {
+    name = await tapMapPoi(a, null, { timeout: 12000 });
+  }
   await until(async () => (await a.locator('[data-place-detail]').count()) > 0, {
     timeout: 12000,
     label: 'place detail sheet',
