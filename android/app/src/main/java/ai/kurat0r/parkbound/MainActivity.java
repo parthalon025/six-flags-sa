@@ -1,4 +1,4 @@
-package com.parkbound.app;
+package ai.kurat0r.parkbound;
 
 import com.getcapacitor.BridgeActivity;
 

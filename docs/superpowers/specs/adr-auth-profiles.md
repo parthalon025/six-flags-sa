@@ -1,10 +1,13 @@
 # ADR: Auth provider and session model (EP.1)
 
-**Status:** Accepted — 2026-08-11  
+**Status:** Superseded — 2026-08-14  
+**Canonical:** [`../../adr/0010-clerk-profile-signup.md`](../../adr/0010-clerk-profile-signup.md)  
+**Historical note:** This document records the 2026-08-11 Auth.js decision. Implementation follows Clerk per ADR-0010.
+
 **Backlog:** EP.1 → EP.2–EP.5  
 **North star:** Explore more, stress less — profiles exist so family prefs, party trust, and **Side Quest** progress survive the park day without forcing a hard wall before the map.
 
-## Decision
+## Decision (historical — Auth.js)
 
 Use **Auth.js (NextAuth v5)** on the existing Next.js party-tracker app.
 

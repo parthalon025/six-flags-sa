@@ -198,5 +198,17 @@
     "items": [
       "perf: park-wifi & cloud-relay P0 fixes + full-stack audit"
     ]
+  },
+  "1.7.0": {
+    "title": "What's new",
+    "items": [
+      "feat: Databricks back-office MVP with free-tier ops lock"
+    ]
+  },
+  "1.8.0": {
+    "title": "What's new",
+    "items": [
+      "feat: wire Clerk profile signup in party-tracker"
+    ]
   }
 }

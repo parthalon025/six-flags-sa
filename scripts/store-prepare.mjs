@@ -115,7 +115,7 @@ Wrote secrets/android-cert-sha256.txt
 After Google Play ($25) and Apple Developer ($99):
 
   1. Copy .env.example → .env and fill team IDs, API keys, keystore password.
-  2. Create a Firebase project for com.parkbound.app, download:
+  2. Create a Firebase project for ai.kurat0r.parkbound, download:
        android/app/google-services.json
        ios/App/App/GoogleService-Info.plist
   3. Set Vercel env IOS_TEAM_ID and ANDROID_CERT_SHA256 (the fingerprint above)

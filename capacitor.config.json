@@ -1,13 +1,22 @@
 {
-  "appId": "com.parkbound.app",
-  "appName": "Park Bound",
+  "appId": "ai.kurat0r.parkbound",
+  "appName": "Parkbound",
   "webDir": "native/www",
   "server": {
     "url": "https://parkbound.kurat0r.ai",
     "androidScheme": "https",
-    "allowNavigation": ["parkbound.kurat0r.ai"]
+    "allowNavigation": [
+      "parkbound.kurat0r.ai",
+      "*.kurat0r.ai",
+      "accounts.parkbound.kurat0r.ai",
+      "clerk.parkbound.kurat0r.ai"
+    ]
+  },
+  "ios": {
+    "contentInset": "automatic"
   },
   "android": {
+    "allowMixedContent": false,
     "useLegacyBridge": true
   },
   "plugins": {

@@ -8259,6 +8259,159 @@ await check('soft-gate helper lives on the local session module', async () => {
     }
   });
 }
+
+{
+  const stashStore = new Map();
+  globalThis.window = {
+    localStorage: {
+      getItem: (k) => (stashStore.has(k) ? stashStore.get(k) : null),
+      setItem: (k, v) => {
+        stashStore.set(k, String(v));
+      },
+      removeItem: (k) => {
+        stashStore.delete(k);
+      },
+    },
+  };
+  const {
+    STASH_KEY,
+    stashGapSubmission,
+    readContributionStash,
+    takeContributionStash,
+    flushContributionStash,
+  } = await import('../../apps/party-tracker/lib/auth/contributionStash.js');
+
+  await check('contribution stash persists gap submit until sign-in flush', async () => {
+    stashStore.clear();
+    assert.equal(stashGapSubmission({ questId: 'q_height', venueId: 'kings-island', kind: 'height', payload: { heightIn: 48 } }), true);
+    assert.equal(readContributionStash().length, 1);
+    assert.equal(readContributionStash()[0].questId, 'q_height');
+    const enqueued = [];
+    const flushed = await flushContributionStash({
+      createReport: (input) => ({ ...input, id: 'rpt_1', status: 'pending', createdAt: Date.now() }),
+      enqueue: async (report) => {
+        enqueued.push(report);
+      },
+      awardQuestXp: async () => ({ profile: { scoredKeys: [] } }),
+    });
+    assert.equal(flushed, 1);
+    assert.equal(enqueued.length, 1);
+    assert.equal(stashStore.has(STASH_KEY), false);
+    assert.equal(takeContributionStash().length, 0);
+    return true;
+  });
+}
+
+/* --------------------------- databricks / E0 contributions ------------- */
+
+{
+  const { filterConsolidateExport, buildConsolidateExport } = await import(
+    '../../packages/shared/consolidateExport.js'
+  );
+  const { validateContributionPost } = await import(
+    '../../apps/party-tracker/lib/contributions/validate.js'
+  );
+  const { insertContribution, listConsolidateCandidates } = await import(
+    '../../apps/party-tracker/lib/contributions/store.js'
+  );
+  const { slimAgentContext, llmConfig } = await import('../../packages/venue-builder/lib/venue-llm.mjs');
+  const { planContribution } = await import('../../packages/venue-builder/lib/consolidate.mjs');
+
+  await check('consolidateExport filters ephemeral accepted rows', () => {
+    const rows = [
+      { id: '1', status: 'accepted', kind: 'height_rule', venueId: 'kings-island' },
+      { id: '2', status: 'accepted', kind: 'experience', venueId: 'kings-island' },
+      { id: '3', status: 'pending', kind: 'height_rule', venueId: 'kings-island' },
+    ];
+    assert.equal(filterConsolidateExport(rows).length, 1);
+    const env = buildConsolidateExport(rows, { runId: 'r1' });
+    assert.equal(env.contributions.length, 1);
+    assert.equal(env.runId, 'r1');
+    return true;
+  });
+
+  await check('validateContributionPost rejects ephemeral kinds', () => {
+    const bad = validateContributionPost({
+      authorId: 'usr_a',
+      venueId: 'kings-island',
+      kind: 'experience',
+      payload: { note: 'wait' },
+    });
+    assert.equal(bad.ok, false);
+    const ok = validateContributionPost({
+      authorId: 'usr_a',
+      venueId: 'kings-island',
+      kind: 'height_rule',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.equal(ok.ok, true);
+    return true;
+  });
+
+  await check('contribution store accepts durable rows in memory', async () => {
+    const row = await insertContribution({
+      authorId: 'usr_test',
+      venueId: 'kings-island',
+      kind: 'height_rule',
+      status: 'accepted',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.ok(row.id.startsWith('c_'));
+    const listed = await listConsolidateCandidates();
+    assert.ok(listed.some((r) => r.id === row.id));
+    return true;
+  });
+
+  await check('slimAgentContext truncates large agent payloads', () => {
+    const slim = slimAgentContext({
+      agents: Array.from({ length: 20 }, (_, i) => ({ role: `r${i}`, ok: true, summary: { n: i } })),
+    });
+    assert.equal(slim.agents.length, 8);
+    return true;
+  });
+
+  await check('llmConfig databricks requires host and token', () => {
+    const prevP = process.env.VENUE_LLM_PROVIDER;
+    const prevH = process.env.DATBRICKS_HOST;
+    const prevT = process.env.DATBRICKS_TOKEN;
+    const prevK = process.env.VENUE_LLM_API_KEY;
+    const prevO = process.env.OPENAI_API_KEY;
+    process.env.VENUE_LLM_PROVIDER = 'databricks';
+    process.env.DATBRICKS_HOST = '';
+    process.env.DATBRICKS_TOKEN = '';
+    process.env.VENUE_LLM_API_KEY = '';
+    process.env.OPENAI_API_KEY = '';
+    assert.equal(llmConfig().ready, false);
+    process.env.DATBRICKS_HOST = 'https://example.cloud.databricks.com';
+    process.env.DATBRICKS_TOKEN = 'test';
+    assert.equal(llmConfig().ready, true);
+    assert.equal(llmConfig().provider, 'databricks');
+    if (prevP) process.env.VENUE_LLM_PROVIDER = prevP;
+    else delete process.env.VENUE_LLM_PROVIDER;
+    if (prevH) process.env.DATBRICKS_HOST = prevH;
+    else delete process.env.DATBRICKS_HOST;
+    if (prevT) process.env.DATBRICKS_TOKEN = prevT;
+    else delete process.env.DATBRICKS_TOKEN;
+    if (prevK) process.env.VENUE_LLM_API_KEY = prevK;
+    else delete process.env.VENUE_LLM_API_KEY;
+    if (prevO) process.env.OPENAI_API_KEY = prevO;
+    else delete process.env.OPENAI_API_KEY;
+    return true;
+  });
+
+  await check('consolidate accepts height kind alias', () => {
+    const plan = planContribution({
+      id: 'c_h',
+      status: 'accepted',
+      kind: 'height',
+      venueId: 'kings-island',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.equal(plan.action, 'heights');
+    return true;
+  });
+}
+
 /* ---------------------------------------------------------------- tally -- */
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

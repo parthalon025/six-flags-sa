@@ -2708,6 +2708,25 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   padding: 4px 0 8px;
 }
 .signInCard .btn { margin-top: 8px; width: 100%; }
+.signInActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+.signInActions .btn { margin-top: 0; width: auto; flex: 1 1 auto; }
+.signInActionsStack { flex-direction: column; align-items: stretch; }
+.signInActionsStack .btn { width: 100%; flex: none; }
+.authGateGuest { margin-top: 12px; width: 100%; }
+.authGateCard .signInActionsStack { margin-bottom: 0; }
+.clerkAuthPage {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
 .brandMark {
   width: 22px; height: 22px; flex: none; color: var(--adventure);
 }
@@ -2717,6 +2736,62 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 .trailLine.active {
   stroke: var(--adventure); stroke-width: 4; stroke-dasharray: none;
+}
+
+/* Standalone legal pages (privacy policy for store URL). */
+.privacyPage {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--label);
+  padding: 24px 20px 48px;
+}
+.privacyPage-inner {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+.privacyPage-kicker {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.privacyPage-kicker a {
+  color: var(--aqua);
+  text-decoration: none;
+  font-weight: 600;
+}
+.privacyPage h1 {
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  letter-spacing: -.03em;
+  margin: 0 0 12px;
+}
+.privacyPage-lede {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--label2);
+  margin: 0 0 28px;
+}
+.privacyPage section {
+  margin-bottom: 24px;
+}
+.privacyPage h2 {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.privacyPage p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--label2);
+}
+.privacyPage a {
+  color: var(--aqua);
+}
+.privacyPage-muted {
+  font-size: 13px;
+  margin-top: 8px;
+  opacity: 0.75;
 }
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes

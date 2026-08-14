@@ -1,0 +1,34 @@
+{
+  "ios": {
+    "sku": "parkbound-ios",
+    "bundleId": "ai.kurat0r.parkbound",
+    "appStoreName": "Park Bound: Explore",
+    "subtitle": "Explore more. Stress less.",
+    "inAppBrandName": "Parkbound",
+    "primaryLocale": "en-US",
+    "primaryCategory": "Navigation",
+    "secondaryCategory": "Travel",
+    "appleId": "269608486",
+    "teamId": "CDHJC4MH4G",
+    "version": "1.8.0",
+    "versionSource": "apps/party-tracker/package.json",
+    "copyright": "2026 Kurat0r",
+    "priceTier": "Free"
+  },
+  "android": {
+    "packageName": "ai.kurat0r.parkbound",
+    "playStoreTitle": "Park Bound: Explore"
+  },
+  "urls": {
+    "marketing": "https://parkbound.kurat0r.ai",
+    "support": "https://parkbound.kurat0r.ai",
+    "privacy": "https://parkbound.kurat0r.ai/privacy"
+  },
+  "notes": {
+    "submissionChecklist": "fastlane/metadata/ios/SUBMISSION.md",
+    "appPrivacyAnswers": "fastlane/metadata/ios/APP_PRIVACY.md",
+    "privacyUrl": "Deploy /privacy before submit — page lives at apps/party-tracker/app/privacy/page.js",
+    "screenshots": "Required: iPhone 6.5\" (1284×2778). Optional: iPad 12.9\".",
+    "build": "TestFlight IPA required before App Review — macOS CI or cloud Mac."
+  }
+}

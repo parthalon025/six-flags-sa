@@ -55,7 +55,7 @@ jobs:
           echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > secrets/parkbound-upload.keystore
       - name: Fastlane Android
         env:
-          ANDROID_PACKAGE_NAME: com.parkbound.app
+          ANDROID_PACKAGE_NAME: ai.kurat0r.parkbound
           GOOGLE_PLAY_JSON_KEY_PATH: ./secrets/google-play-service-account.json
           ANDROID_KEYSTORE_PATH: ./secrets/parkbound-upload.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -91,7 +91,7 @@ jobs:
           pod install
       - name: Fastlane iOS
         env:
-          IOS_BUNDLE_IDENTIFIER: com.parkbound.app
+          IOS_BUNDLE_IDENTIFIER: ai.kurat0r.parkbound
           IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
           IOS_ITC_TEAM_ID: ${{ secrets.IOS_ITC_TEAM_ID }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}

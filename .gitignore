@@ -2,6 +2,10 @@ node_modules
 .next
 out
 .env*.local
+.clerk-*.json
+apps/party-tracker/.env.local.prod
+scripts/lib/clerk-google-connection.json
+scripts/lib/clerk-apple-connection.json
 .DS_Store
 
 # scratch harnesses agents drop at the root while verifying
@@ -31,7 +35,23 @@ fastlane/README.html
 build/ios
 build/android
 
+# Capacitor native build artifacts (commit ios/ and android/ sources)
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+android/.gradle/
+android/app/build/
+android/build/
+*.xcuserstate
+**/xcuserdata/
+
 .vercel
+
+# Databricks bundle local deploy state / agent install artifacts
+.databricks/
+.pi/
+**/__pycache__/
+*.pyc
 
 # GitNexus graph — session-local; never commit (conflicts + raw index)
 .gitnexus/

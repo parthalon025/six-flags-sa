@@ -1,11 +1,15 @@
-Park Bound is an explorer’s companion for a group at a big, crowded park.
+Park Bound is a drawn map of the park you’re standing in — not a generic street map with a pin dropped on the gate.
 
-• Drawn park map — real geometry painted as SVG, not generic map tiles
-• Live party tracking — share location with your group via QR, link, or code
-• Walking directions — trails and walking times to rides, restrooms, and food
-• Height requirements — see at a glance which rides work for your group
-• Works offline — maps and core features after the first visit
+Pick a Venue. Toilets, food, and rides are Places you can open and walk to on guest paths. Height rules show who in your group can ride. After the first visit, the map and a lot of the day still work offline.
 
-Ships with Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna's. Build a map of anywhere OpenStreetMap covers.
+Start a Party when the family wants to stick together. Share an Invite — QR, link, or six-character code. Everyone on the roster sees Location while you’re inside the park: where each phone is, and which Place they’re at when they’re actually there. Set a Meet when someone says “we’ll regroup at the fountain.”
+
+Mark what you’re seeing while you walk — a ride running, a long line, something closed — so your Party knows before they get there.
+
+Side Quests send you to a spot on the ground to confirm what the shipped map still needs: a height sign, a restroom that isn’t drawn yet, a path that’s missing. That work can improve the Venue for the next visit.
+
+You don’t need a Profile to browse or join by name. Continue as a guest and use the map. Sign in with Apple or Google when you want progress and Managed Guests saved on this phone.
+
+Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s are ready now. More Venues follow the same builder.
 
 Explore more. Stress less.

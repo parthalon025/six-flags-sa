@@ -3,12 +3,12 @@
  *
  * The store shells open https://parkbound.kurat0r.ai/join… (ADR-0005). These
  * payloads are what that host must serve at /.well-known/ so iOS and Play
- * will hand the URL to com.parkbound.app. Team ID and the upload-key
+ * will hand the URL to ai.kurat0r.parkbound. Team ID and the upload-key
  * fingerprint are secrets you get after paying Apple / Google — until then
  * the routes 404 rather than publishing a broken association.
  */
 
-export const STORE_BUNDLE_ID = 'com.parkbound.app';
+export const STORE_BUNDLE_ID = 'ai.kurat0r.parkbound';
 export const STORE_HOST = 'parkbound.kurat0r.ai';
 export const INVITE_PATHS = ['/join', '/join/*'];
 
