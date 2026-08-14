@@ -5,11 +5,18 @@ import { useState } from 'react';
 import { rankReward } from '@party-tracker/shared/questScore.js';
 import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
+import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 /**
  * Soft-gate sign-in (EP.3) — Google / Apple only via Clerk OAuth.
  * Map and Party stay usable without a Profile; no email or password UI.
  */
-export default function SignInCard({ session = null, onSession = null }) {
+export default function SignInCard(props) {
+  // Same seam as layout / AuthBridge / AuthGate: no ClerkProvider without a key.
+  if (!clerkBrowserConfigured()) return null;
+  return <SignInCardLive {...props} />;
+}
+
+function SignInCardLive({ session = null, onSession = null }) {
   const { signOut } = useClerk();
   const { isLoaded, signIn } = useSignIn();
   const [busy, setBusy] = useState(null);
@@ -47,7 +54,8 @@ export default function SignInCard({ session = null, onSession = null }) {
               clearGuestChoice();
               await signOut();
               onSession?.(null);
-            }}          >
+            }}
+          >
             Sign out
           </button>
         </div>

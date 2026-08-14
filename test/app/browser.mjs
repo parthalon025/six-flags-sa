@@ -88,6 +88,13 @@ export async function openPhone(
     // Confirmed is the intake answer; pinned is tracker-venue, which would block
     // the map from following the party host.
     if (venueId) localStorage.setItem('tracker-venue-confirmed', venueId);
+    // Headless Chromium implements navigator.share but never resolves the picker —
+    // force the clipboard fallback shareInvite already has for CI.
+    try {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    } catch {
+      /* ignore */
+    }
   }, { version: APP_VERSION, venueId: venue });
   const page = await context.newPage();
 
@@ -431,12 +438,26 @@ export async function signIn(page, email = 'guest@parkbound.example', { keepName
     ? await page.locator('.field[placeholder="Name"]').inputValue().catch(() => '')
     : '';
   const card = page.locator('.signInCard');
+  // CI / local boxes often have no Clerk key — SignInCard stays unmounted (AuthBridge seam).
+  // ADR-0010: no email magic-link UI; Profile-gated tests must soft-assert the gate instead.
+  if ((await card.count()) === 0) {
+    await page.locator('.tabItem[data-tab="explore"]').click();
+    await page.waitForTimeout(200);
+    return false;
+  }
   if ((await card.locator('text=Signed in').count()) > 0) {
     await page.locator('.tabItem[data-tab="explore"]').click();
     await page.waitForTimeout(200);
-    return;
+    return true;
   }
-  await card.locator('input[type="email"]').fill(email);
+  // Legacy email magic-link UI (optional); OAuth-only cards cannot complete in this harness.
+  const emailField = card.locator('input[type="email"]');
+  if ((await emailField.count()) === 0) {
+    await page.locator('.tabItem[data-tab="explore"]').click();
+    await page.waitForTimeout(200);
+    return false;
+  }
+  await emailField.fill(email);
   await card.locator('button:has-text("Email me a link")').click();
   await until(async () => (await card.locator('text=Signed in').count()) > 0, {
     timeout: 10000,
@@ -450,6 +471,20 @@ export async function signIn(page, email = 'guest@parkbound.example', { keepName
     await page.locator('.tabItem[data-tab="explore"]').click();
     await page.waitForTimeout(200);
   }
+  return true;
+}
+
+/** True when the soft-gate Profile session is present on this phone. */
+export async function hasProfileSession(page) {
+  return page.evaluate(() => {
+    try {
+      const raw = sessionStorage.getItem('parkbound.session');
+      const s = raw ? JSON.parse(raw) : null;
+      return Boolean(s?.userId);
+    } catch {
+      return false;
+    }
+  });
 }
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */
