@@ -1,17 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { completeMagicSignIn, signOutLocal } from '@/lib/auth/session';
+import { SignInButton, SignUpButton, Show, UserButton, useClerk } from '@clerk/nextjs';
 import { rankReward } from '@party-tracker/shared/questScore.js';
 
 /**
- * Soft-gate sign-in (EP.3) — magic-link shaped; map stays usable without it.
- * Local stand-in completes immediately until Auth.js email delivery is wired.
+ * Soft-gate sign-in (EP.3) — Clerk Google / Apple via dashboard config.
+ * Map and Party stay usable without a Profile.
  */
 export default function SignInCard({ session = null, onSession = null }) {
-  const [email, setEmail] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState(null);
+  const { signOut } = useClerk();
 
   if (session?.userId) {
     const title = rankReward(session.rank || 'visitor').title;
@@ -25,57 +22,47 @@ export default function SignInCard({ session = null, onSession = null }) {
         {title ? (
           <p className="fine block signInTitle">{title}</p>
         ) : null}
-        <button
-          type="button"
-          className="btn ghost"
-          onClick={async () => {
-            await signOutLocal();
-            onSession?.(null);
-          }}
-        >
-          Sign out
-        </button>
+        <div className="signInActions">
+          <UserButton afterSignOutUrl="/" />
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={async () => {
+              await signOut();
+              onSession?.(null);
+            }}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="signInCard">
-      <div className="label">Sign in to save family heights</div>
+      <div className="label">Sign in to save progress</div>
       <p className="fine block">
-        Browse the map and join a party by name anytime. Sign in to keep XP on your Profile, save
-        Managed Guests, submit gap Side Quests, and fan out park-wide Observations.
+        Browse the map and join a party by name anytime. Sign in with Google or Apple to keep XP on
+        your Profile, save Managed Guests, and submit gap Side Quests.
       </p>
-      <div className="label">Email</div>
-      <input
-        className="field"
-        type="email"
-        autoComplete="email"
-        placeholder="you@example.com"
-        aria-label="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      {err ? <p className="fine block warnText">{err}</p> : null}
-      <button
-        type="button"
-        className="btn primary"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          setErr(null);
-          try {
-            const next = await completeMagicSignIn({ email });
-            onSession?.(next);
-          } catch (e) {
-            setErr(e.message || 'Sign-in failed');
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        {busy ? 'Signing in…' : 'Email me a link'}
-      </button>
+      <div className="signInActions">
+        <Show when="signed-out">
+          <SignInButton mode="redirect" forceRedirectUrl="/">
+            <button type="button" className="btn primary">
+              Sign in
+            </button>
+          </SignInButton>
+          <SignUpButton mode="redirect" forceRedirectUrl="/">
+            <button type="button" className="btn ghost">
+              Create Profile
+            </button>
+          </SignUpButton>
+        </Show>
+        <Show when="signed-in">
+          <UserButton afterSignOutUrl="/" />
+        </Show>
+      </div>
     </div>
   );
 }

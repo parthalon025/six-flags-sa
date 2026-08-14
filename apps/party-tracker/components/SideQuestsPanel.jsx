@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import SignInCard from '@/components/SignInCard';
 import { awardQuestXp, readLocalSession, softGateBlocks } from '@/lib/auth/session';
+import { contributionStashCount, stashGapSubmission } from '@/lib/auth/contributionStash';
 import { readProfileCache } from '@/lib/auth/profileCache';
 import {
   ADD_PLACE_TYPES,
@@ -100,6 +101,11 @@ export default function SideQuestsPanel({
   const [selectedTarget, setSelectedTarget] = useState(null);
   const [pending, setPending] = useState(0);
   const [lastSubmittedId, setLastSubmittedId] = useState(null);
+  const [stashed, setStashed] = useState(0);
+
+  useEffect(() => {
+    setStashed(contributionStashCount());
+  }, [session?.userId, lastSubmittedId]);
 
   useEffect(() => {
     let alive = true;
@@ -123,7 +129,6 @@ export default function SideQuestsPanel({
   }
 
   function toggleQuest(quest) {
-    if (questBlocked(quest)) return;
     if (openQuestId === quest.id) {
       setOpenQuestId(null);
       return;
@@ -185,10 +190,36 @@ export default function SideQuestsPanel({
   }
 
   async function submit(quest) {
-    if (questBlocked(quest)) return;
     if (!factReady(quest)) return;
     const kind = quest.type || quest.id;
     const target = selectedTarget || (ADD_PLACE_TYPES.includes(quest.type) || quest.type === 'camping' ? null : quest.targets?.[0] || null);
+    const scoreTarget = quest.type === 'path' && !target
+      ? pathScoreCell(position?.lat, position?.lng)
+      : target;
+    const key = scoreKey(venueId, quest.type, scoreTarget);
+
+    if (!isLiveQuest(quest) && gapNeedsAuth) {
+      const ok = stashGapSubmission({
+        questId: quest.id,
+        venueId,
+        placeId: target,
+        kind,
+        payload: payloadFor(quest),
+        lat: position?.lat ?? null,
+        lng: position?.lng ?? null,
+        scoreKey: key,
+        walkedNear: walkedNearFor(quest),
+        action: 'first',
+      });
+      if (ok) {
+        setStashed(contributionStashCount());
+        setRewardLine('Saved on this phone. Sign in to upload.');
+      }
+      setOpenQuestId(null);
+      setLastSubmittedId(`stash-${Date.now()}`);
+      return;
+    }
+
     const report = createReport({
       questId: quest.id,
       venueId,
@@ -202,13 +233,12 @@ export default function SideQuestsPanel({
     const live = rideReportFromLiveQuest(quest, { status, pois, position });
     if (live && onRideReport) onRideReport(live.rideId, live.status);
     const action = isLiveQuest(quest) ? 'live' : 'first';
-    const scoreTarget = quest.type === 'path' && !target
-      ? pathScoreCell(position?.lat, position?.lng)
-      : (live?.rideId || target);
-    const key = scoreKey(venueId, isLiveQuest(quest) ? kind : quest.type, scoreTarget);
+    const scoredKey = isLiveQuest(quest)
+      ? scoreKey(venueId, kind, live?.rideId || target)
+      : key;
     const scored = await awardQuestXp({
       action,
-      key,
+      key: scoredKey,
       walkedNear: walkedNearFor(quest),
       now: Date.now(),
     });
@@ -330,9 +360,7 @@ export default function SideQuestsPanel({
     const open = openQuestId === q.id;
     const blocked = questBlocked(q);
     let action;
-    if (blocked) {
-      action = <span className="rowValue">Sign in</span>;
-    } else if (position) {
+    if (position) {
       action = (
         <button
           type="button"
@@ -429,7 +457,16 @@ export default function SideQuestsPanel({
         </div>
       </div>
 
-      {gapNeedsAuth ? <SignInCard session={session} onSession={onSession} /> : null}
+      {gapNeedsAuth ? (
+        <>
+          <SignInCard session={session} onSession={onSession} />
+          {stashed > 0 ? (
+            <p className="fine block">
+              {stashed} answer{stashed === 1 ? '' : 's'} saved on this phone — sign in to upload.
+            </p>
+          ) : null}
+        </>
+      ) : null}
       {rewardLine ? <p className="fine block sideQuestReward">{rewardLine}</p> : null}
 
       <div className="label">
