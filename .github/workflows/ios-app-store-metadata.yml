@@ -11,6 +11,7 @@ on:
     paths:
       - "fastlane/metadata/ios/**"
       - "fastlane/Fastfile"
+      - "Gemfile"
       - ".github/workflows/ios-app-store-metadata.yml"
 
 permissions:

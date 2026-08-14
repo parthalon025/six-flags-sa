@@ -8,7 +8,6 @@ Automated release pipeline for **iOS** (App Store Connect / TestFlight) and **An
 fastlane/
 ├── Appfile                      # Bundle IDs, team IDs (from ENV)
 ├── Fastfile                     # Unified iOS + Android lanes
-├── Pluginfile                   # fastlane-plugin-dotenv
 ├── metadata/
 │   ├── ios/en-US/               # App Store listing copy
 │   └── android/en-US/           # Play Store listing copy
@@ -37,7 +36,6 @@ Install Ruby gems from the repository root:
 
 ```bash
 bundle install
-bundle exec fastlane install_plugins
 ```
 
 ### Native shells
