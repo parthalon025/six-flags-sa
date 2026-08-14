@@ -1,0 +1,13 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "highway": "footway" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[-84.28, 39.33], [-84.275, 39.335]]
+      }
+    }
+  ]
+}

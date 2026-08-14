@@ -1,0 +1,47 @@
+# Databricks Asset Bundle — validate on demand (does not deploy the PWA)
+
+name: Databricks bundle
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'databricks/**'
+      - '.github/workflows/databricks-bundle.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        run: pip install databricks-cli
+
+      - name: Validate bundle (schema only when no secrets)
+        working-directory: databricks
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+        run: |
+          if [ -z "$DATABRICKS_HOST" ]; then
+            echo "DATABRICKS_HOST not set — skipping remote validate"
+            test -f databricks.yml
+            test -f resources/ingest.yml
+            exit 0
+          fi
+          databricks bundle validate
+
+  pytest-transforms:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Test pure-Python transform logic
+        run: pip install pytest && pytest databricks/tests -q

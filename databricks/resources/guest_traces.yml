@@ -1,0 +1,37 @@
+# Guest trace clustering → walkway candidates sidecar (serverless)
+resources:
+  jobs:
+    parkbound_guest_traces:
+      name: parkbound-guest-traces-${bundle.target}
+      schedule:
+        quartz_cron_expression: "0 30 6 * * ?"
+        timezone_id: UTC
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+      tasks:
+        - task_key: cluster_traces
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/transform/guest_trace_cluster.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+              - --venue
+              - kings-island
+              - --gap-m
+              - "12"
+        - task_key: export_sidecar
+          depends_on:
+            - task_key: cluster_traces
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/export/write_sidecars.py
+            parameters:
+              - --catalog
+              - ${var.catalog}
+              - --kind
+              - guest_traces
+              - --venue
+              - kings-island

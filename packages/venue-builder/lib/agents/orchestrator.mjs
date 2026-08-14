@@ -7,8 +7,9 @@ import { runResearchAgent } from './research.mjs';
 import { runGisAgent } from './gis.mjs';
 import { runValidationAgent } from './validation.mjs';
 import { runVisionAgent } from './vision.mjs';
-import { agentReview } from '../venue-llm.mjs';
-import { llmConfig } from '../venue-llm.mjs';
+import { agentReview, llmConfig, orchestratorBatchReview } from '../venue-llm.mjs';
+
+const VERBOSE_LLM = process.env.VENUE_LLM_VERBOSE === '1';
 
 /**
  * @param {string} venueId
@@ -36,30 +37,38 @@ export async function runBuildOrchestrator(venueId, opts = {}) {
     await run('qa', () => runQaAgent(venueId, opts));
   }
   if (!opts.skip?.includes('research')) {
-    await run('research', () => runResearchAgent(venueId, opts));
+    await run('research', () => runResearchAgent(venueId, { ...opts, ai: VERBOSE_LLM && opts.ai }));
   }
   if (!opts.skip?.includes('gis')) {
-    await run('gis', () => runGisAgent(venueId, opts));
+    await run('gis', () => runGisAgent(venueId, { ...opts, ai: VERBOSE_LLM && opts.ai }));
   }
   if (!opts.skip?.includes('vision')) {
     await run('vision', () => runVisionAgent(venueId, opts));
   }
   if (!opts.skip?.includes('validation')) {
-    await run('validation', () => runValidationAgent(venueId, opts));
+    await run('validation', () => runValidationAgent(venueId, { ...opts, ai: VERBOSE_LLM && opts.ai }));
   }
 
   let orchestratorLlm = null;
   if (opts.ai && llmConfig().ready) {
-    orchestratorLlm = await agentReview('orchestrator', {
-      venueId,
-      agents: agents.map((a) => ({
-        role: a.role,
-        ok: a.ok,
-        summary: a.summary || a.evidence || a.routing || a.weaknesses,
-        error: a.error,
-      })),
-      errors,
-    });
+    if (VERBOSE_LLM) {
+      for (const agent of agents) {
+        if (!agent.ok || agent.llm) continue;
+        agent.llm = await agentReview(agent.role, agent, { venueId });
+      }
+      orchestratorLlm = await agentReview('orchestrator', {
+        venueId,
+        agents: agents.map((a) => ({
+          role: a.role,
+          ok: a.ok,
+          summary: a.summary || a.evidence || a.routing || a.weaknesses,
+          error: a.error,
+        })),
+        errors,
+      }, { venueId });
+    } else {
+      orchestratorLlm = await orchestratorBatchReview(venueId, agents, errors, opts);
+    }
   }
 
   return {
@@ -70,6 +79,7 @@ export async function runBuildOrchestrator(venueId, opts = {}) {
     errors,
     llm: orchestratorLlm,
     llmReady: llmConfig().ready,
+    llmMode: VERBOSE_LLM ? 'verbose' : 'batch',
   };
 }
 
@@ -79,6 +89,7 @@ export function renderOrchestratorMarkdown(trace) {
     '',
     `Started: ${trace.started}`,
     `Finished: ${trace.finished}`,
+    trace.llmMode ? `LLM mode: ${trace.llmMode}` : '',
     '',
   ];
   for (const a of trace.agents) {

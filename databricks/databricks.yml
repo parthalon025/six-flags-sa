@@ -1,0 +1,52 @@
+# Parkbound back-office — Databricks Asset Bundle
+# Deploy: databricks bundle validate && databricks bundle deploy -t dev
+# Docs: docs/guide/databricks.md
+
+bundle:
+  name: parkbound
+
+# Host comes from CLI profile (`--profile default`) or DATABRICKS_CONFIG_PROFILE.
+
+variables:
+  catalog:
+    description: Unity Catalog name
+    default: parkbound
+  app_base_url:
+    description: Deployed Parkbound API base for trace export
+    default: ""
+  guest_traces_token:
+    description: GUEST_TRACES_TOKEN for operator export
+    default: ""
+
+include:
+  - resources/ingest.yml
+  - resources/consolidate.yml
+  - resources/guest_traces.yml
+  - resources/llm_research.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      catalog: workspace
+    # Free tier: job definitions deploy; schedules stay PAUSED until you opt in.
+    resources:
+      jobs:
+        parkbound_ingest:
+          schedule:
+            pause_status: PAUSED
+        parkbound_consolidate:
+          schedule:
+            pause_status: PAUSED
+        parkbound_guest_traces:
+          schedule:
+            pause_status: PAUSED
+        parkbound_llm_research:
+          schedule:
+            pause_status: PAUSED
+
+  prod:
+    mode: production
+    variables:
+      catalog: parkbound
