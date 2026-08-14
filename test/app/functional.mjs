@@ -1246,15 +1246,22 @@ await check('first-run covers the map before the splash paints', async () => {
     label: 'a gate on first paint',
   });
   const gate = p.locator('.gate').first();
-  const klass = (await gate.getAttribute('class')) || '';
-  if (!/\bgateFirstRun\b/.test(klass)) throw new Error(`first paint gate was ${klass}`);
-  const { bg, anim } = await gate.evaluate((el) => {
-    const s = getComputedStyle(el);
-    return { bg: s.backgroundColor, anim: s.animationName };
-  });
-  if (anim && anim !== 'none') throw new Error(`first-run gate animated (${anim})`);
-  if (/0,\s*0,\s*0/.test(bg) && /0\.(3|4)/.test(bg)) {
-    throw new Error(`first-run gate is translucent (${bg})`);
+  const painted = await until(
+    async () => {
+      const klass = (await gate.getAttribute('class')) || '';
+      if (!/\bgateFirstRun\b/.test(klass)) return null;
+      const { bg, anim } = await gate.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { bg: s.backgroundColor, anim: s.animationName };
+      });
+      if (!bg) return null;
+      return { klass, bg, anim };
+    },
+    { timeout: 8000, label: 'opaque first-run styles' },
+  );
+  if (painted.anim && painted.anim !== 'none') throw new Error(`first-run gate animated (${painted.anim})`);
+  if (/0,\s*0,\s*0/.test(painted.bg) && /0\.(3|4)/.test(painted.bg)) {
+    throw new Error(`first-run gate is translucent (${painted.bg})`);
   }
   await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
     timeout: 10000,
@@ -1278,16 +1285,17 @@ await check('a returning phone skips the hold and does not hide the map', async 
   const p = await back.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
   await until(
-    async () => (await p.locator('html').getAttribute('data-intro')) === 'seen',
-    { timeout: 8000, label: 'html[data-intro=seen] before the splash' },
+    async () => {
+      if ((await p.locator('html').getAttribute('data-intro')) !== 'seen') return false;
+      const hold = p.locator('[data-intro-hold]');
+      if (!(await hold.count())) return true;
+      const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
+      return display === 'none';
+    },
+    { timeout: 8000, label: 'html[data-intro=seen] hides the SSR hold' },
   );
   if (await p.locator('#intro-splash-title').count()) {
     throw new Error('returning phone still got the logo splash');
-  }
-  const hold = p.locator('[data-intro-hold]');
-  if ((await hold.count()) > 0) {
-    const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
-    if (display !== 'none') throw new Error(`returning hold was ${display}`);
   }
   await back.close();
   return true;
