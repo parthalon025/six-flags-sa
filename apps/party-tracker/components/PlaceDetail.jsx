@@ -27,6 +27,7 @@ export function PlaceDetailBody({
   onSetMeet,
   onReport = null,
   onAddToPlan = null,
+  overlayCompletions = [],
 }) {
   if (!poi) return null;
   const isRide = isRideable(poi);
@@ -34,6 +35,14 @@ export function PlaceDetailBody({
   const camp = campChips(campDetails(poi, venue));
   const ent = isRide ? entranceMeta(poi) : null;
   const rows = isRide && eligibility ? eligibility.explain(identityOf(poi)) : [];
+
+  const overlayLines = [...overlayCompletions];
+  if (status?.report) {
+    const who = status.report.byName || 'Someone';
+    overlayLines.push(
+      status.report.status === 'down' ? `${who} reported it down` : `${who} reported it running`,
+    );
+  }
 
   return (
     <div className="poiDetail">
@@ -67,6 +76,15 @@ export function PlaceDetailBody({
         <p className={`poiNote entranceNote ${ent.confirmed ? 'confirmed' : 'approx'}`}>
           {ent.confirmed ? 'Queue entrance on map' : ent.hint}
         </p>
+      )}
+      {overlayLines.length > 0 && (
+        <ul className="overlayCompletions" data-overlay-completions>
+          {overlayLines.map((line, i) => (
+            <li key={`${i}:${line}`} className="poiNote overlayCompletion">
+              {line}
+            </li>
+          ))}
+        </ul>
       )}
       {poi.tel && (
         <a className="poiTel" href={`tel:${poi.tel.replace(/[^\d+]/g, '')}`}>
@@ -143,6 +161,7 @@ export default function PlaceDetail({
   onSetMeet,
   onReport = null,
   onAddToPlan = null,
+  overlayCompletions = [],
 }) {
   const palette = paletteFor(theme);
   const venue = useVenueSelector((s) => s.venue);
@@ -170,7 +189,11 @@ export default function PlaceDetail({
   const showStatus = Boolean(status?.label);
 
   return (
-    <div className={`placeDetail ${v.cls}`} data-place-detail={poi.id || poi.n}>
+    <div
+      className={`placeDetail ${v.cls}`}
+      data-place-detail={poi.id || poi.n}
+      data-overlay={poi.overlay ? '1' : undefined}
+    >
       <div className="placeDetailHead">
         <span
           className="dot"
@@ -239,6 +262,7 @@ export default function PlaceDetail({
         onSetMeet={onSetMeet}
         onReport={onReport}
         onAddToPlan={onAddToPlan}
+        overlayCompletions={overlayCompletions}
       />
     </div>
   );

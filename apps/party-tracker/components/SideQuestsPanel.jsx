@@ -23,6 +23,7 @@ import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
+import { completionLine, contributionFromGapSubmit } from '@/lib/overlay';
 
 /**
  * Side Quests tab — missions for facts only guests on the ground can settle.
@@ -57,6 +58,8 @@ export default function SideQuestsPanel({
   session = null,
   onSession = null,
   onRideReport = null,
+  onContribution = null,
+  overlay = null,
 }) {
   const queue = defaultQuestQueue();
   const gapNeedsAuth = softGateBlocks('adventure', session);
@@ -230,6 +233,21 @@ export default function SideQuestsPanel({
       lng: position?.lng ?? null,
     });
     await queue.enqueue(report);
+    if (!isLiveQuest(quest) && onContribution) {
+      const contrib = contributionFromGapSubmit({
+        id: report.id,
+        type: quest.type,
+        placeId: target,
+        venueId,
+        authorId: session?.userId || null,
+        authorName: session?.displayName || 'Someone',
+        payload: report.payload,
+        lat: report.lat,
+        lng: report.lng,
+        now: report.createdAt,
+      });
+      if (contrib) onContribution(contrib);
+    }
     const live = rideReportFromLiveQuest(quest, { status, pois, position });
     if (live && onRideReport) onRideReport(live.rideId, live.status);
     const action = isLiveQuest(quest) ? 'live' : 'first';
@@ -403,7 +421,10 @@ export default function SideQuestsPanel({
                   className={`sideQuestChip ${selected ? 'on' : ''}`}
                   aria-pressed={open ? selected : undefined}
                   onClick={() => {
-                    if (open) setSelectedTarget(target);
+                    if (open) {
+                      setSelectedTarget(target);
+                      return;
+                    }
                     if (place && onSelectPlace) onSelectPlace(place);
                   }}
                 >
@@ -443,6 +464,10 @@ export default function SideQuestsPanel({
       </div>
     );
   };
+
+  const myCompletions = (overlay?.completions || []).filter((c) =>
+    session?.userId ? c.authorId === session.userId : true,
+  );
 
   return (
     <div className="sideQuests">
@@ -493,6 +518,23 @@ export default function SideQuestsPanel({
 
       <div className="label">While you walk</div>
       <div className="rowList">{ambient.map(renderQuest)}</div>
+
+      {myCompletions.length > 0 && (
+        <>
+          <div className="label">Your completions</div>
+          <div className="rowList" data-overlay-mine>
+            {myCompletions
+              .slice()
+              .reverse()
+              .slice(0, 8)
+              .map((c) => (
+                <div key={c.id} className="row" data-overlay-completion={c.id}>
+                  <span className="rowText">{completionLine(c)}</span>
+                </div>
+              ))}
+          </div>
+        </>
+      )}
 
       <p className="fine block">
         {gapNeedsAuth

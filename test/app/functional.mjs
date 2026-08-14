@@ -789,6 +789,61 @@ await check('Side Quest submit queues locally', async () => {
   return true;
 });
 
+await check('complete a gap quest draws Overlay on the map', async () => {
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+    timeout: 15000,
+    label: 'side quest rows',
+  });
+  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  await until(async () => (await heightRow.count()) > 0, {
+    timeout: 10000,
+    label: 'height gap quest',
+  });
+  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  await until(async () => (await reportBtn.count()) > 0, {
+    timeout: 10000,
+    label: 'height Report after sign-in',
+  });
+  if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
+    await reportBtn.click();
+    await a.waitForTimeout(200);
+  }
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  const targetChip = heightRow.locator('.sideQuestChip').first();
+  const rideName = ((await targetChip.innerText().catch(() => '')) || '').trim();
+  if (await targetChip.count()) await targetChip.click();
+  const heightChip = heightRow.locator('.sideQuestForm .chip', { hasText: '48"' });
+  await until(async () => (await heightChip.count()) > 0, {
+    timeout: 5000,
+    label: '48 inch chip',
+  });
+  await heightChip.click();
+  await heightRow.locator('.sideQuestSubmit').click();
+  await until(
+    async () => /confirmed 48/i.test(await a.locator('[data-overlay-mine]').innerText().catch(() => '')),
+    { timeout: 10000, label: 'your completions list Overlay' },
+  );
+  if (!rideName) throw new Error('height quest had no target chip');
+  await go(a, 'Places');
+  await searchPlaces(a, rideName);
+  const row = a.locator('.poiRow', { hasText: rideName }).first();
+  await row.waitFor({ state: 'visible', timeout: 15000 });
+  await row.click();
+  await until(
+    async () => (await a.locator('[data-overlay-completions]').count()) > 0,
+    { timeout: 10000, label: 'place overlay completions' },
+  );
+  const detail = await a.locator('.poiDetail, .placeDetail').first().innerText();
+  if (!/48"|confirmed 48/i.test(detail)) {
+    throw new Error(`overlay height missing on ${rideName}: ${detail.slice(0, 240)}`);
+  }
+  await clearSearch(a).catch(() => {});
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();

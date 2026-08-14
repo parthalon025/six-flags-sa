@@ -118,6 +118,13 @@
       "check": "Side Quest submit queues locally"
     },
     {
+      "id": "e125-overlay",
+      "slice": "Adventure",
+      "user_action": "Complete a gap Side Quest and see Overlay on this phone",
+      "suite": "functional",
+      "check": "complete a gap quest draws Overlay on the map"
+    },
+    {
       "id": "e5-eligibility",
       "slice": "E5",
       "user_action": "See structured eligibility reason on a ride",

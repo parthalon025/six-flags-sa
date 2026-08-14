@@ -1,0 +1,100 @@
+name: Store binaries
+
+# Manual only — App Store / Play uploads. Does not run on pull_request
+# (Vercel preview budget + signing secrets).
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform to upload
+        type: choice
+        options:
+          - android
+          - ios
+          - both
+        default: android
+      track:
+        description: Fastlane lane
+        type: choice
+        options:
+          - beta
+          - production
+        default: beta
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    if: inputs.platform == 'android' || inputs.platform == 'both'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Require Play secrets
+        run: |
+          test -n "${{ secrets.GOOGLE_PLAY_JSON_KEY }}"
+          test -n "${{ secrets.ANDROID_KEYSTORE }}"
+      - run: npm ci
+      - name: Decode signing files
+        run: |
+          mkdir -p secrets
+          echo "${{ secrets.GOOGLE_PLAY_JSON_KEY }}" | base64 -d > secrets/google-play-service-account.json
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 -d > secrets/parkbound-upload.keystore
+      - name: Fastlane Android
+        env:
+          ANDROID_PACKAGE_NAME: ai.kurat0r.parkbound
+          GOOGLE_PLAY_JSON_KEY_PATH: ./secrets/google-play-service-account.json
+          ANDROID_KEYSTORE_PATH: ./secrets/parkbound-upload.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: bundle exec fastlane android ${{ inputs.track }}
+
+  ios:
+    if: inputs.platform == 'ios' || inputs.platform == 'both'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - name: Require App Store secrets
+        run: |
+          test -n "${{ secrets.APP_STORE_CONNECT_API_KEY }}"
+          test -n "${{ secrets.IOS_TEAM_ID }}"
+      - run: npm ci
+      - name: Decode API key
+        run: |
+          mkdir -p secrets
+          echo "${{ secrets.APP_STORE_CONNECT_API_KEY }}" | base64 -d > secrets/AuthKey.p8
+      - name: CocoaPods
+        run: |
+          cd ios/App
+          pod install
+      - name: Fastlane iOS
+        env:
+          IOS_BUNDLE_IDENTIFIER: ai.kurat0r.parkbound
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          IOS_ITC_TEAM_ID: ${{ secrets.IOS_ITC_TEAM_ID }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_PATH: ./secrets/AuthKey.p8
+        run: bundle exec fastlane ios ${{ inputs.track }}

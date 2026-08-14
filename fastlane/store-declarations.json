@@ -1,0 +1,77 @@
+{
+  "applePrivacyNutrition": {
+    "privacyPolicyUrl": "https://parkbound.kurat0r.ai/privacy",
+    "tracking": false,
+    "trackingIdentifiers": false,
+    "dataUsedToTrack": [],
+    "dataLinkedToUser": [
+      {
+        "category": "Location",
+        "type": "Precise Location",
+        "purposes": ["App Functionality"],
+        "notes": "A device Member shares Location with their Party while inside the Venue. Background Location keeps a pocketed Host updating the Party map."
+      },
+      {
+        "category": "Identifiers",
+        "type": "User ID",
+        "purposes": ["App Functionality"],
+        "notes": "Profile id when signed in. Name-only Members have no Profile."
+      }
+    ],
+    "dataNotLinkedToUser": [
+      {
+        "category": "Location",
+        "type": "Coarse Location",
+        "purposes": ["App Functionality"],
+        "notes": "Nearest Venue prompt before a Party exists. Not sold. Not ads."
+      }
+    ],
+    "dataNotCollected": ["Contacts", "Health", "Financial", "Sensitive Info", "Browsing History"],
+    "camera": {
+      "purpose": "App Functionality",
+      "notes": "Scan a Party invite QR only. Not stored."
+    }
+  },
+  "playDataSafety": {
+    "privacyPolicyUrl": "https://parkbound.kurat0r.ai/privacy",
+    "appCollectsData": true,
+    "dataEncryptedInTransit": true,
+    "usersCanRequestDeletion": true,
+    "dataCollected": [
+      {
+        "category": "Location",
+        "type": "Approximate location",
+        "collected": true,
+        "shared": false,
+        "required": true,
+        "purpose": "App functionality",
+        "ephemeral": false
+      },
+      {
+        "category": "Location",
+        "type": "Precise location",
+        "collected": true,
+        "shared": false,
+        "required": true,
+        "purpose": "App functionality",
+        "ephemeral": true,
+        "notes": "Shared only with the live Party while inside the Venue. Not sold."
+      },
+      {
+        "category": "App activity",
+        "type": "App interactions",
+        "collected": true,
+        "shared": false,
+        "required": false,
+        "purpose": "App functionality"
+      }
+    ],
+    "securityPractices": {
+      "dataEncryptedInTransit": true,
+      "canRequestDeletion": true,
+      "independentReview": false,
+      "committedToPlayFamiliesPolicy": false
+    },
+    "afterPlayAppSigning": "Add the Play App Signing cert SHA-256 next to the upload cert in ANDROID_CERT_SHA256 (comma-separated) so App Links keep working."
+  }
+}

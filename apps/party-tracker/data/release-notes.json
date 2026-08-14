@@ -210,5 +210,17 @@
     "items": [
       "feat: wire Clerk profile signup in party-tracker"
     ]
+  },
+  "1.9.0": {
+    "title": "What's new",
+    "items": [
+      "feat: add Capacitor iOS and Android store shells"
+    ]
+  },
+  "1.10.0": {
+    "title": "What's new",
+    "items": [
+      "feat: draw Overlay from gap Side Quest completions"
+    ]
   }
 }
