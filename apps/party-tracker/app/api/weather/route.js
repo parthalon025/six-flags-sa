@@ -29,7 +29,8 @@
 
 import { badRequest, json, jsonCached } from '@/app/api/_lib/http';
 
-export const dynamic = 'force-dynamic';
+// Deliberately not `force-dynamic`: this body has no party in it and ships
+// `s-maxage` so the CDN can absorb a park full of guests. Match `/api/rides`.
 
 /** The upstream call is already bounded at TIMEOUT_MS; this bounds the rest. */
 export const maxDuration = 15;

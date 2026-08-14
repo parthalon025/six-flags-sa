@@ -20,7 +20,7 @@ const paths = ['/venues/manifest.json', '/sw.js', '/app-version.json', '/manifes
 
 try {
   for (const name of readdirSync(venuesDir)) {
-    if (/\.(map|pois)\.json$/.test(name) || name === 'manifest.json') {
+    if (/\.(map|pois|gaps)\.json$/.test(name) || name === 'manifest.json') {
       paths.push(`/venues/${name}`);
     }
   }

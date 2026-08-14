@@ -9,7 +9,7 @@
 
 import { distance } from '../geo.js';
 import { isValidLocation } from '../core/state.js';
-import { MAX_SNAP_M, snapToGraph } from '../routing.js';
+import { MAX_SNAP_M, snapToGraph } from '../routingSnap.js';
 import { withinBounds } from '../venue/store.js';
 
 /** Faster than anyone moves on foot at a park. m/s. */

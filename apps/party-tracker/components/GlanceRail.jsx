@@ -5,7 +5,7 @@ import Icon from '@/components/Icon';
 import { LIVE, WORDS } from '@/lib/brand';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
 import { recommendNow } from '@/lib/live';
-import { navKeyOf as keyOfNav } from '@/lib/routing';
+import { navKeyOf as keyOfNav } from '@/lib/navKey';
 import { usePois } from '@/lib/venue/useVenue';
 import { paletteFor } from '@/lib/theme';
 import { placeNav } from '@/lib/venue/ids';

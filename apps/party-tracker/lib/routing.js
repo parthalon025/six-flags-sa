@@ -12,6 +12,10 @@
 // under a metre across a park this size.
 
 import { wayFlagsOf, wayLayerOf } from './wayFlags.js';
+import { MAX_SNAP_M, snapToGraph } from './routingSnap.js';
+
+export { MAX_SNAP_M, snapToGraph } from './routingSnap.js';
+export { navKeyOf } from './navKey.js';
 
 const R = 6371000;
 const rad = Math.PI / 180;
@@ -28,8 +32,6 @@ const MEND_M = 25;
 const MEND_DETOUR_M = 300;
 /** Spatial hash cell. Big enough that a snap rarely walks past one ring. */
 const CELL_M = 30;
-/** Beyond this, the nearest path is not a path you are standing on. */
-export const MAX_SNAP_M = 140;
 /** Crowded-park walking pace, matching lib/geo's formatWalk. */
 export const WALK_MPS = 1.15;
 
@@ -429,46 +431,6 @@ function bridgeIslands(graph) {
     if (!added) return;
     index(graph);
   }
-}
-
-/**
- * The point on the path network closest to a position.
- * @returns {{seg, t, lat, lng, x, y, offset}} or null when nothing is near
- */
-export function snapToGraph(graph, lat, lng, maxOffset = MAX_SNAP_M, { excludeSeg } = {}) {
-  if (!graph) return null;
-  const px = graph.proj.x(lng);
-  const py = graph.proj.y(lat);
-  let best = null;
-  // Rings widen until something is found or the search passes the cap, so a
-  // phone in the middle of a car park still gets an answer.
-  for (let rings = 1; rings <= Math.ceil(maxOffset / CELL_M) + 1; rings += 1) {
-    const seen = new Set(graph.segGrid.around(px, py, rings));
-    for (const segIndex of seen) {
-      if (excludeSeg?.(segIndex)) continue;
-      const seg = graph.segments[segIndex];
-      const a = graph.nodes[seg.a];
-      const b = graph.nodes[seg.b];
-      const t = projectOnSegment(px, py, a.x, a.y, b.x, b.y);
-      const sx = a.x + (b.x - a.x) * t;
-      const sy = a.y + (b.y - a.y) * t;
-      const offset = hypot(px, py, sx, sy);
-      if (!best || offset < best.offset) {
-        best = {
-          seg: segIndex,
-          t,
-          x: sx,
-          y: sy,
-          lat: graph.proj.lat(sy),
-          lng: graph.proj.lng(sx),
-          offset,
-        };
-      }
-    }
-    if (best && best.offset <= rings * CELL_M) break;
-  }
-  if (!best || best.offset > maxOffset) return null;
-  return best;
 }
 
 /**
@@ -1180,16 +1142,3 @@ export function splitRouteAt(route, progress) {
 /** How far off the line counts as "you are not on this route any more". */
 export const OFF_ROUTE_M = 32;
 
-/**
- * A stable identity for somewhere you are walking to.
- *
- * A party member is a moving target and a meet-up can be dropped again, so the
- * destination is held as a reference rather than a pair of coordinates, and
- * this is what the UI compares to know which card is the live one.
- */
-export const navKeyOf = (nav) => {
-  if (!nav) return null;
-  if (nav.kind === 'member') return `member:${nav.id}`;
-  if (nav.kind === 'meet') return 'meet';
-  return `poi:${nav.placeId || nav.label}`;
-};

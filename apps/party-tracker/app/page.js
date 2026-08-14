@@ -2441,7 +2441,7 @@ export default function Page() {
                   compact={plan.digest}
                   weather={weatherFeed.weather}
                   rides={partyRides}
-                  now={Date.now()}
+                  now={clock}
                   eligibility={eligibilityView}
                 />
               )}

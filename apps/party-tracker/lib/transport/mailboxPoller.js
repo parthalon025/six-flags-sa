@@ -112,8 +112,13 @@ function createPoller({ base, partyId, peerId, key }) {
       seen = seq;
       if (seq > cursor) cursor = seq;
     }
-    busy();
     const kind = msg.kind || 'signal';
+    // WebRTC negotiation (`signal`) needs a hot poll. Sealed party frames are
+    // almost always `envelope`, including host PINGs every 4s — treating those
+    // as activity pinned cool cadence at POLL_HOT_MS forever on the cloud
+    // relay. Delivery still happens on the next cool tick; send/post and
+    // explicit busy() keep the hot window for real back-and-forth.
+    if (kind === 'signal') busy();
     const set = handlers.get(kind);
     if (set) {
       for (const fn of [...set]) {
