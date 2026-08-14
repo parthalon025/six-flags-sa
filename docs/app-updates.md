@@ -56,9 +56,8 @@ page.
    Vercel **production** always builds for a `main` push that is not
    GitNexus-index-only (`scripts/lib/vercel-ignore.mjs` — `VERCEL_ENV=production`
    or `VERCEL_GIT_COMMIT_REF=main`), so docs merges still move the live alias.
-   Previews still skip when no app paths changed. The post-merge workflow amends
-   the GitNexus refresh into the unpushed version-bump commit so Vercel does not
-   see a gitnexus-only HEAD and skip the bump.
+   Previews still skip when no app paths changed. GitNexus stays session-local
+   (`.gitnexus/` is gitignored) and is not part of the bump commit.
 5. Phones online within ~5 minutes (or on tab focus) should update; offline
    phones stay on the last good build until they have connectivity.
 

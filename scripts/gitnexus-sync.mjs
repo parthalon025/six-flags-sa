@@ -1,34 +1,23 @@
 #!/usr/bin/env node
 /**
- * Keep the committed GitNexus index in sync for cloud agents and local dev.
+ * Session-local GitNexus index. `.gitnexus/` is gitignored and must not land
+ * on GitHub — the graph is rebuilt at session start.
  *
- *   node scripts/gitnexus-sync.mjs startup           # session start (do not commit)
- *   node scripts/gitnexus-sync.mjs finish --commit   # post-merge / CI only
+ *   node scripts/gitnexus-sync.mjs startup
+ *   node scripts/gitnexus-sync.mjs finish    # same as startup
  *
- * On finish --commit, an unpushed `chore: bump version to …` by
- * github-actions[bot] is amended so Vercel sees one production HEAD with app
- * files instead of a gitnexus-only tip that the ignore step skips.
+ * `--commit` is accepted and ignored so old CI callers do not fail.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  GITNEXUS_INDEX_PATHS,
-  GITNEXUS_REFRESH_MESSAGE,
-  shouldAmendGitnexusIntoBump,
-} from './gitnexus-ci.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const mode = argv.find((a) => a !== '--commit') || 'startup';
 const doCommit = argv.includes('--commit');
 const runCjs = join(root, '.gitnexus', 'run.cjs');
-const innerGitignore = join(root, '.gitnexus', '.gitignore');
-const gitExclude = join(root, '.git', 'info', 'exclude');
-
-/** Paths GitNexus analyze may refresh and that we commit on main. */
-const TRACKED = GITNEXUS_INDEX_PATHS;
 
 function run(nodeCmd, args) {
   execFileSync(nodeCmd, args, { cwd: root, stdio: 'inherit' });
@@ -36,19 +25,6 @@ function run(nodeCmd, args) {
 
 function git(args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
-}
-
-/** GitNexus analyze writes ignore rules that hide the committed index — strip them. */
-function clearGitnexusIgnoreRules() {
-  if (existsSync(innerGitignore)) {
-    rmSync(innerGitignore);
-  }
-  if (!existsSync(gitExclude)) return;
-  const next = readFileSync(gitExclude, 'utf8')
-    .split('\n')
-    .filter((line) => line.trim() !== '.gitnexus/' && line.trim() !== '.gitnexus')
-    .join('\n');
-  writeFileSync(gitExclude, next.endsWith('\n') ? next : `${next}\n`);
 }
 
 function analyze() {
@@ -68,50 +44,27 @@ function analyze() {
     args.push('--force');
     invoke();
   }
-  clearGitnexusIgnoreRules();
 }
 
-function indexChanges() {
+/** Analyze rewrites generated hunks; keep the committed docs stable. */
+function restoreAgentDocs() {
   try {
-    return git(['status', '--porcelain', ...TRACKED]);
+    git(['checkout', '--', 'AGENTS.md', 'CLAUDE.md']);
   } catch {
-    return '';
+    // fresh clone / no HEAD — leave whatever analyze wrote
   }
 }
 
 if (mode !== 'startup' && mode !== 'finish') {
-  console.error('Usage: node scripts/gitnexus-sync.mjs <startup|finish> [--commit]');
+  console.error('Usage: node scripts/gitnexus-sync.mjs <startup|finish>');
   process.exit(1);
 }
 
-if (doCommit && mode !== 'finish') {
-  console.error('[gitnexus-sync] --commit is only valid with finish');
-  process.exit(1);
+if (doCommit) {
+  console.warn('[gitnexus-sync] --commit is ignored; the index is gitignored');
 }
 
-console.log(`[gitnexus-sync] ${mode}: refreshing index…`);
+console.log(`[gitnexus-sync] ${mode}: refreshing session-local index…`);
 analyze();
-
-const changes = indexChanges();
-if (!changes) {
-  console.log('[gitnexus-sync] index matches working tree');
-  process.exit(0);
-}
-
-console.log('[gitnexus-sync] index updated:');
-console.log(changes);
-
-if (mode === 'finish' && doCommit) {
-  git(['add', '-f', '.gitnexus/', 'AGENTS.md', 'CLAUDE.md']);
-  const subject = git(['log', '-1', '--format=%s']);
-  const author = git(['log', '-1', '--format=%an']);
-  if (shouldAmendGitnexusIntoBump({ subject, author })) {
-    git(['commit', '--amend', '--no-edit']);
-    console.log('[gitnexus-sync] amended index into unpushed version bump');
-  } else {
-    git(['commit', '-m', GITNEXUS_REFRESH_MESSAGE]);
-    console.log(`[gitnexus-sync] committed ${GITNEXUS_REFRESH_MESSAGE}`);
-  }
-} else {
-  console.log('[gitnexus-sync] leave these changes unstaged — the post-merge workflow commits the index on main');
-}
+restoreAgentDocs();
+console.log('[gitnexus-sync] index is session-local under .gitnexus/ — not committed');

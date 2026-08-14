@@ -15,18 +15,18 @@ import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Paths the post-merge refresh stages. `scripts/gitnexus-sync.mjs` imports this list. */
+/** Paths GitNexus analyze may dirty. Never commit `.gitnexus/` — it is gitignored. */
 export const GITNEXUS_INDEX_PATHS = ['.gitnexus/', 'AGENTS.md', 'CLAUDE.md'];
 
-/** Commit subject used by `gitnexus-sync.mjs finish --commit`. */
+/** Commit subject previously used when the index was committed on main. */
 export const GITNEXUS_REFRESH_MESSAGE = 'chore: refresh gitnexus index';
 
 /** Author the post-merge workflow sets before `bump-version` / gitnexus commits. */
 export const GITNEXUS_BOT_AUTHOR = 'github-actions[bot]';
 
 /**
- * Fold the GitNexus refresh into an unpushed version-bump commit so Vercel
- * sees one HEAD with app files instead of a gitnexus-only tip that skips.
+ * Fold a GitNexus refresh into an unpushed version-bump commit (legacy).
+ * The index is gitignored now; kept so old CI callers and tests stay honest.
  */
 export function shouldAmendGitnexusIntoBump({ subject, author } = {}) {
   return (
