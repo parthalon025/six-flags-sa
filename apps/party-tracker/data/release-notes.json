@@ -252,5 +252,11 @@
     "items": [
       "fix: make map routes and labels easier to see outdoors"
     ]
+  },
+  "1.11.5": {
+    "title": "What's new",
+    "items": [
+      "fix: stop intro boot check matching beforeInteractive comments"
+    ]
   }
 }
