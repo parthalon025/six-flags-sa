@@ -142,6 +142,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Battery (and charging) is visible to the **Party**; IMU is not; radio scores stay **Host** election internals
 - A **Party** has one or more **Members**; the **Host** is one of them
 - A **Member** optionally binds to one **Profile**; an unbound **Member** is identified by display name until attached
+- Sign-in on a device auto-binds that device’s unbound **Member** to the new **Profile** (one bind per **Member**)
 - A **Member** may carry zero or one **Subgroup** tag
 - A **Member** may carry a **height**; unset height means not height-constrained. Device-less **Members** are valid roster seats
 - A **Member** may carry **With adult** (unset means accompanied for every **Member**)
@@ -253,7 +254,7 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - Browse map / pick **Venue**: no **Profile** required
 - Join or host a **Party**: display name enough; **Profile** optional (attach later); **Location** required to finish join
 - Save **Managed Guests** (name/height for next visit): **Profile** required
-- Gap **Side Quest** / **Contribution** submit: **Profile** required; this phone’s **Overlay** does not need a **Party**
+- Gap **Side Quest** / **Contribution** submit: **Profile** required; this phone’s **Overlay** does not need a **Party**; without a **Profile**, stash locally until sign-in (do not discard on dismissed OAuth)
 - In-party **Ride report**: display name enough
 - Park-wide **Observation** / **Overlay**: **Profile** required, plus a second independent **Party**
 - **Plan** personalization / sync across days: **Profile** required; building a **Plan** inside a **Party** does not
@@ -264,7 +265,8 @@ _Avoid_: Ride report; Observation (those are on-the-ground signals)
 - "park" vs "venue" — resolved: domain term is **Venue**; "park" is colloquial UI only.
 - Host vs Owner/Adult/Child/Guest — resolved: **Host** is invisible mesh authority only; “best phone” is automatic fitness (battery, signal, network, performance), rechecked on **Invite**/join, on failover, and continuously with a margin so it does not flap. Do **not** add Owner/Adult/Child/Guest as party roles — device-less **Member**, **Managed Guest**, and **With adult** cover the family.
 - Code role `member` (non-host) vs domain **Member** — resolved: domain **Member** always means roster person; includes Host.
-- ADR-0001 soft-gates party behind **Profile** — resolved: party is name-first; ADR-0001 and EP.3/EP.5 revised 2026-08-12. Gap **Side Quests** / **Contributions** remain Profile-gated. In-party **Ride reports** are name-first; park-wide **Observation** / **Overlay** need a **Profile** plus a second independent **Party**.
+- ADR-0001 soft-gates party behind **Profile** — resolved: party is name-first; EP.3/EP.5 revised 2026-08-12. Gap **Side Quests** / **Contributions** remain Profile-gated with local stash until sign-in. In-party **Ride reports** are name-first; park-wide **Observation** / **Overlay** need a **Profile** plus a second independent **Party**.
+- Auth provider — resolved 2026-08-14: **Clerk** (Google + Apple only) per ADR-0010; supersedes Auth.js ADR-0001. Native OAuth in Capacitor store shell; Postgres **Profile** row minted on sign-in callback, not webhook-only.
 - "submember" / kids without phones / height on Member or Subgroup — **resolved**: kids without phones are device-less **Members** with height on the roster (family product; shared party visibility OK). Device-holding **Members** may tag them, set height / **With adult**, and remove them from the roster (does not delete the **Managed Guest**). Durable save lives as **Managed Guest** under a **Profile** only (no anonymous guest DB). Stale height prompts at seed; skip keeps last inches. Height is not a **Subgroup** property. Contradicts park-intelligence “heights not on the wire” — accepted trade-off for family use.
 - Code `eligibility()` returns `unknown` when inches is null — **resolved**: unset height means not height-constrained (can ride anything), not an unknown verdict. Adults who never set height do not fade the map. A child added with no height also does not constrain the group until someone enters one.
 - Code `withAdult` global toggle vs per-person accompaniment — **resolved**: domain fact is per-**Member** **With adult**; unset means accompanied for every **Member**; explicit false is rare on a device-holding **Member**. No map-wide “alone” clump switch — leave the **Meet** via **Subgroup**. **Companion** is only the Eligibility verdict.
