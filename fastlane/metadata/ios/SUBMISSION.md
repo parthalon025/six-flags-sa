@@ -83,6 +83,6 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 
 `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` (base64 `.p8`), `APP_STORE_APPLE_ID`
 
-Optional: `APP_STORE_REVIEW_PHONE` — E.164 review contact phone (e.g. `+12125551234`). When set, review notes and contact upload with metadata; when omitted, listing copy still uploads without App Review contact fields.
+Optional: `APP_STORE_REVIEW_PHONE` — **required** for first metadata upload. E.164 review contact phone (e.g. `+12125551234`).
 
 Optional variable: `IOS_APP_VERSION` (defaults to `apps/party-tracker/package.json` version).

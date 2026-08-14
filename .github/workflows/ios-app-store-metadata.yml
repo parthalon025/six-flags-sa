@@ -44,18 +44,6 @@ jobs:
           echo "$APP_STORE_CONNECT_API_KEY" | base64 -d > secrets/AuthKey.p8
           test -s secrets/AuthKey.p8
 
-      - name: Prepare App Review contact
-        env:
-          APP_STORE_REVIEW_PHONE: ${{ secrets.APP_STORE_REVIEW_PHONE }}
-        run: |
-          review_dir="fastlane/metadata/ios/review_information"
-          if [ -n "$APP_STORE_REVIEW_PHONE" ]; then
-            printf '%s\n' "$APP_STORE_REVIEW_PHONE" > "$review_dir/phone_number.txt"
-          else
-            echo "APP_STORE_REVIEW_PHONE not set — skipping review contact upload"
-            rm -f "$review_dir"/*.txt
-          fi
-
       - name: Upload metadata
         env:
           CI: true
@@ -65,6 +53,7 @@ jobs:
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_PATH: ./secrets/AuthKey.p8
           APP_STORE_APPLE_ID: ${{ secrets.APP_STORE_APPLE_ID }}
+          APP_STORE_REVIEW_PHONE: ${{ secrets.APP_STORE_REVIEW_PHONE }}
           IOS_APP_VERSION: ${{ vars.IOS_APP_VERSION }}
           IOS_SKIP_SCREENSHOTS: "true"
         run: |

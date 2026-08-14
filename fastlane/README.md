@@ -183,6 +183,7 @@ Runs on **ubuntu** — uploads `fastlane/metadata/ios/` via `bundle exec fastlan
 | `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID from App Store Connect → Integrations |
 | `APP_STORE_CONNECT_API_KEY` | Base64-encoded `.p8` file (`base64 -w0 AuthKey.p8` on Linux; `[Convert]::ToBase64String([IO.File]::ReadAllBytes('AuthKey.p8'))` on PowerShell) |
 | `APP_STORE_APPLE_ID` | Optional numeric app ID (e.g. `269608486`) |
+| `APP_STORE_REVIEW_PHONE` | **Required** for first upload — E.164 review phone (e.g. `+12125551234`) |
 
 **Repository variable** (optional): `IOS_APP_VERSION` — override App Store Connect version; default is `apps/party-tracker/package.json` `version`. That version must already exist in Connect before metadata upload.
 
