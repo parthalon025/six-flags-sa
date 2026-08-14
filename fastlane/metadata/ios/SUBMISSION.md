@@ -12,8 +12,8 @@ Everything below is filled in repo files. Upload with GitHub Actions (**iOS App 
 | **SKU** | `parkbound-ios` | `store-identifiers.json` |
 | **Apple ID** | `269608486` | `.env` `APP_STORE_APPLE_ID` |
 | **Primary language** | English (U.S.) | `en-US/` |
-| **Primary category** | Navigation | `primary_category.txt` |
-| **Secondary category** | Travel | `secondary_category.txt` |
+| **Primary category** | Navigation (`NAVIGATION`) | `primary_category.txt` |
+| **Secondary category** | Travel (`TRAVEL`) | `secondary_category.txt` |
 | **Copyright** | 2026 Kurat0r | `copyright.txt` |
 | **Content rights** | Contains third-party content — we have rights (park map sources + our renders) | `Fastfile` submission_information |
 | **Age rating** | 4+ expected (no mature content; UGC + unrestricted web) | `age_rating.json` |
@@ -82,5 +82,7 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 ## GitHub secrets (for metadata workflow)
 
 `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` (base64 `.p8`), `APP_STORE_APPLE_ID`
+
+Optional: `APP_STORE_REVIEW_PHONE` — E.164 review contact phone (e.g. `+12125551234`). When set, review notes and contact upload with metadata; when omitted, listing copy still uploads without App Review contact fields.
 
 Optional variable: `IOS_APP_VERSION` (defaults to `apps/party-tracker/package.json` version).
