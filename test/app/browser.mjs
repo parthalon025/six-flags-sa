@@ -88,6 +88,13 @@ export async function openPhone(
     // Confirmed is the intake answer; pinned is tracker-venue, which would block
     // the map from following the party host.
     if (venueId) localStorage.setItem('tracker-venue-confirmed', venueId);
+    // Headless Chromium implements navigator.share but never resolves the picker —
+    // force the clipboard fallback shareInvite already has for CI.
+    try {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
+    } catch {
+      /* ignore */
+    }
   }, { version: APP_VERSION, venueId: venue });
   const page = await context.newPage();
 
