@@ -25,7 +25,10 @@ packages/venue-builder/**
 scripts/**
 !scripts/vercel-ignore.sh
 !scripts/bump-version.mjs
+!scripts/gitnexus-ci.mjs
 !scripts/lib/
+!scripts/lib/vercel-ignore.mjs
+!scripts/lib/app-paths.mjs
 !scripts/lib/app-paths.json
 
 *.md
