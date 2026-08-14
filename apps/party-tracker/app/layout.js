@@ -1,6 +1,5 @@
 import './globals.css';
 import localFont from 'next/font/local';
-import Script from 'next/script';
 import { ClerkProvider } from '@clerk/nextjs';
 import { BRAND } from '@/lib/brand';
 import { INTRO_SEEN_BOOT_SCRIPT } from '@/lib/introGate';
@@ -79,11 +78,10 @@ export default function RootLayout({ children }) {
             map+pois wastes park-wifi bandwidth for returning guests elsewhere. */}
         <link rel="preload" href="/venues/manifest.json" as="fetch" crossOrigin="anonymous" />
         <style>{`:root { --display: var(--font-display), 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }`}</style>
-        <Script
-          id="intro-seen-boot"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: INTRO_SEEN_BOOT_SCRIPT }}
-        />
+        {/* Raw tag so this runs while the parser is still in <head>. next/script
+            beforeInteractive is queued on __next_s and paints too late to hide
+            the SSR hold for returning phones. */}
+        <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_BOOT_SCRIPT }} />
       </head>
       <body>
         <ClerkProvider

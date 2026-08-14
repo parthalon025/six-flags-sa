@@ -7006,7 +7006,8 @@ await check('the boot script stamps data-intro from the same storage key the app
   assert.match(INTRO_SEEN_BOOT_SCRIPT, /data-intro/);
   const layout = fs.readFileSync(new URL('../../apps/party-tracker/app/layout.js', import.meta.url), 'utf8');
   assert.match(layout, /INTRO_SEEN_BOOT_SCRIPT/);
-  assert.match(layout, /beforeInteractive/);
+  assert.match(layout, /dangerouslySetInnerHTML/);
+  assert.doesNotMatch(layout, /beforeInteractive/);
   return true;
 });
 
