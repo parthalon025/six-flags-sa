@@ -246,5 +246,11 @@
     "items": [
       "fix: remove merge conflict markers from package.json"
     ]
+  },
+  "1.11.4": {
+    "title": "What's new",
+    "items": [
+      "fix: make map routes and labels easier to see outdoors"
+    ]
   }
 }
