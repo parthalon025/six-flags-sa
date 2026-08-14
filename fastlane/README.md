@@ -188,6 +188,8 @@ Runs on **ubuntu** — uploads `fastlane/metadata/ios/` via `bundle exec fastlan
 
 Native `android/` and `ios/` marketing versions are stamped from the same file via `npm run cap:sync` (`scripts/stamp-native-version.mjs`).
 
+Refresh listing identifier fields (name, subtitle, categories, URLs, copyright) from `fastlane/store-identifiers.json` with `npm run store:scaffold-metadata` (see `fastlane/metadata/ios/SECTIONS.md`).
+
 Trigger manually: **Actions → iOS App Store metadata → Run workflow**. Pushes to `main` that touch `fastlane/metadata/ios/**` also run this workflow.
 
 Local (any OS with Ruby):

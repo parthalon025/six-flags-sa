@@ -6,6 +6,9 @@ App Privacy answers: [APP_PRIVACY.md](./APP_PRIVACY.md)
 Paste from each file into App Store Connect, or upload with:
 
 ```bash
+# Refresh identifier-driven files from fastlane/store-identifiers.json
+npm run store:scaffold-metadata
+
 # Local (requires .env + secrets/AuthKey*.p8)
 FASTLANE_METADATA_ONLY=true bundle exec fastlane ios metadata
 
