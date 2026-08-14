@@ -432,22 +432,23 @@ export async function signIn(page, email = 'guest@parkbound.example', { keepName
     : '';
   const card = page.locator('.signInCard');
   // CI / local boxes often have no Clerk key — SignInCard stays unmounted (AuthBridge seam).
+  // ADR-0010: no email magic-link UI; Profile-gated tests must soft-assert the gate instead.
   if ((await card.count()) === 0) {
     await page.locator('.tabItem[data-tab="explore"]').click();
     await page.waitForTimeout(200);
-    return;
+    return false;
   }
   if ((await card.locator('text=Signed in').count()) > 0) {
     await page.locator('.tabItem[data-tab="explore"]').click();
     await page.waitForTimeout(200);
-    return;
+    return true;
   }
-  // Legacy email magic-link UI (optional); OAuth-only cards skip soft-gate in this harness.
+  // Legacy email magic-link UI (optional); OAuth-only cards cannot complete in this harness.
   const emailField = card.locator('input[type="email"]');
   if ((await emailField.count()) === 0) {
     await page.locator('.tabItem[data-tab="explore"]').click();
     await page.waitForTimeout(200);
-    return;
+    return false;
   }
   await emailField.fill(email);
   await card.locator('button:has-text("Email me a link")').click();
@@ -463,6 +464,20 @@ export async function signIn(page, email = 'guest@parkbound.example', { keepName
     await page.locator('.tabItem[data-tab="explore"]').click();
     await page.waitForTimeout(200);
   }
+  return true;
+}
+
+/** True when the soft-gate Profile session is present on this phone. */
+export async function hasProfileSession(page) {
+  return page.evaluate(() => {
+    try {
+      const raw = sessionStorage.getItem('parkbound.session');
+      const s = raw ? JSON.parse(raw) : null;
+      return Boolean(s?.userId);
+    } catch {
+      return false;
+    }
+  });
 }
 
 /** The roster names one phone can see, uppercased by CSS but not by the DOM. */
