@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- PARKBOUND app icon — simplified Waypoint glyph on Trail.
+       Brand sheet Image 2: home screen, store listing, notifications.
+       Full lockup (mark + wordmark + tagline) is NOT used here.
+       Full-bleed Trail so OS masks / squircle crops stay on-brand. -->
+  <rect width="512" height="512" fill="#F7F4EC"/>
+  <g transform="translate(256 256) scale(5.4) translate(-32 -32)">
+    <!-- Diamond sides with corner gaps -->
+    <path
+      d="M22 14 L32 6 L42 14 M50 22 L58 32 L50 42 M42 50 L32 58 L22 50 M14 42 L6 32 L14 22"
+      fill="none"
+      stroke="#27B8B0"
+      stroke-width="3.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"/>
+    <!-- Teal outward arrows -->
+    <path d="M32 2 L35.4 9.2 H28.6 Z" fill="#27B8B0"/>
+    <path d="M62 32 L54.8 28.6 V35.4 Z" fill="#27B8B0"/>
+    <path d="M32 62 L28.6 54.8 H35.4 Z" fill="#27B8B0"/>
+    <path d="M2 32 L9.2 35.4 V28.6 Z" fill="#27B8B0"/>
+    <!-- Orange center -->
+    <circle cx="32" cy="32" r="8" fill="#FF6B35"/>
+  </g>
+</svg>

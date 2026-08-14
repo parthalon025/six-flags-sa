@@ -1,13 +1,75 @@
-# Parkbound
+<p align="center">
+  <img src="docs/images/readme/logo.svg" alt="Parkbound app icon" width="128" height="128" />
+</p>
 
-> **Version 1.6.1**
+<h1 align="center">Parkbound</h1>
 
-**Explore more. Stress less.**
+<p align="center"><strong>Explore more. Stress less.</strong></p>
+
+<p align="center">
+  An explorer’s companion for a group at a big, crowded park — live party coordination,
+  walking trails, and a drawn park map.
+</p>
+
+<p align="center">
+  <a href="https://github.com/parthalon025/six-flags-sa/actions/workflows/test-app.yml"><img src="https://github.com/parthalon025/six-flags-sa/actions/workflows/test-app.yml/badge.svg" alt="CI status" /></a>
+  <a href="https://github.com/parthalon025/six-flags-sa/blob/main/package.json"><img src="https://img.shields.io/github/package-json/v/parthalon025/six-flags-sa" alt="Version" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/parthalon025/six-flags-sa" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/node-%3E%3D22-339933?logo=node.js&logoColor=white" alt="Node.js >= 22" />
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React 19" />
+</p>
+
+<p align="center">
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#table-of-contents">Contents</a> •
+  <a href="#get-it-running">Quick start</a> •
+  <a href="INSTALL.md">Install guide</a> •
+  <a href="docs/architecture-map.md">Architecture</a> •
+  <a href="#tests">Tests</a> •
+  <a href="#contributing">Contributing</a> •
+  <a href="#license">License</a>
+</p>
+
+<p align="center">
+  <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fparthalon025%2Fsix-flags-sa"><img src="https://vercel.com/button" alt="Deploy with Vercel" height="32" /></a>
+</p>
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/readme/map-day.png" alt="Park map in daylight with drawn SVG geometry and category markers" width="220" />
+  <img src="docs/images/readme/glance-rail.png" alt="Glance rail showing walking times to party members and nearby places" width="220" />
+  <img src="docs/images/readme/party.png" alt="Party tab with live range, bearing, and status for each member" width="220" />
+  <img src="docs/images/readme/map-night.png" alt="Night map theme for low-glare use after dark" width="220" />
+</p>
+
+<p align="center"><em>Drawn SVG maps, a glance rail with walking times, and live party coordination — Kings Island shown.</em></p>
+
+## Table of contents
+
+- [Screenshots](#screenshots)
+- [Get it running](#get-it-running)
+- [Walking directions](#walking-directions)
+- [How the party works](#how-the-party-works)
+- [API](#api)
+- [Notifications](#notifications)
+- [What a browser cannot do](#what-a-browser-cannot-do)
+- [Tests](#tests)
+- [Building a map of somewhere else](#building-a-map-of-somewhere-else)
+- [Ride entrances](#ride-entrances)
+- [A word on privacy](#a-word-on-privacy)
+- [Where the data came from](#where-the-data-came-from)
+- [Layout](#layout)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
 
 An explorer’s companion for a group at a big, crowded park. It ships with
 Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio), Cedar Point
 (Sandusky, Ohio) and Big Kahuna's (Destin, Florida), and one command — or one form under
-Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 15
+Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 16
 (App Router) and React 19.
 
 Parkbound turns a complicated park day into an adventure you can actually enjoy —
@@ -1166,4 +1228,24 @@ docs/adr/  CONTEXT.md        domain language (Matt layout)
 ```
 
 Phone-layer file names (under `apps/party-tracker/`) are in the architecture map, not restated here.
+
+## Contributing
+
+Issues and feature ideas live in [GitHub Issues](https://github.com/parthalon025/six-flags-sa/issues).
+Before opening a pull request, read the [architecture map](docs/architecture-map.md) and
+[package seams](packages/README.md). App changes that touch generated venue output must go
+through the [venue builder](packages/venue-builder/) — see `AGENTS.md` for the builder ↔ app
+contract.
+
+Screenshots in this README live under `docs/images/readme/`. Regenerate them after major UI
+changes with the dev server running:
+
+```bash
+npm run dev
+node test/app/audit-visual.mjs   # writes test/audit/*.png — copy picks into docs/images/readme/
+```
+
+## License
+
+[MIT](LICENSE) © 2026 Justin
 
