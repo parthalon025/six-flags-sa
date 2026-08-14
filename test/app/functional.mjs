@@ -402,7 +402,7 @@ await check('tapping a map icon opens place details and navigation', async () =>
     timeout: 12000,
     label: 'place detail sheet',
   });
-  const title = await a.locator('.navHead h2').innerText();
+  const title = await a.locator('.placeDetailName').innerText();
   if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
   const go = a.locator('[data-place-detail] button[aria-label="Walk me there"]');
   if (!(await go.count())) throw new Error('no navigate control on place detail');
@@ -419,7 +419,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]').click();
+  await a.locator('.poiRow.open .placeActions button[aria-label="Walk me there"]').click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -565,7 +565,7 @@ await check('return to Kings Island before walk UX coverage', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]').click();
+  await a.locator('.poiRow.open .placeActions button[aria-label="Walk me there"]').click();
   await until(async () => (await a.locator('.routePreview').count()) > 0, {
     timeout: 15000,
     label: 'beast route preview on kings island',
@@ -945,7 +945,7 @@ await check('meet-up set from a ride reaches the other phone', async () => {
   });
   await a.locator('.poiRow', { hasText: 'The Racer' }).first().locator('.poiMain').click();
   await a.waitForTimeout(500);
-  await a.locator('button:has-text("Make this the meet-up")').click();
+  await a.locator('.poiRow.open button[aria-label="Set meet-up"]').click();
   await go(a, 'Party');
   await until(async () => /Racer/i.test(await b.locator('.sheetBody').innerText()), {
     timeout: JOIN_TIMEOUT,

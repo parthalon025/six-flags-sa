@@ -276,7 +276,7 @@ for (const phone of PHONES) {
       await p.waitForTimeout(700);
       await p.locator('.poiRow .poiMain').first().click().catch(() => {});
       await p.waitForTimeout(500);
-      const walk = p.locator('button:has-text("Walk me there"), button:has-text("Go")').first();
+      const walk = p.locator('button[aria-label="Walk me there"], button:has-text("Go")').first();
       if (await walk.count()) {
         await walk.click();
         await p.waitForTimeout(2000);

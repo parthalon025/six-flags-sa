@@ -20,11 +20,12 @@ import useVoiceGuidance from '@/components/useVoiceGuidance';
 import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
-import { BRAND } from '@/lib/brand';
+import { BRAND, GLYPHS, WORDS } from '@/lib/brand';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
   SHEET_PEEK_PX,
+  SHEET_PLACE_PX,
   nextSheetStop,
   sheetCrowdsMap,
   sheetForm,
@@ -296,6 +297,12 @@ export default function Page() {
     [stops],
   );
   const shrinkSheet = useCallback((px) => setSheetPx((h) => Math.min(h, px)), []);
+  /* A map-tapped place is a collapsed Maps card, not half the screen. Set
+     rather than grow: a sheet already at peek would otherwise stay tall. */
+  const fitPlaceSheet = useCallback(
+    () => setSheetPx(Math.min(stops.full, SHEET_PLACE_PX)),
+    [stops.full],
+  );
 
   // Shared by the sheet's chips and the map's own key, which are two views of
   // the same switch.
@@ -396,9 +403,10 @@ export default function Page() {
         { tab: id, stacks: { ...cur, [id]: [...onIt, next] } },
         'fromRight',
       );
-      growSheet(stops.half);
+      if (next === 'place') fitPlaceSheet();
+      else growSheet(stops.half);
     },
-    [goForward, growSheet, stops],
+    [goForward, growSheet, fitPlaceSheet, stops],
   );
 
   /**
@@ -1904,7 +1912,6 @@ export default function Page() {
           return;
         }
         push('place', 'explore');
-        growSheet(stops.half);
         return;
       }
       setSelected(poi);
@@ -1920,15 +1927,15 @@ export default function Page() {
       };
       if (tabRef.current !== 'explore') {
         goForward({ tab: 'explore', stacks: nextStacks }, 'fromLeft');
-        growSheet(stops.half);
+        fitPlaceSheet();
       } else if (!placeOpen) {
         push('place', 'explore');
         return;
       } else {
-        growSheet(stops.half);
+        fitPlaceSheet();
       }
     },
-    [selected, dismissPlaceView, goForward, push, growSheet, stops.half],
+    [selected, dismissPlaceView, goForward, push, fitPlaceSheet],
   );
 
   const onUserPan = useCallback(() => setFollow(false), []);
@@ -2009,7 +2016,7 @@ export default function Page() {
     ];
     // Height rules only exist where a venue publishes them, so neither does the
     // Plan tab that reads them (itinerary + rider height).
-    if (heights) out.push({ id: 'rides', label: 'Plan', icon: 'figure.rollercoaster' });
+    if (heights) out.push({ id: 'rides', label: 'Plan', icon: GLYPHS.plan });
     // Once there is a name, the tab wears it. "Guest" is the placeholder
     // nobody typed, and "GU" on a tab is not a person — so that one keeps the
     // Me glyph until the visitor says who they are.
@@ -2251,9 +2258,9 @@ export default function Page() {
                 showToast('Tap the map to drop the meet-up point');
               }
             }}
-            aria-label="Set meet-up"
+            aria-label={WORDS.meetup}
           >
-            <Icon name="mappin.and.ellipse" />
+            <Icon name={GLYPHS.meetup} />
           </button>
         )}
         {/* Panning away during a walk parks the camera where you left it, and
@@ -2365,10 +2372,10 @@ export default function Page() {
           data-motion={motion}
         >
           {view ? (
-            <header className="navHead">
-              <button type="button" className="navBack" onClick={pop}>
+            <header className={`navHead${view === 'place' ? ' placeNav' : ''}`}>
+              <button type="button" className="navBack" onClick={pop} aria-label="Back">
                 <Icon name="chevron.left" size={19} />
-                Back
+                {view === 'place' ? null : 'Back'}
               </button>
               <h2>{view === 'place' && selected?.n ? selected.n : VIEW_TITLES[view] || ''}</h2>
               <span className="navHeadPad" aria-hidden="true" />
