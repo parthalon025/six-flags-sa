@@ -7,7 +7,7 @@ This document is for whoever picks that up. It states what is already done, the
 two things standing in the way, a design for the one that is solvable, and —
 importantly — the network conditions under which this genuinely cannot work.
 
-Read `README.md` first for the architecture. This assumes it.
+Read [docs/guide/index.md](guide/index.md) and [architecture-map.md](architecture-map.md) first. This assumes them.
 
 ---
 
