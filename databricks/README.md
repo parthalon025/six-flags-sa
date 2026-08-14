@@ -59,3 +59,14 @@ npm run consolidate:export  # dry-run consolidate from exported queue
 - `DATABRICKS_TOKEN` — LLM batch job (or use workspace default)
 
 Never commit tokens. See root `.env.example`.
+
+## Cloud e2e (fixture mode, per-run cost)
+
+Dev target uses catalog `workspace` and bundled fixtures — no Neon or live API required.
+
+```bash
+npm run databricks:e2e              # all four jobs
+npm run databricks:e2e -- --skip-llm  # ingest + consolidate + guest traces only
+```
+
+Jobs route through `src/parkbound_job.py` (serverless-safe entry point). LLM job dry-runs when `DATABRICKS_TOKEN` is unset; set a Databricks secret scope before expecting live model calls.

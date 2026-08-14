@@ -8,9 +8,13 @@ import os
 import sys
 import urllib.request
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from common import ensure_schemas, parse_args, utc_now_iso
+from common import (
+    bundle_files_root,
+    ensure_schemas,
+    fixture_mode,
+    parse_args,
+    utc_now_iso,
+)
 
 
 def fetch_geojson(base: str, venue_id: str, token: str) -> dict:
@@ -20,23 +24,16 @@ def fetch_geojson(base: str, venue_id: str, token: str) -> dict:
         return json.loads(res.read().decode("utf-8"))
 
 
-def main() -> None:
-    args = parse_args({
-        "--app-base": {"default": os.environ.get("PARKBOUND_API_BASE", "")},
-        "--venue": {"default": "kings-island"},
-    })
-    token = os.environ.get("GUEST_TRACES_TOKEN") or os.environ.get("METRICS_TOKEN")
-    if not args.app_base or not token:
-        raise RuntimeError("PARKBOUND_API_BASE and GUEST_TRACES_TOKEN required")
+def load_fixture_geojson(venue_id: str) -> dict:
+    path = os.path.join(bundle_files_root(), "fixtures", "sample-traces.geojson")
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
 
-    from pyspark.sql import SparkSession
+
+def write_traces(spark, catalog: str, venue_id: str, collection: dict) -> None:
     from pyspark.sql import functions as F
     from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
-    spark = SparkSession.builder.appName("parkbound-ingest-guest-traces").getOrCreate()
-    ensure_schemas(spark, args.catalog)
-
-    collection = fetch_geojson(args.app_base, args.venue, token)
     ingested_at = utc_now_iso()
     rows = []
     for feature in collection.get("features") or []:
@@ -48,7 +45,7 @@ def main() -> None:
         mid = coords[len(coords) // 2]
         rows.append(
             {
-                "venue_id": args.venue,
+                "venue_id": venue_id,
                 "session_id": props.get("sessionId"),
                 "source": props.get("source") or "parkbound_guest_movement",
                 "metres": props.get("metres"),
@@ -72,12 +69,37 @@ def main() -> None:
         ]
     )
     df = spark.createDataFrame(rows, schema=schema)
-    df.write.format("delta").mode("append").saveAsTable(
-        f"{args.catalog}.bronze.guest_traces_raw"
+    df.write.format("delta").mode("overwrite").saveAsTable(
+        f"{catalog}.bronze.guest_traces_raw"
     )
     df.write.format("delta").mode("overwrite").saveAsTable(
-        f"{args.catalog}.silver.guest_trace_segments"
+        f"{catalog}.silver.guest_trace_segments"
     )
+    print(f"Ingested {len(rows)} trace segments for {venue_id}")
+
+
+def main() -> None:
+    args = parse_args({
+        "--app-base": {"default": os.environ.get("PARKBOUND_API_BASE", "")},
+        "--venue": {"default": "kings-island"},
+    })
+
+    from pyspark.sql import SparkSession
+
+    spark = SparkSession.builder.appName("parkbound-ingest-guest-traces").getOrCreate()
+    ensure_schemas(spark, args.catalog)
+
+    if fixture_mode(args.catalog):
+        collection = load_fixture_geojson(args.venue)
+        write_traces(spark, args.catalog, args.venue, collection)
+        return
+
+    token = os.environ.get("GUEST_TRACES_TOKEN") or os.environ.get("METRICS_TOKEN")
+    if not args.app_base or not token:
+        raise RuntimeError("PARKBOUND_API_BASE and GUEST_TRACES_TOKEN required")
+
+    collection = fetch_geojson(args.app_base, args.venue, token)
+    write_traces(spark, args.catalog, args.venue, collection)
 
 
 if __name__ == "__main__":

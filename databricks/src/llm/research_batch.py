@@ -11,9 +11,13 @@ import os
 import sys
 import urllib.request
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from common import ensure_schemas, parse_args, sha256_text, utc_now_iso
+from common import (
+    bundle_files_root,
+    ensure_schemas,
+    parse_args,
+    sha256_text,
+    utc_now_iso,
+)
 
 
 SYSTEM = """You assist with theme-park venue research for an open-source map builder.
@@ -78,14 +82,20 @@ def main() -> None:
         "--venue": {"default": "kings-island"},
         "--model": {"default": os.environ.get("VENUE_LLM_MODEL", "databricks-meta-llama-3-1-8b-instruct")},
         "--summary-json": {"default": ""},
+        "--databricks-host": {"default": ""},
+        "--databricks-token": {"default": ""},
     })
+    if args.databricks_host:
+        os.environ["DATABRICKS_HOST"] = args.databricks_host
+    if args.databricks_token:
+        os.environ["DATABRICKS_TOKEN"] = args.databricks_token
     from pyspark.sql import SparkSession
 
     spark = SparkSession.builder.appName("parkbound-llm-research").getOrCreate()
     ensure_schemas(spark, args.catalog)
 
     summary_path = args.summary_json or os.path.join(
-        os.path.dirname(__file__), "..", "..", "fixtures", f"{args.venue}-summary.json"
+        bundle_files_root(), "fixtures", f"{args.venue}-summary.json"
     )
     if os.path.isfile(summary_path):
         with open(summary_path, encoding="utf-8") as fh:
@@ -112,6 +122,10 @@ def main() -> None:
         print("DATABRICKS_HOST not set — skipping LLM call (dev dry-run)")
         response_json = {"skipped": True, "venueId": args.venue, "summary": summary}
         usage = {}
+    elif not (os.environ.get("DATABRICKS_TOKEN") or os.environ.get("VENUE_LLM_API_KEY")):
+        print("DATABRICKS_TOKEN not set — skipping LLM call (dev dry-run)")
+        response_json = {"skipped": True, "venueId": args.venue, "summary": summary}
+        usage = {}
     else:
         text, usage = databricks_chat(prompt, args.model)
         response_json = {
@@ -128,8 +142,8 @@ def main() -> None:
                 "prompt_hash": prompt_hash,
                 "model": args.model,
                 "response_json": json.dumps(response_json),
-                "prompt_tokens": usage.get("prompt_tokens"),
-                "completion_tokens": usage.get("completion_tokens"),
+                "prompt_tokens": int(usage.get("prompt_tokens") or 0),
+                "completion_tokens": int(usage.get("completion_tokens") or 0),
                 "created_at": utc_now_iso(),
             }
         ]

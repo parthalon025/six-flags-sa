@@ -12,9 +12,7 @@ import os
 import sys
 from collections import defaultdict
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
-from common import ensure_schemas, parse_args, utc_now_iso
+from common import ensure_schemas, parse_args, utc_now_iso, bundle_files_root
 
 
 def dist_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
@@ -113,7 +111,11 @@ def main() -> None:
 
     path_coords = []
     if args.paths_json and os.path.isfile(args.paths_json):
-        with open(args.paths_json, encoding="utf-8") as fh:
+        paths_file = args.paths_json
+    else:
+        paths_file = os.path.join(bundle_files_root(), "fixtures", "sample-paths.geojson")
+    if os.path.isfile(paths_file):
+        with open(paths_file, encoding="utf-8") as fh:
             data = json.load(fh)
             for f in data.get("features") or []:
                 g = f.get("geometry") or {}

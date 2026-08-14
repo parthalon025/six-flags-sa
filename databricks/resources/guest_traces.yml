@@ -14,8 +14,10 @@ resources:
         - task_key: cluster_traces
           environment_key: default
           spark_python_task:
-            python_file: ../src/transform/guest_trace_cluster.py
+            python_file: ../src/parkbound_job.py
             parameters:
+              - --module
+              - transform.guest_trace_cluster
               - --catalog
               - ${var.catalog}
               - --venue
@@ -27,8 +29,10 @@ resources:
             - task_key: cluster_traces
           environment_key: default
           spark_python_task:
-            python_file: ../src/export/write_sidecars.py
+            python_file: ../src/parkbound_job.py
             parameters:
+              - --module
+              - export.write_sidecars
               - --catalog
               - ${var.catalog}
               - --kind

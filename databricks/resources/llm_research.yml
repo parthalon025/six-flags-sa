@@ -6,6 +6,11 @@ resources:
       schedule:
         quartz_cron_expression: "0 0 5 * * ?"
         timezone_id: UTC
+      parameters:
+        - name: databricks_host
+          default: ${var.databricks_host}
+        - name: databricks_token
+          default: ${var.databricks_token}
       environments:
         - environment_key: default
           spec:
@@ -14,9 +19,15 @@ resources:
         - task_key: research_batch
           environment_key: default
           spark_python_task:
-            python_file: ../src/llm/research_batch.py
+            python_file: ../src/parkbound_job.py
             parameters:
+              - --module
+              - llm.research_batch
               - --catalog
               - ${var.catalog}
               - --venue
               - kings-island
+              - --databricks-host
+              - "{{job.parameters.databricks_host}}"
+              - --databricks-token
+              - "{{job.parameters.databricks_token}}"

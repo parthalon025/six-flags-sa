@@ -17,6 +17,15 @@ variables:
   guest_traces_token:
     description: GUEST_TRACES_TOKEN for operator export
     default: ""
+  e2e_fixtures:
+    description: Use bundled fixtures instead of Postgres/API (cloud e2e)
+    default: "0"
+  databricks_host:
+    description: Workspace host for LLM serving
+    default: ""
+  databricks_token:
+    description: PAT for LLM job (dev — prefer secrets scope in prod)
+    default: ""
 
 include:
   - resources/ingest.yml
@@ -30,6 +39,8 @@ targets:
     default: true
     variables:
       catalog: workspace
+      e2e_fixtures: "1"
+      databricks_host: "https://dbc-e989baa1-6212.cloud.databricks.com"
     # Free tier: job definitions deploy; schedules stay PAUSED until you opt in.
     resources:
       jobs:

@@ -8,8 +8,6 @@ import os
 import sys
 import uuid
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
 from common import ensure_schemas, parse_args, utc_now_iso
 
 
