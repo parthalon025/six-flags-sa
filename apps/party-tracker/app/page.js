@@ -242,9 +242,6 @@ export default function Page() {
   const [introSeen, setIntroSeen] = useState(null);
   /** Session-only — the logo splash yields to the welcome gate without marking intro seen. */
   const [logoSplashDismissed, setLogoSplashDismissed] = useState(false);
-  const showIntroSplash = introSeen === false && !logoSplashDismissed;
-  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
-  const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
   const introOverlay = firstRunOverlay({ introSeen, logoSplashDismissed });
   /** Stay opaque for the whole first-run intake — flipping this when they tap
    *  nearest-park would re-attach fadeIn and flash the map through the gate. */
