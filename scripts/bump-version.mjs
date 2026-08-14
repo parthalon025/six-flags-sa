@@ -136,6 +136,18 @@ const inject = spawnSync('node', ['scripts/inject-version.mjs'], {
 });
 if (inject.status !== 0) process.exit(inject.status ?? 1);
 
+const readmePath = path.join(root, 'README.md');
+if (fs.existsSync(readmePath)) {
+  const readme = fs.readFileSync(readmePath, 'utf8');
+  const updated = readme.replace(
+    /^> \*\*Version [\d.]+\*\*/m,
+    `> **Version ${to}**`,
+  );
+  if (updated !== readme) {
+    fs.writeFileSync(readmePath, updated);
+  }
+}
+
 emitBumped(from, to);
 
 function sanitizeNote(raw) {
