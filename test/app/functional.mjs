@@ -882,10 +882,17 @@ await check('the party has a hex id distinct from its code', () => {
   return true;
 });
 
-// Share / copy invite — label is "Send invite" (native share with clipboard fallback).
-await a.locator('.codeBox button:has-text("Send invite")').click();
-await a.waitForTimeout(400);
-invite = await a.evaluate(() => navigator.clipboard.readText());
+// Build the invite the same way PartyRuntime does. Do not click "Send invite" in
+// headless CI — navigator.share / share sheets can hang even when stubbed.
+const { encodeInvite } = await import('../../apps/party-tracker/lib/core/session.js');
+invite = encodeInvite(session, { origin: BASE });
+
+await check('Send invite is offered on the party code card', async () => {
+  if ((await a.locator('.codeBox button:has-text("Send invite")').count()) < 1) {
+    throw new Error('Send invite missing');
+  }
+  return true;
+});
 
 await check('the invite is a /join link with everything after the hash', async () => {
   if (!invite.startsWith(`${BASE}/join#`)) throw new Error(invite.slice(0, 80));
