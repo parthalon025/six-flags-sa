@@ -1,12 +1,12 @@
 ---
-description: GitNexus index is session-local on branches and refreshed on main after merge — never in feature PRs.
+description: GitNexus index is session-local and gitignored — never commit it.
 alwaysApply: true
 ---
 
-# GitNexus index — off the PR path
+# GitNexus index — not on GitHub
 
-The `.gitnexus/` graph is **committed** on `main` so agents have a starting index.
-Refresh it the same way as app semver: **after merge**, not in the feature PR.
+The `.gitnexus/` graph is **session-local** (gitignored). Do not commit it, and
+do not commit GitNexus-generated hunks in `AGENTS.md` / `CLAUDE.md`.
 
 ## On start
 
@@ -17,29 +17,17 @@ substantive session:
 npm run gitnexus:startup
 ```
 
-That may dirty `.gitnexus/`, `AGENTS.md`, and `CLAUDE.md`. Leave those changes
-unstaged. Query the graph while you work; do not commit it.
+That rebuilds `.gitnexus/` on disk. Query the graph while you work.
 
 ## Feature PRs
 
-Stage task files only. Leave these out of the commit (restore them if startup
-dirtied them):
-
-- `.gitnexus/`
-- GitNexus-generated hunks in `AGENTS.md` and `CLAUDE.md` (`<!-- gitnexus:start -->` … `<!-- gitnexus:end -->`)
-
-On rebase/merge conflicts in those paths, **keep `main`'s side**.
-
-## After merge
-
-`.github/workflows/bump-version.yml` runs `node scripts/gitnexus-sync.mjs finish --commit`
-after the version bump. Manual retry: Actions → “Refresh GitNexus index”.
+Stage task files only. Leave `.gitnexus/` out (it should not appear in `git status`
+as a tracked path). If analyze dirtied `AGENTS.md` / `CLAUDE.md`, restore them.
 
 ## Manual commands
 
 | Command | Purpose |
 |---------|---------|
-| `node .gitnexus/run.cjs status` | Check freshness |
-| `node .gitnexus/run.cjs analyze` | Rebuild index only (session-local) |
-| `npm run gitnexus:startup` | Start-of-work sync (do not commit) |
-| `node scripts/gitnexus-sync.mjs finish --commit` | Post-merge / CI only |
+| `npm run gitnexus:startup` | Rebuild the session-local index |
+| `node .gitnexus/run.cjs status` | Check freshness (after startup) |
+| `node .gitnexus/run.cjs analyze` | Rebuild index only |

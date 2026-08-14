@@ -23,8 +23,7 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Stamp app version on dev/build | `apps/party-tracker/scripts/inject-version.mjs` (`predev` / `prebuild`) |
 | Bump semver after merge to `main` | `.github/workflows/bump-version.yml` → `scripts/bump-version.mjs` |
 | Regenerate venue output | `npm run venues:build` / `venues:rebuild` (see builder-app-contract rule) |
-| Refresh GitNexus index on `main` | `.github/workflows/bump-version.yml` → `scripts/gitnexus-sync.mjs finish --commit` |
-| Session GitNexus graph | `npm run gitnexus:startup` (do not commit; see gitnexus-sync rule) |
+| Session GitNexus graph | `npm run gitnexus:startup` (gitignored; see gitnexus-sync rule) |
 | Isolate agent work in a git worktree | `npm run worktree:create` / `worktree:remove` / `worktree:prune` (`scripts/worktree.mjs`; also deletes leftover `worktree-*` branches) |
 | Install Matt Pocock skills globally | `node scripts/install-global-skills.mjs` (Cloud `install` in `.cursor/environment.json`) |
 | Package entry points | [packages/README.md](../../packages/README.md) |

@@ -79,6 +79,15 @@ assert.equal(
 );
 assert.equal(shouldAmendGitnexusIntoBump({}), false);
 
+const sync = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../scripts/gitnexus-sync.mjs'), 'utf8');
+assert.doesNotMatch(sync, /git add -f \.gitnexus/, 'must not stage .gitnexus for commit');
+assert.match(sync, /--commit is ignored/, 'legacy --commit must not write the index');
+assert.match(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../.gitignore'), 'utf8'),
+  /^\.gitnexus\/$/m,
+  '.gitnexus/ must be gitignored',
+);
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const tmp = mkdtempSync(join(tmpdir(), 'gitnexus-ci-'));
 const skipOut = join(tmp, 'skip');
