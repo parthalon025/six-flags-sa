@@ -164,11 +164,11 @@ export const FIXTURES = {
  * in-party Ride reports. Contributions, gap Side Quest submit, park-wide
  * Observation / Overlay, and cross-day Plan sync need a Profile.
  * @param {string | null | undefined} userId
- * @param {'party'|'contribute'|'adventure'|'planner'|'ride-report'} action
+ * @param {'party'|'contribute'|'adventure'|'planner'|'ride-report'|'world'} action
  */
 export function requiresSignedIn(userId, action) {
   if (action === 'ride-report' || action === 'party' || action === 'browse') return false;
-  const gated = new Set(['contribute', 'adventure', 'planner']);
+  const gated = new Set(['contribute', 'adventure', 'planner', 'world']);
   if (!gated.has(action)) return false;
   return !userId;
 }

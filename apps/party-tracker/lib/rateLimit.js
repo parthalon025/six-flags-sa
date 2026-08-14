@@ -52,6 +52,8 @@ export const LIMITS = {
   // Cloud REST heartbeats / location patches — keyed by party. Generous for a
   // walking party of six; stops a runaway client rewriting Redis every tick.
   partyMutate: { limit: 600, windowMs: 60 * 1000 },
+  // Marks / Thanks at a Place. Keyed by IP, generous for park wifi NAT.
+  worldMark: { limit: 240, windowMs: 60 * 60 * 1000 },
 };
 
 const mem =

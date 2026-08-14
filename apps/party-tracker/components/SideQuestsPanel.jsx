@@ -56,6 +56,7 @@ export default function SideQuestsPanel({
   session = null,
   onSession = null,
   onRideReport = null,
+  onWorldProgress = null,
 }) {
   const queue = defaultQuestQueue();
   const gapNeedsAuth = softGateBlocks('adventure', session);
@@ -219,6 +220,7 @@ export default function SideQuestsPanel({
     }
     const nextSession = readLocalSession();
     if (nextSession) onSession?.(nextSession);
+    onWorldProgress?.({ quest, report });
     setOpenQuestId(null);
     setLastSubmittedId(report.id);
   }
