@@ -11,6 +11,8 @@ fastlane/
 ├── metadata/
 │   ├── ios/en-US/               # App Store listing copy
 │   └── android/en-US/           # Play Store listing copy
+├── app_previews/
+│   └── en-US/                   # App Store preview videos (`npm run store:app-preview`)
 └── screenshots/
     ├── ios/                     # App Store screenshots (add per device)
     └── android/                 # Play Store screenshots (add per device)
@@ -160,14 +162,15 @@ Add per-release Android changelogs at:
 fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
 ```
 
-Generate listing art and screenshots (no paid accounts):
+Generate listing art, screenshots, and the iPhone App Preview (no paid accounts):
 
 ```bash
 npm run store:icons
 npm run store:screenshots
+npm run store:app-preview
 ```
 
-Glance at the PNGs, then set `IOS_SKIP_SCREENSHOTS=false`, `ANDROID_SKIP_SCREENSHOTS=false`, and `ANDROID_SKIP_IMAGES=false`. Paste `fastlane/store-declarations.json` into App Store privacy nutrition and Play Data safety.
+Glance at the PNGs, then set `IOS_SKIP_SCREENSHOTS=false`, `ANDROID_SKIP_SCREENSHOTS=false`, and `ANDROID_SKIP_IMAGES=false`. Preview videos upload with metadata even when screenshots are skipped — `app_previews_path` in the Fastfile. Paste `fastlane/store-declarations.json` into App Store privacy nutrition and Play Data safety.
 
 ### Push metadata from GitHub (no Mac)
 
@@ -191,7 +194,7 @@ Native `android/` and `ios/` marketing versions are stamped from the same file v
 
 Refresh listing identifier fields (name, subtitle, categories, URLs, copyright) from `fastlane/store-identifiers.json` with `npm run store:scaffold-metadata` (see `fastlane/metadata/ios/SECTIONS.md`).
 
-Trigger manually: **Actions → iOS App Store metadata → Run workflow**. Pushes to `main` that touch `fastlane/metadata/ios/**` also run this workflow.
+Trigger manually: **Actions → iOS App Store metadata → Run workflow**. Pushes to `main` that touch `fastlane/metadata/ios/**` or `fastlane/app_previews/**` also run this workflow.
 
 Local (any OS with Ruby):
 

@@ -2,4 +2,5 @@
 
 source "https://rubygems.org"
 
-gem "fastlane", "~> 2.227"
+# 2.233+ uploads App Preview videos via deliver `app_previews_path`.
+gem "fastlane", "~> 2.233"

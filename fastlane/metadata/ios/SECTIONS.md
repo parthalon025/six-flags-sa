@@ -35,12 +35,14 @@ FASTLANE_METADATA_ONLY=true bundle exec fastlane ios metadata
 | **App Review → First Name** | text | `review_information/first_name.txt` |
 | **App Review → Last Name** | text | `review_information/last_name.txt` |
 | **App Review → Phone** | E.164 | `review_information/phone_number.txt` (add file when ready) |
+| **Version → App Preview** | 15–30s, 886×1920 | `../../app_previews/en-US/IPHONE_67_family-day.mp4` (`npm run store:app-preview`) |
 
 Identifiers (SKU, bundle ID, Apple ID, team) live in `fastlane/store-identifiers.json` — set in Connect when creating the app, not via these text files.
 
 ## Not in metadata files (Connect UI only)
 
 - Screenshots → `fastlane/screenshots/ios/` (set `IOS_SKIP_SCREENSHOTS=false` to upload)
+- App Preview → `fastlane/app_previews/en-US/` (uploads with the metadata workflow; Apple adds the device frame — do not encode a bezel)
 - App Privacy questionnaire → use `APP_PRIVACY.md`
 - Pricing (Free) and availability
 - Review contact phone (add `review_information/phone_number.txt` or Connect UI)

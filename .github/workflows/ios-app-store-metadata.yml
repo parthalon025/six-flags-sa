@@ -1,8 +1,8 @@
 name: iOS App Store metadata
 
-# Upload listing copy to App Store Connect via fastlane deliver — no Xcode build.
-# Runs on ubuntu (API-only). Add GitHub secrets (see fastlane/README.md), then:
-#   Actions → iOS App Store metadata → Run workflow
+# Upload listing copy and App Preview videos to App Store Connect via fastlane
+# deliver — no Xcode build. Runs on ubuntu (API-only). Add GitHub secrets
+# (see fastlane/README.md), then: Actions → iOS App Store metadata → Run workflow
 
 on:
   workflow_dispatch:
@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - "fastlane/metadata/ios/**"
+      - "fastlane/app_previews/**"
       - "fastlane/Fastfile"
       - "Gemfile"
       - ".github/workflows/ios-app-store-metadata.yml"

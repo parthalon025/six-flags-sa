@@ -222,6 +222,9 @@ platform :ios do
       ),
       metadata_path: File.expand_path(File.join("fastlane", "metadata", "ios"), repo_root),
       screenshots_path: File.expand_path(File.join("fastlane", "screenshots", "ios"), repo_root),
+      app_previews_path: File.expand_path(File.join("fastlane", "app_previews"), repo_root),
+      preview_frame_time_code: ENV.fetch("IOS_PREVIEW_FRAME_TIME_CODE", "00:00:05:00"),
+      overwrite_preview_videos: ENV.fetch("IOS_OVERWRITE_PREVIEWS", "true") == "true",
       submission_information: {
         add_id_info_uses_idfa: false,
         export_compliance_uses_encryption: true,
@@ -303,6 +306,9 @@ platform :ios do
       precheck_include_in_app_purchases: false,
       metadata_path: File.join(__dir__, "metadata", "ios"),
       screenshots_path: File.join(__dir__, "screenshots", "ios"),
+      app_previews_path: File.expand_path(File.join("fastlane", "app_previews"), repo_root),
+      preview_frame_time_code: ENV.fetch("IOS_PREVIEW_FRAME_TIME_CODE", "00:00:05:00"),
+      overwrite_preview_videos: ENV.fetch("IOS_OVERWRITE_PREVIEWS", "true") == "true",
       submission_information: {
         add_id_info_uses_idfa: false
       }
