@@ -65,6 +65,7 @@ import { useAuth } from '@clerk/nextjs';
 import AuthBridge from '@/components/AuthBridge';
 import AuthGate from '@/components/AuthGate';
 import { clearGuestChoice, markGuestChoice, readGuestChoice } from '@/lib/auth/guestChoice';
+import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
@@ -212,6 +213,19 @@ const REROUTE_M = 12;
 const OFF_ROUTE_M = 32;
 
 export default function Page() {
+  // Match AuthBridge / layout: without a publishable key there is no provider.
+  if (!clerkBrowserConfigured()) {
+    return <ParkApp clerkLoaded isSignedIn={false} />;
+  }
+  return <PageWithClerk />;
+}
+
+function PageWithClerk() {
+  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
+  return <ParkApp clerkLoaded={clerkLoaded} isSignedIn={Boolean(isSignedIn)} />;
+}
+
+function ParkApp({ clerkLoaded, isSignedIn }) {
   const geo = useGeolocation();
   const { position, heading, shouldBroadcast } = geo;
     const {
@@ -242,9 +256,6 @@ export default function Page() {
   const [introSeen, setIntroSeen] = useState(null);
   /** Session-only — the logo splash yields to the welcome gate without marking intro seen. */
   const [logoSplashDismissed, setLogoSplashDismissed] = useState(false);
-  const showIntroSplash = introSeen === false && !logoSplashDismissed;
-  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
-  const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
   const introOverlay = firstRunOverlay({ introSeen, logoSplashDismissed });
   /** Stay opaque for the whole first-run intake — flipping this when they tap
    *  nearest-park would re-attach fadeIn and flash the map through the gate. */
@@ -260,7 +271,6 @@ export default function Page() {
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
   const [authSession, setAuthSession] = useState(null);
-  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
   /** Session-only guest bypass for the startup auth gate. */
   const [guestMode, setGuestMode] = useState(false);
   const [managedGuests, setManagedGuests] = useState([]);
@@ -738,8 +748,8 @@ export default function Page() {
     if (isSignedIn) clearGuestChoice();
   }, [isSignedIn]);
 
-  const pastAuthGate = isSignedIn || guestMode;
-  const showAuthGate = clerkLoaded && !isSignedIn && !guestMode;
+  const pastAuthGate = isSignedIn || guestMode || !clerkBrowserConfigured();
+  const showAuthGate = clerkBrowserConfigured() && clerkLoaded && !isSignedIn && !guestMode;
   const showIntroSplash = pastAuthGate && introSeen === false && !logoSplashDismissed;
   /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
   const showWelcomeGate = pastAuthGate && introSeen === false && logoSplashDismissed && !nearestIntent;

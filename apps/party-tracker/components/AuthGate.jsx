@@ -9,7 +9,12 @@ import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
  * First screen when the app opens without a Profile — sign in (Google / Apple)
  * or continue as a guest. Map and Party stay name-first after guest continues.
  */
-export default function AuthGate({ onGuest = null }) {
+export default function AuthGate(props) {
+  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) return null;
+  return <AuthGateLive {...props} />;
+}
+
+function AuthGateLive({ onGuest = null }) {
   const { isLoaded, signIn } = useSignIn();
   const [busy, setBusy] = useState(null);
   const [err, setErr] = useState(null);

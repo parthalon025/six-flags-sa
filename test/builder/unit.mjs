@@ -7093,7 +7093,9 @@ await check('the boot script stamps data-intro from the same storage key the app
   return true;
 });
 
-const { clerkConfigured } = await import('../../apps/party-tracker/lib/clerkConfigured.js');
+const { clerkBrowserConfigured, clerkConfigured } = await import(
+  '../../apps/party-tracker/lib/clerkConfigured.js'
+);
 
 await check('Clerk stays off when the API keys are not on this box', () => {
   const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -7101,6 +7103,24 @@ await check('Clerk stays off when the API keys are not on this box', () => {
   delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   delete process.env.CLERK_SECRET_KEY;
   try {
+    assert.equal(clerkConfigured(), false);
+    assert.equal(clerkBrowserConfigured(), false);
+  } finally {
+    if (prevPub == null) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = prevPub;
+    if (prevSec == null) delete process.env.CLERK_SECRET_KEY;
+    else process.env.CLERK_SECRET_KEY = prevSec;
+  }
+  return true;
+});
+
+await check('Clerk provider can mount with only the publishable key', () => {
+  const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const prevSec = process.env.CLERK_SECRET_KEY;
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_ci';
+  delete process.env.CLERK_SECRET_KEY;
+  try {
+    assert.equal(clerkBrowserConfigured(), true);
     assert.equal(clerkConfigured(), false);
   } finally {
     if (prevPub == null) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;

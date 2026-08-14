@@ -3,7 +3,7 @@ import localFont from 'next/font/local';
 import { ClerkProvider } from '@clerk/nextjs';
 import { clerkAppearance } from '@/lib/auth/clerkAppearance';
 import { BRAND } from '@/lib/brand';
-import { clerkConfigured } from '@/lib/clerkConfigured';
+import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 import { INTRO_SEEN_BOOT_SCRIPT } from '@/lib/introGate';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -80,13 +80,13 @@ export default function RootLayout({ children }) {
             map+pois wastes park-wifi bandwidth for returning guests elsewhere. */}
         <link rel="preload" href="/venues/manifest.json" as="fetch" crossOrigin="anonymous" />
         <style>{`:root { --display: var(--font-display), 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }`}</style>
-        {/* Raw tag so this runs while the parser is still in <head>. next/script
-            beforeInteractive is queued on __next_s and paints too late to hide
+        {/* Raw tag so this runs while the parser is still in <head>. A next/script
+            early-load strategy is queued on __next_s and paints too late to hide
             the SSR hold for returning phones. */}
         <script dangerouslySetInnerHTML={{ __html: INTRO_SEEN_BOOT_SCRIPT }} />
       </head>
       <body>
-        {clerkConfigured() ? (
+        {clerkBrowserConfigured() ? (
           <ClerkProvider
             signInUrl="/sign-in"
             signUpUrl="/sign-up"
