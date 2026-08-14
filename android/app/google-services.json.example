@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "0",
+    "project_id": "REPLACE_AFTER_FIREBASE",
+    "storage_bucket": "REPLACE_AFTER_FIREBASE.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:0:android:0",
+        "android_client_info": {
+          "package_name": "ai.kurat0r.parkbound"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "REPLACE_AFTER_FIREBASE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

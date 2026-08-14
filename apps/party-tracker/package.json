@@ -1,6 +1,6 @@
 {
   "name": "@party-tracker/app",
-  "version": "1.6.2",
+  "version": "1.11.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -19,10 +19,12 @@
     "dev:all": "node server/index.mjs & next dev"
   },
   "dependencies": {
-    "@party-tracker/shared": "1.6.2",
+    "@clerk/nextjs": "^7.7.5",
+    "@party-tracker/shared": "1.11.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "next": "^16.3.0",
+    "pg": "^8.16.3",
     "qrcode": "^1.5.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

@@ -14,6 +14,7 @@ scripts/                Repo automation (version bump, worktrees, GitNexus) — 
 test/app/               Playwright behavioural suites (functional, grandma, validate-ui, visual)
 test/builder/           Node unit tests + manifest compare suite
 docs/adr/  CONTEXT.md   Domain language (Matt layout)
+ios/ android/ fastlane/ Store shells — see [fastlane/README.md](../fastlane/README.md)
 ```
 
 ## Commands

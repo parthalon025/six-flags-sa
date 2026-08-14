@@ -1,11 +1,28 @@
-Parkbound is an explorer’s companion for a group at a big, crowded park.
+Your park day, less complicated.
 
-• Drawn park map — real geometry painted as SVG, not generic map tiles
-• Live party tracking — share location with your group via QR, link, or code
-• Walking directions — trails and walking times to rides, restrooms, and food
-• Height requirements — see at a glance which rides work for your group
-• Works offline — maps and core features after the first visit
+Park Bound gives you a detailed map built for the park you are visiting. Find rides, food, restrooms, and the paths that get you there.
 
-Ships with Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna's. Build a map of anywhere OpenStreetMap covers.
+FIND WHAT YOU NEED
+• See nearby rides, food, and restrooms
+• Search the map and follow park paths
+• Keep using the map offline after your first visit
 
-Explore more. Stress less.
+PLAN FOR EVERY RIDER
+• Choose a rider height to see which rides work for them
+• Build a shared Plan for the day
+• Check ride details before you walk across the park
+
+STAY WITH YOUR GROUP
+• Start a Party with a QR code, link, or six-character code
+• When you join a Party, everyone shares their location inside the park so the group can find each other
+• Set a Meet for when it is time to regroup
+• Share ride updates with your Party
+
+HELP MAKE THE MAP BETTER
+Side Quests let you confirm things only a visitor can see: a height sign, a missing restroom, or a path. Your updates help improve future visits.
+
+Start as a guest — no sign-in is needed to explore the map or join a Party. Sign in with Apple or Google when you want to save your progress and family rider details.
+
+Available now: Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s.
+
+Park Bound is free to download. Explore more. Stress less.

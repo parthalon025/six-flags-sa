@@ -1,0 +1,7 @@
+{
+  "poiCount": 312,
+  "onlyOnSite": ["WindSeeker", "Adventure Express"],
+  "onlyOnApi": ["Snoopy's Barnyard Friends"],
+  "inventoryGaps": [{ "name": "Mystery Coaster", "note": "On official site, not in bundle" }],
+  "parkMapRequired": true
+}

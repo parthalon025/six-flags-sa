@@ -49,9 +49,12 @@ export const LIMITS = {
   // Guest walk uploads — keyed by IP, generous for park wifi NAT, still caps
   // a runaway client dumping fabricated LineStrings into the research queue.
   guestTraceUpload: { limit: 120, windowMs: 60 * 60 * 1000 },
+  contributionPost: { limit: 60, windowMs: 60 * 60 * 1000 },
   // Cloud REST heartbeats / location patches — keyed by party. Generous for a
   // walking party of six; stops a runaway client rewriting Redis every tick.
   partyMutate: { limit: 600, windowMs: 60 * 1000 },
+  // Marks / Thanks at a Place. Keyed by IP, generous for park wifi NAT.
+  worldMark: { limit: 240, windowMs: 60 * 60 * 1000 },
 };
 
 const mem =

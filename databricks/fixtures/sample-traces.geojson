@@ -1,0 +1,21 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "source": "parkbound_guest_movement", "sessionId": "s1", "metres": 120 },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[-84.27, 39.34], [-84.269, 39.341], [-84.268, 39.342]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "source": "parkbound_guest_movement", "sessionId": "s2", "metres": 95 },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[-84.27, 39.34], [-84.2695, 39.3405], [-84.269, 39.341]]
+      }
+    }
+  ]
+}

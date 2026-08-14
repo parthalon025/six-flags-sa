@@ -1,6 +1,6 @@
 {
   "name": "@party-tracker/shared",
-  "version": "1.6.2",
+  "version": "1.11.2",
   "private": true,
   "type": "module",
   "exports": {
@@ -9,6 +9,7 @@
     "./mapSymbols.js": "./mapSymbols.js",
     "./ontology.json": "./ontology.json",
     "./schemas.js": "./schemas.js",
+    "./consolidateExport.js": "./consolidateExport.js",
     "./questScore.js": "./questScore.js"
   }
 }

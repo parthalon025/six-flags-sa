@@ -27,6 +27,7 @@ import {
   SET_FAVORITE,
   SET_MEET,
   SET_PLAN,
+  APPLY_CONTRIBUTION,
   ADD_MEMBER,
   REMOVE_MEMBER,
   SET_RIDE_STATUS,
@@ -34,6 +35,10 @@ import {
   SNAPSHOT,
   VICTORY,
   WELCOME,
+  WORLD_MARK,
+  WORLD_OFFER,
+  WORLD_THANKS,
+  WORLD_WITHDRAW,
   addressedTo,
 } from '../core/protocol.js';
 import { adoptSnapshot, createParty, evict, evictRides, publicSnapshot, reduce } from '../core/state.js';
@@ -60,8 +65,13 @@ const COMMAND_FOR = {
   [SET_RIDE_STATUS]: 'set-ride-status',
   [SET_MEET]: 'set-meet',
   [SET_PLAN]: 'set-plan',
+  [APPLY_CONTRIBUTION]: 'apply-contribution',
   [ADD_MEMBER]: 'add-member',
   [REMOVE_MEMBER]: 'remove-member',
+  [WORLD_OFFER]: 'world-offer',
+  [WORLD_WITHDRAW]: 'world-withdraw',
+  [WORLD_MARK]: 'world-mark',
+  [WORLD_THANKS]: 'world-thanks',
   [BYE]: 'leave',
 };
 

@@ -1,0 +1,9 @@
+{
+  "connection_oauth_google": {
+    "enabled": true,
+    "authenticatable": true,
+    "block_email_subaddresses": true,
+    "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    "client_secret": "YOUR_GOOGLE_CLIENT_SECRET"
+  }
+}

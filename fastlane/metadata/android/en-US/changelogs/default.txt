@@ -1,1 +1,5 @@
-Beta release — see https://github.com/parkbound/parkbound/releases
+First release.
+
+Drawn park maps, Party coordination, guest-first browsing, and on-the-ground Side Quests for Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s.
+
+Explore more. Stress less.

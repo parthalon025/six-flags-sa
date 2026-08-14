@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import SignInCard from '@/components/SignInCard';
 import { awardQuestXp, readLocalSession, softGateBlocks } from '@/lib/auth/session';
+import { contributionStashCount, stashGapSubmission } from '@/lib/auth/contributionStash';
 import { readProfileCache } from '@/lib/auth/profileCache';
 import {
   ADD_PLACE_TYPES,
@@ -22,6 +23,7 @@ import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
+import { completionLine, contributionFromGapSubmit } from '@/lib/overlay';
 
 /**
  * Side Quests tab — missions for facts only guests on the ground can settle.
@@ -56,6 +58,9 @@ export default function SideQuestsPanel({
   session = null,
   onSession = null,
   onRideReport = null,
+  onWorldProgress = null,
+  onContribution = null,
+  overlay = null,
 }) {
   const queue = defaultQuestQueue();
   const gapNeedsAuth = softGateBlocks('adventure', session);
@@ -100,6 +105,11 @@ export default function SideQuestsPanel({
   const [selectedTarget, setSelectedTarget] = useState(null);
   const [pending, setPending] = useState(0);
   const [lastSubmittedId, setLastSubmittedId] = useState(null);
+  const [stashed, setStashed] = useState(0);
+
+  useEffect(() => {
+    setStashed(contributionStashCount());
+  }, [session?.userId, lastSubmittedId]);
 
   useEffect(() => {
     let alive = true;
@@ -123,7 +133,6 @@ export default function SideQuestsPanel({
   }
 
   function toggleQuest(quest) {
-    if (questBlocked(quest)) return;
     if (openQuestId === quest.id) {
       setOpenQuestId(null);
       return;
@@ -185,10 +194,36 @@ export default function SideQuestsPanel({
   }
 
   async function submit(quest) {
-    if (questBlocked(quest)) return;
     if (!factReady(quest)) return;
     const kind = quest.type || quest.id;
     const target = selectedTarget || (ADD_PLACE_TYPES.includes(quest.type) || quest.type === 'camping' ? null : quest.targets?.[0] || null);
+    const scoreTarget = quest.type === 'path' && !target
+      ? pathScoreCell(position?.lat, position?.lng)
+      : target;
+    const key = scoreKey(venueId, quest.type, scoreTarget);
+
+    if (!isLiveQuest(quest) && gapNeedsAuth) {
+      const ok = stashGapSubmission({
+        questId: quest.id,
+        venueId,
+        placeId: target,
+        kind,
+        payload: payloadFor(quest),
+        lat: position?.lat ?? null,
+        lng: position?.lng ?? null,
+        scoreKey: key,
+        walkedNear: walkedNearFor(quest),
+        action: 'first',
+      });
+      if (ok) {
+        setStashed(contributionStashCount());
+        setRewardLine('Saved on this phone. Sign in to upload.');
+      }
+      setOpenQuestId(null);
+      setLastSubmittedId(`stash-${Date.now()}`);
+      return;
+    }
+
     const report = createReport({
       questId: quest.id,
       venueId,
@@ -199,16 +234,30 @@ export default function SideQuestsPanel({
       lng: position?.lng ?? null,
     });
     await queue.enqueue(report);
+    if (!isLiveQuest(quest) && onContribution) {
+      const contrib = contributionFromGapSubmit({
+        id: report.id,
+        type: quest.type,
+        placeId: target,
+        venueId,
+        authorId: session?.userId || null,
+        authorName: session?.displayName || 'Someone',
+        payload: report.payload,
+        lat: report.lat,
+        lng: report.lng,
+        now: report.createdAt,
+      });
+      if (contrib) onContribution(contrib);
+    }
     const live = rideReportFromLiveQuest(quest, { status, pois, position });
     if (live && onRideReport) onRideReport(live.rideId, live.status);
     const action = isLiveQuest(quest) ? 'live' : 'first';
-    const scoreTarget = quest.type === 'path' && !target
-      ? pathScoreCell(position?.lat, position?.lng)
-      : (live?.rideId || target);
-    const key = scoreKey(venueId, isLiveQuest(quest) ? kind : quest.type, scoreTarget);
+    const scoredKey = isLiveQuest(quest)
+      ? scoreKey(venueId, kind, live?.rideId || target)
+      : key;
     const scored = await awardQuestXp({
       action,
-      key,
+      key: scoredKey,
       walkedNear: walkedNearFor(quest),
       now: Date.now(),
     });
@@ -219,6 +268,7 @@ export default function SideQuestsPanel({
     }
     const nextSession = readLocalSession();
     if (nextSession) onSession?.(nextSession);
+    onWorldProgress?.({ quest, report });
     setOpenQuestId(null);
     setLastSubmittedId(report.id);
   }
@@ -330,9 +380,7 @@ export default function SideQuestsPanel({
     const open = openQuestId === q.id;
     const blocked = questBlocked(q);
     let action;
-    if (blocked) {
-      action = <span className="rowValue">Sign in</span>;
-    } else if (position) {
+    if (position) {
       action = (
         <button
           type="button"
@@ -375,7 +423,10 @@ export default function SideQuestsPanel({
                   className={`sideQuestChip ${selected ? 'on' : ''}`}
                   aria-pressed={open ? selected : undefined}
                   onClick={() => {
-                    if (open) setSelectedTarget(target);
+                    if (open) {
+                      setSelectedTarget(target);
+                      return;
+                    }
                     if (place && onSelectPlace) onSelectPlace(place);
                   }}
                 >
@@ -416,6 +467,10 @@ export default function SideQuestsPanel({
     );
   };
 
+  const myCompletions = (overlay?.completions || []).filter((c) =>
+    session?.userId ? c.authorId === session.userId : true,
+  );
+
   return (
     <div className="sideQuests">
       <div className="dayMoment">
@@ -429,7 +484,16 @@ export default function SideQuestsPanel({
         </div>
       </div>
 
-      {gapNeedsAuth ? <SignInCard session={session} onSession={onSession} /> : null}
+      {gapNeedsAuth ? (
+        <>
+          <SignInCard session={session} onSession={onSession} />
+          {stashed > 0 ? (
+            <p className="fine block">
+              {stashed} answer{stashed === 1 ? '' : 's'} saved on this phone — sign in to upload.
+            </p>
+          ) : null}
+        </>
+      ) : null}
       {rewardLine ? <p className="fine block sideQuestReward">{rewardLine}</p> : null}
 
       <div className="label">
@@ -456,6 +520,23 @@ export default function SideQuestsPanel({
 
       <div className="label">While you walk</div>
       <div className="rowList">{ambient.map(renderQuest)}</div>
+
+      {myCompletions.length > 0 && (
+        <>
+          <div className="label">Your completions</div>
+          <div className="rowList" data-overlay-mine>
+            {myCompletions
+              .slice()
+              .reverse()
+              .slice(0, 8)
+              .map((c) => (
+                <div key={c.id} className="row" data-overlay-completion={c.id}>
+                  <span className="rowText">{completionLine(c)}</span>
+                </div>
+              ))}
+          </div>
+        </>
+      )}
 
       <p className="fine block">
         {gapNeedsAuth

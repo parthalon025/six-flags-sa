@@ -134,6 +134,7 @@ The long-form README now lives in linked guide pages under **[docs/guide/](docs/
 | Venue builder | [docs/guide/venue-builder.md](docs/guide/venue-builder.md) |
 | Tests | [docs/guide/testing.md](docs/guide/testing.md) |
 | Privacy & data | [docs/guide/privacy.md](docs/guide/privacy.md), [docs/guide/data-sources.md](docs/guide/data-sources.md) |
+| Store binaries | [fastlane/README.md](fastlane/README.md) |
 
 **New to the codebase?** Start with the [architecture map](docs/architecture-map.md), then
 [docs/guide/index.md](docs/guide/index.md).

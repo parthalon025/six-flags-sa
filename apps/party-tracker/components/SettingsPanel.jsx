@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
 import BrandMark from '@/components/BrandMark';
 import SignInCard from '@/components/SignInCard';
+import WorldCloset from '@/components/WorldCloset';
 
 /* Settings, arranged the way Settings is: short groups of rows, a value on the
    right of the row that has one, and a chevron on the rows that lead somewhere.
@@ -39,6 +40,18 @@ export default function SettingsPanel({
   movementPending = 0,
   session = null,
   onSession = null,
+  worldProgress = null,
+  world = null,
+  acceptedOffer = null,
+  selfId = null,
+  venue = null,
+  onWearOwn = null,
+  onAcceptOffer = null,
+  onClearWear = null,
+  onOfferSkin = null,
+  onWithdrawOffer = null,
+  onEquipKit = null,
+  onDropMark = null,
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
@@ -73,7 +86,9 @@ export default function SettingsPanel({
           After that each phone shows the others as coloured markers, with how far away they are and
           how long it takes to walk there. <b>Side Quests</b> are on-the-ground missions for facts
           open maps cannot settle — height signs, queue entrances, closed toilets — so other guests
-          benefit. A <b>meet-up</b> is one spot everybody agrees on, and anyone can set it. The phones
+          benefit. Completing one may leave a <b>Mark</b> at that Place — your party sees it
+          now, and other guests after a second party Thanks it. Kits and live GPS stay in your
+          party. A <b>meet-up</b> is one spot everybody agrees on, and anyone can set it. The phones
           keep a shared list on their own — if one goes flat another picks it up, and nobody has to
           do anything. Live ride marks stay in your party until a second party walks by.
         </p>
@@ -112,8 +127,25 @@ export default function SettingsPanel({
       <p className="fine">
         Light is the one to use outdoors — white midways on pale ground, dark type, and
         deeper marker colours that survive direct sun. Dark is easier on the eyes once the
-        park lights come on.
+        park lights come on. Skins below restyle the map; they do not replace Light and Dark chrome.
       </p>
+
+      <WorldCloset
+        progress={worldProgress}
+        world={world}
+        acceptedOffer={acceptedOffer}
+        selfId={selfId}
+        session={session}
+        venue={venue}
+        position={position}
+        onWearOwn={onWearOwn}
+        onAcceptOffer={onAcceptOffer}
+        onClearWear={onClearWear}
+        onOffer={onOfferSkin}
+        onWithdraw={onWithdrawOffer}
+        onEquipKit={onEquipKit}
+        onDropMark={onDropMark}
+      />
 
       <div className="label">The Map</div>
       <div className="rowList">

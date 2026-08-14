@@ -118,8 +118,19 @@ export const CONTRIBUTION_KINDS = /** @type {const} */ ([
   'queue_band',
   'geometry',
   'height',
+  'height_rule',
+  'poi_patch',
+  'drop_place',
   'amenity',
   'adventure', // Side Quest payload kind on the wire — domain name is Side Quest
+]);
+
+/** Never graduate into builder inputs via consolidate. */
+export const EPHEMERAL_CONTRIBUTION_KINDS = /** @type {const} */ ([
+  'experience',
+  'status',
+  'queue_band',
+  'ride_status',
 ]);
 
 export const CONTRIBUTION_STATUSES = /** @type {const} */ ([
@@ -164,11 +175,11 @@ export const FIXTURES = {
  * in-party Ride reports. Contributions, gap Side Quest submit, park-wide
  * Observation / Overlay, and cross-day Plan sync need a Profile.
  * @param {string | null | undefined} userId
- * @param {'party'|'contribute'|'adventure'|'planner'|'ride-report'} action
+ * @param {'party'|'contribute'|'adventure'|'planner'|'ride-report'|'world'} action
  */
 export function requiresSignedIn(userId, action) {
   if (action === 'ride-report' || action === 'party' || action === 'browse') return false;
-  const gated = new Set(['contribute', 'adventure', 'planner']);
+  const gated = new Set(['contribute', 'adventure', 'planner', 'world']);
   if (!gated.has(action)) return false;
   return !userId;
 }

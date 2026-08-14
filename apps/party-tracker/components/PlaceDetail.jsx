@@ -10,8 +10,45 @@ import { useVenueSelector } from '@/lib/venue/useVenue';
 import { campChips, campDetails } from '@/lib/camping';
 import { entranceMeta } from '@/lib/entrance';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
-import { WORDS } from '@/lib/brand';
+import { GLYPHS, WORDS } from '@/lib/brand';
 import { identityOf, placeNav } from '@/lib/venue/ids';
+
+/**
+ * Walk / meet-up / Plan — the same glyphs as the map FAB and the Plan tab,
+ * so the actions can be learned as icons rather than re-read as words.
+ */
+export function PlaceActions({ poi, onNavigate, onSetMeet, onAddToPlan = null }) {
+  return (
+    <div className="placeActions">
+      <button
+        type="button"
+        className="btn small primary iconOnly"
+        onClick={() => onNavigate(placeNav(poi))}
+        aria-label={WORDS.navigation}
+      >
+        <Icon name={GLYPHS.walk} size={18} />
+      </button>
+      <button
+        type="button"
+        className="btn small iconOnly"
+        onClick={() => onSetMeet(poi)}
+        aria-label={WORDS.meetup}
+      >
+        <Icon name={GLYPHS.meetup} size={18} />
+      </button>
+      {onAddToPlan && (
+        <button
+          type="button"
+          className="btn small iconOnly"
+          onClick={() => onAddToPlan(poi)}
+          aria-label={WORDS.addToPlan}
+        >
+          <Icon name={GLYPHS.plan} size={18} />
+        </button>
+      )}
+    </div>
+  );
+}
 
 /**
  * The open face of a place: notes, camp checklist, phone, ride status, and the
@@ -27,6 +64,8 @@ export function PlaceDetailBody({
   onSetMeet,
   onReport = null,
   onAddToPlan = null,
+  showActions = true,
+  overlayCompletions = [],
 }) {
   if (!poi) return null;
   const isRide = isRideable(poi);
@@ -35,8 +74,24 @@ export function PlaceDetailBody({
   const ent = isRide ? entranceMeta(poi) : null;
   const rows = isRide && eligibility ? eligibility.explain(identityOf(poi)) : [];
 
+  const overlayLines = [...overlayCompletions];
+  if (status?.report) {
+    const who = status.report.byName || 'Someone';
+    overlayLines.push(
+      status.report.status === 'down' ? `${who} reported it down` : `${who} reported it running`,
+    );
+  }
+
   return (
     <div className="poiDetail">
+      {showActions && (
+        <PlaceActions
+          poi={poi}
+          onNavigate={onNavigate}
+          onSetMeet={onSetMeet}
+          onAddToPlan={onAddToPlan}
+        />
+      )}
       {showStatus && status.detail && (
         <p className={`poiNote wxWhy ${status.tone}`}>
           {status.detail}
@@ -68,6 +123,15 @@ export function PlaceDetailBody({
           {ent.confirmed ? 'Queue entrance on map' : ent.hint}
         </p>
       )}
+      {overlayLines.length > 0 && (
+        <ul className="overlayCompletions" data-overlay-completions>
+          {overlayLines.map((line, i) => (
+            <li key={`${i}:${line}`} className="poiNote overlayCompletion">
+              {line}
+            </li>
+          ))}
+        </ul>
+      )}
       {poi.tel && (
         <a className="poiTel" href={`tel:${poi.tel.replace(/[^\d+]/g, '')}`}>
           <Icon name="phone.fill" size={15} />
@@ -96,24 +160,6 @@ export function PlaceDetailBody({
           </button>
         </div>
       )}
-      <div className="joinRow">
-        <button
-          type="button"
-          className="btn small primary iconOnly"
-          onClick={() => onNavigate(placeNav(poi))}
-          aria-label={WORDS.navigation}
-        >
-          <Icon name="location.fill" size={18} />
-        </button>
-        <button type="button" className="btn small" onClick={() => onSetMeet(poi)}>
-          Make this the meet-up
-        </button>
-        {onAddToPlan && (
-          <button type="button" className="btn small" onClick={() => onAddToPlan(poi)}>
-            Add to Plan
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -129,6 +175,10 @@ const VERDICT = {
  * Full place sheet opened from a map icon: who it is, how far, what is known
  * about it, and a compact navigate control — the same answers the list expands
  * to, without requiring the visitor to find the row first.
+ *
+ * Laid out like a Maps collapsed card: name, one line of facts, icon actions.
+ * Notes and reports sit below so a lean sheet still shows the things you came
+ * to do; pull up to read the rest.
  */
 export default function PlaceDetail({
   poi,
@@ -143,6 +193,7 @@ export default function PlaceDetail({
   onSetMeet,
   onReport = null,
   onAddToPlan = null,
+  overlayCompletions = [],
 }) {
   const palette = paletteFor(theme);
   const venue = useVenueSelector((s) => s.venue);
@@ -168,9 +219,16 @@ export default function PlaceDetail({
   const d = me ? distance(me.lat, me.lng, poi.lat, poi.lng) : null;
   const dir = me && d != null ? cardinal(bearing(me.lat, me.lng, poi.lat, poi.lng)) : null;
   const showStatus = Boolean(status?.label);
+  const subtitle = [isRide ? heightLabel(poi) : CATEGORY_LABELS[poi.c] || poi.c, poi.a]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <div className={`placeDetail ${v.cls}`} data-place-detail={poi.id || poi.n}>
+    <div
+      className={`placeDetail ${v.cls}`}
+      data-place-detail={poi.id || poi.n}
+      data-overlay={poi.overlay ? '1' : undefined}
+    >
       <div className="placeDetailHead">
         <span
           className="dot"
@@ -178,56 +236,56 @@ export default function PlaceDetail({
         />
         <div className="placeDetailText">
           <b className="placeDetailName">{poi.n}</b>
-          <span>
-            {isRide ? heightLabel(poi) : CATEGORY_LABELS[poi.c] || poi.c}
-            {poi.a ? ` · ${poi.a}` : ''}
+          <span className="placeDetailLine">
+            {subtitle}
+            {d != null && (
+              <>
+                {subtitle ? ' · ' : ''}
+                <b>{formatWalk(d)}</b>
+                {` ${formatDistance(d)}${dir ? ` ${dir}` : ''}`}
+              </>
+            )}
+            {showStatus && (
+              <span
+                className={[
+                  'liveBadge',
+                  'statusPill',
+                  status.live === 'goNow' || status.key === 'goNow' ? 'goNow' : '',
+                  status.live === 'busy' || status.key === 'busy' ? 'busy' : '',
+                  status.live === 'later' || status.key === 'later' || status.key === 'watch'
+                    ? 'later'
+                    : '',
+                  status.live === 'open' || status.key === 'open' ? 'open' : '',
+                  status.live === 'paused' ||
+                  status.key === 'down' ||
+                  status.key === 'hold' ||
+                  status.key === 'paused'
+                    ? 'paused'
+                    : '',
+                  status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
+                  status.source === 'weather' ? 'guess' : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+              >
+                <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
+                {status.label}
+              </span>
+            )}
+            {v.label && (
+              <span className={`verdict ${v.cls}`}>
+                <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
+                {v.label}
+              </span>
+            )}
           </span>
         </div>
-      </div>
-
-      <div className="placeDetailMeta">
-        {d != null && (
-          <span className="placeDetailWalk">
-            <b>{formatWalk(d)}</b>
-            <em>
-              {formatDistance(d)}
-              {dir ? ` ${dir}` : ''}
-            </em>
-          </span>
-        )}
-        {showStatus && (
-          <span
-            className={[
-              'liveBadge',
-              'statusPill',
-              status.live === 'goNow' || status.key === 'goNow' ? 'goNow' : '',
-              status.live === 'busy' || status.key === 'busy' ? 'busy' : '',
-              status.live === 'later' || status.key === 'later' || status.key === 'watch'
-                ? 'later'
-                : '',
-              status.live === 'open' || status.key === 'open' ? 'open' : '',
-              status.live === 'paused' ||
-              status.key === 'down' ||
-              status.key === 'hold' ||
-              status.key === 'paused'
-                ? 'paused'
-                : '',
-              status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
-              status.source === 'weather' ? 'guess' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
-            {status.label}
-          </span>
-        )}
-        {v.label && (
-          <span className={`verdict ${v.cls}`}>
-            <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
-            {v.label}
-          </span>
-        )}
+        <PlaceActions
+          poi={poi}
+          onNavigate={onNavigate}
+          onSetMeet={onSetMeet}
+          onAddToPlan={onAddToPlan}
+        />
       </div>
 
       <PlaceDetailBody
@@ -239,6 +297,8 @@ export default function PlaceDetail({
         onSetMeet={onSetMeet}
         onReport={onReport}
         onAddToPlan={onAddToPlan}
+        showActions={false}
+        overlayCompletions={overlayCompletions}
       />
     </div>
   );

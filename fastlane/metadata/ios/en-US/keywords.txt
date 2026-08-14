@@ -1,1 +1,1 @@
-theme park,amusement park,map,party,group,navigation,offline,kings island,cedar point,six flags,family
+theme park,park map,rides,roller coaster,family,restrooms,food,offline,kings island,cedar point

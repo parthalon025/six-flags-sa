@@ -52,7 +52,7 @@ const security = [
   // Geolocation is the product; camera/mic stay off. Payment APIs unused.
   {
     key: 'Permissions-Policy',
-    value: 'geolocation=(self), camera=(), microphone=(), payment=()',
+    value: 'geolocation=(self), camera=(self), microphone=(), payment=()',
   },
 ];
 
@@ -63,6 +63,9 @@ const nextConfig = {
     NEXT_PUBLIC_APP_BUILT: versionDoc.built || '',
   },
   reactStrictMode: true,
+  // Preview deploys fail while Vercel patches GitHub preview comments against
+  // immutable static uploads (#163). Keep immutable assets on production.
+  supportsImmutableAssets: process.env.VERCEL_ENV !== 'preview',
   async headers() {
     return [
       { source: '/:path*', headers: security },

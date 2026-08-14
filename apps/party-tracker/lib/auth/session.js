@@ -32,7 +32,7 @@ export function clearLocalSession() {
 }
 
 /**
- * @param {'party'|'contribute'|'adventure'|'planner'} action
+ * @param {'party'|'contribute'|'adventure'|'planner'|'world'} action
  * @param {{ userId?: string } | null} session
  */
 export function softGateBlocks(action, session) {

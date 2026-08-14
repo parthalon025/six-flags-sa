@@ -50,12 +50,18 @@ import {
   PING,
   SET_MEET,
   SET_PLAN,
+  APPLY_CONTRIBUTION,
   ADD_MEMBER,
   REMOVE_MEMBER,
   SET_RIDE_STATUS,
   SET_TARGET,
   VICTORY,
+  WORLD_MARK,
+  WORLD_OFFER,
+  WORLD_THANKS,
+  WORLD_WITHDRAW,
 } from '@/lib/core/protocol';
+import { emptyWorld } from '@/lib/world.js';
 import { readRank, shouldYield } from '@/lib/party/election';
 import {
   clearSession,
@@ -173,6 +179,8 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
       rides: state?.rides ?? {},
       meet: state?.meet ?? null,
       plan: state?.plan ?? [],
+      world: state?.settings?.world ?? emptyWorld(),
+      overlay: state?.overlay ?? { drawn: {}, completions: [] },
       transport: activeName(),
       queued: queued(),
       // When this host stops answering key-requests, as a timestamp. 0 when
@@ -999,10 +1007,18 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     return submit(PATCH_MEMBER, { patch: { userId } });
   };
   const setPlan = (plan) => submit(SET_PLAN, { plan: Array.isArray(plan) ? plan : [] });
+  const applyContribution = (contribution) =>
+    submit(APPLY_CONTRIBUTION, { contribution: contribution || {} });
   const addMember = (body) => submit(ADD_MEMBER, body || {});
   const removeMember = (id) => submit(REMOVE_MEMBER, { id });
   const setMemberFacts = (patch, memberId = null) =>
     submit(PATCH_MEMBER, memberId ? { id: memberId, patch: patch || {} } : { patch: patch || {} });
+  const offerSkin = (skinId) => submit(WORLD_OFFER, { skinId });
+  const withdrawOffer = (skinId) => submit(WORLD_WITHDRAW, { skinId: skinId || null });
+  const dropWorldMark = (body) => submit(WORLD_MARK, body || {});
+  const thankWorldMark = (targetId) => submit(WORLD_THANKS, { targetId });
+  const setKit = (kit) => submit(PATCH_MEMBER, { patch: { kit: kit || null } });
+  const setWearSkin = (wearSkin) => submit(PATCH_MEMBER, { patch: { wearSkin: wearSkin || null } });
 
   async function logAction(kind, detail = {}) {
     try {
@@ -1078,9 +1094,16 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     setShareMode,
     bindUserId,
     setPlan,
+    applyContribution,
     addMember,
     removeMember,
     setMemberFacts,
+    offerSkin,
+    withdrawOffer,
+    dropWorldMark,
+    thankWorldMark,
+    setKit,
+    setWearSkin,
     logAction,
     pushLocation,
     pushBattery,

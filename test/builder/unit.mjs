@@ -187,6 +187,7 @@ const {
   SHEET_LIST_AT_PX,
   SHEET_MAGNET_PX,
   SHEET_PEEK_PX,
+  SHEET_PLACE_PX,
   nextSheetStop,
   sheetCrowdsMap,
   settleSheet,
@@ -255,6 +256,7 @@ await check('createParty starts empty at version 0', () => {
   assert.deepEqual(p.members, {});
   assert.equal(p.meet, null);
   assert.deepEqual(p.plan, []);
+  assert.deepEqual(p.overlay, { drawn: {}, completions: [] });
   return true;
 });
 
@@ -404,6 +406,64 @@ await check('set-plan is shared last-write-wins and add-member creates a device-
   assert.equal(state.members.mia.deviceLess, true);
   assert.equal(state.members.mia.height, 40);
   assert.equal(state.members.mia.location, null);
+  return true;
+});
+
+await check('apply-contribution last-write draws Overlay; earlier stays as completion', () => {
+  const now = 1_000_000;
+  let state = seeded(now);
+  state = reduce(
+    state,
+    {
+      kind: 'apply-contribution',
+      from: PEER,
+      body: {
+        contribution: {
+          id: 'c1',
+          type: 'height',
+          placeId: 'orion',
+          authorId: PEER,
+          authorName: 'Ava',
+          payload: { heightIn: 48 },
+          createdAt: now,
+        },
+      },
+    },
+    now,
+  ).state;
+  assert.equal(state.overlay.drawn['height:orion'].payload.heightIn, 48);
+  state = reduce(
+    state,
+    {
+      kind: 'apply-contribution',
+      from: HOST,
+      body: {
+        contribution: {
+          id: 'c2',
+          type: 'height',
+          placeId: 'orion',
+          authorId: HOST,
+          authorName: 'Justin',
+          payload: { heightIn: 42 },
+          createdAt: now + 1,
+        },
+      },
+    },
+    now + 1,
+  ).state;
+  assert.equal(state.overlay.drawn['height:orion'].payload.heightIn, 42);
+  assert.equal(state.overlay.completions.length, 2);
+  assert.equal(publicSnapshot(state).overlay.drawn['height:orion'].payload.heightIn, 42);
+  const live = reduce(
+    state,
+    {
+      kind: 'apply-contribution',
+      from: PEER,
+      body: { contribution: { id: 'x', type: 'ride_status', payload: { status: 'down' } } },
+    },
+    now + 2,
+  );
+  assert.equal(live.ops.length, 0);
   return true;
 });
 
@@ -6263,9 +6323,18 @@ const {
   recommendNow,
   GO_NOW_M,
 } = await import('../../apps/party-tracker/lib/live.js');
-const { LIVE } = await import('../../apps/party-tracker/lib/brand.js');
+const { GLYPHS: CHROME_GLYPHS, LIVE, WORDS } = await import('../../apps/party-tracker/lib/brand.js');
 
 const BEAST_HERE = { ...BEAST, lat: 39.3441, lng: -84.268 };
+
+await check('meet-up and Plan share the glyphs used on the map and the tab bar', () => {
+  assert.equal(CHROME_GLYPHS.meetup, 'mappin.and.ellipse');
+  assert.equal(CHROME_GLYPHS.plan, 'figure.rollercoaster');
+  assert.equal(CHROME_GLYPHS.walk, 'location.fill');
+  assert.equal(WORDS.meetup, 'Set meet-up');
+  assert.equal(WORDS.addToPlan, 'Add to Plan');
+  return true;
+});
 
 await check('a nearby open report is GO NOW', () => {
   const now = 5_000_000;
@@ -6804,6 +6873,19 @@ await check('the stops come out where the CSS puts them', () => {
   return true;
 });
 
+await check('a map-tapped place card stays leaner than peek and half', () => {
+  // Google Maps' collapsed card: name, one line of facts, icon actions.
+  // It must not open at the half stop (half the screen) — the map stays
+  // the thing you look at, and pulling up is how you read the rest.
+  assert.equal(SHEET_PLACE_PX < STOPS.peek, true);
+  assert.equal(SHEET_PLACE_PX < STOPS.half, true);
+  assert.equal(SHEET_PLACE_PX > SHEET_CHROME_PX, true);
+  // Title+actions on one row, facts on the next: no spare nav row, no
+  // empty band between the icons and the tab bar.
+  assert.equal(SHEET_PLACE_PX, SHEET_CHROME_PX + 40 + 18 + 8);
+  return true;
+});
+
 await check('a release away from every stop stays exactly where it was let go', () => {
   // The whole point of the rewrite: 360px is nowhere near a stop, so the sheet
   // is left at 360px rather than jumping to peek or half.
@@ -6966,6 +7048,66 @@ await check('a short phone still reaches the list', () => {
   assert.ok(small.half < SHEET_LIST_AT_PX);
   assert.ok(small.full >= SHEET_LIST_AT_PX, 'no height on this phone shows the list');
   assert.equal(sheetPlan(SHEET_LIST_AT_PX).list, true);
+  return true;
+});
+
+/* ------------------------------------------------------------- first-run gate */
+
+const { firstRunOverlay, INTRO_KEY, INTRO_SEEN_BOOT_SCRIPT } = await import('../../apps/party-tracker/lib/introGate.js');
+
+await check('unknown intro state covers the map instead of painting the live app', () => {
+  assert.equal(firstRunOverlay({ introSeen: null, logoSplashDismissed: false }), 'hold');
+  return true;
+});
+
+await check('a returning phone skips the first-run overlay', () => {
+  assert.equal(firstRunOverlay({ introSeen: true, logoSplashDismissed: false }), 'none');
+  return true;
+});
+
+await check('a first visit opens the logo splash, then the welcome gate, without a hold in between', () => {
+  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: false }), 'splash');
+  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: true }), 'welcome');
+  return true;
+});
+
+await check('the first-run gate is opaque and does not fade in over the live map', () => {
+  const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  const block = css.match(/\.gate\.gateFirstRun\s*\{[^}]+\}/);
+  assert.ok(block, 'missing .gate.gateFirstRun rule');
+  assert.match(block[0], /animation:\s*none/);
+  assert.match(block[0], /background:\s*var\(--bg\)/);
+  assert.match(css, /html\[data-intro="seen"\]\s+\[data-intro-hold\]/);
+  assert.match(css, /html:not\(\[data-intro="seen"\]\)\s+\.app\s*>\s*:not\(\.gate\)/);
+  return true;
+});
+
+await check('the boot script stamps data-intro from the same storage key the app reads', () => {
+  assert.equal(INTRO_KEY, 'tracker-intro-seen');
+  assert.match(INTRO_SEEN_BOOT_SCRIPT, /tracker-intro-seen/);
+  assert.match(INTRO_SEEN_BOOT_SCRIPT, /data-intro/);
+  const layout = fs.readFileSync(new URL('../../apps/party-tracker/app/layout.js', import.meta.url), 'utf8');
+  assert.match(layout, /INTRO_SEEN_BOOT_SCRIPT/);
+  assert.match(layout, /dangerouslySetInnerHTML/);
+  assert.doesNotMatch(layout, /beforeInteractive/);
+  return true;
+});
+
+const { clerkConfigured } = await import('../../apps/party-tracker/lib/clerkConfigured.js');
+
+await check('Clerk stays off when the API keys are not on this box', () => {
+  const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const prevSec = process.env.CLERK_SECRET_KEY;
+  delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  delete process.env.CLERK_SECRET_KEY;
+  try {
+    assert.equal(clerkConfigured(), false);
+  } finally {
+    if (prevPub == null) delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+    else process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = prevPub;
+    if (prevSec == null) delete process.env.CLERK_SECRET_KEY;
+    else process.env.CLERK_SECRET_KEY = prevSec;
+  }
   return true;
 });
 
@@ -8225,6 +8367,8 @@ await check('soft-gate helper lives on the local session module', async () => {
     assert.equal(softGateBlocks('contribute', null), true);
     assert.equal(softGateBlocks('adventure', null), true);
     assert.equal(softGateBlocks('adventure', { userId: 'usr_x' }), false);
+    assert.equal(softGateBlocks('world', null), true);
+    assert.equal(softGateBlocks('world', { userId: 'usr_x' }), false);
     assert.equal(softGateBlocks('ride-report', null), false);
     assert.equal(softGateBlocks('party', { userId: 'usr_x' }), false);
     return true;
@@ -8259,6 +8403,159 @@ await check('soft-gate helper lives on the local session module', async () => {
     }
   });
 }
+
+{
+  const stashStore = new Map();
+  globalThis.window = {
+    localStorage: {
+      getItem: (k) => (stashStore.has(k) ? stashStore.get(k) : null),
+      setItem: (k, v) => {
+        stashStore.set(k, String(v));
+      },
+      removeItem: (k) => {
+        stashStore.delete(k);
+      },
+    },
+  };
+  const {
+    STASH_KEY,
+    stashGapSubmission,
+    readContributionStash,
+    takeContributionStash,
+    flushContributionStash,
+  } = await import('../../apps/party-tracker/lib/auth/contributionStash.js');
+
+  await check('contribution stash persists gap submit until sign-in flush', async () => {
+    stashStore.clear();
+    assert.equal(stashGapSubmission({ questId: 'q_height', venueId: 'kings-island', kind: 'height', payload: { heightIn: 48 } }), true);
+    assert.equal(readContributionStash().length, 1);
+    assert.equal(readContributionStash()[0].questId, 'q_height');
+    const enqueued = [];
+    const flushed = await flushContributionStash({
+      createReport: (input) => ({ ...input, id: 'rpt_1', status: 'pending', createdAt: Date.now() }),
+      enqueue: async (report) => {
+        enqueued.push(report);
+      },
+      awardQuestXp: async () => ({ profile: { scoredKeys: [] } }),
+    });
+    assert.equal(flushed, 1);
+    assert.equal(enqueued.length, 1);
+    assert.equal(stashStore.has(STASH_KEY), false);
+    assert.equal(takeContributionStash().length, 0);
+    return true;
+  });
+}
+
+/* --------------------------- databricks / E0 contributions ------------- */
+
+{
+  const { filterConsolidateExport, buildConsolidateExport } = await import(
+    '../../packages/shared/consolidateExport.js'
+  );
+  const { validateContributionPost } = await import(
+    '../../apps/party-tracker/lib/contributions/validate.js'
+  );
+  const { insertContribution, listConsolidateCandidates } = await import(
+    '../../apps/party-tracker/lib/contributions/store.js'
+  );
+  const { slimAgentContext, llmConfig } = await import('../../packages/venue-builder/lib/venue-llm.mjs');
+  const { planContribution } = await import('../../packages/venue-builder/lib/consolidate.mjs');
+
+  await check('consolidateExport filters ephemeral accepted rows', () => {
+    const rows = [
+      { id: '1', status: 'accepted', kind: 'height_rule', venueId: 'kings-island' },
+      { id: '2', status: 'accepted', kind: 'experience', venueId: 'kings-island' },
+      { id: '3', status: 'pending', kind: 'height_rule', venueId: 'kings-island' },
+    ];
+    assert.equal(filterConsolidateExport(rows).length, 1);
+    const env = buildConsolidateExport(rows, { runId: 'r1' });
+    assert.equal(env.contributions.length, 1);
+    assert.equal(env.runId, 'r1');
+    return true;
+  });
+
+  await check('validateContributionPost rejects ephemeral kinds', () => {
+    const bad = validateContributionPost({
+      authorId: 'usr_a',
+      venueId: 'kings-island',
+      kind: 'experience',
+      payload: { note: 'wait' },
+    });
+    assert.equal(bad.ok, false);
+    const ok = validateContributionPost({
+      authorId: 'usr_a',
+      venueId: 'kings-island',
+      kind: 'height_rule',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.equal(ok.ok, true);
+    return true;
+  });
+
+  await check('contribution store accepts durable rows in memory', async () => {
+    const row = await insertContribution({
+      authorId: 'usr_test',
+      venueId: 'kings-island',
+      kind: 'height_rule',
+      status: 'accepted',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.ok(row.id.startsWith('c_'));
+    const listed = await listConsolidateCandidates();
+    assert.ok(listed.some((r) => r.id === row.id));
+    return true;
+  });
+
+  await check('slimAgentContext truncates large agent payloads', () => {
+    const slim = slimAgentContext({
+      agents: Array.from({ length: 20 }, (_, i) => ({ role: `r${i}`, ok: true, summary: { n: i } })),
+    });
+    assert.equal(slim.agents.length, 8);
+    return true;
+  });
+
+  await check('llmConfig databricks requires host and token', () => {
+    const prevP = process.env.VENUE_LLM_PROVIDER;
+    const prevH = process.env.DATBRICKS_HOST;
+    const prevT = process.env.DATBRICKS_TOKEN;
+    const prevK = process.env.VENUE_LLM_API_KEY;
+    const prevO = process.env.OPENAI_API_KEY;
+    process.env.VENUE_LLM_PROVIDER = 'databricks';
+    process.env.DATBRICKS_HOST = '';
+    process.env.DATBRICKS_TOKEN = '';
+    process.env.VENUE_LLM_API_KEY = '';
+    process.env.OPENAI_API_KEY = '';
+    assert.equal(llmConfig().ready, false);
+    process.env.DATBRICKS_HOST = 'https://example.cloud.databricks.com';
+    process.env.DATBRICKS_TOKEN = 'test';
+    assert.equal(llmConfig().ready, true);
+    assert.equal(llmConfig().provider, 'databricks');
+    if (prevP) process.env.VENUE_LLM_PROVIDER = prevP;
+    else delete process.env.VENUE_LLM_PROVIDER;
+    if (prevH) process.env.DATBRICKS_HOST = prevH;
+    else delete process.env.DATBRICKS_HOST;
+    if (prevT) process.env.DATBRICKS_TOKEN = prevT;
+    else delete process.env.DATBRICKS_TOKEN;
+    if (prevK) process.env.VENUE_LLM_API_KEY = prevK;
+    else delete process.env.VENUE_LLM_API_KEY;
+    if (prevO) process.env.OPENAI_API_KEY = prevO;
+    else delete process.env.OPENAI_API_KEY;
+    return true;
+  });
+
+  await check('consolidate accepts height kind alias', () => {
+    const plan = planContribution({
+      id: 'c_h',
+      status: 'accepted',
+      kind: 'height',
+      venueId: 'kings-island',
+      payload: { placeName: 'The Beast', min: 48 },
+    });
+    assert.equal(plan.action, 'heights');
+    return true;
+  });
+}
+
 /* ---------------------------------------------------------------- tally -- */
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

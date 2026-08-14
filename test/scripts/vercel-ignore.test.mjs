@@ -103,6 +103,23 @@ assert.match(lib, /\^1/, 'must diff against the first parent');
 assert.match(lib, /VERCEL_ENV/, 'production env must participate in the ignore decision');
 assert.match(lib, /VERCEL_GIT_COMMIT_REF/, 'main ref must participate when env is unset');
 
+// .vercelignore strips scripts/** — the ignoreCommand chain must be re-included
+// or preview deploys fail open and burn the daily preview budget.
+const vercelIgnore = readFileSync(join(root, '.vercelignore'), 'utf8');
+for (const path of [
+  'scripts/vercel-ignore.sh',
+  'scripts/lib/vercel-ignore.mjs',
+  'scripts/lib/app-paths.mjs',
+  'scripts/lib/app-paths.json',
+  'scripts/gitnexus-ci.mjs',
+]) {
+  assert.match(
+    vercelIgnore,
+    new RegExp(`^!${path.replace(/\./g, '\\.')}$`, 'm'),
+    `.vercelignore must keep ${path} for ignoreCommand`,
+  );
+}
+
 const sw = readFileSync(join(root, 'apps/party-tracker/public/sw.js'), 'utf8');
 assert.match(
   sw,
