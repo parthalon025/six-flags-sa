@@ -240,5 +240,11 @@
     "items": [
       "fix: lean Maps-style place sheet with shared action icons"
     ]
+  },
+  "1.11.3": {
+    "title": "What's new",
+    "items": [
+      "fix: remove merge conflict markers from package.json"
+    ]
   }
 }
