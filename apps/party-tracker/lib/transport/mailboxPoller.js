@@ -75,7 +75,10 @@ function createPoller({ base, partyId, peerId, key }) {
 
   const recalcCool = () => {
     const values = [...coolPrefs.values()];
-    coolMs = values.length ? Math.min(...values) : DEFAULT_COOL_MS;
+    // Max, not min: when WebRTC has linked and signaling paces to 10s, a cloud
+    // cool of 2.5s must not keep the shared poller hot. During negotiation both
+    // sit near 2–2.5s so max stays in that band.
+    coolMs = values.length ? Math.max(...values) : DEFAULT_COOL_MS;
   };
 
   const delay = () => {
