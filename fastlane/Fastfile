@@ -203,12 +203,14 @@ platform :ios do
 
     deliver_base = {
       api_key: api_key,
+      api_key_path: nil,
       app_identifier: ENV.fetch("IOS_BUNDLE_IDENTIFIER"),
       app_version: version,
       skip_binary_upload: true,
       submit_for_review: false,
       automatic_release: false,
       force: true,
+      run_precheck_before_submit: false,
       precheck_include_in_app_purchases: false,
       metadata_path: File.expand_path(File.join("fastlane", "metadata", "ios"), repo_root),
       screenshots_path: File.expand_path(File.join("fastlane", "screenshots", "ios"), repo_root),
