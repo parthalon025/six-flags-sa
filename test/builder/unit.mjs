@@ -168,6 +168,7 @@ const {
   sizeAtZoom,
   symbolFor,
   STALE_AFTER_MS,
+  DEFAULT_SYMBOL,
   GLYPHS,
   SYMBOLS,
 } = await import('../../packages/shared/mapSymbols.js');
@@ -2721,6 +2722,43 @@ await check('markers grow with the map but nothing like as fast', () => {
   assert.ok(wide > 6, 'still visible at the park-wide view');
   assert.ok(close < 12, 'not covering a midway at walking zoom');
   assert.ok(close > wide);
+  return true;
+});
+
+/* Grandma test: at arm's length outdoors, place chips and names have to
+   read without squinting. Floors are independent of the zoom curve. */
+await check('place markers stay large enough to read at a glance', () => {
+  assert.ok(SYMBOLS.coaster.r >= 11, `coaster r=${SYMBOLS.coaster.r}`);
+  assert.ok(SYMBOLS.ride.r >= 9, `ride r=${SYMBOLS.ride.r}`);
+  assert.ok(SYMBOLS.food.r >= 8.4, `food r=${SYMBOLS.food.r}`);
+  assert.ok(DEFAULT_SYMBOL.r >= 8, `default r=${DEFAULT_SYMBOL.r}`);
+  return true;
+});
+
+await check('the walking route uses aqua so it does not match coaster orange', () => {
+  const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  const line = css.match(/\.routeLine\s*\{[^}]+\}/);
+  assert.ok(line, 'missing .routeLine rule');
+  assert.match(line[0], /stroke:\s*var\(--aqua\)/);
+  assert.doesNotMatch(line[0], /stroke:\s*var\(--adventure\)/);
+  const turn = css.match(/\.routeTurn\s*\{[^}]+\}/);
+  assert.ok(turn, 'missing .routeTurn rule');
+  assert.match(turn[0], /stroke:\s*var\(--aqua\)/);
+  return true;
+});
+
+await check('map place names are large enough for the grandma test', () => {
+  const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  const poi = css.match(/\.poiLabel\s*\{[^}]+\}/);
+  const land = css.match(/\.landLabel\s*\{[^}]+\}/);
+  const mem = css.match(/\.memName\s*\{[^}]+\}/);
+  assert.ok(poi && land && mem, 'missing map label rules');
+  const poiSize = Number(poi[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
+  const landSize = Number(land[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
+  const memSize = Number(mem[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
+  assert.ok(poiSize >= 13.5, `poiLabel ${poiSize}px`);
+  assert.ok(landSize >= 14, `landLabel ${landSize}px`);
+  assert.ok(memSize >= 13, `memName ${memSize}px`);
   return true;
 });
 

@@ -488,16 +488,17 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    They appear, or they do not — no animation on .lyr-detail. */
 
 /* Apple Maps sets district names in wide-tracked caps and POI names in plain
-   SF with a halo, which is what these two do. */
+   SF with a halo, which is what these two do. Sized for the grandma test:
+   readable at arm's length outdoors, not phone-held-to-the-nose. */
 .landLabel {
-  font-family: var(--ui); font-size: 11px; font-weight: 600; letter-spacing: .12em;
-  text-transform: uppercase; text-anchor: middle; opacity: .85; pointer-events: none;
-  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 2.5px; stroke-linejoin: round;
+  font-family: var(--ui); font-size: 14px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; text-anchor: middle; opacity: .9; pointer-events: none;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3.5px; stroke-linejoin: round;
 }
 .poiLabel {
-  font-family: var(--ui); font-size: 10.5px; font-weight: 500; letter-spacing: -.1px;
+  font-family: var(--ui); font-size: 13.5px; font-weight: 600; letter-spacing: -.1px;
   fill: var(--labelFill); text-anchor: middle;
-  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; stroke-linejoin: round;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4px; stroke-linejoin: round;
   pointer-events: none;
 }
 /* Ruled out by today's height, said in ink rather than in opacity — fading
@@ -532,16 +533,16 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .helpRing { fill: none; stroke: var(--red); stroke-width: 2; animation: ping 1.1s ease-out infinite; }
 .memMarker { transition: opacity var(--t2) var(--easeOut); }
 .memInitials {
-  font-family: var(--ui); font-size: 11px; font-weight: 600; fill: #fff;
+  font-family: var(--ui); font-size: 13px; font-weight: 700; fill: #fff;
   text-anchor: middle; pointer-events: none;
 }
 .memName {
-  font-family: var(--ui); font-size: 10px; font-weight: 500; fill: var(--labelFill);
+  font-family: var(--ui); font-size: 13px; font-weight: 600; fill: var(--labelFill);
   text-anchor: middle;
-  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px; pointer-events: none;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4px; pointer-events: none;
 }
 .kitLetter, .worldMarkLetter {
-  font-family: var(--ui); font-size: 9px; font-weight: 700; fill: var(--label);
+  font-family: var(--ui); font-size: 11px; font-weight: 700; fill: var(--label);
   text-anchor: middle; pointer-events: none;
 }
 .worldMark { cursor: pointer; }
@@ -2251,29 +2252,30 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 
    Which frees the dashed treatment to keep meaning the thing below. */
 .routeCase {
-  fill: none; stroke: var(--markerEdge); stroke-width: 10;
-  stroke-linecap: round; stroke-linejoin: round; opacity: .9;
-  stroke-dasharray: 0 14;
+  fill: none; stroke: var(--markerEdge); stroke-width: 12;
+  stroke-linecap: round; stroke-linejoin: round; opacity: .92;
+  stroke-dasharray: 0 16;
 }
-/* Parkbound trail: dotted adventure markers, not a solid GPS ribbon. */
+/* Parkbound trail: aqua navigation dots — coaster track stays adventure
+   orange, so the walk never disappears into the rides. */
 .routeLine {
-  fill: none; stroke: var(--adventure); stroke-width: 6;
+  fill: none; stroke: var(--aqua); stroke-width: 7;
   stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 0 14;
+  stroke-dasharray: 0 16;
 }
 /* Nothing in the path data joins these two points, so the line is a bearing
    rather than a walk — and it says so by not looking like one. Dashes, not
    dots, now that the dots mean "this is walkable". */
 .routeLine.direct {
-  stroke: var(--aqua); stroke-dasharray: 9 8; stroke-width: 4;
-  stroke-linecap: butt; opacity: .85;
+  stroke: var(--aqua); stroke-dasharray: 10 9; stroke-width: 5;
+  stroke-linecap: butt; opacity: .9;
 }
-.routeTurn { fill: var(--onTint); stroke: var(--adventure); stroke-width: 3; }
-/* Behind you, and no longer the point. */
+.routeTurn { fill: var(--onTint); stroke: var(--aqua); stroke-width: 3.5; }
+/* Behind you — adventure ink at low opacity so the aqua ahead stays loud. */
 .routeDone {
-  fill: none; stroke: var(--aqua); stroke-width: 5; opacity: .45;
+  fill: none; stroke: var(--adventure); stroke-width: 5; opacity: .4;
   stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 0 14;
+  stroke-dasharray: 0 16;
 }
 /* The ways you did not pick — visible, tappable, and clearly not the choice. */
 .altRoute { cursor: pointer; }
@@ -2498,8 +2500,8 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 
 .memAge {
-  font-family: var(--ui); font-size: 9px; font-weight: 500; fill: var(--label2);
-  text-anchor: middle; paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3px;
+  font-family: var(--ui); font-size: 11px; font-weight: 600; fill: var(--label2);
+  text-anchor: middle; paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3.5px;
   pointer-events: none;
 }
 .staleRing {

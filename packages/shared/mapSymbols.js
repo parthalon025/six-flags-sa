@@ -84,16 +84,18 @@ export const GLYPHS = {
  *   diamond — landmarks, so they read as "a place", not "a ride".
  *   pin     — gates, the only markers that mean "in or out".
  * rank drives size, label thresholds and who loses a collision: 1 wins. */
+/* Radii are sized for the grandma test: readable at arm's length outdoors
+   without covering a midway once zoomed in. Coasters stay largest. */
 export const SYMBOLS = {
-  coaster: { shape: 'disc', rank: 1, r: 9, hint: 'Roller coasters' },
-  ride: { shape: 'disc', rank: 2, r: 7.6, hint: 'Flat and family rides' },
-  landmark: { shape: 'diamond', rank: 2, r: 7.4, hint: 'Fountains, towers, stations' },
-  gate: { shape: 'pin', rank: 2, r: 7.8, hint: 'Park entrances and ticketing' },
-  food: { shape: 'chip', rank: 3, r: 7, hint: 'Places to eat' },
-  restroom: { shape: 'chip', rank: 3, r: 7, hint: 'Restrooms' },
-  show: { shape: 'chip', rank: 3, r: 7, hint: 'Theatres and stages' },
-  service: { shape: 'chip', rank: 4, r: 6.6, hint: 'First aid and lockers' },
-  shop: { shape: 'chip', rank: 4, r: 6.6, hint: 'Shops' },
+  coaster: { shape: 'disc', rank: 1, r: 11, hint: 'Roller coasters' },
+  ride: { shape: 'disc', rank: 2, r: 9.1, hint: 'Flat and family rides' },
+  landmark: { shape: 'diamond', rank: 2, r: 8.9, hint: 'Fountains, towers, stations' },
+  gate: { shape: 'pin', rank: 2, r: 9.4, hint: 'Park entrances and ticketing' },
+  food: { shape: 'chip', rank: 3, r: 8.4, hint: 'Places to eat' },
+  restroom: { shape: 'chip', rank: 3, r: 8.4, hint: 'Restrooms' },
+  show: { shape: 'chip', rank: 3, r: 8.4, hint: 'Theatres and stages' },
+  service: { shape: 'chip', rank: 4, r: 8, hint: 'First aid and lockers' },
+  shop: { shape: 'chip', rank: 4, r: 8, hint: 'Shops' },
   /* Rank 5, with parking, and that is the campground's individual pitches
      talking rather than the campground. Lighthouse Point contributes two
      hundred "Site 247"s to the list. They are the single most useful string in
@@ -101,11 +103,11 @@ export const SYMBOLS = {
      so they place last in a collision and only earn a printed name once you
      have zoomed into the campground. The area itself carries its name as a
      district, which is how it stays findable at every zoom. */
-  campsite: { shape: 'chip', rank: 5, r: 6.6, hint: 'Campground and its sites' },
-  parking: { shape: 'chip', rank: 5, r: 6.6, hint: 'Lots and drop-off' },
+  campsite: { shape: 'chip', rank: 5, r: 8, hint: 'Campground and its sites' },
+  parking: { shape: 'chip', rank: 5, r: 8, hint: 'Lots and drop-off' },
 };
 
-export const DEFAULT_SYMBOL = { shape: 'chip', rank: 5, r: 6.6, hint: '' };
+export const DEFAULT_SYMBOL = { shape: 'chip', rank: 5, r: 8, hint: '' };
 export const symbolFor = (category) => SYMBOLS[category] || DEFAULT_SYMBOL;
 
 /* Zoom at which a rank earns a name on the map. Markers themselves are never
