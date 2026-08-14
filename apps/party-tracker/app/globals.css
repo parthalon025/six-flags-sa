@@ -2708,6 +2708,21 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   padding: 4px 0 8px;
 }
 .signInCard .btn { margin-top: 8px; width: 100%; }
+.signInActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+.signInActions .btn { margin-top: 0; width: auto; flex: 1 1 auto; }
+.clerkAuthPage {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
 .brandMark {
   width: 22px; height: 22px; flex: none; color: var(--adventure);
 }

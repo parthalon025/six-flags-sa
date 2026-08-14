@@ -12,6 +12,7 @@ export const json = (body, status = 200) => NextResponse.json(body, { status, he
 export const badRequest = (message = 'Malformed request') => json({ error: message }, 400);
 export const notFound = (message = 'Not found') => json({ error: message }, 404);
 export const forbidden = (message = 'Forbidden') => json({ error: message }, 403);
+export const unauthorized = (message = 'Unauthorized') => json({ error: message }, 401);
 export const serverError = (message = 'Server error') => json({ error: message }, 500);
 
 /**

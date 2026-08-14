@@ -19,6 +19,7 @@
     "dev:all": "node server/index.mjs & next dev"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.7.5",
     "@party-tracker/shared": "1.7.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",

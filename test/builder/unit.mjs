@@ -8260,6 +8260,48 @@ await check('soft-gate helper lives on the local session module', async () => {
   });
 }
 
+{
+  const stashStore = new Map();
+  globalThis.window = {
+    localStorage: {
+      getItem: (k) => (stashStore.has(k) ? stashStore.get(k) : null),
+      setItem: (k, v) => {
+        stashStore.set(k, String(v));
+      },
+      removeItem: (k) => {
+        stashStore.delete(k);
+      },
+    },
+  };
+  const {
+    STASH_KEY,
+    stashGapSubmission,
+    readContributionStash,
+    takeContributionStash,
+    flushContributionStash,
+  } = await import('../../apps/party-tracker/lib/auth/contributionStash.js');
+
+  await check('contribution stash persists gap submit until sign-in flush', async () => {
+    stashStore.clear();
+    assert.equal(stashGapSubmission({ questId: 'q_height', venueId: 'kings-island', kind: 'height', payload: { heightIn: 48 } }), true);
+    assert.equal(readContributionStash().length, 1);
+    assert.equal(readContributionStash()[0].questId, 'q_height');
+    const enqueued = [];
+    const flushed = await flushContributionStash({
+      createReport: (input) => ({ ...input, id: 'rpt_1', status: 'pending', createdAt: Date.now() }),
+      enqueue: async (report) => {
+        enqueued.push(report);
+      },
+      awardQuestXp: async () => ({ profile: { scoredKeys: [] } }),
+    });
+    assert.equal(flushed, 1);
+    assert.equal(enqueued.length, 1);
+    assert.equal(stashStore.has(STASH_KEY), false);
+    assert.equal(takeContributionStash().length, 0);
+    return true;
+  });
+}
+
 /* --------------------------- databricks / E0 contributions ------------- */
 
 {

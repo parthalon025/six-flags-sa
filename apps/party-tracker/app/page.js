@@ -58,6 +58,7 @@ import { newMemberId } from '@/lib/core/ids';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
+import AuthBridge from '@/components/AuthBridge';
 import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
@@ -223,6 +224,13 @@ export default function Page() {
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
   const [authSession, setAuthSession] = useState(null);
   const [managedGuests, setManagedGuests] = useState([]);
+
+  const handleBindProfile = useCallback((userId) => {
+    if (!userId) return;
+    setIdentity((i) => (i ? { ...i, userId } : i));
+    if (identityRef.current) identityRef.current = { ...identityRef.current, userId };
+    runtime.current?.bindUserId?.(userId);
+  }, []);
   const [party, setParty] = useState(null); // the runtime's snapshot
   // The snapshot as a ref, for callbacks that must not be rebuilt on every
   // roster tick just to read the party they are sending to.
@@ -2077,6 +2085,7 @@ export default function Page() {
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
+      <AuthBridge onSession={setAuthSession} onBindUserId={handleBindProfile} />
       <ParkMap
         data={mapData}
         center={venue?.center}

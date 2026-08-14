@@ -1,5 +1,6 @@
 import './globals.css';
 import localFont from 'next/font/local';
+import { ClerkProvider } from '@clerk/nextjs';
 import { BRAND } from '@/lib/brand';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -78,7 +79,14 @@ export default function RootLayout({ children }) {
         <style>{`:root { --display: var(--font-display), 'Plus Jakarta Sans', 'Nunito Sans', 'Manrope', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }`}</style>
       </head>
       <body>
-        {children}
+        <ClerkProvider
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+          signInFallbackRedirectUrl="/"
+          signUpFallbackRedirectUrl="/"
+        >
+          {children}
+        </ClerkProvider>
         <Analytics />
         {/* RUM is for ops, not park-day UX — sample so most phones skip the script. */}
         <SpeedInsights sampleRate={0.1} />
