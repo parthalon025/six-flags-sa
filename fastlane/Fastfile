@@ -233,16 +233,16 @@ platform :ios do
 
     unless ENV.fetch("IOS_SKIP_METADATA", "false") == "true"
       if write_review_phone!
-        deliver(
-          deliver_base.merge(
-            skip_metadata: false,
-            skip_screenshots: true,
-            app_rating_config_path: File.expand_path(
-              File.join("fastlane", "metadata", "ios", "age_rating.json"),
-              repo_root
-            )
+        metadata_options = deliver_base.merge(
+          skip_metadata: false,
+          skip_screenshots: true,
+          app_rating_config_path: File.expand_path(
+            File.join("fastlane", "metadata", "ios", "age_rating.json"),
+            repo_root
           )
         )
+        metadata_options.delete(:api_key_path)
+        deliver(metadata_options)
       else
         UI.important(
           "Skipping metadata upload — set APP_STORE_REVIEW_PHONE (E.164) for App Review contact"

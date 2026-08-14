@@ -82,7 +82,7 @@ const IOS_PHONE = {
   dpr: 3,
 };
 
-const IOS_DEVICES = ['iPhone 16 Pro Max', 'iPhone 15 Pro Max', 'iPhone 14 Pro Max'];
+const IOS_DEVICES = ['iPhone 16 Pro Max'];
 
 const IPAD = {
   prefix: 'iPad Pro 13',

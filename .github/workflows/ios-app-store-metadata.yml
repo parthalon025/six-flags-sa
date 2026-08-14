@@ -57,6 +57,7 @@ jobs:
           APP_STORE_REVIEW_PHONE: ${{ secrets.APP_STORE_REVIEW_PHONE }}
           IOS_APP_VERSION: ${{ vars.IOS_APP_VERSION }}
           IOS_SKIP_SCREENSHOTS: "false"
+          IOS_SKIP_METADATA: ${{ secrets.APP_STORE_REVIEW_PHONE != '' && 'false' || 'true' }}
         run: |
           export IOS_APP_VERSION="${IOS_APP_VERSION:-$(node -p "require('./apps/party-tracker/package.json').version")}"
           bundle exec fastlane ios metadata
