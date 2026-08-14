@@ -80,6 +80,7 @@ jobs:
           git add \
             package.json \
             package-lock.json \
+            README.md \
             apps/party-tracker/package.json \
             packages/shared/package.json \
             packages/venue-builder/package.json \

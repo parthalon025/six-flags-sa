@@ -1,5 +1,7 @@
 # Parkbound
 
+> **Version 1.6.1**
+
 **Explore more. Stress less.**
 
 An explorer’s companion for a group at a big, crowded park. It ships with
