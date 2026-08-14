@@ -63,6 +63,7 @@ import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
+import { navKeyOf } from '@/lib/navKey';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -182,14 +183,6 @@ const REROUTE_M = 12;
 
 /** How far off the line counts as off-route — kept local so render does not pull in routing. */
 const OFF_ROUTE_M = 32;
-
-/** Stable identity for a walk target — local copy of routing.navKeyOf. */
-const navKeyOf = (nav) => {
-  if (!nav) return null;
-  if (nav.kind === 'member') return `member:${nav.id}`;
-  if (nav.kind === 'meet') return 'meet';
-  return `poi:${nav.label}`;
-};
 
 export default function Page() {
   const geo = useGeolocation();
