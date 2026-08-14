@@ -187,6 +187,7 @@ const {
   SHEET_LIST_AT_PX,
   SHEET_MAGNET_PX,
   SHEET_PEEK_PX,
+  SHEET_PLACE_PX,
   nextSheetStop,
   sheetCrowdsMap,
   settleSheet,
@@ -6322,9 +6323,18 @@ const {
   recommendNow,
   GO_NOW_M,
 } = await import('../../apps/party-tracker/lib/live.js');
-const { LIVE } = await import('../../apps/party-tracker/lib/brand.js');
+const { GLYPHS: CHROME_GLYPHS, LIVE, WORDS } = await import('../../apps/party-tracker/lib/brand.js');
 
 const BEAST_HERE = { ...BEAST, lat: 39.3441, lng: -84.268 };
+
+await check('meet-up and Plan share the glyphs used on the map and the tab bar', () => {
+  assert.equal(CHROME_GLYPHS.meetup, 'mappin.and.ellipse');
+  assert.equal(CHROME_GLYPHS.plan, 'figure.rollercoaster');
+  assert.equal(CHROME_GLYPHS.walk, 'location.fill');
+  assert.equal(WORDS.meetup, 'Set meet-up');
+  assert.equal(WORDS.addToPlan, 'Add to Plan');
+  return true;
+});
 
 await check('a nearby open report is GO NOW', () => {
   const now = 5_000_000;
@@ -6860,6 +6870,19 @@ await check('the stops come out where the CSS puts them', () => {
   assert.equal(STOPS.peek, SHEET_PEEK_PX);
   assert.equal(STOPS.half, 439);
   assert.equal(STOPS.full, 743);
+  return true;
+});
+
+await check('a map-tapped place card stays leaner than peek and half', () => {
+  // Google Maps' collapsed card: name, one line of facts, icon actions.
+  // It must not open at the half stop (half the screen) — the map stays
+  // the thing you look at, and pulling up is how you read the rest.
+  assert.equal(SHEET_PLACE_PX < STOPS.peek, true);
+  assert.equal(SHEET_PLACE_PX < STOPS.half, true);
+  assert.equal(SHEET_PLACE_PX > SHEET_CHROME_PX, true);
+  // Title+actions on one row, facts on the next: no spare nav row, no
+  // empty band between the icons and the tab bar.
+  assert.equal(SHEET_PLACE_PX, SHEET_CHROME_PX + 40 + 18 + 8);
   return true;
 });
 
