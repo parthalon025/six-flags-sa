@@ -199,9 +199,12 @@ platform :ios do
       automatic_release: false,
       force: true,
       precheck_include_in_app_purchases: false,
-      app_rating_config_path: File.join(__dir__, "metadata", "ios", "age_rating.json"),
-      metadata_path: File.join(__dir__, "metadata", "ios"),
-      screenshots_path: File.join(__dir__, "screenshots", "ios"),
+      app_rating_config_path: File.expand_path(
+        File.join("fastlane", "metadata", "ios", "age_rating.json"),
+        repo_root
+      ),
+      metadata_path: File.expand_path(File.join("fastlane", "metadata", "ios"), repo_root),
+      screenshots_path: File.expand_path(File.join("fastlane", "screenshots", "ios"), repo_root),
       submission_information: {
         add_id_info_uses_idfa: false,
         export_compliance_uses_encryption: true,
