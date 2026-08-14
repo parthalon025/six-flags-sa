@@ -21,6 +21,7 @@ import useWeather from '@/components/useWeather';
 import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND } from '@/lib/brand';
+import { haptic, listenInviteUrls, registerPush, shouldRegisterPush } from '@/lib/native';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -391,7 +392,7 @@ export default function Page() {
       // A little confirmation under the thumb. The screen has already changed
       // by the time a phone this size has finished animating, and on a bright
       // midway the tap is often felt before it is seen.
-      navigator.vibrate?.(8);
+      void haptic(8);
     },
     [applyNav],
   );
@@ -742,6 +743,27 @@ export default function Page() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    let stop = () => {};
+    void listenInviteUrls((url) => {
+      try {
+        const parsed = new URL(url);
+        if (!parsed.pathname.startsWith('/join')) return;
+        if (window.location.href === url) return;
+        window.location.assign(url);
+      } catch {
+        /* ignore malformed shell URLs */
+      }
+    }).then((unsub) => {
+      if (typeof unsub === 'function') stop = unsub;
+    });
+    return () => stop();
+  }, []);
+
+  useEffect(() => {
+    if (shouldRegisterPush(party)) void registerPush();
+  }, [party?.active]);
 
   useEffect(() => {
     const measure = () => {
@@ -1117,7 +1139,7 @@ export default function Page() {
         const me = positionRef.current;
         const d = me && Number.isFinite(m.lat) ? distance(me.lat, me.lng, m.lat, m.lng) : null;
         showToast(`${m.name} needs help - ${formatDistance(d)}`);
-        navigator.vibrate?.([120, 70, 120]);
+        void haptic([120, 70, 120]);
       }
       if (m.status !== 'NEED HELP') helpSeen.current.delete(m.id);
     });
@@ -1709,7 +1731,7 @@ export default function Page() {
     setNavPhase('go');
     setFollow(true);
     shrinkSheet(stops.peek);
-    navigator.vibrate?.(30);
+    void haptic(30);
   }, [shrinkSheet, stops]);
 
   // The person or pin we were walking to is gone. Say so once instead of
@@ -1854,7 +1876,7 @@ export default function Page() {
     if (arrived.current === key) return;
     arrived.current = key;
     showToast(`You're at ${navTarget.label}`);
-    navigator.vibrate?.(90);
+    void haptic(90);
     stopNav();
   }, [walking, progress?.arrived, navTarget, showToast, stopNav]);
 

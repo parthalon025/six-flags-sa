@@ -61,7 +61,7 @@
     "test:modules": "node test/app/select-modules.mjs",
     "test:module-select": "node test/app/module-select.test.mjs",
     "test:coverage-contract": "node test/app/coverage-contract.mjs",
-    "test:unit": "node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/scripts/gitnexus-ci.test.mjs && node test/scripts/bump-version.test.mjs && node test/scripts/vercel-ignore.test.mjs && node test/scripts/worktree.test.mjs && node test/app/host-service-import.test.mjs",
+    "test:unit": "node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/scripts/gitnexus-ci.test.mjs && node test/scripts/bump-version.test.mjs && node test/scripts/vercel-ignore.test.mjs && node test/scripts/worktree.test.mjs && node test/app/host-service-import.test.mjs && node test/app/native.test.mjs && node test/app/store-links.test.mjs",
     "test:functional": "node test/app/functional.mjs",
     "test:compare": "node test/builder/compare.mjs",
     "test:visual": "node test/app/visual.mjs",
@@ -79,15 +79,34 @@
     "cap:sync": "node scripts/stamp-native-version.mjs && npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
+    "cap:android": "npx cap open android",
+    "cap:ios": "npx cap open ios",
+    "store:prepare": "node scripts/store-prepare.mjs",
+    "store:icons": "node scripts/build-icons.mjs",
+    "store:screenshots": "node scripts/store-screenshots.mjs",
     "store:scaffold-metadata": "node scripts/scaffold-app-store-metadata.mjs"
   },
   "devDependencies": {
-    "@capacitor/android": "^7.4.2",
-    "@capacitor/cli": "^7.4.2",
-    "@capacitor/core": "^7.4.2",
-    "@capacitor/ios": "^7.4.2",
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/ios": "^7.4.4",
     "dependency-cruiser": "^18.2.0",
     "playwright": "^1.62.1",
     "turbo": "^2.10.9"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.26",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/clipboard": "^7.0.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/device": "^7.0.3",
+    "@capacitor/geolocation": "^7.1.8",
+    "@capacitor/haptics": "^7.0.3",
+    "@capacitor/keyboard": "^7.0.4",
+    "@capacitor/network": "^7.0.3",
+    "@capacitor/push-notifications": "^7.0.7",
+    "@capacitor/share": "^7.0.3",
+    "@capacitor/splash-screen": "^7.0.4",
+    "@capacitor/status-bar": "^7.0.4"
   }
 }

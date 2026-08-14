@@ -22,6 +22,17 @@ Identifiers for App Store Connect / Play Console live in [`store-identifiers.jso
 
 ## Prerequisites
 
+Generate the Android upload keystore (no paid accounts required):
+
+```bash
+npm run store:prepare
+```
+
+That writes `secrets/parkbound-upload.keystore` (gitignored) and prints the
+cert fingerprint for Play App Links. After Apple Developer ($99) and Google
+Play ($25), copy `.env.example` → `.env`, add Firebase plists, set
+`IOS_TEAM_ID` and `ANDROID_CERT_SHA256` on Vercel, then run the lanes below.
+
 ### Toolchain
 
 | Tool | Version | Purpose |
@@ -40,13 +51,12 @@ bundle install
 
 ### Native shells
 
-Park Bound ships as a **Next.js PWA** (`apps/party-tracker`). Official store binaries are Capacitor shells around that app — [ADR-0005](../docs/adr/0005-store-capacitor-shell.md). Fastlane expects `ios/` and `android/` once those projects exist. Do not static-export the Next app (`out/`); `/api/*` stays on the deployed origin.
+Park Bound ships as a **Next.js PWA** (`apps/party-tracker`). Official store binaries are Capacitor shells around that app — [ADR-0005](../docs/adr/0005-store-capacitor-shell.md). Native projects live at `ios/` and `android/` (`ai.kurat0r.parkbound`). `npm run cap:sync` stamps the app version, then copies `native/www` and plugin registrations. The WebView loads `https://parkbound.kurat0r.ai` so `/api/*` stays on the deployed origin (do not static-export the Next app).
 
 ```bash
-npm install @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android
-npx cap init Parkbound ai.kurat0r.parkbound
-npx cap add ios
-npx cap add android
+npm run cap:sync
+npm run cap:open:android   # Windows / Android Studio
+npm run cap:open:ios       # macOS / Xcode
 ```
 
 Adjust `WEB_APP_PATH`, `IOS_WORKSPACE_PATH`, and `ANDROID_PROJECT_PATH` in `.env` if your layout differs.
@@ -150,7 +160,14 @@ Add per-release Android changelogs at:
 fastlane/metadata/android/en-US/changelogs/<versionCode>.txt
 ```
 
-Add screenshots under `fastlane/screenshots/ios/` and `fastlane/screenshots/android/`, then set `IOS_SKIP_SCREENSHOTS=false` or `ANDROID_SKIP_SCREENSHOTS=false`.
+Generate listing art and screenshots (no paid accounts):
+
+```bash
+npm run store:icons
+npm run store:screenshots
+```
+
+Glance at the PNGs, then set `IOS_SKIP_SCREENSHOTS=false`, `ANDROID_SKIP_SCREENSHOTS=false`, and `ANDROID_SKIP_IMAGES=false`. Paste `fastlane/store-declarations.json` into App Store privacy nutrition and Play Data safety.
 
 ### Push metadata from GitHub (no Mac)
 

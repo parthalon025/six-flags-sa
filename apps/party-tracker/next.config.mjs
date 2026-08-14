@@ -52,7 +52,7 @@ const security = [
   // Geolocation is the product; camera/mic stay off. Payment APIs unused.
   {
     key: 'Permissions-Policy',
-    value: 'geolocation=(self), camera=(), microphone=(), payment=()',
+    value: 'geolocation=(self), camera=(self), microphone=(), payment=()',
   },
 ];
 

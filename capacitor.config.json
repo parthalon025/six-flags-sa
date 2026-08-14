@@ -1,7 +1,7 @@
 {
   "appId": "ai.kurat0r.parkbound",
   "appName": "Parkbound",
-  "webDir": "apps/party-tracker/public",
+  "webDir": "native/www",
   "server": {
     "url": "https://parkbound.kurat0r.ai",
     "androidScheme": "https",
@@ -16,6 +16,22 @@
     "contentInset": "automatic"
   },
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "useLegacyBridge": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "launchAutoHide": true
+    },
+    "StatusBar": {
+      "style": "DARK"
+    },
+    "Keyboard": {
+      "resize": "body"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
   }
 }
