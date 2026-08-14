@@ -83,6 +83,18 @@ export const SHEET_LIST_AT_PX =
 /** The two open stops, as a fraction of the viewport. */
 export const SHEET_OPEN = { half: 0.52, full: 0.88 };
 
+/**
+ * Compact place card opened from a map tap — Google Maps' collapsed card:
+ * name and icon actions on one row, one line of facts under it. The back
+ * chevron overlays the title rather than taking a row of its own.
+ */
+export const SHEET_PLACE_HEAD_PX = 0;
+export const SHEET_PLACE_TITLE_PX = 40;
+export const SHEET_PLACE_META_PX = 18;
+export const SHEET_PLACE_ACTIONS_PX = 0;
+export const SHEET_PLACE_PX =
+  SHEET_CHROME_PX + SHEET_PLACE_TITLE_PX + SHEET_PLACE_META_PX + 8;
+
 /** How close to a stop a release has to land for the stop to take it. */
 export const SHEET_MAGNET_PX = 26;
 

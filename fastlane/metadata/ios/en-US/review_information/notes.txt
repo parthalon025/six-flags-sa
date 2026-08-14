@@ -1,0 +1,3 @@
+Park Bound is a park-day companion. Location is the product: a device member of a live party shares it with that party while inside the venue so everyone can see each other on the map. Background Location keeps a pocketed Host updating the party. Push is for party alerts (NEED HELP, meet). Camera is only for scanning a party invite QR. No ads. No tracking. No IDFA.
+
+Demo: open the app, allow Location, confirm the nearest park, start a party, share the invite link.

@@ -64,6 +64,18 @@ export const WORDS = {
   ridesTab: 'Plan',
   exploreTab: 'Explore',
   partyTab: 'Party',
+  meetup: 'Set meet-up',
+  addToPlan: 'Add to Plan',
+};
+
+/**
+ * Glyphs the chrome shares, so a button never invents its own icon. Meet-up
+ * is the map pin already on the FAB; Plan is the coaster already on the tab.
+ */
+export const GLYPHS = {
+  meetup: 'mappin.and.ellipse',
+  plan: 'figure.rollercoaster',
+  walk: 'location.fill',
 };
 
 /** Live state labels — bold, short, never buried in gray body copy. */

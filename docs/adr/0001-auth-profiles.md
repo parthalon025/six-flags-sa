@@ -1,5 +1,7 @@
 # Auth provider and session model
 
-Park Bound uses **Auth.js (NextAuth v5)** with email magic link (primary) and optional Google OAuth, JWT session cookies, and a soft gate: anonymous users may browse the map and join or host a **Party** by display name (join still requires **Location**). **Contributions**, gap **Side Quest** submit, park-wide **Observation** / **Overlay**, saving **Managed Guests**, and cross-day **Plan** sync require a signed-in **Profile**. **Ride reports** are name-first and do not need a **Party**. Offline UX caches a profile snapshot in IndexedDB after login; map/routing stay offline from venue JSON. Server identity lives in plain Postgres (no PostGIS).
+**Status:** Superseded — 2026-08-14 by [`0010-clerk-profile-signup.md`](./0010-clerk-profile-signup.md)
 
-Expanded write-up: `docs/superpowers/specs/adr-auth-profiles.md`.
+This ADR recorded **Auth.js (NextAuth v5)** with email magic link + optional Google. Park Bound now uses **Clerk** with Google + Apple only. Soft gates, offline cache intent, and Postgres **Profile** storage are unchanged in spirit — see ADR-0010 and [`CONTEXT.md`](../../CONTEXT.md).
+
+Historical expanded write-up: [`../superpowers/specs/adr-auth-profiles.md`](../superpowers/specs/adr-auth-profiles.md).

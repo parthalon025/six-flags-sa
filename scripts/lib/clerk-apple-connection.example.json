@@ -1,0 +1,11 @@
+{
+  "connection_oauth_apple": {
+    "enabled": true,
+    "authenticatable": true,
+    "client_id": "ai.kurat0r.parkbound.web",
+    "team_id": "YOUR_APPLE_TEAM_ID",
+    "key_id": "YOUR_APPLE_KEY_ID",
+    "client_secret": "-----BEGIN PRIVATE KEY-----\nPASTE_P8_CONTENTS\n-----END PRIVATE KEY-----",
+    "bundle_id": "ai.kurat0r.parkbound"
+  }
+}

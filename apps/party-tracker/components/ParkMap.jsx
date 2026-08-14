@@ -366,6 +366,8 @@ function ParkMap({
   marks = [],
   selfKit = null,
   onThankMark = null,
+  /** Queue pins and path crumbs from Overlay — not extra ride Places. */
+  overlayPins = [],
 }) {
   const palette = paletteFor(theme);
   // The venue's own district tints, where it has hand-picked any.
@@ -1548,6 +1550,23 @@ function ParkMap({
             {l.text}
           </text>
         ))}
+
+        {(overlayPins || []).map((pin) => {
+          if (!Number.isFinite(pin.lat) || !Number.isFinite(pin.lng)) return null;
+          const [sx, sy] = at(pin.lat, pin.lng);
+          const path = pin.kind === 'path';
+          return (
+            <g
+              key={pin.id}
+              className={`overlayPin overlayPin-${pin.kind || 'fact'}`}
+              data-overlay-pin={pin.kind || 'fact'}
+              transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)})`}
+            >
+              <title>{pin.label || pin.kind || 'Overlay'}</title>
+              <circle r={path ? 5 : 8} />
+            </g>
+          );
+        })}
 
         {/* meet-up — Parkbound simplified Waypoint (brand sheet: live map) */}
         {meet &&

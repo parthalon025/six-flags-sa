@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.6.2",
+  "version": "1.11.1",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -41,6 +41,12 @@
     "venues:build-agent": "node packages/venue-builder/venue-build-agent.mjs",
     "venues:certify": "node packages/venue-builder/bin/venue-certify.mjs",
     "venues:consolidate": "node packages/venue-builder/bin/consolidate.mjs",
+    "export:databricks": "node scripts/export-for-databricks.mjs",
+    "consolidate:export": "node scripts/run-consolidate-from-export.mjs --queue data/databricks/bronze/consolidate-export.json",
+    "databricks:setup": "node scripts/databricks-workspace-setup.mjs",
+    "databricks:free-setup": "node scripts/databricks-free-setup.mjs",
+    "clerk:setup": "node scripts/clerk-setup.mjs",
+    "databricks:e2e": "node scripts/databricks-e2e.mjs",
     "venues:discover-parks-api": "node packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node packages/venue-builder/bin/geocode-catalog.mjs",
     "venues:drift-watch": "node packages/venue-builder/bin/drift-watch.mjs",
@@ -55,7 +61,7 @@
     "test:modules": "node test/app/select-modules.mjs",
     "test:module-select": "node test/app/module-select.test.mjs",
     "test:coverage-contract": "node test/app/coverage-contract.mjs",
-    "test:unit": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/scripts/gitnexus-ci.test.mjs && node test/scripts/bump-version.test.mjs && node test/scripts/vercel-ignore.test.mjs && node test/scripts/worktree.test.mjs && node test/app/host-service-import.test.mjs",
+    "test:unit": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/app/overlay.test.mjs && node test/builder/gaps-quests.mjs && node test/scripts/gitnexus-ci.test.mjs && node test/scripts/bump-version.test.mjs && node test/scripts/vercel-ignore.test.mjs && node test/scripts/worktree.test.mjs && node test/scripts/store-app-preview.test.mjs && node test/app/host-service-import.test.mjs && node test/app/native.test.mjs && node test/app/store-links.test.mjs",
     "test:functional": "node test/app/functional.mjs",
     "test:compare": "node test/builder/compare.mjs",
     "test:visual": "node test/app/visual.mjs",
@@ -69,16 +75,39 @@
     "worktree:list": "node scripts/worktree.mjs list",
     "worktree:status": "node scripts/worktree.mjs status",
     "worktree:prune": "node scripts/worktree.mjs prune",
-    "skills:check": "node scripts/check-skills-lock.mjs"
-  },
-  "dependencies": {
-    "next": "^16.3.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "skills:check": "node scripts/check-skills-lock.mjs",
+    "cap:sync": "node scripts/stamp-native-version.mjs && npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android",
+    "cap:android": "npx cap open android",
+    "cap:ios": "npx cap open ios",
+    "store:prepare": "node scripts/store-prepare.mjs",
+    "store:icons": "node scripts/build-icons.mjs",
+    "store:screenshots": "node scripts/store-screenshots.mjs",
+    "store:app-preview": "node scripts/store-app-preview.mjs",
+    "store:scaffold-metadata": "node scripts/scaffold-app-store-metadata.mjs"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/ios": "^7.4.4",
     "dependency-cruiser": "^18.2.0",
     "playwright": "^1.62.1",
     "turbo": "^2.10.9"
+  },
+  "dependencies": {
+    "@capacitor-community/background-geolocation": "^1.2.26",
+    "@capacitor/app": "^7.1.0",
+    "@capacitor/clipboard": "^7.0.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/device": "^7.0.3",
+    "@capacitor/geolocation": "^7.1.8",
+    "@capacitor/haptics": "^7.0.3",
+    "@capacitor/keyboard": "^7.0.4",
+    "@capacitor/network": "^7.0.3",
+    "@capacitor/push-notifications": "^7.0.7",
+    "@capacitor/share": "^7.0.3",
+    "@capacitor/splash-screen": "^7.0.4",
+    "@capacitor/status-bar": "^7.0.4"
   }
 }

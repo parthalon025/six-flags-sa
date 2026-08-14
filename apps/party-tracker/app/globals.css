@@ -739,6 +739,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .navHeadPad { flex: 1 1 0; }
+/* Overlay the chevron on the title row so the place card does not pay a
+   whole nav bar of empty space for Back. */
+.navHead.placeNav {
+  position: absolute; top: 0; left: 0; right: 0; height: 0;
+  padding: 0; margin: 0; border: none; overflow: visible; z-index: 2;
+}
+.navHead.placeNav .navBack {
+  position: absolute; top: 2px; left: 2px;
+  flex: none; width: 36px; min-width: 36px; min-height: 36px;
+}
+.navHead.placeNav .navHeadPad { display: none; }
+.navHead.placeNav h2 {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
 
 /* ---- a grouped list of rows that lead somewhere ---- */
 .rowList {
@@ -918,6 +933,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    sliding sheet of paper rather than two halves landing separately. */
 .sheetStage {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
+  position: relative;
   /* Clipped, so that a peek stop too short for everything above it loses the
      bottom of the rail rather than painting it through the tab bar. */
   overflow: hidden;
@@ -1168,6 +1184,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    continuously under the finger rather than at a stop; all that is left here is
    collapsing the empty box the body leaves behind. */
 .sheetBody:empty { display: none; }
+/* A place card is a collapsed Maps sheet: no fade mask, no 16px inset — those
+   were a band of empty glass between the handle, the title and the tab bar. */
+.sheetBody.placeBody {
+  padding: 0 10px 2px;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
 
 /* What the hidden body is, said in words, because the grab pill is not an
    affordance anyone reads. Caption 1 on a 22px box: the peek budget below was
@@ -1331,36 +1354,53 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .poiDetail { padding: 0 16px 14px 38px; animation: fadeIn var(--t2) var(--easeOut) both; }
 .poiNote { font-size: 15px; color: var(--label2); margin: 0 0 10px; line-height: 20px; }
 
-/* Full place sheet from a map tap — same answers as an expanded list row, with
-   room for the name and walk time above the actions. */
-.placeDetail { padding: 4px 4px 12px; }
+/* Walk / meet-up / Plan as the same icons used on the map and the tab bar. */
+.placeActions { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; flex: none; }
+.placeActions .btn.iconOnly {
+  width: 40px; height: 40px; min-width: 40px; min-height: 40px; padding: 0;
+}
+
+/* Full place sheet from a map tap — title + actions on one row, facts on the
+   next. Notes sit below so a lean height still shows the things you came to do. */
+.placeDetail { padding: 0 0 2px; }
 .placeDetailHead {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 4px 12px 10px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 0 2px 30px;
 }
 .placeDetailHead .dot {
-  width: 12px; height: 12px; border-radius: 50%; margin-top: 6px; flex: none;
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
 }
-.placeDetailText { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.placeDetailText { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 0; }
 .placeDetailName {
-  font-size: 22px; font-weight: 700; letter-spacing: -.4px; line-height: 1.2;
+  font-size: 17px; font-weight: 700; letter-spacing: -.36px; line-height: 1.15;
 }
-.placeDetailText > span {
-  font-size: 15px; color: var(--label2); letter-spacing: -.08px; line-height: 1.3;
+.placeDetailLine {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--label2); letter-spacing: -.08px; line-height: 1.25;
 }
-.placeDetailMeta {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  padding: 0 12px 12px 36px;
-}
-.placeDetailWalk {
-  display: inline-flex; flex-direction: column; line-height: 1.15;
-}
-.placeDetailWalk b { font-size: 17px; font-weight: 600; letter-spacing: -.24px; }
-.placeDetailWalk em { font-style: normal; font-size: 13px; color: var(--label2); }
-.placeDetail .poiDetail { padding-left: 36px; padding-right: 12px; }
+.placeDetailLine b { font-weight: 600; color: var(--label); }
+.placeDetailHead .placeActions { margin: 0; }
+.placeDetail .poiDetail { padding: 2px 0 0 30px; }
+.placeDetail .poiNote { font-size: 13px; margin: 0 0 6px; line-height: 18px; }
 /* The parked-car pin. Same drop-in as the meet-up's, so the two read as the
    same kind of thing — a spot somebody chose — in two different colours. */
 .carPin { animation: popIn var(--t2) var(--easeOut) both; }
+
+.overlayCompletions { list-style: none; margin: 0 0 10px; padding: 0; }
+.overlayCompletion { margin: 0 0 6px; }
+.overlayPin circle {
+  fill: var(--adventure);
+  stroke: var(--markerEdge, #1a1a1a);
+  stroke-width: 1.4;
+}
+.overlayPin-path circle {
+  fill: var(--aqua);
+  opacity: 0.85;
+  stroke-width: 1.2;
+}
+.overlayPin-queue circle {
+  fill: var(--adventure);
+}
 
 /* Hookups and pad details, as a checklist rather than a sentence. Wrapping
    rather than scrolling: this is read against what the caravan needs, and a
@@ -1525,6 +1565,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: rgba(0, 0, 0, .40);
   display: flex; align-items: flex-end;
   animation: fadeIn var(--t2) var(--easeOut) both;
+}
+/* First-run: opaque, no fade. A transparent fade-in over the live map ghosts
+   PARKBOUND (sheet lockup + splash lockup) and looks like a broken load. */
+.gate.gateFirstRun {
+  background: var(--bg);
+  animation: none;
+}
+.gate.gateFirstRun .gateCard {
+  animation: none;
+}
+/* The hold lives in the home SSR HTML because introSeen is null on the server.
+   A head script stamps data-intro before first paint: returning phones skip
+   the cover; first visits hide the map/sheet until that same stamp says seen. */
+html[data-intro="seen"] [data-intro-hold] {
+  display: none;
+}
+html:not([data-intro="seen"]) .app > :not(.gate) {
+  visibility: hidden;
 }
 .gateCard {
   width: 100%; background: var(--bg2);
@@ -2715,6 +2773,25 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   padding: 4px 0 8px;
 }
 .signInCard .btn { margin-top: 8px; width: 100%; }
+.signInActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: center;
+}
+.signInActions .btn { margin-top: 0; width: auto; flex: 1 1 auto; }
+.signInActionsStack { flex-direction: column; align-items: stretch; }
+.signInActionsStack .btn { width: 100%; flex: none; }
+.authGateGuest { margin-top: 12px; width: 100%; }
+.authGateCard .signInActionsStack { margin-bottom: 0; }
+.clerkAuthPage {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
 .brandMark {
   width: 22px; height: 22px; flex: none; color: var(--adventure);
 }
@@ -2724,6 +2801,62 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 .trailLine.active {
   stroke: var(--adventure); stroke-width: 4; stroke-dasharray: none;
+}
+
+/* Standalone legal pages (privacy policy for store URL). */
+.privacyPage {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--label);
+  padding: 24px 20px 48px;
+}
+.privacyPage-inner {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+.privacyPage-kicker {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.privacyPage-kicker a {
+  color: var(--aqua);
+  text-decoration: none;
+  font-weight: 600;
+}
+.privacyPage h1 {
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 5vw, 2.25rem);
+  letter-spacing: -.03em;
+  margin: 0 0 12px;
+}
+.privacyPage-lede {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--label2);
+  margin: 0 0 28px;
+}
+.privacyPage section {
+  margin-bottom: 24px;
+}
+.privacyPage h2 {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.privacyPage p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--label2);
+}
+.privacyPage a {
+  color: var(--aqua);
+}
+.privacyPage-muted {
+  font-size: 13px;
+  margin-top: 8px;
+  opacity: 0.75;
 }
 
 /* Everything above is decoration; none of it is load-bearing, so it all comes

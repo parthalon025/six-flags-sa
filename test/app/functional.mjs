@@ -396,13 +396,22 @@ await check('tapping a map icon opens place details and navigation', async () =>
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(350);
   }
+  await until(() => a.locator('svg.mapSvg path').count().then((n) => n >= 800), {
+    timeout: 20000,
+    label: 'park geometry',
+  });
   // Prefer a named ride so the tap is deterministic after earlier list clicks.
-  const name = (await tapMapPoi(a, 'The Beast')) || (await tapMapPoi(a));
+  let name;
+  try {
+    name = await tapMapPoi(a, 'The Beast', { timeout: 8000 });
+  } catch {
+    name = await tapMapPoi(a, null, { timeout: 12000 });
+  }
   await until(async () => (await a.locator('[data-place-detail]').count()) > 0, {
     timeout: 12000,
     label: 'place detail sheet',
   });
-  const title = await a.locator('.navHead h2').innerText();
+  const title = await a.locator('.placeDetailName').innerText();
   if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
   const go = a.locator('[data-place-detail] button[aria-label="Walk me there"]');
   if (!(await go.count())) throw new Error('no navigate control on place detail');
@@ -419,7 +428,7 @@ await check('"walk me there" offers the route before setting off', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]').click();
+  await a.locator('.poiRow.open .placeActions button[aria-label="Walk me there"]').click();
   await a.waitForTimeout(900);
   if (!(await a.locator('.routePreview').count())) throw new Error('no preview card');
   // Nothing has taken over the screen yet: no banner, no bottom bar.
@@ -565,7 +574,7 @@ await check('return to Kings Island before walk UX coverage', async () => {
   await searchPlaces(a, 'beast');
   await a.locator('.poiRow .poiMain').first().click();
   await a.waitForTimeout(300);
-  await a.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]').click();
+  await a.locator('.poiRow.open .placeActions button[aria-label="Walk me there"]').click();
   await until(async () => (await a.locator('.routePreview').count()) > 0, {
     timeout: 15000,
     label: 'beast route preview on kings island',
@@ -780,6 +789,61 @@ await check('Side Quest submit queues locally', async () => {
   return true;
 });
 
+await check('complete a gap quest draws Overlay on the map', async () => {
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+    timeout: 15000,
+    label: 'side quest rows',
+  });
+  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  await until(async () => (await heightRow.count()) > 0, {
+    timeout: 10000,
+    label: 'height gap quest',
+  });
+  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  await until(async () => (await reportBtn.count()) > 0, {
+    timeout: 10000,
+    label: 'height Report after sign-in',
+  });
+  if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
+    await reportBtn.click();
+    await a.waitForTimeout(200);
+  }
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  const targetChip = heightRow.locator('.sideQuestChip').first();
+  const rideName = ((await targetChip.innerText().catch(() => '')) || '').trim();
+  if (await targetChip.count()) await targetChip.click();
+  const heightChip = heightRow.locator('.sideQuestForm .chip', { hasText: '48"' });
+  await until(async () => (await heightChip.count()) > 0, {
+    timeout: 5000,
+    label: '48 inch chip',
+  });
+  await heightChip.click();
+  await heightRow.locator('.sideQuestSubmit').click();
+  await until(
+    async () => /confirmed 48/i.test(await a.locator('[data-overlay-mine]').innerText().catch(() => '')),
+    { timeout: 10000, label: 'your completions list Overlay' },
+  );
+  if (!rideName) throw new Error('height quest had no target chip');
+  await go(a, 'Places');
+  await searchPlaces(a, rideName);
+  const row = a.locator('.poiRow', { hasText: rideName }).first();
+  await row.waitFor({ state: 'visible', timeout: 15000 });
+  await row.click();
+  await until(
+    async () => (await a.locator('[data-overlay-completions]').count()) > 0,
+    { timeout: 10000, label: 'place overlay completions' },
+  );
+  const detail = await a.locator('.poiDetail, .placeDetail').first().innerText();
+  if (!/48"|confirmed 48/i.test(detail)) {
+    throw new Error(`overlay height missing on ${rideName}: ${detail.slice(0, 240)}`);
+  }
+  await clearSearch(a).catch(() => {});
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
@@ -945,7 +1009,7 @@ await check('meet-up set from a ride reaches the other phone', async () => {
   });
   await a.locator('.poiRow', { hasText: 'The Racer' }).first().locator('.poiMain').click();
   await a.waitForTimeout(500);
-  await a.locator('button:has-text("Make this the meet-up")').click();
+  await a.locator('.poiRow.open button[aria-label="Set meet-up"]').click();
   await go(a, 'Party');
   await until(async () => /Racer/i.test(await b.locator('.sheetBody').innerText()), {
     timeout: JOIN_TIMEOUT,
@@ -1220,6 +1284,77 @@ await check('the roster never collapses while the host is replaced', async () =>
 
 if (want('intake')) {
 console.log('\n--- intake / nearest park ---');
+
+await check('first-run covers the map before the splash paints', async () => {
+  const fresh = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await fresh.addInitScript(() => {
+    localStorage.removeItem('tracker-intro-seen');
+  });
+  const p = await fresh.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await until(async () => (await p.locator('.gate').count()) > 0, {
+    timeout: 8000,
+    label: 'a gate on first paint',
+  });
+  const gate = p.locator('.gate').first();
+  const painted = await until(
+    async () => {
+      const klass = (await gate.getAttribute('class')) || '';
+      if (!/\bgateFirstRun\b/.test(klass)) return null;
+      const { bg, anim } = await gate.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { bg: s.backgroundColor, anim: s.animationName };
+      });
+      if (!bg) return null;
+      return { klass, bg, anim };
+    },
+    { timeout: 8000, label: 'opaque first-run styles' },
+  );
+  if (painted.anim && painted.anim !== 'none') throw new Error(`first-run gate animated (${painted.anim})`);
+  if (/0,\s*0,\s*0/.test(painted.bg) && /0\.(3|4)/.test(painted.bg)) {
+    throw new Error(`first-run gate is translucent (${painted.bg})`);
+  }
+  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+    timeout: 10000,
+    label: 'logo splash after the hold',
+  });
+  const sheetHidden = await p.locator('.app > .sheet').evaluate((el) => getComputedStyle(el).visibility);
+  if (sheetHidden !== 'hidden') throw new Error(`first-run sheet leaked (${sheetHidden})`);
+  await fresh.close();
+  return true;
+});
+
+await check('a returning phone skips the hold and does not hide the map', async () => {
+  const back = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: 30.2672, longitude: -97.7431 },
+  });
+  await back.addInitScript(() => {
+    localStorage.setItem('tracker-intro-seen', '1');
+  });
+  const p = await back.newPage();
+  await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await until(
+    async () => {
+      if ((await p.locator('html').getAttribute('data-intro')) !== 'seen') return false;
+      const hold = p.locator('[data-intro-hold]');
+      if (!(await hold.count())) return true;
+      const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
+      return display === 'none';
+    },
+    { timeout: 8000, label: 'html[data-intro=seen] hides the SSR hold' },
+  );
+  if (await p.locator('#intro-splash-title').count()) {
+    throw new Error('returning phone still got the logo splash');
+  }
+  await back.close();
+  return true;
+});
 
 // A phone that is at neither park: an hour up the interstate from Fiesta Texas,
 // and most of a continent from Kings Island. Its first fix is inside nothing,

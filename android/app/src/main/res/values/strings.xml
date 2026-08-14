@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Parkbound</string>
+    <string name="title_activity_main">Parkbound</string>
+    <string name="package_name">ai.kurat0r.parkbound</string>
+    <string name="custom_url_scheme">ai.kurat0r.parkbound</string>
+</resources>

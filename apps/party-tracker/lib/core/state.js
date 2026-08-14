@@ -24,6 +24,7 @@ import {
   thankMark,
   withdrawOffer,
 } from '../world.js';
+import { applyContribution, emptyOverlay, normalizeContribution, normalizeOverlay } from '../overlay.js';
 
 /** How long a member can go unheard from before the roster drops them. */
 export const MEMBER_TTL_MS = 45 * 60 * 1000;
@@ -74,6 +75,7 @@ export function createParty({ id, name = 'Party', leader, now = Date.now(), tran
     rides: {},
     meet: null,
     plan: [],
+    overlay: emptyOverlay(),
     // Party-wide settings. Collaborative world (Offers, Marks, Thanks) lives
     // under `settings.world` and replicates through OP.SETTINGS_MERGE.
     settings: {},
@@ -133,6 +135,7 @@ export function adoptSnapshot(target, snap) {
     rides: snap.rides,
     meet: snap.meet,
     plan: Array.isArray(snap.plan) ? snap.plan : [],
+    overlay: normalizeOverlay(snap.overlay),
     settings: snap.settings,
   };
 }
@@ -149,6 +152,7 @@ export const OP = {
   RIDE_DEL: 'ride.del', // { id }
   MEET_SET: 'meet.set', // { meet }
   PLAN_SET: 'plan.set', // { plan }
+  OVERLAY_APPLY: 'overlay.apply', // { contribution }
   LEADER_SET: 'leader.set', // { leader }
   SETTINGS_MERGE: 'settings.merge', // { patch }
 };
@@ -186,6 +190,9 @@ export function applyOps(state, ops) {
         break;
       case OP.PLAN_SET:
         clone().plan = op.plan;
+        break;
+      case OP.OVERLAY_APPLY:
+        clone().overlay = applyContribution(next.overlay || emptyOverlay(), op.contribution);
         break;
       case OP.LEADER_SET:
         clone().leader = op.leader;
@@ -396,6 +403,19 @@ export function reduce(state, command, now = Date.now()) {
       return withOps(state, [{ type: OP.PLAN_SET, plan }]);
     }
 
+    case 'apply-contribution': {
+      if (!me) return none(state);
+      const contribution = normalizeContribution(
+        { ...(body.contribution || body), authorName: body.contribution?.authorName || me.name },
+        now,
+      );
+      if (!contribution) return none(state);
+      const key = `${contribution.type}:${contribution.placeId || ''}`;
+      const current = state.overlay?.drawn?.[key];
+      if (current && current.id === contribution.id) return none(state);
+      return withOps(state, [{ type: OP.OVERLAY_APPLY, contribution }]);
+    }
+
     case 'add-member': {
       if (!me) return none(state);
       const id = typeof body.id === 'string' ? body.id.slice(0, 32) : '';
@@ -593,6 +613,7 @@ export function publicSnapshot(state) {
     rides: state.rides,
     meet: state.meet,
     plan: state.plan || [],
+    overlay: normalizeOverlay(state.overlay),
     settings: state.settings,
   };
 }

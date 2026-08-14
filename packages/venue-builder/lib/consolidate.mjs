@@ -74,7 +74,7 @@ export function planContribution(contribution) {
   const venueId = contribution.venueId;
   if (!venueId) return { action: 'skip', reason: 'no-venue' };
 
-  if (kind === 'height_rule') {
+  if (kind === 'height_rule' || kind === 'height') {
     const name = contribution.payload?.placeName || contribution.placeId;
     if (!name) return { action: 'skip', reason: 'no-place' };
     const h = {
@@ -97,6 +97,18 @@ export function planContribution(contribution) {
           },
         ],
       },
+      contributionId: contribution.id,
+    };
+  }
+
+  if (kind === 'geometry' && contribution.payload?.patch) {
+    const name = contribution.payload?.placeName || contribution.placeId;
+    if (!name) return { action: 'skip', reason: 'bad-poi-patch' };
+    return {
+      action: 'overrides-pois',
+      venueId,
+      placeName: name,
+      patch: contribution.payload.patch,
       contributionId: contribution.id,
     };
   }
