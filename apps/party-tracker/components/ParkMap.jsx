@@ -945,14 +945,14 @@ function ParkMap({
   const cullCellX = Math.round((view.x * Math.max(view.scale, 0.01)) / 160);
   const cullCellY = Math.round((view.y * Math.max(view.scale, 0.01)) / 160);
   const cullScaleBand = Math.round(view.scale * 40);
+  const cullEnabled = world?.path.length > 80 || (showDetail && z >= 1.2);
   const cullView = useMemo(() => {
-    const pathHeavy = world?.path.length > 80;
-    if (!pathHeavy && (!showDetail || z < 1.2)) return null;
+    if (!cullEnabled) return null;
     return stableCullView(view);
     // Quantized cell deps — not raw view — keep the object identity stable
     // across pan frames inside the same cell.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [world, showDetail, z, cullCellX, cullCellY, cullScaleBand]);
+  }, [cullEnabled, cullCellX, cullCellY, cullScaleBand]);
 
   const drawWorld = useMemo(() => {
     if (!world) return null;

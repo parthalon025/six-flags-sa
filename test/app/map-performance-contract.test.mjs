@@ -29,6 +29,16 @@ assert.match(
 );
 assert.match(
   parkMap,
+  /const cullEnabled = world\?\.path\.length > 80 \|\| \(showDetail && z >= 1\.2\)/,
+  'culling should use a threshold boolean instead of raw zoom as a memo dependency',
+);
+assert.match(
+  parkMap,
+  /\}, \[cullEnabled, cullCellX, cullCellY, cullScaleBand\]\)/,
+  'cull membership should stay stable within a quantized pan and zoom cell',
+);
+assert.match(
+  parkMap,
   /\{!lowZoom && \(\s*<g className="lyr-pathcase">/,
   'path casing should be omitted at low zoom',
 );
