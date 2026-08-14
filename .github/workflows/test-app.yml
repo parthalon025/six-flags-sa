@@ -29,6 +29,7 @@ jobs:
         run: |
           node test/scripts/gitnexus-ci.test.mjs
           node test/scripts/bump-version.test.mjs
+          node test/app/readme-shots-check.mjs
           node scripts/gitnexus-ci.mjs
 
   select:
@@ -70,6 +71,15 @@ jobs:
             else
               node test/app/select-modules.mjs --base origin/main --format github
             fi
+          fi
+
+      - name: README gallery freshness
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          if [ -n "$BASE_REF" ]; then
+            node test/app/readme-shots-check.mjs --base "origin/$BASE_REF"
+          else
+            node test/app/readme-shots-check.mjs --base origin/main
           fi
 
       - name: Module selection summary

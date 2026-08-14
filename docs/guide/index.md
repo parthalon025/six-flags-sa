@@ -6,6 +6,7 @@ Full documentation split out of the root README. Start with [Features](features.
 
 | Topic | Summary |
 | --- | --- |
+| [Walkthrough](walkthrough.md) | Video + stills: map, coaster tap, heights, walking, party. |
 | [Features](features.md) | What the app does — map, party, directions, weather, and more. |
 | [Getting started](getting-started.md) | Install, run on a phone, and local development. |
 | [Walking directions](walking-directions.md) | On-device routing from venue geometry. |

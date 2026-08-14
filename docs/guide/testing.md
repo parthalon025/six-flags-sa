@@ -12,6 +12,8 @@ npm run test:visual                 # screenshots to test/shots/
 npm run test:theme                  # daylight and night, via the real toggle
 npm run test:ux                     # glance rail with a live party
 npm run test:grandma                # can a stranger actually use it
+npm run readme:shots                # README stills + walkthrough.mp4 (app must be running)
+npm run readme:shots:check          # gallery files exist, linked, and not stale vs --base
 ```
 
 `test/unit.mjs` exercises the pure layers directly: version arithmetic, duplicate
