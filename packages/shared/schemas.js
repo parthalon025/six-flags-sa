@@ -118,8 +118,19 @@ export const CONTRIBUTION_KINDS = /** @type {const} */ ([
   'queue_band',
   'geometry',
   'height',
+  'height_rule',
+  'poi_patch',
+  'drop_place',
   'amenity',
   'adventure', // Side Quest payload kind on the wire — domain name is Side Quest
+]);
+
+/** Never graduate into builder inputs via consolidate. */
+export const EPHEMERAL_CONTRIBUTION_KINDS = /** @type {const} */ ([
+  'experience',
+  'status',
+  'queue_band',
+  'ride_status',
 ]);
 
 export const CONTRIBUTION_STATUSES = /** @type {const} */ ([

@@ -1,0 +1,38 @@
+# Consolidate queue export + Node orchestration hook (serverless)
+resources:
+  jobs:
+    parkbound_consolidate:
+      name: parkbound-consolidate-${bundle.target}
+      schedule:
+        quartz_cron_expression: "0 0 7 ? * MON"
+        timezone_id: UTC
+      parameters:
+        - name: apply
+          default: "false"
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+      tasks:
+        - task_key: export_queue
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/parkbound_job.py
+            parameters:
+              - --module
+              - transform.consolidate_queue
+              - --catalog
+              - ${var.catalog}
+        - task_key: write_sidecars
+          depends_on:
+            - task_key: export_queue
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/parkbound_job.py
+            parameters:
+              - --module
+              - export.write_sidecars
+              - --catalog
+              - ${var.catalog}
+              - --kind
+              - consolidate_queue
