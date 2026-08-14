@@ -84,8 +84,8 @@ No (no ad network, no IDFA, no cross-app tracking).
 - Health data (height inches are user-entered ride eligibility, not HealthKit)
 - Financial info
 - Browsing history off-app
-- Purchases (free app, no IAP at 1.0)
-- Photos / videos (unless user adds in a future feature — not at 1.0)
+- Purchases (free app, no IAP at launch)
+- Photos / videos (unless user adds in a future feature — not shipped yet)
 - Sensitive info
 
 ---

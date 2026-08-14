@@ -10,7 +10,8 @@
     "secondaryCategory": "Travel",
     "appleId": "269608486",
     "teamId": "CDHJC4MH4G",
-    "version": "1.0",
+    "version": "1.7.0",
+    "versionSource": "apps/party-tracker/package.json",
     "copyright": "2026 Kurat0r",
     "priceTier": "Free"
   },

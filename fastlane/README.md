@@ -169,7 +169,9 @@ Runs on **ubuntu** — uploads `fastlane/metadata/ios/` via `bundle exec fastlan
 | `APP_STORE_CONNECT_API_KEY` | Base64-encoded `.p8` file (`base64 -w0 AuthKey.p8` on Linux; `[Convert]::ToBase64String([IO.File]::ReadAllBytes('AuthKey.p8'))` on PowerShell) |
 | `APP_STORE_APPLE_ID` | Optional numeric app ID (e.g. `269608486`) |
 
-**Repository variable** (optional): `IOS_APP_VERSION` — App Store Connect version to update (default `1.0`). The version must already exist in Connect before metadata upload.
+**Repository variable** (optional): `IOS_APP_VERSION` — override App Store Connect version; default is `apps/party-tracker/package.json` `version`. That version must already exist in Connect before metadata upload.
+
+Native `android/` and `ios/` marketing versions are stamped from the same file via `npm run cap:sync` (`scripts/stamp-native-version.mjs`).
 
 Trigger manually: **Actions → iOS App Store metadata → Run workflow**. Pushes to `main` that touch `fastlane/metadata/ios/**` also run this workflow.
 

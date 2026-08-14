@@ -18,7 +18,9 @@ Everything below is filled in repo files. Upload with GitHub Actions (**iOS App 
 | **Content rights** | Contains third-party content — we have rights (park map sources + our renders) | `Fastfile` submission_information |
 | **Age rating** | 4+ expected (no mature content; UGC + unrestricted web) | `age_rating.json` |
 
-## Version 1.0 listing (App Store → iOS App → 1.0)
+## Version listing (App Store → iOS App)
+
+Version string comes from **`apps/party-tracker/package.json`** (same as TestFlight/build via fastlane). Before metadata upload, create that version in App Store Connect if it does not exist yet.
 
 | Field | Source file |
 |-------|-------------|
@@ -69,7 +71,7 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 
 ## Still required before you tap Submit
 
-- [ ] **Version 1.0** created in App Store Connect (metadata upload targets `IOS_APP_VERSION=1.0`)
+- [ ] **App version** in Connect matches `apps/party-tracker/package.json` (metadata upload uses that semver)
 - [ ] **Privacy URL live** — deploy app with `/privacy` (added in `apps/party-tracker/app/privacy/page.js`)
 - [ ] **Screenshots** — iPhone 6.5" (1284×2778) minimum; add under `fastlane/screenshots/ios/` then set `IOS_SKIP_SCREENSHOTS=false`
 - [ ] **TestFlight or App Store build** — IPA from macOS CI or cloud Mac (`fastlane ios beta`)
@@ -81,4 +83,4 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 
 `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY` (base64 `.p8`), `APP_STORE_APPLE_ID`
 
-Optional variable: `IOS_APP_VERSION` (default `1.0`).
+Optional variable: `IOS_APP_VERSION` (defaults to `apps/party-tracker/package.json` version).
