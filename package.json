@@ -78,7 +78,8 @@
     "skills:check": "node scripts/check-skills-lock.mjs",
     "cap:sync": "node scripts/stamp-native-version.mjs && npx cap sync",
     "cap:open:ios": "npx cap open ios",
-    "cap:open:android": "npx cap open android"
+    "cap:open:android": "npx cap open android",
+    "store:scaffold-metadata": "node scripts/scaffold-app-store-metadata.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.2",
