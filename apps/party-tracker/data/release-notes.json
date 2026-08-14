@@ -204,5 +204,11 @@
     "items": [
       "feat: Databricks back-office MVP with free-tier ops lock"
     ]
+  },
+  "1.8.0": {
+    "title": "What's new",
+    "items": [
+      "feat: wire Clerk profile signup in party-tracker"
+    ]
   }
 }
