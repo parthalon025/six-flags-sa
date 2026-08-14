@@ -228,5 +228,11 @@
     "items": [
       "feat: add iPhone App Store family-day preview video"
     ]
+  },
+  "1.11.1": {
+    "title": "What's new",
+    "items": [
+      "fix: opaque first-run gate so splash does not ghost the map"
+    ]
   }
 }
