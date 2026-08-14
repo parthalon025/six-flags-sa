@@ -63,6 +63,9 @@ const nextConfig = {
     NEXT_PUBLIC_APP_BUILT: versionDoc.built || '',
   },
   reactStrictMode: true,
+  // Preview deploys fail while Vercel patches GitHub preview comments against
+  // immutable static uploads (#163). Keep immutable assets on production.
+  supportsImmutableAssets: process.env.VERCEL_ENV !== 'preview',
   async headers() {
     return [
       { source: '/:path*', headers: security },
