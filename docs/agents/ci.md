@@ -41,7 +41,6 @@ After a successful run, `scripts/ci/local-ci-pass.json` records the tree and mod
 | **Pull request** | `merge-base...HEAD` vs PR base branch | Matching modules from `modules.json` |
 | **Push to `main`** | `HEAD^1...HEAD` (this commit only) | Same — merge commit ≈ PR files; stamp-only ≈ nothing |
 | **`chore: bump version to …`** | — | **Workflow skipped** (Post-merge bump already validated the merge) |
-| **GitNexus-only** | — | Gate skips expensive jobs |
 
 `fullSuitePaths` in `modules.json` still forces all modules when e.g. `functional.mjs` or `test-app.yml` changes. Version-stamp-only file lists bypass full-suite triggers.
 
@@ -49,7 +48,7 @@ Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run te
 
 | Step | Script / command |
 |------|------------------|
-| Gate — script invariants | `node scripts/ci/gate-tests.mjs` then `node scripts/gitnexus-ci.mjs` |
+| Gate — script invariants | `node scripts/ci/gate-tests.mjs` |
 | Gate — README gallery | `node test/app/readme-shots-check.mjs` |
 | Module selection | `node test/app/select-modules.mjs` |
 | Local CI pass check | `node scripts/ci/local-ci-pass.mjs check` |
@@ -58,13 +57,10 @@ Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run te
 | UI unpack / start | `node scripts/ci/party-tracker-ui.mjs unpack\|start` |
 | Full local gate | `npm run test:ci-gate` |
 
-`gate` skips expensive jobs when `scripts/gitnexus-ci.mjs` classifies a commit as GitNexus-only.
-
 ## Post-merge (`.github/workflows/bump-version.yml`)
 
 | Step | Script |
 |------|--------|
-| Skip GitNexus-only | `node scripts/gitnexus-ci.mjs` |
 | Semver + stamps | `node scripts/bump-version.mjs` |
 | Stage stamp files | `node scripts/ci/stage-version-stamps.mjs` (paths from `scripts/lib/version-stamp-paths.json`) |
 

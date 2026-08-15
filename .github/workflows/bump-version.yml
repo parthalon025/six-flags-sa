@@ -1,6 +1,5 @@
 # After a merge to main, bump app semver from Conventional Commits when the
 # merge touched the app. Skips its own bump commits so it does not loop.
-# GitNexus is session-local (`.gitnexus/` is gitignored) and is not committed.
 
 name: Post-merge main
 
@@ -27,12 +26,10 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.head_commit.author.name != 'github-actions[bot]' &&
-      !startsWith(github.event.head_commit.message, 'chore: bump version to') &&
-      !startsWith(github.event.head_commit.message, 'chore: refresh gitnexus index'))
+      !startsWith(github.event.head_commit.message, 'chore: bump version to'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
-      run: ${{ steps.gate.outputs.run }}
       bump_from: ${{ steps.bump.outputs.bump_from }}
       bump_to: ${{ steps.bump.outputs.bump_to }}
       skipped: ${{ steps.bump.outputs.skipped }}
@@ -44,30 +41,17 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Skip GitNexus-only commits
-        id: gate
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-          else
-            node scripts/gitnexus-ci.mjs
-          fi
-
       - uses: actions/setup-node@v4
-        if: steps.gate.outputs.run == 'true'
         with:
           node-version: '24'
 
       - name: Git identity
-        if: steps.gate.outputs.run == 'true' && github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Resolve merge PR
-        if: steps.gate.outputs.run == 'true'
         id: merge
         env:
           GH_TOKEN: ${{ github.token }}
@@ -85,7 +69,7 @@ jobs:
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
 
       - name: Resolve release note from the merge
-        if: steps.gate.outputs.run == 'true' && github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch'
         id: note
         env:
           GH_TOKEN: ${{ github.token }}
@@ -106,7 +90,6 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Bump version
-        if: steps.gate.outputs.run == 'true'
         id: bump
         run: |
           set -euo pipefail
@@ -122,7 +105,7 @@ jobs:
           fi
 
       - name: Commit version bump
-        if: steps.gate.outputs.run == 'true' && steps.bump.outputs.skipped != 'true' && github.event_name != 'workflow_dispatch'
+        if: steps.bump.outputs.skipped != 'true' && github.event_name != 'workflow_dispatch'
         run: |
           set -euo pipefail
           node scripts/ci/stage-version-stamps.mjs
@@ -130,12 +113,12 @@ jobs:
           git commit -m "chore: bump version to $VERSION"
 
       - name: Push
-        if: steps.gate.outputs.run == 'true' && steps.bump.outputs.skipped != 'true' && github.event_name != 'workflow_dispatch'
+        if: steps.bump.outputs.skipped != 'true' && github.event_name != 'workflow_dispatch'
         run: git push
 
   version-matrix:
     needs: bump
-    if: needs.bump.outputs.run == 'true'
+    if: needs.bump.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:

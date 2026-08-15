@@ -300,5 +300,11 @@
     "items": [
       "fix: unblock Vercel production deploy (stamp bumps + immutable assets)"
     ]
+  },
+  "1.14.0": {
+    "title": "What's new",
+    "items": [
+      "feat: agent-doc templates to slim always-loaded context"
+    ]
   }
 }
