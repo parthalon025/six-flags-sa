@@ -91,5 +91,6 @@ const bump = readFileSync(join(root, '.github/workflows/bump-version.yml'), 'utf
 assert.match(bump, /scripts\/ci\/stage-version-stamps\.mjs/);
 const pkg = readFileSync(join(root, 'package.json'), 'utf8');
 assert.match(pkg, /test:pre-merge-vertical/);
+assert.match(workflow, /scripts\/ci\/local-ci-pass\.mjs/);
 
 console.log('ci-module: ok');
