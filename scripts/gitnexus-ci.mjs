@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeRepoPath } from './lib/repo-path.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -36,9 +37,7 @@ export function shouldAmendGitnexusIntoBump({ subject, author } = {}) {
 }
 
 export function isGitnexusCiNoise(file) {
-  const norm = String(file || '')
-    .replace(/\\/g, '/')
-    .replace(/^\.\//, '');
+  const norm = normalizeRepoPath(file);
   if (norm === 'AGENTS.md' || norm === 'CLAUDE.md') return true;
   if (norm === '.gitnexus' || norm.startsWith('.gitnexus/')) return true;
   return false;

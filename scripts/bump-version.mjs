@@ -7,6 +7,8 @@
  * package-lock.json, stamps the app's app-version.json / sw.js, and adds a
  * release-notes entry when one is missing for the new version.
  *
+ * Stamp file list: scripts/lib/version-stamp-paths.json (also used by vercel-ignore).
+ *
  * Usage (from repo root):
  *   node scripts/bump-version.mjs [release-note line]
  */

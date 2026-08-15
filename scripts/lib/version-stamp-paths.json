@@ -1,0 +1,10 @@
+[
+  "package.json",
+  "package-lock.json",
+  "apps/party-tracker/package.json",
+  "packages/shared/package.json",
+  "packages/venue-builder/package.json",
+  "apps/party-tracker/public/app-version.json",
+  "apps/party-tracker/public/sw.js",
+  "apps/party-tracker/data/release-notes.json"
+]
