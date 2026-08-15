@@ -23,32 +23,12 @@ import {
   isPreviewEnv,
   isUserDirectedBuild,
 } from './vercel-budget.mjs';
-
-/** Post-merge bump workflow — stamp only; merge commit already deployed the app. */
-const VERSION_STAMP_PATHS = new Set([
-  'package.json',
-  'package-lock.json',
-  'apps/party-tracker/package.json',
-  'packages/shared/package.json',
-  'packages/venue-builder/package.json',
-  'apps/party-tracker/public/app-version.json',
-  'apps/party-tracker/public/sw.js',
-  'apps/party-tracker/data/release-notes.json',
-]);
+import { isVersionStampOnlyChange } from './version-stamp.mjs';
 
 /** Agent / worktree branches — never preview unless the user directed it. */
 const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/)/;
 
-export function normalizeChangedPath(file) {
-  return String(file || '')
-    .replace(/\\/g, '/')
-    .replace(/^\.\//, '');
-}
-
-export function isVersionStampOnlyChange(files) {
-  if (!files?.length) return false;
-  return files.every((f) => VERSION_STAMP_PATHS.has(normalizeChangedPath(f)));
-}
+export { isVersionStampOnlyChange };
 
 export function isAgentPreviewBranch(gitRef, env) {
   if (!isPreviewEnv(env)) return false;

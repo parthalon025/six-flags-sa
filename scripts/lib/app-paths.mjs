@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { normalizeRepoPath } from './repo-path.mjs';
 
 const jsonPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'app-paths.json');
 
@@ -16,9 +17,7 @@ export function loadAppPaths(from = jsonPath) {
 }
 
 export function isAppPath(file, paths) {
-  const norm = String(file || '')
-    .replace(/\\/g, '/')
-    .replace(/^\.\//, '');
+  const norm = normalizeRepoPath(file);
   if (!norm) return false;
   return paths.some((p) => norm === p || (p.endsWith('/') ? norm.startsWith(p) : norm.startsWith(`${p}/`)));
 }
