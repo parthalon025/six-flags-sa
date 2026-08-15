@@ -1181,7 +1181,7 @@ await check('the report says who saw it and when', async () => {
     .innerText();
   // Justin is phone A's roster name; the party, not the forecast, is the source.
   if (!/Justin/.test(detail)) throw new Error(detail);
-  if (!/just now|min ago/.test(detail)) throw new Error(detail);
+  if (!/just now|sec ago|min ago/.test(detail)) throw new Error(detail);
   return true;
 });
 

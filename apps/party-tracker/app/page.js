@@ -995,15 +995,21 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
       rt = partyRuntime.createPartyRuntime({ onState: setParty, onToast: showToast });
       runtime.current = rt;
       setRuntimeApi(rt);
-      const pending = partyRuntime.takePendingInvite();
-      if (pending?.payload) {
-        const named = (pending.name || '').trim();
-        if (named) {
-          identityRef.current = { ...identityRef.current, name: named };
-          setIdentity((i) => ({ ...i, name: named }));
+      // Stash is single-consume. This effect re-runs when selectTab/etc. change
+      // identity — only take from sessionStorage once per page load.
+      if (!pendingInviteRef.current) {
+        const pending = partyRuntime.takePendingInvite();
+        if (pending?.payload) {
+          pendingInviteRef.current = pending;
+          setPendingInvite(pending);
+          const named = (pending.name || '').trim();
+          if (named) {
+            identityRef.current = { ...identityRef.current, name: named };
+            setIdentity((i) => ({ ...i, name: named }));
+          }
         }
-        pendingInviteRef.current = pending;
-        setPendingInvite(pending);
+      }
+      if (pendingInviteRef.current?.payload) {
         selectTab('party');
         return;
       }

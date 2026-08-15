@@ -159,10 +159,15 @@ export async function openPhone(
   if (fromInvite) {
     // Finish name-first invite join before Me/setName tab churn can race it.
     await go(page, 'Party');
-    await until(async () => (await page.locator('.codeText').count()) > 0, {
-      timeout: 45000,
-      label: 'invite join landed',
-    }).catch(() => {});
+    try {
+      await until(async () => (await page.locator('.codeText').count()) > 0, {
+        timeout: 60000,
+        label: 'invite join landed',
+      });
+    } catch (err) {
+      const toast = await page.locator('.toast').innerText().catch(() => '');
+      throw new Error(`${err.message}${toast ? `; toast: ${toast}` : ''}`);
+    }
   } else if (name) {
     await setName(page, name);
   }
