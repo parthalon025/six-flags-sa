@@ -995,15 +995,21 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
       rt = partyRuntime.createPartyRuntime({ onState: setParty, onToast: showToast });
       runtime.current = rt;
       setRuntimeApi(rt);
-      const pending = partyRuntime.takePendingInvite();
-      if (pending?.payload) {
-        const named = (pending.name || '').trim();
-        if (named) {
-          identityRef.current = { ...identityRef.current, name: named };
-          setIdentity((i) => ({ ...i, name: named }));
+      // Stash is single-consume. This effect re-runs when selectTab/etc. change
+      // identity — only take from sessionStorage once per page load.
+      if (!pendingInviteRef.current) {
+        const pending = partyRuntime.takePendingInvite();
+        if (pending?.payload) {
+          pendingInviteRef.current = pending;
+          setPendingInvite(pending);
+          const named = (pending.name || '').trim();
+          if (named) {
+            identityRef.current = { ...identityRef.current, name: named };
+            setIdentity((i) => ({ ...i, name: named }));
+          }
         }
-        pendingInviteRef.current = pending;
-        setPendingInvite(pending);
+      }
+      if (pendingInviteRef.current?.payload) {
         selectTab('party');
         return;
       }
@@ -1036,10 +1042,12 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
     if (!locationReadyToJoin(geo.status)) return undefined;
     if (inviteJoinInFlight.current) return undefined;
     inviteJoinInFlight.current = true;
+    let cancelled = false;
     const named = (pending.name || '').trim();
     const memberName = named || identityRef.current?.name || 'Guest';
     Promise.resolve(runtimeApi.joinParty(pending.payload, { memberName }))
       .then((snap) => {
+        if (cancelled) return;
         pendingInviteRef.current = null;
         setPendingInvite(null);
         selectTab('party');
@@ -1052,12 +1060,18 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
         shareOverlay();
       })
       .catch((err) => {
+        if (cancelled) return;
         showToast(err?.message || 'Could not open that invite.');
       })
       .finally(() => {
         inviteJoinInFlight.current = false;
       });
-    return undefined;
+    return () => {
+      // Runtime effect remounts destroy the PartyRuntime mid-join; clear the
+      // gate so the next runtimeApi can retry the pending invite.
+      cancelled = true;
+      inviteJoinInFlight.current = false;
+    };
   }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft, shareOverlay]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
