@@ -1,36 +1,52 @@
 'use client';
 
+import { stackIsoItems } from '@/lib/isoTycoon';
+
 /**
  * Custom-map paint — sits on or instead of the OSM base (see customMap.js).
  * ParkMap decides placement and camera; this file only draws the extra geometry.
  */
 
+function BuildingMesh({ b }) {
+  return (
+    <g className="isoBuilding">
+      <path className="isoFoot" d={b.foot.d} />
+      {b.walls.map((w, wi) => (
+        <path
+          key={wi}
+          className={w.side === 'L' ? 'isoWallL' : 'isoWallR'}
+          d={w.d}
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+      <path className="isoRoof" d={b.roof.d} vectorEffect="non-scaling-stroke" />
+    </g>
+  );
+}
+
+function TrackMesh({ t }) {
+  return (
+    <g className="isoCoaster">
+      <path className="isoShadow" d={t.shadow.d} vectorEffect="non-scaling-stroke" />
+      {t.supports.map((s, si) => (
+        <path key={si} className="isoSupport" d={s.d} vectorEffect="non-scaling-stroke" />
+      ))}
+      <path className="isoTrack" d={t.track.d} vectorEffect="non-scaling-stroke" />
+    </g>
+  );
+}
+
 function PixelTycoonLayer({ buildings = [], tracks = [] }) {
+  const stack = stackIsoItems(buildings, tracks);
   return (
     <g className="lyr-custom lyr-pixel-tycoon">
-      {buildings.map((b) => (
-        <g key={`iso-b${b.i}`} className="isoBuilding">
-          <path className="isoFoot" d={b.foot.d} />
-          {b.walls.map((w, wi) => (
-            <path
-              key={wi}
-              className={w.side === 'L' ? 'isoWallL' : 'isoWallR'}
-              d={w.d}
-              vectorEffect="non-scaling-stroke"
-            />
-          ))}
-          <path className="isoRoof" d={b.roof.d} vectorEffect="non-scaling-stroke" />
-        </g>
-      ))}
-      {tracks.map((t) => (
-        <g key={`iso-c${t.i}`} className="isoCoaster">
-          <path className="isoShadow" d={t.shadow.d} vectorEffect="non-scaling-stroke" />
-          {t.supports.map((s, si) => (
-            <path key={si} className="isoSupport" d={s.d} vectorEffect="non-scaling-stroke" />
-          ))}
-          <path className="isoTrack" d={t.track.d} vectorEffect="non-scaling-stroke" />
-        </g>
-      ))}
+      {stack.map((entry) =>
+        entry.type === 'building' ? (
+          <BuildingMesh key={`iso-b${entry.item.i}`} b={entry.item} />
+        ) : (
+          <TrackMesh key={`iso-c${entry.item.i}`} t={entry.item} />
+        ),
+      )}
     </g>
   );
 }

@@ -38,6 +38,27 @@ export function buildingHeightM(ring) {
   return 14;
 }
 
+function pointInRing(x, y, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    const crosses = yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi + 1e-12) + xi;
+    if (crosses) inside = !inside;
+  }
+  return inside;
+}
+
+/** True when a building ring is the ride envelope (most of a track sits inside it). */
+export function buildingCoversTrack(ring, line, frac = 0.35) {
+  if (!ring || ring.length < 3 || !line || line.length < 2) return false;
+  let inside = 0;
+  for (const pt of line) {
+    if (pointInRing(pt[0], pt[1], ring)) inside += 1;
+  }
+  return inside / line.length >= frac;
+}
+
 function pathFromPts(pts, close) {
   if (!pts.length) return '';
   let d = '';
@@ -86,21 +107,32 @@ export function assembleIsoMeshes(
   coasterLines,
   { maxBuildings = 220, maxTracks = 40, stepM = 6, heightAmp = 9 } = {},
 ) {
-  const buildings = [];
-  (buildingRings || []).forEach((ring, i) => {
-    if (!ring || ring.length < 3) return;
-    buildings.push({ ...extrudeBuilding(ring, buildingHeightM(ring)), i });
-  });
-  buildings.sort((a, b) => b.depth - a.depth);
   const tracks = [];
   (coasterLines || []).forEach((line, i) => {
     if (!line || line.length < 2) return;
     tracks.push({ ...liftCoaster(line, { stepM, heightAmp }), i });
   });
+  const buildings = [];
+  (buildingRings || []).forEach((ring, i) => {
+    if (!ring || ring.length < 3) return;
+    if ((coasterLines || []).some((line) => buildingCoversTrack(ring, line))) return;
+    buildings.push({ ...extrudeBuilding(ring, buildingHeightM(ring)), i });
+  });
+  buildings.sort((a, b) => b.depth - a.depth);
   return {
     buildings: buildings.slice(0, maxBuildings),
     tracks: tracks.slice(0, maxTracks),
   };
+}
+
+/** Back-to-front paint list so stalls and track interleave instead of two slabs. */
+export function stackIsoItems(buildings = [], tracks = []) {
+  const items = [
+    ...buildings.map((item) => ({ type: 'building', depth: item.depth, item })),
+    ...tracks.map((item) => ({ type: 'track', depth: item.depth, item })),
+  ];
+  items.sort((a, b) => b.depth - a.depth);
+  return items;
 }
 
 function dist2(a, b) {
@@ -129,10 +161,12 @@ export function liftCoaster(line, { stepM = 18, heightAmp = 12 } = {}) {
     });
     next += stepM;
   }
+  const depth = pts.reduce((s, p) => s + p.g.y, 0) / Math.max(pts.length, 1);
   return {
     shadow: { d: pathFromPts(pts.map((p) => p.g), false) },
     track: { d: pathFromPts(pts.map((p) => p.t), false) },
     supports,
+    depth,
   };
 }
 

@@ -7,6 +7,7 @@ import {
   isoInverse,
   isoLocal,
   liftCoaster,
+  stackIsoItems,
 } from '../../apps/party-tracker/lib/isoTycoon.js';
 
 const a = isoLocal(10, 0);
@@ -84,5 +85,37 @@ assert.equal(packed.buildings[0].i, 1, 'far buildings paint first');
 assert.equal(packed.buildings[1].i, 0);
 assert.equal(packed.tracks.length, 2, 'track cap after lift');
 assert.ok(packed.buildings[0].foot.d.includes('M'));
+assert.equal(typeof ride.depth, 'number');
+
+const envelope = [
+  [0, 0],
+  [100, 0],
+  [100, 100],
+  [0, 100],
+];
+const covered = [
+  [10, 10],
+  [20, 10],
+  [30, 10],
+  [40, 10],
+  [50, 10],
+];
+const stallBeside = [
+  [200, 200],
+  [204, 200],
+  [204, 204],
+  [200, 204],
+];
+const culled = assembleIsoMeshes([envelope, stallBeside], [covered]);
+assert.equal(culled.buildings.length, 1, 'ride-envelope rectangle is not a building');
+assert.equal(culled.buildings[0].i, 1);
+
+const stacked = stackIsoItems(
+  [{ i: 0, depth: 12, foot: { d: 'M' }, walls: [], roof: { d: 'M' } }],
+  [{ i: 0, depth: 4, shadow: { d: '' }, track: { d: '' }, supports: [] }],
+);
+assert.equal(stacked[0].type, 'building', 'farther item paints first');
+assert.equal(stacked[1].type, 'track');
+assert.equal(typeof culled.tracks[0].depth, 'number');
 
 console.log('iso-tycoon.test: ok');
