@@ -282,5 +282,11 @@
     "items": [
       "feat: facing Compass on phone strip and Watch"
     ]
+  },
+  "1.12.1": {
+    "title": "What's new",
+    "items": [
+      "fix: surface privacy link and refresh store listing screenshots"
+    ]
   }
 }
