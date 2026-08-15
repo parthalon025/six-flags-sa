@@ -69,11 +69,35 @@ export async function ascGet(path, credentials) {
   return response.json();
 }
 
+export async function resolveAppId(appleIdOrBundle, credentials) {
+  if (/^\d+$/.test(String(appleIdOrBundle))) {
+    try {
+      await ascGet(`/apps/${appleIdOrBundle}`, credentials);
+      return String(appleIdOrBundle);
+    } catch (err) {
+      if (!/404/.test(String(err.message))) throw err;
+    }
+  }
+  const bundleId = String(appleIdOrBundle).includes('.')
+    ? String(appleIdOrBundle)
+    : 'ai.kurat0r.parkbound';
+  const body = await ascGet(
+    `/apps?filter[bundleId]=${encodeURIComponent(bundleId)}&limit=1`,
+    credentials,
+  );
+  const app = body.data?.[0];
+  if (!app?.id) {
+    throw new Error(`ASC app not found for bundle ${bundleId}`);
+  }
+  return app.id;
+}
+
 /**
  * @returns {Promise<{ live: object|null, listing: object|null, testflight: object|null }>}
  */
-export async function fetchIosStoreVersions(appleId, credentials) {
-  const appPath = `/apps/${appleId}/appStoreVersions?filter[platform]=IOS&limit=20`;
+export async function fetchIosStoreVersions(appleId, credentials, bundleId) {
+  const appResourceId = await resolveAppId(bundleId ?? appleId, credentials);
+  const appPath = `/apps/${appResourceId}/appStoreVersions?filter[platform]=IOS&limit=20`;
   const versionsBody = await ascGet(appPath, credentials);
   const versions = versionsBody.data ?? [];
 
@@ -99,7 +123,7 @@ export async function fetchIosStoreVersions(appleId, credentials) {
   let testflight = null;
   try {
     const buildsBody = await ascGet(
-      `/builds?filter[app]=${appleId}&sort=-uploadedDate&limit=5`,
+      `/builds?filter[app]=${appResourceId}&sort=-uploadedDate&limit=5`,
       credentials,
     );
     const build = buildsBody.data?.[0];
