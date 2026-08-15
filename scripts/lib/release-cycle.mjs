@@ -38,12 +38,26 @@ export function latestStoreTag(repoRoot, prefix = 'store/') {
 
 export function changedFilesSinceRef(repoRoot, ref) {
   if (!ref) {
-    const out = execFileSync(
-      'git',
-      ['diff', '--name-only', 'HEAD~20', 'HEAD'],
-      { cwd: repoRoot, encoding: 'utf8' },
-    );
-    return out.split('\n').map((line) => line.trim()).filter(Boolean);
+    try {
+      const out = execFileSync(
+        'git',
+        ['diff', '--name-only', 'HEAD~20', 'HEAD'],
+        { cwd: repoRoot, encoding: 'utf8' },
+      );
+      return out.split('\n').map((line) => line.trim()).filter(Boolean);
+    } catch {
+      // Shallow CI checkout — fall back to the latest commit only.
+      try {
+        const out = execFileSync(
+          'git',
+          ['diff', '--name-only', 'HEAD^1', 'HEAD'],
+          { cwd: repoRoot, encoding: 'utf8' },
+        );
+        return out ? out.split('\n').map((line) => line.trim()).filter(Boolean) : [];
+      } catch {
+        return [];
+      }
+    }
   }
 
   try {
