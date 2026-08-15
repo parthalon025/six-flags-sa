@@ -1720,9 +1720,11 @@ await check('skipping location still asks which park to explore', async () => {
   await fresh.addInitScript(() => {
     localStorage.setItem('tracker-intro-seen', '1');
     localStorage.setItem('tracker-release-notes-seen', '1.1.3');
+    sessionStorage.setItem('parkbound.authGuest', '1');
   });
   const p = await fresh.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await dismissAuthGate(p).catch(() => {});
   await hydrated(p);
   await dismissUpdateSplash(p);
   const skip = p.locator(
