@@ -1042,10 +1042,12 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
     if (!locationReadyToJoin(geo.status)) return undefined;
     if (inviteJoinInFlight.current) return undefined;
     inviteJoinInFlight.current = true;
+    let cancelled = false;
     const named = (pending.name || '').trim();
     const memberName = named || identityRef.current?.name || 'Guest';
     Promise.resolve(runtimeApi.joinParty(pending.payload, { memberName }))
       .then((snap) => {
+        if (cancelled) return;
         pendingInviteRef.current = null;
         setPendingInvite(null);
         selectTab('party');
@@ -1058,12 +1060,18 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
         shareOverlay();
       })
       .catch((err) => {
+        if (cancelled) return;
         showToast(err?.message || 'Could not open that invite.');
       })
       .finally(() => {
         inviteJoinInFlight.current = false;
       });
-    return undefined;
+    return () => {
+      // Runtime effect remounts destroy the PartyRuntime mid-join; clear the
+      // gate so the next runtimeApi can retry the pending invite.
+      cancelled = true;
+      inviteJoinInFlight.current = false;
+    };
   }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft, shareOverlay]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
