@@ -42,6 +42,7 @@ import {
   isoScreenToWorld,
   isoToScreen,
   isoViewTransform,
+  pickWalkways,
 } from '@/lib/isoTycoon';
 import CustomMapLayer from './CustomMapLayer';
 
@@ -238,6 +239,18 @@ function ringToLocalMercator(ring, origin) {
     const [x, y] = project(lat, lng);
     return [x - ox, y - oy];
   });
+}
+
+/** Keep one OSM footway when several hug the same midway. */
+function collapseWalkways(list, origin) {
+  const items = (list || []).map((f, i) => ({
+    r: ringToLocalMercator(Array.isArray(f) ? f : f?.r, origin),
+    n: Array.isArray(f) ? '' : f?.n,
+    i,
+  }));
+  return pickWalkways(items)
+    .map((p) => list[p.i])
+    .filter(Boolean);
 }
 
 function mercatorBbox(ring) {
@@ -1005,7 +1018,7 @@ function ParkMap({
       pool: worldPaths(data.pool, true, origin, iso),
       boundary: data.boundary ? worldPaths([data.boundary], true, origin, iso) : [],
       service: worldPaths(data.service, false, origin, iso),
-      path: worldPaths(data.path, false, origin, iso),
+      path: worldPaths(iso ? collapseWalkways(data.path, origin) : data.path, false, origin, iso),
       building: worldPaths(data.building, true, origin, iso),
       slide: worldPaths(data.slide, false, origin, iso),
       coaster: (data.coaster || [])

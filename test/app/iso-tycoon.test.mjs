@@ -9,6 +9,7 @@ import {
   isoLocal,
   liftCoaster,
   pickCoasterLines,
+  pickWalkways,
   stackIsoItems,
 } from '../../apps/party-tracker/lib/isoTycoon.js';
 
@@ -80,9 +81,9 @@ const far = [
   [20, 22],
 ];
 const midTrack = [
-  [8, 8],
-  [12, 8],
-  [16, 8],
+  [30, 0],
+  [40, 0],
+  [50, 0],
 ];
 const packed = assembleIsoMeshes([near, far], [midTrack, midTrack, midTrack], {
   maxBuildings: 10,
@@ -163,5 +164,51 @@ assert.equal(buildingHitsTrack(clip, grazes), true);
 const afterHit = assembleIsoMeshes([clip, stallBeside], [grazes]);
 assert.equal(afterHit.buildings.length, 1, 'building that the rail crosses is dropped');
 assert.equal(afterHit.buildings[0].i, 1);
+
+const hallOffRail = [
+  [0, 8],
+  [40, 8],
+  [40, 24],
+  [0, 24],
+];
+const railBelow = [
+  [0, 0],
+  [40, 0],
+];
+assert.equal(buildingHitsTrack(hallOffRail, railBelow, 6), false);
+assert.equal(buildingHitsTrack(hallOffRail, railBelow, 10), true);
+
+const hallAlong = [
+  [20, 3],
+  [40, 3],
+  [40, 20],
+  [20, 20],
+];
+const longRail = [
+  [0, 0],
+  [100, 0],
+];
+assert.equal(buildingHitsTrack(hallAlong, longRail), true, 'wall a few metres off a long rail shares ground');
+const afterAlong = assembleIsoMeshes([hallAlong, stallBeside], [longRail]);
+assert.equal(afterAlong.buildings.length, 1, 'building beside a rail is dropped');
+assert.equal(afterAlong.buildings[0].i, 1);
+
+const walkA = [
+  [0, 0],
+  [50, 0],
+];
+const walkTwin = [
+  [0, 1],
+  [50, 1],
+];
+const walkFar = [
+  [0, 30],
+  [50, 30],
+];
+const walks = pickWalkways([walkA, walkTwin, walkFar]);
+assert.equal(walks.length, 2, 'parallel footways collapse to one line');
+assert.ok(walks.some((w) => w.i === 0));
+assert.ok(walks.some((w) => w.i === 2));
+assert.ok(!walks.some((w) => w.i === 1));
 
 console.log('iso-tycoon.test: ok');

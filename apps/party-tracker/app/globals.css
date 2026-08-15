@@ -1437,15 +1437,13 @@ html[data-skin-pixel="1"] .lyr-pool path {
   stroke: #2E98C0;
 }
 html[data-skin-pixel="1"] .lyr-watersheen { display: none; }
-html[data-skin-pixel="1"] .lyr-pathcase path {
-  stroke: #F4F0E0;
-  stroke-width: 6.5;
-  stroke-linecap: square;
-  stroke-linejoin: miter;
+html[data-skin-pixel="1"] .lyr-pathcase,
+html[data-skin-pixel="1"] .lyr-service {
+  display: none;
 }
 html[data-skin-pixel="1"] .lyr-path path {
   stroke: #C8C8C0;
-  stroke-width: 3.4;
+  stroke-width: 3.8;
   stroke-linecap: square;
   stroke-linejoin: miter;
 }

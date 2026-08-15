@@ -71,15 +71,36 @@ function segsCross(a, b, c, d) {
   return o1 * o2 < 0 && o3 * o4 < 0;
 }
 
+function distToRing(pt, ring) {
+  if (pointInRing(pt[0], pt[1], ring)) return 0;
+  let best = Infinity;
+  for (let e = 0; e < ring.length; e += 1) {
+    const a = ring[e];
+    const b = ring[(e + 1) % ring.length];
+    best = Math.min(best, distToSeg(pt[0], pt[1], a[0], a[1], b[0], b[1]));
+  }
+  return best;
+}
+
+function segDist(a, b, c, d) {
+  if (segsCross(a, b, c, d)) return 0;
+  return Math.min(
+    distToSeg(a[0], a[1], c[0], c[1], d[0], d[1]),
+    distToSeg(b[0], b[1], c[0], c[1], d[0], d[1]),
+    distToSeg(c[0], c[1], a[0], a[1], b[0], b[1]),
+    distToSeg(d[0], d[1], a[0], a[1], b[0], b[1]),
+  );
+}
+
 /** True when a stall and a rail share ground — they must not both draw. */
-export function buildingHitsTrack(ring, line) {
+export function buildingHitsTrack(ring, line, padM = 10) {
   if (!ring || ring.length < 3 || !line || line.length < 2) return false;
   for (const pt of line) {
-    if (pointInRing(pt[0], pt[1], ring)) return true;
+    if (distToRing(pt, ring) <= padM) return true;
   }
   for (let i = 0; i < line.length - 1; i += 1) {
     for (let e = 0; e < ring.length; e += 1) {
-      if (segsCross(line[i], line[i + 1], ring[e], ring[(e + 1) % ring.length])) return true;
+      if (segDist(line[i], line[i + 1], ring[e], ring[(e + 1) % ring.length]) <= padM) return true;
     }
   }
   return false;
@@ -200,6 +221,24 @@ export function pickCoasterLines(items, { nearM = 8, joinM = 14 } = {}) {
   }
   unnamed.sort((a, b) => b.len - a.len);
   for (const rec of unnamed) {
+    if (kept.some((k) => linesNear(rec.r, k.r, nearM))) continue;
+    kept.push(rec);
+  }
+  return kept;
+}
+
+/**
+ * OSM often stores two or three ways for one midway. Keep the longest
+ * and drop a footway that hugs it so markers sit on one line.
+ */
+export function pickWalkways(items, { nearM = 8 } = {}) {
+  const recs = (items || []).map((item, i) => {
+    const c = asCoaster(item, i);
+    return { ...c, len: lineLength(c.r) };
+  }).filter((c) => c.r && c.r.length >= 2);
+  recs.sort((a, b) => b.len - a.len);
+  const kept = [];
+  for (const rec of recs) {
     if (kept.some((k) => linesNear(rec.r, k.r, nearM))) continue;
     kept.push(rec);
   }
