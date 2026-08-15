@@ -796,18 +796,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .iconBtn.on { background: var(--blue); color: var(--onTint); box-shadow: var(--lensEdge), var(--lensDrop); }
 
 .tape {
-  position: absolute; left: 12px; right: 12px; top: calc(var(--top) + 66px); z-index: 38;
-  height: 48px; background: var(--glassTintDeep); border: none;
+  /* Under top safe-area / map chrome — one home for the Compass strip. */
+  position: absolute; left: 12px; right: 12px; top: calc(var(--top) + 52px); z-index: 38;
+  height: 52px; background: var(--glassTintDeep); border: none;
   border-radius: var(--r5);
   -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
   box-shadow: var(--lensEdge), var(--lensDrop);
   overflow: hidden;
   animation: riseIn var(--t2) var(--easeOut) both;
-  transition: top var(--t3) var(--ease);
+  transition: top var(--t3) var(--ease), opacity var(--t2) var(--ease);
 }
-/* While the maneuver strip is up, the tape steps below it rather than
-   drawing over the distance and step text someone is navigating by. */
-.tape.lowered { top: calc(var(--top) + 132px); }
+/* Compact in place when the nav banner covers this band — do not relocate. */
+.tape.lowered { top: calc(var(--top) + 52px); opacity: 0.92; }
 .tape canvas { width: 100%; height: 100%; display: block; }
 .tapeMode {
   position: absolute; right: 9px; bottom: 4px; font-size: 11px; font-weight: 400;
@@ -2522,21 +2522,53 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   display: none;
 }
 .northRose {
-  width: 34px; height: 34px; flex: none; padding: 2px; border-radius: 50%;
-  background: var(--glassTint); border: none;
-  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
-  box-shadow: var(--lensEdge), var(--lensDrop);
-  transition: opacity var(--t3) var(--easeOut), transform var(--t3) var(--easeOut);
+  display: none;
 }
-/* North-up: nothing to say, so it steps out. */
-.northRose.idle { opacity: 0; transform: scale(.8); pointer-events: none; }
-.northRose svg { width: 100%; height: 100%; display: block; }
 .roseDial { fill: none; }
 .roseNeedle { fill: var(--red); }
 .roseTail { fill: var(--label3); }
 .roseN {
   font-family: var(--ui); font-size: 8px; font-weight: 600; fill: var(--label);
   text-anchor: middle; letter-spacing: 0;
+}
+
+.watchCompassSettings { padding-bottom: 24px; }
+.watchPreviewWrap {
+  display: flex; justify-content: center; padding: 12px 0 20px;
+}
+.watchFace {
+  width: 196px; min-height: 196px; border-radius: 40px;
+  background: var(--glassTintDeep); border: none;
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 8px 14px; position: relative;
+}
+.watchFace.blank, .watchFace.empty, .watchFace.calm {
+  min-height: 160px;
+}
+.watchBlank { color: var(--label3); font-size: 13px; font-weight: 600; }
+.watchTurn {
+  font-size: 14px; font-weight: 700; color: var(--blue); text-align: center;
+  max-width: 170px; margin-bottom: 4px;
+}
+.watchTurn.muted { color: var(--label3); font-weight: 500; }
+.watchRange { font-size: 22px; font-weight: 700; color: var(--label); }
+.watchDial { stroke: var(--label4); stroke-width: 1.5; }
+.watchFacing { stroke: var(--blue); }
+.watchN { fill: var(--label3); font-size: 11px; font-weight: 700; font-family: var(--ui); }
+.watchMeet { fill: var(--red); }
+.watchPrimary { fill: var(--blue); }
+.watchMember { fill: var(--label2); }
+.watchRangeText {
+  fill: var(--label); font-size: 13px; font-weight: 700; font-family: var(--ui);
+}
+.watchDest {
+  fill: var(--label3); font-size: 8px; font-weight: 500; font-family: var(--ui);
+}
+.watchSplitBand {
+  position: absolute; top: 36px; left: 16px; right: 16px; height: 1px;
+  background: var(--label4);
 }
 
 .mapKey { pointer-events: auto; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }

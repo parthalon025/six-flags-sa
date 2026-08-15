@@ -52,6 +52,7 @@ export default function SettingsPanel({
   onWithdrawOffer = null,
   onEquipKit = null,
   onDropMark = null,
+  onWatchCompass = null,
 }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
@@ -153,6 +154,12 @@ export default function SettingsPanel({
           <span className="rowText">Which park</span>
           <span className="rowValue">{venueName || '—'}</span>
         </button>
+        {onWatchCompass && (
+          <button type="button" className="row" onClick={onWatchCompass}>
+            <span className="rowText">Watch Compass</span>
+            <span className="rowValue">Settings</span>
+          </button>
+        )}
         <button type="button" className="row" onClick={() => onPush('categories')}>
           <span className="rowText">On the map</span>
           <span className="rowValue">

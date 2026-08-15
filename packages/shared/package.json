@@ -10,6 +10,7 @@
     "./ontology.json": "./ontology.json",
     "./schemas.js": "./schemas.js",
     "./consolidateExport.js": "./consolidateExport.js",
-    "./questScore.js": "./questScore.js"
+    "./questScore.js": "./questScore.js",
+    "./compass.js": "./compass.js"
   }
 }

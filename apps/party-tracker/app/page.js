@@ -71,6 +71,7 @@ import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
+import { mapRotationDegrees } from '@/lib/compass';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { navKeyOf } from '@/lib/navKey';
 import {
@@ -108,6 +109,7 @@ const PlaceDetail = dynamic(() => import('@/components/PlaceDetail'), { ssr: fal
 const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: false });
 const IntelligencePanel = dynamic(() => import('@/components/IntelligencePanel'), { ssr: false });
 const CompassTape = dynamic(() => import('@/components/CompassTape'), { ssr: false });
+const WatchCompassSettings = dynamic(() => import('@/components/WatchCompassSettings'), { ssr: false });
 
 const PALETTE = ['#66B56A', '#27B8B0', '#9B6BFF', '#FF5C8A', '#5B7CFF', '#B8956A', '#FFC857', '#FF6B35'];
 const colourFor = (id) => {
@@ -127,6 +129,7 @@ const VIEW_TITLES = {
   venues: 'Which park',
   diagnostics: 'Diagnostics',
   movement: 'Walk history',
+  'watch-compass': 'Watch Compass',
 };
 
 /* The tab bar, left to right. Parkbound's primary areas: Explore, Party,
@@ -1112,6 +1115,20 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
     () => planView({ party: active ? party : null, draft: planDraft }),
     [active, party, planDraft],
   );
+
+  /** Next Plan Place with coordinates for the Compass primary (when not in Go). */
+  const planNextPlace = useMemo(() => {
+    const first = planItems[0];
+    if (!first?.placeId) return null;
+    const poi = POIS.find((p) => p.i === first.placeId || p.id === first.placeId);
+    if (!poi || !Number.isFinite(poi.lat) || !Number.isFinite(poi.lng)) return null;
+    return {
+      lat: poi.lat,
+      lng: poi.lng,
+      label: first.label || poi.n,
+      placeId: first.placeId,
+    };
+  }, [planItems, POIS]);
 
   const commitPlan = useCallback(
     (next) => {
@@ -2122,17 +2139,17 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
   const previewing = navPhase === 'preview' && Boolean(navTarget);
   const offRoute = Boolean(walking && progress && progress.offset > OFF_ROUTE_M);
 
-  /* Course-up, the way a phone map turns while you walk. The compass is the
-     better source when it is there — it knows which way you are facing while
-     standing still — and the route's own bearing is the fallback, which is
-     what a phone with no magnetometer gets. Quantised, because a map that
-     redraws on every tenth of a degree burns battery to no visible end. */
-  const rotation = useMemo(() => {
-    if (!walking || northUp) return 0;
-    const source = heading ?? progress?.course ?? null;
-    if (source == null) return 0;
-    return Math.round(source / 3) * 3;
-  }, [walking, northUp, heading, progress?.course]);
+  /* Course-up only while Go is active — browse stays north-up (ADR-0011). */
+  const rotation = useMemo(
+    () =>
+      mapRotationDegrees({
+        walking,
+        northUp,
+        heading,
+        course: progress?.course,
+      }),
+    [walking, northUp, heading, progress?.course],
+  );
 
   const puck = useMemo(() => {
     if (!walking || !progress?.snapped) return null;
@@ -2515,7 +2532,7 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
               setTapeOn((v) => !v);
               geo.enableCompass();
             }}
-            aria-label="Bearing tape"
+            aria-label={tapeOn ? 'Hide Compass' : 'Show Compass'}
           >
             <Icon name="safari" />
           </button>
@@ -2569,10 +2586,21 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
           me={position}
           members={others}
           meet={meet}
-          selected={selected}
+          selected={
+            selected && Number.isFinite(selected.lat)
+              ? {
+                  lat: selected.lat,
+                  lng: selected.lng,
+                  label: selected.n || selected.label,
+                  placeId: selected.i || selected.id,
+                }
+              : null
+          }
+          go={walking ? navTarget : null}
+          planNext={walking ? null : planNextPlace}
           heading={heading}
           theme={theme}
-          lowered={Boolean(navTarget)}
+          lowered={Boolean(walking && navTarget)}
         />
       )}
 
@@ -3162,6 +3190,30 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
                     authorPartyId: party?.partyId || null,
                   });
                 }}
+                onWatchCompass={() => push('watch-compass')}
+              />
+            )}
+
+            {view === 'watch-compass' && (
+              <WatchCompassSettings
+                me={position}
+                members={others}
+                meet={meet}
+                go={walking ? navTarget : null}
+                planNext={walking ? null : planNextPlace}
+                selected={
+                  selected && Number.isFinite(selected.lat)
+                    ? {
+                        lat: selected.lat,
+                        lng: selected.lng,
+                        label: selected.n || selected.label,
+                        placeId: selected.i || selected.id,
+                      }
+                    : null
+                }
+                heading={heading}
+                progress={progress}
+                walking={walking}
               />
             )}
 

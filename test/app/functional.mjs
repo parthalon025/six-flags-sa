@@ -289,11 +289,11 @@ await check('theme toggle flips data-theme', async () => {
   return true;
 });
 
-await check('bearing tape toggles on', async () => {
-  await a.locator('button[aria-label="Bearing tape"]').click();
+await check('Compass strip toggles on', async () => {
+  await a.locator('button[aria-label="Show Compass"]').click();
   await a.waitForTimeout(400);
   const n = await a.locator('.tape canvas').count();
-  await a.locator('button[aria-label="Bearing tape"]').click();
+  await a.locator('button[aria-label="Hide Compass"]').click();
   return n === 1;
 });
 
