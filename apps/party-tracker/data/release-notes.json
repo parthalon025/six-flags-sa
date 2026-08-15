@@ -264,5 +264,11 @@
     "items": [
       "fix: skip SignInCard Clerk hooks without publishable key (#170)"
     ]
+  },
+  "1.11.7": {
+    "title": "What's new",
+    "items": [
+      "fix: harden Vercel deploy config and stabilize party CI waits"
+    ]
   }
 }

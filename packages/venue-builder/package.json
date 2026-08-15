@@ -1,10 +1,10 @@
 {
   "name": "@party-tracker/venue-builder",
-  "version": "1.11.6",
+  "version": "1.11.7",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@party-tracker/shared": "1.11.6"
+    "@party-tracker/shared": "1.11.7"
   },
   "exports": {
     "./compare.js": "./src/compare.mjs",
