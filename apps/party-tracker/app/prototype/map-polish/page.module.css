@@ -1,0 +1,313 @@
+.prototype {
+  min-height: 100dvh;
+  background: #101b25;
+  color: #f7f4ec;
+  font-family: var(--font-plus-jakarta, Arial, sans-serif);
+  overflow: hidden;
+}
+
+.prototypeLabel {
+  position: fixed;
+  z-index: 20;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 999px;
+  background: rgb(8 18 27 / 76%);
+  color: #aebfca;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  white-space: nowrap;
+}
+
+.mapFrame {
+  position: relative;
+  min-height: 100dvh;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.mapArtwork {
+  display: block;
+  width: 100%;
+  height: 100dvh;
+  transition: filter .25s ease, transform .25s ease;
+}
+
+.baseMap .water { fill: #8dc9cf; opacity: .72; }
+.baseMap .parkBoundary { fill: none; stroke: #477d75; stroke-width: 5; stroke-dasharray: 10 14; opacity: .7; }
+.baseMap .landPatches path { fill: rgb(255 255 255 / 13%); stroke: rgb(255 255 255 / 24%); stroke-width: 2; }
+.baseMap .paths path { fill: none; stroke: #f5f0de; stroke-width: 15; stroke-linecap: round; stroke-linejoin: round; }
+.baseMap .coasterLayer path { fill: none; stroke: #d7653e; stroke-width: 8; stroke-linecap: round; opacity: .8; }
+.baseMap .buildingLayer path { fill: #ead39e; stroke: #a06f4e; stroke-width: 2; }
+.baseMap .landLabels text { fill: #326960; font-size: 26px; font-weight: 900; letter-spacing: .12em; }
+
+.pixelMap {
+  transform: scale(1.01);
+  filter: saturate(1.08) contrast(1.02);
+}
+.pixelMap .water { fill: #32a4c1; opacity: .85; }
+.pixelMap .parkBoundary { fill: none; stroke: #2c7d32; stroke-width: 6; stroke-dasharray: 2 12; }
+.pixelMap .landPatches path { fill: rgb(36 112 40 / 20%); stroke: rgb(33 103 38 / 52%); stroke-width: 3; }
+.pixelMap .paths path { fill: none; stroke: #d8d2bd; stroke-width: 11; stroke-linecap: square; stroke-linejoin: miter; }
+.pixelMap .coasterLayer path { fill: none; stroke: #4d281e; stroke-width: 13; stroke-linecap: square; stroke-linejoin: miter; }
+.pixelMap .coasterLayer path + path { stroke: #c45c38; stroke-width: 6; }
+.pixelMap .buildingLayer path { fill: #e8c878; stroke: #bd5738; stroke-width: 3; }
+.pixelMap .landLabels text { fill: #e8f0c8; font-size: 27px; font-weight: 900; letter-spacing: .08em; paint-order: stroke; stroke: #23612e; stroke-width: 7px; }
+
+.placeLayer { font-family: inherit; }
+.placeHalo { fill: currentColor; opacity: .16; }
+.placeMarker { fill: currentColor; stroke: #fff9e9; stroke-width: 4; }
+.placeGlyph { fill: #fff9e9; font-size: 20px; font-weight: 900; }
+.placeName { fill: #10233f; font-size: 21px; font-weight: 900; paint-order: stroke; stroke: #eff5e9; stroke-width: 7px; }
+.pixelMap .placeName { fill: #173722; stroke: #dff2bc; stroke-width: 6px; }
+.orange { color: #f0733c; }
+.violet { color: #8768de; }
+.yellow { color: #d69c27; }
+.teal { color: #1f9b98; }
+.me .placeMarker { stroke-width: 6; }
+
+.atlasTop,
+.boardTop,
+.questTop {
+  position: absolute;
+  z-index: 4;
+  top: 62px;
+  right: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brandMark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #10233f;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.brandMark span,
+.questAvatar {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 10px;
+  background: #10233f;
+  color: #f7c85b;
+  font-size: 11px;
+  font-weight: 900;
+}
+.modePixel .brandMark { color: #f5efc9; }
+.statusPill,
+.coin {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  background: rgb(14 33 48 / 75%);
+  color: #eff8e5;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+.liveDot { width: 7px; height: 7px; border-radius: 50%; background: #52d49c; box-shadow: 0 0 0 4px rgb(82 212 156 / 18%); }
+.iconButton {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 13px;
+  background: rgb(14 33 48 / 76%);
+  color: #fff;
+  font-weight: 900;
+}
+
+.atlasKey {
+  position: absolute;
+  z-index: 4;
+  top: 112px;
+  left: 20px;
+  display: flex;
+  gap: 13px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: rgb(247 244 236 / 88%);
+  color: #244f52;
+  font-size: 10px;
+  font-weight: 800;
+}
+.atlasKey span { display: inline-flex; align-items: center; gap: 5px; }
+.atlasKey i { width: 8px; height: 8px; display: inline-block; border-radius: 50%; }
+.keyRide { background: #f0733c; }
+.keyFood { background: #d69c27; }
+.keyMe { background: #1f9b98; }
+
+.atlasDock,
+.boardCard,
+.questBottom {
+  position: absolute;
+  z-index: 5;
+  right: 16px;
+  bottom: 92px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 17px;
+  border: 1px solid rgb(255 255 255 / 38%);
+  border-radius: 22px;
+  background: rgb(247 244 236 / 92%);
+  box-shadow: 0 12px 30px rgb(14 33 48 / 18%);
+  color: #10233f;
+  backdrop-filter: blur(12px);
+}
+.atlasDock strong,
+.boardCard strong,
+.questBottom strong { display: block; margin-top: 3px; font-size: 18px; }
+.eyebrow { display: block; color: #6b7f86; font-size: 9px; font-weight: 900; letter-spacing: .13em; }
+.muted { display: block; margin-top: 4px; color: #63727b; font-size: 11px; }
+.primaryButton,
+.ghostButton {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f0733c;
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+.ghostButton { border: 1px solid #b9c5c0; background: transparent; color: #294d58; }
+
+.boardTop { color: #fff9e9; }
+.boardTop strong { display: block; margin-top: 2px; font-size: 22px; }
+.boardTop .eyebrow { color: #b9d5bd; }
+.coin { color: #ffe18b; }
+.boardMission {
+  position: absolute;
+  z-index: 4;
+  top: 135px;
+  right: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgb(255 238 161 / 40%);
+  border-radius: 16px;
+  background: rgb(22 52 42 / 88%);
+  box-shadow: 0 10px 20px rgb(12 37 26 / 22%);
+}
+.missionIcon,
+.questFlag { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: #f2b84b; color: #193c31; font-size: 18px; font-weight: 900; }
+.boardMission strong { display: block; margin-top: 2px; font-size: 14px; }
+.boardMission .eyebrow { color: #b3d9bb; }
+.missionStep { margin-left: auto; color: #f2cf72; font-size: 12px; font-weight: 900; }
+.boardCard { display: block; border-color: rgb(255 255 255 / 20%); background: rgb(20 42 35 / 94%); color: #fff9e9; }
+.boardCard .eyebrow { color: #9ec9a6; }
+.boardCard strong { font-size: 22px; }
+.boardCard .muted { color: #bbd0c1; }
+.cardActions { display: flex; gap: 8px; margin-top: 13px; }
+
+.questTop { color: #fff9e9; justify-content: flex-start; gap: 10px; }
+.questTop > div:nth-child(2) { flex: 1; }
+.questTop strong { display: block; font-size: 12px; letter-spacing: .08em; }
+.questTop span { display: block; margin-top: 3px; color: #b4d1bc; font-size: 10px; }
+.questTop .iconButton { margin-left: auto; }
+.questBanner {
+  position: absolute;
+  z-index: 4;
+  top: 130px;
+  right: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px;
+  border-radius: 17px;
+  background: #fff8df;
+  color: #173c35;
+  box-shadow: 0 10px 20px rgb(10 32 29 / 18%);
+}
+.questBanner strong,
+.questBanner span:last-child { display: block; }
+.questBanner strong { margin-top: 3px; font-size: 15px; }
+.questBanner span:last-child { margin-top: 3px; color: #618074; font-size: 10px; }
+.bannerArrow { margin-left: auto; color: #f0733c; font-size: 28px; }
+.questRail {
+  position: absolute;
+  z-index: 4;
+  top: 245px;
+  left: 18px;
+  display: grid;
+  gap: 9px;
+}
+.railButton {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 16px;
+  background: rgb(15 37 41 / 78%);
+  color: #d9eee0;
+}
+.railButton b { font-size: 18px; }
+.railButton span { font-size: 7px; font-weight: 900; letter-spacing: .08em; }
+.railActive { background: #f0733c; color: white; }
+.questBottom { display: block; background: rgb(16 48 44 / 91%); color: #fff9e9; border-color: rgb(255 255 255 / 20%); }
+.questBottom .eyebrow { color: #9fd0b0; }
+.questBottom .muted { color: #c0ddd0; }
+
+.zoomRail {
+  position: absolute;
+  z-index: 5;
+  right: 18px;
+  bottom: 180px;
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 15px;
+  background: rgb(14 33 48 / 78%);
+  box-shadow: 0 10px 20px rgb(14 33 48 / 16%);
+}
+.zoomRail button { width: 42px; height: 42px; border: 0; border-bottom: 1px solid rgb(255 255 255 / 13%); background: transparent; color: white; font-size: 19px; }
+.zoomRail button:last-child { border: 0; color: #f5c765; font-size: 17px; }
+
+.prototypeBar {
+  position: fixed;
+  z-index: 30;
+  bottom: 14px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  transform: translateX(-50%);
+  padding: 8px 10px;
+  border: 1px solid rgb(255 255 255 / 25%);
+  border-radius: 18px;
+  background: #0c1b28;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 30%);
+}
+.prototypeBar > button { width: 30px; height: 30px; border: 0; border-radius: 10px; background: #1c3948; color: white; font-size: 22px; }
+.prototypeBar > div:not(.modeToggle) { flex: 1; }
+.prototypeBar b { display: block; color: #fff; font-size: 11px; }
+.prototypeBar span { display: block; margin-top: 2px; color: #86a3ae; font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.modeToggle { display: flex; gap: 3px; padding: 3px; border-radius: 10px; background: #152c3a; }
+.modeToggle button { border: 0; border-radius: 7px; padding: 6px 7px; background: transparent; color: #8fa8af; font-size: 8px; font-weight: 900; }
+.modeToggle .modeActive { background: #f2b84b; color: #173c35; }
+
+@media (min-width: 700px) {
+  .mapFrame { max-width: 540px; margin: 0 auto; box-shadow: 0 0 80px rgb(0 0 0 / 30%); }
+}
