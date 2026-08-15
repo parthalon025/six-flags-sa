@@ -979,16 +979,20 @@ await check('a typed code joins the party', async () => {
 await check('the roster converges on both phones', async () => {
   await go(a, 'Party');
   await go(b, 'Party');
-  await until(async () => (await rosterNames(a)).includes('Ava'), {
-    timeout: JOIN_TIMEOUT * 2,
-    label: 'Ava on phone A',
-  });
-  await until(async () => (await rosterNames(b)).includes('Justin'), {
-    timeout: JOIN_TIMEOUT,
-    label: 'Justin on phone B',
-  });
+  // hasText is case-insensitive; rosterNames reads the DOM text node (stable).
+  await until(
+    async () => ((await a.locator('.memberRow', { hasText: 'Ava' }).count()) > 0 ? true : null),
+    { timeout: JOIN_TIMEOUT * 2, label: 'Ava on phone A' },
+  );
+  await until(
+    async () => ((await b.locator('.memberRow', { hasText: 'Justin' }).count()) > 0 ? true : null),
+    { timeout: JOIN_TIMEOUT, label: 'Justin on phone B' },
+  );
   const onA = await rosterNames(a);
   const onB = await rosterNames(b);
+  if (!onA.some((n) => /ava/i.test(n)) || !onB.some((n) => /justin/i.test(n))) {
+    throw new Error(`A ${onA} / B ${onB}`);
+  }
   if (onA.length !== 2 || onB.length !== 2) throw new Error(`A ${onA} / B ${onB}`);
   return true;
 });
@@ -1055,13 +1059,7 @@ C = await openPhone(browser, {
   venue: 'kings-island',
 });
 c = C.page;
-// Invite join is name-first (ADR-0010) — no Profile required. Avoid Settings
-// churn from a no-op soft-gate signIn before the join effect settles.
-await go(c, 'Party');
-await until(async () => (await c.locator('.codeText').count()) > 0, {
-  timeout: JOIN_TIMEOUT,
-  label: 'phone C invite join',
-}).catch(() => {});
+// openPhone(/join) already waits for the name-first handoff to land on Party.
 
 await check('the invite link joins the party with nothing typed', async () => {
   await go(c, 'Party');
