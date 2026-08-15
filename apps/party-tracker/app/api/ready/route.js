@@ -1,5 +1,6 @@
 import { ping, usingRedis } from '@/lib/serverStore';
 import { json } from '@/app/api/_lib/http';
+import { clerkConfigStatus, clerkConfigured } from '@/lib/clerkConfigured';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,9 +14,13 @@ export const maxDuration = 10;
  * balancer's rotation instead of failing every request it is handed.
  */
 export async function GET() {
+  const clerk = { mandatory: true, ...clerkConfigStatus(), configured: clerkConfigured() };
   const probe = await ping();
   if (!probe.ok) {
-    return json({ ready: false, backend: probe.backend, error: probe.error }, 503);
+    return json({ ready: false, backend: probe.backend, clerk, error: probe.error }, 503);
   }
-  return json({ ready: true, backend: probe.backend, durable: usingRedis });
+  if (process.env.VERCEL && !clerk.configured) {
+    return json({ ready: false, backend: probe.backend, clerk, error: 'clerk_not_configured' }, 503);
+  }
+  return json({ ready: true, backend: probe.backend, durable: usingRedis, clerk });
 }

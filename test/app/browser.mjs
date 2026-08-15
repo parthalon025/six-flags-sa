@@ -532,7 +532,7 @@ export async function signIn(page, email = 'guest@parkbound.example', { keepName
     ? await page.locator('.field[placeholder="Name"]').inputValue().catch(() => '')
     : '';
   const card = page.locator('.signInCard');
-  // CI / local boxes often have no Clerk key — SignInCard stays unmounted (AuthBridge seam).
+  // CI may stub env without keys; deployed builds must supply Clerk (ADR-0010).
   // ADR-0010: no email magic-link UI; Profile-gated tests must soft-assert the gate instead.
   if ((await card.count()) === 0) {
     await clickTab(page, 'explore');

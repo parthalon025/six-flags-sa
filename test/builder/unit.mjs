@@ -7238,11 +7238,16 @@ await check('the boot script stamps data-intro from the same storage key the app
   return true;
 });
 
-const { clerkBrowserConfigured, clerkConfigured } = await import(
+const { clerkBrowserConfigured, clerkConfigured, clerkMandatory, clerkConfigStatus } = await import(
   '../../apps/party-tracker/lib/clerkConfigured.js'
 );
 
-await check('Clerk stays off when the API keys are not on this box', () => {
+await check('Clerk is mandatory for Park Bound', () => {
+  assert.equal(clerkMandatory(), true);
+  return true;
+});
+
+await check('Clerk key detection for CI stubs (Clerk is mandatory in deployed envs)', () => {
   const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const prevSec = process.env.CLERK_SECRET_KEY;
   delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
