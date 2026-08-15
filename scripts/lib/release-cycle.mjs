@@ -36,44 +36,50 @@ export function latestStoreTag(repoRoot, prefix = 'store/') {
   }
 }
 
+function gitRefExists(repoRoot, ref) {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', ref], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function gitDiffNames(repoRoot, base, head = 'HEAD') {
+  const out = execFileSync('git', ['diff', '--name-only', base, head], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  return out.split('\n').map((line) => line.trim()).filter(Boolean);
+}
+
+/** Prefer deep history when available; CI gate uses fetch-depth: 2. */
+const RECENT_COMMIT_FALLBACKS = [
+  'HEAD~20',
+  'HEAD~10',
+  'HEAD~5',
+  'HEAD~1',
+  'origin/main',
+];
+
 export function changedFilesSinceRef(repoRoot, ref) {
   if (!ref) {
-    try {
-      const out = execFileSync(
-        'git',
-        ['diff', '--name-only', 'HEAD~20', 'HEAD'],
-        { cwd: repoRoot, encoding: 'utf8' },
-      );
-      return out.split('\n').map((line) => line.trim()).filter(Boolean);
-    } catch {
-      // Shallow CI checkout — fall back to the latest commit only.
-      try {
-        const out = execFileSync(
-          'git',
-          ['diff', '--name-only', 'HEAD^1', 'HEAD'],
-          { cwd: repoRoot, encoding: 'utf8' },
-        );
-        return out ? out.split('\n').map((line) => line.trim()).filter(Boolean) : [];
-      } catch {
-        return [];
+    for (const base of RECENT_COMMIT_FALLBACKS) {
+      if (gitRefExists(repoRoot, base)) {
+        return gitDiffNames(repoRoot, base);
       }
     }
+    return [];
   }
 
   try {
-    const out = execFileSync(
-      'git',
-      ['diff', '--name-only', `${ref}...HEAD`],
-      { cwd: repoRoot, encoding: 'utf8' },
-    );
-    return out.split('\n').map((line) => line.trim()).filter(Boolean);
+    return gitDiffNames(repoRoot, `${ref}...HEAD`);
   } catch {
-    const out = execFileSync(
-      'git',
-      ['diff', '--name-only', ref, 'HEAD'],
-      { cwd: repoRoot, encoding: 'utf8' },
-    );
-    return out.split('\n').map((line) => line.trim()).filter(Boolean);
+    return gitDiffNames(repoRoot, ref);
   }
 }
 
