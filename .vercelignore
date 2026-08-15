@@ -28,6 +28,7 @@ scripts/**
 !scripts/gitnexus-ci.mjs
 !scripts/lib/
 !scripts/lib/vercel-ignore.mjs
+!scripts/lib/vercel-budget.mjs
 !scripts/lib/app-paths.mjs
 !scripts/lib/app-paths.json
 

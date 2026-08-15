@@ -112,7 +112,8 @@ export async function openPhone(
   page.on('request', (r) => requests.push(r.url()));
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
-  if (url.includes('/join')) {
+  const fromInvite = String(url).includes('/join');
+  if (fromInvite) {
     // Name-before-join: /join asks what the family should call this phone.
     const joinName = page.locator('.gateCard input[aria-label="Your name"]');
     try {
@@ -155,7 +156,21 @@ export async function openPhone(
     await closeGate(page);
     await waitForReady();
   }
-  if (name) await setName(page, name);
+  if (fromInvite) {
+    // Finish name-first invite join before Me/setName tab churn can race it.
+    await go(page, 'Party');
+    try {
+      await until(async () => (await page.locator('.codeText').count()) > 0, {
+        timeout: 60000,
+        label: 'invite join landed',
+      });
+    } catch (err) {
+      const toast = await page.locator('.toast').innerText().catch(() => '');
+      throw new Error(`${err.message}${toast ? `; toast: ${toast}` : ''}`);
+    }
+  } else if (name) {
+    await setName(page, name);
+  }
 
   return { context, page, errors, requests, label };
 }
@@ -487,10 +502,22 @@ export async function hasProfileSession(page) {
   });
 }
 
-/** The roster names one phone can see, uppercased by CSS but not by the DOM. */
+/**
+ * Roster display names as the DOM stores them (first text node in the heading).
+ * Prefer textContent over innerText — chip <em>s use text-transform and flex
+ * layout, so innerText is a brittle side channel for the name.
+ */
 export async function rosterNames(page) {
-  const rows = await page.locator('.memberRow .memberText b').allInnerTexts();
-  return rows.map((t) => t.replace(/\s*(you|host|help)\s*/gi, '').trim()).filter(Boolean);
+  return page.locator('.memberRow .memberText b').evaluateAll((els) =>
+    els
+      .map((el) => {
+        const node = [...el.childNodes].find(
+          (n) => n.nodeType === Node.TEXT_NODE && String(n.textContent || '').trim(),
+        );
+        return String(node?.textContent || '').trim();
+      })
+      .filter(Boolean),
+  );
 }
 
 export { chromium };

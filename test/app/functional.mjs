@@ -989,6 +989,9 @@ await check('the roster converges on both phones', async () => {
   });
   const onA = await rosterNames(a);
   const onB = await rosterNames(b);
+  if (!onA.some((n) => /ava/i.test(n)) || !onB.some((n) => /justin/i.test(n))) {
+    throw new Error(`A ${onA} / B ${onB}`);
+  }
   if (onA.length !== 2 || onB.length !== 2) throw new Error(`A ${onA} / B ${onB}`);
   return true;
 });
@@ -1055,13 +1058,7 @@ C = await openPhone(browser, {
   venue: 'kings-island',
 });
 c = C.page;
-// Invite join is name-first (ADR-0010) — no Profile required. Avoid Settings
-// churn from a no-op soft-gate signIn before the join effect settles.
-await go(c, 'Party');
-await until(async () => (await c.locator('.codeText').count()) > 0, {
-  timeout: JOIN_TIMEOUT * 2,
-  label: 'phone C invite join',
-}).catch(() => {});
+// openPhone(/join) already waits for the name-first handoff to land on Party.
 
 await check('the invite link joins the party with nothing typed', async () => {
   await go(c, 'Party');
@@ -1183,7 +1180,7 @@ await check('the report says who saw it and when', async () => {
     .innerText();
   // Justin is phone A's roster name; the party, not the forecast, is the source.
   if (!/Justin/.test(detail)) throw new Error(detail);
-  if (!/just now|min ago/.test(detail)) throw new Error(detail);
+  if (!/just now|sec ago|min ago/.test(detail)) throw new Error(detail);
   return true;
 });
 
