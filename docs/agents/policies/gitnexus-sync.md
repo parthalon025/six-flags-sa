@@ -1,0 +1,25 @@
+# GitNexus index — not on GitHub
+
+The `.gitnexus/` graph is **session-local** (gitignored). Do not commit it, and do not commit GitNexus-generated hunks in `AGENTS.md` / `CLAUDE.md`.
+
+## On start
+
+Cloud Agent `start` runs `node scripts/gitnexus-sync.mjs startup`. Locally, once per substantive session:
+
+```bash
+npm run gitnexus:startup
+```
+
+That rebuilds `.gitnexus/` on disk. Query the graph while you work.
+
+## Feature PRs
+
+Stage task files only. Leave `.gitnexus/` out (it should not appear in `git status` as a tracked path). If analyze dirtied `AGENTS.md` / `CLAUDE.md`, restore them.
+
+## Manual commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm run gitnexus:startup` | Rebuild the session-local index |
+| `node .gitnexus/run.cjs status` | Check freshness (after startup) |
+| `node .gitnexus/run.cjs analyze` | Rebuild index only |

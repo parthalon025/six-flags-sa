@@ -1,0 +1,8 @@
+---
+description: Worktree isolation — create before first edit; remove when done.
+alwaysApply: true
+---
+
+# Worktree
+
+**Worktree** isolation for parallel agents — create before the first edit, remove when done. See [worktree policy](../../docs/agents/policies/worktree.md).

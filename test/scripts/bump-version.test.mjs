@@ -71,6 +71,7 @@ assert.equal(isAppChange(['public/venues/ki.map.json'], paths), false);
 assert.equal(isAppChange(['apps/party-tracker/public/venues/ki.map.json'], paths), true);
 assert.equal(isAppChange(['packages/shared/index.js'], paths), true);
 assert.equal(isAppChange(['scripts/build-venue.mjs'], paths), false);
+assert.equal(isAppChange(['scripts/lib/vercel-ignore.mjs'], paths), true);
 assert.equal(isAppChange(['packages/venue-builder/bin/build-venue.mjs'], paths), false);
 assert.equal(isAppChange(['docs/foo.md', 'apps/party-tracker/lib/x.js'], paths), true);
 

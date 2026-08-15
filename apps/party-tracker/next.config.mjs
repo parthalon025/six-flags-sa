@@ -63,9 +63,10 @@ const nextConfig = {
     NEXT_PUBLIC_APP_BUILT: versionDoc.built || '',
   },
   reactStrictMode: true,
-  // Preview deploys fail while Vercel patches GitHub preview comments against
-  // immutable static uploads (#163). Keep immutable assets on production.
-  supportsImmutableAssets: process.env.VERCEL_ENV !== 'preview',
+  // Immutable static chunks break Vercel production deploys for this monorepo
+  // (build succeeds locally; production target fails since Clerk merge #155).
+  // Preview already skipped immutable for GitHub comment patching (#163).
+  supportsImmutableAssets: false,
   async headers() {
     return [
       { source: '/:path*', headers: security },

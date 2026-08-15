@@ -21,7 +21,7 @@ Before you design, refactor, review, or add agent-facing docs:
 | Reviewing a branch, PR, or diff since a ref | `code-review` |
 | Debugging a reproducible failure | `diagnosing-bugs` |
 | Refactoring across call sites | `tdd` + `codebase-design` |
-| Editing `AGENTS.md`, `CLAUDE.md`, cursor rules, or skills | `writing-for-agents` |
+| Editing `AGENTS.md`, `CLAUDE.md`, cursor rules, or skills | `writing-for-agents` + `npm run agent-docs:build` |
 | Resolving domain terms or ADR gaps | `domain-modeling` / `grilling` → `CONTEXT.md` + `docs/adr/` |
 | Git / worktree / commit hygiene | `git-guardrails-claude-code` |
 | Merge conflicts | `resolving-merge-conflicts` |
@@ -39,4 +39,5 @@ Before you design, refactor, review, or add agent-facing docs:
 
 - Vendor Matt skills under `.agents/skills/` or commit `skills-lock.json`.
 - Duplicate script logic in `AGENTS.md` / cursor rules when a `scripts/lib` module can own it.
+- Hand-edit generated `AGENTS.md`, `CLAUDE.md`, or `.cursor/rules/*.mdc` — edit `docs/agents/policies/` and run `npm run agent-docs:build`.
 - Invent empty `CONTEXT.md` or ADR stubs — grow domain docs when terms are actually resolved.
