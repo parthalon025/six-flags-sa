@@ -294,5 +294,11 @@
     "items": [
       "feat: post-merge version matrix with deploy poll"
     ]
+  },
+  "1.13.1": {
+    "title": "What's new",
+    "items": [
+      "fix: unblock Vercel production deploy (stamp bumps + immutable assets)"
+    ]
   }
 }
