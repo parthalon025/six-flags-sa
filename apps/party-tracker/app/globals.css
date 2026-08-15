@@ -1483,6 +1483,44 @@ html[data-skin-pixel="1"] .landLabel {
   stroke: #E8F0C8;
   stroke-width: 4px;
 }
+html[data-skin-pixel="1"] .isoFoot {
+  fill: #2A1A10;
+  opacity: 0.22;
+  stroke: none;
+}
+html[data-skin-pixel="1"] .isoWallL {
+  fill: #C4A050;
+  stroke: #8A4A28;
+  stroke-width: 1;
+}
+html[data-skin-pixel="1"] .isoWallR {
+  fill: #A87838;
+  stroke: #8A4A28;
+  stroke-width: 1;
+}
+html[data-skin-pixel="1"] .isoRoof {
+  fill: #E8C878;
+  stroke: #C45C38;
+  stroke-width: 1.2;
+}
+html[data-skin-pixel="1"] .isoShadow {
+  fill: none;
+  stroke: #2A1A10;
+  stroke-width: 4;
+  opacity: 0.35;
+}
+html[data-skin-pixel="1"] .isoSupport {
+  fill: none;
+  stroke: #8A8070;
+  stroke-width: 1.4;
+}
+html[data-skin-pixel="1"] .isoTrack {
+  fill: none;
+  stroke: #C45C38;
+  stroke-width: 2.6;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
 html[data-skin-neon="1"] .lyr-coaster path {
   filter: drop-shadow(0 0 2px var(--track));
 }
