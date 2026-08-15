@@ -306,5 +306,11 @@
     "items": [
       "feat: agent-doc templates to slim always-loaded context"
     ]
+  },
+  "1.14.1": {
+    "title": "What's new",
+    "items": [
+      "Fix Profile gate Clerk login (Google/Apple logo buttons)"
+    ]
   }
 }
