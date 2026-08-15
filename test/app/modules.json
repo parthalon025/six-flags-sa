@@ -185,6 +185,7 @@
       "paths": [
         "apps/party-tracker/app/sign-in/**",
         "apps/party-tracker/app/sign-up/**",
+        "apps/party-tracker/lib/auth/clerkOAuth.js",
         "apps/party-tracker/lib/clerkConfigured.js",
         "apps/party-tracker/proxy.js",
         "apps/party-tracker/components/AuthGate.jsx",

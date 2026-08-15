@@ -165,6 +165,18 @@ await check('sign-up page respects Clerk configuration', async () => {
   return true;
 });
 
+await check('OAuth SSO callback does not remount the SignIn widget', async () => {
+  await a.goto(`${BASE}/sign-in/sso-callback`, { waitUntil: 'domcontentloaded' });
+  const url = String(a.url());
+  if (!url.includes('/sign-in/sso-callback')) return true;
+  const clerkSignIn =
+    (await a.locator('.cl-signIn-root, [data-clerk-component="SignIn"]').count()) > 0;
+  if (clerkSignIn) {
+    throw new Error('SSO callback remounted SignIn instead of completing OAuth');
+  }
+  return true;
+});
+
 if (!authOnlyPhone) {
 await check('Settings sign-in card matches Clerk routes', async () => {
   await go(a, 'Settings');
