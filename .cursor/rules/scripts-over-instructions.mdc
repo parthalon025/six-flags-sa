@@ -19,7 +19,7 @@ Examples already handled by scripts (read the file, do not re-document the inter
 
 | Concern | Use this |
 |---------|----------|
-| Skip Vercel builds for non-app diffs | `scripts/vercel-ignore.sh` via `vercel.json` `ignoreCommand` |
+| Skip Vercel builds / deploy budget (25 user, ~75 automation) | `scripts/lib/vercel-budget.mjs` + `scripts/lib/vercel-ignore.mjs` via `scripts/vercel-ignore.sh` (`vercel.json` `ignoreCommand`) |
 | Stamp app version on dev/build | `apps/party-tracker/scripts/inject-version.mjs` (`predev` / `prebuild`) |
 | Bump semver after merge to `main` | `.github/workflows/bump-version.yml` → `scripts/bump-version.mjs` |
 | Regenerate venue output | `npm run venues:build` / `venues:rebuild` (see builder-app-contract rule) |

@@ -69,5 +69,10 @@ the ones that match the PR’s changed paths — including lint — see
 skip the expensive jobs. Push to `main` and edits to the workflow or
 `functional.mjs` still run the full matrix.
 
+Vercel preview deploys are **not** the default validation path — they consume the
+user-reserved deploy budget (25/day). Use `npm run build -w @party-tracker/app` and the
+suites above; see [contributing.md](contributing.md#vercel-deploys) and
+`scripts/lib/vercel-ignore.mjs`.
+
 ---
 [← README](../../README.md) · [Guide index](index.md)
