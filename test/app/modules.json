@@ -190,6 +190,7 @@
         "apps/party-tracker/proxy.js",
         "apps/party-tracker/components/AuthGate.jsx",
         "apps/party-tracker/components/AuthBridge.jsx",
+        "apps/party-tracker/components/OAuthButtons.jsx",
         "apps/party-tracker/components/SignInCard.jsx",
         "vercel.json"
       ],

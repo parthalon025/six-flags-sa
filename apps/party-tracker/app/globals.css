@@ -2817,8 +2817,39 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .signInActions .btn { margin-top: 0; width: auto; flex: 1 1 auto; }
 .signInActionsStack { flex-direction: column; align-items: stretch; }
 .signInActionsStack .btn { width: 100%; flex: none; }
+.signInActions .oauthActions { width: 100%; }
+.oauthActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.oauthBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 88px;
+  margin: 0;
+  padding: 16px 10px;
+  border: none;
+  border-radius: var(--r4);
+  background: var(--fill3);
+  color: var(--label);
+  font: inherit;
+}
+.oauthBtn:active { opacity: .7; }
+.oauthBtn:disabled { opacity: .35; }
+.oauthMark { width: 32px; height: 32px; display: block; }
+.oauthBtnName {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -.2px;
+  color: var(--label);
+}
 .authGateGuest { margin-top: 12px; width: 100%; }
-.authGateCard .signInActionsStack { margin-bottom: 0; }
+.authGateCard .signInActions { margin-bottom: 0; }
 .clerkAuthPage {
   display: flex;
   min-height: 100vh;

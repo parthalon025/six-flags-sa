@@ -7329,6 +7329,22 @@ await check('SSO callback page completes Clerk OAuth instead of remounting SignI
   return true;
 });
 
+await check('OAuth buttons are provider logos in two columns', () => {
+  const buttonsUrl = new URL('../../apps/party-tracker/components/OAuthButtons.jsx', import.meta.url);
+  assert.equal(fs.existsSync(buttonsUrl), true, 'missing OAuthButtons');
+  const src = fs.readFileSync(buttonsUrl, 'utf8');
+  assert.match(src, /oauth_google/);
+  assert.match(src, /oauth_apple/);
+  assert.match(src, /oauthActions/);
+  const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
+  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /OAuthButtons/);
+  assert.match(card, /OAuthButtons/);
+  return true;
+});
+
 const {
   clearPendingInvite,
   stashPendingInvite,

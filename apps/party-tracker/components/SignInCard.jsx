@@ -3,6 +3,7 @@
 import { Show, UserButton, useClerk, useSignIn } from '@clerk/nextjs';
 import { useState } from 'react';
 import { rankReward } from '@party-tracker/shared/questScore.js';
+import OAuthButtons from '@/components/OAuthButtons';
 import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
@@ -70,24 +71,9 @@ function SignInCardLive({ session = null, onSession = null }) {
         Browse the map and join a party by name anytime. Continue with Google or Apple to keep XP,
         Managed Guests, and gap Side Quests on this phone.
       </p>
-      <div className="signInActions signInActionsStack">
+      <div className="signInActions">
         <Show when="signed-out">
-          <button
-            type="button"
-            className="btn primary"
-            disabled={!isLoaded || busy}
-            onClick={() => startOAuth('oauth_google')}
-          >
-            {busy === 'oauth_google' ? 'Opening Google…' : 'Continue with Google'}
-          </button>
-          <button
-            type="button"
-            className="btn ghost"
-            disabled={!isLoaded || busy}
-            onClick={() => startOAuth('oauth_apple')}
-          >
-            {busy === 'oauth_apple' ? 'Opening Apple…' : 'Continue with Apple'}
-          </button>
+          <OAuthButtons isLoaded={isLoaded} busy={busy} onStart={startOAuth} />
         </Show>
         <Show when="signed-in">
           <UserButton afterSignOutUrl="/" />
