@@ -28,6 +28,7 @@ import {
   shouldSkipLocalPreMerge,
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
+import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -102,6 +103,13 @@ export async function runPreMergeVertical({
     if (code !== 0) return code;
   }
 
+  const files = gitChangedFiles(baseRef, cwd);
+  const clerkBlock = clerkE2eBlockReason({ files: files || [], skipBrowser });
+  if (clerkBlock) {
+    console.error(`pre-merge-vertical: ${clerkBlock}`);
+    return 1;
+  }
+
   if (skipBrowser) {
     console.log('pre-merge-vertical: browser vertical skipped (--skip-browser)');
     if (!noStamp) {
@@ -110,7 +118,6 @@ export async function runPreMergeVertical({
     return 0;
   }
 
-  const files = gitChangedFiles(baseRef, cwd);
   if (!needsBrowserVertical(files)) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
     if (!noStamp) {

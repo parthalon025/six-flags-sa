@@ -23,6 +23,9 @@ export const launch = (opts = {}) =>
 
 export const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
 
+/** Local TLS stand-in for the production host (Clerk live FAPI rejects localhost). */
+export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLERK_E2E_TLS === '1';
+
 /**
  * Console noise that is about the sandbox rather than the app: a webfont that
  * cannot be fetched with no outbound network, and a certificate the test
@@ -79,6 +82,7 @@ export async function openPhone(
     geolocation: { latitude: lat, longitude: lng },
     colorScheme,
     locale: 'en-US',
+    ignoreHTTPSErrors,
   });
   // The update splash is driven by a client effect that runs after hydration,
   // so seed the seen-version key before the first paint rather than racing it.

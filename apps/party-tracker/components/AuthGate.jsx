@@ -3,6 +3,7 @@
 import { Show, useSignIn } from '@clerk/nextjs';
 import { useState } from 'react';
 import BrandLockup from '@/components/BrandLockup';
+import OAuthButtons from '@/components/OAuthButtons';
 import { BRAND } from '@/lib/brand';
 import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
@@ -47,24 +48,9 @@ function AuthGateLive({ onGuest = null }) {
           Sign in to save XP and Side Quest progress on this phone, or continue as a guest —
           the map and party work either way.
         </p>
-        <div className="signInActions signInActionsStack">
+        <div className="signInActions">
           <Show when="signed-out">
-            <button
-              type="button"
-              className="btn primary"
-              disabled={!isLoaded || busy}
-              onClick={() => startOAuth('oauth_google')}
-            >
-              {busy === 'oauth_google' ? 'Opening Google…' : 'Continue with Google'}
-            </button>
-            <button
-              type="button"
-              className="btn ghost"
-              disabled={!isLoaded || busy}
-              onClick={() => startOAuth('oauth_apple')}
-            >
-              {busy === 'oauth_apple' ? 'Opening Apple…' : 'Continue with Apple'}
-            </button>
+            <OAuthButtons isLoaded={isLoaded} busy={busy} onStart={startOAuth} />
           </Show>
         </div>
         {err ? <p className="fine block warnText">{err}</p> : null}

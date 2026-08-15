@@ -7278,6 +7278,74 @@ await check('Clerk provider can mount with only the publishable key', () => {
 });
 
 const {
+  CLERK_OAUTH_CALLBACK_PATH,
+  CLERK_OAUTH_COMPLETE_PATH,
+  clerkOAuthRedirect,
+} = await import('../../apps/party-tracker/lib/auth/clerkOAuth.js');
+
+await check('clerkOAuthRedirect sends Google and Apple through the SSO callback', async () => {
+  const calls = [];
+  await clerkOAuthRedirect(
+    {
+      authenticateWithRedirect: async (params) => {
+        calls.push(params);
+      },
+    },
+    'oauth_google',
+  );
+  await clerkOAuthRedirect(
+    {
+      authenticateWithRedirect: async (params) => {
+        calls.push(params);
+      },
+    },
+    'oauth_apple',
+  );
+  assert.deepEqual(
+    calls.map((c) => c.strategy),
+    ['oauth_google', 'oauth_apple'],
+  );
+  for (const params of calls) {
+    assert.equal(params.redirectUrl, CLERK_OAUTH_CALLBACK_PATH);
+    assert.equal(params.redirectUrlComplete, CLERK_OAUTH_COMPLETE_PATH);
+  }
+  assert.equal(CLERK_OAUTH_CALLBACK_PATH, '/sign-in/sso-callback');
+  assert.equal(CLERK_OAUTH_COMPLETE_PATH, '/');
+  return true;
+});
+
+await check('clerkOAuthRedirect refuses a missing Clerk sign-in client', async () => {
+  await assert.rejects(() => clerkOAuthRedirect(null, 'oauth_google'), /not ready/);
+  return true;
+});
+
+await check('SSO callback page completes Clerk OAuth instead of remounting SignIn', () => {
+  const pageUrl = new URL('../../apps/party-tracker/app/sign-in/sso-callback/page.jsx', import.meta.url);
+  assert.equal(fs.existsSync(pageUrl), true, 'missing /sign-in/sso-callback page');
+  const page = fs.readFileSync(pageUrl, 'utf8');
+  assert.match(page, /AuthenticateWithRedirectCallback/);
+  assert.match(page, /clerk-captcha/);
+  assert.doesNotMatch(page, /<SignIn[\s>]/);
+  return true;
+});
+
+await check('OAuth buttons are provider logos in two columns', () => {
+  const buttonsUrl = new URL('../../apps/party-tracker/components/OAuthButtons.jsx', import.meta.url);
+  assert.equal(fs.existsSync(buttonsUrl), true, 'missing OAuthButtons');
+  const src = fs.readFileSync(buttonsUrl, 'utf8');
+  assert.match(src, /oauth_google/);
+  assert.match(src, /oauth_apple/);
+  assert.match(src, /oauthActions/);
+  const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
+  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /OAuthButtons/);
+  assert.match(card, /OAuthButtons/);
+  return true;
+});
+
+const {
   clearPendingInvite,
   stashPendingInvite,
   takePendingInvite,
