@@ -307,6 +307,10 @@ export default function SettingsPanel({
 
       <div className="label">Advanced</div>
       <div className="rowList">
+        <a href="/privacy" className="row">
+          <span className="rowText">Privacy</span>
+          <span className="rowValue">What we collect</span>
+        </a>
         <div className="row">
           <span className="rowText">App version</span>
           <span className="rowValue">{appVersion || '—'}</span>

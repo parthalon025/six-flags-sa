@@ -74,12 +74,12 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 ## Still required before you tap Submit
 
 - [x] **App Store Small Business Program** — enrollment submitted 2026-08-14 (Account Holder Justin McFarland / team `CDHJC4MH4G`); await Apple email; 15% rate starts 15 days after fiscal month of approval
-- [x] **Paid Apps Agreement** — signed; status **Processing** (banking also processing ~24h). Confirm **Active** before first IAP sale
-- [ ] **Profile IAP** — Free download; create auto-renewable **Profile** at **$10.00/yr** (`parkbound_profile_annual` in `store-identifiers.json`) once Paid Apps Agreement is Active
+- [x] **Paid Apps Agreement** — **Active** (confirm in Connect → Agreements before first IAP sale)
+- [ ] **Profile IAP** — Free download; create auto-renewable **Profile** at **$10.00/yr** (`parkbound_profile_annual` in `store-identifiers.json`)
 - [ ] **App version** in Connect matches `apps/party-tracker/package.json` (metadata upload uses that semver)
-- [ ] **Privacy URL live** — deploy app with `/privacy` (added in `apps/party-tracker/app/privacy/page.js`)
+- [ ] **Privacy URL live** — `/privacy` builds on main; production redeploy required (Settings → Privacy link added). Verify `https://parkbound.kurat0r.ai/privacy` returns 200 before submit
 - [x] **App Preview** — iPhone 6.9" slot (`IPHONE_67`, 886×1920, 15–30s). Encode with `npm run store:app-preview`; metadata workflow uploads `fastlane/app_previews/`
-- [ ] **Screenshots** — `npm run store:screenshots` → `fastlane/screenshots/ios/` (workflow uploads with `IOS_SKIP_SCREENSHOTS=false`)
+- [x] **Screenshots** — `npm run store:screenshots` → `fastlane/screenshots/ios/` (5 iPhone 6.7" marketing frames + iPad; re-run after UI changes). Upload via metadata workflow with `IOS_SKIP_SCREENSHOTS=false`
 - [ ] **TestFlight or App Store build** — IPA from macOS CI or cloud Mac (`fastlane ios beta`)
 - [ ] **App Privacy** questionnaire completed in Connect using `APP_PRIVACY.md`
 - [ ] **Review phone number** in Connect
