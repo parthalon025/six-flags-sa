@@ -1369,6 +1369,112 @@ await check('the compass supplies a heading when the GPS has none', () => {
   return true;
 });
 
+/* ----------------------------------------------------------- compass -- */
+
+section('compass');
+
+const {
+  buildCompassMarks,
+  mapRotationDegrees,
+  normalizeWatchSettings,
+  placeKeyOf,
+  watchAlwaysOnPayload,
+  DEFAULT_WATCH_SETTINGS,
+} = await import('../../packages/shared/compass.js');
+
+await check('Compass stays empty without facing', () => {
+  const out = buildCompassMarks({
+    me: { lat: 39.34, lng: -84.27 },
+    heading: null,
+    meet: { lat: 39.341, lng: -84.27, label: 'Fountain' },
+  });
+  assert.equal(out.emptyReason, 'no-facing');
+  assert.deepEqual(out.marks, []);
+  assert.equal(out.facing, null);
+  return true;
+});
+
+await check('Compass coalesces Go over Meet at the same Place', () => {
+  const spot = { lat: 39.340142, lng: -84.266032, placeId: 'beast', label: 'The Beast' };
+  const out = buildCompassMarks({
+    me: { lat: 39.34395, lng: -84.2673 },
+    heading: 90,
+    go: spot,
+    meet: { ...spot, label: 'Meet' },
+    includeNorth: false,
+  });
+  const places = out.marks.filter((m) => m.kind !== 'north');
+  assert.equal(places.length, 1);
+  assert.equal(places[0].kind, 'primary');
+  assert.equal(places[0].role, 'go');
+  assert.equal(places[0].showDistance, true);
+  assert.equal(placeKeyOf(spot), 'id:beast');
+  return true;
+});
+
+await check('selection replaces Plan-next as the primary Place', () => {
+  const out = buildCompassMarks({
+    me: { lat: 39.34395, lng: -84.2673 },
+    heading: 0,
+    selection: { lat: 39.341, lng: -84.268, placeId: 'diamond', label: 'Diamondback' },
+    planNext: { lat: 39.342, lng: -84.265, placeId: 'banshee', label: 'Banshee' },
+    includeNorth: false,
+    showParty: false,
+    showMeet: false,
+  });
+  assert.equal(out.primary?.role, 'selection');
+  assert.equal(out.primary?.label, 'Diamondback');
+  assert.equal(out.marks.filter((m) => m.kind === 'primary').length, 1);
+  return true;
+});
+
+await check('Member marks are bodies, not targets, and omit range', () => {
+  const out = buildCompassMarks({
+    me: { lat: 39.34395, lng: -84.2673 },
+    heading: 45,
+    members: [
+      {
+        id: 'jordan',
+        name: 'Jordan',
+        initials: 'J',
+        lat: 39.344,
+        lng: -84.266,
+        target: 'millennium',
+      },
+    ],
+    includeNorth: false,
+  });
+  const people = out.marks.filter((m) => m.kind === 'member');
+  assert.equal(people.length, 1);
+  assert.equal(people[0].label, 'Jordan');
+  assert.equal(people[0].showDistance, false);
+  assert.ok(!String(people[0].placeKey).includes('millennium'));
+  return true;
+});
+
+await check('map stays north-up until Go', () => {
+  assert.equal(mapRotationDegrees({ walking: false, northUp: false, heading: 120, course: 90 }), 0);
+  assert.equal(mapRotationDegrees({ walking: true, northUp: false, heading: 122, course: null }), 123);
+  assert.equal(mapRotationDegrees({ walking: true, northUp: true, heading: 122, course: 90 }), 0);
+  assert.equal(mapRotationDegrees({ walking: true, northUp: false, heading: null, course: 47 }), 48);
+  return true;
+});
+
+await check('Watch settings normalize and calm Always On drops the mark field', () => {
+  assert.deepEqual(normalizeWatchSettings({ density: 'nope', showParty: false }), {
+    ...DEFAULT_WATCH_SETTINGS,
+    density: 'glance',
+    showParty: false,
+  });
+  assert.deepEqual(watchAlwaysOnPayload({ alwaysOn: 'calm' }, { primaryDistanceM: 120 }), {
+    mode: 'calm',
+    primaryDistanceM: 120,
+    nextTurn: null,
+  });
+  assert.deepEqual(watchAlwaysOnPayload({ alwaysOn: 'off' }), { mode: 'blank' });
+  return true;
+});
+
 await check('reset makes the gate treat the next fix as the first', () => {
   const gate = createBroadcastGate();
   const base = { lat: 39.34395, lng: -84.2673 };

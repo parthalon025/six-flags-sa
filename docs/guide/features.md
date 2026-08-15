@@ -176,7 +176,10 @@ full feature prose.
   reports their range and bearing.
 - **A scale bar that is telling the truth.** It picks a distance people round to — 100 ft,
   250 ft, half a mile — and then measures it, rather than drawing a fixed width and naming
-  it afterwards. A compass rose beside it keeps north findable once the map turns.
+  it afterwards. North lives on the **Compass** strip (and Watch dial) as a quiet tick —
+  the map stays north-up except during Go, so a separate map-edge rose is not used.
+- **Facing Compass** — phone strip and Apple Watch dial: party pins, Meet, and one primary
+  Place relative to facing. Me → Watch Compass holds density / Always On / what shows.
 
 ---
 [← README](../../README.md) · [Guide index](index.md)

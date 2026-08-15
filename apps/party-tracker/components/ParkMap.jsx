@@ -1862,30 +1862,6 @@ function ParkMap({
           hidden={mapKeyHidden}
         />
         <div className="mapMeta">
-          {/* Which way is north, without having to open the compass tape. */}
-          {/* Adaptive, the way a map's compass is on the platform: with the
-              map north-up it has nothing to tell you, so it is not there.
-              Any rotation at all and it comes back. */}
-          <div
-            className={`northRose ${Math.abs(((rotation + 180) % 360) - 180) < 0.5 ? 'idle' : ''}`}
-            title={`North is ${Math.round((360 - rotation) % 360)}°`}
-          >
-            <svg viewBox="-13 -13 26 26" aria-hidden="true">
-              <circle r="11.4" className="roseDial" />
-              <g transform={`rotate(${-rotation})`}>
-                <path d="M0 -8.2 L3.4 2.6 L0 0.4 L-3.4 2.6 Z" className="roseNeedle" />
-                <path d="M0 8.2 L3.4 -2.6 L0 -0.4 L-3.4 -2.6 Z" className="roseTail" />
-              </g>
-              {/* The letter rides to north but never turns over with it. */}
-              <text
-                x={(Math.sin((-rotation * Math.PI) / 180) * 8.4).toFixed(2)}
-                y={(-Math.cos((-rotation * Math.PI) / 180) * 8.4 + 2.4).toFixed(2)}
-                className="roseN"
-              >
-                N
-              </text>
-            </svg>
-          </div>
           <div className="scaleBar">
             <span style={{ width: `${Math.round(bar.px)}px` }} />
             <em>
