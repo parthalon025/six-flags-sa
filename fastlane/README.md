@@ -113,6 +113,16 @@ Required variables:
 | `GOOGLE_PLAY_JSON_KEY_PATH` | Path to service account JSON |
 | `ANDROID_KEYSTORE_*` | Upload keystore path, alias, passwords |
 
+## Release planning
+
+Most changes ship **without** a new App Store binary — the WebView loads `https://parkbound.kurat0r.ai`. Classify your branch:
+
+```bash
+npm run store:release-plan
+```
+
+Full checklists (web vs metadata vs native, workflow map, review best practices): [docs/guide/store-releases.md](../docs/guide/store-releases.md).
+
 ## Lanes
 
 All lanes build the web app, sync Capacitor (when installed), stamp the semver from `apps/party-tracker/package.json`, then compile and upload.

@@ -1,0 +1,20 @@
+{
+  "native_binary": [
+    "ios/",
+    "android/",
+    "capacitor.config.json",
+    "native/"
+  ],
+  "metadata": [
+    "fastlane/metadata/",
+    "fastlane/app_previews/",
+    "fastlane/screenshots/",
+    "fastlane/store-declarations.json"
+  ],
+  "web": [
+    "apps/party-tracker/",
+    "packages/shared/",
+    "packages/venue-builder/",
+    "vercel.json"
+  ]
+}

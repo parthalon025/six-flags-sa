@@ -22,6 +22,7 @@ Full documentation split out of the root README. Start with [Features](features.
 | [Repository layout](layout.md) | Where code and generated venue output live. |
 | [Contributing](contributing.md) | Issues, PRs, builder contract, and README screenshots. |
 | [Store binaries](../../fastlane/README.md) | Capacitor iOS/Android shells and Fastlane upload. |
+| [Store releases](store-releases.md) | Web vs metadata vs native — when App Store review applies. |
 
 ## See also
 
