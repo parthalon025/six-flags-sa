@@ -183,19 +183,16 @@ await check('GO NOW card carries a Why? explanation', async () => {
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(300);
   }
-  // Nudge weather refresh after the fixture is in place.
-  await a.evaluate(async () => {
-    try {
-      await fetch('/api/weather?lat=39.34&lng=-84.27', { cache: 'no-store' });
-    } catch {
-      /* fixture route handles it */
-    }
-  });
-  await a.waitForTimeout(800);
+  // useWeather only reads localStorage on mount; a bare fetch does not update
+  // React state. `online` is the hook's public refresh signal (same as a phone
+  // regaining signal). Retry while waiting — an in-flight poll can no-op once.
   const goNowHit = a.locator('.glanceCard.goNow .glanceHit[title]');
   const whyHit = a.locator('.glanceHit[title*="Why"]');
   await until(
-    async () => (await goNowHit.count()) > 0 || (await whyHit.count()) > 0,
+    async () => {
+      await a.evaluate(() => window.dispatchEvent(new Event('online')));
+      return (await goNowHit.count()) > 0 || (await whyHit.count()) > 0;
+    },
     { timeout: 20000, label: 'a glance card with Why title' },
   );
   const hit = (await goNowHit.count()) > 0 ? goNowHit.first() : whyHit.first();
