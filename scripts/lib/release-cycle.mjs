@@ -38,12 +38,19 @@ export function latestStoreTag(repoRoot, prefix = 'store/') {
 
 export function changedFilesSinceRef(repoRoot, ref) {
   if (!ref) {
-    const out = execFileSync(
-      'git',
-      ['diff', '--name-only', 'HEAD~20', 'HEAD'],
-      { cwd: repoRoot, encoding: 'utf8' },
-    );
-    return out.split('\n').map((line) => line.trim()).filter(Boolean);
+    for (const base of ['HEAD~20', 'HEAD~10', 'HEAD~5', 'HEAD~1']) {
+      try {
+        const out = execFileSync(
+          'git',
+          ['diff', '--name-only', base, 'HEAD'],
+          { cwd: repoRoot, encoding: 'utf8' },
+        );
+        return out.split('\n').map((line) => line.trim()).filter(Boolean);
+      } catch {
+        // shallow CI checkouts may not have HEAD~20 — try a nearer base
+      }
+    }
+    return [];
   }
 
   try {
