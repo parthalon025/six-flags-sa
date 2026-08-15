@@ -22,3 +22,5 @@
 ---
 
 **After editing:** add or update the policy in `scripts/lib/agent-docs/manifest.json`, then run `npm run agent-docs:build`.
+
+**GitHub issue forms:** policy text lives here; the form YAML lives in `docs/agents/templates/github/<name>.yml` and is registered in `manifest.json` → `github.issueTemplates`.

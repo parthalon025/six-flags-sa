@@ -77,16 +77,40 @@
       "body": "Read **[docs/agents/matt-standards.md](../../docs/agents/matt-standards.md)** at session start for the skill map and repo-specific rules.\n\n## Non-negotiable\n\n- **Global skills only** (`~/.agents/skills`) — never vendor. See `.cursor/rules/matt-pocock-skills.mdc`.\n- **Deep modules** — small interface, testable core. Packages via entry points; automation via `scripts/lib/`.\n- **Scripts over instructions** — policy in `scripts/lib` + JSON; agent docs link, don't restate. See `.cursor/rules/scripts-over-instructions.mdc`.\n- **Before editing** a module seam or reviewing a diff: read the matching global skill (`codebase-design`, `code-review`, `writing-for-agents`, `tdd`, …) from `docs/agents/matt-standards.md`.\n- **Before merging** a PR: run `npm run test:pre-merge-vertical` (static + browser vertical when the diff warrants it). See [docs/agents/ci.md](../../docs/agents/ci.md).\n\nWhen in doubt, read the skill file first — do not improvise a second standard."
     }
   ],
+  "github": {
+    "templatesDir": "docs/agents/templates/github",
+    "issueTemplatesDir": ".github/ISSUE_TEMPLATE",
+    "issueTemplates": [
+      {
+        "source": "agent-handoff.yml",
+        "output": "agent-handoff.yml"
+      }
+    ],
+    "docStubs": [
+      {
+        "output": "docs/agents/issue-tracker.md",
+        "title": "Issue tracker: GitHub",
+        "policy": "github-issue-tracker",
+        "pointer": "**GitHub** Issues is the only issue surface — use `gh` CLI for all operations."
+      },
+      {
+        "output": "docs/agents/triage-labels.md",
+        "title": "Triage Labels",
+        "policy": "github-triage-labels",
+        "pointer": "**Triage** labels map Matt skill roles to GitHub label strings."
+      }
+    ]
+  },
   "agentSkillsBlock": {
     "heading": "Agent skills",
     "sections": [
       {
         "subheading": "Issue tracker",
-        "pointer": "Issues live in GitHub Issues for `parthalon025/six-flags-sa` (via `gh`). Agent-handoff issues share that tracker and enter the triage label flow. See [docs/agents/issue-tracker.md](./docs/agents/issue-tracker.md)."
+        "pointer": "**GitHub** Issues for `parthalon025/six-flags-sa` (via `gh`) — see [github-issue-tracker policy](./docs/agents/policies/github-issue-tracker.md)."
       },
       {
         "subheading": "Triage labels",
-        "pointer": "Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See [docs/agents/triage-labels.md](./docs/agents/triage-labels.md)."
+        "pointer": "**Triage** vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` — see [github-triage-labels policy](./docs/agents/policies/github-triage-labels.md)."
       },
       {
         "subheading": "Domain docs",

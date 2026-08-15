@@ -2,7 +2,9 @@
  * Compose always-loaded agent docs from policy templates.
  *
  * Single source of truth: docs/agents/policies/*.md
- * Generated outputs: AGENTS.md, CLAUDE.md, .cursor/rules/*.mdc
+ * Generated outputs: AGENTS.md, CLAUDE.md, .cursor/rules/*.mdc,
+ * docs/agents/issue-tracker.md, docs/agents/triage-labels.md,
+ * .github/ISSUE_TEMPLATE/*.yml
  *
  * Follows writing-for-agents: slim context pointers in always-loaded docs;
  * full policy disclosed behind pointers.
@@ -68,6 +70,34 @@ function renderStaticCursorRule(rule) {
   ].join('\n');
 }
 
+function policyHrefFromAgentsDir(policyId) {
+  return `./policies/${policyId}.md`;
+}
+
+function renderDocStub(stub) {
+  const href = policyHrefFromAgentsDir(stub.policy);
+  return [
+    GENERATED_MARKER,
+    '',
+    `# ${stub.title}`,
+    '',
+    `${stub.pointer} See [${stub.policy} policy](${href}).`,
+    '',
+  ].join('\n');
+}
+
+function renderGitHubIssueTemplate(manifest, entry, rootDir) {
+  const src = join(rootDir, manifest.github.templatesDir, entry.source);
+  let content = readFileSync(src, 'utf8');
+  // Strip template-only comment header lines starting with #
+  content = content
+    .split('\n')
+    .filter((line) => !line.startsWith('# '))
+    .join('\n')
+    .replace(/^\n+/, '');
+  return content.endsWith('\n') ? content : `${content}\n`;
+}
+
 function renderAgentRoot(manifest, { variant, gitnexusBlock }) {
   const lines = [GENERATED_MARKER, ''];
   if (gitnexusBlock) {
@@ -115,6 +145,16 @@ export function composeAgentDocs({
 
   for (const rule of manifest.staticCursorRules) {
     outputs.set(join(manifest.cursorRulesDir, rule.file), renderStaticCursorRule(rule));
+  }
+
+  if (manifest.github) {
+    for (const stub of manifest.github.docStubs ?? []) {
+      outputs.set(stub.output, renderDocStub(stub));
+    }
+    for (const entry of manifest.github.issueTemplates ?? []) {
+      const rel = join(manifest.github.issueTemplatesDir, entry.output);
+      outputs.set(rel, renderGitHubIssueTemplate(manifest, entry, rootDir));
+    }
   }
 
   return outputs;

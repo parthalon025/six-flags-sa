@@ -26,6 +26,7 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Isolate agent work in a git worktree | `npm run worktree:create` / `worktree:remove` / `worktree:prune` (`scripts/worktree.mjs`) |
 | Install Matt Pocock skills globally | `node scripts/install-global-skills.mjs` (Cloud `install` in `.cursor/environment.json`) |
 | Compose agent docs from policy templates | `npm run agent-docs:build` / `agent-docs:check` (`scripts/lib/agent-docs/compose.mjs`) |
+| GitHub issue forms | `docs/agents/templates/github/*.yml` → `.github/ISSUE_TEMPLATE/` via `agent-docs:build` |
 | Package entry points | [packages/README.md](../../packages/README.md) |
 
 When adding new policy, ask: *can a script or workflow own this?* If yes, write that first and keep agent instructions to when and why to invoke it.

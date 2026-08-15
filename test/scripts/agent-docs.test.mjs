@@ -18,10 +18,26 @@ for (const policy of manifest.policies) {
   const policyPath = join(root, manifest.policiesDir, `${policy.id}.md`);
   assert.ok(existsSync(policyPath), `missing policy file: ${policy.id}`);
 }
+for (const stub of manifest.github?.docStubs ?? []) {
+  const policyPath = join(root, manifest.policiesDir, `${stub.policy}.md`);
+  assert.ok(existsSync(policyPath), `missing github policy: ${stub.policy}`);
+}
 
 const outputs = composeAgentDocs({ manifest, rootDir: root });
 assert.ok(outputs.has('AGENTS.md'), 'composes AGENTS.md');
 assert.ok(outputs.has('CLAUDE.md'), 'composes CLAUDE.md');
+assert.ok(outputs.has('docs/agents/issue-tracker.md'), 'composes issue-tracker stub');
+assert.ok(outputs.has('docs/agents/triage-labels.md'), 'composes triage-labels stub');
+assert.ok(outputs.has('.github/ISSUE_TEMPLATE/agent-handoff.yml'), 'composes agent-handoff template');
+
+const issueTracker = outputs.get('docs/agents/issue-tracker.md');
+assert.match(issueTracker, /github-issue-tracker policy/);
+assert.ok(issueTracker.length < 300, 'issue-tracker stub stays slim');
+
+const handoffYml = outputs.get('.github/ISSUE_TEMPLATE/agent-handoff.yml');
+assert.match(handoffYml, /^name: Agent handoff/m);
+assert.match(handoffYml, /agent-handoff/);
+assert.doesNotMatch(handoffYml, /^# Source template/m);
 
 const agents = outputs.get('AGENTS.md');
 assert.match(agents, /<!-- agent-docs:generated -->/);

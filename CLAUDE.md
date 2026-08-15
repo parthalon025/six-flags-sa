@@ -81,11 +81,11 @@ Put policy in **scripts**, not agent prose — one pointer beats a duplicated pa
 
 ### Issue tracker
 
-Issues live in GitHub Issues for `parthalon025/six-flags-sa` (via `gh`). Agent-handoff issues share that tracker and enter the triage label flow. See [docs/agents/issue-tracker.md](./docs/agents/issue-tracker.md).
+**GitHub** Issues for `parthalon025/six-flags-sa` (via `gh`) — see [github-issue-tracker policy](./docs/agents/policies/github-issue-tracker.md).
 
 ### Triage labels
 
-Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See [docs/agents/triage-labels.md](./docs/agents/triage-labels.md).
+**Triage** vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` — see [github-triage-labels policy](./docs/agents/policies/github-triage-labels.md).
 
 ### Domain docs
 

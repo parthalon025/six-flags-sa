@@ -1,3 +1,5 @@
+# Source template for .github/ISSUE_TEMPLATE/agent-handoff.yml
+# Regenerate: npm run agent-docs:build
 name: Agent handoff
 description: Out-of-scope error or failure found during agent work — for another agent to fix
 title: "[Agent handoff] "
