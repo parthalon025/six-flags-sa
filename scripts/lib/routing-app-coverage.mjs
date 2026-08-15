@@ -17,7 +17,7 @@ import {
   ringFromBounds,
   routingCoverageIssues,
   writeRoutingCoverage as writeRoutingCoverageFile,
-} from '@party-tracker/venue-builder/routing-coverage.js';
+} from '../../packages/venue-builder/src/routing-coverage.mjs';
 
 export {
   MAX_POLYGONS,
