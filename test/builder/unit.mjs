@@ -7200,18 +7200,17 @@ await check('a short phone still reaches the list', () => {
 const { firstRunOverlay, INTRO_KEY, INTRO_SEEN_BOOT_SCRIPT } = await import('../../apps/party-tracker/lib/introGate.js');
 
 await check('unknown intro state covers the map instead of painting the live app', () => {
-  assert.equal(firstRunOverlay({ introSeen: null, logoSplashDismissed: false }), 'hold');
+  assert.equal(firstRunOverlay({ introSeen: null }), 'hold');
   return true;
 });
 
 await check('a returning phone skips the first-run overlay', () => {
-  assert.equal(firstRunOverlay({ introSeen: true, logoSplashDismissed: false }), 'none');
+  assert.equal(firstRunOverlay({ introSeen: true }), 'none');
   return true;
 });
 
-await check('a first visit opens the logo splash, then the welcome gate, without a hold in between', () => {
-  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: false }), 'splash');
-  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: true }), 'welcome');
+await check('a first visit opens the welcome gate after Profile login or guest', () => {
+  assert.equal(firstRunOverlay({ introSeen: false }), 'welcome');
   return true;
 });
 
@@ -7340,8 +7339,10 @@ await check('OAuth buttons are provider logos in two columns', () => {
   assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
   const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(gate, /OAuthButtons/);
-  assert.match(card, /OAuthButtons/);
+  const actions = fs.readFileSync(new URL('../../apps/party-tracker/components/ProfileAuthActions.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /ProfileAuthActions/);
+  assert.match(card, /ProfileAuthActions/);
+  assert.match(actions, /OAuthButtons/);
   return true;
 });
 

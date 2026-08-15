@@ -10,7 +10,10 @@
  *
  * BASE_URL points the suites at an app on another port:
  *
- *   BASE_URL=http://127.0.0.1:3711 node test/functional.mjs
+ *   BASE_URL=http://localhost:3711 node test/functional.mjs
+ *
+ * Default is localhost (not 127.0.0.1) — this Clerk instance allows http://localhost:3000;
+ * 127.0.0.1 is rejected by live FAPI and breaks Profile gate hydration.
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -21,9 +24,9 @@ const APP_VERSION = JSON.parse(readFileSync(new URL('../../apps/party-tracker/pa
 export const launch = (opts = {}) =>
   chromium.launch({ ...opts, ...(executablePath ? { executablePath } : {}) });
 
-export const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+export const BASE = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
-/** Local TLS stand-in for the production host (Clerk live FAPI rejects localhost). */
+/** Local TLS stand-in for the production host (Clerk live FAPI on custom domain). */
 export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLERK_E2E_TLS === '1';
 
 /**
@@ -212,23 +215,31 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
 }
 
 /**
- * Dismiss the logo intro splash if it is up. Polls because React may not have painted it yet.
+ * Dismiss the Profile auth gate (Clerk login / guest) when Clerk is configured.
  */
-export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
+export async function dismissAuthGate(page, { timeout = 12000 } = {}) {
   const deadline = Date.now() + timeout;
   do {
-    const intro = page.locator('#intro-splash-title');
-    if (await intro.count()) {
-      const primary = page.locator(
-        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
-      );
-      await primary.first().click({ force: true }).catch(() => {});
-      await page.waitForTimeout(600);
-      if (!(await intro.count())) return true;
+    const guest = page.locator('.authGate button:has-text("Continue as guest")');
+    if (await guest.count()) {
+      await guest.first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(400);
+      if (!(await page.locator('.authGate').count())) return true;
+    } else if (!(await page.locator('.authGate').count())) {
+      return true;
     }
     if (timeout === 0) break;
     await page.waitForTimeout(250);
   } while (Date.now() < deadline);
+  return !(await page.locator('.authGate').count());
+}
+
+/**
+ * Legacy logo splash — removed from first-run; kept as a no-op for older harness calls.
+ */
+export async function dismissIntroSplash(page, { timeout = 0 } = {}) {
+  void page;
+  void timeout;
   return false;
 }
 
@@ -239,6 +250,7 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
  * so an intake bug fails its own assertion rather than every test behind it.
  */
 export async function closeGate(page) {
+  await dismissAuthGate(page);
   await dismissIntroSplash(page);
   await dismissUpdateSplash(page);
   const nearest = page.locator('button:has-text("Go to nearest park")');
@@ -251,6 +263,7 @@ export async function closeGate(page) {
   else if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
+    await dismissAuthGate(page, { timeout: 250 });
     await dismissIntroSplash(page, { timeout: 250 });
     await dismissUpdateSplash(page, { timeout: 250 });
     const paths = await page.locator('.mapSvg path').count();

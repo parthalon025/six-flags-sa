@@ -11,7 +11,6 @@ import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
 import WeatherBanner from '@/components/WeatherBanner';
-import IntroSplash from '@/components/IntroSplash';
 import BrandLockup from '@/components/BrandLockup';
 import BrandMark from '@/components/BrandMark';
 import useSheetDrag from '@/components/useSheetDrag';
@@ -258,9 +257,7 @@ function ParkApp({ isSignedIn }) {
      and a returning one the introduction. Nothing in the intake draws until
      this is a boolean. */
   const [introSeen, setIntroSeen] = useState(null);
-  /** Session-only — the logo splash yields to the welcome gate without marking intro seen. */
-  const [logoSplashDismissed, setLogoSplashDismissed] = useState(false);
-  const introOverlay = firstRunOverlay({ introSeen, logoSplashDismissed });
+  const introOverlay = firstRunOverlay({ introSeen });
   /** Stay opaque for the whole first-run intake — flipping this when they tap
    *  nearest-park would re-attach fadeIn and flash the map through the gate. */
   const [firstRunSession, setFirstRunSession] = useState(false);
@@ -755,9 +752,8 @@ function ParkApp({ isSignedIn }) {
   const pastAuthGate = isSignedIn || guestMode || !clerkBrowserConfigured();
   // Do not wait for Clerk FAPI — a handshake failure must not skip Profile login.
   const showAuthGate = clerkBrowserConfigured() && !isSignedIn && !guestMode;
-  const showIntroSplash = pastAuthGate && introSeen === false && !logoSplashDismissed;
-  /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
-  const showWelcomeGate = pastAuthGate && introSeen === false && logoSplashDismissed && !nearestIntent;
+  /** Brand welcome on the gate after Profile login/guest, before GPS/park intake. */
+  const showWelcomeGate = pastAuthGate && introSeen === false && !nearestIntent;
 
   const continueAsGuest = useCallback(() => {
     markGuestChoice();
@@ -766,7 +762,7 @@ function ParkApp({ isSignedIn }) {
 
   const askingPark = Boolean(parkChoice);
   /** Inline park question on the gate (GPS path), including after "nearest park". */
-  const showParkPrompt = pastAuthGate && !showAuthGate && !showIntroSplash && gateOpen && askingPark;
+  const showParkPrompt = pastAuthGate && !showAuthGate && gateOpen && askingPark;
   const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore) && !nearestIntent;
 
   useEffect(() => {
@@ -2453,7 +2449,7 @@ function ParkApp({ isSignedIn }) {
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
-      {introOverlay === 'hold' && (
+      {introOverlay === 'hold' && !showAuthGate && (
         <div className="gate gateFirstRun" data-intro-hold="1" aria-hidden="true" />
       )}
       <AuthBridge onSession={setAuthSession} onBindUserId={handleBindProfile} />
@@ -3353,13 +3349,6 @@ function ParkApp({ isSignedIn }) {
 
       {showAuthGate && <AuthGate onGuest={continueAsGuest} />}
 
-      {showIntroSplash && !showAuthGate && (
-        <IntroSplash
-          version={appUpdate.version}
-          onContinue={() => setLogoSplashDismissed(true)}
-        />
-      )}
-
       {/* Explore-without-GPS uses its own card; location intake is the GPS gate. */}
       {showExplorePrompt && (
         <ParkPrompt
@@ -3392,7 +3381,7 @@ function ParkApp({ isSignedIn }) {
       )}
 
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
-      {gateOpen && introSeen !== null && !showAuthGate && !showExplorePrompt && !showIntroSplash && !locationLocked && (
+      {gateOpen && introSeen !== null && !showAuthGate && !showExplorePrompt && !locationLocked && (
         <GpsGate
           firstRun={firstRunSession}
           venueName={venue?.name}

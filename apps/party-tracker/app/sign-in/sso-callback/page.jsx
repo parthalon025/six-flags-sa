@@ -5,9 +5,8 @@ import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 export const dynamic = 'force-dynamic';
 
 /**
- * Completes Google / Apple OAuth started from AuthGate and SignInCard.
- * The catch-all /sign-in/[[...sign-in]] page mounts the SignIn widget and
- * cannot finish authenticateWithRedirect — this more-specific route must win.
+ * Completes Google / Apple OAuth started from ProfileAuthActions.
+ * @see https://clerk.com/docs/reference/components/authentication/authenticate-with-redirect-callback
  */
 export default function SsoCallbackPage() {
   if (!clerkBrowserConfigured()) redirect('/');
@@ -19,7 +18,6 @@ export default function SsoCallbackPage() {
         signInFallbackRedirectUrl="/"
         signUpFallbackRedirectUrl="/"
       />
-      {/* Clerk bot sign-up protection is on by default for new OAuth Profiles. */}
       <div id="clerk-captcha" />
     </main>
   );
