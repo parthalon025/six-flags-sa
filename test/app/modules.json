@@ -1,5 +1,5 @@
 {
-  "$schema_note": "CI / validate-ui modules. Path globs select which suites run on a PR; fullSuitePaths (or push to main) runs everything. Functional modules map to gated sections in functional.mjs. `pulls` adds companion modules when this one is selected.",
+  "$schema_note": "CI / validate-ui modules. Path globs select which suites run for a diff; fullSuitePaths force everything when touched. Post-merge version-stamp-only commits select nothing. Functional modules map to gated sections in functional.mjs. `pulls` adds companion modules when this one is selected.",
   "fullSuitePaths": [
     ".github/workflows/test-app.yml",
     "package.json",
@@ -177,6 +177,22 @@
         "apps/party-tracker/lib/install.js",
         "apps/party-tracker/lib/transport/offlineQueue.js"
       ]
+    },
+    {
+      "id": "auth",
+      "title": "Functional — auth / Clerk-off guards",
+      "kind": "functional",
+      "paths": [
+        "apps/party-tracker/app/sign-in/**",
+        "apps/party-tracker/app/sign-up/**",
+        "apps/party-tracker/lib/clerkConfigured.js",
+        "apps/party-tracker/proxy.js",
+        "apps/party-tracker/components/AuthGate.jsx",
+        "apps/party-tracker/components/AuthBridge.jsx",
+        "apps/party-tracker/components/SignInCard.jsx",
+        "vercel.json"
+      ],
+      "pulls": ["smoke"]
     },
     {
       "id": "grandma",

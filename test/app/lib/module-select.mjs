@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isGitnexusCiNoise } from '../../../scripts/gitnexus-ci.mjs';
+import { isVersionStampOnlyChange } from '../../../scripts/lib/version-stamp.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_MANIFEST = path.join(HERE, '../modules.json');
@@ -105,6 +106,10 @@ export function selectModulesFromFiles(files, manifest = loadModulesManifest()) 
     .filter((f) => !isGitnexusCiNoise(f));
   const reasons = {};
   const selected = new Set();
+
+  if (isVersionStampOnlyChange(normFiles)) {
+    return { modules: [], reasons, fullSuite: false };
+  }
 
   const fullHit = normFiles.find((f) => pathMatchesAny(f, manifest.fullSuitePaths || []));
   if (fullHit) {

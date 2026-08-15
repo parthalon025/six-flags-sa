@@ -31,6 +31,19 @@ CI-only / docs-only branches skip the browser phase automatically. Use `--skip-b
 
 ## Test app (`.github/workflows/test-app.yml`)
 
+**Touch-only policy:** PRs and `main` pushes run only modules matched by the diff — not the full matrix every time.
+
+| Event | Diff base | What runs |
+|-------|-----------|-----------|
+| **Pull request** | `merge-base...HEAD` vs PR base branch | Matching modules from `modules.json` |
+| **Push to `main`** | `HEAD^1...HEAD` (this commit only) | Same — merge commit ≈ PR files; stamp-only ≈ nothing |
+| **`chore: bump version to …`** | — | **Workflow skipped** (Post-merge bump already validated the merge) |
+| **GitNexus-only** | — | Gate skips expensive jobs |
+
+`fullSuitePaths` in `modules.json` still forces all modules when e.g. `functional.mjs` or `test-app.yml` changes. Version-stamp-only file lists bypass full-suite triggers.
+
+Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run test:validate-ui -- --all` every Sunday 08:00 UTC (or `workflow_dispatch`).
+
 | Step | Script / command |
 |------|------------------|
 | Gate — script invariants | `node scripts/ci/gate-tests.mjs` then `node scripts/gitnexus-ci.mjs` |
@@ -66,6 +79,7 @@ Previews skip unless user-directed; production app merges on `main` use the auto
 |----------|---------|
 | `skills-lock.yml` | `npm run skills:check` — no vendored Matt skills |
 | `drift-watch.yml` | Weekly `npm run venues:drift-watch` → agent-handoff issue |
+| `validate-ui-weekly.yml` | Sunday full `npm run test:validate-ui -- --all` safety net |
 | `build-venue.yml` | Manual venue PR builder |
 | `databricks-bundle.yml` | Bundle deploy (paused schedules pre-launch) |
 | `store.yml` / `ios-app-store-metadata.yml` | Store metadata lanes |

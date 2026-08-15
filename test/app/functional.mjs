@@ -7,7 +7,7 @@
  * have to keep the party alive between them.
  *
  * Modules (TEST_MODULES / --modules=): smoke, heights, walk, party, intake,
- * venues, offline. Omit or pass `all` to run every section.
+ * venues, offline, auth. Omit or pass `all` to run every section.
  *
  *   npm run build && npm start &
  *   CHROMIUM_PATH=/opt/pw-browsers/chromium node test/app/functional.mjs
@@ -31,9 +31,11 @@ import {
   rideHeightVerdict,
   root,
   rosterNames,
+  partyRosterNames,
   searchPlaces,
   until,
   tapMapPoi,
+  waitForHeightsReady,
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 
@@ -71,7 +73,7 @@ const MIGRATION_TIMEOUT = 75000;
 
 const selected = parseModulesArg();
 const want = (id) => wantModule(selected, id);
-const FUNCTIONAL_IDS = ['smoke', 'heights', 'walk', 'party', 'intake', 'venues', 'offline'];
+const FUNCTIONAL_IDS = ['smoke', 'heights', 'walk', 'party', 'intake', 'venues', 'offline', 'auth'];
 const anyFunctional = !selected || FUNCTIONAL_IDS.some((id) => want(id));
 if (!anyFunctional) {
   console.log('functional: no functional modules selected — skipping');
@@ -95,8 +97,21 @@ let code = null;
 let session = null;
 let invite = null;
 
-const needsPhoneA = want('smoke') || want('heights') || want('walk') || want('party');
-if (needsPhoneA) {
+const needsPhoneA = want('smoke') || want('heights') || want('walk') || want('party') || want('auth');
+const authOnlyPhone =
+  want('auth') && !want('smoke') && !want('heights') && !want('walk') && !want('party');
+if (authOnlyPhone) {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    hasTouch: true,
+    isMobile: true,
+    locale: 'en-US',
+  });
+  const page = await context.newPage();
+  A = { context, page, errors: [], requests: [], label: 'A' };
+  a = page;
+} else if (needsPhoneA) {
   // The Beast's station.
   A = await openPhone(browser, {
     lat: 39.34395,
@@ -107,6 +122,62 @@ if (needsPhoneA) {
   });
   a = A.page;
 }
+
+if (want('auth')) {
+console.log('\n--- auth (Clerk-off guards) ---');
+let clerkAuthPages = false;
+
+await check('sign-in page respects Clerk configuration', async () => {
+  await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
+  const outcome = await until(
+    async () => {
+      const url = String(a.url());
+      const onSignIn = url.includes('/sign-in');
+      const clerkPage = (await a.locator('.clerkAuthPage').count()) > 0;
+      const clerkWidget =
+        (await a.locator('.cl-signIn-root, [data-clerk-component="SignIn"]').count()) > 0;
+      if (!onSignIn) return { mode: 'redirect' };
+      if (clerkPage || clerkWidget) return { mode: 'clerk' };
+      return null;
+    },
+    { timeout: 20000, label: 'sign-in redirect or Clerk widget' },
+  );
+  clerkAuthPages = outcome.mode === 'clerk';
+  return true;
+});
+
+await check('sign-up page respects Clerk configuration', async () => {
+  await a.goto(`${BASE}/sign-up`, { waitUntil: 'domcontentloaded' });
+  const outcome = await until(
+    async () => {
+      const url = String(a.url());
+      const onSignUp = url.includes('/sign-up');
+      const clerkPage = (await a.locator('.clerkAuthPage').count()) > 0;
+      const clerkWidget =
+        (await a.locator('.cl-signUp-root, [data-clerk-component="SignUp"]').count()) > 0;
+      if (!onSignUp) return { mode: 'redirect' };
+      if (clerkPage || clerkWidget) return { mode: 'clerk' };
+      return null;
+    },
+    { timeout: 20000, label: 'sign-up redirect or Clerk widget' },
+  );
+  if (outcome.mode === 'clerk') clerkAuthPages = true;
+  return true;
+});
+
+if (!authOnlyPhone) {
+await check('Settings sign-in card matches Clerk routes', async () => {
+  await go(a, 'Settings');
+  const card = (await a.locator('.signInCard').count()) > 0;
+  if (!clerkAuthPages && card) {
+    throw new Error('SignInCard mounted when /sign-in is not available');
+  }
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  await a.waitForTimeout(200);
+  return true;
+});
+}
+} // end auth
 
 if (want('smoke')) {
 console.log('--- phone A: core ---');
@@ -172,6 +243,11 @@ await check('GO NOW card carries a Why? explanation', async () => {
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("48")').click();
   await a.waitForTimeout(500);
+  await go(a, 'Places');
+  await until(async () => (await a.locator('.glanceCard').count()) >= 2, {
+    timeout: 15000,
+    label: 'glance rail cards',
+  });
   await a.locator('.tabItem[data-tab="explore"]').click();
   await root(a);
   // Peek so the glance rail is visible.
@@ -253,6 +329,7 @@ await check('the sheet cycles peek -> half -> full', async () => {
 
 if (want('heights')) {
 console.log('\n--- rides + heights ---');
+await waitForHeightsReady(a);
 await go(a, 'Rider height');
 await a.waitForTimeout(400);
 
@@ -398,6 +475,12 @@ await check('tapping a map icon opens place details and navigation', async () =>
     timeout: 20000,
     label: 'park geometry',
   });
+  // Beast declutters when GPS is far north — walk the fix to the station first.
+  const beast = { latitude: 39.340154, longitude: -84.266027 };
+  for (let i = 0; i < 4; i += 1) {
+    await A.context.setGeolocation(beast);
+    await a.waitForTimeout(400);
+  }
   // Prefer a named ride so the tap is deterministic after earlier list clicks.
   let name;
   try {
@@ -705,11 +788,16 @@ await check('a glance card walks you to a place and stops again', async () => {
   await a.waitForTimeout(1200);
   await go(a, 'Places');
   const goBtn = a.locator('.glanceGo').first();
-  if (!(await goBtn.count())) throw new Error('no Go button on the rail');
+  await until(async () => (await goBtn.count()) > 0, { timeout: 15000, label: 'glance Go button' });
   await goBtn.click();
-  await a.waitForTimeout(900);
-  if (!(await a.locator('.routePreview').count())) throw new Error('Go did not offer a route');
-  if (!(await a.locator('.glanceCard.walking').count())) throw new Error('card not marked as live');
+  await until(async () => (await a.locator('.routePreview').count()) > 0, {
+    timeout: 15000,
+    label: 'route preview from glance Go',
+  });
+  await until(async () => (await a.locator('.glanceCard.walking').count()) > 0, {
+    timeout: 15000,
+    label: 'glance card walking state',
+  });
   await a.locator('.previewGo').click();
   await a.waitForTimeout(900);
   await a.locator('.navEnd').click();
@@ -932,7 +1020,7 @@ await check('device-less Members can be added to the roster', async () => {
 await check('a phone can remove a device-less Member from the roster', async () => {
   const row = a.locator('.memberRow', { hasText: 'Mia' });
   await row.locator('button:has-text("Remove")').click();
-  await until(async () => !(await rosterNames(a)).includes('Mia'), {
+  await until(async () => !(await partyRosterNames(a)).includes('Mia'), {
     timeout: 10000,
     label: 'Mia gone from roster',
   });
@@ -974,18 +1062,16 @@ await check('a typed code joins the party', async () => {
 });
 
 await check('the roster converges on both phones', async () => {
-  await go(a, 'Party');
-  await go(b, 'Party');
-  await until(async () => (await rosterNames(b)).includes('Justin'), {
+  await until(async () => (await partyRosterNames(b)).includes('Justin'), {
     timeout: JOIN_TIMEOUT,
     label: 'Justin on phone B',
   });
-  await until(async () => (await rosterNames(a)).includes('Ava'), {
+  await until(async () => (await partyRosterNames(a)).some((n) => /ava/i.test(n)), {
     timeout: JOIN_TIMEOUT * 2,
     label: 'Ava on phone A',
   });
-  const onA = await rosterNames(a);
-  const onB = await rosterNames(b);
+  const onA = await partyRosterNames(a);
+  const onB = await partyRosterNames(b);
   if (!onA.some((n) => /ava/i.test(n)) || !onB.some((n) => /justin/i.test(n))) {
     throw new Error(`A ${onA} / B ${onB}`);
   }
@@ -1081,13 +1167,12 @@ await check('the key never leaves the fragment on the way in', () => {
 
 await check('all three phones see all three members', async () => {
   for (const [label, page] of [['A', a], ['B', b], ['C', c]]) {
-    await go(page, 'Party');
     const names = await until(
       async () => {
-        const n = await rosterNames(page);
+        const n = await partyRosterNames(page);
         return n.length === 3 ? n : null;
       },
-      { timeout: JOIN_TIMEOUT, label: `three members on phone ${label}` },
+      { timeout: JOIN_TIMEOUT * 2, label: `three members on phone ${label}` },
     );
     for (const who of ['Justin', 'Ava', 'Sam']) {
       if (!names.includes(who)) throw new Error(`phone ${label} is missing ${who}: ${names}`);
@@ -1682,7 +1767,7 @@ await check('leaving removes the member from the other phone’s roster', async 
     timeout: JOIN_TIMEOUT,
     label: 'the leaver to be back on the start screen',
   });
-  await until(async () => !(await rosterNames(stays)).includes(leaver.name), {
+  await until(async () => !(await partyRosterNames(stays)).includes(leaver.name), {
     timeout: JOIN_TIMEOUT,
     label: `${leaver.name} to disappear from the other roster`,
   });

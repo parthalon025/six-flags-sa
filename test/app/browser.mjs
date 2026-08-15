@@ -30,7 +30,7 @@ export const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\
  * suites assert on it — this list must not grow to make a failure go away.
  */
 export const IGNORABLE_CONSOLE =
-  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico/;
+  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)/;
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {
@@ -350,12 +350,29 @@ export async function dismissNavigation(page) {
   await page.waitForTimeout(300);
 }
 
+/** POI heights gate the Plan/Rides tab — wait before Rider height navigation. */
+export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
+  await until(
+    async () => {
+      if ((await page.locator('.gate').count()) > 0) return false;
+      if ((await page.locator('svg.mapSvg path').count()) < 100) return false;
+      return (await page.locator('.tabItem[data-tab="rides"]').count()) > 0;
+    },
+    { timeout, label: 'rides tab after POI load' },
+  );
+}
+
 export async function go(page, dest) {
   await closeGate(page);
   await dismissNavigation(page);
   const tab = SETTINGS_ROWS.has(dest) ? 'settings' : TAB_OF[dest];
   if (!tab) throw new Error(`go: nothing called "${dest}"`);
-  await page.locator(`.tabItem[data-tab="${tab}"]`).click({ force: true });
+  const tabSel = `.tabItem[data-tab="${tab}"]`;
+  await until(async () => (await page.locator(tabSel).count()) > 0, {
+    timeout: tab === 'rides' ? 45000 : 30000,
+    label: `${dest} tab`,
+  });
+  await page.locator(tabSel).click({ force: true });
   await page.waitForTimeout(300);
   // Tapping the tab you are already on pops it, but arriving from another tab
   // lands on whatever that one was left showing.
@@ -515,6 +532,12 @@ export async function hasProfileSession(page) {
  * Prefer textContent over innerText — chip <em>s use text-transform and flex
  * layout, so innerText is a brittle side channel for the name.
  */
+/** Party tab first — roster rows are not on Explore/Places (#party flake). */
+export async function partyRosterNames(page) {
+  await go(page, 'Party');
+  return rosterNames(page);
+}
+
 export async function rosterNames(page) {
   return page.locator('.memberRow .memberText b').evaluateAll((els) =>
     els

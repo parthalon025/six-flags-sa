@@ -79,6 +79,22 @@ const manifest = loadModulesManifest();
 }
 
 {
+  const sel = selectModulesFromFiles(
+    [
+      'package.json',
+      'package-lock.json',
+      'apps/party-tracker/package.json',
+      'apps/party-tracker/public/app-version.json',
+      'apps/party-tracker/public/sw.js',
+      'apps/party-tracker/data/release-notes.json',
+    ],
+    manifest,
+  );
+  assert(sel.modules.length === 0, 'version-stamp-only selects nothing');
+  assert(!sel.fullSuite, 'version-stamp-only is not full suite despite package.json');
+}
+
+{
   const sel = selectModulesFromFiles(['.github/workflows/test-app.yml'], manifest);
   assert(sel.fullSuite, 'workflow edit → full suite');
   assert(sel.modules.includes('grandma'), 'full includes grandma');
@@ -150,6 +166,13 @@ const manifest = loadModulesManifest();
   const sel = selectModulesFromFiles(['test/app/critical-paths.json'], manifest);
   assert(sel.modules.includes('contract'), 'contract file → contract');
   assert(!sel.modules.includes('party'), 'contract file skips UI');
+}
+
+{
+  const sel = selectModulesFromFiles(['apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx'], manifest);
+  assert(sel.modules.includes('auth'), 'sign-in page → auth');
+  assert(sel.modules.includes('smoke'), 'auth pulls smoke');
+  assert(!sel.fullSuite, 'sign-in alone is not full suite');
 }
 
 {
