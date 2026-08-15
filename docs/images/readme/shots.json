@@ -77,7 +77,10 @@
         "apps/party-tracker/components/PartyPanel.jsx",
         "apps/party-tracker/components/GlanceRail.jsx",
         "apps/party-tracker/components/ParkMap.jsx",
-        "apps/party-tracker/lib/party/**",
+        "apps/party-tracker/lib/party/client.js",
+        "apps/party-tracker/lib/party/election.js",
+        "apps/party-tracker/lib/party/hostService.js",
+        "apps/party-tracker/lib/partyRuntime.js",
         "apps/party-tracker/lib/live.js"
       ]
     }
