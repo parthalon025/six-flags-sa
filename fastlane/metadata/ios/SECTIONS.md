@@ -35,6 +35,11 @@ FASTLANE_METADATA_ONLY=true bundle exec fastlane ios metadata
 | **App Review → First Name** | text | `review_information/first_name.txt` |
 | **App Review → Last Name** | text | `review_information/last_name.txt` |
 | **App Review → Phone** | E.164 | `review_information/phone_number.txt` (add file when ready) |
+| **App Review → Sign-in required** | off | Leave unchecked — guest works; no `demo_user.txt` |
+| **Version → Routing App Coverage File** | one MultiPolygon | `routing_app_coverage.geojson` (`npm run venues:reindex`) |
+| **Version → Export compliance** | exempt HTTPS | `../../store-declarations.json` `appleExportCompliance` — do **not** upload a document |
+| **Version → In-app purchases** | none on this version | `../../store-declarations.json` `appleInAppPurchases` — do **not** attach `parkbound_profile_annual` |
+| **Version → App Store Version Release** | manual | Choose **Manually release this version** (`IOS_AUTOMATIC_RELEASE=false`) |
 | **Version → App Preview** | 15–30s, 886×1920 | `../../app_previews/en-US/IPHONE_67_family-day.mp4` (`npm run store:app-preview`) |
 
 Identifiers (SKU, bundle ID, Apple ID, team) live in `fastlane/store-identifiers.json` — set in Connect when creating the app, not via these text files.
@@ -44,8 +49,10 @@ Identifiers (SKU, bundle ID, Apple ID, team) live in `fastlane/store-identifiers
 - Screenshots → `fastlane/screenshots/ios/` (set `IOS_SKIP_SCREENSHOTS=false` to upload)
 - App Preview → `fastlane/app_previews/en-US/` (uploads with the metadata workflow; Apple adds the device frame — do not encode a bezel)
 - App Privacy questionnaire → use `APP_PRIVACY.md`
-- Pricing (Free) and availability
+- Pricing (Free) and availability (United States)
 - Review contact phone (add `review_information/phone_number.txt` or Connect UI)
+- App Encryption Documentation upload — skip; HTTPS exemption is in Info.plist + Fastlane `submission_information`
+- In-app purchase attach — skip for this version (no StoreKit in the binary)
 - TestFlight / IPA build
 
 ## Blockers before submit

@@ -2,10 +2,15 @@
  * Compare built venue bundles against manifest expectations and on-disk recipes.
  * Used by builder tests, the inspection UI, and the app's admin page.
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { MANIFEST_FILE, OVERRIDE_DIR, VENUE_DIR } from '../src/paths.mjs';
+import { MANIFEST_FILE, OVERRIDE_DIR, ROUTING_COVERAGE_FILE, VENUE_DIR } from './paths.mjs';
 import { venueSidecar } from '../lib/venue-io.mjs';
+import {
+  coverageFromVenues,
+  pointInCoverage,
+  routingCoverageIssues,
+} from './routing-coverage.mjs';
 
 const hasHeights = (pois) => pois.some((p) => p.h);
 
@@ -107,6 +112,33 @@ export function compareVenue(venue) {
 export function compareAll() {
   const manifest = readManifest();
   return manifest.venues.map((v) => compareVenue(v));
+}
+
+/**
+ * App Store routing coverage must match shipped venue bounds (builder → store).
+ */
+export function compareRoutingCoverage() {
+  const issues = [];
+  const manifest = readManifest();
+  if (!existsSync(ROUTING_COVERAGE_FILE)) {
+    return {
+      ok: false,
+      issues: ['missing routing_app_coverage.geojson — run npm run venues:reindex'],
+    };
+  }
+  const actual = JSON.parse(readFileSync(ROUTING_COVERAGE_FILE, 'utf8'));
+  issues.push(...routingCoverageIssues(actual));
+  const expected = coverageFromVenues(manifest.venues);
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    issues.push('geojson does not match shipped venue bounds — run npm run venues:reindex');
+  }
+  for (const venue of manifest.venues) {
+    const center = venue.center;
+    if (!center || !pointInCoverage(actual, center)) {
+      issues.push(`${venue.id} center is outside App Store routing coverage`);
+    }
+  }
+  return { ok: issues.length === 0, issues };
 }
 
 export function summary(reports) {

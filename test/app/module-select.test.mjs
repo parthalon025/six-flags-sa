@@ -79,6 +79,14 @@ const manifest = loadModulesManifest();
 }
 
 {
+  const sel = selectModulesFromFiles(['fastlane/metadata/ios/routing_app_coverage.geojson'], manifest);
+  assert(sel.modules.includes('builder'), 'routing coverage geojson → builder');
+  assert(sel.modules.includes('venues'), 'routing coverage geojson → venues');
+  assert(sel.modules.includes('contract'), 'venues pulls contract');
+  assert(!sel.modules.includes('party'), 'routing coverage skips party');
+}
+
+{
   const sel = selectModulesFromFiles(
     [
       'package.json',

@@ -38,6 +38,8 @@ import {
   waitForHeightsReady,
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
+import { readFileSync } from 'node:fs';
+import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -2061,6 +2063,23 @@ await check('venue inspection API returns all built parks', async () => {
   const body = await res.json();
   if (body.total < 4) throw new Error(`only ${body.total} venues`);
   if (body.passed < 4) throw new Error(`${body.passed}/${body.total} passed compare`);
+  return true;
+});
+
+await check('App Store routing coverage includes every shipped venue', async () => {
+  const geojson = JSON.parse(
+    readFileSync(new URL('../../fastlane/metadata/ios/routing_app_coverage.geojson', import.meta.url), 'utf8'),
+  );
+  const res = await fetch(`${BASE}/venues/manifest.json`);
+  if (!res.ok) throw new Error(`manifest HTTP ${res.status}`);
+  const manifest = await res.json();
+  const venues = manifest.venues || [];
+  if (venues.length < 4) throw new Error(`only ${venues.length} venues in manifest`);
+  for (const venue of venues) {
+    if (!pointInCoverage(geojson, venue.center)) {
+      throw new Error(`${venue.id} center is outside routing coverage`);
+    }
+  }
   return true;
 });
 } // end venues

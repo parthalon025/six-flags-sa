@@ -79,10 +79,11 @@ Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` pro
 
 1. **Batch** native work — upload one IPA when several native changes have merged, not on every `main` bump.
 2. **TestFlight first** — catch signing and native regressions before App Review.
-3. **Manual release** — `IOS_AUTOMATIC_RELEASE=false` (Fastfile default): submit early, release when review passes.
+3. **Manual release** — `IOS_AUTOMATIC_RELEASE=false` (Fastfile default): submit early, release when review passes. In Connect choose **Manually release this version**.
 4. **Phased release** — in App Store Connect after approval, roll out gradually to production users.
 5. **Expedited review** — only for critical production bugs; request in Connect, do not rely on it.
-6. **Review notes** — keep `fastlane/metadata/ios/review_information/notes.txt` accurate (demo account, location, IAP).
+6. **Review notes** — keep `fastlane/metadata/ios/review_information/notes.txt` accurate (guest path, no demo password, location, IAP not in this binary).
+7. **Routing coverage** — `fastlane/metadata/ios/routing_app_coverage.geojson` (one MultiPolygon). `npm run venues:reindex` after adding a venue; `npm run store:scaffold-metadata` also regenerates it.
 
 ### Checklist — beta (TestFlight)
 
@@ -99,7 +100,7 @@ Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` pro
 - [ ] TestFlight build validated
 - [ ] `fastlane/metadata/ios/en-US/release_notes.txt` updated for this version
 - [ ] App Store Connect version record exists matching `apps/party-tracker/package.json`
-- [ ] Privacy URL, IAP (`parkbound_profile_annual`), and App Privacy questionnaire current — [`SUBMISSION.md`](../../fastlane/metadata/ios/SUBMISSION.md)
+- [ ] Privacy URL, IAP product (do not attach until StoreKit ships), routing GeoJSON, and App Privacy questionnaire current — [`SUBMISSION.md`](../../fastlane/metadata/ios/SUBMISSION.md)
 - [ ] Upload:
   - **CI:** **Actions → Store binaries** → `ios` or `both` → track **`production`**
   - **Local:** `bundle exec fastlane ios production`
@@ -111,7 +112,7 @@ Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` pro
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `IOS_SUBMIT_FOR_REVIEW` | `true` | Set `false` to upload binary without submitting |
-| `IOS_AUTOMATIC_RELEASE` | `false` | Keep manual release after approval |
+| `IOS_AUTOMATIC_RELEASE` | `false` | Keep **Manually release this version** after approval |
 | `IOS_SKIP_METADATA` | `false` | Skip listing upload during production lane |
 | `IOS_SKIP_SCREENSHOTS` | `true` | Set `false` when refreshing screenshots in production lane |
 

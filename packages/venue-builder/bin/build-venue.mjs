@@ -133,7 +133,8 @@ Build a venue bundle from OpenStreetMap.
   --dump <file>             save the raw Overpass response for inspection
   --from-dump <file>        build from a saved response instead of querying
   --keep-offsite            keep places standing in named areas outside the venue
-  --reindex                 only rebuild the manifest from files already on disk
+  --reindex                 only rebuild the manifest, index, and App Store
+                            routing coverage GeoJSON from files already on disk
   --reapply [<id>]          re-apply the overrides file to venues already on disk,
                             without going near the network. No id: every venue.
   --allow-no-heights        build a rides venue that publishes no height rules
@@ -1457,6 +1458,7 @@ async function main() {
   if (args.reindex) {
     const manifest = reindex({ preferredDefault: typeof args.default === 'string' ? args.default : undefined });
     console.log(`Manifest rebuilt: ${manifest.venues.length} venue(s), default "${manifest.default}".`);
+    console.log('App Store routing coverage updated.');
     return;
   }
 
