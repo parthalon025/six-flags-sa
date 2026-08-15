@@ -29,8 +29,8 @@ assert.match(
 );
 assert.match(
   env.start,
-  /node scripts\/cloud-agent-clerk-env\.mjs/,
-  'Cloud start must refresh Clerk env on every agent boot',
+  /node scripts\/cloud-agent-clerk-env\.mjs --require/,
+  'Cloud start must require Clerk secrets on every agent boot',
 );
 
 assert.equal(PARKBOUND_CLOUD_ENV_URL.includes('d8097811-95a0-11f1-ba66-0e7d0216e441'), true);
