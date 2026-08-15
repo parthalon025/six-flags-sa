@@ -82,6 +82,7 @@ const LAN_BASE = (process.env.NEXT_PUBLIC_SYNC_URL || '').replace(/\/+$/, '');
 export {
   PENDING_INVITE_KEY,
   takePendingInvite,
+  clearPendingInvite,
   stashPendingInvite,
 } from './party/inviteStash.js';
 

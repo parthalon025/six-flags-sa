@@ -58,11 +58,16 @@ export async function waitForHealth({
 
 export function startProductionServer({
   root = join(dirname(fileURLToPath(import.meta.url)), '../..'),
+  spawnFn = spawn,
 } = {}) {
-  const child = spawn('npm', ['run', 'start', '-w', '@party-tracker/app'], {
+  // Detach + unref so `start` can wait for health and exit while Next keeps
+  // running for the Playwright step (bash `npm start &` used to do this).
+  const child = spawnFn('npm', ['run', 'start', '-w', '@party-tracker/app'], {
     cwd: root,
-    stdio: 'inherit',
+    stdio: 'ignore',
+    detached: true,
   });
+  child.unref?.();
   return child;
 }
 

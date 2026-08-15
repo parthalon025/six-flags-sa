@@ -165,8 +165,16 @@ export async function openPhone(
         label: 'invite join landed',
       });
     } catch (err) {
-      const toast = await page.locator('.toast').innerText().catch(() => '');
-      throw new Error(`${err.message}${toast ? `; toast: ${toast}` : ''}`);
+      const diag = await page
+        .evaluate(() => ({
+          path: location.pathname,
+          hash: location.hash?.slice(0, 12) || '',
+          pending: Boolean(sessionStorage.getItem('ki-pending-invite')),
+          session: Boolean(localStorage.getItem('ki-session-v3')),
+          toast: document.querySelector('.toast')?.textContent || '',
+        }))
+        .catch(() => ({}));
+      throw new Error(`${err.message}; diag=${JSON.stringify(diag)}`);
     }
   } else if (name) {
     await setName(page, name);
