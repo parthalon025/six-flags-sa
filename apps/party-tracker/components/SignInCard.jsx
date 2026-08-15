@@ -3,6 +3,7 @@
 import { Show, UserButton, useClerk } from '@clerk/nextjs';
 import { rankReward } from '@party-tracker/shared/questScore.js';
 import ProfileAuthActions from '@/components/ProfileAuthActions';
+import { AUTH_COPY } from '@/lib/auth/authCopy';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 
@@ -52,10 +53,8 @@ function SignInCardLive({ session = null, onSession = null, onGuest = null }) {
   return (
     <div className="signInCard">
       <div className="label">Save progress on your Profile</div>
-      <p className="fine block">
-        Browse the map and join a party by name anytime. Sign in with Google or Apple to keep XP,
-        Managed Guests, and gap Side Quests on this phone.
-      </p>
+      <p className="fine block">{AUTH_COPY.signInLead}</p>
+      <p className="fine block">{AUTH_COPY.billingNote}</p>
       <ProfileAuthActions
         onGuest={onGuest}
         showGuest={Boolean(onGuest)}

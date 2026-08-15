@@ -76,6 +76,7 @@ Clerk Dashboard: **Native Applications** on; Associated Domains / deep links per
 | EP.5 | Auto-bind **Member** on sign-in (this ADR) |
 | EP.6 | **Managed Guest** under **Profile** |
 | Store | Account deletion page URL in Play Data safety; Settings → Delete **Profile** |
+| Billing | Profile entitlement ledger + store SKU sync — see [ADR-0011](./0011-profile-billing-entitlements.md) |
 
 ## Consequences
 
