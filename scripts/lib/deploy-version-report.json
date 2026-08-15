@@ -1,6 +1,10 @@
 {
   "productionUrl": "https://parkbound.kurat0r.ai",
   "productionVersionPath": "/api/version",
+  "poll": {
+    "intervalMs": 30000,
+    "timeoutMs": 600000
+  },
   "ios": {
     "appleId": "269608486",
     "bundleId": "ai.kurat0r.parkbound"

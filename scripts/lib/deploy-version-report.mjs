@@ -102,8 +102,40 @@ function lagNote(repoVersion, remoteVersion) {
   if (!repoVersion || !remoteVersion) return null;
   const cmp = compareVersions(repoVersion, remoteVersion);
   if (cmp === 0) return 'in sync';
-  if (cmp > 0) return 'deploy pending (repo ahead)';
-  return 'ahead of repo (unexpected)';
+  if (cmp > 0) return 'STALE';
+  return 'ahead of repo';
+}
+
+/**
+ * Poll production until semver >= expectedVersion or timeout.
+ */
+export async function waitForProductionVersion(expectedVersion, options = {}) {
+  const config = options.config ?? loadDeployVersionConfig();
+  const intervalMs = options.intervalMs ?? config.poll?.intervalMs ?? 30_000;
+  const timeoutMs = options.timeoutMs ?? config.poll?.timeoutMs ?? 600_000;
+  const start = Date.now();
+  let last = null;
+
+  while (Date.now() - start < timeoutMs) {
+    last = await fetchWebVersion(config.productionUrl, config.productionVersionPath);
+    if (last.ok && last.version && compareVersions(last.version, expectedVersion) >= 0) {
+      return {
+        matched: true,
+        elapsedMs: Date.now() - start,
+        production: { ...last, lag: 'in sync' },
+      };
+    }
+    const remaining = timeoutMs - (Date.now() - start);
+    if (remaining <= 0) break;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)));
+  }
+
+  const lag = last?.ok && last.version ? lagNote(expectedVersion, last.version) : null;
+  return {
+    matched: false,
+    elapsedMs: Date.now() - start,
+    production: last ? { ...last, lag: lag ?? 'unreachable' } : { ok: false, lag: 'unreachable' },
+  };
 }
 
 /**
@@ -120,10 +152,14 @@ export async function buildDeployVersionReport(options = {}) {
   const repoVersion = options.repoVersion ?? readRepoVersion(repoRoot);
   const lastStoreTag = latestStoreTag(repoRoot, config.storeTagPrefix);
 
-  const production = await fetchWebVersion(
-    config.productionUrl,
-    config.productionVersionPath,
-  );
+  const production = options.productionOverride
+    ?? await fetchWebVersion(config.productionUrl, config.productionVersionPath);
+
+  const productionWithLag = {
+    ...production,
+    lag: production.ok ? lagNote(repoVersion, production.version) : null,
+    deployWait: options.deployWait ?? null,
+  };
 
   let preview = { ok: false, skipped: true, reason: 'Previews deploy only on user directive ([vercel build] / VERCEL_USER_BUILD)' };
   if (process.env.VERCEL_TOKEN && process.env.VERCEL_PROJECT_ID) {
@@ -161,8 +197,8 @@ export async function buildDeployVersionReport(options = {}) {
     },
     web: {
       production: {
-        ...production,
-        lag: production.ok ? lagNote(repoVersion, production.version) : null,
+        ...productionWithLag,
+        deployWait: options.deployWait ?? null,
       },
       preview,
     },
@@ -183,35 +219,93 @@ function configProductionUrl(prod) {
   }
 }
 
-export function formatDeployVersionBrief(report) {
+export function formatDeployVersionOneline(report) {
   const { repo, web, stores } = report;
+  const ios = formatIosRow(stores.ios);
+  const prod = web.production;
+  const prev = web.preview;
+
+  const mainPart = repo.bump.skipped || !repo.bump.from || repo.bump.from === repo.bump.to
+    ? `main ${repo.version}`
+    : `main ${repo.version} (from ${repo.bump.from})`;
+
+  const prodVersion = prod.ok ? prod.version : '—';
+  const prodStatus = prod.lag === 'in sync'
+    ? '✓ deployed'
+    : prod.lag === 'STALE'
+      ? 'STALE'
+      : prod.ok
+        ? prod.lag ?? 'live'
+        : 'unreachable';
+
+  const previewPart = prev.skipped
+    ? '—'
+    : prev.ok
+      ? `${prev.version ?? '—'} @ ${prev.url ?? 'preview'}`
+      : '—';
+
+  const tagVersion = repo.lastStoreTag ? repo.lastStoreTag.replace(/^store\//, '') : 'none';
+
+  const parts = [
+    mainPart,
+    `vercel:prod ${prodVersion} ${prodStatus}`,
+    `preview ${previewPart}`,
+    `appstore:live ${ios.liveVersion}`,
+    `appstore:listing ${ios.listingVersion}${ios.listingNote !== 'no version in review' && ios.listingNote !== 'not queried' ? ` ${ios.listingNote}` : ''}`,
+    `testflight ${ios.testflightVersion}`,
+    `play ${stores.android.skipped ? '—' : '—'}`,
+    `store:tag ${tagVersion}`,
+  ];
+
+  return parts.join(' | ');
+}
+
+export function formatDeployVersionBrief(report) {
+  const oneline = formatDeployVersionOneline(report);
+  const { repo, web } = report;
+  const prod = web.production;
+  const lines = [
+    '## Version matrix',
+    '',
+    '```',
+    oneline,
+    '```',
+    '',
+  ];
+
+  if (prod.deployWait) {
+    const wait = prod.deployWait;
+    if (wait.matched) {
+      lines.push(`Production caught up in ${Math.round(wait.elapsedMs / 1000)}s.`);
+    } else {
+      lines.push(
+        `_Deploy poll timed out after ${Math.round(wait.elapsedMs / 1000)}s — production still on \`${prod.ok ? prod.version : '—'}\` (repo \`${repo.version}\`). Check Vercel dashboard._`,
+      );
+    }
+    lines.push('');
+  }
+
   const bumpLine = repo.bump.skipped
     ? 'no semver bump this merge'
     : repo.bump.from && repo.bump.to && repo.bump.from !== repo.bump.to
       ? `bumped ${repo.bump.from} → ${repo.bump.to}`
       : repo.version;
 
-  const ios = formatIosRow(stores.ios);
-  const prod = web.production;
+  const ios = formatIosRow(report.stores.ios);
   const prev = web.preview;
-
   const prodVersion = prod.ok ? prod.version : '—';
   const prodDetail = prod.ok
     ? `${configProductionUrl(prod)} · ${prod.lag ?? 'live'}`
     : prod.error || 'unreachable';
-
   const previewVersion = prev.skipped ? '—' : prev.ok ? prev.version || '—' : '—';
   const previewDetail = prev.skipped
     ? prev.reason
     : prev.ok
       ? `${prev.url ?? 'preview'} · ${prev.state ?? 'deployed'}`
       : prev.error || 'none';
-
   const tagVersion = repo.lastStoreTag ? repo.lastStoreTag.replace(/^store\//, '') : 'none';
 
-  const lines = [
-    '## Version matrix',
-    '',
+  lines.push(
     `**Repo \`main\`:** \`${repo.version}\` (${bumpLine})`,
     '',
     '| Surface | Version | Notes |',
@@ -221,20 +315,14 @@ export function formatDeployVersionBrief(report) {
     `| App Store **live** | \`${ios.liveVersion}\` | ${ios.liveNote} |`,
     `| App Store **listing** | \`${ios.listingVersion}\` | ${ios.listingNote} |`,
     `| **TestFlight** | \`${ios.testflightVersion}\` | ${ios.testflightNote} |`,
-    `| Play Store **production** | \`—\` | ${stores.android.reason} |`,
-    `| Last **store tag** (native shell) | \`${tagVersion}\` | Capacitor binary last tagged |`,
-    '',
-  ];
+    `| Play Store **production** | \`—\` | ${report.stores.android.reason} |`,
+    `| Last **store tag** | \`${tagVersion}\` | native shell |`,
+  );
 
   if (prod.ok && prod.built) {
     lines.push(
-      `Production build stamp: \`${prod.built}\`${prod.sha ? ` · git \`${prod.sha.slice(0, 7)}\`` : ''}`,
-    );
-  }
-  if (prod.ok && prod.lag === 'deploy pending (repo ahead)') {
-    lines.push(
       '',
-      '_Production may still be on the prior build until Vercel finishes deploying `main` (app-path merges only)._',
+      `Production build: \`${prod.built}\`${prod.sha ? ` · \`${prod.sha.slice(0, 7)}\`` : ''}`,
     );
   }
 
