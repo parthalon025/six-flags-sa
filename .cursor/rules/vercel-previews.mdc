@@ -18,6 +18,10 @@ before pushing.
 
 Reserve the remaining daily budget (~75) for production and user-authorized work.
 
+`scripts/vercel-ignore.sh` already skips previews on `cursor/*` and `worktree-*`
+branches, post-merge version bumps, and non-app diffs. Do not rely on that to spam
+pushes — every forced build still counts against the cap.
+
 ## Do not push unless there is code to land
 
 - No branch or PR for read-only investigation, Q&A, or tasks with nothing to merge.

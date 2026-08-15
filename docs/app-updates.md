@@ -53,11 +53,13 @@ page.
    adds an entry when the new version is missing.
 4. Build and deploy as usual — inject also runs on `prebuild` / `predev` and
    stamps a fresh `built` time (and the git SHA when Vercel/GitHub expose it).
-   Vercel **production** always builds for a `main` push that is not
-   GitNexus-index-only (`scripts/lib/vercel-ignore.mjs` — `VERCEL_ENV=production`
-   or `VERCEL_GIT_COMMIT_REF=main`), so docs merges still move the live alias.
-   Previews still skip when no app paths changed. GitNexus stays session-local
-   (`.gitnexus/` is gitignored) and is not part of the bump commit.
+   Vercel builds only when the commit touches app paths
+   (`scripts/lib/app-paths.json` via `scripts/lib/vercel-ignore.mjs`). That
+   skips docs-only merges, post-merge version bumps, and agent preview branches
+   (`cursor/*`, `worktree-*`) so the daily deploy cap is not exhausted. Force a
+   build with `VERCEL_FORCE_BUILD=1` or `[vercel build]` in the commit subject;
+   skip with `[skip vercel]`. Production still builds for real app merges on
+   `main`. GitNexus stays session-local (`.gitnexus/` is gitignored).
 5. Phones online within ~5 minutes (or on tab focus) should update; offline
    phones stay on the last good build until they have connectivity.
 
