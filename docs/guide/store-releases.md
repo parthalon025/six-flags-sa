@@ -77,7 +77,7 @@ Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` pro
 
 ### Best practices (reduce review friction)
 
-1. **Batch** native work — ship store binaries monthly or quarterly, not per web feature.
+1. **Batch** native work — upload one IPA when several native changes have merged, not on every `main` bump.
 2. **TestFlight first** — catch signing and native regressions before App Review.
 3. **Manual release** — `IOS_AUTOMATIC_RELEASE=false` (Fastfile default): submit early, release when review passes.
 4. **Phased release** — in App Store Connect after approval, roll out gradually to production users.
@@ -125,11 +125,14 @@ Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` pro
 
 Do **not** edit version stamp files in feature PRs. See [version-on-merge](../../.cursor/rules/version-on-merge.mdc).
 
+**Release rhythm:** merge-driven web on every PR; store binary only when native paths change. See [release-cycle.md](release-cycle.md) and `npm run store:release-cycle`.
+
 ## Workflow map
 
 | Goal | Automation |
 |------|------------|
 | Classify this branch | `npm run store:release-plan` |
+| Current release mode | `npm run store:release-cycle` |
 | Web production deploy | Merge PR to `main` → Vercel |
 | iOS listing / previews only | [`ios-app-store-metadata.yml`](../../.github/workflows/ios-app-store-metadata.yml) |
 | IPA / AAB upload | [`store.yml`](../../.github/workflows/store.yml) (manual `workflow_dispatch`) |

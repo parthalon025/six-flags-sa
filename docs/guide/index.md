@@ -23,6 +23,7 @@ Full documentation split out of the root README. Start with [Features](features.
 | [Contributing](contributing.md) | Issues, PRs, builder contract, and README screenshots. |
 | [Store binaries](../../fastlane/README.md) | Capacitor iOS/Android shells and Fastlane upload. |
 | [Store releases](store-releases.md) | Web vs metadata vs native — when App Store review applies. |
+| [Release cycle](release-cycle.md) | Merge-driven web shipping; when to dispatch store.yml. |
 
 ## See also
 

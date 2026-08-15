@@ -2,7 +2,7 @@
 
 Everything below is filled in repo files. Upload with GitHub Actions (**iOS App Store metadata** workflow) or `FASTLANE_METADATA_ONLY=true bundle exec fastlane ios metadata` on a machine with Ruby and `.env`.
 
-**Release tier:** listing-only updates are **metadata** releases (no new IPA). Web/UI fixes deploy via Vercel without App Store review. Native shell changes need a **binary** release. See [docs/guide/store-releases.md](../../../docs/guide/store-releases.md) and `npm run store:release-plan`.
+**Release tier:** listing-only updates are **metadata** releases (no new IPA). Web/UI fixes deploy via Vercel without App Store review. Native shell changes need a **binary** release when **you** dispatch `store.yml`. See [docs/guide/release-cycle.md](../../../docs/guide/release-cycle.md) and `npm run store:release-cycle`.
 
 ## App record (App Store Connect → App Information)
 

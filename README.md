@@ -136,6 +136,7 @@ The long-form README now lives in linked guide pages under **[docs/guide/](docs/
 | Privacy & data | [docs/guide/privacy.md](docs/guide/privacy.md), [docs/guide/data-sources.md](docs/guide/data-sources.md) |
 | Store binaries | [fastlane/README.md](fastlane/README.md) |
 | Store release tiers | [docs/guide/store-releases.md](docs/guide/store-releases.md) |
+| Release cycle | [docs/guide/release-cycle.md](docs/guide/release-cycle.md) |
 
 **New to the codebase?** Start with the [architecture map](docs/architecture-map.md), then
 [docs/guide/index.md](docs/guide/index.md).

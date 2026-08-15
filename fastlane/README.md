@@ -123,6 +123,8 @@ npm run store:release-plan
 
 Full checklists (web vs metadata vs native, workflow map, review best practices): [docs/guide/store-releases.md](../docs/guide/store-releases.md).
 
+**How you ship day to day:** [docs/guide/release-cycle.md](../docs/guide/release-cycle.md) and `npm run store:release-cycle`.
+
 ## Lanes
 
 All lanes build the web app, sync Capacitor (when installed), stamp the semver from `apps/party-tracker/package.json`, then compile and upload.
