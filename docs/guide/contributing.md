@@ -21,5 +21,15 @@ npm run readme:shots:check
 CI runs the check against `origin/main`. A PR that edits a listed source file without
 updating the matching PNG or video fails until you recapture.
 
+## Vercel deploys
+
+The Hobby account has **100 deploys/day**. **Twenty-five** are reserved for explicit
+user directive (`[vercel build]` in the commit subject or `VERCEL_USER_BUILD=1` on the
+Vercel project). Automation uses the rest — mainly production `main` merges that touch
+app paths. Previews skip by default; post-merge version bumps skip too. Policy lives in
+`scripts/lib/vercel-budget.mjs` and `scripts/lib/vercel-ignore.mjs`; ship notes in
+[app-updates.md](../app-updates.md). Validate locally with `npm run build -w @party-tracker/app`
+and CI — do not rely on preview deploys unless you directed one.
+
 ---
 [← README](../../README.md) · [Guide index](index.md)
