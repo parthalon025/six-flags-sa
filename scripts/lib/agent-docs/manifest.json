@@ -1,0 +1,137 @@
+{
+  "policiesDir": "docs/agents/policies",
+  "cursorRulesDir": ".cursor/rules",
+  "agentRoots": {
+    "AGENTS.md": { "variant": "agents" },
+    "CLAUDE.md": { "variant": "claude" }
+  },
+  "policies": [
+    {
+      "id": "worktree",
+      "heading": "Isolate in a worktree",
+      "title": "Worktree",
+      "pointer": "**Worktree** isolation for parallel agents — create before the first edit, remove when done.",
+      "cursorRule": "worktree.mdc",
+      "cursorDescription": "Worktree isolation — create before first edit; remove when done."
+    },
+    {
+      "id": "agent-handoff",
+      "heading": "Agent handoff — out-of-scope issues",
+      "title": "Agent handoff",
+      "pointer": "File **agent-handoff** issues for out-of-scope failures instead of fixing inline.",
+      "cursorRule": "agent-handoff.mdc",
+      "cursorDescription": "File GitHub issues for out-of-scope errors so another agent can pick them up."
+    },
+    {
+      "id": "builder-app-contract",
+      "heading": "Builder ↔ app contract",
+      "title": "Builder ↔ app contract",
+      "pointer": "Venue **builder** output is generated only — fix upstream, prove in the app.",
+      "cursorRule": "builder-app-contract.mdc",
+      "cursorDescription": "Keep the venue builder and the app's data contract in sync — fix generated data upstream, validate app changes against the builder."
+    },
+    {
+      "id": "version-on-merge",
+      "heading": "App version — auto-bumped on merge",
+      "title": "App version",
+      "pointer": "App **version** is auto-bumped on merge — never edit version files in PRs.",
+      "cursorRule": "version-on-merge.mdc",
+      "cursorDescription": "App semver is auto-bumped on merge to main — never edit version files in PRs."
+    },
+    {
+      "id": "vercel-previews",
+      "heading": "Vercel previews",
+      "title": "Vercel previews",
+      "pointer": "**Vercel** previews are user-reserved — verify locally unless deployed behavior is required.",
+      "cursorRule": "vercel-previews.mdc",
+      "cursorDescription": "Minimize Vercel preview deployments — verify locally unless deployed behavior is required."
+    },
+    {
+      "id": "gitnexus-sync",
+      "heading": "GitNexus index",
+      "title": "GitNexus index",
+      "pointer": "**GitNexus** index is session-local — run `npm run gitnexus:startup`, never commit `.gitnexus/`.",
+      "cursorRule": "gitnexus-sync.mdc",
+      "cursorDescription": "GitNexus index is session-local and gitignored — never commit it."
+    },
+    {
+      "id": "scripts-over-instructions",
+      "heading": "Scripts over instructions",
+      "title": "Scripts over instructions",
+      "pointer": "Put policy in **scripts**, not agent prose — one pointer beats a duplicated paragraph.",
+      "cursorRule": "scripts-over-instructions.mdc",
+      "cursorDescription": "Prefer repo scripts and workflows over duplicating the same steps in agent docs."
+    }
+  ],
+  "staticCursorRules": [
+    {
+      "file": "matt-pocock-skills.mdc",
+      "description": "Matt Pocock skills are global-only; never vendor them in this repo",
+      "title": "Matt Pocock skills — global only",
+      "body": "- Canonical skill files live in `~/.agents/skills` (user-global). Do not vendor them under `.agents/skills/` in this repo.\n- Never add `skills-lock.json` here. Upgrade globally with `node scripts/install-global-skills.mjs`.\n- Never commit `agent/` or `.claude/skills/<matt-skill>/` junctions/copies from the installer; keep gitnexus skills under `.claude/skills/gitnexus/` only.\n- `npm run skills:check` asserts this repo has no vendored Matt trees. See [docs/agents/skills-lock.md](../../docs/agents/skills-lock.md).\n- **Always follow Matt standards** — read [docs/agents/matt-standards.md](../../docs/agents/matt-standards.md) and the matching global skill before design/review/refactor.\n- Issue tracker, triage labels, and domain layout are configured in `docs/agents/` — engineering skills read those files.\n- Grow domain language via `/grill-with-docs` into root `CONTEXT.md` and `docs/adr/`; do not invent empty stubs."
+    },
+    {
+      "file": "matt-standards.mdc",
+      "description": "Always follow Matt Pocock global skills for design, review, refactor, and agent docs.",
+      "title": "Matt standards — always apply",
+      "body": "Read **[docs/agents/matt-standards.md](../../docs/agents/matt-standards.md)** at session start for the skill map and repo-specific rules.\n\n## Non-negotiable\n\n- **Global skills only** (`~/.agents/skills`) — never vendor. See `.cursor/rules/matt-pocock-skills.mdc`.\n- **Deep modules** — small interface, testable core. Packages via entry points; automation via `scripts/lib/`.\n- **Scripts over instructions** — policy in `scripts/lib` + JSON; agent docs link, don't restate. See `.cursor/rules/scripts-over-instructions.mdc`.\n- **Before editing** a module seam or reviewing a diff: read the matching global skill (`codebase-design`, `code-review`, `writing-for-agents`, `tdd`, …) from `docs/agents/matt-standards.md`.\n- **Before merging** a PR: run `npm run test:pre-merge-vertical` (static + browser vertical when the diff warrants it). See [docs/agents/ci.md](../../docs/agents/ci.md).\n\nWhen in doubt, read the skill file first — do not improvise a second standard."
+    }
+  ],
+  "github": {
+    "templatesDir": "docs/agents/templates/github",
+    "issueTemplatesDir": ".github/ISSUE_TEMPLATE",
+    "issueTemplates": [
+      {
+        "source": "agent-handoff.yml",
+        "output": "agent-handoff.yml"
+      }
+    ],
+    "docStubs": [
+      {
+        "output": "docs/agents/issue-tracker.md",
+        "title": "Issue tracker: GitHub",
+        "policy": "github-issue-tracker",
+        "pointer": "**GitHub** Issues is the only issue surface — use `gh` CLI for all operations."
+      },
+      {
+        "output": "docs/agents/triage-labels.md",
+        "title": "Triage Labels",
+        "policy": "github-triage-labels",
+        "pointer": "**Triage** labels map Matt skill roles to GitHub label strings."
+      }
+    ]
+  },
+  "agentSkillsBlock": {
+    "heading": "Agent skills",
+    "sections": [
+      {
+        "subheading": "Issue tracker",
+        "pointer": "**GitHub** Issues for `parthalon025/six-flags-sa` (via `gh`) — see [github-issue-tracker policy](./docs/agents/policies/github-issue-tracker.md)."
+      },
+      {
+        "subheading": "Triage labels",
+        "pointer": "**Triage** vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix` — see [github-triage-labels policy](./docs/agents/policies/github-triage-labels.md)."
+      },
+      {
+        "subheading": "Domain docs",
+        "pointer": "Single-context — root `CONTEXT.md` + `docs/adr/` (legacy long-form under `docs/superpowers/specs/`). See [docs/agents/domain.md](./docs/agents/domain.md)."
+      },
+      {
+        "subheading": "Packages",
+        "pointer": "Packages are deep modules — see [packages/README.md](./packages/README.md) before adding or importing one. Layout: [docs/repo-structure.md](./docs/repo-structure.md)."
+      },
+      {
+        "subheading": "Skills lock",
+        "pointer": "Matt Pocock skills are global (`~/.agents/skills`). This repo must not vendor them. `npm run skills:check` asserts `.agents/skills` and `skills-lock.json` are absent. See [docs/agents/skills-lock.md](./docs/agents/skills-lock.md)."
+      },
+      {
+        "subheading": "Matt standards",
+        "pointer": "Always apply the global Matt skills for design, review, refactor, and agent docs. Skill map and repo rules: [docs/agents/matt-standards.md](./docs/agents/matt-standards.md)."
+      },
+      {
+        "subheading": "Agent docs",
+        "pointer": "Always-loaded agent docs are slim pointers; full policy lives under `docs/agents/policies/`. Regenerate with `npm run agent-docs:build`; CI checks with `npm run agent-docs:check`."
+      }
+    ]
+  }
+}

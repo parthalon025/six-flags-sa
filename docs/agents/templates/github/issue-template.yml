@@ -1,0 +1,27 @@
+# Starter template for a new GitHub issue form.
+# 1. Copy to docs/agents/templates/github/<name>.yml
+# 2. Add a row to scripts/lib/agent-docs/manifest.json → github.issueTemplates
+# 3. Run npm run agent-docs:build
+#
+# Policy text (when/why to file) belongs in docs/agents/policies/<id>.md — not here.
+# This file is the GitHub form only.
+
+name: Template name
+description: One-line trigger for when to use this form
+title: "[Prefix] "
+labels:
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Brief intro shown above the form fields.
+        Policy: docs/agents/policies/<policy-id>.md
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened or what is needed.
+    validations:
+      required: true
