@@ -50,6 +50,26 @@ await waitForHealth({
 });
 assert.ok(slept >= 0);
 
+{
+  const { startProductionServer } = await import('../../scripts/ci/party-tracker-ui.mjs');
+  let spawnOpts = null;
+  let unrefCalls = 0;
+  startProductionServer({
+    root: '/tmp/parkbound-ci',
+    spawnFn: (_cmd, _args, opts) => {
+      spawnOpts = opts;
+      return {
+        unref: () => {
+          unrefCalls += 1;
+        },
+      };
+    },
+  });
+  assert.equal(spawnOpts?.detached, true, 'production server must detach from the CI step');
+  assert.equal(spawnOpts?.stdio, 'ignore');
+  assert.equal(unrefCalls, 1, 'child must unref so waitForHealth can exit');
+}
+
 let staged = [];
 stageVersionStamps({
   paths: loadVersionStampPaths(),
