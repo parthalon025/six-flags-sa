@@ -93,8 +93,13 @@ const bumpOnly = [
 assert.equal(isVersionStampOnlyChange(bumpOnly), true, 'bump workflow files are stamp-only');
 assert.equal(
   decideVercelBuild({ files: bumpOnly, env: 'production', gitRef: 'main' }).build,
+  true,
+  'post-merge version bump must deploy production (merge build is cancelled by the bump push)',
+);
+assert.equal(
+  decideVercelBuild({ files: bumpOnly, env: 'preview', gitRef: 'main' }).build,
   false,
-  'post-merge version bump must not trigger a second production deploy',
+  'post-merge version bump must skip preview',
 );
 
 assert.equal(
@@ -184,7 +189,8 @@ assert.doesNotMatch(
   'ignore decision must not diff against the last preview SHA',
 );
 assert.match(lib, /\^1/, 'must diff against the first parent');
-assert.match(lib, /version-stamp\.mjs/, 'must skip post-merge version bumps via shared stamp list');
+assert.match(lib, /version-stamp\.mjs/, 'must treat post-merge version bumps via shared stamp list');
+assert.match(lib, /bump push cancels the merge deploy/, 'production stamp bumps must deploy after merge cancel');
 assert.match(lib, /AGENT_PREVIEW_BRANCH/, 'must skip agent preview branches');
 assert.match(lib, /USER_DEPLOY_RESERVE/, 'must document user reserve');
 assert.equal(USER_DEPLOY_RESERVE, 25);
