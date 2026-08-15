@@ -11,6 +11,7 @@ Before you design, refactor, review, or add agent-facing docs:
 3. **Put policy in scripts**, not agent prose — see `.cursor/rules/scripts-over-instructions.mdc`. One pointer beats a duplicated paragraph.
 4. **Run `code-review` smells** when reviewing a branch or PR (documented repo rules override the Fowler baseline).
 5. **Prefer TDD** (`tdd` skill) when adding or changing behaviour that already has tests nearby.
+6. **Vertical test before merge** — run `npm run test:pre-merge-vertical` before merging any PR. See [docs/agents/ci.md](./ci.md#before-merge-agents).
 
 ## Skill map
 
@@ -24,12 +25,13 @@ Before you design, refactor, review, or add agent-facing docs:
 | Resolving domain terms or ADR gaps | `domain-modeling` / `grilling` → `CONTEXT.md` + `docs/adr/` |
 | Git / worktree / commit hygiene | `git-guardrails-claude-code` |
 | Merge conflicts | `resolving-merge-conflicts` |
+| CI/CD workflows or deploy gates | [docs/agents/ci.md](./ci.md) + `codebase-design` |
 
 ## Deep modules here
 
 **Packages** — entry points only; `npm run lint:boundaries`. See [packages/README.md](../../packages/README.md).
 
-**Scripts** — pure decision logic in `scripts/lib/*.mjs`, thin CLIs in `scripts/*.mjs` / `scripts/*.sh`. Shared lists in JSON (`app-paths.json`, `version-stamp-paths.json`). Test through exported functions (`test/scripts/*.test.mjs`).
+**Scripts** — pure decision logic in `scripts/lib/*.mjs`, CI orchestration in `scripts/ci/` (manifest + thin CLIs), shared lists in JSON. Test through exported functions (`test/scripts/*.test.mjs`). See [docs/agents/ci.md](./ci.md).
 
 **Apps** — follow existing package and test conventions; UI changes need `npm run test:validate-ui` or the relevant module from `test/app/modules.json`.
 

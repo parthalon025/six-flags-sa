@@ -27,8 +27,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          node test/scripts/gitnexus-ci.test.mjs
-          node test/scripts/bump-version.test.mjs
+          node scripts/ci/gate-tests.mjs
           node test/app/readme-shots-check.mjs
           node scripts/gitnexus-ci.mjs
 
@@ -224,22 +223,13 @@ jobs:
           name: party-tracker-next
 
       - name: Unpack production build
-        run: |
-          tar -C apps/party-tracker -xzf party-tracker-next.tgz
-          test -f apps/party-tracker/.next/BUILD_ID
-          ls apps/party-tracker/.next | head
+        run: node scripts/ci/party-tracker-ui.mjs unpack
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
       - name: Start app
-        run: |
-          npm run start -w @party-tracker/app &
-          for i in $(seq 1 90); do
-            if curl -sf http://127.0.0.1:3000/api/health; then break; fi
-            sleep 2
-          done
-          curl -sf http://127.0.0.1:3000/api/health
+        run: node scripts/ci/party-tracker-ui.mjs start
 
       - name: Run module ${{ matrix.module }}
         run: |
@@ -273,21 +263,13 @@ jobs:
           name: party-tracker-next
 
       - name: Unpack production build
-        run: |
-          tar -C apps/party-tracker -xzf party-tracker-next.tgz
-          test -f apps/party-tracker/.next/BUILD_ID
+        run: node scripts/ci/party-tracker-ui.mjs unpack
 
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
       - name: Start app
-        run: |
-          npm run start -w @party-tracker/app &
-          for i in $(seq 1 90); do
-            if curl -sf http://127.0.0.1:3000/api/health; then break; fi
-            sleep 2
-          done
-          curl -sf http://127.0.0.1:3000/api/health
+        run: node scripts/ci/party-tracker-ui.mjs start
 
       - name: Visual inspection shots
         run: npm run test:visual

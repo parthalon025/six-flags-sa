@@ -35,6 +35,7 @@ Long-form decision write-ups also live under `docs/superpowers/specs/` (pre–Ma
 │   │   └── 0009-ship-gaps.md
 │   ├── agents/          ← skill config (this folder)
 │   │   ├── matt-standards.md
+│   │   ├── ci.md
 │   └── superpowers/     ← human specs / expanded history (not the ADR root)
 ├── apps/
 │   └── party-tracker/   ← phone PWA
