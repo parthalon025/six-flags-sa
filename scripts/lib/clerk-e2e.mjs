@@ -1,6 +1,7 @@
 /**
  * Auth UI changes need a Clerk-on browser pass before merge.
  * Clerk-off CI guards stay in the `auth` module; they do not prove login.
+ * Google OAuth redirect is opt-in (`CLERK_E2E_GOOGLE=1`) until that provider is enabled.
  */
 
 export const AUTH_E2E_PATH_NEEDLES = [
