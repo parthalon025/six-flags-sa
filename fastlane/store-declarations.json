@@ -73,5 +73,43 @@
       "committedToPlayFamiliesPolicy": false
     },
     "afterPlayAppSigning": "Add the Play App Signing cert SHA-256 next to the upload cert in ANDROID_CERT_SHA256 (comma-separated) so App Links keep working."
+  },
+  "appleExportCompliance": {
+    "usesEncryption": true,
+    "exempt": true,
+    "itsAppUsesNonExemptEncryption": false,
+    "uploadDocumentation": false,
+    "reason": "HTTPS/TLS only. No custom cryptography. Qualifies for the standard encryption exemption — do not upload CCATS or App Encryption Documentation."
+  },
+  "appleRoutingCoverage": {
+    "file": "fastlane/metadata/ios/routing_app_coverage.geojson",
+    "format": "MultiPolygon",
+    "source": "Shipped venue bounds from apps/party-tracker/public/venues/manifest.json",
+    "availability": "United States"
+  },
+  "appleAppReview": {
+    "signInRequired": false,
+    "reason": "Guest map and Party-by-name work without an account. There is no email/password login. Sign in with Apple or Google is optional for Profile.",
+    "notesFile": "fastlane/metadata/ios/review_information/notes.txt",
+    "attachment": null,
+    "contact": {
+      "firstName": "Justin",
+      "lastName": "McFarland",
+      "email": "parthalon025@gmail.com",
+      "phone": "APP_STORE_REVIEW_PHONE secret (E.164)"
+    }
+  },
+  "appleVersionRelease": {
+    "mode": "manual",
+    "automaticRelease": false,
+    "phasedRelease": false,
+    "connectChoice": "Manually release this version"
+  },
+  "appleInAppPurchases": {
+    "submitWithThisVersion": false,
+    "firstIapMustSubmitWithAppVersion": true,
+    "productId": "parkbound_profile_annual",
+    "displayName": "Profile",
+    "reason": "StoreKit Profile IAP is not in this binary. Create the auto-renewable product in Connect, but do not attach it to this version. First IAP must ship with a later app version that includes the purchase flow."
   }
 }

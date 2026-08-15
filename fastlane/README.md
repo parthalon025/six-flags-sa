@@ -8,8 +8,13 @@ Automated release pipeline for **iOS** (App Store Connect / TestFlight) and **An
 fastlane/
 ├── Appfile                      # Bundle IDs, team IDs (from ENV)
 ├── Fastfile                     # Unified iOS + Android lanes
+├── store-identifiers.json       # SKU, bundle ID, IAP product id
+├── store-declarations.json      # Privacy + Connect submit answers
 ├── metadata/
-│   ├── ios/en-US/               # App Store listing copy
+│   ├── ios/
+│   │   ├── routing_app_coverage.geojson  # one MultiPolygon (shipped venues)
+│   │   ├── review_information/           # App Review contact + notes
+│   │   └── en-US/                        # App Store listing copy
 │   └── android/en-US/           # Play Store listing copy
 ├── app_previews/
 │   └── en-US/                   # App Store preview videos (`npm run store:app-preview`)
@@ -204,7 +209,7 @@ Runs on **ubuntu** — uploads `fastlane/metadata/ios/` via `bundle exec fastlan
 
 Native `android/` and `ios/` marketing versions are stamped from the same file via `npm run cap:sync` (`scripts/stamp-native-version.mjs`).
 
-Refresh listing identifier fields (name, subtitle, categories, URLs, copyright) from `fastlane/store-identifiers.json` with `npm run store:scaffold-metadata` (see `fastlane/metadata/ios/SECTIONS.md`).
+Refresh listing identifier fields (name, subtitle, categories, URLs, copyright) from `fastlane/store-identifiers.json` with `npm run store:scaffold-metadata`. That also regenerates `routing_app_coverage.geojson`; `npm run venues:reindex` is the source of truth after a venue add (see `fastlane/metadata/ios/SECTIONS.md`).
 
 Trigger manually: **Actions → iOS App Store metadata → Run workflow**. Pushes to `main` that touch `fastlane/metadata/ios/**` or `fastlane/app_previews/**` also run this workflow.
 

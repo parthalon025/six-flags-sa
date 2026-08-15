@@ -30,7 +30,7 @@ export function openVenueDraftPr(venueId, { runId = Date.now(), baseBranch = 'ma
   git(['config', 'user.name', 'github-actions[bot]']);
   git(['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com']);
   git(['checkout', '-b', branch]);
-  git(['add', 'apps/party-tracker/public/venues', 'apps/party-tracker/lib/venueIndex.js', 'packages/venue-builder/data/venues']);
+  git(['add', 'apps/party-tracker/public/venues', 'apps/party-tracker/lib/venueIndex.js', 'packages/venue-builder/data/venues', 'fastlane/metadata/ios/routing_app_coverage.geojson']);
   const staged = spawnSync('git', ['diff', '--cached', '--quiet'], { cwd: MONO_ROOT });
   if (staged.status === 0) {
     return { ok: true, skipped: true, reason: 'nothing to commit', branch, certified: cert.certified };

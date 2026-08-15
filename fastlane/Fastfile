@@ -72,6 +72,26 @@ def repo_root
   File.expand_path("..", __dir__)
 end
 
+def ios_routing_app_coverage
+  File.expand_path(File.join("fastlane", "metadata", "ios", "routing_app_coverage.geojson"), repo_root)
+end
+
+def ios_submission_information
+  {
+    add_id_info_uses_idfa: false,
+    add_id_info_serves_ads: false,
+    add_id_info_tracks_action: false,
+    add_id_info_tracks_install: false,
+    export_compliance_uses_encryption: true,
+    export_compliance_encryption_updated: false,
+    export_compliance_is_exempt: true,
+    export_compliance_contains_proprietary_cryptography: false,
+    export_compliance_contains_third_party_cryptography: false,
+    content_rights_contains_third_party_content: true,
+    content_rights_has_rights: true
+  }
+end
+
 def web_app_path
   File.join(repo_root, ENV.fetch("WEB_APP_PATH", "apps/party-tracker"))
 end
@@ -217,14 +237,8 @@ platform :ios do
       app_previews_path: File.expand_path(File.join("fastlane", "app_previews"), repo_root),
       preview_frame_time_code: ENV.fetch("IOS_PREVIEW_FRAME_TIME_CODE", "00:00:05:00"),
       overwrite_preview_videos: ENV.fetch("IOS_OVERWRITE_PREVIEWS", "true") == "true",
-      submission_information: {
-        add_id_info_uses_idfa: false,
-        export_compliance_uses_encryption: true,
-        export_compliance_encryption_updated: false,
-        export_compliance_is_exempt: true,
-        content_rights_contains_third_party_content: true,
-        content_rights_has_rights: true
-      }
+      routing_app_coverage: ios_routing_app_coverage,
+      submission_information: ios_submission_information
     }
 
     unless ENV.fetch("IOS_SKIP_SCREENSHOTS", "true") == "true"
@@ -327,9 +341,8 @@ platform :ios do
       app_previews_path: File.expand_path(File.join("fastlane", "app_previews"), repo_root),
       preview_frame_time_code: ENV.fetch("IOS_PREVIEW_FRAME_TIME_CODE", "00:00:05:00"),
       overwrite_preview_videos: ENV.fetch("IOS_OVERWRITE_PREVIEWS", "true") == "true",
-      submission_information: {
-        add_id_info_uses_idfa: false
-      }
+      routing_app_coverage: ios_routing_app_coverage,
+      submission_information: ios_submission_information
     )
   end
 end

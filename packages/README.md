@@ -46,7 +46,8 @@ Public surface:
 
 - `bin/*.mjs` — CLIs, reached with `npm run venues:*` from the repo root
 - `src/paths.mjs` and `src/compare.mjs` — the `package.json` `exports`
+- `src/routing-coverage.mjs` — App Store routing MultiPolygon from shipped venue bounds (`./routing-coverage.js`)
 
 `lib/` is implementation. `bin/` and `src/` are subfolders, so other packages must not import them — reach CLIs with `npm run venues:*`. `data/venues/<id>/` is builder **input** (hand-edit). The phone app must not import this package.
 
-Shipped venue JSON is builder **output** under `apps/party-tracker/public/venues/` plus generated `apps/party-tracker/lib/venueIndex.js`. Fix output at the source, then regenerate — see the builder ↔ app contract in `AGENTS.md`.
+Shipped venue JSON is builder **output** under `apps/party-tracker/public/venues/` plus generated `apps/party-tracker/lib/venueIndex.js` and App Store `fastlane/metadata/ios/routing_app_coverage.geojson`. Fix output at the source, then regenerate — see the builder ↔ app contract in `AGENTS.md`.

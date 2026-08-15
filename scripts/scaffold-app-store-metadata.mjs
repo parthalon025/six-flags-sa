@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeRoutingCoverage } from './lib/routing-app-coverage.mjs';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const metaIos = path.join(repoRoot, 'fastlane/metadata/ios');
@@ -32,12 +33,22 @@ function ensureText(file, text) {
 
 const store = readJson(storePath);
 const { ios, android, urls } = store;
+const manifestPath = path.join(repoRoot, 'apps/party-tracker/public/venues/manifest.json');
+const venues = readJson(manifestPath).venues ?? [];
+writeRoutingCoverage(repoRoot, venues);
+
+function categoryEnum(name) {
+  return String(name || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+}
 
 const synced = [
   [path.join(metaIos, 'en-US/name.txt'), ios.appStoreName],
   [path.join(metaIos, 'en-US/subtitle.txt'), ios.subtitle],
-  [path.join(metaIos, 'primary_category.txt'), ios.primaryCategory],
-  [path.join(metaIos, 'secondary_category.txt'), ios.secondaryCategory],
+  [path.join(metaIos, 'primary_category.txt'), categoryEnum(ios.primaryCategory)],
+  [path.join(metaIos, 'secondary_category.txt'), categoryEnum(ios.secondaryCategory)],
   [path.join(metaIos, 'copyright.txt'), ios.copyright],
   [path.join(metaIos, 'en-US/marketing_url.txt'), urls.marketing],
   [path.join(metaIos, 'en-US/support_url.txt'), urls.support],
@@ -101,13 +112,23 @@ const reviewDefaults = {
   'review_information/first_name.txt': 'Justin',
   'review_information/last_name.txt': 'McFarland',
   'review_information/email_address.txt': 'parthalon025@gmail.com',
-  'review_information/notes.txt': `Park Bound loads the live web app from ${urls.marketing} inside the native shell.
+  'review_information/notes.txt': `Park Bound loads the live web app from ${urls.marketing} inside the native Capacitor shell.
 
-Guest review (no account): tap Continue as guest → allow Location → pick a shipped Venue → use the map and guest paths.
+SIGN-IN: Sign-in is not required. Leave "Sign-in required" unchecked. There is no email/password account.
+Guest review: tap Continue as guest → allow Location → pick Kings Island (or any shipped Venue) → walk guest paths.
+Profile (optional): Sign in with Apple or Google from the startup gate or Me tab. Reviewers may use their own Apple ID.
 
-Profile review: sign in with Apple or Google from the startup gate or Me tab.
+PARTY: create or join with a six-character code, or Invite (QR/link) from Me. Location is required to finish joining.
 
-Party review: create or join with a six-character code, or use Invite (QR/link) from Me. Location permission is required to finish joining.
+ROUTING: in-park walking directions at shipped US venues only. Upload routing_app_coverage.geojson (one MultiPolygon).
+
+ENCRYPTION: HTTPS/TLS only — exempt. Do not upload CCATS / export-compliance documentation.
+
+IAP: Download is Free. Do not attach parkbound_profile_annual to this version (StoreKit Profile IAP is not in this binary). Guest map and Party-by-name stay free.
+
+RELEASE: Manually release this version after approval.
+
+Third-party content: drawn maps and Place data from public park sources and Contributions; we have rights to our rendered Venue outputs.
 
 Contact parthalon025@gmail.com if anything is unclear.`,
 };
@@ -166,6 +187,7 @@ for (const dir of [
   if (!fs.existsSync(keep)) fs.writeFileSync(keep, '');
 }
 
+console.log(`store-scaffold-metadata: wrote routing coverage for ${venues.length} venue(s)`);
 console.log(`store-scaffold-metadata: synced ${synced.length} identifier files from store-identifiers.json`);
 if (created.length) {
   console.log(`store-scaffold-metadata: created ${created.length} missing prose/template file(s): ${created.join(', ')}`);
