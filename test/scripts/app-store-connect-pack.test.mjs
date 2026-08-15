@@ -121,7 +121,7 @@ assert.match(notes, /HTTPS/i);
 assert.match(notes, /parkbound_profile_annual/);
 assert.match(notes, /Manually release/i);
 assert.match(notes, /routing_app_coverage\.geojson/);
-assert.match(notes, /Continue as guest/i);
+assert.match(notes, /Guest/i);
 
 const fastfile = read('fastlane/Fastfile');
 assert.match(fastfile, /routing_app_coverage:/);

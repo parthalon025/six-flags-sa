@@ -37,6 +37,7 @@ export default function AuthRouteCard({
         onGuest={showGuest ? onGuest : null}
         guestLabel={AUTH_COPY.guestLabel}
         showGuest={showGuest}
+        stackActions
       />
       <p className="authRouteAlt">
         <Link href={alternate.href}>{alternate.label}</Link>

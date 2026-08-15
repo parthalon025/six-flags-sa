@@ -220,7 +220,7 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
 export async function dismissAuthGate(page, { timeout = 12000 } = {}) {
   const deadline = Date.now() + timeout;
   do {
-    const guest = page.locator('.authGate button:has-text("Continue as guest")');
+    const guest = page.locator('.authGate button:has-text("Guest"), .authGate button:has-text("Continue as guest")');
     if (await guest.count()) {
       await guest.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(400);

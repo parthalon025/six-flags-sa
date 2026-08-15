@@ -2848,7 +2848,10 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   letter-spacing: -.2px;
   color: var(--label);
 }
-.authGateGuest { margin-top: 12px; width: 100%; }
+.authGateActions { width: 100%; }
+.authGateLogin,
+.authGateGuest { width: 100%; flex: none; text-align: center; text-decoration: none; }
+.authGateGuest { margin-top: 0; }
 .authGateCard .signInActions { margin-bottom: 0; }
 
 /* ---- Profile auth routes (/sign-in, /sign-up, SSO callback) ---- */

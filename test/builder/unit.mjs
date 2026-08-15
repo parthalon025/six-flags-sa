@@ -7368,9 +7368,12 @@ await check('OAuth buttons are provider logos in two columns', () => {
   const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
   const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  const gateActions = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGateActions.jsx', import.meta.url), 'utf8');
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
   const actions = fs.readFileSync(new URL('../../apps/party-tracker/components/ProfileAuthActions.jsx', import.meta.url), 'utf8');
-  assert.match(gate, /ProfileAuthActions/);
+  assert.match(gate, /AuthGateActions/);
+  assert.match(gateActions, /href="\/sign-in"/);
+  assert.match(gateActions, /AUTH_COPY\.loginLabel/);
   assert.match(card, /ProfileAuthActions/);
   assert.match(actions, /OAuthButtons/);
   return true;
