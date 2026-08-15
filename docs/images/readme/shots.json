@@ -80,7 +80,6 @@
         "apps/party-tracker/lib/party/client.js",
         "apps/party-tracker/lib/party/election.js",
         "apps/party-tracker/lib/party/hostService.js",
-        "apps/party-tracker/lib/partyRuntime.js",
         "apps/party-tracker/lib/live.js"
       ]
     }
