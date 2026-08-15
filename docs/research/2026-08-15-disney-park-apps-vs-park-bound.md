@@ -51,7 +51,7 @@ Disney does not ship one park app. It ships **one official wallet per resort**, 
 | **My Disney Experience** | Walt Disney World (4 parks, 2 water parks, Disney Springs, hotels, ESPN Wide World of Sports) | [App Store](https://apps.apple.com/us/app/my-disney-experience/id547436543), [WDW mobile apps](https://disneyworld.disney.go.com/guest-services/my-disney-experience/mobile-apps/) |
 | **Disneyland** | Disneyland Resort California (Disneyland + Disney California Adventure) | [App Store](https://apps.apple.com/us/app/disneyland/id1022164656), [DLR app page](https://disneyland.disney.go.com/guest-services/download-disneyland-mobile-app/) |
 | **Play Disney Parks** | WDW + DLR only — games / AR / Galaxy’s Edge datapad | [App Store](https://apps.apple.com/us/app/play-disney-parks/id1325935439), [DLR Play page](https://disneyland.disney.go.com/guest-services/play-app/) |
-| **Disneyland Paris** | Disneyland Park + Walt Disney Studios Park | [App Store](https://apps.apple.com/us/app/disneyland-paris/id396908589), [DLP mobile app](https://www.disneylandparis.com/en-usd/mobile-app) |
+| **Disneyland Paris** | Disneyland Park + **Disney Adventure World** (Studios Park renamed 2026-03-29) | [App Store](https://apps.apple.com/us/app/disneyland-paris/id396908589), [DLP mobile app](https://www.disneylandparis.com/en-usd/mobile-app), [rename](https://news.disneylandparis.com/en/walt-disney-studio-park-discovery/) |
 | **Tokyo Disney Resort App** | Tokyo Disneyland + Tokyo DisneySea | [Official app page](https://www.tokyodisneyresort.jp/en/tdr/app.html), [App Store](https://apps.apple.com/us/app/tokyo-disney-resort-app/id1313147771) |
 | **Hong Kong Disneyland** | Hong Kong Disneyland | [App Store](https://apps.apple.com/us/app/hong-kong-disneyland/id1077550649) |
 | **Shanghai Disney Resort** | Shanghai Disneyland + Disneytown + hotels | [App Store](https://apps.apple.com/us/app/shanghai-disney-resort/id1073826118) |
@@ -139,36 +139,41 @@ This is IP entertainment. It is **not** a living map and **not** a Party. Park B
 
 **Role:** European wallet. 298 MB, iOS 15.1+, 8 languages, 4.3★ / 3.3K, v7.16. [App Store](https://apps.apple.com/us/app/disneyland-paris/id396908589), [Official](https://www.disneylandparis.com/en-usd/mobile-app)
 
-- Buy/store park tickets; hotel booking + check-in.
-- **Disney Premier Access One** (per-ride slot) and **Ultimate** (one-time on many attractions, no slot juggling).
-- Disney Picks recommendations + Wishlist.
-- Accessibility conditions per attraction.
-- Waits, showtimes, interactive map + filters (attractions, restaurants, shops, shows, Meet ’n’ Greets).
+- Buy/store park tickets; hotel booking + check-in; Digital MagicPass + digital key at two hotels ([official news](https://news.disneylandparis.com/en/mobile-check-in-digital-magic-pass-and-digital-key-new-services-offered-in-the-disneyland-paris-mobile-application-for-disney-hotel-residents/)).
+- **Disney Premier Access One** (per-ride slot, same-day) and **Ultimate** (one use per available attraction, no slots; Orbitron excluded). [Official](https://www.disneylandparis.com/en-gb/attractions/disney-premier-access)
+- Site still promotes a free **Standby Pass**; current App Store / Play copy **omits** it.
+- Meet-and-greet **virtual queues** via the app after ticket scan (Fans Corner, 2025-04-18). Hero Training Center enlistment in store copy.
+- Disney Picks + Wishlist; accessibility conditions per attraction.
+- Waits, showtimes, interactive map + filters.
 - Dining: book 2 months ahead (12 months for hotel guests); Click & Collect; menus; Meal Plan filter.
-- Annual Pass benefits; notifications.
+- PhotoPass is **not** in current store copy (hotel PhotoPass+ at Reception).
+- No Genie, MagicBand+, or MagicMobile on official listings.
 
 No official live family GPS. No community map edits.
 
 ### 5. Tokyo Disney Resort App
 
-**Role:** Oriental Land Co. ops app. **Requires MyDisney login + GPS** for many functions. 2.2★ / 509 US ratings (listing is thin outside Japan). [Official](https://www.tokyodisneyresort.jp/en/tdr/app.html), [App Store](https://apps.apple.com/us/app/tokyo-disney-resort-app/id1313147771)
+**Role:** Oriental Land Co. ops app. Bookings need **MyDisney (13+)** + GPS; **maps and wait times do not require login** ([FAQ](https://faq-en.tokyodisneyresort.jp/answer/680ba04871b483fd12254fb5/)). [Official](https://www.tokyodisneyresort.jp/en/tdr/app.html), [App Store](https://apps.apple.com/us/app/tokyo-disney-resort-app/id1313147771)
 
-- Tickets; guide map; waits; restaurant + hotel booking.
-- **Disney Premier Access**, **Standby Pass**, **Entry Request**, 40th Anniversary Priority Pass — *in park only*.
-- **Disney Photo** IAP (download packs $9.99–$34.99).
-- **Create Group** — share **tickets and plan details** (restaurant, Standby Pass, hotel key for Japan residents). Invite URL or ID. **Not live location.** Every member needs a MyDisney account. [Official](https://www.tokyodisneyresort.jp/en/tdr/app/group.html)
+- Tickets; guide map; waits; restaurant + hotel booking; **Disney Mobile Order**.
+- **Disney Premier Access** (paid, timed), **Entry Request** (free show virtual entry), **40th Anniversary Priority Pass** (free; **ends 2026-08-31**), **Standby Pass** (free — official FAQ: **shops**, not the US standby-line meaning). In-park only.
+- **Disney Photo** in-app (scan Photo Key; JPEG/MP4 IAP).
+- JP listing: in-app shopping shipped to the guest; hotel digital key **Japan residents only**.
+- **Create Group** — share **tickets and plan details**. Not live location. Members without a phone can ride one smartphone for tickets/passes ([FAQ](https://faq-en.tokyodisneyresort.jp/answer/680ba04501fdf7431bafb3a0/)). [Official](https://www.tokyodisneyresort.jp/en/tdr/app/group.html)
 
-Closest Disney analog to a **Party** — and it is still a **booking share**, not a mesh.
+Closest Disney analog to a **Party** — and it is still a **booking share**, not a mesh. No Genie / MagicBand+ / MagicMobile.
 
 ### 6. Hong Kong Disneyland
 
 **Role:** Compact park OS. 542 MB, iOS 17+, 5 languages, 4.6★ / 6.2K, v8.22.0. [App Store](https://apps.apple.com/us/app/hong-kong-disneyland/id1077550649)
 
 - Approximate waits; GPS map of **your** position; park hours; Character Greetings; showtimes; accessibility.
-- 1-tap **call** for restaurant/hotel reservations (not always in-app booking).
+- Store listing does **not** say “buy tickets”; official press: reserve the park visit in-app. Premier Access and Standby Pass are official on the site/press but **omitted** from current store copy.
+- 1-tap **call** for restaurant/hotel reservations (not DLP-style in-app table booking).
 - Mobile food order; Magic Access member blockouts/discounts.
 - **Magic AR** in World of Frozen (Elsa’s Ice Magic).
-- Premier Access purchased on website or app ([terms](https://www.hongkongdisneyland.com/offers-discounts/disney-premier-access-1-attraction/details/)).
+- Premier Access from HK$199 (advance website multi-pass); 1-Attraction same-day in the app ([terms](https://www.hongkongdisneyland.com/offers-discounts/disney-premier-access-1-attraction/details/)).
+- Sibling **Hong Kong Disney PhotoPass** app (Pictureworks Pte Ltd — official-vendor, not Disney Electronic Content). [App Store](https://apps.apple.com/us/app/hong-kong-disney-photopass/id1130667769)
 - Baidu map SDK (privacy note in listing).
 
 ### 7. Shanghai Disney Resort
@@ -176,12 +181,12 @@ Closest Disney analog to a **Party** — and it is still a **booking share**, no
 **Role:** China wallet. 488 MB, iOS 16+, EN/ZH, 3.5★ / 156 US ratings, v13.9. [App Store](https://apps.apple.com/us/app/shanghai-disney-resort/id1073826118)
 
 - Tickets + Annual Passes; waits; parade/show schedules.
-- **Disney Standby Pass** (free virtual queue) + **Disney Premier Access** (paid).
-- GPS map (Baidu); Alipay; SMS PIN; government ID for some features.
-- Hotels + Disneytown info.
+- **Disney Standby Pass** + **Disney Premier Access** (single or set; party must have entered).
+- GPS map (Baidu); Alipay; SMS PIN; government ID; facial recognition for some features.
+- Hotels + Disneytown info. Dining mobile order is documented on a **WeChat Mini Program**, not the App Store feature list.
 - Location only while the app is open (listing).
 
-WeChat / Alipay mini-programs are a parallel guest surface in China (secondary travel guides). The official app remains the store product.
+**Shanghai Disney Resort WeChat Mini Program** is an official guest surface — tickets, hotels, Premier Access ([official Premier Access](https://prod.origin-character-story.shanghaidisneyresort.com/tours/vip-premier-access/)). A store-listed **Disney PhotoPass** app (DIGI STUDIO) exists; SHDR HTML did not name it.
 
 ---
 
@@ -191,27 +196,27 @@ Legend: **Y** = official listing/help claims it · **P** = partial / filter / bo
 
 | Capability | MDE | DLR | Play | DLP | TDR | HKDL | SHDL | **Park Bound** |
 |------------|-----|-----|------|-----|-----|------|------|----------------|
-| Tickets / reservations | Y | Y | — | Y | Y | Y | Y | **n/a — do not add** |
+| Tickets / reservations | Y | Y | — | Y | Y | P | Y | **n/a — do not add** |
 | Paid skip-the-line | Y | Y | — | Y | Y | Y | Y | **n/a** |
-| Virtual / standby queue | Y | Y | — | — | Y | — | Y | **n/a** |
-| Dining reserve / Mobile Order | Y | Y | — | Y | Y | Y | P | Places only (OSM) |
+| Virtual / standby queue | Y | Y | — | P | Y | P | Y | **n/a** |
+| Dining reserve / Mobile Order | Y | Y | — | Y | Y | P | Mini Program | Places only (OSM) |
 | Official waits / showtimes | Y | Y | — | Y | Y | Y | Y | **Ride report** + weather; no official feed |
 | Character locations | Y | Y | — | Y | Y | Y | P | Not shipped |
 | GPS map of **you** | Y | Y | beacons | Y | Y | Y | Y | Y + drawn OSM |
 | Live map of **Party** | — | — | — | — | — | — | — | **Y** |
 | Group = tickets/plans | Family & Friends | Family & Friends | — | — | **Create Group** | — | — | **Party** is live coordination |
-| Height for *this family* | Filter by ″ | Filter | — | Access copy | — | Access copy | — | **Eligibility** from roster |
-| Device-less child | Managed F&F profile | Same | — | — | Ticket on group | — | — | Device-less **Member** |
+| Height for *this family* | planDisney ″ filter | Advisories | — | Access copy | Website FAQ | Access copy | — | **Eligibility** from roster |
+| Device-less child | Managed F&F profile | Same | — | — | One phone for tickets | — | — | Device-less **Member** |
 | Meet / NEED HELP | — | — | — | — | — | — | — | **Y** |
 | Landmark walking + offline | Directions (online) | Nav (online) | — | Map | Map | Map | Map | **Y (on-device)** |
 | Facing **Compass** / Watch | — | — | — | — | — | — | — | **Y** |
 | Guest-editable park truth | — | — | — | — | — | — | — | **Side Quests / Overlay** |
 | Works at non-Disney parks | — | — | — | — | — | — | — | **Y (4 venues + any OSM)** |
-| Offline-first day | Cache | Cache | Cache | Cache | Login+GPS | Cache | Open-only GPS | **Premise** |
-| Name-first, no operator account | Disney account | Disney account | Optional | Disney account | **Required** | Account for buys | ID/SMS | **Name is enough** |
+| Offline-first day | Cache | Cache | Cache | — | Map/waits no login | — | Open-only GPS | **Premise** |
+| Name-first, no operator account | Disney account | Disney account | Optional | Disney account | Browse free; buy = MyDisney 13+ | Browse free | ID/SMS | **Name is enough** |
 | IP queue games / AR | Lenses | — | **Y** | Hero Training | Photo | Frozen AR | — | **No — stay fact quests** |
 | Hotel key / folio | Y | Y | — | Y | JP only | Call | Y | **n/a** |
-| Photo commerce | Y | Y | — | — | Y | — | — | **n/a** |
+| Photo commerce | Y | Y | — | Hotel desk | Y | Sibling app | Sibling app | **n/a** |
 | Cast chat | Y | Y | — | — | — | — | — | **n/a** |
 | Car pin | Select lots | — | — | — | — | — | — | **Y (private to this phone)** |
 | Campground / pitches | — | — | — | — | — | — | — | **Y (Cedar Point)** |
@@ -223,7 +228,7 @@ Legend: **Y** = official listing/help claims it · **P** = partial / filter / bo
 
 These are **operator privileges**. Guests will keep the official app for them. Competing is a trap.
 
-1. **Admission media** — tickets, MagicBand+, MagicMobile, park reservations.
+1. **Admission media** — tickets, MagicBand+ / MagicMobile (US only; **not found** on DLP/TDR/HK/SH store listings), park reservations. International skip-the-line is **Premier Access**, not Lightning Lane; no official **Genie** brand on those listings.
 2. **Paid queue products** — Lightning Lane, Premier Access, Standby Pass, Entry Request. DLR Multi Pass **starts at $34/ticket/day** (official); WDW prices vary by park/date and are shown in-app (typically ~21 days). Not a map feature.
 3. **Dining inventory** — reservations, Mobile Order, walk-up lists, Meal Plan.
 4. **PhotoPass commerce** — Memory Maker $85–$210; DLR PhotoPass+ $25/day.
