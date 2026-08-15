@@ -1,6 +1,9 @@
 /**
  * Files the post-merge bump workflow touches — stamp only, no app logic.
- * Shared by bump-version.mjs (writer) and vercel-ignore.mjs (skip decision).
+ * Shared by bump-version.mjs (writer) and vercel-ignore.mjs (deploy decision).
+ *
+ * On production, stamp-only bumps still deploy: the bump commit arrives seconds
+ * after the merge and Vercel cancels the in-flight merge build before it lands.
  */
 import fs from 'node:fs';
 import path from 'node:path';
