@@ -270,5 +270,11 @@
     "items": [
       "fix: harden Vercel deploy config and stabilize party CI waits"
     ]
+  },
+  "1.11.8": {
+    "title": "What's new",
+    "items": [
+      "fix: App Store CI hardening — touch-only, flakes, auth, weekly UI"
+    ]
   }
 }
