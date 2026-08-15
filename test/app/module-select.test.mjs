@@ -169,6 +169,13 @@ const manifest = loadModulesManifest();
 }
 
 {
+  const sel = selectModulesFromFiles(['apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx'], manifest);
+  assert(sel.modules.includes('auth'), 'sign-in page → auth');
+  assert(sel.modules.includes('smoke'), 'auth pulls smoke');
+  assert(!sel.fullSuite, 'sign-in alone is not full suite');
+}
+
+{
   const sel = selectModulesFromFiles(['docs/readme-only.md'], manifest);
   const gh = toGithubOutputs(sel, manifest);
   assert(gh.modules === '', 'docs github modules empty');

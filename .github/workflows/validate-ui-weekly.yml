@@ -1,0 +1,44 @@
+# Weekly full UI matrix — safety net without per-push cost.
+
+name: Validate UI (weekly)
+
+on:
+  schedule:
+    - cron: '0 8 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-ui-weekly
+  cancel-in-progress: false
+
+jobs:
+  full-ui:
+    name: Full validate-ui
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build app
+        run: npm run build -w @party-tracker/app
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Start app
+        run: node scripts/ci/party-tracker-ui.mjs start
+
+      - name: Full UI validation
+        env:
+          BASE_URL: http://127.0.0.1:3000
+        run: npm run test:validate-ui -- --all

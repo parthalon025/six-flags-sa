@@ -179,6 +179,22 @@
       ]
     },
     {
+      "id": "auth",
+      "title": "Functional — auth / Clerk-off guards",
+      "kind": "functional",
+      "paths": [
+        "apps/party-tracker/app/sign-in/**",
+        "apps/party-tracker/app/sign-up/**",
+        "apps/party-tracker/lib/clerkConfigured.js",
+        "apps/party-tracker/proxy.js",
+        "apps/party-tracker/components/AuthGate.jsx",
+        "apps/party-tracker/components/AuthBridge.jsx",
+        "apps/party-tracker/components/SignInCard.jsx",
+        "vercel.json"
+      ],
+      "pulls": ["smoke"]
+    },
+    {
       "id": "grandma",
       "title": "Grandma persona suite",
       "kind": "grandma",

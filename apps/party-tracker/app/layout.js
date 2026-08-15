@@ -99,9 +99,14 @@ export default function RootLayout({ children }) {
         ) : (
           children
         )}
-        <Analytics />
-        {/* RUM is for ops, not park-day UX — sample so most phones skip the script. */}
-        <SpeedInsights sampleRate={0.1} />
+        {/* Vercel-hosted scripts 404 on `next start` / local CI — mount only on Vercel. */}
+        {process.env.VERCEL ? (
+          <>
+            <Analytics />
+            {/* RUM is for ops, not park-day UX — sample so most phones skip the script. */}
+            <SpeedInsights sampleRate={0.1} />
+          </>
+        ) : null}
       </body>
     </html>
   );
