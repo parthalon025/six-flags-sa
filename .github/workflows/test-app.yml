@@ -14,10 +14,9 @@ concurrency:
 
 jobs:
   gate:
-    name: Skip GitNexus-only
+    name: Gate
     if: >-
-      !startsWith(github.event.head_commit.message, 'chore: bump version to') &&
-      !startsWith(github.event.head_commit.message, 'chore: refresh gitnexus index')
+      !startsWith(github.event.head_commit.message, 'chore: bump version to')
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.check.outputs.run }}
@@ -25,14 +24,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Classify commit
+      - name: Gate checks
         id: check
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node scripts/ci/gate-tests.mjs
           node test/app/readme-shots-check.mjs
-          node scripts/gitnexus-ci.mjs
+          echo "run=true" >> "$GITHUB_OUTPUT"
 
   select:
     name: Select modules

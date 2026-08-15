@@ -208,7 +208,7 @@ for (const path of [
   'scripts/lib/repo-path.mjs',
   'scripts/lib/app-paths.mjs',
   'scripts/lib/app-paths.json',
-  'scripts/gitnexus-ci.mjs',
+  'scripts/lib/gitnexus-only.mjs',
 ]) {
   assert.match(
     vercelIgnore,

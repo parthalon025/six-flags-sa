@@ -7,7 +7,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isGitnexusCiNoise } from '../../../scripts/gitnexus-ci.mjs';
+import { isGitnexusCiNoise } from '../../../scripts/lib/gitnexus-only.mjs';
 import { isVersionStampOnlyChange } from '../../../scripts/lib/version-stamp.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
