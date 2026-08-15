@@ -985,43 +985,50 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
   // reads its snapshot and calls its verbs.
   const pendingInviteRef = useRef(null);
   const [pendingInvite, setPendingInvite] = useState(null);
+  const showToastRef = useRef(showToast);
+  const selectTabRef = useRef(selectTab);
+  const adoptDraftRef = useRef(adoptDraft);
+  const shareOverlayRef = useRef(shareOverlay);
+  showToastRef.current = showToast;
+  selectTabRef.current = selectTab;
+  adoptDraftRef.current = adoptDraft;
+  shareOverlayRef.current = shareOverlay;
 
+  // One PartyRuntime for the page lifetime. Do not recreate when callback
+  // identities change — that destroyed mid-join invites and stuck the gate.
   useEffect(() => {
     let destroyed = false;
     let rt = null;
     (async () => {
       const partyRuntime = await import('@/lib/partyRuntime');
       if (destroyed) return;
-      rt = partyRuntime.createPartyRuntime({ onState: setParty, onToast: showToast });
+      rt = partyRuntime.createPartyRuntime({
+        onState: setParty,
+        onToast: (msg) => showToastRef.current(msg),
+      });
       runtime.current = rt;
       setRuntimeApi(rt);
-      // Stash is single-consume. This effect re-runs when selectTab/etc. change
-      // identity — only take from sessionStorage once per page load.
-      if (!pendingInviteRef.current) {
-        const pending = partyRuntime.takePendingInvite();
-        if (pending?.payload) {
-          pendingInviteRef.current = pending;
-          setPendingInvite(pending);
-          const named = (pending.name || '').trim();
-          if (named) {
-            identityRef.current = { ...identityRef.current, name: named };
-            setIdentity((i) => ({ ...i, name: named }));
-          }
+      const pending = partyRuntime.takePendingInvite();
+      if (pending?.payload) {
+        pendingInviteRef.current = pending;
+        setPendingInvite(pending);
+        const named = (pending.name || '').trim();
+        if (named) {
+          identityRef.current = { ...identityRef.current, name: named };
+          setIdentity((i) => ({ ...i, name: named }));
         }
-      }
-      if (pendingInviteRef.current?.payload) {
-        selectTab('party');
+        selectTabRef.current('party');
         return;
       }
       if (rt.hasLiveParty?.()) {
         const memberName = identityRef.current?.name || 'Guest';
         Promise.resolve(rt.resume({ memberName }))
           .then(() => {
-            adoptDraft();
-            shareOverlay();
+            adoptDraftRef.current();
+            shareOverlayRef.current();
           })
           .catch((err) =>
-            showToast(err?.message || 'Could not reopen the party.'),
+            showToastRef.current(err?.message || 'Could not reopen the party.'),
           );
       }
     })();
@@ -1031,7 +1038,7 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
       setRuntimeApi(null);
       rt?.destroy();
     };
-  }, [showToast, selectTab, adoptDraft, shareOverlay]);
+  }, []);
 
   /* Join is name-first. Finish /join once location is live so the invite
      cannot land a Member with no fix. Retry when GPS arrives. */
@@ -1050,29 +1057,27 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
         if (cancelled) return;
         pendingInviteRef.current = null;
         setPendingInvite(null);
-        selectTab('party');
-        showToast(
+        selectTabRef.current('party');
+        showToastRef.current(
           snap?.code
             ? `You’re in party ${snap.code}${named ? '' : ' — rename under Me'}`
             : 'You’re in the party',
         );
-        adoptDraft();
-        shareOverlay();
+        adoptDraftRef.current();
+        shareOverlayRef.current();
       })
       .catch((err) => {
         if (cancelled) return;
-        showToast(err?.message || 'Could not open that invite.');
+        showToastRef.current(err?.message || 'Could not open that invite.');
       })
       .finally(() => {
         inviteJoinInFlight.current = false;
       });
     return () => {
-      // Runtime effect remounts destroy the PartyRuntime mid-join; clear the
-      // gate so the next runtimeApi can retry the pending invite.
       cancelled = true;
       inviteJoinInFlight.current = false;
     };
-  }, [pendingInvite, runtimeApi, selectTab, showToast, geo.status, adoptDraft, shareOverlay]);
+  }, [pendingInvite, runtimeApi, geo.status]);
 
   /* Reopen a saved but dormant session when Party is opened. Live sessions
      resume on mount above and keep syncing on every tab. */
