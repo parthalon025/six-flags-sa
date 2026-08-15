@@ -15,6 +15,9 @@ concurrency:
 jobs:
   gate:
     name: Skip GitNexus-only
+    if: >-
+      !startsWith(github.event.head_commit.message, 'chore: bump version to') &&
+      !startsWith(github.event.head_commit.message, 'chore: refresh gitnexus index')
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.check.outputs.run }}
@@ -56,12 +59,10 @@ jobs:
 
       - name: Resolve changed modules
         id: mods
-        env:
-          # On push to main always run the full suite.
-          FORCE_ALL: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
-          if [ "$FORCE_ALL" = "true" ]; then
-            node test/app/select-modules.mjs --all --format github
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            # This commit only — merge commits diff vs main parent; bump commits are workflow-skipped.
+            node test/app/select-modules.mjs --base HEAD^1 --format github
           else
             BASE_REF="${{ github.base_ref }}"
             if [ -n "$BASE_REF" ]; then
@@ -102,8 +103,10 @@ jobs:
 
   boundaries:
     name: Package boundaries
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
+    needs: [gate, select]
+    if: >-
+      needs.gate.outputs.run == 'true' &&
+      (needs.select.outputs.full_suite == 'true' || needs.select.outputs.modules != '')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

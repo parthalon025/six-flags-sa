@@ -31,6 +31,19 @@ CI-only / docs-only branches skip the browser phase automatically. Use `--skip-b
 
 ## Test app (`.github/workflows/test-app.yml`)
 
+**Touch-only policy:** PRs and `main` pushes run only modules matched by the diff — not the full matrix every time.
+
+| Event | Diff base | What runs |
+|-------|-----------|-----------|
+| **Pull request** | `merge-base...HEAD` vs PR base branch | Matching modules from `modules.json` |
+| **Push to `main`** | `HEAD^1...HEAD` (this commit only) | Same — merge commit ≈ PR files; stamp-only ≈ nothing |
+| **`chore: bump version to …`** | — | **Workflow skipped** (Post-merge bump already validated the merge) |
+| **GitNexus-only** | — | Gate skips expensive jobs |
+
+`fullSuitePaths` in `modules.json` still forces all modules when e.g. `functional.mjs` or `test-app.yml` changes. Version-stamp-only file lists bypass full-suite triggers.
+
+Optional safety net: run `npm run test:validate-ui -- --all` locally or add a weekly scheduled workflow if you want periodic full coverage without per-push cost.
+
 | Step | Script / command |
 |------|------------------|
 | Gate — script invariants | `node scripts/ci/gate-tests.mjs` then `node scripts/gitnexus-ci.mjs` |

@@ -1,5 +1,5 @@
 {
-  "$schema_note": "CI / validate-ui modules. Path globs select which suites run on a PR; fullSuitePaths (or push to main) runs everything. Functional modules map to gated sections in functional.mjs. `pulls` adds companion modules when this one is selected.",
+  "$schema_note": "CI / validate-ui modules. Path globs select which suites run for a diff; fullSuitePaths force everything when touched. Post-merge version-stamp-only commits select nothing. Functional modules map to gated sections in functional.mjs. `pulls` adds companion modules when this one is selected.",
   "fullSuitePaths": [
     ".github/workflows/test-app.yml",
     "package.json",

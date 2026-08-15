@@ -79,6 +79,22 @@ const manifest = loadModulesManifest();
 }
 
 {
+  const sel = selectModulesFromFiles(
+    [
+      'package.json',
+      'package-lock.json',
+      'apps/party-tracker/package.json',
+      'apps/party-tracker/public/app-version.json',
+      'apps/party-tracker/public/sw.js',
+      'apps/party-tracker/data/release-notes.json',
+    ],
+    manifest,
+  );
+  assert(sel.modules.length === 0, 'version-stamp-only selects nothing');
+  assert(!sel.fullSuite, 'version-stamp-only is not full suite despite package.json');
+}
+
+{
   const sel = selectModulesFromFiles(['.github/workflows/test-app.yml'], manifest);
   assert(sel.fullSuite, 'workflow edit → full suite');
   assert(sel.modules.includes('grandma'), 'full includes grandma');
