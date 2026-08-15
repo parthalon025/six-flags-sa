@@ -219,17 +219,17 @@ const OFF_ROUTE_M = 32;
 export default function Page() {
   // Match AuthBridge / layout: without a publishable key there is no provider.
   if (!clerkBrowserConfigured()) {
-    return <ParkApp clerkLoaded isSignedIn={false} />;
+    return <ParkApp isSignedIn={false} />;
   }
   return <PageWithClerk />;
 }
 
 function PageWithClerk() {
-  const { isLoaded: clerkLoaded, isSignedIn } = useAuth();
-  return <ParkApp clerkLoaded={clerkLoaded} isSignedIn={Boolean(isSignedIn)} />;
+  const { isSignedIn } = useAuth();
+  return <ParkApp isSignedIn={Boolean(isSignedIn)} />;
 }
 
-function ParkApp({ clerkLoaded, isSignedIn }) {
+function ParkApp({ isSignedIn }) {
   const geo = useGeolocation();
   const { position, heading, shouldBroadcast } = geo;
     const {
@@ -753,7 +753,8 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
   }, [isSignedIn]);
 
   const pastAuthGate = isSignedIn || guestMode || !clerkBrowserConfigured();
-  const showAuthGate = clerkBrowserConfigured() && clerkLoaded && !isSignedIn && !guestMode;
+  // Do not wait for Clerk FAPI — a handshake failure must not skip Profile login.
+  const showAuthGate = clerkBrowserConfigured() && !isSignedIn && !guestMode;
   const showIntroSplash = pastAuthGate && introSeen === false && !logoSplashDismissed;
   /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
   const showWelcomeGate = pastAuthGate && introSeen === false && logoSplashDismissed && !nearestIntent;

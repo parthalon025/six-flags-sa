@@ -16,6 +16,7 @@
 
 import {
   BASE,
+  ignoreHTTPSErrors,
   clearSearch,
   closeGate,
   dismissIntroSplash,
@@ -107,6 +108,7 @@ if (authOnlyPhone) {
     hasTouch: true,
     isMobile: true,
     locale: 'en-US',
+    ignoreHTTPSErrors,
   });
   const page = await context.newPage();
   A = { context, page, errors: [], requests: [], label: 'A' };
@@ -176,6 +178,53 @@ await check('OAuth SSO callback does not remount the SignIn widget', async () =>
   }
   return true;
 });
+
+const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+if (clerkOn) {
+console.log('\n--- auth (Clerk-on Profile OAuth) ---');
+
+await check('Profile gate shows Google and Apple logo buttons', async () => {
+  await a.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await until(
+    async () => (await a.locator('.authGate .oauthBtn').count()) >= 2,
+    { timeout: 25000, label: 'Profile OAuth logo buttons' },
+  );
+  const labels = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
+    els.map((el) => el.getAttribute('aria-label') || ''),
+  );
+  if (!labels.some((l) => /Google/i.test(l))) throw new Error(`no Google button: ${labels.join(' | ')}`);
+  if (!labels.some((l) => /Apple/i.test(l))) throw new Error(`no Apple button: ${labels.join(' | ')}`);
+  const boxes = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
+    els.map((el) => {
+      const b = el.getBoundingClientRect();
+      return { x: b.x, y: b.y, w: b.width, h: b.height };
+    }),
+  );
+  if (Math.abs(boxes[0].y - boxes[1].y) > 24) throw new Error('OAuth buttons are stacked, not two columns');
+  if (Math.abs(boxes[0].x - boxes[1].x) < 40) throw new Error('OAuth buttons share one column');
+  const shot = process.env.CLERK_E2E_SHOTS;
+  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_oauth_buttons.png`, fullPage: true });
+  return true;
+});
+
+await check('Google logo button starts Clerk OAuth', async () => {
+  const google = a.locator('.authGate .oauthBtn[aria-label*="Google"]');
+  await google.click();
+  const dest = await until(
+    async () => {
+      const url = String(a.url());
+      if (/google|clerk\.com|accounts\./i.test(url) && !url.startsWith(BASE)) return url;
+      const err = (await a.locator('.authGate .warnText').innerText().catch(() => '')).trim();
+      if (err) return { error: err };
+      return null;
+    },
+    { timeout: 25000, label: 'Clerk/Google OAuth navigation' },
+  );
+  if (dest?.error) throw new Error(dest.error);
+  if (typeof dest !== 'string') throw new Error('Google button did not leave the app for Clerk OAuth');
+  return true;
+});
+}
 
 if (!authOnlyPhone) {
 await check('Settings sign-in card matches Clerk routes', async () => {
