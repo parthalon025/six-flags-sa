@@ -76,15 +76,7 @@ jobs:
         if: steps.gate.outputs.run == 'true' && steps.bump.outputs.skipped != 'true'
         run: |
           set -euo pipefail
-          git add \
-            package.json \
-            package-lock.json \
-            apps/party-tracker/package.json \
-            packages/shared/package.json \
-            packages/venue-builder/package.json \
-            apps/party-tracker/public/app-version.json \
-            apps/party-tracker/public/sw.js \
-            apps/party-tracker/data/release-notes.json
+          node scripts/ci/stage-version-stamps.mjs
           VERSION=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
           git commit -m "chore: bump version to $VERSION"
 
