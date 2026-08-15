@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 import {
   decideVercelBuild,
   isAgentPreviewBranch,
-  isVersionStampOnlyChange,
 } from '../../scripts/lib/vercel-ignore.mjs';
+import { isVersionStampOnlyChange } from '../../scripts/lib/version-stamp.mjs';
 import {
   AUTOMATION_DEPLOY_BUDGET,
   USER_DEPLOY_RESERVE,
@@ -184,7 +184,7 @@ assert.doesNotMatch(
   'ignore decision must not diff against the last preview SHA',
 );
 assert.match(lib, /\^1/, 'must diff against the first parent');
-assert.match(lib, /VERSION_STAMP_PATHS/, 'must skip post-merge version bumps');
+assert.match(lib, /version-stamp\.mjs/, 'must skip post-merge version bumps via shared stamp list');
 assert.match(lib, /AGENT_PREVIEW_BRANCH/, 'must skip agent preview branches');
 assert.match(lib, /USER_DEPLOY_RESERVE/, 'must document user reserve');
 assert.equal(USER_DEPLOY_RESERVE, 25);
@@ -197,6 +197,9 @@ for (const path of [
   'scripts/vercel-ignore.sh',
   'scripts/lib/vercel-ignore.mjs',
   'scripts/lib/vercel-budget.mjs',
+  'scripts/lib/version-stamp.mjs',
+  'scripts/lib/version-stamp-paths.json',
+  'scripts/lib/repo-path.mjs',
   'scripts/lib/app-paths.mjs',
   'scripts/lib/app-paths.json',
   'scripts/gitnexus-ci.mjs',
