@@ -1,8 +1,7 @@
 'use client';
 
-import BrandLockup from '@/components/BrandLockup';
 import ProfileAuthActions from '@/components/ProfileAuthActions';
-import { BRAND } from '@/lib/brand';
+import AuthShell from '@/components/AuthShell';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 
 /**
@@ -17,22 +16,9 @@ export default function AuthGate(props) {
 function AuthGateLive({ onGuest = null }) {
   return (
     <div className="gate authGate" role="dialog" aria-labelledby="auth-gate-title">
-      <div className="gateCard authGateCard">
-        <div className="gateEyebrow">Profile</div>
-        <BrandLockup
-          size="md"
-          stacked
-          className="gateBrandLockup"
-          markTitle={BRAND.name}
-          nameId="auth-gate-title"
-        />
-        <p>
-          Sign in to save XP and Side Quest progress on this phone, or continue as a guest —
-          the map and party work either way.
-        </p>
+      <AuthShell variant="gate">
         <ProfileAuthActions onGuest={onGuest} />
-        <p className="gateFine">Guests browse and join parties by name. Sign in later from Me.</p>
-      </div>
+      </AuthShell>
     </div>
   );
 }

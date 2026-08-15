@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 /** Official Google G — brand colors stay as-is (Google branding). */
 function GoogleMark() {
   return (
@@ -41,20 +43,42 @@ const PROVIDERS = [
   { strategy: 'oauth_apple', name: 'Apple', Mark: AppleMark },
 ];
 
+function detectPlatform() {
+  if (typeof navigator === 'undefined') return 'default';
+  const ua = navigator.userAgent || '';
+  const ios =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return ios ? 'ios' : 'android';
+}
+
 /**
  * Google + Apple as equal-weight logo buttons (ADR-0010 App Store 4.8).
- * Shared by AuthGate and SignInCard.
+ * Apple leads on iOS; Google leads on Android and desktop.
  */
 export default function OAuthButtons({ isLoaded = false, busy = null, onStart = null }) {
+  const [platform, setPlatform] = useState('default');
+
+  useEffect(() => {
+    setPlatform(detectPlatform());
+  }, []);
+
+  const providers =
+    platform === 'ios'
+      ? [PROVIDERS[1], PROVIDERS[0]]
+      : platform === 'android'
+        ? PROVIDERS
+        : PROVIDERS;
+
   return (
-    <div className="oauthActions">
-      {PROVIDERS.map(({ strategy, name, Mark }) => {
+    <div className={`oauthActions oauthActions-${platform}`}>
+      {providers.map(({ strategy, name, Mark }) => {
         const opening = busy === strategy;
         return (
           <button
             key={strategy}
             type="button"
-            className="oauthBtn"
+            className={`oauthBtn oauthBtn-${strategy}`}
             disabled={!isLoaded || Boolean(busy)}
             aria-label={opening ? `Opening ${name}` : `Continue with ${name}`}
             onClick={() => onStart?.(strategy)}

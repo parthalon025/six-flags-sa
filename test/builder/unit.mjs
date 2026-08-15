@@ -7323,8 +7323,33 @@ await check('SSO callback page completes Clerk OAuth instead of remounting SignI
   assert.equal(fs.existsSync(pageUrl), true, 'missing /sign-in/sso-callback page');
   const page = fs.readFileSync(pageUrl, 'utf8');
   assert.match(page, /AuthenticateWithRedirectCallback/);
+  assert.match(page, /AuthShell/);
   assert.match(page, /clerk-captcha/);
   assert.doesNotMatch(page, /<SignIn[\s>]/);
+  return true;
+});
+
+await check('Profile auth routes share AuthShell lockup and Park Bound palette', () => {
+  const shell = fs.readFileSync(
+    new URL('../../apps/party-tracker/components/AuthShell.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(shell, /BrandLockup/);
+  assert.match(shell, /authShellPage/);
+  const signIn = fs.readFileSync(
+    new URL('../../apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(signIn, /AuthRouteCard/);
+  assert.doesNotMatch(signIn, /<SignIn[\s>]/);
+  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /AuthShell/);
+  const appearance = fs.readFileSync(
+    new URL('../../apps/party-tracker/lib/auth/clerkAppearance.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(appearance, /COLORS\.adventure/);
+  assert.match(appearance, /COLORS\.trail/);
   return true;
 });
 

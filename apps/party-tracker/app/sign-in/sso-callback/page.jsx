@@ -1,5 +1,7 @@
 import { AuthenticateWithRedirectCallback } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
+import AuthShell from '@/components/AuthShell';
+import { AUTH_COPY } from '@/lib/auth/authCopy';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +13,13 @@ export const dynamic = 'force-dynamic';
 export default function SsoCallbackPage() {
   if (!clerkBrowserConfigured()) redirect('/');
   return (
-    <main className="clerkAuthPage">
+    <AuthShell
+      variant="page"
+      description={AUTH_COPY.ssoLead}
+      finePrint={AUTH_COPY.ssoFine}
+      showTagline={false}
+      nameId="auth-sso-title"
+    >
       <AuthenticateWithRedirectCallback
         signInUrl="/sign-in"
         signUpUrl="/sign-up"
@@ -19,6 +27,6 @@ export default function SsoCallbackPage() {
         signUpFallbackRedirectUrl="/"
       />
       <div id="clerk-captcha" />
-    </main>
+    </AuthShell>
   );
 }
