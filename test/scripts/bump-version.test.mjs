@@ -15,6 +15,7 @@ import {
 } from '../../apps/party-tracker/lib/version.js';
 import { isAppChange, loadAppPaths } from '../../scripts/lib/app-paths.mjs';
 import { decideBump } from '../../scripts/lib/release-bump.mjs';
+import { loadVersionStampPaths } from '../../scripts/lib/version-stamp.mjs';
 
 assert.equal(releaseKindFromMessages(['feat: add party Plan reordering']), 'minor');
 assert.equal(releaseKindFromMessages(['feat(plan): add reordering']), 'minor');
@@ -99,8 +100,12 @@ assert.match(bumpYml, /steps\.bump\.outputs\.skipped/);
 assert.match(bumpYml, /fetch-depth:\s*0/);
 assert.match(
   bumpYml,
-  /packages\/venue-builder\/package\.json/,
-  'bump commit must stage venue-builder or npm ci 404s the stale shared pin',
+  /scripts\/ci\/stage-version-stamps\.mjs/,
+  'bump commit must stage version stamps via shared manifest',
+);
+assert.ok(
+  loadVersionStampPaths().includes('packages/venue-builder/package.json'),
+  'stamp manifest must include venue-builder or npm ci 404s the stale shared pin',
 );
 
 const workspacePkgs = [
