@@ -13,7 +13,7 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isGitnexusOnlyChange } from '../gitnexus-ci.mjs';
+import { isGitnexusOnlyChange } from './gitnexus-only.mjs';
 import { isAppChange } from './app-paths.mjs';
 import {
   AUTOMATION_DEPLOY_BUDGET,

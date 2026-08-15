@@ -4,7 +4,7 @@
  */
 export const GATE_SCRIPT_TESTS = [
   'test/scripts/ci-module.test.mjs',
-  'test/scripts/gitnexus-ci.test.mjs',
+  'test/scripts/gitnexus-only.test.mjs',
   'test/scripts/bump-version.test.mjs',
   'test/scripts/version-stamp.test.mjs',
   'test/scripts/vercel-ignore.test.mjs',
