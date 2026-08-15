@@ -1389,18 +1389,46 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 
 .overlayCompletions { list-style: none; margin: 0 0 10px; padding: 0; }
 .overlayCompletion { margin: 0 0 6px; }
-.overlayPin circle {
+.overlayPin.fieldResearch circle:not(.overlayHalo) {
   fill: var(--adventure);
   stroke: var(--markerEdge, #1a1a1a);
   stroke-width: 1.4;
+  stroke-dasharray: 3.5 2.5;
 }
-.overlayPin-path circle {
+.overlayPin .overlayHalo {
   fill: var(--aqua);
-  opacity: 0.85;
-  stroke-width: 1.2;
+  opacity: 0.22;
+  stroke: none;
 }
-.overlayPin-queue circle {
+.overlayPin-path.fieldResearch circle:not(.overlayHalo) {
+  fill: var(--aqua);
+  opacity: 0.9;
+}
+.overlayPin-queue.fieldResearch circle:not(.overlayHalo) {
   fill: var(--adventure);
+}
+
+/* Exploration fog — Profile opt-in; whole canvas soft until walked %. */
+.mapWrap[data-fog="soft"] .mapWorld {
+  filter: saturate(var(--mapFogSaturate, 0.7)) brightness(var(--mapFogBright, 0.9));
+}
+
+/* Ship-polish Skins */
+html[data-skin-pixel="1"] .lyr-path path,
+html[data-skin-pixel="1"] .lyr-coaster path,
+html[data-skin-pixel="1"] .lyr-coastershadow path,
+html[data-skin-pixel="1"] .lyr-slide path {
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+html[data-skin-neon="1"] .lyr-coaster path {
+  filter: drop-shadow(0 0 2px var(--track));
+}
+html[data-skin-neon="1"] .landLabel {
+  filter: drop-shadow(0 0 4px rgba(255, 107, 154, 0.35));
+}
+html[data-skin-junior="1"] .poiMarker {
+  transform-origin: center;
 }
 
 /* Hookups and pad details, as a checklist rather than a sentence. Wrapping
@@ -1538,6 +1566,39 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   .fine { color: color-mix(in srgb, var(--label) 58%, var(--label2)); }
 }
 .fine.block { display: block; margin-left: 0; margin-right: 0; }
+
+.rankPrizeCatalog { margin-top: 4px; }
+.rankPrizeList {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.rankPrizeRow {
+  border: 1px solid color-mix(in srgb, var(--label) 12%, transparent);
+  border-radius: 12px; padding: 10px 12px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+}
+.rankPrizeRow.earned {
+  border-color: color-mix(in srgb, var(--aqua) 35%, transparent);
+}
+.rankPrizeHead {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.rankPrizeXp {
+  font-size: 12px; font-variant-numeric: tabular-nums; color: var(--label2);
+}
+.rankPrizeItems {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.rankPrizeItems li {
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: 14px;
+}
+.rankPrizeKind {
+  font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--label2);
+}
+.rankPrizeItems .fine { margin: 0; grid-column: 2; font-size: 12px; }
+
 .warnText { color: var(--orange); }
 
 /* Four controls sit under the 44pt floor, and three of them cannot simply grow:

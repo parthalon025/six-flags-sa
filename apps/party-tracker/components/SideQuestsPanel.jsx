@@ -22,7 +22,8 @@ import {
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
-import { pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
+import { pathScoreCell, scoreKey } from '@party-tracker/shared/questScore.js';
+import { rankUpRewardLine } from '@party-tracker/shared/rankPrizes.js';
 import { completionLine, contributionFromGapSubmit } from '@/lib/overlay';
 
 /**
@@ -59,6 +60,7 @@ export default function SideQuestsPanel({
   onSession = null,
   onRideReport = null,
   onWorldProgress = null,
+  onRankUp = null,
   onContribution = null,
   overlay = null,
 }) {
@@ -263,8 +265,9 @@ export default function SideQuestsPanel({
     });
     setScoredKeys(scored.profile.scoredKeys || []);
     if (scored.rankUp) {
-      const title = rankReward(scored.profile.rank).title;
-      if (title) setRewardLine(`You're a ${title} now.`);
+      const line = rankUpRewardLine(scored.profile.rank);
+      if (line) setRewardLine(`You're a ${line} now.`);
+      onRankUp?.(scored.profile.rank);
     }
     const nextSession = readLocalSession();
     if (nextSession) onSession?.(nextSession);

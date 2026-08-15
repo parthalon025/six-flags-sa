@@ -79,8 +79,11 @@ import {
   applyThanksToProgress,
   createProgress,
   emptyWorld,
+  grantShipSkins,
+  grantRankExPrizes,
   mergeWorlds,
   recordSideQuest,
+  syncRankExPrizes,
   visibleMarks,
   wearMap,
 } from '@/lib/world';
@@ -96,6 +99,13 @@ import {
   saveOverlay,
   unionOverlays,
 } from '@/lib/overlay';
+import {
+  categoriesForGate,
+  cyclePaletteMode,
+  fogMapStyle,
+  paletteToggleAria,
+  resolvePalette,
+} from '@/lib/mapVisual';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -382,7 +392,8 @@ function ParkApp({ isSignedIn }) {
      a frame or two behind. */
   const mapHeight = useDeferredValue(height);
   const [withAdult, setWithAdult] = useState(true);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState(() => categoriesForGate());
+  const [paletteMode, setPaletteMode] = useState('auto');
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
@@ -417,7 +428,6 @@ function ParkApp({ isSignedIn }) {
     });
   }, []);
   const [focusPoint, setFocusPoint] = useState(null);
-  const [theme, setTheme] = useState('night');
   const [worldProgress, setWorldProgress] = useState(() => createProgress());
   const [acceptedOffer, setAcceptedOffer] = useState(null);
   const [parkWorld, setParkWorld] = useState(() => emptyWorld());
@@ -805,8 +815,9 @@ function ParkApp({ isSignedIn }) {
     setIdentity(next);
     if (saved?.height != null) setHeight(saved.height);
     // Follow the phone's own appearance setting until the visitor overrides it.
-    if (saved?.theme) setTheme(saved.theme);
-    else if (window.matchMedia?.('(prefers-color-scheme: light)').matches) setTheme('day');
+    if (saved?.paletteMode) setPaletteMode(saved.paletteMode);
+    else if (saved?.theme) setPaletteMode(saved.theme === 'day' ? 'day' : 'night');
+    else setPaletteMode('auto');
   }, []);
 
   useEffect(() => {
@@ -836,12 +847,17 @@ function ParkApp({ isSignedIn }) {
   useEffect(() => {
     if (!identity) return;
     identityRef.current = identity;
-    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height: mapHeight, theme }));
-  }, [identity, mapHeight, theme]);
+    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height: mapHeight, paletteMode }));
+  }, [identity, mapHeight, paletteMode]);
 
   useEffect(() => {
     partyRef.current = party;
   }, [party]);
+
+  const theme = useMemo(
+    () => resolvePalette({ paletteMode, manualTheme: paletteMode, now: clock }),
+    [paletteMode, clock],
+  );
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -856,13 +872,25 @@ function ParkApp({ isSignedIn }) {
     loadWorld({ userId: authSession?.userId || null }).then((saved) => {
       if (cancelled) return;
       worldHydrated.current = true;
-      setWorldProgress(saved.progress);
+      let prog = saved.progress;
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('parkbound-demo-skins') === '1') {
+        prog = grantShipSkins(prog, { venueId: venue?.id });
+      }
+      if (authSession?.rank && authSession.rank !== 'visitor') {
+        prog = syncRankExPrizes(prog, authSession.rank);
+      }
+      setWorldProgress(prog);
       setAcceptedOffer(saved.acceptedOffer);
     });
     return () => {
       cancelled = true;
     };
-  }, [authSession?.userId]);
+  }, [authSession?.userId, authSession?.rank]);
+
+  useEffect(() => {
+    if (!worldHydrated.current || !authSession?.rank || authSession.rank === 'visitor') return;
+    setWorldProgress((p) => syncRankExPrizes(p, authSession.rank));
+  }, [authSession?.rank]);
 
   useEffect(() => {
     if (!worldHydrated.current) return;
@@ -1237,6 +1265,11 @@ function ParkApp({ isSignedIn }) {
     [mergedWorld, party?.partyId],
   );
 
+  const mapFogFilter = useMemo(
+    () => fogMapStyle(worldProgress, venue?.id),
+    [worldProgress, venue?.id],
+  );
+
   useEffect(() => {
     applyMapSkin(document.documentElement, mapWear);
   }, [mapWear]);
@@ -1349,6 +1382,10 @@ function ParkApp({ isSignedIn }) {
     },
     [worldProgress, authSession?.userId, venue?.id, venue?.kind, party?.partyId, POIS, publishMark],
   );
+
+  const handleRankUp = useCallback((rank) => {
+    setWorldProgress((p) => grantRankExPrizes(p, rank));
+  }, []);
 
   /**
    * Where the party is, according to the phone hosting it.
@@ -1857,6 +1894,17 @@ function ParkApp({ isSignedIn }) {
      about what is out there, so all three are answered from the venue rather
      than from the vocabulary. */
   const presentCategories = useMemo(() => new Set(POIS.map((p) => p.c)), [POIS]);
+
+  useEffect(() => {
+    if (!venue?.id) return;
+    setCategories(categoriesForGate({ roster, presentCategories }));
+  }, [venue?.id, roster, presentCategories]);
+
+  useEffect(() => {
+    if (typeof localStorage === 'undefined' || localStorage.getItem('parkbound-demo-skins') !== '1') return;
+    if (!venue?.id) return;
+    setWorldProgress((p) => grantShipSkins(p, { venueId: venue.id }));
+  }, [venue?.id]);
 
   const rideableCount = useMemo(() => {
     if (!eligibilityPeople.length) return null;
@@ -2497,6 +2545,8 @@ function ParkApp({ isSignedIn }) {
         selfKit={worldProgress.kit || selfMember?.kit || null}
         onThankMark={thankAMark}
         overlayPins={overlayPins}
+        planNextPlaceId={walking ? null : planNextPlace?.placeId}
+        fogFilter={mapFogFilter}
       />
 
       {/* Nothing runs across the top of a phone map. The two controls float in
@@ -2521,8 +2571,8 @@ function ParkApp({ isSignedIn }) {
           <button
             type="button"
             className="iconBtn"
-            onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
-            aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
+            onClick={() => setPaletteMode((m) => cyclePaletteMode(m))}
+            aria-label={paletteToggleAria(paletteMode, theme)}
           >
             <Icon name={theme === 'day' ? 'moon.fill' : 'sun.max.fill'} />
           </button>
@@ -3098,6 +3148,7 @@ function ParkApp({ isSignedIn }) {
                 onSession={setAuthSession}
                 onRideReport={party?.active ? reportRide : null}
                 onWorldProgress={recordWorldQuest}
+                onRankUp={handleRankUp}
                 onContribution={handleContribution}
                 overlay={localOverlay}
               />
@@ -3127,7 +3178,15 @@ function ParkApp({ isSignedIn }) {
                 position={position}
                 onLocationSettings={() => setGateOpen(true)}
                 theme={theme}
-                onTheme={setTheme}
+                paletteMode={paletteMode}
+                onPaletteMode={setPaletteMode}
+                onToggleFogMap={() =>
+                  setWorldProgress((p) => {
+                    const next = { ...p, fogMapEnabled: !p.fogMapEnabled };
+                    saveWorld({ progress: next });
+                    return next;
+                  })
+                }
                 categoryCount={[...categories].filter((c) => presentCategories.has(c)).length}
                 categoryTotal={Object.keys(CATEGORIES).filter((c) => presentCategories.has(c)).length}
                 venueName={venue?.name}
@@ -3163,6 +3222,7 @@ function ParkApp({ isSignedIn }) {
                   }
                 }}
                 worldProgress={worldProgress}
+                profileXp={authSession?.xp ?? 0}
                 world={mergedWorld}
                 acceptedOffer={acceptedOffer}
                 selfId={party?.selfId || null}

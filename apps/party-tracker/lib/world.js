@@ -6,6 +6,8 @@
  * here touches the DOM, storage, or the mesh.
  */
 
+import { exPrizesForRank } from '@party-tracker/shared/rankPrizes.js';
+
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const FADE_DIM_MS = 7 * DAY_MS;
 export const FADE_GONE_MS = 28 * DAY_MS;
@@ -89,6 +91,7 @@ export const SKINS = {
     unlock: { contributions: 1 },
     share: { venues: 3 },
     paint: paint('#C45C4A', '#F4E4C8', '#7EB8D4', '#C8D48A', '#E8C9A0', '#5A2A22'),
+    traits: { landTint: 1.08 },
   },
   handbill: {
     id: 'handbill',
@@ -130,7 +133,8 @@ export const SKINS = {
     label: 'Marquee',
     unlock: { nightQuests: 5 },
     share: { nightQuests: 20 },
-    paint: paint('#FF6B9A', '#120818', '#1A2050', '#1A1028', '#2A1840', '#FFE8F0'),
+    paint: paint('#FF6B9A', '#0A0614', '#1A2050', '#120818', '#2A1840', '#FFE8F0'),
+    traits: { neon: true, landTint: 1.15 },
   },
   haunt: {
     id: 'haunt',
@@ -161,6 +165,7 @@ export const SKINS = {
     unlock: { deviceLessHeight: true, heightQuests: 1 },
     share: { heightQuests: 5 },
     paint: paint('#FF6B6B', '#FFF5D6', '#7EC8FF', '#B8F0A0', '#FFE0A0', '#3A2060'),
+    traits: { markerBoost: 1.12 },
   },
   'sticker-book': {
     id: 'sticker-book',
@@ -218,7 +223,8 @@ export const SKINS = {
     label: 'Pixel tycoon',
     unlock: { fogPct: 25 },
     share: { fogPct: 100 },
-    paint: paint('#5A8A3A', '#3A5A20', '#3A6A8A', '#4A7A28', '#6A5A3A', '#E8F0C8'),
+    paint: paint('#6AAA42', '#2E4A18', '#3A6A8A', '#4A8A28', '#6A5A3A', '#E8F0C8'),
+    traits: { pixel: true },
   },
   'block-park': {
     id: 'block-park',
@@ -287,6 +293,8 @@ export function createProgress({ userId = null } = {}) {
     userId: userId || null,
     wearSkin: null,
     kit: null,
+    fogMapEnabled: false,
+    rankPrizesGranted: [],
     meters: {
       contributions: 0,
       venues: [],
@@ -656,11 +664,114 @@ export function kitForViewer({ kit, viewerInParty }) {
 }
 
 export function mapPaint(id) {
-  if (id === 'day') return { id: 'day', label: 'Trail (light)', ...DAY_PAINT };
-  if (id === 'night') return { id: 'night', label: 'Park Midnight (dark)', ...NIGHT_PAINT };
+  if (id === 'day') return { id: 'day', label: 'Trail (light)', traits: {}, ...DAY_PAINT };
+  if (id === 'night') return { id: 'night', label: 'Park Midnight (dark)', traits: {}, ...NIGHT_PAINT };
   const skin = SKINS[id];
-  if (!skin) return { id: 'night', label: 'Park Midnight (dark)', ...NIGHT_PAINT };
-  return { id: skin.id, label: skin.label, ...skin.paint };
+  if (!skin) return { id: 'night', label: 'Park Midnight (dark)', traits: {}, ...NIGHT_PAINT };
+  return { id: skin.id, label: skin.label, traits: skin.traits || {}, ...skin.paint };
+}
+
+/** Demo / store capture — unlock ship-polish Skins without farming. */
+export function grantShipSkins(progress, { venueId = null, now = Date.now() } = {}) {
+  const meters = { ...progress.meters };
+  meters.contributions = Math.max(meters.contributions || 0, 3);
+  meters.venues = [...new Set([...(meters.venues || []), 'demo-a', 'demo-b', 'demo-c'])];
+  meters.nightQuests = Math.max(meters.nightQuests || 0, 20);
+  meters.deviceLessHeight = true;
+  meters.heightQuests = Math.max(meters.heightQuests || 0, 5);
+  if (venueId) {
+    const fog = meters.fogByVenue?.[venueId] || [];
+    meters.fogByVenue = {
+      ...(meters.fogByVenue || {}),
+      [venueId]: fog.length >= 4 ? fog : ['fog-0', 'fog-1', 'fog-2', 'fog-3'],
+    };
+    meters.venuePlaceCount = {
+      ...(meters.venuePlaceCount || {}),
+      [venueId]: Math.max(meters.venuePlaceCount?.[venueId] || 0, 16),
+    };
+  }
+  return {
+    ...progress,
+    wearSkin: progress.wearSkin || 'postcard',
+    meters,
+  };
+}
+
+/** Bump meters so a Skin's unlock rule is satisfied (Rank ex-prize grants). */
+function meterFloorForSkinUnlock(meters, rule = {}) {
+  const m = { ...meters };
+  if (rule.contributions) m.contributions = Math.max(m.contributions || 0, rule.contributions);
+  if (rule.venues) {
+    const need = rule.venues;
+    const venues = [...(m.venues || [])];
+    while (venues.length < need) venues.push(`rank-venue-${venues.length}`);
+    m.venues = venues;
+  }
+  if (rule.venueGaps) {
+    m.gapByVenue = { ...(m.gapByVenue || {}) };
+    const key = 'rank-grant';
+    m.gapByVenue[key] = Math.max(m.gapByVenue[key] || 0, rule.venueGaps);
+  }
+  if (rule.pathGaps) m.pathGaps = Math.max(m.pathGaps || 0, rule.pathGaps);
+  if (rule.heightQuests) m.heightQuests = Math.max(m.heightQuests || 0, rule.heightQuests);
+  if (rule.nightQuests) m.nightQuests = Math.max(m.nightQuests || 0, rule.nightQuests);
+  if (rule.fogPct) {
+    m.fogByVenue = { ...(m.fogByVenue || {}) };
+    const key = 'rank-grant';
+    const places = m.fogByVenue[key] || [];
+    const need = Math.max(4, Math.ceil((rule.fogPct / 100) * 16));
+    if (places.length < need) {
+      m.fogByVenue[key] = Array.from({ length: need }, (_, i) => `fog-${i}`);
+    }
+    m.venuePlaceCount = { ...(m.venuePlaceCount || {}), [key]: Math.max(m.venuePlaceCount?.[key] || 0, 16) };
+  }
+  return m;
+}
+
+/**
+ * Grant Rank **Ex prizes** (Skins / Kits) once per Profile rank.
+ * @param {object} progress world progress snapshot
+ * @param {string} rank scout | ranger | cartographer | steward
+ */
+export function grantRankExPrizes(progress, rank) {
+  if (!rank || rank === 'visitor') return progress;
+  const granted = new Set(progress.rankPrizesGranted || []);
+  if (granted.has(rank)) return progress;
+  const prizes = exPrizesForRank(rank);
+  if (!prizes.length) {
+    return { ...progress, rankPrizesGranted: [...granted, rank] };
+  }
+  let next = {
+    ...progress,
+    rankPrizesGranted: [...granted, rank],
+    meters: { ...(progress.meters || {}) },
+  };
+  for (const prize of prizes) {
+    if (prize.kind === 'kit' && prize.id && !next.kit) {
+      next = { ...next, kit: prize.id };
+    }
+    if (prize.kind === 'skin' && prize.id) {
+      const skin = SKINS[prize.id];
+      if (skin?.unlock) {
+        next = { ...next, meters: meterFloorForSkinUnlock(next.meters, skin.unlock) };
+      }
+      if (!next.wearSkin) next = { ...next, wearSkin: prize.id };
+    }
+  }
+  return next;
+}
+
+const RANK_EX_PRIZE_ORDER = ['scout', 'ranger', 'cartographer', 'steward'];
+
+/** Grant every Rank **Ex prize** through `rank` (backfill on sign-in). */
+export function syncRankExPrizes(progress, rank) {
+  const i = RANK_EX_PRIZE_ORDER.indexOf(rank);
+  if (i < 0) return progress;
+  let next = progress;
+  for (let j = 0; j <= i; j += 1) {
+    next = grantRankExPrizes(next, RANK_EX_PRIZE_ORDER[j]);
+  }
+  return next;
 }
 
 export function mapThemeCssVars(pack) {
@@ -696,9 +807,15 @@ export function mapThemeCssVars(pack) {
 
 export function applyMapSkin(el, skinId) {
   if (!el?.style) return;
-  const vars = mapThemeCssVars(mapPaint(skinId));
+  const pack = mapPaint(skinId);
+  const vars = mapThemeCssVars(pack);
   for (const [k, v] of Object.entries(vars)) el.style.setProperty(k, v);
-  if (el.dataset) el.dataset.skin = skinId;
+  if (el.dataset) {
+    el.dataset.skin = skinId;
+    el.dataset.skinPixel = pack.traits?.pixel ? '1' : '';
+    el.dataset.skinNeon = pack.traits?.neon ? '1' : '';
+    el.dataset.skinJunior = pack.traits?.markerBoost ? '1' : '';
+  }
 }
 
 export function applyThanksToProgress(progress, world, authorId) {

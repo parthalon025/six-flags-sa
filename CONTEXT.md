@@ -52,6 +52,10 @@ _Avoid_: experience (that **Contribution** kind); points (generic); Member XP; p
 The earned sub-name on a **Profile** granted when **XP** crosses a threshold: Scout (50), Ranger (250), Cartographer (1000), Steward (3000). Shown under the display name — Alice stays Alice, with **Scout** beneath. Visitor (signed in, below 50) has no **Title** yet. Not a roster rename, not a **Member** field, not a party badge.
 _Avoid_: nickname; handle; level; badge (use **Title**); Rank (internal ladder key only)
 
+**Ex prize**:
+An exclusive **Skin** or **Kit** bundled with a **Rank** threshold — granted when **XP** crosses that **Rank**, never bought and never spent. The **Title** is separate; **Ex prizes** are the cosmetics and party chrome listed in the Rank prize catalog (e.g. Scout → Porter cuff **Kit**; Ranger → Postcard **Skin**). Policy lives in `packages/shared/rankPrizes.js`.
+_Avoid_: loot box; store purchase; Member reward
+
 **Rank**:
 Internal ladder key on a **Profile** that selects the **Title** (`visitor` · `scout` · `ranger` · `cartographer` · `steward`). Guests see the **Title**, not the key. Cartographer later unlocks full-ontology Create (Wayfarer) — not this Field Research loop.
 _Avoid_: showing Rank ids in UI (show **Title**); leaderboard; level
