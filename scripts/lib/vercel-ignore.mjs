@@ -66,9 +66,17 @@ export function decideVercelBuild({
     return { build: false, reason: 'gitnexus-index-only — skipping build', files };
   }
   if (isVersionStampOnlyChange(files)) {
+    if (isPreviewEnv(env)) {
+      return {
+        build: false,
+        reason: 'version-stamp-only bump — skipping preview build',
+        files,
+      };
+    }
     return {
-      build: false,
-      reason: 'version-stamp-only bump — skipping build (merge already deployed the app)',
+      build: true,
+      reason:
+        'version-stamp production bump — proceeding (bump push cancels the merge deploy)',
       files,
     };
   }
