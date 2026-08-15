@@ -1,0 +1,17 @@
+---
+description: Always follow Matt Pocock global skills for design, review, refactor, and agent docs.
+alwaysApply: true
+---
+
+# Matt standards — always apply
+
+Read **`docs/agents/matt-standards.md`** at session start for the skill map and repo-specific rules.
+
+## Non-negotiable
+
+- **Global skills only** (`~/.agents/skills`) — never vendor. See `.cursor/rules/matt-pocock-skills.mdc`.
+- **Deep modules** — small interface, testable core. Packages via entry points; automation via `scripts/lib/`.
+- **Scripts over instructions** — policy in `scripts/lib` + JSON; agent docs link, don't restate. See `.cursor/rules/scripts-over-instructions.mdc`.
+- **Before editing** a module seam or reviewing a diff: read the matching global skill (`codebase-design`, `code-review`, `writing-for-agents`, `tdd`, …) from `docs/agents/matt-standards.md`.
+
+When in doubt, read the skill file first — do not improvise a second standard.

@@ -160,3 +160,7 @@ Packages are deep modules — see [packages/README.md](./packages/README.md) bef
 ### Skills lock
 
 Matt Pocock skills are global (`~/.agents/skills`). This repo must not vendor them. `npm run skills:check` asserts `.agents/skills` and `skills-lock.json` are absent. See `docs/agents/skills-lock.md`.
+
+### Matt standards
+
+Always apply the global Matt skills for design, review, refactor, and agent docs. Skill map and repo rules: [docs/agents/matt-standards.md](./docs/agents/matt-standards.md).
