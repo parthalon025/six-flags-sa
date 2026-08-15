@@ -211,4 +211,19 @@ assert.ok(walks.some((w) => w.i === 0));
 assert.ok(walks.some((w) => w.i === 2));
 assert.ok(!walks.some((w) => w.i === 1));
 
+const tallHall = [
+  [0, 0],
+  [20, 0],
+  [20, 20],
+  [0, 20],
+];
+const railPastRoof = [
+  [31, 10],
+  [50, 10],
+];
+assert.equal(buildingHitsTrack(tallHall, railPastRoof, 10), false, 'ground pad misses a rail 11m off the wall');
+const afterRoof = assembleIsoMeshes([tallHall, stallBeside], [railPastRoof]);
+assert.equal(afterRoof.buildings.length, 1, 'lifted rail through the roof still drops the hall');
+assert.equal(afterRoof.buildings[0].i, 1);
+
 console.log('iso-tycoon.test: ok');

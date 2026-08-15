@@ -1641,10 +1641,11 @@ function ParkMap({
             spec={customMap}
             buildings={isoMeshes.buildings}
             tracks={isoMeshes.tracks}
+            highlightedTrackIds={litTrack}
           />
 
           {/* the selected ride's own track, so the red spaghetti has an owner */}
-          {litTrack.length > 0 && (
+          {!iso && litTrack.length > 0 && (
             <>
               <g className="lyr-trackglow">
                 {litTrack.map((i) => {

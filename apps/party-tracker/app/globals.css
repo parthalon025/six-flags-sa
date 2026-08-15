@@ -1519,6 +1519,10 @@ html[data-skin-pixel="1"] .isoTrack {
   stroke-linecap: square;
   stroke-linejoin: miter;
 }
+html[data-skin-pixel="1"] .isoCoasterSelected .isoTrack {
+  stroke: #F6A43A;
+  stroke-width: 3.4;
+}
 html[data-skin-neon="1"] .lyr-coaster path {
   filter: drop-shadow(0 0 2px var(--track));
 }

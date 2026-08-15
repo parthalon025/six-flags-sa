@@ -92,6 +92,54 @@ function segDist(a, b, c, d) {
   );
 }
 
+function convexHull(pts) {
+  const p = pts.map((q) => ({ x: q.x, y: q.y })).sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower = [];
+  for (const q of p) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop();
+    lower.push(q);
+  }
+  const upper = [];
+  for (let i = p.length - 1; i >= 0; i -= 1) {
+    const q = p[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
+    upper.push(q);
+  }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+function liftedPts(line, stepM, heightAmp) {
+  const pts = [];
+  let travelled = 0;
+  for (let i = 0; i < line.length; i += 1) {
+    if (i > 0) travelled += dist2(line[i - 1], line[i]);
+    const h = 3 + heightAmp * Math.abs(Math.sin(travelled / 28));
+    const g = isoLocal(line[i][0], line[i][1]);
+    pts.push({ x: g.x, y: g.y + h });
+  }
+  return pts;
+}
+
+function distToHull(pt, hull) {
+  const ring = hull.map((p) => [p.x, p.y]);
+  if (pointInRing(pt.x, pt.y, ring)) return 0;
+  return distToRing([pt.x, pt.y], ring);
+}
+
+/** True when a lifted rail punches through the extruded hall on screen. */
+export function buildingHitsLiftedTrack(ring, line, heightM, padM = 8, lift = {}) {
+  if (!ring || ring.length < 3 || !line || line.length < 2) return false;
+  const foot = ring.map(([x, y]) => isoLocal(x, y));
+  const roof = foot.map((p) => ({ x: p.x, y: p.y + heightM }));
+  const hull = convexHull([...foot, ...roof]);
+  if (hull.length < 3) return false;
+  const { stepM = 6, heightAmp = 9 } = lift;
+  return liftedPts(line, stepM, heightAmp).some((pt) => distToHull(pt, hull) <= padM);
+}
+
 /** True when a stall and a rail share ground — they must not both draw. */
 export function buildingHitsTrack(ring, line, padM = 10) {
   if (!ring || ring.length < 3 || !line || line.length < 2) return false;
@@ -302,10 +350,18 @@ export function assembleIsoMeshes(
   const buildings = [];
   (buildingRings || []).forEach((ring, i) => {
     if (!ring || ring.length < 3) return;
-    if (pickedLines.some((line) => buildingHitsTrack(ring, line) || buildingCoversTrack(ring, line))) {
+    const heightM = buildingHeightM(ring);
+    if (
+      pickedLines.some(
+        (line) =>
+          buildingHitsTrack(ring, line) ||
+          buildingCoversTrack(ring, line) ||
+          buildingHitsLiftedTrack(ring, line, heightM, 8, { stepM, heightAmp }),
+      )
+    ) {
       return;
     }
-    buildings.push({ ...extrudeBuilding(ring, buildingHeightM(ring)), i });
+    buildings.push({ ...extrudeBuilding(ring, heightM), i });
   });
   buildings.sort((a, b) => b.depth - a.depth);
   return {
