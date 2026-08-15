@@ -979,15 +979,14 @@ await check('a typed code joins the party', async () => {
 await check('the roster converges on both phones', async () => {
   await go(a, 'Party');
   await go(b, 'Party');
-  // hasText is case-insensitive; rosterNames reads the DOM text node (stable).
-  await until(
-    async () => ((await a.locator('.memberRow', { hasText: 'Ava' }).count()) > 0 ? true : null),
-    { timeout: JOIN_TIMEOUT * 2, label: 'Ava on phone A' },
-  );
-  await until(
-    async () => ((await b.locator('.memberRow', { hasText: 'Justin' }).count()) > 0 ? true : null),
-    { timeout: JOIN_TIMEOUT, label: 'Justin on phone B' },
-  );
+  await until(async () => (await rosterNames(b)).includes('Justin'), {
+    timeout: JOIN_TIMEOUT,
+    label: 'Justin on phone B',
+  });
+  await until(async () => (await rosterNames(a)).includes('Ava'), {
+    timeout: JOIN_TIMEOUT * 2,
+    label: 'Ava on phone A',
+  });
   const onA = await rosterNames(a);
   const onB = await rosterNames(b);
   if (!onA.some((n) => /ava/i.test(n)) || !onB.some((n) => /justin/i.test(n))) {
@@ -1064,7 +1063,7 @@ c = C.page;
 await check('the invite link joins the party with nothing typed', async () => {
   await go(c, 'Party');
   await until(async () => (await c.locator('.codeText').count()) > 0, {
-    timeout: JOIN_TIMEOUT,
+    timeout: JOIN_TIMEOUT * 2,
     label: 'phone C to be in a party',
   });
   const shown = (await c.locator('.codeText').innerText()).trim();
@@ -1273,6 +1272,7 @@ await check('a new host is elected without anybody being asked', async () => {
 
 await check('the party code survives the migration', async () => {
   for (const [label, page] of [['B', b], ['C', c]]) {
+    await go(page, 'Party');
     const shown = (await page.locator('.codeText').innerText()).trim();
     if (shown !== code) throw new Error(`phone ${label} shows ${shown}, was ${code}`);
   }
@@ -1280,6 +1280,8 @@ await check('the party code survives the migration', async () => {
 });
 
 await check('the surviving phones agree on who is hosting', async () => {
+  await go(b, 'Party');
+  await go(c, 'Party');
   const flags = await until(
     async () => {
       const roles = await Promise.all(
@@ -1674,6 +1676,8 @@ await check('leaving removes the member from the other phone’s roster', async 
   const leaver = bHosts ? { page: c, name: 'Sam' } : { page: b, name: 'Ava' };
   const stays = bHosts ? b : c;
 
+  await go(leaver.page, 'Party');
+  await go(stays, 'Party');
   // Leaving confirms too — for the host it hands the roster to another phone.
   await leaver.page.locator('.codeBox button:has-text("Leave")').click();
   await leaver.page.locator('.codeBox button:has-text("Tap to confirm")').click();

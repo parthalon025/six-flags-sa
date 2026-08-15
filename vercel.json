@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["iad1"],
-  "fluid": true,
   "framework": "nextjs",
   "buildCommand": "npx turbo run build --filter=@party-tracker/app",
   "outputDirectory": "apps/party-tracker/.next",
