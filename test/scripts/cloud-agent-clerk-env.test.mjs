@@ -11,6 +11,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CLERK_ENV_DEFAULTS,
+  CLERK_REQUIRED_SECRET_KEYS,
+  PARKBOUND_CLOUD_ENV_URL,
+  clerkCloudSecretsStatus,
   clerkEnvFromProcess,
   formatEnvFile,
   writePartyTrackerClerkEnv,
@@ -24,8 +27,24 @@ assert.match(
   /node scripts\/cloud-agent-clerk-env\.mjs/,
   'Cloud install must materialize Clerk env for party-tracker',
 );
+assert.match(
+  env.start,
+  /node scripts\/cloud-agent-clerk-env\.mjs/,
+  'Cloud start must refresh Clerk env on every agent boot',
+);
+
+assert.equal(PARKBOUND_CLOUD_ENV_URL.includes('d8097811-95a0-11f1-ba66-0e7d0216e441'), true);
+assert.deepEqual(CLERK_REQUIRED_SECRET_KEYS, [
+  'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+  'CLERK_SECRET_KEY',
+]);
 
 assert.deepEqual(clerkEnvFromProcess({}), CLERK_ENV_DEFAULTS);
+assert.deepEqual(clerkCloudSecretsStatus({}).missing, CLERK_REQUIRED_SECRET_KEYS);
+assert.equal(clerkCloudSecretsStatus({
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_x',
+  CLERK_SECRET_KEY: 'sk_test_y',
+}).ok, true);
 assert.equal(
   clerkEnvFromProcess({ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_x' }).NEXT_PUBLIC_CLERK_SIGN_IN_URL,
   CLERK_ENV_DEFAULTS.NEXT_PUBLIC_CLERK_SIGN_IN_URL,
@@ -35,6 +54,7 @@ const scratch = mkdtempSync(join(tmpdir(), 'clerk-env-'));
 try {
   const skipped = writePartyTrackerClerkEnv(scratch, {});
   assert.equal(skipped.wrote, false);
+  assert.deepEqual(skipped.missing, CLERK_REQUIRED_SECRET_KEYS);
 
   const wrote = writePartyTrackerClerkEnv(scratch, {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_x',
