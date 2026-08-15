@@ -1,21 +1,21 @@
 /**
- * Exclusive Profile prizes at Rank thresholds (ADR: XP → Title ladder).
+ * Rank threshold prizes at XP → Title ladder (ADR: XP → Title).
  *
- * **Ex prize**: a cosmetic or Kit granted when XP crosses a Rank — not bought,
- * not spent. Titles live in questScore.RANK_REWARDS; this catalog lists the
- * extra Skin / Kit unlocks bundled with each Rank.
+ * **Rank prize**: a **Skin** or **Kit** granted when **XP** crosses a **Rank** —
+ * not bought, not spent. Titles live in questScore.RANK_REWARDS; this catalog
+ * lists the extra cosmetics bundled with each Rank.
  */
 
 import { RANK_LADDER, rankReward } from './questScore.js';
 
-/** @typedef {'skin'|'kit'|'note'} ExPrizeKind */
+/** @typedef {'skin'|'kit'|'note'} RankPrizeKind */
 
-/** @typedef {{ kind: ExPrizeKind, id?: string, label: string, blurb?: string }} ExPrize */
+/** @typedef {{ kind: RankPrizeKind, id?: string, label: string, blurb?: string }} RankPrize */
 
-/** @typedef {{ rank: string, xp: number, title: string | null, prizes: ExPrize[] }} RankPrizeRow */
+/** @typedef {{ rank: string, xp: number, title: string | null, prizes: RankPrize[] }} RankPrizeRow */
 
 /** Full ladder for UI and tests — one row per Rank above Visitor. */
-export const RANK_EX_PRIZE_CATALOG = Object.freeze([
+export const RANK_PRIZE_CATALOG = Object.freeze([
   {
     rank: 'scout',
     xp: 50,
@@ -87,16 +87,24 @@ export const RANK_EX_PRIZE_CATALOG = Object.freeze([
   },
 ]);
 
-const BY_RANK = Object.fromEntries(RANK_EX_PRIZE_CATALOG.map((row) => [row.rank, row]));
+const BY_RANK = Object.fromEntries(RANK_PRIZE_CATALOG.map((row) => [row.rank, row]));
 
 /**
- * Exclusive prizes granted when the Profile first reaches `rank`.
+ * Rank prizes granted when the Profile first reaches `rank`.
  * @param {string} rank
- * @returns {ExPrize[]}
+ * @returns {RankPrize[]}
  */
-export function exPrizesForRank(rank) {
+export function rankPrizesForRank(rank) {
   return BY_RANK[rank]?.prizes || [];
 }
+
+/** @deprecated use rankPrizesForRank */
+export function exPrizesForRank(rank) {
+  return rankPrizesForRank(rank);
+}
+
+/** @deprecated use RANK_PRIZE_CATALOG */
+export const RANK_EX_PRIZE_CATALOG = RANK_PRIZE_CATALOG;
 
 /**
  * Full catalog rows with Visitor row for settings UI.
@@ -138,7 +146,7 @@ export function rankPrizeCatalog() {
  */
 export function rankUpRewardLine(rank) {
   const title = rankReward(rank).title;
-  const prizes = exPrizesForRank(rank).filter((p) => p.kind !== 'note');
+  const prizes = rankPrizesForRank(rank).filter((p) => p.kind !== 'note');
   if (!title && prizes.length === 0) return null;
   const parts = [];
   if (title) parts.push(title);

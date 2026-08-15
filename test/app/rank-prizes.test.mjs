@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Rank Ex prize catalog — shared policy + world grants.
+ * Rank prize catalog — shared policy + world grants.
  *
  *   node test/app/rank-prizes.test.mjs
  */
@@ -22,8 +22,8 @@ async function check(name, fn) {
 }
 
 const {
-  RANK_EX_PRIZE_CATALOG,
-  exPrizesForRank,
+  RANK_PRIZE_CATALOG,
+  rankPrizesForRank,
   rankPrizeCatalog,
   rankUpRewardLine,
   nextRankPrizeRow,
@@ -31,11 +31,11 @@ const {
 
 const world = await import('../../apps/party-tracker/lib/world.js');
 
-console.log('\nrank ex prizes\n');
+console.log('\nrank prizes\n');
 
 await check('catalog lists every Rank above Visitor', () => {
-  assert.equal(RANK_EX_PRIZE_CATALOG.length, 4);
-  assert.deepEqual(RANK_EX_PRIZE_CATALOG.map((r) => r.rank), ['scout', 'ranger', 'cartographer', 'steward']);
+  assert.equal(RANK_PRIZE_CATALOG.length, 4);
+  assert.deepEqual(RANK_PRIZE_CATALOG.map((r) => r.rank), ['scout', 'ranger', 'cartographer', 'steward']);
   return true;
 });
 
@@ -47,7 +47,7 @@ await check('rankPrizeCatalog includes Visitor row', () => {
 });
 
 await check('scout grants Porter cuff Kit', () => {
-  const prizes = exPrizesForRank('scout');
+  const prizes = rankPrizesForRank('scout');
   assert.equal(prizes.length, 1);
   assert.equal(prizes[0].kind, 'kit');
   assert.equal(prizes[0].id, 'porter-cuff');
@@ -55,13 +55,13 @@ await check('scout grants Porter cuff Kit', () => {
 });
 
 await check('ranger grants Postcard Skin', () => {
-  const prizes = exPrizesForRank('ranger');
+  const prizes = rankPrizesForRank('ranger');
   assert.equal(prizes[0].kind, 'skin');
   assert.equal(prizes[0].id, 'postcard');
   return true;
 });
 
-await check('rankUpRewardLine joins Title and ex prizes', () => {
+await check('rankUpRewardLine joins Title and Rank prizes', () => {
   const line = rankUpRewardLine('cartographer');
   assert.match(line, /Cartographer/);
   assert.match(line, /Drafting/);

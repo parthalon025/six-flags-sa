@@ -6,7 +6,7 @@
  * here touches the DOM, storage, or the mesh.
  */
 
-import { exPrizesForRank } from '@party-tracker/shared/rankPrizes.js';
+import { rankPrizesForRank } from '@party-tracker/shared/rankPrizes.js';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const FADE_DIM_MS = 7 * DAY_MS;
@@ -223,7 +223,19 @@ export const SKINS = {
     label: 'Pixel tycoon',
     unlock: { fogPct: 25 },
     share: { fogPct: 100 },
-    paint: paint('#6AAA42', '#2E4A18', '#3A6A8A', '#4A8A28', '#6A5A3A', '#E8F0C8'),
+    /* RCT Classic: lush grass, grey stone paths, tan stalls, terracotta roofs. */
+    paint: {
+      ...paint('#C8C8C0', '#4FA83A', '#3AA8D0', '#6BC04A', '#E8C878', '#2A2418'),
+      wood: '#2E7A28',
+      groundEdge: '#3A8A28',
+      midway: '#C8C8C0',
+      midwayCase: '#8A8A80',
+      structure: '#E8C878',
+      structureEdge: '#C45C38',
+      lot: '#A8A090',
+      lotEdge: '#787060',
+      backOfHouse: '#C4B898',
+    },
     traits: { pixel: true },
   },
   'block-park': {
@@ -729,7 +741,7 @@ function meterFloorForSkinUnlock(meters, rule = {}) {
 }
 
 /**
- * Grant Rank **Ex prizes** (Skins / Kits) once per Profile rank.
+ * Grant Rank prizes (Skins / Kits) once per Profile rank.
  * @param {object} progress world progress snapshot
  * @param {string} rank scout | ranger | cartographer | steward
  */
@@ -737,7 +749,7 @@ export function grantRankExPrizes(progress, rank) {
   if (!rank || rank === 'visitor') return progress;
   const granted = new Set(progress.rankPrizesGranted || []);
   if (granted.has(rank)) return progress;
-  const prizes = exPrizesForRank(rank);
+  const prizes = rankPrizesForRank(rank);
   if (!prizes.length) {
     return { ...progress, rankPrizesGranted: [...granted, rank] };
   }
@@ -761,15 +773,15 @@ export function grantRankExPrizes(progress, rank) {
   return next;
 }
 
-const RANK_EX_PRIZE_ORDER = ['scout', 'ranger', 'cartographer', 'steward'];
+const RANK_PRIZE_ORDER = ['scout', 'ranger', 'cartographer', 'steward'];
 
-/** Grant every Rank **Ex prize** through `rank` (backfill on sign-in). */
+/** Grant every Rank prize through `rank` (backfill on sign-in). */
 export function syncRankExPrizes(progress, rank) {
-  const i = RANK_EX_PRIZE_ORDER.indexOf(rank);
+  const i = RANK_PRIZE_ORDER.indexOf(rank);
   if (i < 0) return progress;
   let next = progress;
   for (let j = 0; j <= i; j += 1) {
-    next = grantRankExPrizes(next, RANK_EX_PRIZE_ORDER[j]);
+    next = grantRankExPrizes(next, RANK_PRIZE_ORDER[j]);
   }
   return next;
 }

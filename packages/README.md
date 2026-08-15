@@ -36,7 +36,7 @@ Entry points are the root files listed in `package.json` `exports`:
 - `mapSymbols.js`
 - `schemas.js`
 - `questScore.js`
-- `rankPrizes.js` — Rank **Ex prize** catalog (Skins / Kits at XP thresholds)
+- `rankPrizes.js` — Rank prize catalog (Skins / Kits at XP thresholds)
 - `compass.js` — facing-relative Compass marks + Watch settings (ADR-0011)
 
 Import them as `@party-tracker/shared/ontology.js` (and the other export paths). The phone may re-export the same modules from `apps/party-tracker/lib/` so existing relative imports keep working — do not copy the implementation.

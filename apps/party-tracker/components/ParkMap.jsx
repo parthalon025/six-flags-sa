@@ -28,6 +28,7 @@ import { Glyph, PoiMarker } from './MapSymbols';
 import { identityOf, samePlace } from '@/lib/venue/ids';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
+import { markerDeclutterPriority, markerWantsLabel } from '@/lib/mapVisual';
 import { localViewTransform, stableCullView } from '@/lib/mapViewport';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
@@ -302,11 +303,13 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
         </g>
       )}
 
-      <g className="lyr-slide">
-        {world.slide.map((f) => (
-          <path key={`sl${f.i}`} d={f.d} />
-        ))}
-      </g>
+      {!lowZoom && (
+        <g className="lyr-slide">
+          {world.slide.map((f) => (
+            <path key={`sl${f.i}`} d={f.d} />
+          ))}
+        </g>
+      )}
       {showDetail && (
         <>
           <g className="lyr-coastershadow">
@@ -368,6 +371,10 @@ function ParkMap({
   onThankMark = null,
   /** Queue pins and path crumbs from Overlay — not extra ride Places. */
   overlayPins = [],
+  /** Next Plan Place id — promoted in declutter below Go/selection. */
+  planNextPlaceId = null,
+  /** Soft exploration fog filter from mapVisual.fogMapStyle. */
+  fogFilter = null,
 }) {
   const palette = paletteFor(theme);
   // The venue's own district tints, where it has hand-picked any.
@@ -1157,6 +1164,14 @@ function ParkMap({
     reserve(puck?.lat ?? me?.lat, puck?.lng ?? me?.lng, 15);
     (members || []).forEach((m) => reserve(m.lat, m.lng, 17));
     if (meet) reserve(meet.lat, meet.lng, 16);
+    const routePts = route?.points;
+    if (routePts?.length > 1) {
+      const step = Math.max(1, Math.floor(routePts.length / 14));
+      for (let ri = 0; ri < routePts.length; ri += step) {
+        const [sx, sy] = at(routePts[ri][0], routePts[ri][1]);
+        grid.occupy(boxAround(sx, sy, 7, 7), true);
+      }
+    }
 
     const ranked = [];
     pois.forEach((p, i) => {
@@ -1169,21 +1184,36 @@ function ParkMap({
       const barred = state === 'not';
       const isSel = samePlace(selected, p);
       const isNav = Boolean(routeTargetName) && (placeId === routeTargetName || p.n === routeTargetName);
-      const rank = sym.rank + (barred ? 0.25 : 0);
-      const priority = isSel ? -1000 : isNav ? -900 : rank * 1000 + i;
-      ranked.push({ p, sx, sy, sym, state, isSel, isNav, priority });
+      const isPlanNext =
+        Boolean(planNextPlaceId) && (placeId === planNextPlaceId || p.i === planNextPlaceId);
+      const priority = markerDeclutterPriority({
+        isSelected: isSel,
+        isNav,
+        isPlanNext,
+        rank: sym.rank,
+        barred,
+        index: i,
+      });
+      ranked.push({ p, sx, sy, sym, state, isSel, isNav, isPlanNext, priority });
     });
     ranked.sort((a, b) => a.priority - b.priority);
 
     ranked.forEach((item) => {
       const r = sizeAtZoom(item.sym.r, zPlan);
-      const pinned = item.isSel || item.isNav;
+      const pinned = item.isSel || item.isNav || item.isPlanNext;
       if (!grid.claim(boxAround(item.sx, item.sy, r + 1.5, r + 1.5), pinned)) return;
 
       const placeId = identityOf(item.p);
       const wasShown = shownLabels.has(placeId);
       const wanted =
-        (pinned && !item.isSel) || labelWantedAtZoom(item.sym.rank, zPlan, wasShown);
+        markerWantsLabel({
+          isSelected: item.isSel,
+          isNav: item.isNav,
+          isPlanNext: item.isPlanNext,
+          rank: item.sym.rank,
+          zPlan,
+          wasShown,
+        }) || (pinned && !item.isSel);
       let labelSpot = -1;
       if (wanted && !item.isSel) {
         const halfW = textWidth(item.p.n, POI_FONT) / 2 + 3;
@@ -1207,6 +1237,7 @@ function ParkMap({
         state: item.state,
         isSel: item.isSel,
         isNav: item.isNav,
+        isPlanNext: item.isPlanNext,
         r,
         labelSpot,
         faded: item.state === 'not',
@@ -1227,6 +1258,8 @@ function ParkMap({
     eligibility,
     selected,
     routeTargetName,
+    planNextPlaceId,
+    route?.points,
     members,
     meet,
     me,
@@ -1398,7 +1431,16 @@ function ParkMap({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onWheel={onWheel}
-      style={{ cursor: armMeet ? 'crosshair' : 'grab' }}
+      style={{
+        cursor: armMeet ? 'crosshair' : 'grab',
+        ...(fogFilter
+          ? {
+              '--mapFogSaturate': String(fogFilter.saturate),
+              '--mapFogBright': String(fogFilter.brightness),
+            }
+          : null),
+      }}
+      data-fog={fogFilter ? 'soft' : undefined}
     >
       <svg width={size.w} height={size.h} className="mapSvg">
         <defs>
@@ -1408,6 +1450,17 @@ function ParkMap({
             <stop offset="0%" style={{ stopColor: 'var(--poolEdge)', stopOpacity: 0.34 }} />
             <stop offset="55%" style={{ stopColor: 'var(--waterFill)', stopOpacity: 0 }} />
           </linearGradient>
+          <pattern id="rctGrass" patternUnits="userSpaceOnUse" width="36" height="36">
+            <rect width="36" height="36" fill="#4FA83A" />
+            <rect width="18" height="18" fill="#5BB844" />
+            <rect x="18" y="18" width="18" height="18" fill="#5BB844" />
+            <rect y="18" width="18" height="18" fill="#459832" />
+          </pattern>
+          <pattern id="rctWater" patternUnits="userSpaceOnUse" width="32" height="32">
+            <rect width="32" height="32" fill="#3AA8D0" />
+            <rect width="16" height="16" fill="#4AB8DC" />
+            <rect x="16" y="16" width="16" height="16" fill="#2E98C0" />
+          </pattern>
           <radialGradient id="meGlow">
             <stop offset="0%" style={{ stopColor: 'var(--blue)', stopOpacity: 0.28 }} />
             <stop offset="100%" style={{ stopColor: 'var(--blue)', stopOpacity: 0 }} />
@@ -1558,11 +1611,12 @@ function ParkMap({
           return (
             <g
               key={pin.id}
-              className={`overlayPin overlayPin-${pin.kind || 'fact'}`}
+              className={`overlayPin overlayPin-${pin.kind || 'fact'} fieldResearch`}
               data-overlay-pin={pin.kind || 'fact'}
               transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)})`}
             >
               <title>{pin.label || pin.kind || 'Overlay'}</title>
+              <circle className="overlayHalo" r={path ? 11 : 14} />
               <circle r={path ? 5 : 8} />
             </g>
           );

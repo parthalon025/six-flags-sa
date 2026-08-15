@@ -315,6 +315,15 @@ await check('preset Signs cannot be ride-down copy', () => {
   return true;
 });
 
+await check('Pixel tycoon paint is RCT grass and grey stone paths', () => {
+  const pack = world.mapPaint('pixel-tycoon');
+  assert.equal(pack.traits.pixel, true);
+  assert.equal(pack.ground, '#4FA83A');
+  assert.equal(pack.midway, '#C8C8C0');
+  assert.equal(pack.structureEdge, '#C45C38');
+  return true;
+});
+
 await check('every Skin catalog id has a map paint pack', () => {
   for (const id of world.SKIN_IDS) {
     const pack = world.mapPaint(id);
@@ -444,7 +453,7 @@ await check('local world save round-trips progress and accepted Offer', () => {
   return true;
 });
 
-await check('Rank Scout Ex prize grants Porter cuff Kit', () => {
+await check('Rank Scout prize grants Porter cuff Kit', () => {
   let p = progress();
   p = world.grantRankExPrizes(p, 'scout');
   assert.equal(p.kit, 'porter-cuff');
