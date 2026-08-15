@@ -1029,14 +1029,18 @@ function ParkMap({
     });
     const coasterLines = [];
     const coasterBboxes = [];
-    (data.coaster || []).forEach((f) => {
+    (data.coaster || []).forEach((f, i) => {
       const r = Array.isArray(f) ? f : f?.r;
-      coasterLines.push(ringToLocalMercator(r, origin));
+      coasterLines.push({
+        r: ringToLocalMercator(r, origin),
+        n: Array.isArray(f) ? '' : f?.n,
+        i,
+      });
       coasterBboxes.push(mercatorBbox(r));
     });
     const assembled = assembleIsoMeshes(buildingRings, coasterLines, {
       maxBuildings: 800,
-      maxTracks: 200,
+      maxTracks: 80,
     });
     return {
       buildings: assembled.buildings.map((b) => ({ ...b, bbox: buildingBboxes[b.i] })),

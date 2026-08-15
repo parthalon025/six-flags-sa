@@ -59,6 +59,153 @@ export function buildingCoversTrack(ring, line, frac = 0.35) {
   return inside / line.length >= frac;
 }
 
+function orient(ax, ay, bx, by, cx, cy) {
+  return (by - ay) * (cx - bx) - (bx - ax) * (cy - by);
+}
+
+function segsCross(a, b, c, d) {
+  const o1 = orient(a[0], a[1], b[0], b[1], c[0], c[1]);
+  const o2 = orient(a[0], a[1], b[0], b[1], d[0], d[1]);
+  const o3 = orient(c[0], c[1], d[0], d[1], a[0], a[1]);
+  const o4 = orient(c[0], c[1], d[0], d[1], b[0], b[1]);
+  return o1 * o2 < 0 && o3 * o4 < 0;
+}
+
+/** True when a stall and a rail share ground — they must not both draw. */
+export function buildingHitsTrack(ring, line) {
+  if (!ring || ring.length < 3 || !line || line.length < 2) return false;
+  for (const pt of line) {
+    if (pointInRing(pt[0], pt[1], ring)) return true;
+  }
+  for (let i = 0; i < line.length - 1; i += 1) {
+    for (let e = 0; e < ring.length; e += 1) {
+      if (segsCross(line[i], line[i + 1], ring[e], ring[(e + 1) % ring.length])) return true;
+    }
+  }
+  return false;
+}
+
+function lineLength(line) {
+  let n = 0;
+  for (let i = 1; i < (line || []).length; i += 1) n += dist2(line[i - 1], line[i]);
+  return n;
+}
+
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  if (len2 < 1e-9) return Math.hypot(px - ax, py - ay);
+  let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+
+function distToLine(pt, line) {
+  let best = Infinity;
+  for (let i = 1; i < line.length; i += 1) {
+    best = Math.min(best, distToSeg(pt[0], pt[1], line[i - 1][0], line[i - 1][1], line[i][0], line[i][1]));
+  }
+  return best;
+}
+
+function nearFrac(from, to, nearM) {
+  if (!from.length || !to.length) return 0;
+  let n = 0;
+  for (const p of from) {
+    if (distToLine(p, to) <= nearM) n += 1;
+  }
+  return n / from.length;
+}
+
+function linesNear(a, b, nearM) {
+  return Math.max(nearFrac(a, b, nearM), nearFrac(b, a, nearM)) >= 0.55;
+}
+
+function asCoaster(item, i) {
+  if (Array.isArray(item)) return { r: item, n: '', i };
+  return { r: item?.r || [], n: item?.n || '', i: item?.i ?? i };
+}
+
+function closePt(a, b, m) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]) <= m;
+}
+
+function tryJoin(chain, piece, joinM) {
+  const c0 = chain[0];
+  const c1 = chain[chain.length - 1];
+  const p0 = piece[0];
+  const p1 = piece[piece.length - 1];
+  const rev = piece.slice().reverse();
+  if (closePt(c1, p0, joinM)) return chain.concat(piece.slice(1));
+  if (closePt(c1, p1, joinM)) return chain.concat(rev.slice(1));
+  if (closePt(c0, p1, joinM)) return piece.concat(chain.slice(1));
+  if (closePt(c0, p0, joinM)) return rev.concat(chain.slice(1));
+  return null;
+}
+
+function collapseGroup(bucket, { nearM, joinM }) {
+  const leftover = [...bucket].sort((a, b) => b.len - a.len);
+  const chains = [];
+  while (leftover.length) {
+    const seed = leftover.shift();
+    let chain = seed.r.slice();
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let i = leftover.length - 1; i >= 0; i -= 1) {
+        const rec = leftover[i];
+        if (linesNear(rec.r, chain, nearM)) {
+          leftover.splice(i, 1);
+          continue;
+        }
+        const joined = tryJoin(chain, rec.r, joinM);
+        if (!joined) continue;
+        chain = joined;
+        leftover.splice(i, 1);
+        changed = true;
+      }
+    }
+    chains.push({ r: chain, n: seed.n, i: seed.i, len: lineLength(chain) });
+  }
+  return chains;
+}
+
+/**
+ * OSM stores many ways per ride (rails, splits). Merge connected pieces
+ * into one ribbon and drop a rail that hugs another.
+ */
+export function pickCoasterLines(items, { nearM = 8, joinM = 14 } = {}) {
+  const recs = (items || []).map((item, i) => {
+    const c = asCoaster(item, i);
+    return { ...c, len: lineLength(c.r) };
+  }).filter((c) => c.r && c.r.length >= 2);
+
+  const named = new Map();
+  const unnamed = [];
+  for (const rec of recs) {
+    const key = String(rec.n || '').trim().toLowerCase();
+    if (!key) {
+      unnamed.push(rec);
+      continue;
+    }
+    const bucket = named.get(key) || [];
+    bucket.push(rec);
+    named.set(key, bucket);
+  }
+
+  const kept = [];
+  for (const bucket of named.values()) {
+    kept.push(...collapseGroup(bucket, { nearM, joinM }));
+  }
+  unnamed.sort((a, b) => b.len - a.len);
+  for (const rec of unnamed) {
+    if (kept.some((k) => linesNear(rec.r, k.r, nearM))) continue;
+    kept.push(rec);
+  }
+  return kept;
+}
+
 function pathFromPts(pts, close) {
   if (!pts.length) return '';
   let d = '';
@@ -107,15 +254,18 @@ export function assembleIsoMeshes(
   coasterLines,
   { maxBuildings = 220, maxTracks = 40, stepM = 6, heightAmp = 9 } = {},
 ) {
+  const picked = pickCoasterLines(coasterLines);
   const tracks = [];
-  (coasterLines || []).forEach((line, i) => {
-    if (!line || line.length < 2) return;
-    tracks.push({ ...liftCoaster(line, { stepM, heightAmp }), i });
+  picked.forEach((rec) => {
+    tracks.push({ ...liftCoaster(rec.r, { stepM, heightAmp }), i: rec.i });
   });
+  const pickedLines = picked.map((rec) => rec.r);
   const buildings = [];
   (buildingRings || []).forEach((ring, i) => {
     if (!ring || ring.length < 3) return;
-    if ((coasterLines || []).some((line) => buildingCoversTrack(ring, line))) return;
+    if (pickedLines.some((line) => buildingHitsTrack(ring, line) || buildingCoversTrack(ring, line))) {
+      return;
+    }
     buildings.push({ ...extrudeBuilding(ring, buildingHeightM(ring)), i });
   });
   buildings.sort((a, b) => b.depth - a.depth);

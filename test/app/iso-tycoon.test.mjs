@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import {
   assembleIsoMeshes,
   buildingHeightM,
+  buildingHitsTrack,
   extrudeBuilding,
   isoInverse,
   isoLocal,
   liftCoaster,
+  pickCoasterLines,
   stackIsoItems,
 } from '../../apps/party-tracker/lib/isoTycoon.js';
 
@@ -77,13 +79,18 @@ const far = [
   [22, 22],
   [20, 22],
 ];
-const packed = assembleIsoMeshes([near, far], [square, square, square], {
+const midTrack = [
+  [8, 8],
+  [12, 8],
+  [16, 8],
+];
+const packed = assembleIsoMeshes([near, far], [midTrack, midTrack, midTrack], {
   maxBuildings: 10,
-  maxTracks: 2,
+  maxTracks: 8,
 });
 assert.equal(packed.buildings[0].i, 1, 'far buildings paint first');
 assert.equal(packed.buildings[1].i, 0);
-assert.equal(packed.tracks.length, 2, 'track cap after lift');
+assert.equal(packed.tracks.length, 1, 'duplicate OSM rails collapse to one line');
 assert.ok(packed.buildings[0].foot.d.includes('M'));
 assert.equal(typeof ride.depth, 'number');
 
@@ -117,5 +124,44 @@ const stacked = stackIsoItems(
 assert.equal(stacked[0].type, 'building', 'farther item paints first');
 assert.equal(stacked[1].type, 'track');
 assert.equal(typeof culled.tracks[0].depth, 'number');
+
+const longBeast = [
+  [0, 0],
+  [40, 0],
+  [80, 0],
+];
+const shortBeast = [
+  [0, 1],
+  [40, 1],
+];
+const farBeast = [
+  [200, 0],
+  [240, 0],
+  [280, 0],
+];
+const picked = pickCoasterLines([
+  { r: shortBeast, n: 'The Beast', i: 0 },
+  { r: longBeast, n: 'The Beast', i: 1 },
+  { r: farBeast, n: 'The Beast', i: 2 },
+]);
+assert.equal(picked.length, 2, 'parallel rail dropped; far stretch kept');
+assert.ok(picked.some((p) => p.i === 1));
+assert.ok(picked.some((p) => p.i === 2));
+assert.ok(!picked.some((p) => p.i === 0));
+
+const clip = [
+  [8, 8],
+  [12, 8],
+  [12, 12],
+  [8, 12],
+];
+const grazes = [
+  [0, 10],
+  [20, 10],
+];
+assert.equal(buildingHitsTrack(clip, grazes), true);
+const afterHit = assembleIsoMeshes([clip, stallBeside], [grazes]);
+assert.equal(afterHit.buildings.length, 1, 'building that the rail crosses is dropped');
+assert.equal(afterHit.buildings[0].i, 1);
 
 console.log('iso-tycoon.test: ok');
