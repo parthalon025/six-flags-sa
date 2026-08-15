@@ -27,9 +27,9 @@ Disney does not ship one park app. It ships **one official wallet per resort**, 
 | Official wait times, showtimes, character locations | **Wins when the signal is up** | Party **Ride reports** + weather outlook; no official feed (by design) |
 | See *yourself* on a GPS map | Yes (approximate; needs data) | Yes, plus offline drawn map |
 | See *the Party* on the map, named by **Place** | **No official live family GPS** | **Yes — this is the product** |
-| Height for *this* kid / this clump | Filter by a number (e.g. 42″) | **Eligibility** from roster heights + **With adult** |
+| Height for *this* kid / this clump | Not a listed store feature; planDisney describes a ″ filter | **Eligibility** from roster heights + **With adult** |
 | Device-less child on the roster | Family & Friends / managed profiles for *booking* | Device-less **Member** + **Managed Guest** |
-| Walk there, named by what you can see | “Get Directions” (WDW/DLR; needs data) | On-device A*, landmark turns, course-up **Go**, works offline |
+| Walk there, named by what you can see | MDE store: step-by-step (needs data). DLR: GPS map, no official “directions” claim | On-device A*, landmark turns, course-up **Go**, works offline |
 | Facing-relative “where is Dad?” | No | **Compass** (phone + Watch) |
 | Meet / NEED HELP | No | **Meet** + pulsing NEED HELP |
 | Improve the map | No (guests cannot edit park truth) | **Side Quests** → **Contribution** / **Overlay** |
@@ -58,11 +58,12 @@ Disney does not ship one park app. It ships **one official wallet per resort**, 
 
 ### Features, not separate apps
 
-- **Disney MagicMobile** — wallet pass *inside* My Disney Experience / Disneyland. [Official](https://disneyworld.disney.go.com/guest-services/magic-mobile).
+- **Disney MagicMobile** — wallet pass *inside* My Disney Experience only. Official DLR copy does **not** publish MagicMobile (entry is MagicBand+ / tickets in the Disneyland app). [WDW](https://disneyworld.disney.go.com/guest-services/magic-mobile).
 - **Disney Genie** (complimentary itinerary) — *inside* MDE / Disneyland. [Official](https://disneyworld.disney.go.com/genie/).
 - **Lightning Lane Multi / Single / Premier Pass** — purchased and redeemed in MDE / Disneyland. [WDW](https://disneyworld.disney.go.com/lightning-lane-passes/), [DLR](https://disneyland.disney.go.com/lightning-lane-passes/).
 - **Disney PhotoPass / Memory Maker / PhotoPass+** — in-app IAP in MDE / Disneyland.
-- **Virtual queues** — in MDE / Disneyland (official DLR app page lists them).
+- **Virtual queues** — in MDE / Disneyland. Fetch 2026-08-15: WDW listed **none available**; DLR listed **World of Color – ONE**. [WDW](https://disneyworld.disney.go.com/guest-services/virtual-queue/), [DLR](https://disneyland.disney.go.com/guest-services/virtual-queue/).
+- **Merchandise Mobile Checkout** — in MDE and Disneyland (not a Shop Disney Parks app). [WDW](https://disneyworld.disney.go.com/guest-services/merchandise-mobile-checkout/), [DLR](https://disneyland.disney.go.com/guest-services/merchandise-mobile-checkout/).
 
 ### Out of scope (not a theme-park day)
 
@@ -93,9 +94,12 @@ Official listing + help claim:
 - PhotoPass / Memory Maker IAP: One Day **$84.99**, 30 Day **$209.99**, Mural of Memories **$9.99** ([App Store](https://apps.apple.com/us/app/my-disney-experience/id547436543)).
 - Car locator at select lots (store copy).
 - **Family & Friends** — assign tickets, book dining / Lightning Lane for people you manage; share itinerary. Not live location ([legal](https://disneyworld.disney.go.com/park-experience-terms-conditions/)).
-- Height: map **filter by requirement** (e.g. 42″), not a family roster ([planDisney](https://plandisney.disney.go.com/question/list-rides-walt-disney-world-height-requirements-plan-609134/)).
+- Height: **not listed** as an app feature in official MDE store/help copy. planDisney panelists describe a map filter by requirement (e.g. 42″) — not a family roster ([planDisney](https://plandisney.disney.go.com/question/list-rides-walt-disney-world-height-requirements-plan-609134/)).
 - Beacons + location for wait-time quality; waits “may not update accurately” without a strong signal ([App Store](https://apps.apple.com/us/app/my-disney-experience/id547436543)).
 - Optional offline cache of *some* data; purchases and live ops need a connection.
+- **US-only, English-only** ([WDW mobile apps](https://disneyworld.disney.go.com/guest-services/my-disney-experience/mobile-apps/)).
+- In-app Cast Member chat; merchandise mobile checkout; **bus arrival times** with Direct-to-Room ([WDW mobile apps](https://disneyworld.disney.go.com/guest-services/my-disney-experience/mobile-apps/)).
+- Store versions 2026-08-15: iOS **8.23.2** (2026-08-12), Android **8.23.2** (2026-08-14).
 
 **Lightning Lane (2026):** Multi Pass (up to 3 pre-picks, then one-at-a-time), Single Pass, Premier Pass — all in the app. Photo perks bundled with Multi Pass. [Official](https://disneyworld.disney.go.com/lightning-lane-passes/). Prices vary by date/park; displayed in-app (typically ~21 days of pricing). This is a **paid skip-the-line product**, not a family map.
 
@@ -106,10 +110,13 @@ Official listing + help claim:
 Official DLR page adds, beyond the WDW twin ([DLR app](https://disneyland.disney.go.com/guest-services/download-disneyland-mobile-app/)):
 
 - Contactless tickets / park reservations; Magic Key discounts.
-- Lightning Lane Multi / Single / Premier; virtual queues.
+- Lightning Lane Multi / Single / Premier. Official Multi Pass **starts at $34 USD per ticket per day** ([DLR Lightning Lane](https://disneyland.disney.go.com/lightning-lane-passes/)).
+- Virtual queues: **World of Color – ONE** as of 2026-08-15 ([DLR Virtual Queues](https://disneyland.disney.go.com/guest-services/virtual-queue/)).
 - Mobile Order, dining reservations, walk-up list, mobile check-in.
 - Merchandise **mobile checkout**.
-- **In-app Cast Member chat**.
+- **In-app Cast Member chat** (intake 24h; Cast replies 7:00 a.m.–9:00 p.m. PT per [DLR press](https://disneyexperiences.com/disneyland-press/fact/maximize-a-disneyland-resort-visit-with-the-disneyland-app-and-digital-technology/)).
+- Park reservation **required** with admission, same park, same date, ages 3+ ([experience updates](https://disneyland.disney.go.com/experience-updates/)).
+- **MagicMobile is not published** for DLR — entry is MagicBand+ / tickets in the app. MagicBand / MagicBand 2 are **not supported** at DLR.
 - Character locations; PhotoPass+ IAP (**$24.99** / 1 day, **$14.99** digital download).
 - Hotel check-in / digital key.
 - GPS maps, waits, showtimes, park hours, accessibility copy.
@@ -205,7 +212,7 @@ Legend: **Y** = official listing/help claims it · **P** = partial / filter / bo
 | IP queue games / AR | Lenses | — | **Y** | Hero Training | Photo | Frozen AR | — | **No — stay fact quests** |
 | Hotel key / folio | Y | Y | — | Y | JP only | Call | Y | **n/a** |
 | Photo commerce | Y | Y | — | — | Y | — | — | **n/a** |
-| Cast chat | — | Y | — | — | — | — | — | **n/a** |
+| Cast chat | Y | Y | — | — | — | — | — | **n/a** |
 | Car pin | Select lots | — | — | — | — | — | — | **Y (private to this phone)** |
 | Campground / pitches | — | — | — | — | — | — | — | **Y (Cedar Point)** |
 | Weather → ride outlook | — | Forecast waits | — | — | — | — | — | **Y (never claimed as ops)** |
@@ -217,12 +224,12 @@ Legend: **Y** = official listing/help claims it · **P** = partial / filter / bo
 These are **operator privileges**. Guests will keep the official app for them. Competing is a trap.
 
 1. **Admission media** — tickets, MagicBand+, MagicMobile, park reservations.
-2. **Paid queue products** — Lightning Lane, Premier Access, Standby Pass, Entry Request. WDW Multi Pass is a **$30–$40/day-class** upsell (price varies; shown in-app), not a map feature.
+2. **Paid queue products** — Lightning Lane, Premier Access, Standby Pass, Entry Request. DLR Multi Pass **starts at $34/ticket/day** (official); WDW prices vary by park/date and are shown in-app (typically ~21 days). Not a map feature.
 3. **Dining inventory** — reservations, Mobile Order, walk-up lists, Meal Plan.
 4. **PhotoPass commerce** — Memory Maker $85–$210; DLR PhotoPass+ $25/day.
 5. **Hotel** — check-in, digital key, folio.
 6. **Official character / show schedule** — Disney’s own entertainment system.
-7. **Cast chat / merchandise checkout** — DLR-only ops.
+7. **Cast chat / merchandise checkout** — both US resort apps.
 8. **IP play** — Play Disney Parks, Frozen AR, Galaxy’s Edge datapad.
 
 Park Bound’s data-sources guide already states the correct posture: *“Operating status — nobody’s but your own party’s. There is no ride-status feed here and the app never claims one.”* ([`../guide/data-sources.md`](../guide/data-sources.md))
@@ -241,7 +248,7 @@ Life360 sells this gap at WDW because the official app does not fill it.
 
 ### 2. **Eligibility** for the clump, not a height filter
 
-Disney lets you filter attractions by “42 inches.” Park Bound computes **Eligibility** from every **Member** on this phone’s **Subgroup** (including device-less kids) × attraction rules, paints the map alarm-red for the most restrictive person, and lists **Companion** when a grown-up is required. Unset height means not constrained — adults do not fade the map.
+Official MDE/DLR store copy does **not** list a height layer. planDisney describes filtering attractions by a requirement (e.g. 42″). Park Bound computes **Eligibility** from every **Member** on this phone’s **Subgroup** (including device-less kids) × attraction rules, paints the map alarm-red for the most restrictive person, and lists **Companion** when a grown-up is required. Unset height means not constrained — adults do not fade the map.
 
 ### 3. Device-less kids as first-class **Members**
 
@@ -371,6 +378,8 @@ Do not sell Disney-going families a glossary term that is not on the phone.
 - [My Disney Experience — App Store](https://apps.apple.com/us/app/my-disney-experience/id547436543)
 - [WDW mobile apps](https://disneyworld.disney.go.com/guest-services/my-disney-experience/mobile-apps/)
 - [WDW MagicMobile](https://disneyworld.disney.go.com/guest-services/magic-mobile)
+- [WDW merchandise checkout](https://disneyworld.disney.go.com/guest-services/merchandise-mobile-checkout/)
+- [WDW virtual queues](https://disneyworld.disney.go.com/guest-services/virtual-queue/)
 - [WDW access the magic](https://disneyworld.disney.go.com/guest-services/access-the-magic/)
 - [WDW Lightning Lane](https://disneyworld.disney.go.com/lightning-lane-passes/)
 - [WDW Disney Genie](https://disneyworld.disney.go.com/genie/)
@@ -378,6 +387,10 @@ Do not sell Disney-going families a glossary term that is not on the phone.
 - [Disneyland — App Store](https://apps.apple.com/us/app/disneyland/id1022164656)
 - [DLR official app](https://disneyland.disney.go.com/guest-services/download-disneyland-mobile-app/)
 - [DLR Lightning Lane](https://disneyland.disney.go.com/lightning-lane-passes/)
+- [DLR virtual queues](https://disneyland.disney.go.com/guest-services/virtual-queue/)
+- [DLR merchandise checkout](https://disneyland.disney.go.com/guest-services/merchandise-mobile-checkout/)
+- [DLR experience updates](https://disneyland.disney.go.com/experience-updates/)
+- [DLR press — app / digital](https://disneyexperiences.com/disneyland-press/fact/maximize-a-disneyland-resort-visit-with-the-disneyland-app-and-digital-technology/)
 - [DLR Mobile Order](https://disneyland.disney.go.com/guest-services/mobile-food-orders/)
 - [Play Disney Parks — DLR](https://disneyland.disney.go.com/guest-services/play-app/)
 - [Play Disney Parks — App Store](https://apps.apple.com/us/app/play-disney-parks/id1325935439)
