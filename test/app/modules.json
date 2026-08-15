@@ -61,7 +61,8 @@
         "test/builder/**",
         "apps/party-tracker/public/venues/**",
         "apps/party-tracker/lib/venueIndex.js",
-        "data/venues/**"
+        "data/venues/**",
+        "fastlane/metadata/ios/routing_app_coverage.geojson"
       ],
       "pulls": ["venues"]
     },
@@ -164,7 +165,8 @@
         "apps/party-tracker/lib/camping.js",
         "apps/party-tracker/lib/venueCompare.js",
         "apps/party-tracker/app/api/admin/**",
-        "packages/venue-builder/data/venues/**"
+        "packages/venue-builder/data/venues/**",
+        "fastlane/metadata/ios/routing_app_coverage.geojson"
       ]
     },
     {

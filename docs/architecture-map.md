@@ -248,7 +248,7 @@ apps/party-tracker/lib/venueIndex.js            ← generated (API route static 
 | `venues:attractions` | Entrances/exits evidence → publish into pois |
 | `venues:trace` | Georeference a park PDF/map → features |
 | `venues:overrides` | Re-apply overrides without refetching OSM |
-| `venues:reindex` | Manifest + index only |
+| `venues:reindex` | Manifest + index + App Store routing coverage |
 | `venues:report` | Checklist of what a venue carries |
 | `venues:audit` / `research` | Gaps, briefs, capability hints |
 

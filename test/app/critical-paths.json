@@ -83,6 +83,13 @@
       "check": "a new host is elected without anybody being asked"
     },
     {
+      "id": "venues-store-coverage",
+      "slice": "Navigate",
+      "user_action": "Every shipped venue sits inside App Store routing coverage",
+      "suite": "functional",
+      "check": "App Store routing coverage includes every shipped venue"
+    },
+    {
       "id": "offline-map",
       "slice": "Navigate",
       "user_action": "Map still draws offline",

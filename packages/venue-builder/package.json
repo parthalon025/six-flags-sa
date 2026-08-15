@@ -8,7 +8,8 @@
   },
   "exports": {
     "./compare.js": "./src/compare.mjs",
-    "./paths.js": "./src/paths.mjs"
+    "./paths.js": "./src/paths.mjs",
+    "./routing-coverage.js": "./src/routing-coverage.mjs"
   },
   "bin": {
     "build-venue": "./bin/build-venue.mjs",

@@ -36,7 +36,7 @@ FASTLANE_METADATA_ONLY=true bundle exec fastlane ios metadata
 | **App Review → Last Name** | text | `review_information/last_name.txt` |
 | **App Review → Phone** | E.164 | `review_information/phone_number.txt` (add file when ready) |
 | **App Review → Sign-in required** | off | Leave unchecked — guest works; no `demo_user.txt` |
-| **Version → Routing App Coverage File** | one MultiPolygon | `routing_app_coverage.geojson` (`npm run store:scaffold-metadata`) |
+| **Version → Routing App Coverage File** | one MultiPolygon | `routing_app_coverage.geojson` (`npm run venues:reindex`) |
 | **Version → Export compliance** | exempt HTTPS | `../../store-declarations.json` `appleExportCompliance` — do **not** upload a document |
 | **Version → In-app purchases** | none on this version | `../../store-declarations.json` `appleInAppPurchases` — do **not** attach `parkbound_profile_annual` |
 | **Version → App Store Version Release** | manual | Choose **Manually release this version** (`IOS_AUTOMATIC_RELEASE=false`) |

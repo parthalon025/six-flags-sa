@@ -209,7 +209,7 @@ Runs on **ubuntu** — uploads `fastlane/metadata/ios/` via `bundle exec fastlan
 
 Native `android/` and `ios/` marketing versions are stamped from the same file via `npm run cap:sync` (`scripts/stamp-native-version.mjs`).
 
-Refresh listing identifier fields (name, subtitle, categories, URLs, copyright) and regenerate `routing_app_coverage.geojson` from shipped venue bounds with `npm run store:scaffold-metadata` (see `fastlane/metadata/ios/SECTIONS.md`).
+Refresh listing identifier fields (name, subtitle, categories, URLs, copyright) from `fastlane/store-identifiers.json` with `npm run store:scaffold-metadata`. That also regenerates `routing_app_coverage.geojson`; `npm run venues:reindex` is the source of truth after a venue add (see `fastlane/metadata/ios/SECTIONS.md`).
 
 Trigger manually: **Actions → iOS App Store metadata → Run workflow**. Pushes to `main` that touch `fastlane/metadata/ios/**` or `fastlane/app_previews/**` also run this workflow.
 

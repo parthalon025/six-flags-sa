@@ -83,7 +83,7 @@ Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` pro
 4. **Phased release** — in App Store Connect after approval, roll out gradually to production users.
 5. **Expedited review** — only for critical production bugs; request in Connect, do not rely on it.
 6. **Review notes** — keep `fastlane/metadata/ios/review_information/notes.txt` accurate (guest path, no demo password, location, IAP not in this binary).
-7. **Routing coverage** — `fastlane/metadata/ios/routing_app_coverage.geojson` (one MultiPolygon). Regenerate with `npm run store:scaffold-metadata` after adding a venue.
+7. **Routing coverage** — `fastlane/metadata/ios/routing_app_coverage.geojson` (one MultiPolygon). `npm run venues:reindex` after adding a venue; `npm run store:scaffold-metadata` also regenerates it.
 
 ### Checklist — beta (TestFlight)
 

@@ -14,6 +14,7 @@ import {
   PAD_DEG,
   ROUTING_COVERAGE_REL,
   coverageFromVenues,
+  pointInCoverage,
   routingCoverageIssues,
 } from '../../scripts/lib/routing-app-coverage.mjs';
 
@@ -57,6 +58,13 @@ assert.ok(Math.max(...lngs) > ki.bounds.east, 'pad east');
 assert.ok(Math.min(...lats) < ki.bounds.south, 'pad south');
 assert.ok(Math.max(...lats) > ki.bounds.north, 'pad north');
 assert.ok(Math.abs(Math.min(...lngs) - (ki.bounds.west - PAD_DEG)) < 1e-9);
+
+assert.equal(
+  pointInCoverage(coverage, ki.center),
+  true,
+  'Kings Island center is inside its padded box',
+);
+assert.equal(pointInCoverage(coverage, { lat: 0, lng: 0 }), false);
 
 assert.deepEqual(
   routingCoverageIssues({ type: 'Polygon', coordinates: [] }),

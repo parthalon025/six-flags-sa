@@ -20,6 +20,10 @@ npm run venues:build -- --catalog --from 1 --to 10   # batch: loop the universal
 npm run venues:build -- --pipeline --place "Cedar Point, Sandusky, Ohio" --locality "Sandusky, Ohio"
 ```
 
+`npm run venues:reindex` rebuilds `manifest.json`, `venueIndex.js`, and the App Store
+routing coverage file (`fastlane/metadata/ios/routing_app_coverage.geojson`) from whatever
+venue bundles are already on disk. A new park is not done until that GeoJSON lists it.
+
 ### Building the same park again
 
 Every build writes `packages/venue-builder/data/venues/<id>/recipe.json` inside the venue package — the box,

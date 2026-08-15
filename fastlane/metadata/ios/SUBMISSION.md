@@ -48,7 +48,7 @@ Version string comes from **`apps/party-tracker/package.json`** (same as TestFli
 
 ## Routing App Coverage File (required on the version)
 
-Navigation listing. Upload `routing_app_coverage.geojson` (regenerate with `npm run store:scaffold-metadata`). Apple accepts **one MultiPolygon** — padded boxes of the shipped venues. Fastlane `deliver` sends `routing_app_coverage:` from that file.
+Navigation listing. Upload `routing_app_coverage.geojson`. Apple accepts **one MultiPolygon** — padded boxes of the shipped venues. The venue builder stamps this file on `npm run venues:reindex` / `venues:build` (also `npm run store:scaffold-metadata`). Fastlane `deliver` sends `routing_app_coverage:` from that file.
 
 ## Export compliance (set on submit)
 

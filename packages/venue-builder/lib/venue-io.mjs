@@ -7,6 +7,9 @@
  *   public/venues/<id>.gaps.json   Gaps the builder invented; the phone ranks them
  *   public/venues/manifest.json    every venue's name, centre and bounds
  *
+ * Reindex also stamps the App Store routing coverage MultiPolygon
+ * (`fastlane/metadata/ios/routing_app_coverage.geojson`) from those bounds.
+ *
  * Builder *input* for each venue lives in its own package directory:
  *
  *   packages/venue-builder/data/venues/<id>/
@@ -34,6 +37,7 @@ import {
   VENUE_DIR,
 } from '../src/paths.mjs';
 import { shippedGapsForVenue } from './ship-gaps.mjs';
+import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
 
 export { APP_ROOT, BUILDER_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
 /** @deprecated use MONO_ROOT */
@@ -189,6 +193,7 @@ export function reindex({ preferredDefault } = {}) {
   };
   writeJson(MANIFEST_FILE, manifest, true);
   writeIndex(manifest);
+  writeRoutingCoverage(venues);
   return manifest;
 }
 
