@@ -1,0 +1,40 @@
+# Matt standards — always apply
+
+Engineering work in this repo follows the **global** Matt Pocock skills under `~/.agents/skills`. Do not vendor copies here — see [skills-lock.md](./skills-lock.md).
+
+## Always
+
+Before you design, refactor, review, or add agent-facing docs:
+
+1. **Read the matching global skill** (full `SKILL.md` in `~/.agents/skills/<name>/`). Do not rely on memory alone.
+2. **Use the vocabulary** from `codebase-design` — module, interface, depth, seam, adapter, leverage, locality. Packages and `scripts/lib/` are both deep modules.
+3. **Put policy in scripts**, not agent prose — see `.cursor/rules/scripts-over-instructions.mdc`. One pointer beats a duplicated paragraph.
+4. **Run `code-review` smells** when reviewing a branch or PR (documented repo rules override the Fowler baseline).
+5. **Prefer TDD** (`tdd` skill) when adding or changing behaviour that already has tests nearby.
+
+## Skill map
+
+| When you are… | Read this global skill |
+|---------------|------------------------|
+| Designing or splitting a module / package / `scripts/lib` seam | `codebase-design` |
+| Reviewing a branch, PR, or diff since a ref | `code-review` |
+| Debugging a reproducible failure | `diagnosing-bugs` |
+| Refactoring across call sites | `tdd` + `codebase-design` |
+| Editing `AGENTS.md`, `CLAUDE.md`, cursor rules, or skills | `writing-for-agents` |
+| Resolving domain terms or ADR gaps | `domain-modeling` / `grilling` → `CONTEXT.md` + `docs/adr/` |
+| Git / worktree / commit hygiene | `git-guardrails-claude-code` |
+| Merge conflicts | `resolving-merge-conflicts` |
+
+## Deep modules here
+
+**Packages** — entry points only; `npm run lint:boundaries`. See [packages/README.md](../../packages/README.md).
+
+**Scripts** — pure decision logic in `scripts/lib/*.mjs`, thin CLIs in `scripts/*.mjs` / `scripts/*.sh`. Shared lists in JSON (`app-paths.json`, `version-stamp-paths.json`). Test through exported functions (`test/scripts/*.test.mjs`).
+
+**Apps** — follow existing package and test conventions; UI changes need `npm run test:validate-ui` or the relevant module from `test/app/modules.json`.
+
+## Never
+
+- Vendor Matt skills under `.agents/skills/` or commit `skills-lock.json`.
+- Duplicate script logic in `AGENTS.md` / cursor rules when a `scripts/lib` module can own it.
+- Invent empty `CONTEXT.md` or ADR stubs — grow domain docs when terms are actually resolved.

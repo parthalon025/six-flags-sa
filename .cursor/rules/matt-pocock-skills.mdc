@@ -9,5 +9,6 @@ alwaysApply: true
 - Never add `skills-lock.json` here. Upgrade globally with `node scripts/install-global-skills.mjs`.
 - Never commit `agent/` or `.claude/skills/<matt-skill>/` junctions/copies from the installer; keep gitnexus skills under `.claude/skills/gitnexus/` only.
 - `npm run skills:check` asserts this repo has no vendored Matt trees. See `docs/agents/skills-lock.md`.
+- **Always follow Matt standards** — read `docs/agents/matt-standards.md` and the matching global skill before design/review/refactor. See `.cursor/rules/matt-standards.mdc`.
 - Issue tracker, triage labels, and domain layout are configured in `docs/agents/` — engineering skills read those files.
 - Grow domain language via `/grill-with-docs` into root `CONTEXT.md` and `docs/adr/`; do not invent empty stubs.
