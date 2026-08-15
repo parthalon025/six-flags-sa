@@ -7,7 +7,7 @@
  *   runPreMergeVertical({ baseRef, skipBrowser, cwd })
  *
  * CLI:
- *   node scripts/ci/pre-merge-vertical.mjs [--base origin/main] [--skip-browser]
+ *   node scripts/ci/pre-merge-vertical.mjs [--base origin/main] [--skip-browser] [--no-stamp]
  *   npm run test:pre-merge-vertical
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -22,6 +22,12 @@ import {
   startProductionServer,
   waitForHealth,
 } from './party-tracker-ui.mjs';
+import {
+  buildLocalCiContext,
+  readLocalCiPass,
+  shouldSkipLocalPreMerge,
+  writeLocalCiPass,
+} from '../lib/local-ci-pass.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -80,8 +86,16 @@ function runValidateUiChanged(baseRef, cwd = root) {
 export async function runPreMergeVertical({
   baseRef = 'origin/main',
   skipBrowser = false,
+  noStamp = false,
   cwd = root,
 } = {}) {
+  const context = buildLocalCiContext({ baseRef, cwd });
+  const existing = readLocalCiPass(cwd);
+  if (shouldSkipLocalPreMerge(existing, context, { skipBrowser })) {
+    console.log('pre-merge-vertical: local CI pass stamp covers this tree — skipping');
+    return 0;
+  }
+
   for (const args of STATIC_NPM_STEPS) {
     console.log(`\npre-merge-vertical: npm ${args.join(' ')}`);
     const code = runNpmStep(args, cwd);
@@ -90,12 +104,18 @@ export async function runPreMergeVertical({
 
   if (skipBrowser) {
     console.log('pre-merge-vertical: browser vertical skipped (--skip-browser)');
+    if (!noStamp) {
+      writeLocalCiPass({ context, browserVertical: false }, cwd);
+    }
     return 0;
   }
 
   const files = gitChangedFiles(baseRef, cwd);
   if (!needsBrowserVertical(files)) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
+    if (!noStamp) {
+      writeLocalCiPass({ context, browserVertical: false }, cwd);
+    }
     return 0;
   }
 
@@ -103,6 +123,9 @@ export async function runPreMergeVertical({
   startProductionServer({ root: cwd });
   await waitForHealth();
   await runValidateUiChanged(baseRef, cwd);
+  if (!noStamp) {
+    writeLocalCiPass({ context, browserVertical: true }, cwd);
+  }
   return 0;
 }
 
@@ -110,7 +133,8 @@ async function main(argv = process.argv.slice(2)) {
   const baseIdx = argv.indexOf('--base');
   const baseRef = baseIdx >= 0 ? argv[baseIdx + 1] : 'origin/main';
   const skipBrowser = argv.includes('--skip-browser');
-  const code = await runPreMergeVertical({ baseRef, skipBrowser });
+  const noStamp = argv.includes('--no-stamp');
+  const code = await runPreMergeVertical({ baseRef, skipBrowser, noStamp });
   if (code !== 0) process.exit(code);
   console.log('\npre-merge-vertical: ok');
 }

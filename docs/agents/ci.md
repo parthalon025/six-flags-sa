@@ -10,7 +10,8 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `gate-tests.mjs` | `runGateScriptTests()` | Gate job — runs manifest |
 | `stage-version-stamps.mjs` | `stageVersionStamps()` | Bump workflow — `git add` from `version-stamp-paths.json` |
 | `party-tracker-ui.mjs` | `unpackBuildArtifact()`, `waitForHealth()` | Playwright jobs — unpack artifact + health wait |
-| `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical |
+| `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
+| `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Stamp after local vertical; skip GitHub UI jobs when stamp matches |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 
@@ -28,6 +29,8 @@ npm run test:pre-merge-vertical
 | Browser vertical | When the branch diff selects UI modules: start app + `test:validate-ui:changed` |
 
 CI-only / docs-only branches skip the browser phase automatically. Use `--skip-browser` only when Playwright cannot run (document why in the PR).
+
+After a successful run, `scripts/ci/local-ci-pass.json` records the tree and module selection. Commit that file with your branch so GitHub Actions can skip the expensive Playwright jobs when the stamp still matches. Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored and CI runs the UI matrix. Use `--no-stamp` to validate without writing the file.
 
 ## Test app (`.github/workflows/test-app.yml`)
 
@@ -49,6 +52,7 @@ Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run te
 | Gate — script invariants | `node scripts/ci/gate-tests.mjs` then `node scripts/gitnexus-ci.mjs` |
 | Gate — README gallery | `node test/app/readme-shots-check.mjs` |
 | Module selection | `node test/app/select-modules.mjs` |
+| Local CI pass check | `node scripts/ci/local-ci-pass.mjs check` |
 | Boundaries | `npm run lint:boundaries` |
 | Unit-ish layers | `npm run test:builder`, `npm run test:coverage-contract` |
 | UI unpack / start | `node scripts/ci/party-tracker-ui.mjs unpack\|start` |

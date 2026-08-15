@@ -48,6 +48,7 @@ jobs:
       ui_matrix: ${{ steps.mods.outputs.ui_matrix }}
       modules: ${{ steps.mods.outputs.modules }}
       full_suite: ${{ steps.mods.outputs.full_suite }}
+      skip_ui: ${{ steps.local_pass.outputs.skip_ui }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,6 +81,17 @@ jobs:
             node test/app/readme-shots-check.mjs --base "origin/$BASE_REF"
           else
             node test/app/readme-shots-check.mjs --base origin/main
+          fi
+
+      - name: Local CI pass (skip GitHub UI when stamped)
+        id: local_pass
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          ANY_UI="${{ steps.mods.outputs.any_ui }}"
+          if [ -n "$BASE_REF" ]; then
+            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI"
+          else
+            node scripts/ci/local-ci-pass.mjs check --base origin/main --any-ui "$ANY_UI"
           fi
 
       - name: Module selection summary
@@ -171,7 +183,7 @@ jobs:
   app-build:
     name: Build app
     needs: select
-    if: needs.select.outputs.any_ui == 'true'
+    if: needs.select.outputs.any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -203,7 +215,7 @@ jobs:
   ui:
     name: UI · ${{ matrix.module }}
     needs: [select, app-build]
-    if: needs.select.outputs.any_ui == 'true'
+    if: needs.select.outputs.any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -246,7 +258,7 @@ jobs:
   visual:
     name: Visual shots (soft)
     needs: [select, app-build]
-    if: needs.select.outputs.any_ui == 'true'
+    if: needs.select.outputs.any_ui == 'true' && needs.select.outputs.skip_ui != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     continue-on-error: true
