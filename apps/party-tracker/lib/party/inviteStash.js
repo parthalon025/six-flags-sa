@@ -4,12 +4,30 @@
  *
  * Kept out of `partyRuntime.js` so the invite landing page does not pull the
  * whole party runtime (WebRTC / Bluetooth / host service) into its first load.
+ *
+ * Read does not clear — the map page may remount (App Router /join → /) before
+ * GPS is ready. Clear only after joinParty succeeds so a remount can retry.
  */
 
 export const PENDING_INVITE_KEY = 'ki-pending-invite';
 
+function parsePending(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && parsed.payload) {
+      return {
+        payload: String(parsed.payload),
+        name: typeof parsed.name === 'string' ? parsed.name.trim() : '',
+      };
+    }
+  } catch {
+    /* legacy bare string */
+  }
+  return { payload: raw, name: '' };
+}
+
 /**
- * Read and clear the invite /join left behind, if there is one.
+ * Read the invite /join left behind, if there is one (does not clear).
  * Payload shapes:
  *   - legacy string: raw invite hash or code
  *   - JSON `{ payload, name }`: invite plus optional display name from /join
@@ -19,21 +37,19 @@ export function takePendingInvite() {
   try {
     const raw = window.sessionStorage.getItem(PENDING_INVITE_KEY);
     if (!raw) return null;
-    window.sessionStorage.removeItem(PENDING_INVITE_KEY);
-    try {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && parsed.payload) {
-        return {
-          payload: String(parsed.payload),
-          name: typeof parsed.name === 'string' ? parsed.name.trim() : '',
-        };
-      }
-    } catch {
-      /* legacy bare string */
-    }
-    return { payload: raw, name: '' };
+    return parsePending(raw);
   } catch {
     return null;
+  }
+}
+
+/** Drop the stash after joinParty succeeds (or the visitor abandons). */
+export function clearPendingInvite() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(PENDING_INVITE_KEY);
+  } catch {
+    /* private mode */
   }
 }
 

@@ -58,6 +58,7 @@ import {
   view as locationView,
 } from '@/lib/location';
 import { newMemberId } from '@/lib/core/ids';
+import { clearPendingInvite } from '@/lib/party/inviteStash';
 import { mapDisplayPosition } from '@/lib/gps/display';
 import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
@@ -1057,6 +1058,8 @@ function ParkApp({ clerkLoaded, isSignedIn }) {
         if (cancelled) return;
         pendingInviteRef.current = null;
         setPendingInvite(null);
+        // Clear stash only after success — remounts must be able to re-read it.
+        clearPendingInvite();
         selectTabRef.current('party');
         showToastRef.current(
           snap?.code

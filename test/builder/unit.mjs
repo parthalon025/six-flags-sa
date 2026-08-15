@@ -7171,6 +7171,43 @@ await check('Clerk provider can mount with only the publishable key', () => {
   return true;
 });
 
+const {
+  clearPendingInvite,
+  stashPendingInvite,
+  takePendingInvite,
+  PENDING_INVITE_KEY,
+} = await import('../../apps/party-tracker/lib/party/inviteStash.js');
+
+await check('pending invite survives a read so /join remounts can retry', () => {
+  const store = new Map();
+  globalThis.window = {
+    sessionStorage: {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => {
+        store.set(k, String(v));
+      },
+      removeItem: (k) => {
+        store.delete(k);
+      },
+    },
+  };
+  try {
+    assert.equal(stashPendingInvite('#abc', 'Sam'), true);
+    assert.equal(store.has(PENDING_INVITE_KEY), true);
+    const first = takePendingInvite();
+    assert.equal(first?.payload, '#abc');
+    assert.equal(first?.name, 'Sam');
+    // Read must not clear — App Router remounts / before GPS is ready.
+    const second = takePendingInvite();
+    assert.equal(second?.payload, '#abc');
+    clearPendingInvite();
+    assert.equal(takePendingInvite(), null);
+  } finally {
+    delete globalThis.window;
+  }
+  return true;
+});
+
 /* ------------------------------------------------------------- app version */
 
 const { APP_BUILT, APP_VERSION, bumpPatchVersion, bumpVersion, compareVersions, isNewerBuild, isNewerVersion, parseVersion, releaseKindFromMessages } = await import('../../apps/party-tracker/lib/version.js');
