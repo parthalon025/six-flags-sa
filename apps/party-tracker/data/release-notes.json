@@ -288,5 +288,11 @@
     "items": [
       "fix: surface privacy link and refresh store listing screenshots"
     ]
+  },
+  "1.13.0": {
+    "title": "What's new",
+    "items": [
+      "feat: post-merge version matrix with deploy poll"
+    ]
   }
 }
