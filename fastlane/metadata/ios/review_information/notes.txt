@@ -1,15 +1,19 @@
-Park Bound loads the live web app from parkbound.kurat0r.ai inside the native shell.
+Park Bound loads the live web app from https://parkbound.kurat0r.ai inside the native Capacitor shell.
 
-Guest review (no account): tap Continue as guest → allow Location → pick Kings Island (or any shipped Venue) → use the map and guest paths.
+SIGN-IN: Sign-in is not required. Leave "Sign-in required" unchecked. There is no email/password account.
+Guest review: tap Continue as guest → allow Location → pick Kings Island (or any shipped Venue) → walk guest paths.
+Profile (optional): Sign in with Apple or Google from the startup gate or Me tab. Reviewers may use their own Apple ID.
 
-Profile review: sign in with Apple or Google from the startup gate or Me tab. No email/password login.
+PARTY: create or join with a six-character code, or Invite (QR/link) from Me. Location is required to finish joining.
 
-Party review: on a second device, create or join with a six-character code, or use Invite (QR/link) from Me. Location permission is required to finish joining — that is intentional for in-park coordination.
+ROUTING: in-park walking directions at shipped US venues only (Kings Island, Cedar Point, Six Flags Fiesta Texas, Big Kahuna's). Upload routing_app_coverage.geojson — one MultiPolygon of those venue boxes.
 
-Side Quests / Contributions require a signed-in Profile. Live ride reports in a Party work with a display name only.
+ENCRYPTION: HTTPS/TLS only — exempt from export documentation. ITSAppUsesNonExemptEncryption is false. Do not upload CCATS; skip App Encryption Documentation.
+
+IAP: Download is Free. Do not attach parkbound_profile_annual to this version (StoreKit Profile IAP is not in this binary). Guest map and Party-by-name stay free. The first IAP must ship later with a version that includes the purchase flow.
+
+RELEASE: Choose "Manually release this version" after approval. Do not auto-release.
 
 Third-party content: drawn maps and Place data are built from public park sources and on-the-ground Contributions; we have rights to ship our rendered Venue outputs.
 
-Encryption: HTTPS only — qualifies for standard export exemption (no custom cryptography).
-
-Contact parthalon025@gmail.com if anything is unclear.
+Contact: Justin McFarland, parthalon025@gmail.com. Phone is the App Review contact in Connect (secret APP_STORE_REVIEW_PHONE).

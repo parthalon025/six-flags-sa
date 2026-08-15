@@ -42,7 +42,13 @@ Version string comes from **`apps/party-tracker/package.json`** (same as TestFli
 | Last name | McFarland |
 | Email | parthalon025@gmail.com |
 | Phone | **Add in Connect** — not in repo (verify your number) |
+| Sign-in required | **Off** — guest map works; no email/password demo account |
 | Notes | `review_information/notes.txt` |
+| Attachment | None |
+
+## Routing App Coverage File (required on the version)
+
+Navigation listing. Upload `routing_app_coverage.geojson` (regenerate with `npm run store:scaffold-metadata`). Apple accepts **one MultiPolygon** — padded boxes of the shipped venues. Fastlane `deliver` sends `routing_app_coverage:` from that file.
 
 ## Export compliance (set on submit)
 
@@ -50,7 +56,18 @@ Version string comes from **`apps/party-tracker/package.json`** (same as TestFli
 |----------|--------|
 | Uses encryption? | Yes (HTTPS/TLS) |
 | Exempt? | Yes — standard HTTPS only, no custom crypto |
+| Upload documentation? | **No** — skip App Encryption Documentation / CCATS |
 | IDFA / tracking? | No |
+
+`ios/App/App/Info.plist` already has `ITSAppUsesNonExemptEncryption` = false. Production and metadata Fastlane lanes send the same exemption answers.
+
+## App Store Version Release
+
+Choose **Manually release this version** (`IOS_AUTOMATIC_RELEASE=false`). Do not pick automatic or “no earlier than” unless you change that flag on purpose.
+
+## In-app purchases (this version)
+
+Do **not** attach `parkbound_profile_annual` to this version. StoreKit is not in the binary. Create the auto-renewable product in Connect when you are ready, then submit it **with** the first version that includes the purchase flow (Apple requires the first IAP to ship with an app version).
 
 ## App Privacy (Connect questionnaire — manual)
 
@@ -77,7 +94,10 @@ Use `APP_PRIVACY.md` in this folder when filling **App Privacy** in Connect. Sum
 
 - [x] **App Store Small Business Program** — enrollment submitted 2026-08-14 (Account Holder Justin McFarland / team `CDHJC4MH4G`); await Apple email; 15% rate starts 15 days after fiscal month of approval
 - [x] **Paid Apps Agreement** — **Active** (confirm in Connect → Agreements before first IAP sale)
-- [ ] **Profile IAP** — Free download; create auto-renewable **Profile** at **$10.00/yr** (`parkbound_profile_annual` in `store-identifiers.json`)
+- [ ] **Profile IAP product** — create auto-renewable **Profile** at **$10.00/yr** (`parkbound_profile_annual`) in Connect when StoreKit ships; **do not attach it to this version**
+- [x] **Routing coverage GeoJSON** — `routing_app_coverage.geojson` (one MultiPolygon of shipped venues)
+- [x] **Export compliance** — HTTPS exempt; no documentation upload; Fastlane + Info.plist set
+- [x] **Version release** — manual (`IOS_AUTOMATIC_RELEASE=false`)
 - [ ] **App version** in Connect matches `apps/party-tracker/package.json` (metadata upload uses that semver)
 - [ ] **Privacy URL live** — `/privacy` builds on main; production redeploy required (Settings → Privacy link added). Verify `https://parkbound.kurat0r.ai/privacy` returns 200 before submit
 - [x] **App Preview** — iPhone 6.9" slot (`IPHONE_67`, 886×1920, 15–30s). Encode with `npm run store:app-preview`; metadata workflow uploads `fastlane/app_previews/`

@@ -84,7 +84,7 @@ No (no ad network, no IDFA, no cross-app tracking).
 - Health data (height inches are user-entered ride eligibility, not HealthKit)
 - Financial info
 - Browsing history off-app
-- Purchases (free app, no IAP at launch)
+- Purchases (free download; Profile IAP `parkbound_profile_annual` is not in this binary)
 - Photos / videos (unless user adds in a future feature — not shipped yet)
 - Sensitive info
 

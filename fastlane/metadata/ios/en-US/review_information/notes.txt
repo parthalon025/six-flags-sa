@@ -1,3 +1,19 @@
-Park Bound is a park-day companion. Location is the product: a device member of a live party shares it with that party while inside the venue so everyone can see each other on the map. Background Location keeps a pocketed Host updating the party. Push is for party alerts (NEED HELP, meet). Camera is only for scanning a party invite QR. No ads. No tracking. No IDFA.
+Park Bound loads the live web app from https://parkbound.kurat0r.ai inside the native Capacitor shell.
 
-Demo: open the app, allow Location, confirm the nearest park, start a party, share the invite link.
+SIGN-IN: Sign-in is not required. Leave "Sign-in required" unchecked. There is no email/password account.
+Guest review: tap Continue as guest → allow Location → pick Kings Island (or any shipped Venue) → walk guest paths.
+Profile (optional): Sign in with Apple or Google from the startup gate or Me tab. Reviewers may use their own Apple ID.
+
+PARTY: create or join with a six-character code, or Invite (QR/link) from Me. Location is required to finish joining.
+
+ROUTING: in-park walking directions at shipped US venues only (Kings Island, Cedar Point, Six Flags Fiesta Texas, Big Kahuna's). Upload routing_app_coverage.geojson — one MultiPolygon of those venue boxes.
+
+ENCRYPTION: HTTPS/TLS only — exempt from export documentation. ITSAppUsesNonExemptEncryption is false. Do not upload CCATS; skip App Encryption Documentation.
+
+IAP: Download is Free. Do not attach parkbound_profile_annual to this version (StoreKit Profile IAP is not in this binary). Guest map and Party-by-name stay free. The first IAP must ship later with a version that includes the purchase flow.
+
+RELEASE: Choose "Manually release this version" after approval. Do not auto-release.
+
+Third-party content: drawn maps and Place data are built from public park sources and on-the-ground Contributions; we have rights to ship our rendered Venue outputs.
+
+Contact: Justin McFarland, parthalon025@gmail.com. Phone is the App Review contact in Connect (secret APP_STORE_REVIEW_PHONE).
