@@ -69,15 +69,17 @@ jobs:
       - name: Resolve merge PR
         if: steps.gate.outputs.run == 'true'
         id: merge
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           PR=""
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            PR=""
-          else
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             MSG="${{ github.event.head_commit.message }}"
             if [[ "$MSG" =~ ^Merge\ pull\ request\ \#([0-9]+) ]]; then
               PR="${BASH_REMATCH[1]}"
+            elif [ -n "${{ github.sha }}" ]; then
+              PR=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].number' 2>/dev/null || true)
             fi
           fi
           echo "pr=$PR" >> "$GITHUB_OUTPUT"

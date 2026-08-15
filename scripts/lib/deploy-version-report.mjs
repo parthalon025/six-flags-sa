@@ -175,7 +175,11 @@ export async function buildDeployVersionReport(options = {}) {
   const asc = loadAscCredentialsFromEnv();
   if (asc) {
     try {
-      const versions = await fetchIosStoreVersions(config.ios.appleId, asc);
+      const versions = await fetchIosStoreVersions(
+        config.ios.appleId,
+        asc,
+        config.ios.bundleId,
+      );
       ios = { ok: true, ...versions };
     } catch (err) {
       ios = { ok: false, error: err.message || String(err) };
@@ -341,13 +345,14 @@ function formatIosRow(ios) {
     };
   }
   if (!ios.ok) {
+    const err = String(ios.error || 'error').split('\n')[0].slice(0, 80);
     return {
       liveVersion: '—',
-      liveNote: ios.error,
+      liveNote: err,
       listingVersion: '—',
-      listingNote: ios.error,
+      listingNote: err,
       testflightVersion: '—',
-      testflightNote: ios.error,
+      testflightNote: err,
     };
   }
   return {
