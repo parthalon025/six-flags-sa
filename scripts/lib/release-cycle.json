@@ -1,0 +1,25 @@
+{
+  "lanes": {
+    "web": {
+      "trigger": "merge_pr_to_main",
+      "automation": [
+        ".github/workflows/bump-version.yml",
+        "Vercel production (scripts/lib/vercel-ignore.mjs)"
+      ],
+      "client_update": "lib/appUpdate.js polls /api/version (~5 min when online)"
+    },
+    "metadata": {
+      "trigger": "push_main_fastlane_metadata",
+      "automation": [".github/workflows/ios-app-store-metadata.yml"],
+      "manual": "FASTLANE_METADATA_ONLY=true bundle exec fastlane ios metadata"
+    },
+    "native_binary": {
+      "trigger": "manual_workflow_dispatch",
+      "automation": [".github/workflows/store.yml"],
+      "when": "npm run store:release-plan reports native_binary since last store tag",
+      "first_submit": "fastlane/metadata/ios/SUBMISSION.md"
+    }
+  },
+  "store_tag_prefix": "store/",
+  "pr_title_versioning": "feat: minor, fix: patch, feat!: major — see docs/app-updates.md"
+}

@@ -18,7 +18,7 @@ packages/venue-builder/      OSM → venue bundle
 scripts/                     repo automation (version bump, worktrees, GitNexus)
 test/app/  test/builder/
 docs/adr/  CONTEXT.md        domain language (Matt layout)
-ios/  android/  fastlane/    store shells — see [fastlane/README.md](../../fastlane/README.md)
+ios/  android/  fastlane/    store shells — [fastlane/README.md](../../fastlane/README.md), [store releases](store-releases.md)
 ```
 
 Phone-layer file names (under `apps/party-tracker/`) are in the architecture map, not restated here.

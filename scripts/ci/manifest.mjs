@@ -8,4 +8,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/bump-version.test.mjs',
   'test/scripts/version-stamp.test.mjs',
   'test/scripts/vercel-ignore.test.mjs',
+  'test/scripts/store-release-plan.test.mjs',
+  'test/scripts/release-cycle.test.mjs',
+  'test/scripts/deploy-version-report.test.mjs',
 ];
