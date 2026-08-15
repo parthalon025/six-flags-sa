@@ -9,8 +9,9 @@
 # that is often a PR preview with the same tree as the merge, so production
 # would skip and the live alias would stay on a stale deploy.
 #
-# Production always builds except GitNexus-only tips. Previews still skip when
-# no app paths changed. Decision lives in scripts/lib/vercel-ignore.mjs.
+# Production always builds for app-path changes. Previews skip agent branches,
+# version-stamp-only bumps, and non-app diffs. Decision lives in
+# scripts/lib/vercel-ignore.mjs.
 
 set +e
 echo "VERCEL_ENV=${VERCEL_ENV-}"

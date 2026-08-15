@@ -9,17 +9,25 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decideVercelBuild } from '../../scripts/lib/vercel-ignore.mjs';
+import {
+  decideVercelBuild,
+  isAgentPreviewBranch,
+  isVersionStampOnlyChange,
+} from '../../scripts/lib/vercel-ignore.mjs';
+import {
+  AUTOMATION_DEPLOY_BUDGET,
+  USER_DEPLOY_RESERVE,
+} from '../../scripts/lib/vercel-budget.mjs';
 
 assert.equal(
   decideVercelBuild({ files: ['apps/party-tracker/lib/party/hostService.js'] }).build,
   true,
-  'app file vs first parent must build',
+  'app file vs first parent must build on production default',
 );
 assert.equal(
-  decideVercelBuild({ files: ['package.json'] }).build,
+  decideVercelBuild({ files: ['apps/party-tracker/lib/party/hostService.js', 'package.json'] }).build,
   true,
-  'root package.json is an app path',
+  'app file with package.json must build',
 );
 assert.equal(
   decideVercelBuild({ files: ['.gitnexus/meta.json'] }).build,
@@ -38,13 +46,13 @@ assert.equal(
 );
 assert.equal(
   decideVercelBuild({ files: ['docs/adr/0001-auth-profiles.md'], env: 'production' }).build,
-  true,
-  'docs-only production must still build so the live alias tracks main',
+  false,
+  'docs-only production must skip to preserve deploy budget',
 );
 assert.equal(
   decideVercelBuild({ files: ['docs/adr/0001-auth-profiles.md'], gitRef: 'main' }).build,
-  true,
-  'docs-only main ref must build when VERCEL_ENV is unset in ignore',
+  false,
+  'docs-only main ref must skip when VERCEL_ENV is unset in ignore',
 );
 assert.equal(
   decideVercelBuild({ files: ['.gitnexus/meta.json', 'AGENTS.md'], gitRef: 'main' }).build,
@@ -59,17 +67,93 @@ assert.equal(
 assert.equal(
   decideVercelBuild({ files: [] }).build,
   false,
-  'empty first-parent diff (identical trees) must skip only when that IS this commit',
+  'empty first-parent diff (identical trees) must skip',
 );
 assert.equal(
   decideVercelBuild({ files: [], env: 'production' }).build,
   false,
-  'empty production diff must still skip',
+  'empty production diff must skip',
 );
 assert.equal(
   decideVercelBuild({ files: null }).build,
   true,
   'unknown parent/diff must fail open and build',
+);
+
+const bumpOnly = [
+  'package.json',
+  'package-lock.json',
+  'apps/party-tracker/package.json',
+  'packages/shared/package.json',
+  'packages/venue-builder/package.json',
+  'apps/party-tracker/public/app-version.json',
+  'apps/party-tracker/public/sw.js',
+  'apps/party-tracker/data/release-notes.json',
+];
+assert.equal(isVersionStampOnlyChange(bumpOnly), true, 'bump workflow files are stamp-only');
+assert.equal(
+  decideVercelBuild({ files: bumpOnly, env: 'production', gitRef: 'main' }).build,
+  false,
+  'post-merge version bump must not trigger a second production deploy',
+);
+
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'preview',
+    gitRef: 'cursor/fix-map-3b75',
+  }).build,
+  false,
+  'agent preview branch must skip unless user-directed',
+);
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'preview',
+    gitRef: 'feat/my-human-branch',
+  }).build,
+  false,
+  'human preview branch must skip unless user-directed',
+);
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'preview',
+    gitRef: 'cursor/fix-map-3b75',
+    subject: 'feat: map [vercel build]',
+  }).build,
+  true,
+  '[vercel build] in subject is user-directed',
+);
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'preview',
+    gitRef: 'feat/my-branch',
+    userBuild: '1',
+  }).build,
+  true,
+  'VERCEL_USER_BUILD=1 is user-directed',
+);
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'production',
+    gitRef: 'main',
+  }).build,
+  true,
+  'production app changes use automation budget without user directive',
+);
+assert.equal(isAgentPreviewBranch('worktree-fix-party', 'preview'), true);
+assert.equal(isAgentPreviewBranch('main', 'preview'), false);
+
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    subject: 'chore: wip [skip vercel]',
+  }).build,
+  false,
+  '[skip vercel] in subject must skip even for app files',
 );
 
 // The preview-vs-merge trap: previous-SHA diff is empty, first-parent has app files.
@@ -84,7 +168,7 @@ assert.equal(
   'empty previous-SHA diff would skip — do not use it',
 );
 assert.equal(
-  decideVercelBuild({ files: firstParentFiles }).build,
+  decideVercelBuild({ files: firstParentFiles, env: 'production', gitRef: 'main' }).build,
   true,
   'first-parent app files must still build production',
 );
@@ -100,8 +184,11 @@ assert.doesNotMatch(
   'ignore decision must not diff against the last preview SHA',
 );
 assert.match(lib, /\^1/, 'must diff against the first parent');
-assert.match(lib, /VERCEL_ENV/, 'production env must participate in the ignore decision');
-assert.match(lib, /VERCEL_GIT_COMMIT_REF/, 'main ref must participate when env is unset');
+assert.match(lib, /VERSION_STAMP_PATHS/, 'must skip post-merge version bumps');
+assert.match(lib, /AGENT_PREVIEW_BRANCH/, 'must skip agent preview branches');
+assert.match(lib, /USER_DEPLOY_RESERVE/, 'must document user reserve');
+assert.equal(USER_DEPLOY_RESERVE, 25);
+assert.equal(AUTOMATION_DEPLOY_BUDGET, 75);
 
 // .vercelignore strips scripts/** — the ignoreCommand chain must be re-included
 // or preview deploys fail open and burn the daily preview budget.
@@ -109,6 +196,7 @@ const vercelIgnore = readFileSync(join(root, '.vercelignore'), 'utf8');
 for (const path of [
   'scripts/vercel-ignore.sh',
   'scripts/lib/vercel-ignore.mjs',
+  'scripts/lib/vercel-budget.mjs',
   'scripts/lib/app-paths.mjs',
   'scripts/lib/app-paths.json',
   'scripts/gitnexus-ci.mjs',
