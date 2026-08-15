@@ -6,15 +6,23 @@
  * then has the same tree as that preview, git diff is empty, and production
  * is skipped forever.
  *
- * Budget: the Hobby account is capped at ~100 deploys/day. Skip anything that
- * does not change the shipped app bundle, plus agent preview branches, unless
- * VERCEL_FORCE_BUILD=1 or the commit subject contains `[vercel build]`.
+ * Budget (see scripts/lib/vercel-budget.mjs): ~100 deploys/day. Twenty-five are
+ * reserved for user directive only ([vercel build] or VERCEL_USER_BUILD=1).
+ * Production merges with app-path changes use the automation pool (~75).
  */
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isGitnexusOnlyChange } from '../gitnexus-ci.mjs';
 import { isAppChange } from './app-paths.mjs';
+import {
+  AUTOMATION_DEPLOY_BUDGET,
+  USER_DEPLOY_RESERVE,
+  commitSubjectWantsBuild,
+  commitSubjectWantsSkip,
+  isPreviewEnv,
+  isUserDirectedBuild,
+} from './vercel-budget.mjs';
 
 /** Post-merge bump workflow — stamp only; merge commit already deployed the app. */
 const VERSION_STAMP_PATHS = new Set([
@@ -28,7 +36,7 @@ const VERSION_STAMP_PATHS = new Set([
   'apps/party-tracker/data/release-notes.json',
 ]);
 
-/** Agent / worktree branches — previews are for human PRs, not every agent push. */
+/** Agent / worktree branches — never preview unless the user directed it. */
 const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/)/;
 
 export function normalizeChangedPath(file) {
@@ -43,36 +51,30 @@ export function isVersionStampOnlyChange(files) {
 }
 
 export function isAgentPreviewBranch(gitRef, env) {
-  if (env !== 'preview' && env !== 'development') return false;
+  if (!isPreviewEnv(env)) return false;
   return AGENT_PREVIEW_BRANCH.test(String(gitRef || ''));
 }
 
-export function wantsForceVercelBuild({ env } = {}) {
-  if (process.env.VERCEL_FORCE_BUILD === '1') return true;
-  if (process.env.VERCEL_FORCE_BUILD === '0') return false;
-  return env === 'production';
-}
-
-export function commitSubjectWantsBuild(subject) {
-  return /\[vercel build\]/i.test(String(subject || ''));
-}
-
-export function commitSubjectWantsSkip(subject) {
-  return /\[skip vercel\]/i.test(String(subject || ''));
-}
+export { commitSubjectWantsBuild, commitSubjectWantsSkip };
 
 export function decideVercelBuild({
   files,
   env,
   gitRef,
   subject = '',
-  forceBuild = wantsForceVercelBuild({ env }),
+  userBuild,
 } = {}) {
+  const userDirected = isUserDirectedBuild({ subject, userBuild });
+
   if (commitSubjectWantsSkip(subject)) {
     return { build: false, reason: 'commit subject [skip vercel] — skipping build', files };
   }
-  if (commitSubjectWantsBuild(subject)) {
-    return { build: true, reason: 'commit subject [vercel build] — forcing build', files };
+  if (userDirected) {
+    return {
+      build: true,
+      reason: `user-directed build (reserve ${USER_DEPLOY_RESERVE}/day) — proceeding`,
+      files,
+    };
   }
   if (files == null) {
     return { build: true, reason: 'unknown-changed-files — proceeding with build' };
@@ -90,15 +92,26 @@ export function decideVercelBuild({
       files,
     };
   }
-  if (!forceBuild && isAgentPreviewBranch(gitRef, env)) {
+  if (isAgentPreviewBranch(gitRef, env)) {
     return {
       build: false,
-      reason: `agent preview branch ${gitRef} — skipping build (set VERCEL_FORCE_BUILD=1 or [vercel build] to override)`,
+      reason: `agent preview branch ${gitRef} — skipping (user reserve: add [vercel build] or VERCEL_USER_BUILD=1)`,
       files,
     };
   }
   if (isAppChange(files)) {
-    return { build: true, reason: 'app-related change detected', files };
+    if (isPreviewEnv(env)) {
+      return {
+        build: false,
+        reason: `preview reserved for user directive (${USER_DEPLOY_RESERVE}/day) — add [vercel build] or VERCEL_USER_BUILD=1`,
+        files,
+      };
+    }
+    return {
+      build: true,
+      reason: `app-related production change (automation budget ~${AUTOMATION_DEPLOY_BUDGET}/day)`,
+      files,
+    };
   }
   return { build: false, reason: 'no app-related changes — skipping build', files };
 }
@@ -133,6 +146,7 @@ export function runIgnoreCli({
   log(`Current commit: ${commitSha}`);
   log(`Vercel env: ${env || '(unset)'}`);
   log(`Git ref: ${gitRef || '(unset)'}`);
+  log(`Budget: ${USER_DEPLOY_RESERVE} user-reserved, ~${AUTOMATION_DEPLOY_BUDGET} automation`);
   const files = listFirstParentFiles(commitSha);
   const subject = commitSubject(commitSha);
   const decision = decideVercelBuild({ files, env, gitRef, subject });

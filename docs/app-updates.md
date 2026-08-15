@@ -55,11 +55,11 @@ page.
    stamps a fresh `built` time (and the git SHA when Vercel/GitHub expose it).
    Vercel builds only when the commit touches app paths
    (`scripts/lib/app-paths.json` via `scripts/lib/vercel-ignore.mjs`). That
-   skips docs-only merges, post-merge version bumps, and agent preview branches
-   (`cursor/*`, `worktree-*`) so the daily deploy cap is not exhausted. Force a
-   build with `VERCEL_FORCE_BUILD=1` or `[vercel build]` in the commit subject;
-   skip with `[skip vercel]`. Production still builds for real app merges on
-   `main`. GitNexus stays session-local (`.gitnexus/` is gitignored).
+   skips docs-only merges, post-merge version bumps, and **all previews** unless
+   the user directed them (`[vercel build]` or `VERCEL_USER_BUILD=1` on the
+   Vercel project). Twenty-five deploys/day are reserved for that user pool;
+   production app merges on `main` use the automation budget (~75/day). Skip with
+   `[skip vercel]`. GitNexus stays session-local (`.gitnexus/` is gitignored).
 5. Phones online within ~5 minutes (or on tab focus) should update; offline
    phones stay on the last good build until they have connectivity.
 
