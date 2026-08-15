@@ -31,12 +31,19 @@ import MapLegend from './MapLegend';
 import { markerDeclutterPriority, markerWantsLabel } from '@/lib/mapVisual';
 import { localViewTransform, stableCullView } from '@/lib/mapViewport';
 import {
+  customMapCamera,
+  hidesBaseLayer,
+  resolveCustomMap,
+  showsBaseMap,
+} from '@/lib/customMap';
+import {
   assembleIsoMeshes,
   isoLocal,
   isoScreenToWorld,
   isoToScreen,
   isoViewTransform,
 } from '@/lib/isoTycoon';
+import CustomMapLayer from './CustomMapLayer';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
    geometry, projected to Web Mercator metres and painted as SVG. Pan with one
@@ -46,6 +53,10 @@ import {
    name — paths, buildings, water, track — and a centre to open on, so a park, a
    campus or a state fair all render through the same code. Layers a venue has
    no examples of arrive empty and draw nothing.
+
+   A Skin may attach a Custom map (`resolveCustomMap`) that overlays or replaces
+   this OSM base. ParkMap applies the camera and hidden layers; CustomMapLayer
+   draws the extra geometry. Overlay (contributions) is a different layer.
 
    Static geometry is projected once into mercator metres, rebased onto the
    venue centre (SVG float32 otherwise shimmers at max zoom), and moved with an
@@ -254,9 +265,8 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
   lowZoom,
   theme,
   venue,
-  iso = false,
-  isoBuildings = [],
-  isoTracks = [],
+  hideBuilding = false,
+  hideCoaster = false,
 }) {
   return (
     <>
@@ -346,7 +356,7 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
         ))}
       </g>
 
-      {!iso && showDetail && (
+      {!hideBuilding && showDetail && (
         <g className="lyr-building lyr-detail">
           {mapLayers.building.map((f) => (
             <path key={`bldg${f.i}`} d={f.d} />
@@ -361,7 +371,7 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
           ))}
         </g>
       )}
-      {!iso && showDetail && (
+      {!hideCoaster && showDetail && (
         <>
           <g className="lyr-coastershadow">
             {world.coaster.map((f) => (
@@ -374,33 +384,6 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
             ))}
           </g>
         </>
-      )}
-      {iso && (
-        <g className="lyr-iso">
-          {isoBuildings.map((b) => (
-            <g key={`iso-b${b.i}`} className="isoBuilding">
-              <path className="isoFoot" d={b.foot.d} />
-              {b.walls.map((w, wi) => (
-                <path
-                  key={wi}
-                  className={w.side === 'L' ? 'isoWallL' : 'isoWallR'}
-                  d={w.d}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))}
-              <path className="isoRoof" d={b.roof.d} vectorEffect="non-scaling-stroke" />
-            </g>
-          ))}
-          {isoTracks.map((t) => (
-            <g key={`iso-c${t.i}`} className="isoCoaster">
-              <path className="isoShadow" d={t.shadow.d} vectorEffect="non-scaling-stroke" />
-              {t.supports.map((s, si) => (
-                <path key={si} className="isoSupport" d={s.d} vectorEffect="non-scaling-stroke" />
-              ))}
-              <path className="isoTrack" d={t.track.d} vectorEffect="non-scaling-stroke" />
-            </g>
-          ))}
-        </g>
       )}
     </>
   );
@@ -455,7 +438,9 @@ function ParkMap({
   fogFilter = null,
 }) {
   const palette = paletteFor(theme);
-  const iso = theme === 'pixel-tycoon';
+  const customMap = resolveCustomMap(theme);
+  const iso = customMapCamera(customMap) === 'iso';
+  const drawBase = showsBaseMap(customMap);
   // The venue's own district tints, where it has hand-picked any.
   const venue = useVenueSelector((s) => s.venue);
   // What this venue has any of at all, so the key can offer switches for those
@@ -1622,17 +1607,23 @@ function ParkMap({
             pan/zoom/rotate around the venue origin. Labels and markers stay
             outside so they remain upright. */}
         <g className="mapWorld" transform={viewTransform}>
-          <ParkMapStaticWorld
-            world={world}
-            mapLayers={mapLayers}
-            showDetail={showDetail}
-            showService={showService}
-            lowZoom={lowZoom}
-            theme={theme}
-            venue={venue}
-            iso={iso}
-            isoBuildings={isoMeshes.buildings}
-            isoTracks={isoMeshes.tracks}
+          {drawBase && (
+            <ParkMapStaticWorld
+              world={world}
+              mapLayers={mapLayers}
+              showDetail={showDetail}
+              showService={showService}
+              lowZoom={lowZoom}
+              theme={theme}
+              venue={venue}
+              hideBuilding={hidesBaseLayer(customMap, 'building')}
+              hideCoaster={hidesBaseLayer(customMap, 'coaster')}
+            />
+          )}
+          <CustomMapLayer
+            spec={customMap}
+            buildings={isoMeshes.buildings}
+            tracks={isoMeshes.tracks}
           />
 
           {/* the selected ride's own track, so the red spaghetti has an owner */}

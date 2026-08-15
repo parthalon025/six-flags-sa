@@ -12,7 +12,7 @@ Park Bound’s drawn **Venue** map optimizes for arm’s-length outdoor reading:
 
 **When similar lines run close** (parallel paths, stacked coaster track): category reads through marker **Shapes** (disc / chip / diamond / pin) and glyphs at **Places** — not hue alone on the lines. Overview zoom keeps line spaghetti quiet; selection lights the owner track. Parallel offset only if dogfood still fails after that.
 
-**Skins:** never required to read the map; never reposition **Places**. First polish ship: Postcard, Marquee, Junior, Pixel tycoon (plus always-on **Palettes**). Store: **Trail** party-day frame for comprehension; **Park Midnight** / delight **Skin** for screenshot bait.
+**Skins:** never required to read the map; never reposition **Places**. First polish ship: Postcard, Marquee, Junior, Pixel tycoon (plus always-on **Palettes**). Store: **Trail** party-day frame for comprehension; **Park Midnight** / delight **Skin** for screenshot bait. A **Skin** may attach a **Custom map** that replaces or overlays the OSM base (`lib/customMap.js`); Pixel tycoon overlays with an isometric camera and owns building + coaster layers.
 
 Success: grandma comprehension, timed find-a-**Member** / find-a-restroom in dogfood, sunlit screenshot pairs for store.
 

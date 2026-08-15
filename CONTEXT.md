@@ -104,6 +104,10 @@ _Avoid_: Ride report (ops chatter); Observation (live series, not map structure)
 A **Profile**-owned cosmetic restyle of the **Venue** map — how it is painted, not where **Places** sit. Earned as a **Side Quest** prize on that **Profile**; two rungs on the same **Skin** (private unlock, then share). Not a **Contribution**, **Overlay**, or **Ride report**. This is the shipped name for what earlier notes called a Map skin.
 _Avoid_: Theme (Trail / Park Midnight are the always-on palettes); map pack; party theme; Map skin (use **Skin**)
 
+**Custom map**:
+Extra drawing a **Skin** may attach on the OSM **Venue** base — **replace** (hide the base) or **overlay** (draw on it, optionally taking named layers such as buildings). **Places** stay on their lat/lng. Not **Overlay** (that is **Contribution** truth) and not the **Skin** paint itself.
+_Avoid_: Overlay (contributions); map pack; tileset
+
 **Wear**:
 The look this phone is painting: own **Skin**, an accepted **Offer**, or Trail / Park Midnight. Own **Skin** is the default when the **Profile** has one. **Wear** of another **Profile**’s **Skin** is not ownership and is not a copy.
 _Avoid_: Applied theme; unlocked (that is the owner’s prize)
@@ -240,6 +244,7 @@ _Avoid_: compass rose (retired map furniture for this job); bearing tape (legacy
 - Confirm / deny of an **Overlay** claim are statistical (no public counts, names, or percent) and are park-wide — not this ticket. Place detail lists completions; in-party disagreement is last-write, not a vote
 - **XP** and **Title** are **Profile** fields; **XP** is never spent; the **Title** is the visible sub-name when a threshold is crossed
 - **Skin** and **Kit** are earned the same way as **Titles** — never bought with **XP**. A **Skin** restyles this phone’s **Venue** map. A **Kit** draws on that **Member**’s **Location** pin for the **Party**
+- A **Skin** may attach a **Custom map** that replaces or overlays the OSM base; **Places** do not move
 - Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0 **XP**
 - A **Ride report** appears on this phone immediately; a **Party** is not required; if you are already a **Member**, the **Party** sees it immediately; if you join later, **Members** see it then; it is not a **Contribution**
 - A **Ride report** may optionally fan out into an **Observation**; an **Observation** is not a **Contribution**
