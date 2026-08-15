@@ -1,0 +1,12 @@
+{
+  "productionUrl": "https://parkbound.kurat0r.ai",
+  "productionVersionPath": "/api/version",
+  "ios": {
+    "appleId": "269608486",
+    "bundleId": "ai.kurat0r.parkbound"
+  },
+  "android": {
+    "packageName": "ai.kurat0r.parkbound"
+  },
+  "storeTagPrefix": "store/"
+}

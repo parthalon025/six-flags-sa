@@ -63,6 +63,11 @@ page.
 5. Phones online within ~5 minutes (or on tab focus) should update; offline
    phones stay on the last good build until they have connectivity.
 
+**After every merge to `main`**, the post-merge workflow posts a **version matrix**
+(GitHub Actions summary + comment on the merged PR): repo semver, live Vercel
+production, preview (if any), App Store / TestFlight, and last `store/*` tag.
+Run locally anytime: `npm run version:matrix`.
+
 **Merge conflicts:** when syncing a branch with `main`, keep `main`'s version for
 `package.json`, `package-lock.json`, `public/app-version.json`, `public/sw.js`,
 and `data/release-notes.json`. Your merge does not need to advance the semver.

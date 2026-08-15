@@ -105,6 +105,7 @@ You have not tagged a `store/*` release yet. Finish [`SUBMISSION.md`](../../fast
 | Command | Purpose |
 |---------|---------|
 | `npm run store:release-cycle` | Current mode + checklist for how you work |
+| `npm run version:matrix` | Repo vs Vercel vs stores (also on every merge to `main`) |
 | `npm run store:release-plan` | Classify paths: web vs metadata vs native |
 | `npm run test:pre-merge-vertical` | Pre-merge gate before you merge |
 | `bundle exec fastlane ios beta` | Local TestFlight (macOS + secrets) |

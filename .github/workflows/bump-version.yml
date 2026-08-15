@@ -80,6 +80,56 @@ jobs:
           VERSION=$(node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version")
           git commit -m "chore: bump version to $VERSION"
 
+      - name: Version matrix
+        if: steps.gate.outputs.run == 'true'
+        env:
+          BUMP_FROM: ${{ steps.bump.outputs.bump_from }}
+          BUMP_TO: ${{ steps.bump.outputs.bump_to }}
+          BUMP_SKIPPED: ${{ steps.bump.outputs.skipped }}
+          MERGE_MESSAGE: ${{ github.event.head_commit.message }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${APP_STORE_CONNECT_API_KEY:-}" ]; then
+            mkdir -p secrets
+            echo "$APP_STORE_CONNECT_API_KEY" | base64 -d > secrets/AuthKey.p8
+            export APP_STORE_CONNECT_API_KEY_PATH=./secrets/AuthKey.p8
+          fi
+          node scripts/deploy-version-report.mjs --markdown
+
+      - name: Comment version matrix on merged PR
+        if: steps.gate.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUMP_FROM: ${{ steps.bump.outputs.bump_from }}
+          BUMP_TO: ${{ steps.bump.outputs.bump_to }}
+          BUMP_SKIPPED: ${{ steps.bump.outputs.skipped }}
+          MERGE_MESSAGE: ${{ github.event.head_commit.message }}
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          MSG="${MERGE_MESSAGE}"
+          if [[ "$MSG" =~ ^Merge\ pull\ request\ \#([0-9]+) ]]; then
+            PR="${BASH_REMATCH[1]}"
+            if [ -n "${APP_STORE_CONNECT_API_KEY:-}" ]; then
+              mkdir -p secrets
+              echo "$APP_STORE_CONNECT_API_KEY" | base64 -d > secrets/AuthKey.p8
+              export APP_STORE_CONNECT_API_KEY_PATH=./secrets/AuthKey.p8
+            fi
+            BODY=$(node scripts/deploy-version-report.mjs --markdown)
+            gh pr comment "$PR" --body "$BODY"
+          fi
+
       - name: Push
         if: steps.gate.outputs.run == 'true' && steps.bump.outputs.skipped != 'true'
         run: git push

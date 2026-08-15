@@ -62,16 +62,23 @@ function mergeMessages(noteArg) {
 }
 
 function emitSkipped(reason) {
+  const from = JSON.parse(fs.readFileSync(workspacePkgPaths[0], 'utf8')).version || '0.0.0';
   console.log(`bump-version: skip (${reason})`);
   if (process.env.GITHUB_OUTPUT) {
-    fs.appendFileSync(process.env.GITHUB_OUTPUT, 'skipped=true\n');
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `skipped=true\nbump_from=${from}\nbump_to=${from}\n`,
+    );
   }
 }
 
 function emitBumped(from, to) {
   console.log(`bump-version: ${from} -> ${to}`);
   if (process.env.GITHUB_OUTPUT) {
-    fs.appendFileSync(process.env.GITHUB_OUTPUT, 'skipped=false\n');
+    fs.appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `skipped=false\nbump_from=${from}\nbump_to=${to}\n`,
+    );
   }
 }
 
