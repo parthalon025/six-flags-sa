@@ -377,6 +377,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   0% { opacity: 0 }
   100% { opacity: 1 }
 }
+@keyframes venueFadeIn {
+  0% { opacity: 0 }
+  100% { opacity: 1 }
+}
+@keyframes venueFadeOut {
+  0% { opacity: 1 }
+  100% { opacity: 0 }
+}
 @keyframes breathe {
   0%, 100% { opacity: .55 }
   50% { opacity: 1 }
@@ -411,6 +419,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   display: block;
   animation: mapIn var(--t4) var(--easeOut) both;
   transform-origin: 50% 50%;
+}
+.venueLoadFade {
+  position: absolute; inset: 0; z-index: 12; pointer-events: none;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  animation: venueFadeIn var(--t3) var(--easeOut) both;
+}
+.venueLoadFade.out {
+  animation: venueFadeOut var(--t3) var(--easeOut) both;
+}
+.venueLoadFadeLabel {
+  max-width: min(88vw, 320px); padding: 10px 16px;
+  font-size: 17px; font-weight: 650; letter-spacing: -.2px;
+  color: var(--label); text-align: center;
+  background: color-mix(in srgb, var(--bg3) 88%, transparent);
+  border-radius: 12px; box-shadow: var(--shadow2);
 }
 
 /* Apple Maps does not vignette its map, so this is barely there — just enough
@@ -1157,6 +1181,25 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .tab.on { background: var(--bg3); box-shadow: var(--thumbShadow); }
 .tab:active { opacity: .5; }
+.settingsTopics {
+  display: flex; gap: 8px; margin: 8px 0 12px;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.settingsTopics::-webkit-scrollbar { display: none; }
+.settingsTopic {
+  flex: 0 0 auto; min-height: 34px; padding: 7px 14px;
+  font-size: 14px; font-weight: 650; letter-spacing: -.08px;
+  color: var(--label); border-radius: 999px;
+  background: var(--fill3);
+  transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut);
+}
+.settingsTopic.on {
+  background: var(--aqua); color: var(--onAqua, #fff);
+}
+.settingsTopic:active { opacity: .72; }
+.planPanel .settingsTopics { margin-top: 0; }
 /* min-height: 0, or a flex child with a long list inside refuses to shrink and
    pushes the tab bar off the bottom of the sheet. */
 .sheetBody {
