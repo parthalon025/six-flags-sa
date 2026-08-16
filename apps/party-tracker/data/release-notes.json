@@ -324,5 +324,11 @@
     "items": [
       "fix: enable Profile OAuth when useSignIn stays unloaded"
     ]
+  },
+  "1.15.0": {
+    "title": "What's new",
+    "items": [
+      "feat(auth): Profile gate is Login or Guest"
+    ]
   }
 }
