@@ -330,5 +330,11 @@
     "items": [
       "feat(auth): Profile gate is Login or Guest"
     ]
+  },
+  "1.15.1": {
+    "title": "What's new",
+    "items": [
+      "Lock production Sign in with Apple"
+    ]
   }
 }
