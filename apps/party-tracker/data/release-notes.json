@@ -342,5 +342,11 @@
     "items": [
       "feat: revise Parkbound copy to World, Zone, Rally, and Collection"
     ]
+  },
+  "1.17.0": {
+    "title": "What's new",
+    "items": [
+      "feat(watch): wire ParkBoundWatch target and live Compass push (#452)"
+    ]
   }
 }
