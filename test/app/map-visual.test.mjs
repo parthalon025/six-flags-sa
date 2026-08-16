@@ -53,5 +53,12 @@ assert.equal(tycoon.ground, '#4FA83A');
 assert.equal(tycoon.midway, '#C8C8C0');
 const land = landTint('Rivertown', 'pixel-tycoon');
 assert.match(land.fill, /^hsl\(1\d{2} /);
+assert.match(landTint('Rivertown', 'layered-atlas').fill, /^#/);
+assert.match(landTint('Rivertown', 'watercolor-quest').fill, /^#/);
+assert.notEqual(
+  landTint('Rivertown', 'layered-atlas').fill,
+  landTint('Rivertown', 'night').fill,
+  'reference atlas does not inherit dark district fills',
+);
 
 console.log('map-visual.test: ok');

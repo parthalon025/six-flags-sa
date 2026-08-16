@@ -40,18 +40,19 @@ export const MAP_SKIN_VISUAL_POINTS = Object.freeze([
 
 const SKINS = ['layered-atlas', 'watercolor-quest'];
 const OUT = process.env.VISUAL_OUT || path.join('/tmp', 'parkbound-map-skin-visual');
+let activeBrowser = null;
 const REFERENCE_PROFILES = {
   'layered-atlas': {
     style: 'analytical',
-    ground: '#c9d6c0',
-    midway: '#3f6570',
-    structure: '#c9b58d',
+    ground: '#C9D6C0',
+    midway: '#3F6570',
+    structure: '#C9B58D',
   },
   'watercolor-quest': {
     style: 'watercolor',
-    ground: '#f4efdf',
+    ground: '#F4EFDF',
     midway: '#756276',
-    structure: '#b8a68d',
+    structure: '#B8A68D',
   },
 };
 
@@ -67,6 +68,7 @@ function signature(file) {
 
 async function seedSkin(page, skin) {
   const progress = grantShipSkins({ ...createProgress(), wearSkin: skin }, { venueId: 'kings-island' });
+  const snapshot = { progress, acceptedOffer: null };
   await page.evaluate(async (blob) => {
     localStorage.setItem('parkbound.world.v1', JSON.stringify(blob));
     localStorage.setItem('parkbound-demo-skins', '1');
@@ -85,7 +87,7 @@ async function seedSkin(page, skin) {
       };
       request.onerror = resolve;
     });
-  }, progress);
+  }, snapshot);
   await page.reload({ waitUntil: 'domcontentloaded' });
   await closeGate(page);
   await until(
@@ -100,16 +102,19 @@ async function main() {
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
 
-  const browser = await launch();
+  activeBrowser = await launch();
+  const browser = activeBrowser;
+  const first = MAP_SKIN_VISUAL_POINTS[0];
+  const { page, context } = await openPhone(browser, {
+    lat: first.lat,
+    lng: first.lng,
+    name: 'Visual',
+    venue: 'kings-island',
+    label: first.id,
+  });
   const matrix = [];
   for (const point of MAP_SKIN_VISUAL_POINTS) {
-    const { page, context } = await openPhone(browser, {
-      lat: point.lat,
-      lng: point.lng,
-      name: 'Visual',
-      venue: 'kings-island',
-      label: point.id,
-    });
+    await context.setGeolocation({ latitude: point.lat, longitude: point.lng });
     const row = { point: point.id, name: point.name, skins: {} };
     for (const skin of SKINS) {
       await seedSkin(page, skin);
@@ -146,8 +151,8 @@ async function main() {
       `reference Skins differ visually at ${point.id}`,
     );
     matrix.push(row);
-    await context.close();
   }
+  await context.close();
   await browser.close();
   fs.writeFileSync(path.join(OUT, 'matrix.json'), JSON.stringify(matrix, null, 2));
   console.log(`map-skin-visual-points: ${matrix.length} points × ${SKINS.length} Skins: ok`);
@@ -155,6 +160,9 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+  Promise.resolve(activeBrowser?.close())
+    .finally(() => {
+      console.error(error);
+      process.exitCode = 1;
+    });
 });
