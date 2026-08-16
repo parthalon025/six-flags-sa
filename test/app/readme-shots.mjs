@@ -200,8 +200,10 @@ async function main() {
 
   await dismissNavigation(page).catch(() => {});
   await page.keyboard.press('Escape').catch(() => {});
-  await go(page, 'Rider height');
+  await go(page, 'Plan');
   await setSheet(page, 'full');
+  const heightsTab = page.locator('.settingsTopic', { hasText: 'Heights' });
+  if (await heightsTab.count()) await heightsTab.click();
   const tier46 = page.locator('.tier', { hasText: '46' });
   await tier46.click();
   await page.waitForTimeout(700);
@@ -210,7 +212,8 @@ async function main() {
   await page.waitForTimeout(700);
   await shot(page, 'height-filter.png');
 
-  await go(page, 'Rider height');
+  await go(page, 'Plan');
+  if (await heightsTab.count()) await heightsTab.click();
   const clear = page.locator('.labelAction:has-text("Clear")');
   if (await clear.count()) await clear.click();
   await page.waitForTimeout(400);
@@ -222,9 +225,9 @@ async function main() {
   await rowMain.waitFor({ state: 'visible', timeout: 15000 });
   if (!(await page.locator('.poiRow.open').count())) await rowMain.click();
   await page.waitForTimeout(500);
-  if (!(await page.locator('.poiRow.open .joinRow').count())) await rowMain.click();
+  if (!(await page.locator('.poiRow.open .placeActions').count())) await rowMain.click();
   await page.waitForTimeout(400);
-  const walk = page.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]');
+  const walk = page.locator('.poiRow.open button[aria-label="Walk me there"]');
   if (!(await walk.count())) {
     await page.screenshot({ path: '/tmp/walk-fail.png' });
     console.log('walk fail html', (await page.locator('.poiRow').first().innerHTML().catch(() => 'none')).slice(0, 800));
