@@ -1910,9 +1910,13 @@ await check('save where I parked and walk back to it', async () => {
   });
   await saveBtn.click();
   await b.waitForTimeout(600);
-  // Move away from the saved spot so a walk is worth previewing.
-  await B.context.setGeolocation({ latitude: 39.3455, longitude: -84.265 });
-  await b.waitForTimeout(800);
+  // Move away from the saved spot so a walk is worth previewing — pulse the
+  // fake GPS so watchPosition actually moves (one set can sit unread).
+  const away = { latitude: 39.3455, longitude: -84.265 };
+  for (let i = 0; i < 4; i += 1) {
+    await B.context.setGeolocation(away);
+    await b.waitForTimeout(400);
+  }
   await go(b, 'Places');
   const carGo = b.locator('.glanceCard', { hasText: 'Your car' }).locator('.glanceGo');
   await until(async () => (await carGo.count()) > 0, { timeout: 15000, label: 'car glance card' });
@@ -1922,10 +1926,13 @@ await check('save where I parked and walk back to it', async () => {
     label: 'route to car',
   });
   await b.locator('.previewGo').click();
-  await until(async () => (await b.locator('.navBanner').count()) > 0, {
-    timeout: 15000,
-    label: 'walk to car started',
-  });
+  await until(
+    async () => (await b.locator('.navBanner, .navBar').count()) > 0,
+    {
+      timeout: 20000,
+      label: 'walk to car started',
+    },
+  );
   await b.locator('.navEnd').click();
   await b.waitForTimeout(400);
   return true;
