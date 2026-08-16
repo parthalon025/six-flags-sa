@@ -313,8 +313,7 @@ platform :ios do
       output_directory: ios_output_directory,
       output_name: "Parkbound.ipa",
       clean: true,
-      include_bitcode: false,
-      api_key: api_key
+      include_bitcode: false
     )
 
     upload_to_testflight(
@@ -345,8 +344,7 @@ platform :ios do
       output_directory: ios_output_directory,
       output_name: "Parkbound.ipa",
       clean: true,
-      include_bitcode: false,
-      api_key: api_key
+      include_bitcode: false
     )
 
     deliver(
