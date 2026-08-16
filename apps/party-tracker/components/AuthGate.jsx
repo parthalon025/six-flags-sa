@@ -1,11 +1,10 @@
 'use client';
 
-import { Show, useSignIn } from '@clerk/nextjs';
-import { useState } from 'react';
+import { Show } from '@clerk/nextjs';
 import BrandLockup from '@/components/BrandLockup';
 import OAuthButtons from '@/components/OAuthButtons';
 import { BRAND } from '@/lib/brand';
-import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
+import { useClerkOAuth } from '@/lib/auth/useClerkOAuth';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 /**
  * First screen when the app opens without a Profile — sign in (Google / Apple)
@@ -17,21 +16,7 @@ export default function AuthGate(props) {
 }
 
 function AuthGateLive({ onGuest = null }) {
-  const { isLoaded, signIn } = useSignIn();
-  const [busy, setBusy] = useState(null);
-  const [err, setErr] = useState(null);
-
-  async function startOAuth(strategy) {
-    if (!signIn) return;
-    setBusy(strategy);
-    setErr(null);
-    try {
-      await clerkOAuthRedirect(signIn, strategy);
-    } catch (e) {
-      setErr(e?.errors?.[0]?.message || e?.message || 'Sign-in failed');
-      setBusy(null);
-    }
-  }
+  const { ready, busy, err, startOAuth } = useClerkOAuth();
 
   return (
     <div className="gate authGate" role="dialog" aria-labelledby="auth-gate-title">
@@ -50,7 +35,7 @@ function AuthGateLive({ onGuest = null }) {
         </p>
         <div className="signInActions">
           <Show when="signed-out">
-            <OAuthButtons isLoaded={isLoaded} busy={busy} onStart={startOAuth} />
+            <OAuthButtons isLoaded={ready} busy={busy} onStart={startOAuth} />
           </Show>
         </div>
         {err ? <p className="fine block warnText">{err}</p> : null}

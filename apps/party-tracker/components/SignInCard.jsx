@@ -1,11 +1,10 @@
 'use client';
 
-import { Show, UserButton, useClerk, useSignIn } from '@clerk/nextjs';
-import { useState } from 'react';
+import { Show, UserButton, useClerk } from '@clerk/nextjs';
 import { rankReward } from '@party-tracker/shared/questScore.js';
 import OAuthButtons from '@/components/OAuthButtons';
-import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
+import { useClerkOAuth } from '@/lib/auth/useClerkOAuth';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 /**
  * Soft-gate sign-in (EP.3) — Google / Apple only via Clerk OAuth.
@@ -19,21 +18,8 @@ export default function SignInCard(props) {
 
 function SignInCardLive({ session = null, onSession = null }) {
   const { signOut } = useClerk();
-  const { isLoaded, signIn } = useSignIn();
-  const [busy, setBusy] = useState(null);
-  const [err, setErr] = useState(null);
+  const { ready, busy, err, startOAuth } = useClerkOAuth();
 
-  async function startOAuth(strategy) {
-    if (!signIn) return;
-    setBusy(strategy);
-    setErr(null);
-    try {
-      await clerkOAuthRedirect(signIn, strategy);
-    } catch (e) {
-      setErr(e?.errors?.[0]?.message || e?.message || 'Sign-in failed');
-      setBusy(null);
-    }
-  }
   if (session?.userId) {
     const title = rankReward(session.rank || 'visitor').title;
     return (
@@ -73,7 +59,7 @@ function SignInCardLive({ session = null, onSession = null }) {
       </p>
       <div className="signInActions">
         <Show when="signed-out">
-          <OAuthButtons isLoaded={isLoaded} busy={busy} onStart={startOAuth} />
+          <OAuthButtons isLoaded={ready} busy={busy} onStart={startOAuth} />
         </Show>
         <Show when="signed-in">
           <UserButton afterSignOutUrl="/" />

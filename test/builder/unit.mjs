@@ -7280,8 +7280,45 @@ await check('Clerk provider can mount with only the publishable key', () => {
 const {
   CLERK_OAUTH_CALLBACK_PATH,
   CLERK_OAUTH_COMPLETE_PATH,
+  clerkOAuthReady,
   clerkOAuthRedirect,
+  resolveClerkSignIn,
 } = await import('../../apps/party-tracker/lib/auth/clerkOAuth.js');
+
+await check('resolveClerkSignIn prefers hook client then falls back to Clerk.client', () => {
+  const hook = { authenticateWithRedirect: async () => {} };
+  const client = { authenticateWithRedirect: async () => {} };
+  assert.equal(resolveClerkSignIn(hook, client), hook);
+  assert.equal(resolveClerkSignIn(null, client), client);
+  assert.equal(resolveClerkSignIn(undefined, client), client);
+  assert.equal(resolveClerkSignIn(null, null), null);
+  return true;
+});
+
+await check('clerkOAuthReady waits for Clerk JS, not useSignIn isLoaded', () => {
+  const signIn = { authenticateWithRedirect: async () => {} };
+  assert.equal(clerkOAuthReady({ clerkLoaded: false, signIn, clientSignIn: signIn }), false);
+  assert.equal(clerkOAuthReady({ clerkLoaded: true, signIn: null, clientSignIn: null }), false);
+  assert.equal(clerkOAuthReady({ clerkLoaded: true, signIn, clientSignIn: null }), true);
+  assert.equal(
+    clerkOAuthReady({ clerkLoaded: true, signIn: null, clientSignIn: signIn }),
+    true,
+    'client.signIn unlocks OAuth when useSignIn never loads',
+  );
+  return true;
+});
+
+await check('AuthGate and SignInCard share useClerkOAuth for OAuth readiness', () => {
+  const hookUrl = new URL('../../apps/party-tracker/lib/auth/useClerkOAuth.js', import.meta.url);
+  assert.equal(fs.existsSync(hookUrl), true, 'missing useClerkOAuth');
+  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /useClerkOAuth/);
+  assert.match(card, /useClerkOAuth/);
+  assert.doesNotMatch(gate, /useSignIn/);
+  assert.doesNotMatch(card, /useSignIn/);
+  return true;
+});
 
 await check('clerkOAuthRedirect sends Google and Apple through the SSO callback', async () => {
   const calls = [];
