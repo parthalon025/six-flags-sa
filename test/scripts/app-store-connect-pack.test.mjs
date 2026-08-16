@@ -130,6 +130,14 @@ assert.match(fastfile, /export_compliance_uses_encryption:\s*true/);
 assert.match(fastfile, /IOS_AUTOMATIC_RELEASE.*false/);
 assert.match(fastfile, /def ios_submission_information/);
 assert.match(fastfile, /def ios_routing_app_coverage/);
+// Store binaries → ios must not require Google Play secrets (Actions sets iOS only).
+assert.match(fastfile, /def load_ios_deployment_env!/);
+assert.match(fastfile, /def load_android_deployment_env!/);
+assert.match(
+  fastfile,
+  /SharedValues::PLATFORM_NAME/,
+  'before_all must pick iOS vs Android env from the active platform',
+);
 
 const productionBlock = fastfile.slice(fastfile.indexOf('lane :production'));
 assert.match(
