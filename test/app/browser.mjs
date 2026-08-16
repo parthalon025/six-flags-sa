@@ -322,7 +322,7 @@ export async function root(page) {
  *   'Day'            the Day tab
  *   'Which map', 'Which park',
  *   'Show on the map', 'On the map',
- *   'Diagnostics'    a row inside Day
+ *   'Diagnostics'    a row inside Day (Map / More topic tabs)
  */
 const TAB_OF = {
   Places: 'explore',
@@ -415,6 +415,22 @@ export async function go(page, dest) {
     await page.waitForTimeout(300);
   }
   if (!SETTINGS_ROWS.has(dest)) return;
+  // Me settings split into You / Map / Phone / More — park & map rows live under Map.
+  const mapRows = new Set(['Which map', 'Which park', 'Show on the map', 'On the map']);
+  if (mapRows.has(dest)) {
+    const mapTopic = page.locator('.settingsTopic', { hasText: 'Map' });
+    if (await mapTopic.count()) {
+      await mapTopic.click();
+      await page.waitForTimeout(300);
+    }
+  }
+  if (dest === 'Diagnostics') {
+    const moreTopic = page.locator('.settingsTopic', { hasText: 'More' });
+    if (await moreTopic.count()) {
+      await moreTopic.click();
+      await page.waitForTimeout(300);
+    }
+  }
   const rowLabel =
     dest === 'Which map'
       ? 'Which park'
