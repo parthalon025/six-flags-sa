@@ -312,5 +312,11 @@
     "items": [
       "Fix Profile gate Clerk login (Google/Apple logo buttons)"
     ]
+  },
+  "1.14.2": {
+    "title": "What's new",
+    "items": [
+      "fix(ui): park load fade, plan tab stops, Me topic tabs"
+    ]
   }
 }

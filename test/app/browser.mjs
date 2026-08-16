@@ -387,6 +387,11 @@ export async function go(page, dest) {
     await page.getByRole('slider', { name: /Resize panel/ }).click();
     await page.waitForTimeout(350);
   }
+  if (dest === 'Rider height') {
+    const heightsTab = page.locator('.settingsTopic', { hasText: 'Heights' });
+    if (await heightsTab.count()) await heightsTab.click();
+    await page.waitForTimeout(300);
+  }
   if (!SETTINGS_ROWS.has(dest)) return;
   const rowLabel =
     dest === 'Which map'
