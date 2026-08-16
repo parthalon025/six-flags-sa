@@ -7,8 +7,8 @@
 <p align="center"><strong>Explore more. Stress less.</strong></p>
 
 <p align="center">
-  An explorer’s companion for a group at a big, crowded park — live party coordination,
-  walking trails, and a drawn park map.
+  A community-built living map for a day at a big, crowded park — discover Worlds and Places,
+  Rally your Party, and leave better map knowledge for the next family.
 </p>
 
 <p align="center">
@@ -51,12 +51,12 @@ Kings Island on a phone: the drawn map, a coaster tap, height filter, walking di
   <a href="docs/guide/walkthrough.md">Step-by-step examples</a>
 </p>
 
-1. **Drawn map** — SVG from OpenStreetMap, not tiles. Tracks, water, midways, named lands.
+1. **Living World map** — SVG from OpenStreetMap, not tiles. Tracks, water, midways, and real mapped Zones.
 2. **Night palette** — same geometry, low-glare colours after dark.
 3. **Tap a coaster** — that ride's track lights up; callout has walk time and height.
 4. **Height filter** — one slider; rides that are out turn alarm red on the map.
 5. **Walk me there** — on-phone route, time, arrival, Start walking.
-6. **Live party** — another phone on the map with range and walking time.
+6. **Rally your Party** — another phone on the map with range, walking time, and a shared Rally Point.
 
 Full captions: [docs/guide/walkthrough.md](docs/guide/walkthrough.md).
 

@@ -9,7 +9,7 @@
  *
  * An actual grandma with no technical understanding needs:
  * 1. Zero mandatory search or typing: critical needs (toilets, food, family,
- *    meet-ups) must be immediately discoverable on screen via the Glance Rail
+ *    Rally Points) must be immediately discoverable on screen via the Glance Rail
  *    and one-tap category chips.
  * 2. No deep scrolling: immediate amenities and nearby options must appear at
  *    the top of lists and cards.
@@ -22,7 +22,7 @@
  * Two people, scored separately:
  *
  *   B — Solo    needs a toilet, food, walking directions, easy reading & big tap targets
- *   A — Joiner  sent a link; joins family, finds grandchildren, sees meet-ups & calls for help
+ *   A — Joiner  sent a link; joins family, finds grandchildren, sees Rally Points & calls for help
  *
  * Scored 0/1/2 rather than pass/fail, because "she got there after pulling the
  * sheet up" is a different result from "she got there first try", and a suite
@@ -245,7 +245,7 @@ await score('B', 'B7', 'the list says which part of the park things are in', asy
      read "Six Flags Fiesta Texas" because the park had no districts mapped. */
   const named = rows.filter((r) => !/·\s*Six Flags Fiesta Texas/.test(r)).length;
   if (!named) return { score: 0, note: 'every row says only the park name' };
-  return named >= rows.length / 2 ? 2 : { score: 1, note: `${named} of ${rows.length} name a district` };
+  return named >= rows.length / 2 ? 2 : { score: 1, note: `${named} of ${rows.length} name a Zone` };
 });
 
 await score('B', 'B8', 'the things she must tap are big enough to tap (44px target floor)', async () => {
@@ -348,7 +348,7 @@ await score('B', 'B12', 'a card she removes stays removed, and Me can put it bac
   await b.waitForTimeout(2500);
   await b.locator('button:has-text("Share my location"), button:has-text("Allow location")').click().catch(() => {});
   await b.waitForTimeout(2500);
-  await b.locator('.gate .btn.primary:has-text("set up")').click().catch(() => {});
+  await b.locator('.gate .btn.primary:has-text("Enter"), .gate .btn.primary:has-text("set up")').click().catch(() => {});
   await b.waitForFunction(() => !document.querySelector('.gate'), null, { timeout: 25000 }).catch(() => {});
   await b.waitForTimeout(2000);
   if (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) {
@@ -480,11 +480,11 @@ await score('A', 'A4', 'can see where a family member is on the resting screen',
   return /Grandad/.test(rail) ? 2 : { score: 0, note: rail.replace(/\n/g, ' | ').slice(0, 70) };
 });
 
-await score('A', 'A5', 'family meet-up point is clearly visible on the resting screen', async () => {
-  // Host sets a meet-up point
+await score('A', 'A5', 'family Rally Point is clearly visible on the resting screen', async () => {
+  // Host sets a Rally Point.
   await h.locator('.tabItem[data-tab="party"]').click();
   await h.waitForTimeout(600);
-  const meetInput = h.locator('.field[aria-label="Meet-up location name"], input[placeholder*="Meet"], input[placeholder*="meet"]');
+  const meetInput = h.locator('.field[aria-label="Rally Point location name"], input[placeholder*="Rally"], input[placeholder*="rally"]');
   if (await meetInput.count()) {
     await meetInput.fill('Carousel');
   }
@@ -494,26 +494,26 @@ await score('A', 'A5', 'family meet-up point is clearly visible on the resting s
   if (await carouselRow.count()) {
     await carouselRow.locator('.poiMain').click();
     await h.waitForTimeout(600);
-    const meetBtn = h.locator('button[aria-label*="meet-up"], button[aria-label="Set meet-up"]').first();
+    const meetBtn = h.locator('button[aria-label*="Rally"], button[aria-label="Rally the Party"]').first();
     if (await meetBtn.count()) {
       await meetBtn.click();
       await h.waitForTimeout(1200);
     }
   }
-  // On Grandma's screen, glance rail shows the MEET UP card
+  // On Grandma's screen, the glance rail shows the Rally card.
   await a.locator('.tabItem[data-tab="explore"]').click();
   await a.waitForTimeout(2000);
   const rail = await a.locator('.glanceRail').innerText().catch(() => '');
-  if (/MEET UP|Meet-up/i.test(rail)) return { score: 2, note: 'meet-up offered on resting glance rail' };
+  if (/RALLY|Rally Point/i.test(rail)) return { score: 2, note: 'Rally Point offered on resting glance rail' };
   // Check if it's on the party tab if mesh sync was slow
   await a.locator('.tabItem[data-tab="party"]').click();
   await a.waitForTimeout(800);
   const partyText = await a.locator('.sheet').innerText().catch(() => '');
   await a.locator('.tabItem[data-tab="explore"]').click();
-  if (/Meet-Up Point/i.test(partyText)) {
+  if (/Rally Point/i.test(partyText)) {
     return { score: 1, note: 'visible in Party tab' };
   }
-  return { score: 1, note: rail.replace(/\n/g, ' · ').slice(0, 60) || 'meet-up card not at front of rail' };
+  return { score: 1, note: rail.replace(/\n/g, ' · ').slice(0, 60) || 'Rally card not at front of rail' };
 });
 
 await score('A', 'A6', 'calling for help takes intent, and can be taken back', async () => {

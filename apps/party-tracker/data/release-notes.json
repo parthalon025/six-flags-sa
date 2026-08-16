@@ -336,5 +336,11 @@
     "items": [
       "Lock production Sign in with Apple"
     ]
+  },
+  "1.16.0": {
+    "title": "What's new",
+    "items": [
+      "feat: revise Parkbound copy to World, Zone, Rally, and Collection"
+    ]
   }
 }

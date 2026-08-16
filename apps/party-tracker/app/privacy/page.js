@@ -3,7 +3,7 @@ import { BRAND } from '@/lib/brand';
 
 export const metadata = {
   title: `Privacy · ${BRAND.name}`,
-  description: 'What Park Bound collects, why, and what stays on your phone.',
+  description: 'What Parkbound collects, why, and what stays on your phone.',
   alternates: { canonical: '/privacy' },
 };
 
@@ -16,14 +16,15 @@ export default function PrivacyPage() {
         </p>
         <h1>Privacy</h1>
         <p className="privacyPage-lede">
-          Park Bound is built for a day inside a park — not for selling your data. This page says what
-          leaves your phone, what stays local, and what optional sign-in adds.
+          Park Bound: Explore, known in the app as Parkbound, is built for a day inside a World — not for
+          selling your data. This page says what leaves your phone, what stays local, and what optional
+          sign-in adds.
         </p>
 
         <section>
           <h2>Guest-first</h2>
           <p>
-            You can browse the map, pick a Venue, and join a Party with a display name only. No Profile
+            You can explore a World, discover Places, and join a Party with a display name only. No Profile
             required. Guest choice is stored in this browser session and clears when you close the tab.
           </p>
         </section>
@@ -31,10 +32,10 @@ export default function PrivacyPage() {
         <section>
           <h2>Location</h2>
           <p>
-            The map uses your phone&apos;s location to place you on the drawn Venue map, rank nearby Side
+            The map uses your phone&apos;s location to place you on the drawn World map, rank nearby Side
             Quests, and walk guest-path directions. If you join a Party, Location is shared with others on
-            that roster while you are in the park — that is how Meet and live pins work. We do not sell
-            location history.
+            that roster while you are in the park — that is how Rally Points and live Locations work. We do
+            not sell location history.
           </p>
         </section>
 
@@ -79,7 +80,7 @@ export default function PrivacyPage() {
           <h2>Data retention and deletion</h2>
           <p>
             Party roster data is ephemeral to the day. Profile data persists until you delete your account
-            from Me. Local map caches and offline Venue files stay on your device until you clear site
+            from Me. Local map caches and offline World files stay on your device until you clear site
             data or uninstall.
           </p>
         </section>

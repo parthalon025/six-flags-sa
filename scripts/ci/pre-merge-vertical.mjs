@@ -65,7 +65,11 @@ export function needsBrowserVertical(files, manifest = loadModulesManifest()) {
 }
 
 export function runNpmStep(args, cwd = root) {
-  const r = spawnSync('npm', args, { cwd, stdio: 'inherit' });
+  const r = spawnSync('npm', args, {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
   return r.status ?? 1;
 }
 
@@ -74,7 +78,7 @@ function runValidateUiChanged(baseRef, cwd = root) {
     const child = spawn(
       'npm',
       ['run', 'test:validate-ui:changed', '--', '--base', baseRef, '--no-health'],
-      { cwd, stdio: 'inherit', env: process.env },
+      { cwd, stdio: 'inherit', env: process.env, shell: process.platform === 'win32' },
     );
     child.on('error', reject);
     child.on('close', (code) => {

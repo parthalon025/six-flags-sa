@@ -8,14 +8,14 @@
     {
       "id": "intake-welcome",
       "slice": "Navigate",
-      "user_action": "See brand welcome and nearest-park offer",
+      "user_action": "See brand welcome and nearest-World offer",
       "suite": "functional",
       "check": "the welcome gate shows brand, pitch, and nearest-park on one card"
     },
     {
       "id": "intake-confirm-park",
       "slice": "Navigate",
-      "user_action": "Confirm nearest park and load its map",
+      "user_action": "Confirm nearest World and load its map",
       "suite": "functional",
       "check": "the nearest-park button asks before building that park"
     },
@@ -113,9 +113,9 @@
     {
       "id": "clerk-profile-oauth",
       "slice": "EP",
-      "user_action": "Login or Guest from the Profile gate; Google/Apple on /sign-in",
+      "user_action": "Sign in or Guest from the Profile gate; Google/Apple on /sign-in",
       "suite": "functional",
-      "check": "Profile gate shows Login and Guest"
+      "check": "Profile gate shows Sign in and Guest"
     },
     {
       "id": "ep5-sharing",

@@ -20,7 +20,7 @@ const ROW = 'current';
 export const KINDS = {
   help: { label: 'Someone needs help', hint: 'Buzzes even when the phone is locked.', on: true },
   join: { label: 'Someone joins or leaves', hint: 'So you know the invite worked.', on: true },
-  meet: { label: 'The meet-up moves', hint: 'When somebody sets or changes it.', on: true },
+  meet: { label: 'The Rally Point moves', hint: 'When somebody sets or changes it.', on: true },
   quiet: {
     label: 'Someone goes quiet',
     hint: 'No word for a while. Queue buildings eat signal, so this one cries wolf.',

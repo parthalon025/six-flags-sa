@@ -3,8 +3,8 @@
 export const AUTH_COPY = {
   eyebrow: 'Profile',
   gateLead:
-    'Log in to save XP and Side Quest progress, or continue as a guest — the map and party work either way.',
-  gateFine: 'Guests browse and join parties by name. Sign in later from Me.',
-  loginLabel: 'Login',
+    'Sign in to save XP and Side Quest progress, or explore as a guest — your World and Party work either way.',
+  gateFine: 'Guests can explore Worlds and join a Party by name. Sign in later from Me.',
+  loginLabel: 'Sign in',
   guestLabel: 'Guest',
 };

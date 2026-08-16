@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "head": "3e33ea84447e5548e9c4be19603698e82554078e",
+  "mergeBase": "8beef0e8c09959d170630602d485238eb279fe6b",
+  "baseRef": "origin/main",
+  "modules": [
+    "auth",
+    "builder",
+    "contract",
+    "grandma",
+    "heights",
+    "intake",
+    "lint",
+    "offline",
+    "party",
+    "selector",
+    "smoke",
+    "venues",
+    "walk"
+  ],
+  "browserVertical": true,
+  "staticSteps": [
+    "test:ci-gate",
+    "test:unit",
+    "build"
+  ],
+  "lockHash": "691dec76f1063b6f",
+  "manifestHash": "c0bde8376607c2b2",
+  "recordedAt": "2026-08-16T20:08:17.820Z"
+}

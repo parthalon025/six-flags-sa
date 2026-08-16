@@ -76,7 +76,7 @@ export default function SettingsPanel({
         <BrandMark variant="glyph" size={22} aqua="var(--aqua)" className="brandMark" />
         <div>
           <b>Explore more. Stress less.</b>
-          <span>Your settings — which park, theme, and what the panel shows.</span>
+          <span>Your settings — selected World, theme, and what the panel shows.</span>
         </div>
       </div>
 
@@ -106,15 +106,15 @@ export default function SettingsPanel({
           </div>
           {helpOpen && (
             <p className="fine block">
-              Start on <b>Explore</b> — toilets, food and rides on guest walking paths. A <b>party is your group</b>:
-              optional when your expedition wants to stick together: one phone starts one and reads out
+              Start on <b>Explore</b> — Places, routes, and real map Zones inside your current World. A <b>Party is your group</b>:
+              optional when your group wants to stay together: one phone starts one and reads out
               the six-character code; everyone else types it in, scans the square, or opens the link.
               After that each phone shows the others as coloured markers, with how far away they are and
               how long it takes to walk there. <b>Side Quests</b> are on-the-ground missions for facts
               open maps cannot settle — height signs, queue entrances, closed toilets — so other guests
-              benefit. Completing one may leave a <b>Mark</b> at that Place — your party sees it
-              now, and other guests after a second party Thanks it. Kits and live GPS stay in your
-              party. A <b>meet-up</b> is one spot everybody agrees on, and anyone can set it. The phones
+              benefit. Completing one may leave a <b>Mark</b> at that Place — your Party sees it
+              now, and other guests after a second Party Thanks it. Kits and live GPS stay in your
+              Party. <b>Rally</b> brings everyone to one shared Place. The phones
               keep a shared list on their own — if one goes flat another picks it up, and nobody has to
               do anything. Live ride marks stay in your party until a second party walks by.
             </p>
@@ -177,10 +177,10 @@ export default function SettingsPanel({
             onDropMark={onDropMark}
           />
 
-          <div className="label">The Map</div>
+          <div className="label">Explore Worlds</div>
           <div className="rowList">
             <button type="button" className="row" onClick={() => onPush('venues')}>
-              <span className="rowText">Which park</span>
+              <span className="rowText">Explore Worlds</span>
               <span className="rowValue">{venueName || '—'}</span>
             </button>
             {onWatchCompass && (
@@ -196,7 +196,7 @@ export default function SettingsPanel({
               </span>
             </button>
             <a className="row" href="/admin/venues">
-              <span className="rowText">Venue inspection</span>
+              <span className="rowText">World inspection</span>
               <span className="rowValue">Builder compare</span>
             </a>
           </div>

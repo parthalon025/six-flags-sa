@@ -127,7 +127,7 @@ const VIEW_TITLES = {
   route: 'Trail',
   place: 'Place',
   categories: 'On the map',
-  venues: 'Which park',
+  venues: 'Explore Worlds',
   diagnostics: 'Diagnostics',
   movement: 'Walk history',
   'watch-compass': 'Watch Compass',
@@ -178,7 +178,7 @@ const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
 const CAR_KEY = 'tracker-car';
 /** The standing cards, by the name the visitor saw on them. */
 const CARD_LABELS = {
-  restroom: 'Nearest toilet',
+  restroom: 'Nearest restroom',
   food: 'Nearest food',
   firstaid: 'First aid',
   gonow: 'GO NOW',
@@ -251,7 +251,7 @@ function ParkApp({ isSignedIn }) {
   /* The location card has had its turn — allow the explore park question even when
      there is no fix yet. */
   const [locationSettled, setLocationSettled] = useState(false);
-  /** First-run "Go to nearest park" — auto-confirms on fix instead of a second card. */
+  /** First-run "Go to nearest World" — auto-confirms on fix instead of a second card. */
   const [nearestIntent, setNearestIntent] = useState(false);
   /* Has this phone been told what the app is? null until localStorage has been
      read, which cannot happen on the server: rendering a card before the answer
@@ -1748,20 +1748,20 @@ function ParkApp({ isSignedIn }) {
 
   const setMeetPoint = useCallback((lat, lng, label) => {
     setArmMeet(false);
-    const record = { lat, lng, label: label || 'Meet-up' };
+    const record = { lat, lng, label: label || 'Rally Point' };
     if (active) {
       runtime.current?.setMeet(record);
       runtime.current?.logAction?.('meet-set', { label: record.label });
-      showToast('Meet-up shared with your party');
+      showToast('Rally set — your Party has a shared destination');
       pushNote({
         kind: 'meet',
-        title: `${identity?.name || 'Someone'} set the meet-up`,
+        title: `${identity?.name || 'Someone'} set a Rally Point`,
         body: record.label,
         focus: { kind: 'meet', label: record.label },
       });
     } else {
       setLocalMeet({ ...record, by: identity?.name || 'Someone', ts: Date.now() });
-      showToast('Meet-up marked (join a party to share it)');
+      showToast('Rally Point marked — join a Party to share it');
     }
   }, [active, identity?.name, showToast, pushNote]);
 
@@ -1780,7 +1780,7 @@ function ParkApp({ isSignedIn }) {
         POIS,
       );
       if (!candidate) {
-        showToast('No fair meet point on the walkable network');
+        showToast('No fair Rally Point here — try another Place');
         return;
       }
       setMeetPoint(candidate.lat, candidate.lng, candidate.n);
@@ -1800,8 +1800,8 @@ function ParkApp({ isSignedIn }) {
     // one change to it nobody is told about.
     pushNote({
       kind: 'meet',
-      title: `${identity?.name || 'Someone'} cleared the meet-up`,
-      body: 'There is no meeting point set now.',
+      title: `${identity?.name || 'Someone'} cleared the Rally Point`,
+      body: 'Your Party has no Rally Point right now.',
     });
   };
 
@@ -1918,7 +1918,7 @@ function ParkApp({ isSignedIn }) {
   }, [mapData, venue?.id, shippedPois, getRouting]);
 
   // A destination is held by reference, not by coordinates: a party member
-  // walks around while you are walking to them, and a meet-up can be moved or
+  // walks around while you are walking to them, and a Rally Point can be moved or
   // cleared out from under the route.
   const navTarget = useMemo(() => {
     if (!nav) return null;
@@ -1929,10 +1929,10 @@ function ParkApp({ isSignedIn }) {
     }
     if (nav.kind === 'meet') {
       if (!meet) return null;
-      return { ...nav, label: meet.label || 'Meet-up', lat: meet.lat, lng: meet.lng };
+      return { ...nav, label: meet.label || 'Rally Point', lat: meet.lat, lng: meet.lng };
     }
     // The car can be moved or forgotten out from under a route the same way a
-    // meet-up can, so it is resolved live rather than copied into `nav`.
+  // Rally Point can, so it is resolved live rather than copied into `nav`.
     if (nav.kind === 'car') {
       if (!car) return null;
       return { ...nav, label: 'Where I parked', lat: car.lat, lng: car.lng };
@@ -2704,7 +2704,7 @@ function ParkApp({ isSignedIn }) {
               setArmMeet((v) => !v);
               if (!armMeet) {
                 shrinkSheet(stops.peek);
-                showToast('Tap the map to drop the meet-up point');
+                showToast('Rally ready — tap the map to set your Party’s destination');
               }
             }}
             aria-label={WORDS.meetup}
@@ -3045,7 +3045,7 @@ function ParkApp({ isSignedIn }) {
                 onJoin={joinParty}
                 onLeave={leaveParty}
                 onClearMeet={clearMeet}
-                onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Meet-up' })}
+                onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Rally Point' })}
                 onFocus={(m) => {
                   setFollow(false);
                   setFocusPoint({ lat: m.lat, lng: m.lng });
@@ -3515,7 +3515,7 @@ function ParkApp({ isSignedIn }) {
             if (venueConfirmed || venuePinned) {
               setParkAsked(true);
               setGateOpen(false);
-              if (venue?.name) showToast(`Browsing ${venue.name}. Change parks under Me → Which park.`);
+              if (venue?.name) showToast(`Exploring ${venue.name}. Switch Worlds from Me → Explore Worlds.`);
             }
           }}
         />

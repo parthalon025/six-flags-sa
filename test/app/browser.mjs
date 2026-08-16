@@ -262,9 +262,9 @@ export async function closeGate(page) {
   await dismissAuthGate(page);
   await dismissIntroSplash(page);
   await dismissUpdateSplash(page);
-  const nearest = page.locator('button:has-text("Go to nearest park")');
+  const nearest = page.locator('button:has-text("Go to nearest World"), button:has-text("Go to nearest park")');
   const allow = page.locator('button:has-text("Allow location")');
-  const yes = page.locator('.gate .btn.primary:has-text("set up")');
+  const yes = page.locator('.gate .btn.primary:has-text("Enter"), .gate .btn.primary:has-text("set up")');
   const quiet = page.locator(
     'button:has-text("Just browsing"), button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Skip for now"), button:has-text("Not now")',
   );
@@ -320,7 +320,7 @@ export async function root(page) {
  *   'Rides', 'Plan'  the Plan tab, where the venue publishes height rules
  *   'Settings', 'Me',
  *   'Day'            the Day tab
- *   'Which map', 'Which park',
+ *   'Explore Worlds',
  *   'Show on the map', 'On the map',
  *   'Diagnostics'    a row inside Day (Map / More topic tabs)
  */
@@ -338,8 +338,7 @@ const TAB_OF = {
   Day: 'settings',
 };
 const SETTINGS_ROWS = new Set([
-  'Which map',
-  'Which park',
+  'Explore Worlds',
   'Show on the map',
   'On the map',
   'Diagnostics',
@@ -436,15 +435,10 @@ export async function go(page, dest) {
     if (await heightsTab.count()) await heightsTab.click();
     await page.waitForTimeout(300);
   }
-  if (!SETTINGS_ROWS.has(dest)) return;
-  // Me settings split into You / Map / Phone / More — park & map rows live under Map.
-  const mapRows = new Set(['Which map', 'Which park', 'Show on the map', 'On the map']);
-  if (mapRows.has(dest)) {
-    const mapTopic = page.locator('.settingsTopic', { hasText: 'Map' });
-    if (await mapTopic.count()) {
-      await mapTopic.click();
-      await page.waitForTimeout(300);
-    }
+  if (dest === 'Explore Worlds' || dest === 'On the map' || dest === 'Show on the map') {
+    const mapTab = page.locator('.settingsTopic', { hasText: 'Map' });
+    if (await mapTab.count()) await mapTab.click();
+    await page.waitForTimeout(300);
   }
   if (dest === 'Diagnostics') {
     const moreTopic = page.locator('.settingsTopic', { hasText: 'More' });
@@ -453,12 +447,8 @@ export async function go(page, dest) {
       await page.waitForTimeout(300);
     }
   }
-  const rowLabel =
-    dest === 'Which map'
-      ? 'Which park'
-      : dest === 'Show on the map'
-        ? 'On the map'
-        : dest;
+  if (!SETTINGS_ROWS.has(dest)) return;
+  const rowLabel = dest === 'Show on the map' ? 'On the map' : dest;
   await page.locator(`.row:has-text("${rowLabel}")`).first().click();
   await page.waitForTimeout(350);
 }

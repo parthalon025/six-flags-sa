@@ -14,7 +14,7 @@ function momentLabel(entry) {
     case 'meet':
     case 'meetup':
     case 'meet_set':
-      return place ? `Meet-up · ${place}` : 'Meet-up set';
+      return place ? `Rally · ${place}` : 'Rally Point set';
     case 'nav':
     case 'navigate':
     case 'route':
@@ -103,7 +103,7 @@ export default function IntelligencePanel({
           </ul>
           {inParty && (
             <button type="button" className="btn small" onClick={() => onUndoMeet?.()}>
-              Undo last meet-up
+              Undo last Rally
             </button>
           )}
         </>
