@@ -74,7 +74,85 @@ function assertWatchSources() {
 }
 
 function alreadyWired(text) {
-  return text.includes(MARKER) && text.includes(ids.target) && text.includes('WatchCompassPlugin.swift');
+  return (
+    text.includes(MARKER) &&
+    text.includes(ids.target) &&
+    text.includes('WatchCompassPlugin.swift') &&
+    text.includes(`${ids.embedPhase} /* Embed Watch Content */`) &&
+    /9592DBEFFC6D2A0C8D5DEB22 \/\* \[CP\] Embed Pods Frameworks \*\/,\s+A7WATCH00000000000000014 \/\* Embed Watch Content \*\//.test(
+      text,
+    ) &&
+    /dependencies = \(\s+A7WATCH00000000000000017 \/\* PBXTargetDependency \*\//.test(text) &&
+    /targets = \(\s+504EC3031FED79650016851F \/\* App \*\/,\s+A7WATCH00000000000000002 \/\* ParkBoundWatch \*\//.test(
+      text,
+    ) &&
+    /504EC3061FED79650016851F \/\* App \*\/,\s+A7WATCH00000000000000006 \/\* ParkBoundWatch \*\//.test(text) &&
+    /504EC3041FED79650016851F \/\* App\.app \*\/,\s+A7WATCH00000000000000001 \/\* ParkBoundWatch\.app \*\//.test(text)
+  );
+}
+
+/** Patch App↔Watch links that the bulk wire can miss if pbxproj drift changes anchors. */
+function ensureLinks(text) {
+  let next = text;
+  let changed = false;
+
+  function apply(label, alreadyOk, pattern, replacement) {
+    if (alreadyOk(next)) return;
+    if (!pattern.test(next)) throw new Error(`ensureLinks: could not ${label}`);
+    next = next.replace(pattern, replacement);
+    changed = true;
+  }
+
+  apply(
+    'add ParkBoundWatch to root group',
+    (t) => /504EC3061FED79650016851F \/\* App \*\/,\s+A7WATCH00000000000000006 \/\* ParkBoundWatch \*\//.test(t),
+    /(504EC3061FED79650016851F \/\* App \*\/,)(\s+)(504EC3051FED79650016851F \/\* Products \*\/,)/,
+    `$1$2${ids.group} /* ParkBoundWatch */,$2$3`,
+  );
+
+  apply(
+    'add ParkBoundWatch.app to Products',
+    (t) =>
+      /504EC3041FED79650016851F \/\* App\.app \*\/,\s+A7WATCH00000000000000001 \/\* ParkBoundWatch\.app \*\//.test(t),
+    /(504EC3041FED79650016851F \/\* App\.app \*\/,)(\s+)(\);)/,
+    `$1$2${ids.product} /* ParkBoundWatch.app */,$2$3`,
+  );
+
+  apply(
+    'attach Embed Watch Content to App target',
+    (t) =>
+      /9592DBEFFC6D2A0C8D5DEB22 \/\* \[CP\] Embed Pods Frameworks \*\/,\s+A7WATCH00000000000000014 \/\* Embed Watch Content \*\//.test(
+        t,
+      ),
+    /(9592DBEFFC6D2A0C8D5DEB22 \/\* \[CP\] Embed Pods Frameworks \*\/,)(\s+)(\);)(\s+buildRules = \(\s+\);)(\s+dependencies = \()(\s+)(\);)(\s+name = App;)/,
+    `$1$2${ids.embedPhase} /* Embed Watch Content */,$2$3$4$5$6${ids.dependency} /* PBXTargetDependency */,$6$7$8`,
+  );
+
+  apply(
+    'attach PBXTargetDependency to App',
+    (t) => /dependencies = \(\s+A7WATCH00000000000000017 \/\* PBXTargetDependency \*\//.test(t),
+    /(dependencies = \()(\s+)(\);)(\s+name = App;)/,
+    `$1$2${ids.dependency} /* PBXTargetDependency */,$2$3$4`,
+  );
+
+  apply(
+    'add ParkBoundWatch to project targets',
+    (t) =>
+      /targets = \(\s+504EC3031FED79650016851F \/\* App \*\/,\s+A7WATCH00000000000000002 \/\* ParkBoundWatch \*\//.test(
+        t,
+      ),
+    /(targets = \(\s+504EC3031FED79650016851F \/\* App \*\/,)(\s+)(\);)/,
+    `$1$2${ids.target} /* ParkBoundWatch */,$2$3`,
+  );
+
+  apply(
+    'add TargetAttributes for ParkBoundWatch',
+    (t) => t.includes(`${ids.target} = {`),
+    /(TargetAttributes = \{\s+504EC3031FED79650016851F = \{[\s\S]*?ProvisioningStyle = Automatic;\s+\};)(\s+)(\};)/,
+    `$1$2${ids.target} = {$2\tCreatedOnToolsVersion = 15.0;$2\tProvisioningStyle = Automatic;$2};$2$3`,
+  );
+
+  return { text: next, changed };
 }
 
 function wire(text) {
@@ -406,23 +484,32 @@ function wire(text) {
 
 function main() {
   assertWatchSources();
-  const original = fs.readFileSync(PBX, 'utf8');
+  let original = fs.readFileSync(PBX, 'utf8');
   if (checkOnly) {
-    if (!alreadyWired(original)) {
-      console.error('CHECK FAIL: ParkBoundWatch is not wired into App.xcodeproj');
+    const linked = ensureLinks(original);
+    if (linked.changed || !alreadyWired(linked.text)) {
+      console.error('CHECK FAIL: ParkBoundWatch is not fully wired into App.xcodeproj');
       process.exit(1);
     }
     console.log('CHECK OK: ParkBoundWatch target + phone bridge present in pbxproj');
     return;
   }
-  const { text, changed } = wire(original);
+  let text = original;
+  let changed = false;
+  if (!text.includes(ids.target) || !text.includes('WatchCompassPlugin.swift')) {
+    const wired = wire(text);
+    text = wired.text;
+    changed = wired.changed || changed;
+  }
+  const linked = ensureLinks(text);
+  text = linked.text;
+  changed = linked.changed || changed;
   if (changed) {
     fs.writeFileSync(PBX, text);
     console.log('Wired ParkBoundWatch + phone bridge into', path.relative(ROOT, PBX));
   } else {
     console.log('Already wired:', path.relative(ROOT, PBX));
   }
-  // Re-check
   const after = fs.readFileSync(PBX, 'utf8');
   if (!alreadyWired(after)) {
     throw new Error('Post-wire check failed');

@@ -80,6 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3061FED79650016851F /* App */,
+				A7WATCH00000000000000006 /* ParkBoundWatch */,
 				504EC3051FED79650016851F /* Products */,
 				7F8756D8B27F46E3366F6CEA /* Pods */,
 				27E2DDA53C4D2A4D1A88CE4A /* Frameworks */,
@@ -90,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+			A7WATCH00000000000000001 /* ParkBoundWatch.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -146,10 +148,12 @@
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
+			A7WATCH00000000000000014 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			A7WATCH00000000000000017 /* PBXTargetDependency */,
 			);
 			name = App;
 			productName = App;
@@ -187,6 +191,10 @@
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
 					};
+				A7WATCH00000000000000002 = {
+					CreatedOnToolsVersion = 15.0;
+					ProvisioningStyle = Automatic;
+				};
 				};
 			};
 			buildConfigurationList = 504EC2FF1FED79650016851F /* Build configuration list for PBXProject "App" */;
@@ -205,6 +213,7 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+			A7WATCH00000000000000002 /* ParkBoundWatch */,
 			);
 		};
 /* End PBXProject section */
