@@ -6467,16 +6467,29 @@ const {
   recommendNow,
   GO_NOW_M,
 } = await import('../../apps/party-tracker/lib/live.js');
-const { GLYPHS: CHROME_GLYPHS, LIVE, WORDS } = await import('../../apps/party-tracker/lib/brand.js');
+const { GLYPHS: CHROME_GLYPHS, LIVE, PARTY_STATE, WORDS } = await import('../../apps/party-tracker/lib/brand.js');
 
 const BEAST_HERE = { ...BEAST, lat: 39.3441, lng: -84.268 };
 
-await check('meet-up and Plan share the glyphs used on the map and the tab bar', () => {
+await check('Rally and Plan share the glyphs used on the map and the tab bar', () => {
   assert.equal(CHROME_GLYPHS.meetup, 'mappin.and.ellipse');
   assert.equal(CHROME_GLYPHS.plan, 'figure.rollercoaster');
   assert.equal(CHROME_GLYPHS.walk, 'location.fill');
-  assert.equal(WORDS.meetup, 'Set meet-up');
+  assert.equal(WORDS.meetup, 'Rally the Party');
+  assert.equal(LIVE.meetup, 'RALLY');
+  assert.deepEqual(PARTY_STATE.meetHere, { label: 'Rally here', tone: 'info' });
   assert.equal(WORDS.addToPlan, 'Add to Plan');
+  return true;
+});
+
+const { placeContext } = await import('../../apps/party-tracker/lib/venue/placeContext.js');
+
+await check('a Place names a mapped Zone or its World, never an off-map area', () => {
+  const venue = { name: 'Kings Island' };
+  const map = { lands: [{ n: 'Action Zone' }] };
+  assert.deepEqual(placeContext({ a: 'Action Zone' }, venue, map), { kind: 'zone', name: 'Action Zone' });
+  assert.deepEqual(placeContext({ a: 'Landen' }, venue, map), { kind: 'world', name: 'Kings Island' });
+  assert.deepEqual(placeContext({}, venue, map), { kind: 'world', name: 'Kings Island' });
   return true;
 });
 
@@ -7308,9 +7321,9 @@ await check('clerkOAuthReady waits for Clerk JS, not useSignIn isLoaded', () => 
   return true;
 });
 
-await check('Profile gate is Login or Guest — Login routes to Clerk /sign-in', async () => {
+await check('Profile gate is Sign in or Guest — Sign in routes to Clerk /sign-in', async () => {
   const { AUTH_COPY } = await import('../../apps/party-tracker/lib/auth/authCopy.js');
-  assert.equal(AUTH_COPY.loginLabel, 'Login');
+  assert.equal(AUTH_COPY.loginLabel, 'Sign in');
   assert.equal(AUTH_COPY.guestLabel, 'Guest');
   const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
   const gateActions = fs.readFileSync(

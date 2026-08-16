@@ -155,13 +155,13 @@ function GlanceRail({
     };
 
     if (meet) {
-      push('meet', 'MEET UP', meet.label, meet, 'var(--adventure)', `set by ${meet.by}`, 'meet', {
+      push('meet', LIVE.meetup, meet.label, meet, 'var(--adventure)', `set by ${meet.by}`, 'meet', {
         kind: 'meet',
-        label: meet.label || 'Meet-up',
+        label: meet.label || 'Rally Point',
       });
     }
 
-    /* The car, next to the meet-up because they are the same kind of thing: a
+    /* The car, next to the Rally Point because they are the same kind of thing: a
        spot somebody put there rather than a place the park has. It ranks above
        the party on purpose — the roster is what you look at all day, and this
        is what you look at once, at the end, when it is dark and every row of a
@@ -253,7 +253,7 @@ function GlanceRail({
        subtype — the builder folds first aid into `service` and the card had
        silently never rendered at any park. */
     const wants = [
-      ['restroom', 'Nearest toilet', (p) => p.c === 'restroom', palette.categories.restroom],
+      ['restroom', 'Nearest restroom', (p) => p.c === 'restroom', palette.categories.restroom],
       ['food', 'Nearest food', (p) => p.c === 'food', palette.categories.food],
       [
         'firstaid',
@@ -320,8 +320,8 @@ function GlanceRail({
         <div className="glanceDigest quiet">
           <span>
             {me
-              ? 'Pull up for toilets, food and rides'
-              : 'Turn on location for nearest toilets and food'}
+              ? 'Pull up for restrooms, food, and rides'
+              : 'Turn on location for nearby restrooms and food'}
           </span>
         </div>
       );
@@ -344,7 +344,7 @@ function GlanceRail({
   if (!me) {
     return (
       <div className="glanceEmpty">
-        <span>Turn on location to see the nearest toilet, food and how far to walk.</span>
+        <span>Turn on location to see the nearest restroom, food, and how far to walk.</span>
       </div>
     );
   }
@@ -352,7 +352,7 @@ function GlanceRail({
   if (cards.length === 0) {
     return (
       <div className="glanceEmpty">
-        <span>Search above for toilet, food or a ride — or pull the sheet up to browse.</span>
+        <span>Search above for a restroom, food, or a ride — or pull the sheet up to browse.</span>
         {onOpenParty ? (
           <button type="button" className="btn small" onClick={onOpenParty}>
             Party with family

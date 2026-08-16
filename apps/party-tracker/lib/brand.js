@@ -15,16 +15,16 @@
  *    Never put the wordmark on the icon.
  *
  * 3. Active map context (BrandMark glyph + dotted trail + Sky map) — live map
- *    destination / meet-up pin, onboarding trail language, Your Day path.
+ *    destination / Rally Point, onboarding trail language, Your Day path.
  */
 
 export const BRAND = {
   name: 'Parkbound',
   nameUpper: 'PARKBOUND',
   slogan: 'Explore more. Stress less.',
-  promise: 'Parkbound turns a complicated park day into an adventure you can actually enjoy.',
+  promise: 'Explore a living map built by the community. Parkbound is your guide through every World.',
   shortDescription:
-    'Find toilets, food and rides on a drawn park map — walk there on guest paths. Start a party when the family wants to stick together.',
+    'Choose a World, discover Places, and Rally your Party on a living map built for the day you are having.',
   /** Public production host — invites, OG, and metadataBase use this. */
   canonicalHost: 'parkbound.kurat0r.ai',
   canonicalUrl: 'https://parkbound.kurat0r.ai',
@@ -53,23 +53,27 @@ export const WORDS = {
   navigation: 'Walk me there',
   favorites: 'Saved',
   recommendations: 'Explore',
+  world: 'World',
+  worlds: 'Explore Worlds',
+  zone: 'Zone',
+  place: 'Place',
   group: 'Party',
   route: 'Trail',
   destination: 'Next Stop',
   history: 'Settings',
   directions: 'Trail',
-  whichMap: 'Which park',
+  whichMap: 'Explore Worlds',
   showOnMap: 'On the map',
   settingsTab: 'Me',
   ridesTab: 'Plan',
   exploreTab: 'Explore',
   partyTab: 'Party',
-  meetup: 'Set meet-up',
+  meetup: 'Rally the Party',
   addToPlan: 'Add to Plan',
 };
 
 /**
- * Glyphs the chrome shares, so a button never invents its own icon. Meet-up
+ * Glyphs the chrome shares, so a button never invents its own icon. Rally
  * is the map pin already on the FAB; Plan is the coaster already on the tab.
  */
 export const GLYPHS = {
@@ -86,7 +90,7 @@ export const LIVE = {
   paused: 'PAUSED',
   weather: 'WEATHER',
   later: 'LATER',
-  meetup: 'MEET UP',
+  meetup: 'RALLY',
 };
 
 /** Party expedition states. */
@@ -94,7 +98,7 @@ export const PARTY_STATE = {
   together: { label: 'Together', tone: 'ok' },
   onTheWay: { label: 'On the way', tone: 'warn' },
   separated: { label: 'Separated', tone: 'warn' },
-  meetHere: { label: 'Meet here', tone: 'info' },
+  meetHere: { label: 'Rally here', tone: 'info' },
 };
 
 /** Core palette — mirrored as CSS custom properties in globals.css. */

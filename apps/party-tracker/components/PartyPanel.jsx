@@ -19,7 +19,7 @@ const STATUSES = [
   'In line',
   'Eating',
   'Restroom',
-  'Heading to meet-up',
+  'Rallying',
   'Waiting here',
 ];
 const HELP = 'NEED HELP';
@@ -364,7 +364,7 @@ export default function PartyPanel({
                         : stale
                           ? 'On the way'
                           : meet && located
-                            ? 'Meet here'
+                            ? 'Rally here'
                             : 'Together'
                     }
                     aria-hidden="true"
@@ -567,7 +567,7 @@ export default function PartyPanel({
           : 'Buzzes every phone in the party and puts your name at the top of their screen.'}
       </p>
 
-      <div className="label">Meet-Up Point</div>
+      <div className="label">Rally Point</div>
       {onSuggestReunification ? (
         <button
           type="button"
@@ -576,7 +576,7 @@ export default function PartyPanel({
           disabled={reunifyBusy || sorted.length < 2}
           onClick={onSuggestReunification}
         >
-          {reunifyBusy ? 'Finding fair point…' : 'Suggest reunification point'}
+          {reunifyBusy ? 'Finding a fair Rally Point…' : 'Suggest a Rally Point'}
         </button>
       ) : null}
       {meet ? (
@@ -619,8 +619,7 @@ export default function PartyPanel({
         </div>
       ) : (
         <p className="fine">
-          None set. Tap the pin button on the map then tap a spot, or open a place in Explore and
-          make it the meet-up.
+          No Rally Point yet. Tap the pin button on the map, then choose a Place in Explore to Rally the Party.
         </p>
       )}
     </div>
