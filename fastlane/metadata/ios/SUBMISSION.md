@@ -20,6 +20,8 @@ Everything below is filled in repo files. Upload with GitHub Actions (**iOS App 
 | **Content rights** | Contains third-party content — we have rights (park map sources + our renders) | `Fastfile` submission_information |
 | **Age rating** | 4+ expected (no mature content; UGC + unrestricted web) | `age_rating.json` |
 
+Apple Identifiers vs Xcode (Background Modes is Xcode-only): [docs/guide/apple-developer.md](../../../docs/guide/apple-developer.md) and `scripts/lib/apple-developer.json`.
+
 ## Version listing (App Store → iOS App)
 
 Version string comes from **`apps/party-tracker/package.json`** (same as TestFlight/build via fastlane). Before metadata upload, create that version in App Store Connect if it does not exist yet.

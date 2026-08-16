@@ -1,0 +1,155 @@
+{
+  "teamId": "CDHJC4MH4G",
+  "bundleId": "ai.kurat0r.parkbound",
+  "appleId": "269608486",
+  "siwaWeb": {
+    "domain": "clerk.parkbound.kurat0r.ai",
+    "returnUrl": "https://clerk.parkbound.kurat0r.ai/v1/oauth_callback"
+  },
+  "items": [
+    {
+      "id": "app-id",
+      "status": "now",
+      "surfaces": ["identifiers"],
+      "value": "ai.kurat0r.parkbound"
+    },
+    {
+      "id": "services-id",
+      "status": "now",
+      "surfaces": ["identifiers"],
+      "value": "ai.kurat0r.parkbound.web"
+    },
+    {
+      "id": "push-notifications",
+      "status": "now",
+      "surfaces": ["identifiers"]
+    },
+    {
+      "id": "associated-domains",
+      "status": "now",
+      "surfaces": ["identifiers", "xcode"],
+      "applinksHost": "parkbound.kurat0r.ai"
+    },
+    {
+      "id": "sign-in-with-apple-app-id",
+      "status": "now",
+      "surfaces": ["identifiers"],
+      "why": "Primary App ID for the Services ID"
+    },
+    {
+      "id": "background-modes",
+      "status": "now",
+      "surfaces": ["xcode"],
+      "plistKeys": ["location", "remote-notification"],
+      "xcodeTicks": ["Location updates", "Remote notifications"]
+    },
+    {
+      "id": "siwa-key",
+      "status": "now",
+      "surfaces": ["keys"],
+      "keyId": "ZZNS5TWZ74"
+    },
+    {
+      "id": "asc-api-key",
+      "status": "now",
+      "surfaces": ["keys"],
+      "keyId": "45W483PCTK",
+      "portal": "users-and-access"
+    },
+    {
+      "id": "sign-in-with-apple-entitlement",
+      "status": "later",
+      "surfaces": ["xcode"],
+      "when": "native Sign in with Apple sheet"
+    },
+    {
+      "id": "apns-auth-key",
+      "status": "later",
+      "surfaces": ["keys"],
+      "when": "server Party push"
+    },
+    {
+      "id": "iap-profile",
+      "status": "later",
+      "surfaces": ["connect"],
+      "productId": "parkbound_profile_annual",
+      "when": "StoreKit in the IPA"
+    },
+    {
+      "id": "app-group",
+      "status": "later",
+      "surfaces": ["identifiers"],
+      "value": "group.ai.kurat0r.parkbound",
+      "when": "widget or Watch"
+    },
+    {
+      "id": "widget-app-id",
+      "status": "later",
+      "surfaces": ["identifiers"],
+      "value": "ai.kurat0r.parkbound.widget",
+      "when": "home/lock-screen widget"
+    },
+    {
+      "id": "watch-app-id",
+      "status": "later",
+      "surfaces": ["identifiers"],
+      "value": "ai.kurat0r.parkbound.watchkitapp",
+      "when": "Watch Compass companion"
+    },
+    {
+      "id": "app-clip",
+      "status": "later",
+      "surfaces": ["identifiers"],
+      "value": "ai.kurat0r.parkbound.Clip",
+      "when": "App Clip invite"
+    },
+    {
+      "id": "nfc-tag-reading",
+      "status": "later",
+      "surfaces": ["identifiers"],
+      "when": "NFC invite tags"
+    },
+    {
+      "id": "bluetooth-background",
+      "status": "later",
+      "surfaces": ["xcode"],
+      "when": "native BLE party mesh"
+    },
+    {
+      "id": "live-activities",
+      "status": "later",
+      "surfaces": ["xcode"],
+      "when": "lock-screen Party glance"
+    },
+    {
+      "id": "merchant-id",
+      "status": "never",
+      "surfaces": ["identifiers"]
+    },
+    {
+      "id": "icloud",
+      "status": "never",
+      "surfaces": ["identifiers"]
+    },
+    {
+      "id": "game-center",
+      "status": "never",
+      "surfaces": ["identifiers"]
+    },
+    {
+      "id": "healthkit",
+      "status": "never",
+      "surfaces": ["identifiers"]
+    },
+    {
+      "id": "pass-type-id",
+      "status": "never",
+      "surfaces": ["identifiers"]
+    },
+    {
+      "id": "website-push-id",
+      "status": "never",
+      "surfaces": ["identifiers"]
+    }
+  ]
+}

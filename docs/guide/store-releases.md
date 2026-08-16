@@ -73,7 +73,7 @@ See [`fastlane/metadata/ios/SUBMISSION.md`](../../fastlane/metadata/ios/SUBMISSI
 
 ## Native binary release
 
-Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` project files, entitlements, push/location native config, `capacitor.config.json`, or Apple-mandated SDK bumps.
+Use when the **store shell** changes: Capacitor plugins, `ios/` / `android/` project files, entitlements, push/location native config, `capacitor.config.json`, or Apple-mandated SDK bumps. Apple Identifiers vs Xcode capabilities: [apple-developer.md](apple-developer.md).
 
 ### Best practices (reduce review friction)
 
