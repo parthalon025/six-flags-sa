@@ -115,8 +115,8 @@ const reviewDefaults = {
   'review_information/notes.txt': `Park Bound loads the live web app from ${urls.marketing} inside the native Capacitor shell.
 
 SIGN-IN: Sign-in is not required. Leave "Sign-in required" unchecked. There is no email/password account.
-Guest review: tap Continue as guest → allow Location → pick Kings Island (or any shipped Venue) → walk guest paths.
-Profile (optional): Sign in with Apple or Google from the startup gate or Me tab. Reviewers may use their own Apple ID.
+Guest review: tap Guest → allow Location → pick Kings Island (or any shipped Venue) → walk guest paths.
+Profile (optional): tap Login on the startup gate (Google or Apple on /sign-in) or Me tab. Reviewers may use their own Apple ID.
 
 PARTY: create or join with a six-character code, or Invite (QR/link) from Me. Location is required to finish joining.
 

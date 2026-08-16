@@ -193,6 +193,26 @@ export const hydrated = (page) =>
   });
 
 /**
+ * Dismiss the Profile auth gate (Login / Guest) when Clerk is configured.
+ */
+export async function dismissAuthGate(page, { timeout = 12000 } = {}) {
+  const deadline = Date.now() + timeout;
+  do {
+    const guest = page.locator('.authGate button:has-text("Guest"), .authGate button:has-text("Continue as guest")');
+    if (await guest.count()) {
+      await guest.first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(400);
+      if (!(await page.locator('.authGate').count())) return true;
+    } else if (!(await page.locator('.authGate').count())) {
+      return true;
+    }
+    if (timeout === 0) break;
+    await page.waitForTimeout(250);
+  } while (Date.now() < deadline);
+  return false;
+}
+
+/**
  * Dismiss the one-time update splash if it is up. Polls because React may not
  * have painted it yet when `goto` returns.
  */
@@ -239,6 +259,7 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
  * so an intake bug fails its own assertion rather than every test behind it.
  */
 export async function closeGate(page) {
+  await dismissAuthGate(page);
   await dismissIntroSplash(page);
   await dismissUpdateSplash(page);
   const nearest = page.locator('button:has-text("Go to nearest park")');
@@ -251,6 +272,7 @@ export async function closeGate(page) {
   else if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
+    await dismissAuthGate(page, { timeout: 250 });
     await dismissIntroSplash(page, { timeout: 250 });
     await dismissUpdateSplash(page, { timeout: 250 });
     const paths = await page.locator('.mapSvg path').count();
