@@ -25,7 +25,7 @@ fastlane/
 
 Store metadata uses **distinct trees** for each platform (`metadata/ios/` vs `metadata/android/`).
 
-Identifiers for App Store Connect / Play Console live in [`store-identifiers.json`](store-identifiers.json) (SKU, bundle ID, package name).
+Identifiers for App Store Connect / Play Console live in [`store-identifiers.json`](store-identifiers.json) (SKU, bundle ID, package name). Apple Developer Identifiers vs Xcode: [`scripts/lib/apple-developer.json`](../scripts/lib/apple-developer.json).
 
 ## Prerequisites
 
