@@ -39,12 +39,14 @@ sits in Austin, at neither park, to check that the intake asks about the nearer 
 saying yes brings that park's places with it, and that it is not asked again.
 
 `test/grandma.mjs` asks a different question from the other two. They ask whether the app
-still does what it did; this asks whether somebody who has never seen it can get anything
-out of it. Two people are scored separately — one on her own who needs a toilet, then food,
-then to walk there, and one who has been handed a link and has to appear on her family's
-map, find a grandchild and be able to call for help. Tasks score 0, 1 or 2, because "she
-got there after opening the panel" is a different result from "she got there first try",
-and a suite that cannot tell those apart cannot tell you whether the app improved.
+still does what it did; this asks whether an actual non-technical, older first-time visitor
+can get what they need without having to search or deep scroll, with readable font sizes,
+large icons, clear family/grandchild visibility, and big 44px tap targets. Two people are scored
+separately — one on her own who needs a toilet, then food, then to walk there, and one who has
+been handed a link and has to appear on her family's map, find a grandchild, see the meet-up, and
+be able to call for help. Tasks score 0, 1 or 2, because "she got there after opening the panel" is a
+different result from "she got there first try", and a suite that cannot tell those apart cannot tell
+you whether the app improved.
 
 The rule that keeps it honest: **its persona tasks may not use the `go()` helper**. That
 helper knows where the tab bar is and pulls the sheet open by its handle, which are exactly

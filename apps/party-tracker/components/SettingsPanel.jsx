@@ -106,7 +106,7 @@ export default function SettingsPanel({
           </div>
           {helpOpen && (
             <p className="fine block">
-              Start on <b>Explore</b> — toilets, food and rides on guest walking paths. A <b>party</b> is
+              Start on <b>Explore</b> — toilets, food and rides on guest walking paths. A <b>party is your group</b>:
               optional when your expedition wants to stick together: one phone starts one and reads out
               the six-character code; everyone else types it in, scans the square, or opens the link.
               After that each phone shows the others as coloured markers, with how far away they are and

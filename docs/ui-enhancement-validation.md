@@ -52,8 +52,8 @@ Two personas, scored **0 / 1 / 2** per task (not just pass/fail):
 
 | Persona | Scenario |
 |---------|----------|
-| **B — Solo** | At Fiesta Texas: find toilet/food, search quality, walk route, sheet ergonomics, tap targets |
-| **A — Joiner** | Invite link → appear on family map → find grandchild → help flow |
+| **B — Solo** | At Fiesta Texas: find toilet/food without typing or deep scroll, category chips, search quality, walk route, sheet ergonomics, large reading & icon sizes, 44px tap targets, plain-English rider height |
+| **A — Joiner** | Invite link / code join → appear on family map → find grandchild & device-less kids on roster → family meet-up → help flow |
 
 **Pass criteria:**
 
