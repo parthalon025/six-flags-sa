@@ -64,6 +64,12 @@ jobs:
         run: |
           gem install cocoapods --no-document
           pod install
+      - name: Stub Capacitor sync artifacts (gitignored; cap sync needs a web build)
+        working-directory: ios/App
+        run: |
+          mkdir -p App/public
+          printf '%s\n' '{}' > App/capacitor.config.json
+          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><widget></widget>' > App/config.xml
       - name: Compile App + embedded Watch (iOS Simulator, unsigned)
         working-directory: ios/App
         run: |
