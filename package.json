@@ -46,6 +46,7 @@
     "databricks:setup": "node scripts/databricks-workspace-setup.mjs",
     "databricks:free-setup": "node scripts/databricks-free-setup.mjs",
     "clerk:setup": "node scripts/clerk-setup.mjs",
+    "clerk:check": "node scripts/clerk-check.mjs",
     "databricks:e2e": "node scripts/databricks-e2e.mjs",
     "venues:discover-parks-api": "node packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node packages/venue-builder/bin/geocode-catalog.mjs",

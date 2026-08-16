@@ -30,6 +30,16 @@
     "show_sign_in_button": false,
     "used_for_sign_in": false
   },
+  "user_model": {
+    "first_name": {
+      "enabled": true,
+      "required": false
+    },
+    "last_name": {
+      "enabled": true,
+      "required": false
+    }
+  },
   "organization_settings": {
     "enabled": false
   },
