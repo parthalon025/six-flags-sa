@@ -41,30 +41,36 @@ jobs:
       - uses: actions/checkout@v4
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-      - name: CocoaPods
-        working-directory: ios/App
-        run: |
-          gem install cocoapods --no-document
-          pod install --repo-update
-      - name: Compile App + embedded Watch (simulator, unsigned)
-        working-directory: ios/App
-        run: |
-          xcodebuild \
-            -workspace App.xcworkspace \
-            -scheme App \
-            -destination 'generic/platform=iOS Simulator' \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            build
-      - name: Compile Watch target alone (watchOS Simulator, unsigned)
+      - name: Compile Watch target (watchOS Simulator, unsigned)
         working-directory: ios/App
         run: |
           xcodebuild \
             -project App.xcodeproj \
             -target ParkBoundWatch \
             -sdk watchsimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install JS deps for Capacitor pods
+        run: npm ci --ignore-scripts
+      - name: CocoaPods
+        working-directory: ios/App
+        run: |
+          gem install cocoapods --no-document
+          pod install
+      - name: Compile App + embedded Watch (iOS Simulator, unsigned)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \

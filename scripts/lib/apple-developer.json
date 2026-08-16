@@ -77,10 +77,10 @@
     },
     {
       "id": "app-group",
-      "status": "later",
-      "surfaces": ["identifiers"],
+      "status": "now",
+      "surfaces": ["identifiers", "xcode"],
       "value": "group.ai.kurat0r.parkbound",
-      "when": "widget or Watch"
+      "when": "Watch Compass companion"
     },
     {
       "id": "widget-app-id",
@@ -91,8 +91,8 @@
     },
     {
       "id": "watch-app-id",
-      "status": "later",
-      "surfaces": ["identifiers"],
+      "status": "now",
+      "surfaces": ["identifiers", "xcode"],
       "value": "ai.kurat0r.parkbound.watchkitapp",
       "when": "Watch Compass companion"
     },

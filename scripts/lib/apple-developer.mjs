@@ -70,5 +70,15 @@ export function shellGaps(plistText, entitlementsText, spec) {
     const want = `applinks:${domains.applinksHost}`;
     if (!entries.includes(want)) gaps.push(`missing ${want}`);
   }
+  const appGroup = spec.items.find((row) => row.id === 'app-group');
+  if (appGroup?.status === 'now' && appGroup.value) {
+    const groups = plistStringsForKey(
+      entitlementsText,
+      'com.apple.security.application-groups',
+    );
+    if (!groups.includes(appGroup.value)) {
+      gaps.push(`missing application-group ${appGroup.value}`);
+    }
+  }
   return gaps;
 }
