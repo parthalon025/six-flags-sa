@@ -44,7 +44,7 @@ def load_ios_connect_env!
   UI.user_error!("App Store Connect API key not found at #{key_path}") unless File.exist?(key_path)
 end
 
-def load_deployment_env!
+def load_ios_deployment_env!
   load_dotenv!
 
   required = %w[
@@ -54,8 +54,6 @@ def load_deployment_env!
     APP_STORE_CONNECT_API_KEY_ID
     APP_STORE_CONNECT_ISSUER_ID
     APP_STORE_CONNECT_API_KEY_PATH
-    ANDROID_PACKAGE_NAME
-    GOOGLE_PLAY_JSON_KEY_PATH
   ]
 
   missing = required.select { |key| ENV[key].nil? || ENV[key].strip.empty? }
@@ -63,9 +61,26 @@ def load_deployment_env!
 
   key_path = File.expand_path(ENV.fetch("APP_STORE_CONNECT_API_KEY_PATH"), repo_root)
   UI.user_error!("App Store Connect API key not found at #{key_path}") unless File.exist?(key_path)
+end
+
+def load_android_deployment_env!
+  load_dotenv!
+
+  required = %w[
+    ANDROID_PACKAGE_NAME
+    GOOGLE_PLAY_JSON_KEY_PATH
+  ]
+
+  missing = required.select { |key| ENV[key].nil? || ENV[key].strip.empty? }
+  UI.user_error!("Missing required environment variables: #{missing.join(', ')}") unless missing.empty?
 
   play_key_path = File.expand_path(ENV.fetch("GOOGLE_PLAY_JSON_KEY_PATH"), repo_root)
   UI.user_error!("Google Play service account JSON not found at #{play_key_path}") unless File.exist?(play_key_path)
+end
+
+def load_deployment_env!
+  load_ios_deployment_env!
+  load_android_deployment_env!
 end
 
 def repo_root
@@ -206,7 +221,16 @@ before_all do
   if ENV["FASTLANE_METADATA_ONLY"] == "true"
     load_ios_connect_env!
   else
-    load_deployment_env!
+    platform = lane_context[SharedValues::PLATFORM_NAME]&.to_s
+    case platform
+    when "ios"
+      load_ios_deployment_env!
+    when "android"
+      load_android_deployment_env!
+    else
+      # Top-level beta/production runs both platforms.
+      load_deployment_env!
+    end
     setup_ci if ENV["CI"]
   end
 end
