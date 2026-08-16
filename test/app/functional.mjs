@@ -1645,7 +1645,7 @@ await check('the park question is inline when the venue is not yet confirmed', a
     throw new Error('the introduction came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
-  // Explore-without-fix can flash "Where are we headed today?" before the
+  // Explore-without-fix can flash "Which World are we exploring?" before the
   // Austin GPS fix lands; wait for the distance-based confirm copy.
   await until(async () => {
     const heading = (await p.locator('.gate h2').innerText().catch(() => '')).trim();
@@ -1720,12 +1720,12 @@ await check('skipping location still asks which World to explore', async () => {
   );
   await until(async () => (await skip.count()) > 0, { timeout: 10000, label: 'the location skip button' });
   await skip.first().click();
-  await until(async () => (await p.locator('.gate h2').innerText()).includes('headed'), {
+  await until(async () => /which world are we exploring/i.test(await p.locator('.gate h2').innerText()), {
     timeout: 10000,
     label: 'the explore park question',
   });
   const heading = (await p.locator('.gate h2').innerText()).trim();
-  if (!/where are we headed today/i.test(heading)) {
+  if (!/which world are we exploring/i.test(heading)) {
     throw new Error(`asked: "${heading}"`);
   }
   await p.locator('.gate .btn.primary').click();
