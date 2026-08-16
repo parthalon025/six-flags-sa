@@ -357,6 +357,11 @@ await score('B', 'B12', 'a card she removes stays removed, and Me can put it bac
   // …and it has to be findable again, or removing it was a one-way door.
   await b.locator('.tabItem[data-tab="settings"]').click();
   await b.waitForTimeout(800);
+  const phoneTopic = b.locator('.settingsTopic', { hasText: 'Phone' });
+  if (await phoneTopic.count()) {
+    await phoneTopic.click();
+    await b.waitForTimeout(500);
+  }
   const row = b.locator('.row', { hasText: 'Nearest food' });
   if (!(await row.count())) return { score: 1, note: 'hidden for good — Me does not list it' };
   await row.click();
@@ -371,6 +376,11 @@ await score('B', 'B13', 'checking rider height for a grandchild gives plain-Engl
   if (!(await ridesTab.count())) return { score: 0, note: 'no visible Plan/Rides tab' };
   await ridesTab.click();
   await b.waitForTimeout(700);
+  const heightsSubTab = b.locator('.settingsTopic', { hasText: 'Heights' });
+  if (await heightsSubTab.count()) {
+    await heightsSubTab.click();
+    await b.waitForTimeout(500);
+  }
   const tier48 = b.locator('.tier:has-text("48")').first();
   if (!(await tier48.count())) return { score: 0, note: 'no 48" tier button' };
   await tier48.click();
