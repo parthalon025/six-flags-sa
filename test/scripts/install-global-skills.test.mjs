@@ -32,6 +32,11 @@ assert.match(
   'Cloud install must run the global skills installer',
 );
 assert.match(env.install, /^npm ci/m);
+assert.match(
+  env.start,
+  /node scripts\/install-global-skills\.mjs/,
+  'Cloud start must refresh global Cursor skills on every pod boot',
+);
 
 const scratch = mkdtempSync(join(tmpdir(), 'skills-link-'));
 try {
