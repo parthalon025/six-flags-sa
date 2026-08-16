@@ -21,6 +21,7 @@ import {
   closeGate,
   dismissIntroSplash,
   dismissNavigation,
+  ensurePeek,
   signIn,
   hasProfileSession,
   dismissUpdateSplash,
@@ -1892,11 +1893,8 @@ await check('height, theme and party survive a reload', async () => {
 console.log('\n--- car parking ---');
 
 await check('save where I parked and walk back to it', async () => {
-  await dismissNavigation(b).catch(() => {});
-  if (await b.locator('.navBanner').count()) {
-    await b.locator('.navEnd').click().catch(() => {});
-    await b.waitForTimeout(400);
-  }
+  // Persistence / Party leave the sheet high; crowded hides the car fab.
+  await ensurePeek(b);
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
   // Button toggles label once a car is saved — always save first.
@@ -1906,11 +1904,18 @@ await check('save where I parked and walk back to it', async () => {
   // If that was a "go to" focus tap, save again from Me forget + fab.
   if (await b.locator('button[aria-label="Go to where I parked"]').count()) {
     await go(b, 'Me');
+    // Where I Parked lives under the Map settings topic.
+    const mapTopic = b.locator('.settingsTopic', { hasText: 'Map' });
+    if (await mapTopic.count()) {
+      await mapTopic.click();
+      await b.waitForTimeout(300);
+    }
     const forget = b.locator('.row:has-text("Forget where I parked")');
     if (await forget.count()) {
       await forget.click();
       await b.waitForTimeout(400);
     }
+    await ensurePeek(b);
     await b.locator('button[aria-label="Save where I parked"]').click();
     await b.waitForTimeout(600);
   }

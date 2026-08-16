@@ -376,6 +376,28 @@ export async function dismissNavigation(page) {
   await page.waitForTimeout(300);
 }
 
+/**
+ * Peek the Explore sheet so map FABs stay actionable.
+ * A half/full sheet sets data-crowded and zeros .fabs pointer-events.
+ */
+export async function ensurePeek(page) {
+  await dismissNavigation(page).catch(() => {});
+  const explore = page.locator('.tabItem[data-tab="explore"]');
+  if (await explore.count()) {
+    await explore.click({ force: true });
+    await page.waitForTimeout(300);
+  }
+  await root(page);
+  const stop = () =>
+    page.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+    );
+  for (let i = 0; i < 4 && (await stop()) !== 'peek'; i += 1) {
+    await page.getByRole('slider', { name: /Resize panel/ }).click();
+    await page.waitForTimeout(350);
+  }
+}
+
 /** POI heights gate the Plan/Rides tab — wait before Rider height navigation. */
 export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
   await until(
