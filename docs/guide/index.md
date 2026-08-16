@@ -31,3 +31,4 @@ Full documentation split out of the root README. Start with [Features](features.
 - [Architecture map](../architecture-map.md) — system diagram and execution flows
 - [Repository structure](../repo-structure.md) — short tree
 - [Packages](../../packages/README.md) — deep-module seams
+- [Disney park apps vs Park Bound](../research/2026-08-15-disney-park-apps-vs-park-bound.md) — official Disney guest-app audit and what not to copy
