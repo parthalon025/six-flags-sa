@@ -16,5 +16,6 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/local-ci-pass.test.mjs',
   'test/scripts/agent-docs.test.mjs',
   'test/scripts/clerk-e2e.test.mjs',
+  'test/scripts/wire-watch-target.test.mjs',
   'test/scripts/clerk-apple-prod.test.mjs',
 ];

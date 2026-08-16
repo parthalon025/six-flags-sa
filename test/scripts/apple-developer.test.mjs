@@ -61,17 +61,17 @@ assert.equal(item('iap-profile').status, 'later');
 
 assert.deepEqual(
   laterIdentifierIds(spec).sort(),
-  [
-    'app-clip',
-    'app-group',
-    'nfc-tag-reading',
-    'watch-app-id',
-    'widget-app-id',
-  ].sort(),
+  ['app-clip', 'nfc-tag-reading', 'widget-app-id'].sort(),
 );
 assert.equal(item('sign-in-with-apple-entitlement').status, 'later');
 assert.deepEqual(surfaces(item('sign-in-with-apple-entitlement')), ['xcode']);
 assert.equal(item('apns-auth-key').status, 'later');
+
+assert.equal(item('app-group').status, 'now');
+assert.equal(item('app-group').value, 'group.ai.kurat0r.parkbound');
+assert.deepEqual(surfaces(item('app-group')), ['identifiers', 'xcode']);
+assert.equal(item('watch-app-id').status, 'now');
+assert.equal(item('watch-app-id').value, 'ai.kurat0r.parkbound.watchkitapp');
 
 assert.deepEqual(
   neverCreate(spec).sort(),
@@ -90,4 +90,5 @@ const entitlements = readFileSync(join(root, 'ios/App/App/App.entitlements'), 'u
 assert.deepEqual(shellGaps(plist, entitlements, spec), []);
 
 assert.ok(!entitlements.includes('com.apple.developer.applesignin'));
-assert.ok(!entitlements.includes('com.apple.security.application-groups'));
+assert.ok(entitlements.includes('com.apple.security.application-groups'));
+assert.ok(entitlements.includes('group.ai.kurat0r.parkbound'));

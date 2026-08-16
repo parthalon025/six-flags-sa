@@ -1,18 +1,54 @@
 # Park Bound Watch Compass
 
-Native watchOS sources for the facing-relative **Compass** (ADR-0011).
+Native watchOS companion for the facing-relative **Compass** (ADR-0011).
 
-## Add the target in Xcode
+## What’s in the repo
 
-1. Open `ios/App/App.xcworkspace`.
-2. File → New → Target → watchOS → App → name `ParkBoundWatch`.
-3. Add `WatchCompass.swift` to that target.
-4. Share App Group / UserDefaults with the iOS app using key `parkbound-watch-compass-v1` (same as `packages/shared/compass.js`).
+| Path | Role |
+|------|------|
+| `ParkBoundWatchApp.swift` | `@main` Watch app |
+| `WatchCompass.swift` | Dial + settings UI |
+| `WatchCompassSession.swift` | WatchConnectivity receive + sample marks |
+| `../App/WatchCompassPhoneSession.swift` | iPhone WCSession sender |
+| `../App/WatchCompassPlugin.swift` | Capacitor `WatchCompass.pushState` |
+| `App.xcodeproj` | Watch target + Embed Watch Content (via wire script) |
+| `packages/shared/compass.js` → `watchCompassPushState` | Shared mark payload |
+| `apps/party-tracker/lib/native.js` → `pushWatchCompass` | JS → Capacitor |
 
-## Phone prefs
+Bundle IDs:
 
-Me → Watch Compass writes the same JSON shape into `localStorage`. A later Capacitor plugin or WatchConnectivity session should mirror that blob into the Watch `UserDefaults`.
+- Phone: `ai.kurat0r.parkbound`
+- Watch: `ai.kurat0r.parkbound.watchkitapp`
+- App Group: `group.ai.kurat0r.parkbound`
+- Prefs key: `parkbound-watch-compass-v1` (same as `packages/shared/compass.js`)
 
-## Live marks
+## Commands (any OS)
 
-`WatchCompassView` accepts `marks` + `heading` from the phone. Until WatchConnectivity is wired, the Watch settings UI and Always On modes still compile and run with sample data.
+```bash
+npm run ios:wire-watch      # idempotent pbxproj wire
+npm run ios:check-watch     # assert wiring
+node test/scripts/wire-watch-target.test.mjs
+```
+
+## Build on a Mac
+
+```bash
+cd ios/App
+xcodebuild \
+  -project App.xcodeproj \
+  -scheme App \
+  -destination 'generic/platform=watchOS Simulator' \
+  -configuration Debug \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+Or open `ios/App/App.xcworkspace`, select the **App** scheme, and run on an iPhone + Watch simulator pair.
+
+CI: `.github/workflows/ios-watch-compile.yml` runs the unsigned simulator compile on `macos-14`.
+
+## Still needs a human Apple Developer step
+
+1. Enable App Group `group.ai.kurat0r.parkbound` for both App IDs in the developer portal.
+2. Create the Watch App ID `ai.kurat0r.parkbound.watchkitapp` if missing.
+3. First archive with signing for TestFlight / App Store.

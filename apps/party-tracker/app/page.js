@@ -23,7 +23,8 @@ import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND, GLYPHS, WORDS } from '@/lib/brand';
 import { INTRO_KEY, firstRunOverlay } from '@/lib/introGate';
-import { haptic, listenInviteUrls, registerPush, shouldRegisterPush } from '@/lib/native';
+import { haptic, listenInviteUrls, pushWatchCompass, registerPush, shouldRegisterPush } from '@/lib/native';
+import { loadWatchSettings, mapRotationDegrees, watchCompassPushState } from '@/lib/compass';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -72,7 +73,6 @@ import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
-import { mapRotationDegrees } from '@/lib/compass';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { navKeyOf } from '@/lib/navKey';
 import {
@@ -2152,6 +2152,61 @@ function ParkApp({ isSignedIn }) {
       }),
     [walking, northUp, heading, progress?.course],
   );
+
+  /* Live facing Compass → paired Watch (ADR-0011). No-op on web. */
+  const [watchSettingsEpoch, setWatchSettingsEpoch] = useState(0);
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onSettings = () => setWatchSettingsEpoch((n) => n + 1);
+    window.addEventListener('parkbound-watch-compass-settings', onSettings);
+    return () => window.removeEventListener('parkbound-watch-compass-settings', onSettings);
+  }, []);
+  useEffect(() => {
+    const selectedPlace =
+      selected && Number.isFinite(selected.lat)
+        ? {
+            lat: selected.lat,
+            lng: selected.lng,
+            label: selected.n || selected.label,
+            placeId: selected.i || selected.id,
+          }
+        : null;
+    let nextTurn = null;
+    if (walking && progress?.step) {
+      const step = progress.step;
+      nextTurn =
+        typeof step.instruction === 'string'
+          ? step.instruction
+          : typeof step.text === 'string'
+            ? step.text
+            : null;
+    }
+    void pushWatchCompass(
+      watchCompassPushState({
+        me: position,
+        heading,
+        members: others,
+        meet,
+        go: walking ? navTarget : null,
+        selection: selectedPlace,
+        planNext: walking ? null : planNextPlace,
+        settings: loadWatchSettings(),
+        nextTurn,
+        raised: true,
+      }),
+    );
+  }, [
+    position,
+    heading,
+    others,
+    meet,
+    walking,
+    navTarget,
+    selected,
+    planNextPlace,
+    progress,
+    watchSettingsEpoch,
+  ]);
 
   const puck = useMemo(() => {
     if (!walking || !progress?.snapped) return null;

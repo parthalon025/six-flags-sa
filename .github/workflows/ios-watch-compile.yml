@@ -1,0 +1,84 @@
+name: iOS Watch compile
+
+# Compiles ParkBoundWatch on macOS without App Store signing.
+# Also asserts pbxproj wiring on Linux.
+
+on:
+  pull_request:
+    paths:
+      - "ios/**"
+      - "scripts/ios/**"
+      - ".github/workflows/ios-watch-compile.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - "scripts/ios/**"
+      - ".github/workflows/ios-watch-compile.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ios-watch-compile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wire-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run ios:check-watch
+      - run: node test/scripts/wire-watch-target.test.mjs
+
+  compile-watch:
+    runs-on: macos-14
+    needs: wire-check
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Compile Watch target (watchOS Simulator, unsigned)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -project App.xcodeproj \
+            -target ParkBoundWatch \
+            -sdk watchsimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install JS deps for Capacitor pods
+        run: npm ci --ignore-scripts
+      - name: CocoaPods
+        working-directory: ios/App
+        run: |
+          gem install cocoapods --no-document
+          pod install
+      - name: Stub Capacitor sync artifacts (gitignored; cap sync needs a web build)
+        working-directory: ios/App
+        run: |
+          mkdir -p App/public
+          printf '%s\n' '{}' > App/capacitor.config.json
+          printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?><widget></widget>' > App/config.xml
+      - name: Compile App + embedded Watch (iOS Simulator, unsigned)
+        working-directory: ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build

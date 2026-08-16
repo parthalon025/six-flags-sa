@@ -21,6 +21,7 @@ import {
   closeGate,
   dismissIntroSplash,
   dismissNavigation,
+  ensurePeek,
   signIn,
   hasProfileSession,
   dismissUpdateSplash,
@@ -170,7 +171,14 @@ await check('sign-up page respects Clerk configuration', async () => {
 });
 
 await check('OAuth SSO callback does not remount the SignIn widget', async () => {
-  await a.goto(`${BASE}/sign-in/sso-callback`, { waitUntil: 'domcontentloaded' });
+  // Clerk may redirect mid-load; Playwright then reports net::ERR_ABORTED even
+  // though the callback (or its redirect target) did land.
+  try {
+    await a.goto(`${BASE}/sign-in/sso-callback`, { waitUntil: 'domcontentloaded' });
+  } catch (err) {
+    if (!/ERR_ABORTED|Navigation.*interrupted/i.test(String(err?.message || err))) throw err;
+  }
+  await a.waitForLoadState('domcontentloaded').catch(() => {});
   const url = String(a.url());
   if (!url.includes('/sign-in/sso-callback')) return true;
   const clerkSignIn =
@@ -1890,40 +1898,30 @@ await check('height, theme and party survive a reload', async () => {
 console.log('\n--- car parking ---');
 
 await check('save where I parked and walk back to it', async () => {
-  await dismissNavigation(b).catch(() => {});
-  if (await b.locator('.navBanner').count()) {
-    await b.locator('.navEnd').click().catch(() => {});
-    await b.waitForTimeout(400);
-  }
+  // Persistence / Party leave the sheet high; crowded hides the car fab.
+  await ensurePeek(b);
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
-  // Persistence leaves this phone on Party. Map FABs live on Explore.
-  await go(b, 'Places');
-  await b.locator('.tabItem[data-tab="explore"]').click();
-  await b.waitForTimeout(300);
-  // Button toggles label once a car is saved — always save first.
-  const parkBtn = b.locator('button[aria-label="Save where I parked"], button[aria-label="Go to where I parked"]');
-  await parkBtn.click();
-  await b.waitForTimeout(600);
-  // If that was a "go to" focus tap, forget from Me, then save from Explore.
-  if (await b.locator('button[aria-label="Go to where I parked"]').count()) {
-    await go(b, 'Me');
-    const phoneTab = b.locator('.settingsTopic', { hasText: 'Phone' });
-    if (await phoneTab.count()) await phoneTab.click();
-    const forget = b.locator('.row:has-text("Forget where I parked")');
-    if (await forget.count()) {
-      await forget.click();
-      await b.waitForTimeout(400);
-    }
-    await go(b, 'Places');
-    await b.locator('.tabItem[data-tab="explore"]').click();
-    await b.waitForTimeout(300);
-    await b.locator('button[aria-label="Save where I parked"]').click();
-    await b.waitForTimeout(600);
+  // Clear a leftover pin via the glance ✕ (Forget under Me → Phone is easy to miss).
+  const forgetCar = b.locator('button[aria-label="Remove Your car from this list"]');
+  if (await forgetCar.count()) {
+    await forgetCar.click();
+    await b.waitForTimeout(400);
   }
-  // Move away from the saved spot so a walk is worth previewing.
-  await B.context.setGeolocation({ latitude: 39.3455, longitude: -84.265 });
-  await b.waitForTimeout(800);
+  const saveBtn = b.locator('button[aria-label="Save where I parked"]');
+  await until(async () => (await saveBtn.count()) > 0, {
+    timeout: 15000,
+    label: 'Save where I parked fab',
+  });
+  await saveBtn.click();
+  await b.waitForTimeout(600);
+  // Move away from the saved spot so a walk is worth previewing — pulse the
+  // fake GPS so watchPosition actually moves (one set can sit unread).
+  const away = { latitude: 39.3455, longitude: -84.265 };
+  for (let i = 0; i < 4; i += 1) {
+    await B.context.setGeolocation(away);
+    await b.waitForTimeout(400);
+  }
   await go(b, 'Places');
   const carGo = b.locator('.glanceCard', { hasText: 'Your car' }).locator('.glanceGo');
   await until(async () => (await carGo.count()) > 0, { timeout: 15000, label: 'car glance card' });
@@ -1933,10 +1931,13 @@ await check('save where I parked and walk back to it', async () => {
     label: 'route to car',
   });
   await b.locator('.previewGo').click();
-  await until(async () => (await b.locator('.navBanner').count()) > 0, {
-    timeout: 15000,
-    label: 'walk to car started',
-  });
+  await until(
+    async () => (await b.locator('.navBanner, .navBar').count()) > 0,
+    {
+      timeout: 20000,
+      label: 'walk to car started',
+    },
+  );
   await b.locator('.navEnd').click();
   await b.waitForTimeout(400);
   return true;

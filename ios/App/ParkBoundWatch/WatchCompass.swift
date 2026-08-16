@@ -1,7 +1,6 @@
 // Park Bound Watch Compass — native companion sources.
-// Add a watchOS App target in Xcode named ParkBoundWatch and include these files.
 // Preference key matches packages/shared/compass.js WATCH_SETTINGS_KEY.
-// Live marks arrive via WatchConnectivity from the phone (wire in a later ticket).
+// Live marks arrive via WatchConnectivity from WatchCompassPhoneSession.
 
 import Foundation
 import SwiftUI
@@ -164,7 +163,7 @@ struct WatchCompassView: View {
 }
 
 struct WatchCompassSettingsView: View {
-  @State private var settings = WatchCompassSettings.load()
+  @Binding var settings: WatchCompassSettings
 
   var body: some View {
     Form {
@@ -187,7 +186,6 @@ struct WatchCompassSettingsView: View {
       Toggle("Haptics on turn", isOn: $settings.turnHaptics)
       Toggle("Raise to show nav", isOn: $settings.raiseToNav)
     }
-    .onChange(of: settings) { _, next in next.save() }
     .navigationTitle("Compass")
   }
 }

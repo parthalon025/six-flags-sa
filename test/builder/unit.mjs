@@ -1379,6 +1379,7 @@ const {
   normalizeWatchSettings,
   placeKeyOf,
   watchAlwaysOnPayload,
+  watchCompassPushState,
   DEFAULT_WATCH_SETTINGS,
 } = await import('../../packages/shared/compass.js');
 
@@ -1472,6 +1473,48 @@ await check('Watch settings normalize and calm Always On drops the mark field', 
     nextTurn: null,
   });
   assert.deepEqual(watchAlwaysOnPayload({ alwaysOn: 'off' }), { mode: 'blank' });
+  return true;
+});
+
+await check('Watch push state serializes native mark ids from place keys', () => {
+  const payload = watchCompassPushState({
+    me: { lat: 39.34395, lng: -84.2673 },
+    heading: 90,
+    go: { lat: 39.340142, lng: -84.266032, placeId: 'beast', label: 'The Beast' },
+    members: [{ id: 'jordan', name: 'Jordan', lat: 39.344, lng: -84.266 }],
+    meet: { lat: 39.341, lng: -84.27, label: 'Fountain' },
+    settings: { density: 'split', showParty: true, showMeet: true },
+    nextTurn: { label: 'Left in 120 ft' },
+    raised: true,
+  });
+  assert.equal(payload.heading, 90);
+  assert.equal(payload.nextTurn, 'Left in 120 ft');
+  assert.equal(payload.raised, true);
+  assert.equal(payload.settings.density, 'split');
+  const primary = payload.marks.find((m) => m.kind === 'primary');
+  assert.equal(primary?.id, 'id:beast');
+  assert.equal(primary?.label, 'The Beast');
+  assert.equal(primary?.showDistance, true);
+  assert.ok(Number.isFinite(primary?.bearing));
+  assert.ok(Number.isFinite(primary?.distanceM));
+  const member = payload.marks.find((m) => m.kind === 'member');
+  assert.equal(member?.id, 'member:jordan');
+  assert.equal(member?.showDistance, false);
+  const north = payload.marks.find((m) => m.kind === 'north');
+  assert.equal(north?.id, 'north');
+  assert.equal(north?.bearing, 0);
+  return true;
+});
+
+await check('Watch push state stays empty without facing', () => {
+  const payload = watchCompassPushState({
+    me: { lat: 39.34, lng: -84.27 },
+    heading: null,
+    meet: { lat: 39.341, lng: -84.27, label: 'Fountain' },
+  });
+  assert.equal(payload.heading, null);
+  assert.deepEqual(payload.marks, []);
+  assert.equal(payload.nextTurn, null);
   return true;
 });
 

@@ -322,7 +322,7 @@ export async function root(page) {
  *   'Day'            the Day tab
  *   'Explore Worlds',
  *   'Show on the map', 'On the map',
- *   'Diagnostics'    a row inside Day
+ *   'Diagnostics'    a row inside Day (Map / More topic tabs)
  */
 const TAB_OF = {
   Places: 'explore',
@@ -375,6 +375,28 @@ export async function dismissNavigation(page) {
   await page.waitForTimeout(300);
 }
 
+/**
+ * Peek the Explore sheet so map FABs stay actionable.
+ * A half/full sheet sets data-crowded and zeros .fabs pointer-events.
+ */
+export async function ensurePeek(page) {
+  await dismissNavigation(page).catch(() => {});
+  const explore = page.locator('.tabItem[data-tab="explore"]');
+  if (await explore.count()) {
+    await explore.click({ force: true });
+    await page.waitForTimeout(300);
+  }
+  await root(page);
+  const stop = () =>
+    page.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+    );
+  for (let i = 0; i < 4 && (await stop()) !== 'peek'; i += 1) {
+    await page.getByRole('slider', { name: /Resize panel/ }).click();
+    await page.waitForTimeout(350);
+  }
+}
+
 /** POI heights gate the Plan/Rides tab — wait before Rider height navigation. */
 export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
   await until(
@@ -413,10 +435,17 @@ export async function go(page, dest) {
     if (await heightsTab.count()) await heightsTab.click();
     await page.waitForTimeout(300);
   }
-  if (dest === 'Explore Worlds' || dest === 'On the map') {
+  if (dest === 'Explore Worlds' || dest === 'On the map' || dest === 'Show on the map') {
     const mapTab = page.locator('.settingsTopic', { hasText: 'Map' });
     if (await mapTab.count()) await mapTab.click();
     await page.waitForTimeout(300);
+  }
+  if (dest === 'Diagnostics') {
+    const moreTopic = page.locator('.settingsTopic', { hasText: 'More' });
+    if (await moreTopic.count()) {
+      await moreTopic.click();
+      await page.waitForTimeout(300);
+    }
   }
   if (!SETTINGS_ROWS.has(dest)) return;
   const rowLabel = dest === 'Show on the map' ? 'On the map' : dest;
