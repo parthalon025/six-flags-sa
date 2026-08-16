@@ -79,14 +79,14 @@ async function main() {
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();
   check(/PARKBOUND/i.test(first), 'the welcome gate shows the brand lockup');
-  check(/Go to nearest park/i.test(first), 'the welcome gate offers the nearest-park shortcut');
+  check(/Go to nearest World/i.test(first), 'the welcome gate offers the nearest-World shortcut');
 
   await context.grantPermissions(['geolocation']);
-  await page.getByRole('button', { name: 'Go to nearest park' }).click();
+  await page.getByRole('button', { name: 'Go to nearest World' }).click();
   await page.waitForTimeout(2000);
 
-  // Confirm nearest park before download (no silent auto-setup).
-  const confirm = page.locator('.gate .btn.primary:has-text("set up")');
+  // Confirm nearest World before download (no silent auto-setup).
+  const confirm = page.locator('.gate .btn.primary:has-text("Enter")');
   await confirm.waitFor({ state: 'visible', timeout: 25000 });
   const intakeShot = path.join(OUT, '01b-park-auto-setup.png');
   await page.screenshot({ path: intakeShot });

@@ -4,16 +4,20 @@ Community-powered, exploration-first digital twin of theme parks and other venue
 
 ## Language
 
-**Park Bound**:
-The product. User-facing and domain name for this system.
+**Parkbound**:
+The in-product name for this system. **Park Bound: Explore** is the store-facing title.
 _Avoid_: Party Tracker (legacy engineering / package label only)
 
-**Venue**:
-One shippable place with its own map and POI contract (theme park, water park, campground, etc.). The phone updates that map when the app starts and a connection is available (cell or Wi-Fi), so a **Party** shares one current **Venue**.
-_Avoid_: Park (as a second entity type — OK as colloquial UI copy when the Venue is a theme park)
+**World**:
+One selected park-scale map a visitor explores. A **World** may be a theme park, water park, or campground. The phone updates the active World when a connection is available, so a **Party** shares one current World. The builder and generated-data contract retain `venue` as their implementation term.
+_Avoid_: Venue in user-facing copy; Park is OK as a colloquial description of a World.
+
+**Zone**:
+A named real-world area inside a **World**, derived from an OpenStreetMap land polygon and shown only where that map data exists. A **Place** may belong to a Zone; a Place without a mapped Zone stays in its World. The builder and generated-data contract retain `lands` and POI field `a` as implementation terms.
+_Avoid_: inventing fallback Zones or treating Zone as a guaranteed hierarchy level.
 
 **Party**:
-A live group coordinating at a **Venue** — shared roster, presence, meet point, and in-party ride reports. Not a chat room or a saved trip plan.
+A live group coordinating in one **World** — shared roster, presence, Rally Point, and in-Party ride reports. Not a chat room or a saved trip plan.
 _Avoid_: Session, room, lobby
 
 **Host**:
@@ -65,16 +69,16 @@ A Profile-attributed, append-only live signal (wait, status, freshness) that may
 _Avoid_: Contribution (Observations are experience/ops series, not durable map structure)
 
 **Place**:
-A named thing on a **Venue** map (ride, show, restroom, food, etc.).
+A named thing on a **World** map (ride, show, restroom, food, etc.). A Place may be in a mapped **Zone**.
 _Avoid_: POI (engineering/file label for `*.pois.json` only)
 
 **Attraction**:
 A **Place** you ride or experience that may have multiple location slots (queue entrance, station, exit, …) — not a single pin for navigation.
 _Avoid_: Ride (as the umbrella type — “ride” is a category of **Attraction**/Place)
 
-**Meet**:
-The shared rendezvous point on the **Venue** map for a **Party** (at most one). A personal pin before joining promotes into the party **Meet**.
-_Avoid_: Waypoint, marker, pin (generic map chrome — use **Meet** for this job)
+**Rally Point**:
+The shared rendezvous point on the **World** map for a **Party** (at most one). A personal pin before joining promotes into the Party Rally Point.
+_Avoid_: Meet-up, Waypoint, marker, pin (generic map chrome — use **Rally** for the action and Rally Point for its destination)
 
 **Subgroup**:
 A soft partition tag on a **Member** within one **Party** (not a nested party or separate roster). Device-holding **Members** choose their own tag; they may also tag device-less **Members** onto a clump, or remove those seats from the roster. Split the family by tag, then rejoin at the one **Meet**.

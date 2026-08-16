@@ -10,7 +10,7 @@
  * full policy disclosed behind pointers.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const libDir = dirname(fileURLToPath(import.meta.url));
@@ -140,11 +140,11 @@ export function composeAgentDocs({
   }
 
   for (const policy of manifest.policies) {
-    outputs.set(join(manifest.cursorRulesDir, policy.cursorRule), renderCursorRule(policy));
+    outputs.set(posix.join(manifest.cursorRulesDir, policy.cursorRule), renderCursorRule(policy));
   }
 
   for (const rule of manifest.staticCursorRules) {
-    outputs.set(join(manifest.cursorRulesDir, rule.file), renderStaticCursorRule(rule));
+    outputs.set(posix.join(manifest.cursorRulesDir, rule.file), renderStaticCursorRule(rule));
   }
 
   if (manifest.github) {
@@ -152,7 +152,7 @@ export function composeAgentDocs({
       outputs.set(stub.output, renderDocStub(stub));
     }
     for (const entry of manifest.github.issueTemplates ?? []) {
-      const rel = join(manifest.github.issueTemplatesDir, entry.output);
+      const rel = posix.join(manifest.github.issueTemplatesDir, entry.output);
       outputs.set(rel, renderGitHubIssueTemplate(manifest, entry, rootDir));
     }
   }
@@ -173,6 +173,7 @@ export function checkAgentDocs(opts = {}) {
   const outputs = composeAgentDocs(opts);
   const rootDir = opts.rootDir ?? root;
   const drift = [];
+  const normalize = (s) => s.replace(/\r\n/g, '\n');
   for (const [relPath, expected] of outputs) {
     const abs = join(rootDir, relPath);
     if (!existsSync(abs)) {
@@ -180,7 +181,7 @@ export function checkAgentDocs(opts = {}) {
       continue;
     }
     const actual = readFileSync(abs, 'utf8');
-    if (actual !== expected) {
+    if (normalize(actual) !== normalize(expected)) {
       drift.push({ path: relPath, reason: 'content drift' });
     }
   }

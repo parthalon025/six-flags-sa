@@ -14,7 +14,7 @@ const PARTY_LOCK = {
 const COPY = {
   idle: {
     title: 'Find you on the map',
-    body: 'Parkbound uses your GPS to drop your dot, point you at toilets, food and rides, and walk you there on guest paths. Nothing leaves your phone until you join a party.',
+    body: 'Parkbound uses your GPS to place you in a World, point you at Places, and walk you there on guest paths. Nothing leaves your phone until you join a Party.',
     action: 'Allow location',
   },
   asking: {
@@ -40,7 +40,7 @@ const COPY = {
 };
 
 const NEAREST_PARK_HINT =
-  'Go to nearest park uses your GPS once to find the closest map we have, shows you which park that is, and asks you to confirm before anything downloads — so you never pull the wrong park by accident.';
+  'Go to nearest World uses your GPS once to find the closest map we have, shows you which World that is, and asks you to confirm before anything downloads — so you never pull the wrong map by accident.';
 
 const MILE_M = 1609.344;
 
@@ -82,8 +82,8 @@ function ParkSection({
     <>
       <p>
         {inside
-          ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load the full map.`
-          : `${venue.name} in ${venue.locality} is the closest park we have (${distanceText}). Headed that way?`}
+          ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load this World.`
+          : `${venue.name} in ${venue.locality} is the closest World we have (${distanceText}). Headed that way?`}
       </p>
       {error && <p className="gateError">{error}</p>}
 
@@ -93,12 +93,12 @@ function ParkSection({
         disabled={busy}
         onClick={() => onConfirm?.(venue.id)}
       >
-        {busy ? 'Getting it ready…' : `Yes! Set up ${venue.name}`}
+        {busy ? 'Getting it ready…' : `Yes! Enter ${venue.name}`}
       </button>
 
       {options.length > 0 && (
         <>
-          <div className="label">Different park?</div>
+          <div className="label">Explore another World</div>
           <div className="venueList">
             {options.map(({ venue: other, metres, inside: within }) => (
               <button
@@ -165,7 +165,7 @@ export default function GpsGate({
   let primaryDisabled = false;
 
   if (welcomeIdle) {
-    primaryLabel = 'Go to nearest park';
+    primaryLabel = 'Go to nearest World';
     primaryAction = onGoNearest || onRequest;
   } else if (welcomeSearching || (welcome && status === 'asking' && nearestIntent && !showParkQuestion)) {
     primaryLabel = 'Finding your location…';
@@ -185,7 +185,7 @@ export default function GpsGate({
             {welcomeIdle && <p className="gateFine">{NEAREST_PARK_HINT}</p>}
             {welcomeSearching && (
               <p className="gateFine">
-                When your phone shares a fix, we will show the nearest park and ask you to
+                When your phone shares a fix, we will show the nearest World and ask you to
                 confirm before the map downloads.
               </p>
             )}
@@ -237,7 +237,7 @@ export default function GpsGate({
         {!showParkQuestion && !partyLock && (
           <>
             <button type="button" className="btn" onClick={onManual}>
-              Explore parks
+              Explore Worlds
             </button>
             <button type="button" className="btnQuiet" onClick={onDismiss}>
               {venueName ? `Just browsing ${venueName}` : 'Just show me the map'}
@@ -254,7 +254,7 @@ export default function GpsGate({
         <p className="gateFine">
           Your location stays on your phone. Join a party and it goes only to your crew,
           encrypted in transit — nobody in the middle can peek.
-          {showParkQuestion ? ' Switch parks any time under Me → Which park.' : ''}
+          {showParkQuestion ? ' Switch Worlds any time under Me → Explore Worlds.' : ''}
         </p>
       </div>
     </div>

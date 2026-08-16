@@ -51,20 +51,20 @@ export default function ParkPrompt({
   const data = dataText(venue);
 
   const heading = explore
-    ? 'Where are we headed today?'
+    ? 'Which World are we exploring?'
     : inside
       ? `You’re at ${venue.name}!`
       : `Headed to ${venue.name}?`;
   const body = explore
-    ? 'Pick a park and we will build the whole thing on this phone — paths, rides and every spot on the map — so you are ready before you even park the car.'
+    ? 'Choose a World and we will load its living map — paths, rides, Places, and real map Zones where they exist — so you are ready before you arrive.'
     : inside
-      ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load the full map — every path, ride and place.`
-      : `${venue.name} in ${venue.locality} is the closest park we have (${distanceText}). Headed that way? We will build the map now so it is waiting when you arrive.`;
+      ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load this World — every path, ride, and Place, plus real map Zones where they exist.`
+      : `${venue.name} in ${venue.locality} is the closest World we have (${distanceText}). Headed that way? We will load its map now so it is waiting when you arrive.`;
 
   return (
     <div className="gate">
       <div className="gateCard">
-        <div className="gateEyebrow">Pick your park</div>
+        <div className="gateEyebrow">Explore Worlds</div>
         <h2>{heading}</h2>
         <p>{body}</p>
         {error && <p className="gateError">{error}</p>}
@@ -78,13 +78,13 @@ export default function ParkPrompt({
           {busy
             ? 'Getting it ready…'
             : explore
-              ? `Set up ${venue.name}`
-              : `Yes! Set up ${venue.name}`}
+              ? `Enter ${venue.name}`
+              : `Yes! Enter ${venue.name}`}
         </button>
 
         {options.length > 0 && (
           <>
-            <div className="label">Different park?</div>
+            <div className="label">Explore another World</div>
             <div className="venueList">
               {options.map(({ venue: other, metres, inside: within }) => (
                 <button
@@ -107,12 +107,12 @@ export default function ParkPrompt({
         )}
 
         <button type="button" className="btnQuiet" onClick={onSkip}>
-          Skip for now — just show me the map
+          Skip for now — show me the map
         </button>
         <p className="gateFine">
           {data ? `${venue.name} has ${data}. ` : ''}
           Everything downloads once and stays on this phone, so the map still works in a
-          queue with no signal. Switch parks any time under Me → Which park.
+          queue with no signal. Explore another World any time from Me → Explore Worlds.
         </p>
       </div>
     </div>

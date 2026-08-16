@@ -185,17 +185,17 @@ const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 if (clerkOn) {
 console.log('\n--- auth (Clerk-on Profile OAuth) ---');
 
-await check('Profile gate shows Login and Guest', async () => {
+await check('Profile gate shows Sign in and Guest', async () => {
   await a.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await until(
     async () => (await a.locator('.authGate .authGateLogin').count()) >= 1,
-    { timeout: 25000, label: 'Profile Login button' },
+    { timeout: 25000, label: 'Profile Sign in button' },
   );
   if (!(await a.locator('.authGate button:has-text("Guest")').count())) {
     throw new Error('Profile gate missing Guest button');
   }
   const loginHref = await a.locator('.authGate .authGateLogin').getAttribute('href');
-  if (loginHref !== '/sign-in') throw new Error(`Login href expected /sign-in, got ${loginHref}`);
+  if (loginHref !== '/sign-in') throw new Error(`Sign in href expected /sign-in, got ${loginHref}`);
   const shot = process.env.CLERK_E2E_SHOTS;
   if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_login_guest_gate.png`, fullPage: true });
   return true;
@@ -612,7 +612,7 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   };
   // Search "gemini" also hits every place in the Gemini Midway land (area match).
   await dismissNavigation(a).catch(() => {});
-  await go(a, 'Which map');
+  await go(a, 'Explore Worlds');
   await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
   await until(async () => /cedar point/i.test(await venueNameA()), {
     timeout: 15000,
@@ -711,7 +711,7 @@ await check('return to Kings Island before walk UX coverage', async () => {
     return a.locator('.brandName, .brand b').first().innerText().catch(() => '');
   };
   if (!/kings island/i.test(await brand())) {
-    await go(a, 'Which map');
+    await go(a, 'Explore Worlds');
     await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
     await until(async () => /kings island/i.test(await brand()), {
       timeout: 25000,
@@ -896,7 +896,7 @@ await check('back on Kings Island before party tests', async () => {
   await go(a, 'Places');
   const brand = async () => a.locator('.brandName, .brand b').first().innerText();
   if (/kings island/i.test(await brand().catch(() => ''))) return true;
-  await go(a, 'Which map');
+  await go(a, 'Explore Worlds');
   await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
   await until(async () => /kings island/i.test(await brand().catch(() => '')), {
     timeout: 20000,
@@ -1184,7 +1184,7 @@ await check('NEED HELP propagates to the other phone', async () => {
   return true;
 });
 
-await check('meet-up set from a ride reaches the other phone', async () => {
+await check('Rally Point set from a ride reaches the other phone', async () => {
   await resetPlaces(a);
   await a.locator('.field[aria-label="Search places"]').fill('Racer');
   await until(async () => (await a.locator('.poiRow', { hasText: 'The Racer' }).count()) || null, {
@@ -1193,11 +1193,11 @@ await check('meet-up set from a ride reaches the other phone', async () => {
   });
   await a.locator('.poiRow', { hasText: 'The Racer' }).first().locator('.poiMain').click();
   await a.waitForTimeout(500);
-  await a.locator('.poiRow.open button[aria-label="Set meet-up"]').click();
+  await a.locator('.poiRow.open button[aria-label="Rally the Party"]').click();
   await go(a, 'Party');
   await until(async () => /Racer/i.test(await b.locator('.sheetBody').innerText()), {
     timeout: JOIN_TIMEOUT,
-    label: 'the meet-up on phone B',
+    label: 'the Rally Point on phone B',
   });
   return true;
 });
@@ -1586,14 +1586,12 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
   const heading = (await e.locator('.brandLockupName').innerText()).trim();
   if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
   const said = card.indexOf('Explore more. Stress less.');
-  // Pitch is BRAND.shortDescription (map / toilets / party) — not the old
-  // "explorer" vocabulary that used to appear on this card.
-  const pitch = /toilets|park map|start a party/i.test(card);
+  const pitch = /World|Rally|living map/i.test(card);
   if (said < 0 || !pitch) {
     throw new Error('the welcome gate is missing slogan or pitch');
   }
-  if (!/Go to nearest park/i.test(card)) {
-    throw new Error('the welcome gate should offer nearest-park on the first card');
+  if (!/Go to nearest World/i.test(card)) {
+    throw new Error('the welcome gate should offer nearest World on the first card');
   }
   const paths = await e.locator('.mapSvg path').count();
   if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
@@ -1603,13 +1601,13 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
 });
 
 await check('the nearest-park button asks before building that park', async () => {
-  await e.locator('button:has-text("Go to nearest park")').click();
-  // Confirm the nearest park — never auto-download the wrong map.
+  await e.locator('button:has-text("Go to nearest World")').click();
+  // Confirm the nearest World — never auto-download the wrong map.
   await until(
-    async () => (await e.locator('.gate .btn.primary:has-text("set up")').count()) > 0,
-    { timeout: 25000, label: 'park confirm' },
+    async () => (await e.locator('.gate .btn.primary:has-text("Enter")').count()) > 0,
+    { timeout: 25000, label: 'World confirm' },
   );
-  await e.locator('.gate .btn.primary:has-text("set up")').click();
+  await e.locator('.gate .btn.primary:has-text("Enter")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
@@ -1647,7 +1645,7 @@ await check('the park question is inline when the venue is not yet confirmed', a
     throw new Error('the introduction came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
-  // Explore-without-fix can flash "Where are we headed today?" before the
+  // Explore-without-fix can flash "Which World are we exploring?" before the
   // Austin GPS fix lands; wait for the distance-based confirm copy.
   await until(async () => {
     const heading = (await p.locator('.gate h2').innerText().catch(() => '')).trim();
@@ -1655,7 +1653,7 @@ await check('the park question is inline when the venue is not yet confirmed', a
   }, { timeout: 25000, label: 'the park question' });
   const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
   if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
-  await p.locator('.gate .btn.primary:has-text("set up")').click();
+  await p.locator('.gate .btn.primary:has-text("Enter")').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await p.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
@@ -1704,7 +1702,7 @@ await check('the park answered stays answered across a reload', async () => {
   return true;
 });
 
-await check('skipping location still asks which park to explore', async () => {
+await check('skipping location still asks which World to explore', async () => {
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: [],
@@ -1722,12 +1720,12 @@ await check('skipping location still asks which park to explore', async () => {
   );
   await until(async () => (await skip.count()) > 0, { timeout: 10000, label: 'the location skip button' });
   await skip.first().click();
-  await until(async () => (await p.locator('.gate h2').innerText()).includes('headed'), {
+  await until(async () => /which world are we exploring/i.test(await p.locator('.gate h2').innerText()), {
     timeout: 10000,
     label: 'the explore park question',
   });
   const heading = (await p.locator('.gate h2').innerText()).trim();
-  if (!/where are we headed today/i.test(heading)) {
+  if (!/which world are we exploring/i.test(heading)) {
     throw new Error(`asked: "${heading}"`);
   }
   await p.locator('.gate .btn.primary').click();
@@ -1787,8 +1785,8 @@ await check('joining a party moves the map to where the host is', async () => {
   return true;
 });
 
-await check('the picker measures from the party, not from this phone', async () => {
-  await go(d, 'Which map');
+await check('Explore Worlds measures from the Party, not from this phone', async () => {
+  await go(d, 'Explore Worlds');
   await d.waitForTimeout(400);
   const rows = await d.locator('.venueRow').allTextContents();
   const here = rows.find((r) => /Kings Island/.test(r));
@@ -1798,8 +1796,8 @@ await check('the picker measures from the party, not from this phone', async () 
   return true;
 });
 
-await check('picking a venue by hand outranks the host', async () => {
-  await go(d, 'Which map');
+await check('picking a World by hand outranks the host', async () => {
+  await go(d, 'Explore Worlds');
   await d.locator('.venueRow', { hasText: 'Fiesta Texas' }).click();
   await until(async () => /fiesta texas/i.test(await venueName(d)) || false, {
     timeout: JOIN_TIMEOUT,
@@ -1899,18 +1897,27 @@ await check('save where I parked and walk back to it', async () => {
   }
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
+  // Persistence leaves this phone on Party. Map FABs live on Explore.
+  await go(b, 'Places');
+  await b.locator('.tabItem[data-tab="explore"]').click();
+  await b.waitForTimeout(300);
   // Button toggles label once a car is saved — always save first.
   const parkBtn = b.locator('button[aria-label="Save where I parked"], button[aria-label="Go to where I parked"]');
   await parkBtn.click();
   await b.waitForTimeout(600);
-  // If that was a "go to" focus tap, save again from Me forget + fab.
+  // If that was a "go to" focus tap, forget from Me, then save from Explore.
   if (await b.locator('button[aria-label="Go to where I parked"]').count()) {
     await go(b, 'Me');
+    const phoneTab = b.locator('.settingsTopic', { hasText: 'Phone' });
+    if (await phoneTab.count()) await phoneTab.click();
     const forget = b.locator('.row:has-text("Forget where I parked")');
     if (await forget.count()) {
       await forget.click();
       await b.waitForTimeout(400);
     }
+    await go(b, 'Places');
+    await b.locator('.tabItem[data-tab="explore"]').click();
+    await b.waitForTimeout(300);
     await b.locator('button[aria-label="Save where I parked"]').click();
     await b.waitForTimeout(600);
   }
@@ -2126,7 +2133,7 @@ await CP.context.close();
 
 console.log('\n--- admin inspection ---');
 
-await check('venue inspection API returns all built parks', async () => {
+await check('World inspection API returns all built Worlds', async () => {
   const res = await fetch(`${BASE}/api/admin/venues`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const body = await res.json();

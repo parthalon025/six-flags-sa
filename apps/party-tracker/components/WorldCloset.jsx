@@ -15,7 +15,7 @@ import {
 } from '@/lib/world';
 
 /**
- * Closet: Skins (unlock / share / Offer / Wear), Kits, Marks at this Place.
+ * Collection: Skins (unlock / share / Offer / Wear), Kits, Marks at this Place.
  * Trail / Park Midnight stay the Light/Dark chrome above this list.
  */
 export default function WorldCloset({
@@ -41,7 +41,7 @@ export default function WorldCloset({
 
   return (
     <div className="worldCloset">
-      <div className="label">Closet</div>
+      <div className="label">Collection</div>
       <p className="fine">
         Skins paint this map. Kits are how your Party sees you. Marks stay at a Place for
         families you never meet. Light and Dark above are chrome, not Skins.
@@ -86,7 +86,7 @@ export default function WorldCloset({
           const offering = offers.some((o) => o.fromMemberId === selfId && o.skinId === id);
           const wearingOwn = progress?.wearSkin === id && !acceptedOffer;
           let value = 'Locked';
-          if (!allowed) value = skin.season ? 'Out of season' : 'This venue';
+          if (!allowed) value = skin.season ? 'Out of season' : 'This World';
           else if (rung === 'share') value = offering ? 'Offering' : 'Share earned';
           else if (rung === 'unlock') value = 'Unlocked';
           return (

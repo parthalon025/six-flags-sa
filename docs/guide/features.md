@@ -2,14 +2,14 @@
 
 [← README](../../README.md) · [Guide index](index.md)
 
-An explorer’s companion for a group at a big, crowded park. It ships with
+Parkbound is a community-built living map for a group at a big, crowded park. It ships with
 Kings Island (Mason, Ohio), Six Flags Fiesta Texas (San Antonio), Cedar Point
 (Sandusky, Ohio) and Big Kahuna's (Destin, Florida), and one command — or one form under
 Actions — builds a map of anywhere else OpenStreetMap covers. Built with Next.js 16
 (App Router) and React 19.
 
-Parkbound turns a complicated park day into an adventure you can actually enjoy —
-live party coordination, walking trails, and a drawn park map.
+Explore more. Stress less. Choose a World, discover Places, Rally your Party, and leave
+better map knowledge for the next family.
 
 **New to the codebase?** Start with the
 [architecture map](../architecture-map.md) — system diagram, venue build
@@ -35,7 +35,7 @@ full feature prose.
   night palette's coaster red, ride purple and landmark pink are the same dot. The key
   lives on the map itself, bottom left, and every row in it is also the switch that turns
   that category on and off.
-- **Nothing is drawn on top of anything else.** District names, markers and place names
+- **Nothing is drawn on top of anything else.** OSM-backed Zone names, markers and Place names
   all bid for the same pixels in importance order, and whatever will not fit is dropped
   rather than overprinted. District names lie along their district the way a printed park
   map lays them out, clamped to the part of it you can actually see. A name that cannot go
@@ -137,7 +137,7 @@ full feature prose.
   at Juke Box Diner") because almost none of the park's paths have names. It can speak the
   directions, the part behind you greys out as you walk, walking off the route works out a
   new one, and arriving ends it.
-- **Bearing tape.** A HUD strip showing every party member, the meet-up and your selected
+- **Compass.** A HUD strip showing every Party member, the Rally Point and your selected
   destination at their true bearing — useful when you can't see over a crowd.
 - **The weather, in three steps.** A chip in the top corner whenever there is a reading at
   all — a glyph and the temperature, the size of the buttons opposite it. Tap it for the
@@ -160,16 +160,16 @@ full feature prose.
   is ever stated as fact: the wording is "likely" and "watch" because a guess that reads
   as an operations feed is worse than no guess. On a clear day with nothing reported, none
   of it appears.
-- **Meet-up pin** shared to the whole party, with distance and walk time.
-- **Asks which park, once, on the way in.** The first GPS fix is the first moment the app
+- **Rally Point** shared to the whole Party, with distance and walk time.
+- **Asks which World, once, on the way in.** The first GPS fix is the first moment the app
   can say anything useful about which of the maps it ships you want, so that is when it
   asks: "Going to Six Flags Fiesta Texas? — 70 mi away", with every other park it carries
   one tap below. Saying yes is what builds that park on the phone — its geometry and its
   places are fetched then, so nobody downloads a map for a park they are not going to.
-- **Switches maps on its own, to where the party is.** Once you are in a party, the phone
+- **Switches Worlds on its own, to where the Party is.** Once you are in a Party, the phone
   hosting it decides which map you are looking at, so joining from the car park or the
   hotel the night before still draws the map everyone else is looking at. Pick one by hand
-  under Me → Which park and it stops second-guessing you.
+  under Me → Explore Worlds and it stops second-guessing you.
 - **Walking time is the headline everywhere**, with feet as the secondary figure — in a
   park "4 min" answers the question and "825 ft" doesn't.
 - **NEED HELP status** pulses that person's marker, vibrates every phone in the party and
