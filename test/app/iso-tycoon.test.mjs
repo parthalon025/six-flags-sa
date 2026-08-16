@@ -10,6 +10,7 @@ import {
   liftCoaster,
   pickCoasterLines,
   pickWalkways,
+  resolveIsoMapTemplate,
   stackIsoItems,
 } from '../../apps/party-tracker/lib/isoTycoon.js';
 
@@ -54,19 +55,32 @@ const hall = buildingHeightM([
 ]);
 assert.ok(hall > stall);
 
+const rideLine = [
+  [0, 0],
+  [20, 0],
+  [40, 0],
+  [60, 0],
+];
 const ride = liftCoaster(
-  [
-    [0, 0],
-    [20, 0],
-    [40, 0],
-    [60, 0],
-  ],
+  rideLine,
   { stepM: 20, heightAmp: 10 },
 );
 assert.ok(ride.track.d.length > 0);
 assert.ok(ride.shadow.d.length > 0);
 assert.ok(ride.supports.length >= 2);
 assert.ok(ride.supports[0].d.startsWith('M'));
+
+const rctTemplate = resolveIsoMapTemplate('rct-classic');
+assert.equal(rctTemplate.id, 'rct-classic');
+assert.equal(rctTemplate.coasterStepM, 6);
+const sparseTemplate = resolveIsoMapTemplate({
+  id: 'sparse-demo',
+  coasterStepM: 30,
+  coasterHeightAmp: 4,
+});
+assert.equal(sparseTemplate.id, 'sparse-demo');
+const sparseMeshes = assembleIsoMeshes([], [rideLine], { template: sparseTemplate });
+assert.equal(sparseMeshes.tracks[0].supports.length, 3, 'template controls support density');
 
 const near = [
   [0, 0],

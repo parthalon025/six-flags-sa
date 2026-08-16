@@ -17,6 +17,8 @@ const CUSTOM_MAPS = {
     id: 'pixel-tycoon',
     placement: PLACEMENT_OVERLAY,
     camera: 'iso',
+    renderer: 'iso',
+    template: 'rct-classic',
     hideLayers: ['building', 'coaster'],
   },
 };

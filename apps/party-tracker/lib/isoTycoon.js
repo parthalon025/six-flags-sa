@@ -7,6 +7,31 @@
 
 export const ISO_Y = 0.5;
 
+const RCT_CLASSIC_TEMPLATE = Object.freeze({
+  id: 'rct-classic',
+  buildingHeightM,
+  coasterBaseM: 3,
+  coasterHeightAmp: 9,
+  coasterStepM: 6,
+  buildingTrackPadM: 10,
+  liftedTrackPadM: 8,
+});
+export const ISO_MAP_TEMPLATES = Object.freeze({
+  'rct-classic': RCT_CLASSIC_TEMPLATE,
+});
+
+/**
+ * Shared isometric map recipe. A Skin selects a recipe by id; it does not
+ * fork the projection or painter. Future Iso maps can change palette and
+ * geometry policy at their adapter seam while sharing the core renderer.
+ */
+export function resolveIsoMapTemplate(template = 'rct-classic') {
+  if (template && typeof template === 'object') {
+    return { ...RCT_CLASSIC_TEMPLATE, ...template };
+  }
+  return ISO_MAP_TEMPLATES[template] || RCT_CLASSIC_TEMPLATE;
+}
+
 /** Local mercator metres → isometric ground. */
 export function isoLocal(dx, dy) {
   return { x: dx - dy, y: (dx + dy) * ISO_Y };
@@ -111,12 +136,12 @@ function convexHull(pts) {
   return lower.concat(upper);
 }
 
-function liftedPts(line, stepM, heightAmp) {
+function liftedPts(line, stepM, heightAmp, baseHeight) {
   const pts = [];
   let travelled = 0;
   for (let i = 0; i < line.length; i += 1) {
     if (i > 0) travelled += dist2(line[i - 1], line[i]);
-    const h = 3 + heightAmp * Math.abs(Math.sin(travelled / 28));
+    const h = baseHeight + heightAmp * Math.abs(Math.sin(travelled / 28));
     const g = isoLocal(line[i][0], line[i][1]);
     pts.push({ x: g.x, y: g.y + h });
   }
@@ -136,8 +161,8 @@ export function buildingHitsLiftedTrack(ring, line, heightM, padM = 8, lift = {}
   const roof = foot.map((p) => ({ x: p.x, y: p.y + heightM }));
   const hull = convexHull([...foot, ...roof]);
   if (hull.length < 3) return false;
-  const { stepM = 6, heightAmp = 9 } = lift;
-  return liftedPts(line, stepM, heightAmp).some((pt) => distToHull(pt, hull) <= padM);
+  const { stepM = 6, heightAmp = 9, baseHeight = 3 } = lift;
+  return liftedPts(line, stepM, heightAmp, baseHeight).some((pt) => distToHull(pt, hull) <= padM);
 }
 
 /** True when a stall and a rail share ground — they must not both draw. */
@@ -339,24 +364,50 @@ export function extrudeBuilding(ring, heightM) {
 export function assembleIsoMeshes(
   buildingRings,
   coasterLines,
-  { maxBuildings = 220, maxTracks = 40, stepM = 6, heightAmp = 9 } = {},
+  {
+    maxBuildings = 220,
+    maxTracks = 40,
+    stepM,
+    heightAmp,
+    baseHeight,
+    buildingTrackPadM,
+    liftedTrackPadM,
+    template = 'rct-classic',
+  } = {},
 ) {
+  const recipe = resolveIsoMapTemplate(template);
+  const trackStepM = stepM ?? recipe.coasterStepM;
+  const trackHeightAmp = heightAmp ?? recipe.coasterHeightAmp;
+  const trackBaseHeight = baseHeight ?? recipe.coasterBaseM;
+  const groundPadM = buildingTrackPadM ?? recipe.buildingTrackPadM;
+  const liftedPadM = liftedTrackPadM ?? recipe.liftedTrackPadM;
   const picked = pickCoasterLines(coasterLines);
   const tracks = [];
   picked.forEach((rec) => {
-    tracks.push({ ...liftCoaster(rec.r, { stepM, heightAmp }), i: rec.i });
+    tracks.push({
+      ...liftCoaster(rec.r, {
+        stepM: trackStepM,
+        heightAmp: trackHeightAmp,
+        baseHeight: trackBaseHeight,
+      }),
+      i: rec.i,
+    });
   });
   const pickedLines = picked.map((rec) => rec.r);
   const buildings = [];
   (buildingRings || []).forEach((ring, i) => {
     if (!ring || ring.length < 3) return;
-    const heightM = buildingHeightM(ring);
+    const heightM = recipe.buildingHeightM(ring);
     if (
       pickedLines.some(
         (line) =>
-          buildingHitsTrack(ring, line) ||
+          buildingHitsTrack(ring, line, groundPadM) ||
           buildingCoversTrack(ring, line) ||
-          buildingHitsLiftedTrack(ring, line, heightM, 8, { stepM, heightAmp }),
+          buildingHitsLiftedTrack(ring, line, heightM, liftedPadM, {
+            stepM: trackStepM,
+            heightAmp: trackHeightAmp,
+            baseHeight: trackBaseHeight,
+          }),
       )
     ) {
       return;
@@ -388,12 +439,12 @@ function dist2(a, b) {
  * Lift a local-metre polyline into ground shadow, raised track, and posts.
  * @param {number[][]} line [[x,y], ...]
  */
-export function liftCoaster(line, { stepM = 18, heightAmp = 12 } = {}) {
+export function liftCoaster(line, { stepM = 18, heightAmp = 12, baseHeight = 3 } = {}) {
   const pts = [];
   let travelled = 0;
   for (let i = 0; i < line.length; i += 1) {
     if (i > 0) travelled += dist2(line[i - 1], line[i]);
-    const h = 3 + heightAmp * Math.abs(Math.sin(travelled / 28));
+    const h = baseHeight + heightAmp * Math.abs(Math.sin(travelled / 28));
     const g = isoLocal(line[i][0], line[i][1]);
     pts.push({ g, t: { x: g.x, y: g.y + h }, h, travelled });
   }

@@ -1054,12 +1054,13 @@ function ParkMap({
     const assembled = assembleIsoMeshes(buildingRings, coasterLines, {
       maxBuildings: 800,
       maxTracks: 80,
+      template: customMap?.template,
     });
     return {
       buildings: assembled.buildings.map((b) => ({ ...b, bbox: buildingBboxes[b.i] })),
       tracks: assembled.tracks.map((t) => ({ ...t, bbox: coasterBboxes[t.i] })),
     };
-  }, [iso, data, worldOrigin]);
+  }, [iso, data, worldOrigin, customMap?.template]);
 
   const viewTransform = useMemo(
     () =>

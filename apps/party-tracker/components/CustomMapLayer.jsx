@@ -36,11 +36,11 @@ function TrackMesh({ t, highlighted = false }) {
   );
 }
 
-function PixelTycoonLayer({ buildings = [], tracks = [], highlightedTrackIds = [] }) {
+function IsoMapLayer({ spec, buildings = [], tracks = [], highlightedTrackIds = [] }) {
   const stack = stackIsoItems(buildings, tracks);
   const highlighted = new Set(highlightedTrackIds);
   return (
-    <g className="lyr-custom lyr-pixel-tycoon">
+    <g className={`lyr-custom lyr-iso-map lyr-${spec.id}`}>
       {stack.map((entry) =>
         entry.type === 'building' ? (
           <BuildingMesh key={`iso-b${entry.item.i}`} b={entry.item} />
@@ -56,10 +56,6 @@ function PixelTycoonLayer({ buildings = [], tracks = [], highlightedTrackIds = [
   );
 }
 
-const LAYERS = {
-  'pixel-tycoon': PixelTycoonLayer,
-};
-
 export default function CustomMapLayer({
   spec,
   buildings = [],
@@ -67,10 +63,11 @@ export default function CustomMapLayer({
   highlightedTrackIds = [],
 }) {
   if (!spec) return null;
-  const Layer = LAYERS[spec.id];
+  const Layer = spec.renderer === 'iso' ? IsoMapLayer : null;
   if (!Layer) return null;
   return (
     <Layer
+      spec={spec}
       buildings={buildings}
       tracks={tracks}
       highlightedTrackIds={highlightedTrackIds}

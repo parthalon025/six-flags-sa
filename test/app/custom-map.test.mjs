@@ -16,6 +16,8 @@ const tycoon = resolveCustomMap('pixel-tycoon');
 assert.equal(tycoon.id, 'pixel-tycoon');
 assert.equal(tycoon.placement, 'overlay');
 assert.equal(customMapCamera(tycoon), 'iso');
+assert.equal(tycoon.renderer, 'iso');
+assert.equal(tycoon.template, 'rct-classic');
 assert.equal(showsBaseMap(tycoon), true);
 assert.equal(hidesBaseLayer(tycoon, 'building'), true);
 assert.equal(hidesBaseLayer(tycoon, 'coaster'), true);
