@@ -1897,28 +1897,19 @@ await check('save where I parked and walk back to it', async () => {
   await ensurePeek(b);
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
-  // Button toggles label once a car is saved — always save first.
-  const parkBtn = b.locator('button[aria-label="Save where I parked"], button[aria-label="Go to where I parked"]');
-  await parkBtn.click();
-  await b.waitForTimeout(600);
-  // If that was a "go to" focus tap, save again from Me forget + fab.
-  if (await b.locator('button[aria-label="Go to where I parked"]').count()) {
-    await go(b, 'Me');
-    // Where I Parked lives under the Map settings topic.
-    const mapTopic = b.locator('.settingsTopic', { hasText: 'Map' });
-    if (await mapTopic.count()) {
-      await mapTopic.click();
-      await b.waitForTimeout(300);
-    }
-    const forget = b.locator('.row:has-text("Forget where I parked")');
-    if (await forget.count()) {
-      await forget.click();
-      await b.waitForTimeout(400);
-    }
-    await ensurePeek(b);
-    await b.locator('button[aria-label="Save where I parked"]').click();
-    await b.waitForTimeout(600);
+  // Clear a leftover pin via the glance ✕ (Forget under Me → Map is easy to miss).
+  const forgetCar = b.locator('button[aria-label="Remove Your car from this list"]');
+  if (await forgetCar.count()) {
+    await forgetCar.click();
+    await b.waitForTimeout(400);
   }
+  const saveBtn = b.locator('button[aria-label="Save where I parked"]');
+  await until(async () => (await saveBtn.count()) > 0, {
+    timeout: 15000,
+    label: 'Save where I parked fab',
+  });
+  await saveBtn.click();
+  await b.waitForTimeout(600);
   // Move away from the saved spot so a walk is worth previewing.
   await B.context.setGeolocation({ latitude: 39.3455, longitude: -84.265 });
   await b.waitForTimeout(800);
