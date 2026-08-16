@@ -138,6 +138,13 @@ assert.match(
   /SharedValues::PLATFORM_NAME/,
   'before_all must pick iOS vs Android env from the active platform',
 );
+// gym/build_app has no api_key — ASC key is for upload_to_testflight / deliver only.
+const betaBuild = fastfile.slice(fastfile.indexOf('desc "Build and upload a TestFlight beta"'));
+assert.doesNotMatch(
+  betaBuild.slice(0, betaBuild.indexOf('upload_to_testflight')),
+  /build_app\([\s\S]*api_key:/,
+  'ios beta build_app must not pass api_key',
+);
 
 const productionBlock = fastfile.slice(fastfile.indexOf('lane :production'));
 assert.match(
