@@ -49,6 +49,7 @@
       "guide": "docs/guide/features.md",
       "sources": [
         "apps/party-tracker/components/HeightPanel.jsx",
+        "apps/party-tracker/components/PlanPanel.jsx",
         "apps/party-tracker/components/ParkMap.jsx",
         "apps/party-tracker/lib/ontology.js"
       ]
@@ -95,6 +96,7 @@
         "apps/party-tracker/components/ParkMap.jsx",
         "apps/party-tracker/components/PlaceDetail.jsx",
         "apps/party-tracker/components/HeightPanel.jsx",
+        "apps/party-tracker/components/PlanPanel.jsx",
         "apps/party-tracker/components/RoutePreview.jsx",
         "apps/party-tracker/components/PartyPanel.jsx",
         "apps/party-tracker/components/GlanceRail.jsx",

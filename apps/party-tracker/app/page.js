@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
+import VenueLoadFade from '@/components/VenueLoadFade';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
@@ -99,7 +100,7 @@ import {
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
-const HeightPanel = dynamic(() => import('@/components/HeightPanel'), { ssr: false });
+const PlanPanel = dynamic(() => import('@/components/PlanPanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
 const SideQuestsPanel = dynamic(() => import('@/components/SideQuestsPanel'), { ssr: false });
 const MovementHistoryPanel = dynamic(() => import('@/components/MovementHistoryPanel'), { ssr: false });
@@ -2383,9 +2384,14 @@ function ParkApp({ isSignedIn }) {
         icon: 'flag.fill',
       },
     ];
-    // Height rules only exist where a venue publishes them, so neither does the
-    // Plan tab that reads them (itinerary + rider height).
-    if (heights) out.push({ id: 'rides', label: 'Plan', icon: GLYPHS.plan });
+    // Plan tab: today's ordered stops, plus rider height when the venue publishes rules.
+    out.push({
+      id: 'rides',
+      label: 'Plan',
+      icon: GLYPHS.plan,
+      badge: planItems.length || null,
+      badgeLabel: planItems.length ? `${planItems.length} on the plan` : null,
+    });
     // Once there is a name, the tab wears it. "Guest" is the placeholder
     // nobody typed, and "GU" on a tab is not a person — so that one keeps the
     // Me glyph until the visitor says who they are.
@@ -2397,17 +2403,11 @@ function ParkApp({ isSignedIn }) {
       initials: named ? initialsFor(identity.name) : null,
     });
     return out;
-  }, [helpNow, active, visibleOnMap, heights, identity?.name]);
+  }, [helpNow, active, visibleOnMap, planItems.length, identity?.name]);
 
   useEffect(() => {
     tabsRef.current = tabs.map((t) => t.id);
   }, [tabs]);
-
-  // Switching to a venue with no height rules while standing on the Rides tab
-  // would leave the sheet on a screen with no way back to it.
-  useEffect(() => {
-    if (!heights && tab === 'rides') selectTab('explore');
-  }, [heights, tab, selectTab]);
 
   /* ---------- the sheet's own gestures ---------- */
 
@@ -2457,7 +2457,13 @@ function ParkApp({ isSignedIn }) {
         <div className="gate gateFirstRun" data-intro-hold="1" aria-hidden="true" />
       )}
       <AuthBridge onSession={setAuthSession} onBindUserId={handleBindProfile} />
+      <VenueLoadFade
+        venueId={venue?.id}
+        venueName={venue?.name}
+        loading={venueStatus === 'loading'}
+      />
       <ParkMap
+        key={venue?.id || 'map'}
         data={mapData}
         center={venue?.center}
         pois={POIS}
@@ -3104,7 +3110,15 @@ function ParkApp({ isSignedIn }) {
             )}
 
             {view === null && tab === 'rides' && (
-              <HeightPanel
+              <PlanPanel
+                rides={partyRides || {}}
+                plan={planItems}
+                onSetPlan={commitPlan}
+                onWalkStop={(s) => {
+                  const poi = POIS.find((p) => p.i === s.placeId || p.id === s.placeId);
+                  if (poi) startNav(poi);
+                }}
+                hasHeights={heights}
                 height={height}
                 withAdult={withAdult}
                 onHeight={(h) => {
@@ -3275,7 +3289,6 @@ function ParkApp({ isSignedIn }) {
                             .then(() => {
                               setSelected(null);
                               setFollow(false);
-                              showToast(`Showing ${v.name}`);
                             })
                             .catch((err) => showToast(err?.message || 'Could not load that map.'));
                         }}
