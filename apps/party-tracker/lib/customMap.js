@@ -21,6 +21,22 @@ const CUSTOM_MAPS = {
     template: 'rct-classic',
     hideLayers: ['building', 'coaster'],
   },
+  'layered-atlas': {
+    id: 'layered-atlas',
+    placement: PLACEMENT_OVERLAY,
+    camera: 'iso',
+    renderer: 'iso',
+    template: 'frisco-fields',
+    hideLayers: ['building', 'coaster'],
+  },
+  'watercolor-quest': {
+    id: 'watercolor-quest',
+    placement: PLACEMENT_OVERLAY,
+    camera: 'iso',
+    renderer: 'iso',
+    template: 'watercolor-quest',
+    hideLayers: ['building', 'coaster'],
+  },
 };
 
 /** Custom map attached to this Wear, or null for the OSM base alone. */

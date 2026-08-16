@@ -44,6 +44,8 @@ const fog = fogMapStyle(
 assert.ok(fog && fog.saturate < 1);
 
 assert.equal(SHIP_SKIN_IDS.includes('pixel-tycoon'), true);
+assert.equal(SHIP_SKIN_IDS.includes('layered-atlas'), true);
+assert.equal(SHIP_SKIN_IDS.includes('watercolor-quest'), true);
 
 const tycoon = mapPaint('pixel-tycoon');
 assert.equal(tycoon.traits.pixel, true);

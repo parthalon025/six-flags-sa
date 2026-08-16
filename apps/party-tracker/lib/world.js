@@ -238,6 +238,36 @@ export const SKINS = {
     },
     traits: { pixel: true },
   },
+  'layered-atlas': {
+    id: 'layered-atlas',
+    label: 'Layered atlas',
+    unlock: { fogPct: 25 },
+    share: { fogPct: 100 },
+    paint: {
+      ...paint('#3F6570', '#C9D6C0', '#5CA8B3', '#A7C58E', '#C9B58D', '#243B45'),
+      midway: '#3F6570',
+      midwayCase: '#C9D6C0',
+      structure: '#C9B58D',
+      structureEdge: '#7A6655',
+      groundEdge: '#6E8975',
+    },
+    traits: { mapSkin: 'layered-atlas', mapStyle: 'analytical' },
+  },
+  'watercolor-quest': {
+    id: 'watercolor-quest',
+    label: 'Watercolor quest',
+    unlock: { fogPct: 25 },
+    share: { fogPct: 100 },
+    paint: {
+      ...paint('#756276', '#F4EFDF', '#8FB5C2', '#D9D0B5', '#B8A68D', '#57485C'),
+      midway: '#756276',
+      midwayCase: '#F4EFDF',
+      structure: '#B8A68D',
+      structureEdge: '#756276',
+      groundEdge: '#C9BFAE',
+    },
+    traits: { mapSkin: 'watercolor-quest', mapStyle: 'watercolor' },
+  },
   'block-park': {
     id: 'block-park',
     label: 'Block park',
@@ -827,6 +857,8 @@ export function applyMapSkin(el, skinId) {
     el.dataset.skinPixel = pack.traits?.pixel ? '1' : '';
     el.dataset.skinNeon = pack.traits?.neon ? '1' : '';
     el.dataset.skinJunior = pack.traits?.markerBoost ? '1' : '';
+    el.dataset.skinMap = pack.traits?.mapSkin || '';
+    el.dataset.skinMapStyle = pack.traits?.mapStyle || '';
   }
 }
 

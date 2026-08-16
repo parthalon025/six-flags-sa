@@ -24,6 +24,17 @@ assert.equal(hidesBaseLayer(tycoon, 'coaster'), true);
 assert.equal(hidesBaseLayer(tycoon, 'path'), false);
 assert.equal(hidesBaseLayer(tycoon, 'park'), false);
 
+for (const [skin, template] of [
+  ['layered-atlas', 'frisco-fields'],
+  ['watercolor-quest', 'watercolor-quest'],
+]) {
+  const map = resolveCustomMap(skin);
+  assert.equal(map.renderer, 'iso');
+  assert.equal(map.template, template);
+  assert.equal(customMapCamera(map), 'iso');
+  assert.equal(hidesBaseLayer(map, 'building'), true);
+}
+
 assert.equal(showsBaseMap(null), true);
 assert.equal(hidesBaseLayer(null, 'building'), false);
 assert.equal(customMapCamera(null), 'mercator');
