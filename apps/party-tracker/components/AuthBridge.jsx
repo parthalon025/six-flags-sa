@@ -46,6 +46,8 @@ function AuthBridgeLive({ onSession, onBindUserId = null }) {
       let xp = 0;
       let rank = 'visitor';
       let title = null;
+      let entitlement = null;
+      let billing = null;
 
       try {
         const res = await fetch('/api/profile/sync', { method: 'POST' });
@@ -55,6 +57,8 @@ function AuthBridgeLive({ onSession, onBindUserId = null }) {
           xp = Number(body?.profile?.xp) || 0;
           rank = body?.profile?.rank || rankFromXp(xp);
           title = body?.profile?.title ?? titleFromXp(xp);
+          entitlement = body?.entitlement || null;
+          billing = body?.billing || null;
         }
       } catch {
         /* offline — fall back to cache */
@@ -100,6 +104,8 @@ function AuthBridgeLive({ onSession, onBindUserId = null }) {
           rank,
           title,
           xp,
+          entitlement,
+          billing,
           reputation: Number(cached?.reputation) || 0,
           impactHelped: Number(cached?.impactHelped) || 0,
           scoredKeys: Array.isArray(cached?.scoredKeys) ? cached.scoredKeys : [],

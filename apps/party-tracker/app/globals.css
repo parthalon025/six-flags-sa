@@ -2891,14 +2891,54 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   letter-spacing: -.2px;
   color: var(--label);
 }
-.authGateGuest { margin-top: 12px; width: 100%; }
+.authGateActions { width: 100%; }
+.authGateLogin,
+.authGateGuest { width: 100%; flex: none; text-align: center; text-decoration: none; }
+.authGateGuest { margin-top: 0; }
 .authGateCard .signInActions { margin-bottom: 0; }
+
+/* ---- Profile auth routes (/sign-in, /sign-up, SSO callback) ---- */
+.authShellPage {
+  min-height: 100dvh;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 120% 55% at 50% -8%, color-mix(in srgb, var(--aqua) 22%, transparent), transparent 58%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, color-mix(in srgb, var(--adventure) 14%, transparent), transparent 52%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, color-mix(in srgb, var(--aqua) 10%, transparent), transparent 55%);
+}
+.authShellCard-page {
+  max-width: 480px;
+  margin: 0 auto;
+}
+.authRouteAlt {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  color: var(--label2);
+}
+.authRouteAlt a {
+  color: var(--aqua);
+  font-weight: 600;
+  text-decoration: none;
+}
+.authRouteAlt a:hover,
+.authRouteAlt a:focus-visible {
+  color: var(--adventure);
+}
+
 .clerkAuthPage {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
   align-items: center;
   justify-content: center;
   padding: 24px;
+  background: var(--bg);
+  color: var(--label);
 }
 .brandMark {
   width: 22px; height: 22px; flex: none; color: var(--adventure);

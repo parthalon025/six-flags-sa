@@ -1,14 +1,14 @@
 'use client';
 
-import { Show, UserButton, useClerk, useSignIn } from '@clerk/nextjs';
-import { useState } from 'react';
+import { Show, UserButton, useClerk } from '@clerk/nextjs';
 import { rankReward } from '@party-tracker/shared/questScore.js';
-import OAuthButtons from '@/components/OAuthButtons';
-import { clerkOAuthRedirect } from '@/lib/auth/clerkOAuth';
+import ProfileAuthActions from '@/components/ProfileAuthActions';
+import { AUTH_COPY } from '@/lib/auth/authCopy';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
+
 /**
- * Soft-gate sign-in (EP.3) — Google / Apple only via Clerk OAuth.
+ * Soft-gate sign-in (EP.3) — same Clerk login + guest pattern as the Profile gate.
  * Map and Party stay usable without a Profile; no email or password UI.
  */
 export default function SignInCard(props) {
@@ -17,23 +17,9 @@ export default function SignInCard(props) {
   return <SignInCardLive {...props} />;
 }
 
-function SignInCardLive({ session = null, onSession = null }) {
+function SignInCardLive({ session = null, onSession = null, onGuest = null }) {
   const { signOut } = useClerk();
-  const { isLoaded, signIn } = useSignIn();
-  const [busy, setBusy] = useState(null);
-  const [err, setErr] = useState(null);
 
-  async function startOAuth(strategy) {
-    if (!signIn) return;
-    setBusy(strategy);
-    setErr(null);
-    try {
-      await clerkOAuthRedirect(signIn, strategy);
-    } catch (e) {
-      setErr(e?.errors?.[0]?.message || e?.message || 'Sign-in failed');
-      setBusy(null);
-    }
-  }
   if (session?.userId) {
     const title = rankReward(session.rank || 'visitor').title;
     return (
@@ -67,19 +53,19 @@ function SignInCardLive({ session = null, onSession = null }) {
   return (
     <div className="signInCard">
       <div className="label">Save progress on your Profile</div>
-      <p className="fine block">
-        Browse the map and join a party by name anytime. Continue with Google or Apple to keep XP,
-        Managed Guests, and gap Side Quests on this phone.
-      </p>
-      <div className="signInActions">
-        <Show when="signed-out">
-          <OAuthButtons isLoaded={isLoaded} busy={busy} onStart={startOAuth} />
-        </Show>
-        <Show when="signed-in">
+      <p className="fine block">{AUTH_COPY.signInLead}</p>
+      <p className="fine block">{AUTH_COPY.billingNote}</p>
+      <ProfileAuthActions
+        onGuest={onGuest}
+        showGuest={Boolean(onGuest)}
+        guestClassName=""
+        stackActions
+      />
+      <Show when="signed-in">
+        <div className="signInActions">
           <UserButton afterSignOutUrl="/" />
-        </Show>
-      </div>
-      {err ? <p className="fine block warnText">{err}</p> : null}
+        </div>
+      </Show>
     </div>
   );
 }

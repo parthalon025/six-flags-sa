@@ -11,8 +11,9 @@ Park Bound uses **Clerk** for sign-in. **Profile** minting and attribution stay 
 
 | Choice | Value |
 |--------|--------|
-| IdP | **Clerk** (dedicated application under the existing paid account — dev + prod instances; not shared with other products) |
+| IdP | **Clerk** — **mandatory** on all deployed and dev environments (Google + Apple only) |
 | Providers | **Google** + **Sign in with Apple** only — email, password, and magic link **disabled** in Clerk |
+| Deployment | Both `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` required in `apps/party-tracker/.env.local`; `/api/ready` returns 503 on Vercel when missing |
 | Session | Clerk session (httpOnly cookies on web; secure token cache in native shell) |
 | Profile row | Mint `users` / `profiles` in the **sign-in callback** or first authenticated API call — **not** blocked on async webhooks |
 | Webhooks | Verified `user.created` / `user.updated` / `user.deleted` for sync and delete — backup, not onboarding gate |
@@ -76,6 +77,7 @@ Clerk Dashboard: **Native Applications** on; Associated Domains / deep links per
 | EP.5 | Auto-bind **Member** on sign-in (this ADR) |
 | EP.6 | **Managed Guest** under **Profile** |
 | Store | Account deletion page URL in Play Data safety; Settings → Delete **Profile** |
+| Billing | Profile entitlement ledger + store SKU sync — see [ADR-0011](./0011-profile-billing-entitlements.md) |
 
 ## Consequences
 

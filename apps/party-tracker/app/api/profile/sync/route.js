@@ -2,6 +2,12 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { rankFromXp, titleFromXp } from '@party-tracker/shared/questScore.js';
 import { json, unauthorized } from '@/app/api/_lib/http';
 import { upsertProfileForClerkUser } from '@/lib/auth/profiles';
+import {
+  ensureEntitlementForSignedInUser,
+  entitlementForClient,
+  getActiveEntitlement,
+  profileBillingCatalog,
+} from '@/lib/auth/entitlements';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +32,10 @@ export async function POST() {
     displayName: String(displayName).slice(0, 40),
   });
 
+  const entitlementRow =
+    (await ensureEntitlementForSignedInUser(profile.userId)) ||
+    (await getActiveEntitlement(profile.userId));
+
   const xp = Number(profile.xp) || 0;
   return json({
     ok: true,
@@ -34,5 +44,7 @@ export async function POST() {
       rank: profile.rank || rankFromXp(xp),
       title: profile.title ?? titleFromXp(xp),
     },
+    entitlement: entitlementForClient(entitlementRow),
+    billing: profileBillingCatalog(),
   });
 }

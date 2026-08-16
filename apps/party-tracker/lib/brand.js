@@ -108,3 +108,22 @@ export const COLORS = {
   meadow: '#66B56A',
   signal: '#E55353',
 };
+
+/** Semantic groups for auth, marketing, and Clerk appearance tokens. */
+export const PALETTE = {
+  surfaces: {
+    midnight: COLORS.parkMidnight,
+    trail: COLORS.trail,
+    sky: COLORS.sky,
+  },
+  accent: {
+    adventure: COLORS.adventure,
+    aqua: COLORS.aqua,
+    sun: COLORS.sun,
+  },
+  signal: {
+    ok: COLORS.meadow,
+    warn: COLORS.sun,
+    danger: COLORS.signal,
+  },
+};

@@ -10,7 +10,10 @@
  *
  * BASE_URL points the suites at an app on another port:
  *
- *   BASE_URL=http://127.0.0.1:3711 node test/functional.mjs
+ *   BASE_URL=http://localhost:3711 node test/functional.mjs
+ *
+ * Default is localhost (not 127.0.0.1) — this Clerk instance allows http://localhost:3000;
+ * 127.0.0.1 is rejected by live FAPI and breaks Profile gate hydration.
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -21,9 +24,9 @@ const APP_VERSION = JSON.parse(readFileSync(new URL('../../apps/party-tracker/pa
 export const launch = (opts = {}) =>
   chromium.launch({ ...opts, ...(executablePath ? { executablePath } : {}) });
 
-export const BASE = (process.env.BASE_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+export const BASE = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
-/** Local TLS stand-in for the production host (Clerk live FAPI rejects localhost). */
+/** Local TLS stand-in for the production host (Clerk live FAPI on custom domain). */
 export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLERK_E2E_TLS === '1';
 
 /**
@@ -212,23 +215,31 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
 }
 
 /**
- * Dismiss the logo intro splash if it is up. Polls because React may not have painted it yet.
+ * Dismiss the Profile auth gate (Clerk login / guest) when Clerk is configured.
  */
-export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
+export async function dismissAuthGate(page, { timeout = 12000 } = {}) {
   const deadline = Date.now() + timeout;
   do {
-    const intro = page.locator('#intro-splash-title');
-    if (await intro.count()) {
-      const primary = page.locator(
-        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
-      );
-      await primary.first().click({ force: true }).catch(() => {});
-      await page.waitForTimeout(600);
-      if (!(await intro.count())) return true;
+    const guest = page.locator('.authGate button:has-text("Guest"), .authGate button:has-text("Continue as guest")');
+    if (await guest.count()) {
+      await guest.first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(400);
+      if (!(await page.locator('.authGate').count())) return true;
+    } else if (!(await page.locator('.authGate').count())) {
+      return true;
     }
     if (timeout === 0) break;
     await page.waitForTimeout(250);
   } while (Date.now() < deadline);
+  return !(await page.locator('.authGate').count());
+}
+
+/**
+ * Legacy logo splash — removed from first-run; kept as a no-op for older harness calls.
+ */
+export async function dismissIntroSplash(page, { timeout = 0 } = {}) {
+  void page;
+  void timeout;
   return false;
 }
 
@@ -239,6 +250,7 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
  * so an intake bug fails its own assertion rather than every test behind it.
  */
 export async function closeGate(page) {
+  await dismissAuthGate(page);
   await dismissIntroSplash(page);
   await dismissUpdateSplash(page);
   const nearest = page.locator('button:has-text("Go to nearest park")');
@@ -251,6 +263,7 @@ export async function closeGate(page) {
   else if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
+    await dismissAuthGate(page, { timeout: 250 });
     await dismissIntroSplash(page, { timeout: 250 });
     await dismissUpdateSplash(page, { timeout: 250 });
     const paths = await page.locator('.mapSvg path').count();
@@ -366,24 +379,35 @@ export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
   );
 }
 
+/**
+ * Tap a bottom-tab target. Playwright's synthetic click sometimes misses React
+ * handlers when the sheet is tall (Plan → Explore); a native element click
+ * matches what visitors get from the tab bar.
+ */
+async function clickTab(page, tabId, { timeout = 30000 } = {}) {
+  const tabSel = `.tabItem[data-tab="${tabId}"]`;
+  await until(async () => (await page.locator(tabSel).count()) > 0, {
+    timeout,
+    label: `${tabId} tab`,
+  });
+  await page.locator(tabSel).evaluate((el) => el.click());
+  await page.waitForTimeout(300);
+}
+
 export async function go(page, dest) {
   await closeGate(page);
   await dismissNavigation(page);
   const tab = SETTINGS_ROWS.has(dest) ? 'settings' : TAB_OF[dest];
   if (!tab) throw new Error(`go: nothing called "${dest}"`);
-  const tabSel = `.tabItem[data-tab="${tab}"]`;
-  await until(async () => (await page.locator(tabSel).count()) > 0, {
-    timeout: tab === 'rides' ? 45000 : 30000,
-    label: `${dest} tab`,
-  });
-  await page.locator(tabSel).click({ force: true });
-  await page.waitForTimeout(300);
+  await clickTab(page, tab, { timeout: tab === 'rides' ? 45000 : 30000 });
   // Tapping the tab you are already on pops it, but arriving from another tab
   // lands on whatever that one was left showing.
   await root(page);
   // Everything below the fold at the peek stop needs the sheet pulled up first
   // — the way a thumb would.
-  if (await page.locator('.sheet.peek').count()) {
+  if (tab === 'explore' && !SETTINGS_ROWS.has(dest)) {
+    await ensureExploreSearch(page).catch(() => {});
+  } else if (await page.locator('.sheet.peek').count()) {
     await page.getByRole('slider', { name: /Resize panel/ }).click();
     await page.waitForTimeout(350);
   }
@@ -403,8 +427,34 @@ export async function go(page, dest) {
   await page.waitForTimeout(350);
 }
 
+/** Pull the sheet up until the Explore search field is in the DOM. */
+async function ensureExploreSearch(page, { timeout = 15000 } = {}) {
+  const field = page.locator('.field[aria-label="Search places"]');
+  const deadline = Date.now() + timeout;
+  while (Date.now() < deadline) {
+    if (await field.count()) return;
+    const grab = page.locator('.grab');
+    if (await grab.count()) {
+      await grab.first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(350);
+      continue;
+    }
+    const slider = page.getByRole('slider', { name: /Resize panel/ });
+    if (await slider.count()) {
+      await slider.click({ force: true }).catch(() => {});
+      await page.waitForTimeout(350);
+      continue;
+    }
+    await page.waitForTimeout(250);
+  }
+  if (!(await field.count())) {
+    throw new Error('Explore search field never appeared');
+  }
+}
+
 /** Type into the Explore search field and wait for the list to settle. */
 export async function searchPlaces(page, query) {
+  await ensureExploreSearch(page);
   const field = page.locator('.field[aria-label="Search places"]');
   await field.fill(query);
   await page.waitForTimeout(500);
@@ -412,6 +462,7 @@ export async function searchPlaces(page, query) {
 
 /** Clear Explore search back to the full list. */
 export async function clearSearch(page) {
+  await ensureExploreSearch(page);
   const field = page.locator('.field[aria-label="Search places"]');
   await field.fill('');
   await page.waitForTimeout(400);
@@ -471,8 +522,7 @@ export async function setName(page, name) {
   await page.waitForTimeout(300);
   // Back to the map. Pop any settings sub-screen first — leaving Me on a
   // pushed row leaves the map unmounted when Explore is tapped.
-  await page.locator('.tabItem[data-tab="explore"]').click();
-  await page.waitForTimeout(250);
+  await clickTab(page, 'explore');
   await root(page);
   await page.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
     timeout: 40000,
@@ -487,23 +537,20 @@ export async function signIn(page, email = 'guest@parkbound.example', { keepName
     ? await page.locator('.field[placeholder="Name"]').inputValue().catch(() => '')
     : '';
   const card = page.locator('.signInCard');
-  // CI / local boxes often have no Clerk key — SignInCard stays unmounted (AuthBridge seam).
+  // CI may stub env without keys; deployed builds must supply Clerk (ADR-0010).
   // ADR-0010: no email magic-link UI; Profile-gated tests must soft-assert the gate instead.
   if ((await card.count()) === 0) {
-    await page.locator('.tabItem[data-tab="explore"]').click();
-    await page.waitForTimeout(200);
+    await clickTab(page, 'explore');
     return false;
   }
   if ((await card.locator('text=Signed in').count()) > 0) {
-    await page.locator('.tabItem[data-tab="explore"]').click();
-    await page.waitForTimeout(200);
+    await clickTab(page, 'explore');
     return true;
   }
   // Legacy email magic-link UI (optional); OAuth-only cards cannot complete in this harness.
   const emailField = card.locator('input[type="email"]');
   if ((await emailField.count()) === 0) {
-    await page.locator('.tabItem[data-tab="explore"]').click();
-    await page.waitForTimeout(200);
+    await clickTab(page, 'explore');
     return false;
   }
   await emailField.fill(email);
@@ -517,8 +564,7 @@ export async function signIn(page, email = 'guest@parkbound.example', { keepName
   if (keepName && priorName && priorName !== 'Guest') {
     await setName(page, priorName);
   } else {
-    await page.locator('.tabItem[data-tab="explore"]').click();
-    await page.waitForTimeout(200);
+    await clickTab(page, 'explore');
   }
   return true;
 }

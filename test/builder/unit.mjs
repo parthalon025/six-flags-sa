@@ -7200,18 +7200,17 @@ await check('a short phone still reaches the list', () => {
 const { firstRunOverlay, INTRO_KEY, INTRO_SEEN_BOOT_SCRIPT } = await import('../../apps/party-tracker/lib/introGate.js');
 
 await check('unknown intro state covers the map instead of painting the live app', () => {
-  assert.equal(firstRunOverlay({ introSeen: null, logoSplashDismissed: false }), 'hold');
+  assert.equal(firstRunOverlay({ introSeen: null }), 'hold');
   return true;
 });
 
 await check('a returning phone skips the first-run overlay', () => {
-  assert.equal(firstRunOverlay({ introSeen: true, logoSplashDismissed: false }), 'none');
+  assert.equal(firstRunOverlay({ introSeen: true }), 'none');
   return true;
 });
 
-await check('a first visit opens the logo splash, then the welcome gate, without a hold in between', () => {
-  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: false }), 'splash');
-  assert.equal(firstRunOverlay({ introSeen: false, logoSplashDismissed: true }), 'welcome');
+await check('a first visit opens the welcome gate after Profile login or guest', () => {
+  assert.equal(firstRunOverlay({ introSeen: false }), 'welcome');
   return true;
 });
 
@@ -7239,11 +7238,16 @@ await check('the boot script stamps data-intro from the same storage key the app
   return true;
 });
 
-const { clerkBrowserConfigured, clerkConfigured } = await import(
+const { clerkBrowserConfigured, clerkConfigured, clerkMandatory, clerkConfigStatus } = await import(
   '../../apps/party-tracker/lib/clerkConfigured.js'
 );
 
-await check('Clerk stays off when the API keys are not on this box', () => {
+await check('Clerk is mandatory for Park Bound', () => {
+  assert.equal(clerkMandatory(), true);
+  return true;
+});
+
+await check('Clerk key detection for CI stubs (Clerk is mandatory in deployed envs)', () => {
   const prevPub = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const prevSec = process.env.CLERK_SECRET_KEY;
   delete process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -7324,8 +7328,33 @@ await check('SSO callback page completes Clerk OAuth instead of remounting SignI
   assert.equal(fs.existsSync(pageUrl), true, 'missing /sign-in/sso-callback page');
   const page = fs.readFileSync(pageUrl, 'utf8');
   assert.match(page, /AuthenticateWithRedirectCallback/);
+  assert.match(page, /AuthShell/);
   assert.match(page, /clerk-captcha/);
   assert.doesNotMatch(page, /<SignIn[\s>]/);
+  return true;
+});
+
+await check('Profile auth routes share AuthShell lockup and Park Bound palette', () => {
+  const shell = fs.readFileSync(
+    new URL('../../apps/party-tracker/components/AuthShell.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(shell, /BrandLockup/);
+  assert.match(shell, /authShellPage/);
+  const signIn = fs.readFileSync(
+    new URL('../../apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(signIn, /AuthRouteCard/);
+  assert.doesNotMatch(signIn, /<SignIn[\s>]/);
+  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /AuthShell/);
+  const appearance = fs.readFileSync(
+    new URL('../../apps/party-tracker/lib/auth/clerkAppearance.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(appearance, /COLORS\.adventure/);
+  assert.match(appearance, /COLORS\.trail/);
   return true;
 });
 
@@ -7339,9 +7368,14 @@ await check('OAuth buttons are provider logos in two columns', () => {
   const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
   const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  const gateActions = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGateActions.jsx', import.meta.url), 'utf8');
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(gate, /OAuthButtons/);
-  assert.match(card, /OAuthButtons/);
+  const actions = fs.readFileSync(new URL('../../apps/party-tracker/components/ProfileAuthActions.jsx', import.meta.url), 'utf8');
+  assert.match(gate, /AuthGateActions/);
+  assert.match(gateActions, /href="\/sign-in"/);
+  assert.match(gateActions, /AUTH_COPY\.loginLabel/);
+  assert.match(card, /ProfileAuthActions/);
+  assert.match(actions, /OAuthButtons/);
   return true;
 });
 

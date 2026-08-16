@@ -19,6 +19,7 @@ import {
   ignoreHTTPSErrors,
   clearSearch,
   closeGate,
+  dismissAuthGate,
   dismissIntroSplash,
   dismissNavigation,
   signIn,
@@ -185,27 +186,33 @@ const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 if (clerkOn) {
 console.log('\n--- auth (Clerk-on Profile OAuth) ---');
 
-await check('Profile gate shows Google and Apple logo buttons', async () => {
+await check('Profile gate shows Login and Guest', async () => {
   await a.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await until(
-    async () => (await a.locator('.authGate .oauthBtn').count()) >= 2,
-    { timeout: 25000, label: 'Profile OAuth logo buttons' },
+    async () => (await a.locator('.authGate .authGateLogin').count()) >= 1,
+    { timeout: 25000, label: 'Profile Login button' },
   );
-  const labels = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
+  if (!(await a.locator('.authGate button:has-text("Guest")').count())) {
+    throw new Error('Profile gate missing Guest button');
+  }
+  const loginHref = await a.locator('.authGate .authGateLogin').getAttribute('href');
+  if (loginHref !== '/sign-in') throw new Error(`Login href expected /sign-in, got ${loginHref}`);
+  const shot = process.env.CLERK_E2E_SHOTS;
+  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_login_guest_gate.png`, fullPage: true });
+  return true;
+});
+
+await check('sign-in route shows Google and Apple logo buttons', async () => {
+  await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
+  await until(
+    async () => (await a.locator('.clerkAuthPage .oauthBtn, .authShellPage .oauthBtn').count()) >= 2,
+    { timeout: 25000, label: 'Clerk sign-in OAuth logo buttons' },
+  );
+  const labels = await a.locator('.clerkAuthPage .oauthBtn, .authShellPage .oauthBtn').evaluateAll((els) =>
     els.map((el) => el.getAttribute('aria-label') || ''),
   );
   if (!labels.some((l) => /Google/i.test(l))) throw new Error(`no Google button: ${labels.join(' | ')}`);
   if (!labels.some((l) => /Apple/i.test(l))) throw new Error(`no Apple button: ${labels.join(' | ')}`);
-  const boxes = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
-    els.map((el) => {
-      const b = el.getBoundingClientRect();
-      return { x: b.x, y: b.y, w: b.width, h: b.height };
-    }),
-  );
-  if (Math.abs(boxes[0].y - boxes[1].y) > 24) throw new Error('OAuth buttons are stacked, not two columns');
-  if (Math.abs(boxes[0].x - boxes[1].x) < 40) throw new Error('OAuth buttons share one column');
-  const shot = process.env.CLERK_E2E_SHOTS;
-  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_oauth_buttons.png`, fullPage: true });
   return true;
 });
 
@@ -213,13 +220,14 @@ await check('Profile gate shows Google and Apple logo buttons', async () => {
 // after the provider is configured — do not treat a missing Google app as a login bug.
 if (process.env.CLERK_E2E_GOOGLE === '1') {
 await check('Google logo button starts Clerk OAuth', async () => {
-  const google = a.locator('.authGate .oauthBtn[aria-label*="Google"]');
+  await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
+  const google = a.locator('.clerkAuthPage .oauthBtn[aria-label*="Google"], .authShellPage .oauthBtn[aria-label*="Google"]');
   await google.click();
   const dest = await until(
     async () => {
       const url = String(a.url());
       if (/google|clerk\.com|accounts\./i.test(url) && !url.startsWith(BASE)) return url;
-      const err = (await a.locator('.authGate .warnText').innerText().catch(() => '')).trim();
+      const err = (await a.locator('.warnText').innerText().catch(() => '')).trim();
       if (err) return { error: err };
       return null;
     },
@@ -1461,8 +1469,9 @@ await check('the roster never collapses while the host is replaced', async () =>
 
 if (want('intake')) {
 console.log('\n--- intake / nearest park ---');
+const clerkOnIntake = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
-await check('first-run covers the map before the splash paints', async () => {
+await check('first-run covers the map before the Profile gate or welcome paints', async () => {
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: ['geolocation'],
@@ -1477,9 +1486,12 @@ await check('first-run covers the map before the splash paints', async () => {
     timeout: 8000,
     label: 'a gate on first paint',
   });
-  const gate = p.locator('.gate').first();
+  const gate = p.locator('.gate.gateFirstRun, .gate.authGate').first();
   const painted = await until(
     async () => {
+      if (clerkOnIntake && (await p.locator('.authGate').count()) > 0) {
+        return { klass: 'authGate', bg: 'opaque', anim: 'none' };
+      }
       const klass = (await gate.getAttribute('class')) || '';
       if (!/\bgateFirstRun\b/.test(klass)) return null;
       const { bg, anim } = await gate.evaluate((el) => {
@@ -1495,10 +1507,17 @@ await check('first-run covers the map before the splash paints', async () => {
   if (/0,\s*0,\s*0/.test(painted.bg) && /0\.(3|4)/.test(painted.bg)) {
     throw new Error(`first-run gate is translucent (${painted.bg})`);
   }
-  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
-    timeout: 10000,
-    label: 'logo splash after the hold',
-  });
+  if (clerkOnIntake) {
+    await until(async () => (await p.locator('.authGate').count()) > 0, {
+      timeout: 10000,
+      label: 'Profile auth gate after the hold',
+    });
+  } else {
+    await until(async () => /Go to nearest park/i.test(await p.locator('.gate').innerText()), {
+      timeout: 10000,
+      label: 'welcome gate after the hold',
+    });
+  }
   const sheetHidden = await p.locator('.app > .sheet').evaluate((el) => getComputedStyle(el).visibility);
   if (sheetHidden !== 'hidden') throw new Error(`first-run sheet leaked (${sheetHidden})`);
   await fresh.close();
@@ -1513,6 +1532,7 @@ await check('a returning phone skips the hold and does not hide the map', async 
   });
   await back.addInitScript(() => {
     localStorage.setItem('tracker-intro-seen', '1');
+    sessionStorage.setItem('parkbound.authGuest', '1');
   });
   const p = await back.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
@@ -1526,8 +1546,8 @@ await check('a returning phone skips the hold and does not hide the map', async 
     },
     { timeout: 8000, label: 'html[data-intro=seen] hides the SSR hold' },
   );
-  if (await p.locator('#intro-splash-title').count()) {
-    throw new Error('returning phone still got the logo splash');
+  if (await p.locator('.authGate').count()) {
+    if (!clerkOnIntake) throw new Error('returning phone still got the Profile auth gate');
   }
   await back.close();
   return true;
@@ -1543,38 +1563,35 @@ const intake = await browser.newContext({
 });
 const e = await intake.newPage();
 await e.goto(BASE, { waitUntil: 'domcontentloaded' });
-await hydrated(e);
+await dismissAuthGate(e);
+await dismissUpdateSplash(e);
+await until(async () => (await e.locator('button:has-text("Go to nearest park")').count()) > 0, {
+  timeout: 25000,
+  label: 'welcome gate after Profile guest',
+});
 
-await check('the logo splash opens first and release notes stay behind the version control', async () => {
+await check('the Profile gate offers Login and Guest when Clerk is on', async () => {
+  if (!clerkOnIntake) return true;
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: ['geolocation'],
     geolocation: { latitude: 30.2672, longitude: -97.7431 },
   });
+  await fresh.addInitScript(() => {
+    localStorage.removeItem('tracker-intro-seen');
+  });
   const p = await fresh.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
-  await hydrated(p);
-  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+  await until(async () => (await p.locator('.authGate .authGateLogin').count()) >= 1, {
     timeout: 10000,
-    label: 'the logo splash',
+    label: 'Profile Login button',
   });
-  if (await p.locator('#update-splash-title').count()) {
-    throw new Error('the update splash should not open automatically');
+  if (!(await p.locator('button:has-text("Guest")').count())) {
+    throw new Error('Profile gate missing Guest');
   }
-  const heading = (await p.locator('#intro-splash-title').innerText()).trim();
-  if (heading !== 'PARKBOUND') throw new Error(`logo splash heading: "${heading}"`);
-  await p.locator('.gateVersionBtn').click();
-  await until(async () => (await p.locator('#intro-notes-title').count()) > 0, {
-    timeout: 10000,
-    label: 'release notes from the version control',
-  });
-  const notesTitle = (await p.locator('#intro-notes-title').innerText()).trim();
-  if (!/what's new/i.test(notesTitle)) throw new Error(`notes title: "${notesTitle}"`);
   await fresh.close();
   return true;
 });
-
-await dismissIntroSplash(e);
 await dismissUpdateSplash(e);
 
 await check('the welcome gate shows brand, pitch, and nearest-park on one card', async () => {
@@ -1635,12 +1652,14 @@ await check('the park question is inline when the venue is not yet confirmed', a
     localStorage.removeItem('tracker-venue-confirmed');
     localStorage.removeItem('tracker-venue');
     localStorage.setItem('tracker-release-notes-seen', '9.9.9');
+    sessionStorage.setItem('parkbound.authGuest', '1');
   });
   const p = await returning.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await dismissAuthGate(p).catch(() => {});
   await hydrated(p);
-  if (await p.locator('#intro-splash-title').count()) {
-    throw new Error('the introduction came back for a returning phone');
+  if (await p.locator('.authGate').count()) {
+    throw new Error('the Profile gate came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
   // Explore-without-fix can flash "Where are we headed today?" before the
@@ -1673,9 +1692,9 @@ await check('the park answered stays answered across a reload', async () => {
   await e.reload({ waitUntil: 'domcontentloaded' });
   await hydrated(e);
   await dismissUpdateSplash(e);
-  await dismissIntroSplash(e).catch(() => {});
-  if (await e.locator('#intro-splash-title').count()) {
-    throw new Error('the introduction came back on a reload');
+  await dismissAuthGate(e).catch(() => {});
+  if (await e.locator('.authGate').count()) {
+    throw new Error('the Profile gate came back on a reload');
   }
   // Gate may flash for a GPS re-ask while confirmation loads; the vertical
   // guarantee is the park stays Fiesta Texas from storage, not that the gate
@@ -1708,9 +1727,11 @@ await check('skipping location still asks which park to explore', async () => {
   await fresh.addInitScript(() => {
     localStorage.setItem('tracker-intro-seen', '1');
     localStorage.setItem('tracker-release-notes-seen', '1.1.3');
+    sessionStorage.setItem('parkbound.authGuest', '1');
   });
   const p = await fresh.newPage();
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await dismissAuthGate(p).catch(() => {});
   await hydrated(p);
   await dismissUpdateSplash(p);
   const skip = p.locator(
