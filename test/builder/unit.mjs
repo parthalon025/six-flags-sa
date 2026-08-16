@@ -7308,14 +7308,29 @@ await check('clerkOAuthReady waits for Clerk JS, not useSignIn isLoaded', () => 
   return true;
 });
 
+await check('Profile gate is Login or Guest — Login routes to Clerk /sign-in', async () => {
+  const { AUTH_COPY } = await import('../../apps/party-tracker/lib/auth/authCopy.js');
+  assert.equal(AUTH_COPY.loginLabel, 'Login');
+  assert.equal(AUTH_COPY.guestLabel, 'Guest');
+  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  const gateActions = fs.readFileSync(
+    new URL('../../apps/party-tracker/components/AuthGateActions.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(gate, /AuthGateActions/);
+  assert.doesNotMatch(gate, /OAuthButtons/);
+  assert.doesNotMatch(gate, /useClerkOAuth/);
+  assert.match(gateActions, /href="\/sign-in"/);
+  assert.match(gateActions, /AUTH_COPY\.loginLabel/);
+  assert.match(gateActions, /AUTH_COPY\.guestLabel/);
+  return true;
+});
+
 await check('AuthGate and SignInCard share useClerkOAuth for OAuth readiness', () => {
   const hookUrl = new URL('../../apps/party-tracker/lib/auth/useClerkOAuth.js', import.meta.url);
   assert.equal(fs.existsSync(hookUrl), true, 'missing useClerkOAuth');
-  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(gate, /useClerkOAuth/);
   assert.match(card, /useClerkOAuth/);
-  assert.doesNotMatch(gate, /useSignIn/);
   assert.doesNotMatch(card, /useSignIn/);
   return true;
 });
@@ -7375,9 +7390,7 @@ await check('OAuth buttons are provider logos in two columns', () => {
   assert.match(src, /oauthActions/);
   const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
-  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(gate, /OAuthButtons/);
   assert.match(card, /OAuthButtons/);
   return true;
 });

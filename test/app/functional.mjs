@@ -185,27 +185,28 @@ const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 if (clerkOn) {
 console.log('\n--- auth (Clerk-on Profile OAuth) ---');
 
-await check('Profile gate shows Google and Apple logo buttons', async () => {
+await check('Profile gate shows Login and Guest', async () => {
   await a.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await until(
-    async () => (await a.locator('.authGate .oauthBtn').count()) >= 2,
-    { timeout: 25000, label: 'Profile OAuth logo buttons' },
+    async () => (await a.locator('.authGate .authGateLogin').count()) >= 1,
+    { timeout: 25000, label: 'Profile Login button' },
   );
-  const labels = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
-    els.map((el) => el.getAttribute('aria-label') || ''),
-  );
-  if (!labels.some((l) => /Google/i.test(l))) throw new Error(`no Google button: ${labels.join(' | ')}`);
-  if (!labels.some((l) => /Apple/i.test(l))) throw new Error(`no Apple button: ${labels.join(' | ')}`);
-  const boxes = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
-    els.map((el) => {
-      const b = el.getBoundingClientRect();
-      return { x: b.x, y: b.y, w: b.width, h: b.height };
-    }),
-  );
-  if (Math.abs(boxes[0].y - boxes[1].y) > 24) throw new Error('OAuth buttons are stacked, not two columns');
-  if (Math.abs(boxes[0].x - boxes[1].x) < 40) throw new Error('OAuth buttons share one column');
+  if (!(await a.locator('.authGate button:has-text("Guest")').count())) {
+    throw new Error('Profile gate missing Guest button');
+  }
+  const loginHref = await a.locator('.authGate .authGateLogin').getAttribute('href');
+  if (loginHref !== '/sign-in') throw new Error(`Login href expected /sign-in, got ${loginHref}`);
   const shot = process.env.CLERK_E2E_SHOTS;
-  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_oauth_buttons.png`, fullPage: true });
+  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_login_guest_gate.png`, fullPage: true });
+  return true;
+});
+
+await check('sign-in route shows Google and Apple logo buttons', async () => {
+  await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
+  await until(
+    async () => (await a.locator('.clerkAuthPage .oauthBtn, .cl-socialButtons, .cl-socialButtonsBlockButton').count()) >= 1,
+    { timeout: 25000, label: 'Clerk sign-in OAuth buttons' },
+  );
   return true;
 });
 
@@ -213,13 +214,16 @@ await check('Profile gate shows Google and Apple logo buttons', async () => {
 // after the provider is configured — do not treat a missing Google app as a login bug.
 if (process.env.CLERK_E2E_GOOGLE === '1') {
 await check('Google logo button starts Clerk OAuth', async () => {
-  const google = a.locator('.authGate .oauthBtn[aria-label*="Google"]');
-  await google.click();
+  await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
+  const google = a.locator(
+    '.clerkAuthPage .oauthBtn[aria-label*="Google"], .cl-socialButtonsBlockButton:has-text("Google")',
+  );
+  await google.first().click();
   const dest = await until(
     async () => {
       const url = String(a.url());
       if (/google|clerk\.com|accounts\./i.test(url) && !url.startsWith(BASE)) return url;
-      const err = (await a.locator('.authGate .warnText').innerText().catch(() => '')).trim();
+      const err = (await a.locator('.warnText').innerText().catch(() => '')).trim();
       if (err) return { error: err };
       return null;
     },

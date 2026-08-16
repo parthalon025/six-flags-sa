@@ -113,9 +113,9 @@
     {
       "id": "clerk-profile-oauth",
       "slice": "EP",
-      "user_action": "Sign in from the Profile gate with Google or Apple",
+      "user_action": "Login or Guest from the Profile gate; Google/Apple on /sign-in",
       "suite": "functional",
-      "check": "Profile gate shows Google and Apple logo buttons"
+      "check": "Profile gate shows Login and Guest"
     },
     {
       "id": "ep5-sharing",
