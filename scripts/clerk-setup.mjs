@@ -4,6 +4,7 @@
  *
  *   npm run clerk:setup
  *   npm run clerk:setup -- --instance prod
+ *   npm run clerk:check -- --instance prod
  *
  * Prod OAuth credentials (optional, gitignored local files):
  *   scripts/lib/clerk-google-connection.json
@@ -270,6 +271,11 @@ async function main() {
   syncRedirectUrls(inst);
 
   if (isProd) status = deployStatus();
+
+  if (isProd) {
+    log('Apple Sign In invariants', ['npm run clerk:check -- --instance prod']);
+    run(`node "${join(root, 'scripts/clerk-check.mjs')}" --instance prod`);
+  }
 
   printManualFollowUps(isProd, status);
   log('Done', [
