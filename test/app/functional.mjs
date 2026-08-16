@@ -171,7 +171,14 @@ await check('sign-up page respects Clerk configuration', async () => {
 });
 
 await check('OAuth SSO callback does not remount the SignIn widget', async () => {
-  await a.goto(`${BASE}/sign-in/sso-callback`, { waitUntil: 'domcontentloaded' });
+  // Clerk may redirect mid-load; Playwright then reports net::ERR_ABORTED even
+  // though the callback (or its redirect target) did land.
+  try {
+    await a.goto(`${BASE}/sign-in/sso-callback`, { waitUntil: 'domcontentloaded' });
+  } catch (err) {
+    if (!/ERR_ABORTED|Navigation.*interrupted/i.test(String(err?.message || err))) throw err;
+  }
+  await a.waitForLoadState('domcontentloaded').catch(() => {});
   const url = String(a.url());
   if (!url.includes('/sign-in/sso-callback')) return true;
   const clerkSignIn =
