@@ -19,6 +19,7 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | CI gate manifest | `scripts/ci/manifest.mjs` |
 | Pre-merge vertical validation | `npm run test:pre-merge-vertical` → `scripts/ci/pre-merge-vertical.mjs` |
 | Clerk-on e2e before merge (auth UI) | `scripts/lib/clerk-e2e.mjs` |
+| Production Sign in with Apple (Services ID, Clerk flags) | `scripts/lib/clerk-apple-prod-spec.json` + `npm run clerk:check` |
 | CI/CD workflow map | [docs/agents/ci.md](../ci.md) |
 | Stamp app version on dev/build | `apps/party-tracker/scripts/inject-version.mjs` (`predev` / `prebuild`) |
 | Bump semver after merge to `main` | `.github/workflows/bump-version.yml` → `scripts/bump-version.mjs` |

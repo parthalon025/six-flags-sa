@@ -12,7 +12,7 @@ Park Bound uses **Clerk** for sign-in. **Profile** minting and attribution stay 
 | Choice | Value |
 |--------|--------|
 | IdP | **Clerk** (dedicated application under the existing paid account — dev + prod instances; not shared with other products) |
-| Providers | **Google** + **Sign in with Apple** only — email, password, and magic link **disabled** in Clerk |
+| Providers | **Google** + **Sign in with Apple** only — email, password, phone login, and magic link **disabled** in Clerk. First/last name are optional (Apple Hide My Email does not send them). |
 | Session | Clerk session (httpOnly cookies on web; secure token cache in native shell) |
 | Profile row | Mint `users` / `profiles` in the **sign-in callback** or first authenticated API call — **not** blocked on async webhooks |
 | Webhooks | Verified `user.created` / `user.updated` / `user.deleted` for sync and delete — backup, not onboarding gate |
@@ -76,6 +76,14 @@ Clerk Dashboard: **Native Applications** on; Associated Domains / deep links per
 | EP.5 | Auto-bind **Member** on sign-in (this ADR) |
 | EP.6 | **Managed Guest** under **Profile** |
 | Store | Account deletion page URL in Play Data safety; Settings → Delete **Profile** |
+
+## Production Apple web (do not revert)
+
+Canonical IDs, Clerk signup flags, and Apple Developer checklist: [`scripts/lib/clerk-apple-prod-spec.json`](../../scripts/lib/clerk-apple-prod-spec.json).
+
+- After changing Clerk prod: `npm run clerk:check -- --instance prod`
+- `npm run clerk:setup -- --instance prod` runs that check
+- CI asserts the checked-in prod patch cannot require phone or names (`test/scripts/clerk-apple-prod.test.mjs`)
 
 ## Consequences
 
