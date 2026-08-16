@@ -313,7 +313,9 @@ platform :ios do
       output_directory: ios_output_directory,
       output_name: "Parkbound.ipa",
       clean: true,
-      include_bitcode: false
+      include_bitcode: false,
+      export_team_id: ENV.fetch("IOS_TEAM_ID"),
+      xcargs: "DEVELOPMENT_TEAM=#{ENV.fetch("IOS_TEAM_ID")} -allowProvisioningUpdates"
     )
 
     upload_to_testflight(
@@ -344,7 +346,9 @@ platform :ios do
       output_directory: ios_output_directory,
       output_name: "Parkbound.ipa",
       clean: true,
-      include_bitcode: false
+      include_bitcode: false,
+      export_team_id: ENV.fetch("IOS_TEAM_ID"),
+      xcargs: "DEVELOPMENT_TEAM=#{ENV.fetch("IOS_TEAM_ID")} -allowProvisioningUpdates"
     )
 
     deliver(

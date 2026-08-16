@@ -145,6 +145,11 @@ assert.doesNotMatch(
   /build_app\([\s\S]*api_key:/,
   'ios beta build_app must not pass api_key',
 );
+assert.match(
+  fastfile,
+  /DEVELOPMENT_TEAM=#\{ENV\.fetch\("IOS_TEAM_ID"\)\}/,
+  'CI automatic signing needs the team id on gym xcargs',
+);
 
 const productionBlock = fastfile.slice(fastfile.indexOf('lane :production'));
 assert.match(
