@@ -87,7 +87,10 @@ function alreadyWired(text) {
       text,
     ) &&
     /504EC3061FED79650016851F \/\* App \*\/,\s+A7WATCH00000000000000006 \/\* ParkBoundWatch \*\//.test(text) &&
-    /504EC3041FED79650016851F \/\* App\.app \*\/,\s+A7WATCH00000000000000001 \/\* ParkBoundWatch\.app \*\//.test(text)
+    /504EC3041FED79650016851F \/\* App\.app \*\/,\s+A7WATCH00000000000000001 \/\* ParkBoundWatch\.app \*\//.test(text) &&
+    /504EC3081FED79650016851F \/\* AppDelegate\.swift in Sources \*\/,\s+A7WATCH0000000000000001A \/\* WatchCompassPhoneSession\.swift in Sources \*\//.test(
+      text,
+    )
   );
 }
 
@@ -150,6 +153,27 @@ function ensureLinks(text) {
     (t) => t.includes(`${ids.target} = {`),
     /(TargetAttributes = \{\s+504EC3031FED79650016851F = \{[\s\S]*?ProvisioningStyle = Automatic;\s+\};)(\s+)(\};)/,
     `$1$2${ids.target} = {$2\tCreatedOnToolsVersion = 15.0;$2\tProvisioningStyle = Automatic;$2};$2$3`,
+  );
+
+  apply(
+    'add phone Watch bridge sources to App',
+    (t) =>
+      /504EC3081FED79650016851F \/\* AppDelegate\.swift in Sources \*\/,\s+A7WATCH0000000000000001A \/\* WatchCompassPhoneSession\.swift in Sources \*\//.test(
+        t,
+      ),
+    /(504EC3081FED79650016851F \/\* AppDelegate\.swift in Sources \*\/,)(\s+)(\);)/,
+    `$1$2${ids.buildPhoneSession} /* WatchCompassPhoneSession.swift in Sources */,$2${ids.buildPhonePlugin} /* WatchCompassPlugin.swift in Sources */,$2$3`,
+  );
+
+  // Phone file refs under App group
+  apply(
+    'add phone Watch bridge file refs to App group',
+    (t) =>
+      /504EC3071FED79650016851F \/\* AppDelegate\.swift \*\/,\s+A7WATCH00000000000000018 \/\* WatchCompassPhoneSession\.swift \*\//.test(
+        t,
+      ),
+    /(504EC3071FED79650016851F \/\* AppDelegate\.swift \*\/,)(\s+)(?!A7WATCH00000000000000018)/,
+    `$1$2${ids.phoneSession} /* WatchCompassPhoneSession.swift */,$2${ids.phonePlugin} /* WatchCompassPlugin.swift */,$2`,
   );
 
   return { text: next, changed };

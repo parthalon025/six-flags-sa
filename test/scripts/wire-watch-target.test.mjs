@@ -28,4 +28,8 @@ assert.match(
   text,
   /targets = \(\s+504EC3031FED79650016851F \/\* App \*\/,\s+A7WATCH00000000000000002 \/\* ParkBoundWatch \*\//,
 );
+assert.match(
+  text,
+  /504EC3081FED79650016851F \/\* AppDelegate\.swift in Sources \*\/,\s+A7WATCH0000000000000001A \/\* WatchCompassPhoneSession\.swift in Sources \*\//,
+);
 console.log('ok wire-watch-target');
