@@ -74,7 +74,7 @@ async function loadPluginsUncached() {
       plugins = 'web';
       return null;
     }
-    const [geo, haptics, share, clipboard, device, network, bg, push, app] = await Promise.all([
+    const [geo, haptics, share, clipboard, device, network, bg, push, app, core] = await Promise.all([
       import('@capacitor/geolocation'),
       import('@capacitor/haptics'),
       import('@capacitor/share'),
@@ -84,7 +84,10 @@ async function loadPluginsUncached() {
       import('@capacitor-community/background-geolocation'),
       import('@capacitor/push-notifications'),
       import('@capacitor/app'),
+      import('@capacitor/core'),
     ]);
+    const { registerPlugin } = core;
+    const WatchCompass = registerPlugin('WatchCompass');
     plugins = {
       Capacitor,
       Geolocation: geo.Geolocation,
@@ -96,6 +99,7 @@ async function loadPluginsUncached() {
       BackgroundGeolocation: bg.BackgroundGeolocation ?? bg.default,
       PushNotifications: push.PushNotifications,
       App: app.App,
+      WatchCompass,
     };
     return plugins;
   } catch {
@@ -298,4 +302,25 @@ export async function getCurrentPosition(options) {
     }
     navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
+}
+
+/**
+ * Push facing-Compass state to the paired Apple Watch (ADR-0011).
+ * No-op on web / when the native plugin is absent.
+ *
+ * @param {{
+ *   heading?: number|null,
+ *   marks?: object[],
+ *   nextTurn?: string|null,
+ *   settings?: object,
+ *   raised?: boolean,
+ * }} state
+ */
+export async function pushWatchCompass(state) {
+  if (!isNativePlatform()) return { ok: false, reason: 'web' };
+  const p = await loadPlugins();
+  const plugin = p?.WatchCompass;
+  if (!plugin?.pushState) return { ok: false, reason: 'no-plugin' };
+  await plugin.pushState(state || {});
+  return { ok: true };
 }

@@ -15,6 +15,13 @@
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */; };
+		A7WATCH0000000000000000D /* ParkBoundWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7WATCH00000000000000007 /* ParkBoundWatchApp.swift */; };
+		A7WATCH0000000000000000E /* WatchCompass.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7WATCH00000000000000008 /* WatchCompass.swift */; };
+		A7WATCH0000000000000000F /* WatchCompassSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7WATCH00000000000000009 /* WatchCompassSession.swift */; };
+		A7WATCH00000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A7WATCH0000000000000000B /* Assets.xcassets */; };
+		A7WATCH00000000000000015 /* ParkBoundWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A7WATCH00000000000000001 /* ParkBoundWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A7WATCH0000000000000001A /* WatchCompassPhoneSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7WATCH00000000000000018 /* WatchCompassPhoneSession.swift */; };
+		A7WATCH0000000000000001B /* WatchCompassPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7WATCH00000000000000019 /* WatchCompassPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +38,15 @@
 		AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_App.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		FC68EB0AF532CFC21C3344DD /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Pods/Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
+		A7WATCH00000000000000001 /* ParkBoundWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ParkBoundWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A7WATCH00000000000000007 /* ParkBoundWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParkBoundWatchApp.swift; sourceTree = "<group>"; };
+		A7WATCH00000000000000008 /* WatchCompass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompass.swift; sourceTree = "<group>"; };
+		A7WATCH00000000000000009 /* WatchCompassSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompassSession.swift; sourceTree = "<group>"; };
+		A7WATCH0000000000000000A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A7WATCH0000000000000000B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A7WATCH0000000000000000C /* ParkBoundWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ParkBoundWatch.entitlements; sourceTree = "<group>"; };
+		A7WATCH00000000000000018 /* WatchCompassPhoneSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompassPhoneSession.swift; sourceTree = "<group>"; };
+		A7WATCH00000000000000019 /* WatchCompassPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompassPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,6 +55,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A084ECDBA7D38E1E42DFC39D /* Pods_App.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A7WATCH00000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,6 +99,8 @@
 			children = (
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				A7WATCH00000000000000018 /* WatchCompassPhoneSession.swift */,
+				A7WATCH00000000000000019 /* WatchCompassPlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -94,6 +119,19 @@
 				AF51FD2D460BCFE21FA515B2 /* Pods-App.release.xcconfig */,
 			);
 			name = Pods;
+			sourceTree = "<group>";
+		};
+		A7WATCH00000000000000006 /* ParkBoundWatch */ = {
+			isa = PBXGroup;
+			children = (
+				A7WATCH00000000000000007 /* ParkBoundWatchApp.swift */,
+				A7WATCH00000000000000008 /* WatchCompass.swift */,
+				A7WATCH00000000000000009 /* WatchCompassSession.swift */,
+				A7WATCH0000000000000000A /* Info.plist */,
+				A7WATCH0000000000000000C /* ParkBoundWatch.entitlements */,
+				A7WATCH0000000000000000B /* Assets.xcassets */,
+			);
+			path = ParkBoundWatch;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -116,6 +154,23 @@
 			name = App;
 			productName = App;
 			productReference = 504EC3041FED79650016851F /* App.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A7WATCH00000000000000002 /* ParkBoundWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A7WATCH00000000000000013 /* Build configuration list for PBXNativeTarget "ParkBoundWatch" */;
+			buildPhases = (
+				A7WATCH00000000000000003 /* Sources */,
+				A7WATCH00000000000000005 /* Frameworks */,
+				A7WATCH00000000000000004 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ParkBoundWatch;
+			productName = ParkBoundWatch;
+			productReference = A7WATCH00000000000000001 /* ParkBoundWatch.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -154,6 +209,38 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A7WATCH00000000000000014 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				A7WATCH00000000000000015 /* ParkBoundWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		A7WATCH00000000000000016 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A7WATCH00000000000000002;
+			remoteInfo = ParkBoundWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		A7WATCH00000000000000017 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A7WATCH00000000000000002 /* ParkBoundWatch */;
+			targetProxy = A7WATCH00000000000000016 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin PBXResourcesBuildPhase section */
 		504EC3021FED79650016851F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
@@ -165,6 +252,14 @@
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A7WATCH00000000000000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7WATCH00000000000000010 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -212,6 +307,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A7WATCH00000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7WATCH0000000000000000D /* ParkBoundWatchApp.swift in Sources */,
+				A7WATCH0000000000000000E /* WatchCompass.swift in Sources */,
+				A7WATCH0000000000000000F /* WatchCompassSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,6 +490,48 @@
 			};
 			name = Release;
 		};
+		A7WATCH00000000000000011 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ParkBoundWatch/ParkBoundWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ParkBoundWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.8.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.kurat0r.parkbound.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		A7WATCH00000000000000012 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = ParkBoundWatch/ParkBoundWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ParkBoundWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.8.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ai.kurat0r.parkbound.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -402,6 +549,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A7WATCH00000000000000013 /* Build configuration list for PBXNativeTarget "ParkBoundWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A7WATCH00000000000000011 /* Debug */,
+				A7WATCH00000000000000012 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

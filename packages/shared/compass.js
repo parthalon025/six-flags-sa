@@ -63,6 +63,13 @@ export function saveWatchSettings(next, storage) {
   const store = storageOf(storage);
   const normalized = normalizeWatchSettings(next);
   if (store?.setItem) store.setItem(WATCH_SETTINGS_KEY, JSON.stringify(normalized));
+  try {
+    if (typeof globalThis !== 'undefined' && typeof globalThis.dispatchEvent === 'function') {
+      globalThis.dispatchEvent(new Event('parkbound-watch-compass-settings'));
+    }
+  } catch {
+    /* SSR / non-DOM */
+  }
   return normalized;
 }
 
@@ -227,4 +234,59 @@ export function watchAlwaysOnPayload(settings, { primaryDistanceM = null, nextTu
     };
   }
   return { mode: 'full' };
+}
+
+/**
+ * Application-context payload for the Watch companion (WatchConnectivity).
+ * Marks use stable `id` strings the Swift `CompassMark` initializer expects.
+ */
+export function watchCompassPushState({
+  me = null,
+  heading = null,
+  members = [],
+  meet = null,
+  go = null,
+  selection = null,
+  planNext = null,
+  settings = null,
+  nextTurn = null,
+  raised = true,
+} = {}) {
+  const normalized = normalizeWatchSettings(
+    settings != null ? settings : loadWatchSettings(),
+  );
+  const built = buildCompassMarks({
+    me,
+    heading,
+    members,
+    meet,
+    go,
+    selection,
+    planNext,
+    includeNorth: true,
+    showParty: normalized.showParty,
+    showMeet: normalized.showMeet,
+  });
+  let turn = null;
+  if (typeof nextTurn === 'string') turn = nextTurn;
+  else if (nextTurn && typeof nextTurn.label === 'string') turn = nextTurn.label;
+  if (typeof turn === 'string') turn = turn.slice(0, 28);
+
+  return {
+    heading: built.facing,
+    marks: built.marks.map((m) => {
+      const row = {
+        id: m.placeKey,
+        kind: m.kind,
+        bearing: m.bearing,
+        label: m.label,
+        showDistance: Boolean(m.showDistance),
+      };
+      if (Number.isFinite(m.distanceM)) row.distanceM = m.distanceM;
+      return row;
+    }),
+    nextTurn: turn,
+    settings: normalized,
+    raised: raised !== false,
+  };
 }

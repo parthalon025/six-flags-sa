@@ -13,4 +13,5 @@ export {
   placeKeyOf,
   saveWatchSettings,
   watchAlwaysOnPayload,
+  watchCompassPushState,
 } from '@party-tracker/shared/compass.js';
