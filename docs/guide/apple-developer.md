@@ -28,4 +28,4 @@ Values: `siwaWeb` and `services-id` in the JSON. Clerk production already takes 
 
 The SIWA key is `ZZNS5TWZ74`. The App Store Connect API key is a different key (Users and Access) — do not paste it into Clerk.
 
-Create **later** identifier rows only when that Xcode target exists (widget, App Clip, NFC). App Group + Watch App ID are **now** for the Watch Compass companion.
+Create **later** identifier rows only when that Xcode target exists (widget, App Clip, NFC). App Group + Watch App ID are **now** for the Watch Compass companion — enable both in Identifiers before the next signed archive (`npm run cap:sync`, then Actions → Store binaries → ios → beta).

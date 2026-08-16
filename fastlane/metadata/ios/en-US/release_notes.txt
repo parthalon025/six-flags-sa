@@ -1,5 +1,6 @@
 Welcome to Park Bound.
 
+• Facing Compass on phone and Apple Watch companion (paired Watch app)
 • Detailed maps for Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s
 • Find rides, food, restrooms, and walkable park paths
 • Pick a rider height to see which rides work for them
