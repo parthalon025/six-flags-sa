@@ -101,8 +101,20 @@ The phone’s pending/accepted **Contribution** layer drawn on the shipped **Ven
 _Avoid_: Ride report (ops chatter); Observation (live series, not map structure); draft Overlay (solo is the same Overlay); queue / outbox (upload adapter — the map reads Overlay); Skin (paint, not park truth); Action (generic — the **Party** sees the **Side Quest** completion, not a fourth entity)
 
 **Skin**:
-A **Profile**-owned cosmetic restyle of the **Venue** map — how it is painted, not where **Places** sit. Earned as a **Side Quest** prize on that **Profile**; two rungs on the same **Skin** (private unlock, then share). Not a **Contribution**, **Overlay**, or **Ride report**. This is the shipped name for what earlier notes called a Map skin.
+A **Profile**-owned cosmetic restyle of the **World** map — how it is painted, not where **Places** sit. Earned as a **Side Quest** prize on that **Profile**; two rungs on the same **Skin** (private unlock, then share). Not a **Contribution**, **Overlay**, or **Ride report**. **Wear** resolves a global **Skin template** plus optional **World** overrides from that **World**’s **display pack**. This is the shipped name for what earlier notes called a Map skin.
 _Avoid_: Theme (Trail / Park Midnight are the always-on palettes); map pack; party theme; Map skin (use **Skin**)
+
+**Display pack**:
+The builder-produced visual assets for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), optional per-**Skin** baked variants, `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`.
+_Avoid_: tile server (runtime HTTP on the phone); map pack (use **display pack**); baking truth into tiles (truth stays JSON)
+
+**Skin template**:
+The global compile recipe for a **Skin** id — MapLibre style JSON, iso template parameters, and optional baked tile variant — not hand-tuned CSS per **World**. A **Profile** still earns the **Skin**; **Wear** selects which template loads atop the active **World** **display pack**. **World**-specific reward art overrides live in that **World**’s `visual.json`, not in forked app code.
+_Avoid_: per-park CSS; Theme (Trail / Park Midnight are palettes, not **Skin templates**)
+
+**Custom map**:
+Extra drawing a **Skin** may attach on the OSM base — **replace** (hide the base) or **overlay** (draw on it, optionally taking named layers such as buildings). **Places** stay on their lat/lng. Not **Overlay** (that is **Contribution** truth) and not the **Skin** paint itself. At scale, **Custom map** geometry compiles into the **display pack** (ADR-0013); runtime does not fork per **World** in React.
+_Avoid_: Overlay (contributions); map pack; tileset
 
 **Wear**:
 The look this phone is painting: own **Skin**, an accepted **Offer**, or Trail / Park Midnight. Own **Skin** is the default when the **Profile** has one. **Wear** of another **Profile**’s **Skin** is not ownership and is not a copy.
@@ -146,7 +158,9 @@ _Avoid_: compass rose (retired map furniture for this job); bearing tape (legacy
 
 ## Relationships
 
-- **Park Bound** ships one or more **Venues**
+- **Park Bound** ships one or more **Worlds** (builder contract: `venue` bundles)
+- The builder produces map truth (JSON) and a **display pack** per **World**; the phone downloads and caches both; routing reads JSON only
+- A **Skin** **Wear** resolves a global **Skin template** plus optional **World** overrides from `visual.json`
 - The phone updates the active **Venue** when the app starts and a connection is available (cell or Wi-Fi)
 - A **Party** coordinates at one active **Venue** at a time
 - A **Party** has exactly one **Host** at a time; **Host** is not user-facing
@@ -344,3 +358,4 @@ _Avoid_: compass rose (retired map furniture for this job); bearing tape (legacy
 - Location pause / history — resolved: **Location** is **Party** situational awareness, not a hide. No pause; no deliberate blur to spare the roster. Live position plus **Place** name only when they are at that **Place** (**Attraction** queue or station; restroom / food at the **Place**) — not nearest while walking past. Never two **Place** names; on conflict, the most recognizable **Place** to a person; two equal **Attractions** use the slot he is standing in. Not “most likely,” “probably,” or “near” on the roster. One **Party** truth: **Location** plus **Venue** slots, and the **Place** travels with **Location** — not a check-in, not each phone guessing. The phone updates the **Venue** at app start when a connection is available. Join does not finish without **Location**. Live **Location** only inside **Venue** bounds. When live stops (outside bounds or OS revoke), last-known + trail stay visible to the **Party** and are marked stale — last known location of that **Member** at that **Place** when they were at one; not wiped. Trail is path dots only; **Place** name only on the live or last-known pin. OS revoke after join: stay a **Member**, wall to turn it back on — not an eject. Battery visible; IMU not shared; signal/network are **Host** election only. Contradicts park-intelligence “never keep location history” — accepted for family trail dots.
 - Databricks vs Vercel Postgres vs App vs offline-first — resolved 2026-08-14: phones stay offline-first on precached venue JSON; **Vercel + Neon Postgres** is E0 OLTP; **Databricks serverless jobs + Delta** is batch back-office only (ingest, traces, sidecar export); **Node consolidate + venue builder** still graduates shipped map truth. **No Databricks App deploy** and **paused job schedules** pre-launch ($0). Lakebase deferred until App/steward UI or explicit Postgres-host move. Do not relitigate — see `docs/adr/0010-databricks-ops-free-tier.md`.
 - Navigation compass / bearing tape / compass rose — resolved 2026-08-15: product term is **Compass** (phone strip + Watch dial, facing-relative game radar). Map-edge rose removed. Map north-up except Go. Phone + Watch share mark rules; Watch adds distance/nav and full user settings. See `docs/adr/0011-facing-compass.md`.
+- Map display at scale — resolved 2026-08-17: hundreds of **Worlds** ship through the universal builder; **Side Quest** / **Rank** **Skins** need custom visuals without per-**World** React forks. **Map truth** (`map.json`, `pois.json`, `gaps.json`) stays routing and **Place** contract; **display packs** (PMTiles + `visual.json` + manifest) are builder output for MapLibre offline paint. Global **Skin templates** compile earnable cosmetics; per-**World** `visual.json` holds quest-reward overrides. Phones download and cache **display packs**; no tile server on device; no live commercial tile API as the primary path. SVG `ParkMap.jsx` migrates to MapLibre after parity; live overlay (markers, route, puck, **Overlay**) stays a separate layer. Databricks unchanged (batch back-office only). See `docs/adr/0013-display-pipeline.md`.
