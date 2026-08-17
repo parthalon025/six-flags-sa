@@ -1,5 +1,5 @@
 {
   "name": "parkbound",
   "install": "npm ci\nnode scripts/install-global-skills.mjs",
-  "start": "node scripts/gitnexus-sync.mjs startup"
+  "start": "node scripts/install-global-skills.mjs\nnode scripts/gitnexus-sync.mjs startup"
 }
