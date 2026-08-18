@@ -22,6 +22,7 @@ import {
   selectModulesFromFiles,
 } from '../../test/app/lib/module-select.mjs';
 import {
+  healthAlreadyServing,
   startProductionServer,
   waitForHealth,
 } from './party-tracker-ui.mjs';
@@ -173,6 +174,18 @@ export async function runPreMergeVertical({
   } else if (!browserWanted) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
   } else {
+    if (await healthAlreadyServing()) {
+      console.error(
+        [
+          'pre-merge-vertical: something is already serving the app port.',
+          'A leftover server from an earlier run holds the build it started with,',
+          'so the browser vertical would prove that build, not the one just made.',
+          'Stop it and re-run:',
+          "  pkill -f 'next start' || pkill -f next-server",
+        ].join('\n'),
+      );
+      return 1;
+    }
     console.log('\npre-merge-vertical: starting app for browser vertical');
     startProductionServer({ root: cwd });
     await waitForHealth();

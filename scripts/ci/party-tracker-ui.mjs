@@ -4,6 +4,7 @@
  * Interface (testable):
  *   unpackBuildArtifact({ root, artifact, appDir })
  *   waitForHealth({ url, attempts, delayMs, fetchFn, sleep })
+ *   healthAlreadyServing({ url, fetchFn })
  *
  * CLI:
  *   node scripts/ci/party-tracker-ui.mjs unpack
@@ -34,6 +35,29 @@ export function unpackBuildArtifact({
     throw new Error(`party-tracker-ui: missing ${buildId} after unpack`);
   }
   return buildId;
+}
+
+/**
+ * Is something already answering on the health port?
+ *
+ * `startProductionServer` detaches and never stops the server, which is free
+ * on a CI runner that is thrown away and a trap anywhere else: a second run in
+ * the same session finds the first server still up, `waitForHealth` passes
+ * immediately, and the browser vertical then tests whatever build that old
+ * process is holding — not the one just built. A pass claimed on that is a
+ * pass for the wrong code, so callers refuse rather than guess.
+ */
+export async function healthAlreadyServing({
+  url = DEFAULT_HEALTH_URL,
+  fetchFn = globalThis.fetch,
+} = {}) {
+  if (!fetchFn) throw new Error('party-tracker-ui: fetch is required');
+  try {
+    const res = await fetchFn(url);
+    return res.ok === true;
+  } catch {
+    return false;
+  }
 }
 
 export async function waitForHealth({
