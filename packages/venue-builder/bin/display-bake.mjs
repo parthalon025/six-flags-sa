@@ -58,7 +58,7 @@ only, never geometry. Reply with ONLY a JSON object:
     "building": {"style":"${BUILDING_STYLES.join('|')}","roofs":[colors],"edge","wall","drop"},
     "slide": {"style":"${TRACK_STYLES.join('|')}","casing","colors":[colors],"width"},
     "coaster": {"style":"${TRACK_STYLES.join('|')}","rail","tie"},
-    "badge": {"gate","food","restroom","shop","show","service","icons":{kind:{"asset":"<icon id>"}}} } }
+    "badge": {"gate","food","restroom","shop","show","service","icons":{"<badge kind>":{"asset":"<icon id>"}}} } }
 "tiles" paints that terrain with real dual-grid tile art; "style" switches how a
 sprite is DRAWN (outline vs drop-shadowed buildings, tube vs mono tracks), not
 just its colors. Asset ids must come from this ledger menu:

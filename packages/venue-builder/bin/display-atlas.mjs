@@ -36,7 +36,8 @@ if (!ids.length) {
 
 const key = atlasCacheKey(ids, { ledger, px });
 const outDir = path.join(outRoot, key);
-if (existsSync(path.join(outDir, 'atlas.json'))) {
+const OUTPUTS = ['atlas.json', 'sprite.png', 'sprite.json', 'sprite@2x.png', 'sprite@2x.json', 'credits.json'];
+if (OUTPUTS.every((f) => existsSync(path.join(outDir, f)))) {
   console.log(`atlas cache hit: ${outDir} (${ids.length} icons @ ${px}px, v${ATLAS_VERSION})`);
   process.exit(0);
 }

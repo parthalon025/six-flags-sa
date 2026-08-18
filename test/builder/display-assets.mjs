@@ -184,6 +184,37 @@ await check('atlas cache key moves with content, size, and version', () => {
   return true;
 });
 
+await check('a real bake writes a credits manifest naming its assets', async () => {
+  // Integration over the wire the unit tests can't see: bin/display-bake.mjs
+  // → credits.json beside the PNG. Chromium-gated like CI's visual jobs —
+  // recorded as a skip, never a silent pass, where no browser exists.
+  const { existsSync, mkdtempSync, readFileSync, rmSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const os = await import('node:os');
+  const chromium = process.env.CHROMIUM_PATH
+    || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : null);
+  if (!chromium) {
+    console.log('       (skipped: no Chromium in this environment)');
+    return true;
+  }
+  const out = mkdtempSync(`${os.tmpdir()}/bake-credits-`);
+  try {
+    execFileSync(
+      'node',
+      ['packages/venue-builder/bin/display-bake.mjs', 'big-kahunas', '--kit', 'island-brochure', '--out', out],
+      { env: { ...process.env, CHROMIUM_PATH: chromium }, stdio: 'pipe', timeout: 180000 },
+    );
+    const credits = JSON.parse(readFileSync(`${out}/big-kahunas--island-brochure.credits.json`, 'utf8'));
+    const ids = credits.assets.map((a) => a.id);
+    assert.ok(ids.includes('parkbound-badge-gate'), 'badge icons ride the credits');
+    assert.ok(ids.includes('parkbound-palm-tree'), 'venue-theme sprite rides the credits');
+    for (const row of credits.assets) assert.ok(row.license && row.source, 'license + source on every row');
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+  return true;
+});
+
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));

@@ -303,6 +303,7 @@
     g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(x, y + 1.5, r * 0.5, r * 0.24, 0, 0, 7); g.fill();
     g.fillStyle = color;
     g.beginPath(); g.moveTo(x, y); g.lineTo(x - r * 0.42, cy + r * 0.7); g.lineTo(x + r * 0.42, cy + r * 0.7); g.closePath(); g.fill();
+    g.fillStyle = color;
     g.beginPath(); g.arc(x, cy, r, 0, 7); g.fill();
     g.strokeStyle = '#FFFFFF'; g.lineWidth = 1.5; g.stroke();
     // Glyph from the icon ledger (white-on-transparent); letter fallback.

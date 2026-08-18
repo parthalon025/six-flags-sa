@@ -41,7 +41,7 @@ export const TERRAIN_PIECES = {
   lot: { base: '#B9B3A6', texture: { kind: 'stripe', color: '#E2DDD2', density: 0.33 } },
   // road cells never take the per-cell texture pass — they render as cased
   // polylines whose casing and dashed centerline both use texture.color.
-  road: { base: '#8C8F98', texture: { kind: 'none', color: '#C9CCD3', density: 1 } },
+  road: { base: '#8C8F98', texture: { kind: 'none', color: '#C9CCD3' } },
   service: { base: '#7D8089', texture: { kind: 'none' } },
 };
 
@@ -124,7 +124,9 @@ export function resolveKit(spec = {}, { assets, overlay } = {}) {
     if (!row) throw new Error(`tree.sprite references unknown asset "${spriteRef.asset}"`);
     if (row.kind !== 'sprite') throw new Error(`tree.sprite asset "${spriteRef.asset}" is not a sprite`);
   }
+  const BADGE_KINDS = Object.keys(SPRITE_PIECES.badge).filter((k) => k !== 'icons');
   for (const [kind, ref] of Object.entries(spec.sprites?.badge?.icons || {})) {
+    if (!BADGE_KINDS.includes(kind)) throw new Error(`Unknown badge kind "${kind}"`);
     if (!assets) throw new Error('badge.icons needs the asset ledger to resolve');
     const row = assets[ref?.asset];
     if (!row) throw new Error(`badge.icons.${kind} references unknown asset "${ref?.asset}"`);
