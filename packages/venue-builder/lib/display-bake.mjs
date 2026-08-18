@@ -211,7 +211,11 @@ function projector(map, maxCols) {
     ((lng - west) * mPerLng) / tileMetres,
     ((north - lat) * mPerLat) / tileMetres,
   ];
-  return { cols, rows, tileMetres, toCell };
+  const toGeo = ([x, y]) => [
+    west + (x * tileMetres) / mPerLng,
+    north - (y * tileMetres) / mPerLat,
+  ];
+  return { cols, rows, tileMetres, toCell, toGeo };
 }
 
 function pointInRing(x, y, ring) {
@@ -272,7 +276,7 @@ const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', shop: 'sh
  * @param {{ maxCols?: number }} opts grid budget (default 240 cells across)
  */
 export function bakeModel(map, pois = [], opts = {}) {
-  const { cols, rows, tileMetres, toCell } = projector(map, opts.maxCols || 240);
+  const { cols, rows, tileMetres, toCell, toGeo } = projector(map, opts.maxCols || 240);
   const cells = new Array(cols * rows).fill(TERRAIN.outside);
 
   // Ground inside the venue boundary (or everywhere when no boundary).
@@ -388,7 +392,6 @@ export function bakeModel(map, pois = [], opts = {}) {
     .sort((a, b) => a.y - b.y || a.x - b.x);
 
   const model = cropModel({
-
     version: 1,
     venue: map.meta?.id,
     cols,
@@ -401,7 +404,7 @@ export function bakeModel(map, pois = [], opts = {}) {
     buildings,
     tracks,
     badges,
-  }, boundaryRing, opts.margin ?? 6);
+  }, boundaryRing, opts.margin ?? 6, toGeo);
   // Declutter after the crop so a cluster whose greedy keeper fell
   // outside the window still pins an in-window member.
   model.badges = declutterBadges(model.badges);
@@ -430,8 +433,17 @@ export function declutterBadges(badges, reach = 1.6) {
  * padded bounds. The window is the boundary ring's box plus a margin
  * (falling back to non-outside content when a venue has no boundary).
  */
-function cropModel(model, boundaryRing, margin) {
+function cropModel(model, boundaryRing, margin, toGeo) {
   const { cols, rows, cells } = model;
+  // Geo bounds of the window — the raster tier and pack manifest need to
+  // place the baked image on the map (WSEN, like everything MapLibre).
+  const geoBounds = (x0, y0, x1, y1) => {
+    if (!toGeo) return null;
+    const [west, north] = toGeo([x0, y0]);
+    const [east, south] = toGeo([x1 + 1, y1 + 1]);
+    const r = (v) => Math.round(v * 1e7) / 1e7;
+    return { west: r(west), south: r(south), east: r(east), north: r(north) };
+  };
   let minX = cols; let minY = rows; let maxX = -1; let maxY = -1;
   if (boundaryRing) {
     for (const [x, y] of boundaryRing) {
@@ -448,7 +460,7 @@ function cropModel(model, boundaryRing, margin) {
       }
     }
   }
-  if (maxX < 0) return model;
+  if (maxX < 0) return { ...model, bounds: geoBounds(0, 0, cols - 1, rows - 1) };
   // Boundary ring coords are floats — floor/ceil before the margin so the
   // window (and every array size derived from it) stays integral.
   const x0 = Math.max(0, Math.floor(minX) - margin); const y0 = Math.max(0, Math.floor(minY) - margin);
@@ -470,6 +482,7 @@ function cropModel(model, boundaryRing, margin) {
     ...model,
     cols: newCols,
     rows: newRows,
+    bounds: geoBounds(x0, y0, x1, y1),
     cells: newCells,
     roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })).filter((r) => anyIn(r.pts)),
     trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })).filter((t) => ptIn([t.x, t.y])),

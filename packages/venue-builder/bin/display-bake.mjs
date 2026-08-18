@@ -18,16 +18,14 @@ import http from 'node:http';
 import path from 'node:path';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
-import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, slugify } from '../lib/venue-io.mjs';
-import {
-  bakeModel, kitAssetIds, resolveKit,
-  TERRAIN_PIECES, SPRITE_PIECES, TEXTURE_KINDS,
-  BUILDING_STYLES, TREE_STYLES, TRACK_STYLES,
-} from '../lib/display-bake.mjs';
+import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson } from '../lib/venue-io.mjs';
+import { bakeModel, kitAssetIds, resolveKit } from '../lib/display-bake.mjs';
+import { kitBriefSystem, parseKitAnswer } from '../lib/display-kit-brief.mjs';
 import { readAssetLedger, assetPath, creditsManifest } from '../lib/display-assets.mjs';
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
 import { profileForKit, readReferenceProfiles } from '../lib/display-references.mjs';
+import { ldtkProject } from '../lib/display-ldtk.mjs';
 import {
   stylePoints, certifyStyleContract, harvestProfileDraft, signature,
 } from '../lib/display-style-contract.mjs';
@@ -36,40 +34,6 @@ const LEDGER = readAssetLedger();
 
 const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
 
-// The asset menu the brief may reference — GUIDs from the license-gated
-// ledger only; resolveKit rejects anything else before a kit is saved.
-const assetMenu = () => {
-  const rows = Object.values(LEDGER);
-  const sheets = rows.filter((r) => r.kind === 'tilesheet')
-    .map((r) => `${r.id} tiles: ${Object.keys(r.import.tiles).join(', ')}`);
-  const sprites = rows.filter((r) => r.kind === 'sprite').map((r) => r.id);
-  const icons = rows.filter((r) => r.kind === 'icon').map((r) => r.id);
-  return { sheets, sprites, icons };
-};
-
-const KIT_BRIEF_SYSTEM = `You author map "kit specs" for a deterministic game-map baker.
-The bake is composed of small pieces; you choose params per piece — presentation
-only, never geometry. Reply with ONLY a JSON object:
-{
-  "id": "<kebab-case kit name>",
-  "label": "<short human name>",
-  "terrain": { any subset of ${Object.keys(TERRAIN_PIECES).join('|')}:
-    { "base": "<css color>",
-      "texture": { "kind": "${TEXTURE_KINDS.join('|')}", "color": "<css>", "density": 0..1 },
-      "tiles": { "asset": "<tilesheet id>", "tile": "<tile name>", "tint": "<css, optional>" } } },
-  "sprites": { any subset of:
-    "tree": {"style":"${TREE_STYLES.join('|')}","canopy","highlight","shadow","scale","sprite":{"asset":"<sprite id>"}},
-    "building": {"style":"${BUILDING_STYLES.join('|')}","roofs":[colors],"edge","wall","drop"},
-    "slide": {"style":"${TRACK_STYLES.join('|')}","casing","colors":[colors],"width"},
-    "coaster": {"style":"${TRACK_STYLES.join('|')}","rail","tie"},
-    "badge": {"gate","food","restroom","shop","show","service","icons":{"<badge kind>":{"asset":"<icon id>"}}} } }
-"tiles" paints that terrain with real dual-grid tile art; "style" switches how a
-sprite is DRAWN (outline vs drop-shadowed buildings, tube vs mono tracks), not
-just its colors. Asset ids must come from this ledger menu:
-${JSON.stringify(assetMenu())}
-Defaults fill anything you omit: ${JSON.stringify({ terrain: TERRAIN_PIECES, sprites: SPRITE_PIECES })}
-Keep water readable as water and paths as paths, with outdoor-phone contrast.`;
-
 const argv = process.argv.slice(2);
 const ids = [];
 const kitIdsArg = [];
@@ -77,6 +41,7 @@ let prompt = null;
 let maxCols = 240;
 let px = 16;
 let harvestProfile = false;
+let ldtk = false;
 let outRoot = path.join(MONO_ROOT, 'artifacts', 'display-bake');
 for (let i = 0; i < argv.length; i += 1) {
   const a = argv[i];
@@ -85,6 +50,7 @@ for (let i = 0; i < argv.length; i += 1) {
   else if (a === '--max-cols') maxCols = Number(argv[++i]) || 240;
   else if (a === '--px') px = Number(argv[++i]) || 16;
   else if (a === '--harvest-profile') harvestProfile = true;
+  else if (a === '--ldtk') ldtk = true;
   else if (a === '--out') outRoot = path.resolve(argv[++i]);
   else if (!a.startsWith('--')) ids.push(a);
 }
@@ -105,7 +71,7 @@ function loadKit(id) {
 async function kitFromPrompt(text) {
   const content = await chatCompletion(
     [
-      { role: 'system', content: KIT_BRIEF_SYSTEM },
+      { role: 'system', content: kitBriefSystem(LEDGER) },
       { role: 'user', content: `Map prompt: ${text}` },
     ],
     { jsonMode: true },
@@ -114,11 +80,7 @@ async function kitFromPrompt(text) {
     console.error('Kit brief filed — answer it, then rerun this command.');
     process.exit(3);
   }
-  const spec = JSON.parse(content.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''));
-  if (!spec.id) throw new Error('Kit spec needs an id');
-  resolveKit(spec, { assets: LEDGER }); // reject unknown pieces/kinds/tile refs before saving
-  spec.id = slugify(spec.id);
-  spec.prompt = text;
+  const spec = parseKitAnswer(content, { assets: LEDGER, prompt: text });
   mkdirSync(KITS_DIR, { recursive: true });
   const file = path.join(KITS_DIR, `${spec.id}.json`);
   writeFileSync(file, `${JSON.stringify(spec, null, 2)}\n`);
@@ -184,6 +146,13 @@ for (const id of ids) {
   // only (custom quest-prize sprites, accent palettes) — never geometry.
   const overlay = readJson(path.join(OVERRIDE_DIR, id, 'display', 'theme.json'), null);
   if (overlay) console.error(`  venue theme: data/venues/${id}/display/theme.json`);
+
+  if (ldtk) {
+    // Kit-independent (the model is), so one file per venue suffices.
+    const ldtkFile = path.join(outRoot, `${id}.ldtk`);
+    writeFileSync(ldtkFile, `${JSON.stringify(ldtkProject(bakeModel(map, pois, { maxCols })), null, 2)}\n`);
+    console.error(`  LDtk debug export: ${ldtkFile}`);
+  }
 
   // Bake every requested kit first; certification runs after so the
   // cross-kit check compares this invocation's own bakes, never stale
@@ -254,6 +223,9 @@ for (const id of ids) {
       profile: r.profile,
       kit: r.kit,
     });
+    // Geo bounds ride the cert so the display stage can place the baked
+    // image (and attempt the raster tier) without re-baking the model.
+    cert.bounds = r.model.bounds ?? null;
     writeFileSync(path.join(outRoot, `${id}--${r.kitId}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
     const failing = cert.checks.filter((c) => !c.pass);
     const certLine = cert.certified

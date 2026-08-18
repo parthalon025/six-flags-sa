@@ -54,6 +54,8 @@ The tag means *local CI already ran everything the skipped jobs would have run, 
 
 `gate` and `select` never skip — `select` is the job that reads the tag, and something unskippable has to.
 
+`gitnexus` (soft) never skips either, on purpose: it exists to prove GitNexus still installs on a clean runner, which is exactly the thing a local run cannot vouch for — the agent's own session either has an index already or failed to build one.
+
 **The stamp is self-attested.** Anyone who can push to the branch can also write a `local-ci-verified` JSON by hand and skip those jobs; the checks above stop a *stale* or *incomplete* stamp, not a dishonest one. That is the same trust model as `matt-review-pass.json`, and it is why review and branch protection stay the real control on what merges. Label a PR `full-ci` when you want the jobs run regardless.
 
 Two things always run full CI regardless of the stamp:

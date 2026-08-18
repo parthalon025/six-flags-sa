@@ -26,6 +26,8 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/dependency-boundaries.test.mjs',
   'test/scripts/map-performance-contract.test.mjs',
   'test/scripts/drift-watch.test.mjs',
+  'test/scripts/app-store-connect.test.mjs',
+  'test/scripts/store-screenshot-compose.test.mjs',
 ];
 
 /**
