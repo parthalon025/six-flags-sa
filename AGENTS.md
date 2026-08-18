@@ -61,6 +61,10 @@ File **agent-handoff** issues for out-of-scope failures instead of fixing inline
 
 Venue **builder** output is generated only — fix upstream, prove in the app. See [builder-app-contract policy](./docs/agents/policies/builder-app-contract.md).
 
+## Vertical e2e — output validation
+
+All code work is proven **end to end** with the run's output asserted — `npm run test:pre-merge-vertical` gates it. See [vertical-e2e policy](./docs/agents/policies/vertical-e2e.md).
+
 ## App version — auto-bumped on merge
 
 App **version** is auto-bumped on merge — never edit version files in PRs. See [version-on-merge policy](./docs/agents/policies/version-on-merge.md).
