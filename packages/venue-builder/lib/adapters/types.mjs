@@ -19,6 +19,7 @@ export const STAGES = [
   'tiles',      // vector tile delivery
   'orchestration', // long-running agent workflows
   'runtime_map', // client map renderer (optional future)
+  'display', // PR #471 Display-layer assets (materials, tiles, skins) — enforced empty evidence_sources, see registry.mjs
 ];
 
 /**

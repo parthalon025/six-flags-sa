@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "405739b6e7e9eff32db2c5e20079708e045974e68c50d37a326f9b9df16f6c95"
+    "sha256": "f19f78284912dd57b3fc65b48ee117cc9e702f0a329c877e43c9ddd95709a744"
   },
   "paths": [
     {
@@ -257,7 +257,6 @@
       "user_action": "Leave the Party and drop off the other rosters",
       "suite": "functional",
       "check": "leaving removes the member from the other phone’s roster"
-
     }
   ],
   "upcoming": []
