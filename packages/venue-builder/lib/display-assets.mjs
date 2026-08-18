@@ -20,13 +20,12 @@
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
+import { BUILDER_ROOT, OVERRIDE_DIR, readJson } from './venue-io.mjs';
 import { ALLOWED_LICENSES } from './display-pack.mjs';
 
-const BUILDER_PKG_ROOT = path.join(OVERRIDE_DIR, '..', '..');
 const LEDGER_FILE = path.join(OVERRIDE_DIR, '..', 'display', 'assets.json');
 
-export const assetPath = (row) => path.join(BUILDER_PKG_ROOT, row.path);
+export const assetPath = (row) => path.join(BUILDER_ROOT, row.path);
 
 /** Asset ledger, keyed by stable GUID. */
 export function readAssetLedger(file = LEDGER_FILE) {

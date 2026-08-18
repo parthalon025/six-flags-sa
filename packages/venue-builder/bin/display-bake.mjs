@@ -72,7 +72,7 @@ Keep water readable as water and paths as paths, with outdoor-phone contrast.`;
 
 const argv = process.argv.slice(2);
 const ids = [];
-let kitId = null;
+const kitIdsArg = [];
 let prompt = null;
 let maxCols = 240;
 let px = 16;
@@ -80,7 +80,7 @@ let harvestProfile = false;
 let outRoot = path.join(MONO_ROOT, 'artifacts', 'display-bake');
 for (let i = 0; i < argv.length; i += 1) {
   const a = argv[i];
-  if (a === '--kit') kitId = argv[++i];
+  if (a === '--kit') kitIdsArg.push(argv[++i]);
   else if (a === '--prompt') prompt = argv[++i];
   else if (a === '--max-cols') maxCols = Number(argv[++i]) || 240;
   else if (a === '--px') px = Number(argv[++i]) || 16;
@@ -88,8 +88,8 @@ for (let i = 0; i < argv.length; i += 1) {
   else if (a === '--out') outRoot = path.resolve(argv[++i]);
   else if (!a.startsWith('--')) ids.push(a);
 }
-if (!ids.length || (!kitId && !prompt)) {
-  console.error('usage: display-bake.mjs <venueId>… (--kit <id> | --prompt "…") [--max-cols N] [--px N] [--out dir]');
+if (!ids.length || (!kitIdsArg.length && !prompt)) {
+  console.error('usage: display-bake.mjs <venueId>… (--kit <id> [--kit <id>…] | --prompt "…") [--max-cols N] [--px N] [--out dir]');
   const kits = existsSync(KITS_DIR) ? readdirSync(KITS_DIR).map((f) => f.replace(/\.json$/, '')) : [];
   if (kits.length) console.error(`kits on disk: ${kits.join(', ')}`);
   process.exit(2);
@@ -161,9 +161,13 @@ function serve(model, kit, points) {
   });
 }
 
-const resolvedKitId = prompt ? await kitFromPrompt(prompt) : kitId;
-const kitSpec = readJson(path.join(KITS_DIR, `${resolvedKitId}.json`), null);
-if (!kitSpec) loadKit(resolvedKitId); // throws with the helpful message
+const kitIds = prompt ? [await kitFromPrompt(prompt)] : kitIdsArg;
+const kitSpecs = {};
+for (const k of kitIds) {
+  kitSpecs[k] = readJson(path.join(KITS_DIR, `${k}.json`), null);
+  if (!kitSpecs[k]) loadKit(k); // throws with the helpful message
+}
+const profiles = readReferenceProfiles();
 
 const browser = await chromium.launch(
   process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
@@ -179,88 +183,84 @@ for (const id of ids) {
   // Venue design theme: a partial spec overlaid on the kit for this World
   // only (custom quest-prize sprites, accent palettes) — never geometry.
   const overlay = readJson(path.join(OVERRIDE_DIR, id, 'display', 'theme.json'), null);
-  const kit = resolveKit(kitSpec, { assets: LEDGER, overlay });
   if (overlay) console.error(`  venue theme: data/venues/${id}/display/theme.json`);
-  const model = bakeModel(map, pois, { maxCols });
-  // Dual-grid corner masks for every kit-tiled terrain (ground uses full
-  // tiles on its own cells) — computed once here so the lib stays the only
-  // implementation.
-  const terrainId = Object.fromEntries(Object.entries(model.terrains).map(([v, n]) => [n, Number(v)]));
-  model.autotile = {};
-  for (const [name, piece] of Object.entries(kit.terrain)) {
-    if (piece.tiles && name !== 'ground') {
-      model.autotile[name] = Array.from(dualGridIndices(model.cells, model.cols, model.rows, terrainId[name]));
-    }
-  }
-  const points = stylePoints(model);
-  const server = serve(model, kit, points);
-  await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  await page.goto(`http://127.0.0.1:${server.address().port}/`);
-  await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
-  const file = path.join(outRoot, `${id}--${resolvedKitId}.png`);
-  await page.locator('#c').screenshot({ path: file });
-  // Credits ride every bake: each ledger asset the kit touched, with its
-  // license and source — the audit trail the asset ledger promises.
-  const credits = creditsManifest(kitAssetIds(kit), LEDGER);
-  writeFileSync(path.join(outRoot, `${id}--${resolvedKitId}.credits.json`), `${JSON.stringify(credits, null, 2)}\n`);
 
-  // Style contract: sample the painted canvas at the truth-derived points
-  // and hold the pixels to the kit's reference profile.
-  const samples = await page.evaluate('window.__samples');
-  const samplesFile = path.join(outRoot, `${id}--${resolvedKitId}.samples.json`);
-  writeFileSync(samplesFile, `${JSON.stringify({ signature: signature(samples), points, samples })}\n`);
-  // True determinism proof: render the same model again in a fresh page
-  // load and demand identical pixels — no comparison against stale runs
-  // of older code, no clock to blame.
-  await page.reload();
-  await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
-  const rerun = await page.evaluate('window.__samples');
-  if (harvestProfile) {
-    const draftFile = path.join(outRoot, `${id}--${resolvedKitId}.profile-draft.json`);
-    writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples }), null, 2)}\n`);
-    console.error(`  profile draft (measured medians): ${draftFile}`);
-  }
-  const profile = profileForKit(resolvedKitId, readReferenceProfiles());
-  let certLine = 'no reference profile — style uncertified';
-  if (profile) {
-    const cert = certifyStyleContract({ model, points, samples, profile, kit });
-    cert.checks.push({
-      key: 'style_bake_deterministic',
-      claim: 'a fresh render of the same model samples byte-identical pixels',
-      pass: signature(rerun) === cert.signature,
-      evidence: `render ${cert.signature} vs rerender ${signature(rerun)}`,
-      confidence: 1,
-      falsifier: 'any clock or RNG sneaking into the compositor',
-      soWhat: 'determinism is the bake’s core guarantee',
-    });
-    cert.certified = cert.checks.every((c) => c.pass);
-    // Cross-kit distinctness: sibling kits of the same venue must not
-    // collapse into one look (design languages, not palette swaps).
-    const twins = readdirSync(outRoot)
-      .filter((f) => f.startsWith(`${id}--`) && f.endsWith('.samples.json') && f !== path.basename(samplesFile))
-      .map((f) => ({ f, sig: readJson(path.join(outRoot, f), {}).signature }))
-      .filter((t) => t.sig);
-    if (twins.length) {
-      const clashes = twins.filter((t) => t.sig === cert.signature);
-      cert.checks.push({
-        key: 'style_cross_kit_distinct',
-        claim: 'sibling kits of this venue sample distinct pixels',
-        pass: clashes.length === 0,
-        evidence: clashes.length ? `identical to ${clashes.map((t) => t.f).join(', ')}` : `distinct from ${twins.length} sibling bake(s)`,
-        confidence: 0.9,
-        falsifier: 'two kits that only differ in name',
-        soWhat: 'the factory exists to make different-looking maps',
-      });
-      cert.certified = cert.checks.every((c) => c.pass);
+  // Bake every requested kit first; certification runs after so the
+  // cross-kit check compares this invocation's own bakes, never stale
+  // files from an older code version.
+  const results = [];
+  for (const kitId of kitIds) {
+    const kit = resolveKit(kitSpecs[kitId], { assets: LEDGER, overlay });
+    const model = bakeModel(map, pois, { maxCols });
+    // Dual-grid corner masks for every kit-tiled terrain (ground uses full
+    // tiles on its own cells) — computed once here so the lib stays the
+    // only implementation.
+    const terrainId = Object.fromEntries(Object.entries(model.terrains).map(([v, n]) => [n, Number(v)]));
+    model.autotile = {};
+    for (const [name, piece] of Object.entries(kit.terrain)) {
+      if (piece.tiles && name !== 'ground') {
+        model.autotile[name] = Array.from(dualGridIndices(model.cells, model.cols, model.rows, terrainId[name]));
+      }
     }
-    writeFileSync(path.join(outRoot, `${id}--${resolvedKitId}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
+    const points = stylePoints(model);
+    const server = serve(model, kit, points);
+    await new Promise((r) => server.listen(0, '127.0.0.1', r));
+    await page.goto(`http://127.0.0.1:${server.address().port}/`);
+    await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
+    const file = path.join(outRoot, `${id}--${kitId}.png`);
+    await page.locator('#c').screenshot({ path: file });
+    // Credits ride every bake: each ledger asset the kit touched, with its
+    // license and source — the audit trail the asset ledger promises.
+    const credits = creditsManifest(kitAssetIds(kit), LEDGER);
+    writeFileSync(path.join(outRoot, `${id}--${kitId}.credits.json`), `${JSON.stringify(credits, null, 2)}\n`);
+    const samples = await page.evaluate('window.__samples');
+    writeFileSync(
+      path.join(outRoot, `${id}--${kitId}.samples.json`),
+      `${JSON.stringify({ signature: signature(samples), points, samples })}\n`,
+    );
+    if (harvestProfile) {
+      const draftFile = path.join(outRoot, `${id}--${kitId}.profile-draft.json`);
+      writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples }), null, 2)}\n`);
+      console.error(`  profile draft (measured medians): ${draftFile}`);
+    }
+    const profile = profileForKit(kitId, profiles);
+    let rerun = null;
+    if (profile) {
+      // True determinism proof: render the same model again in a fresh
+      // page load and demand identical pixels. Only certified kits pay
+      // for the second render — an ad-hoc prompt kit has no profile yet.
+      await page.reload();
+      await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
+      rerun = await page.evaluate('window.__samples');
+    }
+    server.close();
+    results.push({ kitId, kit, model, points, samples, rerun, profile, file });
+  }
+
+  for (const r of results) {
+    if (!r.profile) {
+      console.log(`${id} × ${r.kitId}: ${r.model.cols}×${r.model.rows} tiles → ${r.file} (+credits; no reference profile — style uncertified)`);
+      continue;
+    }
+    const siblings = results
+      .filter((o) => o !== r)
+      .map((o) => ({ kit: o.kitId, signature: signature(o.samples) }));
+    const cert = certifyStyleContract({
+      model: r.model,
+      points: r.points,
+      samples: r.samples,
+      rerunSamples: r.rerun,
+      siblings,
+      profile: r.profile,
+      kit: r.kit,
+    });
+    writeFileSync(path.join(outRoot, `${id}--${r.kitId}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
     const failing = cert.checks.filter((c) => !c.pass);
-    certLine = cert.certified
+    const certLine = cert.certified
       ? `style contract ok (${cert.checks.length} checks, ${cert.review.length} review items)`
       : `STYLE CONTRACT FAILING: ${failing.map((c) => c.key).join(', ')}`;
     if (!cert.certified) process.exitCode = 1;
+    console.log(`${id} × ${r.kitId}: ${r.model.cols}×${r.model.rows} tiles → ${r.file} (+credits; ${certLine})`);
   }
-  console.log(`${id} × ${resolvedKitId}: ${model.cols}×${model.rows} tiles → ${file} (+credits; ${certLine})`);
-  server.close();
 }
 await browser.close();

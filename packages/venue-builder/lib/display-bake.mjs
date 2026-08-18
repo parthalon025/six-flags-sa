@@ -387,20 +387,8 @@ export function bakeModel(map, pois = [], opts = {}) {
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);
 
-  // Declutter, reference-map style: dense POI clusters would stack pins
-  // into unreadable blends, so thin greedily — gates always keep their
-  // pin, everything else yields to an earlier pin within reach. The
-  // dropped POIs stay truth; they just don't badge at this scale
-  // (ADR-0012: annotation is a decluttered final layer).
-  const BADGE_REACH = 1.6;
-  const kept = [];
-  for (const b of [...badges.filter((x) => x.kind === 'gate'), ...badges.filter((x) => x.kind !== 'gate')]) {
-    if (kept.some((k) => Math.hypot(k.x - b.x, k.y - b.y) < BADGE_REACH)) continue;
-    kept.push(b);
-  }
-  const badgesShown = kept.sort((a, b) => a.y - b.y || a.x - b.x);
+  const model = cropModel({
 
-  return cropModel({
     version: 1,
     venue: map.meta?.id,
     cols,
@@ -412,8 +400,29 @@ export function bakeModel(map, pois = [], opts = {}) {
     trees,
     buildings,
     tracks,
-    badges: badgesShown,
+    badges,
   }, boundaryRing, opts.margin ?? 6);
+  // Declutter after the crop so a cluster whose greedy keeper fell
+  // outside the window still pins an in-window member.
+  model.badges = declutterBadges(model.badges);
+  return model;
+}
+
+/**
+ * Reference-map declutter: dense POI clusters would stack pins into
+ * unreadable blends, so thin greedily — gate pins take priority over
+ * other kinds (two gates within reach still thin to one), everything
+ * else yields to an earlier pin within reach. Dropped POIs stay truth;
+ * they just don't badge at this scale (ADR-0012: annotation is a
+ * decluttered final layer).
+ */
+export function declutterBadges(badges, reach = 1.6) {
+  const kept = [];
+  for (const b of [...badges.filter((x) => x.kind === 'gate'), ...badges.filter((x) => x.kind !== 'gate')]) {
+    if (kept.some((k) => Math.hypot(k.x - b.x, k.y - b.y) < reach)) continue;
+    kept.push(b);
+  }
+  return kept.sort((a, b) => a.y - b.y || a.x - b.x);
 }
 
 /**

@@ -186,9 +186,14 @@ const groupMedians = (points, samples) => {
 /**
  * The mechanical style-contract rows + the agent-review items, from one
  * bake's sampled pixels. Pure: everything it needs rides its arguments.
+ * `rerunSamples` (a second render of the same model) powers the
+ * determinism row; `siblings` ([{kit, signature}] from the same
+ * invocation) powers cross-kit distinctness — pass an empty array to
+ * record an explicit skip rather than omitting the row.
  */
-export function certifyStyleContract({ model, points, samples, profile, kit }) {
+export function certifyStyleContract({ model, points, samples, rerunSamples = null, siblings = null, profile, kit }) {
   const { groups, medians } = groupMedians(points, samples);
+  const sig = signature(samples);
   const fams = profile.colorFamilies || {};
   const checks = [];
   const dE = (a, b) => Math.round(deltaE(a, b) * 10) / 10;
@@ -207,10 +212,9 @@ export function certifyStyleContract({ model, points, samples, profile, kit }) {
   let worst = null;
   for (const [cls, family] of Object.entries(fams)) {
     if (cls === 'draft' || cls === 'structure' || cls === 'badge' || !medians[cls]) continue;
-    const d = dE(medians[cls], hexToRgb(family.anchor));
     const nearest = Math.round(familyDistance(medians[cls], family) * 10) / 10;
     terrainRows.push({ cls, nearest, tolerance: family.deltaE });
-    if (!worst || nearest / family.deltaE > worst.nearest / worst.tolerance) worst = { cls, nearest, tolerance: family.deltaE, anchorDelta: d };
+    if (!worst || nearest / family.deltaE > worst.nearest / worst.tolerance) worst = { cls, nearest, tolerance: family.deltaE };
   }
   checks.push(check({
     key: 'style_terrain_palette',
@@ -366,9 +370,40 @@ export function certifyStyleContract({ model, points, samples, profile, kit }) {
     soWhat: 'ADR-0012 declutter rule, model-side',
   }));
 
-  const review = (profile.agentReview || []).map((prompt, i) => ({
-    key: ['style_reference_resemblance', 'style_texture_language', 'style_tree_read'][i] || `style_review_${i}`,
-    prompt,
+  if (rerunSamples) {
+    checks.push(check({
+      key: 'style_bake_deterministic',
+      claim: 'a fresh render of the same model samples byte-identical pixels',
+      pass: signature(rerunSamples) === sig,
+      evidence: `render ${sig} vs rerender ${signature(rerunSamples)}`,
+      confidence: 1,
+      falsifier: 'any clock or RNG sneaking into the compositor',
+      soWhat: 'determinism is the bake’s core guarantee',
+    }));
+  }
+
+  if (siblings) {
+    // Sibling kits from the same invocation must not collapse into one
+    // look (design languages, not palette swaps).
+    const clashes = siblings.filter((s) => s.signature === sig);
+    checks.push(check({
+      key: 'style_cross_kit_distinct',
+      claim: 'sibling kits of this venue sample distinct pixels',
+      pass: clashes.length === 0,
+      evidence: siblings.length === 0
+        ? 'no sibling kits in this invocation — nothing to compare'
+        : clashes.length
+          ? `identical to ${clashes.map((s) => s.kit).join(', ')}`
+          : `distinct from ${siblings.length} sibling bake(s)`,
+      confidence: 0.9,
+      falsifier: 'two kits that only differ in name',
+      soWhat: 'the factory exists to make different-looking maps',
+    }));
+  }
+
+  const review = (profile.agentReview || []).map((item, i) => ({
+    key: (typeof item === 'object' && item.key) || `style_review_${i}`,
+    prompt: typeof item === 'object' ? item.prompt : item,
     images: profile.inspiration?.images || [],
   }));
 
@@ -376,7 +411,7 @@ export function certifyStyleContract({ model, points, samples, profile, kit }) {
     version: 1,
     kit: kit.id,
     profile: profile.id,
-    signature: signature(samples),
+    signature: sig,
     certified: checks.every((c) => c.pass),
     checks,
     review,

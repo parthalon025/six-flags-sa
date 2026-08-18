@@ -18,10 +18,9 @@
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { OVERRIDE_DIR, readJson } from './venue-io.mjs';
+import { BUILDER_ROOT, OVERRIDE_DIR, readJson } from './venue-io.mjs';
 import { BUILDING_STYLES, TRACK_STYLES, TERRAIN_NAMES } from './display-bake.mjs';
 
-const BUILDER_PKG_ROOT = path.join(OVERRIDE_DIR, '..', '..');
 const REFS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'references');
 const IMAGES_FILE = path.join(REFS_DIR, 'images.json');
 
@@ -69,6 +68,13 @@ export function validateProfile(profile, imageLedger = readReferenceImageLedger(
   if (!Array.isArray(profile.agentReview) || !profile.agentReview.length) {
     problems.push(`${profile.id}: no agentReview items — pixels alone cannot judge genre`);
   }
+  for (const item of profile.agentReview || []) {
+    if (typeof item.prompt !== 'string' || !item.prompt) {
+      problems.push(`${profile.id}: agentReview items carry {key, prompt}, not bare strings`);
+    } else if (item.key && !/^[a-z][a-z0-9_]*$/.test(item.key)) {
+      problems.push(`${profile.id}: agentReview key "${item.key}" is not a slug`);
+    }
+  }
   return problems;
 }
 
@@ -79,7 +85,7 @@ export function readReferenceImageLedger(file = IMAGES_FILE) {
   return doc.images;
 }
 
-export const referenceImagePath = (row) => path.join(BUILDER_PKG_ROOT, row.path);
+export const referenceImagePath = (row) => path.join(BUILDER_ROOT, row.path);
 
 /**
  * Verify every reference-image pin. Committed rows must resolve and match;

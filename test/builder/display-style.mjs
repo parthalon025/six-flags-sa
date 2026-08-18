@@ -89,7 +89,7 @@ const profile = {
   ground: { outsideVsInside: { minDeltaE: 15 }, waterVsVegetation: { minDeltaE: 15 } },
   structures: { buildingStyle: 'drop', coasterVsUnderlay: { minDeltaE: 10 } },
   hierarchy: { annotationOnTop: true, oneBadgePerPoi: true },
-  agentReview: ['same genre as the reference?'],
+  agentReview: [{ key: 'style_reference_resemblance', prompt: 'same genre as the reference?' }],
 };
 const kit = { id: 'test-kit' };
 
@@ -175,6 +175,42 @@ await check('agent items ride review, never checks; certified ignores them', () 
   assert.equal(res.review.length, 1);
   assert.equal(res.review[0].key, 'style_reference_resemblance');
   assert.ok(!res.checks.some((c) => c.key === 'style_reference_resemblance'));
+  return true;
+});
+
+await check('the determinism row demands identical rerender pixels', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  const samples = paint(points);
+  const same = certifyStyleContract({ model, points, samples, rerunSamples: paint(points), profile, kit });
+  assert.equal(same.checks.find((c) => c.key === 'style_bake_deterministic').pass, true);
+  const drifted = certifyStyleContract({
+    model, points, samples, rerunSamples: paint(points, { water: '#88CC88' }), profile, kit,
+  });
+  assert.equal(drifted.checks.find((c) => c.key === 'style_bake_deterministic').pass, false);
+  assert.equal(drifted.certified, false, 'a nondeterministic bake never certifies');
+  const absent = certifyStyleContract({ model, points, samples, profile, kit });
+  assert.ok(!absent.checks.some((c) => c.key === 'style_bake_deterministic'), 'no rerun, no row');
+  return true;
+});
+
+await check('cross-kit distinctness compares this invocation, skips explicitly', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  const samples = paint(points);
+  const mySig = signature(samples);
+  const twin = certifyStyleContract({
+    model, points, samples, siblings: [{ kit: 'copycat', signature: mySig }], profile, kit,
+  });
+  const twinRow = twin.checks.find((c) => c.key === 'style_cross_kit_distinct');
+  assert.equal(twinRow.pass, false);
+  assert.match(twinRow.evidence, /copycat/);
+  const distinct = certifyStyleContract({
+    model, points, samples, siblings: [{ kit: 'other', signature: 'ffffffff' }], profile, kit,
+  });
+  assert.equal(distinct.checks.find((c) => c.key === 'style_cross_kit_distinct').pass, true);
+  const alone = certifyStyleContract({ model, points, samples, siblings: [], profile, kit });
+  const aloneRow = alone.checks.find((c) => c.key === 'style_cross_kit_distinct');
+  assert.equal(aloneRow.pass, true);
+  assert.match(aloneRow.evidence, /no sibling kits/, 'skip is recorded, never silent');
   return true;
 });
 

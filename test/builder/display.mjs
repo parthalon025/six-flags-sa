@@ -277,7 +277,7 @@ await check('buildTiles produces base.pmtiles, or records the gap honestly', () 
 
 /* ------------------------------------------------------- the bake pieces -- */
 
-const { bakeModel, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS } = await import(
+const { bakeModel, declutterBadges, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS } = await import(
   '../../packages/venue-builder/lib/display-bake.mjs'
 );
 
@@ -398,6 +398,38 @@ await check('the crop window is integral and tightens to the boundary', () => {
   assert.equal(cropped.cells.length, cropped.cols * cropped.rows, 'cells must fill the grid exactly');
   assert.ok(cropped.cols < full.cols && cropped.rows < full.rows, 'crop must tighten to the boundary');
   assert.equal(JSON.stringify(cropped), JSON.stringify(bakeModel(tight, [], { maxCols: 60, margin: 2 })));
+  return true;
+});
+
+await check('entities outside the crop window leave the model', () => {
+  const withOutsider = {
+    ...BAKE_MAP,
+    boundary: [[0.004, 0.004], [0.009, 0.004], [0.009, 0.009], [0.004, 0.009]],
+    building: [
+      { r: [[0.005, 0.005], [0.006, 0.005], [0.006, 0.006]] }, // inside the window
+      { r: [[0.0005, 0.0005], [0.001, 0.0005], [0.001, 0.001]] }, // a neighboring business
+    ],
+  };
+  const outsidePoi = { i: 'far-gate', n: 'Far Gate', c: 'gate', lat: 0.0005, lng: 0.0005 };
+  const insidePoi = { i: 'near-food', n: 'Near Food', c: 'food', lat: 0.006, lng: 0.006 };
+  const model = bakeModel(withOutsider, [outsidePoi, insidePoi], { maxCols: 60, margin: 1 });
+  assert.equal(model.buildings.length, 1, 'the off-window footprint is not part of this world');
+  assert.deepEqual(model.badges.map((b) => b.kind), ['food'], 'the off-window pin is dropped');
+  return true;
+});
+
+await check('badge declutter thins clusters, gate pins first', () => {
+  const cluster = [
+    { kind: 'food', x: 10, y: 10 },
+    { kind: 'shop', x: 10.5, y: 10.4 },
+    { kind: 'gate', x: 10.8, y: 10.8 }, // listed last, still wins its cluster
+    { kind: 'restroom', x: 30, y: 30 }, // far away, untouched
+  ];
+  const kept = declutterBadges(cluster);
+  assert.equal(kept.length, 2, 'the cluster thins to one pin');
+  assert.ok(kept.some((b) => b.kind === 'gate'), 'the gate keeps its pin over earlier cluster-mates');
+  assert.ok(kept.some((b) => b.kind === 'restroom'), 'isolated pins survive');
+  assert.deepEqual(kept, declutterBadges(cluster), 'deterministic');
   return true;
 });
 

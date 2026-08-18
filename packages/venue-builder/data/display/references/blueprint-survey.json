@@ -4,7 +4,7 @@
   "kit": "blueprint-survey",
   "style": "blueprint-linework",
   "inspiration": {
-    "summary": "Technical survey drawing \u2014 warm paper, fine ink linework, outlined unfilled buildings, hatched water, no sprites",
+    "summary": "Technical survey drawing — warm paper, fine ink linework, outlined unfilled buildings, hatched water, no sprites",
     "images": [],
     "lineage": "structural-switch proof kit (design languages, not palette swaps); ADR-0012 layer rules"
   },
@@ -107,8 +107,17 @@
     ]
   },
   "agentReview": [
-    "Reads as an ink drawing: linework carries the information, fills stay paper-quiet",
-    "Buildings are unfilled outlines; tracks are monoline ink; no sprite decoration anywhere",
-    "Overall: a surveyor would file it, a player would not mistake it for the game tier"
+    {
+      "key": "style_texture_language",
+      "prompt": "Reads as an ink drawing: linework carries the information, fills stay paper-quiet"
+    },
+    {
+      "key": "style_structure_language",
+      "prompt": "Buildings are unfilled outlines; tracks are monoline ink; no sprite decoration anywhere"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Overall: a surveyor would file it, a player would not mistake it for the game tier"
+    }
   ]
 }

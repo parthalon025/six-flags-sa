@@ -4,7 +4,7 @@
   "kit": "rpg-overworld",
   "style": "pixel-tiled",
   "inspiration": {
-    "summary": "Retro JRPG tiled overworld \u2014 chunky sprite tiles and scrub forests, not recolored vectors",
+    "summary": "Retro JRPG tiled overworld — chunky sprite tiles and scrub forests, not recolored vectors",
     "images": [
       "ref-rpg-overworld"
     ],
@@ -125,8 +125,17 @@
     ]
   },
   "agentReview": [
-    "Tile art reads as discrete sprites/tiles, not smooth vector fills \u2014 the reference is a tilemap, not a recolor",
-    "Trees read as canopy clusters in woods, scattered singles on grass \u2014 the reference's dense scrub forests",
-    "Overall: side-by-side with ref-rpg-overworld, a stranger names the same genre"
+    {
+      "key": "style_texture_language",
+      "prompt": "Tile art reads as discrete sprites/tiles, not smooth vector fills — the reference is a tilemap, not a recolor"
+    },
+    {
+      "key": "style_tree_read",
+      "prompt": "Trees read as canopy clusters in woods, scattered singles on grass — the reference's dense scrub forests"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Overall: side-by-side with ref-rpg-overworld, a stranger names the same genre"
+    }
   ]
 }

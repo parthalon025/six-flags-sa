@@ -16,6 +16,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { readAssetLedger, verifyAssetHashes, assetPath } from '../lib/display-assets.mjs';
+import { verifyReferenceImages } from '../lib/display-references.mjs';
 
 const fetchMissing = process.argv.includes('--fetch');
 const ledger = readAssetLedger();
@@ -61,7 +62,6 @@ if (problems.length) {
 
 // Reference images ride the same pin discipline: committed rows must match,
 // hand-vendored rows are reported when absent and refused when drifted.
-const { verifyReferenceImages } = await import('../lib/display-references.mjs');
 const refs = verifyReferenceImages();
 for (const r of refs.reports) console.error(`  ${r}`);
 if (refs.problems.length) {

@@ -4,7 +4,7 @@
   "kit": "island-brochure",
   "style": "illustrated-brochure",
   "inspiration": {
-    "summary": "Hand-illustrated resort park map \u2014 warm cream ground, terracotta paths, saturated pool water, cheerful flume colors",
+    "summary": "Hand-illustrated resort park map — warm cream ground, terracotta paths, saturated pool water, cheerful flume colors",
     "images": [
       "ref-big-kahunas-2026",
       "ref-aerial-photo"
@@ -126,8 +126,17 @@
     ]
   },
   "agentReview": [
-    "Hand-illustrated warmth: saturated water, roof-color variety, flume palette like the Big Kahuna's map",
-    "Paths read as walkable terracotta ribbons with visible casing, the brochure's wayfinding language",
-    "Overall: side-by-side with ref-big-kahunas-2026, a stranger names the same genre"
+    {
+      "key": "style_texture_language",
+      "prompt": "Hand-illustrated warmth: saturated water, roof-color variety, flume palette like the Big Kahuna's map"
+    },
+    {
+      "key": "style_wayfinding_language",
+      "prompt": "Paths read as walkable terracotta ribbons with visible casing, the brochure's wayfinding language"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Overall: side-by-side with ref-big-kahunas-2026, a stranger names the same genre"
+    }
   ]
 }
