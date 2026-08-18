@@ -26,6 +26,8 @@
  *   verticalE2eBlockReason({ files, ran, skipBrowser })
  */
 import { pathMatchesAny } from '../../test/app/lib/module-select.mjs';
+import { isGitnexusCiNoise } from './gitnexus-only.mjs';
+import { isVersionStampOnlyChange } from './version-stamp.mjs';
 
 /**
  * Stamp files are written *by* the gates; they are never the code work being
@@ -99,6 +101,17 @@ function normalize(file) {
   return String(file).replace(/\\/g, '/').replace(/^\.\//, '');
 }
 
+/**
+ * The files a vertical may be selected by: session index noise and the gate's
+ * own stamps are neither code work nor evidence of it.
+ */
+function candidates(files = []) {
+  return files
+    .map(normalize)
+    .filter((f) => !STAMP_FILES.includes(f))
+    .filter((f) => !isGitnexusCiNoise(f));
+}
+
 export function isCodeFile(file) {
   const f = normalize(file);
   if (STAMP_FILES.includes(f)) return false;
@@ -111,16 +124,18 @@ export function verticalById(id) {
 
 /** Verticals whose paths this diff touches, in VERTICALS order. */
 export function verticalsForFiles(files = []) {
-  const candidates = files.map(normalize).filter((f) => !STAMP_FILES.includes(f));
-  return VERTICALS.filter((v) => candidates.some((f) => pathMatchesAny(f, v.paths))).map(
-    (v) => v.id,
-  );
+  const paths = candidates(files);
+  // Post-merge version stamps are machine-written and prove nothing about
+  // behaviour — the same exemption module selection makes.
+  if (isVersionStampOnlyChange(paths)) return [];
+  return VERTICALS.filter((v) => paths.some((f) => pathMatchesAny(f, v.paths))).map((v) => v.id);
 }
 
 /** Code files no vertical claims — the map has a hole and cannot be trusted. */
 export function unclassifiedCodeFiles(files = []) {
-  return files
-    .map(normalize)
+  const paths = candidates(files);
+  if (isVersionStampOnlyChange(paths)) return [];
+  return paths
     .filter((f) => isCodeFile(f))
     .filter((f) => !VERTICALS.some((v) => pathMatchesAny(f, v.paths)));
 }

@@ -50,6 +50,23 @@ assert.deepEqual(
   'a stamp-only commit owes nothing',
 );
 
+// Machine-written noise owes nothing: post-merge version stamps and the
+// session-local GitNexus index are not behaviour.
+assert.deepEqual(
+  requiredVerticals(['apps/party-tracker/public/app-version.json']),
+  [],
+  'a version-stamp-only commit owes nothing',
+);
+assert.deepEqual(
+  requiredVerticals([
+    'apps/party-tracker/public/app-version.json',
+    'apps/party-tracker/app/page.js',
+  ]),
+  ['app'],
+  'a stamp riding along with real code does not exempt the code',
+);
+assert.deepEqual(requiredVerticals(['CLAUDE.md', '.gitnexus/graph.db']), []);
+
 // Fails closed: unknown diff, and code no vertical claims.
 assert.deepEqual(requiredVerticals(null), VERTICAL_IDS, 'unknown diff owes every vertical');
 assert.deepEqual(unclassifiedCodeFiles(['test/nowhere/thing.mjs']), ['test/nowhere/thing.mjs']);

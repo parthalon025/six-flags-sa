@@ -20,6 +20,8 @@ The gate is `scripts/lib/vertical-e2e.mjs`, enforced by `npm run test:pre-merge-
 
 A new area of the repo, or a new way to ship: add a row to `VERTICALS` with its `command` and its `validates`. If you cannot fill `validates` with output a suite actually reads, it is not a vertical yet — write the assertion first.
 
+Machine-written diffs owe nothing: post-merge version stamps and the session-local GitNexus index are not behaviour, and are exempt exactly as they are in module selection.
+
 Code the map does not claim fails closed: the diff owes *every* vertical until a row claims it. That is deliberate — a hole in the map must cost more than filling it.
 
 ## Where the assertions go
