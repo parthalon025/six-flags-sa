@@ -65,11 +65,24 @@ const merged = (base, over) => {
 
 /**
  * Resolve a kit spec (any subset of pieces) onto the piece defaults.
- * Unknown texture kinds, unknown pieces, and unresolvable tile-art refs are
+ * Unknown texture kinds, unknown pieces, and unresolvable art refs are
  * rejected here, not at paint time — a prompt-authored kit fails loudly
  * before it ever renders, and can only reference license-gated ledger art.
+ *
+ * `overlay` is a venue design theme: a partial spec merged over the kit
+ * before validation (data/venues/<id>/display/theme.json), so one World
+ * can restyle any kit — custom quest-prize sprites included — without
+ * forking it. Overlays restyle; they cannot move geometry any more than
+ * kits can.
  */
-export function resolveKit(spec = {}, { assets } = {}) {
+export function resolveKit(spec = {}, { assets, overlay } = {}) {
+  if (overlay) {
+    spec = {
+      ...spec,
+      terrain: merged(spec.terrain || {}, overlay.terrain || {}),
+      sprites: merged(spec.sprites || {}, overlay.sprites || {}),
+    };
+  }
   for (const key of Object.keys(spec.terrain || {})) {
     if (!TERRAIN_PIECES[key]) throw new Error(`Unknown terrain piece "${key}"`);
     const piece = spec.terrain[key] || {};
@@ -86,6 +99,13 @@ export function resolveKit(spec = {}, { assets } = {}) {
   }
   for (const key of Object.keys(spec.sprites || {})) {
     if (!SPRITE_PIECES[key]) throw new Error(`Unknown sprite piece "${key}"`);
+  }
+  const spriteRef = spec.sprites?.tree?.sprite;
+  if (spriteRef) {
+    if (!assets) throw new Error('tree.sprite needs the asset ledger to resolve');
+    const row = assets[spriteRef.asset];
+    if (!row) throw new Error(`tree.sprite references unknown asset "${spriteRef.asset}"`);
+    if (row.kind !== 'sprite') throw new Error(`tree.sprite asset "${spriteRef.asset}" is not a sprite`);
   }
   const styleOf = (k) => spec.sprites?.[k]?.style;
   if (styleOf('building') && !BUILDING_STYLES.includes(styleOf('building'))) {

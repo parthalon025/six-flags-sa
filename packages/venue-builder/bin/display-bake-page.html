@@ -269,10 +269,17 @@
   }
 
   const TR = kit.sprites.tree;
+  const treeImg = TR.sprite ? sheetImages[TR.sprite.asset] : null;
   if (TR.style !== 'none') {
     for (const t of trees) {
       const x = t.x * px; const y = t.y * px;
       const r = (t.big ? 0.44 : 0.3) * px * TR.scale;
+      if (treeImg) {
+        // Custom sprite asset, anchored at its base on the truth-derived spot.
+        const w = r * 3.2;
+        g.drawImage(treeImg, x - w / 2, y - w * 0.94, w, w);
+        continue;
+      }
       if (TR.style === 'dot') {
         g.fillStyle = TR.canopy; g.beginPath(); g.arc(x, y, r * 0.6, 0, 7); g.fill();
         continue;

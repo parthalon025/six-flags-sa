@@ -34,8 +34,14 @@ await check('every ledger row is licensed, sourced, and byte-pinned', () => {
   assert.ok(Object.keys(ledger).length >= 3, 'expected the vendored Kenney packs');
   for (const [id, row] of Object.entries(ledger)) {
     assert.match(id, /^[a-z][a-z0-9-]*$/, `asset id "${id}" is not a stable slug`);
-    assert.ok(row.import?.tileSize >= 8, `${id} lacks import settings beside the asset`);
-    assert.ok(row.source.commit, `${id} lacks a pinned mirror commit`);
+    assert.ok(row.import, `${id} lacks import settings beside the asset`);
+    if (row.kind === 'tilesheet') {
+      assert.ok(row.import.tileSize >= 8, `${id} tilesheet lacks tile geometry`);
+      assert.ok(row.source.commit, `${id} lacks a pinned mirror commit`);
+    }
+    if (row.license === 'original') {
+      assert.match(row.path, /^assets\/custom\//, `${id}: original art lives under assets/custom/`);
+    }
   }
   return true;
 });

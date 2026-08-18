@@ -354,6 +354,39 @@ await check('kit tile refs resolve against the ledger or fail loudly', async () 
   return true;
 });
 
+await check('a venue design theme overlays a kit; custom sprite refs are gated', async () => {
+  const { readAssetLedger } = await import('../../packages/venue-builder/lib/display-assets.mjs');
+  const assets = readAssetLedger();
+  const overlay = {
+    sprites: { tree: { sprite: { asset: 'parkbound-palm-tree' }, scale: 1.35 } },
+    terrain: { water: { base: '#00CED1' } },
+  };
+  const themed = resolveKit({ id: 'base', terrain: { water: { base: '#111111' } } }, { assets, overlay });
+  assert.equal(themed.sprites.tree.sprite.asset, 'parkbound-palm-tree', 'overlay adds the custom sprite');
+  assert.equal(themed.terrain.water.base, '#00CED1', 'overlay wins over the kit');
+  assert.equal(themed.terrain.water.texture.kind, 'wave', 'defaults still fill the rest');
+  assert.throws(() => resolveKit({}, { assets, overlay: { sprites: { tree: { sprite: { asset: 'ghost' } } } } }), /unknown asset/);
+  assert.throws(
+    () => resolveKit({}, { assets, overlay: { sprites: { tree: { sprite: { asset: 'kenney-roguelike-sheet' } } } } }),
+    /not a sprite/,
+  );
+  return true;
+});
+
+await check('every Skin bakeKit binding names a kit on disk', async () => {
+  const { readSkinTemplates } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+  const { existsSync } = await import('node:fs');
+  const bound = Object.entries(readSkinTemplates()).filter(([, s]) => s.bakeKit);
+  assert.ok(bound.length >= 2, 'expected Skin→kit bindings');
+  for (const [id, skin] of bound) {
+    assert.ok(
+      existsSync(new URL(`../../packages/venue-builder/data/display/kits/${skin.bakeKit}.json`, import.meta.url)),
+      `Skin "${id}" binds missing kit "${skin.bakeKit}"`,
+    );
+  }
+  return true;
+});
+
 await check('the crop window is integral and tightens to the boundary', () => {
   const tight = {
     ...BAKE_MAP,

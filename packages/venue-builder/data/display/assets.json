@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "contact": "display factory — docs/research/2026-08-18-custom-map-display-factory.md",
+  "contact": "display factory \u2014 docs/research/2026-08-18-custom-map-display-factory.md",
   "assets": {
     "kenney-roguelike-sheet": {
       "label": "Kenney Roguelike/RPG pack spritesheet",
@@ -15,18 +15,36 @@
         "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
         "file": "roguelike-pack/Spritesheet/roguelikeSheet_transparent.png"
       },
-      "attribution": "Roguelike pack by Kenney Vleugels (kenney.nl), CC0 — attribution appreciated, not required",
+      "attribution": "Roguelike pack by Kenney Vleugels (kenney.nl), CC0 \u2014 attribution appreciated, not required",
       "import": {
         "tileSize": 16,
         "margin": 0,
         "spacing": 1,
         "tiles": {
-          "dirt": [1, 26],
-          "stone": [4, 26],
-          "sand": [7, 26],
-          "grass": [10, 26],
-          "clay": [13, 26],
-          "teal": [16, 26]
+          "dirt": [
+            1,
+            26
+          ],
+          "stone": [
+            4,
+            26
+          ],
+          "sand": [
+            7,
+            26
+          ],
+          "grass": [
+            10,
+            26
+          ],
+          "clay": [
+            13,
+            26
+          ],
+          "teal": [
+            16,
+            26
+          ]
         }
       }
     },
@@ -43,8 +61,29 @@
         "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
         "file": "kenney_rpgurbanpack/Tilemap/tilemap_packed.png"
       },
-      "attribution": "RPG Urban Pack by Kenney (kenney.nl), CC0 — attribution appreciated, not required",
-      "import": { "tileSize": 16, "margin": 0, "spacing": 1, "tiles": {} }
+      "attribution": "RPG Urban Pack by Kenney (kenney.nl), CC0 \u2014 attribution appreciated, not required",
+      "import": {
+        "tileSize": 16,
+        "margin": 0,
+        "spacing": 1,
+        "tiles": {}
+      }
+    },
+    "parkbound-palm-tree": {
+      "label": "Park Bound palm tree (original)",
+      "kind": "sprite",
+      "target": "flat",
+      "path": "assets/custom/palm-tree.svg",
+      "sha256": "1b0d71760394abcbc639031eac600d733bfa9bf33c8c6fbf3e72ac9e5fbb994c",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "anchor": "base"
+      }
     },
     "kenney-roguelike-city-sheet": {
       "label": "Kenney Roguelike Modern City spritesheet",
@@ -59,8 +98,13 @@
         "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
         "file": "roguelike-modern-city-pack/Spritesheet/roguelikeCity_transparent.png"
       },
-      "attribution": "Roguelike Modern City pack by Kenney (kenney.nl), CC0 — attribution appreciated, not required",
-      "import": { "tileSize": 16, "margin": 0, "spacing": 1, "tiles": {} }
+      "attribution": "Roguelike Modern City pack by Kenney (kenney.nl), CC0 \u2014 attribution appreciated, not required",
+      "import": {
+        "tileSize": 16,
+        "margin": 0,
+        "spacing": 1,
+        "tiles": {}
+      }
     }
   }
 }

@@ -104,8 +104,8 @@ async function kitFromPrompt(text) {
 const PAGE = readFileSync(new URL('./display-bake-page.html', import.meta.url), 'utf8');
 
 function serve(model, kit) {
-  // Every asset the kit's tile refs use, with its import geometry — the
-  // page loads sheets from /asset/<id> and cuts dual-grid corners itself.
+  // Every asset the kit references — tile sheets (with import geometry for
+  // dual-grid cutting) and standalone sprites — served from the ledger.
   const sheets = {};
   for (const piece of Object.values(kit.terrain)) {
     const ref = piece.tiles;
@@ -113,13 +113,20 @@ function serve(model, kit) {
     const { tileSize, margin, spacing, tiles } = LEDGER[ref.asset].import;
     sheets[ref.asset] = { url: `/asset/${ref.asset}`, tileSize, margin, spacing, tiles };
   }
+  const treeSprite = kit.sprites.tree?.sprite;
+  if (treeSprite && !sheets[treeSprite.asset]) {
+    sheets[treeSprite.asset] = { url: `/asset/${treeSprite.asset}`, sprite: true };
+  }
   return http.createServer((req, res) => {
     const url = req.url.split('?')[0];
     if (url === '/') { res.setHeader('content-type', 'text/html'); return res.end(PAGE); }
     if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ model, kit, px, sheets })); }
     if (url.startsWith('/asset/')) {
       const row = LEDGER[url.slice('/asset/'.length)];
-      if (row) { res.setHeader('content-type', 'image/png'); return res.end(readFileSync(assetPath(row))); }
+      if (row) {
+        res.setHeader('content-type', row.path.endsWith('.svg') ? 'image/svg+xml' : 'image/png');
+        return res.end(readFileSync(assetPath(row)));
+      }
     }
     res.statusCode = 404;
     return res.end('not found');
@@ -127,7 +134,8 @@ function serve(model, kit) {
 }
 
 const resolvedKitId = prompt ? await kitFromPrompt(prompt) : kitId;
-const kit = loadKit(resolvedKitId);
+const kitSpec = readJson(path.join(KITS_DIR, `${resolvedKitId}.json`), null);
+if (!kitSpec) loadKit(resolvedKitId); // throws with the helpful message
 
 const browser = await chromium.launch(
   process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
@@ -140,6 +148,11 @@ for (const id of ids) {
   const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), null);
   const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
   if (!map) { console.error(`${id}: no map.json`); continue; }
+  // Venue design theme: a partial spec overlaid on the kit for this World
+  // only (custom quest-prize sprites, accent palettes) — never geometry.
+  const overlay = readJson(path.join(OVERRIDE_DIR, id, 'display', 'theme.json'), null);
+  const kit = resolveKit(kitSpec, { assets: LEDGER, overlay });
+  if (overlay) console.error(`  venue theme: data/venues/${id}/display/theme.json`);
   const model = bakeModel(map, pois, { maxCols });
   // Dual-grid corner masks for every kit-tiled terrain (ground uses full
   // tiles on its own cells) — computed once here so the lib stays the only
