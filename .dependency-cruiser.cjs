@@ -27,27 +27,10 @@ const PACKAGE_INTERNALS = `^${R}/[^/]+/[^/]+/`;
  * A package's `package.json` "exports" targets are entry points too, even
  * when they live in a subfolder (e.g. venue-builder's src/compare.mjs).
  * The documented interface is the exports map, not only the root files.
+ * Logic lives (tested) in scripts/lib/dependency-boundaries.cjs.
  */
-const fs = require("node:fs");
-const path = require("node:path");
-function exportTargets(root) {
-  const targets = [];
-  for (const name of fs.readdirSync(root)) {
-    const pkgJson = path.join(root, name, "package.json");
-    if (!fs.existsSync(pkgJson)) continue;
-    const exportsMap = JSON.parse(fs.readFileSync(pkgJson, "utf8")).exports || {};
-    for (const value of Object.values(exportsMap)) {
-      const leaves = typeof value === "string" ? [value] : Object.values(value);
-      for (const leaf of leaves) {
-        if (typeof leaf !== "string") continue;
-        const rel = `${root}/${name}/${leaf.replace(/^\.\//, "")}`;
-        targets.push(`^${rel.replace(/[.\\+*?^$()[\]{}|]/g, "\\$&")}$`);
-      }
-    }
-  }
-  return targets;
-}
-const EXPORTED_ENTRY_POINTS = exportTargets(R);
+const { exportedEntryPointPatterns } = require("./scripts/lib/dependency-boundaries.cjs");
+const EXPORTED_ENTRY_POINTS = exportedEntryPointPatterns(R);
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {

@@ -22,6 +22,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/worktree.test.mjs',
   'test/scripts/matt-standards.test.mjs',
   'test/scripts/matt-review.test.mjs',
+  'test/scripts/dependency-boundaries.test.mjs',
 ];
 
 /**

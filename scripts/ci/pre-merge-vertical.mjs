@@ -119,6 +119,8 @@ export async function runPreMergeVertical({
     return 1;
   }
 
+  // clerk gate treats an unknown diff as empty; matt-review instead fails
+  // closed on null (reviewRequiredForFiles) — both are deliberate.
   const reviewBlock = mattReviewBlockReason({
     files,
     context: buildMattReviewContext({ baseRef, cwd }),

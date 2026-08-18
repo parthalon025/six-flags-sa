@@ -92,7 +92,7 @@ export function runMattStandardsChecks({ cwd = root } = {}) {
   const problems = [];
 
   const libFiles = walk(join(cwd, 'scripts/lib'))
-    .filter((f) => f.endsWith('.mjs'))
+    .filter((f) => /\.(mjs|cjs)$/.test(f))
     .map((f) => rel(cwd, f));
   const testSources = Object.fromEntries(
     readdirSync(join(cwd, 'test/scripts'))

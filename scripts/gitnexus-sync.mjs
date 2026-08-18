@@ -75,5 +75,5 @@ try {
   // continues without the index; code-graph MUSTs degrade to best-effort.
   restoreAgentDocs();
   console.warn(`[gitnexus-sync] gitnexus unavailable — continuing without a code-graph index (${err.message || err})`);
-  console.warn('[gitnexus-sync] impact/detect_changes are best-effort this session; note it in PRs per matt-standards');
+  console.warn('[gitnexus-sync] impact/detect_changes are best-effort this session');
 }

@@ -6,7 +6,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -76,16 +76,17 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
       },
     });
   git('init', '-q', '-b', 'main');
-  writeFileSync(join(dir, 'a.js'), 'export const a = 1;\n');
+  mkdirSync(join(dir, 'scripts'), { recursive: true });
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
   git('add', '.');
   git('commit', '-qm', 'base');
   git('checkout', '-qb', 'feature');
-  writeFileSync(join(dir, 'a.js'), 'export const a = 2;\n');
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 2;\n');
   git('add', '.');
   git('commit', '-qm', 'change');
 
   const context = buildMattReviewContext({ baseRef: 'main', cwd: dir });
-  assert.deepEqual(context.files, ['a.js']);
+  assert.deepEqual(context.files, ['scripts/a.js']);
   writeMattReview({ context, gitnexus: 'unavailable', recordedAt: 'test' }, dir);
   git('add', '.');
   git('commit', '-qm', 'stamp');
@@ -94,11 +95,20 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   assert.equal(afterStamp.diffHash, context.diffHash, 'committing the stamp does not stale it');
   assert.equal(stampCoversReview(readMattReview(dir), afterStamp), true, 'stamp covers after commit');
 
-  writeFileSync(join(dir, 'a.js'), 'export const a = 3;\n');
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 3;\n');
   git('add', '.');
   git('commit', '-qm', 'more code');
   const afterCode = buildMattReviewContext({ baseRef: 'main', cwd: dir });
   assert.equal(stampCoversReview(readMattReview(dir), afterCode), false, 'code change stales the stamp');
+
+  // CLI layer (scripts/ci/matt-review.mjs) over the same temp repo —
+  // mirrors how local-ci-pass.mjs tests its runCheck/runWrite.
+  const { runCheck, runWrite, runPrompt } = await import('../../scripts/ci/matt-review.mjs');
+  assert.equal(runCheck({ baseRef: 'main', cwd: dir }), 1, 'CLI check fails on stale stamp');
+  assert.equal(runWrite({ baseRef: 'main', model: 'claude-sonnet-5', gitnexus: 'ok', cwd: dir }), 0, 'CLI write stamps');
+  assert.equal(runCheck({ baseRef: 'main', cwd: dir }), 0, 'CLI check passes after write');
+  assert.equal(readMattReview(dir).gitnexus, 'ok', 'write records gitnexus status');
+  assert.equal(runPrompt({ baseRef: 'main', cwd: dir }), 0, 'CLI prompt renders');
 
   rmSync(dir, { recursive: true, force: true });
 }
