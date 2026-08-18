@@ -204,3 +204,11 @@ export function staleness(evidence = [], asOf, { months = 12 } = {}) {
     why: stale ? `newest evidence is from ${newest}, over ${months} months before ${asOf}` : null,
   };
 }
+
+/**
+ * One certification row — the claim/evidence/confidence/falsifier/so-what
+ * contract shared by venue and display certification.
+ */
+export const check = ({ key, claim, pass, evidence, confidence, falsifier, soWhat }) => ({
+  key, claim, pass, evidence, confidence, falsifier, soWhat,
+});

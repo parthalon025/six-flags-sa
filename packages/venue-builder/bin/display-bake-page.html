@@ -9,6 +9,7 @@
   c.width = cols * px; c.height = rows * px;
   const g = c.getContext('2d');
 
+  // Keep in sync with lib/display-bake.mjs#cellHash — same jitter, one truth.
   const hash = (...nums) => {
     let h = 2166136261;
     for (const n of nums) { h ^= Math.trunc(n * 8191); h = Math.imul(h, 16777619); }
@@ -40,7 +41,9 @@
       g.beginPath(); g.moveTo(x * px + 2, wy); g.quadraticCurveTo(x * px + px / 2, wy - 3, x * px + px - 2, wy); g.stroke();
     },
     stripe(x, y, tx) {
-      if (x % 3 !== 0) return;
+      // density is the stripe cadence: 0.33 → every 3rd column.
+      const period = Math.max(2, Math.round(1 / (tx.density ?? 0.33)));
+      if (x % period !== 0) return;
       g.strokeStyle = tx.color; g.lineWidth = 1;
       g.beginPath(); g.moveTo(x * px + 1, y * px); g.lineTo(x * px + 1, y * px + px); g.stroke();
     },
@@ -85,7 +88,7 @@
       if (t === T.road || t === T.service) continue; // roads draw as polylines
       const tx = kit.terrain[NAME[t]].texture || { kind: 'none' };
       const gated = tx.kind === 'stripe' || hash(x, y) < (tx.density ?? 0.3);
-      if (gated && tx.kind !== 'dash') TEXTURES[tx.kind](x, y, tx, t);
+      if (gated) TEXTURES[tx.kind](x, y, tx, t);
     }
   }
 
@@ -163,14 +166,19 @@
   const LETTER = { gate: 'E', food: 'F', restroom: 'R', shop: 'S', show: 'W', service: 'i' };
   g.textAlign = 'center'; g.textBaseline = 'middle';
   for (const b of badges) {
+    // Pinned marker: the tail's tip sits on the exact truth coordinate.
     const x = b.x * px; const y = b.y * px;
     const r = px * 0.42;
-    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.arc(x + 1, y + 2, r, 0, 7); g.fill();
-    g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
-    g.strokeStyle = BD[b.kind] || '#666'; g.lineWidth = 2; g.stroke();
-    g.fillStyle = BD[b.kind] || '#666';
+    const cy = y - r * 1.5;
+    const color = BD[b.kind] || '#666';
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(x, y + 1.5, r * 0.5, r * 0.24, 0, 0, 7); g.fill();
+    g.fillStyle = color;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x - r * 0.42, cy + r * 0.7); g.lineTo(x + r * 0.42, cy + r * 0.7); g.closePath(); g.fill();
+    g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(x, cy, r, 0, 7); g.fill();
+    g.strokeStyle = color; g.lineWidth = 2; g.stroke();
+    g.fillStyle = color;
     g.font = `bold ${Math.round(px * 0.5)}px system-ui, sans-serif`;
-    g.fillText(LETTER[b.kind] || '?', x, y + 0.5);
+    g.fillText(LETTER[b.kind] || '?', x, cy + 0.5);
   }
 
   window.__done = true;

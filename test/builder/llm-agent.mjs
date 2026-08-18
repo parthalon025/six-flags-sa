@@ -96,6 +96,41 @@ await check('the answered brief is returned on rerun; JSON is validated', async 
   return true;
 });
 
+await check('research callers report a pending brief, not a parse failure', async () => {
+  setEnv({ VENUE_LLM_PROVIDER: 'agent' });
+  const briefsDir = mkdtempSync(path.join(tmpdir(), 'briefs-'));
+  const { llmExtractOfficialResearch } = await import('../../packages/venue-builder/lib/open-research.mjs');
+  const { llmSearchParkMaps } = await import('../../packages/venue-builder/lib/park-map-research.mjs');
+  const extract = await llmExtractOfficialResearch({
+    official: { attractions: [] },
+    pois: [],
+    opts: { briefsDir },
+  });
+  assert.equal(extract.reason, 'llm_brief_pending');
+  assert.equal(extract.skipped, true);
+  assert.ok(!extract.error, 'a pending brief is not an error');
+  const search = await llmSearchParkMaps({ venueId: 'test-park', opts: { briefsDir } });
+  assert.equal(search.reason, 'llm_brief_pending');
+  assert.equal(search.pending, true);
+  assert.equal(search.required, true);
+  assert.ok(!search.error, 'a pending brief is not an error');
+
+  // Through the merge: a pending brief must never report a completed search.
+  const { mergeParkMapResearch } = await import('../../packages/venue-builder/lib/park-map-research.mjs');
+  const { mergeOpenResearch } = await import('../../packages/venue-builder/lib/open-research.mjs');
+  const merged = mergeParkMapResearch({ parkMaps: [], followUpUrls: [], notes: [] }, search);
+  assert.ok(!merged.notes.some((n) => /completed/.test(n)), 'pending must not read as completed');
+  assert.equal(merged.llmParkMapSearch.skipped, true);
+  const open = mergeOpenResearch(
+    { fetched: '2026-08-18', aliases: [], heightCandidates: [], inventoryGaps: [], notes: [] },
+    extract,
+    merged,
+  );
+  assert.equal(open.mode, 'official', 'a pending brief must not claim official+llm');
+  assert.ok(!open.sources.includes('llm_park_map_search'), 'pending search is not a source');
+  return true;
+});
+
 await check('a different prompt files a different brief', async () => {
   setEnv({ VENUE_LLM_PROVIDER: 'agent' });
   const briefsDir = mkdtempSync(path.join(tmpdir(), 'briefs-'));

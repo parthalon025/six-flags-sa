@@ -81,7 +81,10 @@ export function resolveKit(spec = {}) {
   };
 }
 
-/** Deterministic 0..1 hash from integers — sprite jitter without a RNG. */
+/**
+ * Deterministic 0..1 hash from integers — sprite jitter without a RNG.
+ * Keep in sync with the inline hash() in bin/display-bake-page.html.
+ */
 export function cellHash(...nums) {
   let h = 2166136261;
   for (const n of nums) {
@@ -208,6 +211,32 @@ export function bakeModel(map, pois = [], opts = {}) {
       if (terrain === TERRAIN.grass) treeCells.grass.push(...painted);
     }
   }
+
+  // Ground truth (aerial imagery): a parking lot is one contiguous asphalt
+  // expanse; OSM often maps it as separate row polygons. A cell flanked by
+  // lot within LOT_REACH cells on opposite sides is aisle, not meadow —
+  // close it, but only over ground/grass, never over water or roads.
+  const LOT_REACH = 4;
+  const closable = new Set([TERRAIN.ground, TERRAIN.grass]);
+  const lotWithin = (x, y, dx, dy) => {
+    for (let k = 1; k <= LOT_REACH; k += 1) {
+      const cx = x + dx * k; const cy = y + dy * k;
+      if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) return false;
+      const t = cells[cy * cols + cx];
+      if (t === TERRAIN.lot) return true;
+      if (!closable.has(t)) return false;
+    }
+    return false;
+  };
+  const grown = [];
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      if (!closable.has(cells[y * cols + x])) continue;
+      if ((lotWithin(x, y, -1, 0) && lotWithin(x, y, 1, 0))
+        || (lotWithin(x, y, 0, -1) && lotWithin(x, y, 0, 1))) grown.push(x + y * cols);
+    }
+  }
+  for (const i of grown) cells[i] = TERRAIN.lot;
   // Roads render as smooth round-capped polylines (crisp diagonals, dashed
   // centerlines); cells under them still classify for terrain sanity.
   const roads = [];
@@ -226,19 +255,35 @@ export function bakeModel(map, pois = [], opts = {}) {
     }
   }
 
-  // Trees: dense canopy in woods, scattered on grass — hash-jittered, never random.
-  const trees = [];
-  for (const [x, y] of treeCells.wood) {
-    if (cellHash(x, y) < 0.65) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.4 });
-  }
-  for (const [x, y] of treeCells.grass) {
-    if (cellHash(x, y) < 0.14) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.8 });
-  }
-  trees.sort((a, b) => a.y - b.y || a.x - b.x);
-
   const buildings = (map.building || [])
     .filter((w) => w.r?.length >= 3)
     .map((w, i) => ({ ring: w.r.map(toCell), roof: i % 3 }));
+
+  // Occupancy: cells under building footprints (padded a cell) grow no
+  // trees — a sprite inside a roof reads as a bug, not a forest.
+  const occupied = new Array(cols * rows).fill(0);
+  for (const b of buildings) paintPolygon(occupied, cols, rows, b.ring, 1);
+  const isOccupied = (x, y) => {
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const cx = x + dx; const cy = y + dy;
+        if (cx >= 0 && cy >= 0 && cx < cols && cy < rows && occupied[cy * cols + cx]) return true;
+      }
+    }
+    return false;
+  };
+
+  // Trees: dense canopy in woods, scattered on grass — hash-jittered, never random.
+  const trees = [];
+  for (const [x, y] of treeCells.wood) {
+    if (cells[y * cols + x] !== TERRAIN.wood || isOccupied(x, y)) continue;
+    if (cellHash(x, y) < 0.65) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.4 });
+  }
+  for (const [x, y] of treeCells.grass) {
+    if (cells[y * cols + x] !== TERRAIN.grass || isOccupied(x, y)) continue;
+    if (cellHash(x, y) < 0.14) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.8 });
+  }
+  trees.sort((a, b) => a.y - b.y || a.x - b.x);
 
   const tracks = [];
   let slideIdx = 0;

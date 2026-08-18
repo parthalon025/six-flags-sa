@@ -133,15 +133,6 @@
       "confidence": "high",
       "falsifier": "a venue with no gates, no district anchors, and no coasters",
       "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
-    },
-    {
-      "key": "tiles",
-      "claim": "base.pmtiles builds and fits the 15 MB pack budget",
-      "pass": true,
-      "evidence": "base.pmtiles 207 KB",
-      "confidence": "high",
-      "falsifier": "tippecanoe fails or the archive exceeds the download budget",
-      "soWhat": "the display pack rides the venue download; an oversized or missing archive blocks it"
     }
   ],
   "skins": {

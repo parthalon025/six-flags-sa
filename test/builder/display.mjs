@@ -333,6 +333,41 @@ await check('the crop window is integral and tightens to the boundary', () => {
   return true;
 });
 
+await check('parking rows close into one lot, per aerial ground truth', () => {
+  const rows = {
+    meta: { id: 'lot-park', bounds: { n: 0.01, s: 0, e: 0.01, w: 0 } },
+    boundary: null,
+    parking: [
+      { r: [[0.001, 0.004], [0.0044, 0.004], [0.0044, 0.006], [0.001, 0.006]] },
+      { r: [[0.0056, 0.004], [0.009, 0.004], [0.009, 0.006], [0.0056, 0.006]] },
+    ],
+  };
+  const model = bakeModel(rows, [], { maxCols: 50, margin: 0 });
+  const name = (t) => model.terrains[t];
+  const mid = model.cells[Math.floor(0.5 * model.rows) * model.cols + Math.floor(0.5 * model.cols)];
+  assert.equal(name(mid), 'lot', 'the gap between lot rows must close to lot');
+  const far = model.cells[Math.floor(0.1 * model.rows) * model.cols + Math.floor(0.5 * model.cols)];
+  assert.notEqual(name(far), 'lot', 'closing must not flood beyond the rows');
+  return true;
+});
+
+await check('buildings grow no trees', () => {
+  const wooded = {
+    meta: { id: 'wood-park', bounds: { n: 0.01, s: 0, e: 0.01, w: 0 } },
+    boundary: null,
+    wood: [{ r: [[0.001, 0.001], [0.009, 0.001], [0.009, 0.009], [0.001, 0.009]] }],
+    building: [{ r: [[0.003, 0.003], [0.007, 0.003], [0.007, 0.007], [0.003, 0.007]] }],
+  };
+  const model = bakeModel(wooded, [], { maxCols: 40, margin: 0 });
+  assert.ok(model.trees.length > 0, 'the woods must still grow trees');
+  const ring = model.buildings[0].ring;
+  const xs = ring.map(([x]) => x); const ys = ring.map(([, y]) => y);
+  const inside = model.trees.filter((t) =>
+    t.x > Math.min(...xs) && t.x < Math.max(...xs) && t.y > Math.min(...ys) && t.y < Math.max(...ys));
+  assert.equal(inside.length, 0, `trees inside the building footprint: ${inside.length}`);
+  return true;
+});
+
 await check('crop shifts roads with the window', () => {
   const model = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 2 });
   assert.ok(model.roads.length >= 1, 'path polyline expected');

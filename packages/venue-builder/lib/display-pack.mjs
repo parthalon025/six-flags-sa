@@ -17,6 +17,7 @@
 import path from 'node:path';
 import { OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
+import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
 
@@ -202,9 +203,6 @@ function findCoordinateKey(value) {
   return null;
 }
 
-const check = ({ key, claim, pass, evidence, confidence, falsifier, soWhat }) => ({
-  key, claim, pass, evidence, confidence, falsifier, soWhat,
-});
 
 const SPEC_BUDGET_BYTES = 64 * 1024;
 const MATERIAL_BUDGET_PX = 1024;

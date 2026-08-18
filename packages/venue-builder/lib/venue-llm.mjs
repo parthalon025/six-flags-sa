@@ -204,6 +204,13 @@ function agentCompletion(messages, opts = {}) {
   return null;
 }
 
+/**
+ * True when a null completion means "a brief is waiting for the agent",
+ * not "the model replied with garbage" — callers branch on this before
+ * treating null as a parse failure.
+ */
+export const isAgentPending = (content) => content === null && llmConfig().provider === 'agent';
+
 /** Briefs still waiting for an answer, newest last. */
 export function pendingBriefs({ venueId, briefsDir } = {}) {
   const dirs = venueId || briefsDir
