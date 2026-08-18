@@ -3274,7 +3274,6 @@ function ParkApp({ isSignedIn }) {
                 onNameCommit={(v) => runtime.current?.setMemberName(v.trim() || 'Guest')}
                 position={position}
                 onLocationSettings={() => setGateOpen(true)}
-                theme={theme}
                 paletteMode={paletteMode}
                 onPaletteMode={setPaletteMode}
                 onToggleFogMap={() =>

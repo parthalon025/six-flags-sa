@@ -25,8 +25,6 @@ export default function SettingsPanel({
   onNameCommit,
   position,
   onLocationSettings,
-  theme,
-  onTheme,
   paletteMode = 'auto',
   onPaletteMode = null,
   onToggleFogMap = null,
