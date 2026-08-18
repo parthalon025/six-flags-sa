@@ -523,7 +523,8 @@ gate, and everything below it rejects fails before a pixel renders.
 {
   "id": "midnight-carnival",        // slugified; becomes kits/<id>.json
   "label": "Midnight carnival",
-  "prompt": "deep indigo night…",   // provenance: the map prompt that authored it
+  "prompt": "deep indigo night…",   // provenance — stamped by parseKitAnswer from the
+                                    //   caller's map prompt, never authored by the model
   "terrain": {                      // one piece per surface: outside, ground,
     "grass": {                      //   grass, wood, water, lot, road, service
       "base": "#1E3328",            // fill color

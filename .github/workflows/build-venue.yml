@@ -234,7 +234,7 @@ jobs:
           set -euo pipefail
           for id in $VENUE_IDS; do
             node packages/venue-builder/bin/display-bake.mjs "$id" \
-              --kit island-brochure --kit rpg-overworld --kit blueprint-survey --ldtk
+              --kit island-brochure --kit rpg-overworld --kit blueprint-survey --kit midnight-carnival --ldtk
             node packages/venue-builder/bin/display-pack.mjs "$id" --tiles --bake
           done
           node packages/venue-builder/bin/display-contact-sheet.mjs

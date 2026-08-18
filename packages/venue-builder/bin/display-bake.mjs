@@ -18,7 +18,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
-import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, slugify } from '../lib/venue-io.mjs';
+import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson } from '../lib/venue-io.mjs';
 import { bakeModel, kitAssetIds, resolveKit } from '../lib/display-bake.mjs';
 import { kitBriefSystem, parseKitAnswer } from '../lib/display-kit-brief.mjs';
 import { readAssetLedger, assetPath, creditsManifest } from '../lib/display-assets.mjs';
@@ -147,6 +147,13 @@ for (const id of ids) {
   const overlay = readJson(path.join(OVERRIDE_DIR, id, 'display', 'theme.json'), null);
   if (overlay) console.error(`  venue theme: data/venues/${id}/display/theme.json`);
 
+  if (ldtk) {
+    // Kit-independent (the model is), so one file per venue suffices.
+    const ldtkFile = path.join(outRoot, `${id}.ldtk`);
+    writeFileSync(ldtkFile, `${JSON.stringify(ldtkProject(bakeModel(map, pois, { maxCols })), null, 2)}\n`);
+    console.error(`  LDtk debug export: ${ldtkFile}`);
+  }
+
   // Bake every requested kit first; certification runs after so the
   // cross-kit check compares this invocation's own bakes, never stale
   // files from an older code version.
@@ -184,12 +191,6 @@ for (const id of ids) {
       const draftFile = path.join(outRoot, `${id}--${kitId}.profile-draft.json`);
       writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples }), null, 2)}\n`);
       console.error(`  profile draft (measured medians): ${draftFile}`);
-    }
-    if (ldtk) {
-      // Kit-independent (the model is), so one file per venue suffices.
-      const ldtkFile = path.join(outRoot, `${id}.ldtk`);
-      writeFileSync(ldtkFile, `${JSON.stringify(ldtkProject(model), null, 2)}\n`);
-      console.error(`  LDtk debug export: ${ldtkFile}`);
     }
     const profile = profileForKit(kitId, profiles);
     let rerun = null;
