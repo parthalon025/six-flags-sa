@@ -2084,6 +2084,9 @@ p.wxWhy.warn { color: var(--orange); }
    greyed-out line is what the app already uses for a place it knows nothing
    about. */
 .verdict.bad { color: var(--onTint); background: var(--barred); }
+/* Height data the venue never sent — not a verdict against the rider, so it
+   stays as muted as the app's other "nothing to say" ink. */
+.verdict.unknown { color: var(--gray); background: color-mix(in srgb, var(--gray) 14%, transparent); }
 .poiRow.bad .poiText b { color: var(--label); }
 .poiRow.bad .dot { opacity: 1; }
 

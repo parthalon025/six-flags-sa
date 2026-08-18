@@ -153,6 +153,13 @@
       "check": "ride detail shows a structured eligibility reason"
     },
     {
+      "id": "e5-eligibility-unknown",
+      "slice": "E5",
+      "user_action": "See a visible Unknown verdict on a ride with no height data, instead of a blank badge",
+      "suite": "functional",
+      "check": "ride with no height data shows an Unknown verdict"
+    },
+    {
       "id": "e81-next-best",
       "slice": "E8",
       "user_action": "Next-best GO NOW + Why?",

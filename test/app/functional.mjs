@@ -463,6 +463,27 @@ await check('ride detail shows a structured eligibility reason', async () => {
   return true;
 });
 
+await check('ride with no height data shows an Unknown verdict', async () => {
+  // Hang Time (Kings Island) ships with no `h` in the venue file — a real
+  // no-rule ride, not a fabricated one. The row expansion renders the
+  // unknown verdict's reason through the same explain() seam as the sheet.
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("42")').click();
+  await a.waitForTimeout(400);
+  await go(a, 'Places');
+  await searchPlaces(a, 'hang time');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(400);
+  const reason = a.locator('.eligibilityReason');
+  await until(async () => (await reason.count()) > 0, {
+    timeout: 10000,
+    label: 'unknown eligibility reason on Hang Time',
+  });
+  const text = (await reason.innerText()).trim();
+  if (!/no height info yet/i.test(text)) throw new Error(`expected no-height reason, got "${text}"`);
+  return true;
+});
+
 await check('"with adult" changes the companion tally', async () => {
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();

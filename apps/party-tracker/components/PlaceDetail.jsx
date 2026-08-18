@@ -170,6 +170,7 @@ const VERDICT = {
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
   advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
   not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
+  unknown: { label: 'Unknown', cls: 'unknown', icon: null },
 };
 
 /**
