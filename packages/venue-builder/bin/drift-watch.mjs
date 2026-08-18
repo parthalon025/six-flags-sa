@@ -13,11 +13,23 @@ import { readJson, VENUE_DIR } from '../lib/venue-io.mjs';
 
 const BUILDER_BIN = path.join(path.dirname(fileURLToPath(import.meta.url)), 'build-venue.mjs');
 
+function printUsage() {
+  console.log(
+    [
+      'Fleet drift watch — rebuild --dry-run across every shipped venue.',
+      '',
+      '  npm run venues:drift-watch',
+      '  npm run venues:drift-watch -- --json',
+    ].join('\n'),
+  );
+}
+
 function parseArgs(argv) {
-  const out = { json: false, all: false, _: [] };
+  const out = { json: false, all: false, help: false, _: [] };
   for (const a of argv) {
     if (a === '--json') out.json = true;
     else if (a === '--all') out.all = true;
+    else if (a === '--help' || a === '-h') out.help = true;
     else if (!a.startsWith('--')) out._.push(a);
   }
   return out;
@@ -35,6 +47,10 @@ function dryRunRebuild(id) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    printUsage();
+    process.exit(0);
+  }
   const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
   const ids = args._.length ? args._ : manifest.venues.map((v) => v.id);
   const rows = ids.map(dryRunRebuild);
