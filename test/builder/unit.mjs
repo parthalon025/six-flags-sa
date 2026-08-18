@@ -7941,6 +7941,50 @@ await check('new external evidence sources fuse', async () => {
   return true;
 });
 
+await check('deriveOrsRouteSamples builds one sample per distinct destination category', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const pois = [
+    { c: 'gate', n: 'Main Gate', lat: 40.1, lng: -82.1 },
+    { c: 'coaster', n: 'Millennium Force', lat: 40.2, lng: -82.2 },
+    { c: 'ride', n: 'Snake River Falls', lat: 40.3, lng: -82.3 },
+    { c: 'show', n: 'Good Time Theatre', lat: 40.4, lng: -82.4 },
+  ];
+  const samples = deriveOrsRouteSamples(pois);
+  assert.equal(samples.length, 3);
+  for (const s of samples) {
+    assert.deepEqual(s.from, { lat: 40.1, lng: -82.1 });
+    assert.ok(Number.isFinite(s.to.lat) && Number.isFinite(s.to.lng));
+    assert.ok(s.label.startsWith('Main Gate'));
+  }
+  return true;
+});
+
+await check('deriveOrsRouteSamples degrades to [] without an entrance-like POI', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  assert.deepEqual(deriveOrsRouteSamples([{ c: 'coaster', n: 'X', lat: 1, lng: 2 }]), []);
+  return true;
+});
+
+await check('deriveOrsRouteSamples degrades to [] below the min-samples floor', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  assert.deepEqual(
+    deriveOrsRouteSamples([
+      { c: 'gate', n: 'Gate', lat: 1, lng: 2 },
+      { c: 'ride', n: 'Only Ride', lat: 3, lng: 4 },
+    ]),
+    [],
+  );
+  return true;
+});
+
+await check('deriveOrsRouteSamples filters POIs missing coordinates and never throws', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  assert.deepEqual(deriveOrsRouteSamples([{ c: 'gate', n: 'Gate' }]), []);
+  assert.deepEqual(deriveOrsRouteSamples([]), []);
+  assert.deepEqual(deriveOrsRouteSamples(), []);
+  return true;
+});
+
 await check('sync external sources cache-only does not throw', async () => {
   const { syncExternalSources } = await import('../../packages/venue-builder/lib/external-research.mjs');
   const runs = await syncExternalSources('cedar-point', { fetch: false, sources: ['wikidata', 'open-meteo'] });
