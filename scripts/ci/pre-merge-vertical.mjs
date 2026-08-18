@@ -26,6 +26,7 @@ import {
   waitForHealth,
 } from './party-tracker-ui.mjs';
 import {
+  STATIC_STEPS,
   buildLocalCiContext,
   readLocalCiPass,
   shouldSkipLocalPreMerge,
@@ -45,11 +46,12 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
-export const STATIC_NPM_STEPS = [
-  ['run', 'test:ci-gate'],
-  ['run', 'test:unit'],
-  ['run', 'build', '-w', '@party-tracker/app'],
-];
+/**
+ * The static floor, in run order. Derived from `STATIC_STEPS` rather than
+ * restated: the stamp records those ids, and GitHub skips the jobs they cover,
+ * so a second copy here would let the two drift into a lie.
+ */
+export const STATIC_NPM_STEPS = STATIC_STEPS.map((step) => step.npm);
 
 export function gitChangedFiles(baseRef = 'origin/main', cwd = root) {
   try {
