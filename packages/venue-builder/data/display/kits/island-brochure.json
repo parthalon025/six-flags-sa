@@ -1,0 +1,127 @@
+{
+  "id": "island-brochure",
+  "label": "Island brochure",
+  "terrain": {
+    "outside": {
+      "base": "#B9B2A8",
+      "texture": {
+        "kind": "dot",
+        "color": "#C7C0B5",
+        "density": 0.25
+      }
+    },
+    "ground": {
+      "base": "#F3E5C0",
+      "texture": {
+        "kind": "speckle",
+        "color": "#E4D3A6",
+        "density": 0.3
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "sand"
+      }
+    },
+    "grass": {
+      "base": "#7CBF6B",
+      "texture": {
+        "kind": "tuft",
+        "color": "#5FA452",
+        "density": 0.35
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass"
+      }
+    },
+    "wood": {
+      "base": "#57964C",
+      "texture": {
+        "kind": "tuft",
+        "color": "#457F3D",
+        "density": 0.4
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass",
+        "tint": "rgba(10,80,40,0.4)"
+      }
+    },
+    "water": {
+      "base": "#39C2D7",
+      "texture": {
+        "kind": "wave",
+        "color": "#B8F0F7",
+        "density": 0.35
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "teal"
+      }
+    },
+    "lot": {
+      "base": "#CFC6B4",
+      "texture": {
+        "kind": "stripe",
+        "color": "#EBE3D2",
+        "density": 0.33
+      }
+    },
+    "road": {
+      "base": "#C86F4A",
+      "texture": {
+        "kind": "dash",
+        "color": "#F5DEC4"
+      }
+    },
+    "service": {
+      "base": "#A98F72",
+      "texture": {
+        "kind": "none"
+      }
+    }
+  },
+  "sprites": {
+    "tree": {
+      "canopy": "#2F8F4E",
+      "highlight": "#7CD98A",
+      "shadow": "rgba(20,60,50,0.3)",
+      "scale": 1.15
+    },
+    "building": {
+      "roofs": [
+        "#F09A62",
+        "#EFD9A9",
+        "#8FC7C0"
+      ],
+      "edge": "#7A4E33",
+      "wall": "#8A6248",
+      "drop": 0.3
+    },
+    "slide": {
+      "casing": "rgba(255,255,255,0.95)",
+      "colors": [
+        "#FF7A66",
+        "#2FB8C9",
+        "#FFC24D",
+        "#8B6BD9",
+        "#57B96B",
+        "#F45FA2"
+      ],
+      "width": 1.15
+    },
+    "coaster": {
+      "rail": "#5A4636",
+      "tie": "#E8D3B0"
+    },
+    "badge": {
+      "gate": "#E5484D",
+      "food": "#F08A24",
+      "restroom": "#2E7FC2",
+      "shop": "#3FA36B",
+      "show": "#9A5FC0",
+      "service": "#8A8F98"
+    }
+  },
+  "prompt": "Sunny tropical brochure: warm cream sand, lush palm-green lawns, bright turquoise water like a resort pool map, terracotta paths, cheerful coral and teal ride flumes, soft warm gray outside the park"
+}
