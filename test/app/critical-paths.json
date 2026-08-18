@@ -165,6 +165,13 @@
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
       "check": "GO NOW card carries a Why? explanation"
+    },
+    {
+      "id": "ride-status-stale-marker",
+      "slice": "E7",
+      "user_action": "A ride report old enough to hedge is visibly muted and never claims live/GO NOW",
+      "suite": "functional",
+      "check": "a stale report is marked and never claims live/GO NOW"
     }
   ],
   "upcoming": []

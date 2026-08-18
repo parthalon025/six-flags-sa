@@ -271,9 +271,11 @@ export default function PlaceDetail({
                     : '',
                   status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
                   status.source === 'weather' ? 'guess' : '',
+                  status.stale ? 'stale' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                title={status.detail || undefined}
               >
                 <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {status.label}

@@ -42,6 +42,7 @@ import {
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
+import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
 
 const PASS = [];
 const FAIL = [];
@@ -126,6 +127,49 @@ if (authOnlyPhone) {
     venue: 'kings-island',
   });
   a = A.page;
+}
+
+/** Open a ride's row on the sheet's root screen and return its detail panel. */
+async function openRide(page, name) {
+  await go(page, 'Places');
+  await page.waitForTimeout(300);
+  await page.locator('.chip:has-text("All")').first().click();
+  // By aria-label, not placeholder: the placeholder names the loaded venue.
+  await page.locator('.field[aria-label="Search places"]').fill(name);
+  await page.waitForTimeout(400);
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  await row.locator('.poiMain').click();
+  await page.waitForTimeout(300);
+  return row;
+}
+
+/**
+ * The report buttons are addressed by `data-report` rather than by their label:
+ * the label is deliberately stateful ("It's down" becomes "PAUSED"), so
+ * matching on text couples the test to which way the button is currently
+ * pointing — which is the thing under test.
+ */
+const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`);
+
+/**
+ * The running-status pill on a ride's row, or '' when it carries none.
+ *
+ * `.statusPill` and not `.verdict`: the height verdict is also a `.verdict` and
+ * sits in the same stack, and matching it would read "CAN RIDE" as a claim
+ * about whether the ride is operating — which is the exact confusion this
+ * feature exists to undo.
+ */
+async function pillFor(page, name) {
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  const pill = row.locator('.statusPill').first();
+  try {
+    // Short timeout and a catch rather than a count() guard: the retraction
+    // test is polling for this pill to vanish, so it can and does disappear
+    // between being counted and being read.
+    return (await pill.innerText({ timeout: 1000 })).trim();
+  } catch {
+    return '';
+  }
 }
 
 if (want('auth')) {
@@ -544,6 +588,72 @@ await check('clear removes the height filter', async () => {
   await a.locator('.labelAction:has-text("Clear")').click();
   await a.waitForTimeout(400);
   return (await a.locator('.filterBadge').count()) === 0;
+});
+
+/**
+ * A report old enough to hedge (rideStatus.js's `stale`, past
+ * RIDE_STALE_AFTER_MS) has to say so on the pill — a 29-minute-old PAUSED and
+ * a 1-minute-old one must not read the same, and neither may claim GO NOW or
+ * OPEN once the evidence is that old.
+ *
+ * On a throwaway phone, not phone A: the timestamp is stamped server-side by
+ * the reducer's own clock, so there is no store to backdate from here. Ageing
+ * it deterministically instead freezes the *reading* phone's `Date.now()`
+ * (`page.clock.setFixedTime`) while its real setInterval(60s) — the one that
+ * drives the UI's `now` — keeps running, so the next natural tick reads the
+ * frozen future time and the status recomputes as stale. Playwright has no
+ * clock uninstall, hence the dedicated context that closes with the check —
+ * phone A's clock stays real for every later module. Lives in heights, not
+ * party: the party module hangs in CI and locally (#194), and a ride report
+ * only needs its own solo party.
+ */
+await check('a stale report is marked and never claims live/GO NOW', async () => {
+  const S = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Stale',
+    label: 'S',
+    venue: 'kings-island',
+  });
+  const s = S.page;
+  try {
+    await go(s, 'Party');
+    await s.waitForTimeout(300);
+    await s.locator('button:has-text("Start a party")').click();
+    await s.waitForSelector('.codeText', { timeout: 20000 });
+    const row = await openRide(s, 'Diamondback');
+    await reportBtn(row, 'down').click();
+    await until(async () => /paused/i.test(await pillFor(s, 'Diamondback')), {
+      timeout: 20000,
+      label: 'the reporting phone to show the fresh report',
+    });
+
+    const pill = () => row.locator('.statusPill').first();
+    const freshClass = (await pill().getAttribute('class')) || '';
+    if (/\bstale\b/.test(freshClass)) throw new Error(`fresh report already reads stale: ${freshClass}`);
+
+    await s.clock.setFixedTime(Date.now() + RIDE_STALE_AFTER_MS + 60_000);
+
+    await until(
+      async () => {
+        const klass = (await pill().getAttribute('class').catch(() => '')) || '';
+        return /\bstale\b/.test(klass) || null;
+      },
+      { timeout: 75000, step: 2000, label: "the phone's clock to carry the report past stale" },
+    );
+
+    const [staleClass, staleText, staleTitle] = await Promise.all([
+      pill().getAttribute('class'),
+      pill().innerText(),
+      pill().getAttribute('title'),
+    ]);
+    if (!/\bstale\b/.test(staleClass || '')) throw new Error(`missing stale class: ${staleClass}`);
+    if (/go now|\bopen\b/i.test(staleText)) throw new Error(`stale pill still claims live: ${staleText}`);
+    if (!staleTitle || !/ago/i.test(staleTitle)) throw new Error(`pill title lost the "…ago" detail: ${staleTitle}`);
+    return true;
+  } finally {
+    await S.context.close().catch(() => {});
+  }
 });
 } // end heights
 
@@ -1290,49 +1400,6 @@ console.log('\n--- ride reports ---');
  * report is an ordinary command and gets the same delivery guarantees as a
  * location or a meet-up pin.
  */
-
-/** Open a ride's row on the sheet's root screen and return its detail panel. */
-async function openRide(page, name) {
-  await go(page, 'Places');
-  await page.waitForTimeout(300);
-  await page.locator('.chip:has-text("All")').first().click();
-  // By aria-label, not placeholder: the placeholder names the loaded venue.
-  await page.locator('.field[aria-label="Search places"]').fill(name);
-  await page.waitForTimeout(400);
-  const row = page.locator('.poiRow', { hasText: name }).first();
-  await row.locator('.poiMain').click();
-  await page.waitForTimeout(300);
-  return row;
-}
-
-/**
- * The report buttons are addressed by `data-report` rather than by their label:
- * the label is deliberately stateful ("It's down" becomes "PAUSED"), so
- * matching on text couples the test to which way the button is currently
- * pointing — which is the thing under test.
- */
-const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`);
-
-/**
- * The running-status pill on a ride's row, or '' when it carries none.
- *
- * `.statusPill` and not `.verdict`: the height verdict is also a `.verdict` and
- * sits in the same stack, and matching it would read "CAN RIDE" as a claim
- * about whether the ride is operating — which is the exact confusion this
- * feature exists to undo.
- */
-async function pillFor(page, name) {
-  const row = page.locator('.poiRow', { hasText: name }).first();
-  const pill = row.locator('.statusPill').first();
-  try {
-    // Short timeout and a catch rather than a count() guard: the retraction
-    // test is polling for this pill to vanish, so it can and does disappear
-    // between being counted and being read.
-    return (await pill.innerText({ timeout: 1000 })).trim();
-  } catch {
-    return '';
-  }
-}
 
 await check('a ride reported down on one phone reaches the other', async () => {
   const row = await openRide(a, 'Diamondback');
