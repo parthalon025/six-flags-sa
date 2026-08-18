@@ -1543,7 +1543,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .carPin { animation: popIn var(--t2) var(--easeOut) both; }
 
 .overlayCompletions { list-style: none; margin: 0 0 10px; padding: 0; }
-.overlayCompletion { margin: 0 0 6px; }
+/* The Death Stranding plaque: a fact left on the world carries who left it.
+   Flag rail + finder's name, quiet enough to sit under any Place. */
+.overlayCompletion {
+  margin: 0 0 6px; padding: 6px 10px;
+  border-left: 2px solid color-mix(in srgb, var(--adventure) 55%, transparent);
+  border-radius: 0 var(--r2) var(--r2) 0;
+  background: color-mix(in srgb, var(--adventure) 7%, transparent);
+}
 .overlayPin circle {
   fill: var(--adventure);
   stroke: var(--markerEdge, #1a1a1a);
