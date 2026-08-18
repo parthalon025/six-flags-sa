@@ -1,0 +1,352 @@
+{
+  "version": 1,
+  "venue": "cedar-point",
+  "certified": true,
+  "anchors": [
+    {
+      "id": "gate:bay-harbor",
+      "name": "Bay Harbor",
+      "lat": 41.478351,
+      "lng": -82.681713
+    },
+    {
+      "id": "gate:camper-village",
+      "name": "Camper Village",
+      "lat": 41.48862,
+      "lng": -82.689707
+    },
+    {
+      "id": "gate:entrance",
+      "name": "Entrance",
+      "lat": 41.486918,
+      "lng": -82.686281
+    },
+    {
+      "id": "gate:entrance-2",
+      "name": "Entrance",
+      "lat": 41.487162,
+      "lng": -82.687437
+    },
+    {
+      "id": "gate:entrance-3",
+      "name": "Entrance",
+      "lat": 41.482794,
+      "lng": -82.686754
+    },
+    {
+      "id": "gate:entrance-4",
+      "name": "Entrance",
+      "lat": 41.482796,
+      "lng": -82.685391
+    },
+    {
+      "id": "gate:entrance-5",
+      "name": "Entrance",
+      "lat": 41.485353,
+      "lng": -82.686702
+    },
+    {
+      "id": "gate:lighthouse-point",
+      "name": "Lighthouse Point",
+      "lat": 41.488043,
+      "lng": -82.693191
+    },
+    {
+      "id": "gate:magnum-xl-200-gate",
+      "name": "Magnum XL-200 Gate",
+      "lat": 41.48566,
+      "lng": -82.686255
+    },
+    {
+      "id": "gate:main-gate",
+      "name": "Main Gate",
+      "lat": 41.478314,
+      "lng": -82.67905
+    },
+    {
+      "id": "gate:valravn-gate",
+      "name": "Valravn Gate",
+      "lat": 41.48091,
+      "lng": -82.683633
+    },
+    {
+      "id": "gate:windseeker-gate",
+      "name": "Windseeker Gate",
+      "lat": 41.482853,
+      "lng": -82.680903
+    },
+    {
+      "id": "land:Camp Snoopy",
+      "name": "Camp Snoopy",
+      "lat": 41.48534,
+      "lng": -82.68855
+    },
+    {
+      "id": "land:Cedar Point Shores",
+      "name": "Cedar Point Shores",
+      "lat": 41.48779,
+      "lng": -82.6859
+    },
+    {
+      "id": "land:Frontier Town",
+      "name": "Frontier Town",
+      "lat": 41.48543,
+      "lng": -82.69174
+    },
+    {
+      "id": "land:Frontier Trail",
+      "name": "Frontier Trail",
+      "lat": 41.48363,
+      "lng": -82.68952
+    },
+    {
+      "id": "land:Gemini Midway",
+      "name": "Gemini Midway",
+      "lat": 41.48479,
+      "lng": -82.68677
+    },
+    {
+      "id": "land:Kiddy Kingdom",
+      "name": "Kiddy Kingdom",
+      "lat": 41.48083,
+      "lng": -82.68089
+    },
+    {
+      "id": "land:Lakeside Midway",
+      "name": "Lakeside Midway",
+      "lat": 41.48159,
+      "lng": -82.68026
+    },
+    {
+      "id": "land:Lighthouse Point",
+      "name": "Lighthouse Point",
+      "lat": 41.48948,
+      "lng": -82.68983
+    }
+  ],
+  "checks": [
+    {
+      "key": "visual_points",
+      "claim": "truth yields fixed visual points for every future render matrix",
+      "pass": true,
+      "evidence": "20 anchor(s): gate:bay-harbor, gate:camper-village, gate:entrance…",
+      "confidence": "high",
+      "falsifier": "a venue with no gates, no district anchors, and no coasters",
+      "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
+    }
+  ],
+  "skins": {
+    "trail": {
+      "version": 1,
+      "venue": "cedar-point",
+      "skin": "trail",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "0 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 889 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "park-midnight": {
+      "version": 1,
+      "venue": "cedar-point",
+      "skin": "park-midnight",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "0 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 899 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "layered-atlas": {
+      "version": 1,
+      "venue": "cedar-point",
+      "skin": "layered-atlas",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "0 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 969 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "watercolor-quest": {
+      "version": 1,
+      "venue": "cedar-point",
+      "skin": "watercolor-quest",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "0 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 972 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    }
+  }
+}

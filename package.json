@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.17.0",
+  "version": "1.17.1",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -57,7 +57,7 @@
     "venues:pipeline": "node --env-file-if-exists=.env packages/venue-builder/bin/build-top-parks.mjs",
     "cdn:warm": "node scripts/warm-cdn.mjs",
     "test": "npm run test:builder && npm run test:app",
-    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/compare.mjs",
+    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/display.mjs && node test/builder/display-assets.mjs && node test/builder/display-references.mjs && node test/builder/display-style.mjs && node test/builder/llm-agent.mjs && node test/builder/mapillary-video.mjs && node test/builder/poly-haven.mjs && node test/builder/esa-worldcover.mjs && node test/builder/overture-buildings.mjs && node test/builder/footprint-fusion.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",
     "test:validate-ui": "node test/app/validate-ui.mjs",
     "test:validate-ui:changed": "node test/app/validate-ui.mjs --changed",
@@ -97,14 +97,27 @@
     "store:scaffold-metadata": "node scripts/scaffold-app-store-metadata.mjs",
     "store:release-plan": "node scripts/store-release-plan.mjs",
     "store:release-cycle": "node scripts/release-cycle.mjs",
-    "version:matrix": "node scripts/deploy-version-report.mjs"
+    "version:matrix": "node scripts/deploy-version-report.mjs",
+    "venues:display": "node --env-file-if-exists=.env packages/venue-builder/bin/display-pack.mjs",
+    "venues:render": "node --env-file-if-exists=.env packages/venue-builder/bin/display-render.mjs",
+    "venues:llm-briefs": "node --env-file-if-exists=.env packages/venue-builder/bin/llm-briefs.mjs",
+    "venues:bake": "node --env-file-if-exists=.env packages/venue-builder/bin/display-bake.mjs",
+    "venues:atlas": "node --env-file-if-exists=.env packages/venue-builder/bin/display-atlas.mjs",
+    "venues:bake-review": "node --env-file-if-exists=.env packages/venue-builder/bin/display-contact-sheet.mjs",
+    "venues:vendor-assets": "node --env-file-if-exists=.env packages/venue-builder/bin/vendor-assets.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.4",
     "@capacitor/cli": "^7.4.4",
     "@capacitor/ios": "^7.4.4",
+    "@turf/area": "^7.4.0",
+    "@turf/intersect": "^7.4.0",
+    "@turf/union": "^7.4.0",
     "dependency-cruiser": "^18.2.0",
+    "geotiff": "^3.0.5",
+    "maplibre-gl": "^6.4.1",
     "playwright": "^1.62.1",
+    "pmtiles": "^4.5.0",
     "turbo": "^2.10.9"
   },
   "dependencies": {

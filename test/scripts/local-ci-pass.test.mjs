@@ -22,18 +22,19 @@ import { runCheck } from '../../scripts/ci/local-ci-pass.mjs';
 const tmp = mkdtempSync(join(tmpdir(), 'local-ci-pass-'));
 try {
   const context = {
-    schema: 1,
+    schema: 2,
     head: 'abc123',
     mergeBase: 'def456',
     baseRef: 'origin/main',
     modules: ['lint', 'party'],
     needsBrowser: true,
+    verticals: ['app'],
     staticSteps: ['test:ci-gate', 'test:unit', 'build'],
     lockHash: 'lockhash12345678',
     manifestHash: 'manifest12345678',
   };
 
-  const stamp = writeLocalCiPass({ context, browserVertical: true }, tmp);
+  const stamp = writeLocalCiPass({ context, browserVertical: true, verticals: ['app'] }, tmp);
   assert.equal(readLocalCiPass(tmp)?.head, 'abc123');
   assert.equal(stamp.browserVertical, true);
   assert.ok(readFileSync(join(tmp, LOCAL_CI_PASS_REL), 'utf8').includes('"browserVertical": true'));
@@ -61,6 +62,11 @@ try {
     ),
     false,
     'browser still required when stamp lacks browser vertical',
+  );
+  assert.equal(
+    shouldSkipLocalPreMerge({ ...stamp, verticals: [] }, context),
+    false,
+    'a stamp missing a required vertical never covers the tree',
   );
   assert.equal(
     shouldSkipGithubUi(stamp, context, { anyUi: true }),

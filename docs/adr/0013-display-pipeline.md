@@ -76,6 +76,11 @@ Target: **MapLibre GL JS** in the Capacitor WebView reading local PMTiles. SVG `
 2. Wire `tiles-build` + `display-certify` into `runVenuePipeline`
 3. MapLibre renderer loading local PMTiles + global skin templates
 4. Venue download manager (prefetch, cache, delta)
-5. Retire SVG base geometry once parity proven on store WebView
+5. Port `ParkMap.jsx`'s gesture handling (pinch/wheel zoom-about-point), Follow-mode/**Go** camera,
+   and **Overlay** pin rendering (route, queue pins) into the MapLibre renderer — item 3 covers
+   drawing the map; nothing above names who ports the interaction layer that currently lives
+   entirely in the 1879-line SVG component, and item 6's "parity proven" gate is not met until this
+   is done.
+6. Retire SVG base geometry once parity proven on store WebView
 
 Canonical language: root `CONTEXT.md`.

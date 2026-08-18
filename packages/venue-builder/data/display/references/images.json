@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "description": "reference-image ledger — the pinned left half of every bake comparison",
+  "images": {
+    "ref-big-kahunas-2026": {
+      "label": "Big Kahuna's 2026 illustrated park map",
+      "path": "data/venues/big-kahunas/maps/2026-parkmap.webp",
+      "sha256": "60c797d07da9684d917663eae280bda378af562450cb6ca353d9f516e352d99a",
+      "license": "licensed",
+      "source": {
+        "url": "operator-published park map, vendored with the venue",
+        "note": "already committed with the venue; profiles point at the existing bytes, no second copy"
+      },
+      "committed": true
+    },
+    "ref-rpg-overworld": {
+      "label": "RPG-Maker-style overworld reference (user-supplied)",
+      "path": "assets/reference/ref-rpg-overworld.png",
+      "sha256": "b829d9816365c82cc96aeda17a6d0a9e4852a8d9d1b58d0776e24adbb4b84996",
+      "license": "licensed",
+      "source": {
+        "url": "user-pasted, session 2026-08-18",
+        "note": "third-party game art, provenance unknown — NOT redistributable; sha-pinned, vendored by hand, gitignored"
+      },
+      "committed": false
+    },
+    "ref-aerial-photo": {
+      "label": "Big Kahuna's aerial photo (ground truth for layout reading)",
+      "path": "assets/reference/ref-aerial-photo.jpeg",
+      "sha256": "c6a9192a88f2c943ced0ad6c59ae3a78b779683996edab331beaaabd2cf35116",
+      "license": "licensed",
+      "source": {
+        "url": "user-pasted, session 2026-08-18",
+        "note": "third-party aerial photo, provenance unknown — NOT redistributable; sha-pinned, vendored by hand, gitignored"
+      },
+      "committed": false
+    }
+  }
+}

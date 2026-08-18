@@ -452,6 +452,86 @@ nameless one merges onto the nearest place within `--merge-metres` (25 by defaul
 that matches nothing is reported rather than added, because a point that landed nowhere near
 a place is far more likely to be the wrong projection than a new place.
 
+### Display packs: skins as certified data
+
+The map's look is data, not renderer code. Two committed ledgers under
+`packages/venue-builder/data/display/` hold the display ontology: `materials.json`
+(PBR material sets — each row carries its license and source, and only CC0,
+original, or licensed-with-proof rows ship) and `skins.json` (skin templates
+binding surface classes — walkway, water, vegetation, structure, coaster-track —
+to materials, with ids matching the app's `world.js`).
+
+```
+npm run venues:display -- cedar-point           # compile + certify one venue's packs
+npm run venues:display -- --all --tiles         # every shipped venue, with base.pmtiles
+npm run venues:build -- --pipeline --display …  # as a pipeline stage after certify
+npm run venues:render -- cedar-point            # MapLibre screenshots at the visual points
+```
+
+`--tiles` exports GeoJSON from the shipped contract and wraps Tippecanoe into
+`display/base.pmtiles` (a recorded gap, not a crash, when the binary is
+absent). Each Skin also gets a compiled MapLibre `<skin>.style.json`;
+`venues:render` serves the pack to headless Chromium and screenshots every
+Skin at the certification's truth-derived visual points — the builder-side
+descendant of the reference-skin visual matrix.
+
+Per venue × skin this writes `data/venues/<id>/display/<skin>.visual.json` and a
+`display-certification.json` beside it. The certification enforces the standing
+rule — *skins restyle, never reposition*: a spec that carries any coordinate
+fails, as does an unresolved material, a disallowed license, a land tone naming
+a district the map does not have, or a pack over the phone budget. Specs are
+compiled from truth only (`basedOn` records the map's `generated` date; there is
+no clock anywhere), so rerunning the stage on an unchanged venue is
+byte-identical. Publishing display files into `public/venues/` stays a separate,
+human-gated step. Design doc:
+[custom map display factory](../research/2026-08-18-custom-map-display-factory.md).
+
+### Game bakes: kits, themes, and the asset ledger
+
+The game tier renders each venue as a tile-and-sprite map. Geometry comes
+only from truth (`bakeModel`); the look is a **kit** — palette, textures,
+tile-art bindings, structural style switches — usually authored by the
+invoking agent from a map prompt, validated by `resolveKit`, and saved
+under `data/display/kits/`.
+
+```
+npm run venues:bake -- big-kahunas --kit rpg-overworld    # bake with a saved kit
+npm run venues:bake -- kings-island --prompt "ink survey" # agent authors a new kit
+npm run venues:atlas                                      # MapLibre sprite atlas from ledger icons
+npm run venues:vendor-assets                              # verify (or --fetch) pinned art
+```
+
+Every piece of art rides `data/display/assets.json` — stable GUIDs, sha256
+pins, license gate (CC0-1.0 / original / licensed only), provenance, and
+import settings beside the asset. Kits reference art by GUID (`tiles`,
+`sprite`, `badge.icons`); unknown or unlicensed refs fail in `resolveKit`
+before anything renders. A venue can overlay any kit with a design theme
+(`data/venues/<id>/display/theme.json` — custom sprites, accent palettes;
+never geometry). Each bake writes a `credits.json` naming every asset it
+used; `venues:atlas` packs the ledger's icon glyphs into a content-addressed
+MapLibre sprite sheet (rebuilds only when bytes, size, or packer version
+move).
+
+### The agent is the model
+
+The builder is usually run by an AI agent, so the LLM seams don't need a
+second model: with `VENUE_LLM_PROVIDER=agent` (the default inside an agent
+session when no API key is set), every model prompt is filed as a **brief**
+instead of an API call, and the invoking agent answers it.
+
+```
+npm run venues:research -- cedar-point --offline --ai   # files a brief, prints where
+npm run venues:llm-briefs                               # list pending briefs
+npm run venues:llm-briefs -- show <hash>                # the full prompt to answer
+npm run venues:llm-briefs -- answer <hash> --file a.md  # or pipe the answer on stdin
+npm run venues:research -- cedar-point --offline --ai   # rerun consumes the answer
+```
+
+Same prompt, same brief — reruns never duplicate; a JSON-expecting brief
+rejects a malformed answer at the door. The guardrails do not move: agent
+answers are still claims (weight `llm_extract`), never coordinates, never
+auto-applied heights.
+
 ### The checklist
 
 ```
