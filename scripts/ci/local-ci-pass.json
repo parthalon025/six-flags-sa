@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "head": "8de9191d879beb6b699c66fc621ba2094841543a",
+  "head": "1d70b902337dfc0a06284ad9ad01eb1c4a5de187",
   "mergeBase": "722a83aac2cfa952fb9900ae4a61083fd7444bcd",
   "baseRef": "origin/main",
   "modules": [
@@ -9,7 +9,10 @@
     "venues"
   ],
   "browserVertical": true,
-  "verticals": [],
+  "verticals": [
+    "app",
+    "builder"
+  ],
   "staticSteps": [
     "test:ci-gate",
     "test:unit",
@@ -17,5 +20,5 @@
   ],
   "lockHash": "3a9d51bcbf5a831e",
   "manifestHash": "8896c207e1eac635",
-  "recordedAt": "2026-08-18T23:09:42.395Z"
+  "recordedAt": "2026-08-18T23:28:34.020Z"
 }
