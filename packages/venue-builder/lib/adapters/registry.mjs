@@ -354,10 +354,12 @@ const ENTRIES = [
     gpu: false,
     offline: true,
     commercial_ok: true,
-    evidence_sources: ['mapillary'],
+    evidence_sources: ['mapillary', 'video'],
     integration: 'medium',
-    overlap: 'Manual aerial survey for Big Kahunas only',
-    notes: 'Queue entrance candidates from street-level sequences + API metadata.',
+    overlap:
+      'Manual aerial survey for Big Kahunas only. Shares the mapillary_tools CLI with the mapillary-api row (image API vs. this row\'s video_process implementation in lib/adapters/mapillary-video.mjs).',
+    notes:
+      'Queue entrance candidates from street-level sequences + API metadata. Requires ctx.videoPath for the video path; not in DEFAULT_EXTERNAL_ADAPTERS since a walkthrough video must be manually supplied.',
   },
   {
     id: 'mapillary-js',
@@ -448,6 +450,102 @@ const ENTRIES = [
     integration: 'high',
     overlap: 'Same deferral as YOLO',
     notes: 'Segment queue structures for georeferenced polygons.',
+  },
+  {
+    id: 'esa-worldcover',
+    name: 'ESA WorldCover',
+    repo: 'ESA-WorldCover/esa-worldcover-datasets',
+    url: 'https://esa-worldcover.org/en/data-access',
+    capability: 'Global 10 m land-cover classification (aerial evidence + Display land-tone input)',
+    role: 'LAND_COVER_CLASSIFIER',
+    stage: 'vision',
+    license: 'CC BY 4.0',
+    adopt: 'wrap',
+    maturity: 'production',
+    maintenance: 4,
+    languages: ['n/a'],
+    docker: false,
+    gpu: false,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: ['aerial'],
+    integration: 'low',
+    overlap:
+      'lib/adapters/esa-worldcover.mjs reads public esa-worldcover S3 COGs via HTTP byte ranges (geotiff npm package) — no full-tile download, no API key, no rate limit.',
+    notes:
+      'Cross-checks the two highest-weight entrance-evidence sources (park map=5, aerial=4): does the classified land under a claim match what it implies? Also the cheapest land-tone base layer for PR #471 Display (see registry\'s poly-haven row) — same raster, two consumers, one adapter.',
+  },
+  {
+    id: 'overture-buildings',
+    name: 'Overture Maps — buildings theme',
+    repo: 'OvertureMaps',
+    url: 'https://docs.overturemaps.org/guides/buildings/',
+    capability: 'Deduplicated OSM + Microsoft ML + Google Open Buildings footprints, one ODbL pull',
+    role: 'BUILDING_FOOTPRINT_MERGED',
+    stage: 'vision',
+    license: 'ODbL',
+    adopt: 'wrap',
+    maturity: 'production',
+    maintenance: 5,
+    languages: ['n/a'],
+    docker: false,
+    gpu: false,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: ['cv_segmentation'],
+    integration: 'medium',
+    overlap:
+      'lib/adapters/overture-buildings.mjs wraps the duckdb CLI (httpfs + spatial extensions) — plain HTTPS bucket listing and parquet reads, no S3 SDK/credentials (those broke in this environment for a proxy-injection reason unrelated to Overture itself). Supersedes separately wrapping Microsoft + Google building datasets — Overture already resolved the overlap.',
+    notes:
+      'Second independent polygon source for lib/footprint-fusion.mjs (proposed, blocked on this adapter landing — see docs/research/2026-08-18-footprint-conflation-proposal.md). Live-verified against Cedar Point: 761 real building footprints, named ones matching real ride/service buildings (Raptor, Guest Services, Midway Carousel). Does not emit evidence.mjs point claims — polygon evidence has no shape in EvidenceClaim.at yet; caches raw footprint GeoJSON for the fusion module to consume once it exists. Opt-in, not scaffolded by default (needs duckdb on PATH, ~2 min/venue over 512 remote part-files).',
+  },
+  {
+    id: 'segment-geospatial',
+    name: 'segment-geospatial (samgeo)',
+    repo: 'opengeos/segment-geospatial',
+    url: 'https://github.com/opengeos/segment-geospatial',
+    capability: 'SAM/SAM2-based georeferenced raster segmentation for fresh imagery',
+    role: 'VISION_SEGMENTER_GEOSPATIAL',
+    stage: 'vision',
+    license: 'MIT',
+    adopt: 'defer',
+    maturity: 'beta',
+    maintenance: 3,
+    languages: ['python'],
+    docker: true,
+    gpu: true,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: ['cv_segmentation', 'cv_detection'],
+    integration: 'high',
+    overlap: 'Same deferral class as the existing sam2 row — this is effectively sam2 pointed at raster tiles instead of photos.',
+    notes:
+      'Answers the ride-specific-structure coverage gap (queue canopies, kiosks) that overture-buildings/Microsoft/Google building datasets won\'t have, trained on typical urban/suburban structures. Confirmed this repo has zero GPU infrastructure anywhere (all CI on ubuntu-latest/macos-latest, no CUDA reference outside this doc) — deferred until GPU infra exists for other reasons, not standing it up just for this.',
+  },
+
+  // —— Display-layer materials (PR #471 PBR pipeline) — never evidence_sources ——
+  {
+    id: 'poly-haven',
+    name: 'Poly Haven',
+    repo: 'n/a (asset library, not source-hosted)',
+    url: 'https://polyhaven.com/textures',
+    capability: 'CC0 PBR material sets (asphalt, roofing, foliage) for the Display pipeline',
+    role: 'PBR_MATERIAL_LIBRARY',
+    stage: 'display',
+    license: 'CC0',
+    adopt: 'adopt',
+    maturity: 'production',
+    maintenance: 5,
+    languages: ['n/a'],
+    docker: false,
+    gpu: false,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: [],
+    integration: 'low',
+    overlap: 'PR #471 material pipeline / visual.json land tones — Display, not Truth',
+    notes:
+      'lib/adapters/poly-haven.mjs writes a committed data/display/polyhaven-materials.json catalog (license + provenance + file URLs) that materials.json surface bindings draw from; texture bytes fetch at build time and are never committed. No water category — Poly Haven has no static PBR water texture (checked directly against its API); water stays a documented gap, not a fabricated slug.',
   },
 
   // —— Open-source research adapters (builder-side) ——
@@ -755,78 +853,22 @@ const ENTRIES = [
     overlap: '1.8ms/query; Valhalla rejected for runtime',
     notes: 'Keep unless vector routing proves necessary on phone.',
   },
-  // Display-tier rows from the PR #480 visual ground-truth survey. The
-  // firewall: display consumers live in `notes`, never in evidence_sources
-  // — display art must not masquerade as truth evidence.
-  {
-    id: 'polyhaven-ambientcg',
-    name: 'Poly Haven + ambientCG (CC0 material libraries)',
-    repo: 'polyhaven/ambientcg',
-    url: 'https://ambientcg.com',
-    capability: 'CC0 PBR material sets (albedo/normal/roughness) for display packs',
-    role: 'PBR_MATERIAL_LIBRARY',
-    stage: 'display',
-    license: 'CC0-1.0',
-    adopt: 'adopt',
-    maturity: 'production',
-    maintenance: 5,
-    languages: [],
-    docker: false,
-    gpu: false,
-    offline: true,
-    commercial_ok: true,
-    evidence_sources: [],
-    integration: 'low',
-    overlap: 'materials.json already binds ambientCG ids; bytes vendored sha-pinned like assets.json',
-    notes: 'Display only — feeds materials.json/kits via bin/vendor-assets.mjs; never wire into evidence.mjs.',
-  },
-  {
-    id: 'esa-worldcover',
-    name: 'ESA WorldCover 10m land cover',
-    repo: 'ESA-WorldCover',
-    url: 'https://esa-worldcover.org',
-    capability: 'Global 10m land-cover classes (built-up, water, tree cover) for terrain corroboration',
-    role: 'LAND_COVER_CLASSIFIER',
-    stage: 'vision',
-    license: 'CC-BY-4.0',
-    adopt: 'wrap',
-    maturity: 'production',
-    maintenance: 4,
-    languages: [],
-    docker: false,
-    gpu: false,
-    offline: true,
-    commercial_ok: true,
-    evidence_sources: ['aerial'],
-    integration: 'medium',
-    overlap: 'Would corroborate bakeModel lot/water/vegetation classes upstream via map.json',
-    notes: 'Truth-side adapter (lib/adapters/worldcover.mjs, not yet built). Display-side consumer is land-tone corroboration for the bake — documented here, never as an extra evidence_sources entry. CC BY: shipped derivatives ride the licensed ledger class with attribution in creditsManifest.',
-  },
-  {
-    id: 'segment-geospatial',
-    name: 'segment-geospatial (SAM for aerial imagery)',
-    repo: 'opengeos/segment-geospatial',
-    url: 'https://github.com/opengeos/segment-geospatial',
-    capability: 'Segment-anything masks over aerial tiles (pools, lots, canopies)',
-    role: 'CV_SEGMENTATION',
-    stage: 'vision',
-    license: 'MIT',
-    adopt: 'defer',
-    maturity: 'beta',
-    maintenance: 4,
-    languages: ['python'],
-    docker: true,
-    gpu: true,
-    offline: false,
-    commercial_ok: true,
-    evidence_sources: ['cv_segmentation'],
-    integration: 'high',
-    overlap: 'GPU + model weights; promote together with the illustrated tier GPU harness (plan Phase D)',
-    notes: 'Deferred until the GPU batch harness exists; CPU-only ONNX re-inference is the certify-side fallback.',
-  },
 ];
 
 export const ADAPTER_REGISTRY = ENTRIES.map((e) => defineAdapter(e));
+
+/**
+ * Display feeds how the ground looks; Truth feeds evidence.mjs. A `display`
+ * stage row that also carried `evidence_sources` would blur that boundary
+ * silently — enforced here (not just documented) so a new Display adapter
+ * can't cross it by accident.
+ */
+const displayStageLeak = ADAPTER_REGISTRY.find((a) => a.stage === 'display' && a.evidence_sources.length > 0);
+if (displayStageLeak) {
+  throw new Error(
+    `adapter '${displayStageLeak.id}' is stage:'display' but declares evidence_sources — Display adapters must never feed evidence.mjs`,
+  );
+}
 
 export function getAdapter(id) {
   return ADAPTER_REGISTRY.find((a) => a.id === id) || null;

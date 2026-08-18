@@ -7614,6 +7614,64 @@ await check('adapter registry lists core external stacks', () => {
   return true;
 });
 
+await check('mapillary-tools row covers ride-walkthrough video evidence', () => {
+  const row = getAdapter('mapillary-tools');
+  assert.ok(row.evidence_sources.includes('mapillary'));
+  assert.ok(row.evidence_sources.includes('video'));
+  assert.equal(row.adopt, 'wrap');
+});
+
+await check('mapillary-tools is runnable but opt-in, not scaffolded by default', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  assert.ok(getAdapterImplementation('mapillary-tools'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('mapillary-tools'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('mapillary-tools'));
+});
+
+await check('poly-haven is a Display-layer adapter with no evidence_sources', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const row = getAdapter('poly-haven');
+  assert.ok(row);
+  assert.equal(row.stage, 'display');
+  assert.deepEqual(row.evidence_sources, []);
+  assert.equal(row.license, 'CC0');
+  assert.ok(getAdapterImplementation('poly-haven'));
+});
+
+await check('esa-worldcover is a Truth-layer aerial adapter, scaffolded by default', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const row = getAdapter('esa-worldcover');
+  assert.ok(row);
+  assert.deepEqual(row.evidence_sources, ['aerial']);
+  assert.equal(row.license, 'CC BY 4.0');
+  assert.ok(getAdapterImplementation('esa-worldcover'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('esa-worldcover'));
+  assert.ok(DEFAULT_EXTERNAL_ADAPTERS.includes('esa-worldcover'));
+});
+
+await check('overture-buildings is a Truth-layer cv_segmentation adapter, opt-in not scaffolded', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const row = getAdapter('overture-buildings');
+  assert.ok(row);
+  assert.deepEqual(row.evidence_sources, ['cv_segmentation']);
+  assert.equal(row.license, 'ODbL');
+  assert.ok(getAdapterImplementation('overture-buildings'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('overture-buildings'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('overture-buildings'));
+});
+
+await check('segment-geospatial is deferred pending GPU infra, matching sam2', () => {
+  const sg = getAdapter('segment-geospatial');
+  const sam2 = getAdapter('sam2');
+  assert.ok(sg);
+  assert.equal(sg.adopt, 'defer');
+  assert.equal(sg.gpu, true);
+  assert.equal(sam2.adopt, 'defer');
+});
+
 await check('evidence graph summarises converging claims', () => {
   const { nodes, summary } = graphFromAttractions({
     rides: {
