@@ -7,7 +7,7 @@
  * convenient screenshot.
  *
  *   node packages/venue-builder/bin/display-render.mjs <venueId> [--skin id]…
- *     [--points N] [--out dir]
+ *     [--points N] [--out dir] [--size WxH] [--scale N]
  *
  * Dev-tooling only: maplibre-gl, pmtiles, and playwright are devDependencies;
  * nothing here ships to the phone.
@@ -24,11 +24,17 @@ const ids = [];
 const skins = [];
 let points = 2;
 let outRoot = path.join(MONO_ROOT, 'artifacts', 'display-render');
+let size = { width: 960, height: 720 };
+let scale = 2;
 for (let i = 0; i < argv.length; i += 1) {
   const a = argv[i];
   if (a === '--skin') skins.push(argv[++i]);
   else if (a === '--points') points = Number(argv[++i]);
   else if (a === '--out') outRoot = path.resolve(argv[++i]);
+  else if (a === '--size') {
+    const [w, h] = String(argv[++i]).split('x').map(Number);
+    if (w && h) size = { width: w, height: h };
+  } else if (a === '--scale') scale = Number(argv[++i]) || 2;
   else if (!a.startsWith('--')) ids.push(a);
 }
 if (!ids.length) {
@@ -117,7 +123,7 @@ function serve(displayDir, mapFile) {
 const browser = await chromium.launch(
   process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
 );
-const page = await browser.newPage({ viewport: { width: 960, height: 720 }, deviceScaleFactor: 2 });
+const page = await browser.newPage({ viewport: size, deviceScaleFactor: scale });
 page.on('pageerror', (err) => console.error('  page error:', err.message));
 page.on('console', (m) => {
   if (m.type() === 'error' && !/WebGL|GL Driver/.test(m.text())) console.error('  console:', m.text().slice(0, 200));
