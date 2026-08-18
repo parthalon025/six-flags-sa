@@ -452,6 +452,32 @@ nameless one merges onto the nearest place within `--merge-metres` (25 by defaul
 that matches nothing is reported rather than added, because a point that landed nowhere near
 a place is far more likely to be the wrong projection than a new place.
 
+### Display packs: skins as certified data
+
+The map's look is data, not renderer code. Two committed ledgers under
+`packages/venue-builder/data/display/` hold the display ontology: `materials.json`
+(PBR material sets — each row carries its license and source, and only CC0,
+original, or licensed-with-proof rows ship) and `skins.json` (skin templates
+binding surface classes — walkway, water, vegetation, structure, coaster-track —
+to materials, with ids matching the app's `world.js`).
+
+```
+npm run venues:display -- cedar-point   # compile + certify one venue's packs
+npm run venues:display -- --all         # every shipped venue
+npm run venues:build -- --pipeline --display …   # as a pipeline stage after certify
+```
+
+Per venue × skin this writes `data/venues/<id>/display/<skin>.visual.json` and a
+`display-certification.json` beside it. The certification enforces the standing
+rule — *skins restyle, never reposition*: a spec that carries any coordinate
+fails, as does an unresolved material, a disallowed license, a land tone naming
+a district the map does not have, or a pack over the phone budget. Specs are
+compiled from truth only (`basedOn` records the map's `generated` date; there is
+no clock anywhere), so rerunning the stage on an unchanged venue is
+byte-identical. Publishing display files into `public/venues/` stays a separate,
+human-gated step. Design doc:
+[custom map display factory](../research/2026-08-18-custom-map-display-factory.md).
+
 ### The checklist
 
 ```

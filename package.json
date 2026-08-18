@@ -57,7 +57,7 @@
     "venues:pipeline": "node packages/venue-builder/bin/build-top-parks.mjs",
     "cdn:warm": "node scripts/warm-cdn.mjs",
     "test": "npm run test:builder && npm run test:app",
-    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/compare.mjs",
+    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/display.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",
     "test:validate-ui": "node test/app/validate-ui.mjs",
     "test:validate-ui:changed": "node test/app/validate-ui.mjs --changed",
@@ -97,7 +97,8 @@
     "store:scaffold-metadata": "node scripts/scaffold-app-store-metadata.mjs",
     "store:release-plan": "node scripts/store-release-plan.mjs",
     "store:release-cycle": "node scripts/release-cycle.mjs",
-    "version:matrix": "node scripts/deploy-version-report.mjs"
+    "version:matrix": "node scripts/deploy-version-report.mjs",
+    "venues:display": "node packages/venue-builder/bin/display-pack.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.4",

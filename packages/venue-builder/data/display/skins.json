@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "contact": "display factory — docs/research/2026-08-18-custom-map-display-factory.md",
+  "skins": {
+    "trail": {
+      "label": "Trail",
+      "status": "active",
+      "palette": true,
+      "tokens": { "contrastFloor": 4.5, "labelHalo": true, "mode": "day" },
+      "surfaces": {
+        "walkway": "paving-stones--warm",
+        "service-road": "asphalt--worn",
+        "vegetation": "grass--meadow",
+        "water": "water--calm",
+        "pool": "water--pool",
+        "coaster-track": "steel--track",
+        "slide": "fiberglass--flume",
+        "structure": "roofing--shingle",
+        "lot": "concrete--lot"
+      }
+    },
+    "park-midnight": {
+      "label": "Park Midnight",
+      "status": "active",
+      "palette": true,
+      "tokens": { "contrastFloor": 4.5, "labelHalo": true, "mode": "night" },
+      "surfaces": {
+        "walkway": "paving-stones--warm",
+        "service-road": "asphalt--worn",
+        "vegetation": "grass--meadow",
+        "water": "water--calm",
+        "pool": "water--pool",
+        "coaster-track": "steel--track",
+        "slide": "fiberglass--flume",
+        "structure": "roofing--shingle",
+        "lot": "concrete--lot"
+      }
+    }
+  }
+}

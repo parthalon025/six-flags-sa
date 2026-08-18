@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "skin": "trail",
+  "basedOn": {
+    "map": "2026-08-10"
+  },
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "day"
+  },
+  "surfaces": {
+    "walkway": {
+      "material": "paving-stones--warm",
+      "layers": [
+        "path"
+      ]
+    },
+    "service-road": {
+      "material": "asphalt--worn",
+      "layers": [
+        "service"
+      ]
+    },
+    "vegetation": {
+      "material": "grass--meadow",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ]
+    },
+    "water": {
+      "material": "water--calm",
+      "layers": [
+        "water"
+      ]
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ]
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ]
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ]
+    }
+  },
+  "landTones": {},
+  "fallback": {
+    "landTone": "name-hue"
+  }
+}
