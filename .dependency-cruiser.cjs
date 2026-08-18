@@ -43,9 +43,13 @@ module.exports = {
       from: {
         pathNot: [
           `^${R}/`, // importer is NOT inside any package
-          // test/builder is the venue-builder's white-box unit suite and
-          // predates the boundary; scoped exemption — #476 tracks moving it
-          // into packages/venue-builder/tests behind seams, or blessing it.
+          // test/builder/*.mjs is the repo's sanctioned white-box
+          // integration suite: it deliberately exercises both
+          // packages/venue-builder and apps/party-tracker/lib/core
+          // internals together, because it tests the builder-output/
+          // app-consumption contract directly. That's a permanent,
+          // documented exception (see packages/README.md), not a gap
+          // pending a move — see #476.
           "^test/builder/",
         ],
       },
