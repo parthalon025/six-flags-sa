@@ -13,8 +13,11 @@ import {
   SKILLS_ADD_ARGS,
   SKILLS_SOURCE,
   agentsSkillsDir,
+  claudeSkillsDir,
   cursorSkillsDir,
   ensureCursorSkillsLink,
+  parseAgentArg,
+  skillsAddArgs,
 } from '../../scripts/install-global-skills.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -24,6 +27,33 @@ assert.ok(SKILLS_ADD_ARGS.includes('-g'));
 assert.ok(SKILLS_ADD_ARGS.includes('cursor'));
 assert.equal(agentsSkillsDir('/home/u'), '/home/u/.agents/skills');
 assert.equal(cursorSkillsDir('/home/u'), '/home/u/.cursor/skills');
+assert.equal(claudeSkillsDir('/home/u'), '/home/u/.claude/skills');
+
+assert.deepEqual(skillsAddArgs(), SKILLS_ADD_ARGS);
+assert.ok(skillsAddArgs('claude-code').includes('claude-code'));
+assert.ok(skillsAddArgs('claude-code').includes('-g'));
+assert.throws(() => skillsAddArgs('vscode'), /unknown skills agent/);
+
+assert.equal(parseAgentArg([]), 'cursor');
+assert.equal(parseAgentArg(['--agent', 'claude-code']), 'claude-code');
+assert.throws(() => parseAgentArg(['--agent', 'nope']), /--agent must be one of/);
+assert.throws(() => parseAgentArg(['--agent']), /--agent must be one of/);
+
+// Claude Code web sessions install via the SessionStart hook.
+const hookPath = join(root, '.claude/hooks/session-start.sh');
+const hook = readFileSync(hookPath, 'utf8');
+assert.match(hook, /CLAUDE_CODE_REMOTE/, 'hook must be web-only');
+assert.match(hook, /install-global-skills\.mjs --agent claude-code/);
+assert.ok(lstatSync(hookPath).mode & 0o111, 'hook must be executable');
+
+const settings = JSON.parse(readFileSync(join(root, '.claude/settings.json'), 'utf8'));
+const sessionStart = (settings.hooks?.SessionStart ?? [])
+  .flatMap((group) => group.hooks ?? [])
+  .map((h) => h.command ?? '');
+assert.ok(
+  sessionStart.some((cmd) => cmd.includes('.claude/hooks/session-start.sh')),
+  'SessionStart must run the skills install hook',
+);
 
 const env = JSON.parse(readFileSync(join(root, '.cursor/environment.json'), 'utf8'));
 assert.match(
