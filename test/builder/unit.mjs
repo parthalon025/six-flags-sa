@@ -5017,14 +5017,18 @@ await check('sourcing plan lists what the catalogue already covers', () => {
   return true;
 });
 
-await check('LLM helper reports not ready without an API key', () => {
-  const prev = process.env.VENUE_LLM_API_KEY;
-  const prevO = process.env.OPENAI_API_KEY;
-  delete process.env.VENUE_LLM_API_KEY;
-  delete process.env.OPENAI_API_KEY;
+await check('LLM helper: keyless is not ready outside an agent session, agent-ready inside one', () => {
+  const KEYS = ['VENUE_LLM_API_KEY', 'OPENAI_API_KEY', 'CLAUDECODE', 'CURSOR_AGENT'];
+  const prev = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
+  for (const k of KEYS) delete process.env[k];
   assert.equal(llmConfig().ready, false);
-  if (prev) process.env.VENUE_LLM_API_KEY = prev;
-  if (prevO) process.env.OPENAI_API_KEY = prevO;
+  process.env.CLAUDECODE = '1';
+  assert.equal(llmConfig().provider, 'agent');
+  assert.equal(llmConfig().ready, true);
+  for (const k of KEYS) {
+    if (prev[k] === undefined) delete process.env[k];
+    else process.env[k] = prev[k];
+  }
   return true;
 });
 

@@ -486,6 +486,26 @@ byte-identical. Publishing display files into `public/venues/` stays a separate,
 human-gated step. Design doc:
 [custom map display factory](../research/2026-08-18-custom-map-display-factory.md).
 
+### The agent is the model
+
+The builder is usually run by an AI agent, so the LLM seams don't need a
+second model: with `VENUE_LLM_PROVIDER=agent` (the default inside an agent
+session when no API key is set), every model prompt is filed as a **brief**
+instead of an API call, and the invoking agent answers it.
+
+```
+npm run venues:research -- cedar-point --offline --ai   # files a brief, prints where
+npm run venues:llm-briefs                               # list pending briefs
+npm run venues:llm-briefs -- show <hash>                # the full prompt to answer
+npm run venues:llm-briefs -- answer <hash> --file a.md  # or pipe the answer on stdin
+npm run venues:research -- cedar-point --offline --ai   # rerun consumes the answer
+```
+
+Same prompt, same brief — reruns never duplicate; a JSON-expecting brief
+rejects a malformed answer at the door. The guardrails do not move: agent
+answers are still claims (weight `llm_extract`), never coordinates, never
+auto-applied heights.
+
 ### The checklist
 
 ```
