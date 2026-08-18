@@ -348,5 +348,11 @@
     "items": [
       "feat(watch): wire ParkBoundWatch target and live Compass push (#452)"
     ]
+  },
+  "1.17.1": {
+    "title": "What's new",
+    "items": [
+      "Custom map display factory: design doc + builder display stage with display-certify gate (#471)"
+    ]
   }
 }

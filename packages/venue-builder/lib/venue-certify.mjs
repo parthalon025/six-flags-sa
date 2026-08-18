@@ -13,7 +13,7 @@ import { compareVenue } from '../src/compare.mjs';
 import { checklist, failures } from './venue-checklist.mjs';
 import { requests, briefJson } from './venue-requests.mjs';
 import { readRecipe } from './venue-recipe.mjs';
-import { PUBLISH_AT, atLeast } from './evidence.mjs';
+import { PUBLISH_AT, atLeast, check } from './evidence.mjs';
 import { VENUE_DIR, readJson, writeJson, venueSidecar, resolveBuilderPath } from './venue-io.mjs';
 import { qaVenueRouting, MAX_ROUTING_ISLANDS, MAX_RIDE_SNAP_METRES } from './venue-route-qa-core.mjs';
 import { readSources, externalAdaptersFromCatalog, adapterGapNotes, TOKEN_GATED_ADAPTERS } from './venue-sources.mjs';
@@ -28,9 +28,6 @@ export const CERT_VERSION = 1;
 
 const RIDE = (p) => p.c === 'coaster' || p.c === 'ride';
 
-function check({ key, claim, pass, evidence, confidence, falsifier, soWhat }) {
-  return { key, claim, pass, evidence, confidence, falsifier, soWhat };
-}
 
 function readAttractionsEntrances(id) {
   const data = readJson(venueSidecar(id, 'attractions.json'));

@@ -10,7 +10,7 @@
  */
 
 import { readJson, writeJson, venueSidecar } from './venue-io.mjs';
-import { llmConfig, chatCompletion } from './venue-llm.mjs';
+import { llmConfig, chatCompletion, isAgentPending } from './venue-llm.mjs';
 import { loadOfficialData, officialCacheFile } from './venue-official-site.mjs';
 import { readSources } from './venue-sources.mjs';
 import { pairSuggestions } from './venue-judge.mjs';
@@ -167,6 +167,9 @@ export async function llmExtractOfficialResearch({ official, pois, opts = {} }) 
     opts,
   );
 
+  if (isAgentPending(content)) {
+    return { skipped: true, reason: 'llm_brief_pending' };
+  }
   const parsed = parseJsonObject(content);
   if (!parsed) {
     return { skipped: false, error: 'llm_json_parse_failed', raw: content?.slice?.(0, 500) || null };

@@ -35,6 +35,14 @@ export const WEIGHTS = {
   osm_entrance: 4,
   osm_named_queue: 4,
   osm_queue_name: 2,
+  /**
+   * OSM's own building/footprint ways — deliberately above `cv_segmentation`
+   * (3), mirroring `osm_named_queue`(4) outranking `cv_detection`(2): a
+   * mapper who traced the shape by hand outranks an ML model that looked at
+   * a pixel, for footprints exactly as it already does for entrances. See
+   * docs/research/2026-08-18-footprint-conflation-proposal.md.
+   */
+  osm_footprint: 4,
   aerial: 4,
   mapillary: 4,
   parks_api: 3,
@@ -204,3 +212,11 @@ export function staleness(evidence = [], asOf, { months = 12 } = {}) {
     why: stale ? `newest evidence is from ${newest}, over ${months} months before ${asOf}` : null,
   };
 }
+
+/**
+ * One certification row — the claim/evidence/confidence/falsifier/so-what
+ * contract shared by venue and display certification.
+ */
+export const check = ({ key, claim, pass, evidence, confidence, falsifier, soWhat }) => ({
+  key, claim, pass, evidence, confidence, falsifier, soWhat,
+});

@@ -5017,14 +5017,18 @@ await check('sourcing plan lists what the catalogue already covers', () => {
   return true;
 });
 
-await check('LLM helper reports not ready without an API key', () => {
-  const prev = process.env.VENUE_LLM_API_KEY;
-  const prevO = process.env.OPENAI_API_KEY;
-  delete process.env.VENUE_LLM_API_KEY;
-  delete process.env.OPENAI_API_KEY;
+await check('LLM helper: keyless is not ready outside an agent session, agent-ready inside one', () => {
+  const KEYS = ['VENUE_LLM_API_KEY', 'OPENAI_API_KEY', 'CLAUDECODE', 'CURSOR_AGENT'];
+  const prev = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
+  for (const k of KEYS) delete process.env[k];
   assert.equal(llmConfig().ready, false);
-  if (prev) process.env.VENUE_LLM_API_KEY = prev;
-  if (prevO) process.env.OPENAI_API_KEY = prevO;
+  process.env.CLAUDECODE = '1';
+  assert.equal(llmConfig().provider, 'agent');
+  assert.equal(llmConfig().ready, true);
+  for (const k of KEYS) {
+    if (prev[k] === undefined) delete process.env[k];
+    else process.env[k] = prev[k];
+  }
   return true;
 });
 
@@ -5228,9 +5232,9 @@ await check('heightsSidecarFromOfficial pairs official listings to bundle rides'
 const { runVenuePipeline, runVenueBatch, STAGES, parseCatalogArgs, pipelineOptsFromCatalogArgs } =
   await import('../../packages/venue-builder/lib/build-pipeline.mjs');
 
-await check('unified build pipeline lists all nine stages', () => {
+await check('unified build pipeline lists all ten stages', () => {
   assert.deepEqual(STAGES, [
-    'sources', 'geometry', 'research', 'aliases', 'heights', 'rebuild', 'attractions', 'agent', 'certify',
+    'sources', 'geometry', 'research', 'aliases', 'heights', 'rebuild', 'attractions', 'agent', 'certify', 'display',
   ]);
   return true;
 });
@@ -7608,6 +7612,64 @@ await check('adapter registry lists core external stacks', () => {
   const summary = registrySummary();
   assert.ok(summary.byAdopt.wrap >= 5);
   return true;
+});
+
+await check('mapillary-tools row covers ride-walkthrough video evidence', () => {
+  const row = getAdapter('mapillary-tools');
+  assert.ok(row.evidence_sources.includes('mapillary'));
+  assert.ok(row.evidence_sources.includes('video'));
+  assert.equal(row.adopt, 'wrap');
+});
+
+await check('mapillary-tools is runnable but opt-in, not scaffolded by default', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  assert.ok(getAdapterImplementation('mapillary-tools'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('mapillary-tools'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('mapillary-tools'));
+});
+
+await check('poly-haven is a Display-layer adapter with no evidence_sources', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const row = getAdapter('poly-haven');
+  assert.ok(row);
+  assert.equal(row.stage, 'display');
+  assert.deepEqual(row.evidence_sources, []);
+  assert.equal(row.license, 'CC0');
+  assert.ok(getAdapterImplementation('poly-haven'));
+});
+
+await check('esa-worldcover is a Truth-layer aerial adapter, scaffolded by default', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const row = getAdapter('esa-worldcover');
+  assert.ok(row);
+  assert.deepEqual(row.evidence_sources, ['aerial']);
+  assert.equal(row.license, 'CC BY 4.0');
+  assert.ok(getAdapterImplementation('esa-worldcover'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('esa-worldcover'));
+  assert.ok(DEFAULT_EXTERNAL_ADAPTERS.includes('esa-worldcover'));
+});
+
+await check('overture-buildings is a Truth-layer cv_segmentation adapter, opt-in not scaffolded', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const row = getAdapter('overture-buildings');
+  assert.ok(row);
+  assert.deepEqual(row.evidence_sources, ['cv_segmentation']);
+  assert.equal(row.license, 'ODbL');
+  assert.ok(getAdapterImplementation('overture-buildings'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('overture-buildings'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('overture-buildings'));
+});
+
+await check('segment-geospatial is deferred pending GPU infra, matching sam2', () => {
+  const sg = getAdapter('segment-geospatial');
+  const sam2 = getAdapter('sam2');
+  assert.ok(sg);
+  assert.equal(sg.adopt, 'defer');
+  assert.equal(sg.gpu, true);
+  assert.equal(sam2.adopt, 'defer');
 });
 
 await check('evidence graph summarises converging claims', () => {

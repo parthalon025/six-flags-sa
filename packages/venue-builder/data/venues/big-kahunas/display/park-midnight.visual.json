@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "skin": "park-midnight",
+  "basedOn": {
+    "map": "2026-08-10"
+  },
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "night",
+    "colors": {
+      "path": "#C4A882",
+      "ground": "#1A1520",
+      "water": "#1E4A5C",
+      "grass": "#1E3020",
+      "building": "#2A2438",
+      "label": "#F0E8DC"
+    }
+  },
+  "surfaces": {
+    "walkway": {
+      "material": "paving-stones--warm",
+      "layers": [
+        "path"
+      ]
+    },
+    "service-road": {
+      "material": "asphalt--worn",
+      "layers": [
+        "service"
+      ]
+    },
+    "vegetation": {
+      "material": "grass--meadow",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ]
+    },
+    "water": {
+      "material": "water--calm",
+      "layers": [
+        "water"
+      ]
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ]
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ]
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ]
+    }
+  },
+  "landTones": {},
+  "fallback": {
+    "landTone": "name-hue"
+  }
+}
