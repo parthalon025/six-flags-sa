@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "contact": "display factory — docs/research/2026-08-18-custom-map-display-factory.md",
+  "assets": {
+    "kenney-roguelike-sheet": {
+      "label": "Kenney Roguelike/RPG pack spritesheet",
+      "kind": "tilesheet",
+      "target": "flat",
+      "path": "assets/vendor/kenney/roguelike-pack/sheet.png",
+      "sha256": "808c8d734480bc949b284f3bcc252e87e1ee53b24178791a6838cce6a319c439",
+      "license": "CC0-1.0",
+      "source": {
+        "url": "https://kenney.nl/assets/roguelike-rpg-pack",
+        "mirror": "https://github.com/ETdoFresh/kenney.nl/tree/master/roguelike-pack",
+        "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
+        "file": "roguelike-pack/Spritesheet/roguelikeSheet_transparent.png"
+      },
+      "attribution": "Roguelike pack by Kenney Vleugels (kenney.nl), CC0 — attribution appreciated, not required",
+      "import": { "tileSize": 16, "margin": 0, "spacing": 1, "tiles": {} }
+    },
+    "kenney-rpg-urban-sheet": {
+      "label": "Kenney RPG Urban pack tilemap",
+      "kind": "tilesheet",
+      "target": "flat",
+      "path": "assets/vendor/kenney/rpg-urban-pack/sheet.png",
+      "sha256": "305e71fa778444a0858c33988d45a6b79ea923f500f96079f4378347cf6ad389",
+      "license": "CC0-1.0",
+      "source": {
+        "url": "https://kenney.nl/assets/rpg-urban-pack",
+        "mirror": "https://github.com/ETdoFresh/kenney.nl/tree/master/kenney_rpgurbanpack",
+        "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
+        "file": "kenney_rpgurbanpack/Tilemap/tilemap_packed.png"
+      },
+      "attribution": "RPG Urban Pack by Kenney (kenney.nl), CC0 — attribution appreciated, not required",
+      "import": { "tileSize": 16, "margin": 0, "spacing": 1, "tiles": {} }
+    },
+    "kenney-roguelike-city-sheet": {
+      "label": "Kenney Roguelike Modern City spritesheet",
+      "kind": "tilesheet",
+      "target": "flat",
+      "path": "assets/vendor/kenney/roguelike-city-pack/sheet.png",
+      "sha256": "d301225be8cb4cc93da1c02b632fd4fdf74d1a2524f86aba21876b5a7f16be94",
+      "license": "CC0-1.0",
+      "source": {
+        "url": "https://kenney.nl/assets/roguelike-modern-city",
+        "mirror": "https://github.com/ETdoFresh/kenney.nl/tree/master/roguelike-modern-city-pack",
+        "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
+        "file": "roguelike-modern-city-pack/Spritesheet/roguelikeCity_transparent.png"
+      },
+      "attribution": "Roguelike Modern City pack by Kenney (kenney.nl), CC0 — attribution appreciated, not required",
+      "import": { "tileSize": 16, "margin": 0, "spacing": 1, "tiles": {} }
+    }
+  }
+}
