@@ -123,15 +123,6 @@
       "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
     },
     {
-      "key": "tiles",
-      "claim": "base.pmtiles builds and fits the 15 MB pack budget",
-      "pass": true,
-      "evidence": "base.pmtiles 100 KB",
-      "confidence": "high",
-      "falsifier": "tippecanoe fails or the archive exceeds the download budget",
-      "soWhat": "the display pack rides the venue download; an oversized or missing archive blocks it"
-    },
-    {
       "key": "bake:blueprint-survey:reference_profile_resolves",
       "claim": "kit \"blueprint-survey\" has a committed reference profile",
       "pass": true,
@@ -225,7 +216,7 @@
       "key": "bake:blueprint-survey:style_cross_kit_distinct",
       "claim": "sibling kits of this venue sample distinct pixels",
       "pass": true,
-      "evidence": "distinct from 2 sibling bake(s)",
+      "evidence": "distinct from 3 sibling bake(s)",
       "confidence": 0.9,
       "falsifier": "two kits that only differ in name",
       "soWhat": "the factory exists to make different-looking maps"
@@ -324,7 +315,106 @@
       "key": "bake:island-brochure:style_cross_kit_distinct",
       "claim": "sibling kits of this venue sample distinct pixels",
       "pass": true,
-      "evidence": "distinct from 2 sibling bake(s)",
+      "evidence": "distinct from 3 sibling bake(s)",
+      "confidence": 0.9,
+      "falsifier": "two kits that only differ in name",
+      "soWhat": "the factory exists to make different-looking maps"
+    },
+    {
+      "key": "bake:midnight-carnival:reference_profile_resolves",
+      "claim": "kit \"midnight-carnival\" has a committed reference profile",
+      "pass": true,
+      "evidence": "profile midnight-carnival (style night-neon)",
+      "confidence": 1,
+      "falsifier": "a kit on disk with no profile under data/display/references/",
+      "soWhat": "no contract, no certification — the look would drift unmeasured"
+    },
+    {
+      "key": "bake:midnight-carnival:style_terrain_palette",
+      "claim": "every sampled terrain class stays inside its profile color family",
+      "pass": true,
+      "evidence": "grass ΔE 0/14, wood ΔE 0/14, water ΔE 0/14, lot ΔE 0/14, road ΔE 0/12, service ΔE 0/12, outside ΔE 0/12",
+      "confidence": 0.9,
+      "falsifier": "worst class grass beyond tolerance on a rerun",
+      "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:midnight-carnival:style_road_hierarchy",
+      "claim": "roads separate from the park floor (ΔE ≥ 25, lighter)",
+      "pass": true,
+      "evidence": "road vs grass ΔE 69.1, L* 62 vs 19",
+      "confidence": 0.9,
+      "falsifier": "a kit whose roads dissolve into the floor on a phone outdoors",
+      "soWhat": "wayfinding is the map’s one job"
+    },
+    {
+      "key": "bake:midnight-carnival:style_water_legibility",
+      "claim": "water reads as water (ΔE ≥ 6 vs vegetation and ground)",
+      "pass": true,
+      "evidence": "water vs grass ΔE 23.9, vs ground ΔE —",
+      "confidence": 0.9,
+      "falsifier": "a pool that reads as lawn",
+      "soWhat": "the kit brief’s own promise, now enforced"
+    },
+    {
+      "key": "bake:midnight-carnival:style_outside_distinct",
+      "claim": "the world outside the venue separates from the park floor (ΔE ≥ 6)",
+      "pass": true,
+      "evidence": "outside vs grass ΔE 29.3",
+      "confidence": 0.9,
+      "falsifier": "a bake where the park has no edge",
+      "soWhat": "the boundary is the first thing the reference maps establish"
+    },
+    {
+      "key": "bake:midnight-carnival:style_structure_presence",
+      "claim": "buildings paint in the profile's interior treatment",
+      "pass": true,
+      "evidence": "232/251 buildings show interior treatment (266 total)",
+      "confidence": 0.8,
+      "falsifier": "a kit whose buildings vanish into terrain",
+      "soWhat": "structures are the landmarks navigation hangs on"
+    },
+    {
+      "key": "bake:midnight-carnival:style_track_presence",
+      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 12)",
+      "pass": true,
+      "evidence": "127 tracks sampled, 0 indistinct (noise floor 3)",
+      "confidence": 0.8,
+      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
+      "soWhat": "rides are why the map exists"
+    },
+    {
+      "key": "bake:midnight-carnival:style_annotation_on_top",
+      "claim": "every badge disc samples badge ink, never the terrain under it",
+      "pass": true,
+      "evidence": "64/64 badge discs in family",
+      "confidence": 0.85,
+      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
+      "soWhat": "POI pins must survive every style"
+    },
+    {
+      "key": "bake:midnight-carnival:style_badge_dedup",
+      "claim": "one badge per POI position",
+      "pass": true,
+      "evidence": "64 badges, 64 distinct positions",
+      "confidence": 1,
+      "falsifier": "duplicate pins stacked on one POI",
+      "soWhat": "ADR-0012 declutter rule, model-side"
+    },
+    {
+      "key": "bake:midnight-carnival:style_bake_deterministic",
+      "claim": "a fresh render of the same model samples byte-identical pixels",
+      "pass": true,
+      "evidence": "render 43432d5b vs rerender 43432d5b",
+      "confidence": 1,
+      "falsifier": "any clock or RNG sneaking into the compositor",
+      "soWhat": "determinism is the bake’s core guarantee"
+    },
+    {
+      "key": "bake:midnight-carnival:style_cross_kit_distinct",
+      "claim": "sibling kits of this venue sample distinct pixels",
+      "pass": true,
+      "evidence": "distinct from 3 sibling bake(s)",
       "confidence": 0.9,
       "falsifier": "two kits that only differ in name",
       "soWhat": "the factory exists to make different-looking maps"
@@ -423,7 +513,7 @@
       "key": "bake:rpg-overworld:style_cross_kit_distinct",
       "claim": "sibling kits of this venue sample distinct pixels",
       "pass": true,
-      "evidence": "distinct from 2 sibling bake(s)",
+      "evidence": "distinct from 3 sibling bake(s)",
       "confidence": 0.9,
       "falsifier": "two kits that only differ in name",
       "soWhat": "the factory exists to make different-looking maps"
@@ -432,7 +522,7 @@
       "key": "bake_certs",
       "claim": "every baked kit passes its reference-profile style contract",
       "pass": true,
-      "evidence": "blueprint-survey:ok, island-brochure:ok, rpg-overworld:ok",
+      "evidence": "blueprint-survey:ok, island-brochure:ok, midnight-carnival:ok, rpg-overworld:ok",
       "confidence": "high",
       "falsifier": "a kit whose style-cert.json reports certified:false, or no bakes at all",
       "soWhat": "an uncertified look must not ride the venue download"
@@ -446,6 +536,10 @@
     "island-brochure": {
       "certified": true,
       "signature": "6a3d21d5"
+    },
+    "midnight-carnival": {
+      "certified": true,
+      "signature": "43432d5b"
     },
     "rpg-overworld": {
       "certified": true,

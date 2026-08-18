@@ -512,6 +512,57 @@ used; `venues:atlas` packs the ledger's icon glyphs into a content-addressed
 MapLibre sprite sheet (rebuilds only when bytes, size, or packer version
 move).
 
+### The kit spec, field by field
+
+A kit is one JSON file — the whole look, nothing about geometry. The
+agent authors it as the answer to a kit brief (the brief's system prompt
+carries this same schema plus the live asset menu); `resolveKit` is the
+gate, and everything below it rejects fails before a pixel renders.
+
+```jsonc
+{
+  "id": "midnight-carnival",        // slugified; becomes kits/<id>.json
+  "label": "Midnight carnival",
+  "prompt": "deep indigo night…",   // provenance: the map prompt that authored it
+  "terrain": {                      // one piece per surface: outside, ground,
+    "grass": {                      //   grass, wood, water, lot, road, service
+      "base": "#1E3328",            // fill color
+      "texture": {                  // procedural overlay drawn on the fill
+        "kind": "tuft",             //   none|speckle|tuft|wave|dot|stripe|dash|hatch
+        "color": "#2A4636",
+        "density": 0.35
+      },
+      "tiles": {                    // OR tile art instead of procedural:
+        "asset": "kenney-roguelike-sheet",  // ledger GUID — unknown id throws
+        "tile": "grass"             // named region in the sheet's import map
+      }
+    }
+  },
+  "sprites": {
+    "tree":     { "canopy": "#24402F", "highlight": "#3F7A55", "shadow": "rgba(0,0,0,0.5)", "scale": 1,
+                  "sprite": { "asset": "parkbound-palm-tree" } },   // optional ledger sprite
+    "building": { "style": "drop",  // drop|flat|outline
+                  "roofs": ["#332C48"], "edge": "#C9C2E8", "wall": "#171226", "drop": 0.3 },
+    "slide":    { "style": "tube",  // tube|mono (slide + coaster share TRACK_STYLES)
+                  "casing": "rgba(255,255,255,0.55)", "colors": ["#FF3D8A"], "width": 1.1 },
+    "coaster":  { "rail": "#0E0A18", "tie": "#8F86B8" },
+    "badge":    { "gate": "#FF4D6D", "food": "#FFA02E", "restroom": "#3FB6FF",
+                  "shop": "#3DE08A", "show": "#B06CFF", "service": "#8A8F98",
+                  "icons": { "gate": { "asset": "parkbound-badge-gate" } } }  // ledger icon glyphs
+  }
+}
+```
+
+Omitted fields inherit `TERRAIN_PIECES` / sprite defaults, so a kit only
+has to say what it changes. The hard rules: every `asset` ref must be a
+ledger GUID of the right type (tile sheets under `tiles`, sprites under
+`sprite`, icons under `icons`); `kind` and `style` values must come from
+the exported vocabularies (`TEXTURE_KINDS`, `BUILDING_STYLES`,
+`TREE_STYLES`, `TRACK_STYLES`); and a kit is not *done* until it also has
+a reference profile under `data/display/references/` — the test suite
+fails on a kit with no profile, and the bake certifies every kit against
+its profile's measured color families and hierarchy rules.
+
 ### The agent is the model
 
 The builder is usually run by an AI agent, so the LLM seams don't need a
