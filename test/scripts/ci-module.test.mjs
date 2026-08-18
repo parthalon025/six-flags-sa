@@ -22,8 +22,8 @@ import { loadVersionStampPaths } from '../../scripts/lib/version-stamp.mjs';
 
 assert.ok(GATE_SCRIPT_TESTS.length >= 4, 'gate manifest lists deploy/skip guards');
 assert.ok(
-  GATE_SCRIPT_TESTS.every((p) => p.startsWith('test/scripts/')),
-  'gate tests live under test/scripts',
+  GATE_SCRIPT_TESTS.every((p) => p.startsWith('test/')),
+  'gate tests live under test/',
 );
 
 let calls = 0;

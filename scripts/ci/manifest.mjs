@@ -18,4 +18,5 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/clerk-e2e.test.mjs',
   'test/scripts/wire-watch-target.test.mjs',
   'test/scripts/clerk-apple-prod.test.mjs',
+  'test/app/map-performance-contract.test.mjs',
 ];
