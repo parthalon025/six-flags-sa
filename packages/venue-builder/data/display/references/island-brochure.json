@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "id": "island-brochure",
+  "kit": "island-brochure",
+  "style": "illustrated-brochure",
+  "inspiration": {
+    "summary": "Hand-illustrated resort park map — warm cream ground, terracotta paths, saturated pool water, cheerful flume colors",
+    "images": ["ref-big-kahunas-2026", "ref-aerial-photo"],
+    "lineage": "Big Kahuna's operator map (committed with the venue) as the style target; the aerial photo as layout ground truth; ADR-0012 layer rules"
+  },
+  "colorFamilies": {
+    "draft": true,
+    "ground": { "anchor": "#F3E5C0", "members": ["#E4D3A6"], "deltaE": 14 },
+    "grass": { "anchor": "#7CBF6B", "members": ["#5FA452"], "deltaE": 14 },
+    "wood": { "anchor": "#57964C", "members": ["#457F3D"], "deltaE": 14 },
+    "water": { "anchor": "#39C2D7", "members": ["#B8F0F7"], "deltaE": 14 },
+    "lot": { "anchor": "#CFC6B4", "members": ["#EBE3D2"], "deltaE": 14 },
+    "road": { "anchor": "#C86F4A", "members": ["#F5DEC4"], "deltaE": 12 },
+    "service": { "anchor": "#A98F72", "deltaE": 12 },
+    "outside": { "anchor": "#B9B2A8", "members": ["#C7C0B5"], "deltaE": 14 },
+    "structure": { "anchor": "#F09A62", "members": ["#EFD9A9", "#8FC7C0"], "deltaE": 16 },
+    "badge": { "anchor": "#E5484D", "members": ["#F08A24", "#2E7FC2", "#3FA36B", "#9A5FC0", "#8A8F98"], "deltaE": 10 }
+  },
+  "roads": {
+    "vsGround": { "minDeltaE": 15, "polarity": "darker" },
+    "vsService": { "minDeltaE": 6 },
+    "serviceLayer": "muted"
+  },
+  "ground": {
+    "outsideVsInside": { "minDeltaE": 12 },
+    "waterVsVegetation": { "minDeltaE": 20 }
+  },
+  "structures": {
+    "buildingStyle": "drop",
+    "trackStyle": "tube",
+    "coasterVsUnderlay": { "minDeltaE": 12 }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": ["terrain", "roads", "tracks", "buildings", "trees", "badges"]
+  },
+  "agentReview": [
+    "Hand-illustrated warmth: saturated water, roof-color variety, flume palette like the Big Kahuna's map",
+    "Paths read as walkable terracotta ribbons with visible casing, the brochure's wayfinding language",
+    "Overall: side-by-side with ref-big-kahunas-2026, a stranger names the same genre"
+  ]
+}

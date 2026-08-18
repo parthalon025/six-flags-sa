@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "id": "rpg-overworld",
+  "kit": "rpg-overworld",
+  "style": "pixel-tiled",
+  "inspiration": {
+    "summary": "Retro JRPG tiled overworld — chunky sprite tiles and scrub forests, not recolored vectors",
+    "images": ["ref-rpg-overworld"],
+    "lineage": "user reference (session 2026-08-18, 'build them to look like this, not just change colors'); PR #447 layered-atlas token seam; ADR-0012 layer rules"
+  },
+  "colorFamilies": {
+    "draft": true,
+    "ground": { "anchor": "#EBD9A4", "members": ["#DCC888"], "deltaE": 14 },
+    "grass": { "anchor": "#8CBE74", "members": ["#699E55"], "deltaE": 14 },
+    "wood": { "anchor": "#6BA35A", "members": ["#54874A"], "deltaE": 14 },
+    "water": { "anchor": "#4FB8D4", "members": ["#A6E2EE"], "deltaE": 14 },
+    "lot": { "anchor": "#B3AC9D", "members": ["#E4DECF"], "deltaE": 14 },
+    "road": { "anchor": "#7E8494", "members": ["#D3D7DE"], "deltaE": 12 },
+    "service": { "anchor": "#6F7482", "deltaE": 12 },
+    "outside": { "anchor": "#6B4E9B", "members": ["#7C5DAF"], "deltaE": 14 },
+    "structure": { "anchor": "#CFC2A8", "members": ["#B9C7D6", "#C4A98F"], "deltaE": 16 },
+    "badge": { "anchor": "#D84B4B", "members": ["#E8862F", "#3F7FBF", "#4FA36B", "#9A5FC0", "#8A8F98"], "deltaE": 10 }
+  },
+  "roads": {
+    "vsGround": { "minDeltaE": 15, "polarity": "darker" },
+    "vsService": { "minDeltaE": 6 },
+    "serviceLayer": "visible"
+  },
+  "ground": {
+    "outsideVsInside": { "minDeltaE": 20 },
+    "waterVsVegetation": { "minDeltaE": 20 }
+  },
+  "structures": {
+    "buildingStyle": "drop",
+    "trackStyle": "tube",
+    "coasterVsUnderlay": { "minDeltaE": 12 }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": ["terrain", "roads", "tracks", "buildings", "trees", "badges"]
+  },
+  "agentReview": [
+    "Tile art reads as discrete sprites/tiles, not smooth vector fills — the reference is a tilemap, not a recolor",
+    "Trees read as canopy clusters in woods, scattered singles on grass — the reference's dense scrub forests",
+    "Overall: side-by-side with ref-rpg-overworld, a stranger names the same genre"
+  ]
+}

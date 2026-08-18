@@ -58,3 +58,15 @@ if (problems.length) {
 } else {
   console.log(`asset ledger green: ${Object.keys(ledger).length} asset(s), all pins verified`);
 }
+
+// Reference images ride the same pin discipline: committed rows must match,
+// hand-vendored rows are reported when absent and refused when drifted.
+const { verifyReferenceImages } = await import('../lib/display-references.mjs');
+const refs = verifyReferenceImages();
+for (const r of refs.reports) console.error(`  ${r}`);
+if (refs.problems.length) {
+  for (const p of refs.problems) console.error(`! ${p}`);
+  process.exitCode = 1;
+} else {
+  console.log(`reference images green (${refs.reports.length} awaiting hand-vendoring)`);
+}
