@@ -118,6 +118,10 @@
       g.strokeStyle = tx.color; g.lineWidth = 1;
       g.beginPath(); g.moveTo(x * px + 1, y * px); g.lineTo(x * px + 1, y * px + px); g.stroke();
     },
+    hatch(x, y, tx) {
+      g.strokeStyle = tx.color; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x * px, y * px + px); g.lineTo(x * px + px, y * px); g.stroke();
+    },
     dash(x, y, tx, t) {
       const hRun = at(x - 1, y) === t && at(x + 1, y) === t;
       const vRun = at(x, y - 1) === t && at(x, y + 1) === t;
@@ -226,7 +230,13 @@
   const B = kit.sprites.building;
   g.lineJoin = 'round';
   for (const b of buildings) {
-    g.fillStyle = B.wall; tracePoly(b.ring, 0, px * B.drop); g.fill();
+    if (B.style === 'outline') {
+      tracePoly(b.ring); g.strokeStyle = B.edge; g.lineWidth = 2; g.stroke();
+      continue;
+    }
+    if (B.style !== 'flat') {
+      g.fillStyle = B.wall; tracePoly(b.ring, 0, px * B.drop); g.fill();
+    }
     g.fillStyle = B.roofs[b.roof % B.roofs.length]; tracePoly(b.ring); g.fill();
     g.strokeStyle = B.edge; g.lineWidth = 1.6; g.stroke();
   }
@@ -235,26 +245,43 @@
   const SL = kit.sprites.slide;
   g.lineCap = 'round';
   for (const tr of tracks) {
+    const mono = (tr.kind === 'coaster' ? CO : SL).style === 'mono';
+    if (mono) continue;
     traceLine(tr.pts); g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = px * 0.62; g.stroke();
   }
   for (const tr of tracks.filter((t) => t.kind === 'coaster')) {
+    if (CO.style === 'mono') {
+      traceLine(tr.pts); g.strokeStyle = CO.rail; g.lineWidth = Math.max(1.4, px * 0.12); g.stroke();
+      continue;
+    }
     traceLine(tr.pts); g.strokeStyle = CO.rail; g.lineWidth = px * 0.42; g.stroke();
     g.setLineDash([2.5, px * 0.4]); traceLine(tr.pts); g.strokeStyle = CO.tie; g.lineWidth = px * 0.2; g.stroke();
     g.setLineDash([]);
   }
   for (const tr of tracks.filter((t) => t.kind === 'slide')) {
+    const color = SL.colors[tr.idx % SL.colors.length];
+    if (SL.style === 'mono') {
+      traceLine(tr.pts); g.strokeStyle = color; g.lineWidth = Math.max(1.4, px * 0.14); g.stroke();
+      continue;
+    }
     traceLine(tr.pts); g.strokeStyle = SL.casing; g.lineWidth = px * 0.56 * SL.width; g.stroke();
-    traceLine(tr.pts); g.strokeStyle = SL.colors[tr.idx % SL.colors.length]; g.lineWidth = px * 0.36 * SL.width; g.stroke();
+    traceLine(tr.pts); g.strokeStyle = color; g.lineWidth = px * 0.36 * SL.width; g.stroke();
   }
 
   const TR = kit.sprites.tree;
-  for (const t of trees) {
-    const x = t.x * px; const y = t.y * px;
-    const r = (t.big ? 0.44 : 0.3) * px * TR.scale;
-    g.fillStyle = TR.shadow; g.beginPath(); g.ellipse(x + r / 4, y + r / 3, r, r * 0.6, 0, 0, 7); g.fill();
-    g.fillStyle = TR.canopy; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
-    g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1; g.stroke();
-    g.fillStyle = TR.highlight; g.beginPath(); g.arc(x - r / 3, y - r / 3, r / 2.4, 0, 7); g.fill();
+  if (TR.style !== 'none') {
+    for (const t of trees) {
+      const x = t.x * px; const y = t.y * px;
+      const r = (t.big ? 0.44 : 0.3) * px * TR.scale;
+      if (TR.style === 'dot') {
+        g.fillStyle = TR.canopy; g.beginPath(); g.arc(x, y, r * 0.6, 0, 7); g.fill();
+        continue;
+      }
+      g.fillStyle = TR.shadow; g.beginPath(); g.ellipse(x + r / 4, y + r / 3, r, r * 0.6, 0, 0, 7); g.fill();
+      g.fillStyle = TR.canopy; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1; g.stroke();
+      g.fillStyle = TR.highlight; g.beginPath(); g.arc(x - r / 3, y - r / 3, r / 2.4, 0, 7); g.fill();
+    }
   }
 
   const BD = kit.sprites.badge;

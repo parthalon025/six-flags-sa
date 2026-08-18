@@ -25,7 +25,12 @@ import { LINE_LAYERS } from './osm-tags.mjs';
  */
 
 /** Texture primitives the compositor knows how to paint. */
-export const TEXTURE_KINDS = ['none', 'speckle', 'tuft', 'wave', 'dot', 'stripe', 'dash'];
+export const TEXTURE_KINDS = ['none', 'speckle', 'tuft', 'wave', 'dot', 'stripe', 'dash', 'hatch'];
+
+/** Structural design switches — different drawing, not different color. */
+export const BUILDING_STYLES = ['drop', 'flat', 'outline'];
+export const TREE_STYLES = ['round', 'dot', 'none'];
+export const TRACK_STYLES = ['tube', 'mono'];
 
 export const TERRAIN_PIECES = {
   outside: { base: '#6B4E9B', texture: { kind: 'dot', color: '#7A5BAD', density: 0.35 } },
@@ -39,10 +44,10 @@ export const TERRAIN_PIECES = {
 };
 
 export const SPRITE_PIECES = {
-  tree: { canopy: '#3F7A38', highlight: '#6FBF5C', shadow: 'rgba(0,0,0,0.22)', scale: 1 },
-  building: { roofs: ['#C7B9A2', '#B79E8C', '#9FA6B4'], edge: '#5E5648', wall: '#6E6355', drop: 0.25 },
-  slide: { casing: 'rgba(255,255,255,0.9)', colors: ['#F4C542', '#E05548', '#3FA0D8', '#7BC47F', '#C468D8', '#F08A3C'], width: 1 },
-  coaster: { rail: '#4A3A30', tie: '#C9B9A6' },
+  tree: { style: 'round', canopy: '#3F7A38', highlight: '#6FBF5C', shadow: 'rgba(0,0,0,0.22)', scale: 1 },
+  building: { style: 'drop', roofs: ['#C7B9A2', '#B79E8C', '#9FA6B4'], edge: '#5E5648', wall: '#6E6355', drop: 0.25 },
+  slide: { style: 'tube', casing: 'rgba(255,255,255,0.9)', colors: ['#F4C542', '#E05548', '#3FA0D8', '#7BC47F', '#C468D8', '#F08A3C'], width: 1 },
+  coaster: { style: 'tube', rail: '#4A3A30', tie: '#C9B9A6' },
   badge: { gate: '#D84B4B', food: '#E8862F', restroom: '#3F7FBF', shop: '#4FA36B', show: '#9A5FC0', service: '#8A8F98' },
 };
 
@@ -81,6 +86,16 @@ export function resolveKit(spec = {}, { assets } = {}) {
   }
   for (const key of Object.keys(spec.sprites || {})) {
     if (!SPRITE_PIECES[key]) throw new Error(`Unknown sprite piece "${key}"`);
+  }
+  const styleOf = (k) => spec.sprites?.[k]?.style;
+  if (styleOf('building') && !BUILDING_STYLES.includes(styleOf('building'))) {
+    throw new Error(`Unknown building style "${styleOf('building')}"`);
+  }
+  if (styleOf('tree') && !TREE_STYLES.includes(styleOf('tree'))) {
+    throw new Error(`Unknown tree style "${styleOf('tree')}"`);
+  }
+  for (const k of ['slide', 'coaster']) {
+    if (styleOf(k) && !TRACK_STYLES.includes(styleOf(k))) throw new Error(`Unknown ${k} style "${styleOf(k)}"`);
   }
   return {
     id: spec.id || 'default',

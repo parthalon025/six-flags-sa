@@ -289,7 +289,16 @@ await check('a kit composes pieces onto defaults; unknown pieces fail loudly', (
   assert.throws(() => resolveKit({ terrain: { lava: {} } }), /Unknown terrain piece/);
   assert.throws(() => resolveKit({ terrain: { water: { texture: { kind: 'sparkle' } } } }), /Unknown texture kind/);
   assert.throws(() => resolveKit({ sprites: { dragon: {} } }), /Unknown sprite piece/);
-  assert.ok(TEXTURE_KINDS.includes('none'));
+  assert.ok(TEXTURE_KINDS.includes('none') && TEXTURE_KINDS.includes('hatch'));
+  // Structural design switches — different drawing, not different color.
+  const survey = resolveKit({
+    id: 'survey',
+    sprites: { building: { style: 'outline' }, tree: { style: 'none' }, coaster: { style: 'mono' } },
+  });
+  assert.equal(survey.sprites.building.style, 'outline');
+  assert.throws(() => resolveKit({ sprites: { building: { style: 'hologram' } } }), /Unknown building style/);
+  assert.throws(() => resolveKit({ sprites: { tree: { style: 'cubist' } } }), /Unknown tree style/);
+  assert.throws(() => resolveKit({ sprites: { slide: { style: 'ribbon' } } }), /Unknown slide style/);
   return true;
 });
 
