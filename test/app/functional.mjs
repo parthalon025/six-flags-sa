@@ -1338,6 +1338,60 @@ await check('a scored Side Quest pays XP into the Title ladder', async () => {
   return true;
 });
 
+await check('Me carries the journey: ladder, field stats, finder credit', async () => {
+  if (!profileReady) return true;
+
+  // The finder's name landed on the Overlay completions (first-to-find
+  // credit) — the gap submits above were made signed-in with sharing on.
+  const mine = await a.locator('[data-overlay-mine]').innerText({ timeout: 3000 }).catch(() => '');
+  if (mine && !/justin/i.test(mine)) {
+    throw new Error(`completions do not credit the finder: ${mine.slice(0, 120)}`);
+  }
+
+  await go(a, 'Settings');
+  await until(async () => (await a.locator('.profileJourney').count()) > 0, {
+    timeout: 10000,
+    label: 'journey card on Me',
+  });
+  if ((await a.locator('.profileJourney .titleProgress .titleProgressFill').count()) < 1) {
+    throw new Error('Me journey hero has no XP bar');
+  }
+
+  await a.locator('.journeyToggle').click();
+  await until(async () => (await a.locator('.journeyStep').count()) === 5, {
+    timeout: 5000,
+    label: 'five Title ladder steps',
+  });
+  const ladder = await a.locator('.journeyLadder').innerText();
+  for (const title of ['Visitor', 'Scout', 'Ranger', 'Cartographer', 'Steward']) {
+    if (!ladder.includes(title)) throw new Error(`ladder is missing ${title}: ${ladder.slice(0, 160)}`);
+  }
+  const stats = await a.locator('[data-journey-stats]').innerText();
+  if (!/fact/i.test(stats) || !/guest/i.test(stats)) {
+    throw new Error(`field stats missing: ${stats.slice(0, 120)}`);
+  }
+
+  // Finder credit is on by default, and the switch answers a tap both ways.
+  const share = a.locator('.journeyShare');
+  if ((await share.getAttribute('aria-checked')) !== 'true') {
+    throw new Error('finder credit should default on');
+  }
+  await share.click();
+  await until(async () => (await share.getAttribute('aria-checked')) === 'false', {
+    timeout: 5000,
+    label: 'finder credit toggles off',
+  });
+  if (!/fellow guest/i.test(await share.innerText())) {
+    throw new Error('opted-out copy should explain the anonymous line');
+  }
+  await share.click();
+  await until(async () => (await share.getAttribute('aria-checked')) === 'true', {
+    timeout: 5000,
+    label: 'finder credit toggles back on',
+  });
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();

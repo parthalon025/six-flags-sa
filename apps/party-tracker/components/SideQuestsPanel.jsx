@@ -6,7 +6,7 @@ import SignInCard from '@/components/SignInCard';
 import TitleProgress from '@/components/TitleProgress';
 import { awardQuestXp, readLocalSession, softGateBlocks } from '@/lib/auth/session';
 import { contributionStashCount, stashGapSubmission } from '@/lib/auth/contributionStash';
-import { readProfileCache } from '@/lib/auth/profileCache';
+import { readProfileCache, sharesName } from '@/lib/auth/profileCache';
 import {
   ADD_PLACE_TYPES,
   CAMPING_HOOKUPS,
@@ -125,7 +125,11 @@ export default function SideQuestsPanel({
       if (!alive) return;
       if (Array.isArray(snap?.scoredKeys)) setScoredKeys(snap.scoredKeys);
       if (snap?.userId) {
-        setProgressSnap({ xp: Number(snap.xp) || 0, lastQuestDay: snap.lastQuestDay || null });
+        setProgressSnap({
+          xp: Number(snap.xp) || 0,
+          lastQuestDay: snap.lastQuestDay || null,
+          shareName: sharesName(snap),
+        });
       }
     });
     return () => {
@@ -299,13 +303,17 @@ export default function SideQuestsPanel({
     });
     await queue.enqueue(report);
     if (!isLiveQuest(quest) && onContribution) {
+      // First-to-find credit rides on the Contribution unless the Profile
+      // opted out on Me — then the find reads as "a fellow guest".
+      const named = progressSnap ? progressSnap.shareName : true;
       const contrib = contributionFromGapSubmit({
         id: report.id,
         type: quest.type,
         placeId: target,
         venueId,
         authorId: session?.userId || null,
-        authorName: session?.displayName || 'Someone',
+        authorName: named ? session?.displayName || 'Someone' : 'a fellow guest',
+        authorTitle: named ? session?.title || rankReward(session?.rank || 'visitor').title : null,
         payload: report.payload,
         lat: report.lat,
         lng: report.lng,
@@ -327,7 +335,11 @@ export default function SideQuestsPanel({
     });
     setScoredKeys(scored.profile.scoredKeys || []);
     if (scored.deltaXp > 0) {
-      setProgressSnap({ xp: scored.profile.xp, lastQuestDay: scored.profile.lastQuestDay });
+      setProgressSnap((prev) => ({
+        xp: scored.profile.xp,
+        lastQuestDay: scored.profile.lastQuestDay,
+        shareName: prev ? prev.shareName : true,
+      }));
     }
     if (scored.rankUp) {
       const title = rankReward(scored.profile.rank).title;

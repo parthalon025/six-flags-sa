@@ -80,6 +80,15 @@ export async function clearProfileCache() {
   }
 }
 
+/**
+ * Finder-credit preference: named credit on Contributions. Unset means on —
+ * the display name is already public on the Party roster, and named credit
+ * is the social reward for finding. Explicit false means "a fellow guest".
+ */
+export function sharesName(snapshot) {
+  return snapshot?.shareName !== false;
+}
+
 /** @returns {Array<{ id: string, displayName: string, heightIn?: number, heightConfirmedAt?: string }>} */
 export async function listManagedGuests() {
   const snap = await readProfileCache();

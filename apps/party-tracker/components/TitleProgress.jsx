@@ -1,26 +1,21 @@
 'use client';
 
 import Icon from '@/components/Icon';
-import {
-  RANK_LADDER,
-  XP_AWARDS,
-  rankProgress,
-  rankReward,
-  utcDay,
-} from '@party-tracker/shared/questScore.js';
+import { XP_AWARDS, rankProgress, utcDay } from '@party-tracker/shared/questScore.js';
 
 /**
- * The Profile's walk up the Title ladder — the game-feel surface for XP.
+ * The Profile's walk to the next Title — the game-feel bar for XP.
  *
- * Lives on Profile surfaces (Side Quests header, sign-in card), never on the
- * quest cards themselves: cards stay meaning-first, the reward reads here.
- * Titles are sub-names (Scout → Steward), not levels, and XP is never spent.
+ * Lives on Profile surfaces (Side Quests header, the Me journey card), never
+ * on the quest cards themselves: cards stay meaning-first, the reward reads
+ * here. Titles are sub-names (Scout → Steward), not levels, and XP is never
+ * spent. The full Title ladder lives on Me (ProfileJourney).
  */
-export default function TitleProgress({ xp = 0, lastQuestDay, compact = false }) {
+export default function TitleProgress({ xp = 0, lastQuestDay }) {
   const p = rankProgress(xp);
   const dailyReady = lastQuestDay !== undefined && lastQuestDay !== utcDay();
   return (
-    <div className={`titleProgress ${compact ? 'compact' : ''}`} data-xp={p.xp}>
+    <div className="titleProgress" data-xp={p.xp}>
       <div className="titleProgressHead">
         <b className="titleProgressLabel">{p.title || 'Visitor'}</b>
         <span className="titleProgressXp">{p.xp} XP</span>
@@ -49,25 +44,6 @@ export default function TitleProgress({ xp = 0, lastQuestDay, compact = false })
           </span>
         ) : null}
       </div>
-      {compact ? null : (
-        <ol className="titleLadder" aria-label="Title ladder">
-          {RANK_LADDER.map((row) => {
-            const reward = rankReward(row.rank);
-            const earned = p.xp >= row.xp;
-            const current = p.rank === row.rank;
-            return (
-              <li
-                key={row.rank}
-                className={`titleLadderStep ${earned ? 'earned' : ''} ${current ? 'current' : ''}`}
-              >
-                <i className="titleLadderDot" aria-hidden="true" />
-                <span className="titleLadderName">{reward.label}</span>
-                {earned ? null : <span className="titleLadderAt">{row.xp}</span>}
-              </li>
-            );
-          })}
-        </ol>
-      )}
     </div>
   );
 }
