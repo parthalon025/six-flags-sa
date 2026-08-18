@@ -15,6 +15,25 @@
  */
 
 import { LINE_LAYERS } from './osm-tags.mjs';
+import { densityFromSpecies, scatterPoints } from './display-scatter.mjs';
+
+/**
+ * Sprite footprints, in cells. Radius is what stops two trees sharing a
+ * trunk; probability is the mix within a terrain.
+ */
+const TREE_SPECIES = {
+  wood: [
+    { id: 'big', radius: 0.85, probability: 0.55, big: true },
+    { id: 'small', radius: 0.6, probability: 0.45 },
+  ],
+  grass: [
+    { id: 'big', radius: 0.9, probability: 0.2, big: true },
+    { id: 'small', radius: 0.65, probability: 0.8 },
+  ],
+};
+
+/** Woods saturate; grass is deliberately sparse ornamental planting. */
+const TREE_DENSITY_SCALE = { wood: 1, grass: 0.22 };
 
 /* ------------------------------------------------ the pieces vocabulary --
  * The bake decomposes into the smallest pieces the builder owns. A kit is
@@ -176,6 +195,23 @@ export function cellHash(...nums) {
   return ((h >>> 0) % 10000) / 10000;
 }
 
+/**
+ * Stable integer seed from a string. FNV-1a over char codes — a real hash, so
+ * two areas in one park get unrelated streams. (A seed built by shifting a
+ * byte right by 16, or by adding x to y, collapses to a handful of distinct
+ * values and shows up as diagonal banding in the bake.)
+ * @param {string} s
+ * @returns {number}
+ */
+export function seedFromString(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 const TERRAIN = { outside: 0, ground: 1, grass: 2, wood: 3, water: 4, lot: 5, road: 6, service: 7 };
 export const TERRAIN_NAMES = Object.fromEntries(Object.entries(TERRAIN).map(([k, v]) => [v, k]));
 
@@ -266,6 +302,54 @@ function paintLine(cells, cols, rows, pts, terrain, halfWidth) {
   }
 }
 
+/**
+ * Dither vegetation into the surface beside it.
+ *
+ * A filled polygon ends on a hard vector edge, which is exactly what a park
+ * does not look like — planting fades into pavement. Rather than offset the
+ * polygon and fill a band (which needs boolean geometry), this walks the
+ * cells that could receive spill and flips them with a probability that falls
+ * off with distance from the nearest vegetated neighbour.
+ *
+ * The pattern is a hash of the cell and the terrain it is spilling, so it is
+ * stable across reruns and different for grass than for wood.
+ *
+ * @param {number[]} cells terrain grid, mutated in place
+ * @param {number} cols
+ * @param {number} rows
+ * @param {{ spread?: number[], over?: number[], reach?: number, strength?: number }} [opts]
+ */
+export function crownStipple(cells, cols, rows, opts = {}) {
+  const spread = opts.spread ?? [TERRAIN.wood, TERRAIN.grass];
+  const over = opts.over ?? [TERRAIN.ground, TERRAIN.lot];
+  const reach = opts.reach ?? 2;
+  const strength = opts.strength ?? 0.55;
+  const src = cells.slice();
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const i = y * cols + x;
+      if (!over.includes(src[i])) continue;
+      let nearest = -1;
+      let dist = Infinity;
+      for (let dy = -reach; dy <= reach; dy += 1) {
+        for (let dx = -reach; dx <= reach; dx += 1) {
+          const cx = x + dx;
+          const cy = y + dy;
+          if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) continue;
+          const v = src[cy * cols + cx];
+          if (!spread.includes(v)) continue;
+          const d = Math.hypot(dx, dy);
+          if (d < dist) { dist = d; nearest = v; }
+        }
+      }
+      if (nearest < 0) continue;
+      const falloff = 1 - (dist - 1) / reach;
+      if (falloff <= 0) continue;
+      if (cellHash(x, y, nearest) < falloff * strength) cells[i] = nearest;
+    }
+  }
+}
+
 const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', shop: 'shop', show: 'show', service: 'service' };
 
 /**
@@ -289,6 +373,7 @@ export function bakeModel(map, pois = [], opts = {}) {
   }
 
   const treeCells = { wood: [], grass: [] };
+  const scatterNotes = [];
   for (const [layer, terrain] of AREA_TERRAIN) {
     for (const way of map[layer] || []) {
       if (!Array.isArray(way.r) || way.r.length < 3) continue;
@@ -297,6 +382,10 @@ export function bakeModel(map, pois = [], opts = {}) {
       if (terrain === TERRAIN.grass) treeCells.grass.push(...painted);
     }
   }
+
+  // Soften vegetation edges before roads and lots are stamped, so paths stay
+  // crisp and only open ground receives the spill.
+  crownStipple(cells, cols, rows);
 
   // Ground truth (aerial imagery): a parking lot is one contiguous asphalt
   // expanse; OSM often maps it as separate row polygons. A cell flanked by
@@ -359,15 +448,26 @@ export function bakeModel(map, pois = [], opts = {}) {
     return false;
   };
 
-  // Trees: dense canopy in woods, scattered on grass — hash-jittered, never random.
+  // Trees: dense canopy in woods, scattered on grass. Placement is a real
+  // scatter (area-derived count, non-overlapping discs, noise-biased darts)
+  // rather than a per-cell coin flip, so sprites stop stacking on each other
+  // and a wood reads as a thicket instead of wallpaper. See display-scatter.mjs.
   const trees = [];
-  for (const [x, y] of treeCells.wood) {
-    if (cells[y * cols + x] !== TERRAIN.wood || isOccupied(x, y)) continue;
-    if (cellHash(x, y) < 0.65) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.4 });
-  }
-  for (const [x, y] of treeCells.grass) {
-    if (cells[y * cols + x] !== TERRAIN.grass || isOccupied(x, y)) continue;
-    if (cellHash(x, y) < 0.14) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.8 });
+  for (const kind of ['wood', 'grass']) {
+    const candidates = treeCells[kind].filter(
+      ([x, y]) => cells[y * cols + x] === TERRAIN[kind] && !isOccupied(x, y),
+    );
+    const species = TREE_SPECIES[kind];
+    const { placed, dropped, requested } = scatterPoints({
+      cells: candidates,
+      species,
+      seed: seedFromString(`${map.meta?.id || 'venue'}:${kind}`),
+      density: densityFromSpecies(species) * TREE_DENSITY_SCALE[kind],
+      reject: (x, y) => isOccupied(Math.floor(x), Math.floor(y)),
+    });
+    // No silent caps: a wood that could not be filled is worth knowing about.
+    if (dropped > 0) scatterNotes.push({ kind, requested, dropped });
+    for (const p of placed) trees.push({ x: p.x, y: p.y, big: p.big });
   }
   trees.sort((a, b) => a.y - b.y || a.x - b.x);
 
@@ -404,6 +504,7 @@ export function bakeModel(map, pois = [], opts = {}) {
     buildings,
     tracks,
     badges,
+    ...(scatterNotes.length ? { scatterNotes } : {}),
   }, boundaryRing, opts.margin ?? 6, toGeo);
   // Declutter after the crop so a cluster whose greedy keeper fell
   // outside the window still pins an in-window member.

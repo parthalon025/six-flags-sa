@@ -39,7 +39,7 @@
       "source": "park",
       "source-layer": "park",
       "paint": {
-        "fill-color": "#B8D4A0",
+        "fill-color": "#90A373",
         "fill-opacity": 0.35
       }
     },
@@ -84,7 +84,7 @@
       "source": "park",
       "source-layer": "grass",
       "paint": {
-        "fill-color": "#B8D4A0"
+        "fill-color": "#90A373"
       }
     },
     {
@@ -93,7 +93,7 @@
       "source": "park",
       "source-layer": "wood",
       "paint": {
-        "fill-color": "#B8D4A0",
+        "fill-color": "#90A373",
         "fill-opacity": 0.8
       }
     },
@@ -103,7 +103,7 @@
       "source": "park",
       "source-layer": "parking",
       "paint": {
-        "fill-color": "#E8E0D4",
+        "fill-color": "#CDC8C0",
         "fill-opacity": 0.6
       }
     },
@@ -113,7 +113,7 @@
       "source": "park",
       "source-layer": "water",
       "paint": {
-        "fill-color": "#7EC8E3"
+        "fill-color": "#6FBEE0"
       }
     },
     {
@@ -122,7 +122,7 @@
       "source": "park",
       "source-layer": "pool",
       "paint": {
-        "fill-color": "#7EC8E3"
+        "fill-color": "#6BC6E5"
       }
     },
     {
@@ -131,7 +131,7 @@
       "source": "park",
       "source-layer": "building",
       "paint": {
-        "fill-color": "#E8E0D4"
+        "fill-color": "#ACA79D"
       }
     },
     {
@@ -162,7 +162,7 @@
       "source": "park",
       "source-layer": "service",
       "paint": {
-        "line-color": "#8B7355",
+        "line-color": "#6A5B47",
         "line-width": [
           "interpolate",
           [
@@ -207,7 +207,7 @@
       "source": "park",
       "source-layer": "path",
       "paint": {
-        "line-color": "#8B7355",
+        "line-color": "#877862",
         "line-width": [
           "interpolate",
           [
@@ -229,7 +229,7 @@
       "source": "park",
       "source-layer": "slide",
       "paint": {
-        "line-color": "#8B7355",
+        "line-color": "#B07951",
         "line-width": [
           "interpolate",
           [
@@ -252,7 +252,7 @@
       "source": "park",
       "source-layer": "coaster",
       "paint": {
-        "line-color": "#2C2416",
+        "line-color": "#43423D",
         "line-width": [
           "interpolate",
           [

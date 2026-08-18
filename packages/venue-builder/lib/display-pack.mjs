@@ -32,16 +32,50 @@ export const ALLOWED_LICENSES = ['CC0-1.0', 'original', 'licensed'];
  * materials) and every claimed layer belongs to exactly one class.
  */
 export const SURFACE_CLASSES = {
-  walkway: { label: 'Walkways', layers: ['path'] },
-  'service-road': { label: 'Service roads', layers: ['service'] },
-  water: { label: 'Water', layers: ['water', 'sea'] },
-  pool: { label: 'Pools', layers: ['pool'] },
-  vegetation: { label: 'Vegetation', layers: ['grass', 'wood', 'park'] },
-  lot: { label: 'Parking lots', layers: ['parking'] },
-  structure: { label: 'Structures', layers: ['building'] },
-  'coaster-track': { label: 'Coaster track', layers: ['coaster'] },
-  slide: { label: 'Slides', layers: ['slide'] },
+  walkway: { label: 'Walkways', layers: ['path'], token: 'path' },
+  'service-road': { label: 'Service roads', layers: ['service'], token: 'path' },
+  water: { label: 'Water', layers: ['water', 'sea'], token: 'water' },
+  pool: { label: 'Pools', layers: ['pool'], token: 'water' },
+  vegetation: { label: 'Vegetation', layers: ['grass', 'wood', 'park'], token: 'grass' },
+  lot: { label: 'Parking lots', layers: ['parking'], token: 'building' },
+  structure: { label: 'Structures', layers: ['building'], token: 'building' },
+  'coaster-track': { label: 'Coaster track', layers: ['coaster'], token: 'label' },
+  slide: { label: 'Slides', layers: ['slide'], token: 'path' },
 };
+
+/**
+ * How far a surface is pulled from the skin's authored colour toward its
+ * material's measured average. 0 keeps the skin exactly as authored; 1 paints
+ * the photograph. Leaning low on purpose: a material average is what the stuff
+ * really looks like, and four skins that all borrow it stop being four skins.
+ */
+export const DEFAULT_MATERIAL_MIX = 0.4;
+
+const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
+
+/** #rrggbb → [r,g,b], or null for anything else (named colours, rgba()). */
+function parseHex(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/**
+ * Blend two hex colours. Returns `a` unchanged when either side is not a plain
+ * hex, so a skin using an rgba() token degrades to its authored value.
+ * @param {string} a
+ * @param {string} b
+ * @param {number} t 0 = all `a`, 1 = all `b`
+ * @returns {string}
+ */
+export function mixHex(a, b, t) {
+  const ca = parseHex(a);
+  const cb = parseHex(b);
+  if (!ca || !cb) return a;
+  const out = ca.map((v, i) => clamp255(v + (cb[i] - v) * t));
+  return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
 
 const DISPLAY_DATA_DIR = path.join(OVERRIDE_DIR, '..', 'display');
 
@@ -88,7 +122,15 @@ export function compileVisualSpec({ map, pois = [], template, materials }) {
     const layers = (SURFACE_CLASSES[surface]?.layers || []).filter((l) => map[l]?.length);
     if (!layers.length) continue;
     if (!materials[materialId]) continue; // certification reports it; compile stays total
-    surfaces[surface] = { material: materialId, layers };
+    // Pull the authored token toward the material's measured average, so the
+    // ledger's textures actually reach the renderer instead of being metadata
+    // a budget gate polices and nothing paints.
+    const token = SURFACE_CLASSES[surface]?.token;
+    const authored = template.tokens?.colors?.[token];
+    const avg = materials[materialId].avgColor;
+    const mix = template.materialMix ?? DEFAULT_MATERIAL_MIX;
+    const color = authored && avg ? mixHex(authored, avg, mix) : authored || null;
+    surfaces[surface] = { material: materialId, layers, ...(color ? { color } : {}) };
   }
   return {
     version: DISPLAY_VERSION,
@@ -132,6 +174,14 @@ const fill = (id, sourceLayer, color, opts = {}) => ({
 export function styleFromSpec(spec) {
   const c = spec.tokens?.colors || {};
   const mode = spec.tokens?.mode === 'night' ? 'night' : 'day';
+  // Surfaces carry a material-blended colour; fall back to the raw token for
+  // any layer no surface claims.
+  const byLayer = new Map();
+  for (const surface of Object.values(spec.surfaces || {})) {
+    if (!surface.color) continue;
+    for (const layer of surface.layers || []) byLayer.set(layer, surface.color);
+  }
+  const paintOf = (layer, fallback) => byLayer.get(layer) || fallback;
   const tones = Object.entries(spec.landTones || {})
     .filter(([, t]) => t[mode])
     .sort(([a], [b]) => (a < b ? -1 : 1));
@@ -144,22 +194,22 @@ export function styleFromSpec(spec) {
     sources: { park: { type: 'vector', url: 'pmtiles://base.pmtiles' } },
     layers: [
       { id: 'background', type: 'background', paint: { 'background-color': c.ground } },
-      fill('sea-under', 'sea', c.water),
+      fill('sea-under', 'sea', paintOf('sea', c.water)),
       fill('venue', 'venue', c.ground),
-      fill('park', 'park', c.grass, { 'fill-opacity': 0.35 }),
+      fill('park', 'park', paintOf('park', c.grass), { 'fill-opacity': 0.35 }),
       fill('lands', 'lands', landFill, { 'fill-opacity': 0.45 }),
-      fill('grass', 'grass', c.grass),
-      fill('wood', 'wood', c.grass, { 'fill-opacity': 0.8 }),
-      fill('parking', 'parking', c.building, { 'fill-opacity': 0.6 }),
-      fill('water', 'water', c.water),
-      fill('pool', 'pool', c.water),
-      fill('building', 'building', c.building),
+      fill('grass', 'grass', paintOf('grass', c.grass)),
+      fill('wood', 'wood', paintOf('wood', c.grass), { 'fill-opacity': 0.8 }),
+      fill('parking', 'parking', paintOf('parking', c.building), { 'fill-opacity': 0.6 }),
+      fill('water', 'water', paintOf('water', c.water)),
+      fill('pool', 'pool', paintOf('pool', c.water)),
+      fill('building', 'building', paintOf('building', c.building)),
       line('building-edge', 'building', c.structureEdge || c.path, 0.6),
-      line('service', 'service', c.path, 0.8, { 'line-opacity': 0.55 }),
+      line('service', 'service', paintOf('service', c.path), 0.8, { 'line-opacity': 0.55 }),
       line('path-casing', 'path', c.pathCasing || c.ground, 3),
-      line('path', 'path', c.path, 1.6),
-      line('slide', 'slide', c.path, 1.2, { 'line-opacity': 0.9 }),
-      line('coaster', 'coaster', c.structureEdge || c.label, 1.2, { 'line-opacity': 0.85 }),
+      line('path', 'path', paintOf('path', c.path), 1.6),
+      line('slide', 'slide', paintOf('slide', c.path), 1.2, { 'line-opacity': 0.9 }),
+      line('coaster', 'coaster', paintOf('coaster', c.structureEdge || c.label), 1.2, { 'line-opacity': 0.85 }),
     ],
   };
 }

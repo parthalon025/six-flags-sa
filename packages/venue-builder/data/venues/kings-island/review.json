@@ -129,7 +129,23 @@
       "who": "unit-test",
       "why": "ok",
       "at": "2026-08-18T20:03:49.727Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-18T22:48:51.287Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-18T22:59:11.023Z"
     }
   ],
-  "updated": "2026-08-18T20:03:49.727Z"
+  "updated": "2026-08-18T22:59:11.023Z"
 }

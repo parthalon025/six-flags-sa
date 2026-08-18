@@ -23,13 +23,15 @@
       "material": "paving-stones--warm",
       "layers": [
         "path"
-      ]
+      ],
+      "color": "#877862"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
-      ]
+      ],
+      "color": "#6A5B47"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -37,31 +39,36 @@
         "grass",
         "wood",
         "park"
-      ]
+      ],
+      "color": "#90A373"
     },
     "water": {
       "material": "water--calm",
       "layers": [
         "water"
-      ]
+      ],
+      "color": "#6FBEE0"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
-      ]
+      ],
+      "color": "#6BC6E5"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
-      ]
+      ],
+      "color": "#B07951"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
-      ]
+      ],
+      "color": "#ACA79D"
     }
   },
   "landTones": {},
