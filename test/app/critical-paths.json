@@ -105,6 +105,13 @@
       "check": "the map still draws with the network cut"
     },
     {
+      "id": "ep4-offline-profile",
+      "slice": "EP",
+      "user_action": "Cached Profile identity (name, offline cue, rank title) shows on Settings with no network and no live session",
+      "suite": "functional",
+      "check": "offline profile identity survives without network"
+    },
+    {
       "id": "grandma-core",
       "slice": "Navigate",
       "user_action": "First-time visitor can complete toilet → food → walk",
@@ -140,6 +147,13 @@
       "check": "Side Quest submit queues locally"
     },
     {
+      "id": "e91-quest-sync",
+      "slice": "Adventure",
+      "user_action": "A queued Side Quest reaches the server once the network is back",
+      "suite": "functional",
+      "check": "queued Side Quest syncs once the network is back"
+    },
+    {
       "id": "e125-overlay",
       "slice": "Adventure",
       "user_action": "Complete a gap Side Quest and see Overlay on this phone",
@@ -154,11 +168,32 @@
       "check": "ride detail shows a structured eligibility reason"
     },
     {
+      "id": "e5-eligibility-unknown",
+      "slice": "E5",
+      "user_action": "See a visible Unknown verdict on a ride with no height data, instead of a blank badge",
+      "suite": "functional",
+      "check": "ride with no height data shows an Unknown verdict"
+    },
+    {
       "id": "e81-next-best",
       "slice": "E8",
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
       "check": "GO NOW card carries a Why? explanation"
+    },
+    {
+      "id": "ride-status-stale-marker",
+      "slice": "E7",
+      "user_action": "A ride report old enough to hedge is visibly muted and never claims live/GO NOW",
+      "suite": "functional",
+      "check": "a stale report is marked and never claims live/GO NOW"
+    },
+    {
+      "id": "party-share-precise",
+      "slice": "Party",
+      "user_action": "Switch to Precise sharing for 30 minutes; it reverts to Approximate on its own",
+      "suite": "functional",
+      "check": "precise sharing expires back to approximate"
     },
     {
       "id": "compass-strip",
@@ -222,6 +257,7 @@
       "user_action": "Leave the Party and drop off the other rosters",
       "suite": "functional",
       "check": "leaving removes the member from the other phone’s roster"
+
     }
   ],
   "upcoming": []

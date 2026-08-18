@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "head": "3e33ea84447e5548e9c4be19603698e82554078e",
-  "mergeBase": "8beef0e8c09959d170630602d485238eb279fe6b",
+  "head": "e00373fd40bb281f7c9db5da30d7cce5c8f9442b",
+  "mergeBase": "7a2067edbae1df2ddf4daec952919793d71474a2",
   "baseRef": "origin/main",
   "modules": [
     "auth",
@@ -24,7 +24,7 @@
     "test:unit",
     "build"
   ],
-  "lockHash": "691dec76f1063b6f",
-  "manifestHash": "c0bde8376607c2b2",
-  "recordedAt": "2026-08-16T20:08:17.820Z"
+  "lockHash": "2afb3f8ebc82ffed",
+  "manifestHash": "55e9108852f144c7",
+  "recordedAt": "2026-08-18T16:09:20.657Z"
 }

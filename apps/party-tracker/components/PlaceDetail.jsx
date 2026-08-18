@@ -170,6 +170,7 @@ const VERDICT = {
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
   advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
   not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
+  unknown: { label: 'Unknown', cls: 'unknown', icon: null },
 };
 
 /**
@@ -270,9 +271,11 @@ export default function PlaceDetail({
                     : '',
                   status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
                   status.source === 'weather' ? 'guess' : '',
+                  status.stale ? 'stale' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                title={status.detail || undefined}
               >
                 <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {status.label}

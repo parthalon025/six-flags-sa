@@ -1,4 +1,5 @@
 import { identityOf } from './venue/ids.js';
+import { isRideable } from '@party-tracker/shared/ontology.js';
 
 /* Eligibility as one fold over this phone's people × the venue's places.
  *
@@ -178,6 +179,19 @@ export function fold(people, places) {
     const id = identityOf(place);
     if (!id) continue;
     const h = normHeight(place.h);
+    if (!h && isRideable(place) && list.length > 0) {
+      cells.set(id, { kind: 'unknown', blocks: false });
+      rows.set(
+        id,
+        list.map((p, index) => ({
+          id: p?.id != null ? String(p.id) : String(index),
+          name: p?.name || 'Rider',
+          kind: 'unknown',
+          reasons: ['No height info yet.'],
+        })),
+      );
+      continue;
+    }
     if (!h || list.length === 0) {
       cells.set(id, SILENT);
       rows.set(id, []);

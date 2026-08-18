@@ -59,10 +59,15 @@ export async function insertContribution(input) {
 
   if (usingPostgres()) {
     const pool = await getPool();
-    await pool.query(
+    // ON CONFLICT DO NOTHING: a client-supplied id (E9.1 quest sync retry)
+    // may legitimately repeat a POST the client never saw the 2xx for. That
+    // is a replay, not an error — return the row that is already there.
+    const res = await pool.query(
       `INSERT INTO contributions
         (id, author_id, venue_id, place_id, kind, status, payload, lat, lng, created_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (id) DO NOTHING
+       RETURNING *`,
       [
         row.id,
         row.author_id,
@@ -76,8 +81,14 @@ export async function insertContribution(input) {
         row.created_at,
       ],
     );
-    return rowToApi(row);
+    if (res.rows[0]) return rowToApi(res.rows[0]);
+    return getContribution(id);
   }
+
+  // Same idempotency contract as the Postgres ON CONFLICT DO NOTHING path
+  // above: a client-supplied id that already exists is a replay, not an
+  // error — return the existing row instead of overwriting it.
+  if (mem.rows.has(id)) return rowToApi(mem.rows.get(id));
 
   mem.rows.set(id, { ...row, payload: { ...row.payload } });
   return rowToApi(row);

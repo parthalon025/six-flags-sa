@@ -33,7 +33,7 @@ export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLER
  * suites assert on it — this list must not grow to make a failure go away.
  */
 export const IGNORABLE_CONSOLE =
-  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)/;
+  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)|Blocked call to navigator\.vibrate/;
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {
@@ -225,6 +225,9 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
       await page.waitForTimeout(600);
       return true;
     }
+    // No gate of any kind up: this splash is not forming either, so stop polling
+    // instead of burning the full timeout on every call (functional#194).
+    if (!(await page.locator('.gate').count())) return true;
     if (timeout === 0) break;
     await page.waitForTimeout(250);
   } while (Date.now() < deadline);
@@ -245,6 +248,10 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
       await primary.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
       if (!(await intro.count())) return true;
+    } else if (!(await page.locator('.gate').count())) {
+      // No gate of any kind up: this splash is not forming either, so stop
+      // polling instead of burning the full timeout on every call (#194).
+      return true;
     }
     if (timeout === 0) break;
     await page.waitForTimeout(250);

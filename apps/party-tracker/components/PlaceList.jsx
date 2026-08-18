@@ -34,6 +34,7 @@ const VERDICT = {
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
   advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
   not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
+  unknown: { label: 'Unknown', cls: 'unknown', icon: null },
 };
 
 export default function PlaceList({
@@ -245,9 +246,11 @@ export default function PlaceList({
                     : '',
                   st.live === 'weather' || st.key === 'closed' ? 'weather' : '',
                   st.source === 'weather' ? 'guess' : '',
+                  st.stale ? 'stale' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                title={st.detail || undefined}
               >
                 <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {st.label}
