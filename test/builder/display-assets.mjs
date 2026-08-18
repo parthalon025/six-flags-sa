@@ -80,6 +80,110 @@ await check('content hash moves with import settings, not just bytes', () => {
   return true;
 });
 
+console.log('\nbadge icons\n');
+
+const { resolveKit, kitAssetIds } = await import('../../packages/venue-builder/lib/display-bake.mjs');
+
+await check('every badge kind carries an original icon glyph by default', () => {
+  const ledger = readAssetLedger();
+  const kit = resolveKit({}, { assets: ledger });
+  for (const kind of ['gate', 'food', 'restroom', 'shop', 'show', 'service']) {
+    const ref = kit.sprites.badge.icons[kind];
+    assert.ok(ref?.asset, `badge ${kind} has no icon ref`);
+    assert.equal(ledger[ref.asset]?.kind, 'icon', `badge ${kind} icon is not ledger kind "icon"`);
+  }
+  return true;
+});
+
+await check('badge icon refs are validated against the ledger', () => {
+  const ledger = readAssetLedger();
+  assert.throws(
+    () => resolveKit({ sprites: { badge: { icons: { gate: { asset: 'parkbound-palm-tree' } } } } }, { assets: ledger }),
+    /not an icon/,
+  );
+  assert.throws(
+    () => resolveKit({ sprites: { badge: { icons: { gate: { asset: 'nope' } } } } }, { assets: ledger }),
+    /unknown asset/,
+  );
+  return true;
+});
+
+await check('kitAssetIds names every asset a resolved kit references', () => {
+  const ledger = readAssetLedger();
+  const overlay = { sprites: { tree: { sprite: { asset: 'parkbound-palm-tree' } } } };
+  const kit = resolveKit(
+    { terrain: { grass: { tiles: { asset: 'kenney-roguelike-sheet', tile: 'grass' } } } },
+    { assets: ledger, overlay },
+  );
+  const ids = kitAssetIds(kit);
+  assert.ok(ids.includes('kenney-roguelike-sheet'), 'tile sheet is referenced');
+  assert.ok(ids.includes('parkbound-palm-tree'), 'tree sprite is referenced');
+  assert.ok(ids.includes('parkbound-badge-gate'), 'badge icons are referenced');
+  assert.deepEqual(ids, [...new Set(ids)].sort(), 'sorted and unique');
+  assert.doesNotThrow(() => creditsManifest(ids, ledger), 'every id resolves to a credit row');
+  return true;
+});
+
+await check('every kit on disk resolves against the ledger, bare and themed', async () => {
+  const { readdirSync, readFileSync } = await import('node:fs');
+  const ledger = readAssetLedger();
+  const kitsDir = new URL('../../packages/venue-builder/data/display/kits/', import.meta.url);
+  const themeUrl = new URL(
+    '../../packages/venue-builder/data/venues/big-kahunas/display/theme.json',
+    import.meta.url,
+  );
+  const overlay = JSON.parse(readFileSync(themeUrl, 'utf8'));
+  const kits = readdirSync(kitsDir).filter((f) => f.endsWith('.json'));
+  assert.ok(kits.length >= 3, 'expected the committed kits');
+  for (const f of kits) {
+    const spec = JSON.parse(readFileSync(new URL(f, kitsDir), 'utf8'));
+    assert.doesNotThrow(() => resolveKit(spec, { assets: ledger }), `${f} does not resolve`);
+    assert.doesNotThrow(() => resolveKit(spec, { assets: ledger, overlay }), `${f} + venue theme does not resolve`);
+  }
+  return true;
+});
+
+console.log('\nsprite atlas\n');
+
+const { atlasPlan, mapLibreSpriteJson, atlasCacheKey } = await import(
+  '../../packages/venue-builder/lib/display-atlas.mjs'
+);
+
+await check('atlas plan is deterministic and order-insensitive', () => {
+  const ids = ['parkbound-badge-shop', 'parkbound-badge-gate', 'parkbound-badge-food'];
+  const a = atlasPlan(ids, { px: 32 });
+  const b = atlasPlan([...ids].reverse(), { px: 32 });
+  assert.deepEqual(a, b, 'same frames whatever the input order');
+  const frames = Object.values(a.frames);
+  assert.equal(frames.length, 3);
+  for (const f of frames) {
+    assert.ok(f.x >= 0 && f.y >= 0 && f.x + f.w <= a.width && f.y + f.h <= a.height, 'frame inside canvas');
+  }
+  const seen = new Set(frames.map((f) => `${f.x},${f.y}`));
+  assert.equal(seen.size, frames.length, 'no two frames share an origin');
+  return true;
+});
+
+await check('MapLibre sprite json rides the plan', () => {
+  const plan = atlasPlan(['parkbound-badge-gate', 'parkbound-badge-food'], { px: 24 });
+  const json = mapLibreSpriteJson(plan, { pixelRatio: 2 });
+  assert.ok(json['badge-gate'], 'parkbound- prefix stripped for style names');
+  const e = json['badge-gate'];
+  assert.deepEqual(Object.keys(e).sort(), ['height', 'pixelRatio', 'width', 'x', 'y']);
+  assert.equal(e.pixelRatio, 2);
+  return true;
+});
+
+await check('atlas cache key moves with content, size, and version', () => {
+  const ledger = readAssetLedger();
+  const ids = ['parkbound-badge-gate', 'parkbound-badge-food'];
+  const a = atlasCacheKey(ids, { ledger, px: 32, version: 1 });
+  assert.equal(a, atlasCacheKey([...ids].reverse(), { ledger, px: 32, version: 1 }), 'order-insensitive');
+  assert.notEqual(a, atlasCacheKey(ids, { ledger, px: 48, version: 1 }), 'px is part of the key');
+  assert.notEqual(a, atlasCacheKey(ids, { ledger, px: 32, version: 2 }), 'version is part of the key');
+  return true;
+});
+
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));

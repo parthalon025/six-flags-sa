@@ -11,6 +11,10 @@
  * The vendored bytes live under packages/venue-builder/assets/vendor/,
  * fetched once by bin/vendor-assets.mjs (never at CI time) and pinned by
  * sha256 — verifyAssetHashes() is the gate that notices drift.
+ *
+ * Row schema notes: `kind` is tilesheet | sprite | icon; `target` names the
+ * render target a variant serves (flat now, iso when the isometric tier
+ * lands) so one label can carry per-target art without new ids.
  */
 
 import path from 'node:path';

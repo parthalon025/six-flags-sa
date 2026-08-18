@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "contact": "display factory \u2014 docs/research/2026-08-18-custom-map-display-factory.md",
+  "contact": "display factory — docs/research/2026-08-18-custom-map-display-factory.md",
   "assets": {
     "kenney-roguelike-sheet": {
       "label": "Kenney Roguelike/RPG pack spritesheet",
@@ -15,7 +15,7 @@
         "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
         "file": "roguelike-pack/Spritesheet/roguelikeSheet_transparent.png"
       },
-      "attribution": "Roguelike pack by Kenney Vleugels (kenney.nl), CC0 \u2014 attribution appreciated, not required",
+      "attribution": "Roguelike pack by Kenney Vleugels (kenney.nl), CC0 — attribution appreciated, not required",
       "import": {
         "tileSize": 16,
         "margin": 0,
@@ -61,7 +61,7 @@
         "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
         "file": "kenney_rpgurbanpack/Tilemap/tilemap_packed.png"
       },
-      "attribution": "RPG Urban Pack by Kenney (kenney.nl), CC0 \u2014 attribution appreciated, not required",
+      "attribution": "RPG Urban Pack by Kenney (kenney.nl), CC0 — attribution appreciated, not required",
       "import": {
         "tileSize": 16,
         "margin": 0,
@@ -98,12 +98,114 @@
         "commit": "45df48c4d45f8716216b1a9e22df0b69cd9f5932",
         "file": "roguelike-modern-city-pack/Spritesheet/roguelikeCity_transparent.png"
       },
-      "attribution": "Roguelike Modern City pack by Kenney (kenney.nl), CC0 \u2014 attribution appreciated, not required",
+      "attribution": "Roguelike Modern City pack by Kenney (kenney.nl), CC0 — attribution appreciated, not required",
       "import": {
         "tileSize": 16,
         "margin": 0,
         "spacing": 1,
         "tiles": {}
+      }
+    },
+    "parkbound-badge-gate": {
+      "label": "Park Bound badge glyph: entrance gate (original)",
+      "kind": "icon",
+      "target": null,
+      "path": "assets/custom/badges/gate.svg",
+      "sha256": "38348d10843f7eca00601a2819dfb0e6c543082c3c147af532bd6c9ce375b2ae",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "glyph": "white-on-transparent",
+        "viewBox": 24
+      }
+    },
+    "parkbound-badge-food": {
+      "label": "Park Bound badge glyph: food (fork and knife) (original)",
+      "kind": "icon",
+      "target": null,
+      "path": "assets/custom/badges/food.svg",
+      "sha256": "d3e5faec8f6d397fe8b2ebf67a47008d522ec2dddf0dd6afff0774c28a06470f",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "glyph": "white-on-transparent",
+        "viewBox": 24
+      }
+    },
+    "parkbound-badge-restroom": {
+      "label": "Park Bound badge glyph: restroom figures (original)",
+      "kind": "icon",
+      "target": null,
+      "path": "assets/custom/badges/restroom.svg",
+      "sha256": "7cec68acb09ca4abdde51a75848f82b97dd79ef521c45b582ab13b534084d361",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "glyph": "white-on-transparent",
+        "viewBox": 24
+      }
+    },
+    "parkbound-badge-shop": {
+      "label": "Park Bound badge glyph: shopping bag (original)",
+      "kind": "icon",
+      "target": null,
+      "path": "assets/custom/badges/shop.svg",
+      "sha256": "b25aa615044b761da5db1d43c49cd76bee13ee7bc4974d72b815baacaaebbe2b",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "glyph": "white-on-transparent",
+        "viewBox": 24
+      }
+    },
+    "parkbound-badge-show": {
+      "label": "Park Bound badge glyph: show star (original)",
+      "kind": "icon",
+      "target": null,
+      "path": "assets/custom/badges/show.svg",
+      "sha256": "6eeeadd7b82969ac3ab8e94a0239c68c9a48cce340f6fc79e322a67e8150d70f",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "glyph": "white-on-transparent",
+        "viewBox": 24
+      }
+    },
+    "parkbound-badge-service": {
+      "label": "Park Bound badge glyph: service wrench (original)",
+      "kind": "icon",
+      "target": null,
+      "path": "assets/custom/badges/service.svg",
+      "sha256": "4c5a0380b10b5e0da84e20fb33edb90ccfbcb4e196348df3327ece57d08b0d0b",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "glyph": "white-on-transparent",
+        "viewBox": 24
       }
     }
   }

@@ -39,7 +39,9 @@ export const TERRAIN_PIECES = {
   wood: { base: '#639E55', texture: { kind: 'tuft', color: '#4E8443', density: 0.35 } },
   water: { base: '#58AEDC', texture: { kind: 'wave', color: '#8FCBE8', density: 0.3 } },
   lot: { base: '#B9B3A6', texture: { kind: 'stripe', color: '#E2DDD2', density: 0.33 } },
-  road: { base: '#8C8F98', texture: { kind: 'dash', color: '#C9CCD3', density: 1 } },
+  // road cells never take the per-cell texture pass — they render as cased
+  // polylines whose casing and dashed centerline both use texture.color.
+  road: { base: '#8C8F98', texture: { kind: 'none', color: '#C9CCD3', density: 1 } },
   service: { base: '#7D8089', texture: { kind: 'none' } },
 };
 
@@ -48,7 +50,22 @@ export const SPRITE_PIECES = {
   building: { style: 'drop', roofs: ['#C7B9A2', '#B79E8C', '#9FA6B4'], edge: '#5E5648', wall: '#6E6355', drop: 0.25 },
   slide: { style: 'tube', casing: 'rgba(255,255,255,0.9)', colors: ['#F4C542', '#E05548', '#3FA0D8', '#7BC47F', '#C468D8', '#F08A3C'], width: 1 },
   coaster: { style: 'tube', rail: '#4A3A30', tie: '#C9B9A6' },
-  badge: { gate: '#D84B4B', food: '#E8862F', restroom: '#3F7FBF', shop: '#4FA36B', show: '#9A5FC0', service: '#8A8F98' },
+  badge: {
+    gate: '#D84B4B',
+    food: '#E8862F',
+    restroom: '#3F7FBF',
+    shop: '#4FA36B',
+    show: '#9A5FC0',
+    service: '#8A8F98',
+    icons: {
+      gate: { asset: 'parkbound-badge-gate' },
+      food: { asset: 'parkbound-badge-food' },
+      restroom: { asset: 'parkbound-badge-restroom' },
+      shop: { asset: 'parkbound-badge-shop' },
+      show: { asset: 'parkbound-badge-show' },
+      service: { asset: 'parkbound-badge-service' },
+    },
+  },
 };
 
 const merged = (base, over) => {
@@ -107,15 +124,16 @@ export function resolveKit(spec = {}, { assets, overlay } = {}) {
     if (!row) throw new Error(`tree.sprite references unknown asset "${spriteRef.asset}"`);
     if (row.kind !== 'sprite') throw new Error(`tree.sprite asset "${spriteRef.asset}" is not a sprite`);
   }
-  const styleOf = (k) => spec.sprites?.[k]?.style;
-  if (styleOf('building') && !BUILDING_STYLES.includes(styleOf('building'))) {
-    throw new Error(`Unknown building style "${styleOf('building')}"`);
+  for (const [kind, ref] of Object.entries(spec.sprites?.badge?.icons || {})) {
+    if (!assets) throw new Error('badge.icons needs the asset ledger to resolve');
+    const row = assets[ref?.asset];
+    if (!row) throw new Error(`badge.icons.${kind} references unknown asset "${ref?.asset}"`);
+    if (row.kind !== 'icon') throw new Error(`badge.icons.${kind} asset "${ref.asset}" is not an icon`);
   }
-  if (styleOf('tree') && !TREE_STYLES.includes(styleOf('tree'))) {
-    throw new Error(`Unknown tree style "${styleOf('tree')}"`);
-  }
-  for (const k of ['slide', 'coaster']) {
-    if (styleOf(k) && !TRACK_STYLES.includes(styleOf(k))) throw new Error(`Unknown ${k} style "${styleOf(k)}"`);
+  const STYLE_AXES = { building: BUILDING_STYLES, tree: TREE_STYLES, slide: TRACK_STYLES, coaster: TRACK_STYLES };
+  for (const [k, allowed] of Object.entries(STYLE_AXES)) {
+    const style = spec.sprites?.[k]?.style;
+    if (style && !allowed.includes(style)) throw new Error(`Unknown ${k} style "${style}"`);
   }
   return {
     id: spec.id || 'default',
@@ -124,6 +142,23 @@ export function resolveKit(spec = {}, { assets, overlay } = {}) {
     terrain: merged(TERRAIN_PIECES, spec.terrain),
     sprites: merged(SPRITE_PIECES, spec.sprites),
   };
+}
+
+/**
+ * Every ledger asset a resolved kit references — tile sheets, the tree
+ * sprite, badge icon glyphs. This is the credits manifest's input and the
+ * atlas planner's frame list: one place decides what "used" means.
+ */
+export function kitAssetIds(kit) {
+  const ids = new Set();
+  for (const piece of Object.values(kit.terrain || {})) {
+    if (piece.tiles?.asset) ids.add(piece.tiles.asset);
+  }
+  if (kit.sprites?.tree?.sprite?.asset) ids.add(kit.sprites.tree.sprite.asset);
+  for (const ref of Object.values(kit.sprites?.badge?.icons || {})) {
+    if (ref?.asset) ids.add(ref.asset);
+  }
+  return [...ids].sort();
 }
 
 /**

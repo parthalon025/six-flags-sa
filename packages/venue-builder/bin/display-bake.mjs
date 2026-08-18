@@ -20,15 +20,28 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { chromium } from 'playwright';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, slugify } from '../lib/venue-io.mjs';
 import {
-  bakeModel, resolveKit, TERRAIN_PIECES, SPRITE_PIECES, TEXTURE_KINDS,
+  bakeModel, kitAssetIds, resolveKit,
+  TERRAIN_PIECES, SPRITE_PIECES, TEXTURE_KINDS,
+  BUILDING_STYLES, TREE_STYLES, TRACK_STYLES,
 } from '../lib/display-bake.mjs';
-import { readAssetLedger, assetPath } from '../lib/display-assets.mjs';
+import { readAssetLedger, assetPath, creditsManifest } from '../lib/display-assets.mjs';
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
 
 const LEDGER = readAssetLedger();
 
 const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
+
+// The asset menu the brief may reference — GUIDs from the license-gated
+// ledger only; resolveKit rejects anything else before a kit is saved.
+const assetMenu = () => {
+  const rows = Object.values(LEDGER);
+  const sheets = rows.filter((r) => r.kind === 'tilesheet')
+    .map((r) => `${r.id} tiles: ${Object.keys(r.import.tiles).join(', ')}`);
+  const sprites = rows.filter((r) => r.kind === 'sprite').map((r) => r.id);
+  const icons = rows.filter((r) => r.kind === 'icon').map((r) => r.id);
+  return { sheets, sprites, icons };
+};
 
 const KIT_BRIEF_SYSTEM = `You author map "kit specs" for a deterministic game-map baker.
 The bake is composed of small pieces; you choose params per piece — presentation
@@ -37,13 +50,19 @@ only, never geometry. Reply with ONLY a JSON object:
   "id": "<kebab-case kit name>",
   "label": "<short human name>",
   "terrain": { any subset of ${Object.keys(TERRAIN_PIECES).join('|')}:
-    { "base": "<css color>", "texture": { "kind": "${TEXTURE_KINDS.join('|')}", "color": "<css>", "density": 0..1 } } },
+    { "base": "<css color>",
+      "texture": { "kind": "${TEXTURE_KINDS.join('|')}", "color": "<css>", "density": 0..1 },
+      "tiles": { "asset": "<tilesheet id>", "tile": "<tile name>", "tint": "<css, optional>" } } },
   "sprites": { any subset of:
-    "tree": {"canopy","highlight","shadow","scale"},
-    "building": {"roofs":[colors],"edge","wall","drop"},
-    "slide": {"casing","colors":[colors],"width"},
-    "coaster": {"rail","tie"},
-    "badge": {"gate","food","restroom","shop","show","service"} } }
+    "tree": {"style":"${TREE_STYLES.join('|')}","canopy","highlight","shadow","scale","sprite":{"asset":"<sprite id>"}},
+    "building": {"style":"${BUILDING_STYLES.join('|')}","roofs":[colors],"edge","wall","drop"},
+    "slide": {"style":"${TRACK_STYLES.join('|')}","casing","colors":[colors],"width"},
+    "coaster": {"style":"${TRACK_STYLES.join('|')}","rail","tie"},
+    "badge": {"gate","food","restroom","shop","show","service","icons":{kind:{"asset":"<icon id>"}}} } }
+"tiles" paints that terrain with real dual-grid tile art; "style" switches how a
+sprite is DRAWN (outline vs drop-shadowed buildings, tube vs mono tracks), not
+just its colors. Asset ids must come from this ledger menu:
+${JSON.stringify(assetMenu())}
 Defaults fill anything you omit: ${JSON.stringify({ terrain: TERRAIN_PIECES, sprites: SPRITE_PIECES })}
 Keep water readable as water and paths as paths, with outdoor-phone contrast.`;
 
@@ -117,6 +136,9 @@ function serve(model, kit) {
   if (treeSprite && !sheets[treeSprite.asset]) {
     sheets[treeSprite.asset] = { url: `/asset/${treeSprite.asset}`, sprite: true };
   }
+  for (const ref of Object.values(kit.sprites.badge?.icons || {})) {
+    if (ref?.asset && !sheets[ref.asset]) sheets[ref.asset] = { url: `/asset/${ref.asset}`, sprite: true };
+  }
   return http.createServer((req, res) => {
     const url = req.url.split('?')[0];
     if (url === '/') { res.setHeader('content-type', 'text/html'); return res.end(PAGE); }
@@ -170,7 +192,11 @@ for (const id of ids) {
   await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
   const file = path.join(outRoot, `${id}--${resolvedKitId}.png`);
   await page.locator('#c').screenshot({ path: file });
-  console.log(`${id} × ${resolvedKitId}: ${model.cols}×${model.rows} tiles → ${file}`);
+  // Credits ride every bake: each ledger asset the kit touched, with its
+  // license and source — the audit trail the asset ledger promises.
+  const credits = creditsManifest(kitAssetIds(kit), LEDGER);
+  writeFileSync(path.join(outRoot, `${id}--${resolvedKitId}.credits.json`), `${JSON.stringify(credits, null, 2)}\n`);
+  console.log(`${id} × ${resolvedKitId}: ${model.cols}×${model.rows} tiles → ${file} (+credits)`);
   server.close();
 }
 await browser.close();
