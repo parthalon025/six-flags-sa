@@ -15,6 +15,7 @@ import {
   mediaFiles,
   missingFromReadme,
   shotsNeedingRefresh,
+  videosNeedingRefresh,
 } from './lib/readme-shots.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -42,7 +43,8 @@ assert.match(readme, /walkthrough/i, 'README should include a walkthrough');
 {
   const stale = shotsNeedingRefresh(['apps/party-tracker/components/ParkMap.jsx'], manifest);
   assert.ok(stale.includes('map-day.png'), 'ParkMap.jsx must stale the day map shot');
-  assert.ok(stale.includes('walkthrough.mp4'), 'ParkMap.jsx must stale the walkthrough video');
+  const staleVideos = videosNeedingRefresh(['apps/party-tracker/components/ParkMap.jsx'], manifest);
+  assert.ok(staleVideos.includes('walkthrough.mp4'), 'ParkMap.jsx must stale the walkthrough video');
 }
 
 {
@@ -80,6 +82,15 @@ if (base) {
       0,
       `README media stale after ${ref} changes (${stale.join(', ')}). Run: npm run readme:shots`,
     );
+
+    // Videos are best-effort (encoding needs ffmpeg — not guaranteed to be
+    // installed, #469), so a stale walkthrough warns instead of failing CI.
+    const staleVideos = videosNeedingRefresh(changed, manifest);
+    if (staleVideos.length) {
+      console.warn(
+        `readme-shots-check: warning — README walkthrough stale after ${ref} changes (${staleVideos.join(', ')}). Run: npm run readme:shots`,
+      );
+    }
   }
 }
 

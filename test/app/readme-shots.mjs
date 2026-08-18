@@ -108,10 +108,20 @@ async function shot(page, name) {
   if (paths < 200) throw new Error(`${name}: map not drawn (${paths} paths)`);
 }
 
+const FFMPEG_BIN = process.env.FFMPEG_BIN || 'ffmpeg';
+
+/** True when FFMPEG_BIN resolves to a runnable ffmpeg. Video encoding is
+ * best-effort (#469): agent containers may not have ffmpeg installed, and
+ * that must not fail a run where every still already captured fine. */
+function ffmpegAvailable() {
+  const probe = spawnSync(FFMPEG_BIN, ['-version'], { stdio: 'ignore' });
+  return !probe.error && probe.status === 0;
+}
+
 function encodeWalkthrough(webmPath) {
   const mp4 = path.join(OUT, 'walkthrough.mp4');
   const r = spawnSync(
-    'ffmpeg',
+    FFMPEG_BIN,
     [
       '-y',
       '-i',
@@ -294,7 +304,11 @@ async function main() {
 
   const webm = fs.readdirSync(videoDir).find((f) => f.endsWith('.webm'));
   if (!webm) throw new Error('Playwright did not write a walkthrough video');
-  encodeWalkthrough(path.join(videoDir, webm));
+  if (ffmpegAvailable()) {
+    encodeWalkthrough(path.join(videoDir, webm));
+  } else {
+    console.log('  walkthrough.mp4: skipped (no ffmpeg)');
+  }
   fs.rmSync(videoDir, { recursive: true, force: true });
   console.log('\nreadme shots written to docs/images/readme/\n');
 }
