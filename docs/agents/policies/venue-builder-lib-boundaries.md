@@ -51,7 +51,11 @@ Enforced in `.dependency-cruiser.cjs` (`npm run lint:boundaries`), not written d
 prose alone — per this repo's own scripts-over-instructions policy:
 
 - `lib/operators/` may never import `lib/agents/` or `lib/adapters/`.
-- `lib/adapters/` may never import `lib/agents/` or `lib/operators/`.
+- `lib/adapters/` may never import `lib/agents/`, `lib/operators/`, or `lib/terrain/`.
+- `lib/terrain/` may never import `lib/agents/`, `lib/operators/`, or the evidence
+  engine (`evidence.mjs` / `evidence-graph.mjs`). It reads `lib/adapters/` for a DEM
+  and nothing else — height is a Display input, never a claim about where a Place is
+  ([ADR-0015](../../adr/0015-terrain-in-display.md)).
 - A core `lib/*.mjs` file reaching into `agents/`, `operators/`, or `adapters/` must be
   one of the six files already doing so (`build-pipeline.mjs`, `venue-official-site.mjs`,
   `external-claims.mjs`, `external-research.mjs`, `venue-certify.mjs`,

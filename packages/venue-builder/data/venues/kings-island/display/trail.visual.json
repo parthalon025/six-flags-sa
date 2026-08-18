@@ -152,12 +152,6 @@
       "east": -84.2595,
       "west": -84.2775
     },
-    "steepDegrees": 18,
-    "constrained": {
-      "paths": 757,
-      "water": 24,
-      "pads": 206,
-      "nodes": 139445
-    }
+    "steepDegrees": 18
   }
 }
