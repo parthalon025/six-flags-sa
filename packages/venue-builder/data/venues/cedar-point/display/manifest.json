@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "tiers": {
+    "vector": {
+      "file": "base.pmtiles",
+      "bytes": 211533
+    },
+    "raster": {
+      "gap": true,
+      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 3294 KB PNG + bounds still ship in the manifest for direct image placement"
+    },
+    "bake:blueprint-survey": {
+      "file": "cedar-point--blueprint-survey.png",
+      "bytes": 3676086,
+      "kit": "blueprint-survey"
+    },
+    "bake:island-brochure": {
+      "file": "cedar-point--island-brochure.png",
+      "bytes": 3427004,
+      "kit": "island-brochure"
+    },
+    "bake:midnight-carnival": {
+      "file": "cedar-point--midnight-carnival.png",
+      "bytes": 4146029,
+      "kit": "midnight-carnival"
+    },
+    "bake:rpg-overworld": {
+      "file": "cedar-point--rpg-overworld.png",
+      "bytes": 3373430,
+      "kit": "rpg-overworld"
+    },
+    "credits": {
+      "file": "cedar-point--rpg-overworld.credits.json",
+      "bytes": 1859,
+      "kit": "rpg-overworld"
+    }
+  }
+}
