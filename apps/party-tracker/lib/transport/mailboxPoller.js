@@ -10,7 +10,7 @@
  * state until the last one disconnects.
  */
 
-import { markNoStream, mayStream, normalizeBase } from './mailboxClient.js';
+import { markNoStream, mayStream, normalizeBase } from './streamGate.js';
 
 const POLL_HOT_MS = 500;
 const HOT_WINDOW_MS = 20000;
