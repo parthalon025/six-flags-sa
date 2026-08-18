@@ -97,6 +97,13 @@
       "check": "the map still draws with the network cut"
     },
     {
+      "id": "ep4-offline-profile",
+      "slice": "EP",
+      "user_action": "Cached Profile identity (name, offline cue, rank title) shows on Settings with no network and no live session",
+      "suite": "functional",
+      "check": "offline profile identity survives without network"
+    },
+    {
       "id": "grandma-core",
       "slice": "Navigate",
       "user_action": "First-time visitor can complete toilet \u2192 food \u2192 walk",

@@ -2078,6 +2078,57 @@ await check('ride heights still work with the network cut', async () => {
   if (!/\d+ of \d+ rides/.test(badge.replace(/\s+/g, ' '))) throw new Error(badge);
   return true;
 });
+
+// SignInCard (and its offline cue) render only behind clerkBrowserConfigured() —
+// same seam the auth module gates on.
+if (Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)) {
+await check('offline profile identity survives without network', async () => {
+  const fakeProfile = { userId: 'usr_offline_check', displayName: 'Offline Scout', rank: 'ranger', xp: 250 };
+  // IndexedDB is a local API — unaffected by context.setOffline() — so the
+  // snapshot can be seeded on `off` without going back online first.
+  await off.evaluate(
+    (profile) =>
+      new Promise((resolve, reject) => {
+        const req = indexedDB.open('parkbound.profile', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('snapshot')) db.createObjectStore('snapshot');
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('snapshot', 'readwrite');
+          tx.objectStore('snapshot').put({ ...profile, cachedAt: new Date().toISOString() }, 'current');
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => {
+            db.close();
+            reject(tx.error);
+          };
+        };
+        req.onerror = () => reject(req.error);
+      }),
+    fakeProfile,
+  );
+  await off.evaluate(() => sessionStorage.removeItem('parkbound.session'));
+  await off.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+  await off.waitForTimeout(1500);
+  await hydrated(off).catch(() => {});
+  await go(off, 'Settings');
+  const cardText = await until(
+    async () => {
+      if (!(await off.locator('.signInCard').count())) return null;
+      const text = await off.locator('.signInCard').innerText();
+      return text.includes('Offline Scout') ? text : null;
+    },
+    { timeout: 15000, label: 'cached displayName on the offline SignInCard' },
+  );
+  if (!cardText.includes('offline profile')) throw new Error(`missing offline cue: ${cardText}`);
+  if (!cardText.includes('Ranger')) throw new Error(`missing rank title: ${cardText}`);
+  return true;
+});
+}
 await offline.close();
 } // end offline
 
