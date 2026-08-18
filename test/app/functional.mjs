@@ -43,6 +43,7 @@ import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
 import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
+import { PRECISE_MAX_MS } from '../../apps/party-tracker/lib/location.js';
 
 const PASS = [];
 const FAIL = [];
@@ -653,6 +654,71 @@ await check('a stale report is marked and never claims live/GO NOW', async () =>
     return true;
   } finally {
     await S.context.close().catch(() => {});
+  }
+});
+
+/**
+ * E4.1: a Member can switch to Precise sharing, but it is always time-boxed —
+ * `shareModePatch` caps it at PRECISE_MAX_MS and the runtime reverts to
+ * Approximate on its own once `shareUntil` passes. There is no "Off" mode
+ * (lib/location.js: Location is mandatory), so the only two states a Member
+ * ever sees are Approximate and Precise.
+ *
+ * Same clock trick as the stale-report check above, and lives here for the
+ * same reason: PartyPanel's own `now` ticks on a real setInterval(30_000),
+ * so `page.clock.setFixedTime` only moves what `Date.now()` reads — the next
+ * natural tick (up to 30 real seconds later) is what actually recomputes the
+ * chip. Solo party, throwaway context: the party module hangs in CI and
+ * locally (#194).
+ */
+await check('precise sharing expires back to approximate', async () => {
+  const S2 = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Sharer',
+    label: 'S2',
+    venue: 'kings-island',
+  });
+  const s2 = S2.page;
+  try {
+    await go(s2, 'Party');
+    await s2.waitForTimeout(300);
+    await s2.locator('button:has-text("Start a party")').click();
+    await s2.waitForSelector('.codeText', { timeout: 20000 });
+
+    const approxChip = s2.locator('.chip:has-text("Approximate")').first();
+    const preciseChip = s2.locator('.chip:has-text("Precise")').first();
+    const locationLabel = s2.locator('.label', { hasText: 'Your Location' });
+
+    await until(
+      async () => /\bon\b/.test((await approxChip.getAttribute('class')) || ''),
+      { timeout: 15000, label: 'Approximate to be the default' },
+    );
+    if (/\bon\b/.test((await preciseChip.getAttribute('class')) || '')) {
+      throw new Error('Precise reads active before it was ever chosen');
+    }
+
+    await preciseChip.click();
+    await until(
+      async () => /\bon\b/.test((await preciseChip.getAttribute('class').catch(() => '')) || ''),
+      { timeout: 20000, label: 'Precise to become active' },
+    );
+    const activeLabel = await locationLabel.innerText();
+    if (!/min left/i.test(activeLabel)) throw new Error(`Precise missing its countdown: ${activeLabel}`);
+
+    await s2.clock.setFixedTime(Date.now() + PRECISE_MAX_MS + 60_000);
+
+    await until(
+      async () => /\bon\b/.test((await approxChip.getAttribute('class').catch(() => '')) || ''),
+      { timeout: 75000, step: 2000, label: "the phone's clock to carry precise sharing past expiry" },
+    );
+    const expiredLabel = await locationLabel.innerText();
+    if (/min left/i.test(expiredLabel)) throw new Error(`countdown survived expiry: ${expiredLabel}`);
+    const preciseAfter = (await preciseChip.getAttribute('class')) || '';
+    if (/\bon\b/.test(preciseAfter)) throw new Error(`Precise still reads active after expiry: ${preciseAfter}`);
+    return true;
+  } finally {
+    await S2.context.close().catch(() => {});
   }
 });
 } // end heights

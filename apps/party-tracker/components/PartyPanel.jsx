@@ -6,7 +6,7 @@ import Icon from '@/components/Icon';
 import { GLYPHS, WORDS } from '@/lib/brand';
 import { shareInvite } from '@/lib/native';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
-import { locationCopy, placeAt } from '@/lib/location';
+import { effectiveShareMode, locationCopy, placeAt } from '@/lib/location';
 import { usePois } from '@/lib/venue/useVenue';
 import { heightIsStale } from '@party-tracker/shared/schemas.js';
 
@@ -86,6 +86,7 @@ export default function PartyPanel({
   hosting,
   status,
   onStatus,
+  onShareMode = null,
   onCreate,
   onJoin,
   onLeave,
@@ -230,6 +231,16 @@ export default function PartyPanel({
 
   /* Rounded up, so the last fifty seconds read "1 min left" rather than "0". */
   const joinsLeft = joinsOpenUntil > now ? Math.ceil((joinsOpenUntil - now) / 60000) : 0;
+
+  /* E4.1: precise sharing is time-boxed and reverts to Approximate on its own
+     once shareUntil passes — effectiveShareMode is the same call the runtime
+     makes, so the chip never disagrees with what is actually on the wire. */
+  const self = members.find((m) => m.id === myId) || null;
+  const shareMode = effectiveShareMode(self, now);
+  const shareLeft =
+    shareMode === 'precise' && self?.shareUntil > now
+      ? Math.ceil((self.shareUntil - now) / 60000)
+      : 0;
 
   /* This is a phone, so the sheet every other app uses to send a link is the
      right thing to open. Clipboard is the fallback, and either way it says so —
@@ -565,6 +576,34 @@ export default function PartyPanel({
         {status === HELP
           ? 'Everyone in the party has been told, and can see how far away you are.'
           : 'Buzzes every phone in the party and puts your name at the top of their screen.'}
+      </p>
+
+      <div className="label">
+        Your Location
+        {shareMode === 'precise' && shareLeft > 0 ? (
+          <span className="labelRight">{shareLeft} min left</span>
+        ) : null}
+      </div>
+      <div className="chips wrap">
+        <button
+          type="button"
+          className={`chip ${shareMode === 'approx' ? 'on' : ''}`}
+          onClick={() => onShareMode?.('approx')}
+        >
+          Approximate
+        </button>
+        <button
+          type="button"
+          className={`chip ${shareMode === 'precise' ? 'on' : ''}`}
+          onClick={() => onShareMode?.('precise')}
+        >
+          Precise · 30 min
+        </button>
+      </div>
+      <p className="fine" style={{ marginTop: 0 }}>
+        {shareMode === 'precise'
+          ? 'Sharing your exact spot with the party — it reverts to Approximate on its own.'
+          : 'Approximate rounds your dot for the family map. Precise shares your exact spot for 30 minutes.'}
       </p>
 
       <div className="label">Rally Point</div>

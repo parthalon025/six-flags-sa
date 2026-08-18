@@ -57,6 +57,7 @@ import {
   capture,
   locationReadyToJoin,
   locationRevokedInParty,
+  PRECISE_MAX_MS,
   view as locationView,
 } from '@/lib/location';
 import { newMemberId } from '@/lib/core/ids';
@@ -3041,6 +3042,12 @@ function ParkApp({ isSignedIn }) {
                     );
                   }
                 }}
+                onShareMode={(mode) =>
+                  runtime.current?.setShareMode(
+                    mode,
+                    mode === 'precise' ? { durationMs: PRECISE_MAX_MS } : {},
+                  )
+                }
                 onCreate={createParty}
                 onJoin={joinParty}
                 onLeave={leaveParty}

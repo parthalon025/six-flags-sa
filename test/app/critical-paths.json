@@ -172,6 +172,13 @@
       "user_action": "A ride report old enough to hedge is visibly muted and never claims live/GO NOW",
       "suite": "functional",
       "check": "a stale report is marked and never claims live/GO NOW"
+    },
+    {
+      "id": "party-share-precise",
+      "slice": "Party",
+      "user_action": "Switch to Precise sharing for 30 minutes; it reverts to Approximate on its own",
+      "suite": "functional",
+      "check": "precise sharing expires back to approximate"
     }
   ],
   "upcoming": []
