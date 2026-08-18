@@ -29,6 +29,11 @@ import {
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
+import {
+  buildMattReviewContext,
+  mattReviewBlockReason,
+  readMattReview,
+} from '../lib/matt-review.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -111,6 +116,18 @@ export async function runPreMergeVertical({
   const clerkBlock = clerkE2eBlockReason({ files: files || [], skipBrowser });
   if (clerkBlock) {
     console.error(`pre-merge-vertical: ${clerkBlock}`);
+    return 1;
+  }
+
+  // clerk gate treats an unknown diff as empty; matt-review instead fails
+  // closed on null (reviewRequiredForFiles) — both are deliberate.
+  const reviewBlock = mattReviewBlockReason({
+    files,
+    context: buildMattReviewContext({ baseRef, cwd }),
+    stamp: readMattReview(cwd),
+  });
+  if (reviewBlock) {
+    console.error(`pre-merge-vertical: ${reviewBlock}`);
     return 1;
   }
 

@@ -19,7 +19,7 @@ Layout: [docs/repo-structure.md](../docs/repo-structure.md). Visual tour: [docs/
 
 ## The four rules
 
-**Entry-point boundary.** Code outside a package (app code or another package) may import only that package's entry points, never anything in its subfolders.
+**Entry-point boundary.** Code outside a package (app code or another package) may import only that package's entry points, never anything in its subfolders. Entry points are the package's root files plus the targets of its `package.json` `exports` map — dependency-cruiser reads the exports map, so a documented export in a subfolder (e.g. `venue-builder/src/compare.mjs`) is public.
 
 **Intra-package freedom.** A package's own files import each other freely. Depth lives behind the interface; internals may nest as deep as they need.
 

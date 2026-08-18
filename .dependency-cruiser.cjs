@@ -23,6 +23,15 @@ const R = PACKAGES_ROOT;
  */
 const PACKAGE_INTERNALS = `^${R}/[^/]+/[^/]+/`;
 
+/**
+ * A package's `package.json` "exports" targets are entry points too, even
+ * when they live in a subfolder (e.g. venue-builder's src/compare.mjs).
+ * The documented interface is the exports map, not only the root files.
+ * Logic lives (tested) in scripts/lib/dependency-boundaries.cjs.
+ */
+const { exportedEntryPointPatterns } = require("./scripts/lib/dependency-boundaries.cjs");
+const EXPORTED_ENTRY_POINTS = exportedEntryPointPatterns(R);
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -31,8 +40,16 @@ module.exports = {
       comment:
         "App/root code may import a package's entry points (its root files), but nothing inside its subfolders.",
       severity: "error",
-      from: { pathNot: `^${R}/` }, // importer is NOT inside any package
-      to: { path: PACKAGE_INTERNALS },
+      from: {
+        pathNot: [
+          `^${R}/`, // importer is NOT inside any package
+          // test/builder is the venue-builder's white-box unit suite and
+          // predates the boundary; scoped exemption — #476 tracks moving it
+          // into packages/venue-builder/tests behind seams, or blessing it.
+          "^test/builder/",
+        ],
+      },
+      to: { path: PACKAGE_INTERNALS, pathNot: EXPORTED_ENTRY_POINTS },
     },
     {
       name: "entrypoint-boundary-across-packages",
@@ -43,7 +60,7 @@ module.exports = {
       from: { path: `^${R}/([^/]+)/`, pathNot: `^${R}/[^/]+/tests/` },
       to: {
         path: PACKAGE_INTERNALS,
-        pathNot: `^${R}/$1/`, // same package → intra-package freedom
+        pathNot: [`^${R}/$1/`, ...EXPORTED_ENTRY_POINTS], // same package → intra-package freedom
       },
     },
     {
@@ -69,7 +86,12 @@ module.exports = {
       name: "no-circular",
       comment: "No dependency cycles. Scope to `^${R}/` if you want to allow cycles outside packages.",
       severity: "error",
-      from: {},
+      from: {
+        // Known cycle: mailboxClient ↔ mailboxPoller (transport layer).
+        // Allowlisted, not endorsed — #478 tracks extracting the shared
+        // stream helpers.
+        pathNot: "^apps/party-tracker/lib/transport/(mailboxClient|mailboxPoller)\\.js$",
+      },
       to: { circular: true },
     },
 

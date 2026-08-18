@@ -12,6 +12,7 @@ Before you design, refactor, review, or add agent-facing docs:
 4. **Run `code-review` smells** when reviewing a branch or PR (documented repo rules override the Fowler baseline).
 5. **Prefer TDD** (`tdd` skill) when adding or changing behaviour that already has tests nearby.
 6. **Vertical test before merge** — run `npm run test:pre-merge-vertical` before merging any PR. See [docs/agents/ci.md](./ci.md#before-merge-agents).
+7. **Sonnet standards review before merge (code diffs)** — spawn a `claude-sonnet-5` subagent with the prompt from `node scripts/ci/matt-review.mjs prompt` (it applies `code-review`, this doc, and `codebase-design`; give it the GitNexus blast radius when the index is available). Address or answer its advisory findings, then stamp with `node scripts/ci/matt-review.mjs write --gitnexus <ok|unavailable>` and commit `scripts/ci/matt-review-pass.json`. CI and `test:pre-merge-vertical` fail code diffs without a fresh stamp; docs-only diffs are exempt.
 
 ## Skill map
 
@@ -29,7 +30,7 @@ Before you design, refactor, review, or add agent-facing docs:
 
 ## Deep modules here
 
-**Packages** — entry points only; `npm run lint:boundaries`. See [packages/README.md](../../packages/README.md).
+**Packages** — entry points only (root files plus `package.json` `exports` targets); `npm run lint:boundaries` cruises `apps packages scripts test`, so app/script/test importers and cycles are enforced too. See [packages/README.md](../../packages/README.md).
 
 **Scripts** — pure decision logic in `scripts/lib/*.mjs`, CI orchestration in `scripts/ci/` (manifest + thin CLIs), shared lists in JSON. Test through exported functions (`test/scripts/*.test.mjs`). See [docs/agents/ci.md](./ci.md).
 

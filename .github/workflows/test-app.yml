@@ -80,6 +80,15 @@ jobs:
             node test/app/readme-shots-check.mjs --base origin/main
           fi
 
+      - name: Matt-review stamp (code PRs)
+        run: |
+          BASE_REF="${{ github.base_ref }}"
+          if [ -n "$BASE_REF" ]; then
+            node scripts/ci/matt-review.mjs check --base "origin/$BASE_REF"
+          else
+            echo "push event — matt-review checked on the PR"
+          fi
+
       - name: Local CI pass (skip GitHub UI when stamped)
         id: local_pass
         run: |
