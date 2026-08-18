@@ -23,7 +23,7 @@ import {
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
-import { XP_AWARDS, pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
+import { pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
 import { completionLine, contributionFromGapSubmit } from '@/lib/overlay';
 
 /**
@@ -333,11 +333,7 @@ export default function SideQuestsPanel({
       const title = rankReward(scored.profile.rank).title;
       if (title) setReward({ kind: 'rankUp', rankUp: true, title, deltaXp: scored.deltaXp });
     } else if (scored.deltaXp > 0) {
-      setReward({
-        kind: 'xp',
-        deltaXp: scored.deltaXp,
-        dailyBonus: scored.deltaXp - (XP_AWARDS[action] || 0) > 0,
-      });
+      setReward({ kind: 'xp', deltaXp: scored.deltaXp, dailyBonus: scored.dailyBonus });
     } else if (scored.reason === 'repeat') {
       setReward({ kind: 'repeat' });
     } else if (scored.reason === 'not_near') {

@@ -143,6 +143,7 @@ export function scoreSideQuest(profile = {}, event = {}) {
   let deltaXp = 0;
   let deltaRep = 0;
   let reason = 'none';
+  let dailyBonus = false;
 
   if (action === 'overturned') {
     deltaRep = -10;
@@ -175,6 +176,7 @@ export function scoreSideQuest(profile = {}, event = {}) {
       if (lastQuestDay !== day) {
         deltaXp += XP_AWARDS.firstHelpfulDay;
         lastQuestDay = day;
+        dailyBonus = true;
       }
       xp += deltaXp;
       reason = action;
@@ -199,6 +201,7 @@ export function scoreSideQuest(profile = {}, event = {}) {
     },
     deltaXp,
     deltaRep,
+    dailyBonus,
     rankUp: (RANK_INDEX[rank] ?? 0) > (RANK_INDEX[previousRank] ?? 0),
     previousRank,
     reason,

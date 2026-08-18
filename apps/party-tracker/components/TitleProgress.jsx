@@ -20,11 +20,7 @@ export default function TitleProgress({ xp = 0, lastQuestDay, compact = false })
   const p = rankProgress(xp);
   const dailyReady = lastQuestDay !== undefined && lastQuestDay !== utcDay();
   return (
-    <div
-      className={`titleProgress ${compact ? 'compact' : ''}`}
-      data-xp={p.xp}
-      data-rank={p.rank}
-    >
+    <div className={`titleProgress ${compact ? 'compact' : ''}`} data-xp={p.xp}>
       <div className="titleProgressHead">
         <b className="titleProgressLabel">{p.title || 'Visitor'}</b>
         <span className="titleProgressXp">{p.xp} XP</span>

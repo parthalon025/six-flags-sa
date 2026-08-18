@@ -110,6 +110,16 @@ await check('first independent Gap awards 12 plus first-helpful-of-day; repeat i
   assert.equal(first.profile.xp, 17);
   assert.equal(first.rankUp, false);
   assert.equal(first.reason, 'first');
+  assert.equal(first.dailyBonus, true);
+  const second = scoreSideQuest(first.profile, {
+    action: 'first',
+    key: 'ki:height:orion',
+    hasProfile: true,
+    walkedNear: true,
+    now,
+  });
+  assert.equal(second.deltaXp, XP_AWARDS.first);
+  assert.equal(second.dailyBonus, false);
   const again = scoreSideQuest(first.profile, {
     action: 'first',
     key: 'ki:height:beast',
@@ -119,6 +129,7 @@ await check('first independent Gap awards 12 plus first-helpful-of-day; repeat i
   });
   assert.equal(again.deltaXp, 0);
   assert.equal(again.reason, 'repeat');
+  assert.equal(again.dailyBonus, false);
   assert.equal(again.profile.xp, 17);
   return true;
 });
