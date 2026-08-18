@@ -254,6 +254,9 @@ for (const id of ids) {
       profile: r.profile,
       kit: r.kit,
     });
+    // Geo bounds ride the cert so the display stage can place the baked
+    // image (and attempt the raster tier) without re-baking the model.
+    cert.bounds = r.model.bounds ?? null;
     writeFileSync(path.join(outRoot, `${id}--${r.kitId}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
     const failing = cert.checks.filter((c) => !c.pass);
     const certLine = cert.certified

@@ -121,8 +121,337 @@
       "confidence": "high",
       "falsifier": "a venue with no gates, no district anchors, and no coasters",
       "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
+    },
+    {
+      "key": "tiles",
+      "claim": "base.pmtiles builds and fits the 15 MB pack budget",
+      "pass": true,
+      "evidence": "base.pmtiles 100 KB",
+      "confidence": "high",
+      "falsifier": "tippecanoe fails or the archive exceeds the download budget",
+      "soWhat": "the display pack rides the venue download; an oversized or missing archive blocks it"
+    },
+    {
+      "key": "bake:blueprint-survey:reference_profile_resolves",
+      "claim": "kit \"blueprint-survey\" has a committed reference profile",
+      "pass": true,
+      "evidence": "profile blueprint-survey (style blueprint-linework)",
+      "confidence": 1,
+      "falsifier": "a kit on disk with no profile under data/display/references/",
+      "soWhat": "no contract, no certification — the look would drift unmeasured"
+    },
+    {
+      "key": "bake:blueprint-survey:style_terrain_palette",
+      "claim": "every sampled terrain class stays inside its profile color family",
+      "pass": true,
+      "evidence": "grass ΔE 0/12, wood ΔE 0/12, water ΔE 0/12, lot ΔE 0/12, road ΔE 0/10, service ΔE 0/10, outside ΔE 0/10",
+      "confidence": 0.9,
+      "falsifier": "worst class grass beyond tolerance on a rerun",
+      "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:blueprint-survey:style_road_hierarchy",
+      "claim": "road centerline ink separates from paper (ΔE ≥ 25)",
+      "pass": true,
+      "evidence": "best roadline sample vs paper ΔE 74.1",
+      "confidence": 0.85,
+      "falsifier": "linework styles whose ink fades into the paper",
+      "soWhat": "near-monochrome styles carry hierarchy in ink, not fill"
+    },
+    {
+      "key": "bake:blueprint-survey:style_water_legibility",
+      "claim": "water reads as water (ΔE ≥ 3 vs vegetation and ground)",
+      "pass": true,
+      "evidence": "water vs grass ΔE 13.7, vs ground ΔE —",
+      "confidence": 0.9,
+      "falsifier": "a pool that reads as lawn",
+      "soWhat": "the kit brief’s own promise, now enforced"
+    },
+    {
+      "key": "bake:blueprint-survey:style_outside_distinct",
+      "claim": "the world outside the venue separates from the park floor (ΔE ≥ 2)",
+      "pass": true,
+      "evidence": "outside vs grass ΔE 3.9",
+      "confidence": 0.9,
+      "falsifier": "a bake where the park has no edge",
+      "soWhat": "the boundary is the first thing the reference maps establish"
+    },
+    {
+      "key": "bake:blueprint-survey:style_structure_presence",
+      "claim": "buildings paint in the profile's edge treatment",
+      "pass": true,
+      "evidence": "265/266 buildings show edge treatment (266 total)",
+      "confidence": 0.8,
+      "falsifier": "a kit whose buildings vanish into terrain",
+      "soWhat": "structures are the landmarks navigation hangs on"
+    },
+    {
+      "key": "bake:blueprint-survey:style_track_presence",
+      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 10)",
+      "pass": true,
+      "evidence": "127 tracks sampled, 0 indistinct (noise floor 3)",
+      "confidence": 0.8,
+      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
+      "soWhat": "rides are why the map exists"
+    },
+    {
+      "key": "bake:blueprint-survey:style_annotation_on_top",
+      "claim": "every badge disc samples badge ink, never the terrain under it",
+      "pass": true,
+      "evidence": "64/64 badge discs in family",
+      "confidence": 0.85,
+      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
+      "soWhat": "POI pins must survive every style"
+    },
+    {
+      "key": "bake:blueprint-survey:style_badge_dedup",
+      "claim": "one badge per POI position",
+      "pass": true,
+      "evidence": "64 badges, 64 distinct positions",
+      "confidence": 1,
+      "falsifier": "duplicate pins stacked on one POI",
+      "soWhat": "ADR-0012 declutter rule, model-side"
+    },
+    {
+      "key": "bake:blueprint-survey:style_bake_deterministic",
+      "claim": "a fresh render of the same model samples byte-identical pixels",
+      "pass": true,
+      "evidence": "render bccb7d98 vs rerender bccb7d98",
+      "confidence": 1,
+      "falsifier": "any clock or RNG sneaking into the compositor",
+      "soWhat": "determinism is the bake’s core guarantee"
+    },
+    {
+      "key": "bake:blueprint-survey:style_cross_kit_distinct",
+      "claim": "sibling kits of this venue sample distinct pixels",
+      "pass": true,
+      "evidence": "distinct from 2 sibling bake(s)",
+      "confidence": 0.9,
+      "falsifier": "two kits that only differ in name",
+      "soWhat": "the factory exists to make different-looking maps"
+    },
+    {
+      "key": "bake:island-brochure:reference_profile_resolves",
+      "claim": "kit \"island-brochure\" has a committed reference profile",
+      "pass": true,
+      "evidence": "profile island-brochure (style illustrated-brochure)",
+      "confidence": 1,
+      "falsifier": "a kit on disk with no profile under data/display/references/",
+      "soWhat": "no contract, no certification — the look would drift unmeasured"
+    },
+    {
+      "key": "bake:island-brochure:style_terrain_palette",
+      "claim": "every sampled terrain class stays inside its profile color family",
+      "pass": true,
+      "evidence": "grass ΔE 0/16, wood ΔE 3.5/16, water ΔE 0/16, lot ΔE 0/14, road ΔE 0/12, service ΔE 0/12, outside ΔE 0/14",
+      "confidence": 0.9,
+      "falsifier": "worst class wood beyond tolerance on a rerun",
+      "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:island-brochure:style_road_hierarchy",
+      "claim": "roads separate from the park floor (ΔE ≥ 15, darker)",
+      "pass": true,
+      "evidence": "road vs grass ΔE 71.5, L* 56 vs 65",
+      "confidence": 0.9,
+      "falsifier": "a kit whose roads dissolve into the floor on a phone outdoors",
+      "soWhat": "wayfinding is the map’s one job"
+    },
+    {
+      "key": "bake:island-brochure:style_water_legibility",
+      "claim": "water reads as water (ΔE ≥ 20 vs vegetation and ground)",
+      "pass": true,
+      "evidence": "water vs grass ΔE 64, vs ground ΔE —",
+      "confidence": 0.9,
+      "falsifier": "a pool that reads as lawn",
+      "soWhat": "the kit brief’s own promise, now enforced"
+    },
+    {
+      "key": "bake:island-brochure:style_outside_distinct",
+      "claim": "the world outside the venue separates from the park floor (ΔE ≥ 12)",
+      "pass": true,
+      "evidence": "outside vs grass ΔE 63.3",
+      "confidence": 0.9,
+      "falsifier": "a bake where the park has no edge",
+      "soWhat": "the boundary is the first thing the reference maps establish"
+    },
+    {
+      "key": "bake:island-brochure:style_structure_presence",
+      "claim": "buildings paint in the profile's interior treatment",
+      "pass": true,
+      "evidence": "228/251 buildings show interior treatment (266 total)",
+      "confidence": 0.8,
+      "falsifier": "a kit whose buildings vanish into terrain",
+      "soWhat": "structures are the landmarks navigation hangs on"
+    },
+    {
+      "key": "bake:island-brochure:style_track_presence",
+      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 12)",
+      "pass": true,
+      "evidence": "127 tracks sampled, 0 indistinct (noise floor 3)",
+      "confidence": 0.8,
+      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
+      "soWhat": "rides are why the map exists"
+    },
+    {
+      "key": "bake:island-brochure:style_annotation_on_top",
+      "claim": "every badge disc samples badge ink, never the terrain under it",
+      "pass": true,
+      "evidence": "64/64 badge discs in family",
+      "confidence": 0.85,
+      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
+      "soWhat": "POI pins must survive every style"
+    },
+    {
+      "key": "bake:island-brochure:style_badge_dedup",
+      "claim": "one badge per POI position",
+      "pass": true,
+      "evidence": "64 badges, 64 distinct positions",
+      "confidence": 1,
+      "falsifier": "duplicate pins stacked on one POI",
+      "soWhat": "ADR-0012 declutter rule, model-side"
+    },
+    {
+      "key": "bake:island-brochure:style_bake_deterministic",
+      "claim": "a fresh render of the same model samples byte-identical pixels",
+      "pass": true,
+      "evidence": "render 6a3d21d5 vs rerender 6a3d21d5",
+      "confidence": 1,
+      "falsifier": "any clock or RNG sneaking into the compositor",
+      "soWhat": "determinism is the bake’s core guarantee"
+    },
+    {
+      "key": "bake:island-brochure:style_cross_kit_distinct",
+      "claim": "sibling kits of this venue sample distinct pixels",
+      "pass": true,
+      "evidence": "distinct from 2 sibling bake(s)",
+      "confidence": 0.9,
+      "falsifier": "two kits that only differ in name",
+      "soWhat": "the factory exists to make different-looking maps"
+    },
+    {
+      "key": "bake:rpg-overworld:reference_profile_resolves",
+      "claim": "kit \"rpg-overworld\" has a committed reference profile",
+      "pass": true,
+      "evidence": "profile rpg-overworld (style pixel-tiled)",
+      "confidence": 1,
+      "falsifier": "a kit on disk with no profile under data/display/references/",
+      "soWhat": "no contract, no certification — the look would drift unmeasured"
+    },
+    {
+      "key": "bake:rpg-overworld:style_terrain_palette",
+      "claim": "every sampled terrain class stays inside its profile color family",
+      "pass": true,
+      "evidence": "grass ΔE 0/16, wood ΔE 2.3/16, water ΔE 0/16, lot ΔE 0/14, road ΔE 0/12, service ΔE 0/12, outside ΔE 0/14",
+      "confidence": 0.9,
+      "falsifier": "worst class wood beyond tolerance on a rerun",
+      "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:rpg-overworld:style_road_hierarchy",
+      "claim": "roads separate from the park floor (ΔE ≥ 15, darker)",
+      "pass": true,
+      "evidence": "road vs grass ΔE 76.7, L* 55 vs 65",
+      "confidence": 0.9,
+      "falsifier": "a kit whose roads dissolve into the floor on a phone outdoors",
+      "soWhat": "wayfinding is the map’s one job"
+    },
+    {
+      "key": "bake:rpg-overworld:style_water_legibility",
+      "claim": "water reads as water (ΔE ≥ 20 vs vegetation and ground)",
+      "pass": true,
+      "evidence": "water vs grass ΔE 64, vs ground ΔE —",
+      "confidence": 0.9,
+      "falsifier": "a pool that reads as lawn",
+      "soWhat": "the kit brief’s own promise, now enforced"
+    },
+    {
+      "key": "bake:rpg-overworld:style_outside_distinct",
+      "claim": "the world outside the venue separates from the park floor (ΔE ≥ 20)",
+      "pass": true,
+      "evidence": "outside vs grass ΔE 117.9",
+      "confidence": 0.9,
+      "falsifier": "a bake where the park has no edge",
+      "soWhat": "the boundary is the first thing the reference maps establish"
+    },
+    {
+      "key": "bake:rpg-overworld:style_structure_presence",
+      "claim": "buildings paint in the profile's interior treatment",
+      "pass": true,
+      "evidence": "231/251 buildings show interior treatment (266 total)",
+      "confidence": 0.8,
+      "falsifier": "a kit whose buildings vanish into terrain",
+      "soWhat": "structures are the landmarks navigation hangs on"
+    },
+    {
+      "key": "bake:rpg-overworld:style_track_presence",
+      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 12)",
+      "pass": true,
+      "evidence": "127 tracks sampled, 0 indistinct (noise floor 3)",
+      "confidence": 0.8,
+      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
+      "soWhat": "rides are why the map exists"
+    },
+    {
+      "key": "bake:rpg-overworld:style_annotation_on_top",
+      "claim": "every badge disc samples badge ink, never the terrain under it",
+      "pass": true,
+      "evidence": "64/64 badge discs in family",
+      "confidence": 0.85,
+      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
+      "soWhat": "POI pins must survive every style"
+    },
+    {
+      "key": "bake:rpg-overworld:style_badge_dedup",
+      "claim": "one badge per POI position",
+      "pass": true,
+      "evidence": "64 badges, 64 distinct positions",
+      "confidence": 1,
+      "falsifier": "duplicate pins stacked on one POI",
+      "soWhat": "ADR-0012 declutter rule, model-side"
+    },
+    {
+      "key": "bake:rpg-overworld:style_bake_deterministic",
+      "claim": "a fresh render of the same model samples byte-identical pixels",
+      "pass": true,
+      "evidence": "render cf78e49c vs rerender cf78e49c",
+      "confidence": 1,
+      "falsifier": "any clock or RNG sneaking into the compositor",
+      "soWhat": "determinism is the bake’s core guarantee"
+    },
+    {
+      "key": "bake:rpg-overworld:style_cross_kit_distinct",
+      "claim": "sibling kits of this venue sample distinct pixels",
+      "pass": true,
+      "evidence": "distinct from 2 sibling bake(s)",
+      "confidence": 0.9,
+      "falsifier": "two kits that only differ in name",
+      "soWhat": "the factory exists to make different-looking maps"
+    },
+    {
+      "key": "bake_certs",
+      "claim": "every baked kit passes its reference-profile style contract",
+      "pass": true,
+      "evidence": "blueprint-survey:ok, island-brochure:ok, rpg-overworld:ok",
+      "confidence": "high",
+      "falsifier": "a kit whose style-cert.json reports certified:false, or no bakes at all",
+      "soWhat": "an uncertified look must not ride the venue download"
     }
   ],
+  "bakes": {
+    "blueprint-survey": {
+      "certified": true,
+      "signature": "bccb7d98"
+    },
+    "island-brochure": {
+      "certified": true,
+      "signature": "6a3d21d5"
+    },
+    "rpg-overworld": {
+      "certified": true,
+      "signature": "cf78e49c"
+    }
+  },
   "skins": {
     "trail": {
       "version": 1,

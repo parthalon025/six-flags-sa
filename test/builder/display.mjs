@@ -38,6 +38,8 @@ const {
   styleFromSpec,
   anchorsFromTruth,
   runDisplayStage,
+  foldBakeCerts,
+  tierManifest,
 } = await import('../../packages/venue-builder/lib/display-pack.mjs');
 const { displayGeoJson, buildTiles, tippecanoeAvailable } = await import(
   '../../packages/venue-builder/lib/display-tiles.mjs'
@@ -398,6 +400,47 @@ await check('the crop window is integral and tightens to the boundary', () => {
   assert.equal(cropped.cells.length, cropped.cols * cropped.rows, 'cells must fill the grid exactly');
   assert.ok(cropped.cols < full.cols && cropped.rows < full.rows, 'crop must tighten to the boundary');
   assert.equal(JSON.stringify(cropped), JSON.stringify(bakeModel(tight, [], { maxCols: 60, margin: 2 })));
+  return true;
+});
+
+await check('the bake model carries geo bounds of its crop window', () => {
+  const full = bakeModel({ ...BAKE_MAP, boundary: null }, [], { maxCols: 60 });
+  const cropped = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 });
+  for (const m of [full, cropped]) {
+    assert.ok(m.bounds, 'bounds ride every model');
+    assert.ok(m.bounds.west < m.bounds.east && m.bounds.south < m.bounds.north, 'WSEN ordering');
+    assert.ok(m.bounds.west >= -0.001 && m.bounds.east <= 0.011, 'inside the map bbox');
+  }
+  const span = (b) => (b.east - b.west) * (b.north - b.south);
+  assert.ok(span(cropped.bounds) < span(full.bounds), 'the crop window tightens the geo bounds');
+  assert.deepEqual(cropped.bounds, bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 }).bounds, 'deterministic');
+  return true;
+});
+
+await check('bake certifications fold into the pack, namespaced and gated', () => {
+  const certA = { certified: true, checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'x' }] };
+  const certB = { certified: false, checks: [{ key: 'style_track_presence', pass: false, evidence: 'y' }] };
+  const rows = foldBakeCerts([{ kit: 'a', cert: certA }, { kit: 'b', cert: certB }]);
+  assert.ok(rows.some((r) => r.key === 'bake:a:style_terrain_palette' && r.pass));
+  assert.ok(rows.some((r) => r.key === 'bake:b:style_track_presence' && !r.pass));
+  const gate = rows.find((r) => r.key === 'bake_certs');
+  assert.equal(gate.pass, false, 'one failing kit fails the gate');
+  assert.match(gate.evidence, /b:FAILING/);
+  const empty = foldBakeCerts([]).find((r) => r.key === 'bake_certs');
+  assert.equal(empty.pass, false, 'no bakes is a recorded gap, not a silent pass');
+  assert.match(empty.evidence, /run venues:bake/);
+  return true;
+});
+
+await check('the tier manifest names every tier, sizes or gaps', () => {
+  const manifest = tierManifest([
+    { name: 'vector', file: 'base.pmtiles', bytes: 12345 },
+    { name: 'raster', gap: true, reason: 'no tiler' },
+    { name: 'bake:island-brochure', file: 'x.png', bytes: 99, meta: { kit: 'island-brochure' } },
+  ]);
+  assert.equal(manifest.tiers.vector.bytes, 12345);
+  assert.deepEqual(manifest.tiers.raster, { gap: true, reason: 'no tiler' });
+  assert.equal(manifest.tiers['bake:island-brochure'].kit, 'island-brochure');
   return true;
 });
 
