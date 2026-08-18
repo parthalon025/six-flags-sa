@@ -10,6 +10,7 @@
  *   6. attractions — entrance inventory and evidence sidecar
  *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
  *   8. certify   — report + compare + route-qa + ask; writes certification.json
+ *   9. display   — per-Skin visual specs + display-certify (opt-in, --display)
  */
 
 import path from 'node:path';
@@ -41,6 +42,7 @@ export const STAGES = [
   'attractions',
   'agent',
   'certify',
+  'display',
 ];
 
 function sleep(seconds) {
@@ -105,6 +107,7 @@ export async function runVenuePipeline(park, opts = {}) {
     attractions = true,
     agent = true,
     certify = true,
+    display = false,
     skip = [],
   } = opts;
 
@@ -135,6 +138,9 @@ export async function runVenuePipeline(park, opts = {}) {
     }
     if (!skip.includes('certify') && certify) {
       console.log(`#   certify → report + compare + route-qa + ask`);
+    }
+    if (!skip.includes('display') && display) {
+      console.log(`#   display → visual specs + display-certify`);
     }
     return { id: park.id, rank: park.rank, status: 'dry-run', stages };
   }
@@ -323,6 +329,31 @@ export async function runVenuePipeline(park, opts = {}) {
     }
   }
 
+  if (!skip.includes('display') && display) {
+    console.error('  · display: visual specs + display-certify');
+    try {
+      const { runDisplayStage } = await import('./display-pack.mjs');
+      const disp = runDisplayStage(park.id, { tiles: true });
+      logStage('display', {
+        certified: disp.certified,
+        skins: Object.keys(disp.packs).length,
+        tiles: disp.tiles?.ok ? `${disp.tiles.sizeKb} KB` : disp.tiles?.reason,
+      });
+      if (!disp.certified) {
+        return {
+          id: park.id,
+          rank: park.rank,
+          status: 'uncertified',
+          error: 'display certification failed',
+          display: disp,
+          stages,
+        };
+      }
+    } catch (err) {
+      return { id: park.id, rank: park.rank, status: 'failed', error: `display failed: ${err.message}`, stages };
+    }
+  }
+
   return { id: park.id, rank: park.rank, status: 'built', stages };
 }
 
@@ -396,6 +427,7 @@ export function parseCatalogArgs(argv) {
     attractions: true,
     agent: true,
     certify: true,
+    display: false,
     applyAliases: true,
     openPr: false,
     json: false,
@@ -417,6 +449,7 @@ export function parseCatalogArgs(argv) {
     else if (a === '--no-attractions') out.attractions = false;
     else if (a === '--no-agent') out.agent = false;
     else if (a === '--no-certify') out.certify = false;
+    else if (a === '--display') out.display = true;
     else if (a === '--no-aliases') out.applyAliases = false;
     else if (a === '--pr') out.openPr = true;
     else if (a === '--json') out.json = true;
@@ -438,6 +471,7 @@ export function pipelineOptsFromCatalogArgs(args) {
     attractions: args.attractions,
     agent: args.agent,
     certify: args.certify,
+    display: args.display,
     rebuildOnly: args.skipExisting,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };

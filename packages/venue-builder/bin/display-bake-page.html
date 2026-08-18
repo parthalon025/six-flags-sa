@@ -1,0 +1,337 @@
+<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;background:#222}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script>
+(async () => {
+  const { model, kit, px, sheets, points } = await (await fetch('/model.json')).json();
+  const { cols, rows, cells, trees, buildings, tracks, badges, terrains } = model;
+  const c = document.getElementById('c');
+  c.width = cols * px; c.height = rows * px;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+
+  // Load the kit's referenced tile sheets (served from the asset ledger).
+  const sheetImages = {};
+  await Promise.all(Object.entries(sheets || {}).map(([id, s]) => new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => { sheetImages[id] = im; res(); };
+    im.onerror = () => rej(new Error('sheet load failed: ' + id));
+    im.src = s.url;
+  })));
+
+  // Dual-grid corner patterns: 16 mask variants cut from one seamless full
+  // tile. Bits: NW=1, NE=2, SW=4, SE=8 — which quadrants hold the terrain.
+  function buildPatterns(ref) {
+    const sheet = sheets[ref.asset];
+    const [tc, tr] = sheet.tiles[ref.tile];
+    const T = sheet.tileSize;
+    const sx = sheet.margin + tc * (T + sheet.spacing);
+    const sy = sheet.margin + tr * (T + sheet.spacing);
+    const h = T / 2;
+    const QUADS = [[1, 0, 0], [2, h, 0], [4, 0, h], [8, h, h]]; // bit, qx, qy
+    const patterns = [null];
+    for (let mask = 1; mask <= 15; mask += 1) {
+      const t = document.createElement('canvas');
+      t.width = T; t.height = T;
+      const tg = t.getContext('2d');
+      // 1 — mask shape
+      tg.fillStyle = '#fff';
+      for (const [bit, qx, qy] of QUADS) {
+        if (!(mask & bit)) continue;
+        const horiz = bit === 1 || bit === 4 ? 2 : 1; // orthogonal neighbors
+        const vert = bit === 1 || bit === 2 ? 4 : 8;
+        const hOn = mask & (bit === 1 ? 2 : bit === 2 ? 1 : bit === 4 ? 8 : 4);
+        const vOn = mask & (bit === 1 ? 4 : bit === 2 ? 8 : bit === 4 ? 1 : 2);
+        if (!hOn && !vOn) {
+          // isolated corner: rounded blob toward the outer corner
+          tg.save(); tg.beginPath(); tg.rect(qx, qy, h, h); tg.clip();
+          tg.beginPath(); tg.arc(h, h, h, 0, 7); tg.fill(); tg.restore();
+        } else {
+          tg.fillRect(qx, qy, h, h);
+        }
+      }
+      // concave fillet where an absent quadrant meets two present arms
+      for (const [bit, qx, qy] of QUADS) {
+        if (mask & bit) continue;
+        const hOn = mask & (bit === 1 ? 2 : bit === 2 ? 1 : bit === 4 ? 8 : 4);
+        const vOn = mask & (bit === 1 ? 4 : bit === 2 ? 8 : bit === 4 ? 1 : 2);
+        if (hOn && vOn) {
+          tg.save(); tg.beginPath(); tg.rect(qx, qy, h, h); tg.clip();
+          tg.fillRect(qx, qy, h, h);
+          tg.globalCompositeOperation = 'destination-out';
+          const ox = qx === 0 ? 0 : T; const oy = qy === 0 ? 0 : T;
+          tg.beginPath(); tg.arc(ox, oy, h, 0, 7); tg.fill();
+          tg.restore();
+        }
+      }
+      // 2 — texture the shape from the sheet tile
+      tg.globalCompositeOperation = 'source-in';
+      tg.drawImage(sheetImages[ref.asset], sx, sy, T, T, 0, 0, T, T);
+      if (ref.tint) {
+        tg.globalCompositeOperation = 'source-atop';
+        tg.fillStyle = ref.tint;
+        tg.fillRect(0, 0, T, T);
+      }
+      tg.globalCompositeOperation = 'source-over';
+      patterns[mask] = t;
+    }
+    return patterns;
+  }
+
+  const fullTile = (ref) => buildPatterns(ref)[15];
+
+  // Keep in sync with lib/display-bake.mjs#cellHash — same jitter, one truth.
+  const hash = (...nums) => {
+    let h = 2166136261;
+    for (const n of nums) { h ^= Math.trunc(n * 8191); h = Math.imul(h, 16777619); }
+    return ((h >>> 0) % 10000) / 10000;
+  };
+  const T = {}; for (const [v, name] of Object.entries(terrains)) T[name] = Number(v);
+  const NAME = terrains;
+  const at = (x, y) => (x < 0 || y < 0 || x >= cols || y >= rows) ? T.outside : cells[y * cols + x];
+
+  // Texture primitives — one small painter per kind, params from the piece.
+  const TEXTURES = {
+    none() {},
+    speckle(x, y, tx) {
+      g.fillStyle = tx.color;
+      g.fillRect(x * px + hash(x, y) * px, y * px + hash(x, y, 7) * px, 2, 2);
+    },
+    dot(x, y, tx) {
+      g.fillStyle = tx.color;
+      g.beginPath(); g.arc(x * px + hash(x, y) * px, y * px + hash(x, y, 9) * px, px / 6, 0, 7); g.fill();
+    },
+    tuft(x, y, tx) {
+      g.strokeStyle = tx.color; g.lineWidth = 1;
+      const ax = x * px + hash(x, y, 3) * px; const ay = y * px + hash(x, y, 4) * px;
+      g.beginPath(); g.moveTo(ax, ay); g.lineTo(ax - 2, ay - 3); g.moveTo(ax, ay); g.lineTo(ax + 2, ay - 3); g.stroke();
+    },
+    wave(x, y, tx) {
+      g.strokeStyle = tx.color; g.lineWidth = 1.4;
+      const wy = y * px + hash(x, y, 5) * px;
+      g.beginPath(); g.moveTo(x * px + 2, wy); g.quadraticCurveTo(x * px + px / 2, wy - 3, x * px + px - 2, wy); g.stroke();
+    },
+    stripe(x, y, tx) {
+      // density is the stripe cadence: 0.33 → every 3rd column.
+      const period = Math.max(2, Math.round(1 / (tx.density ?? 0.33)));
+      if (x % period !== 0) return;
+      g.strokeStyle = tx.color; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x * px + 1, y * px); g.lineTo(x * px + 1, y * px + px); g.stroke();
+    },
+    hatch(x, y, tx) {
+      g.strokeStyle = tx.color; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x * px, y * px + px); g.lineTo(x * px + px, y * px); g.stroke();
+    },
+    dash(x, y, tx, t) {
+      const hRun = at(x - 1, y) === t && at(x + 1, y) === t;
+      const vRun = at(x, y - 1) === t && at(x, y + 1) === t;
+      g.strokeStyle = tx.color; g.lineWidth = 1.4;
+      const cx = x * px + px / 2; const cy = y * px + px / 2;
+      if (hRun && !vRun) { g.beginPath(); g.moveTo(x * px + 3, cy); g.lineTo(x * px + px - 3, cy); g.stroke(); }
+      else if (vRun && !hRun) { g.beginPath(); g.moveTo(cx, y * px + 3); g.lineTo(cx, y * px + px - 3); g.stroke(); }
+    },
+  };
+
+  // Base squares under everything, then real tile art where the kit binds
+  // it: full tiles on a terrain's own cells, dual-grid corner tiles on the
+  // offset vertex grid so shores and tree lines curve with Kenney's own
+  // rounding. Terrains without tile art keep the organic blob pass.
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      g.fillStyle = kit.terrain[NAME[at(x, y)]].base;
+      g.fillRect(x * px, y * px, px, px);
+    }
+  }
+  const tiledPatterns = {};
+  for (const [name, piece] of Object.entries(kit.terrain)) {
+    if (piece.tiles && model.autotile?.[name]) tiledPatterns[name] = buildPatterns(piece.tiles);
+  }
+  if (kit.terrain.ground.tiles) {
+    const full = fullTile(kit.terrain.ground.tiles);
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        if (at(x, y) === T.ground) g.drawImage(full, x * px, y * px, px, px);
+      }
+    }
+  }
+  for (const name of ['grass', 'wood', 'water']) {
+    const t = T[name];
+    if (tiledPatterns[name]) {
+      const masks = model.autotile[name];
+      const patterns = tiledPatterns[name];
+      for (let vy = 0; vy <= rows; vy += 1) {
+        for (let vx = 0; vx <= cols; vx += 1) {
+          const mask = masks[vy * (cols + 1) + vx];
+          if (mask) g.drawImage(patterns[mask], (vx - 0.5) * px, (vy - 0.5) * px, px, px);
+        }
+      }
+      continue;
+    }
+    g.fillStyle = kit.terrain[name].base;
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        if (at(x, y) !== t) continue;
+        const edge = at(x - 1, y) !== t || at(x + 1, y) !== t || at(x, y - 1) !== t || at(x, y + 1) !== t;
+        if (!edge) continue;
+        const r = px * (0.62 + 0.16 * hash(x, y, 11));
+        g.beginPath();
+        g.arc(x * px + px / 2, y * px + px / 2, r, 0, 7);
+        g.fill();
+      }
+    }
+  }
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const t = at(x, y);
+      if (t === T.road || t === T.service) continue; // roads draw as polylines
+      if (tiledPatterns[NAME[t]] || (t === T.ground && kit.terrain.ground.tiles)) continue;
+      const tx = kit.terrain[NAME[t]].texture || { kind: 'none' };
+      const gated = tx.kind === 'stripe' || hash(x, y) < (tx.density ?? 0.3);
+      if (gated) TEXTURES[tx.kind](x, y, tx, t);
+    }
+  }
+
+  const toPx = ([x, y]) => [x * px, y * px];
+  const tracePoly = (ring, dx = 0, dy = 0) => {
+    g.beginPath();
+    ring.forEach((pt, i) => {
+      const [x, y] = toPx(pt);
+      if (i === 0) g.moveTo(x + dx, y + dy); else g.lineTo(x + dx, y + dy);
+    });
+    g.closePath();
+  };
+  const traceLine = (pts) => {
+    g.beginPath();
+    pts.forEach((pt, i) => {
+      const [x, y] = toPx(pt);
+      if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    });
+  };
+
+  // Roads as smooth polylines: service lanes quiet, walkways cased with a
+  // dashed centerline — crisp diagonals the cell grid cannot give.
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const roadPiece = kit.terrain.road; const servicePiece = kit.terrain.service;
+  for (const r of model.roads.filter((x) => x.kind === 'service')) {
+    traceLine(r.pts); g.strokeStyle = servicePiece.base; g.lineWidth = px * 0.4; g.stroke();
+  }
+  for (const r of model.roads.filter((x) => x.kind === 'path')) {
+    traceLine(r.pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = px * 0.95; g.stroke();
+  }
+  for (const r of model.roads.filter((x) => x.kind === 'path')) {
+    traceLine(r.pts); g.strokeStyle = roadPiece.base; g.lineWidth = px * 0.72; g.stroke();
+  }
+  g.setLineDash([px * 0.55, px * 0.75]);
+  for (const r of model.roads.filter((x) => x.kind === 'path')) {
+    traceLine(r.pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = Math.max(1.2, px * 0.08); g.stroke();
+  }
+  g.setLineDash([]);
+
+  const B = kit.sprites.building;
+  g.lineJoin = 'round';
+  for (const b of buildings) {
+    if (B.style === 'outline') {
+      tracePoly(b.ring); g.strokeStyle = B.edge; g.lineWidth = 2; g.stroke();
+      continue;
+    }
+    if (B.style !== 'flat') {
+      g.fillStyle = B.wall; tracePoly(b.ring, 0, px * B.drop); g.fill();
+    }
+    g.fillStyle = B.roofs[b.roof % B.roofs.length]; tracePoly(b.ring); g.fill();
+    g.strokeStyle = B.edge; g.lineWidth = 1.6; g.stroke();
+  }
+
+  const CO = kit.sprites.coaster;
+  const SL = kit.sprites.slide;
+  g.lineCap = 'round';
+  for (const tr of tracks) {
+    const mono = (tr.kind === 'coaster' ? CO : SL).style === 'mono';
+    if (mono) continue;
+    traceLine(tr.pts); g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = px * 0.62; g.stroke();
+  }
+  for (const tr of tracks.filter((t) => t.kind === 'coaster')) {
+    if (CO.style === 'mono') {
+      traceLine(tr.pts); g.strokeStyle = CO.rail; g.lineWidth = Math.max(1.4, px * 0.12); g.stroke();
+      continue;
+    }
+    traceLine(tr.pts); g.strokeStyle = CO.rail; g.lineWidth = px * 0.42; g.stroke();
+    g.setLineDash([2.5, px * 0.4]); traceLine(tr.pts); g.strokeStyle = CO.tie; g.lineWidth = px * 0.2; g.stroke();
+    g.setLineDash([]);
+  }
+  for (const tr of tracks.filter((t) => t.kind === 'slide')) {
+    const color = SL.colors[tr.idx % SL.colors.length];
+    if (SL.style === 'mono') {
+      traceLine(tr.pts); g.strokeStyle = color; g.lineWidth = Math.max(1.4, px * 0.14); g.stroke();
+      continue;
+    }
+    traceLine(tr.pts); g.strokeStyle = SL.casing; g.lineWidth = px * 0.56 * SL.width; g.stroke();
+    traceLine(tr.pts); g.strokeStyle = color; g.lineWidth = px * 0.36 * SL.width; g.stroke();
+  }
+
+  const TR = kit.sprites.tree;
+  const treeImg = TR.sprite ? sheetImages[TR.sprite.asset] : null;
+  if (TR.style !== 'none') {
+    for (const t of trees) {
+      const x = t.x * px; const y = t.y * px;
+      const r = (t.big ? 0.44 : 0.3) * px * TR.scale;
+      if (treeImg) {
+        // Custom sprite asset, anchored at its base on the truth-derived spot.
+        const w = r * 3.2;
+        g.drawImage(treeImg, x - w / 2, y - w * 0.94, w, w);
+        continue;
+      }
+      if (TR.style === 'dot') {
+        g.fillStyle = TR.canopy; g.beginPath(); g.arc(x, y, r * 0.6, 0, 7); g.fill();
+        continue;
+      }
+      g.fillStyle = TR.shadow; g.beginPath(); g.ellipse(x + r / 4, y + r / 3, r, r * 0.6, 0, 0, 7); g.fill();
+      g.fillStyle = TR.canopy; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1; g.stroke();
+      g.fillStyle = TR.highlight; g.beginPath(); g.arc(x - r / 3, y - r / 3, r / 2.4, 0, 7); g.fill();
+    }
+  }
+
+  const BD = kit.sprites.badge;
+  const LETTER = { gate: 'E', food: 'F', restroom: 'R', shop: 'S', show: 'W', service: 'i' };
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const b of badges) {
+    // Pinned marker: the tail's tip sits on the exact truth coordinate.
+    const x = b.x * px; const y = b.y * px;
+    const r = px * 0.42;
+    const cy = y - r * 1.5;
+    const color = BD[b.kind] || '#666';
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(x, y + 1.5, r * 0.5, r * 0.24, 0, 0, 7); g.fill();
+    g.fillStyle = color;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x - r * 0.42, cy + r * 0.7); g.lineTo(x + r * 0.42, cy + r * 0.7); g.closePath(); g.fill();
+    g.fillStyle = color;
+    g.beginPath(); g.arc(x, cy, r, 0, 7); g.fill();
+    g.strokeStyle = '#FFFFFF'; g.lineWidth = 1.5; g.stroke();
+    // Glyph from the icon ledger (white-on-transparent); letter fallback.
+    const icon = sheetImages[BD.icons?.[b.kind]?.asset];
+    if (icon) {
+      // 1.1r leaves a clear disc-ink moat between glyph edge and ring —
+      // the style contract samples that moat (display-style-contract.mjs).
+      const s = r * 1.1;
+      g.drawImage(icon, x - s / 2, cy - s / 2, s, s);
+    } else {
+      g.fillStyle = '#FFFFFF';
+      g.font = `bold ${Math.round(px * 0.5)}px system-ui, sans-serif`;
+      g.fillText(LETTER[b.kind] || '?', x, cy + 0.5);
+    }
+  }
+
+  // Style-contract sampling: the certifier's points (cell coords) read
+  // back the painted canvas — the pixels the phone would actually show.
+  const pts = points || [];
+  window.__samples = pts.map((p) => {
+    const d = g.getImageData(
+      Math.max(0, Math.min(c.width - 1, Math.round(p.x * px))),
+      Math.max(0, Math.min(c.height - 1, Math.round(p.y * px))),
+      1, 1,
+    ).data;
+    return [d[0], d[1], d[2], d[3]];
+  });
+
+  window.__done = true;
+})().catch((err) => { console.error(err); window.__done = true; window.__error = String(err); });
+</script>

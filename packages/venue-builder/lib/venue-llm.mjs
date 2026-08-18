@@ -1,14 +1,20 @@
 /**
  * Optional model assistance for venue research and build agents.
  *
- * Providers: openai (default) | databricks (Foundation Model / serving endpoints).
+ * Providers: openai (default) | databricks (Foundation Model / serving endpoints)
+ * | agent — the builder is usually invoked BY an LLM agent, and the agent
+ * provider lets that caller be the model: an unanswered prompt is filed as a
+ * brief on disk, the invoking agent answers it (npm run venues:llm-briefs),
+ * and the rerun consumes the answer. No API key, same guardrails — answers
+ * are still claims, never coordinates, never auto-applied heights.
+ *
  * Token savings: slim agentReview context, file cache (llm-cache.mjs), batched orchestrator call.
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { venueSidecar } from './venue-io.mjs';
+import { OVERRIDE_DIR, venueSidecar } from './venue-io.mjs';
 
 const llmResearchCacheFile = (id) => venueSidecar(id, 'llm-research-cache.json');
 
@@ -17,18 +23,27 @@ const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 const DEFAULT_DATABRICKS_MODEL = 'databricks-meta-llama-3-1-8b-instruct';
 
 export function llmConfig() {
-  const provider = (process.env.VENUE_LLM_PROVIDER || 'openai').toLowerCase();
+  const apiKey = process.env.VENUE_LLM_API_KEY || process.env.OPENAI_API_KEY || null;
+  // An interactive agent session with no API key defaults to the agent
+  // provider — the caller IS the model.
+  const inAgentSession = Boolean(process.env.CLAUDECODE || process.env.CURSOR_AGENT);
+  const provider = (
+    process.env.VENUE_LLM_PROVIDER || (!apiKey && inAgentSession ? 'agent' : 'openai')
+  ).toLowerCase();
   const databricksHost = (process.env.DATBRICKS_HOST || '').replace(/\/$/, '');
   const databricksToken = process.env.DATBRICKS_TOKEN || null;
-  const apiKey = process.env.VENUE_LLM_API_KEY || process.env.OPENAI_API_KEY || null;
   const baseUrl = (process.env.VENUE_LLM_BASE_URL || DEFAULT_OPENAI_BASE).replace(/\/$/, '');
   const model =
     process.env.VENUE_LLM_MODEL
-    || (provider === 'databricks' ? DEFAULT_DATABRICKS_MODEL : DEFAULT_OPENAI_MODEL);
+    || (provider === 'databricks' ? DEFAULT_DATABRICKS_MODEL
+      : provider === 'agent' ? 'agent'
+        : DEFAULT_OPENAI_MODEL);
 
   const databricksReady = Boolean(databricksHost && (databricksToken || apiKey));
   const openaiReady = Boolean(apiKey);
-  const ready = provider === 'databricks' ? databricksReady : openaiReady;
+  const ready = provider === 'databricks' ? databricksReady
+    : provider === 'agent' ? true
+      : openaiReady;
 
   return {
     provider,
@@ -152,11 +167,103 @@ async function openaiCompletion(messages, cfg, opts = {}) {
   return content ? String(content).trim() : null;
 }
 
+/* ------------------------------------------------- the agent provider ---- */
+
+const GLOBAL_BRIEFS_DIR = path.join(OVERRIDE_DIR, '..', 'llm-briefs');
+
+export const briefsDirFor = (venueId, override) =>
+  override || (venueId ? venueSidecar(venueId, 'llm-briefs') : GLOBAL_BRIEFS_DIR);
+
+/**
+ * The calling agent is the model. A cache miss files a brief and returns
+ * null (callers already treat null as "no model"); the agent answers with
+ * `npm run venues:llm-briefs`, and the rerun returns that answer.
+ */
+function agentCompletion(messages, opts = {}) {
+  const dir = briefsDirFor(opts.venueId, opts.briefsDir);
+  const hash = promptHash(messages, 'agent');
+  const answerFile = path.join(dir, `${hash}.answer.md`);
+  if (existsSync(answerFile)) {
+    const content = readFileSync(answerFile, 'utf8').trim();
+    if (content) return content;
+  }
+  const briefFile = path.join(dir, `${hash}.brief.json`);
+  if (!existsSync(briefFile)) {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(briefFile, `${JSON.stringify({
+      version: 1,
+      provider: 'agent',
+      hash,
+      venue: opts.venueId || null,
+      expectsJson: Boolean(opts.jsonMode) || /JSON/.test(messages[0]?.content || ''),
+      messages,
+    }, null, 2)}\n`);
+  }
+  console.error(`  llm brief pending: ${briefFile}`);
+  console.error('  answer it with: npm run venues:llm-briefs -- answer <hash> (then rerun this command)');
+  return null;
+}
+
+/**
+ * True when a null completion means "a brief is waiting for the agent",
+ * not "the model replied with garbage" — callers branch on this before
+ * treating null as a parse failure.
+ */
+export const isAgentPending = (content) => content === null && llmConfig().provider === 'agent';
+
+/** Briefs still waiting for an answer, newest last. */
+export function pendingBriefs({ venueId, briefsDir } = {}) {
+  const dirs = venueId || briefsDir
+    ? [briefsDirFor(venueId, briefsDir)]
+    : [GLOBAL_BRIEFS_DIR, ...listVenueBriefDirs()];
+  const out = [];
+  for (const dir of dirs) {
+    if (!existsSync(dir)) continue;
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.brief.json')).sort()) {
+      const brief = JSON.parse(readFileSync(path.join(dir, f), 'utf8'));
+      if (existsSync(path.join(dir, `${brief.hash}.answer.md`))) continue;
+      out.push({ ...brief, file: path.join(dir, f), dir });
+    }
+  }
+  return out;
+}
+
+function listVenueBriefDirs() {
+  if (!existsSync(OVERRIDE_DIR)) return [];
+  return readdirSync(OVERRIDE_DIR, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => path.join(OVERRIDE_DIR, d.name, 'llm-briefs'))
+    .filter((d) => existsSync(d));
+}
+
+/**
+ * Record the agent's answer for one brief. JSON is validated when the brief
+ * expects it, so a malformed answer fails here instead of downstream.
+ */
+export function answerBrief(hashPrefix, content, { venueId, briefsDir } = {}) {
+  const briefs = pendingBriefs({ venueId, briefsDir });
+  const matches = briefs.filter((b) => b.hash.startsWith(hashPrefix));
+  if (!matches.length) throw new Error(`No pending brief matches "${hashPrefix}"`);
+  if (matches.length > 1) throw new Error(`"${hashPrefix}" is ambiguous (${matches.length} briefs)`);
+  const brief = matches[0];
+  const text = String(content).trim();
+  if (!text) throw new Error('Empty answer');
+  if (brief.expectsJson) {
+    const jsonText = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+    JSON.parse(jsonText);
+  }
+  const file = path.join(brief.dir, `${brief.hash}.answer.md`);
+  writeFileSync(file, `${text}\n`);
+  return { hash: brief.hash, file };
+}
+
 export async function chatCompletion(messages, opts = {}) {
   const cfg = llmConfig();
+  const provider = opts.provider || cfg.provider;
+  if (provider === 'agent') return agentCompletion(messages, opts);
   if (!cfg.ready && !opts.apiKey && !opts.databricksToken) return null;
 
-  if ((opts.provider || cfg.provider) === 'databricks') {
+  if (provider === 'databricks') {
     return databricksCompletion(messages, cfg, opts);
   }
   return openaiCompletion(messages, cfg, opts);

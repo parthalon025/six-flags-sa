@@ -1,0 +1,8 @@
+---
+description: Prove code work end to end and assert the run's output; static steps are the floor, not the proof.
+alwaysApply: true
+---
+
+# Vertical e2e
+
+All code work is proven **end to end** with the run's output asserted — `npm run test:pre-merge-vertical` gates it. See [vertical-e2e policy](../../docs/agents/policies/vertical-e2e.md).

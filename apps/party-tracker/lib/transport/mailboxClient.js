@@ -5,8 +5,10 @@
  *
  * A mailbox is a dumb store-and-forward queue: it moves opaque blobs between
  * peers of a party and can read none of them. The shared poll loop lives in
- * mailboxPoller.js; this module supplies probe helpers and the channel wrapper
- * the relay transports build on.
+ * mailboxPoller.js; the stream-worthiness gate (normalizeBase/mayStream/
+ * markNoStream) lives in streamGate.js so both can depend on it without
+ * depending on each other. This module supplies probe helpers and the channel
+ * wrapper the relay transports build on.
  *
  *   POST {base}/api/mailbox/{partyId}            { from, to, kind, data } -> { ok, seq }
  *   GET  {base}/api/mailbox/{partyId}?for&since  -> { messages: [...], cursor }
@@ -15,6 +17,7 @@
 
 import { STATUS } from './types.js';
 import { getMailboxPoller } from './mailboxPoller.js';
+import { normalizeBase } from './streamGate.js';
 
 /**
  * Cool cadence for the cloud relay. It is the fallback path, so every poll here
@@ -22,35 +25,6 @@ import { getMailboxPoller } from './mailboxPoller.js';
  * that a join actually is, and this number covers the hours of nothing after.
  */
 export const DEFAULT_POLL_MS = 2500;
-
-export const normalizeBase = (base) => String(base || '').replace(/\/+$/, '');
-
-/**
- * Bases known to have no `/stream`. One page, one answer, no retries.
- *
- * The relay in app/api deliberately implements no SSE — serverless gives no
- * useful guarantee about how long a response may stay open — while the
- * standalone Node host in /server does. Asking anyway costs a 404 per peer per
- * page load, which is real console noise for a fact that is knowable up front:
- * a base that is this app's own origin IS that relay. Anything else is asked
- * once, and a stream that never opens is remembered here as absent.
- */
-const noStream = new Set();
-
-const ownOrigin = () => (typeof window === 'undefined' ? '' : normalizeBase(window.location.origin));
-
-/** True if `base` is worth attempting an EventSource against. */
-export function mayStream(base) {
-  const root = normalizeBase(base);
-  if (noStream.has(root)) return false;
-  // An empty base is a relative URL, which is this app's own origin too.
-  return Boolean(root) && root !== ownOrigin();
-}
-
-/** Remember that `base` serves no stream. Permanent for this page. */
-export function markNoStream(base) {
-  noStream.add(normalizeBase(base));
-}
 
 /**
  * Liveness check. `timeoutMs` above zero arms an AbortController, which is what
