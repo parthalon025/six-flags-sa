@@ -220,6 +220,44 @@ jobs:
             node packages/venue-builder/bin/venue-certify.mjs "$id"
           done
 
+      # The game-tier bake, held to its reference contract (ADR-0014) — the
+      # human gate sees the map beside its reference, not just numbers. The
+      # images ride this run's artifact; the certification rows and the tier
+      # manifest ride the committed pack sidecars under data/venues.
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Bake the game map against its reference contract
+        env:
+          VENUE_IDS: ${{ steps.build.outputs.ids }}
+        run: |
+          set -euo pipefail
+          for id in $VENUE_IDS; do
+            node packages/venue-builder/bin/display-bake.mjs "$id" \
+              --kit island-brochure --kit rpg-overworld --kit blueprint-survey --ldtk
+            node packages/venue-builder/bin/display-pack.mjs "$id" --tiles --bake
+          done
+          node packages/venue-builder/bin/display-contact-sheet.mjs
+          {
+            echo "## Game-map bakes"
+            for id in $VENUE_IDS; do
+              for f in artifacts/display-bake/"$id"--*.style-cert.json; do
+                kit=$(basename "$f" .style-cert.json); kit=${kit#"$id"--}
+                ok=$(node -e "console.log(JSON.parse(require('fs').readFileSync('$f','utf8')).certified ? 'ok' : 'FAILING')")
+                echo "- $id × $kit: style contract $ok"
+              done
+            done
+            echo
+            echo "Baked maps, LDtk exports, and the bake-beside-reference review.html ride this run's game-map-bakes artifact."
+          } > bake-summary.md
+          cat bake-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload baked maps for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-map-bakes
+          path: artifacts/display-bake/
+
       - name: Open a pull request
         env:
           GH_TOKEN: ${{ github.token }}
@@ -267,6 +305,10 @@ jobs:
               cat venue-requests.md
               echo
               echo "</details>"
+            fi
+            if [ -s bake-summary.md ]; then
+              echo
+              cat bake-summary.md
             fi
             echo
             echo "Map geometry is © OpenStreetMap contributors, ODbL."
