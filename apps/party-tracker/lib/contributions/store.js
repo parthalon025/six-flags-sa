@@ -85,6 +85,11 @@ export async function insertContribution(input) {
     return getContribution(id);
   }
 
+  // Same idempotency contract as the Postgres ON CONFLICT DO NOTHING path
+  // above: a client-supplied id that already exists is a replay, not an
+  // error — return the existing row instead of overwriting it.
+  if (mem.rows.has(id)) return rowToApi(mem.rows.get(id));
+
   mem.rows.set(id, { ...row, payload: { ...row.payload } });
   return rowToApi(row);
 }

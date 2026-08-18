@@ -6,7 +6,7 @@ import Icon from '@/components/Icon';
 import { GLYPHS, WORDS } from '@/lib/brand';
 import { shareInvite } from '@/lib/native';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
-import { effectiveShareMode, locationCopy, placeAt } from '@/lib/location';
+import { PRECISE_MAX_MS, effectiveShareMode, locationCopy, placeAt } from '@/lib/location';
 import { usePois } from '@/lib/venue/useVenue';
 import { heightIsStale } from '@party-tracker/shared/schemas.js';
 
@@ -597,7 +597,7 @@ export default function PartyPanel({
           className={`chip ${shareMode === 'precise' ? 'on' : ''}`}
           onClick={() => onShareMode?.('precise')}
         >
-          Precise · 30 min
+          {`Precise · ${Math.round(PRECISE_MAX_MS / 60000)} min`}
         </button>
       </div>
       <p className="fine" style={{ marginTop: 0 }}>
