@@ -184,6 +184,18 @@ await check('atlas cache key moves with content, size, and version', () => {
   return true;
 });
 
+await check('display-stage adapters never masquerade as truth evidence', async () => {
+  // The PR #480 firewall: display art rows may feed kits and packs, but
+  // evidence_sources stays Truth-only — an empty list, mechanically.
+  const { adaptersByStage } = await import('../../packages/venue-builder/lib/adapters/registry.mjs');
+  const displayRows = adaptersByStage('display');
+  assert.ok(displayRows.length >= 1, 'expected the material-library row');
+  for (const row of displayRows) {
+    assert.deepEqual(row.evidence_sources, [], `${row.id} leaks display art into evidence`);
+  }
+  return true;
+});
+
 await check('a real bake writes a credits manifest naming its assets', async () => {
   // Integration over the wire the unit tests can't see: bin/display-bake.mjs
   // → credits.json beside the PNG. Chromium-gated like CI's visual jobs —

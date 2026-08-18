@@ -103,6 +103,7 @@
     "venues:llm-briefs": "node packages/venue-builder/bin/llm-briefs.mjs",
     "venues:bake": "node packages/venue-builder/bin/display-bake.mjs",
     "venues:atlas": "node packages/venue-builder/bin/display-atlas.mjs",
+    "venues:bake-review": "node packages/venue-builder/bin/display-contact-sheet.mjs",
     "venues:vendor-assets": "node packages/venue-builder/bin/vendor-assets.mjs"
   },
   "devDependencies": {
