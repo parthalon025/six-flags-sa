@@ -13,6 +13,8 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
 | `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Stamp after local vertical; skip GitHub UI jobs when stamp matches |
+| `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
+| `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 
@@ -44,6 +46,8 @@ After a successful run, `scripts/ci/local-ci-pass.json` records the tree and mod
 | **`chore: bump version to …`** | — | **Workflow skipped** (Post-merge bump already validated the merge) |
 
 `fullSuitePaths` in `modules.json` still forces all modules when e.g. `functional.mjs` or `test-app.yml` changes. Version-stamp-only file lists bypass full-suite triggers.
+
+`CONTEXT.md` / `docs/adr/**` diffs select the coverage-contract job; it fails on a stale context stamp until `test/app/critical-paths.json` is reviewed against the new capabilities and restamped (`node test/app/coverage-contract.mjs --stamp`).
 
 Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run test:validate-ui -- --all` every Sunday 08:00 UTC (or `workflow_dispatch`).
 

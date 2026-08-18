@@ -4,6 +4,14 @@
     "functional": "test/app/functional.mjs",
     "grandma": "test/app/grandma.mjs"
   },
+  "context": {
+    "note": "Fingerprint of the domain context this contract was last reviewed against. When CONTEXT.md or docs/adr change, review the rows below against the new capabilities, then restamp: node test/app/coverage-contract.mjs --stamp",
+    "files": [
+      "CONTEXT.md",
+      "docs/adr"
+    ],
+    "sha256": "405739b6e7e9eff32db2c5e20079708e045974e68c50d37a326f9b9df16f6c95"
+  },
   "paths": [
     {
       "id": "intake-welcome",
@@ -106,7 +114,7 @@
     {
       "id": "grandma-core",
       "slice": "Navigate",
-      "user_action": "First-time visitor can complete toilet \u2192 food \u2192 walk",
+      "user_action": "First-time visitor can complete toilet → food → walk",
       "suite": "grandma",
       "check_includes": "toilet"
     },
@@ -186,6 +194,70 @@
       "user_action": "Switch to Precise sharing for 30 minutes; it reverts to Approximate on its own",
       "suite": "functional",
       "check": "precise sharing expires back to approximate"
+    },
+    {
+      "id": "compass-strip",
+      "slice": "Navigate",
+      "user_action": "Toggle the facing-relative Compass strip (ADR-0011)",
+      "suite": "functional",
+      "check": "Compass strip toggles on"
+    },
+    {
+      "id": "world-picker",
+      "slice": "Navigate",
+      "user_action": "Pick a World by hand and outrank the host suggestion",
+      "suite": "functional",
+      "check": "picking a World by hand outranks the host"
+    },
+    {
+      "id": "state-persistence",
+      "slice": "Navigate",
+      "user_action": "Height, theme, and party survive a reload",
+      "suite": "functional",
+      "check": "height, theme and party survive a reload"
+    },
+    {
+      "id": "party-location-roster",
+      "slice": "Party",
+      "user_action": "Roster shows a live distance to another Member (Location)",
+      "suite": "functional",
+      "check": "roster shows a real distance to phone B"
+    },
+    {
+      "id": "party-rally-point",
+      "slice": "Party",
+      "user_action": "Set a Rally Point from a ride and it reaches every phone",
+      "suite": "functional",
+      "check": "Rally Point set from a ride reaches the other phone"
+    },
+    {
+      "id": "party-ride-report",
+      "slice": "Party",
+      "user_action": "A Ride report reaches the Party",
+      "suite": "functional",
+      "check": "a ride reported down on one phone reaches the other"
+    },
+    {
+      "id": "party-ride-report-retract",
+      "slice": "Party",
+      "user_action": "Retract a Ride report and it clears everywhere",
+      "suite": "functional",
+      "check": "retracting a report clears it everywhere"
+    },
+    {
+      "id": "party-deviceless-remove",
+      "slice": "Party",
+      "user_action": "Remove a device-less Member from the roster",
+      "suite": "functional",
+      "check": "a phone can remove a device-less Member from the roster"
+    },
+    {
+      "id": "party-leave",
+      "slice": "Party",
+      "user_action": "Leave the Party and drop off the other rosters",
+      "suite": "functional",
+      "check": "leaving removes the member from the other phone’s roster"
+
     }
   ],
   "upcoming": []

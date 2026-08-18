@@ -19,5 +19,18 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/wire-watch-target.test.mjs',
   'test/scripts/clerk-apple-prod.test.mjs',
   'test/scripts/install-global-skills.test.mjs',
-  'test/app/map-performance-contract.test.mjs',
+  'test/scripts/worktree.test.mjs',
+  'test/scripts/matt-standards.test.mjs',
+  'test/scripts/matt-review.test.mjs',
+  'test/scripts/dependency-boundaries.test.mjs',
+  'test/scripts/map-performance-contract.test.mjs',
 ];
+
+/**
+ * test/scripts tests deliberately NOT in the gate, with the reason.
+ * ci-module.test.mjs fails when a test file is in neither list.
+ */
+export const GATE_EXCLUDED_TESTS = {
+  'test/scripts/store-app-preview.test.mjs':
+    'needs ffmpeg on PATH — runs via npm run test:unit where the toolchain has it (#474)',
+};

@@ -5,10 +5,10 @@
  *   node test/scripts/ci-module.test.mjs
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GATE_SCRIPT_TESTS } from '../../scripts/ci/manifest.mjs';
+import { GATE_SCRIPT_TESTS, GATE_EXCLUDED_TESTS } from '../../scripts/ci/manifest.mjs';
 import { runGateScriptTests } from '../../scripts/ci/gate-tests.mjs';
 import {
   DEFAULT_HEALTH_URL,
@@ -25,6 +25,27 @@ assert.ok(
   GATE_SCRIPT_TESTS.every((p) => p.startsWith('test/')),
   'gate tests live under test/',
 );
+
+// Manifest completeness: every test/scripts test runs in the gate or is
+// explicitly excluded with a reason — orphaned tests rot unseen.
+{
+  const testDir = join(dirname(fileURLToPath(import.meta.url)));
+  const onDisk = readdirSync(testDir)
+    .filter((f) => f.endsWith('.test.mjs'))
+    .map((f) => `test/scripts/${f}`);
+  for (const rel of onDisk) {
+    assert.ok(
+      GATE_SCRIPT_TESTS.includes(rel) || rel in GATE_EXCLUDED_TESTS,
+      `${rel} is in neither GATE_SCRIPT_TESTS nor GATE_EXCLUDED_TESTS`,
+    );
+  }
+  for (const rel of GATE_SCRIPT_TESTS) {
+    assert.ok(onDisk.includes(rel), `${rel} listed in gate manifest but missing on disk`);
+  }
+  for (const rel of Object.keys(GATE_EXCLUDED_TESTS)) {
+    assert.ok(!GATE_SCRIPT_TESTS.includes(rel), `${rel} both excluded and in the gate`);
+  }
+}
 
 let calls = 0;
 const code = runGateScriptTests({
