@@ -7,7 +7,7 @@ points. `.dependency-cruiser.cjs`'s package-level rules already stop anything *o
 `venue-builder` from reaching into `lib/`'s internals. Nothing enforced the boundaries
 *inside* `lib/` itself — until now.
 
-## The three layers
+## The four layers
 
 Surveyed from the real import graph (2026-08-18, zero cycles at the time):
 
@@ -23,6 +23,22 @@ Surveyed from the real import graph (2026-08-18, zero cycles at the time):
    QA, validation agents, plus the orchestrator that wires them together). Sits above
    both: every agent imports `adapters/runner.mjs` (or `adapters/index.mjs`) plus
    various core files.
+4. **`lib/terrain/`** — Display-layer elevation maths (added 2026-08-18): the elevation
+   grid, hillshade, the constraint solver, mesh export, and the DEM resolver. Reads
+   *down* into `adapters/` for a DEM (`usgs-3dep`, `copernicus-dem`) and nothing else.
+
+   Two directions matter here, and both are enforced rather than described:
+
+   - **`adapters/` must not import `terrain/`.** The shared COG window reader lives at
+     `adapters/cog.mjs`, not under `terrain/`, precisely so the DEM adapters and the
+     terrain maths do not import each other. It was briefly the other way round and
+     that was a cluster-level cycle the old rules could not see, because
+     `venue-builder-adapters-are-leaf` only named `agents|operators`.
+   - **`terrain/` must not import the evidence engine.** Height is not evidence — a
+     ride entrance is at the same coordinate whether the ground under it is level or
+     on a berm ([ADR-0015](../../adr/0015-terrain-in-display.md)). A terrain module
+     importing `evidence.mjs` has started fusing elevation as if it were a claim about
+     where something is, which is the failure the Truth/Display split exists to stop.
 
 Core `lib/*.mjs` is nominally the base layer, but isn't a clean one: `build-pipeline.mjs`
 and `venue-official-site.mjs` (plus `external-claims.mjs`, `external-research.mjs`,

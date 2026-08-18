@@ -148,7 +148,10 @@
       g.fillRect(x * px, y * px, px, px);
     }
   }
-  // Relief. Multiplying here -- over ground, under everything built on it --
+  // Relief. Mirrors the mean-centred falloff in lib/terrain/hillshade.mjs
+  // (shadeRgba); that one paints a PNG for MapLibre, this one paints the bake.
+  // Change one, change the other.
+  // Multiplying here -- over ground, under everything built on it --
   // is what makes a berm look like a berm on a map that has no third
   // dimension. Neutral is the field's own mean, so a flat park stays flat
   // rather than acquiring a gradient.

@@ -73,7 +73,7 @@ export async function prepareVenueTerrain({
   const midLat = (bounds.north + bounds.south) / 2;
   const widthM = spanLng * 111320 * Math.cos((midLat * Math.PI) / 180);
   const heightM = spanLat * 110540;
-  const cols = Math.min(maxCols, Math.max(16, Math.round(maxCols)));
+  const cols = Math.max(16, Math.round(maxCols));
   const rows = Math.max(16, Math.round((cols * heightM) / widthM));
 
   const grid = gridFromBounds({ bounds, cols, rows, sample: dem.sample });

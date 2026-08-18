@@ -1,8 +1,8 @@
 /**
  * Read a bbox-sized window out of a remote Cloud-Optimized GeoTIFF.
  *
- * Shared by every terrain source because they all hit the same trap, which
- * `lib/adapters/esa-worldcover.mjs` paid for first and wrote down: geotiff's
+ * Shared by every COG-backed adapter because they all hit the same trap, which
+ * `esa-worldcover.mjs` paid for first and wrote down: geotiff's
  * `readRasters({ bbox })` resolves the box against the source's full pixel
  * grid and fans a small request out into hundreds of internal tile fetches,
  * which fall over under this environment's connection limits — while one

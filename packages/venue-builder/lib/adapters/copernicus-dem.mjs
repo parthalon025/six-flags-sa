@@ -15,7 +15,7 @@
  */
 
 import { fromUrl } from 'geotiff';
-import { readCogWindow, makeSampler } from '../terrain/cog.mjs';
+import { readCogWindow, makeSampler } from './cog.mjs';
 
 export const ID = 'copernicus-dem';
 export const LICENSE = 'copernicus-free';
@@ -65,7 +65,11 @@ export async function elevationSampler(bounds, { openTiff = fromUrl } = {}) {
       url: target,
       surfaceModel: true,
     };
-  } catch {
+  } catch (err) {
+    // "No coverage" and "the read broke" both end as flat ground, so the
+    // reason has to survive or a transient failure is indistinguishable from
+    // a venue that genuinely has no DEM.
+    console.warn(`copernicus-dem: no elevation for this bbox (${err.message})`);
     return null;
   }
 }

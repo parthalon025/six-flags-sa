@@ -21,7 +21,7 @@
  */
 
 import { fromUrl } from 'geotiff';
-import { readCogWindow, makeSampler } from '../terrain/cog.mjs';
+import { readCogWindow, makeSampler } from './cog.mjs';
 
 export const ID = 'usgs-3dep';
 export const LICENSE = 'public-domain';
@@ -74,7 +74,11 @@ export async function elevationSampler(bounds, { openTiff = fromUrl, url } = {})
       source: ID,
       url: target,
     };
-  } catch {
+  } catch (err) {
+    // "No coverage" and "the read broke" both end as flat ground, so the
+    // reason has to survive or a transient failure is indistinguishable from
+    // a venue that genuinely has no DEM.
+    console.warn(`usgs-3dep: no elevation for this bbox (${err.message})`);
     return null;
   }
 }

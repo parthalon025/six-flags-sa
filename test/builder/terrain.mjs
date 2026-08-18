@@ -20,7 +20,10 @@ import { tileNameFor as tile3dep } from '../../packages/venue-builder/lib/adapte
 import { tileNameFor as tileCop } from '../../packages/venue-builder/lib/adapters/copernicus-dem.mjs';
 import {
   compileVisualSpec, certifyDisplayPack, readMaterials, readSkinTemplates,
+  styleFromSpec, mixHex, DEFAULT_MATERIAL_MIX,
 } from '../../packages/venue-builder/lib/display-pack.mjs';
+import { crownStipple, seedFromString } from '../../packages/venue-builder/lib/display-bake.mjs';
+import { buildMattReviewContext } from '../../scripts/lib/matt-review.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -395,6 +398,132 @@ await check('a coordinate smuggled under a non-obvious key still fails', () => {
   const gate = certifyDisplayPack({ spec, map, template, materials })
     .checks.find((c) => c.key === 'no_repositioning');
   assert.equal(gate.pass, false, 'a bare key blacklist would have passed this');
+  return true;
+});
+
+/* ------------------------------------------------- material colour blend -- */
+
+await check('mixHex blends, clamps, and leaves non-hex colours alone', () => {
+  assert.equal(mixHex('#000000', '#FFFFFF', 0.5), '#808080');
+  assert.equal(mixHex('#000000', '#FFFFFF', 0), '#000000');
+  assert.equal(mixHex('#000000', '#FFFFFF', 1), '#FFFFFF');
+  // Over- and under-shooting must not wrap round.
+  assert.equal(mixHex('#000000', '#FFFFFF', 5), '#FFFFFF');
+  assert.equal(mixHex('#FFFFFF', '#000000', 5), '#000000');
+  // A skin using rgba() or a named colour keeps what it authored.
+  assert.equal(mixHex('rgba(0,0,0,0.5)', '#FFFFFF', 0.5), 'rgba(0,0,0,0.5)');
+  assert.equal(mixHex('#000000', 'nonsense', 0.5), '#000000');
+  return true;
+});
+
+await check('a surface takes its material colour, blended toward the skin', () => {
+  const map = JSON.parse(readFileSync('apps/party-tracker/public/venues/kings-island.map.json', 'utf8'));
+  const materials = readMaterials();
+  const template = readSkinTemplates().trail;
+  const spec = compileVisualSpec({ map, template, materials });
+  const veg = spec.surfaces.vegetation;
+  const expected = mixHex(
+    template.tokens.colors.grass,
+    materials[veg.material].avgColor,
+    template.materialMix ?? DEFAULT_MATERIAL_MIX,
+  );
+  assert.equal(veg.color, expected);
+  assert.notEqual(veg.color, template.tokens.colors.grass, 'the material must actually move it');
+  return true;
+});
+
+await check('a material with no harvested swatch leaves the skin token alone', () => {
+  const map = JSON.parse(readFileSync('apps/party-tracker/public/venues/kings-island.map.json', 'utf8'));
+  const template = readSkinTemplates().trail;
+  const materials = readMaterials();
+  const bare = Object.fromEntries(
+    Object.entries(materials).map(([k, v]) => [k, { ...v, avgColor: undefined }]),
+  );
+  const spec = compileVisualSpec({ map, template, materials: bare });
+  assert.equal(spec.surfaces.vegetation.color, template.tokens.colors.grass);
+  return true;
+});
+
+await check('the style paints surface colours and falls back per layer', () => {
+  const map = JSON.parse(readFileSync('apps/party-tracker/public/venues/kings-island.map.json', 'utf8'));
+  const materials = readMaterials();
+  const template = readSkinTemplates().trail;
+  const spec = compileVisualSpec({ map, template, materials });
+  const style = styleFromSpec(spec);
+  const paintOf = (id) => style.layers.find((l) => l.id === id)?.paint;
+  assert.equal(paintOf('grass')['fill-color'], spec.surfaces.vegetation.color);
+  assert.equal(paintOf('water')['fill-color'], spec.surfaces.water.color);
+  // `lands` is a district wash, not a surface class — it keeps its own expression.
+  assert.ok(Array.isArray(paintOf('lands')['fill-color']));
+  // background is a token, never a material.
+  assert.equal(paintOf('background')['background-color'], template.tokens.colors.ground);
+  return true;
+});
+
+await check('a layer no surface claims still gets a colour', () => {
+  const map = JSON.parse(readFileSync('apps/party-tracker/public/venues/kings-island.map.json', 'utf8'));
+  const template = readSkinTemplates().trail;
+  const spec = compileVisualSpec({ map, template, materials: {} });
+  const style = styleFromSpec(spec);
+  for (const layer of style.layers) {
+    const paint = layer.paint || {};
+    const colour = paint['fill-color'] ?? paint['line-color'] ?? paint['background-color'];
+    if (colour === undefined) continue;
+    assert.ok(colour !== null, `${layer.id} has a null colour`);
+  }
+  return true;
+});
+
+/* ------------------------------------------------------------ bake bits -- */
+
+await check('crownStipple spills vegetation onto open ground, never onto a path', () => {
+  const T = { outside: 0, ground: 1, grass: 2, wood: 3, water: 4, lot: 5, road: 6, service: 7 };
+  const cols = 20; const rows = 20;
+  const cells = new Array(cols * rows).fill(T.ground);
+  for (let y = 0; y < rows; y += 1) for (let x = 0; x < 8; x += 1) cells[y * cols + x] = T.wood;
+  // A road hard against the wood edge must survive untouched.
+  for (let y = 0; y < rows; y += 1) cells[y * cols + 9] = T.road;
+  const before = cells.slice();
+  crownStipple(cells, cols, rows);
+  const roadKept = cells.every((v, i) => (before[i] === T.road ? v === T.road : true));
+  assert.ok(roadKept, 'stipple must not paint over a road');
+  const spilled = cells.filter((v, i) => before[i] === T.ground && v === T.wood).length;
+  assert.ok(spilled > 0, 'expected some spill onto open ground');
+  const deep = cells[10 * cols + 18];
+  assert.equal(deep, T.ground, 'ground far from vegetation is untouched');
+  return true;
+});
+
+await check('crownStipple is deterministic', () => {
+  const cols = 12; const rows = 12;
+  const seed = () => {
+    const c = new Array(cols * rows).fill(1);
+    for (let y = 0; y < rows; y += 1) for (let x = 0; x < 5; x += 1) c[y * cols + x] = 3;
+    return c;
+  };
+  const a = seed(); crownStipple(a, cols, rows);
+  const b = seed(); crownStipple(b, cols, rows);
+  assert.deepEqual(a, b);
+  return true;
+});
+
+await check('seedFromString separates the strings the bake actually uses', () => {
+  const seeds = ['kings-island:wood', 'kings-island:grass', 'cedar-point:wood', 'cedar-point:grass']
+    .map(seedFromString);
+  assert.equal(new Set(seeds).size, seeds.length, 'adjacent kind strings must not collide');
+  assert.equal(seedFromString('a'), seedFromString('a'));
+  assert.ok(seeds.every(Number.isInteger));
+  return true;
+});
+
+/* --------------------------------------------------- review gate plumbing -- */
+
+await check('the standards-review context survives a diff larger than 1 MB', () => {
+  // It buffered the whole branch patch with node's 1 MB default, so any branch
+  // big enough (or carrying one binary asset) died on `spawnSync git ENOBUFS`
+  // after the app build had already run.
+  const ctx = buildMattReviewContext({ baseRef: 'origin/main' });
+  assert.ok(Array.isArray(ctx.files));
   return true;
 });
 

@@ -13,6 +13,10 @@
  * behind them. There was nothing to port; this is written from the standard
  * formulation.)
  *
+ * The mean-centred falloff below is mirrored by the canvas compositor in
+ * bin/display-bake-page.html, which shades from the model's `shade` channel
+ * rather than this PNG. Change one, change the other.
+ *
  * PNG encoding is done here rather than by a library because the only thing
  * needed is a single-image, no-filter, RGBA write, and node's zlib already
  * does the hard part.
