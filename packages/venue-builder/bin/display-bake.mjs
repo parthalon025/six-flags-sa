@@ -28,6 +28,7 @@ import { readAssetLedger, assetPath, creditsManifest } from '../lib/display-asse
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
 import { profileForKit, readReferenceProfiles } from '../lib/display-references.mjs';
+import { ldtkProject } from '../lib/display-ldtk.mjs';
 import {
   stylePoints, certifyStyleContract, harvestProfileDraft, signature,
 } from '../lib/display-style-contract.mjs';
@@ -77,6 +78,7 @@ let prompt = null;
 let maxCols = 240;
 let px = 16;
 let harvestProfile = false;
+let ldtk = false;
 let outRoot = path.join(MONO_ROOT, 'artifacts', 'display-bake');
 for (let i = 0; i < argv.length; i += 1) {
   const a = argv[i];
@@ -85,6 +87,7 @@ for (let i = 0; i < argv.length; i += 1) {
   else if (a === '--max-cols') maxCols = Number(argv[++i]) || 240;
   else if (a === '--px') px = Number(argv[++i]) || 16;
   else if (a === '--harvest-profile') harvestProfile = true;
+  else if (a === '--ldtk') ldtk = true;
   else if (a === '--out') outRoot = path.resolve(argv[++i]);
   else if (!a.startsWith('--')) ids.push(a);
 }
@@ -222,6 +225,12 @@ for (const id of ids) {
       const draftFile = path.join(outRoot, `${id}--${kitId}.profile-draft.json`);
       writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples }), null, 2)}\n`);
       console.error(`  profile draft (measured medians): ${draftFile}`);
+    }
+    if (ldtk) {
+      // Kit-independent (the model is), so one file per venue suffices.
+      const ldtkFile = path.join(outRoot, `${id}.ldtk`);
+      writeFileSync(ldtkFile, `${JSON.stringify(ldtkProject(model), null, 2)}\n`);
+      console.error(`  LDtk debug export: ${ldtkFile}`);
     }
     const profile = profileForKit(kitId, profiles);
     let rerun = null;

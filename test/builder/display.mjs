@@ -444,6 +444,26 @@ await check('the tier manifest names every tier, sizes or gaps', () => {
   return true;
 });
 
+await check('the LDtk debug export mirrors the model exactly', async () => {
+  const { ldtkProject } = await import('../../packages/venue-builder/lib/display-ldtk.mjs');
+  const model = bakeModel(BAKE_MAP, FIXTURE_POIS, { maxCols: 60 });
+  const project = ldtkProject(model);
+  const level = project.levels[0];
+  const terrain = level.layerInstances.find((l) => l.__identifier === 'Terrain');
+  assert.equal(terrain.__cWid, model.cols);
+  assert.equal(terrain.intGridCsv.length, model.cols * model.rows, 'every cell exported');
+  assert.ok(terrain.intGridCsv.every((v) => v >= 1), 'IntGrid values are 1-based');
+  assert.equal(new Set(terrain.intGridCsv).size <= 8, true, 'only real terrain classes');
+  const entities = level.layerInstances.find((l) => l.__identifier === 'Entities').entityInstances;
+  const badgeCount = entities.filter((e) => e.__identifier === 'Badge').length;
+  assert.equal(badgeCount, model.badges.length, 'one entity per badge');
+  const trackVertices = entities.filter((e) => e.__identifier === 'TrackVertex');
+  assert.equal(trackVertices.length, model.tracks.reduce((n, t) => n + t.pts.length, 0));
+  assert.equal(JSON.stringify(project), JSON.stringify(ldtkProject(model)), 'byte-identical rerun');
+  JSON.parse(JSON.stringify(project)); // round-trips as plain JSON
+  return true;
+});
+
 await check('entities outside the crop window leave the model', () => {
   const withOutsider = {
     ...BAKE_MAP,
