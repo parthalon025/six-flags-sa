@@ -1,7 +1,7 @@
 'use client';
 
 import { Show, UserButton, useClerk } from '@clerk/nextjs';
-import { rankReward } from '@party-tracker/shared/questScore.js';
+import TitleProgress from '@/components/TitleProgress';
 import OAuthButtons from '@/components/OAuthButtons';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
 import { useClerkOAuth } from '@/lib/auth/useClerkOAuth';
@@ -21,7 +21,6 @@ function SignInCardLive({ session = null, onSession = null }) {
   const { ready, busy, err, startOAuth } = useClerkOAuth();
 
   if (session?.userId) {
-    const title = rankReward(session.rank || 'visitor').title;
     return (
       <div className="signInCard">
         <div className="label">Signed in</div>
@@ -29,9 +28,7 @@ function SignInCardLive({ session = null, onSession = null }) {
           {session.displayName || 'Guest'}
           {session.fromCache ? ' · offline profile' : ''}
         </p>
-        {title ? (
-          <p className="fine block signInTitle">{title}</p>
-        ) : null}
+        <TitleProgress xp={session.xp} compact />
         <div className="signInActions">
           <UserButton afterSignOutUrl="/" />
           <button

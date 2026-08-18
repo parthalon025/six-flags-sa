@@ -61,6 +61,50 @@ export function titleFromXp(xp) {
   return rankReward(rankFromXp(xp)).title;
 }
 
+/**
+ * Where a Profile stands on the Title ladder: the current band's floor, the
+ * next threshold, and how far along the band this XP sits. `next` is null at
+ * Steward (the top), where `fraction` pins to 1 so a bar can render full.
+ *
+ * @param {number} xp
+ * @returns {{
+ *   xp: number,
+ *   rank: ProfileRank,
+ *   title: string | null,
+ *   label: string,
+ *   floor: number,
+ *   next: { rank: ProfileRank, title: string, label: string, at: number, toGo: number } | null,
+ *   fraction: number,
+ * }}
+ */
+export function rankProgress(xp) {
+  const n = Math.max(0, Number(xp) || 0);
+  const rank = rankFromXp(n);
+  const index = RANK_INDEX[rank] ?? 0;
+  const floor = RANK_LADDER[index].xp;
+  const nextRow = RANK_LADDER[index + 1] || null;
+  const reward = rankReward(rank);
+  if (!nextRow) {
+    return { xp: n, rank, title: reward.title, label: reward.label, floor, next: null, fraction: 1 };
+  }
+  const nextReward = rankReward(nextRow.rank);
+  return {
+    xp: n,
+    rank,
+    title: reward.title,
+    label: reward.label,
+    floor,
+    next: {
+      rank: nextRow.rank,
+      title: nextReward.title,
+      label: nextReward.label,
+      at: nextRow.xp,
+      toGo: nextRow.xp - n,
+    },
+    fraction: Math.min(1, Math.max(0, (n - floor) / (nextRow.xp - floor))),
+  };
+}
+
 /** Coarse ~40 m cell so a generic path walk does not farm-block the whole park. */
 export const PATH_SCORE_CELL_M = 40;
 

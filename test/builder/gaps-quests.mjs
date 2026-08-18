@@ -26,6 +26,7 @@ console.log('\ngaps + quest score\n');
 const {
   pathScoreCell,
   rankFromXp,
+  rankProgress,
   rankReward,
   scoreKey,
   scoreSideQuest,
@@ -63,6 +64,39 @@ await check('XP thresholds grant Titles as Profile sub-names; Visitor has none y
   assert.equal(titleFromXp(1000), 'Cartographer');
   assert.equal(titleFromXp(3000), 'Steward');
   assert.equal(rankReward('scout').title, 'Scout');
+  return true;
+});
+
+await check('rankProgress measures the walk to the next Title', () => {
+  const fresh = rankProgress(0);
+  assert.equal(fresh.rank, 'visitor');
+  assert.equal(fresh.label, 'Visitor');
+  assert.equal(fresh.next.title, 'Scout');
+  assert.equal(fresh.next.at, 50);
+  assert.equal(fresh.next.toGo, 50);
+  assert.equal(fresh.fraction, 0);
+
+  const scout = rankProgress(62);
+  assert.equal(scout.rank, 'scout');
+  assert.equal(scout.title, 'Scout');
+  assert.equal(scout.floor, 50);
+  assert.equal(scout.next.rank, 'ranger');
+  assert.equal(scout.next.toGo, 188);
+  assert.equal(scout.fraction, (62 - 50) / (250 - 50));
+  return true;
+});
+
+await check('rankProgress clamps junk XP and tops out at Steward', () => {
+  const junk = rankProgress(Number.NaN);
+  assert.equal(junk.xp, 0);
+  assert.equal(junk.rank, 'visitor');
+  assert.equal(rankProgress(-40).xp, 0);
+
+  const top = rankProgress(4200);
+  assert.equal(top.rank, 'steward');
+  assert.equal(top.title, 'Steward');
+  assert.equal(top.next, null);
+  assert.equal(top.fraction, 1);
   return true;
 });
 

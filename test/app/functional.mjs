@@ -1284,6 +1284,60 @@ await check('complete a gap quest draws Overlay on the map', async () => {
   return true;
 });
 
+await check('a scored Side Quest pays XP into the Title ladder', async () => {
+  if (!profileReady) return true;
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+
+  // The Profile's progress card is the game surface: Title label, XP bar,
+  // and the walk to the next Title. It sits above the quest cards — the
+  // cards themselves stay meaning-first and never advertise XP.
+  await until(async () => (await a.locator('.titleProgress').count()) > 0, {
+    timeout: 10000,
+    label: 'Title progress card',
+  });
+  const card = a.locator('.titleProgress').first();
+  const xpBefore = Number(await card.getAttribute('data-xp')) || 0;
+  if ((await a.locator('.titleProgress .titleProgressFill').count()) < 1) {
+    throw new Error('XP bar missing from the Title progress card');
+  }
+  const cardText = await card.innerText();
+  if (!/\d+ XP/.test(cardText)) throw new Error(`no XP total on the card: ${cardText.slice(0, 120)}`);
+  if (!/XP to|Top of the ladder/i.test(cardText)) {
+    throw new Error(`no next-Title line on the card: ${cardText.slice(0, 120)}`);
+  }
+
+  // Answer the live "Ride up or down?" from the suite's standing fix — 62 m
+  // from Viking Fury, walked-near, first live report for that ride, so XP
+  // must land.
+  const liveRow = a.locator('.sideQuestRow', { hasText: 'Ride up or down?' });
+  await until(async () => (await liveRow.count()) > 0, { timeout: 10000, label: 'live ride quest' });
+  const reportBtn = liveRow.locator('button.sideQuestReportBtn');
+  if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
+    await reportBtn.click();
+    await a.waitForTimeout(200);
+  }
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  await liveRow.locator('.sideQuestSubmit').click();
+
+  // Output validation: the toast says what landed, and the card's number
+  // moved by exactly that amount — the reward is real, not decoration.
+  await until(async () => (await a.locator('.xpToast .xpToastDelta').count()) > 0, {
+    timeout: 10000,
+    label: 'XP reward toast',
+  });
+  const deltaText = await a.locator('.xpToast .xpToastDelta').innerText();
+  const m = deltaText.match(/\+(\d+)\s*XP/);
+  if (!m) throw new Error(`reward toast shows no +XP: "${deltaText}"`);
+  const delta = Number(m[1]);
+  await until(
+    async () => Number(await card.getAttribute('data-xp')) === xpBefore + delta,
+    { timeout: 10000, label: `Title card XP to rise ${xpBefore} -> ${xpBefore + delta}` },
+  );
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();
