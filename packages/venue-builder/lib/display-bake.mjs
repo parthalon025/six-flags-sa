@@ -191,8 +191,10 @@ export function bakeModel(map, pois = [], opts = {}) {
   const cells = new Array(cols * rows).fill(TERRAIN.outside);
 
   // Ground inside the venue boundary (or everywhere when no boundary).
+  let boundaryRing = null;
   if (Array.isArray(map.boundary) && map.boundary.length >= 3) {
-    paintPolygon(cells, cols, rows, map.boundary.map(toCell), TERRAIN.ground);
+    boundaryRing = map.boundary.map(toCell);
+    paintPolygon(cells, cols, rows, boundaryRing, TERRAIN.ground);
   } else {
     cells.fill(TERRAIN.ground);
   }
@@ -206,20 +208,31 @@ export function bakeModel(map, pois = [], opts = {}) {
       if (terrain === TERRAIN.grass) treeCells.grass.push(...painted);
     }
   }
+  // Roads render as smooth round-capped polylines (crisp diagonals, dashed
+  // centerlines); cells under them still classify for terrain sanity.
+  const roads = [];
   for (const way of map.service || []) {
-    if (way.r?.length >= 2) paintLine(cells, cols, rows, way.r.map(toCell), TERRAIN.service, 0);
+    if (way.r?.length >= 2) {
+      const pts = way.r.map(toCell);
+      paintLine(cells, cols, rows, pts, TERRAIN.service, 0);
+      roads.push({ kind: 'service', pts });
+    }
   }
   for (const way of map.path || []) {
-    if (way.r?.length >= 2) paintLine(cells, cols, rows, way.r.map(toCell), TERRAIN.road, 0);
+    if (way.r?.length >= 2) {
+      const pts = way.r.map(toCell);
+      paintLine(cells, cols, rows, pts, TERRAIN.road, 0);
+      roads.push({ kind: 'path', pts });
+    }
   }
 
-  // Trees: dense in woods, sparse tufts on grass — hash-jittered, never random.
+  // Trees: dense canopy in woods, scattered on grass — hash-jittered, never random.
   const trees = [];
   for (const [x, y] of treeCells.wood) {
-    if (cellHash(x, y) < 0.45) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.5 });
+    if (cellHash(x, y) < 0.65) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.4 });
   }
   for (const [x, y] of treeCells.grass) {
-    if (cellHash(x, y) < 0.05) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: false });
+    if (cellHash(x, y) < 0.14) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.8 });
   }
   trees.sort((a, b) => a.y - b.y || a.x - b.x);
 
@@ -247,7 +260,7 @@ export function bakeModel(map, pois = [], opts = {}) {
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);
 
-  return {
+  return cropModel({
     version: 1,
     venue: map.meta?.id,
     cols,
@@ -255,9 +268,59 @@ export function bakeModel(map, pois = [], opts = {}) {
     tileMetres: Math.round(tileMetres * 100) / 100,
     terrains: TERRAIN_NAMES,
     cells,
+    roads,
     trees,
     buildings,
     tracks,
     badges,
+  }, boundaryRing, opts.margin ?? 6);
+}
+
+/**
+ * Crop to the venue: the map fills the frame instead of floating in its
+ * padded bounds. The window is the boundary ring's box plus a margin
+ * (falling back to non-outside content when a venue has no boundary).
+ */
+function cropModel(model, boundaryRing, margin) {
+  const { cols, rows, cells } = model;
+  let minX = cols; let minY = rows; let maxX = -1; let maxY = -1;
+  if (boundaryRing) {
+    for (const [x, y] of boundaryRing) {
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  } else {
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        if (TERRAIN_NAMES[cells[y * cols + x]] !== 'outside') {
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      }
+    }
+  }
+  if (maxX < 0) return model;
+  // Boundary ring coords are floats — floor/ceil before the margin so the
+  // window (and every array size derived from it) stays integral.
+  const x0 = Math.max(0, Math.floor(minX) - margin); const y0 = Math.max(0, Math.floor(minY) - margin);
+  const x1 = Math.min(cols - 1, Math.ceil(maxX) + margin); const y1 = Math.min(rows - 1, Math.ceil(maxY) + margin);
+  const newCols = x1 - x0 + 1; const newRows = y1 - y0 + 1;
+  const newCells = new Array(newCols * newRows);
+  for (let y = 0; y < newRows; y += 1) {
+    for (let x = 0; x < newCols; x += 1) {
+      newCells[y * newCols + x] = cells[(y + y0) * cols + (x + x0)];
+    }
+  }
+  const shiftPt = ([x, y]) => [x - x0, y - y0];
+  return {
+    ...model,
+    cols: newCols,
+    rows: newRows,
+    cells: newCells,
+    roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })),
+    trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })),
+    buildings: model.buildings.map((b) => ({ ...b, ring: b.ring.map(shiftPt) })),
+    tracks: model.tracks.map((t) => ({ ...t, pts: t.pts.map(shiftPt) })),
+    badges: model.badges.map((b) => ({ ...b, x: b.x - x0, y: b.y - y0 })),
   };
 }

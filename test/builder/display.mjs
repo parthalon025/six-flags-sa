@@ -319,6 +319,32 @@ await check('the bake model is truth-locked and deterministic', () => {
   return true;
 });
 
+await check('the crop window is integral and tightens to the boundary', () => {
+  const tight = {
+    ...BAKE_MAP,
+    boundary: [[0.004, 0.004], [0.006, 0.004], [0.006, 0.006], [0.004, 0.006]],
+  };
+  const full = bakeModel({ ...tight, boundary: null }, [], { maxCols: 60 });
+  const cropped = bakeModel(tight, [], { maxCols: 60, margin: 2 });
+  assert.ok(Number.isInteger(cropped.cols) && Number.isInteger(cropped.rows), 'grid dims must be integers');
+  assert.equal(cropped.cells.length, cropped.cols * cropped.rows, 'cells must fill the grid exactly');
+  assert.ok(cropped.cols < full.cols && cropped.rows < full.rows, 'crop must tighten to the boundary');
+  assert.equal(JSON.stringify(cropped), JSON.stringify(bakeModel(tight, [], { maxCols: 60, margin: 2 })));
+  return true;
+});
+
+await check('crop shifts roads with the window', () => {
+  const model = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 2 });
+  assert.ok(model.roads.length >= 1, 'path polyline expected');
+  for (const road of model.roads) {
+    for (const [x, y] of road.pts) {
+      assert.ok(x >= -2 && x <= model.cols + 2 && y >= -2 && y <= model.rows + 2,
+        'road points must live in the cropped window');
+    }
+  }
+  return true;
+});
+
 /* ------------------------------------------------------------ the stage -- */
 
 await check('runDisplayStage writes spec + certification, twice byte-identical', () => {
