@@ -8055,6 +8055,53 @@ await check('sync external sources cache-only does not throw', async () => {
   return true;
 });
 
+// Guards the #465 wiring itself: reverting either call site to `samples: []`
+// keeps every pure deriveOrsRouteSamples test green, so this one drives
+// syncExternalSources end to end and asserts the derived coordinates are what
+// the ORS adapter actually sends.
+await check('syncExternalSources threads derived ORS samples into the adapter fetch', async () => {
+  const { syncExternalSources, deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const { venueSidecar } = await import('../../packages/venue-builder/lib/venue-io.mjs');
+  const pois = [
+    { c: 'gate', n: 'Main Gate', lat: 40.1, lng: -82.1 },
+    { c: 'coaster', n: 'Millennium Force', lat: 40.2, lng: -82.2 },
+    { c: 'ride', n: 'Snake River Falls', lat: 40.3, lng: -82.3 },
+    { c: 'show', n: 'Good Time Theatre', lat: 40.4, lng: -82.4 },
+  ];
+  const expected = deriveOrsRouteSamples(pois);
+  assert.ok(expected.length >= 3);
+  const bodies = [];
+  const realFetch = global.fetch;
+  const priorKey = process.env.ORS_API_KEY;
+  process.env.ORS_API_KEY = 'test-key-wiring';
+  global.fetch = async (url, opts = {}) => {
+    bodies.push(JSON.parse(opts.body));
+    return { ok: true, status: 200, json: async () => ({ features: [] }) };
+  };
+  try {
+    const runs = await syncExternalSources('ors-wiring-probe', {
+      fetch: true,
+      sources: ['openrouteservice'],
+      pois,
+    });
+    assert.ok(runs.openrouteservice);
+    assert.equal(bodies.length, expected.length);
+    assert.deepEqual(
+      bodies.map((b) => b.coordinates),
+      expected.map((s) => [
+        [s.from.lng, s.from.lat],
+        [s.to.lng, s.to.lat],
+      ]),
+    );
+  } finally {
+    global.fetch = realFetch;
+    if (priorKey === undefined) delete process.env.ORS_API_KEY;
+    else process.env.ORS_API_KEY = priorKey;
+    fs.rmSync(path.dirname(venueSidecar('ors-wiring-probe', 'x')), { recursive: true, force: true });
+  }
+  return true;
+});
+
 await check('datasets.external from sources.json filters sync list', async () => {
   const { resolveExternalAdapterIds } = await import('../../packages/venue-builder/lib/external-research.mjs');
   const {
