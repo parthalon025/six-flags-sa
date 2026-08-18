@@ -356,9 +356,10 @@ const ENTRIES = [
     commercial_ok: true,
     evidence_sources: ['mapillary', 'video'],
     integration: 'medium',
-    overlap: 'Manual aerial survey for Big Kahunas only',
+    overlap:
+      'Manual aerial survey for Big Kahunas only. Shares the mapillary_tools CLI with the mapillary-api row (image API vs. this row\'s video_process implementation in lib/adapters/mapillary-video.mjs).',
     notes:
-      'Queue entrance candidates from street-level sequences + API metadata. Also covers ride-walkthrough POV video via the video_process subcommand (sample_video + process) — see lib/adapters/mapillary-video.mjs. Requires ctx.videoPath; not in DEFAULT_EXTERNAL_ADAPTERS since a walkthrough video must be manually supplied.',
+      'Queue entrance candidates from street-level sequences + API metadata. Requires ctx.videoPath for the video path; not in DEFAULT_EXTERNAL_ADAPTERS since a walkthrough video must be manually supplied.',
   },
   {
     id: 'mapillary-js',

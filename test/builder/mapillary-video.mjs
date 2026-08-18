@@ -9,9 +9,15 @@ import {
   run,
 } from '../../packages/venue-builder/lib/adapters/mapillary-video.mjs';
 
-// A synthetic id so run()'s writeCache side effect never touches a real shipped
+// Synthetic ids so run()'s writeCache side effect never touches a real shipped
 // venue's data/venues/<id>/ sidecar — cleaned up after the suite either way.
+// gapResult() reuses a cached stub once one exists (matching mapillary-api.mjs's
+// own "cached || fresh stub" pattern), so each check that writes a gap needs its
+// own id — sharing one across checks would let an earlier gap's cached error
+// mask a later, differently-caused one.
 const TEST_VENUE = '__test-mapillary-video__';
+const TEST_VENUE_2 = '__test-mapillary-video-2__';
+const TEST_VENUE_3 = '__test-mapillary-video-3__';
 
 const PASS = [];
 const FAIL = [];
@@ -62,10 +68,23 @@ await check('run() gaps when no videoPath is supplied', async () => {
 });
 
 await check('run() gaps when the mapillary_tools CLI is unavailable', async () => {
-  const available = await cliAvailable(async () => {
+  const failingExec = async () => {
     throw new Error('ENOENT: mapillary_tools not found');
-  });
-  assert.equal(available, false);
+  };
+  assert.equal(await cliAvailable(failingExec), false);
+
+  const res = await run({ venueId: TEST_VENUE_2, videoPath: 'walkthrough.mp4' }, { exec: failingExec });
+  assert.equal(res.ok, false);
+  assert.equal(res.meta.gap, true);
+  assert.ok(res.error.includes('mapillary_tools CLI not found'));
+});
+
+await check('run() processes a video end to end with an injected exec', async () => {
+  const fakeExec = async () => ({ stdout: '', stderr: '' }); // version check + video_process both succeed, no manifest written
+  const res = await run({ venueId: TEST_VENUE_3, videoPath: 'walkthrough.mp4' }, { exec: fakeExec });
+  assert.equal(res.ok, false); // no manifest → zero frames, still a valid (empty) result, not an error
+  assert.deepEqual(res.claims, []);
+  assert.equal(res.meta.count, 0);
 });
 
 await check('run() requires a venueId', async () => {
@@ -81,13 +100,15 @@ await check('processWalkthroughVideo returns [] when the CLI writes no manifest'
   assert.deepEqual(frames, []);
 });
 
-try {
-  rmSync(new URL(`../../packages/venue-builder/data/venues/${TEST_VENUE}`, import.meta.url), {
-    recursive: true,
-    force: true,
-  });
-} catch {
-  // best-effort cleanup of the synthetic venue's sidecar
+for (const id of [TEST_VENUE, TEST_VENUE_2, TEST_VENUE_3]) {
+  try {
+    rmSync(new URL(`../../packages/venue-builder/data/venues/${id}`, import.meta.url), {
+      recursive: true,
+      force: true,
+    });
+  } catch {
+    // best-effort cleanup of the synthetic venues' sidecars
+  }
 }
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

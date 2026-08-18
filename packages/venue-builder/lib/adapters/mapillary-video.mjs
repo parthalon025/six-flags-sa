@@ -68,7 +68,14 @@ export function videoClaims(frames = [], { date } = {}) {
     }));
 }
 
-export async function run(ctx = {}) {
+/** One shape for every "can't run video_process yet" branch — cache it and report the gap. */
+function gapResult(id, cached, error) {
+  const stub = cached || { frames: [], error, gap: true };
+  writeCache(id, 'mapillary-video', stub);
+  return { adapterId: 'mapillary-tools', ok: false, claims: [], meta: { gap: true }, data: stub, error: stub.error };
+}
+
+export async function run(ctx = {}, { exec = execFileAsync } = {}) {
   const id = ctx.venueId;
   if (!id) return { adapterId: 'mapillary-tools', ok: false, error: 'venueId_required' };
 
@@ -84,24 +91,16 @@ export async function run(ctx = {}) {
 
   const videoPath = ctx.videoPath;
   if (!videoPath) {
-    const stub = cached || {
-      frames: [],
-      error: 'Set ctx.videoPath to a ride-walkthrough video to run video_process.',
-      gap: true,
-    };
-    writeCache(id, 'mapillary-video', stub);
-    return { adapterId: 'mapillary-tools', ok: false, claims: [], meta: { gap: true }, data: stub, error: stub.error };
+    return gapResult(id, cached, 'Set ctx.videoPath to a ride-walkthrough video to run video_process.');
   }
 
-  if (!(await cliAvailable())) {
-    const stub = cached || { frames: [], error: 'mapillary_tools CLI not found on PATH.', gap: true };
-    writeCache(id, 'mapillary-video', stub);
-    return { adapterId: 'mapillary-tools', ok: false, claims: [], meta: { gap: true }, data: stub, error: stub.error };
+  if (!(await cliAvailable(exec))) {
+    return gapResult(id, cached, 'mapillary_tools CLI not found on PATH.');
   }
 
   try {
     const outDir = venueSidecar(id, 'mapillary-video-frames');
-    const frames = await processWalkthroughVideo(videoPath, outDir);
+    const frames = await processWalkthroughVideo(videoPath, outDir, exec);
     const out = {
       fetched: new Date().toISOString().slice(0, 19),
       source: 'mapillary_tools video_process',
