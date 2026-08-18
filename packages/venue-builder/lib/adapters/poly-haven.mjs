@@ -18,7 +18,10 @@ import { fetchJson, UA } from './_cache.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DISPLAY_DIR = path.join(HERE, '..', '..', 'data', 'display');
-const materialsLedgerFile = () => path.join(DISPLAY_DIR, 'materials.json');
+// Sibling of materials.json (the surface-binding ledger display-pack.mjs
+// reads): this file is the Poly Haven source catalog those bindings can
+// draw from — two schemas, two files.
+const materialsLedgerFile = () => path.join(DISPLAY_DIR, 'polyhaven-materials.json');
 
 /**
  * Curated, real Poly Haven slugs per land-cover category this product needs

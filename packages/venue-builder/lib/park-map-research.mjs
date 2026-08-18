@@ -10,7 +10,7 @@
 
 import path from 'node:path';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { llmConfig, chatCompletion } from './venue-llm.mjs';
+import { llmConfig, chatCompletion, isAgentPending } from './venue-llm.mjs';
 import { fetchUrl } from './venue-official-site.mjs';
 import { officialMapsFromCatalog } from './official-map.mjs';
 import {
@@ -232,6 +232,11 @@ export async function llmSearchParkMaps({
     opts,
   );
 
+  if (isAgentPending(content)) {
+    // skipped:true matches the sibling in open-research.mjs so the merge
+    // functions report "answer the brief", never a completed search.
+    return { skipped: true, required: true, pending: true, reason: 'llm_brief_pending' };
+  }
   const parsed = parseJsonObject(content);
   if (!parsed) {
     return {
@@ -300,7 +305,7 @@ export function mergeParkMapResearch(deterministic, llm) {
     llmParkMapSearch: null,
   };
 
-  if (llm && !llm.skipped && !llm.error) {
+  if (llm && !llm.skipped && !llm.error && !llm.pending) {
     out.llmParkMapSearch = { model: llm.model, fetched: llm.fetched, required: true };
     for (const m of llm.parkMaps || []) {
       out.parkMaps.push({ ...m, source: m.source || 'llm_park_map_search' });

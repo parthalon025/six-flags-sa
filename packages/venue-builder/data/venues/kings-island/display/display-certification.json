@@ -1,0 +1,340 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "certified": true,
+  "anchors": [
+    {
+      "id": "gate:main-entrance",
+      "name": "Main Entrance",
+      "lat": 39.344794,
+      "lng": -84.268636
+    },
+    {
+      "id": "gate:soak-city-entrance",
+      "name": "Soak City Entrance",
+      "lat": 39.340029,
+      "lng": -84.274333
+    },
+    {
+      "id": "land:Action Zone",
+      "name": "Action Zone",
+      "lat": 39.34588,
+      "lng": -84.26639
+    },
+    {
+      "id": "land:Adventure Port",
+      "name": "Adventure Port",
+      "lat": 39.3444,
+      "lng": -84.26566
+    },
+    {
+      "id": "land:Area 72",
+      "name": "Area 72",
+      "lat": 39.34275,
+      "lng": -84.26319
+    },
+    {
+      "id": "land:Camp Snoopy",
+      "name": "Camp Snoopy",
+      "lat": 39.34178,
+      "lng": -84.26936
+    },
+    {
+      "id": "land:Coney Mall",
+      "name": "Coney Mall",
+      "lat": 39.34201,
+      "lng": -84.26484
+    },
+    {
+      "id": "land:International Street",
+      "name": "International Street",
+      "lat": 39.34369,
+      "lng": -84.26739
+    },
+    {
+      "id": "land:Oktoberfest",
+      "name": "Oktoberfest",
+      "lat": 39.34443,
+      "lng": -84.26682
+    },
+    {
+      "id": "land:Planet Snoopy",
+      "name": "Planet Snoopy",
+      "lat": 39.34233,
+      "lng": -84.26925
+    },
+    {
+      "id": "land:Rivertown",
+      "name": "Rivertown",
+      "lat": 39.34111,
+      "lng": -84.26755
+    },
+    {
+      "id": "land:Soak City",
+      "name": "Soak City",
+      "lat": 39.33906,
+      "lng": -84.27418
+    },
+    {
+      "id": "ride:3-point-challange",
+      "name": "3 Point Challange",
+      "lat": 39.341395,
+      "lng": -84.265345
+    },
+    {
+      "id": "coaster:adventure-express",
+      "name": "Adventure Express",
+      "lat": 39.344465,
+      "lng": -84.264865
+    },
+    {
+      "id": "ride:aruba-tuba",
+      "name": "Aruba Tuba",
+      "lat": 39.338326,
+      "lng": -84.274013
+    },
+    {
+      "id": "coaster:backlot-stunt-coaster",
+      "name": "Backlot Stunt Coaster",
+      "lat": 39.341937,
+      "lng": -84.265944
+    },
+    {
+      "id": "ride:bank-ball",
+      "name": "Bank Ball",
+      "lat": 39.3437,
+      "lng": -84.26524
+    },
+    {
+      "id": "coaster:banshee",
+      "name": "Banshee",
+      "lat": 39.345666,
+      "lng": -84.265478
+    }
+  ],
+  "checks": [
+    {
+      "key": "visual_points",
+      "claim": "truth yields fixed visual points for every future render matrix",
+      "pass": true,
+      "evidence": "18 anchor(s): gate:main-entrance, gate:soak-city-entrance, land:Action Zone…",
+      "confidence": "high",
+      "falsifier": "a venue with no gates, no district anchors, and no coasters",
+      "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
+    }
+  ],
+  "skins": {
+    "trail": {
+      "version": 1,
+      "venue": "kings-island",
+      "skin": "trail",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "9 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 1338 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "park-midnight": {
+      "version": 1,
+      "venue": "kings-island",
+      "skin": "park-midnight",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "9 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 1348 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "layered-atlas": {
+      "version": 1,
+      "venue": "kings-island",
+      "skin": "layered-atlas",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "9 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 1418 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    },
+    "watercolor-quest": {
+      "version": 1,
+      "venue": "kings-island",
+      "skin": "watercolor-quest",
+      "certified": true,
+      "checks": [
+        {
+          "key": "bindings_resolve",
+          "claim": "every bound surface resolves to a ledger material",
+          "pass": true,
+          "evidence": "9 bindings resolve",
+          "confidence": "high",
+          "falsifier": "a binding names a material absent from data/display/materials.json",
+          "soWhat": "an unresolved binding renders as a hole in the ground on every phone"
+        },
+        {
+          "key": "license_gate",
+          "claim": "every shipped material carries an allowed license with provenance",
+          "pass": true,
+          "evidence": "licenses ⊆ {CC0-1.0, original, licensed}",
+          "confidence": "high",
+          "falsifier": "a ledger row carries a license outside the allowed set",
+          "soWhat": "license before embed — an AGPL texture in the bundle is a shipping bug"
+        },
+        {
+          "key": "no_repositioning",
+          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "pass": true,
+          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "confidence": "high",
+          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "soWhat": "a display file that can move a Place breaks the truth/display split"
+        },
+        {
+          "key": "references_resolve",
+          "claim": "every styled land exists in truth geometry",
+          "pass": true,
+          "evidence": "9 land tone(s) resolve",
+          "confidence": "high",
+          "falsifier": "a land tone names a district the map does not have",
+          "soWhat": "styling a district that does not exist means a tint silently never draws"
+        },
+        {
+          "key": "budget",
+          "claim": "spec ≤ 64 KB and materials ≤ 1024px",
+          "pass": true,
+          "evidence": "spec 1421 bytes",
+          "confidence": "high",
+          "falsifier": "a spec or bound material exceeds the phone budget",
+          "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
+        }
+      ]
+    }
+  }
+}
