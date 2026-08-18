@@ -60,14 +60,24 @@ const merged = (base, over) => {
 
 /**
  * Resolve a kit spec (any subset of pieces) onto the piece defaults.
- * Unknown texture kinds and unknown pieces are rejected here, not at paint
- * time — a prompt-authored kit fails loudly before it ever renders.
+ * Unknown texture kinds, unknown pieces, and unresolvable tile-art refs are
+ * rejected here, not at paint time — a prompt-authored kit fails loudly
+ * before it ever renders, and can only reference license-gated ledger art.
  */
-export function resolveKit(spec = {}) {
+export function resolveKit(spec = {}, { assets } = {}) {
   for (const key of Object.keys(spec.terrain || {})) {
     if (!TERRAIN_PIECES[key]) throw new Error(`Unknown terrain piece "${key}"`);
-    const kind = spec.terrain[key]?.texture?.kind;
+    const piece = spec.terrain[key] || {};
+    const kind = piece.texture?.kind;
     if (kind && !TEXTURE_KINDS.includes(kind)) throw new Error(`Unknown texture kind "${kind}" on ${key}`);
+    if (piece.tiles) {
+      if (!assets) throw new Error(`${key}.tiles needs the asset ledger to resolve`);
+      const row = assets[piece.tiles.asset];
+      if (!row) throw new Error(`${key}.tiles references unknown asset "${piece.tiles.asset}"`);
+      if (!row.import?.tiles?.[piece.tiles.tile]) {
+        throw new Error(`${key}.tiles references unknown tile "${piece.tiles.tile}" on ${piece.tiles.asset}`);
+      }
+    }
   }
   for (const key of Object.keys(spec.sprites || {})) {
     if (!SPRITE_PIECES[key]) throw new Error(`Unknown sprite piece "${key}"`);

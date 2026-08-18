@@ -3,11 +3,82 @@
 <canvas id="c"></canvas>
 <script>
 (async () => {
-  const { model, kit, px } = await (await fetch('/model.json')).json();
+  const { model, kit, px, sheets } = await (await fetch('/model.json')).json();
   const { cols, rows, cells, trees, buildings, tracks, badges, terrains } = model;
   const c = document.getElementById('c');
   c.width = cols * px; c.height = rows * px;
   const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+
+  // Load the kit's referenced tile sheets (served from the asset ledger).
+  const sheetImages = {};
+  await Promise.all(Object.entries(sheets || {}).map(([id, s]) => new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => { sheetImages[id] = im; res(); };
+    im.onerror = () => rej(new Error('sheet load failed: ' + id));
+    im.src = s.url;
+  })));
+
+  // Dual-grid corner patterns: 16 mask variants cut from one seamless full
+  // tile. Bits: NW=1, NE=2, SW=4, SE=8 — which quadrants hold the terrain.
+  function buildPatterns(ref) {
+    const sheet = sheets[ref.asset];
+    const [tc, tr] = sheet.tiles[ref.tile];
+    const T = sheet.tileSize;
+    const sx = sheet.margin + tc * (T + sheet.spacing);
+    const sy = sheet.margin + tr * (T + sheet.spacing);
+    const h = T / 2;
+    const QUADS = [[1, 0, 0], [2, h, 0], [4, 0, h], [8, h, h]]; // bit, qx, qy
+    const patterns = [null];
+    for (let mask = 1; mask <= 15; mask += 1) {
+      const t = document.createElement('canvas');
+      t.width = T; t.height = T;
+      const tg = t.getContext('2d');
+      // 1 — mask shape
+      tg.fillStyle = '#fff';
+      for (const [bit, qx, qy] of QUADS) {
+        if (!(mask & bit)) continue;
+        const horiz = bit === 1 || bit === 4 ? 2 : 1; // orthogonal neighbors
+        const vert = bit === 1 || bit === 2 ? 4 : 8;
+        const hOn = mask & (bit === 1 ? 2 : bit === 2 ? 1 : bit === 4 ? 8 : 4);
+        const vOn = mask & (bit === 1 ? 4 : bit === 2 ? 8 : bit === 4 ? 1 : 2);
+        if (!hOn && !vOn) {
+          // isolated corner: rounded blob toward the outer corner
+          tg.save(); tg.beginPath(); tg.rect(qx, qy, h, h); tg.clip();
+          tg.beginPath(); tg.arc(h, h, h, 0, 7); tg.fill(); tg.restore();
+        } else {
+          tg.fillRect(qx, qy, h, h);
+        }
+      }
+      // concave fillet where an absent quadrant meets two present arms
+      for (const [bit, qx, qy] of QUADS) {
+        if (mask & bit) continue;
+        const hOn = mask & (bit === 1 ? 2 : bit === 2 ? 1 : bit === 4 ? 8 : 4);
+        const vOn = mask & (bit === 1 ? 4 : bit === 2 ? 8 : bit === 4 ? 1 : 2);
+        if (hOn && vOn) {
+          tg.save(); tg.beginPath(); tg.rect(qx, qy, h, h); tg.clip();
+          tg.fillRect(qx, qy, h, h);
+          tg.globalCompositeOperation = 'destination-out';
+          const ox = qx === 0 ? 0 : T; const oy = qy === 0 ? 0 : T;
+          tg.beginPath(); tg.arc(ox, oy, h, 0, 7); tg.fill();
+          tg.restore();
+        }
+      }
+      // 2 — texture the shape from the sheet tile
+      tg.globalCompositeOperation = 'source-in';
+      tg.drawImage(sheetImages[ref.asset], sx, sy, T, T, 0, 0, T, T);
+      if (ref.tint) {
+        tg.globalCompositeOperation = 'source-atop';
+        tg.fillStyle = ref.tint;
+        tg.fillRect(0, 0, T, T);
+      }
+      tg.globalCompositeOperation = 'source-over';
+      patterns[mask] = t;
+    }
+    return patterns;
+  }
+
+  const fullTile = (ref) => buildPatterns(ref)[15];
 
   // Keep in sync with lib/display-bake.mjs#cellHash — same jitter, one truth.
   const hash = (...nums) => {
@@ -57,18 +128,41 @@
     },
   };
 
-  // Base squares, then organic blob passes: circles per cell round the
-  // terrain edges (soft shorelines and tree-line edges instead of hard
-  // cell steps), then per-cell textures on top.
+  // Base squares under everything, then real tile art where the kit binds
+  // it: full tiles on a terrain's own cells, dual-grid corner tiles on the
+  // offset vertex grid so shores and tree lines curve with Kenney's own
+  // rounding. Terrains without tile art keep the organic blob pass.
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
       g.fillStyle = kit.terrain[NAME[at(x, y)]].base;
       g.fillRect(x * px, y * px, px, px);
     }
   }
-  const ORGANIC = ['grass', 'wood', 'water'];
-  for (const name of ORGANIC) {
+  const tiledPatterns = {};
+  for (const [name, piece] of Object.entries(kit.terrain)) {
+    if (piece.tiles && model.autotile?.[name]) tiledPatterns[name] = buildPatterns(piece.tiles);
+  }
+  if (kit.terrain.ground.tiles) {
+    const full = fullTile(kit.terrain.ground.tiles);
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        if (at(x, y) === T.ground) g.drawImage(full, x * px, y * px, px, px);
+      }
+    }
+  }
+  for (const name of ['grass', 'wood', 'water']) {
     const t = T[name];
+    if (tiledPatterns[name]) {
+      const masks = model.autotile[name];
+      const patterns = tiledPatterns[name];
+      for (let vy = 0; vy <= rows; vy += 1) {
+        for (let vx = 0; vx <= cols; vx += 1) {
+          const mask = masks[vy * (cols + 1) + vx];
+          if (mask) g.drawImage(patterns[mask], (vx - 0.5) * px, (vy - 0.5) * px, px, px);
+        }
+      }
+      continue;
+    }
     g.fillStyle = kit.terrain[name].base;
     for (let y = 0; y < rows; y += 1) {
       for (let x = 0; x < cols; x += 1) {
@@ -86,6 +180,7 @@
     for (let x = 0; x < cols; x += 1) {
       const t = at(x, y);
       if (t === T.road || t === T.service) continue; // roads draw as polylines
+      if (tiledPatterns[NAME[t]] || (t === T.ground && kit.terrain.ground.tiles)) continue;
       const tx = kit.terrain[NAME[t]].texture || { kind: 'none' };
       const gated = tx.kind === 'stripe' || hash(x, y) < (tx.density ?? 0.3);
       if (gated) TEXTURES[tx.kind](x, y, tx, t);

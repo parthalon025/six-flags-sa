@@ -319,6 +319,32 @@ await check('the bake model is truth-locked and deterministic', () => {
   return true;
 });
 
+await check('dual-grid masks: one cell yields its four corner vertices', async () => {
+  const { dualGridIndices } = await import('../../packages/venue-builder/lib/display-autotile.mjs');
+  const masks = dualGridIndices([7], 1, 1, 7);
+  // vertices row-major on the (cols+1)x(rows+1) offset grid
+  assert.deepEqual(Array.from(masks), [8, 4, 2, 1]);
+  const none = dualGridIndices([7], 1, 1, 3);
+  assert.deepEqual(Array.from(none), [0, 0, 0, 0]);
+  const same = dualGridIndices([7], 1, 1, 7);
+  assert.deepEqual(Array.from(masks), Array.from(same), 'deterministic');
+  return true;
+});
+
+await check('kit tile refs resolve against the ledger or fail loudly', async () => {
+  const { readAssetLedger } = await import('../../packages/venue-builder/lib/display-assets.mjs');
+  const assets = readAssetLedger();
+  const good = resolveKit({
+    id: 'tiled',
+    terrain: { grass: { tiles: { asset: 'kenney-roguelike-sheet', tile: 'grass' } } },
+  }, { assets });
+  assert.equal(good.terrain.grass.tiles.tile, 'grass');
+  assert.throws(() => resolveKit({ terrain: { grass: { tiles: { asset: 'nope', tile: 'grass' } } } }, { assets }), /unknown asset/);
+  assert.throws(() => resolveKit({ terrain: { grass: { tiles: { asset: 'kenney-roguelike-sheet', tile: 'lava' } } } }, { assets }), /unknown tile/);
+  assert.throws(() => resolveKit({ terrain: { grass: { tiles: { asset: 'kenney-roguelike-sheet', tile: 'grass' } } } }), /needs the asset ledger/);
+  return true;
+});
+
 await check('the crop window is integral and tightens to the boundary', () => {
   const tight = {
     ...BAKE_MAP,

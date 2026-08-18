@@ -22,7 +22,11 @@ import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, slugify } from '../lib/ve
 import {
   bakeModel, resolveKit, TERRAIN_PIECES, SPRITE_PIECES, TEXTURE_KINDS,
 } from '../lib/display-bake.mjs';
+import { readAssetLedger, assetPath } from '../lib/display-assets.mjs';
+import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
+
+const LEDGER = readAssetLedger();
 
 const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
 
@@ -70,7 +74,7 @@ function loadKit(id) {
   const file = path.join(KITS_DIR, `${id}.json`);
   const spec = readJson(file, null);
   if (!spec) throw new Error(`No kit "${id}" under data/display/kits/`);
-  return resolveKit(spec);
+  return resolveKit(spec, { assets: LEDGER });
 }
 
 async function kitFromPrompt(text) {
@@ -87,7 +91,7 @@ async function kitFromPrompt(text) {
   }
   const spec = JSON.parse(content.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''));
   if (!spec.id) throw new Error('Kit spec needs an id');
-  resolveKit(spec); // reject unknown pieces/texture kinds before saving
+  resolveKit(spec, { assets: LEDGER }); // reject unknown pieces/kinds/tile refs before saving
   spec.id = slugify(spec.id);
   spec.prompt = text;
   mkdirSync(KITS_DIR, { recursive: true });
@@ -100,10 +104,23 @@ async function kitFromPrompt(text) {
 const PAGE = readFileSync(new URL('./display-bake-page.html', import.meta.url), 'utf8');
 
 function serve(model, kit) {
+  // Every asset the kit's tile refs use, with its import geometry — the
+  // page loads sheets from /asset/<id> and cuts dual-grid corners itself.
+  const sheets = {};
+  for (const piece of Object.values(kit.terrain)) {
+    const ref = piece.tiles;
+    if (!ref || sheets[ref.asset]) continue;
+    const { tileSize, margin, spacing, tiles } = LEDGER[ref.asset].import;
+    sheets[ref.asset] = { url: `/asset/${ref.asset}`, tileSize, margin, spacing, tiles };
+  }
   return http.createServer((req, res) => {
     const url = req.url.split('?')[0];
     if (url === '/') { res.setHeader('content-type', 'text/html'); return res.end(PAGE); }
-    if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ model, kit, px })); }
+    if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ model, kit, px, sheets })); }
+    if (url.startsWith('/asset/')) {
+      const row = LEDGER[url.slice('/asset/'.length)];
+      if (row) { res.setHeader('content-type', 'image/png'); return res.end(readFileSync(assetPath(row))); }
+    }
     res.statusCode = 404;
     return res.end('not found');
   });
@@ -124,6 +141,16 @@ for (const id of ids) {
   const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
   if (!map) { console.error(`${id}: no map.json`); continue; }
   const model = bakeModel(map, pois, { maxCols });
+  // Dual-grid corner masks for every kit-tiled terrain (ground uses full
+  // tiles on its own cells) — computed once here so the lib stays the only
+  // implementation.
+  const terrainId = Object.fromEntries(Object.entries(model.terrains).map(([v, n]) => [n, Number(v)]));
+  model.autotile = {};
+  for (const [name, piece] of Object.entries(kit.terrain)) {
+    if (piece.tiles && name !== 'ground') {
+      model.autotile[name] = Array.from(dualGridIndices(model.cells, model.cols, model.rows, terrainId[name]));
+    }
+  }
   const server = serve(model, kit);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   await page.goto(`http://127.0.0.1:${server.address().port}/`);

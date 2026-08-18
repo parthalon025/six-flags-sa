@@ -16,7 +16,19 @@
         "file": "roguelike-pack/Spritesheet/roguelikeSheet_transparent.png"
       },
       "attribution": "Roguelike pack by Kenney Vleugels (kenney.nl), CC0 — attribution appreciated, not required",
-      "import": { "tileSize": 16, "margin": 0, "spacing": 1, "tiles": {} }
+      "import": {
+        "tileSize": 16,
+        "margin": 0,
+        "spacing": 1,
+        "tiles": {
+          "dirt": [1, 26],
+          "stone": [4, 26],
+          "sand": [7, 26],
+          "grass": [10, 26],
+          "clay": [13, 26],
+          "teal": [16, 26]
+        }
+      }
     },
     "kenney-rpg-urban-sheet": {
       "label": "Kenney RPG Urban pack tilemap",

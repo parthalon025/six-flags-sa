@@ -16,6 +16,10 @@
         "kind": "speckle",
         "color": "#DCC888",
         "density": 0.32
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "sand"
       }
     },
     "grass": {
@@ -24,6 +28,10 @@
         "kind": "tuft",
         "color": "#699E55",
         "density": 0.38
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass"
       }
     },
     "wood": {
@@ -32,6 +40,11 @@
         "kind": "tuft",
         "color": "#54874A",
         "density": 0.4
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass",
+        "tint": "rgba(25,70,25,0.35)"
       }
     },
     "water": {
@@ -40,6 +53,10 @@
         "kind": "wave",
         "color": "#A6E2EE",
         "density": 0.32
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "teal"
       }
     },
     "lot": {
