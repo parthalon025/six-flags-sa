@@ -225,6 +225,9 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
       await page.waitForTimeout(600);
       return true;
     }
+    // No gate of any kind up: this splash is not forming either, so stop polling
+    // instead of burning the full timeout on every call (functional#194).
+    if (!(await page.locator('.gate').count())) return true;
     if (timeout === 0) break;
     await page.waitForTimeout(250);
   } while (Date.now() < deadline);
@@ -245,6 +248,10 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
       await primary.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
       if (!(await intro.count())) return true;
+    } else if (!(await page.locator('.gate').count())) {
+      // No gate of any kind up: this splash is not forming either, so stop
+      // polling instead of burning the full timeout on every call (#194).
+      return true;
     }
     if (timeout === 0) break;
     await page.waitForTimeout(250);
