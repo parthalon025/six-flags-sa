@@ -1530,11 +1530,18 @@ await check('a returning phone skips the hold and does not hide the map', async 
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
   await until(
     async () => {
-      if ((await p.locator('html').getAttribute('data-intro')) !== 'seen') return false;
-      const hold = p.locator('[data-intro-hold]');
-      if (!(await hold.count())) return true;
-      const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
-      return display === 'none';
+      // The service worker can reload the page mid-poll; a destroyed
+      // execution context is "not settled yet", not a failure.
+      try {
+        if ((await p.locator('html').getAttribute('data-intro')) !== 'seen') return false;
+        const hold = p.locator('[data-intro-hold]');
+        if (!(await hold.count())) return true;
+        const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
+        return display === 'none';
+      } catch (err) {
+        if (/Execution context was destroyed|navigation/i.test(err.message)) return false;
+        throw err;
+      }
     },
     { timeout: 8000, label: 'html[data-intro=seen] hides the SSR hold' },
   );
