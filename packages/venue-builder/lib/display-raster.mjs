@@ -2,13 +2,13 @@
  * Raster tier — the baked PNG as map tiles, honestly gapped until a tiler
  * exists.
  *
- * The seam mirrors display-tiles.mjs's tippecanoe wrap: the pack asks for
- * a raster PMTiles archive; when the toolchain to produce one is absent
- * (go-pmtiles converts MBTiles, which needs a tiler + sqlite this repo
- * deliberately does not carry), the result is `{ok: false, reason}` and
- * the certification records a gap instead of pretending. The baked PNG +
- * its geo bounds remain in the manifest, so a renderer can still place
- * the image directly (MapLibre image source) without any tiling.
+ * The seam SHAPE mirrors display-tiles.mjs's tippecanoe wrap — the same
+ * `{ok, reason}` contract — but unlike buildTiles there is no working
+ * conversion path yet: go-pmtiles converts MBTiles, which needs a tiler +
+ * sqlite this repo deliberately does not carry, so every call today
+ * returns a precisely-named gap. The baked PNG + its geo bounds remain in
+ * the manifest, so a renderer can still place the image directly
+ * (MapLibre image source) without any tiling.
  */
 
 import { spawnSync } from 'node:child_process';

@@ -565,6 +565,41 @@ await check('runDisplayStage writes spec + certification, twice byte-identical',
   return true;
 });
 
+await check('runDisplayStage with bakes: folds certs, binds the primary kit via skins', async () => {
+  const { writeFileSync } = await import('node:fs');
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const bakeDir = mkdtempSync(path.join(tmpdir(), 'bakes-'));
+  // Two baked kits; alphabetical order would pick island-brochure, but the
+  // first active Skin bakeKit binding (park-midnight → rpg-overworld) wins.
+  for (const kit of ['island-brochure', 'rpg-overworld']) {
+    writeFileSync(path.join(bakeDir, `test-park--${kit}.style-cert.json`), JSON.stringify({
+      certified: true,
+      signature: `sig-${kit}`,
+      bounds: { west: 0, south: 0, east: 0.01, north: 0.01 },
+      checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'fixture' }],
+    }));
+    writeFileSync(path.join(bakeDir, `test-park--${kit}.png`), 'png-bytes');
+    writeFileSync(path.join(bakeDir, `test-park--${kit}.credits.json`), '{"assets":[]}');
+  }
+  const result = runDisplayStage('test-park', {
+    map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir, bake: { dir: bakeDir },
+  });
+  assert.deepEqual(Object.keys(result.bakes).sort(), ['island-brochure', 'rpg-overworld']);
+  assert.equal(result.bakes['rpg-overworld'].signature, 'sig-rpg-overworld');
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  assert.ok(cert.checks.some((c) => c.key === 'bake:island-brochure:style_terrain_palette'));
+  assert.equal(cert.checks.find((c) => c.key === 'bake_certs').pass, true);
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  assert.equal(manifest.tiers.credits.kit, 'rpg-overworld', 'skins bakeKit binding beats directory order');
+  assert.ok(manifest.tiers['bake:island-brochure'].bytes > 0);
+  assert.ok(manifest.tiers.raster.gap, 'raster stays an honest gap');
+  const empty = runDisplayStage('test-park', {
+    map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-')), bake: { dir: mkdtempSync(path.join(tmpdir(), 'nobakes-')) },
+  });
+  assert.equal(empty.certified, false, 'no bakes = recorded gap, stage fails honestly');
+  return true;
+});
+
 /* --------------------------------------------------------------- wiring -- */
 
 await check('display is a pipeline stage after certify, opt-in via --display', () => {

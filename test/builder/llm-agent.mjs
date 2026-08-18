@@ -142,6 +142,52 @@ await check('a different prompt files a different brief', async () => {
 
 restoreEnv();
 
+console.log('\nkit briefs\n');
+
+const { kitBriefSystem, parseKitAnswer, assetMenu } = await import(
+  '../../packages/venue-builder/lib/display-kit-brief.mjs'
+);
+const { readAssetLedger } = await import('../../packages/venue-builder/lib/display-assets.mjs');
+
+await check('the kit brief advertises exactly the license-gated asset menu', () => {
+  const ledger = readAssetLedger();
+  const system = kitBriefSystem(ledger);
+  const menu = assetMenu(ledger);
+  assert.ok(menu.sheets.length >= 3 && menu.icons.length >= 6, 'the real ledger rides the menu');
+  for (const id of [...menu.sprites, ...menu.icons]) {
+    assert.ok(system.includes(id), `menu id "${id}" missing from the system prompt`);
+  }
+  assert.ok(!system.includes('stolen'), 'nothing outside the ledger is offered');
+  return true;
+});
+
+await check('a brief answer with ledger GUIDs becomes a saveable kit spec', () => {
+  const ledger = readAssetLedger();
+  const spec = parseKitAnswer(`\`\`\`json
+{"id": "Neon Night", "terrain": {"grass": {"tiles": {"asset": "kenney-roguelike-sheet", "tile": "grass"}}},
+ "sprites": {"tree": {"sprite": {"asset": "parkbound-palm-tree"}},
+             "badge": {"icons": {"gate": {"asset": "parkbound-badge-gate"}}}}}
+\`\`\``, { assets: ledger, prompt: 'neon night' });
+  assert.equal(spec.id, 'neon-night', 'id slugified');
+  assert.equal(spec.prompt, 'neon night', 'provenance recorded');
+  return true;
+});
+
+await check('answers referencing art outside the ledger never become kits', () => {
+  const ledger = readAssetLedger();
+  const cases = [
+    [{ id: 'x', terrain: { grass: { tiles: { asset: 'ripped-tileset', tile: 'grass' } } } }, /unknown asset/],
+    [{ id: 'x', sprites: { tree: { sprite: { asset: 'kenney-roguelike-sheet' } } } }, /not a sprite/],
+    [{ id: 'x', sprites: { badge: { icons: { gate: { asset: 'parkbound-palm-tree' } } } } }, /not an icon/],
+    [{ id: 'x', sprites: { building: { style: 'hologram' } } }, /Unknown building style/],
+    [{ terrain: {} }, /needs an id/],
+  ];
+  for (const [spec, rx] of cases) {
+    assert.throws(() => parseKitAnswer(JSON.stringify(spec), { assets: ledger }), rx);
+  }
+  return true;
+});
+
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));

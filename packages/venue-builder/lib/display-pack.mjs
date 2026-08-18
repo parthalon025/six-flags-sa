@@ -418,9 +418,9 @@ export function runDisplayStage(id, opts = {}) {
   let bakes = null;
   if (opts.bake) {
     const bakeDir = opts.bake.dir || path.join(MONO_ROOT, 'artifacts', 'display-bake');
-    const certFiles = existsSync(bakeDir)
+    const certFiles = (existsSync(bakeDir)
       ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
-      : [];
+      : []).sort();
     const bakeCerts = certFiles.map((f) => ({
       kit: f.slice(id.length + 2, -'.style-cert.json'.length),
       cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
@@ -430,11 +430,19 @@ export function runDisplayStage(id, opts = {}) {
       kit, { certified: cert.certified, signature: cert.signature },
     ]));
 
-    const firstKit = bakeCerts[0]?.kit;
-    const bakePng = firstKit ? path.join(bakeDir, `${id}--${firstKit}.png`) : null;
+    // The venue's primary bake is a meaningful choice, not directory order:
+    // the first active Skin's bakeKit binding (skins.json) wins — which kit
+    // fronts the credits carries real attribution weight — with the sorted
+    // first bake as the deterministic fallback.
+    const boundKits = Object.keys(templates).sort()
+      .map((skinId) => templates[skinId])
+      .filter((t) => t.status === 'active' && t.bakeKit && bakes[t.bakeKit])
+      .map((t) => t.bakeKit);
+    const primaryKit = boundKits[0] || bakeCerts[0]?.kit || null;
+    const primaryCert = bakeCerts.find((b) => b.kit === primaryKit)?.cert;
     const raster = buildRasterTier({
-      bakePng,
-      bounds: opts.bake.bounds ?? bakeCerts[0]?.cert.bounds ?? null,
+      bakePng: primaryKit ? path.join(bakeDir, `${id}--${primaryKit}.png`) : null,
+      bounds: opts.bake.bounds ?? primaryCert?.bounds ?? null,
     });
     const manifest = tierManifest([
       fileEntry('vector', path.join(outDir, 'base.pmtiles')),
@@ -442,7 +450,9 @@ export function runDisplayStage(id, opts = {}) {
         ? { name: 'raster', file: path.basename(raster.file), bytes: raster.sizeKb * 1024 }
         : { name: 'raster', gap: true, reason: raster.reason },
       ...bakeCerts.map(({ kit }) => fileEntry(`bake:${kit}`, path.join(bakeDir, `${id}--${kit}.png`), { kit })),
-      fileEntry('credits', firstKit ? path.join(bakeDir, `${id}--${firstKit}.credits.json`) : path.join(bakeDir, 'none')),
+      primaryKit
+        ? fileEntry('credits', path.join(bakeDir, `${id}--${primaryKit}.credits.json`), { kit: primaryKit })
+        : { name: 'credits', gap: true, reason: 'no baked kits — run venues:bake first' },
     ]);
     if (write) {
       const manifestFile = path.join(outDir, 'manifest.json');
