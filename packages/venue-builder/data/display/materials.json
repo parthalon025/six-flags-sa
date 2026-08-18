@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "fetched": "2026-08-18",
+  "license": "CC0",
+  "source": "https://polyhaven.com",
+  "note": "Display-layer PBR materials. Ledger only — texture bytes fetched at build time, never committed.",
+  "materials": [
+    {
+      "category": "asphalt",
+      "slug": "asphalt_02",
+      "name": "Asphalt 02",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/asphalt_02",
+      "categories": [
+        "terrain",
+        "road",
+        "man made",
+        "outdoor",
+        "floor"
+      ],
+      "resolution": "2k",
+      "format": "jpg",
+      "maps": {
+        "Diffuse": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_diff_2k.jpg",
+          "size": 3075676,
+          "md5": "336af399fd98a39ab986d8b3bf73b4ff"
+        },
+        "nor_dx": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_nor_dx_2k.jpg",
+          "size": 5052243,
+          "md5": "801b454d4070a499e48c448d299fcf1f"
+        },
+        "nor_gl": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_nor_gl_2k.jpg",
+          "size": 4943950,
+          "md5": "77ebd1cc0b020ccaa1c6b58f103d1f75"
+        },
+        "rough_ao": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_rough_ao_2k.jpg",
+          "size": 4631920,
+          "md5": "836c7929a08dbb07c7a6cdfe1c9995aa"
+        },
+        "arm": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_arm_2k.jpg",
+          "size": 1299186,
+          "md5": "152c0fb79ad6f33040b79779fea98664"
+        },
+        "AO": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_ao_2k.jpg",
+          "size": 2039487,
+          "md5": "2bf61d77e68da004eea168b88c4c31b5"
+        },
+        "Displacement": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_disp_2k.jpg",
+          "size": 1131595,
+          "md5": "d5f850f6c2d283be7482db3b0458a2af"
+        },
+        "Rough": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/asphalt_02/asphalt_02_rough_2k.jpg",
+          "size": 2230457,
+          "md5": "6fe669ab38640ef2009d6a28d1ad5ee9"
+        }
+      }
+    },
+    {
+      "category": "roofing",
+      "slug": "grey_roof_01",
+      "name": "Grey Roof 01",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/grey_roof_01",
+      "categories": [
+        "roofing",
+        "outdoor",
+        "man made",
+        "clean"
+      ],
+      "resolution": "2k",
+      "format": "jpg",
+      "maps": {
+        "Diffuse": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_diff_2k.jpg",
+          "size": 1388588,
+          "md5": "6781d56da21588281c19ec145410932d"
+        },
+        "nor_dx": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_nor_dx_2k.jpg",
+          "size": 1665510,
+          "md5": "5d0f1017a28032b587d3671d865ddd2f"
+        },
+        "nor_gl": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_nor_gl_2k.jpg",
+          "size": 1750511,
+          "md5": "355b32ebefa90ab26fec732498edbfd5"
+        },
+        "Bump": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_bump_2k.jpg",
+          "size": 1886307,
+          "md5": "57b4a6df7cdc101a2f03cffec3354dab"
+        },
+        "arm": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_arm_2k.jpg",
+          "size": 807658,
+          "md5": "1f1073387ee4895a7ac5cb0f0a10ab1c"
+        },
+        "AO": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_ao_2k.jpg",
+          "size": 804437,
+          "md5": "c1123cc88000928ca89695973ab4778c"
+        },
+        "Displacement": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_disp_2k.jpg",
+          "size": 647905,
+          "md5": "5596abbf5ffe3d61087ce6e5a54b9791"
+        },
+        "Rough": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_rough_2k.jpg",
+          "size": 1354799,
+          "md5": "80e9f4e92b809df846223ab6472c3d94"
+        },
+        "spec": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/grey_roof_01/grey_roof_01_spec_2k.jpg",
+          "size": 793069,
+          "md5": "0fa6a8b62e36b229035e0d817d25c820"
+        }
+      }
+    },
+    {
+      "category": "foliage",
+      "slug": "leafy_grass",
+      "name": "Leafy Grass",
+      "license": "CC0",
+      "source": "https://polyhaven.com/a/leafy_grass",
+      "categories": [
+        "outdoor",
+        "floor"
+      ],
+      "resolution": "2k",
+      "format": "jpg",
+      "maps": {
+        "Diffuse": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_diff_2k.jpg",
+          "size": 4766204,
+          "md5": "8014f4dace676a62ed71b3dd76119dae"
+        },
+        "nor_dx": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_nor_dx_2k.jpg",
+          "size": 6049495,
+          "md5": "82936efe4dd20543414cb55d47a9f53c"
+        },
+        "nor_gl": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_nor_gl_2k.jpg",
+          "size": 6047262,
+          "md5": "ea5e91abe01dc5e5d7028c68c3bc9194"
+        },
+        "Mask": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_mask_2k.jpg",
+          "size": 4238964,
+          "md5": "19dc115fca09c8642ced624f6e9db043"
+        },
+        "arm": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_arm_2k.jpg",
+          "size": 4116600,
+          "md5": "64f2eb364e806301df19edc7a67d65bb"
+        },
+        "AO": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_ao_2k.jpg",
+          "size": 4175463,
+          "md5": "f25065162a26693b29a10587582df688"
+        },
+        "Displacement": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_disp_2k.jpg",
+          "size": 2545281,
+          "md5": "9c0a5f6c375be590bda0c28e2c1dfa2a"
+        },
+        "Rough": {
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/leafy_grass/leafy_grass_rough_2k.jpg",
+          "size": 2274652,
+          "md5": "b5c551ed91162aab5afbfb03b73ae3f5"
+        }
+      }
+    }
+  ]
+}

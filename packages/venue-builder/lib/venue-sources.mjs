@@ -31,7 +31,10 @@ export const TOKEN_GATED_ADAPTERS = Object.freeze([
 ]);
 
 /**
- * Known runnable external adapter ids (mirrors implementations.mjs, minus playwright).
+ * Known runnable external adapter ids (mirrors implementations.mjs, minus
+ * playwright — and minus any venue-agnostic Display adapter, e.g.
+ * poly-haven, which has no per-venue sync/gap concept and stays out of this
+ * list on purpose).
  * Duplicated here deliberately — see TOKEN_GATED_ADAPTERS note.
  */
 export const KNOWN_EXTERNAL_ADAPTER_IDS = Object.freeze([
@@ -46,6 +49,7 @@ export const KNOWN_EXTERNAL_ADAPTER_IDS = Object.freeze([
   'project-sidewalk',
   'mapillary-api',
   'mapillary-tools',
+  'esa-worldcover',
   'openrouteservice',
 ]);
 

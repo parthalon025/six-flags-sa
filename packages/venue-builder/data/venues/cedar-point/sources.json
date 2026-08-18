@@ -36,7 +36,8 @@
       "mapillary-api",
       "accessibility-cloud",
       "project-sidewalk",
-      "openrouteservice"
+      "openrouteservice",
+      "esa-worldcover"
     ]
   },
   "gaps": {

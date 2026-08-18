@@ -57,7 +57,7 @@
     "venues:pipeline": "node packages/venue-builder/bin/build-top-parks.mjs",
     "cdn:warm": "node scripts/warm-cdn.mjs",
     "test": "npm run test:builder && npm run test:app",
-    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/compare.mjs && node test/builder/mapillary-video.mjs",
+    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/compare.mjs && node test/builder/mapillary-video.mjs && node test/builder/poly-haven.mjs && node test/builder/esa-worldcover.mjs",
     "test:app": "node test/app/functional.mjs",
     "test:validate-ui": "node test/app/validate-ui.mjs",
     "test:validate-ui:changed": "node test/app/validate-ui.mjs --changed",
@@ -104,6 +104,7 @@
     "@capacitor/cli": "^7.4.4",
     "@capacitor/ios": "^7.4.4",
     "dependency-cruiser": "^18.2.0",
+    "geotiff": "^3.0.5",
     "playwright": "^1.62.1",
     "turbo": "^2.10.9"
   },

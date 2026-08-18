@@ -451,6 +451,55 @@ const ENTRIES = [
     overlap: 'Same deferral as YOLO',
     notes: 'Segment queue structures for georeferenced polygons.',
   },
+  {
+    id: 'esa-worldcover',
+    name: 'ESA WorldCover',
+    repo: 'ESA-WorldCover/esa-worldcover-datasets',
+    url: 'https://esa-worldcover.org/en/data-access',
+    capability: 'Global 10 m land-cover classification (aerial evidence + Display land-tone input)',
+    role: 'LAND_COVER_CLASSIFIER',
+    stage: 'vision',
+    license: 'CC BY 4.0',
+    adopt: 'wrap',
+    maturity: 'production',
+    maintenance: 4,
+    languages: ['n/a'],
+    docker: false,
+    gpu: false,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: ['aerial'],
+    integration: 'low',
+    overlap:
+      'lib/adapters/esa-worldcover.mjs reads public esa-worldcover S3 COGs via HTTP byte ranges (geotiff npm package) — no full-tile download, no API key, no rate limit.',
+    notes:
+      'Cross-checks the two highest-weight entrance-evidence sources (park map=5, aerial=4): does the classified land under a claim match what it implies? Also the cheapest land-tone base layer for PR #471 Display (see registry\'s poly-haven row) — same raster, two consumers, one adapter.',
+  },
+
+  // —— Display-layer materials (PR #471 PBR pipeline) — never evidence_sources ——
+  {
+    id: 'poly-haven',
+    name: 'Poly Haven',
+    repo: 'n/a (asset library, not source-hosted)',
+    url: 'https://polyhaven.com/textures',
+    capability: 'CC0 PBR material sets (asphalt, roofing, foliage) for the Display pipeline',
+    role: 'PBR_MATERIAL_LIBRARY',
+    stage: 'display',
+    license: 'CC0',
+    adopt: 'adopt',
+    maturity: 'production',
+    maintenance: 5,
+    languages: ['n/a'],
+    docker: false,
+    gpu: false,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: [],
+    integration: 'low',
+    overlap: 'PR #471 material pipeline / visual.json land tones — Display, not Truth',
+    notes:
+      'lib/adapters/poly-haven.mjs writes a committed data/display/materials.json ledger (license + provenance + file URLs); texture bytes fetch at build time and are never committed. No water category — Poly Haven has no static PBR water texture (checked directly against its API); water stays a documented gap, not a fabricated slug.',
+  },
 
   // —— Open-source research adapters (builder-side) ——
   {
@@ -760,6 +809,19 @@ const ENTRIES = [
 ];
 
 export const ADAPTER_REGISTRY = ENTRIES.map((e) => defineAdapter(e));
+
+/**
+ * Display feeds how the ground looks; Truth feeds evidence.mjs. A `display`
+ * stage row that also carried `evidence_sources` would blur that boundary
+ * silently — enforced here (not just documented) so a new Display adapter
+ * can't cross it by accident.
+ */
+const displayStageLeak = ADAPTER_REGISTRY.find((a) => a.stage === 'display' && a.evidence_sources.length > 0);
+if (displayStageLeak) {
+  throw new Error(
+    `adapter '${displayStageLeak.id}' is stage:'display' but declares evidence_sources — Display adapters must never feed evidence.mjs`,
+  );
+}
 
 export function getAdapter(id) {
   return ADAPTER_REGISTRY.find((a) => a.id === id) || null;

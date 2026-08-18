@@ -23,6 +23,7 @@ export const ADAPTER_CACHE_SUFFIX = {
   'project-sidewalk': 'project-sidewalk',
   'mapillary-api': 'mapillary',
   'mapillary-tools': 'mapillary-video',
+  'esa-worldcover': 'esa-worldcover',
   openrouteservice: 'openrouteservice',
   playwright: 'official',
 };
