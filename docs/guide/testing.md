@@ -65,6 +65,13 @@ every shipped vertical capability (intake, walk, party, offline, grandma toilet
 path) must keep a named check. New epics add a row + check in the same PR —
 build vertically, don’t leave feature PRs without their user-action coverage.
 
+The contract also pins the domain context it was reviewed against:
+`critical-paths.json` stores a sha256 fingerprint of `CONTEXT.md` +
+`docs/adr/*.md`. A diff that builds new context selects the coverage-contract
+CI job, and the job fails until the rows are reviewed against the new
+capabilities and restamped with `node test/app/coverage-contract.mjs --stamp` —
+so the user-action e2e contract is always updated when new context lands.
+
 CI splits that suite into **modules** (`test/app/modules.json`) and only runs
 the ones that match the PR’s changed paths — including lint — see
 `npm run test:modules` / `npm run test:validate-ui:changed`. Docs-only diffs
