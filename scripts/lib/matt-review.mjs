@@ -39,8 +39,17 @@ export function reviewRequiredForFiles(files) {
   return files.some((f) => CODE_PATH.test(f) && !STAMP_EXCLUDES.includes(f));
 }
 
+/**
+ * `maxBuffer` is explicit because one caller below captures the *whole* branch
+ * patch in order to hash it. Node's default is 1 MB, so any branch whose diff
+ * passed that — a large feature branch, or a small one that adds a binary
+ * asset — died with `spawnSync git ENOBUFS`, uncaught, after the app build had
+ * already run. 256 MB is far beyond any real review diff.
+ */
+const GIT_MAX_BUFFER = 256 * 1024 * 1024;
+
 function git(args, cwd) {
-  return execFileSync('git', args, { cwd, encoding: 'utf8' });
+  return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: GIT_MAX_BUFFER });
 }
 
 /**

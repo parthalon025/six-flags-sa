@@ -3,7 +3,7 @@
  * Display packs — compile + certify per-Skin visual specs for shipped venues.
  *
  *   npm run venues:display -- <venueId> [<venueId>…]
- *   npm run venues:display -- --all [--tiles] [--bake] [--terrain] [--json]
+ *   npm run venues:display -- --all [--tiles] [--bake] [--terrain] [--constrain] [--mesh] [--json]
  *
  * `--terrain` fetches a DEM and writes display/hillshade.png. It needs the
  * network, so it is opt-in: without it a venue compiles flat, which is a
@@ -26,6 +26,8 @@ const all = argv.includes('--all');
 const tiles = argv.includes('--tiles');
 const bake = argv.includes('--bake');
 const wantTerrain = argv.includes('--terrain');
+const wantConstrain = argv.includes('--constrain');
+const wantMesh = argv.includes('--mesh');
 const ids = argv.filter((a) => !a.startsWith('--'));
 
 const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
@@ -43,7 +45,9 @@ for (const id of targets) {
     if (wantTerrain) {
       const outDir = venueSidecar(id, 'display');
       const { map } = loadTruthFor(id);
-      const prepared = await prepareVenueTerrain({ id, map, outDir });
+      const prepared = await prepareVenueTerrain({
+        id, map, outDir, constrain: wantConstrain, mesh: wantMesh,
+      });
       terrain = prepared?.terrain || null;
       if (!json && !terrain) console.log(`${id}: no DEM coverage — compiling flat`);
     }

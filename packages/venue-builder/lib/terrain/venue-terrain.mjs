@@ -16,6 +16,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolveDem, fitness } from './dem-source.mjs';
 import { gridFromBounds } from './elevation-grid.mjs';
 import { shadeField, shadeRgba, shadeBytes, encodePng, DEFAULT_LIGHT } from './hillshade.mjs';
+import { constrainFromTruth } from './constraints-from-truth.mjs';
+import { meshFromGrid } from './mesh-export.mjs';
 
 export const HILLSHADE_FILE = 'hillshade.png';
 
@@ -42,6 +44,8 @@ const boundsOf = (map) => {
  * @param {boolean} [opts.write]
  * @param {object} [opts.light] azimuth/altitude override
  * @param {string} [opts.url] pin an explicit DEM tile
+ * @param {boolean} [opts.constrain] make paths, water and pads sit properly
+ * @param {boolean} [opts.mesh] also write an OBJ/MTL of the heightfield
  * @param {Function} [opts.openTiff] injected for tests
  * @returns {Promise<{terrain: object, grid: object, written: string[]}|null>}
  */
@@ -53,6 +57,8 @@ export async function prepareVenueTerrain({
   write = true,
   light = DEFAULT_LIGHT,
   url,
+  constrain = false,
+  mesh = false,
   openTiff,
 }) {
   const bounds = boundsOf(map);
@@ -74,6 +80,19 @@ export async function prepareVenueTerrain({
   const { min, max } = grid.extent();
   if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
 
+  // Constraints run before shading: the light must fall on the ground the
+  // renderer will actually draw, not the raw DEM it started from.
+  let constrained = null;
+  if (constrain) {
+    const toCell = ([lng, lat]) => [
+      ((lng - bounds.west) / spanLng) * cols,
+      ((bounds.north - lat) / spanLat) * rows,
+    ];
+    const { constraints, applied } = constrainFromTruth(grid, map, toCell);
+    constraints.solveAndApply({ iterations: 8 });
+    constrained = { ...applied, nodes: constraints.nodes.length };
+  }
+
   const field = shadeField(grid, light);
   const written = [];
   if (write) {
@@ -81,6 +100,14 @@ export async function prepareVenueTerrain({
     const file = path.join(outDir, HILLSHADE_FILE);
     writeFileSync(file, encodePng(cols, rows, shadeRgba(field, cols, rows)));
     written.push(file);
+    if (mesh) {
+      const { obj, mtl } = meshFromGrid(grid, { name: `${id}-terrain`, texture: 'ground.png' });
+      const objFile = path.join(outDir, `${id}-terrain.obj`);
+      const mtlFile = path.join(outDir, `${id}-terrain.mtl`);
+      writeFileSync(objFile, obj);
+      writeFileSync(mtlFile, mtl);
+      written.push(objFile, mtlFile);
+    }
   }
 
   const terrain = {
@@ -104,6 +131,7 @@ export async function prepareVenueTerrain({
     // certification asserts these are equal to truth rather than merely absent.
     bounds,
     steepDegrees: STEEP_DEGREES,
+    ...(constrained ? { constrained } : {}),
   };
 
   return { terrain, grid, shade: shadeBytes(field), written };

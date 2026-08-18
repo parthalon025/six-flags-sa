@@ -161,7 +161,47 @@
       "who": "unit-test",
       "why": "ok",
       "at": "2026-08-18T23:11:47.148Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-18T23:20:23.144Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-18T23:21:38.380Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-18T23:22:53.506Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-18T23:24:11.715Z"
+    },
+    {
+      "key": "test-gate",
+      "claimType": "general",
+      "decision": "approve",
+      "who": "unit-test",
+      "why": "ok",
+      "at": "2026-08-18T23:25:25.449Z"
     }
   ],
-  "updated": "2026-08-18T23:11:47.148Z"
+  "updated": "2026-08-18T23:25:25.449Z"
 }
