@@ -90,12 +90,7 @@ module.exports = {
       name: "no-circular",
       comment: "No dependency cycles. Scope to `^${R}/` if you want to allow cycles outside packages.",
       severity: "error",
-      from: {
-        // Known cycle: mailboxClient ↔ mailboxPoller (transport layer).
-        // Allowlisted, not endorsed — #478 tracks extracting the shared
-        // stream helpers.
-        pathNot: "^apps/party-tracker/lib/transport/(mailboxClient|mailboxPoller)\\.js$",
-      },
+      from: {},
       to: { circular: true },
     },
 
