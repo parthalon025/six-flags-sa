@@ -6,7 +6,7 @@
  *   node test/scripts/ors-route-samples.test.mjs
  */
 import assert from 'node:assert/strict';
-import { deriveOrsRouteSamples } from '../../packages/venue-builder/lib/external-research.mjs';
+import { deriveOrsRouteSamples } from '../../packages/venue-builder/lib/ors-route-samples.mjs';
 
 // Entrance + 3 distinct-category destinations -> 3 correctly-shaped samples.
 {
