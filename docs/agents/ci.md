@@ -12,6 +12,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `party-tracker-ui.mjs` | `unpackBuildArtifact()`, `waitForHealth()` | Playwright jobs — unpack artifact + health wait |
 | `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
+| `../lib/vertical-e2e.mjs` | `requiredVerticals()`, `verticalE2eBlockReason()` | Which verticals a diff owes, and what blocks a merge without them |
 | `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Stamp after local vertical; skip GitHub UI jobs when stamp matches |
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
@@ -26,14 +27,18 @@ Always run vertical validation **before** merging a PR (from repo root with `npm
 npm run test:pre-merge-vertical
 ```
 
+The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), runs them, and refuses to stamp a pass when one did not run.
+
 | Phase | What runs |
 |-------|-----------|
-| Static | `test:ci-gate` → `test:unit` → `build -w @party-tracker/app` |
-| Browser vertical | When the branch diff selects UI modules: start app + `test:validate-ui:changed` |
+| Static (floor) | `test:ci-gate` → `test:unit` → `build -w @party-tracker/app` |
+| `automation` vertical | `test:ci-gate` — CI/deploy/stamp decisions through their exported functions |
+| `builder` vertical | `test:builder` — assertions over generated venue output |
+| `app` vertical | start app + `test:validate-ui:changed` — behaviour in a real browser |
 
-CI-only / docs-only branches skip the browser phase automatically. Use `--skip-browser` only when Playwright cannot run (document why in the PR).
+Docs-only branches owe nothing and skip straight through. `--skip-browser` is **refused** for diffs that touch app behaviour — static steps prove the build compiles, not that a guest can still use it. Code paths no vertical claims fail closed: the diff owes every vertical until a `VERTICALS` row claims the path. See [vertical-e2e policy](./policies/vertical-e2e.md).
 
-After a successful run, `scripts/ci/local-ci-pass.json` records the tree and module selection. Commit that file with your branch so GitHub Actions can skip the expensive Playwright jobs when the stamp still matches. Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored and CI runs the UI matrix. Use `--no-stamp` to validate without writing the file.
+After a successful run, `scripts/ci/local-ci-pass.json` records the tree, the module selection, and the `verticals` that ran (schema 2 — a stamp without them never covers a code diff). Commit that file with your branch so GitHub Actions can skip the expensive Playwright jobs when the stamp still matches. Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored and CI runs the UI matrix. Use `--no-stamp` to validate without writing the file.
 
 ## Test app (`.github/workflows/test-app.yml`)
 
