@@ -71,3 +71,8 @@ ios/DerivedData
 google-services.json
 GoogleService-Info.plist
 
+
+# Display tiles are rebuilt from truth — GeoJSON export and PMTiles stay local
+packages/venue-builder/data/venues/*/display/tiles/
+packages/venue-builder/data/venues/*/display/base.pmtiles
+artifacts/

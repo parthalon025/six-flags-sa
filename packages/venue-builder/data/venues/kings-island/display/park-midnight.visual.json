@@ -8,7 +8,15 @@
   "tokens": {
     "contrastFloor": 4.5,
     "labelHalo": true,
-    "mode": "night"
+    "mode": "night",
+    "colors": {
+      "path": "#C4A882",
+      "ground": "#1A1520",
+      "water": "#1E4A5C",
+      "grass": "#1E3020",
+      "building": "#2A2438",
+      "label": "#F0E8DC"
+    }
   },
   "surfaces": {
     "walkway": {
@@ -70,112 +78,40 @@
   },
   "landTones": {
     "International Street": {
-      "day": {
-        "fill": "#F1EEE4",
-        "stroke": "#E0DBCC",
-        "label": "#7E6F44"
-      },
-      "night": {
-        "fill": "#2A271D",
-        "stroke": "#3C382A",
-        "label": "#BBAD81"
-      }
+      "day": "#F1EEE4",
+      "night": "#2A271D"
     },
     "Coney Mall": {
-      "day": {
-        "fill": "#F1EAE4",
-        "stroke": "#E0D5CC",
-        "label": "#7E5C44"
-      },
-      "night": {
-        "fill": "#2A231D",
-        "stroke": "#3C312A",
-        "label": "#BB9981"
-      }
+      "day": "#F1EAE4",
+      "night": "#2A231D"
     },
     "Rivertown": {
-      "day": {
-        "fill": "#E4F1E4",
-        "stroke": "#CCE0CC",
-        "label": "#447E44"
-      },
-      "night": {
-        "fill": "#1D2A1D",
-        "stroke": "#2A3C2A",
-        "label": "#81BB81"
-      }
+      "day": "#E4F1E4",
+      "night": "#1D2A1D"
     },
     "Action Zone": {
-      "day": {
-        "fill": "#E4ECF1",
-        "stroke": "#CCD8E0",
-        "label": "#44667E"
-      },
-      "night": {
-        "fill": "#1D252A",
-        "stroke": "#2A353C",
-        "label": "#81A3BB"
-      }
+      "day": "#E4ECF1",
+      "night": "#1D252A"
     },
     "Area 72": {
-      "day": {
-        "fill": "#EAE4F1",
-        "stroke": "#D5CCE0",
-        "label": "#5C447E"
-      },
-      "night": {
-        "fill": "#231D2A",
-        "stroke": "#312A3C",
-        "label": "#9981BB"
-      }
+      "day": "#EAE4F1",
+      "night": "#231D2A"
     },
     "Planet Snoopy": {
-      "day": {
-        "fill": "#F1EFE4",
-        "stroke": "#E0DECC",
-        "label": "#7E7644"
-      },
-      "night": {
-        "fill": "#2A281D",
-        "stroke": "#3C3A2A",
-        "label": "#BBB381"
-      }
+      "day": "#F1EFE4",
+      "night": "#2A281D"
     },
     "Camp Snoopy": {
-      "day": {
-        "fill": "#ECF1E4",
-        "stroke": "#D8E0CC",
-        "label": "#667E44"
-      },
-      "night": {
-        "fill": "#252A1D",
-        "stroke": "#353C2A",
-        "label": "#A3BB81"
-      }
+      "day": "#ECF1E4",
+      "night": "#252A1D"
     },
     "Adventure Port": {
-      "day": {
-        "fill": "#E4F1EF",
-        "stroke": "#CCE0DE",
-        "label": "#447E76"
-      },
-      "night": {
-        "fill": "#1D2A28",
-        "stroke": "#2A3C3A",
-        "label": "#81BBB3"
-      }
+      "day": "#E4F1EF",
+      "night": "#1D2A28"
     },
     "Soak City": {
-      "day": {
-        "fill": "#E4EEF1",
-        "stroke": "#CCDBE0",
-        "label": "#446F7E"
-      },
-      "night": {
-        "fill": "#1D272A",
-        "stroke": "#2A383C",
-        "label": "#81ADBB"
-      }
+      "day": "#E4EEF1",
+      "night": "#1D272A"
     }
   },
   "fallback": {

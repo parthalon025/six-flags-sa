@@ -98,14 +98,17 @@
     "store:release-plan": "node scripts/store-release-plan.mjs",
     "store:release-cycle": "node scripts/release-cycle.mjs",
     "version:matrix": "node scripts/deploy-version-report.mjs",
-    "venues:display": "node packages/venue-builder/bin/display-pack.mjs"
+    "venues:display": "node packages/venue-builder/bin/display-pack.mjs",
+    "venues:render": "node packages/venue-builder/bin/display-render.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.4",
     "@capacitor/cli": "^7.4.4",
     "@capacitor/ios": "^7.4.4",
     "dependency-cruiser": "^18.2.0",
+    "maplibre-gl": "^6.4.1",
     "playwright": "^1.62.1",
+    "pmtiles": "^4.5.0",
     "turbo": "^2.10.9"
   },
   "dependencies": {

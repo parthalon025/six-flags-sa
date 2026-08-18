@@ -1,0 +1,248 @@
+{
+  "version": 8,
+  "name": "cedar-point — layered-atlas",
+  "sources": {
+    "park": {
+      "type": "vector",
+      "url": "pmtiles://base.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#C9D6C0"
+      }
+    },
+    {
+      "id": "sea-under",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "sea",
+      "paint": {
+        "fill-color": "#5CA8B3"
+      }
+    },
+    {
+      "id": "venue",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "venue",
+      "paint": {
+        "fill-color": "#C9D6C0"
+      }
+    },
+    {
+      "id": "park",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "park",
+      "paint": {
+        "fill-color": "#A7C58E",
+        "fill-opacity": 0.35
+      }
+    },
+    {
+      "id": "lands",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "lands",
+      "paint": {
+        "fill-color": "rgba(0,0,0,0)",
+        "fill-opacity": 0.45
+      }
+    },
+    {
+      "id": "grass",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "grass",
+      "paint": {
+        "fill-color": "#A7C58E"
+      }
+    },
+    {
+      "id": "wood",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "wood",
+      "paint": {
+        "fill-color": "#A7C58E",
+        "fill-opacity": 0.8
+      }
+    },
+    {
+      "id": "parking",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "parking",
+      "paint": {
+        "fill-color": "#C9B58D",
+        "fill-opacity": 0.6
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "#5CA8B3"
+      }
+    },
+    {
+      "id": "pool",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "pool",
+      "paint": {
+        "fill-color": "#5CA8B3"
+      }
+    },
+    {
+      "id": "building",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "building",
+      "paint": {
+        "fill-color": "#C9B58D"
+      }
+    },
+    {
+      "id": "building-edge",
+      "type": "line",
+      "source": "park",
+      "source-layer": "building",
+      "paint": {
+        "line-color": "#7A6655",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0.6,
+          18,
+          1.56
+        ]
+      }
+    },
+    {
+      "id": "service",
+      "type": "line",
+      "source": "park",
+      "source-layer": "service",
+      "paint": {
+        "line-color": "#3F6570",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0.8,
+          18,
+          2.08
+        ],
+        "line-opacity": 0.55
+      }
+    },
+    {
+      "id": "path-casing",
+      "type": "line",
+      "source": "park",
+      "source-layer": "path",
+      "paint": {
+        "line-color": "#C9D6C0",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          3,
+          18,
+          7.800000000000001
+        ]
+      }
+    },
+    {
+      "id": "path",
+      "type": "line",
+      "source": "park",
+      "source-layer": "path",
+      "paint": {
+        "line-color": "#3F6570",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.6,
+          18,
+          4.16
+        ]
+      }
+    },
+    {
+      "id": "slide",
+      "type": "line",
+      "source": "park",
+      "source-layer": "slide",
+      "paint": {
+        "line-color": "#3F6570",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.2,
+          18,
+          3.12
+        ],
+        "line-opacity": 0.9
+      }
+    },
+    {
+      "id": "coaster",
+      "type": "line",
+      "source": "park",
+      "source-layer": "coaster",
+      "paint": {
+        "line-color": "#7A6655",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.2,
+          18,
+          3.12
+        ],
+        "line-opacity": 0.85
+      }
+    }
+  ]
+}

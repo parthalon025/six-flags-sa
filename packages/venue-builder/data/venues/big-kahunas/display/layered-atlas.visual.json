@@ -1,21 +1,24 @@
 {
   "version": 1,
   "venue": "big-kahunas",
-  "skin": "park-midnight",
+  "skin": "layered-atlas",
   "basedOn": {
     "map": "2026-08-10"
   },
   "tokens": {
     "contrastFloor": 4.5,
     "labelHalo": true,
-    "mode": "night",
+    "mode": "day",
     "colors": {
-      "path": "#C4A882",
-      "ground": "#1A1520",
-      "water": "#1E4A5C",
-      "grass": "#1E3020",
-      "building": "#2A2438",
-      "label": "#F0E8DC"
+      "path": "#3F6570",
+      "ground": "#C9D6C0",
+      "water": "#5CA8B3",
+      "grass": "#A7C58E",
+      "building": "#C9B58D",
+      "label": "#243B45",
+      "structureEdge": "#7A6655",
+      "groundEdge": "#6E8975",
+      "pathCasing": "#C9D6C0"
     }
   },
   "surfaces": {

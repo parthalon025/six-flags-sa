@@ -35,8 +35,13 @@ const {
   readMaterials,
   compileVisualSpec,
   certifyDisplayPack,
+  styleFromSpec,
+  anchorsFromTruth,
   runDisplayStage,
 } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+const { displayGeoJson, buildTiles, tippecanoeAvailable } = await import(
+  '../../packages/venue-builder/lib/display-tiles.mjs'
+);
 const { LAYERS } = await import('../../packages/venue-builder/lib/osm-tags.mjs');
 const { STAGES, parseCatalogArgs, pipelineOptsFromCatalogArgs } = await import(
   '../../packages/venue-builder/lib/build-pipeline.mjs'
@@ -107,11 +112,13 @@ const FIXTURE_MAP = {
   },
   lands: [{ n: 'Midway', r: [[0, 0], [1, 0], [1, 1]] }],
   path: [{ r: [[0, 0], [1, 1]] }],
-  water: [{ r: [[2, 2], [3, 3]] }],
+  water: [{ r: [[2, 2], [3, 3], [2, 3]] }],
   building: [],
+  landAnchors: { Midway: [0.5, 0.5] },
 };
 const FIXTURE_POIS = [
   { i: 'front-gate', n: 'Front Gate', c: 'gate', lat: 1, lng: 2 },
+  { i: 'orion', n: 'Orion', c: 'coaster', lat: 0.4, lng: 0.6 },
 ];
 
 function compiled(skinId = 'trail') {
@@ -211,6 +218,60 @@ await check('a land tone naming a land the venue does not have fails', () => {
   }));
   assert.equal(cert.certified, false);
   assert.ok(cert.checks.find((c) => c.key === 'references_resolve' && !c.pass));
+  return true;
+});
+
+/* ----------------------------------------------------- style + geometry -- */
+
+await check('styleFromSpec paints from tokens and carries no coordinates', () => {
+  const style = styleFromSpec(compiled());
+  assert.equal(style.version, 8);
+  assert.equal(style.layers[0].type, 'background');
+  assert.equal(style.layers[0].paint['background-color'], '#F5F0E8');
+  const lands = style.layers.find((l) => l.id === 'lands');
+  assert.ok(JSON.stringify(lands.paint['fill-color']).includes('#f2e8d0'), 'day land tint missing');
+  assert.ok(!/"lat"|"lng"|"center"|"bounds"/.test(JSON.stringify(style)), 'style carries a position');
+  return true;
+});
+
+await check('park-midnight style picks the night side of land tones', () => {
+  const style = styleFromSpec(compiled('park-midnight'));
+  const lands = style.layers.find((l) => l.id === 'lands');
+  assert.ok(JSON.stringify(lands.paint['fill-color']).includes('#1a2233'));
+  return true;
+});
+
+await check('displayGeoJson splits area rings from open lines', () => {
+  const layers = displayGeoJson(FIXTURE_MAP, FIXTURE_POIS);
+  assert.equal(layers.path.features[0].geometry.type, 'LineString');
+  assert.equal(layers.water.features[0].geometry.type, 'Polygon');
+  const ring = layers.water.features[0].geometry.coordinates[0];
+  assert.deepEqual(ring[0], ring[ring.length - 1], 'polygon ring not closed');
+  assert.equal(layers.lands.features[0].properties.name, 'Midway');
+  assert.equal(layers.places.features.length, 2);
+  assert.equal(layers.places.features[0].properties.key, 'front-gate');
+  return true;
+});
+
+await check('anchorsFromTruth is deterministic: gates, lands, coasters', () => {
+  const anchors = anchorsFromTruth(FIXTURE_MAP, FIXTURE_POIS);
+  assert.deepEqual(anchors.map((a) => a.id), ['gate:front-gate', 'land:Midway', 'coaster:orion']);
+  assert.deepEqual(anchors, anchorsFromTruth(FIXTURE_MAP, FIXTURE_POIS));
+  return true;
+});
+
+await check('buildTiles produces base.pmtiles, or records the gap honestly', () => {
+  const outDir = mkdtempSync(path.join(tmpdir(), 'tiles-'));
+  const result = buildTiles({ id: 'test-park', map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir });
+  if (tippecanoeAvailable()) {
+    assert.equal(result.ok, true, result.reason);
+    assert.ok(result.sizeKb >= 1, 'archive is empty');
+    assert.ok(readFileSync(result.file).subarray(0, 2).toString() !== '', 'unreadable archive');
+  } else {
+    assert.equal(result.ok, false);
+    assert.match(result.reason, /tippecanoe/);
+  }
+  assert.ok(result.files.length >= 3, 'geojson export missing');
   return true;
 });
 

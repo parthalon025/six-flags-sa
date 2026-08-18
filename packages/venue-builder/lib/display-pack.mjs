@@ -16,6 +16,7 @@
 
 import path from 'node:path';
 import { OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
+import { buildTiles } from './display-tiles.mjs';
 
 export const DISPLAY_VERSION = 1;
 
@@ -54,11 +55,17 @@ export function readSkinTemplates() {
 }
 
 function landTonesFromMeta(meta) {
+  // Hand tints are either a fill string or a {fill, stroke, label} object
+  // (Kings Island); the spec carries the fill — the phone keeps the richer
+  // form from truth.
+  const fillOf = (tone) => (typeof tone === 'string' ? tone : tone?.fill);
   const tones = {};
   for (const mode of ['day', 'night']) {
     for (const [land, tone] of Object.entries(meta?.lands?.[mode] || {})) {
+      const fill = fillOf(tone);
+      if (!fill) continue;
       tones[land] = tones[land] || {};
-      tones[land][mode] = tone;
+      tones[land][mode] = fill;
     }
   }
   return tones;
@@ -92,6 +99,89 @@ export function compileVisualSpec({ map, pois = [], template, materials }) {
   };
 }
 
+const line = (id, sourceLayer, color, width, opts = {}) => ({
+  id,
+  type: 'line',
+  source: 'park',
+  'source-layer': sourceLayer,
+  paint: {
+    'line-color': color,
+    'line-width': ['interpolate', ['linear'], ['zoom'], 14, width, 18, width * 2.6],
+    ...opts,
+  },
+});
+
+const fill = (id, sourceLayer, color, opts = {}) => ({
+  id,
+  type: 'fill',
+  source: 'park',
+  'source-layer': sourceLayer,
+  paint: { 'fill-color': color, ...opts },
+});
+
+/**
+ * Compile a spec into a MapLibre style. Colors come from the Skin's tokens
+ * (palettes harvested from `world.js` and PR #447's reference skins); land
+ * washes come from the spec's hand tints, matched by district name. The
+ * style carries no coordinates — the renderer sets its own camera from truth.
+ * Labels are deliberately absent: annotation is the phone's overlay layer.
+ */
+export function styleFromSpec(spec) {
+  const c = spec.tokens?.colors || {};
+  const mode = spec.tokens?.mode === 'night' ? 'night' : 'day';
+  const tones = Object.entries(spec.landTones || {})
+    .filter(([, t]) => t[mode])
+    .sort(([a], [b]) => (a < b ? -1 : 1));
+  const landFill = tones.length
+    ? ['match', ['get', 'name'], ...tones.flatMap(([name, t]) => [name, t[mode]]), 'rgba(0,0,0,0)']
+    : 'rgba(0,0,0,0)';
+  return {
+    version: 8,
+    name: `${spec.venue} — ${spec.skin}`,
+    sources: { park: { type: 'vector', url: 'pmtiles://base.pmtiles' } },
+    layers: [
+      { id: 'background', type: 'background', paint: { 'background-color': c.ground } },
+      fill('sea-under', 'sea', c.water),
+      fill('venue', 'venue', c.ground),
+      fill('park', 'park', c.grass, { 'fill-opacity': 0.35 }),
+      fill('lands', 'lands', landFill, { 'fill-opacity': 0.45 }),
+      fill('grass', 'grass', c.grass),
+      fill('wood', 'wood', c.grass, { 'fill-opacity': 0.8 }),
+      fill('parking', 'parking', c.building, { 'fill-opacity': 0.6 }),
+      fill('water', 'water', c.water),
+      fill('pool', 'pool', c.water),
+      fill('building', 'building', c.building),
+      line('building-edge', 'building', c.structureEdge || c.path, 0.6),
+      line('service', 'service', c.path, 0.8, { 'line-opacity': 0.55 }),
+      line('path-casing', 'path', c.pathCasing || c.ground, 3),
+      line('path', 'path', c.path, 1.6),
+      line('slide', 'slide', c.path, 1.2, { 'line-opacity': 0.9 }),
+      line('coaster', 'coaster', c.structureEdge || c.label, 1.2, { 'line-opacity': 0.85 }),
+    ],
+  };
+}
+
+/**
+ * Fixed visual points, derived from truth — the builder-side harvest of
+ * PR #447's 20-point matrix. Gates first, then district anchors, then the
+ * first coasters; deterministic order, capped at twenty.
+ */
+export function anchorsFromTruth(map, pois = []) {
+  const anchors = [];
+  const byKey = (a, b) => ((a.i || a.n || '') < (b.i || b.n || '') ? -1 : 1);
+  for (const p of pois.filter((x) => x.c === 'gate').sort(byKey)) {
+    anchors.push({ id: `gate:${p.i}`, name: p.n, lat: p.lat, lng: p.lng });
+  }
+  for (const [name, at] of Object.entries(map.landAnchors || {}).sort(([a], [b]) => (a < b ? -1 : 1))) {
+    anchors.push({ id: `land:${name}`, name, lat: at[0], lng: at[1] });
+  }
+  const rideable = pois.filter((x) => x.c === 'coaster' || x.c === 'ride').sort(byKey);
+  for (const p of rideable.slice(0, 6)) {
+    anchors.push({ id: `${p.c}:${p.i}`, name: p.n, lat: p.lat, lng: p.lng });
+  }
+  return anchors.slice(0, 20);
+}
+
 const COORDINATE_KEYS = new Set(['lat', 'lng', 'r']);
 
 function findCoordinateKey(value) {
@@ -118,6 +208,7 @@ const check = ({ key, claim, pass, evidence, confidence, falsifier, soWhat }) =>
 
 const SPEC_BUDGET_BYTES = 64 * 1024;
 const MATERIAL_BUDGET_PX = 1024;
+const TILES_BUDGET_KB = 15 * 1024;
 
 /**
  * Certify one compiled spec against truth, the template, and the ledger.
@@ -239,19 +330,52 @@ export function runDisplayStage(id, opts = {}) {
     if (!template) throw new Error(`Unknown skin "${skinId}"`);
     const spec = compileVisualSpec({ map, pois, template, materials });
     const certification = certifyDisplayPack({ spec, map, template, materials });
-    packs[skinId] = { spec, certification };
+    const style = styleFromSpec(spec);
+    packs[skinId] = { spec, certification, style };
     if (write) {
-      const file = path.join(outDir, `${skinId}.visual.json`);
-      writeJson(file, spec, true);
-      written.push(file);
+      const specFile = path.join(outDir, `${skinId}.visual.json`);
+      writeJson(specFile, spec, true);
+      written.push(specFile);
+      const styleFile = path.join(outDir, `${skinId}.style.json`);
+      writeJson(styleFile, style, true);
+      written.push(styleFile);
     }
   }
 
-  const certified = Object.values(packs).every((p) => p.certification.certified);
+  const anchors = anchorsFromTruth(map, pois);
+  const venueChecks = [check({
+    key: 'visual_points',
+    claim: 'truth yields fixed visual points for every future render matrix',
+    pass: anchors.length >= 3,
+    evidence: `${anchors.length} anchor(s): ${anchors.slice(0, 3).map((a) => a.id).join(', ')}…`,
+    confidence: 'high',
+    falsifier: 'a venue with no gates, no district anchors, and no coasters',
+    soWhat: 'without fixed points, visual drift is compared at one convenient screenshot',
+  })];
+
+  let tiles = null;
+  if (opts.tiles) {
+    tiles = buildTiles({ id, map, pois, outDir });
+    if (tiles.ok) written.push(tiles.file);
+    venueChecks.push(check({
+      key: 'tiles',
+      claim: `base.pmtiles builds and fits the ${TILES_BUDGET_KB / 1024} MB pack budget`,
+      pass: tiles.ok && tiles.sizeKb <= TILES_BUDGET_KB,
+      evidence: tiles.ok ? `base.pmtiles ${tiles.sizeKb} KB` : tiles.reason,
+      confidence: 'high',
+      falsifier: 'tippecanoe fails or the archive exceeds the download budget',
+      soWhat: 'the display pack rides the venue download; an oversized or missing archive blocks it',
+    }));
+  }
+
+  const certified = Object.values(packs).every((p) => p.certification.certified)
+    && venueChecks.every((c) => c.pass);
   const summary = {
     version: DISPLAY_VERSION,
     venue: id,
     certified,
+    anchors,
+    checks: venueChecks,
     skins: Object.fromEntries(
       Object.entries(packs).map(([skinId, p]) => [skinId, p.certification]),
     ),
@@ -262,5 +386,5 @@ export function runDisplayStage(id, opts = {}) {
     written.push(file);
   }
 
-  return { venue: id, certified, packs, written };
+  return { venue: id, certified, packs, anchors, tiles, written };
 }

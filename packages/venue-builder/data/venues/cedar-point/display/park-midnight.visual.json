@@ -8,7 +8,15 @@
   "tokens": {
     "contrastFloor": 4.5,
     "labelHalo": true,
-    "mode": "night"
+    "mode": "night",
+    "colors": {
+      "path": "#C4A882",
+      "ground": "#1A1520",
+      "water": "#1E4A5C",
+      "grass": "#1E3020",
+      "building": "#2A2438",
+      "label": "#F0E8DC"
+    }
   },
   "surfaces": {
     "walkway": {

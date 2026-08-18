@@ -1,7 +1,7 @@
 {
   "version": 1,
   "venue": "kings-island",
-  "skin": "trail",
+  "skin": "layered-atlas",
   "basedOn": {
     "map": "2026-08-09"
   },
@@ -10,12 +10,15 @@
     "labelHalo": true,
     "mode": "day",
     "colors": {
-      "path": "#8B7355",
-      "ground": "#F5F0E8",
-      "water": "#7EC8E3",
-      "grass": "#B8D4A0",
-      "building": "#E8E0D4",
-      "label": "#2C2416"
+      "path": "#3F6570",
+      "ground": "#C9D6C0",
+      "water": "#5CA8B3",
+      "grass": "#A7C58E",
+      "building": "#C9B58D",
+      "label": "#243B45",
+      "structureEdge": "#7A6655",
+      "groundEdge": "#6E8975",
+      "pathCasing": "#C9D6C0"
     }
   },
   "surfaces": {

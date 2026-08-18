@@ -333,8 +333,12 @@ export async function runVenuePipeline(park, opts = {}) {
     console.error('  · display: visual specs + display-certify');
     try {
       const { runDisplayStage } = await import('./display-pack.mjs');
-      const disp = runDisplayStage(park.id);
-      logStage('display', { certified: disp.certified, skins: Object.keys(disp.packs).length });
+      const disp = runDisplayStage(park.id, { tiles: true });
+      logStage('display', {
+        certified: disp.certified,
+        skins: Object.keys(disp.packs).length,
+        tiles: disp.tiles?.ok ? `${disp.tiles.sizeKb} KB` : disp.tiles?.reason,
+      });
       if (!disp.certified) {
         return {
           id: park.id,

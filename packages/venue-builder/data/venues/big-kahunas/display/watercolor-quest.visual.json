@@ -1,21 +1,24 @@
 {
   "version": 1,
   "venue": "big-kahunas",
-  "skin": "park-midnight",
+  "skin": "watercolor-quest",
   "basedOn": {
     "map": "2026-08-10"
   },
   "tokens": {
     "contrastFloor": 4.5,
     "labelHalo": true,
-    "mode": "night",
+    "mode": "day",
     "colors": {
-      "path": "#C4A882",
-      "ground": "#1A1520",
-      "water": "#1E4A5C",
-      "grass": "#1E3020",
-      "building": "#2A2438",
-      "label": "#F0E8DC"
+      "path": "#756276",
+      "ground": "#F4EFDF",
+      "water": "#8FB5C2",
+      "grass": "#D9D0B5",
+      "building": "#B8A68D",
+      "label": "#57485C",
+      "structureEdge": "#756276",
+      "groundEdge": "#C9BFAE",
+      "pathCasing": "#F4EFDF"
     }
   },
   "surfaces": {
