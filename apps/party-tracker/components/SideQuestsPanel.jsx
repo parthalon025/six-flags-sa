@@ -23,7 +23,7 @@ import {
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
-import { pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
+import { pathScoreCell, rankReward, scoreKey, titleFromXp } from '@party-tracker/shared/questScore.js';
 import { completionLine, contributionFromGapSubmit } from '@/lib/overlay';
 
 /**
@@ -304,8 +304,11 @@ export default function SideQuestsPanel({
     await queue.enqueue(report);
     if (!isLiveQuest(quest) && onContribution) {
       // First-to-find credit rides on the Contribution unless the Profile
-      // opted out on Me — then the find reads as "a fellow guest".
+      // opted out on Me — then the find reads as "a fellow guest". The Title
+      // badge is first-find only: re-answering a fact this Profile already
+      // settled keeps the name (provenance) but is not a find.
       const named = progressSnap ? progressSnap.shareName : true;
+      const firstFind = !(key && scoredKeys.includes(key));
       const contrib = contributionFromGapSubmit({
         id: report.id,
         type: quest.type,
@@ -313,7 +316,10 @@ export default function SideQuestsPanel({
         venueId,
         authorId: session?.userId || null,
         authorName: named ? session?.displayName || 'Someone' : 'a fellow guest',
-        authorTitle: named ? session?.title || rankReward(session?.rank || 'visitor').title : null,
+        authorTitle:
+          named && firstFind
+            ? titleFromXp(Number(progressSnap?.xp ?? session?.xp) || 0)
+            : null,
         payload: report.payload,
         lat: report.lat,
         lng: report.lng,

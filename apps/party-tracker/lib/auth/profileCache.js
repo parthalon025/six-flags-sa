@@ -40,6 +40,35 @@ export async function writeProfileCache(profile) {
   });
 }
 
+/**
+ * Read-modify-write in ONE IndexedDB transaction, so two concurrent patches
+ * (the Me stats refresh, the finder-credit toggle) can never clobber each
+ * other's fields. Returns the merged snapshot, or null without a Profile.
+ */
+export async function patchProfileCache(patch) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const req = store.get(KEY);
+    let next = null;
+    req.onsuccess = () => {
+      const snap = req.result;
+      if (!snap?.userId) return;
+      next = { ...snap, ...patch, cachedAt: new Date().toISOString() };
+      store.put(next, KEY);
+    };
+    tx.oncomplete = () => {
+      db.close();
+      resolve(next);
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
+  });
+}
+
 export async function readProfileCache() {
   try {
     const db = await openDb();

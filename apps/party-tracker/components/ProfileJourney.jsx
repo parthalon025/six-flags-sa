@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import TitleProgress from '@/components/TitleProgress';
-import { readProfileCache, sharesName, writeProfileCache } from '@/lib/auth/profileCache';
+import { patchProfileCache, readProfileCache, sharesName } from '@/lib/auth/profileCache';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 import { RANK_LADDER, rankProgress, rankReward } from '@party-tracker/shared/questScore.js';
 
@@ -58,15 +58,13 @@ export default function ProfileJourney({ session = null }) {
         if (!res.ok) return;
         const data = await res.json();
         if (!data?.profile) return;
-        const cached = await readProfileCache();
-        if (!cached?.userId) return;
-        const next = {
-          ...cached,
+        // Patch only the server-owned fields, atomically — a finder-credit
+        // toggle mid-flight must never be reverted by this write.
+        const next = await patchProfileCache({
           impactHelped: Number(data.profile.impactHelped) || 0,
           reputation: Number(data.profile.reputation) || 0,
-        };
-        await writeProfileCache(next);
-        if (alive) setSnap(next);
+        });
+        if (alive && next) setSnap(next);
       } catch {
         /* offline or Clerk-off — the cache is the day's truth */
       }
@@ -89,8 +87,7 @@ export default function ProfileJourney({ session = null }) {
     const next = !shareName;
     setSnap((s) => ({ ...(s || {}), shareName: next }));
     try {
-      const cached = await readProfileCache();
-      if (cached?.userId) await writeProfileCache({ ...cached, shareName: next });
+      await patchProfileCache({ shareName: next });
     } catch {
       /* private mode — the in-memory choice still holds this session */
     }
