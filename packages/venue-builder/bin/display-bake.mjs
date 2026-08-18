@@ -1,0 +1,136 @@
+#!/usr/bin/env node
+/**
+ * Skin bake, game tier — render a venue as a tile-and-sprite game map.
+ *
+ * The LOOK is prompt-driven; the GEOMETRY is not. `--prompt` asks the
+ * configured LLM provider (inside an agent session that is the invoking
+ * agent, via the briefs inbox) to author a kit spec — palette, textures,
+ * sprite styling — which is saved to data/display/kits/<id>.json and
+ * reused with `--kit`. The bake model itself (lib/display-bake.mjs) comes
+ * only from truth: a prompt can repaint the park, never move it.
+ *
+ *   npm run venues:bake -- big-kahunas --kit rpg-overworld
+ *   npm run venues:bake -- big-kahunas --prompt "sunny hand-drawn brochure"
+ *   npm run venues:bake -- kings-island --kit rpg-overworld --max-cols 320
+ */
+
+import http from 'node:http';
+import path from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { chromium } from 'playwright';
+import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, slugify } from '../lib/venue-io.mjs';
+import {
+  bakeModel, resolveKit, TERRAIN_PIECES, SPRITE_PIECES, TEXTURE_KINDS,
+} from '../lib/display-bake.mjs';
+import { chatCompletion } from '../lib/venue-llm.mjs';
+
+const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
+
+const KIT_BRIEF_SYSTEM = `You author map "kit specs" for a deterministic game-map baker.
+The bake is composed of small pieces; you choose params per piece — presentation
+only, never geometry. Reply with ONLY a JSON object:
+{
+  "id": "<kebab-case kit name>",
+  "label": "<short human name>",
+  "terrain": { any subset of ${Object.keys(TERRAIN_PIECES).join('|')}:
+    { "base": "<css color>", "texture": { "kind": "${TEXTURE_KINDS.join('|')}", "color": "<css>", "density": 0..1 } } },
+  "sprites": { any subset of:
+    "tree": {"canopy","highlight","shadow","scale"},
+    "building": {"roofs":[colors],"edge","wall","drop"},
+    "slide": {"casing","colors":[colors],"width"},
+    "coaster": {"rail","tie"},
+    "badge": {"gate","food","restroom","shop","show","service"} } }
+Defaults fill anything you omit: ${JSON.stringify({ terrain: TERRAIN_PIECES, sprites: SPRITE_PIECES })}
+Keep water readable as water and paths as paths, with outdoor-phone contrast.`;
+
+const argv = process.argv.slice(2);
+const ids = [];
+let kitId = null;
+let prompt = null;
+let maxCols = 240;
+let px = 16;
+let outRoot = path.join(MONO_ROOT, 'artifacts', 'display-bake');
+for (let i = 0; i < argv.length; i += 1) {
+  const a = argv[i];
+  if (a === '--kit') kitId = argv[++i];
+  else if (a === '--prompt') prompt = argv[++i];
+  else if (a === '--max-cols') maxCols = Number(argv[++i]) || 240;
+  else if (a === '--px') px = Number(argv[++i]) || 16;
+  else if (a === '--out') outRoot = path.resolve(argv[++i]);
+  else if (!a.startsWith('--')) ids.push(a);
+}
+if (!ids.length || (!kitId && !prompt)) {
+  console.error('usage: display-bake.mjs <venueId>… (--kit <id> | --prompt "…") [--max-cols N] [--px N] [--out dir]');
+  const kits = existsSync(KITS_DIR) ? readdirSync(KITS_DIR).map((f) => f.replace(/\.json$/, '')) : [];
+  if (kits.length) console.error(`kits on disk: ${kits.join(', ')}`);
+  process.exit(2);
+}
+
+function loadKit(id) {
+  const file = path.join(KITS_DIR, `${id}.json`);
+  const spec = readJson(file, null);
+  if (!spec) throw new Error(`No kit "${id}" under data/display/kits/`);
+  return resolveKit(spec);
+}
+
+async function kitFromPrompt(text) {
+  const content = await chatCompletion(
+    [
+      { role: 'system', content: KIT_BRIEF_SYSTEM },
+      { role: 'user', content: `Map prompt: ${text}` },
+    ],
+    { jsonMode: true },
+  );
+  if (!content) {
+    console.error('Kit brief filed — answer it, then rerun this command.');
+    process.exit(3);
+  }
+  const spec = JSON.parse(content.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''));
+  if (!spec.id) throw new Error('Kit spec needs an id');
+  resolveKit(spec); // reject unknown pieces/texture kinds before saving
+  spec.id = slugify(spec.id);
+  spec.prompt = text;
+  mkdirSync(KITS_DIR, { recursive: true });
+  const file = path.join(KITS_DIR, `${spec.id}.json`);
+  writeFileSync(file, `${JSON.stringify(spec, null, 2)}\n`);
+  console.error(`kit saved: ${file}`);
+  return spec.id;
+}
+
+const PAGE = readFileSync(new URL('./display-bake-page.html', import.meta.url), 'utf8');
+
+function serve(model, kit) {
+  return http.createServer((req, res) => {
+    const url = req.url.split('?')[0];
+    if (url === '/') { res.setHeader('content-type', 'text/html'); return res.end(PAGE); }
+    if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ model, kit, px })); }
+    res.statusCode = 404;
+    return res.end('not found');
+  });
+}
+
+const resolvedKitId = prompt ? await kitFromPrompt(prompt) : kitId;
+const kit = loadKit(resolvedKitId);
+
+const browser = await chromium.launch(
+  process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {},
+);
+const page = await browser.newPage({ viewport: { width: 800, height: 600 } });
+page.on('pageerror', (err) => console.error('  page error:', err.message));
+
+mkdirSync(outRoot, { recursive: true });
+for (const id of ids) {
+  const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), null);
+  const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), []);
+  if (!map) { console.error(`${id}: no map.json`); continue; }
+  const model = bakeModel(map, pois, { maxCols });
+  const server = serve(model, kit);
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  await page.goto(`http://127.0.0.1:${server.address().port}/`);
+  await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
+  const file = path.join(outRoot, `${id}--${resolvedKitId}.png`);
+  await page.locator('#c').screenshot({ path: file });
+  console.log(`${id} × ${resolvedKitId}: ${model.cols}×${model.rows} tiles → ${file}`);
+  server.close();
+}
+await browser.close();

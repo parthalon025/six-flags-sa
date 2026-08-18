@@ -100,7 +100,8 @@
     "version:matrix": "node scripts/deploy-version-report.mjs",
     "venues:display": "node packages/venue-builder/bin/display-pack.mjs",
     "venues:render": "node packages/venue-builder/bin/display-render.mjs",
-    "venues:llm-briefs": "node packages/venue-builder/bin/llm-briefs.mjs"
+    "venues:llm-briefs": "node packages/venue-builder/bin/llm-briefs.mjs",
+    "venues:bake": "node packages/venue-builder/bin/display-bake.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.4",

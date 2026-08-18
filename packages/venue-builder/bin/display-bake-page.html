@@ -1,0 +1,132 @@
+<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;background:#222}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script>
+(async () => {
+  const { model, kit, px } = await (await fetch('/model.json')).json();
+  const { cols, rows, cells, trees, buildings, tracks, badges, terrains } = model;
+  const c = document.getElementById('c');
+  c.width = cols * px; c.height = rows * px;
+  const g = c.getContext('2d');
+
+  const hash = (...nums) => {
+    let h = 2166136261;
+    for (const n of nums) { h ^= Math.trunc(n * 8191); h = Math.imul(h, 16777619); }
+    return ((h >>> 0) % 10000) / 10000;
+  };
+  const T = {}; for (const [v, name] of Object.entries(terrains)) T[name] = Number(v);
+  const NAME = terrains;
+  const at = (x, y) => (x < 0 || y < 0 || x >= cols || y >= rows) ? T.outside : cells[y * cols + x];
+
+  // Texture primitives — one small painter per kind, params from the piece.
+  const TEXTURES = {
+    none() {},
+    speckle(x, y, tx) {
+      g.fillStyle = tx.color;
+      g.fillRect(x * px + hash(x, y) * px, y * px + hash(x, y, 7) * px, 2, 2);
+    },
+    dot(x, y, tx) {
+      g.fillStyle = tx.color;
+      g.beginPath(); g.arc(x * px + hash(x, y) * px, y * px + hash(x, y, 9) * px, px / 6, 0, 7); g.fill();
+    },
+    tuft(x, y, tx) {
+      g.strokeStyle = tx.color; g.lineWidth = 1;
+      const ax = x * px + hash(x, y, 3) * px; const ay = y * px + hash(x, y, 4) * px;
+      g.beginPath(); g.moveTo(ax, ay); g.lineTo(ax - 2, ay - 3); g.moveTo(ax, ay); g.lineTo(ax + 2, ay - 3); g.stroke();
+    },
+    wave(x, y, tx) {
+      g.strokeStyle = tx.color; g.lineWidth = 1.4;
+      const wy = y * px + hash(x, y, 5) * px;
+      g.beginPath(); g.moveTo(x * px + 2, wy); g.quadraticCurveTo(x * px + px / 2, wy - 3, x * px + px - 2, wy); g.stroke();
+    },
+    stripe(x, y, tx) {
+      if (x % 3 !== 0) return;
+      g.strokeStyle = tx.color; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x * px + 1, y * px); g.lineTo(x * px + 1, y * px + px); g.stroke();
+    },
+    dash(x, y, tx, t) {
+      const hRun = at(x - 1, y) === t && at(x + 1, y) === t;
+      const vRun = at(x, y - 1) === t && at(x, y + 1) === t;
+      g.strokeStyle = tx.color; g.lineWidth = 1.4;
+      const cx = x * px + px / 2; const cy = y * px + px / 2;
+      if (hRun && !vRun) { g.beginPath(); g.moveTo(x * px + 3, cy); g.lineTo(x * px + px - 3, cy); g.stroke(); }
+      else if (vRun && !hRun) { g.beginPath(); g.moveTo(cx, y * px + 3); g.lineTo(cx, y * px + px - 3); g.stroke(); }
+    },
+  };
+
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const t = at(x, y);
+      const piece = kit.terrain[NAME[t]];
+      g.fillStyle = piece.base;
+      g.fillRect(x * px, y * px, px, px);
+      const tx = piece.texture || { kind: 'none' };
+      const gated = tx.kind === 'dash' || tx.kind === 'stripe' || hash(x, y) < (tx.density ?? 0.3);
+      if (gated) TEXTURES[tx.kind](x, y, tx, t);
+    }
+  }
+
+  const toPx = ([x, y]) => [x * px, y * px];
+  const tracePoly = (ring, dx = 0, dy = 0) => {
+    g.beginPath();
+    ring.forEach((pt, i) => {
+      const [x, y] = toPx(pt);
+      if (i === 0) g.moveTo(x + dx, y + dy); else g.lineTo(x + dx, y + dy);
+    });
+    g.closePath();
+  };
+  const traceLine = (pts) => {
+    g.beginPath();
+    pts.forEach((pt, i) => {
+      const [x, y] = toPx(pt);
+      if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    });
+  };
+
+  const B = kit.sprites.building;
+  g.lineJoin = 'round';
+  for (const b of buildings) {
+    g.fillStyle = B.wall; tracePoly(b.ring, 0, px * B.drop); g.fill();
+    g.fillStyle = B.roofs[b.roof % B.roofs.length]; tracePoly(b.ring); g.fill();
+    g.strokeStyle = B.edge; g.lineWidth = 1.6; g.stroke();
+  }
+
+  const CO = kit.sprites.coaster;
+  const SL = kit.sprites.slide;
+  g.lineCap = 'round';
+  for (const tr of tracks.filter((t) => t.kind === 'coaster')) {
+    traceLine(tr.pts); g.strokeStyle = CO.rail; g.lineWidth = px / 3.2; g.stroke();
+    g.setLineDash([2, px / 2.4]); traceLine(tr.pts); g.strokeStyle = CO.tie; g.lineWidth = px / 6; g.stroke();
+    g.setLineDash([]);
+  }
+  for (const tr of tracks.filter((t) => t.kind === 'slide')) {
+    traceLine(tr.pts); g.strokeStyle = SL.casing; g.lineWidth = (px / 2.2) * SL.width; g.stroke();
+    traceLine(tr.pts); g.strokeStyle = SL.colors[tr.idx % SL.colors.length]; g.lineWidth = (px / 3.4) * SL.width; g.stroke();
+  }
+
+  const TR = kit.sprites.tree;
+  for (const t of trees) {
+    const [x, y] = toPx(t);
+    const r = (t.big ? 0.44 : 0.3) * px * TR.scale;
+    g.fillStyle = TR.shadow; g.beginPath(); g.ellipse(x + r / 4, y + r / 3, r, r * 0.6, 0, 0, 7); g.fill();
+    g.fillStyle = TR.canopy; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    g.fillStyle = TR.highlight; g.beginPath(); g.arc(x - r / 3, y - r / 3, r / 2.4, 0, 7); g.fill();
+  }
+
+  const BD = kit.sprites.badge;
+  const LETTER = { gate: 'E', food: 'F', restroom: 'R', shop: 'S', show: 'W', service: 'i' };
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const b of badges) {
+    const [x, y] = toPx(b);
+    const r = px * 0.42;
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.arc(x + 1, y + 2, r, 0, 7); g.fill();
+    g.fillStyle = '#FFFFFF'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+    g.strokeStyle = BD[b.kind] || '#666'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = BD[b.kind] || '#666';
+    g.font = `bold ${Math.round(px * 0.5)}px system-ui, sans-serif`;
+    g.fillText(LETTER[b.kind] || '?', x, y + 0.5);
+  }
+
+  window.__done = true;
+})().catch((err) => { console.error(err); window.__done = true; window.__error = String(err); });
+</script>

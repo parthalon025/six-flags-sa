@@ -275,6 +275,50 @@ await check('buildTiles produces base.pmtiles, or records the gap honestly', () 
   return true;
 });
 
+/* ------------------------------------------------------- the bake pieces -- */
+
+const { bakeModel, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS } = await import(
+  '../../packages/venue-builder/lib/display-bake.mjs'
+);
+
+await check('a kit composes pieces onto defaults; unknown pieces fail loudly', () => {
+  const kit = resolveKit({ id: 'night', terrain: { water: { base: '#123' } } });
+  assert.equal(kit.terrain.water.base, '#123');
+  assert.equal(kit.terrain.water.texture.kind, 'wave', 'omitted texture must keep its default');
+  assert.equal(kit.terrain.grass.base, TERRAIN_PIECES.grass.base);
+  assert.throws(() => resolveKit({ terrain: { lava: {} } }), /Unknown terrain piece/);
+  assert.throws(() => resolveKit({ terrain: { water: { texture: { kind: 'sparkle' } } } }), /Unknown texture kind/);
+  assert.throws(() => resolveKit({ sprites: { dragon: {} } }), /Unknown sprite piece/);
+  assert.ok(TEXTURE_KINDS.includes('none'));
+  return true;
+});
+
+const BAKE_MAP = {
+  meta: { id: 'test-park', bounds: { n: 0.01, s: 0, e: 0.01, w: 0 } },
+  boundary: [[0.001, 0.001], [0.009, 0.001], [0.009, 0.009], [0.001, 0.009]],
+  water: [{ r: [[0.002, 0.002], [0.004, 0.002], [0.004, 0.004], [0.002, 0.004]] }],
+  wood: [{ r: [[0.006, 0.006], [0.008, 0.006], [0.008, 0.008], [0.006, 0.008]] }],
+  path: [{ r: [[0.001, 0.005], [0.009, 0.005]] }],
+  building: [{ r: [[0.005, 0.002], [0.006, 0.002], [0.006, 0.003]] }],
+  slide: [{ r: [[0.002, 0.006], [0.003, 0.007]] }, { r: [[0.003, 0.006], [0.004, 0.007]] }],
+};
+
+await check('the bake model is truth-locked and deterministic', () => {
+  const a = bakeModel(BAKE_MAP, FIXTURE_POIS, { maxCols: 60 });
+  const b = bakeModel(BAKE_MAP, FIXTURE_POIS, { maxCols: 60 });
+  assert.equal(JSON.stringify(a), JSON.stringify(b));
+  const name = (t) => a.terrains[t];
+  const cellAt = (fx, fy) => a.cells[Math.floor(fy * a.rows) * a.cols + Math.floor(fx * a.cols)];
+  assert.equal(name(cellAt(0.3, 0.7)), 'water', 'water ring must classify as water');
+  assert.equal(name(cellAt(0.5, 0.5)), 'road', 'the path line must paint road cells');
+  assert.equal(name(cellAt(0.02, 0.02)), 'outside', 'beyond the boundary is outside');
+  assert.ok(a.trees.length > 0, 'woods must grow trees');
+  assert.ok(a.trees.every((t) => Number.isFinite(t.x) && t.x <= a.cols && t.y <= a.rows));
+  assert.deepEqual(a.tracks.filter((t) => t.kind === 'slide').map((t) => t.idx), [0, 1],
+    'slides carry indices; color belongs to the kit piece');
+  return true;
+});
+
 /* ------------------------------------------------------------ the stage -- */
 
 await check('runDisplayStage writes spec + certification, twice byte-identical', () => {
