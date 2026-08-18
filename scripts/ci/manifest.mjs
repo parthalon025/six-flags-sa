@@ -24,6 +24,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/matt-review.test.mjs',
   'test/scripts/dependency-boundaries.test.mjs',
   'test/scripts/map-performance-contract.test.mjs',
+  'test/scripts/ors-route-samples.test.mjs',
 ];
 
 /**
