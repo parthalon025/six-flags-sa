@@ -7610,6 +7610,21 @@ await check('adapter registry lists core external stacks', () => {
   return true;
 });
 
+await check('mapillary-tools row covers ride-walkthrough video evidence', () => {
+  const row = getAdapter('mapillary-tools');
+  assert.ok(row.evidence_sources.includes('mapillary'));
+  assert.ok(row.evidence_sources.includes('video'));
+  assert.equal(row.adopt, 'wrap');
+});
+
+await check('mapillary-tools is runnable but opt-in, not scaffolded by default', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  assert.ok(getAdapterImplementation('mapillary-tools'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('mapillary-tools'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('mapillary-tools'));
+});
+
 await check('evidence graph summarises converging claims', () => {
   const { nodes, summary } = graphFromAttractions({
     rides: {

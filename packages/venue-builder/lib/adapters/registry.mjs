@@ -354,10 +354,11 @@ const ENTRIES = [
     gpu: false,
     offline: true,
     commercial_ok: true,
-    evidence_sources: ['mapillary'],
+    evidence_sources: ['mapillary', 'video'],
     integration: 'medium',
     overlap: 'Manual aerial survey for Big Kahunas only',
-    notes: 'Queue entrance candidates from street-level sequences + API metadata.',
+    notes:
+      'Queue entrance candidates from street-level sequences + API metadata. Also covers ride-walkthrough POV video via the video_process subcommand (sample_video + process) — see lib/adapters/mapillary-video.mjs. Requires ctx.videoPath; not in DEFAULT_EXTERNAL_ADAPTERS since a walkthrough video must be manually supplied.',
   },
   {
     id: 'mapillary-js',

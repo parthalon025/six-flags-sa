@@ -36,7 +36,7 @@ USDA's US-only aerial orthoimagery program. Per the USDA Farm Service Agency's o
 
 - **Fit:** `aerial` evidence source, high confidence, US-only.
 - **Proposed row:** `role: AERIAL_IMAGERY_SOURCE`, `stage: 'vision'`, `adopt: 'wrap'`, `license: 'Public Domain (US Government)'`, `docker: false`, `gpu: false`, `offline: true` (once downloaded/cached), `commercial_ok: true`, `evidence_sources: ['aerial']`.
-- **Caveat:** IGS blog coverage notes USDA has floated licensing changes for future NAIP cycles ([UC ANR IGIS](https://ucanr.edu/blog/igis/article/usda-considers-switching-naip-imagery-license-model)) — **secondary**, watch for a terms change before hardcoding "public domain, forever" into adapter notes.
+- **Caveat:** Third-party coverage (UC ANR IGIS, and similar writeups citing FSA Aerial Photography Field Office conference presentations) reports that FSA has periodically floated moving NAIP to a commercial/licensed model — no USDA-published announcement, Federal Register notice, or official USDA page confirming this was found in this research pass, so the rumor itself remains **secondary** ([UC ANR IGIS](https://ucanr.edu/blog/igis/article/usda-considers-switching-naip-imagery-license-model)). What *is* primary-sourced: USDA's own current dataset listing still classifies NAIP as Public Domain, with no change reflected as of its most recent metadata update — [USDA NAIP Imagery dataset, Data.gov catalog (publisher: USDA Farm Production and Conservation Business Center; metadata updated 2025-07-09; rights: `https://www.usa.gov/publicdomain/label/1.0/`)](https://catalog.data.gov/dataset/national-agriculture-imagery-program-naip-imagery). Watch for a terms change before hardcoding "public domain, forever" into adapter notes.
 
 ### Sentinel-2 (Copernicus)
 
@@ -118,7 +118,7 @@ The registry already has a `mapillary-tools` row (`adopt: wrap`, `stage: vision`
 For footage where the *only* need is pulling embedded GPS out of the camera's metadata track (no frame sampling, no photogrammetry) — several single-purpose OSS tools exist:
 
 - **`gopro2gpx`** (`juanmcasillas/gopro2gpx`) — parses the GPMD stream in GoPro MP4 files, emits GPX/KML/CSV. License: **GPL-3.0** ([repo](https://github.com/juanmcasillas/gopro2gpx)).
-- **`pygpmf`** (`alexis-mignon/pygpmf`) — Python module for the same GPMF extraction. No explicit `LICENSE` file was found in the upstream repo at time of research; a maintained fork (`pygpmf-oz`) publishes under MIT — **secondary**, verify the specific fork's license file before wrapping.
+- **`pygpmf`** (`alexis-mignon/pygpmf`) — Python module for the same GPMF extraction. Correction from initial research: the upstream repo does carry a `LICENSE` file — **MIT License**, copyright (c) 2020 Alexis Mignon, confirmed by direct fetch ([`alexis-mignon/pygpmf` — LICENSE](https://github.com/alexis-mignon/pygpmf/blob/master/LICENSE)). Primary-sourced; no need to fall back to the `pygpmf-oz` fork for licensing clarity.
 - **`gopro-telemetry`** (JuanIrache, npm/Node) — same GPMF parsing, JS-native, multiple output formats (GPX/KML/GeoJSON/CSV) ([GitHub](https://github.com/JuanIrache/gopro-telemetry)) — worth a license check since it is the only Node-native option in this list and would integrate with zero Python/Docker overhead.
 
 These only help when the walkthrough footage already carries embedded GPS (action cameras) — they do nothing for a phone-shot or downloaded/YouTube-sourced POV video with no telemetry track, which is the more common case for a park walkthrough. For that case:
@@ -129,7 +129,7 @@ These only help when the walkthrough footage already carries embedded GPS (actio
 
 - **Fit:** `video` → path/geometry, the "watch a ride walkthrough" gap `venue-builder.md` names directly.
 - **Proposed row:** `role: VIDEO_PATH_RECONSTRUCTION`, `stage: 'vision'`, `adopt: 'defer'` (same Phase-2+ class as `opensfm`/`sam2`), `license: 'BSD-3-Clause'`, `docker: true`, `gpu: true` (CPU-only build exists but is materially slower per project docs), `offline: true`, `commercial_ok: true`, `evidence_sources: ['video', 'traced']`, notes: "Extends opensfm's existing deferral to video frame sequences; check third-party build deps (CUDA/CGAL) for license drift before adopting."
-- **OpenDroneMap (ODM/WebODM)** was also evaluated as a possible video→georeferenced-map pipeline: it handles video by pulling still frames from `.mp4`/`.mov`/`.lrv`/`.ts` and optionally pairing `.srt` GPS subtitle files, then runs the normal drone-photo pipeline (**secondary** description, [comparison writeup](https://www.skyebrowse.com/news/posts/webodm-vs-opendronemap)). Both ODM and WebODM are **AGPLv3**. Following this repo's own precedent — `overpass-api` (AGPL-3.0) is `adopt: wrap` because it is queried as an arm's-length, self-hosted service rather than linked into product code, while `ultralytics-yolo` (AGPL-3.0) is `reject` because it would be imported directly — ODM fits the `overpass-api` shape (Docker container invoked via CLI/API, its output consumed as data) rather than the `yolo` shape, so it is a defensible `wrap`, not an automatic `reject`. Flag it in the row notes regardless: it is drone-photogrammetry-first and camera-agnostic-video-second, so it's a heavier dependency than the mapillary_tools path above for the same job.
+- **OpenDroneMap (ODM/WebODM)** was also evaluated as a possible video→georeferenced-map pipeline: it handles video by pulling still frames from `.mp4`/`.mov`/`.lrv`/`.ts` and optionally pairing `.srt` GPS subtitle files, then runs the normal drone-photo pipeline — confirmed directly from ODM's own README under its "Video Support" heading: "Starting from version 3.0.4, ODM can automatically extract images from video files (.mp4, .mov, .lrv, .ts)... Subtitles files (.srt) with GPS information are also supported" ([`OpenDroneMap/ODM` — README, "Video Support"](https://github.com/OpenDroneMap/ODM/blob/master/README.md#video-support)), primary-sourced. Both ODM and WebODM are **AGPLv3**. Following this repo's own precedent — `overpass-api` (AGPL-3.0) is `adopt: wrap` because it is queried as an arm's-length, self-hosted service rather than linked into product code, while `ultralytics-yolo` (AGPL-3.0) is `reject` because it would be imported directly — ODM fits the `overpass-api` shape (Docker container invoked via CLI/API, its output consumed as data) rather than the `yolo` shape, so it is a defensible `wrap`, not an automatic `reject`. Flag it in the row notes regardless: it is drone-photogrammetry-first and camera-agnostic-video-second, so it's a heavier dependency than the mapillary_tools path above for the same job.
 
 ---
 
@@ -166,14 +166,14 @@ For park maps distributed as vector PDFs (not scans), the geometry is often alre
 
 ### Poly Haven and ambientCG — CC0 PBR texture libraries (recommended first prototype target)
 
-Both are community-run libraries of production-grade, tileable PBR material sets (albedo/normal/roughness/displacement/AO maps) released under **CC0** (public domain dedication) — no attribution required, no commercial restriction. [Poly Haven's texture catalog](https://polyhaven.com/textures) has dedicated categories including [`asphalt`](https://polyhaven.com/textures/asphalt), [`asphalt-bitumen`](https://polyhaven.com/textures/asphalt-bitumen), and [`roofing`](https://polyhaven.com/textures/roofing/outdoor); [ambientCG](https://ambientcg.com/) hosts a comparably broad set including water and foliage/ground-cover materials (**secondary for the exact category list** — verified as "2000+ PBR Materials... free under the CC0 Public Domain license" via search-result summary, category browsing on the live site recommended before committing to specific asset IDs).
+Both are community-run libraries of production-grade, tileable PBR material sets (albedo/normal/roughness/displacement/AO maps) released under **CC0** (public domain dedication) — no attribution required, no commercial restriction. [Poly Haven's texture catalog](https://polyhaven.com/textures) has dedicated categories including [`asphalt`](https://polyhaven.com/textures/asphalt), [`asphalt-bitumen`](https://polyhaven.com/textures/asphalt-bitumen), and [`roofing`](https://polyhaven.com/textures/roofing/outdoor); [ambientCG](https://ambientcg.com/) hosts a comparably broad set including water and foliage/ground-cover materials — confirmed by browsing the live site's category listing, which includes dedicated `Water`, `Foliage`, `Grass`, `Ground`, and `Asphalt` categories among 60+ material categories ([ambientCG — asset/category list](https://ambientcg.com/list)); the CC0 license is stated directly on ambientCG's own homepage: "All assets are released under the Creative Commons CC0 license, making them free to use without attribution - even in commercial circumstances" ([ambientCG homepage](https://ambientcg.com/)). Primary-sourced.
 
 - **Fit:** direct material source assets for `visual.json`'s land tones and skin-bake stage — asphalt for midways, water for lagoons/log-flume splashdown, foliage for landscaping, generic roofing for building shells.
 - **Proposed row:** `role: PBR_MATERIAL_LIBRARY`, `stage: 'display'` (a new stage value, distinct from `vision` — this is display-pipeline input, not evidence), `adopt: 'adopt'`, `license: 'CC0'`, `docker: false`, `gpu: false`, `offline: true` (download once, vendor into `display/` build assets), `commercial_ok: true`, `evidence_sources: []` (deliberately empty — Display, not Truth), notes: "Feeds PR #471's material pipeline / visual.json land tones directly. Not an evidence source — do not wire into evidence.mjs."
 
 ### Materialize (BoundingBoxSoftware) — flag GPL, likely unnecessary
 
-A Unity-adjacent open-source tool that converts photographic source images into height/metallic/smoothness maps (then derives normal/edge/occlusion). Repo license per [`BoundingBoxSoftware/Materialize`](https://github.com/BoundingBoxSoftware/Materialize) is **GPL-3.0** (**secondary** — sourced from search-result summary of the repo, not a direct LICENSE-file fetch; verify before adopting). Given Poly Haven/ambientCG already ship finished CC0 PBR sets for exactly the material categories this project needs (asphalt, roofing, water, foliage), there is no clear reason to stand up a photo-to-PBR *generation* tool at all — the categories needed are generic outdoor surfaces already well-covered by existing CC0 libraries, not park-specific textures requiring bespoke capture.
+A Unity-adjacent open-source tool that converts photographic source images into height/metallic/smoothness maps (then derives normal/edge/occlusion). Repo license, confirmed by direct fetch of the repo's [`LICENSE`](https://github.com/BoundingBoxSoftware/Materialize/blob/master/LICENSE) file, is **GPL-3.0** (GNU General Public License, Version 3, 29 June 2007) — primary-sourced. Given Poly Haven/ambientCG already ship finished CC0 PBR sets for exactly the material categories this project needs (asphalt, roofing, water, foliage), there is no clear reason to stand up a photo-to-PBR *generation* tool at all — the categories needed are generic outdoor surfaces already well-covered by existing CC0 libraries, not park-specific textures requiring bespoke capture.
 
 - **Proposed row:** `adopt: 'defer'` (not `reject` — GPL-3.0 as a standalone CLI/desktop tool used to *pre-bake* offline assets, never linked into the shipped app, is a materially different risk than AGPL-in-the-service-loop; but there is no evident need to reach for it while CC0 libraries cover the same ground), notes: "Deferred on lack of need, not license — Poly Haven/ambientCG already supply the material categories PR #471 needs. Revisit only if a park-specific texture (branded pavement, signature roofing) can't be approximated from stock CC0 sets."
 
@@ -214,6 +214,7 @@ In order of "prototype this first":
 - [NAIP — AWS Registry of Open Data](https://registry.opendata.aws/naip/)
 - [NAIP — Google Earth Engine catalog](https://developers.google.com/earth-engine/datasets/catalog/USDA_NAIP_DOQQ)
 - [UC ANR IGIS — USDA considers NAIP licensing change](https://ucanr.edu/blog/igis/article/usda-considers-switching-naip-imagery-license-model) (secondary)
+- [USDA NAIP Imagery — Data.gov catalog entry (current public-domain status, publisher: USDA FPAC-BC)](https://catalog.data.gov/dataset/national-agriculture-imagery-program-naip-imagery)
 - [Copernicus — copyright and licences](https://www.copernicus.eu/en/access-data/copyright-and-licences)
 - [Copernicus Data Space Ecosystem — terms and conditions](https://dataspace.copernicus.eu/terms-and-conditions)
 - [ESA WorldCover — data access](https://esa-worldcover.org/en/data-access)
@@ -241,10 +242,12 @@ In order of "prototype this first":
 - [Mapillary forum — external GPX support for video](https://forum.mapillary.com/t/external-gpx-support-for-videos-in-mapillary-tools-0-11-0b2/7373) (secondary)
 - [juanmcasillas/gopro2gpx — repo](https://github.com/juanmcasillas/gopro2gpx)
 - [alexis-mignon/pygpmf — repo](https://github.com/alexis-mignon/pygpmf)
+- [alexis-mignon/pygpmf — LICENSE (MIT)](https://github.com/alexis-mignon/pygpmf/blob/master/LICENSE)
 - [JuanIrache/gopro-telemetry — repo](https://github.com/JuanIrache/gopro-telemetry)
 - [colmap/colmap — license page](https://colmap.github.io/license.html)
 - [colmap/colmap — repo](https://github.com/colmap/colmap)
-- [OpenDroneMap vs WebODM comparison](https://www.skyebrowse.com/news/posts/webodm-vs-opendronemap) (secondary)
+- [OpenDroneMap/ODM — README, "Video Support"](https://github.com/OpenDroneMap/ODM/blob/master/README.md#video-support)
+- [OpenDroneMap vs WebODM comparison](https://www.skyebrowse.com/news/posts/webodm-vs-opendronemap) (secondary; superseded as citation by ODM's own README above)
 - [WebODM — official site](https://webodm.org/)
 
 ### Park map / PDF digitization
@@ -258,7 +261,9 @@ In order of "prototype this first":
 - [Poly Haven — asphalt](https://polyhaven.com/textures/asphalt)
 - [Poly Haven — roofing](https://polyhaven.com/textures/roofing/outdoor)
 - [ambientCG](https://ambientcg.com/)
-- [BoundingBoxSoftware/Materialize — repo](https://github.com/BoundingBoxSoftware/Materialize) (secondary — license summary, verify LICENSE file directly)
+- [ambientCG — asset/category list](https://ambientcg.com/list)
+- [BoundingBoxSoftware/Materialize — repo](https://github.com/BoundingBoxSoftware/Materialize)
+- [BoundingBoxSoftware/Materialize — LICENSE (GPL-3.0)](https://github.com/BoundingBoxSoftware/Materialize/blob/master/LICENSE)
 - [OpenSurfaces — project page](http://opensurfaces.cs.cornell.edu/publications/opensurfaces/)
 - [MINC (Materials in Context Database) — project page](http://opensurfaces.cs.cornell.edu/publications/minc/)
 

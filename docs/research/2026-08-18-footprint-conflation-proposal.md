@@ -1,7 +1,7 @@
 # Proposal: Overture-style footprint conflation for venue-builder polygon evidence
 
 **Date:** 2026-08-18
-**Status:** Proposal — not yet accepted, not yet an ADR
+**Status:** Decided (2026-08-18) — open questions resolved below; not yet an ADR, not yet implemented (tracked as [#501](https://github.com/parthalon025/six-flags-sa/issues/501), blocked on [#497](https://github.com/parthalon025/six-flags-sa/issues/497))
 **Product:** Universal Venue Builder (`packages/venue-builder`)
 **Depends on / builds on:** [`packages/venue-builder/lib/evidence.mjs`](../../packages/venue-builder/lib/evidence.mjs), [`docs/adr/0002-dual-layer-park-truth.md`](../adr/0002-dual-layer-park-truth.md), [`docs/adr/0013-display-pipeline.md`](../adr/0013-display-pipeline.md), [`docs/research/2026-08-18-visual-ground-truth-tools.md`](./2026-08-18-visual-ground-truth-tools.md)
 
@@ -91,9 +91,12 @@ A new module, `lib/footprint-fusion.mjs`, sitting next to `evidence.mjs` and reu
 `WEIGHTS`/`BANDS` exports rather than duplicating them:
 
 ```
-fuseFootprints(polygons: [{ source, geometry, date? }], { iouThreshold = 0.5 } = {})
+fuseFootprints(polygons: [{ source, geometry, date?, featureType? }], { iouThresholds } = {})
   → { geometry, score, band, sources, dissent, conflict }
 ```
+
+`iouThresholds` is a map keyed by `featureType` (e.g. `building`, `queue_canopy`, `station`), not a
+single constant — resolved in "Decisions" below.
 
 Mirroring `fuse()`/`pointOf()`'s split:
 
@@ -128,30 +131,41 @@ Mirroring `fuse()`/`pointOf()`'s split:
   the companion research doc's shortlist; this note is only about the fusion *rule*, not which
   adapters feed it.
 
-## Open questions for review
+## Decisions
 
-1. **IoU threshold value.** Overture uses 0.5 for attribute merging. Is 0.5 right for this
-   product, where a ride's footprint (queue canopy, station building, footprint of the track
-   itself) is smaller and more irregularly shaped than typical urban buildings, or does a smaller
-   venue-scale footprint need a lower threshold to avoid false non-matches?
-2. **Should OSM ways keep a weight advantage over Overture's merged footprints even where
-   Overture's own confidence is high?** OSM ways at these parks are often hand-traced by mappers
-   who have walked the ride (per `docs/guide/venue-builder.md`'s existing observation about
-   named-queue ways being "as good as automatic evidence gets"); Overture's ML-derived footprints
-   are automatic by construction. The existing `WEIGHTS` table would need a `cv_segmentation`
-   entry considered alongside `osm_entrance`/`osm_named_queue` rather than assumed equal.
-3. **Ride-specific structures Overture won't cover.** Queue canopies, standalone ticket kiosks,
-   and similar small theme-park-specific structures are unlikely to appear in a general building-
-   footprint dataset trained on typical urban/suburban structures. The companion doc's
-   `segment-geospatial` (samgeo) recommendation — deferred, GPU-gated — is the eventual answer for
-   venue-specific footprints Overture/Microsoft/Google don't have; this proposal's fusion rule
-   should be written so a third source slots in without a redesign, not just two.
+Three questions were open at proposal time. All three are now resolved:
+
+1. **IoU threshold value — resolved: don't hardcode one.** Overture uses a single 0.5 for
+   attribute merging across institutional building datasets; this product's footprints (queue
+   canopies, station buildings, the track's own footprint) are smaller and more irregularly shaped
+   than typical urban buildings, and there is no real second polygon source in the pipeline yet to
+   test a number against. Picking 0.5 (or any other value) now would be guessing at a fact nobody
+   has. `fuseFootprints()`'s `iouThresholds` is a map keyed by `featureType`, defaulting every type
+   to Overture's 0.5 until real venue data run through [#497](https://github.com/parthalon025/six-flags-sa/issues/497)'s
+   Overture adapter shows where it's wrong for a given type — then that type's entry gets tuned,
+   not the global default.
+2. **OSM vs. Overture weight precedence — resolved: OSM keeps the edge.** The same reasoning that
+   already justified the point-evidence weights (`osm_named_queue: 4` outranking `cv_detection: 2`
+   — a human walked the ride vs. an ML model looked at a pixel) applies identically to footprints.
+   `WEIGHTS` gains a `cv_segmentation`-derived footprint entry that sits below OSM's footprint
+   weight, not equal to it, regardless of Overture's own per-cell confidence — Overture's ML
+   footprints corroborate, they don't outrank a hand-traced way.
+3. **Ride-specific-structure coverage gap — resolved: accept it for now.** This repo has **zero
+   GPU infrastructure** anywhere: all CI runs on `ubuntu-latest`/`macos-latest`, no CUDA/GPU
+   reference exists outside venue-builder's own aspirational docs, and the only Docker usage in the
+   repo is a GPU-free Node/Postgres image unrelated to venue-builder. Standing up GPU infra just to
+   close the queue-canopy/kiosk gap is a bigger lift than the gap justifies today. `segment-geospatial`
+   stays `defer` ([#497](https://github.com/parthalon025/six-flags-sa/issues/497) adds the stub row
+   documenting this). `fuseFootprints()`'s signature already accepts an arbitrary list of
+   `{ source, geometry }` candidates, so a third source slots in without a redesign whenever GPU
+   infra exists for other reasons.
 
 ## If accepted
 
 Promote this note to an ADR (following the `docs/research/2026-08-15-comparable-park-map-
 rendering.md` → ADR-0012 and the PR #471 design doc → ADR-0013 precedent already in this repo),
-then implement `lib/footprint-fusion.mjs` plus the `WEIGHTS` table additions in a follow-up PR,
-gated on the Overture Maps `buildings` theme adapter (companion doc's shortlist item 3) actually
-landing as a `cv_segmentation` source first — there is no second polygon source to conflate
-against until that adapter exists.
+then implement `lib/footprint-fusion.mjs` plus the `WEIGHTS` table additions — tracked as
+[#501](https://github.com/parthalon025/six-flags-sa/issues/501), blocked on the Overture Maps
+`buildings` theme adapter ([#497](https://github.com/parthalon025/six-flags-sa/issues/497))
+actually landing as a `cv_segmentation` source first — there is no second polygon source to
+conflate against until that adapter exists.

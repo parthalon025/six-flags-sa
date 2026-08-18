@@ -13,6 +13,7 @@ import { run as runOhm } from './openhistoricalmap.mjs';
 import { run as runProjectSidewalk } from './project-sidewalk.mjs';
 import { run as runGuestTraces } from './guest-traces.mjs';
 import { run as runMapillary } from './mapillary-api.mjs';
+import { run as runMapillaryVideo } from './mapillary-video.mjs';
 import { run as runOrs } from './openrouteservice.mjs';
 import { run as runPlaywright } from './playwright-official.mjs';
 
@@ -29,6 +30,7 @@ export const ADAPTER_IMPLEMENTATIONS = {
   'project-sidewalk': runProjectSidewalk,
   'guest-traces': runGuestTraces,
   'mapillary-api': runMapillary,
+  'mapillary-tools': runMapillaryVideo,
   openrouteservice: runOrs,
   playwright: runPlaywright,
 };

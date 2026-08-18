@@ -45,15 +45,18 @@ export const KNOWN_EXTERNAL_ADAPTER_IDS = Object.freeze([
   'openhistoricalmap',
   'project-sidewalk',
   'mapillary-api',
+  'mapillary-tools',
   'openrouteservice',
 ]);
 
 /**
  * Default open-data adapters for a theme-park venue when scaffolding offline.
- * Excludes RopeDrop (Disney/Universal only) and token-gated adapters.
+ * Excludes RopeDrop (Disney/Universal only), token-gated adapters, and
+ * mapillary-tools — it needs a manually supplied `ctx.videoPath`, not something
+ * a scaffold can acquire automatically the way an API token or open dataset can.
  */
 export const DEFAULT_EXTERNAL_ADAPTERS = KNOWN_EXTERNAL_ADAPTER_IDS.filter(
-  (id) => id !== 'ropedrop' && !TOKEN_GATED_ADAPTERS.includes(id),
+  (id) => id !== 'ropedrop' && id !== 'mapillary-tools' && !TOKEN_GATED_ADAPTERS.includes(id),
 );
 
 /**
