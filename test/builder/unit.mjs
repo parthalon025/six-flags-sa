@@ -7647,6 +7647,27 @@ await check('esa-worldcover is a Truth-layer aerial adapter, scaffolded by defau
   assert.ok(DEFAULT_EXTERNAL_ADAPTERS.includes('esa-worldcover'));
 });
 
+await check('overture-buildings is a Truth-layer cv_segmentation adapter, opt-in not scaffolded', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const row = getAdapter('overture-buildings');
+  assert.ok(row);
+  assert.deepEqual(row.evidence_sources, ['cv_segmentation']);
+  assert.equal(row.license, 'ODbL');
+  assert.ok(getAdapterImplementation('overture-buildings'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('overture-buildings'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('overture-buildings'));
+});
+
+await check('segment-geospatial is deferred pending GPU infra, matching sam2', () => {
+  const sg = getAdapter('segment-geospatial');
+  const sam2 = getAdapter('sam2');
+  assert.ok(sg);
+  assert.equal(sg.adopt, 'defer');
+  assert.equal(sg.gpu, true);
+  assert.equal(sam2.adopt, 'defer');
+});
+
 await check('evidence graph summarises converging claims', () => {
   const { nodes, summary } = graphFromAttractions({
     rides: {

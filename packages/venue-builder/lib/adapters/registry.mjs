@@ -475,6 +475,53 @@ const ENTRIES = [
     notes:
       'Cross-checks the two highest-weight entrance-evidence sources (park map=5, aerial=4): does the classified land under a claim match what it implies? Also the cheapest land-tone base layer for PR #471 Display (see registry\'s poly-haven row) — same raster, two consumers, one adapter.',
   },
+  {
+    id: 'overture-buildings',
+    name: 'Overture Maps — buildings theme',
+    repo: 'OvertureMaps',
+    url: 'https://docs.overturemaps.org/guides/buildings/',
+    capability: 'Deduplicated OSM + Microsoft ML + Google Open Buildings footprints, one ODbL pull',
+    role: 'BUILDING_FOOTPRINT_MERGED',
+    stage: 'vision',
+    license: 'ODbL',
+    adopt: 'wrap',
+    maturity: 'production',
+    maintenance: 5,
+    languages: ['n/a'],
+    docker: false,
+    gpu: false,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: ['cv_segmentation'],
+    integration: 'medium',
+    overlap:
+      'lib/adapters/overture-buildings.mjs wraps the duckdb CLI (httpfs + spatial extensions) — plain HTTPS bucket listing and parquet reads, no S3 SDK/credentials (those broke in this environment for a proxy-injection reason unrelated to Overture itself). Supersedes separately wrapping Microsoft + Google building datasets — Overture already resolved the overlap.',
+    notes:
+      'Second independent polygon source for lib/footprint-fusion.mjs (proposed, blocked on this adapter landing — see docs/research/2026-08-18-footprint-conflation-proposal.md). Live-verified against Cedar Point: 761 real building footprints, named ones matching real ride/service buildings (Raptor, Guest Services, Midway Carousel). Does not emit evidence.mjs point claims — polygon evidence has no shape in EvidenceClaim.at yet; caches raw footprint GeoJSON for the fusion module to consume once it exists. Opt-in, not scaffolded by default (needs duckdb on PATH, ~2 min/venue over 512 remote part-files).',
+  },
+  {
+    id: 'segment-geospatial',
+    name: 'segment-geospatial (samgeo)',
+    repo: 'opengeos/segment-geospatial',
+    url: 'https://github.com/opengeos/segment-geospatial',
+    capability: 'SAM/SAM2-based georeferenced raster segmentation for fresh imagery',
+    role: 'VISION_SEGMENTER_GEOSPATIAL',
+    stage: 'vision',
+    license: 'MIT',
+    adopt: 'defer',
+    maturity: 'beta',
+    maintenance: 3,
+    languages: ['python'],
+    docker: true,
+    gpu: true,
+    offline: true,
+    commercial_ok: true,
+    evidence_sources: ['cv_segmentation', 'cv_detection'],
+    integration: 'high',
+    overlap: 'Same deferral class as the existing sam2 row — this is effectively sam2 pointed at raster tiles instead of photos.',
+    notes:
+      'Answers the ride-specific-structure coverage gap (queue canopies, kiosks) that overture-buildings/Microsoft/Google building datasets won\'t have, trained on typical urban/suburban structures. Confirmed this repo has zero GPU infrastructure anywhere (all CI on ubuntu-latest/macos-latest, no CUDA reference outside this doc) — deferred until GPU infra exists for other reasons, not standing it up just for this.',
+  },
 
   // —— Display-layer materials (PR #471 PBR pipeline) — never evidence_sources ——
   {

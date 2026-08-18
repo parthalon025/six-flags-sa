@@ -18,6 +18,7 @@ import { run as runOrs } from './openrouteservice.mjs';
 import { run as runPlaywright } from './playwright-official.mjs';
 import { run as runPolyHaven } from './poly-haven.mjs';
 import { run as runEsaWorldcover } from './esa-worldcover.mjs';
+import { run as runOvertureBuildings } from './overture-buildings.mjs';
 
 /** @type {Record<string, (ctx: object) => Promise<import('./types.mjs').AdapterResult>>} */
 export const ADAPTER_IMPLEMENTATIONS = {
@@ -37,6 +38,7 @@ export const ADAPTER_IMPLEMENTATIONS = {
   playwright: runPlaywright,
   'poly-haven': runPolyHaven,
   'esa-worldcover': runEsaWorldcover,
+  'overture-buildings': runOvertureBuildings,
 };
 
 export const EXTERNAL_ADAPTER_IDS = Object.keys(ADAPTER_IMPLEMENTATIONS).filter(

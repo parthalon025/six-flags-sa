@@ -24,6 +24,7 @@ export const ADAPTER_CACHE_SUFFIX = {
   'mapillary-api': 'mapillary',
   'mapillary-tools': 'mapillary-video',
   'esa-worldcover': 'esa-worldcover',
+  'overture-buildings': 'overture-buildings',
   openrouteservice: 'openrouteservice',
   playwright: 'official',
 };

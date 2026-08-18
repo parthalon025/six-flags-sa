@@ -50,17 +50,20 @@ export const KNOWN_EXTERNAL_ADAPTER_IDS = Object.freeze([
   'mapillary-api',
   'mapillary-tools',
   'esa-worldcover',
+  'overture-buildings',
   'openrouteservice',
 ]);
 
 /**
  * Default open-data adapters for a theme-park venue when scaffolding offline.
- * Excludes RopeDrop (Disney/Universal only), token-gated adapters, and
- * mapillary-tools — it needs a manually supplied `ctx.videoPath`, not something
- * a scaffold can acquire automatically the way an API token or open dataset can.
+ * Excludes RopeDrop (Disney/Universal only), token-gated adapters,
+ * mapillary-tools (needs a manually supplied `ctx.videoPath`), and
+ * overture-buildings (needs the `duckdb` CLI and takes ~2 minutes per venue —
+ * an opt-in adapter, not something a fast offline scaffold should run by
+ * default).
  */
 export const DEFAULT_EXTERNAL_ADAPTERS = KNOWN_EXTERNAL_ADAPTER_IDS.filter(
-  (id) => id !== 'ropedrop' && id !== 'mapillary-tools' && !TOKEN_GATED_ADAPTERS.includes(id),
+  (id) => id !== 'ropedrop' && id !== 'mapillary-tools' && id !== 'overture-buildings' && !TOKEN_GATED_ADAPTERS.includes(id),
 );
 
 /**
