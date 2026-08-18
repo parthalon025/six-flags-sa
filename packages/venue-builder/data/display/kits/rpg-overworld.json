@@ -1,0 +1,126 @@
+{
+  "id": "rpg-overworld",
+  "label": "RPG overworld",
+  "terrain": {
+    "outside": {
+      "base": "#6B4E9B",
+      "texture": {
+        "kind": "dot",
+        "color": "#7C5DAF",
+        "density": 0.4
+      }
+    },
+    "ground": {
+      "base": "#EBD9A4",
+      "texture": {
+        "kind": "speckle",
+        "color": "#DCC888",
+        "density": 0.32
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "sand"
+      }
+    },
+    "grass": {
+      "base": "#8CBE74",
+      "texture": {
+        "kind": "tuft",
+        "color": "#699E55",
+        "density": 0.38
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass"
+      }
+    },
+    "wood": {
+      "base": "#6BA35A",
+      "texture": {
+        "kind": "tuft",
+        "color": "#54874A",
+        "density": 0.4
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass",
+        "tint": "rgba(25,70,25,0.35)"
+      }
+    },
+    "water": {
+      "base": "#4FB8D4",
+      "texture": {
+        "kind": "wave",
+        "color": "#A6E2EE",
+        "density": 0.32
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "teal"
+      }
+    },
+    "lot": {
+      "base": "#B3AC9D",
+      "texture": {
+        "kind": "stripe",
+        "color": "#E4DECF"
+      }
+    },
+    "road": {
+      "base": "#7E8494",
+      "texture": {
+        "kind": "dash",
+        "color": "#D3D7DE"
+      }
+    },
+    "service": {
+      "base": "#6F7482",
+      "texture": {
+        "kind": "none"
+      }
+    }
+  },
+  "sprites": {
+    "tree": {
+      "canopy": "#3E7C3A",
+      "highlight": "#71C25E",
+      "shadow": "rgba(30,20,60,0.28)",
+      "scale": 1.1
+    },
+    "building": {
+      "roofs": [
+        "#CFC2A8",
+        "#B9C7D6",
+        "#C4A98F"
+      ],
+      "edge": "#4F4A3E",
+      "wall": "#615A4C",
+      "drop": 0.3
+    },
+    "slide": {
+      "casing": "rgba(255,255,255,0.92)",
+      "colors": [
+        "#F4C542",
+        "#E05548",
+        "#3FA0D8",
+        "#7BC47F",
+        "#C468D8",
+        "#F08A3C"
+      ],
+      "width": 1
+    },
+    "coaster": {
+      "rail": "#463A32",
+      "tie": "#D6C7B0"
+    },
+    "badge": {
+      "gate": "#D84B4B",
+      "food": "#E8862F",
+      "restroom": "#3F7FBF",
+      "shop": "#4FA36B",
+      "show": "#9A5FC0",
+      "service": "#8A8F98"
+    }
+  },
+  "prompt": "Retro JRPG overworld: purple alien wasteland outside the park, warm sand paths inside, blue-gray roads with dashed centerlines, bright teal water, chunky sprite trees"
+}

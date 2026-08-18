@@ -545,7 +545,7 @@ const ENTRIES = [
     integration: 'low',
     overlap: 'PR #471 material pipeline / visual.json land tones — Display, not Truth',
     notes:
-      'lib/adapters/poly-haven.mjs writes a committed data/display/materials.json ledger (license + provenance + file URLs); texture bytes fetch at build time and are never committed. No water category — Poly Haven has no static PBR water texture (checked directly against its API); water stays a documented gap, not a fabricated slug.',
+      'lib/adapters/poly-haven.mjs writes a committed data/display/polyhaven-materials.json catalog (license + provenance + file URLs) that materials.json surface bindings draw from; texture bytes fetch at build time and are never committed. No water category — Poly Haven has no static PBR water texture (checked directly against its API); water stays a documented gap, not a fabricated slug.',
   },
 
   // —— Open-source research adapters (builder-side) ——
