@@ -13,6 +13,8 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
 | `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Stamp after local vertical; skip GitHub UI jobs when stamp matches |
+| `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
+| `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 
