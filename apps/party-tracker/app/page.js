@@ -98,6 +98,8 @@ import {
   saveOverlay,
   unionOverlays,
 } from '@/lib/overlay';
+import { defaultQuestQueue } from '@/lib/adventure/questQueue';
+import { flushQuestQueue } from '@/lib/adventure/questSync';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -340,6 +342,24 @@ function ParkApp({ isSignedIn }) {
     if (partyRef.current?.active) runtime.current?.applyContribution?.(contribution);
     createHttpUploadAdapter().enqueue(contribution).catch(() => {});
   }, []);
+  /** E9.1: retries Side Quests' local outbox against the same upload seam
+   *  `handleContribution` uses. Bumping this after a flush is the signal
+   *  SideQuestsPanel's "N pending" label re-reads pendingCount on. */
+  const [questFlushTick, setQuestFlushTick] = useState(0);
+  const flushQuests = useCallback(() => {
+    flushQuestQueue(defaultQuestQueue(), createHttpUploadAdapter())
+      .then(({ flushed }) => {
+        if (flushed > 0) setQuestFlushTick((n) => n + 1);
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    flushQuests();
+  }, [authSession?.userId, flushQuests]);
+  useEffect(() => {
+    window.addEventListener('online', flushQuests);
+    return () => window.removeEventListener('online', flushQuests);
+  }, [flushQuests]);
   const overlayCompletionsFor = useCallback(
     (place) => completionsForPlace(displayOverlay, identityOf(place)).map(completionLine),
     [displayOverlay],
@@ -3168,6 +3188,7 @@ function ParkApp({ isSignedIn }) {
                 onWorldProgress={recordWorldQuest}
                 onContribution={handleContribution}
                 overlay={localOverlay}
+                flushTick={questFlushTick}
               />
             )}
 

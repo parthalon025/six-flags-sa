@@ -26,6 +26,11 @@ export function validateContributionPost(body) {
   const venueId = String(body.venueId || '').trim();
   const kind = String(body.kind || '').trim();
   const placeId = body.placeId != null ? String(body.placeId).trim() : undefined;
+  // Optional client-supplied id (E9.1): lets a retried upload — after a
+  // network failure the client never confirmed — land on the same row
+  // instead of minting a duplicate. Absent id keeps today's server-minted one.
+  const id = body.id != null ? String(body.id).trim() : undefined;
+  if (id !== undefined && !ID_RE.test(id)) return { ok: false, error: 'id must be a short opaque token' };
 
   if (!authorId || !ID_RE.test(authorId)) return { ok: false, error: 'authorId required' };
   if (!venueId || !ID_RE.test(venueId)) return { ok: false, error: 'venueId required' };
@@ -47,6 +52,7 @@ export function validateContributionPost(body) {
   return {
     ok: true,
     contribution: {
+      id,
       authorId,
       venueId,
       placeId,

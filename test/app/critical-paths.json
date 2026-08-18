@@ -139,6 +139,13 @@
       "check": "Side Quest submit queues locally"
     },
     {
+      "id": "e91-quest-sync",
+      "slice": "Adventure",
+      "user_action": "A queued Side Quest reaches the server once the network is back",
+      "suite": "functional",
+      "check": "queued Side Quest syncs once the network is back"
+    },
+    {
       "id": "e125-overlay",
       "slice": "Adventure",
       "user_action": "Complete a gap Side Quest and see Overlay on this phone",

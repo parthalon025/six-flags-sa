@@ -1164,6 +1164,67 @@ await check('Side Quest submit queues locally', async () => {
   return true;
 });
 
+await check('queued Side Quest syncs once the network is back', async () => {
+  // E9.1: the queue only ever fills without profileReady's authorId, so the
+  // sync itself needs the same soft-gate carve-out as the checks around it.
+  if (!profileReady) return true;
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+    timeout: 15000,
+    label: 'side quest rows',
+  });
+  const label = a.locator('.sideQuests .label').first();
+  const pendingCount = async () => {
+    const text = await label.innerText().catch(() => '');
+    const m = text.match(/(\d+)\s*pending/i);
+    return m ? Number(m[1]) : 0;
+  };
+  const before = await pendingCount();
+
+  // Block the real POST so the local queue is what proves the write, then
+  // let it through — same idiom `context.route` uses elsewhere in this file.
+  let blockPost = true;
+  await a.route('**/api/contributions', async (route) => {
+    if (blockPost && route.request().method() === 'POST') {
+      await route.abort('failed');
+      return;
+    }
+    await route.fallback();
+  });
+
+  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  await until(async () => (await heightRow.count()) > 0, { timeout: 10000, label: 'height gap quest' });
+  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  await until(async () => (await reportBtn.count()) > 0, { timeout: 10000, label: 'height Report' });
+  if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
+    await reportBtn.click();
+    await a.waitForTimeout(200);
+  }
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  const targetChip = heightRow.locator('.sideQuestChip').first();
+  if (await targetChip.count()) await targetChip.click();
+  const heightChip = heightRow.locator('.sideQuestForm .chip', { hasText: '44"' });
+  await until(async () => (await heightChip.count()) > 0, { timeout: 5000, label: '44 inch chip' });
+  await heightChip.click();
+  await heightRow.locator('.sideQuestSubmit').click();
+
+  await until(async () => (await pendingCount()) > before, {
+    timeout: 10000,
+    label: 'pending count rises while the contribution API is blocked',
+  });
+
+  blockPost = false;
+  await a.evaluate(() => window.dispatchEvent(new Event('online')));
+  await until(async () => (await pendingCount()) === 0, {
+    timeout: 15000,
+    label: 'pending count drains to 0 once the network is back',
+  });
+  await a.unroute('**/api/contributions').catch(() => {});
+  return true;
+});
+
 await check('complete a gap quest draws Overlay on the map', async () => {
   if (!profileReady) {
     // Same soft gate — Profile-only Overlay path is covered when Clerk is configured.
