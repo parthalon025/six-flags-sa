@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "note": "Tropical venue design theme — overlays any kit for this World only.",
+  "sprites": {
+    "tree": { "sprite": { "asset": "parkbound-palm-tree" }, "scale": 1.35 },
+    "slide": { "colors": ["#FF7A66", "#2FB8C9", "#FFC24D", "#57B96B", "#F45FA2", "#8B6BD9"] }
+  }
+}

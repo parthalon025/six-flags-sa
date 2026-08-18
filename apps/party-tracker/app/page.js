@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
+import VenueLoadFade from '@/components/VenueLoadFade';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
@@ -22,7 +23,8 @@ import useAppUpdate from '@/components/useAppUpdate';
 import useMovementLog from '@/components/useMovementLog';
 import { BRAND, GLYPHS, WORDS } from '@/lib/brand';
 import { INTRO_KEY, firstRunOverlay } from '@/lib/introGate';
-import { haptic, listenInviteUrls, registerPush, shouldRegisterPush } from '@/lib/native';
+import { haptic, listenInviteUrls, pushWatchCompass, registerPush, shouldRegisterPush } from '@/lib/native';
+import { loadWatchSettings, mapRotationDegrees, watchCompassPushState } from '@/lib/compass';
 import {
   SHEET_GAP,
   SHEET_LIST_AT_PX,
@@ -55,6 +57,7 @@ import {
   capture,
   locationReadyToJoin,
   locationRevokedInParty,
+  PRECISE_MAX_MS,
   view as locationView,
 } from '@/lib/location';
 import { newMemberId } from '@/lib/core/ids';
@@ -71,7 +74,6 @@ import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
-import { mapRotationDegrees } from '@/lib/compass';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
 import { navKeyOf } from '@/lib/navKey';
 import {
@@ -106,10 +108,12 @@ import {
   paletteToggleAria,
   resolvePalette,
 } from '@/lib/mapVisual';
+import { defaultQuestQueue } from '@/lib/adventure/questQueue';
+import { flushQuestQueue } from '@/lib/adventure/questSync';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
-const HeightPanel = dynamic(() => import('@/components/HeightPanel'), { ssr: false });
+const PlanPanel = dynamic(() => import('@/components/PlanPanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
 const SideQuestsPanel = dynamic(() => import('@/components/SideQuestsPanel'), { ssr: false });
 const MovementHistoryPanel = dynamic(() => import('@/components/MovementHistoryPanel'), { ssr: false });
@@ -136,7 +140,7 @@ const VIEW_TITLES = {
   route: 'Trail',
   place: 'Place',
   categories: 'On the map',
-  venues: 'Which park',
+  venues: 'Explore Worlds',
   diagnostics: 'Diagnostics',
   movement: 'Walk history',
   'watch-compass': 'Watch Compass',
@@ -187,7 +191,7 @@ const HIDDEN_CARDS_KEY = 'tracker-hidden-cards';
 const CAR_KEY = 'tracker-car';
 /** The standing cards, by the name the visitor saw on them. */
 const CARD_LABELS = {
-  restroom: 'Nearest toilet',
+  restroom: 'Nearest restroom',
   food: 'Nearest food',
   firstaid: 'First aid',
   gonow: 'GO NOW',
@@ -260,7 +264,7 @@ function ParkApp({ isSignedIn }) {
   /* The location card has had its turn — allow the explore park question even when
      there is no fix yet. */
   const [locationSettled, setLocationSettled] = useState(false);
-  /** First-run "Go to nearest park" — auto-confirms on fix instead of a second card. */
+  /** First-run "Go to nearest World" — auto-confirms on fix instead of a second card. */
   const [nearestIntent, setNearestIntent] = useState(false);
   /* Has this phone been told what the app is? null until localStorage has been
      read, which cannot happen on the server: rendering a card before the answer
@@ -348,6 +352,24 @@ function ParkApp({ isSignedIn }) {
     if (partyRef.current?.active) runtime.current?.applyContribution?.(contribution);
     createHttpUploadAdapter().enqueue(contribution).catch(() => {});
   }, []);
+  /** E9.1: retries Side Quests' local outbox against the same upload seam
+   *  `handleContribution` uses. Bumping this after a flush is the signal
+   *  SideQuestsPanel's "N pending" label re-reads pendingCount on. */
+  const [questFlushTick, setQuestFlushTick] = useState(0);
+  const flushQuests = useCallback(() => {
+    flushQuestQueue(defaultQuestQueue(), createHttpUploadAdapter())
+      .then(({ flushed }) => {
+        if (flushed > 0) setQuestFlushTick((n) => n + 1);
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    flushQuests();
+  }, [authSession?.userId, flushQuests]);
+  useEffect(() => {
+    window.addEventListener('online', flushQuests);
+    return () => window.removeEventListener('online', flushQuests);
+  }, [flushQuests]);
   const overlayCompletionsFor = useCallback(
     (place) => completionsForPlace(displayOverlay, identityOf(place)).map(completionLine),
     [displayOverlay],
@@ -1784,20 +1806,20 @@ function ParkApp({ isSignedIn }) {
 
   const setMeetPoint = useCallback((lat, lng, label) => {
     setArmMeet(false);
-    const record = { lat, lng, label: label || 'Meet-up' };
+    const record = { lat, lng, label: label || 'Rally Point' };
     if (active) {
       runtime.current?.setMeet(record);
       runtime.current?.logAction?.('meet-set', { label: record.label });
-      showToast('Meet-up shared with your party');
+      showToast('Rally set — your Party has a shared destination');
       pushNote({
         kind: 'meet',
-        title: `${identity?.name || 'Someone'} set the meet-up`,
+        title: `${identity?.name || 'Someone'} set a Rally Point`,
         body: record.label,
         focus: { kind: 'meet', label: record.label },
       });
     } else {
       setLocalMeet({ ...record, by: identity?.name || 'Someone', ts: Date.now() });
-      showToast('Meet-up marked (join a party to share it)');
+      showToast('Rally Point marked — join a Party to share it');
     }
   }, [active, identity?.name, showToast, pushNote]);
 
@@ -1816,7 +1838,7 @@ function ParkApp({ isSignedIn }) {
         POIS,
       );
       if (!candidate) {
-        showToast('No fair meet point on the walkable network');
+        showToast('No fair Rally Point here — try another Place');
         return;
       }
       setMeetPoint(candidate.lat, candidate.lng, candidate.n);
@@ -1836,8 +1858,8 @@ function ParkApp({ isSignedIn }) {
     // one change to it nobody is told about.
     pushNote({
       kind: 'meet',
-      title: `${identity?.name || 'Someone'} cleared the meet-up`,
-      body: 'There is no meeting point set now.',
+      title: `${identity?.name || 'Someone'} cleared the Rally Point`,
+      body: 'Your Party has no Rally Point right now.',
     });
   };
 
@@ -1965,7 +1987,7 @@ function ParkApp({ isSignedIn }) {
   }, [mapData, venue?.id, shippedPois, getRouting]);
 
   // A destination is held by reference, not by coordinates: a party member
-  // walks around while you are walking to them, and a meet-up can be moved or
+  // walks around while you are walking to them, and a Rally Point can be moved or
   // cleared out from under the route.
   const navTarget = useMemo(() => {
     if (!nav) return null;
@@ -1976,10 +1998,10 @@ function ParkApp({ isSignedIn }) {
     }
     if (nav.kind === 'meet') {
       if (!meet) return null;
-      return { ...nav, label: meet.label || 'Meet-up', lat: meet.lat, lng: meet.lng };
+      return { ...nav, label: meet.label || 'Rally Point', lat: meet.lat, lng: meet.lng };
     }
     // The car can be moved or forgotten out from under a route the same way a
-    // meet-up can, so it is resolved live rather than copied into `nav`.
+  // Rally Point can, so it is resolved live rather than copied into `nav`.
     if (nav.kind === 'car') {
       if (!car) return null;
       return { ...nav, label: 'Where I parked', lat: car.lat, lng: car.lng };
@@ -2199,6 +2221,61 @@ function ParkApp({ isSignedIn }) {
       }),
     [walking, northUp, heading, progress?.course],
   );
+
+  /* Live facing Compass → paired Watch (ADR-0011). No-op on web. */
+  const [watchSettingsEpoch, setWatchSettingsEpoch] = useState(0);
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const onSettings = () => setWatchSettingsEpoch((n) => n + 1);
+    window.addEventListener('parkbound-watch-compass-settings', onSettings);
+    return () => window.removeEventListener('parkbound-watch-compass-settings', onSettings);
+  }, []);
+  useEffect(() => {
+    const selectedPlace =
+      selected && Number.isFinite(selected.lat)
+        ? {
+            lat: selected.lat,
+            lng: selected.lng,
+            label: selected.n || selected.label,
+            placeId: selected.i || selected.id,
+          }
+        : null;
+    let nextTurn = null;
+    if (walking && progress?.step) {
+      const step = progress.step;
+      nextTurn =
+        typeof step.instruction === 'string'
+          ? step.instruction
+          : typeof step.text === 'string'
+            ? step.text
+            : null;
+    }
+    void pushWatchCompass(
+      watchCompassPushState({
+        me: position,
+        heading,
+        members: others,
+        meet,
+        go: walking ? navTarget : null,
+        selection: selectedPlace,
+        planNext: walking ? null : planNextPlace,
+        settings: loadWatchSettings(),
+        nextTurn,
+        raised: true,
+      }),
+    );
+  }, [
+    position,
+    heading,
+    others,
+    meet,
+    walking,
+    navTarget,
+    selected,
+    planNextPlace,
+    progress,
+    watchSettingsEpoch,
+  ]);
 
   const puck = useMemo(() => {
     if (!walking || !progress?.snapped) return null;
@@ -2431,9 +2508,14 @@ function ParkApp({ isSignedIn }) {
         icon: 'flag.fill',
       },
     ];
-    // Height rules only exist where a venue publishes them, so neither does the
-    // Plan tab that reads them (itinerary + rider height).
-    if (heights) out.push({ id: 'rides', label: 'Plan', icon: GLYPHS.plan });
+    // Plan tab: today's ordered stops, plus rider height when the venue publishes rules.
+    out.push({
+      id: 'rides',
+      label: 'Plan',
+      icon: GLYPHS.plan,
+      badge: planItems.length || null,
+      badgeLabel: planItems.length ? `${planItems.length} on the plan` : null,
+    });
     // Once there is a name, the tab wears it. "Guest" is the placeholder
     // nobody typed, and "GU" on a tab is not a person — so that one keeps the
     // Me glyph until the visitor says who they are.
@@ -2445,17 +2527,11 @@ function ParkApp({ isSignedIn }) {
       initials: named ? initialsFor(identity.name) : null,
     });
     return out;
-  }, [helpNow, active, visibleOnMap, heights, identity?.name]);
+  }, [helpNow, active, visibleOnMap, planItems.length, identity?.name]);
 
   useEffect(() => {
     tabsRef.current = tabs.map((t) => t.id);
   }, [tabs]);
-
-  // Switching to a venue with no height rules while standing on the Rides tab
-  // would leave the sheet on a screen with no way back to it.
-  useEffect(() => {
-    if (!heights && tab === 'rides') selectTab('explore');
-  }, [heights, tab, selectTab]);
 
   /* ---------- the sheet's own gestures ---------- */
 
@@ -2505,7 +2581,13 @@ function ParkApp({ isSignedIn }) {
         <div className="gate gateFirstRun" data-intro-hold="1" aria-hidden="true" />
       )}
       <AuthBridge onSession={setAuthSession} onBindUserId={handleBindProfile} />
+      <VenueLoadFade
+        venueId={venue?.id}
+        venueName={venue?.name}
+        loading={venueStatus === 'loading'}
+      />
       <ParkMap
+        key={venue?.id || 'map'}
         data={mapData}
         center={venue?.center}
         pois={POIS}
@@ -2693,7 +2775,7 @@ function ParkApp({ isSignedIn }) {
               setArmMeet((v) => !v);
               if (!armMeet) {
                 shrinkSheet(stops.peek);
-                showToast('Tap the map to drop the meet-up point');
+                showToast('Rally ready — tap the map to set your Party’s destination');
               }
             }}
             aria-label={WORDS.meetup}
@@ -3030,11 +3112,17 @@ function ParkApp({ isSignedIn }) {
                     );
                   }
                 }}
+                onShareMode={(mode) =>
+                  runtime.current?.setShareMode(
+                    mode,
+                    mode === 'precise' ? { durationMs: PRECISE_MAX_MS } : {},
+                  )
+                }
                 onCreate={createParty}
                 onJoin={joinParty}
                 onLeave={leaveParty}
                 onClearMeet={clearMeet}
-                onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Meet-up' })}
+                onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Rally Point' })}
                 onFocus={(m) => {
                   setFollow(false);
                   setFocusPoint({ lat: m.lat, lng: m.lng });
@@ -3151,11 +3239,20 @@ function ParkApp({ isSignedIn }) {
                 onRankUp={handleRankUp}
                 onContribution={handleContribution}
                 overlay={localOverlay}
+                flushTick={questFlushTick}
               />
             )}
 
             {view === null && tab === 'rides' && (
-              <HeightPanel
+              <PlanPanel
+                rides={partyRides || {}}
+                plan={planItems}
+                onSetPlan={commitPlan}
+                onWalkStop={(s) => {
+                  const poi = POIS.find((p) => p.i === s.placeId || p.id === s.placeId);
+                  if (poi) startNav(poi);
+                }}
+                hasHeights={heights}
                 height={height}
                 withAdult={withAdult}
                 onHeight={(h) => {
@@ -3335,7 +3432,6 @@ function ParkApp({ isSignedIn }) {
                             .then(() => {
                               setSelected(null);
                               setFollow(false);
-                              showToast(`Showing ${v.name}`);
                             })
                             .catch((err) => showToast(err?.message || 'Could not load that map.'));
                         }}
@@ -3507,7 +3603,7 @@ function ParkApp({ isSignedIn }) {
             if (venueConfirmed || venuePinned) {
               setParkAsked(true);
               setGateOpen(false);
-              if (venue?.name) showToast(`Browsing ${venue.name}. Change parks under Me → Which park.`);
+              if (venue?.name) showToast(`Exploring ${venue.name}. Switch Worlds from Me → Explore Worlds.`);
             }
           }}
         />

@@ -121,7 +121,7 @@ assert.match(notes, /HTTPS/i);
 assert.match(notes, /parkbound_profile_annual/);
 assert.match(notes, /Manually release/i);
 assert.match(notes, /routing_app_coverage\.geojson/);
-assert.match(notes, /Continue as guest/i);
+assert.match(notes, /tap Guest/i);
 
 const fastfile = read('fastlane/Fastfile');
 assert.match(fastfile, /routing_app_coverage:/);
@@ -130,6 +130,26 @@ assert.match(fastfile, /export_compliance_uses_encryption:\s*true/);
 assert.match(fastfile, /IOS_AUTOMATIC_RELEASE.*false/);
 assert.match(fastfile, /def ios_submission_information/);
 assert.match(fastfile, /def ios_routing_app_coverage/);
+// Store binaries → ios must not require Google Play secrets (Actions sets iOS only).
+assert.match(fastfile, /def load_ios_deployment_env!/);
+assert.match(fastfile, /def load_android_deployment_env!/);
+assert.match(
+  fastfile,
+  /SharedValues::PLATFORM_NAME/,
+  'before_all must pick iOS vs Android env from the active platform',
+);
+// gym/build_app has no api_key — ASC key is for upload_to_testflight / deliver only.
+const betaBuild = fastfile.slice(fastfile.indexOf('desc "Build and upload a TestFlight beta"'));
+assert.doesNotMatch(
+  betaBuild.slice(0, betaBuild.indexOf('upload_to_testflight')),
+  /build_app\([\s\S]*api_key:/,
+  'ios beta build_app must not pass api_key',
+);
+assert.match(
+  fastfile,
+  /DEVELOPMENT_TEAM=#\{ENV\.fetch\("IOS_TEAM_ID"\)\}/,
+  'CI automatic signing needs the team id on gym xcargs',
+);
 
 const productionBlock = fastfile.slice(fastfile.indexOf('lane :production'));
 assert.match(

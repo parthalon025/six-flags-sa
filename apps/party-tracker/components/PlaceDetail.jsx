@@ -12,9 +12,10 @@ import { entranceMeta } from '@/lib/entrance';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { GLYPHS, WORDS } from '@/lib/brand';
 import { identityOf, placeNav } from '@/lib/venue/ids';
+import { placeContext } from '@/lib/venue/placeContext';
 
 /**
- * Walk / meet-up / Plan — the same glyphs as the map FAB and the Plan tab,
+ * Walk / Rally / Plan — the same glyphs as the map FAB and the Plan tab,
  * so the actions can be learned as icons rather than re-read as words.
  */
 export function PlaceActions({ poi, onNavigate, onSetMeet, onAddToPlan = null }) {
@@ -52,7 +53,7 @@ export function PlaceActions({ poi, onNavigate, onSetMeet, onAddToPlan = null })
 
 /**
  * The open face of a place: notes, camp checklist, phone, ride status, and the
- * two things you came here to do — walk there, or make it the meet-up.
+ * two things you came here to do — walk there, or Rally the Party there.
  * Shared by the list's expanded row and the sheet that opens from a map tap.
  */
 export function PlaceDetailBody({
@@ -169,6 +170,7 @@ const VERDICT = {
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
   advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
   not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
+  unknown: { label: 'Unknown', cls: 'unknown', icon: null },
 };
 
 /**
@@ -197,6 +199,7 @@ export default function PlaceDetail({
 }) {
   const palette = paletteFor(theme);
   const venue = useVenueSelector((s) => s.venue);
+  const map = useVenueSelector((s) => s.map);
 
   const status = useMemo(() => {
     if (!poi) return null;
@@ -219,7 +222,11 @@ export default function PlaceDetail({
   const d = me ? distance(me.lat, me.lng, poi.lat, poi.lng) : null;
   const dir = me && d != null ? cardinal(bearing(me.lat, me.lng, poi.lat, poi.lng)) : null;
   const showStatus = Boolean(status?.label);
-  const subtitle = [isRide ? heightLabel(poi) : CATEGORY_LABELS[poi.c] || poi.c, poi.a]
+  const context = placeContext(poi, venue, map);
+  const subtitle = [
+    isRide ? heightLabel(poi) : CATEGORY_LABELS[poi.c] || poi.c,
+    context ? `${context.kind === 'zone' ? WORDS.zone : WORDS.world} · ${context.name}` : null,
+  ]
     .filter(Boolean)
     .join(' · ');
 
@@ -264,9 +271,11 @@ export default function PlaceDetail({
                     : '',
                   status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
                   status.source === 'weather' ? 'guess' : '',
+                  status.stale ? 'stale' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                title={status.detail || undefined}
               >
                 <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {status.label}

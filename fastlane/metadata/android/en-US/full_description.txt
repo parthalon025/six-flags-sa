@@ -1,15 +1,15 @@
-Park Bound is a drawn map of the park you’re standing in — not a generic street map with a pin dropped on the gate.
+Park Bound: Explore introduces Parkbound — a living map built by the community for the World you are exploring, not a generic street map with a pin dropped on the gate.
 
-Pick a Venue. Toilets, food, and rides are Places you can open and walk to on guest paths. Height rules show who in your group can ride. After the first visit, the map and a lot of the day still work offline.
+Choose a World. Rides, food, restrooms, and services are Places you can open and walk to on guest paths. Real OpenStreetMap areas become Zones where they exist. Height rules show who in your group can ride. After the first visit, the map and a lot of the day still work offline.
 
-Start a Party when the family wants to stick together. Share an Invite — QR, link, or six-character code. Everyone on the roster sees Location while you’re inside the park: where each phone is, and which Place they’re at when they’re actually there. Set a Meet when someone says “we’ll regroup at the fountain.”
+Start a Party when your group wants to stick together. Share an Invite — QR, link, or six-character code. Everyone on the roster sees Location while you’re inside the park: where each phone is, and which Place they’re at when they’re actually there. Rally the Party when someone says “we’ll regroup at the fountain.”
 
 Mark what you’re seeing while you walk — a ride running, a long line, something closed — so your Party knows before they get there.
 
-Side Quests send you to a spot on the ground to confirm what the shipped map still needs: a height sign, a restroom that isn’t drawn yet, a path that’s missing. That work can improve the Venue for the next visit.
+Side Quests send you to a spot on the ground to confirm what the living map still needs: a height sign, a restroom that isn’t drawn yet, a path that’s missing. That work can improve the World for the next visit.
 
 You don’t need a Profile to browse or join by name. Continue as a guest and use the map. Sign in with Apple or Google when you want progress and Managed Guests saved on this phone.
 
-Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s are ready now. More Venues follow the same builder.
+Kings Island, Six Flags Fiesta Texas, Cedar Point, and Big Kahuna’s are ready now. More Worlds follow the same builder.
 
 Explore more. Stress less.

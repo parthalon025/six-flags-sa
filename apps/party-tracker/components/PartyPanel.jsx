@@ -6,7 +6,7 @@ import Icon from '@/components/Icon';
 import { GLYPHS, WORDS } from '@/lib/brand';
 import { shareInvite } from '@/lib/native';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
-import { locationCopy, placeAt } from '@/lib/location';
+import { PRECISE_MAX_MS, effectiveShareMode, locationCopy, placeAt } from '@/lib/location';
 import { usePois } from '@/lib/venue/useVenue';
 import { heightIsStale } from '@party-tracker/shared/schemas.js';
 
@@ -19,7 +19,7 @@ const STATUSES = [
   'In line',
   'Eating',
   'Restroom',
-  'Heading to meet-up',
+  'Rallying',
   'Waiting here',
 ];
 const HELP = 'NEED HELP';
@@ -86,6 +86,7 @@ export default function PartyPanel({
   hosting,
   status,
   onStatus,
+  onShareMode = null,
   onCreate,
   onJoin,
   onLeave,
@@ -231,6 +232,16 @@ export default function PartyPanel({
   /* Rounded up, so the last fifty seconds read "1 min left" rather than "0". */
   const joinsLeft = joinsOpenUntil > now ? Math.ceil((joinsOpenUntil - now) / 60000) : 0;
 
+  /* E4.1: precise sharing is time-boxed and reverts to Approximate on its own
+     once shareUntil passes — effectiveShareMode is the same call the runtime
+     makes, so the chip never disagrees with what is actually on the wire. */
+  const self = members.find((m) => m.id === myId) || null;
+  const shareMode = effectiveShareMode(self, now);
+  const shareLeft =
+    shareMode === 'precise' && self?.shareUntil > now
+      ? Math.ceil((self.shareUntil - now) / 60000)
+      : 0;
+
   /* This is a phone, so the sheet every other app uses to send a link is the
      right thing to open. Clipboard is the fallback, and either way it says so —
      a copy that reports nothing is indistinguishable from one that failed, and
@@ -364,7 +375,7 @@ export default function PartyPanel({
                         : stale
                           ? 'On the way'
                           : meet && located
-                            ? 'Meet here'
+                            ? 'Rally here'
                             : 'Together'
                     }
                     aria-hidden="true"
@@ -567,7 +578,35 @@ export default function PartyPanel({
           : 'Buzzes every phone in the party and puts your name at the top of their screen.'}
       </p>
 
-      <div className="label">Meet-Up Point</div>
+      <div className="label">
+        Your Location
+        {shareMode === 'precise' && shareLeft > 0 ? (
+          <span className="labelRight">{shareLeft} min left</span>
+        ) : null}
+      </div>
+      <div className="chips wrap">
+        <button
+          type="button"
+          className={`chip ${shareMode === 'approx' ? 'on' : ''}`}
+          onClick={() => onShareMode?.('approx')}
+        >
+          Approximate
+        </button>
+        <button
+          type="button"
+          className={`chip ${shareMode === 'precise' ? 'on' : ''}`}
+          onClick={() => onShareMode?.('precise')}
+        >
+          {`Precise · ${Math.round(PRECISE_MAX_MS / 60000)} min`}
+        </button>
+      </div>
+      <p className="fine" style={{ marginTop: 0 }}>
+        {shareMode === 'precise'
+          ? 'Sharing your exact spot with the party — it reverts to Approximate on its own.'
+          : 'Approximate rounds your dot for the family map. Precise shares your exact spot for 30 minutes.'}
+      </p>
+
+      <div className="label">Rally Point</div>
       {onSuggestReunification ? (
         <button
           type="button"
@@ -576,7 +615,7 @@ export default function PartyPanel({
           disabled={reunifyBusy || sorted.length < 2}
           onClick={onSuggestReunification}
         >
-          {reunifyBusy ? 'Finding fair point…' : 'Suggest reunification point'}
+          {reunifyBusy ? 'Finding a fair Rally Point…' : 'Suggest a Rally Point'}
         </button>
       ) : null}
       {meet ? (
@@ -619,8 +658,7 @@ export default function PartyPanel({
         </div>
       ) : (
         <p className="fine">
-          None set. Tap the pin button on the map then tap a spot, or open a place in Explore and
-          make it the meet-up.
+          No Rally Point yet. Tap the pin button on the map, then choose a Place in Explore to Rally the Party.
         </p>
       )}
     </div>

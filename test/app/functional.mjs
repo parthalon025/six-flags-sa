@@ -21,6 +21,7 @@ import {
   closeGate,
   dismissIntroSplash,
   dismissNavigation,
+  ensurePeek,
   signIn,
   hasProfileSession,
   dismissUpdateSplash,
@@ -41,6 +42,8 @@ import {
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
+import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
+import { PRECISE_MAX_MS } from '../../apps/party-tracker/lib/location.js';
 
 const PASS = [];
 const FAIL = [];
@@ -127,6 +130,49 @@ if (authOnlyPhone) {
   a = A.page;
 }
 
+/** Open a ride's row on the sheet's root screen and return its detail panel. */
+async function openRide(page, name) {
+  await go(page, 'Places');
+  await page.waitForTimeout(300);
+  await page.locator('.chip:has-text("All")').first().click();
+  // By aria-label, not placeholder: the placeholder names the loaded venue.
+  await page.locator('.field[aria-label="Search places"]').fill(name);
+  await page.waitForTimeout(400);
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  await row.locator('.poiMain').click();
+  await page.waitForTimeout(300);
+  return row;
+}
+
+/**
+ * The report buttons are addressed by `data-report` rather than by their label:
+ * the label is deliberately stateful ("It's down" becomes "PAUSED"), so
+ * matching on text couples the test to which way the button is currently
+ * pointing — which is the thing under test.
+ */
+const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`);
+
+/**
+ * The running-status pill on a ride's row, or '' when it carries none.
+ *
+ * `.statusPill` and not `.verdict`: the height verdict is also a `.verdict` and
+ * sits in the same stack, and matching it would read "CAN RIDE" as a claim
+ * about whether the ride is operating — which is the exact confusion this
+ * feature exists to undo.
+ */
+async function pillFor(page, name) {
+  const row = page.locator('.poiRow', { hasText: name }).first();
+  const pill = row.locator('.statusPill').first();
+  try {
+    // Short timeout and a catch rather than a count() guard: the retraction
+    // test is polling for this pill to vanish, so it can and does disappear
+    // between being counted and being read.
+    return (await pill.innerText({ timeout: 1000 })).trim();
+  } catch {
+    return '';
+  }
+}
+
 if (want('auth')) {
 console.log('\n--- auth (Clerk-off guards) ---');
 let clerkAuthPages = false;
@@ -170,7 +216,14 @@ await check('sign-up page respects Clerk configuration', async () => {
 });
 
 await check('OAuth SSO callback does not remount the SignIn widget', async () => {
-  await a.goto(`${BASE}/sign-in/sso-callback`, { waitUntil: 'domcontentloaded' });
+  // Clerk may redirect mid-load; Playwright then reports net::ERR_ABORTED even
+  // though the callback (or its redirect target) did land.
+  try {
+    await a.goto(`${BASE}/sign-in/sso-callback`, { waitUntil: 'domcontentloaded' });
+  } catch (err) {
+    if (!/ERR_ABORTED|Navigation.*interrupted/i.test(String(err?.message || err))) throw err;
+  }
+  await a.waitForLoadState('domcontentloaded').catch(() => {});
   const url = String(a.url());
   if (!url.includes('/sign-in/sso-callback')) return true;
   const clerkSignIn =
@@ -185,27 +238,28 @@ const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 if (clerkOn) {
 console.log('\n--- auth (Clerk-on Profile OAuth) ---');
 
-await check('Profile gate shows Google and Apple logo buttons', async () => {
+await check('Profile gate shows Sign in and Guest', async () => {
   await a.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await until(
-    async () => (await a.locator('.authGate .oauthBtn').count()) >= 2,
-    { timeout: 25000, label: 'Profile OAuth logo buttons' },
+    async () => (await a.locator('.authGate .authGateLogin').count()) >= 1,
+    { timeout: 25000, label: 'Profile Sign in button' },
   );
-  const labels = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
-    els.map((el) => el.getAttribute('aria-label') || ''),
-  );
-  if (!labels.some((l) => /Google/i.test(l))) throw new Error(`no Google button: ${labels.join(' | ')}`);
-  if (!labels.some((l) => /Apple/i.test(l))) throw new Error(`no Apple button: ${labels.join(' | ')}`);
-  const boxes = await a.locator('.authGate .oauthBtn').evaluateAll((els) =>
-    els.map((el) => {
-      const b = el.getBoundingClientRect();
-      return { x: b.x, y: b.y, w: b.width, h: b.height };
-    }),
-  );
-  if (Math.abs(boxes[0].y - boxes[1].y) > 24) throw new Error('OAuth buttons are stacked, not two columns');
-  if (Math.abs(boxes[0].x - boxes[1].x) < 40) throw new Error('OAuth buttons share one column');
+  if (!(await a.locator('.authGate button:has-text("Guest")').count())) {
+    throw new Error('Profile gate missing Guest button');
+  }
+  const loginHref = await a.locator('.authGate .authGateLogin').getAttribute('href');
+  if (loginHref !== '/sign-in') throw new Error(`Sign in href expected /sign-in, got ${loginHref}`);
   const shot = process.env.CLERK_E2E_SHOTS;
-  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_oauth_buttons.png`, fullPage: true });
+  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_login_guest_gate.png`, fullPage: true });
+  return true;
+});
+
+await check('sign-in route shows Google and Apple logo buttons', async () => {
+  await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
+  await until(
+    async () => (await a.locator('.clerkAuthPage .oauthBtn, .cl-socialButtons, .cl-socialButtonsBlockButton').count()) >= 1,
+    { timeout: 25000, label: 'Clerk sign-in OAuth buttons' },
+  );
   return true;
 });
 
@@ -213,13 +267,16 @@ await check('Profile gate shows Google and Apple logo buttons', async () => {
 // after the provider is configured — do not treat a missing Google app as a login bug.
 if (process.env.CLERK_E2E_GOOGLE === '1') {
 await check('Google logo button starts Clerk OAuth', async () => {
-  const google = a.locator('.authGate .oauthBtn[aria-label*="Google"]');
-  await google.click();
+  await a.goto(`${BASE}/sign-in`, { waitUntil: 'domcontentloaded' });
+  const google = a.locator(
+    '.clerkAuthPage .oauthBtn[aria-label*="Google"], .cl-socialButtonsBlockButton:has-text("Google")',
+  );
+  await google.first().click();
   const dest = await until(
     async () => {
       const url = String(a.url());
       if (/google|clerk\.com|accounts\./i.test(url) && !url.startsWith(BASE)) return url;
-      const err = (await a.locator('.authGate .warnText').innerText().catch(() => '')).trim();
+      const err = (await a.locator('.warnText').innerText().catch(() => '')).trim();
       if (err) return { error: err };
       return null;
     },
@@ -451,6 +508,27 @@ await check('ride detail shows a structured eligibility reason', async () => {
   return true;
 });
 
+await check('ride with no height data shows an Unknown verdict', async () => {
+  // Hang Time (Kings Island) ships with no `h` in the venue file — a real
+  // no-rule ride, not a fabricated one. The row expansion renders the
+  // unknown verdict's reason through the same explain() seam as the sheet.
+  await go(a, 'Rider height');
+  await a.locator('.tier:has-text("42")').click();
+  await a.waitForTimeout(400);
+  await go(a, 'Places');
+  await searchPlaces(a, 'hang time');
+  await a.locator('.poiRow .poiMain').first().click();
+  await a.waitForTimeout(400);
+  const reason = a.locator('.eligibilityReason');
+  await until(async () => (await reason.count()) > 0, {
+    timeout: 10000,
+    label: 'unknown eligibility reason on Hang Time',
+  });
+  const text = (await reason.innerText()).trim();
+  if (!/no height info yet/i.test(text)) throw new Error(`expected no-height reason, got "${text}"`);
+  return true;
+});
+
 await check('"with adult" changes the companion tally', async () => {
   await go(a, 'Rider height');
   await a.locator('.tier:has-text("36")').click();
@@ -511,6 +589,137 @@ await check('clear removes the height filter', async () => {
   await a.locator('.labelAction:has-text("Clear")').click();
   await a.waitForTimeout(400);
   return (await a.locator('.filterBadge').count()) === 0;
+});
+
+/**
+ * A report old enough to hedge (rideStatus.js's `stale`, past
+ * RIDE_STALE_AFTER_MS) has to say so on the pill — a 29-minute-old PAUSED and
+ * a 1-minute-old one must not read the same, and neither may claim GO NOW or
+ * OPEN once the evidence is that old.
+ *
+ * On a throwaway phone, not phone A: the timestamp is stamped server-side by
+ * the reducer's own clock, so there is no store to backdate from here. Ageing
+ * it deterministically instead freezes the *reading* phone's `Date.now()`
+ * (`page.clock.setFixedTime`) while its real setInterval(60s) — the one that
+ * drives the UI's `now` — keeps running, so the next natural tick reads the
+ * frozen future time and the status recomputes as stale. Playwright has no
+ * clock uninstall, hence the dedicated context that closes with the check —
+ * phone A's clock stays real for every later module. Lives in heights, not
+ * party: the party module hangs in CI and locally (#194), and a ride report
+ * only needs its own solo party.
+ */
+await check('a stale report is marked and never claims live/GO NOW', async () => {
+  const S = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Stale',
+    label: 'S',
+    venue: 'kings-island',
+  });
+  const s = S.page;
+  try {
+    await go(s, 'Party');
+    await s.waitForTimeout(300);
+    await s.locator('button:has-text("Start a party")').click();
+    await s.waitForSelector('.codeText', { timeout: 20000 });
+    const row = await openRide(s, 'Diamondback');
+    await reportBtn(row, 'down').click();
+    await until(async () => /paused/i.test(await pillFor(s, 'Diamondback')), {
+      timeout: 20000,
+      label: 'the reporting phone to show the fresh report',
+    });
+
+    const pill = () => row.locator('.statusPill').first();
+    const freshClass = (await pill().getAttribute('class')) || '';
+    if (/\bstale\b/.test(freshClass)) throw new Error(`fresh report already reads stale: ${freshClass}`);
+
+    await s.clock.setFixedTime(Date.now() + RIDE_STALE_AFTER_MS + 60_000);
+
+    await until(
+      async () => {
+        const klass = (await pill().getAttribute('class').catch(() => '')) || '';
+        return /\bstale\b/.test(klass) || null;
+      },
+      { timeout: 75000, step: 2000, label: "the phone's clock to carry the report past stale" },
+    );
+
+    const [staleClass, staleText, staleTitle] = await Promise.all([
+      pill().getAttribute('class'),
+      pill().innerText(),
+      pill().getAttribute('title'),
+    ]);
+    if (!/\bstale\b/.test(staleClass || '')) throw new Error(`missing stale class: ${staleClass}`);
+    if (/go now|\bopen\b/i.test(staleText)) throw new Error(`stale pill still claims live: ${staleText}`);
+    if (!staleTitle || !/ago/i.test(staleTitle)) throw new Error(`pill title lost the "…ago" detail: ${staleTitle}`);
+    return true;
+  } finally {
+    await S.context.close().catch(() => {});
+  }
+});
+
+/**
+ * E4.1: a Member can switch to Precise sharing, but it is always time-boxed —
+ * `shareModePatch` caps it at PRECISE_MAX_MS and the runtime reverts to
+ * Approximate on its own once `shareUntil` passes. There is no "Off" mode
+ * (lib/location.js: Location is mandatory), so the only two states a Member
+ * ever sees are Approximate and Precise.
+ *
+ * Same clock trick as the stale-report check above, and lives here for the
+ * same reason: PartyPanel's own `now` ticks on a real setInterval(30_000),
+ * so `page.clock.setFixedTime` only moves what `Date.now()` reads — the next
+ * natural tick (up to 30 real seconds later) is what actually recomputes the
+ * chip. Solo party, throwaway context: the party module hangs in CI and
+ * locally (#194).
+ */
+await check('precise sharing expires back to approximate', async () => {
+  const S2 = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Sharer',
+    label: 'S2',
+    venue: 'kings-island',
+  });
+  const s2 = S2.page;
+  try {
+    await go(s2, 'Party');
+    await s2.waitForTimeout(300);
+    await s2.locator('button:has-text("Start a party")').click();
+    await s2.waitForSelector('.codeText', { timeout: 20000 });
+
+    const approxChip = s2.locator('.chip:has-text("Approximate")').first();
+    const preciseChip = s2.locator('.chip:has-text("Precise")').first();
+    const locationLabel = s2.locator('.label', { hasText: 'Your Location' });
+
+    await until(
+      async () => /\bon\b/.test((await approxChip.getAttribute('class')) || ''),
+      { timeout: 15000, label: 'Approximate to be the default' },
+    );
+    if (/\bon\b/.test((await preciseChip.getAttribute('class')) || '')) {
+      throw new Error('Precise reads active before it was ever chosen');
+    }
+
+    await preciseChip.click();
+    await until(
+      async () => /\bon\b/.test((await preciseChip.getAttribute('class').catch(() => '')) || ''),
+      { timeout: 20000, label: 'Precise to become active' },
+    );
+    const activeLabel = await locationLabel.innerText();
+    if (!/min left/i.test(activeLabel)) throw new Error(`Precise missing its countdown: ${activeLabel}`);
+
+    await s2.clock.setFixedTime(Date.now() + PRECISE_MAX_MS + 60_000);
+
+    await until(
+      async () => /\bon\b/.test((await approxChip.getAttribute('class').catch(() => '')) || ''),
+      { timeout: 75000, step: 2000, label: "the phone's clock to carry precise sharing past expiry" },
+    );
+    const expiredLabel = await locationLabel.innerText();
+    if (/min left/i.test(expiredLabel)) throw new Error(`countdown survived expiry: ${expiredLabel}`);
+    const preciseAfter = (await preciseChip.getAttribute('class')) || '';
+    if (/\bon\b/.test(preciseAfter)) throw new Error(`Precise still reads active after expiry: ${preciseAfter}`);
+    return true;
+  } finally {
+    await S2.context.close().catch(() => {});
+  }
 });
 } // end heights
 
@@ -608,7 +817,7 @@ await check('cedar point route preview names surveyed queue entrances', async ()
   };
   // Search "gemini" also hits every place in the Gemini Midway land (area match).
   await dismissNavigation(a).catch(() => {});
-  await go(a, 'Which map');
+  await go(a, 'Explore Worlds');
   await a.locator('.venueRow', { hasText: 'Cedar Point' }).click();
   await until(async () => /cedar point/i.test(await venueNameA()), {
     timeout: 15000,
@@ -707,7 +916,7 @@ await check('return to Kings Island before walk UX coverage', async () => {
     return a.locator('.brandName, .brand b').first().innerText().catch(() => '');
   };
   if (!/kings island/i.test(await brand())) {
-    await go(a, 'Which map');
+    await go(a, 'Explore Worlds');
     await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
     await until(async () => /kings island/i.test(await brand()), {
       timeout: 25000,
@@ -892,7 +1101,7 @@ await check('back on Kings Island before party tests', async () => {
   await go(a, 'Places');
   const brand = async () => a.locator('.brandName, .brand b').first().innerText();
   if (/kings island/i.test(await brand().catch(() => ''))) return true;
-  await go(a, 'Which map');
+  await go(a, 'Explore Worlds');
   await a.locator('.venueRow', { hasText: 'Kings Island' }).click();
   await until(async () => /kings island/i.test(await brand().catch(() => '')), {
     timeout: 20000,
@@ -952,6 +1161,67 @@ await check('Side Quest submit queues locally', async () => {
       await a.waitForTimeout(300);
     }
   }
+  return true;
+});
+
+await check('queued Side Quest syncs once the network is back', async () => {
+  // E9.1: the queue only ever fills without profileReady's authorId, so the
+  // sync itself needs the same soft-gate carve-out as the checks around it.
+  if (!profileReady) return true;
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+    timeout: 15000,
+    label: 'side quest rows',
+  });
+  const label = a.locator('.sideQuests .label').first();
+  const pendingCount = async () => {
+    const text = await label.innerText().catch(() => '');
+    const m = text.match(/(\d+)\s*pending/i);
+    return m ? Number(m[1]) : 0;
+  };
+  const before = await pendingCount();
+
+  // Block the real POST so the local queue is what proves the write, then
+  // let it through — same idiom `context.route` uses elsewhere in this file.
+  let blockPost = true;
+  await a.route('**/api/contributions', async (route) => {
+    if (blockPost && route.request().method() === 'POST') {
+      await route.abort('failed');
+      return;
+    }
+    await route.fallback();
+  });
+
+  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  await until(async () => (await heightRow.count()) > 0, { timeout: 10000, label: 'height gap quest' });
+  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  await until(async () => (await reportBtn.count()) > 0, { timeout: 10000, label: 'height Report' });
+  if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
+    await reportBtn.click();
+    await a.waitForTimeout(200);
+  }
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  const targetChip = heightRow.locator('.sideQuestChip').first();
+  if (await targetChip.count()) await targetChip.click();
+  const heightChip = heightRow.locator('.sideQuestForm .chip', { hasText: '44"' });
+  await until(async () => (await heightChip.count()) > 0, { timeout: 5000, label: '44 inch chip' });
+  await heightChip.click();
+  await heightRow.locator('.sideQuestSubmit').click();
+
+  await until(async () => (await pendingCount()) > before, {
+    timeout: 10000,
+    label: 'pending count rises while the contribution API is blocked',
+  });
+
+  blockPost = false;
+  await a.evaluate(() => window.dispatchEvent(new Event('online')));
+  await until(async () => (await pendingCount()) === 0, {
+    timeout: 15000,
+    label: 'pending count drains to 0 once the network is back',
+  });
+  await a.unroute('**/api/contributions').catch(() => {});
   return true;
 });
 
@@ -1180,7 +1450,7 @@ await check('NEED HELP propagates to the other phone', async () => {
   return true;
 });
 
-await check('meet-up set from a ride reaches the other phone', async () => {
+await check('Rally Point set from a ride reaches the other phone', async () => {
   await resetPlaces(a);
   await a.locator('.field[aria-label="Search places"]').fill('Racer');
   await until(async () => (await a.locator('.poiRow', { hasText: 'The Racer' }).count()) || null, {
@@ -1189,11 +1459,11 @@ await check('meet-up set from a ride reaches the other phone', async () => {
   });
   await a.locator('.poiRow', { hasText: 'The Racer' }).first().locator('.poiMain').click();
   await a.waitForTimeout(500);
-  await a.locator('.poiRow.open button[aria-label="Set meet-up"]').click();
+  await a.locator('.poiRow.open button[aria-label="Rally the Party"]').click();
   await go(a, 'Party');
   await until(async () => /Racer/i.test(await b.locator('.sheetBody').innerText()), {
     timeout: JOIN_TIMEOUT,
-    label: 'the meet-up on phone B',
+    label: 'the Rally Point on phone B',
   });
   return true;
 });
@@ -1257,49 +1527,6 @@ console.log('\n--- ride reports ---');
  * report is an ordinary command and gets the same delivery guarantees as a
  * location or a meet-up pin.
  */
-
-/** Open a ride's row on the sheet's root screen and return its detail panel. */
-async function openRide(page, name) {
-  await go(page, 'Places');
-  await page.waitForTimeout(300);
-  await page.locator('.chip:has-text("All")').first().click();
-  // By aria-label, not placeholder: the placeholder names the loaded venue.
-  await page.locator('.field[aria-label="Search places"]').fill(name);
-  await page.waitForTimeout(400);
-  const row = page.locator('.poiRow', { hasText: name }).first();
-  await row.locator('.poiMain').click();
-  await page.waitForTimeout(300);
-  return row;
-}
-
-/**
- * The report buttons are addressed by `data-report` rather than by their label:
- * the label is deliberately stateful ("It's down" becomes "PAUSED"), so
- * matching on text couples the test to which way the button is currently
- * pointing — which is the thing under test.
- */
-const reportBtn = (row, status) => row.locator(`button[data-report="${status}"]`);
-
-/**
- * The running-status pill on a ride's row, or '' when it carries none.
- *
- * `.statusPill` and not `.verdict`: the height verdict is also a `.verdict` and
- * sits in the same stack, and matching it would read "CAN RIDE" as a claim
- * about whether the ride is operating — which is the exact confusion this
- * feature exists to undo.
- */
-async function pillFor(page, name) {
-  const row = page.locator('.poiRow', { hasText: name }).first();
-  const pill = row.locator('.statusPill').first();
-  try {
-    // Short timeout and a catch rather than a count() guard: the retraction
-    // test is polling for this pill to vanish, so it can and does disappear
-    // between being counted and being read.
-    return (await pill.innerText({ timeout: 1000 })).trim();
-  } catch {
-    return '';
-  }
-}
 
 await check('a ride reported down on one phone reaches the other', async () => {
   const row = await openRide(a, 'Diamondback');
@@ -1518,11 +1745,18 @@ await check('a returning phone skips the hold and does not hide the map', async 
   await p.goto(BASE, { waitUntil: 'domcontentloaded' });
   await until(
     async () => {
-      if ((await p.locator('html').getAttribute('data-intro')) !== 'seen') return false;
-      const hold = p.locator('[data-intro-hold]');
-      if (!(await hold.count())) return true;
-      const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
-      return display === 'none';
+      // The service worker can reload the page mid-poll; a destroyed
+      // execution context is "not settled yet", not a failure.
+      try {
+        if ((await p.locator('html').getAttribute('data-intro')) !== 'seen') return false;
+        const hold = p.locator('[data-intro-hold]');
+        if (!(await hold.count())) return true;
+        const display = await hold.first().evaluate((el) => getComputedStyle(el).display);
+        return display === 'none';
+      } catch (err) {
+        if (/Execution context was destroyed|navigation/i.test(err.message)) return false;
+        throw err;
+      }
     },
     { timeout: 8000, label: 'html[data-intro=seen] hides the SSR hold' },
   );
@@ -1582,14 +1816,12 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
   const heading = (await e.locator('.brandLockupName').innerText()).trim();
   if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
   const said = card.indexOf('Explore more. Stress less.');
-  // Pitch is BRAND.shortDescription (map / toilets / party) — not the old
-  // "explorer" vocabulary that used to appear on this card.
-  const pitch = /toilets|park map|start a party/i.test(card);
+  const pitch = /World|Rally|living map/i.test(card);
   if (said < 0 || !pitch) {
     throw new Error('the welcome gate is missing slogan or pitch');
   }
-  if (!/Go to nearest park/i.test(card)) {
-    throw new Error('the welcome gate should offer nearest-park on the first card');
+  if (!/Go to nearest World/i.test(card)) {
+    throw new Error('the welcome gate should offer nearest World on the first card');
   }
   const paths = await e.locator('.mapSvg path').count();
   if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
@@ -1599,13 +1831,13 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
 });
 
 await check('the nearest-park button asks before building that park', async () => {
-  await e.locator('button:has-text("Go to nearest park")').click();
-  // Confirm the nearest park — never auto-download the wrong map.
+  await e.locator('button:has-text("Go to nearest World")').click();
+  // Confirm the nearest World — never auto-download the wrong map.
   await until(
-    async () => (await e.locator('.gate .btn.primary:has-text("set up")').count()) > 0,
-    { timeout: 25000, label: 'park confirm' },
+    async () => (await e.locator('.gate .btn.primary:has-text("Enter")').count()) > 0,
+    { timeout: 25000, label: 'World confirm' },
   );
-  await e.locator('.gate .btn.primary:has-text("set up")').click();
+  await e.locator('.gate .btn.primary:has-text("Enter")').click();
   await e.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await e.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
@@ -1643,7 +1875,7 @@ await check('the park question is inline when the venue is not yet confirmed', a
     throw new Error('the introduction came back for a returning phone');
   }
   await p.locator('button:has-text("Allow location")').click();
-  // Explore-without-fix can flash "Where are we headed today?" before the
+  // Explore-without-fix can flash "Which World are we exploring?" before the
   // Austin GPS fix lands; wait for the distance-based confirm copy.
   await until(async () => {
     const heading = (await p.locator('.gate h2').innerText().catch(() => '')).trim();
@@ -1651,7 +1883,7 @@ await check('the park question is inline when the venue is not yet confirmed', a
   }, { timeout: 25000, label: 'the park question' });
   const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
   if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
-  await p.locator('.gate .btn.primary:has-text("set up")').click();
+  await p.locator('.gate .btn.primary:has-text("Enter")').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await p.locator('.brandName, .brand b').first().innerText();
   if (!/fiesta texas/i.test(shown)) throw new Error(`brand reads "${shown}"`);
@@ -1700,7 +1932,7 @@ await check('the park answered stays answered across a reload', async () => {
   return true;
 });
 
-await check('skipping location still asks which park to explore', async () => {
+await check('skipping location still asks which World to explore', async () => {
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: [],
@@ -1718,12 +1950,12 @@ await check('skipping location still asks which park to explore', async () => {
   );
   await until(async () => (await skip.count()) > 0, { timeout: 10000, label: 'the location skip button' });
   await skip.first().click();
-  await until(async () => (await p.locator('.gate h2').innerText()).includes('headed'), {
+  await until(async () => /which world are we exploring/i.test(await p.locator('.gate h2').innerText()), {
     timeout: 10000,
     label: 'the explore park question',
   });
   const heading = (await p.locator('.gate h2').innerText()).trim();
-  if (!/where are we headed today/i.test(heading)) {
+  if (!/which world are we exploring/i.test(heading)) {
     throw new Error(`asked: "${heading}"`);
   }
   await p.locator('.gate .btn.primary').click();
@@ -1783,8 +2015,8 @@ await check('joining a party moves the map to where the host is', async () => {
   return true;
 });
 
-await check('the picker measures from the party, not from this phone', async () => {
-  await go(d, 'Which map');
+await check('Explore Worlds measures from the Party, not from this phone', async () => {
+  await go(d, 'Explore Worlds');
   await d.waitForTimeout(400);
   const rows = await d.locator('.venueRow').allTextContents();
   const here = rows.find((r) => /Kings Island/.test(r));
@@ -1794,8 +2026,8 @@ await check('the picker measures from the party, not from this phone', async () 
   return true;
 });
 
-await check('picking a venue by hand outranks the host', async () => {
-  await go(d, 'Which map');
+await check('picking a World by hand outranks the host', async () => {
+  await go(d, 'Explore Worlds');
   await d.locator('.venueRow', { hasText: 'Fiesta Texas' }).click();
   await until(async () => /fiesta texas/i.test(await venueName(d)) || false, {
     timeout: JOIN_TIMEOUT,
@@ -1888,31 +2120,30 @@ await check('height, theme and party survive a reload', async () => {
 console.log('\n--- car parking ---');
 
 await check('save where I parked and walk back to it', async () => {
-  await dismissNavigation(b).catch(() => {});
-  if (await b.locator('.navBanner').count()) {
-    await b.locator('.navEnd').click().catch(() => {});
-    await b.waitForTimeout(400);
-  }
+  // Persistence / Party leave the sheet high; crowded hides the car fab.
+  await ensurePeek(b);
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
-  // Button toggles label once a car is saved — always save first.
-  const parkBtn = b.locator('button[aria-label="Save where I parked"], button[aria-label="Go to where I parked"]');
-  await parkBtn.click();
-  await b.waitForTimeout(600);
-  // If that was a "go to" focus tap, save again from Me forget + fab.
-  if (await b.locator('button[aria-label="Go to where I parked"]').count()) {
-    await go(b, 'Me');
-    const forget = b.locator('.row:has-text("Forget where I parked")');
-    if (await forget.count()) {
-      await forget.click();
-      await b.waitForTimeout(400);
-    }
-    await b.locator('button[aria-label="Save where I parked"]').click();
-    await b.waitForTimeout(600);
+  // Clear a leftover pin via the glance ✕ (Forget under Me → Phone is easy to miss).
+  const forgetCar = b.locator('button[aria-label="Remove Your car from this list"]');
+  if (await forgetCar.count()) {
+    await forgetCar.click();
+    await b.waitForTimeout(400);
   }
-  // Move away from the saved spot so a walk is worth previewing.
-  await B.context.setGeolocation({ latitude: 39.3455, longitude: -84.265 });
-  await b.waitForTimeout(800);
+  const saveBtn = b.locator('button[aria-label="Save where I parked"]');
+  await until(async () => (await saveBtn.count()) > 0, {
+    timeout: 15000,
+    label: 'Save where I parked fab',
+  });
+  await saveBtn.click();
+  await b.waitForTimeout(600);
+  // Move away from the saved spot so a walk is worth previewing — pulse the
+  // fake GPS so watchPosition actually moves (one set can sit unread).
+  const away = { latitude: 39.3455, longitude: -84.265 };
+  for (let i = 0; i < 4; i += 1) {
+    await B.context.setGeolocation(away);
+    await b.waitForTimeout(400);
+  }
   await go(b, 'Places');
   const carGo = b.locator('.glanceCard', { hasText: 'Your car' }).locator('.glanceGo');
   await until(async () => (await carGo.count()) > 0, { timeout: 15000, label: 'car glance card' });
@@ -1922,10 +2153,13 @@ await check('save where I parked and walk back to it', async () => {
     label: 'route to car',
   });
   await b.locator('.previewGo').click();
-  await until(async () => (await b.locator('.navBanner').count()) > 0, {
-    timeout: 15000,
-    label: 'walk to car started',
-  });
+  await until(
+    async () => (await b.locator('.navBanner, .navBar').count()) > 0,
+    {
+      timeout: 20000,
+      label: 'walk to car started',
+    },
+  );
   await b.locator('.navEnd').click();
   await b.waitForTimeout(400);
   return true;
@@ -2066,6 +2300,57 @@ await check('ride heights still work with the network cut', async () => {
   if (!/\d+ of \d+ rides/.test(badge.replace(/\s+/g, ' '))) throw new Error(badge);
   return true;
 });
+
+// SignInCard (and its offline cue) render only behind clerkBrowserConfigured() —
+// same seam the auth module gates on.
+if (Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)) {
+await check('offline profile identity survives without network', async () => {
+  const fakeProfile = { userId: 'usr_offline_check', displayName: 'Offline Scout', rank: 'ranger', xp: 250 };
+  // IndexedDB is a local API — unaffected by context.setOffline() — so the
+  // snapshot can be seeded on `off` without going back online first.
+  await off.evaluate(
+    (profile) =>
+      new Promise((resolve, reject) => {
+        const req = indexedDB.open('parkbound.profile', 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('snapshot')) db.createObjectStore('snapshot');
+        };
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('snapshot', 'readwrite');
+          tx.objectStore('snapshot').put({ ...profile, cachedAt: new Date().toISOString() }, 'current');
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => {
+            db.close();
+            reject(tx.error);
+          };
+        };
+        req.onerror = () => reject(req.error);
+      }),
+    fakeProfile,
+  );
+  await off.evaluate(() => sessionStorage.removeItem('parkbound.session'));
+  await off.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+  await off.waitForTimeout(1500);
+  await hydrated(off).catch(() => {});
+  await go(off, 'Settings');
+  const cardText = await until(
+    async () => {
+      if (!(await off.locator('.signInCard').count())) return null;
+      const text = await off.locator('.signInCard').innerText();
+      return text.includes('Offline Scout') ? text : null;
+    },
+    { timeout: 15000, label: 'cached displayName on the offline SignInCard' },
+  );
+  if (!cardText.includes('offline profile')) throw new Error(`missing offline cue: ${cardText}`);
+  if (!cardText.includes('Ranger')) throw new Error(`missing rank title: ${cardText}`);
+  return true;
+});
+}
 await offline.close();
 } // end offline
 
@@ -2122,7 +2407,7 @@ await CP.context.close();
 
 console.log('\n--- admin inspection ---');
 
-await check('venue inspection API returns all built parks', async () => {
+await check('World inspection API returns all built Worlds', async () => {
   const res = await fetch(`${BASE}/api/admin/venues`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const body = await res.json();

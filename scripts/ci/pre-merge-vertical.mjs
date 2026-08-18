@@ -1,6 +1,9 @@
 /**
  * Pre-merge vertical validation — static checks + browser vertical when the diff warrants it.
  *
+ * Every code diff must clear the verticals its paths require (see
+ * scripts/lib/vertical-e2e.mjs) — static steps are the floor, not the proof.
+ *
  * Interface:
  *   gitChangedFiles(baseRef, cwd)
  *   needsBrowserVertical(files, manifest)
@@ -29,6 +32,16 @@ import {
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
+import {
+  requiredVerticals,
+  verticalById,
+  verticalE2eBlockReason,
+} from '../lib/vertical-e2e.mjs';
+import {
+  buildMattReviewContext,
+  mattReviewBlockReason,
+  readMattReview,
+} from '../lib/matt-review.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -65,7 +78,11 @@ export function needsBrowserVertical(files, manifest = loadModulesManifest()) {
 }
 
 export function runNpmStep(args, cwd = root) {
-  const r = spawnSync('npm', args, { cwd, stdio: 'inherit' });
+  const r = spawnSync('npm', args, {
+    cwd,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
   return r.status ?? 1;
 }
 
@@ -74,7 +91,7 @@ function runValidateUiChanged(baseRef, cwd = root) {
     const child = spawn(
       'npm',
       ['run', 'test:validate-ui:changed', '--', '--base', baseRef, '--no-health'],
-      { cwd, stdio: 'inherit', env: process.env },
+      { cwd, stdio: 'inherit', env: process.env, shell: process.platform === 'win32' },
     );
     child.on('error', reject);
     child.on('close', (code) => {
@@ -97,41 +114,81 @@ export async function runPreMergeVertical({
     return 0;
   }
 
+  const files = gitChangedFiles(baseRef, cwd);
+  const required = requiredVerticals(files);
+  console.log(
+    `pre-merge-vertical: verticals required — ${required.join(', ') || 'none (no code work in this diff)'}`,
+  );
+
+  // Refusing a flag combination should not cost a full static run, so the
+  // --skip-browser check happens before the slow steps: `ran = required`
+  // leaves only that rule able to fire.
+  const refusal = verticalE2eBlockReason({ files, ran: required, skipBrowser });
+  if (refusal) {
+    console.error(`pre-merge-vertical: ${refusal}`);
+    return 1;
+  }
+
   for (const args of STATIC_NPM_STEPS) {
     console.log(`\npre-merge-vertical: npm ${args.join(' ')}`);
     const code = runNpmStep(args, cwd);
     if (code !== 0) return code;
   }
 
-  const files = gitChangedFiles(baseRef, cwd);
+  const ran = [];
+  // test:ci-gate is a static step and is exactly the automation vertical.
+  if (required.includes('automation')) ran.push('automation');
+
   const clerkBlock = clerkE2eBlockReason({ files: files || [], skipBrowser });
   if (clerkBlock) {
     console.error(`pre-merge-vertical: ${clerkBlock}`);
     return 1;
   }
 
+  // clerk gate treats an unknown diff as empty; matt-review instead fails
+  // closed on null (reviewRequiredForFiles) — both are deliberate.
+  const reviewBlock = mattReviewBlockReason({
+    files,
+    context: buildMattReviewContext({ baseRef, cwd }),
+    stamp: readMattReview(cwd),
+  });
+  if (reviewBlock) {
+    console.error(`pre-merge-vertical: ${reviewBlock}`);
+    return 1;
+  }
+
+  if (required.includes('builder')) {
+    const builder = verticalById('builder');
+    console.log(`\npre-merge-vertical: ${builder.title} — ${builder.command}`);
+    const code = runNpmStep(['run', 'test:builder'], cwd);
+    if (code !== 0) return code;
+    ran.push('builder');
+  }
+
+  const browserWanted = required.includes('app') || needsBrowserVertical(files);
   if (skipBrowser) {
     console.log('pre-merge-vertical: browser vertical skipped (--skip-browser)');
-    if (!noStamp) {
-      writeLocalCiPass({ context, browserVertical: false }, cwd);
-    }
-    return 0;
-  }
-
-  if (!needsBrowserVertical(files)) {
+  } else if (!browserWanted) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
-    if (!noStamp) {
-      writeLocalCiPass({ context, browserVertical: false }, cwd);
-    }
-    return 0;
+  } else {
+    console.log('\npre-merge-vertical: starting app for browser vertical');
+    startProductionServer({ root: cwd });
+    await waitForHealth();
+    await runValidateUiChanged(baseRef, cwd);
+    if (required.includes('app')) ran.push('app');
   }
 
-  console.log('\npre-merge-vertical: starting app for browser vertical');
-  startProductionServer({ root: cwd });
-  await waitForHealth();
-  await runValidateUiChanged(baseRef, cwd);
+  const block = verticalE2eBlockReason({ files, ran, skipBrowser });
+  if (block) {
+    console.error(`pre-merge-vertical: ${block}`);
+    return 1;
+  }
+
   if (!noStamp) {
-    writeLocalCiPass({ context, browserVertical: true }, cwd);
+    writeLocalCiPass(
+      { context, browserVertical: ran.includes('app'), verticals: ran },
+      cwd,
+    );
   }
   return 0;
 }

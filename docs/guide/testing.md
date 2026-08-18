@@ -39,12 +39,14 @@ sits in Austin, at neither park, to check that the intake asks about the nearer 
 saying yes brings that park's places with it, and that it is not asked again.
 
 `test/grandma.mjs` asks a different question from the other two. They ask whether the app
-still does what it did; this asks whether somebody who has never seen it can get anything
-out of it. Two people are scored separately — one on her own who needs a toilet, then food,
-then to walk there, and one who has been handed a link and has to appear on her family's
-map, find a grandchild and be able to call for help. Tasks score 0, 1 or 2, because "she
-got there after opening the panel" is a different result from "she got there first try",
-and a suite that cannot tell those apart cannot tell you whether the app improved.
+still does what it did; this asks whether an actual non-technical, older first-time visitor
+can get what they need without having to search or deep scroll, with readable font sizes,
+large icons, clear family/grandchild visibility, and big 44px tap targets. Two people are scored
+separately — one on her own who needs a toilet, then food, then to walk there, and one who has
+been handed a link and has to appear on her family's map, find a grandchild, see the meet-up, and
+be able to call for help. Tasks score 0, 1 or 2, because "she got there after opening the panel" is a
+different result from "she got there first try", and a suite that cannot tell those apart cannot tell
+you whether the app improved.
 
 The rule that keeps it honest: **its persona tasks may not use the `go()` helper**. That
 helper knows where the tab bar is and pulls the sheet open by its handle, which are exactly
@@ -63,11 +65,23 @@ every shipped vertical capability (intake, walk, party, offline, grandma toilet
 path) must keep a named check. New epics add a row + check in the same PR —
 build vertically, don’t leave feature PRs without their user-action coverage.
 
+The contract also pins the domain context it was reviewed against:
+`critical-paths.json` stores a sha256 fingerprint of `CONTEXT.md` +
+`docs/adr/*.md`. A diff that builds new context selects the coverage-contract
+CI job, and the job fails until the rows are reviewed against the new
+capabilities and restamped with `node test/app/coverage-contract.mjs --stamp` —
+so the user-action e2e contract is always updated when new context lands.
+
 CI splits that suite into **modules** (`test/app/modules.json`) and only runs
 the ones that match the PR’s changed paths — including lint — see
 `npm run test:modules` / `npm run test:validate-ui:changed`. Docs-only diffs
 skip the expensive jobs. Push to `main` and edits to the workflow or
 `functional.mjs` still run the full matrix.
+
+Before merging, `npm run test:pre-merge-vertical` prints the verticals your diff owes and
+runs them: code work is proven end to end with the run's output asserted, and the pass
+stamp records which verticals ran. `--skip-browser` is refused for diffs that touch app
+behaviour. See [docs/agents/policies/vertical-e2e.md](../agents/policies/vertical-e2e.md).
 
 Vercel preview deploys are **not** the default validation path — they consume the
 user-reserved deploy budget (25/day). Use `npm run build -w @party-tracker/app` and the

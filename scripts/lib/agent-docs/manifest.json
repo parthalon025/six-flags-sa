@@ -31,6 +31,14 @@
       "cursorDescription": "Keep the venue builder and the app's data contract in sync — fix generated data upstream, validate app changes against the builder."
     },
     {
+      "id": "vertical-e2e",
+      "heading": "Vertical e2e — output validation",
+      "title": "Vertical e2e",
+      "pointer": "All code work is proven **end to end** with the run's output asserted — `npm run test:pre-merge-vertical` gates it.",
+      "cursorRule": "vertical-e2e.mdc",
+      "cursorDescription": "Prove code work end to end and assert the run's output; static steps are the floor, not the proof."
+    },
+    {
       "id": "version-on-merge",
       "heading": "App version — auto-bumped on merge",
       "title": "App version",

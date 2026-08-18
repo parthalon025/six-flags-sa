@@ -1,0 +1,123 @@
+{
+  "version": 1,
+  "id": "blueprint-survey",
+  "kit": "blueprint-survey",
+  "style": "blueprint-linework",
+  "inspiration": {
+    "summary": "Technical survey drawing — warm paper, fine ink linework, outlined unfilled buildings, hatched water, no sprites",
+    "images": [],
+    "lineage": "structural-switch proof kit (design languages, not palette swaps); ADR-0012 layer rules"
+  },
+  "colorFamilies": {
+    "ground": {
+      "anchor": "#FBF7EC",
+      "deltaE": 8
+    },
+    "grass": {
+      "anchor": "#F0F3E2",
+      "members": [
+        "#C9D4A8"
+      ],
+      "deltaE": 12
+    },
+    "wood": {
+      "anchor": "#E7EDD6",
+      "members": [
+        "#B4C494"
+      ],
+      "deltaE": 12
+    },
+    "water": {
+      "anchor": "#E3EDF6",
+      "members": [
+        "#8FB0D4"
+      ],
+      "deltaE": 12
+    },
+    "lot": {
+      "anchor": "#F6F2E5",
+      "members": [
+        "#C9C2AE"
+      ],
+      "deltaE": 12
+    },
+    "road": {
+      "anchor": "#FBF7EC",
+      "members": [
+        "#39567E"
+      ],
+      "deltaE": 10
+    },
+    "service": {
+      "anchor": "#D8D2BF",
+      "deltaE": 10
+    },
+    "outside": {
+      "anchor": "#EFEAD9",
+      "members": [
+        "#DDD6C2"
+      ],
+      "deltaE": 10
+    },
+    "structure": {
+      "anchor": "#2F4C7A",
+      "deltaE": 12
+    },
+    "badge": {
+      "anchor": "#B23A48",
+      "members": [
+        "#39567E",
+        "#8A8F98"
+      ],
+      "deltaE": 16
+    }
+  },
+  "roads": {
+    "centerlineVsPaper": {
+      "minDeltaE": 25
+    },
+    "serviceLayer": "visible"
+  },
+  "ground": {
+    "outsideVsInside": {
+      "minDeltaE": 2
+    },
+    "waterVsVegetation": {
+      "minDeltaE": 3
+    }
+  },
+  "structures": {
+    "buildingStyle": "outline",
+    "trackStyle": "mono",
+    "edgeInk": {
+      "anchor": "#2F4C7A",
+      "deltaE": 24
+    }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": [
+      "terrain",
+      "roads",
+      "tracks",
+      "buildings",
+      "trees",
+      "badges"
+    ]
+  },
+  "agentReview": [
+    {
+      "key": "style_texture_language",
+      "prompt": "Reads as an ink drawing: linework carries the information, fills stay paper-quiet"
+    },
+    {
+      "key": "style_structure_language",
+      "prompt": "Buildings are unfilled outlines; tracks are monoline ink; no sprite decoration anywhere"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Overall: a surveyor would file it, a player would not mistake it for the game tier"
+    }
+  ]
+}

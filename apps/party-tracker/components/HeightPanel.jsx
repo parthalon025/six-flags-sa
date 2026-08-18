@@ -33,7 +33,7 @@ export default function HeightPanel({ height, withAdult, onHeight, onWithAdult, 
       const k = elig.at(identityOf(p)).kind;
       if (k === 'eligible') tally.yes += 1;
       else if (k === 'companion') tally.companion += 1;
-      else tally.no += 1;
+      else if (k === 'not' || k === 'advisory') tally.no += 1;
     });
     return tally;
   }, [POIS, height, withAdult]);

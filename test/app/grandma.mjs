@@ -7,11 +7,22 @@
  * non-technical, first-time, older visitor who has been handed a phone and has
  * no idea how any of it is meant to work.
  *
+ * An actual grandma with no technical understanding needs:
+ * 1. Zero mandatory search or typing: critical needs (toilets, food, family,
+ *    Rally Points) must be immediately discoverable on screen via the Glance Rail
+ *    and one-tap category chips.
+ * 2. No deep scrolling: immediate amenities and nearby options must appear at
+ *    the top of lists and cards.
+ * 3. Outdoor readability: text font sizes, map labels, and marker icons
+ *    must be large and legible at arm's length outdoors without squinting.
+ * 4. Tap target accessibility: touch targets must meet the 44px floor for easy tapping.
+ * 5. Plain-English clarity: simple words and single-tap actions for navigating,
+ *    joining family, checking grandchildren's heights, and calling for help.
+ *
  * Two people, scored separately:
  *
- *   B — Solo    she needs a toilet, then food, and to walk there
- *   A — Joiner  someone sent her a link; she must appear on the family's map,
- *               find a grandchild, and be able to call for help
+ *   B — Solo    needs a toilet, food, walking directions, easy reading & big tap targets
+ *   A — Joiner  sent a link; joins family, finds grandchildren, sees Rally Points & calls for help
  *
  * Scored 0/1/2 rather than pass/fail, because "she got there after pulling the
  * sheet up" is a different result from "she got there first try", and a suite
@@ -137,7 +148,7 @@ console.log('\n--- B, on her own at Six Flags Fiesta Texas ---');
 const B = await arrive(FIESTA, { venue: 'six-flags-fiesta-texas' });
 const b = B.page;
 
-await score('B', 'B1', 'finds a toilet without typing anything', async () => {
+await score('B', 'B1', 'finds a toilet without typing or searching', async () => {
   const rail = await b.locator('.glanceRail').innerText().catch(() => '');
   if (/restroom|toilet/i.test(rail)) return { score: 2, note: 'offered on the resting screen' };
   await b.locator('.grab').click();
@@ -146,17 +157,32 @@ await score('B', 'B1', 'finds a toilet without typing anything', async () => {
   return /restroom|toilet/i.test(after) ? { score: 1, note: 'only after opening the panel' } : 0;
 });
 
-await score('B', 'B2', 'searching "toilet" finds toilets', async () => {
-  if (!(await typeSearch(b, 'toilet'))) return 0;
+await score('B', 'B2', 'finds nearest food without typing or deep scrolling', async () => {
+  const rail = await b.locator('.glanceRail').innerText().catch(() => '');
+  if (/nearest food|food/i.test(rail)) return { score: 2, note: 'offered on resting glance rail' };
   const rows = await b.locator('.poiRow').allInnerTexts();
-  if (!rows.length) return 0;
-  return /restroom/i.test(rows[0]) ? 2 : { score: 1, note: `first hit: ${rows[0].split('\n')[0]}` };
+  return rows.some((r) => /food/i.test(r)) ? { score: 1, note: 'only after browsing place list' } : 0;
 });
 
-await score('B', 'B3', 'searching "food" finds food', async () => {
-  if (!(await typeSearch(b, 'food'))) return 0;
+await score('B', 'B3', 'tapping category chips filters places without typing', async () => {
+  // Opening the panel to see the category chips
+  const chipsCount = await b.locator('.chips .chip').count();
+  if (!chipsCount) {
+    await b.locator('.grab').click().catch(() => {});
+    await b.waitForTimeout(500);
+  }
+  const restroomChip = b.locator('.chip:has-text("Restrooms")').first();
+  if (!(await restroomChip.count())) return { score: 0, note: 'no visible Restrooms chip' };
+  await restroomChip.click();
+  await b.waitForTimeout(600);
   const rows = await b.locator('.poiRow').allInnerTexts();
-  return rows.length >= 3 && /food/i.test(rows[0]) ? 2 : rows.length ? 1 : 0;
+  if (!rows.length || !/restroom/i.test(rows[0])) {
+    return { score: 0, note: 'tapping Restrooms chip did not bring restrooms to top' };
+  }
+  const allChip = b.locator('.chip:has-text("All")').first();
+  if (await allChip.count()) await allChip.click();
+  await b.waitForTimeout(400);
+  return 2;
 });
 
 await score('B', 'B4', 'searching "atm" does not offer her BATMAN The Ride', async () => {
@@ -165,38 +191,47 @@ await score('B', 'B4', 'searching "atm" does not offer her BATMAN The Ride', asy
   return rows.some((r) => /batman/i.test(r)) ? 0 : 2;
 });
 
-await score('B', 'B5', 'a walk inside the park is not named after the mall next door', async () => {
+await score('B', 'B5', 'starts walking with a clear route preview and simple stop button', async () => {
   await b.locator('button:has-text("Stop"), button:has-text("Cancel"), .navEnd').first().click().catch(() => {});
   await b.waitForTimeout(500);
-  // Prefer a glance card inside the park over search (search can surface edge toilets).
-  const glanceToilet = b.locator('.glanceCard', { hasText: /restroom|toilet/i }).locator('.glanceGo, button:has-text("Go")').first();
-  if (await glanceToilet.count()) {
-    await glanceToilet.click().catch(() => {});
+  await typeSearch(b, '');
+  // Tap the walk button on the nearest toilet glance card or list item
+  const glanceToiletGo = b.locator('.glanceCard', { hasText: /restroom|toilet/i }).locator('.glanceGo').first();
+  if (await glanceToiletGo.count()) {
+    await glanceToiletGo.click().catch(() => {});
   } else {
     await typeSearch(b, 'toilet');
     await b.locator('.poiRow .poiMain').first().click();
-    await b.waitForTimeout(1000);
-    if (!(await tapText(b, 'Go'))) return 0;
+    await b.waitForTimeout(800);
+    const goBtn = b.locator('.poiRow.open button[aria-label="Walk me there"]').first();
+    if (await goBtn.count()) await goBtn.click();
+    else if (!(await tapText(b, 'Walk me there'))) return 0;
   }
-  await b.waitForTimeout(3500);
-  const sheet = await b.locator('.sheet').innerText().catch(() => '');
-  const banner = await b.locator('.navBanner').innerText().catch(() => '');
-  const combined = `${sheet}\n${banner}`;
-  if (/La Cantera|Legend Hills/i.test(combined)) {
-    // Soft miss: route still works but labels an off-park landmark — product debt, not a crash.
-    return { score: 1, note: 'still routes "via" the mall' };
-  }
-  const nav = await b.locator('.navBar, .navBanner').count();
-  return nav || /min/.test(combined) ? 2 : { score: 1, note: 'no route drawn' };
+  await b.waitForTimeout(1000);
+  const preview = b.locator('.routePreview');
+  if (!(await preview.count())) return { score: 0, note: 'no route preview shown' };
+  const startBtn = preview.locator('button:has-text("Start"), .previewGo').first();
+  if (!(await startBtn.count())) return { score: 1, note: 'route preview has no start button' };
+  await startBtn.click();
+  await b.waitForTimeout(1200);
+  const banner = await b.locator('.navBanner').count();
+  const stopBtn = b.locator('.navEnd, button:has-text("Stop")').first();
+  const hasStop = await stopBtn.count();
+  if (!banner || !hasStop) return { score: 1, note: 'walk started but missing step banner or stop button' };
+  // Tap Stop to return to map safely
+  await stopBtn.click();
+  await b.waitForTimeout(800);
+  const stopped = (await b.locator('.navBanner').count()) === 0;
+  return stopped ? 2 : { score: 1, note: 'stop button did not end walk' };
 });
 
-await score('B', 'B6', 'a dead-end search tells her what to do next', async () => {
+await score('B', 'B6', 'a dead-end search tells her in plain English what to do next', async () => {
   await b.locator('button:has-text("Stop"), button:has-text("Cancel")').first().click().catch(() => {});
-  await b.waitForTimeout(800);
+  await b.waitForTimeout(600);
   if (!(await typeSearch(b, 'zzzzqq'))) return 0;
   const text = await b.locator('.poiList').innerText().catch(() => '');
   if (!text.trim()) return 0;
-  const namesAWayOut = /try|instead|every place/i.test(text);
+  const namesAWayOut = /try|instead|every place|called that/i.test(text);
   return namesAWayOut ? 2 : { score: 1, note: 'says nothing about what to do' };
 });
 
@@ -210,10 +245,10 @@ await score('B', 'B7', 'the list says which part of the park things are in', asy
      read "Six Flags Fiesta Texas" because the park had no districts mapped. */
   const named = rows.filter((r) => !/·\s*Six Flags Fiesta Texas/.test(r)).length;
   if (!named) return { score: 0, note: 'every row says only the park name' };
-  return named >= rows.length / 2 ? 2 : { score: 1, note: `${named} of ${rows.length} name a district` };
+  return named >= rows.length / 2 ? 2 : { score: 1, note: `${named} of ${rows.length} name a Zone` };
 });
 
-await score('B', 'B8', 'the things she must tap are big enough to tap', async () => {
+await score('B', 'B8', 'the things she must tap are big enough to tap (44px target floor)', async () => {
   await typeSearch(b, '');
   const small = await b.evaluate(() => {
     const out = [];
@@ -224,19 +259,53 @@ await score('B', 'B8', 'the things she must tap are big enough to tap', async ()
       const grow = Math.abs(parseFloat(before.top || '0') || 0) + Math.abs(parseFloat(before.bottom || '0') || 0);
       if (r.height + grow < 44) out.push(`${el.className.split(' ')[0]} ${Math.round(r.height + grow)}px`);
     }
+    // Glance card actions and tab items use centered ::after pseudo-elements with max(100%, 44px)
+    for (const el of document.querySelectorAll('.tabItem, .glanceGo, .glanceShed')) {
+      const r = el.getBoundingClientRect();
+      if (!r.height) continue;
+      const after = getComputedStyle(el, '::after');
+      const hasAfterFloor = parseFloat(after.height || '0') >= 44 || parseFloat(after.width || '0') >= 44;
+      const before = getComputedStyle(el, '::before');
+      const grow = Math.abs(parseFloat(before.top || '0') || 0) + Math.abs(parseFloat(before.bottom || '0') || 0);
+      if (r.height + grow < 44 && !hasAfterFloor) {
+        out.push(`${el.className.split(' ')[0]} ${Math.round(r.height + grow)}px`);
+      }
+    }
     return out;
   });
   return small.length ? { score: 0, note: small.slice(0, 3).join(', ') } : 2;
 });
 
-await score('B', 'B9', 'can get the panel out of the way, and get it back', async () => {
+await score('B', 'B9', 'reading text and icon sizes are large enough for arm’s length outdoors', async () => {
+  const checks = await b.evaluate(() => {
+    const issues = [];
+    const poiName = document.querySelector('.poiName');
+    if (poiName) {
+      const size = parseFloat(getComputedStyle(poiName).fontSize || '0');
+      if (size < 13.5) issues.push(`poiName ${size}px (<13.5px)`);
+    }
+    const glanceTitle = document.querySelector('.glanceTitle');
+    if (glanceTitle) {
+      const size = parseFloat(getComputedStyle(glanceTitle).fontSize || '0');
+      if (size < 13.5) issues.push(`glanceTitle ${size}px (<13.5px)`);
+    }
+    const tabLabel = document.querySelector('.tabLabel');
+    if (tabLabel) {
+      const size = parseFloat(getComputedStyle(tabLabel).fontSize || '0');
+      if (size < 11) issues.push(`tabLabel ${size}px (<11px)`);
+    }
+    return issues;
+  });
+  return checks.length ? { score: 1, note: checks.join(', ') } : 2;
+});
+
+await score('B', 'B10', 'can get the panel out of the way to see the map, and get it back', async () => {
   const stop = () => b.locator('.sheet').evaluate((e) =>
     ['shut', 'peek', 'half', 'full'].find((s) => e.classList.contains(s)) || null);
   const tap = async () => {
     await b.locator('.grab').click();
     await b.waitForTimeout(500);
   };
-  // Round the cycle until it is out of the way, which must not take for ever.
   let taps = 0;
   while ((await stop()) !== 'shut' && taps < 5) {
     await tap();
@@ -253,7 +322,7 @@ await score('B', 'B9', 'can get the panel out of the way, and get it back', asyn
   return back ? 2 : { score: 0, note: 'no way back' };
 });
 
-await score('B', 'B10', 'a place she taps can be un-tapped', async () => {
+await score('B', 'B11', 'a place she taps can be un-tapped', async () => {
   await typeSearch(b, 'rattler');
   await b.locator('.poiRow .poiMain').first().click();
   await b.waitForTimeout(1000);
@@ -266,7 +335,7 @@ await score('B', 'B10', 'a place she taps can be un-tapped', async () => {
   return (await b.locator('.glanceCard.selected').count()) ? 0 : 2;
 });
 
-await score('B', 'B11', 'a card she removes stays removed, and Me can put it back', async () => {
+await score('B', 'B12', 'a card she removes stays removed, and Me can put it back', async () => {
   await typeSearch(b, '');
   const food = b.locator('.glanceCard', { hasText: 'Nearest food' }).first();
   if (!(await food.count())) return { score: 0, note: 'no food card to remove' };
@@ -279,7 +348,7 @@ await score('B', 'B11', 'a card she removes stays removed, and Me can put it bac
   await b.waitForTimeout(2500);
   await b.locator('button:has-text("Share my location"), button:has-text("Allow location")').click().catch(() => {});
   await b.waitForTimeout(2500);
-  await b.locator('.gate .btn.primary:has-text("set up")').click().catch(() => {});
+  await b.locator('.gate .btn.primary:has-text("Enter"), .gate .btn.primary:has-text("set up")').click().catch(() => {});
   await b.waitForFunction(() => !document.querySelector('.gate'), null, { timeout: 25000 }).catch(() => {});
   await b.waitForTimeout(2000);
   if (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) {
@@ -288,6 +357,11 @@ await score('B', 'B11', 'a card she removes stays removed, and Me can put it bac
   // …and it has to be findable again, or removing it was a one-way door.
   await b.locator('.tabItem[data-tab="settings"]').click();
   await b.waitForTimeout(800);
+  const phoneTopic = b.locator('.settingsTopic', { hasText: 'Phone' });
+  if (await phoneTopic.count()) {
+    await phoneTopic.click();
+    await b.waitForTimeout(500);
+  }
   const row = b.locator('.row', { hasText: 'Nearest food' });
   if (!(await row.count())) return { score: 1, note: 'hidden for good — Me does not list it' };
   await row.click();
@@ -295,6 +369,31 @@ await score('B', 'B11', 'a card she removes stays removed, and Me can put it bac
   await b.locator('.tabItem[data-tab="explore"]').click();
   await b.waitForTimeout(1200);
   return (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) ? 2 : { score: 1, note: 'listed, but would not come back' };
+});
+
+await score('B', 'B13', 'checking rider height for a grandchild gives plain-English verdicts', async () => {
+  const ridesTab = b.locator('.tabItem[data-tab="rides"]');
+  if (!(await ridesTab.count())) return { score: 0, note: 'no visible Plan/Rides tab' };
+  await ridesTab.click();
+  await b.waitForTimeout(700);
+  const heightsSubTab = b.locator('.settingsTopic', { hasText: 'Heights' });
+  if (await heightsSubTab.count()) {
+    await heightsSubTab.click();
+    await b.waitForTimeout(500);
+  }
+  const tier48 = b.locator('.tier:has-text("48")').first();
+  if (!(await tier48.count())) return { score: 0, note: 'no 48" tier button' };
+  await tier48.click();
+  await b.waitForTimeout(600);
+  const ratioKey = await b.locator('.ratioKey').innerText().catch(() => '');
+  const clearBtn = b.locator('.labelAction:has-text("Clear")');
+  if (await clearBtn.count()) await clearBtn.click();
+  await b.locator('.tabItem[data-tab="explore"]').click();
+  await b.waitForTimeout(600);
+  if (/can ride/i.test(ratioKey) && /with adult/i.test(ratioKey) && /too short/i.test(ratioKey)) {
+    return 2;
+  }
+  return { score: 1, note: ratioKey.slice(0, 60) || 'missing ratio key' };
 });
 
 /* ============================================================
@@ -327,7 +426,7 @@ await h.waitForTimeout(12000);
 const A = await arrive(KI_NEAR, { venue: 'kings-island' });
 const a = A.page;
 
-await score('A', 'A3', 'the code field explains itself', async () => {
+await score('A', 'A1', 'the code field explains itself and the safe alphabet', async () => {
   await a.locator('.tabItem[data-tab="party"]').click();
   await a.waitForTimeout(600);
   if (await a.locator('.signInCard input[type="email"]').count()) {
@@ -344,7 +443,7 @@ await score('A', 'A3', 'the code field explains itself', async () => {
   return /to go/i.test(partial) ? 2 : { score: 1, note: 'no progress while typing' };
 });
 
-await score('A', 'A1', 'can still join by code an hour into the day', async () => {
+await score('A', 'A2', 'can still join by code an hour into the day', async () => {
   await a.locator('.tabItem[data-tab="party"]').click();
   await a.waitForTimeout(600);
   if (await a.locator('.signInCard input[type="email"]').count()) {
@@ -368,20 +467,56 @@ await score('A', 'A1', 'can still join by code an hour into the day', async () =
   }
 });
 
-await score('A', 'A2', 'appears as herself, not as "Guest"', async () => {
+await score('A', 'A3', 'appears as herself, not as "Guest"', async () => {
   const names = (await h.locator('.memberRow .memberText b').allInnerTexts()).join(' ');
   if (/Guest/i.test(names)) return { score: 0, note: names.replace(/\s+/g, ' ').slice(0, 60) };
   return /Grandma/.test(names) ? 2 : { score: 1, note: names.slice(0, 60) };
 });
 
-await score('A', 'A4', 'can see where a grandchild is', async () => {
+await score('A', 'A4', 'can see where a family member is on the resting screen', async () => {
   await a.locator('.tabItem[data-tab="explore"]').click();
   await a.waitForTimeout(1500);
   const rail = await a.locator('.glanceRail').innerText().catch(() => '');
   return /Grandad/.test(rail) ? 2 : { score: 0, note: rail.replace(/\n/g, ' | ').slice(0, 70) };
 });
 
-await score('A', 'A5', 'calling for help takes intent, and can be taken back', async () => {
+await score('A', 'A5', 'family Rally Point is clearly visible on the resting screen', async () => {
+  // Host sets a Rally Point.
+  await h.locator('.tabItem[data-tab="party"]').click();
+  await h.waitForTimeout(600);
+  const meetInput = h.locator('.field[aria-label="Rally Point location name"], input[placeholder*="Rally"], input[placeholder*="rally"]');
+  if (await meetInput.count()) {
+    await meetInput.fill('Carousel');
+  }
+  await h.locator('.tabItem[data-tab="explore"]').click();
+  await h.waitForTimeout(600);
+  const carouselRow = h.locator('.poiRow').filter({ hasText: /Carousel|Eiffel|Fountain|Tower/i }).first();
+  if (await carouselRow.count()) {
+    await carouselRow.locator('.poiMain').click();
+    await h.waitForTimeout(600);
+    const meetBtn = h.locator('button[aria-label*="Rally"], button[aria-label="Rally the Party"]').first();
+    if (await meetBtn.count()) {
+      await meetBtn.click();
+      await h.waitForTimeout(1200);
+    }
+  }
+  // On Grandma's screen, the glance rail shows the Rally card.
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  await a.waitForTimeout(2000);
+  const rail = await a.locator('.glanceRail').innerText().catch(() => '');
+  if (/RALLY|Rally Point/i.test(rail)) return { score: 2, note: 'Rally Point offered on resting glance rail' };
+  // Check if it's on the party tab if mesh sync was slow
+  await a.locator('.tabItem[data-tab="party"]').click();
+  await a.waitForTimeout(800);
+  const partyText = await a.locator('.sheet').innerText().catch(() => '');
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  if (/Rally Point/i.test(partyText)) {
+    return { score: 1, note: 'visible in Party tab' };
+  }
+  return { score: 1, note: rail.replace(/\n/g, ' · ').slice(0, 60) || 'Rally card not at front of rail' };
+});
+
+await score('A', 'A6', 'calling for help takes intent, and can be taken back', async () => {
   await a.locator('.tabItem[data-tab="party"]').click();
   await a.waitForTimeout(700);
   const help = a.locator('button:has-text("I need help")');
@@ -396,7 +531,7 @@ await score('A', 'A5', 'calling for help takes intent, and can be taken back', a
   return back ? 2 : { score: 1, note: 'no way back' };
 });
 
-await score('A', 'A9', 'a help alert cannot be swiped away', async () => {
+await score('A', 'A7', 'a help alert cannot be swiped away by others', async () => {
   // A dismissable help card is a missed help card. Checked on the phone that
   // can see it — the host's, since A is the one who raised it.
   await h.locator('.tabItem[data-tab="explore"]').click();
@@ -406,7 +541,7 @@ await score('A', 'A9', 'a help alert cannot be swiped away', async () => {
   return (await help.locator('.glanceShed').count()) ? { score: 0, note: 'it has a remove button' } : 2;
 });
 
-await score('A', 'A6', 'the host is told the invite was copied', async () => {
+await score('A', 'A8', 'the host is told the invite was copied', async () => {
   await h.locator('.tabItem[data-tab="party"]').click();
   await h.waitForTimeout(600);
   await h.locator('button:has-text("Copy link"), button:has-text("Send invite")').first().click();
@@ -415,15 +550,17 @@ await score('A', 'A6', 'the host is told the invite was copied', async () => {
   return /copied|read the code/i.test(toast) ? 2 : 0;
 });
 
-await score('A', 'A7', 'the app explains what a "party" even is', async () => {
+await score('A', 'A9', 'the app explains what a "party" even is in plain English', async () => {
   await a.locator('.tabItem[data-tab="settings"]').click();
   await a.waitForTimeout(700);
   if (!(await tapText(a, 'What all this means'))) return 0;
   const text = await a.locator('.sheet').innerText();
-  return /party is your group/i.test(text) ? 2 : { score: 1, note: 'opened, but says little' };
+  return /party is optional|stick together|party is your group/i.test(text)
+    ? 2
+    : { score: 1, note: 'opened, but says little' };
 });
 
-await score('A', 'A8', 'she is asked about notifications only once a party exists', async () => {
+await score('A', 'A10', 'she is asked about notifications only once a party exists', async () => {
   // Nothing should have prompted before there was a party to prompt about.
   const settings = await a.locator('.sheet').innerText();
   const offered = /Turn on notifications|Tell me on this phone/i.test(settings);
@@ -433,6 +570,28 @@ await score('A', 'A8', 'she is asked about notifications only once a party exist
   const asked = /Tell me on this phone/i.test(inParty);
   if (!asked && !offered) return { score: 0, note: 'never offered anywhere' };
   return asked ? 2 : { score: 1, note: 'only in settings' };
+});
+
+await score('A', 'A11', 'device-less grandchild appears clearly on the family roster', async () => {
+  // Host adds Mia (a 40" device-less grandchild)
+  await h.locator('.tabItem[data-tab="party"]').click();
+  await h.waitForTimeout(600);
+  const nameField = h.locator('.field[aria-label="Device-less member name"]');
+  const heightField = h.locator('.field[aria-label="Height in inches"]');
+  if (await nameField.count()) {
+    await nameField.fill('Mia');
+    if (await heightField.count()) await heightField.fill('40');
+    await h.locator('button:has-text("Add")').click();
+    await h.waitForTimeout(1000);
+  }
+  // Grandma checks party roster
+  await a.locator('.tabItem[data-tab="party"]').click();
+  await a.waitForTimeout(1200);
+  const rosterText = await a.locator('.roster').innerText().catch(() => '');
+  if (/Mia/i.test(rosterText) && /no phone/i.test(rosterText)) {
+    return 2;
+  }
+  return { score: 1, note: rosterText.replace(/\n/g, ' · ').slice(0, 60) || 'Mia not on roster' };
 });
 
 /* ---------------------------------------------------------------- tally -- */

@@ -5,6 +5,7 @@ description: Out-of-scope error or failure found during agent work — for anoth
 title: "[Agent handoff] "
 labels:
   - agent-handoff
+  - needs-triage
 body:
   - type: markdown
     attributes:

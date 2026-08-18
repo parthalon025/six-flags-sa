@@ -108,10 +108,20 @@ async function shot(page, name) {
   if (paths < 200) throw new Error(`${name}: map not drawn (${paths} paths)`);
 }
 
+const FFMPEG_BIN = process.env.FFMPEG_BIN || 'ffmpeg';
+
+/** True when FFMPEG_BIN resolves to a runnable ffmpeg. Video encoding is
+ * best-effort (#469): agent containers may not have ffmpeg installed, and
+ * that must not fail a run where every still already captured fine. */
+function ffmpegAvailable() {
+  const probe = spawnSync(FFMPEG_BIN, ['-version'], { stdio: 'ignore' });
+  return !probe.error && probe.status === 0;
+}
+
 function encodeWalkthrough(webmPath) {
   const mp4 = path.join(OUT, 'walkthrough.mp4');
   const r = spawnSync(
-    'ffmpeg',
+    FFMPEG_BIN,
     [
       '-y',
       '-i',
@@ -200,8 +210,10 @@ async function main() {
 
   await dismissNavigation(page).catch(() => {});
   await page.keyboard.press('Escape').catch(() => {});
-  await go(page, 'Rider height');
+  await go(page, 'Plan');
   await setSheet(page, 'full');
+  const heightsTab = page.locator('.settingsTopic', { hasText: 'Heights' });
+  if (await heightsTab.count()) await heightsTab.click();
   const tier46 = page.locator('.tier', { hasText: '46' });
   await tier46.click();
   await page.waitForTimeout(700);
@@ -210,7 +222,8 @@ async function main() {
   await page.waitForTimeout(700);
   await shot(page, 'height-filter.png');
 
-  await go(page, 'Rider height');
+  await go(page, 'Plan');
+  if (await heightsTab.count()) await heightsTab.click();
   const clear = page.locator('.labelAction:has-text("Clear")');
   if (await clear.count()) await clear.click();
   await page.waitForTimeout(400);
@@ -222,9 +235,9 @@ async function main() {
   await rowMain.waitFor({ state: 'visible', timeout: 15000 });
   if (!(await page.locator('.poiRow.open').count())) await rowMain.click();
   await page.waitForTimeout(500);
-  if (!(await page.locator('.poiRow.open .joinRow').count())) await rowMain.click();
+  if (!(await page.locator('.poiRow.open .placeActions').count())) await rowMain.click();
   await page.waitForTimeout(400);
-  const walk = page.locator('.poiRow.open .joinRow button[aria-label="Walk me there"]');
+  const walk = page.locator('.poiRow.open button[aria-label="Walk me there"]');
   if (!(await walk.count())) {
     await page.screenshot({ path: '/tmp/walk-fail.png' });
     console.log('walk fail html', (await page.locator('.poiRow').first().innerHTML().catch(() => 'none')).slice(0, 800));
@@ -291,7 +304,11 @@ async function main() {
 
   const webm = fs.readdirSync(videoDir).find((f) => f.endsWith('.webm'));
   if (!webm) throw new Error('Playwright did not write a walkthrough video');
-  encodeWalkthrough(path.join(videoDir, webm));
+  if (ffmpegAvailable()) {
+    encodeWalkthrough(path.join(videoDir, webm));
+  } else {
+    console.log('  walkthrough.mp4: skipped (no ffmpeg)');
+  }
   fs.rmSync(videoDir, { recursive: true, force: true });
   console.log('\nreadme shots written to docs/images/readme/\n');
 }

@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "contact": "display factory — docs/research/2026-08-18-custom-map-display-factory.md",
+  "materials": {
+    "paving-stones--warm": {
+      "label": "Warm paving stones",
+      "license": "CC0-1.0",
+      "source": "https://ambientcg.com/view?id=PavingStones070",
+      "maps": ["basecolor", "normal", "orm"],
+      "resolution": 1024,
+      "seamless": true
+    },
+    "asphalt--worn": {
+      "label": "Worn asphalt",
+      "license": "CC0-1.0",
+      "source": "https://ambientcg.com/view?id=Asphalt025",
+      "maps": ["basecolor", "normal", "orm"],
+      "resolution": 1024,
+      "seamless": true
+    },
+    "grass--meadow": {
+      "label": "Meadow grass",
+      "license": "CC0-1.0",
+      "source": "https://ambientcg.com/view?id=Grass004",
+      "maps": ["basecolor", "normal", "orm"],
+      "resolution": 1024,
+      "seamless": true
+    },
+    "water--calm": {
+      "label": "Calm water",
+      "license": "original",
+      "source": "material-maker://graphs/water-calm",
+      "maps": ["basecolor", "normal"],
+      "resolution": 512,
+      "seamless": true
+    },
+    "water--pool": {
+      "label": "Pool water",
+      "license": "original",
+      "source": "material-maker://graphs/water-pool",
+      "maps": ["basecolor", "normal"],
+      "resolution": 512,
+      "seamless": true
+    },
+    "steel--track": {
+      "label": "Coaster track steel",
+      "license": "CC0-1.0",
+      "source": "https://ambientcg.com/view?id=Metal032",
+      "maps": ["basecolor", "normal", "orm"],
+      "resolution": 512,
+      "seamless": true
+    },
+    "fiberglass--flume": {
+      "label": "Slide flume fiberglass",
+      "license": "original",
+      "source": "material-maker://graphs/fiberglass-flume",
+      "maps": ["basecolor", "normal"],
+      "resolution": 512,
+      "seamless": true
+    },
+    "roofing--shingle": {
+      "label": "Shingle roofing",
+      "license": "CC0-1.0",
+      "source": "https://ambientcg.com/view?id=RoofingTiles003",
+      "maps": ["basecolor", "normal", "orm"],
+      "resolution": 1024,
+      "seamless": true
+    },
+    "concrete--lot": {
+      "label": "Parking lot concrete",
+      "license": "CC0-1.0",
+      "source": "https://ambientcg.com/view?id=Concrete034",
+      "maps": ["basecolor", "normal", "orm"],
+      "resolution": 1024,
+      "seamless": true
+    }
+  }
+}

@@ -73,8 +73,8 @@ This backlog **strangles** toward the vision. It does not greenfield-rewrite the
 |----|------|-------|-----------|--------|
 | EP.1 | Auth provider choice + ADR | Clerk; Google + Apple only; soft gate | ADR: [`../../adr/0010-clerk-profile-signup.md`](../../adr/0010-clerk-profile-signup.md) (supersedes Auth.js) | done |
 | EP.2 | Profile schema | `users`, `profiles` (display name, avatar key, created_at) | Migrations + shared types | open |
-| EP.3 | Sign-in / sign-up UX | Soft gate: browse map and join/host a **Party** by name; contribute / **Side Quest** submit need a **Profile** | Functional tests; no anonymous contribution path | open |
-| EP.4 | Offline profile cache | Profile + rank/passport snapshot in IndexedDB after login | Map still draws offline; identity available for local queues | open |
+| EP.3 | Sign-in / sign-up UX | Soft gate: browse map and join/host a **Party** by name; contribute / **Side Quest** submit need a **Profile** | Functional tests; no anonymous contribution path | **done** |
+| EP.4 | Offline profile cache | Profile + rank/passport snapshot in IndexedDB after login | Map still draws offline; identity available for local queues | **partial** (code shipped — profileCache + resolveSession fallback; named offline-identity check pending) |
 | EP.5 | Party ↔ profile link | **Member** may bind to a **Profile** later (invite is name-first; join does not require sign-in) | Protocol/tests updated | open |
 | EP.6 | Managed guest profiles | Height/age for kids under guardian profile | Eligibility-ready; privacy rules documented | open |
 
@@ -264,7 +264,7 @@ Detail: [`2026-08-10-gamified-map-contributions-design.md`](./2026-08-10-gamifie
 | 4 | Human review gate; PR-only ship | open |
 | 5 | Vision + weekly OSM drift | deferred (E13) |
 
-**Map track:** M0 float rebase landed in #72. **M0 remainder** (viewport cull, gesture off React, node-budget HUD, LOD) is a follow-on — separate from auth epics. M2–M4 skins wait for E11.
+**Map track:** M0 float rebase landed in #72. **M0 remainder** (viewport cull, gesture off React, node-budget HUD, LOD) is a follow-on — separate from auth epics. M2–M4 skins wait for E11. The M0 map performance contract test (`test/scripts/map-performance-contract.test.mjs`) is now wired into the CI gate (`scripts/ci/manifest.mjs`).
 
 ---
 
@@ -322,7 +322,7 @@ Parallel after #72: **M0 remainder** map zoom perf (cull / HUD / LOD).
 4. ~~**Sign-in gate hardness:**~~ **Resolved 2026-08-11 plan: soft gate** — browse map anonymously; party / contribute / adventure sync require sign-in.  
 5. ~~**Consolidate apply mode:**~~ **Resolved 2026-08-11 plan: steward-approved** override PRs (no auto-merge).  
 6. **Height rules → OSM?** Prefer Park Bound overrides forever unless OSM has a clear tag.  
-7. **MapLibre:** Stay on SVG until a measured need.  
+7. ~~**MapLibre:** Stay on SVG until a measured need.~~ **Resolved 2026-08-18: SVG pin removed** — MapLibre/WebGL adoption may proceed (builder-side style compiler + PMTiles pipeline lands the GL-ready data; M0 HUD metrics inform the swap rather than gate it).  
 8. **Python workers now vs later:** Prefer Node workers first; Python OK for GIS-heavy E12/E13.
 
 ---

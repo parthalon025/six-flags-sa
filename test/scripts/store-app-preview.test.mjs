@@ -23,6 +23,24 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
+const FFMPEG_BIN = process.env.FFMPEG_BIN || 'ffmpeg';
+
+/** ffmpeg is best-effort tooling (#469): agent containers may not have it
+ * installed, and that must not crash the whole unit chain. */
+function ffmpegAvailable() {
+  try {
+    execFileSync(FFMPEG_BIN, ['-version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+if (!ffmpegAvailable()) {
+  console.log('store-app-preview: skipped (no ffmpeg)');
+  process.exit(0);
+}
+
 assert.equal(IPHONE_PREVIEW.width, 886);
 assert.equal(IPHONE_PREVIEW.height, 1920);
 assert.equal(IPHONE_PREVIEW.minSeconds, 15);

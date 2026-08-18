@@ -62,11 +62,19 @@ export function startProductionServer({
 } = {}) {
   // Detach + unref so `start` can wait for health and exit while Next keeps
   // running for the Playwright step (bash `npm start &` used to do this).
-  const child = spawnFn('npm', ['run', 'start', '-w', '@party-tracker/app'], {
-    cwd: root,
-    stdio: 'ignore',
-    detached: true,
-  });
+  const isWin = process.platform === 'win32';
+  const child = isWin
+    ? spawnFn(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', 'npm run start -w @party-tracker/app'], {
+        cwd: root,
+        stdio: 'ignore',
+        detached: true,
+        windowsHide: true,
+      })
+    : spawnFn('npm', ['run', 'start', '-w', '@party-tracker/app'], {
+        cwd: root,
+        stdio: 'ignore',
+        detached: true,
+      });
   child.unref?.();
   return child;
 }

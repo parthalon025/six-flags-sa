@@ -35,14 +35,36 @@ jobs:
           cat drift-report.json
           exit 0
 
-      - name: Open handoff issue on drift
+      - name: Check for existing drift issue
+        id: existing
         if: steps.drift.outputs.exit != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NUMBER=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search 'in:title "Venue drift detected"' \
+            --json number --jq '.[0].number // empty')
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on existing drift issue
+        if: steps.drift.outputs.exit != '0' && steps.existing.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh issue comment "${{ steps.existing.outputs.number }}" \
+            --body "Drift still detected as of $(date -u +%Y-%m-%dT%H:%M:%SZ) — see this run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Open handoff issue on drift
+        if: steps.drift.outputs.exit != '0' && steps.existing.outputs.number == ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh issue create \
             --title "Venue drift detected — OSM no longer matches shipped bundles" \
             --label agent-handoff \
+            --label needs-triage \
             --body "$(cat <<'EOF'
           ## What failed
           Weekly drift watch found venues that would change on rebuild.

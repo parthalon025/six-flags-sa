@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/Icon';
+import { WORDS } from '@/lib/brand';
 import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/lib/park';
 import { usePois, useVenueSelector } from '@/lib/venue/useVenue';
 import { identityOf, samePlace } from '@/lib/venue/ids';
+import { placeContext } from '@/lib/venue/placeContext';
 import { campDetails, campSearchText } from '@/lib/camping';
 import { distance, formatDistance, formatWalk } from '@/lib/geo';
 import { PlaceDetailBody } from '@/components/PlaceDetail';
@@ -32,6 +34,7 @@ const VERDICT = {
   companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
   advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
   not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
+  unknown: { label: 'Unknown', cls: 'unknown', icon: null },
 };
 
 export default function PlaceList({
@@ -65,6 +68,7 @@ export default function PlaceList({
   // The venue, for the half of a campsite's details that belong to the whole
   // campground rather than to one pitch.
   const venue = useVenueSelector((s) => s.venue);
+  const map = useVenueSelector((s) => s.map);
   const [onlyRunning, setOnlyRunning] = useState(false);
 
   const ROW_H = 52;
@@ -196,6 +200,7 @@ export default function PlaceList({
     const open = selected && samePlace(selected, p);
     const st = statuses.get(p.id) || null;
     const showStatus = Boolean(st && st.label);
+    const context = placeContext(p, venue, map);
     return (
       <div key={p.id} className={`poiRow ${open ? 'open' : ''} ${v.cls}`}>
         <button
@@ -216,7 +221,8 @@ export default function PlaceList({
           <span className="poiText">
             <b className="poiName">{p.n}</b>
             <span>
-              {isRide ? heightLabel(p) : CATEGORY_LABELS[p.c]} · {p.a}
+              {isRide ? heightLabel(p) : CATEGORY_LABELS[p.c]}
+              {context ? ` · ${context.kind === 'zone' ? WORDS.zone : WORDS.world} · ${context.name}` : ''}
             </span>
           </span>
           <span className="poiOut">
@@ -240,9 +246,11 @@ export default function PlaceList({
                     : '',
                   st.live === 'weather' || st.key === 'closed' ? 'weather' : '',
                   st.source === 'weather' ? 'guess' : '',
+                  st.stale ? 'stale' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')}
+                title={st.detail || undefined}
               >
                 <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {st.label}
@@ -346,8 +354,8 @@ export default function PlaceList({
             </div>
           ) : (
             <p className="fine">
-              Nothing in this park is called that. Try a ride&apos;s name, or a word like
-              “toilet”, “food” or “first aid”.
+              Nothing in this World is called that. Try a ride&apos;s name, or a word like
+              “restroom”, “food” or “first aid”.
             </p>
           ))}
         {useVirtual ? (

@@ -31,7 +31,7 @@ export default function AdminVenuesPage() {
   if (error) {
     return (
       <main className="adminPage">
-        <h1>Venue inspection</h1>
+        <h1>World inspection</h1>
         <p className="fine">Could not load comparison: {error}</p>
         <Link href="/">Back to map</Link>
       </main>
@@ -41,8 +41,8 @@ export default function AdminVenuesPage() {
   if (!data) {
     return (
       <main className="adminPage">
-        <h1>Venue inspection</h1>
-        <p className="fine">Loading built venues…</p>
+        <h1>World inspection</h1>
+        <p className="fine">Loading built Worlds…</p>
       </main>
     );
   }
@@ -51,9 +51,9 @@ export default function AdminVenuesPage() {
     <main className="adminPage">
       <header className="adminHeader">
         <div>
-          <h1>Venue inspection</h1>
+          <h1>World inspection</h1>
           <p className="fine">
-            Built bundles compared to manifest. Approve before merging a venue rebuild PR.
+            Built World bundles compared to the manifest. Approve before merging a World rebuild PR.
           </p>
         </div>
         <Link className="btn small" href="/">
@@ -62,7 +62,7 @@ export default function AdminVenuesPage() {
       </header>
 
       <p className="adminSummary">
-        <b>{data.passed}</b> of <b>{data.total}</b> venues match manifest
+          <b>{data.passed}</b> of <b>{data.total}</b> Worlds match the manifest
       </p>
 
       <div className="adminGrid">

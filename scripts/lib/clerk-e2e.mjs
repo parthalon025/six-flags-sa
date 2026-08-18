@@ -6,9 +6,11 @@
 
 export const AUTH_E2E_PATH_NEEDLES = [
   'apps/party-tracker/components/AuthGate.jsx',
+  'apps/party-tracker/components/AuthGateActions.jsx',
   'apps/party-tracker/components/SignInCard.jsx',
   'apps/party-tracker/components/OAuthButtons.jsx',
   'apps/party-tracker/lib/auth/clerkOAuth.js',
+  'apps/party-tracker/lib/auth/useClerkOAuth.js',
   'apps/party-tracker/app/sign-in/',
 ];
 

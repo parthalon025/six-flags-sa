@@ -2,13 +2,12 @@
 
 **Explore more. Stress less.**
 
-The app ends up as an icon on everyone's phone, and one phone runs the party.
-There are no accounts and nobody has to sign up for anything.
+Parkbound puts a living World map on everyone's phone, and one phone can host the Party.
+You can explore as a guest; sign in is optional when you want to save Profile progress.
 
-It opens on Kings Island, and Six Flags Fiesta Texas is in the **Day** tab under
-**Which park**. It switches on its own: to whichever one your first GPS fix lands
-inside, and then to wherever the phone hosting your party is, so everyone in a
-party sees the same map. To add anywhere else, see *Building a map of somewhere
+It can open on Kings Island, and other Worlds are available from **Me → Explore Worlds**.
+It can switch to the World your first GPS fix lands inside, and then to wherever the phone
+hosting your Party is, so everyone sees the same map. To add anywhere else, see *Building a map of somewhere
 else* in [docs/guide/venue-builder.md](docs/guide/venue-builder.md).
 
 ## The two fast ways

@@ -177,6 +177,20 @@ const manifest = loadModulesManifest();
 }
 
 {
+  const sel = selectModulesFromFiles(['CONTEXT.md'], manifest);
+  assert(sel.modules.includes('contract'), 'CONTEXT.md → contract (context stamp re-check)');
+  assert(!sel.modules.includes('smoke'), 'CONTEXT.md skips UI');
+  assert(!sel.fullSuite, 'CONTEXT.md is not full suite');
+}
+
+{
+  const sel = selectModulesFromFiles(['docs/adr/0013-display-pipeline.md'], manifest);
+  assert(sel.modules.includes('contract'), 'ADR → contract (context stamp re-check)');
+  assert(!sel.modules.includes('party'), 'ADR skips UI');
+  assert(!sel.fullSuite, 'ADR is not full suite');
+}
+
+{
   const sel = selectModulesFromFiles(['apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx'], manifest);
   assert(sel.modules.includes('auth'), 'sign-in page → auth');
   assert(sel.modules.includes('smoke'), 'auth pulls smoke');

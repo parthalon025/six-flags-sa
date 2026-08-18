@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "skin": "park-midnight",
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "night",
+    "colors": {
+      "path": "#C4A882",
+      "ground": "#1A1520",
+      "water": "#1E4A5C",
+      "grass": "#1E3020",
+      "building": "#2A2438",
+      "label": "#F0E8DC"
+    }
+  },
+  "surfaces": {
+    "walkway": {
+      "material": "paving-stones--warm",
+      "layers": [
+        "path"
+      ]
+    },
+    "service-road": {
+      "material": "asphalt--worn",
+      "layers": [
+        "service"
+      ]
+    },
+    "vegetation": {
+      "material": "grass--meadow",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ]
+    },
+    "water": {
+      "material": "water--calm",
+      "layers": [
+        "water"
+      ]
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ]
+    },
+    "coaster-track": {
+      "material": "steel--track",
+      "layers": [
+        "coaster"
+      ]
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ]
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ]
+    },
+    "lot": {
+      "material": "concrete--lot",
+      "layers": [
+        "parking"
+      ]
+    }
+  },
+  "landTones": {
+    "International Street": {
+      "day": "#F1EEE4",
+      "night": "#2A271D"
+    },
+    "Coney Mall": {
+      "day": "#F1EAE4",
+      "night": "#2A231D"
+    },
+    "Rivertown": {
+      "day": "#E4F1E4",
+      "night": "#1D2A1D"
+    },
+    "Action Zone": {
+      "day": "#E4ECF1",
+      "night": "#1D252A"
+    },
+    "Area 72": {
+      "day": "#EAE4F1",
+      "night": "#231D2A"
+    },
+    "Planet Snoopy": {
+      "day": "#F1EFE4",
+      "night": "#2A281D"
+    },
+    "Camp Snoopy": {
+      "day": "#ECF1E4",
+      "night": "#252A1D"
+    },
+    "Adventure Port": {
+      "day": "#E4F1EF",
+      "night": "#1D2A28"
+    },
+    "Soak City": {
+      "day": "#E4EEF1",
+      "night": "#1D272A"
+    }
+  },
+  "fallback": {
+    "landTone": "name-hue"
+  }
+}

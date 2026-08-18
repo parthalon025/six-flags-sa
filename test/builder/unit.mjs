@@ -1379,6 +1379,7 @@ const {
   normalizeWatchSettings,
   placeKeyOf,
   watchAlwaysOnPayload,
+  watchCompassPushState,
   DEFAULT_WATCH_SETTINGS,
 } = await import('../../packages/shared/compass.js');
 
@@ -1472,6 +1473,48 @@ await check('Watch settings normalize and calm Always On drops the mark field', 
     nextTurn: null,
   });
   assert.deepEqual(watchAlwaysOnPayload({ alwaysOn: 'off' }), { mode: 'blank' });
+  return true;
+});
+
+await check('Watch push state serializes native mark ids from place keys', () => {
+  const payload = watchCompassPushState({
+    me: { lat: 39.34395, lng: -84.2673 },
+    heading: 90,
+    go: { lat: 39.340142, lng: -84.266032, placeId: 'beast', label: 'The Beast' },
+    members: [{ id: 'jordan', name: 'Jordan', lat: 39.344, lng: -84.266 }],
+    meet: { lat: 39.341, lng: -84.27, label: 'Fountain' },
+    settings: { density: 'split', showParty: true, showMeet: true },
+    nextTurn: { label: 'Left in 120 ft' },
+    raised: true,
+  });
+  assert.equal(payload.heading, 90);
+  assert.equal(payload.nextTurn, 'Left in 120 ft');
+  assert.equal(payload.raised, true);
+  assert.equal(payload.settings.density, 'split');
+  const primary = payload.marks.find((m) => m.kind === 'primary');
+  assert.equal(primary?.id, 'id:beast');
+  assert.equal(primary?.label, 'The Beast');
+  assert.equal(primary?.showDistance, true);
+  assert.ok(Number.isFinite(primary?.bearing));
+  assert.ok(Number.isFinite(primary?.distanceM));
+  const member = payload.marks.find((m) => m.kind === 'member');
+  assert.equal(member?.id, 'member:jordan');
+  assert.equal(member?.showDistance, false);
+  const north = payload.marks.find((m) => m.kind === 'north');
+  assert.equal(north?.id, 'north');
+  assert.equal(north?.bearing, 0);
+  return true;
+});
+
+await check('Watch push state stays empty without facing', () => {
+  const payload = watchCompassPushState({
+    me: { lat: 39.34, lng: -84.27 },
+    heading: null,
+    meet: { lat: 39.341, lng: -84.27, label: 'Fountain' },
+  });
+  assert.equal(payload.heading, null);
+  assert.deepEqual(payload.marks, []);
+  assert.equal(payload.nextTurn, null);
   return true;
 });
 
@@ -4974,14 +5017,18 @@ await check('sourcing plan lists what the catalogue already covers', () => {
   return true;
 });
 
-await check('LLM helper reports not ready without an API key', () => {
-  const prev = process.env.VENUE_LLM_API_KEY;
-  const prevO = process.env.OPENAI_API_KEY;
-  delete process.env.VENUE_LLM_API_KEY;
-  delete process.env.OPENAI_API_KEY;
+await check('LLM helper: keyless is not ready outside an agent session, agent-ready inside one', () => {
+  const KEYS = ['VENUE_LLM_API_KEY', 'OPENAI_API_KEY', 'CLAUDECODE', 'CURSOR_AGENT'];
+  const prev = Object.fromEntries(KEYS.map((k) => [k, process.env[k]]));
+  for (const k of KEYS) delete process.env[k];
   assert.equal(llmConfig().ready, false);
-  if (prev) process.env.VENUE_LLM_API_KEY = prev;
-  if (prevO) process.env.OPENAI_API_KEY = prevO;
+  process.env.CLAUDECODE = '1';
+  assert.equal(llmConfig().provider, 'agent');
+  assert.equal(llmConfig().ready, true);
+  for (const k of KEYS) {
+    if (prev[k] === undefined) delete process.env[k];
+    else process.env[k] = prev[k];
+  }
   return true;
 });
 
@@ -5185,9 +5232,9 @@ await check('heightsSidecarFromOfficial pairs official listings to bundle rides'
 const { runVenuePipeline, runVenueBatch, STAGES, parseCatalogArgs, pipelineOptsFromCatalogArgs } =
   await import('../../packages/venue-builder/lib/build-pipeline.mjs');
 
-await check('unified build pipeline lists all nine stages', () => {
+await check('unified build pipeline lists all ten stages', () => {
   assert.deepEqual(STAGES, [
-    'sources', 'geometry', 'research', 'aliases', 'heights', 'rebuild', 'attractions', 'agent', 'certify',
+    'sources', 'geometry', 'research', 'aliases', 'heights', 'rebuild', 'attractions', 'agent', 'certify', 'display',
   ]);
   return true;
 });
@@ -6467,16 +6514,29 @@ const {
   recommendNow,
   GO_NOW_M,
 } = await import('../../apps/party-tracker/lib/live.js');
-const { GLYPHS: CHROME_GLYPHS, LIVE, WORDS } = await import('../../apps/party-tracker/lib/brand.js');
+const { GLYPHS: CHROME_GLYPHS, LIVE, PARTY_STATE, WORDS } = await import('../../apps/party-tracker/lib/brand.js');
 
 const BEAST_HERE = { ...BEAST, lat: 39.3441, lng: -84.268 };
 
-await check('meet-up and Plan share the glyphs used on the map and the tab bar', () => {
+await check('Rally and Plan share the glyphs used on the map and the tab bar', () => {
   assert.equal(CHROME_GLYPHS.meetup, 'mappin.and.ellipse');
   assert.equal(CHROME_GLYPHS.plan, 'figure.rollercoaster');
   assert.equal(CHROME_GLYPHS.walk, 'location.fill');
-  assert.equal(WORDS.meetup, 'Set meet-up');
+  assert.equal(WORDS.meetup, 'Rally the Party');
+  assert.equal(LIVE.meetup, 'RALLY');
+  assert.deepEqual(PARTY_STATE.meetHere, { label: 'Rally here', tone: 'info' });
   assert.equal(WORDS.addToPlan, 'Add to Plan');
+  return true;
+});
+
+const { placeContext } = await import('../../apps/party-tracker/lib/venue/placeContext.js');
+
+await check('a Place names a mapped Zone or its World, never an off-map area', () => {
+  const venue = { name: 'Kings Island' };
+  const map = { lands: [{ n: 'Action Zone' }] };
+  assert.deepEqual(placeContext({ a: 'Action Zone' }, venue, map), { kind: 'zone', name: 'Action Zone' });
+  assert.deepEqual(placeContext({ a: 'Landen' }, venue, map), { kind: 'world', name: 'Kings Island' });
+  assert.deepEqual(placeContext({}, venue, map), { kind: 'world', name: 'Kings Island' });
   return true;
 });
 
@@ -7280,8 +7340,60 @@ await check('Clerk provider can mount with only the publishable key', () => {
 const {
   CLERK_OAUTH_CALLBACK_PATH,
   CLERK_OAUTH_COMPLETE_PATH,
+  clerkOAuthReady,
   clerkOAuthRedirect,
+  resolveClerkSignIn,
 } = await import('../../apps/party-tracker/lib/auth/clerkOAuth.js');
+
+await check('resolveClerkSignIn prefers hook client then falls back to Clerk.client', () => {
+  const hook = { authenticateWithRedirect: async () => {} };
+  const client = { authenticateWithRedirect: async () => {} };
+  assert.equal(resolveClerkSignIn(hook, client), hook);
+  assert.equal(resolveClerkSignIn(null, client), client);
+  assert.equal(resolveClerkSignIn(undefined, client), client);
+  assert.equal(resolveClerkSignIn(null, null), null);
+  return true;
+});
+
+await check('clerkOAuthReady waits for Clerk JS, not useSignIn isLoaded', () => {
+  const signIn = { authenticateWithRedirect: async () => {} };
+  assert.equal(clerkOAuthReady({ clerkLoaded: false, signIn, clientSignIn: signIn }), false);
+  assert.equal(clerkOAuthReady({ clerkLoaded: true, signIn: null, clientSignIn: null }), false);
+  assert.equal(clerkOAuthReady({ clerkLoaded: true, signIn, clientSignIn: null }), true);
+  assert.equal(
+    clerkOAuthReady({ clerkLoaded: true, signIn: null, clientSignIn: signIn }),
+    true,
+    'client.signIn unlocks OAuth when useSignIn never loads',
+  );
+  return true;
+});
+
+await check('Profile gate is Sign in or Guest — Sign in routes to Clerk /sign-in', async () => {
+  const { AUTH_COPY } = await import('../../apps/party-tracker/lib/auth/authCopy.js');
+  assert.equal(AUTH_COPY.loginLabel, 'Sign in');
+  assert.equal(AUTH_COPY.guestLabel, 'Guest');
+  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
+  const gateActions = fs.readFileSync(
+    new URL('../../apps/party-tracker/components/AuthGateActions.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(gate, /AuthGateActions/);
+  assert.doesNotMatch(gate, /OAuthButtons/);
+  assert.doesNotMatch(gate, /useClerkOAuth/);
+  assert.match(gateActions, /href="\/sign-in"/);
+  assert.match(gateActions, /AUTH_COPY\.loginLabel/);
+  assert.match(gateActions, /AUTH_COPY\.guestLabel/);
+  return true;
+});
+
+await check('AuthGate and SignInCard share useClerkOAuth for OAuth readiness', () => {
+  const hookUrl = new URL('../../apps/party-tracker/lib/auth/useClerkOAuth.js', import.meta.url);
+  assert.equal(fs.existsSync(hookUrl), true, 'missing useClerkOAuth');
+  const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
+  assert.match(card, /useClerkOAuth/);
+  assert.doesNotMatch(card, /useSignIn/);
+  return true;
+});
 
 await check('clerkOAuthRedirect sends Google and Apple through the SSO callback', async () => {
   const calls = [];
@@ -7338,9 +7450,7 @@ await check('OAuth buttons are provider logos in two columns', () => {
   assert.match(src, /oauthActions/);
   const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
-  const gate = fs.readFileSync(new URL('../../apps/party-tracker/components/AuthGate.jsx', import.meta.url), 'utf8');
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(gate, /OAuthButtons/);
   assert.match(card, /OAuthButtons/);
   return true;
 });
@@ -7502,6 +7612,64 @@ await check('adapter registry lists core external stacks', () => {
   const summary = registrySummary();
   assert.ok(summary.byAdopt.wrap >= 5);
   return true;
+});
+
+await check('mapillary-tools row covers ride-walkthrough video evidence', () => {
+  const row = getAdapter('mapillary-tools');
+  assert.ok(row.evidence_sources.includes('mapillary'));
+  assert.ok(row.evidence_sources.includes('video'));
+  assert.equal(row.adopt, 'wrap');
+});
+
+await check('mapillary-tools is runnable but opt-in, not scaffolded by default', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  assert.ok(getAdapterImplementation('mapillary-tools'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('mapillary-tools'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('mapillary-tools'));
+});
+
+await check('poly-haven is a Display-layer adapter with no evidence_sources', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const row = getAdapter('poly-haven');
+  assert.ok(row);
+  assert.equal(row.stage, 'display');
+  assert.deepEqual(row.evidence_sources, []);
+  assert.equal(row.license, 'CC0');
+  assert.ok(getAdapterImplementation('poly-haven'));
+});
+
+await check('esa-worldcover is a Truth-layer aerial adapter, scaffolded by default', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const row = getAdapter('esa-worldcover');
+  assert.ok(row);
+  assert.deepEqual(row.evidence_sources, ['aerial']);
+  assert.equal(row.license, 'CC BY 4.0');
+  assert.ok(getAdapterImplementation('esa-worldcover'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('esa-worldcover'));
+  assert.ok(DEFAULT_EXTERNAL_ADAPTERS.includes('esa-worldcover'));
+});
+
+await check('overture-buildings is a Truth-layer cv_segmentation adapter, opt-in not scaffolded', async () => {
+  const { getAdapterImplementation } = await import('../../packages/venue-builder/lib/adapters/implementations.mjs');
+  const { DEFAULT_EXTERNAL_ADAPTERS, KNOWN_EXTERNAL_ADAPTER_IDS } = await import('../../packages/venue-builder/lib/venue-sources.mjs');
+  const row = getAdapter('overture-buildings');
+  assert.ok(row);
+  assert.deepEqual(row.evidence_sources, ['cv_segmentation']);
+  assert.equal(row.license, 'ODbL');
+  assert.ok(getAdapterImplementation('overture-buildings'));
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('overture-buildings'));
+  assert.ok(!DEFAULT_EXTERNAL_ADAPTERS.includes('overture-buildings'));
+});
+
+await check('segment-geospatial is deferred pending GPU infra, matching sam2', () => {
+  const sg = getAdapter('segment-geospatial');
+  const sam2 = getAdapter('sam2');
+  assert.ok(sg);
+  assert.equal(sg.adopt, 'defer');
+  assert.equal(sg.gpu, true);
+  assert.equal(sam2.adopt, 'defer');
 });
 
 await check('evidence graph summarises converging claims', () => {

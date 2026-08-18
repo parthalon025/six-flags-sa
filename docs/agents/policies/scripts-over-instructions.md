@@ -18,7 +18,9 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Playwright UI job unpack/start | `scripts/ci/party-tracker-ui.mjs` |
 | CI gate manifest | `scripts/ci/manifest.mjs` |
 | Pre-merge vertical validation | `npm run test:pre-merge-vertical` → `scripts/ci/pre-merge-vertical.mjs` |
+| Which verticals a code diff owes | `scripts/lib/vertical-e2e.mjs` (see vertical-e2e policy) |
 | Clerk-on e2e before merge (auth UI) | `scripts/lib/clerk-e2e.mjs` |
+| Production Sign in with Apple (Services ID, Clerk flags) | `scripts/lib/clerk-apple-prod-spec.json` + `npm run clerk:check` |
 | CI/CD workflow map | [docs/agents/ci.md](../ci.md) |
 | Stamp app version on dev/build | `apps/party-tracker/scripts/inject-version.mjs` (`predev` / `prebuild`) |
 | Bump semver after merge to `main` | `.github/workflows/bump-version.yml` → `scripts/bump-version.mjs` |
@@ -29,5 +31,6 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Compose agent docs from policy templates | `npm run agent-docs:build` / `agent-docs:check` (`scripts/lib/agent-docs/compose.mjs`) |
 | GitHub issue forms | `docs/agents/templates/github/*.yml` → `.github/ISSUE_TEMPLATE/` via `agent-docs:build` |
 | Package entry points | [packages/README.md](../../packages/README.md) |
+| Apple Identifiers vs Xcode vs Keys | `scripts/lib/apple-developer.json` + `scripts/lib/apple-developer.mjs` (human steps: [docs/guide/apple-developer.md](../../guide/apple-developer.md)) |
 
 When adding new policy, ask: *can a script or workflow own this?* If yes, write that first and keep agent instructions to when and why to invoke it.

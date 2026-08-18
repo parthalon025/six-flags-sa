@@ -263,6 +263,7 @@ const HTTP_KIND = {
 export function contributionHttpBody(contribution) {
   if (!contribution) return contribution;
   return {
+    id: contribution.id || undefined,
     authorId: contribution.authorId,
     venueId: contribution.venueId,
     placeId: contribution.placeId || undefined,

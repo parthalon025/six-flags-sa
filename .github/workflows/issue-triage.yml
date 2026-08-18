@@ -1,0 +1,48 @@
+# Backstop: every issue must land in one of the five canonical triage
+# states (docs/agents/policies/github-triage-labels.md). Issue templates and
+# ad hoc `gh issue create` calls can omit a triage-state label — this applies
+# needs-triage when none is present, unless the issue already carries a
+# separately-managed classification label (roadmap:*, wayfinder:*).
+
+name: Issue triage
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Apply needs-triage if unlabeled
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LABELS_JSON: ${{ toJSON(github.event.issue.labels) }}
+        run: |
+          set -euo pipefail
+          TRIAGE_STATES="needs-triage needs-info ready-for-agent ready-for-human wontfix"
+          NAMES=$(echo "$LABELS_JSON" | jq -r '.[].name')
+
+          has_triage_state=false
+          has_managed_prefix=false
+          while IFS= read -r name; do
+            [ -z "$name" ] && continue
+            for state in $TRIAGE_STATES; do
+              if [ "$name" = "$state" ]; then
+                has_triage_state=true
+              fi
+            done
+            case "$name" in
+              roadmap:*|wayfinder:*)
+                has_managed_prefix=true
+                ;;
+            esac
+          done <<< "$NAMES"
+
+          if [ "$has_triage_state" = false ] && [ "$has_managed_prefix" = false ]; then
+            gh issue edit "${{ github.event.issue.number }}" --add-label needs-triage
+          fi

@@ -1,0 +1,36 @@
+{
+  "apple_developer": {
+    "services_id": "ai.kurat0r.parkbound.web",
+    "bundle_id": "ai.kurat0r.parkbound",
+    "team_id": "CDHJC4MH4G",
+    "key_id": "ZZNS5TWZ74",
+    "do_not_use_key_id": "45W483PCTK",
+    "domain": "clerk.parkbound.kurat0r.ai",
+    "return_url": "https://clerk.parkbound.kurat0r.ai/v1/oauth_callback",
+    "notes": [
+      "Services ID must be ai.kurat0r.parkbound.web — not com.Kurat0r.parkbound and not the App ID.",
+      "Sign In with Apple → Configure: primary App ID ai.kurat0r.parkbound, domain clerk.parkbound.kurat0r.ai (no https), Return URL exactly the return_url.",
+      "Save through Next → Done → Continue → Save.",
+      "SIWA .p8 is key_id ZZNS5TWZ74. Never paste AuthKey_45W483PCTK (App Store Connect API).",
+      "Start Apple from https://parkbound.kurat0r.ai/sign-in so Clerk mints state. A probe authorize URL with a fake state returns authorization_invalid.",
+      "Phone, email login, passkeys, and required first/last name block Apple Hide My Email — keep clerk_signup as specified."
+    ]
+  },
+  "clerk_connection": {
+    "enabled": true,
+    "client_id": "ai.kurat0r.parkbound.web",
+    "team_id": "CDHJC4MH4G",
+    "key_id": "ZZNS5TWZ74",
+    "bundle_id": "ai.kurat0r.parkbound"
+  },
+  "clerk_signup": {
+    "auth_phone.required_for_sign_up": false,
+    "auth_phone.used_for_sign_up": false,
+    "auth_phone.used_for_sign_in": false,
+    "auth_email.required_for_sign_up": false,
+    "auth_email.used_for_sign_in": false,
+    "auth_passkey.used_for_sign_in": false,
+    "user_model.first_name.required": false,
+    "user_model.last_name.required": false
+  }
+}

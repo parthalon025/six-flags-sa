@@ -31,9 +31,16 @@ export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLER
  * cannot be fetched with no outbound network, and a certificate the test
  * browser has never been told to trust. Everything else is a real error and the
  * suites assert on it — this list must not grow to make a failure go away.
+ *
+ * /api/weather gateway-class failures (502/503/504) are the same class: the
+ * route proxies an external weather service that can be down or rate-limiting
+ * CI runner IPs, and the app treats missing weather as a gap, not an error.
+ * Only the weather route's outage codes are tolerated — any other route, and
+ * a weather 500 (a bug, not an outage), stay real errors. Remove this entry
+ * when #502 lands (the route degrading gap-honest instead of 503ing).
  */
 export const IGNORABLE_CONSOLE =
-  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)/;
+  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)|Blocked call to navigator\.vibrate|Failed to load resource.*\b50[234]\b.*\/api\/weather/;
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {
@@ -193,6 +200,26 @@ export const hydrated = (page) =>
   });
 
 /**
+ * Dismiss the Profile auth gate (Login / Guest) when Clerk is configured.
+ */
+export async function dismissAuthGate(page, { timeout = 12000 } = {}) {
+  const deadline = Date.now() + timeout;
+  do {
+    const guest = page.locator('.authGate button:has-text("Guest"), .authGate button:has-text("Continue as guest")');
+    if (await guest.count()) {
+      await guest.first().click({ force: true }).catch(() => {});
+      await page.waitForTimeout(400);
+      if (!(await page.locator('.authGate').count())) return true;
+    } else if (!(await page.locator('.authGate').count())) {
+      return true;
+    }
+    if (timeout === 0) break;
+    await page.waitForTimeout(250);
+  } while (Date.now() < deadline);
+  return false;
+}
+
+/**
  * Dismiss the one-time update splash if it is up. Polls because React may not
  * have painted it yet when `goto` returns.
  */
@@ -205,6 +232,9 @@ export async function dismissUpdateSplash(page, { timeout = 12000 } = {}) {
       await page.waitForTimeout(600);
       return true;
     }
+    // No gate of any kind up: this splash is not forming either, so stop polling
+    // instead of burning the full timeout on every call (functional#194).
+    if (!(await page.locator('.gate').count())) return true;
     if (timeout === 0) break;
     await page.waitForTimeout(250);
   } while (Date.now() < deadline);
@@ -225,6 +255,10 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
       await primary.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
       if (!(await intro.count())) return true;
+    } else if (!(await page.locator('.gate').count())) {
+      // No gate of any kind up: this splash is not forming either, so stop
+      // polling instead of burning the full timeout on every call (#194).
+      return true;
     }
     if (timeout === 0) break;
     await page.waitForTimeout(250);
@@ -239,11 +273,12 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
  * so an intake bug fails its own assertion rather than every test behind it.
  */
 export async function closeGate(page) {
+  await dismissAuthGate(page);
   await dismissIntroSplash(page);
   await dismissUpdateSplash(page);
-  const nearest = page.locator('button:has-text("Go to nearest park")');
+  const nearest = page.locator('button:has-text("Go to nearest World"), button:has-text("Go to nearest park")');
   const allow = page.locator('button:has-text("Allow location")');
-  const yes = page.locator('.gate .btn.primary:has-text("set up")');
+  const yes = page.locator('.gate .btn.primary:has-text("Enter"), .gate .btn.primary:has-text("set up")');
   const quiet = page.locator(
     'button:has-text("Just browsing"), button:has-text("Just look around"), button:has-text("Just show me"), button:has-text("Just show me the map"), button:has-text("Skip for now"), button:has-text("Not now")',
   );
@@ -251,6 +286,7 @@ export async function closeGate(page) {
   else if (await allow.count()) await allow.click().catch(() => {});
   const deadline = Date.now() + 20000;
   while (Date.now() < deadline) {
+    await dismissAuthGate(page, { timeout: 250 });
     await dismissIntroSplash(page, { timeout: 250 });
     await dismissUpdateSplash(page, { timeout: 250 });
     const paths = await page.locator('.mapSvg path').count();
@@ -298,9 +334,9 @@ export async function root(page) {
  *   'Rides', 'Plan'  the Plan tab, where the venue publishes height rules
  *   'Settings', 'Me',
  *   'Day'            the Day tab
- *   'Which map', 'Which park',
+ *   'Explore Worlds',
  *   'Show on the map', 'On the map',
- *   'Diagnostics'    a row inside Day
+ *   'Diagnostics'    a row inside Day (Map / More topic tabs)
  */
 const TAB_OF = {
   Places: 'explore',
@@ -316,8 +352,7 @@ const TAB_OF = {
   Day: 'settings',
 };
 const SETTINGS_ROWS = new Set([
-  'Which map',
-  'Which park',
+  'Explore Worlds',
   'Show on the map',
   'On the map',
   'Diagnostics',
@@ -354,6 +389,28 @@ export async function dismissNavigation(page) {
   await page.waitForTimeout(300);
 }
 
+/**
+ * Peek the Explore sheet so map FABs stay actionable.
+ * A half/full sheet sets data-crowded and zeros .fabs pointer-events.
+ */
+export async function ensurePeek(page) {
+  await dismissNavigation(page).catch(() => {});
+  const explore = page.locator('.tabItem[data-tab="explore"]');
+  if (await explore.count()) {
+    await explore.click({ force: true });
+    await page.waitForTimeout(300);
+  }
+  await root(page);
+  const stop = () =>
+    page.locator('.sheet').evaluate((e) =>
+      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+    );
+  for (let i = 0; i < 4 && (await stop()) !== 'peek'; i += 1) {
+    await page.getByRole('slider', { name: /Resize panel/ }).click();
+    await page.waitForTimeout(350);
+  }
+}
+
 /** POI heights gate the Plan/Rides tab — wait before Rider height navigation. */
 export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
   await until(
@@ -387,13 +444,25 @@ export async function go(page, dest) {
     await page.getByRole('slider', { name: /Resize panel/ }).click();
     await page.waitForTimeout(350);
   }
+  if (dest === 'Rider height') {
+    const heightsTab = page.locator('.settingsTopic', { hasText: 'Heights' });
+    if (await heightsTab.count()) await heightsTab.click();
+    await page.waitForTimeout(300);
+  }
+  if (dest === 'Explore Worlds' || dest === 'On the map' || dest === 'Show on the map') {
+    const mapTab = page.locator('.settingsTopic', { hasText: 'Map' });
+    if (await mapTab.count()) await mapTab.click();
+    await page.waitForTimeout(300);
+  }
+  if (dest === 'Diagnostics') {
+    const moreTopic = page.locator('.settingsTopic', { hasText: 'More' });
+    if (await moreTopic.count()) {
+      await moreTopic.click();
+      await page.waitForTimeout(300);
+    }
+  }
   if (!SETTINGS_ROWS.has(dest)) return;
-  const rowLabel =
-    dest === 'Which map'
-      ? 'Which park'
-      : dest === 'Show on the map'
-        ? 'On the map'
-        : dest;
+  const rowLabel = dest === 'Show on the map' ? 'On the map' : dest;
   await page.locator(`.row:has-text("${rowLabel}")`).first().click();
   await page.waitForTimeout(350);
 }

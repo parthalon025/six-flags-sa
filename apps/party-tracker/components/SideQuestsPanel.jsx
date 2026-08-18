@@ -63,6 +63,7 @@ export default function SideQuestsPanel({
   onRankUp = null,
   onContribution = null,
   overlay = null,
+  flushTick = 0,
 }) {
   const queue = defaultQuestQueue();
   const gapNeedsAuth = softGateBlocks('adventure', session);
@@ -121,7 +122,10 @@ export default function SideQuestsPanel({
     return () => {
       alive = false;
     };
-  }, [queue, lastSubmittedId]);
+    // flushTick: bumped by app/page.js after a background sync removes
+    // reports from this same queue — re-reads the count so "N pending"
+    // reflects what actually reached the server.
+  }, [queue, lastSubmittedId, flushTick]);
 
   function resetForm() {
     setNote('');
