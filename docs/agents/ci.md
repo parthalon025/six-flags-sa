@@ -45,6 +45,8 @@ After a successful run, `scripts/ci/local-ci-pass.json` records the tree and mod
 
 `fullSuitePaths` in `modules.json` still forces all modules when e.g. `functional.mjs` or `test-app.yml` changes. Version-stamp-only file lists bypass full-suite triggers.
 
+`CONTEXT.md` / `docs/adr/**` diffs select the coverage-contract job; it fails on a stale context stamp until `test/app/critical-paths.json` is reviewed against the new capabilities and restamped (`node test/app/coverage-contract.mjs --stamp`).
+
 Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run test:validate-ui -- --all` every Sunday 08:00 UTC (or `workflow_dispatch`).
 
 | Step | Script / command |
