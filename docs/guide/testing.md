@@ -78,6 +78,11 @@ the ones that match the PR’s changed paths — including lint — see
 skip the expensive jobs. Push to `main` and edits to the workflow or
 `functional.mjs` still run the full matrix.
 
+Before merging, `npm run test:pre-merge-vertical` prints the verticals your diff owes and
+runs them: code work is proven end to end with the run's output asserted, and the pass
+stamp records which verticals ran. `--skip-browser` is refused for diffs that touch app
+behaviour. See [docs/agents/policies/vertical-e2e.md](../agents/policies/vertical-e2e.md).
+
 Vercel preview deploys are **not** the default validation path — they consume the
 user-reserved deploy budget (25/day). Use `npm run build -w @party-tracker/app` and the
 suites above; see [contributing.md](contributing.md#vercel-deploys) and

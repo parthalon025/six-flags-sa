@@ -219,6 +219,10 @@ docs/
   universal-venue-builder-architecture.md   (this file)
 ```
 
+Internal boundaries between `agents/`, `operators/`, and `adapters/` (and which core
+files may reach into them) are enforced by `npm run lint:boundaries`, not prose alone —
+see [venue-builder-lib-boundaries.md](./agents/policies/venue-builder-lib-boundaries.md).
+
 ## Principles
 
 1. **Wrap, don't fork** — upstream stays upstream; adapters document invoke paths.

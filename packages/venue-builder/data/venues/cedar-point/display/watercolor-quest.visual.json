@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "venue": "cedar-point",
+  "skin": "watercolor-quest",
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "tokens": {
+    "contrastFloor": 4.5,
+    "labelHalo": true,
+    "mode": "day",
+    "colors": {
+      "path": "#756276",
+      "ground": "#F4EFDF",
+      "water": "#8FB5C2",
+      "grass": "#D9D0B5",
+      "building": "#B8A68D",
+      "label": "#57485C",
+      "structureEdge": "#756276",
+      "groundEdge": "#C9BFAE",
+      "pathCasing": "#F4EFDF"
+    }
+  },
+  "surfaces": {
+    "walkway": {
+      "material": "paving-stones--warm",
+      "layers": [
+        "path"
+      ]
+    },
+    "service-road": {
+      "material": "asphalt--worn",
+      "layers": [
+        "service"
+      ]
+    },
+    "vegetation": {
+      "material": "grass--meadow",
+      "layers": [
+        "grass",
+        "wood",
+        "park"
+      ]
+    },
+    "water": {
+      "material": "water--calm",
+      "layers": [
+        "water",
+        "sea"
+      ]
+    },
+    "pool": {
+      "material": "water--pool",
+      "layers": [
+        "pool"
+      ]
+    },
+    "coaster-track": {
+      "material": "steel--track",
+      "layers": [
+        "coaster"
+      ]
+    },
+    "slide": {
+      "material": "fiberglass--flume",
+      "layers": [
+        "slide"
+      ]
+    },
+    "structure": {
+      "material": "roofing--shingle",
+      "layers": [
+        "building"
+      ]
+    },
+    "lot": {
+      "material": "concrete--lot",
+      "layers": [
+        "parking"
+      ]
+    }
+  },
+  "landTones": {},
+  "fallback": {
+    "landTone": "name-hue"
+  }
+}

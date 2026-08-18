@@ -22,6 +22,9 @@ export const ADAPTER_CACHE_SUFFIX = {
   openhistoricalmap: 'openhistoricalmap',
   'project-sidewalk': 'project-sidewalk',
   'mapillary-api': 'mapillary',
+  'mapillary-tools': 'mapillary-video',
+  'esa-worldcover': 'esa-worldcover',
+  'overture-buildings': 'overture-buildings',
   openrouteservice: 'openrouteservice',
   playwright: 'official',
 };

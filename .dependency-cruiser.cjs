@@ -105,6 +105,47 @@ module.exports = {
     //   from: { path: `^${R}/ui/` },
     //   to:   { path: `^${R}/billing/` },
     // },
+
+    // venue-builder/lib/ internal layering. Grounded in the real import graph
+    // (surveyed 2026-08-18, zero cycles): operators/ and adapters/ are strict
+    // leaves that never import agents/ or each other's sibling, and only a
+    // named set of core files are allowed to reach down into agents/,
+    // operators/, or adapters/ at all — everything else in core lib/ stays a
+    // base layer. See docs/agents/policies/venue-builder-lib-boundaries.md.
+    {
+      name: "venue-builder-operators-are-leaf",
+      comment:
+        "lib/operators/ never imports agents/ or adapters/ — it's the deepest leaf in the builder's lib/ layering (park-chain listing parsers only).",
+      severity: "error",
+      from: { path: "^packages/venue-builder/lib/operators/" },
+      to: { path: "^packages/venue-builder/lib/(agents|adapters)/" },
+    },
+    {
+      name: "venue-builder-adapters-are-leaf",
+      comment:
+        "lib/adapters/ never imports agents/ or operators/ — adapters are wrap layers around external tools/services, not orchestration.",
+      severity: "error",
+      from: { path: "^packages/venue-builder/lib/adapters/" },
+      to: { path: "^packages/venue-builder/lib/(agents|operators)/" },
+    },
+    {
+      name: "venue-builder-core-orchestration-is-sanctioned",
+      comment:
+        "Core lib/*.mjs reaching into agents/, operators/, or adapters/ is an orchestration seam, not the default. Only the files listed here do it today (build-pipeline, venue-official-site, the external-*/venue-certify/venue-packet adapter consumers) — a new core file that needs the same reach adds itself here deliberately rather than importing silently.",
+      severity: "error",
+      from: {
+        path: "^packages/venue-builder/lib/[^/]+\\.mjs$",
+        pathNot: [
+          "^packages/venue-builder/lib/build-pipeline\\.mjs$",
+          "^packages/venue-builder/lib/venue-official-site\\.mjs$",
+          "^packages/venue-builder/lib/external-claims\\.mjs$",
+          "^packages/venue-builder/lib/external-research\\.mjs$",
+          "^packages/venue-builder/lib/venue-certify\\.mjs$",
+          "^packages/venue-builder/lib/venue-packet\\.mjs$",
+        ],
+      },
+      to: { path: "^packages/venue-builder/lib/(agents|operators|adapters)/" },
+    },
   ],
   options: {
     doNotFollow: { path: "node_modules" },

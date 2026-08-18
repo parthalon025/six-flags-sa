@@ -47,6 +47,11 @@ function emitGithubOutput(key, value) {
   }
 }
 
+/**
+ * Hand-written stamp. It deliberately records **no** verticals — only a real
+ * `pre-merge-vertical` run may claim those — so a code diff still owes its
+ * runs after this, and a hand stamp can never wave one through.
+ */
 export function runWrite({ baseRef, noBrowser, cwd = root } = {}) {
   const context = buildLocalCiContext({ baseRef, cwd });
   const stamp = writeLocalCiPass(
@@ -56,6 +61,11 @@ export function runWrite({ baseRef, noBrowser, cwd = root } = {}) {
   console.log(`Wrote ${stamp.head.slice(0, 7)} → scripts/ci/local-ci-pass.json`);
   console.log(`  modules: ${stamp.modules.join(', ') || '(none)'}`);
   console.log(`  browserVertical: ${stamp.browserVertical}`);
+  if (context.verticals.length) {
+    console.log(
+      `  verticals: (none recorded) — this diff still owes ${context.verticals.join(', ')}; run npm run test:pre-merge-vertical`,
+    );
+  }
   return stamp;
 }
 

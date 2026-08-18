@@ -1,0 +1,24 @@
+{
+  "fetched": "2026-08-18",
+  "source": "esa-worldcover.org",
+  "license": "CC BY 4.0",
+  "tile": "ESA_WorldCover_10m_2021_v200_N39W084_Map",
+  "center": {
+    "lat": 41.482602,
+    "lng": -82.686185
+  },
+  "histogram": {
+    "10": 2245,
+    "30": 1218,
+    "40": 78,
+    "50": 16569,
+    "60": 1256,
+    "80": 32555,
+    "90": 1
+  },
+  "dominant": {
+    "code": 80,
+    "name": "permanent_water",
+    "count": 32555
+  }
+}

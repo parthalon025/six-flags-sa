@@ -19,6 +19,7 @@ import {
   loadModulesManifest,
   selectModulesFromFiles,
 } from '../../test/app/lib/module-select.mjs';
+import { requiredVerticals, stampCoversVerticals } from './vertical-e2e.mjs';
 
 function needsBrowserForFiles(files, manifest) {
   if (files == null) return true;
@@ -26,7 +27,9 @@ function needsBrowserForFiles(files, manifest) {
   return selectModulesFromFiles(files, manifest).modules.length > 0;
 }
 
-export const LOCAL_CI_PASS_SCHEMA = 1;
+// 2: stamps record which verticals ran, so a pass cannot be claimed for a
+// code diff whose vertical e2e never executed.
+export const LOCAL_CI_PASS_SCHEMA = 2;
 export const LOCAL_CI_PASS_REL = 'scripts/ci/local-ci-pass.json';
 
 export const STATIC_STEP_IDS = ['test:ci-gate', 'test:unit', 'build'];
@@ -81,6 +84,7 @@ export function buildLocalCiContext({
 
   return {
     schema: LOCAL_CI_PASS_SCHEMA,
+    verticals: requiredVerticals(files),
     head,
     mergeBase,
     baseRef,
@@ -106,6 +110,7 @@ export function writeLocalCiPass(
   {
     context,
     browserVertical = false,
+    verticals = [],
     recordedAt = new Date().toISOString(),
   },
   cwd = repoRootFrom(),
@@ -117,6 +122,7 @@ export function writeLocalCiPass(
     baseRef: context.baseRef,
     modules: context.modules,
     browserVertical,
+    verticals: [...verticals].sort(),
     staticSteps: context.staticSteps,
     lockHash: context.lockHash,
     manifestHash: context.manifestHash,
@@ -156,6 +162,7 @@ export function shouldSkipLocalPreMerge(
   { skipBrowser = false } = {},
 ) {
   if (!stampCoversContext(stamp, context)) return false;
+  if (!stampCoversVerticals(stamp, context.verticals)) return false;
   if (!context.needsBrowser || skipBrowser) return true;
   return stamp.browserVertical === true;
 }
