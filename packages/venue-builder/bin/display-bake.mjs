@@ -27,6 +27,10 @@ import {
 import { readAssetLedger, assetPath, creditsManifest } from '../lib/display-assets.mjs';
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
+import { profileForKit, readReferenceProfiles } from '../lib/display-references.mjs';
+import {
+  stylePoints, certifyStyleContract, harvestProfileDraft, signature,
+} from '../lib/display-style-contract.mjs';
 
 const LEDGER = readAssetLedger();
 
@@ -72,6 +76,7 @@ let kitId = null;
 let prompt = null;
 let maxCols = 240;
 let px = 16;
+let harvestProfile = false;
 let outRoot = path.join(MONO_ROOT, 'artifacts', 'display-bake');
 for (let i = 0; i < argv.length; i += 1) {
   const a = argv[i];
@@ -79,6 +84,7 @@ for (let i = 0; i < argv.length; i += 1) {
   else if (a === '--prompt') prompt = argv[++i];
   else if (a === '--max-cols') maxCols = Number(argv[++i]) || 240;
   else if (a === '--px') px = Number(argv[++i]) || 16;
+  else if (a === '--harvest-profile') harvestProfile = true;
   else if (a === '--out') outRoot = path.resolve(argv[++i]);
   else if (!a.startsWith('--')) ids.push(a);
 }
@@ -122,7 +128,7 @@ async function kitFromPrompt(text) {
 
 const PAGE = readFileSync(new URL('./display-bake-page.html', import.meta.url), 'utf8');
 
-function serve(model, kit) {
+function serve(model, kit, points) {
   // Every asset the kit references — tile sheets (with import geometry for
   // dual-grid cutting) and standalone sprites — served from the ledger.
   const sheets = {};
@@ -142,7 +148,7 @@ function serve(model, kit) {
   return http.createServer((req, res) => {
     const url = req.url.split('?')[0];
     if (url === '/') { res.setHeader('content-type', 'text/html'); return res.end(PAGE); }
-    if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ model, kit, px, sheets })); }
+    if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ model, kit, px, sheets, points })); }
     if (url.startsWith('/asset/')) {
       const row = LEDGER[url.slice('/asset/'.length)];
       if (row) {
@@ -186,7 +192,8 @@ for (const id of ids) {
       model.autotile[name] = Array.from(dualGridIndices(model.cells, model.cols, model.rows, terrainId[name]));
     }
   }
-  const server = serve(model, kit);
+  const points = stylePoints(model);
+  const server = serve(model, kit, points);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
@@ -196,7 +203,64 @@ for (const id of ids) {
   // license and source — the audit trail the asset ledger promises.
   const credits = creditsManifest(kitAssetIds(kit), LEDGER);
   writeFileSync(path.join(outRoot, `${id}--${resolvedKitId}.credits.json`), `${JSON.stringify(credits, null, 2)}\n`);
-  console.log(`${id} × ${resolvedKitId}: ${model.cols}×${model.rows} tiles → ${file} (+credits)`);
+
+  // Style contract: sample the painted canvas at the truth-derived points
+  // and hold the pixels to the kit's reference profile.
+  const samples = await page.evaluate('window.__samples');
+  const samplesFile = path.join(outRoot, `${id}--${resolvedKitId}.samples.json`);
+  writeFileSync(samplesFile, `${JSON.stringify({ signature: signature(samples), points, samples })}\n`);
+  // True determinism proof: render the same model again in a fresh page
+  // load and demand identical pixels — no comparison against stale runs
+  // of older code, no clock to blame.
+  await page.reload();
+  await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
+  const rerun = await page.evaluate('window.__samples');
+  if (harvestProfile) {
+    const draftFile = path.join(outRoot, `${id}--${resolvedKitId}.profile-draft.json`);
+    writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples }), null, 2)}\n`);
+    console.error(`  profile draft (measured medians): ${draftFile}`);
+  }
+  const profile = profileForKit(resolvedKitId, readReferenceProfiles());
+  let certLine = 'no reference profile — style uncertified';
+  if (profile) {
+    const cert = certifyStyleContract({ model, points, samples, profile, kit });
+    cert.checks.push({
+      key: 'style_bake_deterministic',
+      claim: 'a fresh render of the same model samples byte-identical pixels',
+      pass: signature(rerun) === cert.signature,
+      evidence: `render ${cert.signature} vs rerender ${signature(rerun)}`,
+      confidence: 1,
+      falsifier: 'any clock or RNG sneaking into the compositor',
+      soWhat: 'determinism is the bake’s core guarantee',
+    });
+    cert.certified = cert.checks.every((c) => c.pass);
+    // Cross-kit distinctness: sibling kits of the same venue must not
+    // collapse into one look (design languages, not palette swaps).
+    const twins = readdirSync(outRoot)
+      .filter((f) => f.startsWith(`${id}--`) && f.endsWith('.samples.json') && f !== path.basename(samplesFile))
+      .map((f) => ({ f, sig: readJson(path.join(outRoot, f), {}).signature }))
+      .filter((t) => t.sig);
+    if (twins.length) {
+      const clashes = twins.filter((t) => t.sig === cert.signature);
+      cert.checks.push({
+        key: 'style_cross_kit_distinct',
+        claim: 'sibling kits of this venue sample distinct pixels',
+        pass: clashes.length === 0,
+        evidence: clashes.length ? `identical to ${clashes.map((t) => t.f).join(', ')}` : `distinct from ${twins.length} sibling bake(s)`,
+        confidence: 0.9,
+        falsifier: 'two kits that only differ in name',
+        soWhat: 'the factory exists to make different-looking maps',
+      });
+      cert.certified = cert.checks.every((c) => c.pass);
+    }
+    writeFileSync(path.join(outRoot, `${id}--${resolvedKitId}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
+    const failing = cert.checks.filter((c) => !c.pass);
+    certLine = cert.certified
+      ? `style contract ok (${cert.checks.length} checks, ${cert.review.length} review items)`
+      : `STYLE CONTRACT FAILING: ${failing.map((c) => c.key).join(', ')}`;
+    if (!cert.certified) process.exitCode = 1;
+  }
+  console.log(`${id} × ${resolvedKitId}: ${model.cols}×${model.rows} tiles → ${file} (+credits; ${certLine})`);
   server.close();
 }
 await browser.close();

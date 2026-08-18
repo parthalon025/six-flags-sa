@@ -3,7 +3,7 @@
 <canvas id="c"></canvas>
 <script>
 (async () => {
-  const { model, kit, px, sheets } = await (await fetch('/model.json')).json();
+  const { model, kit, px, sheets, points } = await (await fetch('/model.json')).json();
   const { cols, rows, cells, trees, buildings, tracks, badges, terrains } = model;
   const c = document.getElementById('c');
   c.width = cols * px; c.height = rows * px;
@@ -309,7 +309,9 @@
     // Glyph from the icon ledger (white-on-transparent); letter fallback.
     const icon = sheetImages[BD.icons?.[b.kind]?.asset];
     if (icon) {
-      const s = r * 1.3;
+      // 1.1r leaves a clear disc-ink moat between glyph edge and ring —
+      // the style contract samples that moat (display-style-contract.mjs).
+      const s = r * 1.1;
       g.drawImage(icon, x - s / 2, cy - s / 2, s, s);
     } else {
       g.fillStyle = '#FFFFFF';
@@ -317,6 +319,18 @@
       g.fillText(LETTER[b.kind] || '?', x, cy + 0.5);
     }
   }
+
+  // Style-contract sampling: the certifier's points (cell coords) read
+  // back the painted canvas — the pixels the phone would actually show.
+  const pts = points || [];
+  window.__samples = pts.map((p) => {
+    const d = g.getImageData(
+      Math.max(0, Math.min(c.width - 1, Math.round(p.x * px))),
+      Math.max(0, Math.min(c.height - 1, Math.round(p.y * px))),
+      1, 1,
+    ).data;
+    return [d[0], d[1], d[2], d[3]];
+  });
 
   window.__done = true;
 })().catch((err) => { console.error(err); window.__done = true; window.__error = String(err); });

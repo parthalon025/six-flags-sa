@@ -387,6 +387,19 @@ export function bakeModel(map, pois = [], opts = {}) {
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);
 
+  // Declutter, reference-map style: dense POI clusters would stack pins
+  // into unreadable blends, so thin greedily — gates always keep their
+  // pin, everything else yields to an earlier pin within reach. The
+  // dropped POIs stay truth; they just don't badge at this scale
+  // (ADR-0012: annotation is a decluttered final layer).
+  const BADGE_REACH = 1.6;
+  const kept = [];
+  for (const b of [...badges.filter((x) => x.kind === 'gate'), ...badges.filter((x) => x.kind !== 'gate')]) {
+    if (kept.some((k) => Math.hypot(k.x - b.x, k.y - b.y) < BADGE_REACH)) continue;
+    kept.push(b);
+  }
+  const badgesShown = kept.sort((a, b) => a.y - b.y || a.x - b.x);
+
   return cropModel({
     version: 1,
     venue: map.meta?.id,
@@ -399,7 +412,7 @@ export function bakeModel(map, pois = [], opts = {}) {
     trees,
     buildings,
     tracks,
-    badges,
+    badges: badgesShown,
   }, boundaryRing, opts.margin ?? 6);
 }
 
@@ -439,15 +452,20 @@ function cropModel(model, boundaryRing, margin) {
     }
   }
   const shiftPt = ([x, y]) => [x - x0, y - y0];
+  // Entities entirely outside the window (neighboring businesses inside the
+  // map bbox but beyond the venue boundary) leave the model, not just the
+  // canvas — an off-crop building is not part of this world.
+  const ptIn = ([x, y]) => x >= 0 && y >= 0 && x < newCols && y < newRows;
+  const anyIn = (pts) => pts.some(ptIn);
   return {
     ...model,
     cols: newCols,
     rows: newRows,
     cells: newCells,
-    roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })),
-    trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })),
-    buildings: model.buildings.map((b) => ({ ...b, ring: b.ring.map(shiftPt) })),
-    tracks: model.tracks.map((t) => ({ ...t, pts: t.pts.map(shiftPt) })),
-    badges: model.badges.map((b) => ({ ...b, x: b.x - x0, y: b.y - y0 })),
+    roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })).filter((r) => anyIn(r.pts)),
+    trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })).filter((t) => ptIn([t.x, t.y])),
+    buildings: model.buildings.map((b) => ({ ...b, ring: b.ring.map(shiftPt) })).filter((b) => anyIn(b.ring)),
+    tracks: model.tracks.map((t) => ({ ...t, pts: t.pts.map(shiftPt) })).filter((t) => anyIn(t.pts)),
+    badges: model.badges.map((b) => ({ ...b, x: b.x - x0, y: b.y - y0 })).filter((b) => ptIn([b.x, b.y])),
   };
 }
