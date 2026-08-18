@@ -2,10 +2,13 @@
 /**
  * Install official Matt Pocock skills globally (not in this repo).
  *
- * Cloud Agents run this from `.cursor/environment.json` `install`.
+ * Cursor Cloud Agents run this from `.cursor/environment.json` `install`
+ * (default agent: cursor). Claude Code on the web runs it from the
+ * SessionStart hook `.claude/hooks/session-start.sh` with
+ * `--agent claude-code`, which installs into `~/.claude/skills`.
  * Cursor loads `~/.cursor/skills`; skills.sh writes `~/.agents/skills`.
  *
- *   node scripts/install-global-skills.mjs
+ *   node scripts/install-global-skills.mjs [--agent cursor|claude-code]
  */
 import { spawn } from 'node:child_process';
 import { lstat, mkdir, mkdtemp, readdir, readlink, rmdir, symlink, unlink } from 'node:fs/promises';
@@ -14,18 +17,18 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const SKILLS_SOURCE = 'mattpocock/skills';
-export const SKILLS_ADD_ARGS = [
-  '-y',
-  'skills@latest',
-  'add',
-  SKILLS_SOURCE,
-  '-g',
-  '-y',
-  '--skill',
-  '*',
-  '-a',
-  'cursor',
-];
+export const SKILLS_AGENTS = ['cursor', 'claude-code'];
+
+export function skillsAddArgs(agent = 'cursor') {
+  if (!SKILLS_AGENTS.includes(agent)) {
+    throw new Error(
+      `unknown skills agent "${agent}" (expected one of: ${SKILLS_AGENTS.join(', ')})`,
+    );
+  }
+  return ['-y', 'skills@latest', 'add', SKILLS_SOURCE, '-g', '-y', '--skill', '*', '-a', agent];
+}
+
+export const SKILLS_ADD_ARGS = skillsAddArgs('cursor');
 
 export function agentsSkillsDir(home = homedir()) {
   return join(home, '.agents', 'skills');
@@ -33,6 +36,10 @@ export function agentsSkillsDir(home = homedir()) {
 
 export function cursorSkillsDir(home = homedir()) {
   return join(home, '.cursor', 'skills');
+}
+
+export function claudeSkillsDir(home = homedir()) {
+  return join(home, '.claude', 'skills');
 }
 
 function run(command, args, opts = {}) {
@@ -86,17 +93,35 @@ export async function ensureCursorSkillsLink({
 
 export async function installMattPocockSkills({
   npx = 'npx',
-  args = SKILLS_ADD_ARGS,
+  agent = 'cursor',
+  args = skillsAddArgs(agent),
   cwd,
 } = {}) {
   const workdir = cwd ?? (await mkdtemp(join(tmpdir(), 'matt-skills-')));
   await run(npx, args, { cwd: workdir });
 }
 
+export function parseAgentArg(argv = process.argv.slice(2)) {
+  const flag = argv.indexOf('--agent');
+  if (flag === -1) return 'cursor';
+  const agent = argv[flag + 1];
+  if (!SKILLS_AGENTS.includes(agent)) {
+    throw new Error(
+      `--agent must be one of: ${SKILLS_AGENTS.join(', ')} (got "${agent ?? ''}")`,
+    );
+  }
+  return agent;
+}
+
 async function main() {
-  await installMattPocockSkills();
-  const linked = await ensureCursorSkillsLink();
-  console.log(`install-global-skills: Cursor skills at ${linked}`);
+  const agent = parseAgentArg();
+  await installMattPocockSkills({ agent });
+  if (agent === 'cursor') {
+    const linked = await ensureCursorSkillsLink();
+    console.log(`install-global-skills: Cursor skills at ${linked}`);
+    return;
+  }
+  console.log(`install-global-skills: Claude Code skills at ${claudeSkillsDir()}`);
 }
 
 const isDirect =
