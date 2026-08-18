@@ -491,6 +491,25 @@ export function bakeModel(map, pois = [], opts = {}) {
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);
 
+  // Terrain channels: relief shading and a steepness flag the kit may paint
+  // differently. Absent when the venue has no DEM — flat is a real answer.
+  let shade = null;
+  let steep = null;
+  if (opts.terrain?.grid && opts.terrain?.shade) {
+    const { grid } = opts.terrain;
+    const steepAt = opts.terrain.steepDegrees ?? 18;
+    shade = opts.terrain.shade;
+    steep = new Array(cols * rows).fill(0);
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        // Grid and bake share an aspect but not always a resolution.
+        const gx = ((x + 0.5) / cols) * grid.cols;
+        const gy = ((y + 0.5) / rows) * grid.rows;
+        steep[y * cols + x] = grid.slopeAt(gx, gy) >= steepAt ? 1 : 0;
+      }
+    }
+  }
+
   const model = cropModel({
     version: 1,
     venue: map.meta?.id,
@@ -499,6 +518,8 @@ export function bakeModel(map, pois = [], opts = {}) {
     tileMetres: Math.round(tileMetres * 100) / 100,
     terrains: TERRAIN_NAMES,
     cells,
+    ...(shade ? { shade } : {}),
+    ...(steep ? { steep } : {}),
     roads,
     trees,
     buildings,
@@ -567,12 +588,19 @@ function cropModel(model, boundaryRing, margin, toGeo) {
   const x0 = Math.max(0, Math.floor(minX) - margin); const y0 = Math.max(0, Math.floor(minY) - margin);
   const x1 = Math.min(cols - 1, Math.ceil(maxX) + margin); const y1 = Math.min(rows - 1, Math.ceil(maxY) + margin);
   const newCols = x1 - x0 + 1; const newRows = y1 - y0 + 1;
-  const newCells = new Array(newCols * newRows);
-  for (let y = 0; y < newRows; y += 1) {
-    for (let x = 0; x < newCols; x += 1) {
-      newCells[y * newCols + x] = cells[(y + y0) * cols + (x + x0)];
+  const cropCells = (src) => {
+    const out = new Array(newCols * newRows);
+    for (let y = 0; y < newRows; y += 1) {
+      for (let x = 0; x < newCols; x += 1) {
+        out[y * newCols + x] = src[(y + y0) * cols + (x + x0)];
+      }
     }
-  }
+    return out;
+  };
+  const newCells = cropCells(cells);
+  // Per-cell terrain channels ride along, or the shade lands on the wrong ground.
+  const newShade = model.shade ? cropCells(model.shade) : null;
+  const newSteep = model.steep ? cropCells(model.steep) : null;
   const shiftPt = ([x, y]) => [x - x0, y - y0];
   // Entities entirely outside the window (neighboring businesses inside the
   // map bbox but beyond the venue boundary) leave the model, not just the
@@ -585,6 +613,8 @@ function cropModel(model, boundaryRing, margin, toGeo) {
     rows: newRows,
     bounds: geoBounds(x0, y0, x1, y1),
     cells: newCells,
+    ...(newShade ? { shade: newShade } : {}),
+    ...(newSteep ? { steep: newSteep } : {}),
     roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })).filter((r) => anyIn(r.pts)),
     trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })).filter((t) => ptIn([t.x, t.y])),
     buildings: model.buildings.map((b) => ({ ...b, ring: b.ring.map(shiftPt) })).filter((b) => anyIn(b.ring)),

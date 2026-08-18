@@ -136,12 +136,40 @@
   // it: full tiles on a terrain's own cells, dual-grid corner tiles on the
   // offset vertex grid so shores and tree lines curve with Kenney's own
   // rounding. Terrains without tile art keep the organic blob pass.
+  // Terrain base. Where the venue has a DEM, a cell may take the kit's `steep`
+  // variant instead of its base -- slope-aware material choice, so a bank reads
+  // as bank and not as lawn painted at an angle.
+  const steepCells = model.steep || null;
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
-      g.fillStyle = kit.terrain[NAME[at(x, y)]].base;
+      const piece = kit.terrain[NAME[at(x, y)]];
+      const isSteep = steepCells && steepCells[y * cols + x];
+      g.fillStyle = (isSteep && piece.steep && piece.steep.base) || piece.base;
       g.fillRect(x * px, y * px, px, px);
     }
   }
+  // Relief. Multiplying here -- over ground, under everything built on it --
+  // is what makes a berm look like a berm on a map that has no third
+  // dimension. Neutral is the field's own mean, so a flat park stays flat
+  // rather than acquiring a gradient.
+  if (model.shade) {
+    const shade = model.shade;
+    let mean = 0;
+    for (const v of shade) mean += v;
+    mean /= shade.length || 1;
+    g.save();
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        const d = (shade[y * cols + x] - mean) / 255;
+        if (Math.abs(d) < 0.012) continue;
+        g.fillStyle = d > 0 ? 'rgba(255,255,255,' + Math.min(0.5, d * 1.9) + ')'
+                            : 'rgba(0,0,0,' + Math.min(0.5, -d * 1.9) + ')';
+        g.fillRect(x * px, y * px, px, px);
+      }
+    }
+    g.restore();
+  }
+
   const tiledPatterns = {};
   for (const [name, piece] of Object.entries(kit.terrain)) {
     if (piece.tiles && model.autotile?.[name]) tiledPatterns[name] = buildPatterns(piece.tiles);

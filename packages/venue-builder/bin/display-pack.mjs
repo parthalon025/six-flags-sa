@@ -3,7 +3,11 @@
  * Display packs — compile + certify per-Skin visual specs for shipped venues.
  *
  *   npm run venues:display -- <venueId> [<venueId>…]
- *   npm run venues:display -- --all [--tiles] [--bake] [--json]
+ *   npm run venues:display -- --all [--tiles] [--bake] [--terrain] [--json]
+ *
+ * `--terrain` fetches a DEM and writes display/hillshade.png. It needs the
+ * network, so it is opt-in: without it a venue compiles flat, which is a
+ * declared outcome rather than a silent one.
  *
  * Writes data/venues/<id>/display/<skin>.visual.json and
  * display-certification.json. Publishing to public/venues stays a separate,
@@ -12,13 +16,16 @@
 
 import path from 'node:path';
 import { runDisplayStage } from '../lib/display-pack.mjs';
-import { VENUE_DIR, readJson } from '../lib/venue-io.mjs';
+import { VENUE_DIR, readJson, venueSidecar } from '../lib/venue-io.mjs';
+import { loadTruthFor } from '../lib/display-pack.mjs';
+import { prepareVenueTerrain } from '../lib/terrain/venue-terrain.mjs';
 
 const argv = process.argv.slice(2);
 const json = argv.includes('--json');
 const all = argv.includes('--all');
 const tiles = argv.includes('--tiles');
 const bake = argv.includes('--bake');
+const wantTerrain = argv.includes('--terrain');
 const ids = argv.filter((a) => !a.startsWith('--'));
 
 const manifest = readJson(path.join(VENUE_DIR, 'manifest.json'), { venues: [] });
@@ -32,7 +39,15 @@ if (!targets.length) {
 const results = [];
 for (const id of targets) {
   try {
-    const result = runDisplayStage(id, { tiles, ...(bake ? { bake: {} } : {}) });
+    let terrain = null;
+    if (wantTerrain) {
+      const outDir = venueSidecar(id, 'display');
+      const { map } = loadTruthFor(id);
+      const prepared = await prepareVenueTerrain({ id, map, outDir });
+      terrain = prepared?.terrain || null;
+      if (!json && !terrain) console.log(`${id}: no DEM coverage — compiling flat`);
+    }
+    const result = runDisplayStage(id, { tiles, terrain, ...(bake ? { bake: {} } : {}) });
     results.push(result);
     if (!json) {
       const mark = result.certified ? 'ok' : 'FAILED';

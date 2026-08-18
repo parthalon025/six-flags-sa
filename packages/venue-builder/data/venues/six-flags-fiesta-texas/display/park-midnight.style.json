@@ -5,6 +5,28 @@
     "park": {
       "type": "vector",
       "url": "pmtiles://base.pmtiles"
+    },
+    "hillshade": {
+      "type": "image",
+      "url": "hillshade.png",
+      "coordinates": [
+        [
+          -98.61789,
+          29.60751
+        ],
+        [
+          -98.60144,
+          29.60751
+        ],
+        [
+          -98.60144,
+          29.59224
+        ],
+        [
+          -98.61789,
+          29.59224
+        ]
+      ]
     }
   },
   "layers": [
@@ -70,6 +92,14 @@
       "paint": {
         "fill-color": "#334126",
         "fill-opacity": 0.8
+      }
+    },
+    {
+      "id": "hillshade",
+      "type": "raster",
+      "source": "hillshade",
+      "paint": {
+        "raster-opacity": 0.45
       }
     },
     {
