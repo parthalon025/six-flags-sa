@@ -1,10 +1,10 @@
 {
   "name": "@party-tracker/venue-builder",
-  "version": "1.20.1",
+  "version": "1.21.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@party-tracker/shared": "1.20.1"
+    "@party-tracker/shared": "1.21.0"
   },
   "exports": {
     "./bake-drift.js": "./src/bake-drift.mjs",
