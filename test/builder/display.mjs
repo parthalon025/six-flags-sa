@@ -622,7 +622,10 @@ await check('display is a pipeline stage after certify, opt-in via --display', (
   ]);
   const args = parseCatalogArgs(['--pipeline', '--display']);
   assert.equal(args.display, true);
-  assert.equal(parseCatalogArgs(['--pipeline']).display, false);
+  // Unset rather than false without the flag: runVenuePipeline's own default
+  // (on for big-kahunas, off elsewhere — issue #527) only applies when this
+  // is undefined, not when a caller forces it false for every park.
+  assert.equal(parseCatalogArgs(['--pipeline']).display, undefined);
   assert.equal(pipelineOptsFromCatalogArgs(args).display, true);
   return true;
 });
