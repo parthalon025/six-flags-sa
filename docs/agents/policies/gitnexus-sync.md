@@ -4,7 +4,13 @@ The `.gitnexus/` graph is **session-local** (gitignored). Do not commit it, and 
 
 ## On start
 
-Cloud Agent `start` runs `node scripts/gitnexus-sync.mjs startup`. Locally, once per substantive session:
+Cursor Cloud Agent `start` runs `node scripts/gitnexus-sync.mjs startup`. Claude Code
+sessions (CLI and web) run the same command automatically via the
+`SessionStart` hook in `.claude/settings.json` — both agents build the index
+the same way, so neither depends on the model remembering the manual step.
+
+If you're driving a session by hand outside those hooks, run it yourself
+once per substantive session:
 
 ```bash
 npm run gitnexus:startup
