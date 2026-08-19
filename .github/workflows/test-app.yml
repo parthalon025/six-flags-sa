@@ -121,6 +121,28 @@ jobs:
           echo "ui_matrix=${{ steps.mods.outputs.ui_matrix }}"
           echo "skip_ci=${{ steps.local_pass.outputs.skip_ci }} skip_ui=${{ steps.local_pass.outputs.skip_ui }}"
 
+  # Not a merge gate — absent from the `ci` job's `needs:` below on purpose.
+  # See docs/agents/ci.md#auto-ready-draft-prs.
+  auto-ready:
+    name: Auto-ready (local CI verified)
+    needs: select
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == true &&
+      needs.select.outputs.skip_ci == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Mark PR ready for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # continue-on-error: a fork PR's GITHUB_TOKEN is read-only regardless
+        # of the permissions block above, so this fails (not skips) there —
+        # expected, and never allowed to redden a non-gating job.
+        continue-on-error: true
+        run: gh pr ready "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}"
+
   module-select-unit:
     name: Module select unit
     needs: select

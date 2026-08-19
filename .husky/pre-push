@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Prefer local CI over GitHub Actions to save on GitHub credits.
+# Decision logic lives in scripts/lib/pre-push.mjs (tested in
+# test/scripts/pre-push.test.mjs); see docs/agents/ci.md#pre-push-hook.
+#
+# Escape hatch for an emergency push: `HUSKY=0 git push`. GitHub then runs
+# full CI on that push since no stamp covers it.
+node scripts/ci/pre-push.mjs
