@@ -13,8 +13,9 @@
  * sha256 — verifyAssetHashes() is the gate that notices drift.
  *
  * Row schema notes: `kind` is tilesheet | sprite | icon; `target` names the
- * render target a variant serves (flat now, iso when the isometric tier
- * lands) so one label can carry per-target art without new ids.
+ * render target a variant serves — absent (or null) means the flat/top-down
+ * tier, "iso" marks art drawn for the isometric tier — so one label can
+ * carry per-target art without new ids. assetsForTarget() is the reader.
  */
 
 import path from 'node:path';
@@ -26,6 +27,9 @@ import { ALLOWED_LICENSES } from './display-pack.mjs';
 const LEDGER_FILE = path.join(OVERRIDE_DIR, '..', 'display', 'assets.json');
 
 export const assetPath = (row) => path.join(BUILDER_ROOT, row.path);
+
+/** Render targets a variant may serve; a row with no target serves 'flat'. */
+export const ASSET_TARGETS = ['flat', 'iso'];
 
 /** Asset ledger, keyed by stable GUID. */
 export function readAssetLedger(file = LEDGER_FILE) {
@@ -45,6 +49,9 @@ export function verifyAssetHashes(ledger = readAssetLedger()) {
       problems.push(`${id}: license "${row.license}" not allowed`);
     }
     if (!row.source?.url) problems.push(`${id}: no source url`);
+    if (row.target != null && !ASSET_TARGETS.includes(row.target)) {
+      problems.push(`${id}: target "${row.target}" is not a render target (${ASSET_TARGETS.join(' | ')})`);
+    }
     const file = assetPath(row);
     if (!existsSync(file)) {
       problems.push(`${id}: missing bytes at ${row.path} — run bin/vendor-assets.mjs`);
@@ -54,6 +61,24 @@ export function verifyAssetHashes(ledger = readAssetLedger()) {
     if (sha !== row.sha256) problems.push(`${id}: sha256 drift (${sha.slice(0, 12)}… ≠ pinned)`);
   }
   return problems;
+}
+
+/**
+ * Ledger filtered to one render target. Rows without a target (or with
+ * target null) serve the flat tier, so today's readers see exactly the set
+ * they always did; an unknown target on a row or the argument fails loudly.
+ */
+export function assetsForTarget(ledger, target = 'flat') {
+  if (!ASSET_TARGETS.includes(target)) throw new Error(`Unknown render target "${target}"`);
+  const out = {};
+  for (const [id, row] of Object.entries(ledger)) {
+    const rowTarget = row.target ?? 'flat';
+    if (!ASSET_TARGETS.includes(rowTarget)) {
+      throw new Error(`${id}: target "${row.target}" is not a render target (${ASSET_TARGETS.join(' | ')})`);
+    }
+    if (rowTarget === target) out[id] = row;
+  }
+  return out;
 }
 
 /** Per-bake credits + license-audit manifest for the asset ids used. */
