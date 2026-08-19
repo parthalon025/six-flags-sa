@@ -354,5 +354,17 @@
     "items": [
       "Custom map display factory: design doc + builder display stage with display-certify gate (#471)"
     ]
+  },
+  "1.18.0": {
+    "title": "What's new",
+    "items": [
+      "feat(ci): local-ci-verified tag skips GitHub jobs local CI already ran (#507)"
+    ]
+  },
+  "1.19.0": {
+    "title": "What's new",
+    "items": [
+      "feat: live stepped gate on the Vercel automation deploy pool (#516)"
+    ]
   }
 }

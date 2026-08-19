@@ -418,8 +418,12 @@ export function runDisplayStage(id, opts = {}) {
   let bakes = null;
   if (opts.bake) {
     const bakeDir = opts.bake.dir || path.join(MONO_ROOT, 'artifacts', 'display-bake');
+    // Iso-tier bakes (`<id>--<kit>--iso-r<N>.*`) stay out of the pack: they
+    // would fold as a pseudo-kit otherwise. Iso pack-tier integration is
+    // Phase C work.
     const certFiles = (existsSync(bakeDir)
-      ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
+      ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json')
+        && !/--iso-r\d+\.style-cert\.json$/.test(f))
       : []).sort();
     const bakeCerts = certFiles.map((f) => ({
       kit: f.slice(id.length + 2, -'.style-cert.json'.length),

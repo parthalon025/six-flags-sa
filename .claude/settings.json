@@ -14,6 +14,12 @@
           },
           {
             "type": "command",
+            "command": "node scripts/gitnexus-sync.mjs startup",
+            "timeout": 300,
+            "statusMessage": "Building GitNexus index"
+          },
+          {
+            "type": "command",
             "command": "node scripts/worktree.mjs prune",
             "timeout": 30,
             "statusMessage": "Pruning leftover agent branches"

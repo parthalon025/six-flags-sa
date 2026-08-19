@@ -13,9 +13,11 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
 | `../lib/vertical-e2e.mjs` | `requiredVerticals()`, `verticalE2eBlockReason()` | Which verticals a diff owes, and what blocks a merge without them |
-| `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Stamp after local vertical; skip GitHub UI jobs when stamp matches |
+| `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Writes the `local-ci-verified` stamp after a local vertical; tells GitHub which jobs it already proved |
+| `../lib/local-ci-pass.mjs` | `localCiDecision()`, `STATIC_STEPS` | The tag: what a local CI run covers, and when GitHub may honour it |
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
+| `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 
@@ -31,14 +33,52 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 
 | Phase | What runs |
 |-------|-----------|
-| Static (floor) | `test:ci-gate` → `test:unit` → `build -w @party-tracker/app` |
+| Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:coverage-contract` → `test:module-select` → `build -w @party-tracker/app` |
 | `automation` vertical | `test:ci-gate` — CI/deploy/stamp decisions through their exported functions |
 | `builder` vertical | `test:builder` — assertions over generated venue output |
 | `app` vertical | start app + `test:validate-ui:changed` — behaviour in a real browser |
 
 Docs-only branches owe nothing and skip straight through. `--skip-browser` is **refused** for diffs that touch app behaviour — static steps prove the build compiles, not that a guest can still use it. Code paths no vertical claims fail closed: the diff owes every vertical until a `VERTICALS` row claims the path. See [vertical-e2e policy](./policies/vertical-e2e.md).
 
-After a successful run, `scripts/ci/local-ci-pass.json` records the tree, the module selection, and the `verticals` that ran (schema 2 — a stamp without them never covers a code diff). Commit that file with your branch so GitHub Actions can skip the expensive Playwright jobs when the stamp still matches. Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored and CI runs the UI matrix. Use `--no-stamp` to validate without writing the file.
+After a successful run, `scripts/ci/local-ci-pass.json` records the diff, the module selection, the static steps and the `verticals` that ran, tagged `local-ci-verified` (schema 3 — a stamp without the tag or without the verticals never covers a code diff). Commit that file with your branch. Use `--no-stamp` to validate without writing the file.
+
+## `local-ci-verified` — skipping GitHub CI
+
+The tag means *local CI already ran everything the skipped jobs would have run, over this diff*. When `test-app.yml` finds it, the jobs named in `TAG_SKIPPED_JOBS` (`scripts/lib/local-ci-pass.mjs`) are skipped instead of run a second time.
+
+| Property | How it holds |
+|----------|--------------|
+| Same code | `diffHash` — the branch diff vs merge-base with the stamp files excluded, so committing the stamp never invalidates it and any code change does |
+| Same everything else | base ref, merge-base, module selection, `package-lock.json` and `modules.json` hashes all have to match |
+| Nothing waved through | the stamp must list every step in `STATIC_STEPS` and every vertical the diff owes; `pre-merge-vertical` writes it only after they all pass |
+| Not written by hand | `local-ci-pass.mjs write` (the hand path) records no tag and no verticals, so it can only ever skip the narrower UI matrix |
+
+`gate` and `select` never skip — `select` is the job that reads the tag, and something unskippable has to.
+
+`gitnexus` (soft) never skips either, on purpose: it exists to prove GitNexus still installs on a clean runner, which is exactly the thing a local run cannot vouch for — the agent's own session either has an index already or failed to build one.
+
+**The stamp is self-attested.** Anyone who can push to the branch can also write a `local-ci-verified` JSON by hand and skip those jobs; the checks above stop a *stale* or *incomplete* stamp, not a dishonest one. That is the same trust model as `matt-review-pass.json`, and it is why review and branch protection stay the real control on what merges. Label a PR `full-ci` when you want the jobs run regardless.
+
+Two things always run full CI regardless of the stamp:
+
+- **Pushes to `main`.** The merge commit is a different diff from any PR head, and it is the tree we ship.
+- **`full-ci`.** Label the PR `full-ci`, or put `[full-ci]` in its title, and the tag is ignored for that run.
+
+Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored, the `Select modules` job summary says why, and CI runs everything.
+
+### Pre-push hook
+
+`.husky/pre-push` calls `scripts/ci/pre-push.mjs`, which runs `npm run test:pre-merge-vertical` before every `git push`. The decision — skip for a push made up only of `refs/heads/main` updates (main always runs full CI regardless of the stamp) or a delete-only push, otherwise run — is `prePushDecision()` in `scripts/lib/pre-push.mjs` (tested in `test/scripts/pre-push.test.mjs`), judged from the refs git is actually pushing rather than the branch checked out locally. It exists so the stamp is never missing by accident — GitHub credits are only saved when the tag is actually there. `shouldSkipLocalPreMerge` makes a repeat push with no new commits cost nothing: the hook re-runs the script, and the script exits immediately once it sees the existing stamp still covers the tree.
+
+`PRE_PUSH_SKIP_BROWSER=1 git push` passes `--skip-browser` through for a faster local check; `test:pre-merge-vertical` still refuses to skip the browser vertical for a diff that touches app behaviour, so this only speeds up pushes that don't need it.
+
+Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
+
+### Auto-ready draft PRs
+
+The `auto-ready` job in `test-app.yml` marks a draft PR ready for review automatically once `select` reports `skip_ci == 'true'` — i.e. a fresh `local-ci-verified` tag covers the diff, so a human has nothing left to gate before review starts. It runs `gh pr ready` with the job's own `pull-requests: write` permission (scoped to that job only; the workflow's default is `contents: read`). It is not in the `ci` job's `needs:` list — it can never block a merge, whatever it does.
+
+The job is skipped entirely for a non-PR event, an already-ready PR, or no tag. For a draft PR from a **fork** that does carry a fresh tag, the job still runs — a fork's `GITHUB_TOKEN` on the `pull_request` event is read-only regardless of the permissions block, so `gh pr ready` fails there rather than being skipped. `continue-on-error: true` on that step is what keeps the expected failure from showing red on a job nothing depends on.
 
 ## Test app (`.github/workflows/test-app.yml`)
 
@@ -61,7 +101,7 @@ Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run te
 | Gate — script invariants | `node scripts/ci/gate-tests.mjs` |
 | Gate — README gallery | `node test/app/readme-shots-check.mjs` |
 | Module selection | `node test/app/select-modules.mjs` |
-| Local CI pass check | `node scripts/ci/local-ci-pass.mjs check` |
+| `local-ci-verified` tag | `node scripts/ci/local-ci-pass.mjs check` |
 | Boundaries | `npm run lint:boundaries` |
 | Unit-ish layers | `npm run test:builder`, `npm run test:coverage-contract` |
 | UI unpack / start | `node scripts/ci/party-tracker-ui.mjs unpack\|start` |

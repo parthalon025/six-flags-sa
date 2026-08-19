@@ -85,6 +85,22 @@
         "anchor": "base"
       }
     },
+    "parkbound-palm-tree-iso": {
+      "label": "Park Bound palm tree, isometric tier (original)",
+      "kind": "sprite",
+      "target": "iso",
+      "path": "assets/custom/palm-tree-iso.svg",
+      "sha256": "b11e1ecf67b077f577220794820da36cbe20f8408147ec98cfb08bc1ce9d23e3",
+      "license": "original",
+      "source": {
+        "url": "generated://parkbound/display-factory",
+        "note": "hand-authored in-repo vector art; no external source"
+      },
+      "attribution": "Park Bound original art",
+      "import": {
+        "anchor": "base"
+      }
+    },
     "kenney-roguelike-city-sheet": {
       "label": "Kenney Roguelike Modern City spritesheet",
       "kind": "tilesheet",

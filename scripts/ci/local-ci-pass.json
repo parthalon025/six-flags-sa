@@ -1,7 +1,9 @@
 {
-  "schema": 2,
-  "head": "53fcac654759b95f5f8c5caedf07f8d3a4bf8844",
-  "mergeBase": "722a83aac2cfa952fb9900ae4a61083fd7444bcd",
+  "schema": 3,
+  "tag": null,
+  "diffHash": "85caab419db69f07",
+  "head": "3dae9adca2da213e0cb51644919e7f3a6e6b59fb",
+  "mergeBase": "7e237fd0216a2a7db5f1dd61c3997f4508581399",
   "baseRef": "origin/main",
   "modules": [
     "builder",
@@ -13,9 +15,12 @@
   "staticSteps": [
     "test:ci-gate",
     "test:unit",
+    "lint",
+    "test:coverage-contract",
+    "test:module-select",
     "build"
   ],
-  "lockHash": "3a9d51bcbf5a831e",
+  "lockHash": "cb19cfc69bb8eaa3",
   "manifestHash": "8896c207e1eac635",
-  "recordedAt": "2026-08-18T23:11:41.924Z"
+  "recordedAt": "2026-08-19T00:46:40.434Z"
 }

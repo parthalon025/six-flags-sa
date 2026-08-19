@@ -46,6 +46,8 @@ jobs:
       modules: ${{ steps.mods.outputs.modules }}
       full_suite: ${{ steps.mods.outputs.full_suite }}
       skip_ui: ${{ steps.local_pass.outputs.skip_ui }}
+      skip_ci: ${{ steps.local_pass.outputs.skip_ci }}
+      local_ci_tag: ${{ steps.local_pass.outputs.local_ci_tag }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -89,15 +91,26 @@ jobs:
             echo "push event — matt-review checked on the PR"
           fi
 
-      - name: Local CI pass (skip GitHub UI when stamped)
+      # `local-ci-verified` — an agent already ran the whole local CI over this
+      # exact diff, so the jobs it stands in for are skipped rather than being
+      # run a second time. Policy lives in scripts/lib/local-ci-pass.mjs.
+      - name: Local CI pass tag
         id: local_pass
+        env:
+          # One line on purpose: a folded scalar keeps the newline, and this
+          # value has to reach the expression parser intact.
+          FORCE_FULL: ${{ contains(github.event.pull_request.labels.*.name, 'full-ci') || contains(github.event.pull_request.title, '[full-ci]') }}
         run: |
           BASE_REF="${{ github.base_ref }}"
           ANY_UI="${{ steps.mods.outputs.any_ui }}"
-          if [ -n "$BASE_REF" ]; then
-            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI"
+          if [ -z "$BASE_REF" ]; then
+            # Push to main: the merge commit is a different diff from any PR
+            # head, and it is the tree we ship. It always re-proves itself.
+            node scripts/ci/local-ci-pass.mjs check --base origin/main --any-ui "$ANY_UI" --force-full
+          elif [ "$FORCE_FULL" = "true" ]; then
+            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI" --force-full
           else
-            node scripts/ci/local-ci-pass.mjs check --base origin/main --any-ui "$ANY_UI"
+            node scripts/ci/local-ci-pass.mjs check --base "origin/$BASE_REF" --any-ui "$ANY_UI"
           fi
 
       - name: Module selection summary
@@ -106,11 +119,34 @@ jobs:
           echo "lint=${{ steps.mods.outputs.lint }} contract=${{ steps.mods.outputs.contract }} selector=${{ steps.mods.outputs.selector }}"
           echo "builder=${{ steps.mods.outputs.builder }} any_ui=${{ steps.mods.outputs.any_ui }} full=${{ steps.mods.outputs.full_suite }}"
           echo "ui_matrix=${{ steps.mods.outputs.ui_matrix }}"
+          echo "skip_ci=${{ steps.local_pass.outputs.skip_ci }} skip_ui=${{ steps.local_pass.outputs.skip_ui }}"
+
+  # Not a merge gate — absent from the `ci` job's `needs:` below on purpose.
+  # See docs/agents/ci.md#auto-ready-draft-prs.
+  auto-ready:
+    name: Auto-ready (local CI verified)
+    needs: select
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == true &&
+      needs.select.outputs.skip_ci == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Mark PR ready for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # continue-on-error: a fork PR's GITHUB_TOKEN is read-only regardless
+        # of the permissions block above, so this fails (not skips) there —
+        # expected, and never allowed to redden a non-gating job.
+        continue-on-error: true
+        run: gh pr ready "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}"
 
   module-select-unit:
     name: Module select unit
     needs: select
-    if: needs.select.outputs.selector == 'true'
+    if: needs.select.outputs.selector == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -124,6 +160,7 @@ jobs:
     needs: [gate, select]
     if: >-
       needs.gate.outputs.run == 'true' &&
+      needs.select.outputs.skip_ci != 'true' &&
       (needs.select.outputs.full_suite == 'true' || needs.select.outputs.modules != '')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -139,7 +176,7 @@ jobs:
   lint:
     name: Lint
     needs: select
-    if: needs.select.outputs.lint == 'true'
+    if: needs.select.outputs.lint == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -158,7 +195,7 @@ jobs:
   contract:
     name: Coverage contract
     needs: select
-    if: needs.select.outputs.contract == 'true'
+    if: needs.select.outputs.contract == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -170,7 +207,7 @@ jobs:
   builder:
     name: Builder
     needs: select
-    if: needs.select.outputs.builder == 'true'
+    if: needs.select.outputs.builder == 'true' && needs.select.outputs.skip_ci != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -332,6 +369,14 @@ jobs:
       - gitnexus
     runs-on: ubuntu-latest
     steps:
+      - name: Local CI tag
+        run: |
+          if [ "${{ needs.select.outputs.skip_ci }}" = "true" ]; then
+            echo "${{ needs.select.outputs.local_ci_tag }}: jobs skipped — local CI proved this diff (see the Select job summary)."
+          else
+            echo "No local CI tag honoured for this run — jobs ran on GitHub."
+          fi
+
       - name: Required jobs passed
         env:
           RESULTS: ${{ toJson(needs) }}

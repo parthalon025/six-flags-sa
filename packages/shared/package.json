@@ -1,6 +1,6 @@
 {
   "name": "@party-tracker/shared",
-  "version": "1.17.1",
+  "version": "1.19.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -11,6 +11,8 @@
     "./schemas.js": "./schemas.js",
     "./consolidateExport.js": "./consolidateExport.js",
     "./questScore.js": "./questScore.js",
-    "./compass.js": "./compass.js"
+    "./compass.js": "./compass.js",
+    "./isoWorld.js": "./isoWorld.js",
+    "./isoTrack.js": "./isoTrack.js"
   }
 }

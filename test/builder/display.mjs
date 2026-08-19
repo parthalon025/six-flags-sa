@@ -581,17 +581,30 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
     writeFileSync(path.join(bakeDir, `test-park--${kit}.png`), 'png-bytes');
     writeFileSync(path.join(bakeDir, `test-park--${kit}.credits.json`), '{"assets":[]}');
   }
+  // Iso-tier outputs share the bake dir but must not fold as a pseudo-kit
+  // or land as manifest tiers (iso pack-tier integration is Phase C). The
+  // fixture cert is FAILING so an accidental fold would trip bake_certs.
+  writeFileSync(path.join(bakeDir, 'test-park--rpg-overworld--iso-r0.style-cert.json'), JSON.stringify({
+    certified: false,
+    signature: 'sig-iso',
+    checks: [{ key: 'style_terrain_palette', pass: false, evidence: 'iso fixture' }],
+  }));
+  writeFileSync(path.join(bakeDir, 'test-park--rpg-overworld--iso-r0.png'), 'png-bytes');
   const result = runDisplayStage('test-park', {
     map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir, bake: { dir: bakeDir },
   });
-  assert.deepEqual(Object.keys(result.bakes).sort(), ['island-brochure', 'rpg-overworld']);
+  assert.deepEqual(Object.keys(result.bakes).sort(), ['island-brochure', 'rpg-overworld'],
+    'iso certs never register as a pseudo-kit');
   assert.equal(result.bakes['rpg-overworld'].signature, 'sig-rpg-overworld');
   const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
   assert.ok(cert.checks.some((c) => c.key === 'bake:island-brochure:style_terrain_palette'));
-  assert.equal(cert.checks.find((c) => c.key === 'bake_certs').pass, true);
+  assert.equal(cert.checks.find((c) => c.key === 'bake_certs').pass, true,
+    'the failing iso fixture cert is excluded from the fold');
+  assert.ok(!cert.checks.some((c) => c.key.includes('iso-r0')), 'no iso rows fold into the pack cert');
   const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
   assert.equal(manifest.tiers.credits.kit, 'rpg-overworld', 'skins bakeKit binding beats directory order');
   assert.ok(manifest.tiers['bake:island-brochure'].bytes > 0);
+  assert.ok(!Object.keys(manifest.tiers).some((k) => k.includes('iso-r0')), 'iso bakes are not pack tiers');
   assert.ok(manifest.tiers.raster.gap, 'raster stays an honest gap');
   const empty = runDisplayStage('test-park', {
     map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-')), bake: { dir: mkdtempSync(path.join(tmpdir(), 'nobakes-')) },
