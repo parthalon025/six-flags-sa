@@ -2,37 +2,16 @@
   "version": 1,
   "tiers": {
     "vector": {
-      "file": "base.pmtiles",
-      "bytes": 170878
+      "gap": true,
+      "reason": "base.pmtiles not built"
     },
     "raster": {
       "gap": true,
-      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 4897 KB PNG + bounds still ship in the manifest for direct image placement"
-    },
-    "bake:blueprint-survey": {
-      "file": "six-flags-fiesta-texas--blueprint-survey.png",
-      "bytes": 3140881,
-      "kit": "blueprint-survey"
-    },
-    "bake:island-brochure": {
-      "file": "six-flags-fiesta-texas--island-brochure.png",
-      "bytes": 5150887,
-      "kit": "island-brochure"
-    },
-    "bake:midnight-carnival": {
-      "file": "six-flags-fiesta-texas--midnight-carnival.png",
-      "bytes": 5285267,
-      "kit": "midnight-carnival"
-    },
-    "bake:rpg-overworld": {
-      "file": "six-flags-fiesta-texas--rpg-overworld.png",
-      "bytes": 5014979,
-      "kit": "rpg-overworld"
+      "reason": "no baked PNG to tile — run venues:bake first"
     },
     "credits": {
-      "file": "six-flags-fiesta-texas--rpg-overworld.credits.json",
-      "bytes": 1859,
-      "kit": "rpg-overworld"
+      "gap": true,
+      "reason": "no baked kits — run venues:bake first"
     }
   }
 }

@@ -544,14 +544,21 @@ export function runDisplayStage(id, opts = {}) {
   if (opts.tiles) {
     tiles = buildTiles({ id, map, pois, outDir });
     if (tiles.ok) written.push(tiles.file);
+    // A gate can only assert what its toolchain can answer. tippecanoe is a
+    // `wrap` dependency and is not installed in CI, so failing certification on
+    // its absence would fail every venue on most machines the moment tiles stop
+    // being opt-in — while saying nothing about this venue. An absent binary is
+    // therefore a recorded gap (the sibling raster tier already works this way);
+    // a tippecanoe that ran and produced a broken or oversized archive is still
+    // a hard failure, because that is a fact about this venue.
     venueChecks.push(check({
       key: 'tiles',
-      claim: `base.pmtiles builds and fits the ${TILES_BUDGET_KB / 1024} MB pack budget`,
-      pass: tiles.ok && tiles.sizeKb <= TILES_BUDGET_KB,
+      claim: `base.pmtiles builds and fits the ${TILES_BUDGET_KB / 1024} MB pack budget, or the tiler is a recorded gap`,
+      pass: tiles.gap || (tiles.ok && tiles.sizeKb <= TILES_BUDGET_KB),
       evidence: tiles.ok ? `base.pmtiles ${tiles.sizeKb} KB` : tiles.reason,
-      confidence: 'high',
-      falsifier: 'tippecanoe fails or the archive exceeds the download budget',
-      soWhat: 'the display pack rides the venue download; an oversized or missing archive blocks it',
+      confidence: tiles.gap ? 'low' : 'high',
+      falsifier: 'tippecanoe runs and the archive is broken or exceeds the download budget',
+      soWhat: 'the display pack rides the venue download; an oversized or broken archive blocks it, and a missing tiler leaves the vector tier unbuilt',
     }));
   }
 

@@ -10,11 +10,13 @@
  *   6. attractions — entrance inventory and evidence sidecar
  *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
  *   8. certify   — report + compare + route-qa + ask; writes certification.json
- *   9. display   — per-Skin visual specs + display-certify (opt-in, --display;
- *                  add --terrain for a DEM-derived hillshade, --constrain to
- *                  settle paths and water onto it. --mesh stays per-venue:
- *                  batch-generating a 10 MB OBJ nothing renders, times 100
- *                  parks, is a gigabyte of nothing.)
+ *   9. display   — per-Skin visual specs + display-certify (opt-in, --display).
+ *                  Terrain and the constraint solver are ON by default here, as
+ *                  they are in venues:display: --no-terrain / --no-constrain opt
+ *                  out. --mesh is the one capability that stays opt-in, and only
+ *                  at catalog scale: a 10 MB OBJ nothing renders, times 100
+ *                  parks, is a gigabyte of nothing. venues:display defaults it on
+ *                  because four shipped venues is 40 MB of gitignored output.
  */
 
 import path from 'node:path';
@@ -112,8 +114,9 @@ export async function runVenuePipeline(park, opts = {}) {
     agent = true,
     certify = true,
     display = false,
-    terrain: wantTerrain = false,
-    constrain = false,
+    terrain: wantTerrain = true,
+    constrain = true,
+    mesh = false,
     skip = [],
   } = opts;
 
@@ -347,7 +350,7 @@ export async function runVenuePipeline(park, opts = {}) {
         const { prepareVenueTerrain } = await import('./terrain/venue-terrain.mjs');
         const { map } = loadTruthFor(park.id);
         const prepared = await prepareVenueTerrain({
-          id: park.id, map, outDir: venueSidecar(park.id, 'display'), constrain,
+          id: park.id, map, outDir: venueSidecar(park.id, 'display'), constrain, mesh,
         });
         terrain = prepared?.terrain || null;
       }
@@ -447,8 +450,11 @@ export function parseCatalogArgs(argv) {
     agent: true,
     certify: true,
     display: false,
-    terrain: false,
-    constrain: false,
+    // Display capabilities are on by default; a bare run produces what ships.
+    // mesh is the exception at catalog scale — see the --mesh note in the header.
+    terrain: true,
+    constrain: true,
+    mesh: false,
     applyAliases: true,
     openPr: false,
     json: false,
@@ -472,7 +478,11 @@ export function parseCatalogArgs(argv) {
     else if (a === '--no-certify') out.certify = false;
     else if (a === '--display') out.display = true;
     else if (a === '--terrain') out.terrain = true;
+    else if (a === '--no-terrain') out.terrain = false;
     else if (a === '--constrain') out.constrain = true;
+    else if (a === '--no-constrain') out.constrain = false;
+    else if (a === '--mesh') out.mesh = true;
+    else if (a === '--no-mesh') out.mesh = false;
     else if (a === '--no-aliases') out.applyAliases = false;
     else if (a === '--pr') out.openPr = true;
     else if (a === '--json') out.json = true;
@@ -497,6 +507,7 @@ export function pipelineOptsFromCatalogArgs(args) {
     display: args.display,
     terrain: args.terrain,
     constrain: args.constrain,
+    mesh: args.mesh,
     rebuildOnly: args.skipExisting,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };

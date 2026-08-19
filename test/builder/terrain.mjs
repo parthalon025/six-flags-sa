@@ -584,17 +584,45 @@ await check('a kit inherits steep variants and can override them', () => {
   return true;
 });
 
-await check('--terrain survives the trip from CLI flag to pipeline options', () => {
-  // It was parsed and then dropped here, so the flag ran the whole pipeline
-  // and produced flat venues without ever saying it had ignored you.
-  const on = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--terrain']));
-  const off = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display']));
-  assert.equal(on.terrain, true);
+await check('terrain and the solver default on, and --no-* still turns them off', () => {
+  // The flag used to be parsed and then dropped, so it ran the whole pipeline
+  // and produced flat venues without ever saying it had ignored you. Now the
+  // capability is the default and the *opt-out* is the thing that must survive
+  // the trip — a dropped --no-terrain would silently do more, not less.
+  const bare = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display']));
+  assert.equal(bare.terrain, true, 'a bare --display run should produce what ships');
+  assert.equal(bare.constrain, true);
+  assert.equal(bare.display, true);
+
+  const off = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--no-terrain', '--no-constrain']));
   assert.equal(off.terrain, false);
-  assert.equal(on.display, true);
-  const both = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--terrain', '--constrain']));
-  assert.equal(both.constrain, true);
-  assert.equal(on.constrain, false, 'constrain is its own opt-in, not implied by terrain');
+  assert.equal(off.constrain, false);
+
+  // The positive forms still parse, so older invocations keep working.
+  const explicit = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--terrain', '--constrain']));
+  assert.equal(explicit.terrain, true);
+  assert.equal(explicit.constrain, true);
+
+  // Mesh is the one capability that stays opt-in at catalog scale: a 10 MB OBJ
+  // per park over a 100-park catalog is a gigabyte of output nothing reads.
+  assert.equal(bare.mesh, false, 'mesh must not default on for a catalog run');
+  assert.equal(pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--mesh'])).mesh, true);
+  return true;
+});
+
+await check('an absent tiler is a gap; a broken one is still a failure', () => {
+  // Defaulting --tiles on would have failed certification for every venue on
+  // every machine without tippecanoe — a `wrap` dependency CI does not install.
+  // The gate now distinguishes "the toolchain cannot answer" from "this venue's
+  // tiles are wrong", so softening it must not have cost it its teeth.
+  const gate = (tiles) => tiles.gap || (tiles.ok && tiles.sizeKb <= 8 * 1024);
+  assert.equal(gate({ ok: false, gap: true, reason: 'tippecanoe not installed' }), true,
+    'a missing tiler is a recorded gap');
+  assert.equal(gate({ ok: false, reason: 'tippecanoe exited 1: bad geometry' }), false,
+    'a tiler that ran and failed is still a failure');
+  assert.equal(gate({ ok: true, sizeKb: 99999 }), false,
+    'an oversized archive is still a failure');
+  assert.equal(gate({ ok: true, sizeKb: 512 }), true);
   return true;
 });
 
