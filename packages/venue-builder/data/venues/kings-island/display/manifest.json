@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "tiers": {
+    "vector": {
+      "file": "base.pmtiles",
+      "bytes": 102212
+    },
+    "raster": {
+      "gap": true,
+      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 7275 KB PNG + bounds still ship in the manifest for direct image placement"
+    },
+    "bake:blueprint-survey": {
+      "file": "kings-island--blueprint-survey.png",
+      "bytes": 5127205,
+      "kit": "blueprint-survey"
+    },
+    "bake:island-brochure": {
+      "file": "kings-island--island-brochure.png",
+      "bytes": 7632145,
+      "kit": "island-brochure"
+    },
+    "bake:midnight-carnival": {
+      "file": "kings-island--midnight-carnival.png",
+      "bytes": 8060514,
+      "kit": "midnight-carnival"
+    },
+    "bake:rpg-overworld": {
+      "file": "kings-island--rpg-overworld.png",
+      "bytes": 7449969,
+      "kit": "rpg-overworld"
+    },
+    "credits": {
+      "file": "kings-island--rpg-overworld.credits.json",
+      "bytes": 1859,
+      "kit": "rpg-overworld"
+    }
+  }
+}

@@ -295,6 +295,26 @@ jobs:
       - name: Visual inspection shots
         run: npm run test:visual
 
+  gitnexus:
+    name: GitNexus install (soft)
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      - name: GitNexus startup probe
+        run: node scripts/gitnexus-sync.mjs startup
+
   ci:
     name: CI
     if: always()
@@ -309,6 +329,7 @@ jobs:
       - app-build
       - ui
       - visual
+      - gitnexus
     runs-on: ubuntu-latest
     steps:
       - name: Required jobs passed
@@ -317,7 +338,7 @@ jobs:
         run: |
           node -e '
             const needs = JSON.parse(process.env.RESULTS);
-            const soft = new Set(["visual"]);
+            const soft = new Set(["visual", "gitnexus"]);
             const failed = Object.entries(needs).filter(([name, job]) => {
               if (soft.has(name)) return false;
               return job.result === "failure" || job.result === "cancelled";
