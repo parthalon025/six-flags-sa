@@ -32,6 +32,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/venues-env-file.test.mjs',
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/bake-drift-watch.test.mjs',
+  'test/scripts/profile-max-rank.test.mjs',
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
 ];

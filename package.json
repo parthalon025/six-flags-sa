@@ -50,7 +50,7 @@
     "ios:wire-watch": "node scripts/ios/wire-watch-target.mjs",
     "ios:check-watch": "node scripts/ios/wire-watch-target.mjs --check",
     "clerk:check": "node scripts/clerk-check.mjs",
-    "profile:max-rank": "node scripts/profile-max-rank.mjs",
+    "profile:max-rank": "node --env-file-if-exists=apps/party-tracker/.env.local --env-file-if-exists=.env scripts/profile-max-rank.mjs",
     "databricks:e2e": "node scripts/databricks-e2e.mjs",
     "venues:discover-parks-api": "node --env-file-if-exists=.env packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node --env-file-if-exists=.env packages/venue-builder/bin/geocode-catalog.mjs",
@@ -128,7 +128,6 @@
     "turbo": "^2.10.9"
   },
   "dependencies": {
-    "pg": "^8.16.3",
     "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/app": "^7.1.0",
     "@capacitor/clipboard": "^7.0.4",
@@ -141,6 +140,7 @@
     "@capacitor/push-notifications": "^7.0.7",
     "@capacitor/share": "^7.0.3",
     "@capacitor/splash-screen": "^7.0.4",
-    "@capacitor/status-bar": "^7.0.4"
+    "@capacitor/status-bar": "^7.0.4",
+    "pg": "^8.16.3"
   }
 }
