@@ -141,3 +141,47 @@ export async function listConsolidateCandidates() {
   const rows = await listContributions({ status: 'accepted', limit: 2000 });
   return rows;
 }
+
+/**
+ * Thanks the finder — the Death Stranding like. Idempotent per
+ * (contribution, thanker): only the first thanks feeds the author's
+ * impact_helped; repeats and self-thanks count nothing and are not errors.
+ *
+ * @param {{ contributionId: string, thankerId: string }} args
+ * @returns {Promise<{ ok: boolean, counted: boolean, reason?: string }>}
+ */
+export async function thankContribution({ contributionId, thankerId } = {}) {
+  if (!thankerId) return { ok: false, counted: false, reason: 'thanker_required' };
+  const row = await getContribution(contributionId);
+  if (!row) return { ok: false, counted: false, reason: 'not_found' };
+  if (row.authorId === thankerId) return { ok: true, counted: false, reason: 'self' };
+
+  if (usingPostgres()) {
+    const pool = await getPool();
+    const res = await pool.query(
+      `INSERT INTO contribution_thanks (id, contribution_id, thanker_id)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (contribution_id, thanker_id) DO NOTHING
+       RETURNING id`,
+      [newId('t_'), contributionId, thankerId],
+    );
+    if (!res.rows[0]) return { ok: true, counted: false, reason: 'repeat' };
+    await pool.query(
+      'UPDATE profiles SET impact_helped = impact_helped + 1, updated_at = now() WHERE user_id = $1',
+      [row.authorId],
+    );
+    return { ok: true, counted: true };
+  }
+
+  // Dev fallback mirrors the Postgres contract. The impact tally lives here
+  // rather than in lib/auth/profiles' memory map (keyed by Clerk id, not
+  // user id) — good enough for a DATABASE_URL-less run, exact in production.
+  mem.thanks ??= new Map();
+  mem.impact ??= new Map();
+  const given = mem.thanks.get(contributionId) || new Set();
+  if (given.has(thankerId)) return { ok: true, counted: false, reason: 'repeat' };
+  given.add(thankerId);
+  mem.thanks.set(contributionId, given);
+  mem.impact.set(row.authorId, (mem.impact.get(row.authorId) || 0) + 1);
+  return { ok: true, counted: true };
+}

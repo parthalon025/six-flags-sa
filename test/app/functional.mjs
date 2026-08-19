@@ -1392,6 +1392,51 @@ await check('Me carries the journey: ladder, field stats, finder credit', async 
   return true;
 });
 
+await check('a Thanks lands once per guest and never for yourself', async () => {
+  // The Death Stranding like, proven through the production server: create a
+  // Contribution, thank it as a stranger, and assert what actually counted.
+  const created = await fetch(`${BASE}/api/contributions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      authorId: 'usr_thx_finder',
+      venueId: 'kings-island',
+      placeId: 'orion',
+      kind: 'height',
+      payload: { heightIn: 48 },
+    }),
+  });
+  if (created.status !== 201) throw new Error(`contribution POST ${created.status}`);
+  const { contribution } = await created.json();
+
+  const thank = async (thankerId) => {
+    const res = await fetch(`${BASE}/api/contributions/thanks`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ contributionId: contribution.id, thankerId }),
+    });
+    if (!res.ok) throw new Error(`thanks POST ${res.status}`);
+    return res.json();
+  };
+
+  const first = await thank('usr_thx_fan');
+  if (first.counted !== true) throw new Error(`first thanks did not count: ${JSON.stringify(first)}`);
+  const repeat = await thank('usr_thx_fan');
+  if (repeat.counted !== false) throw new Error('repeat thanks double-counted');
+  const second = await thank('usr_thx_other');
+  if (second.counted !== true) throw new Error('a second guest should count');
+  const self = await thank('usr_thx_finder');
+  if (self.counted !== false || self.reason !== 'self') throw new Error('self-thanks must never count');
+
+  const missing = await fetch(`${BASE}/api/contributions/thanks`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ contributionId: 'c_never_existed', thankerId: 'usr_thx_fan' }),
+  });
+  if (missing.status !== 404) throw new Error(`unknown contribution should 404, got ${missing.status}`);
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();

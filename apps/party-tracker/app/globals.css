@@ -1546,11 +1546,21 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* The Death Stranding plaque: a fact left on the world carries who left it.
    Flag rail + finder's name, quiet enough to sit under any Place. */
 .overlayCompletion {
+  display: flex; align-items: center; gap: 8px;
   margin: 0 0 6px; padding: 6px 10px;
   border-left: 2px solid color-mix(in srgb, var(--adventure) 55%, transparent);
   border-radius: 0 var(--r2) var(--r2) 0;
   background: color-mix(in srgb, var(--adventure) 7%, transparent);
 }
+.overlayCompletionLine { flex: 1; min-width: 0; }
+/* Thanks the finder — the Death Stranding like, once per phone. */
+.thanksBtn {
+  flex: none; display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 999px; border: none;
+  font-size: 12px; font-weight: 600;
+  background: var(--fill3); color: var(--adventure);
+}
+.thanksBtn.on { background: transparent; color: var(--label3); }
 .overlayPin circle {
   fill: var(--adventure);
   stroke: var(--markerEdge, #1a1a1a);
