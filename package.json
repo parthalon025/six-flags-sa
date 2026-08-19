@@ -101,6 +101,7 @@
     "store:release-cycle": "node scripts/release-cycle.mjs",
     "version:matrix": "node scripts/deploy-version-report.mjs",
     "venues:display": "node --env-file-if-exists=.env packages/venue-builder/bin/display-pack.mjs",
+    "venues:worldcover-lands": "node --env-file-if-exists=.env packages/venue-builder/bin/worldcover-lands.mjs",
     "venues:render": "node --env-file-if-exists=.env packages/venue-builder/bin/display-render.mjs",
     "venues:llm-briefs": "node --env-file-if-exists=.env packages/venue-builder/bin/llm-briefs.mjs",
     "venues:bake": "node --env-file-if-exists=.env packages/venue-builder/bin/display-bake.mjs",

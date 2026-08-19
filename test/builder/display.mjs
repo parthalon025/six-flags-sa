@@ -31,6 +31,7 @@ console.log('\ndisplay factory\n');
 const {
   SURFACE_CLASSES,
   ALLOWED_LICENSES,
+  LAND_COVER_STYLE,
   readSkinTemplates,
   readMaterials,
   compileVisualSpec,
@@ -70,6 +71,19 @@ await check('no map layer is claimed by two surface classes', () => {
       assert.ok(!seen.has(layer), `layer "${layer}" claimed by ${seen.get(layer)} and ${key}`);
       seen.set(layer, key);
     }
+  }
+  return true;
+});
+
+/* -------------------------------------------------- land-cover materials -- */
+
+await check('every WorldCover class binds a real ledger material', () => {
+  const materials = readMaterials();
+  assert.ok(Object.keys(LAND_COVER_STYLE).length >= 4, 'expected built-up/tree-cover/water/grassland at least');
+  for (const [cls, row] of Object.entries(LAND_COVER_STYLE)) {
+    assert.match(cls, /^[a-z][a-z_]*$/, `class key "${cls}" is not a WorldCover class name`);
+    assert.ok(materials[row.material], `${cls} binds unknown material "${row.material}"`);
+    assert.ok(row.tone.day && row.tone.night, `${cls} is missing a day/night tone`);
   }
   return true;
 });
@@ -158,6 +172,67 @@ await check('compiled spec carries no coordinates and no build date', () => {
 
 await check('compiling twice is byte-identical (deterministic)', () => {
   assert.equal(JSON.stringify(compiled()), JSON.stringify(compiled()));
+  return true;
+});
+
+/* -------------------------------------------- WorldCover land-cover tones -- */
+
+const FIXTURE_MAP_TWO_LANDS = {
+  ...FIXTURE_MAP,
+  meta: { ...FIXTURE_MAP.meta, lands: { day: {}, night: {} } }, // no hand tints
+  lands: [
+    { n: 'Midway', r: [[0, 0], [1, 0], [1, 1]] },
+    { n: 'Backwoods', r: [[2, 2], [3, 2], [3, 3]] },
+  ],
+};
+
+function compiledWithCover(landCover) {
+  const skins = readSkinTemplates();
+  return compileVisualSpec({
+    map: FIXTURE_MAP_TWO_LANDS,
+    pois: FIXTURE_POIS,
+    template: skins.trail,
+    materials: readMaterials(),
+    landCover,
+  });
+}
+
+await check('WorldCover classification picks a land tone when there is no hand tint', () => {
+  const spec = compiledWithCover({
+    Midway: { code: 50, name: 'built_up' },
+    Backwoods: { code: 10, name: 'tree_cover' },
+  });
+  assert.equal(spec.landTones.Midway.day, LAND_COVER_STYLE.built_up.tone.day);
+  assert.equal(spec.landTones.Backwoods.night, LAND_COVER_STYLE.tree_cover.tone.night);
+  return true;
+});
+
+await check('an unmapped WorldCover class invents no tone — falls to name-hue', () => {
+  const spec = compiledWithCover({ Midway: { code: 70, name: 'snow_ice' } });
+  assert.equal(spec.landTones.Midway, undefined);
+  return true;
+});
+
+await check('a hand tint always wins over an inferred WorldCover tone', () => {
+  const skins = readSkinTemplates();
+  const handTinted = {
+    ...FIXTURE_MAP_TWO_LANDS,
+    meta: { ...FIXTURE_MAP_TWO_LANDS.meta, lands: { day: { Midway: '#f2e8d0' }, night: { Midway: '#1a2233' } } },
+  };
+  const spec = compileVisualSpec({
+    map: handTinted,
+    pois: FIXTURE_POIS,
+    template: skins.trail,
+    materials: readMaterials(),
+    landCover: { Midway: { code: 50, name: 'built_up' } },
+  });
+  assert.equal(spec.landTones.Midway.day, '#f2e8d0', 'the curated hand tint must not be overwritten');
+  return true;
+});
+
+await check('omitting landCover behaves exactly as before (no WorldCover data)', () => {
+  const spec = compiledWithCover(undefined);
+  assert.equal(Object.keys(spec.landTones).length, 0);
   return true;
 });
 
@@ -639,6 +714,19 @@ await check('runDisplayStage writes spec + certification, twice byte-identical',
   for (const [f, body] of snapshot) {
     assert.equal(readFileSync(path.join(outDir, f), 'utf8'), body, `${f} changed on a no-op rerun`);
   }
+  return true;
+});
+
+await check('runDisplayStage threads injected landCover into every skin spec', () => {
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const result = runDisplayStage('test-park', {
+    map: FIXTURE_MAP_TWO_LANDS,
+    pois: FIXTURE_POIS,
+    outDir,
+    landCover: { Midway: { code: 50, name: 'built_up' } },
+  });
+  assert.equal(result.certified, true);
+  assert.equal(result.packs.trail.spec.landTones.Midway.day, LAND_COVER_STYLE.built_up.tone.day);
   return true;
 });
 

@@ -9,6 +9,10 @@ import {
   classHistogram,
   CLASS_NAMES,
   run,
+  boundsFromRing,
+  classifyLands,
+  classifyVenueLands,
+  worldcoverLandsCacheFile,
 } from '../../packages/venue-builder/lib/adapters/esa-worldcover.mjs';
 
 const PASS = [];
@@ -144,6 +148,92 @@ await check('run() treats a bbox touching the equator/prime-meridian as valid, n
       recursive: true,
       force: true,
     });
+  } catch {
+    // best-effort cleanup
+  }
+});
+
+await check('boundsFromRing computes a bbox from a [lng,lat] ring', () => {
+  assert.deepEqual(
+    boundsFromRing([[-82.69, 41.48], [-82.68, 41.49], [-82.70, 41.50]]),
+    { north: 41.5, south: 41.48, east: -82.68, west: -82.70 },
+  );
+  return true;
+});
+
+await check('boundsFromRing skips non-finite points rather than poisoning the box', () => {
+  assert.deepEqual(
+    boundsFromRing([[-82.69, 41.48], [null, undefined], [-82.68, 41.49]]),
+    { north: 41.49, south: 41.48, east: -82.68, west: -82.69 },
+  );
+  return true;
+});
+
+await check('classifyLands samples each land\'s own bbox, not the venue bbox', async () => {
+  // Two districts, two different fake rasters — proves each land gets its
+  // own window/read rather than one shared venue-wide histogram.
+  const seenUrls = [];
+  const fakeOpenTiff = async (url) => {
+    seenUrls.push(url);
+    return {
+      getImage: async () => ({
+        getOrigin: () => [-84, 42],
+        getResolution: () => [0.00008333333333333333, -0.00008333333333333333],
+        readRasters: async () => (seenUrls.length === 1
+          ? [new Uint8Array([50, 50, 50, 50])] // built-up
+          : [new Uint8Array([10, 10, 10, 10])]), // tree cover
+      }),
+    };
+  };
+  const lands = [
+    { n: 'Midway', r: [[-82.693, 41.486], [-82.692, 41.486], [-82.692, 41.487], [-82.693, 41.487]] },
+    { n: 'Backcountry', r: [[-82.680, 41.480], [-82.679, 41.480], [-82.679, 41.481], [-82.680, 41.481]] },
+    { n: 'Too Small', r: [[0, 0], [1, 1]] }, // fewer than 3 points — skipped
+  ];
+  const out = await classifyLands(lands, { openTiff: fakeOpenTiff });
+  assert.equal(out.Midway.name, 'built_up');
+  assert.equal(out.Backcountry.name, 'tree_cover');
+  assert.equal(out['Too Small'], undefined);
+  assert.equal(seenUrls.length, 2, 'one raster read per land, not a shared venue-wide read');
+  return true;
+});
+
+await check('classifyLands leaves a failing land unclassified instead of failing the batch', async () => {
+  const flaky = async () => { throw new Error('range read failed'); };
+  const out = await classifyLands([{ n: 'Ghost Town', r: [[0, 0], [1, 0], [1, 1]] }], { openTiff: flaky });
+  assert.deepEqual(out, {});
+  return true;
+});
+
+await check('classifyVenueLands offline reads back what was cached, ok:false when nothing cached', async () => {
+  const missing = await classifyVenueLands('__test-esa-worldcover-lands-missing__', [], { offline: true });
+  assert.equal(missing.ok, false);
+  assert.deepEqual(missing.data.lands, {});
+
+  const fakeOpenTiff = async () => ({
+    getImage: async () => ({
+      getOrigin: () => [-84, 42],
+      getResolution: () => [0.00008333333333333333, -0.00008333333333333333],
+      readRasters: async () => [new Uint8Array([80, 80, 80, 80])],
+    }),
+  });
+  const id = '__test-esa-worldcover-lands__';
+  const online = await classifyVenueLands(id, [
+    { n: 'Lagoon', r: [[-82.693, 41.486], [-82.692, 41.486], [-82.692, 41.487]] },
+  ], { openTiff: fakeOpenTiff });
+  assert.equal(online.ok, true);
+  assert.equal(online.data.lands.Lagoon.name, 'permanent_water');
+
+  const { existsSync, readFileSync, rmSync } = await import('node:fs');
+  assert.ok(existsSync(worldcoverLandsCacheFile(id)), 'cache file must be written');
+  assert.equal(JSON.parse(readFileSync(worldcoverLandsCacheFile(id), 'utf8')).lands.Lagoon.code, 80);
+
+  const readBack = await classifyVenueLands(id, [], { offline: true });
+  assert.equal(readBack.ok, true);
+  assert.equal(readBack.data.lands.Lagoon.name, 'permanent_water');
+
+  try {
+    rmSync(new URL(`../../packages/venue-builder/data/venues/${id}`, import.meta.url), { recursive: true, force: true });
   } catch {
     // best-effort cleanup
   }
