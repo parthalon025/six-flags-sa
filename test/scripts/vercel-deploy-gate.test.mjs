@@ -107,4 +107,22 @@ assert.equal(gateAutomationDeploy(-5).tier, 'ok');
   assert.equal(result.counts.automation, AUTOMATION_DEPLOY_BUDGET);
 }
 
+// checkLiveAutomationGate: warn tier still allows but surfaces the warning reason.
+{
+  const warnCount = Math.ceil(AUTOMATION_DEPLOY_BUDGET * GATE_WARN_RATIO);
+  const warnDeploys = Array.from({ length: warnCount }, (_, i) => ({
+    createdAt: cutoff + i,
+    meta: { githubCommitMessage: 'feat: merge' },
+  }));
+  const result = await checkLiveAutomationGate({
+    token: 't',
+    projectId: 'p',
+    now,
+    fetchImpl: async () => ({ ok: true, json: async () => ({ deployments: warnDeploys }) }),
+  });
+  assert.equal(result.tier, 'warn');
+  assert.equal(result.allow, true);
+  assert.match(result.reason, /approaching the cap/);
+}
+
 console.log('vercel-deploy-gate: ok');

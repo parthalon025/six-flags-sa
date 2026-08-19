@@ -123,6 +123,9 @@ export async function applyLiveAutomationGate(decision, liveGateOptions = {}) {
   }
   const live = await checkLiveAutomationGate(liveGateOptions);
   if (live.allow) {
+    if (live.tier === 'warn') {
+      return { ...decision, reason: live.reason, liveGate: live };
+    }
     return { ...decision, liveGate: live };
   }
   return {

@@ -265,5 +265,31 @@ assert.equal(
   const gated = await applyLiveAutomationGate(skipDecision);
   assert.equal(gated, skipDecision, 'a skip decision is never re-checked against the live gate');
 }
+{
+  // A 'warn' tier still builds but must surface the warning as the logged reason —
+  // otherwise the "60-90%: builds, logs a warning" promise in the policy doc is a no-op.
+  const automationDecision = decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'production',
+    gitRef: 'main',
+  });
+  const gated = await applyLiveAutomationGate(automationDecision, {
+    token: 't',
+    projectId: 'p',
+    fetchImpl: async () => ({
+      ok: true,
+      json: async () => ({
+        deployments: Array.from({ length: 50 }, (_, i) => ({
+          createdAt: Date.UTC(2026, 0, 1) + i,
+          meta: { githubCommitMessage: 'feat: merge' },
+        })),
+      }),
+    }),
+    now: new Date(Date.UTC(2026, 0, 1, 12)),
+  });
+  assert.equal(gated.build, true);
+  assert.equal(gated.liveGate.tier, 'warn');
+  assert.match(gated.reason, /approaching the cap/, 'warn-tier reason must reach the logged decision');
+}
 
 console.log('vercel-ignore: ok');
