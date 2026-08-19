@@ -1396,7 +1396,7 @@ async function runCatalogBatch(argv) {
   console.error(`Building ${parks.length} of ${catalog.parks.length} catalog parks (${mode})…`);
 
   const summary = await runVenueBatch(parks, {
-    ...pipelineOptsFromCatalogArgs(args),
+    ...pipelineOptsFromCatalogArgs(args, { batch: true }),
     batchDelay: args.delay,
     openPr: args.openPr,
     catalogSize: catalog.parks.length,

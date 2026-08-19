@@ -10,6 +10,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { appendFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,10 +38,13 @@ function gitDiffNames(ref) {
   try {
     const mergeBase = execFileSync('git', ['merge-base', 'HEAD', ref], {
       cwd: ROOT,
+      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+      env: scrubGitEnv(),
       encoding: 'utf8',
     }).trim();
     const out = execFileSync('git', ['diff', '--name-only', `${mergeBase}...HEAD`], {
       cwd: ROOT,
+      env: scrubGitEnv(),
       encoding: 'utf8',
     });
     return out.split('\n').map((s) => s.trim()).filter(Boolean);

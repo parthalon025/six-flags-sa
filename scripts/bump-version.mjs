@@ -15,6 +15,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './lib/git-env.mjs';
 import { fileURLToPath } from 'node:url';
 import { bumpVersion } from '../apps/party-tracker/lib/version.js';
 import { decideBump } from './lib/release-bump.mjs';
@@ -33,7 +34,8 @@ const workspacePkgPaths = [
 /** Internal workspace package names whose exact version pins must track the bump. */
 const INTERNAL_DEP_NAMES = ['@party-tracker/shared'];
 function git(args) {
-  return execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+  // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+  return execFileSync('git', args, { cwd: root, env: scrubGitEnv(), encoding: 'utf8' });
 }
 
 function changedFiles() {
