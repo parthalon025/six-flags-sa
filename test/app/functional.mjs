@@ -402,14 +402,21 @@ await check('GO NOW card carries a Why? explanation', async () => {
 });
 
 
-await check('theme toggle flips data-theme', async () => {
+await check('the palette toggle cycles data-theme through Trail and Park Midnight', async () => {
+  // ADR-0012: the toggle cycles auto -> Trail (day) -> Park Midnight (night).
+  // A full cycle of three taps must show both resolved palettes and land back
+  // on the mode it started from, whatever that was.
+  const toggle = () => a.getByRole('button', { name: /switch to (Trail|Park Midnight)/i });
   const before = await a.evaluate(() => document.documentElement.dataset.theme);
-  await a.getByRole('button', { name: /Switch to (night|daylight) map/ }).click();
-  await a.waitForTimeout(300);
+  const seen = new Set([before]);
+  for (let i = 0; i < 3; i += 1) {
+    await toggle().click();
+    await a.waitForTimeout(300);
+    seen.add(await a.evaluate(() => document.documentElement.dataset.theme));
+  }
+  if (seen.size < 2) throw new Error(`palette never changed (stuck on ${before})`);
   const after = await a.evaluate(() => document.documentElement.dataset.theme);
-  if (before === after) throw new Error('theme did not change');
-  await a.getByRole('button', { name: /Switch to (night|daylight) map/ }).click();
-  await a.waitForTimeout(300);
+  if (after !== before) throw new Error(`cycle did not return to ${before} (got ${after})`);
   return true;
 });
 
