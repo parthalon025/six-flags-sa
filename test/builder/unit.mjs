@@ -5255,6 +5255,40 @@ await check('unified build pipeline dry-run covers research and agent', async ()
   return true;
 });
 
+await check('display stage defaults on for big-kahunas, off for everyone else', async () => {
+  // Dry-run prints "#   display → …" only when the stage is on for this park —
+  // the cheapest external signal of the default without reaching into
+  // runVenuePipeline's internals or hitting the network.
+  const originalLog = console.log;
+  const capture = async (park) => {
+    const lines = [];
+    console.log = (...args) => lines.push(args.join(' '));
+    try {
+      await runVenuePipeline(park, { dryRun: true });
+    } finally {
+      console.log = originalLog;
+    }
+    return lines.some((l) => l.includes('display →'));
+  };
+  const bigKahunasDisplays = await capture({
+    id: 'big-kahunas', rank: 5, name: "Big Kahuna's", place: "Big Kahuna's, Destin, Florida", locality: 'Destin, Florida',
+  });
+  const magicKingdomDisplays = await capture({
+    id: 'magic-kingdom', rank: 1, name: 'Magic Kingdom', place: 'Magic Kingdom theme park, Florida', locality: 'Lake Buena Vista, Florida',
+  });
+  assert.equal(bigKahunasDisplays, true, 'big-kahunas should default the display stage on');
+  assert.equal(magicKingdomDisplays, false, 'other parks should default the display stage off');
+  return true;
+});
+
+await check('parseCatalogArgs leaves display unset unless --display is passed, so the per-park default applies', () => {
+  const unset = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--pipeline']));
+  assert.equal(unset.display, undefined);
+  const forced = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--pipeline', '--display']));
+  assert.equal(forced.display, true);
+  return true;
+});
+
 await check('catalog batch is a loop over the universal builder', async () => {
   const parks = [{
     id: 'magic-kingdom',
