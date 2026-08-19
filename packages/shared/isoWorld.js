@@ -21,6 +21,9 @@ export const LIFT_HILL_PERIOD_M = 28;
  * Lift-profile height (metres) at a travelled distance along a track.
  * The single sin-hill implementation — liftCoaster's geometry and
  * isoTrack.js's segment classification must agree on it.
+ * The bare defaults (12/3) are liftCoaster's legacy fallback, not
+ * rct-classic's resolved values — real callers resolve explicit values
+ * from a template and pass them in.
  */
 export function liftHeightAt(travelled, { heightAmp = 12, baseHeight = 3 } = {}) {
   return baseHeight + heightAmp * Math.abs(Math.sin(travelled / LIFT_HILL_PERIOD_M));

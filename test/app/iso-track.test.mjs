@@ -71,6 +71,24 @@ const rightSegs = trackSegments(rightL, { heightAmp: 0 });
 assert.equal(rightSegs.filter((s) => s.kind.startsWith('turn')).length, 1, 'exactly one turn');
 assert.deepEqual(rightSegs.map((s) => s.kind), ['flat', 'turn-right'], 'CW corner turns right');
 
+// A gently rounded turn (36° total, 6° per vertex) with one collinear
+// vertex mid-curve still reads as a turn: a zero heading delta holds the
+// accumulator instead of wiping it. heightAmp 0 keeps grades out of the way.
+const roundedHeadings = [0, 6, 12, 18, 24, 24, 30, 36];
+const rounded = [[0, 0]];
+for (const deg of roundedHeadings) {
+  const [x, y] = rounded[rounded.length - 1];
+  const rad = (deg * Math.PI) / 180;
+  rounded.push([x + 10 * Math.cos(rad), y + 10 * Math.sin(rad)]);
+}
+const roundedSegs = trackSegments(rounded, { heightAmp: 0 });
+assert.equal(
+  roundedSegs.filter((s) => s.kind === 'turn-left').length,
+  1,
+  'the accumulated 36° curve survives its collinear vertex',
+);
+assert.ok(roundedSegs.every((s) => s.kind !== 'turn-right'));
+
 // Turns never outrank climb/drop: the same corner on a steep lift stays a climb.
 const steepCorner = trackSegments([[0, 0], [10, 0], [10, 10]]);
 assert.ok(steepCorner.every((s) => !s.kind.startsWith('turn')), 'climb wins over turn');

@@ -21,7 +21,9 @@ import { chromium } from 'playwright';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson } from '../lib/venue-io.mjs';
 import { bakeModel, kitAssetIds, resolveKit } from '../lib/display-bake.mjs';
 import { kitBriefSystem, parseKitAnswer } from '../lib/display-kit-brief.mjs';
-import { readAssetLedger, assetPath, creditsManifest } from '../lib/display-assets.mjs';
+import {
+  readAssetLedger, assetPath, assetsForTarget, creditsManifest,
+} from '../lib/display-assets.mjs';
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
 import { profileForKit, readReferenceProfiles } from '../lib/display-references.mjs';
@@ -30,7 +32,9 @@ import {
   stylePoints, certifyStyleContract, harvestProfileDraft, signature,
 } from '../lib/display-style-contract.mjs';
 
-const LEDGER = readAssetLedger();
+// This baker paints the flat/top-down tier: iso-target variants stay out of
+// every kit resolve, brief, byte-serve, and credits row it produces.
+const LEDGER = assetsForTarget(readAssetLedger(), 'flat');
 
 const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
 

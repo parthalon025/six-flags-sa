@@ -75,7 +75,9 @@ export function trackSegments(line, { heightAmp, baseHeight, template = 'rct-cla
     else if (grade < -GRADE_THRESHOLD) kind = 'drop';
     if (i > 0) {
       const d = headingDelta(headingDeg(pts[i - 1], pts[i]), headingDeg(pts[i], pts[i + 1]));
-      acc = Math.sign(d) === Math.sign(acc) ? acc + d : d;
+      // A collinear vertex (d === 0) holds the accumulator — only a genuine
+      // sign FLIP restarts it, so grid-snapped waypoints can't wipe a curve.
+      if (d !== 0) acc = acc !== 0 && Math.sign(d) !== Math.sign(acc) ? d : acc + d;
       if (kind === 'flat' && Math.abs(acc) > TURN_THRESHOLD_DEG) {
         kind = acc > 0 ? 'turn-left' : 'turn-right';
         acc = 0;
