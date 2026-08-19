@@ -54,6 +54,7 @@
     "venues:discover-parks-api": "node --env-file-if-exists=.env packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node --env-file-if-exists=.env packages/venue-builder/bin/geocode-catalog.mjs",
     "venues:drift-watch": "node --env-file-if-exists=.env packages/venue-builder/bin/drift-watch.mjs",
+    "venues:bake-drift-watch": "node --env-file-if-exists=.env packages/venue-builder/bin/bake-drift-watch.mjs",
     "venues:build-top100": "node --env-file-if-exists=.env packages/venue-builder/bin/build-top-parks.mjs",
     "venues:pipeline": "node --env-file-if-exists=.env packages/venue-builder/bin/build-top-parks.mjs",
     "cdn:warm": "node scripts/warm-cdn.mjs",
