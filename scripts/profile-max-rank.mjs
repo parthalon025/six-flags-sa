@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Grant one Profile the max XP/Rank (Steward, 3000 XP — the top of the
- * ladder in packages/shared/questScore.js). Full access in this app's
- * domain model is just having a Profile (CONTEXT.md); there is no
- * separate access/tier column to flip.
+ * Grant one Profile the max XP/Rank — the top entry of RANK_LADDER in
+ * packages/shared/questScore.js. Full access in this app's domain model
+ * is just having a Profile (CONTEXT.md); there is no separate
+ * access/tier column to flip.
  *
  *   npm run profile:max-rank -- --clerk-id user_xxx
  *   npm run profile:max-rank -- --clerk-id user_xxx --dry-run
@@ -17,6 +17,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { RANK_LADDER } from '../packages/shared/questScore.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -36,8 +37,7 @@ function loadEnvFile(path) {
 loadEnvFile(join(root, 'apps/party-tracker/.env.local'));
 loadEnvFile(join(root, '.env'));
 
-const MAX_RANK = 'steward';
-const MAX_XP = 3000;
+const { rank: MAX_RANK, xp: MAX_XP } = RANK_LADDER[RANK_LADDER.length - 1];
 
 function parseArgs(argv) {
   const out = { clerkId: null, dryRun: false };

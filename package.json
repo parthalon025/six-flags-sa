@@ -122,6 +122,7 @@
     "turbo": "^2.10.9"
   },
   "dependencies": {
+    "pg": "^8.16.3",
     "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor/app": "^7.1.0",
     "@capacitor/clipboard": "^7.0.4",
