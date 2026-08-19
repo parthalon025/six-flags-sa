@@ -3,6 +3,11 @@
  *
  * Does not invoke tippecanoe — writes files and a shell recipe the maintainer
  * or CI can run when the binary is available.
+ *
+ * Way geometry comes from the shipped `map.json` contract: a ring `r` of
+ * `[lng, lat]` pairs, not the `{lng, lat}` object shape once expected under
+ * `p` (see `display-tiles.mjs`, which reads the same `r` ring for the
+ * ADR-0013 display-pack pipeline).
  */
 
 import path from 'node:path';
@@ -11,12 +16,23 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 const LAYER_KEYS = ['path', 'building', 'water', 'coaster', 'slide', 'parking', 'pool'];
 
 function wayToLine(way) {
-  if (!way?.p?.length) return null;
-  return {
-    type: 'Feature',
-    geometry: { type: 'LineString', coordinates: way.p.map((pt) => [pt.lng, pt.lat]) },
-    properties: { name: way.n || '', layer: way.layer || '' },
-  };
+  if (Array.isArray(way?.r) && way.r.length) {
+    return {
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: way.r },
+      properties: { name: way.n || '', layer: way.layer || '' },
+    };
+  }
+  // Fallback for any internal caller that still produces the pre-contract
+  // `{lng, lat}` object shape under `p` instead of the shipped `r` rings.
+  if (way?.p?.length) {
+    return {
+      type: 'Feature',
+      geometry: { type: 'LineString', coordinates: way.p.map((pt) => [pt.lng, pt.lat]) },
+      properties: { name: way.n || '', layer: way.layer || '' },
+    };
+  }
+  return null;
 }
 
 function poiToPoint(poi) {
