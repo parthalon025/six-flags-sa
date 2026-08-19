@@ -65,6 +65,12 @@ Two things always run full CI regardless of the stamp:
 
 Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored, the `Select modules` job summary says why, and CI runs everything.
 
+### Pre-push hook
+
+`.husky/pre-push` runs `npm run test:pre-merge-vertical` before every `git push` (skipped for `main`, and for delete-only pushes). It exists so the stamp is never missing by accident — GitHub credits are only saved when the tag is actually there. `shouldSkipLocalPreMerge` makes a repeat push with no new commits cost nothing: the hook re-runs the script, and the script exits immediately once it sees the existing stamp still covers the tree.
+
+Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
+
 ## Test app (`.github/workflows/test-app.yml`)
 
 **Touch-only policy:** PRs and `main` pushes run only modules matched by the diff — not the full matrix every time.

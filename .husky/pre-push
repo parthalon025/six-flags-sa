@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+# Prefer local CI over GitHub Actions to save on GitHub credits.
+#
+# Runs `npm run test:pre-merge-vertical` before every push (except to `main`,
+# which always runs full CI regardless — see docs/agents/ci.md). A fresh
+# `local-ci-verified` stamp lets GitHub skip the jobs this run already
+# covered instead of re-running them. If the stamp already covers this diff
+# the script exits immediately, so a repeat push with no new commits costs
+# nothing.
+#
+# Escape hatch for an emergency push: `HUSKY=0 git push` (skips all hooks).
+# GitHub still runs full CI in that case — you're trading the local check
+# for the GitHub minutes it would have saved, not skipping verification.
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [ "$branch" = "main" ]; then
+  exit 0
+fi
+
+# A push that only deletes remote refs has nothing local to validate.
+deleting_only=1
+while read -r local_ref local_sha _remote_ref _remote_sha; do
+  if [ -n "$local_ref" ] && [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
+    deleting_only=0
+  fi
+done
+if [ "$deleting_only" = "1" ]; then
+  exit 0
+fi
+
+echo "pre-push: running local CI (npm run test:pre-merge-vertical) so GitHub can skip redundant jobs"
+npm run test:pre-merge-vertical
