@@ -372,5 +372,11 @@
     "items": [
       "feat(display): terrain, scatter, and material colour for the visual builder (#506)"
     ]
+  },
+  "1.20.1": {
+    "title": "What's new",
+    "items": [
+      "Display pipeline Phase 1: localMetres() seam + MapLibre spike renderer for Big Kahuna's (behind a flag) (#549)"
+    ]
   }
 }
