@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import VenueLoadFade from '@/components/VenueLoadFade';
+import { mapLibreDisplayEnabled } from '@/lib/mapLibreConfigured';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
@@ -115,6 +116,7 @@ const RoutePreview = dynamic(() => import('@/components/RoutePreview'), { ssr: f
 const IntelligencePanel = dynamic(() => import('@/components/IntelligencePanel'), { ssr: false });
 const CompassTape = dynamic(() => import('@/components/CompassTape'), { ssr: false });
 const WatchCompassSettings = dynamic(() => import('@/components/WatchCompassSettings'), { ssr: false });
+const DisplayMap = dynamic(() => import('@/components/DisplayMap'), { ssr: false });
 
 const PALETTE = ['#66B56A', '#27B8B0', '#9B6BFF', '#FF5C8A', '#5B7CFF', '#B8956A', '#FFC857', '#FF6B35'];
 const colourFor = (id) => {
@@ -2550,48 +2552,57 @@ function ParkApp({ isSignedIn }) {
         venueName={venue?.name}
         loading={venueStatus === 'loading'}
       />
-      <ParkMap
-        key={venue?.id || 'map'}
-        data={mapData}
-        center={venue?.center}
-        pois={POIS}
-        me={mapMe}
-        members={others}
-        meet={meet}
-        car={car}
-        selected={selected}
-        onSelectPoi={handleSelectFromMap}
-        onMapTap={handleMapTap}
-        armMeet={armMeet}
-        follow={follow}
-        onUserPan={onUserPan}
-        heading={heading}
-        eligibility={eligibilityView}
-        visibleCategories={categories}
-        onToggleCategory={toggleCategory}
-        focusPoint={focusPoint}
-        theme={mapWear}
-        route={navTarget ? route : null}
-        routeStep={walking ? progress?.step ?? null : null}
-        routeAhead={routeAhead}
-        routeDone={routeDone}
-        routeTargetName={navTarget?.kind === 'poi' ? navTarget.placeId || navTarget.label : null}
-        alternatives={shownAlternatives}
-        onPickAlternative={setPick}
-        puck={puck}
-        bottomInset={floorPx}
-        rotation={rotation}
-        liftCentre={walking ? 0.2 : previewing ? -0.12 : 0}
-        navZoom={walking ? 3 : null}
-        fitPoints={previewing ? route?.points : null}
-        fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
-        mapKeyHidden={previewing || walking}
-        onMapStats={handleMapStats}
-        marks={worldMarksOnMap}
-        selfKit={worldProgress.kit || selfMember?.kit || null}
-        onThankMark={thankAMark}
-        overlayPins={overlayPins}
-      />
+      {mapLibreDisplayEnabled() && venue?.id === 'big-kahunas' ? (
+        // Phase 1 display-pipeline spike (issue #527): Big Kahuna's is the
+        // only World with a certified display pack today, so this stays
+        // scoped to it rather than swapping the renderer app-wide. Static
+        // base map and Place pins only — Overlay/route/puck/Follow stay on
+        // ParkMap.jsx until a later phase ports them (ADR-0013).
+        <DisplayMap venue={venue} pois={POIS} />
+      ) : (
+        <ParkMap
+          key={venue?.id || 'map'}
+          data={mapData}
+          center={venue?.center}
+          pois={POIS}
+          me={mapMe}
+          members={others}
+          meet={meet}
+          car={car}
+          selected={selected}
+          onSelectPoi={handleSelectFromMap}
+          onMapTap={handleMapTap}
+          armMeet={armMeet}
+          follow={follow}
+          onUserPan={onUserPan}
+          heading={heading}
+          eligibility={eligibilityView}
+          visibleCategories={categories}
+          onToggleCategory={toggleCategory}
+          focusPoint={focusPoint}
+          theme={mapWear}
+          route={navTarget ? route : null}
+          routeStep={walking ? progress?.step ?? null : null}
+          routeAhead={routeAhead}
+          routeDone={routeDone}
+          routeTargetName={navTarget?.kind === 'poi' ? navTarget.placeId || navTarget.label : null}
+          alternatives={shownAlternatives}
+          onPickAlternative={setPick}
+          puck={puck}
+          bottomInset={floorPx}
+          rotation={rotation}
+          liftCentre={walking ? 0.2 : previewing ? -0.12 : 0}
+          navZoom={walking ? 3 : null}
+          fitPoints={previewing ? route?.points : null}
+          fitKey={previewing ? `${navKeyOf(navTarget)}:${pick}` : null}
+          mapKeyHidden={previewing || walking}
+          onMapStats={handleMapStats}
+          marks={worldMarksOnMap}
+          selfKit={worldProgress.kit || selfMember?.kit || null}
+          onThankMark={thankAMark}
+          overlayPins={overlayPins}
+        />
+      )}
 
       {/* Nothing runs across the top of a phone map. The two controls float in
           the corner and the rest of the frame is map. */}

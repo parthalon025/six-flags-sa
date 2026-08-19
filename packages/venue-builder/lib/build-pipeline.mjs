@@ -111,7 +111,11 @@ export async function runVenuePipeline(park, opts = {}) {
     attractions = true,
     agent = true,
     certify = true,
-    display = false,
+    // Big Kahuna's display pack ships certified today (issue #527 Phase 1) —
+    // the stage defaults on for it alone so the spike renderer always has a
+    // pack to load, without flipping every other World's pipeline run to a
+    // slower, tippecanoe-dependent stage it hasn't opted into.
+    display = park.id === 'big-kahunas',
     terrain: wantTerrain = false,
     constrain = false,
     skip = [],
@@ -446,7 +450,10 @@ export function parseCatalogArgs(argv) {
     attractions: true,
     agent: true,
     certify: true,
-    display: false,
+    // Left undefined rather than false: runVenuePipeline's own default
+    // (on for big-kahunas, off elsewhere) only fires when opts.display is
+    // undefined. An explicit --display still forces every selected park on.
+    display: undefined,
     terrain: false,
     constrain: false,
     applyAliases: true,

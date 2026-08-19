@@ -65,5 +65,20 @@ export function unproject(x, y) {
   return [lat, lng];
 }
 
+/**
+ * Mercator metres for (lat, lng), rebased onto a local `origin` (itself a
+ * `project()` result) — the venue-relative frame SVG rendering needs so its
+ * float32 transforms stay precise. Pure and renderer-agnostic: the reference
+ * implementation an independent parity check calls to verify two renderers
+ * agree on where a point sits, not something either renderer calls per-pin —
+ * MapLibre projects raw [lng, lat] itself, and the SVG renderer already has
+ * this rebase step inlined at every call site.
+ */
+export function localMetres(lat, lng, origin) {
+  const [x, y] = project(lat, lng);
+  const [ox, oy] = origin;
+  return [x - ox, y - oy];
+}
+
 /* Where the park is no longer lives here. Bounds and centre belong to whichever
    venue is loaded, so they come from lib/venue/store.js — see withinBounds. */
