@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import {
   decideVercelBuild,
   isAgentPreviewBranch,
+  applyLiveAutomationGate,
 } from '../../scripts/lib/vercel-ignore.mjs';
 import { isVersionStampOnlyChange } from '../../scripts/lib/version-stamp.mjs';
 import {
@@ -203,6 +204,7 @@ for (const path of [
   'scripts/vercel-ignore.sh',
   'scripts/lib/vercel-ignore.mjs',
   'scripts/lib/vercel-budget.mjs',
+  'scripts/lib/vercel-deploy-gate.mjs',
   'scripts/lib/version-stamp.mjs',
   'scripts/lib/version-stamp-paths.json',
   'scripts/lib/repo-path.mjs',
@@ -228,5 +230,40 @@ assert.doesNotMatch(
   /c\.put\(request, res\.clone\(\)\)/,
   'late res.clone() after respondWith races and throws',
 );
+
+// Only the automation-production category is subject to the live stepped gate.
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'production',
+    gitRef: 'main',
+  }).category,
+  'automation-production',
+  'production app change without a marker is the automation category',
+);
+assert.equal(
+  decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'preview',
+    gitRef: 'feat/my-branch',
+    subject: 'feat: map [vercel build]',
+  }).category,
+  'user-directed',
+  'user-directed builds never enter the automation category',
+);
+{
+  const userDecision = decideVercelBuild({
+    files: ['apps/party-tracker/lib/party/hostService.js'],
+    env: 'preview',
+    subject: 'feat: map [vercel build]',
+  });
+  const gated = await applyLiveAutomationGate(userDecision);
+  assert.equal(gated, userDecision, 'non-automation decisions pass through the live gate untouched');
+}
+{
+  const skipDecision = decideVercelBuild({ files: [] });
+  const gated = await applyLiveAutomationGate(skipDecision);
+  assert.equal(gated, skipDecision, 'a skip decision is never re-checked against the live gate');
+}
 
 console.log('vercel-ignore: ok');

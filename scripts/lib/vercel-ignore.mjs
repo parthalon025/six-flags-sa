@@ -24,6 +24,7 @@ import {
   isUserDirectedBuild,
 } from './vercel-budget.mjs';
 import { isVersionStampOnlyChange } from './version-stamp.mjs';
+import { checkLiveAutomationGate } from './vercel-deploy-gate.mjs';
 
 /** Agent / worktree branches — never preview unless the user directed it. */
 const AGENT_PREVIEW_BRANCH = /^(worktree-|cursor\/)/;
@@ -47,34 +48,37 @@ export function decideVercelBuild({
   const userDirected = isUserDirectedBuild({ subject, userBuild });
 
   if (commitSubjectWantsSkip(subject)) {
-    return { build: false, reason: 'commit subject [skip vercel] — skipping build', files };
+    return { build: false, category: 'skip-explicit', reason: 'commit subject [skip vercel] — skipping build', files };
   }
   if (userDirected) {
     return {
       build: true,
+      category: 'user-directed',
       reason: `user-directed build (reserve ${USER_DEPLOY_RESERVE}/day) — proceeding`,
       files,
     };
   }
   if (files == null) {
-    return { build: true, reason: 'unknown-changed-files — proceeding with build' };
+    return { build: true, category: 'unknown-diff', reason: 'unknown-changed-files — proceeding with build' };
   }
   if (!files.length) {
-    return { build: false, reason: 'empty diff vs first parent — skipping build', files };
+    return { build: false, category: 'skip-empty-diff', reason: 'empty diff vs first parent — skipping build', files };
   }
   if (isGitnexusOnlyChange(files)) {
-    return { build: false, reason: 'gitnexus-index-only — skipping build', files };
+    return { build: false, category: 'skip-gitnexus', reason: 'gitnexus-index-only — skipping build', files };
   }
   if (isVersionStampOnlyChange(files)) {
     if (isPreviewEnv(env)) {
       return {
         build: false,
+        category: 'skip-version-stamp-preview',
         reason: 'version-stamp-only bump — skipping preview build',
         files,
       };
     }
     return {
       build: true,
+      category: 'version-stamp-production',
       reason:
         'version-stamp production bump — proceeding (bump push cancels the merge deploy)',
       files,
@@ -83,6 +87,7 @@ export function decideVercelBuild({
   if (isAgentPreviewBranch(gitRef, env)) {
     return {
       build: false,
+      category: 'skip-agent-preview',
       reason: `agent preview branch ${gitRef} — skipping (user reserve: add [vercel build] or VERCEL_USER_BUILD=1)`,
       files,
     };
@@ -91,17 +96,42 @@ export function decideVercelBuild({
     if (isPreviewEnv(env)) {
       return {
         build: false,
+        category: 'skip-preview-reserved',
         reason: `preview reserved for user directive (${USER_DEPLOY_RESERVE}/day) — add [vercel build] or VERCEL_USER_BUILD=1`,
         files,
       };
     }
     return {
       build: true,
+      category: 'automation-production',
       reason: `app-related production change (automation budget ~${AUTOMATION_DEPLOY_BUDGET}/day)`,
       files,
     };
   }
-  return { build: false, reason: 'no app-related changes — skipping build', files };
+  return { build: false, category: 'skip-no-app-changes', reason: 'no app-related changes — skipping build', files };
+}
+
+/**
+ * Second, live pass on top of decideVercelBuild: only the automation-production
+ * category is subject to the stepped budget gate (previews and user-directed
+ * builds never touch the automation pool, so they're never throttled here).
+ * Falls open to the categorical decision when the live check is unavailable.
+ */
+export async function applyLiveAutomationGate(decision, liveGateOptions = {}) {
+  if (!decision.build || decision.category !== 'automation-production') {
+    return decision;
+  }
+  const live = await checkLiveAutomationGate(liveGateOptions);
+  if (live.allow) {
+    return { ...decision, liveGate: live };
+  }
+  return {
+    ...decision,
+    build: false,
+    category: `automation-production-${live.tier}`,
+    reason: live.reason,
+    liveGate: live,
+  };
 }
 
 function git(args) {
@@ -124,7 +154,7 @@ export function commitSubject(commitSha = 'HEAD') {
   return git(['log', '-1', '--format=%s', commitSha]) || '';
 }
 
-export function runIgnoreCli({
+export async function runIgnoreCli({
   commitSha = process.env.VERCEL_GIT_COMMIT_SHA || 'HEAD',
   env = process.env.VERCEL_ENV,
   gitRef = process.env.VERCEL_GIT_COMMIT_REF,
@@ -137,17 +167,25 @@ export function runIgnoreCli({
   log(`Budget: ${USER_DEPLOY_RESERVE} user-reserved, ~${AUTOMATION_DEPLOY_BUDGET} automation`);
   const files = listFirstParentFiles(commitSha);
   const subject = commitSubject(commitSha);
-  const decision = decideVercelBuild({ files, env, gitRef, subject });
+  let decision = decideVercelBuild({ files, env, gitRef, subject });
   if (files) {
     log('Changed files vs first parent:');
     for (const file of files.slice(0, 20)) log(file);
     if (files.length > 20) log(`... and ${files.length - 20} more`);
   }
   if (subject) log(`Commit subject: ${subject}`);
+  if (decision.category === 'automation-production') {
+    decision = await applyLiveAutomationGate(decision);
+    if (decision.liveGate?.counts) {
+      log(
+        `Live deploy count today: ${decision.liveGate.counts.total} total (${decision.liveGate.counts.automation} automation, ${decision.liveGate.counts.user} user-directed)`,
+      );
+    }
+  }
   log(decision.reason);
   return decision.build ? 1 : 0;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-  process.exit(runIgnoreCli());
+  process.exit(await runIgnoreCli());
 }
