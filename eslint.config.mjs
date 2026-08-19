@@ -3,9 +3,13 @@ import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 const config = [
   {
     ignores: [
-      '.next/**',
+      // Flat-config ignores resolve against this file's directory, so a bare
+      // '.next/**' only ever matched a root-level build. The workspace builds
+      // into apps/party-tracker/.next, which `npm run lint` then linted the
+      // moment anyone had built — CI never noticed because its tree is fresh.
+      '**/.next/**',
       'node_modules/**',
-      'out/**',
+      '**/out/**',
       'apps/party-tracker/public/sw.js',
       '.gitnexus/**',
       '.claude/**',

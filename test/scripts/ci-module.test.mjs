@@ -12,6 +12,7 @@ import { GATE_SCRIPT_TESTS, GATE_EXCLUDED_TESTS } from '../../scripts/ci/manifes
 import { runGateScriptTests } from '../../scripts/ci/gate-tests.mjs';
 import {
   DEFAULT_HEALTH_URL,
+  healthAlreadyServing,
   waitForHealth,
 } from '../../scripts/ci/party-tracker-ui.mjs';
 import { stageVersionStamps } from '../../scripts/ci/stage-version-stamps.mjs';
@@ -45,6 +46,30 @@ assert.ok(
   for (const rel of Object.keys(GATE_EXCLUDED_TESTS)) {
     assert.ok(!GATE_SCRIPT_TESTS.includes(rel), `${rel} both excluded and in the gate`);
   }
+}
+
+// A leftover server would let the browser vertical pass against the wrong
+// build, so the gate has to notice one before it starts its own.
+{
+  assert.equal(
+    await healthAlreadyServing({ fetchFn: async () => ({ ok: true }) }),
+    true,
+    'a responding health port is reported as already serving',
+  );
+  assert.equal(
+    await healthAlreadyServing({
+      fetchFn: async () => {
+        throw new Error('ECONNREFUSED');
+      },
+    }),
+    false,
+    'a refused connection means the port is free',
+  );
+  assert.equal(
+    await healthAlreadyServing({ fetchFn: async () => ({ ok: false }) }),
+    false,
+    'a non-ok response is not a server we would collide with',
+  );
 }
 
 let calls = 0;
