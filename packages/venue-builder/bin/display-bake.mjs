@@ -12,6 +12,13 @@
  *   npm run venues:bake -- big-kahunas --kit rpg-overworld
  *   npm run venues:bake -- big-kahunas --prompt "sunny hand-drawn brochure"
  *   npm run venues:bake -- kings-island --kit rpg-overworld --max-cols 320
+ *
+ * `--target iso` renders the RCT-style isometric bake of the SAME model —
+ * depth-sorted extrusions and lifted tracks (lib/display-iso.mjs), the
+ * flat tier's kit palette, certified through the same style contract.
+ * `--rotation 0..3` picks the quarter-turn view (iso only).
+ *
+ *   npm run venues:bake -- big-kahunas --kit rpg-overworld --target iso --rotation 2
  */
 
 import http from 'node:http';
@@ -29,12 +36,17 @@ import { chatCompletion } from '../lib/venue-llm.mjs';
 import { profileForKit, readReferenceProfiles } from '../lib/display-references.mjs';
 import { ldtkProject } from '../lib/display-ldtk.mjs';
 import {
-  stylePoints, certifyStyleContract, harvestProfileDraft, signature,
+  stylePoints, isoStylePoints, certifyStyleContract, harvestProfileDraft, signature,
 } from '../lib/display-style-contract.mjs';
+import { isoBakeGeometry } from '../lib/display-iso.mjs';
 
-// This baker paints the flat/top-down tier: iso-target variants stay out of
-// every kit resolve, brief, byte-serve, and credits row it produces.
-const LEDGER = assetsForTarget(readAssetLedger(), 'flat');
+// Kits resolve against the flat/top-down ledger: iso-target variants stay
+// out of every kit resolve, brief, and flat credits row. The iso render
+// path serves iso-target art (a tree sprite's `-iso` sibling) from the
+// iso slice and credits exactly the assets it painted.
+const FULL_LEDGER = readAssetLedger();
+const LEDGER = assetsForTarget(FULL_LEDGER, 'flat');
+const ISO_LEDGER = assetsForTarget(FULL_LEDGER, 'iso');
 
 const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
 
@@ -46,6 +58,9 @@ let maxCols = 240;
 let px = 16;
 let harvestProfile = false;
 let ldtk = false;
+let target = 'flat';
+let rotation = 0;
+let rotationSet = false;
 let outRoot = path.join(MONO_ROOT, 'artifacts', 'display-bake');
 for (let i = 0; i < argv.length; i += 1) {
   const a = argv[i];
@@ -55,15 +70,26 @@ for (let i = 0; i < argv.length; i += 1) {
   else if (a === '--px') px = Number(argv[++i]) || 16;
   else if (a === '--harvest-profile') harvestProfile = true;
   else if (a === '--ldtk') ldtk = true;
+  else if (a === '--target') target = argv[++i];
+  else if (a === '--rotation') { rotation = Number(argv[++i]); rotationSet = true; }
   else if (a === '--out') outRoot = path.resolve(argv[++i]);
   else if (!a.startsWith('--')) ids.push(a);
 }
 if (!ids.length || (!kitIdsArg.length && !prompt)) {
-  console.error('usage: display-bake.mjs <venueId>… (--kit <id> [--kit <id>…] | --prompt "…") [--max-cols N] [--px N] [--out dir]');
+  console.error('usage: display-bake.mjs <venueId>… (--kit <id> [--kit <id>…] | --prompt "…") [--target flat|iso] [--rotation 0..3] [--max-cols N] [--px N] [--out dir]');
   const kits = existsSync(KITS_DIR) ? readdirSync(KITS_DIR).map((f) => f.replace(/\.json$/, '')) : [];
   if (kits.length) console.error(`kits on disk: ${kits.join(', ')}`);
   process.exit(2);
 }
+if (!['flat', 'iso'].includes(target)) {
+  console.error(`unknown --target "${target}" (flat | iso)`);
+  process.exit(2);
+}
+if (!Number.isInteger(rotation) || rotation < 0 || rotation > 3) {
+  console.error('--rotation must be an integer 0..3');
+  process.exit(2);
+}
+if (rotationSet && target !== 'iso') console.error('--rotation only applies to --target iso — ignored');
 
 function loadKit(id) {
   const file = path.join(KITS_DIR, `${id}.json`);
@@ -93,10 +119,11 @@ async function kitFromPrompt(text) {
 }
 
 const PAGE = readFileSync(new URL('./display-bake-page.html', import.meta.url), 'utf8');
+const ISO_PAGE = readFileSync(new URL('./display-iso-page.html', import.meta.url), 'utf8');
 
-function serve(model, kit, points) {
-  // Every asset the kit references — tile sheets (with import geometry for
-  // dual-grid cutting) and standalone sprites — served from the ledger.
+// Every asset the flat painter needs — tile sheets (with import geometry
+// for dual-grid cutting) and standalone sprites — from the flat ledger.
+function flatSheets(kit) {
   const sheets = {};
   for (const piece of Object.values(kit.terrain)) {
     const ref = piece.tiles;
@@ -111,12 +138,27 @@ function serve(model, kit, points) {
   for (const ref of Object.values(kit.sprites.badge?.icons || {})) {
     if (ref?.asset && !sheets[ref.asset]) sheets[ref.asset] = { url: `/asset/${ref.asset}`, sprite: true };
   }
+  return sheets;
+}
+
+// The iso painter uses no terrain tiles (diamonds are flat fills): only
+// badge icon glyphs plus the tree sprite's iso sibling when one exists.
+function isoSheets(kit, treeAsset) {
+  const sheets = {};
+  for (const ref of Object.values(kit.sprites.badge?.icons || {})) {
+    if (ref?.asset && !sheets[ref.asset]) sheets[ref.asset] = { url: `/asset/${ref.asset}`, sprite: true };
+  }
+  if (treeAsset) sheets[treeAsset] = { url: `/asset/${treeAsset}`, sprite: true };
+  return sheets;
+}
+
+function serve(payload, { page = PAGE, ledger = LEDGER } = {}) {
   return http.createServer((req, res) => {
     const url = req.url.split('?')[0];
-    if (url === '/') { res.setHeader('content-type', 'text/html'); return res.end(PAGE); }
-    if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify({ model, kit, px, sheets, points })); }
+    if (url === '/') { res.setHeader('content-type', 'text/html'); return res.end(page); }
+    if (url === '/model.json') { res.setHeader('content-type', 'application/json'); return res.end(JSON.stringify(payload)); }
     if (url.startsWith('/asset/')) {
-      const row = LEDGER[url.slice('/asset/'.length)];
+      const row = ledger[url.slice('/asset/'.length)];
       if (row) {
         res.setHeader('content-type', row.path.endsWith('.svg') ? 'image/svg+xml' : 'image/png');
         return res.end(readFileSync(assetPath(row)));
@@ -165,34 +207,57 @@ for (const id of ids) {
   for (const kitId of kitIds) {
     const kit = resolveKit(kitSpecs[kitId], { assets: LEDGER, overlay });
     const model = bakeModel(map, pois, { maxCols });
-    // Dual-grid corner masks for every kit-tiled terrain (ground uses full
-    // tiles on its own cells) — computed once here so the lib stays the
-    // only implementation.
-    const terrainId = Object.fromEntries(Object.entries(model.terrains).map(([v, n]) => [n, Number(v)]));
-    model.autotile = {};
-    for (const [name, piece] of Object.entries(kit.terrain)) {
-      if (piece.tiles && name !== 'ground') {
-        model.autotile[name] = Array.from(dualGridIndices(model.cells, model.cols, model.rows, terrainId[name]));
+    let base;
+    let server;
+    let points;
+    let skips = null;
+    let credits;
+    if (target === 'iso') {
+      // The iso variant convention: a flat sprite's `-iso` sibling in the
+      // iso ledger slice serves the iso tier under the same label.
+      const flatTree = kit.sprites.tree?.sprite?.asset;
+      const treeAsset = flatTree && ISO_LEDGER[`${flatTree}-iso`] ? `${flatTree}-iso` : null;
+      const geometry = isoBakeGeometry(model, kit, { rotation, px, treeAsset });
+      const plan = isoStylePoints(model, stylePoints(model), { rotation, px });
+      points = plan.points;
+      skips = plan.skips;
+      const sheets = isoSheets(kit, treeAsset);
+      base = `${id}--${kitId}--iso-r${rotation}`;
+      // Credits list exactly what the iso painter fetched: badge glyphs
+      // plus the iso tree sprite — iso assets never leak into flat credits.
+      credits = creditsManifest(Object.keys(sheets), FULL_LEDGER);
+      server = serve({ model, kit, px, sheets, geometry, points }, { page: ISO_PAGE, ledger: FULL_LEDGER });
+    } else {
+      // Dual-grid corner masks for every kit-tiled terrain (ground uses full
+      // tiles on its own cells) — computed once here so the lib stays the
+      // only implementation.
+      const terrainId = Object.fromEntries(Object.entries(model.terrains).map(([v, n]) => [n, Number(v)]));
+      model.autotile = {};
+      for (const [name, piece] of Object.entries(kit.terrain)) {
+        if (piece.tiles && name !== 'ground') {
+          model.autotile[name] = Array.from(dualGridIndices(model.cells, model.cols, model.rows, terrainId[name]));
+        }
       }
+      points = stylePoints(model);
+      base = `${id}--${kitId}`;
+      // Credits ride every bake: each ledger asset the kit touched, with its
+      // license and source — the audit trail the asset ledger promises.
+      credits = creditsManifest(kitAssetIds(kit), LEDGER);
+      server = serve({ model, kit, px, sheets: flatSheets(kit), points });
     }
-    const points = stylePoints(model);
-    const server = serve(model, kit, points);
     await new Promise((r) => server.listen(0, '127.0.0.1', r));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.waitForFunction('window.__done === true', null, { timeout: 120000 });
-    const file = path.join(outRoot, `${id}--${kitId}.png`);
+    const file = path.join(outRoot, `${base}.png`);
     await page.locator('#c').screenshot({ path: file });
-    // Credits ride every bake: each ledger asset the kit touched, with its
-    // license and source — the audit trail the asset ledger promises.
-    const credits = creditsManifest(kitAssetIds(kit), LEDGER);
-    writeFileSync(path.join(outRoot, `${id}--${kitId}.credits.json`), `${JSON.stringify(credits, null, 2)}\n`);
+    writeFileSync(path.join(outRoot, `${base}.credits.json`), `${JSON.stringify(credits, null, 2)}\n`);
     const samples = await page.evaluate('window.__samples');
     writeFileSync(
-      path.join(outRoot, `${id}--${kitId}.samples.json`),
+      path.join(outRoot, `${base}.samples.json`),
       `${JSON.stringify({ signature: signature(samples), points, samples })}\n`,
     );
     if (harvestProfile) {
-      const draftFile = path.join(outRoot, `${id}--${kitId}.profile-draft.json`);
+      const draftFile = path.join(outRoot, `${base}.profile-draft.json`);
       writeFileSync(draftFile, `${JSON.stringify(harvestProfileDraft({ points, samples }), null, 2)}\n`);
       console.error(`  profile draft (measured medians): ${draftFile}`);
     }
@@ -207,7 +272,7 @@ for (const id of ids) {
       rerun = await page.evaluate('window.__samples');
     }
     server.close();
-    results.push({ kitId, kit, model, points, samples, rerun, profile, file });
+    results.push({ kitId, kit, model, points, skips, samples, rerun, profile, file, base });
   }
 
   for (const r of results) {
@@ -226,11 +291,13 @@ for (const id of ids) {
       siblings,
       profile: r.profile,
       kit: r.kit,
+      target,
+      skips: r.skips,
     });
     // Geo bounds ride the cert so the display stage can place the baked
     // image (and attempt the raster tier) without re-baking the model.
     cert.bounds = r.model.bounds ?? null;
-    writeFileSync(path.join(outRoot, `${id}--${r.kitId}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
+    writeFileSync(path.join(outRoot, `${r.base}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
     const failing = cert.checks.filter((c) => !c.pass);
     const certLine = cert.certified
       ? `style contract ok (${cert.checks.length} checks, ${cert.review.length} review items)`

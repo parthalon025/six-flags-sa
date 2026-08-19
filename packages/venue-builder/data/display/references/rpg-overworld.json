@@ -112,6 +112,20 @@
       "minDeltaE": 12
     }
   },
+  "iso": {
+    "notes": "The iso tier reuses the flat kit palette wholesale, so the color rows hold unchanged. Structure interior samples land on the extruded roof plane and compare against the same structure family (its anchors ARE the roof colors); track samples ride the lifted rail at the sin-hill height the painter draws. The flat tube's casing-edge samples are structurally skipped by the contract's iso path, on the record.",
+    "appliesUnchanged": [
+      "style_terrain_palette",
+      "style_road_hierarchy",
+      "style_water_legibility",
+      "style_outside_distinct",
+      "style_structure_presence",
+      "style_track_presence",
+      "style_annotation_on_top",
+      "style_badge_dedup",
+      "style_bake_deterministic"
+    ]
+  },
   "hierarchy": {
     "annotationOnTop": true,
     "oneBadgePerPoi": true,

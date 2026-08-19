@@ -12,6 +12,10 @@
 
 import { check } from './evidence.mjs';
 import { TERRAIN_NAMES } from './display-bake.mjs';
+import {
+  isoCellMap, isoCellToPixel, buildingHeightsM, trackVertexHeightsM,
+  buildingScreenHulls, occludedByBuilding,
+} from './display-iso.mjs';
 
 /* ------------------------------------------------------------ color math */
 
@@ -158,6 +162,74 @@ export function stylePoints(model, { perClass = 48 } = {}) {
   return points;
 }
 
+/**
+ * The iso tier's sample plan: the SAME truth-derived stylePoints selection,
+ * with only the coordinates re-projected — truth cell → isoLocal(rotation)
+ * → pixel, through the exact affine map the iso painter draws with.
+ *
+ * Lifted geometry keeps its lift: track points project at the rail's
+ * height (trackVertexHeightsM — the painter's own sin-hill), structure
+ * interior points at the roof plane (the iso structure check compares the
+ * roof color family), and badge offsets apply in SCREEN pixels because
+ * pins are screen-space annotation in both tiers.
+ *
+ * Point classes the projection makes structurally unsound are SKIPPED on
+ * the record, never silently dropped: each skip carries a named key +
+ * reason, and certifyStyleContract turns them into explicit check rows.
+ * That includes occlusion: ground-plane samples hidden behind a building
+ * extrusion at this rotation test the building, not the terrain paint.
+ *
+ * @returns {{ map: object, points: object[], skips: {key,reason,count}[] }}
+ */
+export function isoStylePoints(model, points, { rotation = 0, px = 16, template = 'rct-classic' } = {}) {
+  const map = isoCellMap(model, { rotation, px, template });
+  const bHeights = buildingHeightsM(model);
+  const tHeights = trackVertexHeightsM(model, template);
+  const hulls = buildingScreenHulls(model, { rotation });
+  const t = model.tileMetres || 1;
+  const groundCls = new Set([...Object.values(TERRAIN_NAMES), 'roadline']);
+  const kept = [];
+  const skipped = {};
+  const skip = (key, reason) => {
+    skipped[key] = skipped[key] || { key, reason, count: 0 };
+    skipped[key].count += 1;
+  };
+  const r2 = (v) => Math.round(v * 100) / 100;
+  for (const p of points) {
+    if (p.cls === 'trackedge') {
+      skip('trackedge', 'the ±0.26-cell casing-edge offsets are flat tube geometry; they do not survive the iso lift and projection');
+      continue;
+    }
+    if (p.cls === 'structure' && p.mode === 'edge') {
+      skip('structure_edge', 'flat outline strokes have no counterpart on an extruded building; the roof plane carries the interior sample instead');
+      continue;
+    }
+    let sx;
+    let sy;
+    if (p.cls === 'badge') {
+      const b = model.badges[p.idx];
+      const [ax, ay] = isoCellToPixel(map, b.x, b.y, 0);
+      sx = ax + (p.x - b.x) * px;
+      sy = ay + (p.y - b.y) * px;
+    } else if (p.cls === 'structure') {
+      [sx, sy] = isoCellToPixel(map, p.x, p.y, bHeights[p.idx]);
+    } else if (p.cls === 'track') {
+      const tr = model.tracks[p.idx];
+      const v = tr.pts.findIndex((q) => q[0] === p.x && q[1] === p.y);
+      [sx, sy] = isoCellToPixel(map, p.x, p.y, v >= 0 ? tHeights[p.idx][v] : 0);
+    } else {
+      [sx, sy] = isoCellToPixel(map, p.x, p.y, 0);
+      if (groundCls.has(p.cls)
+        && occludedByBuilding((sx - map.ox) / map.hs, (map.oy - sy) / map.hs, hulls)) {
+        skip('occluded', 'ground-plane samples hidden behind a building extrusion at this rotation test the building, not the terrain paint');
+        continue;
+      }
+    }
+    kept.push({ ...p, sx: r2(sx), sy: r2(sy) });
+  }
+  return { map, points: kept, skips: Object.values(skipped) };
+}
+
 /* ---------------------------------------------------------- certification */
 
 /** FNV-1a over sample bytes — the cross-kit / determinism signature. */
@@ -190,11 +262,26 @@ const groupMedians = (points, samples) => {
  * determinism row; `siblings` ([{kit, signature}] from the same
  * invocation) powers cross-kit distinctness — pass an empty array to
  * record an explicit skip rather than omitting the row.
+ *
+ * `target` names the render tier ('flat' default). For 'iso' the same
+ * rows run against the iso projection's samples; the profile's optional
+ * `iso` block may override family tolerances (iso.toleranceOverrides)
+ * and the track margin (iso.structures.coasterVsUnderlay.minDeltaE).
+ * `skips` ([{key, reason, count}] from isoStylePoints) become explicit
+ * pass rows so a projection-skipped check is visible, never silent.
  */
-export function certifyStyleContract({ model, points, samples, rerunSamples = null, siblings = null, profile, kit }) {
+export function certifyStyleContract({
+  model, points, samples, rerunSamples = null, siblings = null, profile, kit,
+  target = 'flat', skips = null,
+}) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
-  const fams = profile.colorFamilies || {};
+  const baseFams = profile.colorFamilies || {};
+  const isoOverrides = (target === 'iso' && profile.iso?.toleranceOverrides) || {};
+  const fams = Object.fromEntries(Object.entries(baseFams).map(([cls, fam]) => [
+    cls,
+    isoOverrides[cls] && fam && typeof fam === 'object' ? { ...fam, deltaE: isoOverrides[cls] } : fam,
+  ]));
   const checks = [];
   const dE = (a, b) => Math.round(deltaE(a, b) * 10) / 10;
 
@@ -314,7 +401,8 @@ export function certifyStyleContract({ model, points, samples, rerunSamples = nu
   }
 
   if (groups.track?.length) {
-    const margin = profile.structures?.coasterVsUnderlay?.minDeltaE ?? 10;
+    const margin = (target === 'iso' ? profile.iso?.structures?.coasterVsUnderlay?.minDeltaE : null)
+      ?? profile.structures?.coasterVsUnderlay?.minDeltaE ?? 10;
     // Compare against the under-terrain's BASE fill only: family members
     // often carry stroke inks (a road's centerline, water's hatch), and a
     // track legitimately shares ink vocabulary with those in linework
@@ -401,6 +489,18 @@ export function certifyStyleContract({ model, points, samples, rerunSamples = nu
     }));
   }
 
+  for (const s of skips || []) {
+    checks.push(check({
+      key: `style_skip_${s.key}`,
+      claim: `${s.key} sampling is structurally unsound in the ${target} projection and skipped on the record`,
+      pass: true,
+      evidence: `${s.count} points skipped: ${s.reason}`,
+      confidence: 1,
+      falsifier: 'a projection change that makes these samples meaningful again without updating the contract',
+      soWhat: 'a skipped row must be a visible decision, never a silent pass',
+    }));
+  }
+
   const review = (profile.agentReview || []).map((item, i) => ({
     key: (typeof item === 'object' && item.key) || `style_review_${i}`,
     prompt: typeof item === 'object' ? item.prompt : item,
@@ -411,6 +511,7 @@ export function certifyStyleContract({ model, points, samples, rerunSamples = nu
     version: 1,
     kit: kit.id,
     profile: profile.id,
+    target,
     signature: sig,
     certified: checks.every((c) => c.pass),
     checks,
