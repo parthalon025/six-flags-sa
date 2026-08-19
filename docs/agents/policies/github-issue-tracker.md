@@ -2,6 +2,10 @@
 
 Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 
+## Mandatory: read comments before acting
+
+**MUST** read the full comment thread on an issue or PR (`gh issue view <n> --comments` / `gh pr view <n> --comments`) before commenting, labeling, closing, or pushing further changes to it. Acting on stale context — a title/body read without the comments — risks repeating a question already answered or missing a blocker a human already raised. This applies every time you return to an issue/PR, not just on first contact.
+
 ## Conventions
 
 - **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
