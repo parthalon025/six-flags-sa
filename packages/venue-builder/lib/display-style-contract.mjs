@@ -11,7 +11,7 @@
  */
 
 import { check } from './evidence.mjs';
-import { TERRAIN_NAMES } from './display-bake.mjs';
+import { TERRAIN_NAMES, impliedTerrainClasses } from './display-bake.mjs';
 import {
   isoCellMap, isoCellToPixel, buildingHeightsM, trackVertexHeightsM,
   buildingScreenHulls, occludedByBuilding,
@@ -314,10 +314,18 @@ const groupMedians = (points, samples) => {
  * and the track margin (iso.structures.coasterVsUnderlay.minDeltaE).
  * `skips` ([{key, reason, count}] from isoStylePoints) become explicit
  * pass rows so a projection-skipped check is visible, never silent.
+ *
+ * `map` is the venue's truth (map.json body) — optional, but when given it
+ * powers `style_terrain_coverage`: a class the venue's own geometry implies
+ * (map.grass, map.parking, map.water, …) must actually survive to the
+ * sampled render. `style_terrain_palette` alone only judges classes that
+ * DID survive; a compositing bug that erases a class entirely (issue #518:
+ * water painted over the whole park with no boundary clip) passed that
+ * check clean because there was nothing sampled to fail on.
  */
 export function certifyStyleContract({
   model, points, samples, rerunSamples = null, siblings = null, profile, kit,
-  target = 'flat', skips = null,
+  target = 'flat', skips = null, map = null,
 }) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
@@ -357,6 +365,27 @@ export function certifyStyleContract({
     falsifier: `worst class ${worst ? worst.cls : 'n/a'} beyond tolerance on a rerun`,
     soWhat: 'palette drift is the first way a design language stops matching its reference',
   }));
+
+  // Coverage, not just color fit: style_terrain_palette above only judges
+  // classes present in `medians` — a bake reduced to water/road/service by
+  // a boundary-unaware paint order samples cleanly in-family on those three
+  // and never surfaces the missing grass/wood/lot at all. Compare against
+  // what the venue's OWN truth implies instead of what happened to render.
+  if (map) {
+    const implied = impliedTerrainClasses(map);
+    const missing = [...implied].filter((cls) => !medians[cls]).sort();
+    checks.push(check({
+      key: 'style_terrain_coverage',
+      claim: 'every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render',
+      pass: missing.length === 0,
+      evidence: missing.length
+        ? `truth implies ${[...implied].sort().join(', ') || 'nothing'}; missing from the bake: ${missing.join(', ')}`
+        : `truth implies ${[...implied].sort().join(', ') || 'no terrain classes'}; all present`,
+      confidence: 1,
+      falsifier: 'a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)',
+      soWhat: 'a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world',
+    }));
+  }
 
   // The park floor a road must separate from: ground where the venue has
   // it, else the class that actually carpets the park (all-lawn venues).

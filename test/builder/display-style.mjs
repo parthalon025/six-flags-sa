@@ -122,6 +122,61 @@ await check('a faithful bake certifies; palette drift fails with the worst class
   return true;
 });
 
+// Issue #518, second half: style_terrain_palette only judges classes that
+// SURVIVED to the render (medians) — a bake that lost a class entirely (the
+// water-erases-the-park bug) sampled cleanly in-family on the three classes
+// left and certified. style_terrain_coverage compares against what the
+// venue's own truth (map.json) implies instead of what happened to render.
+await check('style_terrain_coverage: truth implies a class the render dropped (issue #518 shape)', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  // Simulate the exact symptom: only water and road survive to the render
+  // (plus the non-terrain structure/track/badge samples), even though
+  // truth carries grass, wood and a parking lot too.
+  const brokenPoints = points.filter((p) => p.cls === 'water' || p.cls === 'road' || !(p.cls in T));
+  const brokenSamples = paint(brokenPoints);
+  const truthMap = {
+    grass: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    wood: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    parking: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    water: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    path: [{ r: [[0, 0], [1, 1]] }],
+  };
+  const broken = certifyStyleContract({
+    model, points: brokenPoints, samples: brokenSamples, profile, kit, map: truthMap,
+  });
+  const coverage = broken.checks.find((c) => c.key === 'style_terrain_coverage');
+  assert.ok(coverage, 'style_terrain_coverage row must ride when a truth map is given');
+  assert.equal(coverage.pass, false);
+  assert.match(coverage.evidence, /grass/);
+  assert.match(coverage.evidence, /wood/);
+  assert.match(coverage.evidence, /lot/);
+  assert.equal(broken.certified, false, 'a bake missing a truth-implied terrain class must not certify');
+  // The stale, pre-fix behavior: style_terrain_palette alone stays green —
+  // every class that DID render (water, road) is in-family. Coverage is
+  // the row that actually catches the regression.
+  const palette = broken.checks.find((c) => c.key === 'style_terrain_palette');
+  assert.equal(palette.pass, true, 'palette alone cannot see a class that never rendered — that is the bug');
+  return true;
+});
+
+await check('style_terrain_coverage passes when the bake covers everything truth implies; is absent without a map', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  const samples = paint(points);
+  const truthMap = {
+    grass: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    parking: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    water: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    path: [{ r: [[0, 0], [1, 1]] }],
+  };
+  const covered = certifyStyleContract({ model, points, samples, profile, kit, map: truthMap });
+  const coverage = covered.checks.find((c) => c.key === 'style_terrain_coverage');
+  assert.equal(coverage.pass, true, coverage.evidence);
+  assert.equal(covered.certified, true, JSON.stringify(covered.checks.filter((c) => !c.pass)));
+  const noMap = certifyStyleContract({ model, points, samples, profile, kit });
+  assert.ok(!noMap.checks.some((c) => c.key === 'style_terrain_coverage'), 'no map given, no row — never a silent pass either way');
+  return true;
+});
+
 await check('road-hierarchy polarity flips fail', () => {
   const points = stylePoints(model, { perClass: 8 });
   const light = certifyStyleContract({
