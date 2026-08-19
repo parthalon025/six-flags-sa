@@ -7,7 +7,7 @@
     },
     "raster": {
       "gap": true,
-      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 2575 KB PNG + bounds still ship in the manifest for direct image placement"
+      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 1735 KB PNG + bounds still ship in the manifest for direct image placement"
     },
     "bake:blueprint-survey": {
       "file": "big-kahunas--blueprint-survey.png",
@@ -16,17 +16,17 @@
     },
     "bake:island-brochure": {
       "file": "big-kahunas--island-brochure.png",
-      "bytes": 2543854,
+      "bytes": 1686950,
       "kit": "island-brochure"
     },
     "bake:midnight-carnival": {
       "file": "big-kahunas--midnight-carnival.png",
-      "bytes": 2976497,
+      "bytes": 2159636,
       "kit": "midnight-carnival"
     },
     "bake:rpg-overworld": {
       "file": "big-kahunas--rpg-overworld.png",
-      "bytes": 2636758,
+      "bytes": 1776594,
       "kit": "rpg-overworld"
     },
     "credits": {

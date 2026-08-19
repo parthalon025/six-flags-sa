@@ -7,26 +7,26 @@
     },
     "raster": {
       "gap": true,
-      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 7276 KB PNG + bounds still ship in the manifest for direct image placement"
+      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 6189 KB PNG + bounds still ship in the manifest for direct image placement"
     },
     "bake:blueprint-survey": {
       "file": "kings-island--blueprint-survey.png",
-      "bytes": 5124234,
+      "bytes": 5377015,
       "kit": "blueprint-survey"
     },
     "bake:island-brochure": {
       "file": "kings-island--island-brochure.png",
-      "bytes": 7632033,
+      "bytes": 6431331,
       "kit": "island-brochure"
     },
     "bake:midnight-carnival": {
       "file": "kings-island--midnight-carnival.png",
-      "bytes": 8055290,
+      "bytes": 7288341,
       "kit": "midnight-carnival"
     },
     "bake:rpg-overworld": {
       "file": "kings-island--rpg-overworld.png",
-      "bytes": 7450205,
+      "bytes": 6337580,
       "kit": "rpg-overworld"
     },
     "credits": {
