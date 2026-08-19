@@ -1,7 +1,7 @@
 {
   "schema": 2,
-  "head": "1a92f8f2cd0b8109629c1bcd5ca2397c863e7aa1",
-  "mergeBase": "ca5f665ee9e9a425e71d093a52d656104238f9bf",
+  "head": "a3a89170361b85cb3168e1b6bc7e1d5e2a1780c7",
+  "mergeBase": "722a83aac2cfa952fb9900ae4a61083fd7444bcd",
   "baseRef": "origin/main",
   "modules": [
     "auth",
@@ -19,7 +19,10 @@
     "walk"
   ],
   "browserVertical": true,
-  "verticals": [],
+  "verticals": [
+    "app",
+    "builder"
+  ],
   "staticSteps": [
     "test:ci-gate",
     "test:unit",
@@ -27,5 +30,5 @@
   ],
   "lockHash": "3a9d51bcbf5a831e",
   "manifestHash": "8896c207e1eac635",
-  "recordedAt": "2026-08-18T22:56:16.368Z"
+  "recordedAt": "2026-08-19T00:22:40.854Z"
 }
