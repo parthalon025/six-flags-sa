@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Local CI pass stamp — write/check seam for pre-merge-vertical and test-app.yml.
+ * Local CI pass stamp — the `local-ci-verified` write/check seam shared by
+ * pre-merge-vertical and test-app.yml.
  *
  *   node test/scripts/local-ci-pass.test.mjs
  */
@@ -10,41 +11,97 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   LOCAL_CI_PASS_REL,
+  LOCAL_CI_TAG,
+  STATIC_STEPS,
+  STATIC_STEP_IDS,
+  TAG_SKIPPED_JOBS,
   buildLocalCiContext,
+  localCiDecision,
   readLocalCiPass,
+  shouldSkipGithubCi,
   shouldSkipGithubUi,
   shouldSkipLocalPreMerge,
   stampCoversContext,
   writeLocalCiPass,
 } from '../../scripts/lib/local-ci-pass.mjs';
-import { runCheck } from '../../scripts/ci/local-ci-pass.mjs';
+import { STATIC_NPM_STEPS } from '../../scripts/ci/pre-merge-vertical.mjs';
+import { runCheck, runWrite } from '../../scripts/ci/local-ci-pass.mjs';
+
+// The tag skips GitHub jobs, so every job it skips needs a local step that
+// stood in for it — otherwise the tag waves through work nothing ran.
+{
+  const covered = new Set(STATIC_STEPS.flatMap((s) => s.covers));
+  for (const job of ['lint', 'boundaries', 'contract', 'module-select-unit', 'app-build']) {
+    assert.ok(covered.has(job), `${job} is skipped by the tag but no static step covers it`);
+  }
+  assert.deepEqual(
+    STATIC_NPM_STEPS,
+    STATIC_STEPS.map((s) => s.npm),
+    'pre-merge-vertical runs exactly the steps the stamp records',
+  );
+  for (const job of ['builder', 'ui']) {
+    assert.ok(TAG_SKIPPED_JOBS.includes(job), `${job} belongs to the tag's skip set`);
+  }
+  assert.ok(
+    !TAG_SKIPPED_JOBS.includes('gate'),
+    'the gate job reads the tag, so it can never be skipped by it',
+  );
+}
 
 const tmp = mkdtempSync(join(tmpdir(), 'local-ci-pass-'));
 try {
   const context = {
-    schema: 2,
+    schema: 3,
     head: 'abc123',
+    diffHash: 'diff123456789abc',
     mergeBase: 'def456',
     baseRef: 'origin/main',
     modules: ['lint', 'party'],
     needsBrowser: true,
     verticals: ['app'],
-    staticSteps: ['test:ci-gate', 'test:unit', 'build'],
+    staticSteps: [...STATIC_STEP_IDS],
     lockHash: 'lockhash12345678',
     manifestHash: 'manifest12345678',
   };
 
   const stamp = writeLocalCiPass({ context, browserVertical: true, verticals: ['app'] }, tmp);
-  assert.equal(readLocalCiPass(tmp)?.head, 'abc123');
+  assert.equal(readLocalCiPass(tmp)?.diffHash, 'diff123456789abc');
+  assert.equal(stamp.tag, LOCAL_CI_TAG, 'a pre-merge-vertical stamp carries the tag');
   assert.equal(stamp.browserVertical, true);
   assert.ok(readFileSync(join(tmp, LOCAL_CI_PASS_REL), 'utf8').includes('"browserVertical": true'));
 
   assert.equal(stampCoversContext(stamp, context), true);
   assert.equal(
-    stampCoversContext(stamp, { ...context, head: 'other' }),
+    stampCoversContext(stamp, { ...context, diffHash: 'other' }),
     false,
-    'head mismatch invalidates stamp',
+    'a changed diff invalidates the stamp',
   );
+  assert.equal(
+    stampCoversContext(stamp, { ...context, head: 'committed-the-stamp' }),
+    true,
+    'committing the stamp moves HEAD but not the diff — the stamp still covers',
+  );
+  assert.equal(
+    stampCoversContext(stamp, { ...context, mergeBase: 'base-tip-of-the-merge-commit' }),
+    true,
+    'GitHub sees the merge commit, so merge-base moves without the code moving',
+  );
+  assert.equal(
+    stampCoversContext(stamp, { ...context, lockHash: 'deps-moved-on-base' }),
+    false,
+    'a base that moved the dependencies is a different run',
+  );
+  assert.equal(
+    stampCoversContext({ ...stamp, staticSteps: ['test:ci-gate'] }, context),
+    false,
+    'a stamp from a narrower static floor never covers the jobs the tag skips',
+  );
+  assert.equal(
+    stampCoversContext({ ...stamp, schema: 2 }, context),
+    false,
+    'pre-tag schemas never cover',
+  );
+
   assert.equal(
     shouldSkipLocalPreMerge(stamp, context),
     true,
@@ -56,10 +113,7 @@ try {
     'stamp covers static when browser skipped explicitly',
   );
   assert.equal(
-    shouldSkipLocalPreMerge(
-      { ...stamp, browserVertical: false },
-      context,
-    ),
+    shouldSkipLocalPreMerge({ ...stamp, browserVertical: false }, context),
     false,
     'browser still required when stamp lacks browser vertical',
   );
@@ -68,6 +122,7 @@ try {
     false,
     'a stamp missing a required vertical never covers the tree',
   );
+
   assert.equal(
     shouldSkipGithubUi(stamp, context, { anyUi: true }),
     true,
@@ -78,23 +133,120 @@ try {
     false,
     'no UI modules means nothing to skip on GitHub',
   );
+
+  assert.equal(
+    shouldSkipGithubCi(stamp, context),
+    true,
+    'a tagged stamp over this diff skips the jobs it proved',
+  );
+  assert.equal(
+    shouldSkipGithubCi({ ...stamp, tag: null }, context),
+    false,
+    'an untagged stamp never skips GitHub jobs',
+  );
+  assert.equal(
+    shouldSkipGithubCi({ ...stamp, verticals: [] }, context),
+    false,
+    'a stamp missing a required vertical never skips GitHub jobs',
+  );
+  assert.equal(
+    shouldSkipGithubCi({ ...stamp, browserVertical: false }, context),
+    false,
+    'a UI diff without a browser vertical never skips GitHub jobs',
+  );
+  assert.equal(
+    shouldSkipGithubCi(stamp, { ...context, diffHash: 'moved-on' }),
+    false,
+    'a new commit on the branch retires the tag',
+  );
+  assert.equal(
+    shouldSkipGithubCi({ ...stamp, diffHash: null }, { ...context, diffHash: null }),
+    false,
+    'an unreadable diff can never be claimed as verified',
+  );
+
+  // Docs-only diffs owe no verticals, so the tag covers them on its own.
+  const docsContext = { ...context, needsBrowser: false, verticals: [], modules: [] };
+  const docsStamp = writeLocalCiPass(
+    { context: docsContext, browserVertical: false, verticals: [] },
+    tmp,
+  );
+  assert.equal(shouldSkipGithubCi(docsStamp, docsContext), true);
+
+  const decision = localCiDecision(stamp, context, { anyUi: true });
+  assert.equal(decision.skipCi, true);
+  assert.equal(decision.skipUi, true, 'skipping CI implies skipping the UI jobs');
+  assert.match(decision.reason, new RegExp(LOCAL_CI_TAG));
+
+  const forced = localCiDecision(stamp, context, { anyUi: true, forceFull: true });
+  assert.equal(forced.skipCi, false, 'full-ci escape hatch wins over any stamp');
+  assert.equal(forced.skipUi, false);
+  assert.match(forced.reason, /forced/);
+
+  const stale = localCiDecision(stamp, { ...context, diffHash: 'moved-on' }, { anyUi: true });
+  assert.equal(stale.skipCi, false);
+  assert.match(stale.reason, /different diff/);
+
+  assert.equal(
+    localCiDecision(null, context, { anyUi: true }).skipCi,
+    false,
+    'no stamp means full CI',
+  );
+  assert.match(localCiDecision(null, context, {}).reason, /no local CI pass stamp/);
 } finally {
   rmSync(tmp, { recursive: true, force: true });
 }
 
+// A hand-written stamp records no tag, so it can never skip a GitHub job.
+{
+  const handTmp = mkdtempSync(join(tmpdir(), 'local-ci-hand-'));
+  try {
+    const handContext = {
+      schema: 3,
+      head: 'abc123',
+      diffHash: 'hand123456789abc',
+      mergeBase: 'def456',
+      baseRef: 'origin/main',
+      modules: ['party'],
+      needsBrowser: true,
+      verticals: ['app'],
+      staticSteps: [...STATIC_STEP_IDS],
+      lockHash: 'lockhash12345678',
+      manifestHash: 'manifest12345678',
+    };
+    const stamp = runWrite({ noBrowser: false, cwd: handTmp, context: handContext });
+    assert.equal(stamp.tag, null, 'the hand-write path never claims the tag');
+    assert.deepEqual(stamp.verticals, []);
+    assert.equal(
+      shouldSkipGithubCi(stamp, handContext),
+      false,
+      'a hand stamp can never skip GitHub jobs, however complete it looks',
+    );
+  } finally {
+    rmSync(handTmp, { recursive: true, force: true });
+  }
+}
+
 const realContext = buildLocalCiContext({ baseRef: 'origin/main' });
 assert.ok(realContext.head, 'buildLocalCiContext resolves HEAD in repo');
+assert.deepEqual(realContext.staticSteps, [...STATIC_STEP_IDS]);
 
-let githubOut = '';
 const prevOut = process.env.GITHUB_OUTPUT;
 const outFile = join(tmpdir(), `local-ci-pass-out-${process.pid}`);
 writeFileSync(outFile, '');
 process.env.GITHUB_OUTPUT = outFile;
 try {
   const result = runCheck({ baseRef: 'origin/main', anyUi: false });
-  githubOut = readFileSync(outFile, 'utf8');
-  assert.equal(result.skipUi, false);
-  assert.match(githubOut, /skip_ui=false/);
+  const githubOut = readFileSync(outFile, 'utf8');
+  assert.equal(typeof result.skipCi, 'boolean');
+  assert.match(githubOut, /skip_ui=(true|false)/);
+  assert.match(githubOut, /skip_ci=(true|false)/);
+  assert.match(githubOut, new RegExp(`local_ci_tag=${LOCAL_CI_TAG}`));
+
+  writeFileSync(outFile, '');
+  const forcedRun = runCheck({ baseRef: 'origin/main', anyUi: true, forceFull: true });
+  assert.equal(forcedRun.skipCi, false);
+  assert.match(readFileSync(outFile, 'utf8'), /skip_ci=false/);
 } finally {
   process.env.GITHUB_OUTPUT = prevOut;
   rmSync(outFile, { force: true });
