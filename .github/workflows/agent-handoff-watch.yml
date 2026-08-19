@@ -70,10 +70,14 @@ jobs:
             Do not call `gh` directly. Use
             `node scripts/ci/agent-handoff-watch.mjs gh -- <gh args>` for
             every GitHub read or write instead (e.g. `... gh -- issue view
-            ${{ github.event.issue.number }} --comments`) — it only allows
-            reads, comments, and label edits on issue
-            #${{ github.event.issue.number }}, plus the read-only
-            `issue list` / `search issues` the triage skill's duplicate check
-            needs.
+            ${{ github.event.issue.number }} --comments`). It enforces this
+            itself, not just by convention: reads on issue
+            #${{ github.event.issue.number }} always pass; `issue edit` on
+            that issue accepts only `--add-label`/`--remove-label` (no
+            retitling, rebodying, or reassigning); `issue comment` on that
+            issue is rejected unless `--body` starts with the disclosure line
+            above; and the read-only `issue list` / `search issues` the
+            triage skill's duplicate check needs always pass. Anything else —
+            including any of this touching a different issue — is refused.
           claude_args: |
             --allowedTools "Bash(node scripts/ci/agent-handoff-watch.mjs gh:*),Grep,Glob,Read"
