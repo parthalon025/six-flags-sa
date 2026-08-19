@@ -30,9 +30,13 @@ async function apiGet(pathname) {
 
 /**
  * Fetch attraction list for a venue, optionally writing cache.
+ *
+ * `cacheFile` overrides where the cache is read from / written to — tests
+ * that need to exercise a real venue's live fetch use it to redirect the
+ * write away from the committed `data/venues/<id>/` sidecar.
  */
-export async function loadParksApiData(id, { fetch = false, offline = false } = {}) {
-  const cachePath = parksApiCacheFile(id);
+export async function loadParksApiData(id, { fetch = false, offline = false, cacheFile } = {}) {
+  const cachePath = cacheFile || parksApiCacheFile(id);
   const cached = readJson(cachePath);
   if (offline) return cached || { fetched: null, attractions: [], error: 'No cache on disk.' };
   if (!fetch && cached?.attractions?.length) return cached;
