@@ -44,7 +44,7 @@ for (const flag of ['--help', '-h']) {
   );
 }
 
-const { driftedBakes } = await import('@party-tracker/venue-builder/bake-drift.js');
+const { driftedBakes } = await import(join(root, 'packages/venue-builder/src/bake-drift.mjs'));
 
 // A manufactured staleness case: the committed row is exactly what a bake
 // produced at some past commit; "fresh" stands in for a re-bake against
