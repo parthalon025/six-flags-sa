@@ -84,6 +84,32 @@ await check('last Contribution per Place + type is drawn; earlier stays as compl
   assert.deepEqual(lines, ['Dad confirmed 48"', 'Mom confirmed 42"']);
 });
 
+await check('finder credit: Title rides the name; opt-out reads as a fellow guest', () => {
+  const titled = contributionFromGapSubmit({
+    id: 'c9', type: 'height', placeId: 'orion', authorId: 'alice',
+    authorName: 'Alice', authorTitle: 'Scout',
+    payload: { heightIn: 48 }, now: 1000,
+  });
+  assert.equal(completionLine(titled), 'Alice · Scout confirmed 48"');
+
+  // Visitor (no Title yet): name only, no dangling separator.
+  const untitled = contributionFromGapSubmit({
+    id: 'c10', type: 'queue', placeId: 'orion', authorId: 'bob', authorName: 'Bob',
+    payload: {}, now: 1000,
+  });
+  assert.equal(untitled.authorTitle, null);
+  assert.equal(completionLine(untitled), 'Bob pinned the queue');
+
+  // Opted out on Me: the find still lands, anonymously — and a Title must
+  // never leak through on an anonymous find.
+  const anon = contributionFromGapSubmit({
+    id: 'c11', type: 'height', placeId: 'orion', authorId: 'alice',
+    authorName: 'a fellow guest', authorTitle: null,
+    payload: { heightIn: 44 }, now: 2000,
+  });
+  assert.equal(completionLine(anon), 'a fellow guest confirmed 44"');
+});
+
 await check('same id is not double-counted', () => {
   const c = contributionFromGapSubmit({
     id: 'c1', type: 'height', placeId: 'orion', authorId: 'dad',

@@ -141,3 +141,84 @@ export async function listConsolidateCandidates() {
   const rows = await listContributions({ status: 'accepted', limit: 2000 });
   return rows;
 }
+
+/**
+ * Thanks the finder — the Death Stranding like. Idempotent per
+ * (contribution, thanker): only the first thanks feeds the author's
+ * impact_helped; repeats and self-thanks count nothing and are not errors.
+ * `thanksCount` is the contribution's public like tally either way.
+ *
+ * @param {{ contributionId: string, thankerId: string }} args
+ * @returns {Promise<{ ok: boolean, counted: boolean, thanksCount?: number, reason?: string }>}
+ */
+export async function thankContribution({ contributionId, thankerId } = {}) {
+  if (!thankerId) return { ok: false, counted: false, reason: 'thanker_required' };
+  const row = await getContribution(contributionId);
+  if (!row) return { ok: false, counted: false, reason: 'not_found' };
+  if (row.authorId === thankerId) {
+    return { ok: true, counted: false, thanksCount: await thanksCountFor(contributionId), reason: 'self' };
+  }
+
+  if (usingPostgres()) {
+    const pool = await getPool();
+    const res = await pool.query(
+      `INSERT INTO contribution_thanks (id, contribution_id, thanker_id)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (contribution_id, thanker_id) DO NOTHING
+       RETURNING id`,
+      [newId('t_'), contributionId, thankerId],
+    );
+    if (res.rows[0]) {
+      await pool.query(
+        'UPDATE profiles SET impact_helped = impact_helped + 1, updated_at = now() WHERE user_id = $1',
+        [row.authorId],
+      );
+    }
+    return {
+      ok: true,
+      counted: Boolean(res.rows[0]),
+      thanksCount: await thanksCountFor(contributionId),
+      reason: res.rows[0] ? undefined : 'repeat',
+    };
+  }
+
+  // Dev fallback (no DATABASE_URL): proves the dedupe + tally contract via
+  // this store's own read paths (thanksCountFor / impactHelpedFor). The Me
+  // screen's dev profile lives in lib/auth/profiles' separate memory map and
+  // does not see this tally — only the Postgres path feeds the real Profile.
+  mem.thanks ??= new Map();
+  mem.impact ??= new Map();
+  const given = mem.thanks.get(contributionId) || new Set();
+  if (given.has(thankerId)) {
+    return { ok: true, counted: false, thanksCount: given.size, reason: 'repeat' };
+  }
+  given.add(thankerId);
+  mem.thanks.set(contributionId, given);
+  mem.impact.set(row.authorId, (mem.impact.get(row.authorId) || 0) + 1);
+  return { ok: true, counted: true, thanksCount: given.size };
+}
+
+/** Public like tally for one Contribution. */
+export async function thanksCountFor(contributionId) {
+  if (usingPostgres()) {
+    const pool = await getPool();
+    const res = await pool.query(
+      'SELECT COUNT(*)::int AS n FROM contribution_thanks WHERE contribution_id = $1',
+      [contributionId],
+    );
+    return res.rows[0]?.n || 0;
+  }
+  mem.thanks ??= new Map();
+  return mem.thanks.get(contributionId)?.size || 0;
+}
+
+/** The finder's guests-helped stat, as this store's writes leave it. */
+export async function impactHelpedFor(userId) {
+  if (usingPostgres()) {
+    const pool = await getPool();
+    const res = await pool.query('SELECT impact_helped FROM profiles WHERE user_id = $1', [userId]);
+    return Number(res.rows[0]?.impact_helped) || 0;
+  }
+  mem.impact ??= new Map();
+  return mem.impact.get(userId) || 0;
+}

@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Icon from '@/components/Icon';
+import { sendThanks, thankedIds } from '@/lib/adventure/thanks';
 import { RIDE_DOWN, RIDE_OPEN } from '@/lib/core/state';
 import { liveFor, membersAt } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
@@ -67,7 +68,10 @@ export function PlaceDetailBody({
   onAddToPlan = null,
   showActions = true,
   overlayCompletions = [],
+  session = null,
 }) {
+  // Thanks the finder — remembered per phone; state refreshes after a tap.
+  const [thanked, setThanked] = useState(() => thankedIds());
   if (!poi) return null;
   const isRide = isRideable(poi);
   const showStatus = Boolean(status?.label);
@@ -75,12 +79,18 @@ export function PlaceDetailBody({
   const ent = isRide ? entranceMeta(poi) : null;
   const rows = isRide && eligibility ? eligibility.explain(identityOf(poi)) : [];
 
-  const overlayLines = [...overlayCompletions];
+  // Contribution entries arrive as { id, authorId, line }; ride reports and
+  // any legacy string stay lines without a Thanks target.
+  const overlayLines = overlayCompletions.map((c, i) =>
+    typeof c === 'string' ? { id: `line-${i}`, authorId: null, line: c } : c,
+  );
   if (status?.report) {
     const who = status.report.byName || 'Someone';
-    overlayLines.push(
-      status.report.status === 'down' ? `${who} reported it down` : `${who} reported it running`,
-    );
+    overlayLines.push({
+      id: 'ride-report',
+      authorId: null,
+      line: status.report.status === 'down' ? `${who} reported it down` : `${who} reported it running`,
+    });
   }
 
   return (
@@ -126,11 +136,33 @@ export function PlaceDetailBody({
       )}
       {overlayLines.length > 0 && (
         <ul className="overlayCompletions" data-overlay-completions>
-          {overlayLines.map((line, i) => (
-            <li key={`${i}:${line}`} className="poiNote overlayCompletion">
-              {line}
-            </li>
-          ))}
+          {overlayLines.map((c) => {
+            // The Death Stranding like: thank the finder of somebody else's
+            // fact, once per phone. Your own finds have no button to press.
+            const canThank = Boolean(
+              session?.userId && c.id && c.authorId && c.authorId !== session.userId,
+            );
+            const done = thanked.has(c.id);
+            return (
+              <li key={c.id} className="poiNote overlayCompletion">
+                <span className="overlayCompletionLine">{c.line}</span>
+                {canThank ? (
+                  <button
+                    type="button"
+                    className={`thanksBtn ${done ? 'on' : ''}`}
+                    disabled={done}
+                    data-thanks={c.id}
+                    onClick={async () => {
+                      await sendThanks({ contributionId: c.id, thankerId: session.userId });
+                      setThanked(thankedIds());
+                    }}
+                  >
+                    <Icon name="sparkles" size={13} /> {done ? 'Thanked' : 'Thanks'}
+                  </button>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       )}
       {poi.tel && (
@@ -196,6 +228,7 @@ export default function PlaceDetail({
   onReport = null,
   onAddToPlan = null,
   overlayCompletions = [],
+  session = null,
 }) {
   const palette = paletteFor(theme);
   const venue = useVenueSelector((s) => s.venue);
@@ -308,6 +341,7 @@ export default function PlaceDetail({
         onAddToPlan={onAddToPlan}
         showActions={false}
         overlayCompletions={overlayCompletions}
+        session={session}
       />
     </div>
   );

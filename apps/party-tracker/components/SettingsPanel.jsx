@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
 import BrandMark from '@/components/BrandMark';
+import ProfileJourney from '@/components/ProfileJourney';
 import SignInCard from '@/components/SignInCard';
 import WorldCloset from '@/components/WorldCloset';
 
@@ -132,6 +133,8 @@ export default function SettingsPanel({
           <p className="fine">Shown on the map and roster when you join a party. Solo guests can leave this blank.</p>
 
           <SignInCard session={session} onSession={onSession} />
+
+          <ProfileJourney session={session} />
         </>
       )}
 
