@@ -402,14 +402,72 @@ await check('GO NOW card carries a Why? explanation', async () => {
 });
 
 
-await check('theme toggle flips data-theme', async () => {
+await check('the palette toggle cycles data-theme through Trail and Park Midnight', async () => {
+  // ADR-0012: the toggle cycles auto -> Trail (day) -> Park Midnight (night).
+  // A full cycle of three taps must show both resolved palettes and land back
+  // on the mode it started from, whatever that was.
+  const toggle = () => a.getByRole('button', { name: /switch to (Trail|Park Midnight)/i });
   const before = await a.evaluate(() => document.documentElement.dataset.theme);
-  await a.getByRole('button', { name: /Switch to (night|daylight) map/ }).click();
-  await a.waitForTimeout(300);
+  const seen = new Set([before]);
+  for (let i = 0; i < 3; i += 1) {
+    await toggle().click();
+    await a.waitForTimeout(300);
+    seen.add(await a.evaluate(() => document.documentElement.dataset.theme));
+  }
+  if (seen.size < 2) throw new Error(`palette never changed (stuck on ${before})`);
   const after = await a.evaluate(() => document.documentElement.dataset.theme);
-  if (before === after) throw new Error('theme did not change');
-  await a.getByRole('button', { name: /Switch to (night|daylight) map/ }).click();
-  await a.waitForTimeout(300);
+  if (after !== before) throw new Error(`cycle did not return to ${before} (got ${after})`);
+  return true;
+});
+
+await check('wearing Pixel tycoon draws the isometric custom map', async () => {
+  // A dedicated phone keeps the Wear off the other checks. The demo/store
+  // grant (grantShipSkins, `parkbound-demo-skins`) unlocks the ship-polish
+  // Skins without farming fog quests; the Wear itself is the real user action:
+  // Settings -> Map -> Collection -> Pixel tycoon.
+  const P = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Iso',
+    label: 'ISO',
+    venue: 'kings-island',
+  });
+  const p = P.page;
+  try {
+    await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
+    await p.reload({ waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+      timeout: 40000,
+    });
+    await closeGate(p);
+    await go(p, 'Settings');
+    await p.getByRole('tab', { name: 'Map' }).click();
+    await p.waitForTimeout(300);
+    const row = p.locator('.worldSkinRow .row', { hasText: 'Pixel tycoon' }).first();
+    await row.scrollIntoViewIfNeeded();
+    if (/Locked|Out of season|This World/.test(await row.innerText())) {
+      throw new Error('Pixel tycoon still locked after demo grant');
+    }
+    await row.click();
+    await p.waitForTimeout(500);
+    if ((await p.evaluate(() => document.documentElement.dataset.skinPixel)) !== '1') {
+      throw new Error('data-skin-pixel not set');
+    }
+    // The custom-map layer draws iso geometry inside the map SVG…
+    const meshes = await p
+      .locator('.mapWorld .lyr-iso-map .isoBuilding, .mapWorld .lyr-iso-map .isoCoaster')
+      .count();
+    if (meshes < 5) throw new Error(`only ${meshes} iso meshes drawn`);
+    // …and owns the OSM building + coaster layers (hidden, not doubled).
+    if (await p.locator('.mapWorld .lyr-building').count()) {
+      throw new Error('base building layer still drawn under the iso overlay');
+    }
+    if (await p.locator('.mapWorld .lyr-coaster').count()) {
+      throw new Error('base coaster layer still drawn under the iso overlay');
+    }
+  } finally {
+    await P.context.close();
+  }
   return true;
 });
 

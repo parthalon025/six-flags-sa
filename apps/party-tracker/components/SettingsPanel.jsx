@@ -24,8 +24,8 @@ export default function SettingsPanel({
   onNameCommit,
   position,
   onLocationSettings,
-  theme,
-  onTheme,
+  paletteMode = 'auto',
+  onPaletteMode = null,
   categoryCount,
   categoryTotal,
   venueName,
@@ -140,24 +140,24 @@ export default function SettingsPanel({
           <div className="label">Map Appearance</div>
           <div className="segmented" role="group" aria-label="Map appearance">
             {[
+              ['auto', 'Auto'],
               ['day', 'Light'],
               ['night', 'Dark'],
             ].map(([key, labelText]) => (
               <button
                 key={key}
                 type="button"
-                className={`tab ${theme === key ? 'on' : ''}`}
-                aria-pressed={theme === key}
-                onClick={() => onTheme(key)}
+                className={`tab ${paletteMode === key ? 'on' : ''}`}
+                aria-pressed={paletteMode === key}
+                onClick={() => onPaletteMode?.(key)}
               >
                 {labelText}
               </button>
             ))}
           </div>
           <p className="fine">
-            Light is the one to use outdoors — white midways on pale ground, dark type, and
-            deeper marker colours that survive direct sun. Dark is easier on the eyes once the
-            park lights come on. Skins below restyle the map; they do not replace Light and Dark chrome.
+            Auto follows local sunset (Trail by day, Park Midnight after dark). Light is best outdoors;
+            Dark is easier once park lights come on. Skins below restyle the map paint.
           </p>
 
           <WorldCloset

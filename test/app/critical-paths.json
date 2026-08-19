@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "0180bbf523f0d1b54fab893bb4a17580b1bee8de2b7ea985b6e83e44ff7995b9"
+    "sha256": "d8f0607f4fdf2afe5cd8105e23485f60104eff18d99d86f75a82dfceac874a78"
   },
   "paths": [
     {
@@ -257,6 +257,13 @@
       "user_action": "Leave the Party and drop off the other rosters",
       "suite": "functional",
       "check": "leaving removes the member from the other phone’s roster"
+    },
+    {
+      "id": "iso-custom-map",
+      "slice": "Adventure",
+      "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
+      "suite": "functional",
+      "check": "wearing Pixel tycoon draws the isometric custom map"
     }
   ],
   "upcoming": []

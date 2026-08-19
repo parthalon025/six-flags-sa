@@ -120,6 +120,34 @@ _Avoid_: Overlay (contributions); map pack; tileset
 The look this phone is painting: own **Skin**, an accepted **Offer**, or Trail / Park Midnight. Own **Skin** is the default when the **Profile** has one. **Wear** of another **Profile**’s **Skin** is not ownership and is not a copy.
 _Avoid_: Applied theme; unlocked (that is the owner’s prize)
 
+**Trail**:
+The always-on daylight **Palette** for the **Venue** map — warm paper ground, restrained midways, bright category signals. The marketing and first-run canon look.
+_Avoid_: day theme; light mode (OS setting)
+
+**Park Midnight**:
+The always-on night **Palette** for the **Venue** map — dark ground, adventure-coloured category signals. Auto from local time / park hours with a manual override.
+_Avoid_: night theme; dark mode (OS setting)
+
+**Palette**:
+The base paint under **Wear** when no **Skin** is active — **Trail** or **Park Midnight**. Not a **Skin**; not party state.
+_Avoid_: Theme (use **Palette** or **Skin**); map pack
+
+**Shape**:
+One of four marker silhouettes on a **Place** — disc, chip, diamond, pin — plus its glyph. Shape, colour, and glyph are redundant channels so a category stays readable when any one fails. When similar lines on the ground run close together (parallel paths, stacked coaster track), **Shapes** at **Place** markers carry the category — not hue alone on the lines.
+_Avoid_: icon (generic); pin (generic map chrome — use **Meet** or **Kit** for those jobs)
+
+**Go**:
+Turn-by-turn walking navigation on the **Venue** map. Course-up camera, route line and puck forward, category key folded. Temporarily promotes utility over souvenir-map calm; ends north-up when **Go** stops.
+_Avoid_: navigate (verb); GPS mode
+
+**Field research look**:
+The shared visual treatment on **Overlay** facts — kind-specific geometry (queue pin, path segment, height ring) plus a subtle provisional cue (soft halo or dashed edge) until consolidate graduates into shipped **Venue** JSON.
+_Avoid_: pending layer; draft pin
+
+**Fog**:
+Optional **Profile** shroud on unexplored **Venue** geometry. Default off on the map canvas so **Party** coordination stays readable; progress meters and passport UI may still track exploration.
+_Avoid_: fog of war (generic game term in UI copy)
+
 **Offer**:
 A share-unlocked **Skin** held out to **Members** of the current **Party** so they may choose to **Wear** it. Not a push; each phone picks; several **Offers** may be out at once. **Offer** is only for **Skins**, not **Kits**.
 _Avoid_: Location share (mandatory device presence); party theme; push
@@ -226,6 +254,7 @@ _Avoid_: compass rose (retired map furniture for this job); bearing tape (legacy
 - Confirm / deny of an **Overlay** claim are statistical (no public counts, names, or percent) and are park-wide — not this ticket. Place detail lists completions; in-party disagreement is last-write, not a vote
 - **XP** and **Title** are **Profile** fields; **XP** is never spent; the **Title** is the visible sub-name when a threshold is crossed
 - **Skin** and **Kit** are earned the same way as **Titles** — never bought with **XP**. A **Skin** restyles this phone’s **Venue** map. A **Kit** draws on that **Member**’s **Location** pin for the **Party**
+- A **Skin** may attach a **Custom map** that replaces or overlays the OSM base; **Places** do not move
 - Repeat of the same (`venue`, `type`, `target`) by the same **Profile** awards 0 **XP**
 - A **Ride report** appears on this phone immediately; a **Party** is not required; if you are already a **Member**, the **Party** sees it immediately; if you join later, **Members** see it then; it is not a **Contribution**
 - A **Ride report** may optionally fan out into an **Observation**; an **Observation** is not a **Contribution**
@@ -358,4 +387,5 @@ _Avoid_: compass rose (retired map furniture for this job); bearing tape (legacy
 - Location pause / history — resolved: **Location** is **Party** situational awareness, not a hide. No pause; no deliberate blur to spare the roster. Live position plus **Place** name only when they are at that **Place** (**Attraction** queue or station; restroom / food at the **Place**) — not nearest while walking past. Never two **Place** names; on conflict, the most recognizable **Place** to a person; two equal **Attractions** use the slot he is standing in. Not “most likely,” “probably,” or “near” on the roster. One **Party** truth: **Location** plus **Venue** slots, and the **Place** travels with **Location** — not a check-in, not each phone guessing. The phone updates the **Venue** at app start when a connection is available. Join does not finish without **Location**. Live **Location** only inside **Venue** bounds. When live stops (outside bounds or OS revoke), last-known + trail stay visible to the **Party** and are marked stale — last known location of that **Member** at that **Place** when they were at one; not wiped. Trail is path dots only; **Place** name only on the live or last-known pin. OS revoke after join: stay a **Member**, wall to turn it back on — not an eject. Battery visible; IMU not shared; signal/network are **Host** election only. Contradicts park-intelligence “never keep location history” — accepted for family trail dots.
 - Databricks vs Vercel Postgres vs App vs offline-first — resolved 2026-08-14: phones stay offline-first on precached venue JSON; **Vercel + Neon Postgres** is E0 OLTP; **Databricks serverless jobs + Delta** is batch back-office only (ingest, traces, sidecar export); **Node consolidate + venue builder** still graduates shipped map truth. **No Databricks App deploy** and **paused job schedules** pre-launch ($0). Lakebase deferred until App/steward UI or explicit Postgres-host move. Do not relitigate — see `docs/adr/0010-databricks-ops-free-tier.md`.
 - Navigation compass / bearing tape / compass rose — resolved 2026-08-15: product term is **Compass** (phone strip + Watch dial, facing-relative game radar). Map-edge rose removed. Map north-up except Go. Phone + Watch share mark rules; Watch adds distance/nav and full user settings. See `docs/adr/0011-facing-compass.md`.
+- Map visual design — resolved 2026-08-15: souvenir **Palette** at rest (**Trail** / **Park Midnight** auto with override); **Go** promotes route + puck; first paint sparse and context-driven; **Overlay** uses **Field research look**; declutter priority puck → route → **Meet** → **Members** → primary **Place** → districts → other markers → labels; **Skin** is delight atop canon palettes; **Fog** opt-in only; motion on **Go** + NEED HELP; **Shapes** win when similar lines crowd; height **Eligibility** detail in list/sheet not more map ink. Land tints: souvenir on canon palettes, **Skin**-dependent loudness. Height filter: marker verdict only (Signal Red barred, **Companion** plus), not category hide. Crowded lines: quiet overview spaghetti, selection lights owner track; **Shapes** at **Places** always. Kids on roster → sparser first paint; no separate kids renderer. **Skin** polish priority: Postcard, Marquee, Junior, Pixel tycoon. Markers on at gate, labels quiet; next **Plan** **Place** promoted in declutter. Store frames: Trail party day (comprehension) + Midnight delight (screenshot). See `docs/adr/0012-map-visual-design.md`.
 - Map display at scale — resolved 2026-08-17: hundreds of **Worlds** ship through the universal builder; **Side Quest** / **Rank** **Skins** need custom visuals without per-**World** React forks. **Map truth** (`map.json`, `pois.json`, `gaps.json`) stays routing and **Place** contract; **display packs** (PMTiles + `visual.json` + manifest) are builder output for MapLibre offline paint. Global **Skin templates** compile earnable cosmetics; per-**World** `visual.json` holds quest-reward overrides. Phones download and cache **display packs**; no tile server on device; no live commercial tile API as the primary path. SVG `ParkMap.jsx` migrates to MapLibre after parity; live overlay (markers, route, puck, **Overlay**) stays a separate layer. Databricks unchanged (batch back-office only). See `docs/adr/0013-display-pipeline.md`.

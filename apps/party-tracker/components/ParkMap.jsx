@@ -28,7 +28,23 @@ import { Glyph, PoiMarker } from './MapSymbols';
 import { identityOf, samePlace } from '@/lib/venue/ids';
 import { useVenueSelector } from '@/lib/venue/useVenue';
 import MapLegend from './MapLegend';
+import { markerDeclutterPriority, markerWantsLabel } from '@/lib/mapVisual';
 import { localViewTransform, stableCullView } from '@/lib/mapViewport';
+import {
+  customMapCamera,
+  hidesBaseLayer,
+  resolveCustomMap,
+  showsBaseMap,
+} from '@/lib/customMap';
+import {
+  assembleIsoMeshes,
+  isoLocal,
+  isoScreenToWorld,
+  isoToScreen,
+  isoViewTransform,
+  pickWalkways,
+} from '@party-tracker/shared/isoWorld.js';
+import CustomMapLayer from './CustomMapLayer';
 
 /* The map is drawn, not tiled: every polyline below is real OpenStreetMap
    geometry, projected to Web Mercator metres and painted as SVG. Pan with one
@@ -38,6 +54,10 @@ import { localViewTransform, stableCullView } from '@/lib/mapViewport';
    name — paths, buildings, water, track — and a centre to open on, so a park, a
    campus or a state fair all render through the same code. Layers a venue has
    no examples of arrive empty and draw nothing.
+
+   A Skin may attach a Custom map (`resolveCustomMap`) that overlays or replaces
+   this OSM base. ParkMap applies the camera and hidden layers; CustomMapLayer
+   draws the extra geometry. Overlay (contributions) is a different layer.
 
    Static geometry is projected once into mercator metres, rebased onto the
    venue centre (SVG float32 otherwise shimmers at max zoom), and moved with an
@@ -82,14 +102,16 @@ const POI_FONT = 9.5;
 
 /** Screen projection for a viewport snapshot — used by the declutter pass so
  *  membership does not re-run on every pan frame. */
-function projectionFor(view, spin, cx, cy) {
+function projectionFor(view, spin, cx, cy, iso = false) {
   const to = (x, y) => {
+    if (iso) return isoToScreen(x, y, view, cx, cy);
     const u = (x - view.x) * view.scale;
     const v = (view.y - y) * view.scale;
     return [u * spin.cos - v * spin.sin + cx, u * spin.sin + v * spin.cos + cy];
   };
   const at = (lat, lng) => to(...project(lat, lng));
   const screenDir = (ux, uy) => {
+    if (iso) return [ux, -uy];
     const u = ux;
     const v = -uy;
     return [u * spin.cos - v * spin.sin, u * spin.sin + v * spin.cos];
@@ -109,22 +131,27 @@ const LABEL_SPOTS = (sx, sy, r, halfW, gap) => [
    pathFromLatLngs below. Venue geometry uses {@link worldPathFromRing}. */
 
 /** Mercator-metre path, rebased to `origin` so SVG transforms stay precise. */
-function worldPathFromRing(ring, close = false, origin = [0, 0]) {
+function worldPathFromRing(ring, close = false, origin = [0, 0], iso = false) {
   if (!Array.isArray(ring) || ring.length < 2) return '';
   const [ox, oy] = origin;
   let d = '';
   for (let i = 0; i < ring.length; i += 1) {
     const [x, y] = project(ring[i][1], ring[i][0]);
-    d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
+    if (iso) {
+      const p = isoLocal(x - ox, y - oy);
+      d += `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
+    } else {
+      d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
+    }
   }
   return close ? `${d}Z` : d;
 }
 
-function worldPaths(list, close, origin = [0, 0]) {
+function worldPaths(list, close, origin = [0, 0], iso = false) {
   const out = [];
   (list || []).forEach((f, i) => {
     const r = Array.isArray(f) ? f : f?.r;
-    const d = worldPathFromRing(r, close, origin);
+    const d = worldPathFromRing(r, close, origin, iso);
     if (!d) return;
     let minX = Infinity;
     let minY = Infinity;
@@ -144,7 +171,7 @@ function worldPaths(list, close, origin = [0, 0]) {
 }
 
 /** Frustum test in mercator space — skip paths off-screen at high zoom. */
-function featureInView(f, view, cx, cy, spin, w, h, pad = 0.2) {
+function featureInView(f, view, cx, cy, spin, w, h, pad = 0.2, iso = false) {
   if (!f?.bbox) return true;
   const { minX, minY, maxX, maxY } = f.bbox;
   const corners = [[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY]];
@@ -153,10 +180,16 @@ function featureInView(f, view, cx, cy, spin, w, h, pad = 0.2) {
   let sMaxX = -Infinity;
   let sMaxY = -Infinity;
   for (const [x, y] of corners) {
-    const u = (x - view.x) * view.scale;
-    const v = (view.y - y) * view.scale;
-    const sx = u * spin.cos - v * spin.sin + cx;
-    const sy = u * spin.sin + v * spin.cos + cy;
+    let sx;
+    let sy;
+    if (iso) {
+      [sx, sy] = isoToScreen(x, y, view, cx, cy);
+    } else {
+      const u = (x - view.x) * view.scale;
+      const v = (view.y - y) * view.scale;
+      sx = u * spin.cos - v * spin.sin + cx;
+      sy = u * spin.sin + v * spin.cos + cy;
+    }
     sMinX = Math.min(sMinX, sx);
     sMinY = Math.min(sMinY, sy);
     sMaxX = Math.max(sMaxX, sx);
@@ -184,15 +217,55 @@ function pathFromLatLngs(points, to) {
 /** World-coordinate path from a route's [lat, lng] points. Drawn once in
  *  mercator metres (rebased to `origin`), then transformed by viewTransform
  *  like venue geometry. Use vector-effect="non-scaling-stroke" for stroke width. */
-function worldPathFromLatLngs(points, origin = [0, 0]) {
+function worldPathFromLatLngs(points, origin = [0, 0], iso = false) {
   if (!Array.isArray(points) || points.length < 2) return '';
   const [ox, oy] = origin;
   let d = '';
   for (let i = 0; i < points.length; i += 1) {
     const [x, y] = project(points[i][0], points[i][1]);
-    d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
+    if (iso) {
+      const p = isoLocal(x - ox, y - oy);
+      d += `${i === 0 ? 'M' : 'L'}${p.x.toFixed(2)} ${p.y.toFixed(2)}`;
+    } else {
+      d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
+    }
   }
   return d;
+}
+
+function ringToLocalMercator(ring, origin) {
+  const [ox, oy] = origin;
+  return (ring || []).map(([lng, lat]) => {
+    const [x, y] = project(lat, lng);
+    return [x - ox, y - oy];
+  });
+}
+
+/** Keep one OSM footway when several hug the same midway. */
+function collapseWalkways(list, origin) {
+  const items = (list || []).map((f, i) => ({
+    r: ringToLocalMercator(Array.isArray(f) ? f : f?.r, origin),
+    n: Array.isArray(f) ? '' : f?.n,
+    i,
+  }));
+  return pickWalkways(items)
+    .map((p) => list[p.i])
+    .filter(Boolean);
+}
+
+function mercatorBbox(ring) {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const pt of ring || []) {
+    const [x, y] = project(pt[1], pt[0]);
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  }
+  return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
 }
 
 /** Venue geometry has no live-location inputs. Keeping it behind its own memo
@@ -205,6 +278,8 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
   lowZoom,
   theme,
   venue,
+  hideBuilding = false,
+  hideCoaster = false,
 }) {
   return (
     <>
@@ -294,7 +369,7 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
         ))}
       </g>
 
-      {showDetail && (
+      {!hideBuilding && showDetail && (
         <g className="lyr-building lyr-detail">
           {mapLayers.building.map((f) => (
             <path key={`bldg${f.i}`} d={f.d} />
@@ -302,12 +377,14 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
         </g>
       )}
 
-      <g className="lyr-slide">
-        {world.slide.map((f) => (
-          <path key={`sl${f.i}`} d={f.d} />
-        ))}
-      </g>
-      {showDetail && (
+      {!lowZoom && (
+        <g className="lyr-slide">
+          {world.slide.map((f) => (
+            <path key={`sl${f.i}`} d={f.d} />
+          ))}
+        </g>
+      )}
+      {!hideCoaster && showDetail && (
         <>
           <g className="lyr-coastershadow">
             {world.coaster.map((f) => (
@@ -368,8 +445,15 @@ function ParkMap({
   onThankMark = null,
   /** Queue pins and path crumbs from Overlay — not extra ride Places. */
   overlayPins = [],
+  /** Next Plan Place id — promoted in declutter below Go/selection. */
+  planNextPlaceId = null,
+  /** Soft exploration fog filter from mapVisual.fogMapStyle. */
+  fogFilter = null,
 }) {
   const palette = paletteFor(theme);
+  const customMap = resolveCustomMap(theme);
+  const iso = customMapCamera(customMap) === 'iso';
+  const drawBase = showsBaseMap(customMap);
   // The venue's own district tints, where it has hand-picked any.
   const venue = useVenueSelector((s) => s.venue);
   // What this venue has any of at all, so the key can offer switches for those
@@ -585,10 +669,11 @@ function ParkMap({
      whole map. A transform would take every label and marker round with it —
      upside-down ride names the moment you walk south — and undoing that per
      element costs more than the two extra multiplications here. */
+  const mapRotation = iso ? 0 : rotation;
   const spin = useMemo(() => {
-    const t = (-rotation * Math.PI) / 180;
+    const t = (-mapRotation * Math.PI) / 180;
     return { cos: Math.cos(t), sin: Math.sin(t) };
-  }, [rotation]);
+  }, [mapRotation]);
   // Course-up puts you near the bottom of the screen looking up the route, so
   // the centre of the map sits below the centre of the viewport.
   const cx = size.w / 2;
@@ -596,11 +681,12 @@ function ParkMap({
 
   const to = useCallback(
     (x, y) => {
+      if (iso) return isoToScreen(x, y, view, cx, cy);
       const u = (x - view.x) * view.scale;
       const v = (view.y - y) * view.scale;
       return [u * spin.cos - v * spin.sin + cx, u * spin.sin + v * spin.cos + cy];
     },
-    [view, spin, cx, cy],
+    [iso, view, spin, cx, cy],
   );
 
   const at = useCallback((lat, lng) => to(...project(lat, lng)), [to]);
@@ -618,18 +704,23 @@ function ParkMap({
 
   const screenToLatLng = useCallback(
     (px, py) => {
+      if (iso) {
+        const w = isoScreenToWorld(px, py, view, cx, cy);
+        return unproject(w.x, w.y);
+      }
       const dx = px - cx;
       const dy = py - cy;
       const u = dx * spin.cos + dy * spin.sin;
       const v = -dx * spin.sin + dy * spin.cos;
       return unproject(u / view.scale + view.x, view.y - v / view.scale);
     },
-    [view, spin, cx, cy],
+    [iso, view, spin, cx, cy],
   );
 
   /** World metres under a screen point at the current view. */
   const screenToWorld = useCallback(
     (px, py, snap = viewRef.current) => {
+      if (iso) return isoScreenToWorld(px, py, snap, cx, cy);
       const dx = px - cx;
       const dy = py - cy;
       const u = dx * spin.cos + dy * spin.sin;
@@ -639,23 +730,31 @@ function ParkMap({
         y: snap.y - v / snap.scale,
       };
     },
-    [spin, cx, cy],
+    [iso, spin, cx, cy],
   );
 
   /** View centre that keeps `world` pinned under the same screen point at `scale`. */
   const viewForScaleAt = useCallback(
-    (scale, px, py, world, snap = viewRef.current) => {
+    (scale, px, py, worldPt, snap = viewRef.current) => {
+      if (iso) {
+        const pinned = isoScreenToWorld(px, py, { ...snap, scale }, cx, cy);
+        return {
+          x: snap.x + (worldPt.x - pinned.x),
+          y: snap.y + (worldPt.y - pinned.y),
+          scale,
+        };
+      }
       const dx = px - cx;
       const dy = py - cy;
       const u = dx * spin.cos + dy * spin.sin;
       const v = -dx * spin.sin + dy * spin.cos;
       return {
-        x: world.x - u / scale,
-        y: world.y + v / scale,
+        x: worldPt.x - u / scale,
+        y: worldPt.y + v / scale,
         scale,
       };
     },
-    [spin, cx, cy],
+    [iso, spin, cx, cy],
   );
 
   /** Zoom about a screen point, keeping whatever is under it under it. */
@@ -904,45 +1003,90 @@ function ParkMap({
     if (!data) return null;
     const origin = worldOrigin;
     return {
-      sea: worldPaths(data.sea, true, origin),
-      park: worldPaths(data.park, true, origin),
+      sea: worldPaths(data.sea, true, origin, iso),
+      park: worldPaths(data.park, true, origin, iso),
       lands: (data.lands || [])
         .map((land, i) => {
-          const d = worldPathFromRing(land.r, true, origin);
+          const d = worldPathFromRing(land.r, true, origin, iso);
           return d ? { i, d, n: land.n } : null;
         })
         .filter(Boolean),
-      wood: worldPaths(data.wood, true, origin),
-      grass: worldPaths(data.grass, true, origin),
-      parking: worldPaths(data.parking, true, origin),
-      water: worldPaths(data.water, true, origin),
-      pool: worldPaths(data.pool, true, origin),
-      boundary: data.boundary ? worldPaths([data.boundary], true, origin) : [],
-      service: worldPaths(data.service, false, origin),
-      path: worldPaths(data.path, false, origin),
-      building: worldPaths(data.building, true, origin),
-      slide: worldPaths(data.slide, false, origin),
-      coaster: (data.coaster || []).map((f, i) => {
-        const d = worldPathFromRing(Array.isArray(f) ? f : f?.r, false, origin);
-        return d ? { i, d, n: f?.n } : null;
-      }),
+      wood: worldPaths(data.wood, true, origin, iso),
+      grass: worldPaths(data.grass, true, origin, iso),
+      parking: worldPaths(data.parking, true, origin, iso),
+      water: worldPaths(data.water, true, origin, iso),
+      pool: worldPaths(data.pool, true, origin, iso),
+      boundary: data.boundary ? worldPaths([data.boundary], true, origin, iso) : [],
+      service: worldPaths(data.service, false, origin, iso),
+      path: worldPaths(iso ? collapseWalkways(data.path, origin) : data.path, false, origin, iso),
+      building: worldPaths(data.building, true, origin, iso),
+      slide: worldPaths(data.slide, false, origin, iso),
+      coaster: (data.coaster || [])
+        .map((f, i) => {
+          const d = worldPathFromRing(Array.isArray(f) ? f : f?.r, false, origin, iso);
+          return d ? { i, d, n: f?.n } : null;
+        })
+        .filter(Boolean),
     };
-  }, [data, worldOrigin]);
+  }, [data, worldOrigin, iso]);
+
+  const isoMeshesAll = useMemo(() => {
+    if (!iso || !data) return { buildings: [], tracks: [] };
+    const origin = worldOrigin;
+    const buildingRings = [];
+    const buildingBboxes = [];
+    (data.building || []).forEach((f) => {
+      const r = Array.isArray(f) ? f : f?.r;
+      buildingRings.push(ringToLocalMercator(r, origin));
+      buildingBboxes.push(mercatorBbox(r));
+    });
+    const coasterLines = [];
+    const coasterBboxes = [];
+    (data.coaster || []).forEach((f, i) => {
+      const r = Array.isArray(f) ? f : f?.r;
+      coasterLines.push({
+        r: ringToLocalMercator(r, origin),
+        n: Array.isArray(f) ? '' : f?.n,
+        i,
+      });
+      coasterBboxes.push(mercatorBbox(r));
+    });
+    const assembled = assembleIsoMeshes(buildingRings, coasterLines, {
+      maxBuildings: 800,
+      maxTracks: 80,
+      template: customMap?.template,
+    });
+    return {
+      buildings: assembled.buildings.map((b) => ({ ...b, bbox: buildingBboxes[b.i] })),
+      tracks: assembled.tracks.map((t) => ({ ...t, bbox: coasterBboxes[t.i] })),
+    };
+  }, [iso, data, worldOrigin, customMap?.template]);
 
   const viewTransform = useMemo(
     () =>
-      localViewTransform({
-        cx,
-        cy,
-        rotation,
-        scale: z,
-        viewX: view.x,
-        viewY: view.y,
-        originX: worldOrigin[0],
-        originY: worldOrigin[1],
-        pixelRatio,
-      }),
-    [cx, cy, rotation, z, view.x, view.y, worldOrigin, pixelRatio],
+      iso
+        ? isoViewTransform({
+            cx,
+            cy,
+            scale: z,
+            viewX: view.x,
+            viewY: view.y,
+            originX: worldOrigin[0],
+            originY: worldOrigin[1],
+            pixelRatio,
+          })
+        : localViewTransform({
+            cx,
+            cy,
+            rotation,
+            scale: z,
+            viewX: view.x,
+            viewY: view.y,
+            originX: worldOrigin[0],
+            originY: worldOrigin[1],
+            pixelRatio,
+          }),
+    [iso, cx, cy, rotation, z, view.x, view.y, worldOrigin, pixelRatio],
   );
 
   /* Cull path-heavy venues even in overview, but snap the cull camera onto a
@@ -964,31 +1108,44 @@ function ParkMap({
     if (!cullView) return world;
     const cullPad = lowZoom ? 1.2 : 0.55;
     const cull = (list) =>
-      list.filter((f) => featureInView(f, cullView, cx, cy, spin, size.w, size.h, cullPad));
+      list.filter((f) => featureInView(f, cullView, cx, cy, spin, size.w, size.h, cullPad, iso));
     return {
       ...world,
       path: cull(world.path),
       building: cull(world.building),
       service: showService ? cull(world.service) : world.service,
     };
-  }, [world, cullView, lowZoom, cx, cy, spin, size.w, size.h, showService]);
+  }, [world, cullView, lowZoom, cx, cy, spin, size.w, size.h, showService, iso]);
 
   const mapLayers = drawWorld || world;
+
+  const isoMeshes = useMemo(() => {
+    if (!iso) return { buildings: [], tracks: [] };
+    const cam = cullView || stableCullView(view);
+    const vis = (list, pad) =>
+      list.filter((f) => featureInView(f, cam, cx, cy, spin, size.w, size.h, pad, true));
+    return {
+      buildings: vis(isoMeshesAll.buildings, 0.55).slice(0, 400),
+      tracks: vis(isoMeshesAll.tracks, 0.7).slice(0, 80),
+    };
+    // Quantized cull cells — not raw view — keep meshes stable across pan frames.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iso, isoMeshesAll, cullView, cullCellX, cullCellY, cullScaleBand, cx, cy, spin, size.w, size.h]);
 
   /* Route paths in world coordinates — drawn once per route change, then
      transformed by viewTransform like venue geometry. Uses non-scaling-stroke
      so stroke widths stay constant across zoom levels. */
   const worldRouteAhead = useMemo(
-    () => worldPathFromLatLngs(routeAhead?.length > 1 ? routeAhead : route?.points, worldOrigin),
-    [routeAhead, route?.points, worldOrigin],
+    () => worldPathFromLatLngs(routeAhead?.length > 1 ? routeAhead : route?.points, worldOrigin, iso),
+    [routeAhead, route?.points, worldOrigin, iso],
   );
   const worldRouteDone = useMemo(
-    () => (routeDone?.length > 1 ? worldPathFromLatLngs(routeDone, worldOrigin) : ''),
-    [routeDone, worldOrigin],
+    () => (routeDone?.length > 1 ? worldPathFromLatLngs(routeDone, worldOrigin, iso) : ''),
+    [routeDone, worldOrigin, iso],
   );
   const worldAlternatives = useMemo(
-    () => (alternatives || []).map((alt) => worldPathFromLatLngs(alt.points, worldOrigin)),
-    [alternatives, worldOrigin],
+    () => (alternatives || []).map((alt) => worldPathFromLatLngs(alt.points, worldOrigin, iso)),
+    [alternatives, worldOrigin, iso],
   );
 
   /* Coaster track carries the ride's name in the source geometry, so the red
@@ -1047,7 +1204,7 @@ function ParkMap({
     const nextShown = new Set();
     if (!data) return { landWinners, markerItems, nextShown };
 
-    const { to, at, screenDir } = projectionFor(viewRef.current, spin, cx, cy);
+    const { to, at, screenDir } = projectionFor(viewRef.current, spin, cx, cy, iso);
 
     // `bottomInset` is how much of the map the sheet is standing on right now:
     // it grows when the sheet is opened and shrinks to the nav bar while
@@ -1157,6 +1314,14 @@ function ParkMap({
     reserve(puck?.lat ?? me?.lat, puck?.lng ?? me?.lng, 15);
     (members || []).forEach((m) => reserve(m.lat, m.lng, 17));
     if (meet) reserve(meet.lat, meet.lng, 16);
+    const routePts = route?.points;
+    if (routePts?.length > 1) {
+      const step = Math.max(1, Math.floor(routePts.length / 14));
+      for (let ri = 0; ri < routePts.length; ri += step) {
+        const [sx, sy] = at(routePts[ri][0], routePts[ri][1]);
+        grid.occupy(boxAround(sx, sy, 7, 7), true);
+      }
+    }
 
     const ranked = [];
     pois.forEach((p, i) => {
@@ -1169,21 +1334,36 @@ function ParkMap({
       const barred = state === 'not';
       const isSel = samePlace(selected, p);
       const isNav = Boolean(routeTargetName) && (placeId === routeTargetName || p.n === routeTargetName);
-      const rank = sym.rank + (barred ? 0.25 : 0);
-      const priority = isSel ? -1000 : isNav ? -900 : rank * 1000 + i;
-      ranked.push({ p, sx, sy, sym, state, isSel, isNav, priority });
+      const isPlanNext =
+        Boolean(planNextPlaceId) && (placeId === planNextPlaceId || p.i === planNextPlaceId);
+      const priority = markerDeclutterPriority({
+        isSelected: isSel,
+        isNav,
+        isPlanNext,
+        rank: sym.rank,
+        barred,
+        index: i,
+      });
+      ranked.push({ p, sx, sy, sym, state, isSel, isNav, isPlanNext, priority });
     });
     ranked.sort((a, b) => a.priority - b.priority);
 
     ranked.forEach((item) => {
       const r = sizeAtZoom(item.sym.r, zPlan);
-      const pinned = item.isSel || item.isNav;
+      const pinned = item.isSel || item.isNav || item.isPlanNext;
       if (!grid.claim(boxAround(item.sx, item.sy, r + 1.5, r + 1.5), pinned)) return;
 
       const placeId = identityOf(item.p);
       const wasShown = shownLabels.has(placeId);
       const wanted =
-        (pinned && !item.isSel) || labelWantedAtZoom(item.sym.rank, zPlan, wasShown);
+        markerWantsLabel({
+          isSelected: item.isSel,
+          isNav: item.isNav,
+          isPlanNext: item.isPlanNext,
+          rank: item.sym.rank,
+          zPlan,
+          wasShown,
+        }) || (pinned && !item.isSel);
       let labelSpot = -1;
       if (wanted && !item.isSel) {
         const halfW = textWidth(item.p.n, POI_FONT) / 2 + 3;
@@ -1207,6 +1387,7 @@ function ParkMap({
         state: item.state,
         isSel: item.isSel,
         isNav: item.isNav,
+        isPlanNext: item.isPlanNext,
         r,
         labelSpot,
         faded: item.state === 'not',
@@ -1227,6 +1408,8 @@ function ParkMap({
     eligibility,
     selected,
     routeTargetName,
+    planNextPlaceId,
+    route?.points,
     members,
     meet,
     me,
@@ -1235,6 +1418,7 @@ function ParkMap({
     spin,
     cx,
     cy,
+    iso,
   ]);
 
   const plan = useMemo(() => {
@@ -1398,7 +1582,16 @@ function ParkMap({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onWheel={onWheel}
-      style={{ cursor: armMeet ? 'crosshair' : 'grab' }}
+      style={{
+        cursor: armMeet ? 'crosshair' : 'grab',
+        ...(fogFilter
+          ? {
+              '--mapFogSaturate': String(fogFilter.saturate),
+              '--mapFogBright': String(fogFilter.brightness),
+            }
+          : null),
+      }}
+      data-fog={fogFilter ? 'soft' : undefined}
     >
       <svg width={size.w} height={size.h} className="mapSvg">
         <defs>
@@ -1408,6 +1601,17 @@ function ParkMap({
             <stop offset="0%" style={{ stopColor: 'var(--poolEdge)', stopOpacity: 0.34 }} />
             <stop offset="55%" style={{ stopColor: 'var(--waterFill)', stopOpacity: 0 }} />
           </linearGradient>
+          <pattern id="rctGrass" patternUnits="userSpaceOnUse" width="36" height="36">
+            <rect width="36" height="36" fill="#4FA83A" />
+            <rect width="18" height="18" fill="#5BB844" />
+            <rect x="18" y="18" width="18" height="18" fill="#5BB844" />
+            <rect y="18" width="18" height="18" fill="#459832" />
+          </pattern>
+          <pattern id="rctWater" patternUnits="userSpaceOnUse" width="32" height="32">
+            <rect width="32" height="32" fill="#3AA8D0" />
+            <rect width="16" height="16" fill="#4AB8DC" />
+            <rect x="16" y="16" width="16" height="16" fill="#2E98C0" />
+          </pattern>
           <radialGradient id="meGlow">
             <stop offset="0%" style={{ stopColor: 'var(--blue)', stopOpacity: 0.28 }} />
             <stop offset="100%" style={{ stopColor: 'var(--blue)', stopOpacity: 0 }} />
@@ -1421,28 +1625,42 @@ function ParkMap({
             pan/zoom/rotate around the venue origin. Labels and markers stay
             outside so they remain upright. */}
         <g className="mapWorld" transform={viewTransform}>
-          <ParkMapStaticWorld
-            world={world}
-            mapLayers={mapLayers}
-            showDetail={showDetail}
-            showService={showService}
-            lowZoom={lowZoom}
-            theme={theme}
-            venue={venue}
+          {drawBase && (
+            <ParkMapStaticWorld
+              world={world}
+              mapLayers={mapLayers}
+              showDetail={showDetail}
+              showService={showService}
+              lowZoom={lowZoom}
+              theme={theme}
+              venue={venue}
+              hideBuilding={hidesBaseLayer(customMap, 'building')}
+              hideCoaster={hidesBaseLayer(customMap, 'coaster')}
+            />
+          )}
+          <CustomMapLayer
+            spec={customMap}
+            buildings={isoMeshes.buildings}
+            tracks={isoMeshes.tracks}
+            highlightedTrackIds={litTrack}
           />
 
           {/* the selected ride's own track, so the red spaghetti has an owner */}
-          {litTrack.length > 0 && (
+          {!iso && litTrack.length > 0 && (
             <>
               <g className="lyr-trackglow">
                 {litTrack.map((i) => {
-                  const d = world.coaster[i]?.d;
+                  const d = iso
+                    ? isoMeshesAll.tracks.find((t) => t.i === i)?.track.d
+                    : world.coaster.find((f) => f.i === i)?.d;
                   return d ? <path key={`tg${i}`} d={d} /> : null;
                 })}
               </g>
               <g className="lyr-trackpick">
                 {litTrack.map((i) => {
-                  const d = world.coaster[i]?.d;
+                  const d = iso
+                    ? isoMeshesAll.tracks.find((t) => t.i === i)?.track.d
+                    : world.coaster.find((f) => f.i === i)?.d;
                   return d ? <path key={`tp${i}`} d={d} /> : null;
                 })}
               </g>
@@ -1558,11 +1776,12 @@ function ParkMap({
           return (
             <g
               key={pin.id}
-              className={`overlayPin overlayPin-${pin.kind || 'fact'}`}
+              className={`overlayPin overlayPin-${pin.kind || 'fact'} fieldResearch`}
               data-overlay-pin={pin.kind || 'fact'}
               transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)})`}
             >
               <title>{pin.label || pin.kind || 'Overlay'}</title>
+              <circle className="overlayHalo" r={path ? 11 : 14} />
               <circle r={path ? 5 : 8} />
             </g>
           );
@@ -1681,7 +1900,7 @@ function ParkMap({
                   d={`M${sx} ${sy - 23} l5.5 9.5 h-11 Z`}
                   fill={help ? 'var(--crimson)' : m.colour}
                   opacity="0.8"
-                  transform={`rotate(${facing - rotation} ${sx} ${sy})`}
+                  transform={`rotate(${facing - mapRotation} ${sx} ${sy})`}
                 />
               )}
               {/* Staleness is a broken ring and a clock, not a fade: fading is
@@ -1754,7 +1973,7 @@ function ParkMap({
                     className={puck ? 'puckCone' : ''}
                     fill="var(--blue)"
                     opacity={puck ? 0.32 : 0.85}
-                    transform={`rotate(${facing - rotation} ${sx} ${sy})`}
+                    transform={`rotate(${facing - mapRotation} ${sx} ${sy})`}
                   />
                 )}
                 <circle cx={sx} cy={sy} r={9} className="mePulse" />
