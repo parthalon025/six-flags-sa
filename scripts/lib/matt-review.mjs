@@ -14,6 +14,7 @@
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './git-env.mjs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,7 +50,14 @@ export function reviewRequiredForFiles(files) {
 const GIT_MAX_BUFFER = 256 * 1024 * 1024;
 
 function git(args, cwd) {
-  return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: GIT_MAX_BUFFER });
+  // An inherited GIT_DIR outranks `cwd`, so a hook-spawned run would
+  // silently operate on the hook's repository. See scripts/lib/git-env.mjs.
+  return execFileSync('git', args, {
+    cwd,
+    env: scrubGitEnv(),
+    encoding: 'utf8',
+    maxBuffer: GIT_MAX_BUFFER,
+  });
 }
 
 /**

@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from './git-env.mjs';
 import { classifyStoreRelease } from './store-release-plan.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -22,12 +23,19 @@ export function readAppVersion(repoRoot) {
   return pkg.version;
 }
 
+/**
+ * Every git call below names its repository with `cwd: repoRoot`. An inherited
+ * GIT_DIR outranks that, so under a git hook these would read the hook's
+ * repository instead of the one asked for. See scripts/lib/git-env.mjs.
+ */
+const GIT_ENV = scrubGitEnv();
+
 export function latestStoreTag(repoRoot, prefix = 'store/') {
   try {
     const out = execFileSync(
       'git',
       ['tag', '-l', `${prefix}*`, '--sort=-v:refname'],
-      { cwd: repoRoot, encoding: 'utf8' },
+      { cwd: repoRoot, env: GIT_ENV, encoding: 'utf8' },
     );
     const tag = out.split('\n').map((line) => line.trim()).find(Boolean);
     return tag ?? null;
@@ -40,6 +48,7 @@ function gitRefExists(repoRoot, ref) {
   try {
     execFileSync('git', ['rev-parse', '--verify', ref], {
       cwd: repoRoot,
+      env: GIT_ENV,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });
@@ -52,6 +61,7 @@ function gitRefExists(repoRoot, ref) {
 function gitDiffNames(repoRoot, base, head = 'HEAD') {
   const out = execFileSync('git', ['diff', '--name-only', base, head], {
     cwd: repoRoot,
+    env: GIT_ENV,
     encoding: 'utf8',
   });
   return out.split('\n').map((line) => line.trim()).filter(Boolean);

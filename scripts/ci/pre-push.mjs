@@ -13,6 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from '../lib/git-env.mjs';
 import { parsePrePushRefs, prePushDecision } from '../lib/pre-push.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -30,7 +31,11 @@ export function main({ stdin, cwd = root, env = process.env } = {}) {
   );
   const args = ['run', 'test:pre-merge-vertical'];
   if (env.PRE_PUSH_SKIP_BROWSER === '1') args.push('--', '--skip-browser');
-  const result = spawnSync('npm', args, { cwd, stdio: 'inherit' });
+  // Git resolved *this* repository into the environment before running the hook,
+  // and every process below inherits it. The suite builds scratch repos in
+  // tmpdirs; without this scrub their commits land on the branch being pushed.
+  // See scripts/lib/git-env.mjs.
+  const result = spawnSync('npm', args, { cwd, stdio: 'inherit', env: scrubGitEnv(env) });
   return result.status ?? 1;
 }
 
