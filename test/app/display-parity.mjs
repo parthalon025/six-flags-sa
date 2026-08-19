@@ -34,6 +34,7 @@ process.emitWarning = (warning, ...rest) => {
 };
 
 const { project, localMetres } = await import('../../apps/party-tracker/lib/geo.js');
+const { DISPLAY_SPIKE_VENUE } = await import('../../apps/party-tracker/lib/mapLibreConfigured.js');
 
 const R_GEO = 6371000; // lib/geo.js spherical radius
 const R_WGS = 6378137; // MapLibre's WGS84 mercator radius
@@ -45,12 +46,14 @@ const TOL_B = 0.5;
 // not — at the boot scale (~0.6 px/m) those two quantisations together stay
 // under ~1.1 m per axis.
 const TOL_C = 1.5;
-const TOL_CROSS = 2;
+// Strictly below TOL_B + TOL_C, or the triangle inequality would make this
+// check a free rider on the other two — measured drift is under 0.3 m.
+const TOL_CROSS = 1.5;
 const MIN_SVG_MARKERS = 10; // declutter hides some; the pass must still be real
 
 const VENUE_DIR = new URL('../../apps/party-tracker/public/venues/', import.meta.url);
-const mapJson = JSON.parse(readFileSync(new URL('big-kahunas.map.json', VENUE_DIR)));
-const pois = JSON.parse(readFileSync(new URL('big-kahunas.pois.json', VENUE_DIR)));
+const mapJson = JSON.parse(readFileSync(new URL(`${DISPLAY_SPIKE_VENUE}.map.json`, VENUE_DIR)));
+const pois = JSON.parse(readFileSync(new URL(`${DISPLAY_SPIKE_VENUE}.pois.json`, VENUE_DIR)));
 const center = mapJson.meta.center;
 const ORIGIN = project(center.lat, center.lng);
 
@@ -102,11 +105,11 @@ async function openLeg(url, label) {
   });
   // Skip the intake gates the way openPhone does — this harness measures
   // geometry, not onboarding.
-  await context.addInitScript(({ version }) => {
+  await context.addInitScript(({ version, venueId }) => {
     localStorage.setItem('tracker-release-notes-seen', version);
     localStorage.setItem('tracker-intro-seen', '1');
-    localStorage.setItem('tracker-venue-confirmed', 'big-kahunas');
-  }, { version: APP_VERSION });
+    localStorage.setItem('tracker-venue-confirmed', venueId);
+  }, { version: APP_VERSION, venueId: DISPLAY_SPIKE_VENUE });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`${label} pageerror: ${e.message}`));

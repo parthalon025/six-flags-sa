@@ -257,7 +257,7 @@ function ParkApp({ isSignedIn }) {
      server render and first client render must stay identical. */
   const [svgParityView, setSvgParityView] = useState(false);
   useEffect(() => {
-    if (window.location.search.includes('displayMap=svg')) setSvgParityView(true);
+    if (new URLSearchParams(window.location.search).get('displayMap') === 'svg') setSvgParityView(true);
   }, []);
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
@@ -2569,8 +2569,8 @@ function ParkApp({ isSignedIn }) {
         <DisplayMap
           venue={venue}
           pois={POIS}
-          // Parity-test seam (issue #527): flag-gated path only — the shipped
-          // SVG experience never mounts DisplayMap, so this never ships.
+          // Parity-test seam (issue #527), live on every flag-on mount:
+          // the flag is what keeps it out of the shipped SVG experience.
           onMapReady={(m) => {
             window.__parkboundDisplayMap = m;
           }}

@@ -104,9 +104,10 @@ export default function DisplayMap({ venue, pois, className = '', onMapReady = n
       map.on('error', (e) => {
         if (!cancelled) setError(e?.error?.message || 'MapLibre error');
       });
-      // For the parity harness (issue #527 Testing Decisions) to reach
-      // map.project() independently of both renderers — never used by the
-      // shipped app, which passes no callback.
+      // The parity harness (issue #527 Testing Decisions) reaches
+      // map.project() through this; page.js wires it on every flag-on
+      // mount, so the handle exists whenever this spike renders at all —
+      // the flag itself is what keeps it out of the shipped experience.
       onMapReady?.(map);
     })().catch((err) => {
       if (!cancelled) setError(err.message);
