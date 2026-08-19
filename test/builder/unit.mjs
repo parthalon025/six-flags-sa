@@ -8003,11 +8003,102 @@ await check('new external evidence sources fuse', async () => {
   return true;
 });
 
+await check('deriveOrsRouteSamples builds one sample per distinct destination category', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const pois = [
+    { c: 'gate', n: 'Main Gate', lat: 40.1, lng: -82.1 },
+    { c: 'coaster', n: 'Millennium Force', lat: 40.2, lng: -82.2 },
+    { c: 'ride', n: 'Snake River Falls', lat: 40.3, lng: -82.3 },
+    { c: 'show', n: 'Good Time Theatre', lat: 40.4, lng: -82.4 },
+  ];
+  const samples = deriveOrsRouteSamples(pois);
+  assert.equal(samples.length, 3);
+  for (const s of samples) {
+    assert.deepEqual(s.from, { lat: 40.1, lng: -82.1 });
+    assert.ok(Number.isFinite(s.to.lat) && Number.isFinite(s.to.lng));
+    assert.ok(s.label.startsWith('Main Gate'));
+  }
+  return true;
+});
+
+await check('deriveOrsRouteSamples degrades to [] without an entrance-like POI', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  assert.deepEqual(deriveOrsRouteSamples([{ c: 'coaster', n: 'X', lat: 1, lng: 2 }]), []);
+  return true;
+});
+
+await check('deriveOrsRouteSamples degrades to [] below the min-samples floor', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  assert.deepEqual(
+    deriveOrsRouteSamples([
+      { c: 'gate', n: 'Gate', lat: 1, lng: 2 },
+      { c: 'ride', n: 'Only Ride', lat: 3, lng: 4 },
+    ]),
+    [],
+  );
+  return true;
+});
+
+await check('deriveOrsRouteSamples filters POIs missing coordinates and never throws', async () => {
+  const { deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  assert.deepEqual(deriveOrsRouteSamples([{ c: 'gate', n: 'Gate' }]), []);
+  assert.deepEqual(deriveOrsRouteSamples([]), []);
+  assert.deepEqual(deriveOrsRouteSamples(), []);
+  return true;
+});
+
 await check('sync external sources cache-only does not throw', async () => {
   const { syncExternalSources } = await import('../../packages/venue-builder/lib/external-research.mjs');
   const runs = await syncExternalSources('cedar-point', { fetch: false, sources: ['wikidata', 'open-meteo'] });
   assert.ok(runs.wikidata);
   assert.ok(runs['open-meteo']);
+  return true;
+});
+
+// Guards the #465 wiring itself: reverting either call site to `samples: []`
+// keeps every pure deriveOrsRouteSamples test green, so this one drives
+// syncExternalSources end to end and asserts the derived coordinates are what
+// the ORS adapter actually sends.
+await check('syncExternalSources threads derived ORS samples into the adapter fetch', async () => {
+  const { syncExternalSources, deriveOrsRouteSamples } = await import('../../packages/venue-builder/lib/external-research.mjs');
+  const { venueSidecar } = await import('../../packages/venue-builder/lib/venue-io.mjs');
+  const pois = [
+    { c: 'gate', n: 'Main Gate', lat: 40.1, lng: -82.1 },
+    { c: 'coaster', n: 'Millennium Force', lat: 40.2, lng: -82.2 },
+    { c: 'ride', n: 'Snake River Falls', lat: 40.3, lng: -82.3 },
+    { c: 'show', n: 'Good Time Theatre', lat: 40.4, lng: -82.4 },
+  ];
+  const expected = deriveOrsRouteSamples(pois);
+  assert.ok(expected.length >= 3);
+  const bodies = [];
+  const realFetch = global.fetch;
+  const priorKey = process.env.ORS_API_KEY;
+  process.env.ORS_API_KEY = 'test-key-wiring';
+  global.fetch = async (url, opts = {}) => {
+    bodies.push(JSON.parse(opts.body));
+    return { ok: true, status: 200, json: async () => ({ features: [] }) };
+  };
+  try {
+    const runs = await syncExternalSources('ors-wiring-probe', {
+      fetch: true,
+      sources: ['openrouteservice'],
+      pois,
+    });
+    assert.ok(runs.openrouteservice);
+    assert.equal(bodies.length, expected.length);
+    assert.deepEqual(
+      bodies.map((b) => b.coordinates),
+      expected.map((s) => [
+        [s.from.lng, s.from.lat],
+        [s.to.lng, s.to.lat],
+      ]),
+    );
+  } finally {
+    global.fetch = realFetch;
+    if (priorKey === undefined) delete process.env.ORS_API_KEY;
+    else process.env.ORS_API_KEY = priorKey;
+    fs.rmSync(path.dirname(venueSidecar('ors-wiring-probe', 'x')), { recursive: true, force: true });
+  }
   return true;
 });
 
