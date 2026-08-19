@@ -129,6 +129,8 @@ Previews skip unless user-directed; production app merges on `main` use the auto
 |----------|---------|
 | `skills-lock.yml` | `npm run skills:check` — no vendored Matt skills |
 | `drift-watch.yml` | Weekly `npm run venues:drift-watch` → agent-handoff issue |
+| `issue-triage.yml` | Backstop `needs-triage` label on unlabeled issues |
+| `agent-handoff-watch.yml` | AFK triage of new/labeled `agent-handoff` issues via Claude Code — see [agent-handoff policy](./policies/agent-handoff.md) |
 | `validate-ui-weekly.yml` | Sunday full `npm run test:validate-ui -- --all` safety net |
 | `build-venue.yml` | Manual venue PR builder |
 | `databricks-bundle.yml` | Bundle deploy (paused schedules pre-launch) |

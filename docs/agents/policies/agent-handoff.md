@@ -34,3 +34,7 @@ Each issue must include:
 After filing, mention the issue number in your task summary and continue with your assigned work.
 
 Apply the `agent-handoff` label when filing.
+
+## Automated triage
+
+`.github/workflows/agent-handoff-watch.yml` watches the queue: on a new or newly-labeled `agent-handoff` issue, it runs the `triage` skill against that one issue and moves it to `ready-for-agent` (with a posted Agent Brief) or `ready-for-human`. It requires the `ANTHROPIC_API_KEY` repository secret; without it the workflow fails closed and the issue waits for a human to run `/triage`. It never pushes code — it only triages.
