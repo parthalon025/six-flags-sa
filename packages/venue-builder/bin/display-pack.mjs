@@ -29,6 +29,24 @@ import { loadTruthFor } from '../lib/display-pack.mjs';
 import { prepareVenueTerrain } from '../lib/terrain/venue-terrain.mjs';
 
 const argv = process.argv.slice(2);
+/**
+ * Every flag this script understands. Unknown ones are rejected rather than
+ * ignored: now that capabilities are on by default, a typo'd `--no-tile`
+ * silently does *more* than asked, and the run looks like it obeyed you.
+ */
+const CAPABILITIES = ['terrain', 'constrain', 'mesh', 'tiles', 'bake'];
+const KNOWN = new Set([
+  '--json', '--all', '--bake',
+  ...CAPABILITIES.map((c) => `--no-${c}`),
+  ...CAPABILITIES.map((c) => `--${c}`),
+]);
+const unknown = argv.filter((a) => a.startsWith('--') && !KNOWN.has(a));
+if (unknown.length) {
+  console.error(`display-pack.mjs: unknown flag(s) ${unknown.join(', ')}`);
+  console.error(`known: ${[...KNOWN].sort().join(' ')}`);
+  process.exit(2);
+}
+
 const json = argv.includes('--json');
 const all = argv.includes('--all');
 /** On unless switched off; `--<name>` still accepted so old invocations keep working. */

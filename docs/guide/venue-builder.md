@@ -463,14 +463,22 @@ to materials, with ids matching the app's `world.js`).
 
 ```
 npm run venues:display -- cedar-point           # compile + certify one venue's packs
-npm run venues:display -- --all --tiles         # every shipped venue, with base.pmtiles
+npm run venues:display -- --all                 # every shipped venue, all capabilities
+npm run venues:display -- --all --no-constrain  # …minus the terrain constraint solver
 npm run venues:build -- --pipeline --display …  # as a pipeline stage after certify
 npm run venues:render -- cedar-point            # MapLibre screenshots at the visual points
 ```
 
-`--tiles` exports GeoJSON from the shipped contract and wraps Tippecanoe into
-`display/base.pmtiles` (a recorded gap, not a crash, when the binary is
-absent). Each Skin also gets a compiled MapLibre `<skin>.style.json`;
+Terrain, the constraint solver, mesh export and tile export are all on by
+default, so a bare run reproduces the committed output; `--no-terrain`,
+`--no-constrain`, `--no-mesh` and `--no-tiles` opt out. `--bake` is the one
+capability you still ask for: it folds already-baked kit style contracts in, so
+passing it without having run `venues:bake` fails the pack on purpose.
+
+Tile export writes GeoJSON from the shipped contract and wraps Tippecanoe into
+`display/base.pmtiles` — a recorded gap, not a crash, when the binary is absent,
+though a Tippecanoe that runs and produces a broken or oversized archive still
+fails certification. Each Skin also gets a compiled MapLibre `<skin>.style.json`;
 `venues:render` serves the pack to headless Chromium and screenshots every
 Skin at the certification's truth-derived visual points — the builder-side
 descendant of the reference-skin visual matrix.

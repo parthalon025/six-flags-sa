@@ -610,6 +610,29 @@ await check('terrain and the solver default on, and --no-* still turns them off'
   return true;
 });
 
+await check('a typo\'d capability flag is rejected, not silently ignored', () => {
+  // With capabilities on by default, an ignored `--no-tile` does *more* than
+  // asked while looking like it obeyed. Unknown flags must stop the run.
+  const run = (args) => {
+    try {
+      execFileSync(process.execPath, ['packages/venue-builder/bin/display-pack.mjs', ...args], {
+        env: scrubGitEnv(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      return { status: 0, stderr: '' };
+    } catch (e) {
+      return { status: e.status, stderr: String(e.stderr || '') };
+    }
+  };
+  const typo = run(['big-kahunas', '--no-tile']);
+  assert.equal(typo.status, 2, 'a typo must exit non-zero');
+  assert.match(typo.stderr, /unknown flag\(s\) --no-tile/);
+  assert.match(typo.stderr, /--no-tiles/, 'the error should name the real flag');
+
+  // A run with no targets still prints usage rather than the unknown-flag error.
+  assert.equal(run(['--no-tiles']).status, 2);
+  return true;
+});
+
 await check('an absent tiler is a gap; a broken one is still a failure', () => {
   // Defaulting --tiles on would have failed certification for every venue on
   // every machine without tippecanoe — a `wrap` dependency CI does not install.
