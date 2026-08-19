@@ -66,6 +66,31 @@ Generates repository documentation from the knowledge graph using an LLM. Requir
 | `--concurrency <n>` | Parallel LLM calls (default: 3)           |
 | `--gist`            | Publish wiki as a public GitHub Gist      |
 
+### detect-changes — Blast radius for a diff
+
+```bash
+node .gitnexus/run.cjs detect-changes --scope compare --base-ref main
+```
+
+Maps a git diff's hunks to indexed symbols and affected execution flows —
+the CLI form of the `detect_changes` MCP tool (`detect-changes` and
+`detect_changes` are aliases of the same command). Prints a plain-text
+report: file/symbol counts, a risk level, the changed-symbol list, and
+affected execution flows. Exits 0 whether or not it finds changes.
+
+| Flag                  | Effect                                                        |
+| ---------------------- | -------------------------------------------------------------- |
+| `-s, --scope <scope>`  | `unstaged` (default), `staged`, `all`, or `compare`             |
+| `-b, --base-ref <ref>` | Branch/commit to diff against — required for `--scope compare` |
+| `-l, --limit <n>`      | Max changed symbols to return                                  |
+
+**MUST run before committing** (per this repo's CLAUDE.md): `detect-changes
+--scope compare --base-ref main` verifies a change only touches the symbols
+and flows it meant to. CI runs the same command via
+`scripts/gitnexus-detect-changes.mjs`, invoked from the soft `gitnexus` job
+in `.github/workflows/test-app.yml`, and posts the report to the run's job
+summary.
+
 ### list — Show all indexed repos
 
 ```bash

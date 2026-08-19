@@ -5,6 +5,7 @@
 export const GATE_SCRIPT_TESTS = [
   'test/scripts/ci-module.test.mjs',
   'test/scripts/gitnexus-only.test.mjs',
+  'test/scripts/gitnexus-detect-changes.test.mjs',
   'test/scripts/bump-version.test.mjs',
   'test/scripts/version-stamp.test.mjs',
   'test/scripts/vercel-ignore.test.mjs',
@@ -31,6 +32,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/venues-env-file.test.mjs',
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/bake-drift-watch.test.mjs',
+  'test/scripts/profile-max-rank.test.mjs',
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
 ];

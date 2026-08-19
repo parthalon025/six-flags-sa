@@ -4,7 +4,7 @@ How the engineering skills should consume this repo's domain documentation when 
 
 ## Layout
 
-**Single-context.** One product (**Park Bound**) despite npm workspaces (`apps/*`, `packages/*`). The venue builder and the phone app are two runtimes of the same language: **Venue**, **Place**, **Attraction**, **Gap**, **Contribution**, and **Overlay** mean the same thing on both sides. Enjoyment and map improvement are one loop, not two glossaries.
+**Single-context.** One product (**Park Bound**) despite npm workspaces (`apps/*`, `packages/*`). The venue builder and the phone app are two runtimes of the same language: **World**, **Place**, **Attraction**, **Gap**, **Contribution**, and **Overlay** mean the same thing on both sides (`venue` is the builder/file term). Enjoyment and map improvement are one loop, not two glossaries.
 
 ## Before exploring, read these
 
