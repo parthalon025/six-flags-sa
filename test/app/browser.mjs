@@ -32,15 +32,14 @@ export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLER
  * browser has never been told to trust. Everything else is a real error and the
  * suites assert on it — this list must not grow to make a failure go away.
  *
- * /api/weather gateway-class failures (502/503/504) are the same class: the
- * route proxies an external weather service that can be down or rate-limiting
- * CI runner IPs, and the app treats missing weather as a gap, not an error.
- * Only the weather route's outage codes are tolerated — any other route, and
- * a weather 500 (a bug, not an outage), stay real errors. Remove this entry
- * when #502 lands (the route degrading gap-honest instead of 503ing).
+ * /api/weather no longer emits 502/503/504 for an upstream outage (#502) — a
+ * cold cache with no upstream reachable degrades to a 200 gap body instead,
+ * so there is nothing here for the browser to log as a failed resource load.
+ * That gateway-class allowlist entry was removed with the fix; do not re-add
+ * it to paper over a future regression in that route.
  */
 export const IGNORABLE_CONSOLE =
-  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)|Blocked call to navigator\.vibrate|Failed to load resource.*\b50[234]\b.*\/api\/weather/;
+  /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)|Blocked call to navigator\.vibrate/;
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {

@@ -93,9 +93,21 @@ export function onControllerChange(reload) {
     /* fall through */
   }
 
+  // A service worker's very first `clients.claim()` also fires
+  // `controllerchange` — a fresh install has no prior controller to "update
+  // away from". Only a `controllerchange` after a controller already
+  // existed is a genuine new-version takeover worth reloading for.
+  let hadController = false;
+  try {
+    hadController = Boolean(navigator.serviceWorker.controller);
+  } catch {
+    /* no controller info available — treat as first install, don't reload */
+  }
+
   const handler = () => {
     if (reloaded) return;
     reloaded = true;
+    if (!hadController) return;
     try {
       sessionStorage.setItem(RELOAD_GUARD_KEY, '1');
     } catch {

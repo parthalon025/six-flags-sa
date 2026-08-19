@@ -46,6 +46,8 @@ export async function runResearchAgent(venueId, opts = {}) {
         browser: false,
         ai: opts.ai ?? false,
         applyAliases: opts.applyAliases ?? false,
+        // Test-only redirect for the sidecar write; unset in every real build run.
+        cacheFile: opts.researchCacheFile,
       });
     } catch (err) {
       openResearch = { error: err.message };
