@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
 import VenueLoadFade from '@/components/VenueLoadFade';
-import { mapLibreDisplayEnabled } from '@/lib/mapLibreConfigured';
+import { DISPLAY_SPIKE_VENUE, mapLibreDisplayEnabled } from '@/lib/mapLibreConfigured';
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
@@ -251,6 +251,14 @@ function ParkApp({ isSignedIn }) {
       pinned: venuePinned,
     } = useVenue();
   const movement = useMovementLog({ position, venue, pois: shippedPois });
+  /* Parity-harness escape (issue #527 Testing Decisions): `?displayMap=svg`
+     renders ParkMap even with the display flag on, so one flag-on build serves
+     both renderers to test/app/display-parity.mjs. Post-mount state flip —
+     server render and first client render must stay identical. */
+  const [svgParityView, setSvgParityView] = useState(false);
+  useEffect(() => {
+    if (window.location.search.includes('displayMap=svg')) setSvgParityView(true);
+  }, []);
   const [gateOpen, setGateOpen] = useState(true);
   /** Waved the park question away for this session — do not put it back up. */
   const [parkAsked, setParkAsked] = useState(false);
@@ -2552,13 +2560,21 @@ function ParkApp({ isSignedIn }) {
         venueName={venue?.name}
         loading={venueStatus === 'loading'}
       />
-      {mapLibreDisplayEnabled() && venue?.id === 'big-kahunas' ? (
+      {mapLibreDisplayEnabled() && venue?.id === DISPLAY_SPIKE_VENUE && !svgParityView ? (
         // Phase 1 display-pipeline spike (issue #527): Big Kahuna's is the
         // only World with a certified display pack today, so this stays
         // scoped to it rather than swapping the renderer app-wide. Static
         // base map and Place pins only — Overlay/route/puck/Follow stay on
         // ParkMap.jsx until a later phase ports them (ADR-0013).
-        <DisplayMap venue={venue} pois={POIS} />
+        <DisplayMap
+          venue={venue}
+          pois={POIS}
+          // Parity-test seam (issue #527): flag-gated path only — the shipped
+          // SVG experience never mounts DisplayMap, so this never ships.
+          onMapReady={(m) => {
+            window.__parkboundDisplayMap = m;
+          }}
+        />
       ) : (
         <ParkMap
           key={venue?.id || 'map'}
