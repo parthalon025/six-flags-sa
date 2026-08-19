@@ -28,6 +28,7 @@ scripts/**
 !scripts/lib/
 !scripts/lib/vercel-ignore.mjs
 !scripts/lib/vercel-budget.mjs
+!scripts/lib/vercel-deploy-gate.mjs
 !scripts/lib/version-stamp.mjs
 !scripts/lib/version-stamp-paths.json
 !scripts/lib/repo-path.mjs

@@ -14,14 +14,16 @@ import {
   TERRAIN_PIECES, SPRITE_PIECES, TEXTURE_KINDS,
   BUILDING_STYLES, TREE_STYLES, TRACK_STYLES,
 } from './display-bake.mjs';
+import { assetsForTarget } from './display-assets.mjs';
 import { slugify } from './venue-io.mjs';
 
 /**
  * The asset menu a brief may reference — GUIDs from the license-gated
- * ledger only, grouped the way the schema binds them.
+ * ledger only, grouped the way the schema binds them. Kit briefs author
+ * the flat/top-down tier, so iso-target variants never make the menu.
  */
 export function assetMenu(ledger) {
-  const rows = Object.values(ledger);
+  const rows = Object.values(assetsForTarget(ledger, 'flat'));
   return {
     sheets: rows.filter((r) => r.kind === 'tilesheet')
       .map((r) => `${r.id} tiles: ${Object.keys(r.import.tiles).join(', ')}`),
@@ -60,13 +62,14 @@ Keep water readable as water and paths as paths, with outdoor-phone contrast.`;
  * Parse a brief answer into a validated kit spec, ready to save.
  * Rejects before anything renders: malformed JSON, a missing id, and —
  * via resolveKit — unknown pieces, texture kinds, styles, or asset GUIDs
- * outside the ledger. Returns the spec with a slugified id and the
+ * outside the flat tier of the ledger (an iso-target GUID is as unknown
+ * here as a made-up one). Returns the spec with a slugified id and the
  * originating prompt recorded.
  */
 export function parseKitAnswer(content, { assets, prompt }) {
   const spec = JSON.parse(content.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''));
   if (!spec.id) throw new Error('Kit spec needs an id');
-  resolveKit(spec, { assets }); // the hard gate
+  resolveKit(spec, { assets: assetsForTarget(assets, 'flat') }); // the hard gate
   spec.id = slugify(spec.id);
   if (prompt) spec.prompt = prompt;
   return spec;

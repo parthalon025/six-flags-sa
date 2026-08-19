@@ -1,0 +1,193 @@
+<!doctype html><meta charset="utf-8">
+<style>html,body{margin:0;background:#222}canvas{display:block}</style>
+<canvas id="c"></canvas>
+<script>
+// Iso tier painter — a dumb renderer of lib/display-iso.mjs's draw list.
+// Same page contract as display-bake-page.html: paint, sample the points,
+// set window.__done. All geometry (paths, depths, the affine cell→pixel
+// map) is assembled in Node; this script only iterates and strokes.
+(async () => {
+  const { model, kit, px, sheets, geometry, points } = await (await fetch('/model.json')).json();
+  const { map, items, badges, treeAsset } = geometry;
+  const { cols, rows, cells, terrains } = model;
+  const c = document.getElementById('c');
+  c.width = map.width; c.height = map.height;
+  const g = c.getContext('2d');
+  g.imageSmoothingEnabled = false;
+
+  const sheetImages = {};
+  await Promise.all(Object.entries(sheets || {}).map(([id, s]) => new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => { sheetImages[id] = im; res(); };
+    im.onerror = () => rej(new Error('sheet load failed: ' + id));
+    im.src = s.url;
+  })));
+
+  // Keep in sync with lib/display-bake.mjs#cellHash — same jitter, one truth.
+  const hash = (...nums) => {
+    let h = 2166136261;
+    for (const n of nums) { h ^= Math.trunc(n * 8191); h = Math.imul(h, 16777619); }
+    return ((h >>> 0) % 10000) / 10000;
+  };
+  const NAME = terrains;
+  const at = (x, y) => cells[y * cols + x];
+  // The affine map from lib/display-iso.mjs#isoCellToPixel — constants
+  // derived in Node from isoLocal, so this is arithmetic, not forked math.
+  const corner = (cx, cy) => [map.ox + cx * map.ax + cy * map.bx, map.oy + cx * map.ay + cy * map.by];
+
+  // Ground pass: every cell as the iso diamond of its unit square, kit
+  // base color, self-stroked to close antialias seams between diamonds.
+  const diamond = (x, y) => {
+    const pts = [corner(x, y), corner(x + 1, y), corner(x + 1, y + 1), corner(x, y + 1)];
+    g.beginPath();
+    pts.forEach(([sx, sy], i) => { if (i === 0) g.moveTo(sx, sy); else g.lineTo(sx, sy); });
+    g.closePath();
+  };
+  g.lineJoin = 'round';
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const base = kit.terrain[NAME[at(x, y)]].base;
+      diamond(x, y);
+      g.fillStyle = base; g.fill();
+      g.strokeStyle = base; g.lineWidth = 1; g.stroke();
+    }
+  }
+  // Accent pass: one deterministic dot per gated cell in the terrain's
+  // texture color, hash-jittered inside the diamond (never at the center
+  // the style contract samples).
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const t = at(x, y);
+      const name = NAME[t];
+      if (name === 'road' || name === 'service') continue; // roads draw as polylines
+      const tx = kit.terrain[name].texture || { kind: 'none' };
+      if (tx.kind === 'none' || !tx.color) continue;
+      if (hash(x, y) >= (tx.density ?? 0.3)) continue;
+      const [sx, sy] = corner(x + 0.2 + 0.6 * hash(x, y, 1), y + 0.2 + 0.6 * hash(x, y, 2));
+      g.fillStyle = tx.color;
+      g.beginPath(); g.arc(sx, sy, px / 7, 0, 7); g.fill();
+    }
+  }
+
+  // Roads hug the ground: projected polylines, flat tier's layering.
+  const tracePts = (pts) => {
+    g.beginPath();
+    pts.forEach((pt, i) => {
+      const [sx, sy] = corner(pt[0], pt[1]);
+      if (i === 0) g.moveTo(sx, sy); else g.lineTo(sx, sy);
+    });
+  };
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  const roadPiece = kit.terrain.road; const servicePiece = kit.terrain.service;
+  for (const r of model.roads.filter((x) => x.kind === 'service')) {
+    tracePts(r.pts); g.strokeStyle = servicePiece.base; g.lineWidth = px * 0.4; g.stroke();
+  }
+  for (const r of model.roads.filter((x) => x.kind === 'path')) {
+    tracePts(r.pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = px * 0.95; g.stroke();
+  }
+  for (const r of model.roads.filter((x) => x.kind === 'path')) {
+    tracePts(r.pts); g.strokeStyle = roadPiece.base; g.lineWidth = px * 0.72; g.stroke();
+  }
+  g.setLineDash([px * 0.55, px * 0.75]);
+  for (const r of model.roads.filter((x) => x.kind === 'path')) {
+    tracePts(r.pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = Math.max(1.2, px * 0.08); g.stroke();
+  }
+  g.setLineDash([]);
+
+  // Structures, strictly in the draw list's depth order (far → near).
+  // Building/track paths are iso-metre space (y up): setTransform flips y
+  // and scales by hs (screen px per metre); line widths ride in metres.
+  const isoSpace = () => g.setTransform(map.hs, 0, 0, -map.hs, map.ox, map.oy);
+  const screenSpace = () => g.setTransform(1, 0, 0, 1, 0, 0);
+  const treeImg = treeAsset ? sheetImages[treeAsset] : null;
+  for (const item of items) {
+    if (item.type === 'building') {
+      isoSpace();
+      for (const w of item.walls) {
+        g.fillStyle = w.color; g.fill(new Path2D(w.d));
+      }
+      const roof = new Path2D(item.roof.d);
+      g.fillStyle = item.roof.color; g.fill(roof);
+      g.strokeStyle = item.edge; g.lineWidth = item.edgeW; g.stroke(roof);
+      screenSpace();
+    } else if (item.type === 'track') {
+      isoSpace();
+      g.lineJoin = 'round'; g.lineCap = 'round';
+      g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = item.w.shadow; g.stroke(new Path2D(item.shadow));
+      g.strokeStyle = item.support; g.lineWidth = item.w.support;
+      for (const d of item.supports) g.stroke(new Path2D(d));
+      const track = new Path2D(item.track);
+      if (item.casing) {
+        g.strokeStyle = item.casing; g.lineWidth = item.w.casing; g.stroke(track);
+        // climb/drop segments: the casing color emphasized — subtle, deterministic
+        g.lineWidth = item.w.emphasis;
+        for (const e of item.emphasis) g.stroke(new Path2D(e.d));
+        g.strokeStyle = item.color; g.lineWidth = item.w.fill; g.stroke(track);
+      } else {
+        g.strokeStyle = item.color; g.lineWidth = item.w.fill; g.stroke(track);
+        // climb/drop segments: a slightly heavier rail stroke
+        g.lineWidth = item.w.emphasis;
+        for (const e of item.emphasis) g.stroke(new Path2D(e.d));
+      }
+      screenSpace();
+    } else if (item.type === 'tree') {
+      const sx = map.ox + item.x * map.hs;
+      const sy = map.oy - item.y * map.hs;
+      const rp = item.r * map.hs;
+      if (item.sprite && treeImg) {
+        const w = rp * 3.2;
+        g.drawImage(treeImg, sx - w / 2, sy - w * 0.94, w, w);
+        continue;
+      }
+      g.fillStyle = item.shadow;
+      g.beginPath(); g.ellipse(sx + rp / 4, sy + rp / 3, rp, rp * 0.6, 0, 0, 7); g.fill();
+      g.fillStyle = item.canopy;
+      g.beginPath(); g.arc(sx, sy - rp * 0.9, rp, 0, 7); g.fill();
+      g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = 1; g.stroke();
+      g.fillStyle = item.highlight;
+      g.beginPath(); g.arc(sx - rp / 3, sy - rp * 0.9 - rp / 3, rp / 2.4, 0, 7); g.fill();
+    }
+  }
+
+  // Badges last (ADR-0012: annotation on top), screen space, flat-tier pin
+  // geometry — the disc-ink moat the sample offsets target is identical.
+  const BD = kit.sprites.badge;
+  const LETTER = { gate: 'E', food: 'F', restroom: 'R', shop: 'S', show: 'W', service: 'i' };
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const b of badges) {
+    const x = b.sx; const y = b.sy;
+    const r = px * 0.42;
+    const cy = y - r * 1.5;
+    const color = BD[b.kind] || '#666';
+    g.fillStyle = 'rgba(0,0,0,0.25)'; g.beginPath(); g.ellipse(x, y + 1.5, r * 0.5, r * 0.24, 0, 0, 7); g.fill();
+    g.fillStyle = color;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x - r * 0.42, cy + r * 0.7); g.lineTo(x + r * 0.42, cy + r * 0.7); g.closePath(); g.fill();
+    g.fillStyle = color;
+    g.beginPath(); g.arc(x, cy, r, 0, 7); g.fill();
+    g.strokeStyle = '#FFFFFF'; g.lineWidth = 1.5; g.stroke();
+    const icon = sheetImages[BD.icons?.[b.kind]?.asset];
+    if (icon) {
+      const s = r * 1.1;
+      g.drawImage(icon, x - s / 2, cy - s / 2, s, s);
+    } else {
+      g.fillStyle = '#FFFFFF';
+      g.font = `bold ${Math.round(px * 0.5)}px system-ui, sans-serif`;
+      g.fillText(LETTER[b.kind] || '?', x, cy + 0.5);
+    }
+  }
+
+  // Style-contract sampling: the iso plan's points already carry canvas
+  // pixel coordinates (sx, sy) — the projection happened in Node.
+  const pts = points || [];
+  window.__samples = pts.map((p) => {
+    const d = g.getImageData(
+      Math.max(0, Math.min(c.width - 1, Math.round(p.sx))),
+      Math.max(0, Math.min(c.height - 1, Math.round(p.sy))),
+      1, 1,
+    ).data;
+    return [d[0], d[1], d[2], d[3]];
+  });
+
+  window.__done = true;
+})().catch((err) => { console.error(err); window.__done = true; window.__error = String(err); });
+</script>
