@@ -78,12 +78,24 @@ export const tippecanoeAvailable = () =>
  * The tiles-build stage: GeoJSON export → `base.pmtiles` beside it.
  * Returns { ok, file, sizeKb } or { ok: false, reason } — never throws for a
  * missing binary; that is a recorded gap, not a crash.
+ *
+ * The two failure shapes are not the same thing, and the certification gate
+ * needs to tell them apart. `gap: true` means the *toolchain* is absent —
+ * tippecanoe is a `wrap` dependency nobody is required to install, so the
+ * honest record is a named gap, exactly as buildRasterTier does for a missing
+ * go-pmtiles. No `gap` means tippecanoe ran and this venue's tiles are
+ * genuinely broken or oversized, which is a real failure.
  */
 export function buildTiles({ id, map, pois, outDir }) {
   const tilesDir = path.join(outDir, 'tiles');
   const { files } = writeDisplayGeoJson(tilesDir, map, pois);
   if (!tippecanoeAvailable()) {
-    return { ok: false, reason: 'tippecanoe not installed — GeoJSON + recipe written', files };
+    return {
+      ok: false,
+      gap: true,
+      reason: 'tippecanoe not installed — GeoJSON + tippecanoe.sh recipe written; run it to build base.pmtiles',
+      files,
+    };
   }
   const outFile = path.join(outDir, 'base.pmtiles');
   const args = [

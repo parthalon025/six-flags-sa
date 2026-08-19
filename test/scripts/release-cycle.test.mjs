@@ -10,6 +10,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { classifyStoreRelease } from '../../scripts/lib/store-release-plan.mjs';
 import {
   buildReleaseCycleReport,
@@ -37,6 +38,9 @@ assert.ok(nativeFiles.classification);
 function git(cwd, args) {
   return execFileSync('git', args, {
     cwd,
+    // `cwd` is not isolation on its own: under a git hook the environment names
+    // the real repository and git prefers it. See scripts/lib/git-env.mjs.
+    env: scrubGitEnv(),
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();

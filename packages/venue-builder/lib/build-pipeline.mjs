@@ -10,14 +10,20 @@
  *   6. attractions — entrance inventory and evidence sidecar
  *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
  *   8. certify   — report + compare + route-qa + ask; writes certification.json
- *   9. display   — per-Skin visual specs + display-certify (opt-in, --display)
+ *   9. display   — per-Skin visual specs + display-certify (opt-in, --display).
+ *                  Terrain and the constraint solver are ON by default here, as
+ *                  they are in venues:display: --no-terrain / --no-constrain opt
+ *                  out. --mesh defaults by scale rather than by CLI: on for a
+ *                  single venue, off for a catalog batch, where a 10 MB OBJ
+ *                  nothing renders times 100 parks is a gigabyte of nothing.
+ *                  --mesh / --no-mesh override either way.
  */
 
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { readJson, VENUE_DIR } from './venue-io.mjs';
+import { readJson, VENUE_DIR, venueSidecar } from './venue-io.mjs';
 import { recipeFile } from './venue-recipe.mjs';
 import { ensureSourcesCatalogue, syncHeightsFromOfficial } from './heights-from-official.mjs';
 import { runResearchAgent } from './agents/research.mjs';
@@ -108,6 +114,9 @@ export async function runVenuePipeline(park, opts = {}) {
     agent = true,
     certify = true,
     display = false,
+    terrain: wantTerrain = true,
+    constrain = true,
+    mesh = false,
     skip = [],
   } = opts;
 
@@ -332,12 +341,25 @@ export async function runVenuePipeline(park, opts = {}) {
   if (!skip.includes('display') && display) {
     console.error('  · display: visual specs + display-certify');
     try {
-      const { runDisplayStage } = await import('./display-pack.mjs');
-      const disp = runDisplayStage(park.id, { tiles: true });
+      const { runDisplayStage, loadTruthFor } = await import('./display-pack.mjs');
+      // Terrain needs the network, so it rides the same opt-in shape as the
+      // stage itself. Without it a venue compiles flat, which is declared in
+      // certification rather than silent.
+      let terrain = null;
+      if (wantTerrain) {
+        const { prepareVenueTerrain } = await import('./terrain/venue-terrain.mjs');
+        const { map } = loadTruthFor(park.id);
+        const prepared = await prepareVenueTerrain({
+          id: park.id, map, outDir: venueSidecar(park.id, 'display'), constrain, mesh,
+        });
+        terrain = prepared?.terrain || null;
+      }
+      const disp = runDisplayStage(park.id, { tiles: true, terrain });
       logStage('display', {
         certified: disp.certified,
         skins: Object.keys(disp.packs).length,
         tiles: disp.tiles?.ok ? `${disp.tiles.sizeKb} KB` : disp.tiles?.reason,
+        terrain: terrain ? `${terrain.source} @ ${terrain.resolution}m` : 'flat (no DEM)',
       });
       if (!disp.certified) {
         return {
@@ -428,6 +450,11 @@ export function parseCatalogArgs(argv) {
     agent: true,
     certify: true,
     display: false,
+    // Display capabilities are on by default; a bare run produces what ships.
+    // mesh stays null until scale is known — see pipelineOptsFromCatalogArgs.
+    terrain: true,
+    constrain: true,
+    mesh: null,
     applyAliases: true,
     openPr: false,
     json: false,
@@ -450,6 +477,12 @@ export function parseCatalogArgs(argv) {
     else if (a === '--no-agent') out.agent = false;
     else if (a === '--no-certify') out.certify = false;
     else if (a === '--display') out.display = true;
+    else if (a === '--terrain') out.terrain = true;
+    else if (a === '--no-terrain') out.terrain = false;
+    else if (a === '--constrain') out.constrain = true;
+    else if (a === '--no-constrain') out.constrain = false;
+    else if (a === '--mesh') out.mesh = true;
+    else if (a === '--no-mesh') out.mesh = false;
     else if (a === '--no-aliases') out.applyAliases = false;
     else if (a === '--pr') out.openPr = true;
     else if (a === '--json') out.json = true;
@@ -461,7 +494,17 @@ export function parseCatalogArgs(argv) {
   return out;
 }
 
-export function pipelineOptsFromCatalogArgs(args) {
+/**
+ * @param {object} args parsed by parseCatalogArgs
+ * @param {{ batch?: boolean }} [scale] true when this run covers the catalog
+ *
+ * `mesh` has no single right default, so it is resolved here where the scale
+ * is actually known rather than guessed from which CLI was typed. One venue
+ * gets a mesh, matching venues:display; a catalog batch does not, because a
+ * 10 MB OBJ per park across a 100-park catalog is a gigabyte nothing reads.
+ * An explicit --mesh / --no-mesh always wins over both.
+ */
+export function pipelineOptsFromCatalogArgs(args, { batch = false } = {}) {
   return {
     dryRun: args.dryRun,
     retries: args.retries,
@@ -472,6 +515,9 @@ export function pipelineOptsFromCatalogArgs(args) {
     agent: args.agent,
     certify: args.certify,
     display: args.display,
+    terrain: args.terrain,
+    constrain: args.constrain,
+    mesh: args.mesh ?? !batch,
     rebuildOnly: args.skipExisting,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };

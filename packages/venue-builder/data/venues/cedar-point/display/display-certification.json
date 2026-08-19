@@ -135,357 +135,42 @@
       "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
     },
     {
-      "key": "bake:blueprint-survey:reference_profile_resolves",
-      "claim": "kit \"blueprint-survey\" has a committed reference profile",
+      "key": "terrain_source_resolves",
+      "claim": "the ground under this venue comes from a named DEM, or is declared flat",
       "pass": true,
-      "evidence": "profile blueprint-survey (style blueprint-linework)",
-      "confidence": 1,
-      "falsifier": "a kit on disk with no profile under data/display/references/",
-      "soWhat": "no contract, no certification — the look would drift unmeasured"
-    },
-    {
-      "key": "bake:blueprint-survey:style_terrain_palette",
-      "claim": "every sampled terrain class stays inside its profile color family",
-      "pass": true,
-      "evidence": "water ΔE 0/12, road ΔE 0/10, service ΔE 0/10",
-      "confidence": 0.9,
-      "falsifier": "worst class water beyond tolerance on a rerun",
-      "soWhat": "palette drift is the first way a design language stops matching its reference"
-    },
-    {
-      "key": "bake:blueprint-survey:style_water_legibility",
-      "claim": "water reads as water (ΔE ≥ 3 vs vegetation and ground)",
-      "pass": true,
-      "evidence": "water vs grass ΔE —, vs ground ΔE —",
-      "confidence": 0.9,
-      "falsifier": "a pool that reads as lawn",
-      "soWhat": "the kit brief’s own promise, now enforced"
-    },
-    {
-      "key": "bake:blueprint-survey:style_structure_presence",
-      "claim": "buildings paint in the profile's edge treatment",
-      "pass": true,
-      "evidence": "459/459 buildings show edge treatment (459 total)",
-      "confidence": 0.8,
-      "falsifier": "a kit whose buildings vanish into terrain",
-      "soWhat": "structures are the landmarks navigation hangs on"
-    },
-    {
-      "key": "bake:blueprint-survey:style_track_presence",
-      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 10)",
-      "pass": true,
-      "evidence": "175 tracks sampled, 0 indistinct (noise floor 4)",
-      "confidence": 0.8,
-      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
-      "soWhat": "rides are why the map exists"
-    },
-    {
-      "key": "bake:blueprint-survey:style_annotation_on_top",
-      "claim": "every badge disc samples badge ink, never the terrain under it",
-      "pass": true,
-      "evidence": "148/148 badge discs in family",
-      "confidence": 0.85,
-      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
-      "soWhat": "POI pins must survive every style"
-    },
-    {
-      "key": "bake:blueprint-survey:style_badge_dedup",
-      "claim": "one badge per POI position",
-      "pass": true,
-      "evidence": "148 badges, 148 distinct positions",
-      "confidence": 1,
-      "falsifier": "duplicate pins stacked on one POI",
-      "soWhat": "ADR-0012 declutter rule, model-side"
-    },
-    {
-      "key": "bake:blueprint-survey:style_bake_deterministic",
-      "claim": "a fresh render of the same model samples byte-identical pixels",
-      "pass": true,
-      "evidence": "render 9d92f2b0 vs rerender 9d92f2b0",
-      "confidence": 1,
-      "falsifier": "any clock or RNG sneaking into the compositor",
-      "soWhat": "determinism is the bake’s core guarantee"
-    },
-    {
-      "key": "bake:blueprint-survey:style_cross_kit_distinct",
-      "claim": "sibling kits of this venue sample distinct pixels",
-      "pass": true,
-      "evidence": "distinct from 3 sibling bake(s)",
-      "confidence": 0.9,
-      "falsifier": "two kits that only differ in name",
-      "soWhat": "the factory exists to make different-looking maps"
-    },
-    {
-      "key": "bake:island-brochure:reference_profile_resolves",
-      "claim": "kit \"island-brochure\" has a committed reference profile",
-      "pass": true,
-      "evidence": "profile island-brochure (style illustrated-brochure)",
-      "confidence": 1,
-      "falsifier": "a kit on disk with no profile under data/display/references/",
-      "soWhat": "no contract, no certification — the look would drift unmeasured"
-    },
-    {
-      "key": "bake:island-brochure:style_terrain_palette",
-      "claim": "every sampled terrain class stays inside its profile color family",
-      "pass": true,
-      "evidence": "water ΔE 0/16, road ΔE 0/12, service ΔE 0/12",
-      "confidence": 0.9,
-      "falsifier": "worst class water beyond tolerance on a rerun",
-      "soWhat": "palette drift is the first way a design language stops matching its reference"
-    },
-    {
-      "key": "bake:island-brochure:style_water_legibility",
-      "claim": "water reads as water (ΔE ≥ 20 vs vegetation and ground)",
-      "pass": true,
-      "evidence": "water vs grass ΔE —, vs ground ΔE —",
-      "confidence": 0.9,
-      "falsifier": "a pool that reads as lawn",
-      "soWhat": "the kit brief’s own promise, now enforced"
-    },
-    {
-      "key": "bake:island-brochure:style_structure_presence",
-      "claim": "buildings paint in the profile's interior treatment",
-      "pass": true,
-      "evidence": "381/448 buildings show interior treatment (459 total)",
-      "confidence": 0.8,
-      "falsifier": "a kit whose buildings vanish into terrain",
-      "soWhat": "structures are the landmarks navigation hangs on"
-    },
-    {
-      "key": "bake:island-brochure:style_track_presence",
-      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 12)",
-      "pass": true,
-      "evidence": "175 tracks sampled, 0 indistinct (noise floor 4)",
-      "confidence": 0.8,
-      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
-      "soWhat": "rides are why the map exists"
-    },
-    {
-      "key": "bake:island-brochure:style_annotation_on_top",
-      "claim": "every badge disc samples badge ink, never the terrain under it",
-      "pass": true,
-      "evidence": "148/148 badge discs in family",
-      "confidence": 0.85,
-      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
-      "soWhat": "POI pins must survive every style"
-    },
-    {
-      "key": "bake:island-brochure:style_badge_dedup",
-      "claim": "one badge per POI position",
-      "pass": true,
-      "evidence": "148 badges, 148 distinct positions",
-      "confidence": 1,
-      "falsifier": "duplicate pins stacked on one POI",
-      "soWhat": "ADR-0012 declutter rule, model-side"
-    },
-    {
-      "key": "bake:island-brochure:style_bake_deterministic",
-      "claim": "a fresh render of the same model samples byte-identical pixels",
-      "pass": true,
-      "evidence": "render 3cf9fbee vs rerender 3cf9fbee",
-      "confidence": 1,
-      "falsifier": "any clock or RNG sneaking into the compositor",
-      "soWhat": "determinism is the bake’s core guarantee"
-    },
-    {
-      "key": "bake:island-brochure:style_cross_kit_distinct",
-      "claim": "sibling kits of this venue sample distinct pixels",
-      "pass": true,
-      "evidence": "distinct from 3 sibling bake(s)",
-      "confidence": 0.9,
-      "falsifier": "two kits that only differ in name",
-      "soWhat": "the factory exists to make different-looking maps"
-    },
-    {
-      "key": "bake:midnight-carnival:reference_profile_resolves",
-      "claim": "kit \"midnight-carnival\" has a committed reference profile",
-      "pass": true,
-      "evidence": "profile midnight-carnival (style night-neon)",
-      "confidence": 1,
-      "falsifier": "a kit on disk with no profile under data/display/references/",
-      "soWhat": "no contract, no certification — the look would drift unmeasured"
-    },
-    {
-      "key": "bake:midnight-carnival:style_terrain_palette",
-      "claim": "every sampled terrain class stays inside its profile color family",
-      "pass": true,
-      "evidence": "water ΔE 0/14, road ΔE 0/12, service ΔE 0/12",
-      "confidence": 0.9,
-      "falsifier": "worst class water beyond tolerance on a rerun",
-      "soWhat": "palette drift is the first way a design language stops matching its reference"
-    },
-    {
-      "key": "bake:midnight-carnival:style_water_legibility",
-      "claim": "water reads as water (ΔE ≥ 6 vs vegetation and ground)",
-      "pass": true,
-      "evidence": "water vs grass ΔE —, vs ground ΔE —",
-      "confidence": 0.9,
-      "falsifier": "a pool that reads as lawn",
-      "soWhat": "the kit brief’s own promise, now enforced"
-    },
-    {
-      "key": "bake:midnight-carnival:style_structure_presence",
-      "claim": "buildings paint in the profile's interior treatment",
-      "pass": true,
-      "evidence": "416/448 buildings show interior treatment (459 total)",
-      "confidence": 0.8,
-      "falsifier": "a kit whose buildings vanish into terrain",
-      "soWhat": "structures are the landmarks navigation hangs on"
-    },
-    {
-      "key": "bake:midnight-carnival:style_track_presence",
-      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 12)",
-      "pass": true,
-      "evidence": "175 tracks sampled, 2 indistinct (noise floor 4)",
-      "confidence": 0.8,
-      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
-      "soWhat": "rides are why the map exists"
-    },
-    {
-      "key": "bake:midnight-carnival:style_annotation_on_top",
-      "claim": "every badge disc samples badge ink, never the terrain under it",
-      "pass": true,
-      "evidence": "148/148 badge discs in family",
-      "confidence": 0.85,
-      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
-      "soWhat": "POI pins must survive every style"
-    },
-    {
-      "key": "bake:midnight-carnival:style_badge_dedup",
-      "claim": "one badge per POI position",
-      "pass": true,
-      "evidence": "148 badges, 148 distinct positions",
-      "confidence": 1,
-      "falsifier": "duplicate pins stacked on one POI",
-      "soWhat": "ADR-0012 declutter rule, model-side"
-    },
-    {
-      "key": "bake:midnight-carnival:style_bake_deterministic",
-      "claim": "a fresh render of the same model samples byte-identical pixels",
-      "pass": true,
-      "evidence": "render 862134bd vs rerender 862134bd",
-      "confidence": 1,
-      "falsifier": "any clock or RNG sneaking into the compositor",
-      "soWhat": "determinism is the bake’s core guarantee"
-    },
-    {
-      "key": "bake:midnight-carnival:style_cross_kit_distinct",
-      "claim": "sibling kits of this venue sample distinct pixels",
-      "pass": true,
-      "evidence": "distinct from 3 sibling bake(s)",
-      "confidence": 0.9,
-      "falsifier": "two kits that only differ in name",
-      "soWhat": "the factory exists to make different-looking maps"
-    },
-    {
-      "key": "bake:rpg-overworld:reference_profile_resolves",
-      "claim": "kit \"rpg-overworld\" has a committed reference profile",
-      "pass": true,
-      "evidence": "profile rpg-overworld (style pixel-tiled)",
-      "confidence": 1,
-      "falsifier": "a kit on disk with no profile under data/display/references/",
-      "soWhat": "no contract, no certification — the look would drift unmeasured"
-    },
-    {
-      "key": "bake:rpg-overworld:style_terrain_palette",
-      "claim": "every sampled terrain class stays inside its profile color family",
-      "pass": true,
-      "evidence": "water ΔE 0/16, road ΔE 0/12, service ΔE 0/12",
-      "confidence": 0.9,
-      "falsifier": "worst class water beyond tolerance on a rerun",
-      "soWhat": "palette drift is the first way a design language stops matching its reference"
-    },
-    {
-      "key": "bake:rpg-overworld:style_water_legibility",
-      "claim": "water reads as water (ΔE ≥ 20 vs vegetation and ground)",
-      "pass": true,
-      "evidence": "water vs grass ΔE —, vs ground ΔE —",
-      "confidence": 0.9,
-      "falsifier": "a pool that reads as lawn",
-      "soWhat": "the kit brief’s own promise, now enforced"
-    },
-    {
-      "key": "bake:rpg-overworld:style_structure_presence",
-      "claim": "buildings paint in the profile's interior treatment",
-      "pass": true,
-      "evidence": "390/448 buildings show interior treatment (459 total)",
-      "confidence": 0.8,
-      "falsifier": "a kit whose buildings vanish into terrain",
-      "soWhat": "structures are the landmarks navigation hangs on"
-    },
-    {
-      "key": "bake:rpg-overworld:style_track_presence",
-      "claim": "ride tracks separate from the terrain under them (fill or casing, ΔE ≥ 12)",
-      "pass": true,
-      "evidence": "175 tracks sampled, 0 indistinct (noise floor 4)",
-      "confidence": 0.8,
-      "falsifier": "a flume whose fill AND casing both dissolve into the lawn",
-      "soWhat": "rides are why the map exists"
-    },
-    {
-      "key": "bake:rpg-overworld:style_annotation_on_top",
-      "claim": "every badge disc samples badge ink, never the terrain under it",
-      "pass": true,
-      "evidence": "148/148 badge discs in family",
-      "confidence": 0.85,
-      "falsifier": "a badge painted under a later layer (ADR-0012 rule: annotation pass last)",
-      "soWhat": "POI pins must survive every style"
-    },
-    {
-      "key": "bake:rpg-overworld:style_badge_dedup",
-      "claim": "one badge per POI position",
-      "pass": true,
-      "evidence": "148 badges, 148 distinct positions",
-      "confidence": 1,
-      "falsifier": "duplicate pins stacked on one POI",
-      "soWhat": "ADR-0012 declutter rule, model-side"
-    },
-    {
-      "key": "bake:rpg-overworld:style_bake_deterministic",
-      "claim": "a fresh render of the same model samples byte-identical pixels",
-      "pass": true,
-      "evidence": "render 135ce974 vs rerender 135ce974",
-      "confidence": 1,
-      "falsifier": "any clock or RNG sneaking into the compositor",
-      "soWhat": "determinism is the bake’s core guarantee"
-    },
-    {
-      "key": "bake:rpg-overworld:style_cross_kit_distinct",
-      "claim": "sibling kits of this venue sample distinct pixels",
-      "pass": true,
-      "evidence": "distinct from 3 sibling bake(s)",
-      "confidence": 0.9,
-      "falsifier": "two kits that only differ in name",
-      "soWhat": "the factory exists to make different-looking maps"
-    },
-    {
-      "key": "bake_certs",
-      "claim": "every baked kit passes its reference-profile style contract",
-      "pass": true,
-      "evidence": "blueprint-survey:ok, island-brochure:ok, midnight-carnival:ok, rpg-overworld:ok",
+      "evidence": "usgs-3dep @ 10m (marginal against 7.44m cells), relief 6.1m",
       "confidence": "high",
-      "falsifier": "a kit whose style-cert.json reports certified:false, or no bakes at all",
-      "soWhat": "an uncertified look must not ride the venue download"
+      "falsifier": "a heightfield appears with no source recorded",
+      "soWhat": "a fabricated heightfield looks convincing and is wrong everywhere"
+    },
+    {
+      "key": "terrain_within_bounds",
+      "claim": "the hillshade covers exactly the venue truth already published",
+      "pass": true,
+      "evidence": "terrain bounds equal map.meta.bounds",
+      "confidence": "high",
+      "falsifier": "the overlay is placed on a rectangle truth did not publish",
+      "soWhat": "an overlay on the wrong rectangle shades the wrong ground"
+    },
+    {
+      "key": "terrain_surface_model",
+      "claim": "a radar surface model is labelled as one, not passed off as ground",
+      "pass": true,
+      "evidence": "usgs-3dep is bare-earth",
+      "confidence": "high",
+      "falsifier": "a DSM is reported as resolving bare ground",
+      "soWhat": "at 30m over a park one sample blends canopy, roof and ride structure"
+    },
+    {
+      "key": "tiles",
+      "claim": "base.pmtiles builds and fits the 15 MB pack budget, or the tiler is a recorded gap",
+      "pass": true,
+      "evidence": "tippecanoe not installed — GeoJSON + tippecanoe.sh recipe written; run it to build base.pmtiles",
+      "confidence": "low",
+      "falsifier": "tippecanoe runs and the archive is broken or exceeds the download budget",
+      "soWhat": "the display pack rides the venue download; an oversized or broken archive blocks it, and a missing tiler leaves the vector tier unbuilt"
     }
   ],
-  "bakes": {
-    "blueprint-survey": {
-      "certified": true,
-      "signature": "9d92f2b0"
-    },
-    "island-brochure": {
-      "certified": true,
-      "signature": "3cf9fbee"
-    },
-    "midnight-carnival": {
-      "certified": true,
-      "signature": "862134bd"
-    },
-    "rpg-overworld": {
-      "certified": true,
-      "signature": "135ce974"
-    }
-  },
   "skins": {
     "trail": {
       "version": 1,
@@ -513,11 +198,11 @@
         },
         {
           "key": "no_repositioning",
-          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "claim": "every coordinate in the spec is one truth already published — skins restyle, never reposition",
           "pass": true,
-          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "evidence": "every coordinate in the spec matches a published bound",
           "confidence": "high",
-          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "falsifier": "a spec carries any position value the truth bounds do not already contain",
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
@@ -533,7 +218,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 889 bytes",
+          "evidence": "spec 1562 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -566,11 +251,11 @@
         },
         {
           "key": "no_repositioning",
-          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "claim": "every coordinate in the spec is one truth already published — skins restyle, never reposition",
           "pass": true,
-          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "evidence": "every coordinate in the spec matches a published bound",
           "confidence": "high",
-          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "falsifier": "a spec carries any position value the truth bounds do not already contain",
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
@@ -586,7 +271,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 899 bytes",
+          "evidence": "spec 1572 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -619,11 +304,11 @@
         },
         {
           "key": "no_repositioning",
-          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "claim": "every coordinate in the spec is one truth already published — skins restyle, never reposition",
           "pass": true,
-          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "evidence": "every coordinate in the spec matches a published bound",
           "confidence": "high",
-          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "falsifier": "a spec carries any position value the truth bounds do not already contain",
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
@@ -639,7 +324,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 969 bytes",
+          "evidence": "spec 1642 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -672,11 +357,11 @@
         },
         {
           "key": "no_repositioning",
-          "claim": "the spec carries no coordinates — skins restyle, never reposition",
+          "claim": "every coordinate in the spec is one truth already published — skins restyle, never reposition",
           "pass": true,
-          "evidence": "no lat/lng/ring keys anywhere in the spec",
+          "evidence": "every coordinate in the spec matches a published bound",
           "confidence": "high",
-          "falsifier": "any lat, lng, or ring key appears anywhere in the spec",
+          "falsifier": "a spec carries any position value the truth bounds do not already contain",
           "soWhat": "a display file that can move a Place breaks the truth/display split"
         },
         {
@@ -692,7 +377,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 972 bytes",
+          "evidence": "spec 1645 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
