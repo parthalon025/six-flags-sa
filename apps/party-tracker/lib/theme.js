@@ -78,6 +78,7 @@ const DAY_TONES = new Set([
   'chalk-lot',
   'sunrise',
   'woodblock',
+  'pixel-tycoon',
   'block-park',
   'redline',
 ]);
@@ -131,7 +132,15 @@ const GENERATED = {
  */
 export function landTint(name, theme, venue = null) {
   const named = venue?.lands?.[theme] || venue?.lands?.night || venue?.lands?.day || null;
-  if (name && named && named[name]) return named[name];
+  if (name && named && named[name] && theme !== 'pixel-tycoon') return named[name];
+  if (theme === 'pixel-tycoon') {
+    const h = 95 + (hueOf(name || 'land') % 28);
+    return {
+      fill: `hsl(${h} 54% 40%)`,
+      stroke: `hsl(${h} 42% 30%)`,
+      label: '#2A2418',
+    };
+  }
   const band = theme === 'day' || DAY_TONES.has(theme) ? 'day' : 'night';
   const make = GENERATED[band] || GENERATED.night;
   return make(hueOf(name || 'land'));

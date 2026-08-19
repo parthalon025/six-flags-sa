@@ -1561,18 +1561,148 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: var(--fill3); color: var(--adventure);
 }
 .thanksBtn.on { background: transparent; color: var(--label3); }
-.overlayPin circle {
+.overlayPin.fieldResearch circle:not(.overlayHalo) {
   fill: var(--adventure);
   stroke: var(--markerEdge, #1a1a1a);
   stroke-width: 1.4;
+  stroke-dasharray: 3.5 2.5;
 }
-.overlayPin-path circle {
+.overlayPin .overlayHalo {
   fill: var(--aqua);
-  opacity: 0.85;
+  opacity: 0.22;
+  stroke: none;
+}
+.overlayPin-path.fieldResearch circle:not(.overlayHalo) {
+  fill: var(--aqua);
+  opacity: 0.9;
+}
+.overlayPin-queue.fieldResearch circle:not(.overlayHalo) {
+  fill: var(--adventure);
+}
+
+/* Exploration fog — Profile opt-in; whole canvas soft until walked %. */
+.mapWrap[data-fog="soft"] .mapWorld {
+  filter: saturate(var(--mapFogSaturate, 0.7)) brightness(var(--mapFogBright, 0.9));
+}
+
+/* Pixel tycoon — RCT Classic: tiled grass, grey stone paths, tan stalls. */
+html[data-skin-pixel="1"] {
+  --track: #5A8A38;
+  --trackCase: #3A2A18;
+  --slide: #3AA8D0;
+  --mapBg: #4FA83A;
+}
+html[data-skin-pixel="1"] .mapWrap {
+  background: #4FA83A;
+}
+html[data-skin-pixel="1"] .lyr-park path {
+  fill: url(#rctGrass);
+  stroke: #3A8A28;
+  stroke-width: 1;
+}
+html[data-skin-pixel="1"] .lyr-wood path { fill: #2E7A28; }
+html[data-skin-pixel="1"] .lyr-grass path { fill: #6BC04A; }
+html[data-skin-pixel="1"] .lyr-water path,
+html[data-skin-pixel="1"] .lyr-sea path,
+html[data-skin-pixel="1"] .lyr-pool path {
+  fill: url(#rctWater);
+  stroke: #2E98C0;
+}
+html[data-skin-pixel="1"] .lyr-watersheen { display: none; }
+html[data-skin-pixel="1"] .lyr-pathcase,
+html[data-skin-pixel="1"] .lyr-service {
+  display: none;
+}
+html[data-skin-pixel="1"] .lyr-path path {
+  stroke: #C8C8C0;
+  stroke-width: 3.8;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+html[data-skin-pixel="1"] .lyr-building path {
+  fill: #E8C878;
+  stroke: #C45C38;
+  stroke-width: 1.2;
+  stroke-linejoin: miter;
+}
+html[data-skin-pixel="1"] .lyr-parking path {
+  fill: #A8A090;
+  stroke: #787060;
+}
+html[data-skin-pixel="1"] .lyr-coastershadow path,
+html[data-skin-pixel="1"] .lyr-slide path,
+html[data-skin-pixel="1"] .lyr-coaster path {
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+html[data-skin-pixel="1"] .lyr-coastershadow path {
+  stroke: #3A2A18;
+  stroke-width: 6.5;
+}
+html[data-skin-pixel="1"] .lyr-coaster path {
+  stroke: #5A8A38;
+  stroke-width: 3;
+}
+html[data-skin-pixel="1"] .lyr-slide path {
+  stroke: #3AA8D0;
+  stroke-width: 2.6;
+}
+html[data-skin-pixel="1"] .landLabel {
+  letter-spacing: 0.06em;
+  font-weight: 800;
+  stroke: #E8F0C8;
+  stroke-width: 4px;
+}
+html[data-skin-pixel="1"] .isoFoot {
+  fill: #2A1A10;
+  opacity: 0.22;
+  stroke: none;
+}
+html[data-skin-pixel="1"] .isoWallL {
+  fill: #C4A050;
+  stroke: #8A4A28;
+  stroke-width: 1;
+}
+html[data-skin-pixel="1"] .isoWallR {
+  fill: #A87838;
+  stroke: #8A4A28;
+  stroke-width: 1;
+}
+html[data-skin-pixel="1"] .isoRoof {
+  fill: #E8C878;
+  stroke: #C45C38;
   stroke-width: 1.2;
 }
-.overlayPin-queue circle {
-  fill: var(--adventure);
+html[data-skin-pixel="1"] .isoShadow {
+  fill: none;
+  stroke: #2A1A10;
+  stroke-width: 4;
+  opacity: 0.35;
+}
+html[data-skin-pixel="1"] .isoSupport {
+  fill: none;
+  stroke: #8A8070;
+  stroke-width: 1.4;
+}
+html[data-skin-pixel="1"] .isoTrack {
+  fill: none;
+  stroke: #C45C38;
+  stroke-width: 2.6;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+html[data-skin-pixel="1"] .isoCoasterSelected .isoTrack {
+  stroke: #F6A43A;
+  stroke-width: 3.4;
+}
+html[data-skin-neon="1"] .lyr-coaster path {
+  filter: drop-shadow(0 0 2px var(--track));
+}
+html[data-skin-neon="1"] .landLabel {
+  filter: drop-shadow(0 0 4px rgba(255, 107, 154, 0.35));
+}
+html[data-skin-junior="1"] .poiMarker {
+  transform-origin: center;
 }
 
 /* Hookups and pad details, as a checklist rather than a sentence. Wrapping
@@ -1710,6 +1840,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   .fine { color: color-mix(in srgb, var(--label) 58%, var(--label2)); }
 }
 .fine.block { display: block; margin-left: 0; margin-right: 0; }
+
 .warnText { color: var(--orange); }
 
 /* Four controls sit under the 44pt floor, and three of them cannot simply grow:

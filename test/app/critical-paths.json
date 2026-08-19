@@ -257,6 +257,13 @@
       "user_action": "Leave the Party and drop off the other rosters",
       "suite": "functional",
       "check": "leaving removes the member from the other phone’s roster"
+    },
+    {
+      "id": "iso-custom-map",
+      "slice": "Adventure",
+      "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
+      "suite": "functional",
+      "check": "wearing Pixel tycoon draws the isometric custom map"
     }
   ],
   "upcoming": []

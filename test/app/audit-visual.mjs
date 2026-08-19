@@ -24,10 +24,14 @@ async function dismissIntake(page) {
 }
 
 async function setTheme(page, theme) {
-  const want = theme === 'day' ? 'daylight map' : 'night map';
-  const btn = page.locator(`button[aria-label*="${want}"]`);
-  if (await btn.count()) {
-    await btn.click();
+  // The palette control cycles auto -> Trail -> Park Midnight, so click until
+  // the resolved palette lands on the one asked for (ADR-0012).
+  const btn = page.locator('button[aria-label*="Trail"], button[aria-label*="Park Midnight"]').first();
+  await btn.waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
+  for (let i = 0; i < 3; i += 1) {
+    const got = await page.evaluate(() => document.documentElement.dataset.theme);
+    if (got === theme || !(await btn.isVisible().catch(() => false))) return;
+    await btn.click({ timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(600);
   }
 }

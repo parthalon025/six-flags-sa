@@ -89,6 +89,7 @@ export const SKINS = {
     unlock: { contributions: 1 },
     share: { venues: 3 },
     paint: paint('#C45C4A', '#F4E4C8', '#7EB8D4', '#C8D48A', '#E8C9A0', '#5A2A22'),
+    traits: { landTint: 1.08 },
   },
   handbill: {
     id: 'handbill',
@@ -130,7 +131,8 @@ export const SKINS = {
     label: 'Marquee',
     unlock: { nightQuests: 5 },
     share: { nightQuests: 20 },
-    paint: paint('#FF6B9A', '#120818', '#1A2050', '#1A1028', '#2A1840', '#FFE8F0'),
+    paint: paint('#FF6B9A', '#0A0614', '#1A2050', '#120818', '#2A1840', '#FFE8F0'),
+    traits: { neon: true, landTint: 1.15 },
   },
   haunt: {
     id: 'haunt',
@@ -161,6 +163,7 @@ export const SKINS = {
     unlock: { deviceLessHeight: true, heightQuests: 1 },
     share: { heightQuests: 5 },
     paint: paint('#FF6B6B', '#FFF5D6', '#7EC8FF', '#B8F0A0', '#FFE0A0', '#3A2060'),
+    traits: { markerBoost: 1.12 },
   },
   'sticker-book': {
     id: 'sticker-book',
@@ -218,7 +221,20 @@ export const SKINS = {
     label: 'Pixel tycoon',
     unlock: { fogPct: 25 },
     share: { fogPct: 100 },
-    paint: paint('#5A8A3A', '#3A5A20', '#3A6A8A', '#4A7A28', '#6A5A3A', '#E8F0C8'),
+    /* RCT Classic: lush grass, grey stone paths, tan stalls, terracotta roofs. */
+    paint: {
+      ...paint('#C8C8C0', '#4FA83A', '#3AA8D0', '#6BC04A', '#E8C878', '#2A2418'),
+      wood: '#2E7A28',
+      groundEdge: '#3A8A28',
+      midway: '#C8C8C0',
+      midwayCase: '#8A8A80',
+      structure: '#E8C878',
+      structureEdge: '#C45C38',
+      lot: '#A8A090',
+      lotEdge: '#787060',
+      backOfHouse: '#C4B898',
+    },
+    traits: { pixel: true },
   },
   'block-park': {
     id: 'block-park',
@@ -287,6 +303,7 @@ export function createProgress({ userId = null } = {}) {
     userId: userId || null,
     wearSkin: null,
     kit: null,
+    fogMapEnabled: false,
     meters: {
       contributions: 0,
       venues: [],
@@ -656,11 +673,37 @@ export function kitForViewer({ kit, viewerInParty }) {
 }
 
 export function mapPaint(id) {
-  if (id === 'day') return { id: 'day', label: 'Trail (light)', ...DAY_PAINT };
-  if (id === 'night') return { id: 'night', label: 'Park Midnight (dark)', ...NIGHT_PAINT };
+  if (id === 'day') return { id: 'day', label: 'Trail (light)', traits: {}, ...DAY_PAINT };
+  if (id === 'night') return { id: 'night', label: 'Park Midnight (dark)', traits: {}, ...NIGHT_PAINT };
   const skin = SKINS[id];
-  if (!skin) return { id: 'night', label: 'Park Midnight (dark)', ...NIGHT_PAINT };
-  return { id: skin.id, label: skin.label, ...skin.paint };
+  if (!skin) return { id: 'night', label: 'Park Midnight (dark)', traits: {}, ...NIGHT_PAINT };
+  return { id: skin.id, label: skin.label, traits: skin.traits || {}, ...skin.paint };
+}
+
+/** Demo / store capture — unlock ship-polish Skins without farming. */
+export function grantShipSkins(progress, { venueId = null, now = Date.now() } = {}) {
+  const meters = { ...progress.meters };
+  meters.contributions = Math.max(meters.contributions || 0, 3);
+  meters.venues = [...new Set([...(meters.venues || []), 'demo-a', 'demo-b', 'demo-c'])];
+  meters.nightQuests = Math.max(meters.nightQuests || 0, 20);
+  meters.deviceLessHeight = true;
+  meters.heightQuests = Math.max(meters.heightQuests || 0, 5);
+  if (venueId) {
+    const fog = meters.fogByVenue?.[venueId] || [];
+    meters.fogByVenue = {
+      ...(meters.fogByVenue || {}),
+      [venueId]: fog.length >= 4 ? fog : ['fog-0', 'fog-1', 'fog-2', 'fog-3'],
+    };
+    meters.venuePlaceCount = {
+      ...(meters.venuePlaceCount || {}),
+      [venueId]: Math.max(meters.venuePlaceCount?.[venueId] || 0, 16),
+    };
+  }
+  return {
+    ...progress,
+    wearSkin: progress.wearSkin || 'postcard',
+    meters,
+  };
 }
 
 export function mapThemeCssVars(pack) {
@@ -696,9 +739,15 @@ export function mapThemeCssVars(pack) {
 
 export function applyMapSkin(el, skinId) {
   if (!el?.style) return;
-  const vars = mapThemeCssVars(mapPaint(skinId));
+  const pack = mapPaint(skinId);
+  const vars = mapThemeCssVars(pack);
   for (const [k, v] of Object.entries(vars)) el.style.setProperty(k, v);
-  if (el.dataset) el.dataset.skin = skinId;
+  if (el.dataset) {
+    el.dataset.skin = skinId;
+    el.dataset.skinPixel = pack.traits?.pixel ? '1' : '';
+    el.dataset.skinNeon = pack.traits?.neon ? '1' : '';
+    el.dataset.skinJunior = pack.traits?.markerBoost ? '1' : '';
+  }
 }
 
 export function applyThanksToProgress(progress, world, authorId) {
