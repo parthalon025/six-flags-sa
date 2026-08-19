@@ -3,6 +3,8 @@
  * ADR-0012 + root CONTEXT.md.
  */
 
+import { labelWantedAtZoom } from './mapSymbols.js';
+
 /** First ship-polish Skins (store + delight tier). */
 export const SHIP_SKIN_IDS = ['postcard', 'marquee', 'junior', 'pixel-tycoon'];
 
@@ -101,13 +103,16 @@ export function markerDeclutterPriority({
   return rank * 1000 + (barred ? 250 : 0) + index;
 }
 
+/**
+ * Whether a marker gets a name at this zoom. The policy layer here is only
+ * pin promotion (Go target / next Plan stop always named, selection never —
+ * its name lives in the sheet); the zoom decision itself delegates to the
+ * shared labelWantedAtZoom so the canonical hysteresis is what ships.
+ */
 export function markerWantsLabel({ isSelected, isNav, isPlanNext, rank, zPlan, wasShown }) {
-  const pinned = isNav || isPlanNext;
   if (isSelected) return false;
-  // labelWantedAtZoom logic inlined for policy tests — ParkMap still uses mapSymbols.
-  const LABEL_ZOOM = { 1: 0.5, 2: 0.95, 3: 1.5, 4: 2.2, 5: 2.2 };
-  const enter = LABEL_ZOOM[rank] ?? 2.3;
-  return pinned || zPlan >= enter || (wasShown && zPlan >= enter - 0.12);
+  if (isNav || isPlanNext) return true;
+  return labelWantedAtZoom(rank, zPlan, wasShown);
 }
 
 /**

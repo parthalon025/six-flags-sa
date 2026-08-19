@@ -6,7 +6,6 @@ import { landTint, paletteFor } from '@/lib/theme';
 import Icon from '@/components/Icon';
 import { heightLabel, isRideable } from '@/lib/park';
 import {
-  labelWantedAtZoom,
   layerVisible,
   normaliseRideName,
   partyMarkerState,
@@ -1355,15 +1354,14 @@ function ParkMap({
 
       const placeId = identityOf(item.p);
       const wasShown = shownLabels.has(placeId);
-      const wanted =
-        markerWantsLabel({
-          isSelected: item.isSel,
-          isNav: item.isNav,
-          isPlanNext: item.isPlanNext,
-          rank: item.sym.rank,
-          zPlan,
-          wasShown,
-        }) || (pinned && !item.isSel);
+      const wanted = markerWantsLabel({
+        isSelected: item.isSel,
+        isNav: item.isNav,
+        isPlanNext: item.isPlanNext,
+        rank: item.sym.rank,
+        zPlan,
+        wasShown,
+      });
       let labelSpot = -1;
       if (wanted && !item.isSel) {
         const halfW = textWidth(item.p.n, POI_FONT) / 2 + 3;
