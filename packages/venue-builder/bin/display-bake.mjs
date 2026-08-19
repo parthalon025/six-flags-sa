@@ -299,8 +299,11 @@ for (const id of ids) {
     cert.bounds = r.model.bounds ?? null;
     writeFileSync(path.join(outRoot, `${r.base}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
     const failing = cert.checks.filter((c) => !c.pass);
+    // Skip-disclosure rows are decisions on the record, not passed checks:
+    // the summary tallies them apart so "N checks" means gated rows.
+    const skipRows = cert.checks.filter((c) => c.key.startsWith('style_skip_')).length;
     const certLine = cert.certified
-      ? `style contract ok (${cert.checks.length} checks, ${cert.review.length} review items)`
+      ? `style contract ok (${cert.checks.length - skipRows} checks, ${skipRows ? `${skipRows} skips listed, ` : ''}${cert.review.length} review items)`
       : `STYLE CONTRACT FAILING: ${failing.map((c) => c.key).join(', ')}`;
     if (!cert.certified) process.exitCode = 1;
     console.log(`${id} × ${r.kitId}: ${r.model.cols}×${r.model.rows} tiles → ${r.file} (+credits; ${certLine})`);

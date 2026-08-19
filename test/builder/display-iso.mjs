@@ -30,7 +30,7 @@ const {
   buildingScreenHulls, occludedByBuilding,
 } = await import('../../packages/venue-builder/lib/display-iso.mjs');
 const { isoLocal, isoInverse, ISO_ROTATIONS } = await import('../../packages/shared/isoWorld.js');
-const { stylePoints, isoStylePoints, certifyStyleContract, hexToRgb } = await import(
+const { stylePoints, isoStylePoints, certifyStyleContract, hexToRgb, STARVED_MIN_KEPT } = await import(
   '../../packages/venue-builder/lib/display-style-contract.mjs'
 );
 const { resolveKit } = await import('../../packages/venue-builder/lib/display-bake.mjs');
@@ -202,15 +202,61 @@ await check('ground samples behind an extrusion are occlusion-skipped', () => {
   assert.ok(occludedByBuilding(behind.x, behind.y, hulls), 'the extrusion hides the ground behind it');
   const far = at(1, 1);
   assert.ok(!occludedByBuilding(far.x, far.y, hulls), 'open ground stays sampled');
-  // and the plan records any such skip under one named key
+  // and the plan records any such skip under one named key, with counts
   const plan = isoStylePoints(model, stylePoints(model, { perClass: 48 }), { rotation: 0, px: 16 });
   const occl = plan.skips.find((s) => s.key === 'occluded');
-  if (occl) assert.ok(occl.count > 0 && /extrusion/.test(occl.reason));
+  if (occl) {
+    assert.ok(occl.count > 0 && /extrusion/.test(occl.reason));
+    assert.ok(occl.byClass, 'per-class culled/kept counts ride the skip entry');
+    for (const c of Object.values(occl.byClass)) {
+      assert.ok(c.culled > 0 && c.kept >= STARVED_MIN_KEPT && c.culled <= c.kept, 'occluded covers only healthy classes');
+    }
+  }
   for (const p of plan.points) {
     if (p.cls === 'structure' || p.cls === 'track' || p.cls === 'badge') continue;
     const iso = { x: (p.sx - plan.map.ox) / plan.map.hs, y: (plan.map.oy - p.sy) / plan.map.hs };
     assert.ok(!occludedByBuilding(iso.x, iso.y, hulls), `kept ${p.cls} point is not occluded`);
   }
+  return true;
+});
+
+await check('a class starved by occlusion withdraws its sliver, on the record', () => {
+  // A 2x2 lot patch entirely inside the building's screen shadow: every
+  // lot sample is culled, so the class must not just vanish from the plan.
+  const starveCells = cells.slice();
+  for (const [x, y] of [[5, 3], [6, 3], [5, 4], [6, 4]]) starveCells[y * COLS + x] = T.lot;
+  const starveModel = { ...model, cells: starveCells };
+  const points = stylePoints(starveModel);
+  assert.ok(points.some((p) => p.cls === 'lot'), 'the flat plan samples the lot');
+  const plan = isoStylePoints(starveModel, points, { rotation: 0, px: 16 });
+  assert.ok(!plan.points.some((p) => p.cls === 'lot'), 'no sliver median: starved samples are withdrawn');
+  const starved = plan.skips.find((s) => s.key === 'occlusion_starved');
+  assert.ok(starved, 'starvation is a named skip, never a silent absence');
+  assert.ok(starved.byClass.lot, 'the starved class is named');
+  assert.equal(starved.byClass.lot.kept, 0, 'fully occluded');
+  assert.ok(starved.byClass.lot.culled >= 4);
+  assert.ok(new RegExp(`fewer than ${STARVED_MIN_KEPT}`).test(starved.reason));
+  assert.equal(
+    plan.points.length + plan.skips.reduce((n, s) => n + s.count, 0),
+    points.length,
+    'every point is kept or accounted for in a skip',
+  );
+  // the cert renders the starved row with its per-class counts
+  const profile = {
+    id: 'p', kit: 'test-kit', style: 'test',
+    colorFamilies: { ground: { anchor: '#EBDDA8', deltaE: 12 }, lot: { anchor: '#B3AC9D', deltaE: 12 } },
+    roads: { vsGround: { minDeltaE: 1, polarity: 'darker' } },
+    agentReview: [{ key: 'k', prompt: 'q' }],
+  };
+  const samples = plan.points.map(() => [235, 221, 168, 255]);
+  const cert = certifyStyleContract({
+    model: starveModel, points: plan.points, samples, profile, kit: { id: 'test-kit' }, target: 'iso', skips: plan.skips,
+  });
+  const row = cert.checks.find((c) => c.key === 'style_skip_occlusion_starved');
+  assert.ok(row && row.pass, 'the starved row is an explicit disclosure');
+  assert.match(row.evidence, /lot: 0 kept \/ \d+ culled/, 'per-class counts render into the cert evidence');
+  const palette = cert.checks.find((c) => c.key === 'style_terrain_palette');
+  assert.ok(!/lot ΔE/.test(palette.evidence), 'the starved class never renders as a normal palette entry');
   return true;
 });
 

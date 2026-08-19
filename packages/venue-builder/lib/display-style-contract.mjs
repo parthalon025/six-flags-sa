@@ -175,24 +175,37 @@ export function stylePoints(model, { perClass = 48 } = {}) {
  *
  * Point classes the projection makes structurally unsound are SKIPPED on
  * the record, never silently dropped: each skip carries a named key +
- * reason, and certifyStyleContract turns them into explicit check rows.
- * That includes occlusion: ground-plane samples hidden behind a building
- * extrusion at this rotation test the building, not the terrain paint.
+ * reason (and per-class counts where classes differ), and
+ * certifyStyleContract turns them into explicit check rows.
  *
- * @returns {{ map: object, points: object[], skips: {key,reason,count}[] }}
+ * Occlusion is tracked PER CLASS: ground-plane samples hidden behind a
+ * building extrusion test the building, not the terrain paint, so they
+ * skip — and a class starved below STARVED_MIN_KEPT surviving samples
+ * (or with the majority of its samples culled) withdraws its remaining
+ * sliver too, under its own `occlusion_starved` skip entry. A sliver
+ * median must never render as a normal-looking row, and a fully occluded
+ * class must never just vanish from the cert.
+ *
+ * @returns {{ map: object, points: object[], skips: {key,reason,count,byClass?}[] }}
  */
+export const STARVED_MIN_KEPT = 3;
+
 export function isoStylePoints(model, points, { rotation = 0, px = 16, template = 'rct-classic' } = {}) {
   const map = isoCellMap(model, { rotation, px, template });
   const bHeights = buildingHeightsM(model);
   const tHeights = trackVertexHeightsM(model, template);
   const hulls = buildingScreenHulls(model, { rotation });
-  const t = model.tileMetres || 1;
   const groundCls = new Set([...Object.values(TERRAIN_NAMES), 'roadline']);
   const kept = [];
   const skipped = {};
   const skip = (key, reason) => {
     skipped[key] = skipped[key] || { key, reason, count: 0 };
     skipped[key].count += 1;
+  };
+  const occl = {}; // per ground class: { culled, kept }
+  const tally = (cls, field) => {
+    occl[cls] = occl[cls] || { culled: 0, kept: 0 };
+    occl[cls][field] += 1;
   };
   const r2 = (v) => Math.round(v * 100) / 100;
   for (const p of points) {
@@ -219,15 +232,47 @@ export function isoStylePoints(model, points, { rotation = 0, px = 16, template 
       [sx, sy] = isoCellToPixel(map, p.x, p.y, v >= 0 ? tHeights[p.idx][v] : 0);
     } else {
       [sx, sy] = isoCellToPixel(map, p.x, p.y, 0);
-      if (groundCls.has(p.cls)
-        && occludedByBuilding((sx - map.ox) / map.hs, (map.oy - sy) / map.hs, hulls)) {
-        skip('occluded', 'ground-plane samples hidden behind a building extrusion at this rotation test the building, not the terrain paint');
-        continue;
+      if (groundCls.has(p.cls)) {
+        if (occludedByBuilding((sx - map.ox) / map.hs, (map.oy - sy) / map.hs, hulls)) {
+          tally(p.cls, 'culled');
+          continue;
+        }
+        tally(p.cls, 'kept');
       }
     }
     kept.push({ ...p, sx: r2(sx), sy: r2(sy) });
   }
-  return { map, points: kept, skips: Object.values(skipped) };
+
+  // Occlusion accounting: classes that keep enough samples record their
+  // culls under `occluded`; a starved class (below the floor, or mostly
+  // culled) moves entirely — culls AND surviving sliver — under
+  // `occlusion_starved`, so its median never renders as a normal row.
+  const culledByClass = {};
+  const starvedByClass = {};
+  for (const [cls, c] of Object.entries(occl)) {
+    if (!c.culled) continue;
+    if (c.kept < STARVED_MIN_KEPT || c.culled > c.kept) starvedByClass[cls] = { ...c };
+    else culledByClass[cls] = { ...c };
+  }
+  if (Object.keys(culledByClass).length) {
+    skipped.occluded = {
+      key: 'occluded',
+      reason: 'ground-plane samples hidden behind a building extrusion at this rotation test the building, not the terrain paint',
+      count: Object.values(culledByClass).reduce((n, c) => n + c.culled, 0),
+      byClass: culledByClass,
+    };
+  }
+  const starvedCls = new Set(Object.keys(starvedByClass));
+  if (starvedCls.size) {
+    skipped.occlusion_starved = {
+      key: 'occlusion_starved',
+      reason: `occlusion starves these classes below the certification floor (fewer than ${STARVED_MIN_KEPT} samples surviving, or most culled) — their remaining sliver is withdrawn rather than passing as a normal-looking row`,
+      count: Object.values(starvedByClass).reduce((n, c) => n + c.culled + c.kept, 0),
+      byClass: starvedByClass,
+    };
+  }
+  const surviving = starvedCls.size ? kept.filter((p) => !starvedCls.has(p.cls)) : kept;
+  return { map, points: surviving, skips: Object.values(skipped) };
 }
 
 /* ---------------------------------------------------------- certification */
@@ -490,11 +535,14 @@ export function certifyStyleContract({
   }
 
   for (const s of skips || []) {
+    const perClass = s.byClass
+      ? ` [${Object.entries(s.byClass).map(([cls, c]) => `${cls}: ${c.kept} kept / ${c.culled} culled`).join(', ')}]`
+      : '';
     checks.push(check({
       key: `style_skip_${s.key}`,
       claim: `${s.key} sampling is structurally unsound in the ${target} projection and skipped on the record`,
       pass: true,
-      evidence: `${s.count} points skipped: ${s.reason}`,
+      evidence: `${s.count} points skipped: ${s.reason}${perClass}`,
       confidence: 1,
       falsifier: 'a projection change that makes these samples meaningful again without updating the contract',
       soWhat: 'a skipped row must be a visible decision, never a silent pass',

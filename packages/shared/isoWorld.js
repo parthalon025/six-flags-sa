@@ -169,7 +169,12 @@ function segDist(a, b, c, d) {
   );
 }
 
-function convexHull(pts) {
+/**
+ * Monotone-chain convex hull of {x,y} points. Used here for the extruded
+ * screen silhouette in buildingHitsLiftedTrack; exported so consumers
+ * (e.g. the iso bake's occlusion culling) share the one implementation.
+ */
+export function convexHull(pts) {
   const p = pts.map((q) => ({ x: q.x, y: q.y })).sort((a, b) => a.x - b.x || a.y - b.y);
   const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
   const lower = [];

@@ -21,6 +21,7 @@ import {
   buildingHeightM,
   liftHeightAt,
   resolveIsoMapTemplate,
+  convexHull,
 } from '@party-tracker/shared/isoWorld.js';
 import { trackSegments } from '@party-tracker/shared/isoTrack.js';
 
@@ -116,28 +117,9 @@ export function shade(hex, f) {
 
 const pathD = (pts) => pts.map((p, i) => `${i ? 'L' : 'M'}${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join('');
 
-/* Monotone-chain hull + point test — occlusion culling for the sample
- * plan, the same screen-hull idea isoWorld's buildingHitsLiftedTrack
- * uses for its culling. */
-function convexHull(pts) {
-  const p = pts.map((q) => ({ x: q.x, y: q.y })).sort((a, b) => a.x - b.x || a.y - b.y);
-  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-  const lower = [];
-  for (const q of p) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop();
-    lower.push(q);
-  }
-  const upper = [];
-  for (let i = p.length - 1; i >= 0; i -= 1) {
-    const q = p[i];
-    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
-    upper.push(q);
-  }
-  lower.pop();
-  upper.pop();
-  return lower.concat(upper);
-}
-
+/* Point-in-hull test against isoWorld's shared convexHull — occlusion
+ * culling for the sample plan, the same screen-silhouette idea isoWorld's
+ * buildingHitsLiftedTrack uses for its culling. */
 function pointInHull(x, y, hull) {
   let inside = false;
   for (let i = 0, j = hull.length - 1; i < hull.length; j = i, i += 1) {
