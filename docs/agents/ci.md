@@ -17,6 +17,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `../lib/local-ci-pass.mjs` | `localCiDecision()`, `STATIC_STEPS` | The tag: what a local CI run covers, and when GitHub may honour it |
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
+| `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 
@@ -67,7 +68,9 @@ Re-run `npm run test:pre-merge-vertical` after changing code or dependencies —
 
 ### Pre-push hook
 
-`.husky/pre-push` runs `npm run test:pre-merge-vertical` before every `git push` (skipped for `main`, and for delete-only pushes). It exists so the stamp is never missing by accident — GitHub credits are only saved when the tag is actually there. `shouldSkipLocalPreMerge` makes a repeat push with no new commits cost nothing: the hook re-runs the script, and the script exits immediately once it sees the existing stamp still covers the tree.
+`.husky/pre-push` calls `scripts/ci/pre-push.mjs`, which runs `npm run test:pre-merge-vertical` before every `git push`. The decision — skip for a push made up only of `refs/heads/main` updates (main always runs full CI regardless of the stamp) or a delete-only push, otherwise run — is `prePushDecision()` in `scripts/lib/pre-push.mjs` (tested in `test/scripts/pre-push.test.mjs`), judged from the refs git is actually pushing rather than the branch checked out locally. It exists so the stamp is never missing by accident — GitHub credits are only saved when the tag is actually there. `shouldSkipLocalPreMerge` makes a repeat push with no new commits cost nothing: the hook re-runs the script, and the script exits immediately once it sees the existing stamp still covers the tree.
+
+`PRE_PUSH_SKIP_BROWSER=1 git push` passes `--skip-browser` through for a faster local check; `test:pre-merge-vertical` still refuses to skip the browser vertical for a diff that touches app behaviour, so this only speeds up pushes that don't need it.
 
 Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
 
