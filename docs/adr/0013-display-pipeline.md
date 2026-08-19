@@ -1,6 +1,6 @@
 # Display pipeline — builder-owned map beauty, phone-owned overlay
 
-**Status:** Accepted (amended 2026-08-19 — item 4, real-time PBR tier)  
+**Status:** Accepted — amended 2026-08-19 (item 4, real-time PBR tier)  
 **Date:** 2026-08-17  
 **Depends on:** [ADR-0012 map visual design](./0012-map-visual-design.md), [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md), [ADR-0005 store Capacitor shell](./0005-store-capacitor-shell.md)  
 **See also:** [custom map display factory](../research/2026-08-18-custom-map-display-factory.md) — PBR material pipeline and rendering-tier detail for implementation order item 4
