@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "id": "midnight-carnival",
+  "kit": "midnight-carnival",
+  "style": "night-neon",
+  "inspiration": {
+    "summary": "Night-mode park map — indigo darkness, lantern-warm paths, neon flumes, silhouette buildings with pale rooflines",
+    "images": [],
+    "lineage": "authored through the agent kit-brief flow end-to-end (prompt → brief → answer → kit); the first curated kit born after the reference contract"
+  },
+  "colorFamilies": {
+    "ground": {
+      "anchor": "#2A2140",
+      "members": ["#352A52"],
+      "deltaE": 14
+    },
+    "grass": {
+      "anchor": "#1E3328",
+      "members": ["#2A4636"],
+      "deltaE": 14
+    },
+    "wood": {
+      "anchor": "#17281F",
+      "members": ["#223A2C"],
+      "deltaE": 14
+    },
+    "water": {
+      "anchor": "#101C2E",
+      "members": ["#3E6B9E"],
+      "deltaE": 14
+    },
+    "lot": {
+      "anchor": "#241F33",
+      "members": ["#3A3452"],
+      "deltaE": 14
+    },
+    "road": {
+      "anchor": "#C98A3B",
+      "members": ["#F5D9A0"],
+      "deltaE": 12
+    },
+    "service": {
+      "anchor": "#3A3444",
+      "deltaE": 12
+    },
+    "outside": {
+      "anchor": "#1A1226",
+      "members": ["#241833"],
+      "deltaE": 12
+    },
+    "structure": {
+      "anchor": "#8E88A9",
+      "members": ["#332C48", "#2C2740", "#3A3050"],
+      "deltaE": 16
+    },
+    "badge": {
+      "anchor": "#FF4D6D",
+      "members": ["#FFA02E", "#3FB6FF", "#3DE08A", "#B06CFF", "#8A8F98"],
+      "deltaE": 16
+    }
+  },
+  "roads": {
+    "vsGround": {
+      "minDeltaE": 25,
+      "polarity": "lighter"
+    },
+    "vsService": {
+      "minDeltaE": 12
+    },
+    "serviceLayer": "muted"
+  },
+  "ground": {
+    "outsideVsInside": {
+      "minDeltaE": 6
+    },
+    "waterVsVegetation": {
+      "minDeltaE": 6
+    }
+  },
+  "structures": {
+    "buildingStyle": "drop",
+    "trackStyle": "tube",
+    "coasterVsUnderlay": {
+      "minDeltaE": 12
+    }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": ["terrain", "roads", "tracks", "buildings", "trees", "badges"]
+  },
+  "agentReview": [
+    {
+      "key": "style_texture_language",
+      "prompt": "Reads as NIGHT: everything sits in darkness except what glows — paths, flumes, rooflines"
+    },
+    {
+      "key": "style_wayfinding_language",
+      "prompt": "The lantern-amber paths are the brightest ground element and carry the eye through the park"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Overall: a night-mode map a phone would show after sunset, not a dimmed day map"
+    }
+  ]
+}

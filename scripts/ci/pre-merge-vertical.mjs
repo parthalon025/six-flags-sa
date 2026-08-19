@@ -22,10 +22,12 @@ import {
   selectModulesFromFiles,
 } from '../../test/app/lib/module-select.mjs';
 import {
+  healthAlreadyServing,
   startProductionServer,
   waitForHealth,
 } from './party-tracker-ui.mjs';
 import {
+  STATIC_STEPS,
   buildLocalCiContext,
   readLocalCiPass,
   shouldSkipLocalPreMerge,
@@ -45,11 +47,12 @@ import {
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
-export const STATIC_NPM_STEPS = [
-  ['run', 'test:ci-gate'],
-  ['run', 'test:unit'],
-  ['run', 'build', '-w', '@party-tracker/app'],
-];
+/**
+ * The static floor, in run order. Derived from `STATIC_STEPS` rather than
+ * restated: the stamp records those ids, and GitHub skips the jobs they cover,
+ * so a second copy here would let the two drift into a lie.
+ */
+export const STATIC_NPM_STEPS = STATIC_STEPS.map((step) => step.npm);
 
 export function gitChangedFiles(baseRef = 'origin/main', cwd = root) {
   try {
@@ -171,6 +174,18 @@ export async function runPreMergeVertical({
   } else if (!browserWanted) {
     console.log('pre-merge-vertical: no UI modules for diff — browser vertical skipped');
   } else {
+    if (await healthAlreadyServing()) {
+      console.error(
+        [
+          'pre-merge-vertical: something is already serving the app port.',
+          'A leftover server from an earlier run holds the build it started with,',
+          'so the browser vertical would prove that build, not the one just made.',
+          'Stop it and re-run:',
+          "  pkill -f 'next start' || pkill -f next-server",
+        ].join('\n'),
+      );
+      return 1;
+    }
     console.log('\npre-merge-vertical: starting app for browser vertical');
     startProductionServer({ root: cwd });
     await waitForHealth();

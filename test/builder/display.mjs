@@ -38,6 +38,8 @@ const {
   styleFromSpec,
   anchorsFromTruth,
   runDisplayStage,
+  foldBakeCerts,
+  tierManifest,
 } = await import('../../packages/venue-builder/lib/display-pack.mjs');
 const { displayGeoJson, buildTiles, tippecanoeAvailable } = await import(
   '../../packages/venue-builder/lib/display-tiles.mjs'
@@ -401,6 +403,67 @@ await check('the crop window is integral and tightens to the boundary', () => {
   return true;
 });
 
+await check('the bake model carries geo bounds of its crop window', () => {
+  const full = bakeModel({ ...BAKE_MAP, boundary: null }, [], { maxCols: 60 });
+  const cropped = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 });
+  for (const m of [full, cropped]) {
+    assert.ok(m.bounds, 'bounds ride every model');
+    assert.ok(m.bounds.west < m.bounds.east && m.bounds.south < m.bounds.north, 'WSEN ordering');
+    assert.ok(m.bounds.west >= -0.001 && m.bounds.east <= 0.011, 'inside the map bbox');
+  }
+  const span = (b) => (b.east - b.west) * (b.north - b.south);
+  assert.ok(span(cropped.bounds) < span(full.bounds), 'the crop window tightens the geo bounds');
+  assert.deepEqual(cropped.bounds, bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 }).bounds, 'deterministic');
+  return true;
+});
+
+await check('bake certifications fold into the pack, namespaced and gated', () => {
+  const certA = { certified: true, checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'x' }] };
+  const certB = { certified: false, checks: [{ key: 'style_track_presence', pass: false, evidence: 'y' }] };
+  const rows = foldBakeCerts([{ kit: 'a', cert: certA }, { kit: 'b', cert: certB }]);
+  assert.ok(rows.some((r) => r.key === 'bake:a:style_terrain_palette' && r.pass));
+  assert.ok(rows.some((r) => r.key === 'bake:b:style_track_presence' && !r.pass));
+  const gate = rows.find((r) => r.key === 'bake_certs');
+  assert.equal(gate.pass, false, 'one failing kit fails the gate');
+  assert.match(gate.evidence, /b:FAILING/);
+  const empty = foldBakeCerts([]).find((r) => r.key === 'bake_certs');
+  assert.equal(empty.pass, false, 'no bakes is a recorded gap, not a silent pass');
+  assert.match(empty.evidence, /run venues:bake/);
+  return true;
+});
+
+await check('the tier manifest names every tier, sizes or gaps', () => {
+  const manifest = tierManifest([
+    { name: 'vector', file: 'base.pmtiles', bytes: 12345 },
+    { name: 'raster', gap: true, reason: 'no tiler' },
+    { name: 'bake:island-brochure', file: 'x.png', bytes: 99, meta: { kit: 'island-brochure' } },
+  ]);
+  assert.equal(manifest.tiers.vector.bytes, 12345);
+  assert.deepEqual(manifest.tiers.raster, { gap: true, reason: 'no tiler' });
+  assert.equal(manifest.tiers['bake:island-brochure'].kit, 'island-brochure');
+  return true;
+});
+
+await check('the LDtk debug export mirrors the model exactly', async () => {
+  const { ldtkProject } = await import('../../packages/venue-builder/lib/display-ldtk.mjs');
+  const model = bakeModel(BAKE_MAP, FIXTURE_POIS, { maxCols: 60 });
+  const project = ldtkProject(model);
+  const level = project.levels[0];
+  const terrain = level.layerInstances.find((l) => l.__identifier === 'Terrain');
+  assert.equal(terrain.__cWid, model.cols);
+  assert.equal(terrain.intGridCsv.length, model.cols * model.rows, 'every cell exported');
+  assert.ok(terrain.intGridCsv.every((v) => v >= 1), 'IntGrid values are 1-based');
+  assert.equal(new Set(terrain.intGridCsv).size <= 8, true, 'only real terrain classes');
+  const entities = level.layerInstances.find((l) => l.__identifier === 'Entities').entityInstances;
+  const badgeCount = entities.filter((e) => e.__identifier === 'Badge').length;
+  assert.equal(badgeCount, model.badges.length, 'one entity per badge');
+  const trackVertices = entities.filter((e) => e.__identifier === 'TrackVertex');
+  assert.equal(trackVertices.length, model.tracks.reduce((n, t) => n + t.pts.length, 0));
+  assert.equal(JSON.stringify(project), JSON.stringify(ldtkProject(model)), 'byte-identical rerun');
+  JSON.parse(JSON.stringify(project)); // round-trips as plain JSON
+  return true;
+});
+
 await check('entities outside the crop window leave the model', () => {
   const withOutsider = {
     ...BAKE_MAP,
@@ -499,6 +562,41 @@ await check('runDisplayStage writes spec + certification, twice byte-identical',
   for (const [f, body] of snapshot) {
     assert.equal(readFileSync(path.join(outDir, f), 'utf8'), body, `${f} changed on a no-op rerun`);
   }
+  return true;
+});
+
+await check('runDisplayStage with bakes: folds certs, binds the primary kit via skins', async () => {
+  const { writeFileSync } = await import('node:fs');
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const bakeDir = mkdtempSync(path.join(tmpdir(), 'bakes-'));
+  // Two baked kits; alphabetical order would pick island-brochure, but the
+  // first active Skin bakeKit binding (park-midnight → rpg-overworld) wins.
+  for (const kit of ['island-brochure', 'rpg-overworld']) {
+    writeFileSync(path.join(bakeDir, `test-park--${kit}.style-cert.json`), JSON.stringify({
+      certified: true,
+      signature: `sig-${kit}`,
+      bounds: { west: 0, south: 0, east: 0.01, north: 0.01 },
+      checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'fixture' }],
+    }));
+    writeFileSync(path.join(bakeDir, `test-park--${kit}.png`), 'png-bytes');
+    writeFileSync(path.join(bakeDir, `test-park--${kit}.credits.json`), '{"assets":[]}');
+  }
+  const result = runDisplayStage('test-park', {
+    map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir, bake: { dir: bakeDir },
+  });
+  assert.deepEqual(Object.keys(result.bakes).sort(), ['island-brochure', 'rpg-overworld']);
+  assert.equal(result.bakes['rpg-overworld'].signature, 'sig-rpg-overworld');
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  assert.ok(cert.checks.some((c) => c.key === 'bake:island-brochure:style_terrain_palette'));
+  assert.equal(cert.checks.find((c) => c.key === 'bake_certs').pass, true);
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  assert.equal(manifest.tiers.credits.kit, 'rpg-overworld', 'skins bakeKit binding beats directory order');
+  assert.ok(manifest.tiers['bake:island-brochure'].bytes > 0);
+  assert.ok(manifest.tiers.raster.gap, 'raster stays an honest gap');
+  const empty = runDisplayStage('test-park', {
+    map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-')), bake: { dir: mkdtempSync(path.join(tmpdir(), 'nobakes-')) },
+  });
+  assert.equal(empty.certified, false, 'no bakes = recorded gap, stage fails honestly');
   return true;
 });
 

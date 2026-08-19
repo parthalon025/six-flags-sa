@@ -19,10 +19,7 @@ import { loadModulesManifest } from '../../test/app/lib/module-select.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
 /** scripts/lib modules with no direct test yet — backfill tracked in #474. */
-export const SCRIPTS_LIB_TEST_ALLOWLIST = [
-  'scripts/lib/app-store-connect.mjs',
-  'scripts/lib/store-screenshot-compose.mjs',
-];
+export const SCRIPTS_LIB_TEST_ALLOWLIST = [];
 
 /** App files allowed to reference packages/venue-builder by path literal — seam refactor tracked in #475. */
 export const VENUE_BUILDER_PATH_ALLOWLIST = [

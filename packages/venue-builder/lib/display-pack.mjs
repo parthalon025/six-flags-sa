@@ -15,8 +15,10 @@
  */
 
 import path from 'node:path';
-import { OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
+import { buildRasterTier } from './display-raster.mjs';
 import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
@@ -304,6 +306,49 @@ function loadTruth(id) {
 }
 
 /**
+ * Fold baked-kit style certifications into the venue's certification rows.
+ * Pure: takes [{kit, cert}] (a kit's style-cert.json content) and returns
+ * every row re-keyed `bake:<kit>:<key>` plus one gate row over the set —
+ * the pack certifies only when every requested bake did.
+ */
+export function foldBakeCerts(bakeCerts) {
+  const rows = [];
+  for (const { kit, cert } of bakeCerts) {
+    for (const row of cert.checks || []) rows.push({ ...row, key: `bake:${kit}:${row.key}` });
+  }
+  rows.push(check({
+    key: 'bake_certs',
+    claim: 'every baked kit passes its reference-profile style contract',
+    pass: bakeCerts.length > 0 && bakeCerts.every(({ cert }) => cert.certified),
+    evidence: bakeCerts.length
+      ? bakeCerts.map(({ kit, cert }) => `${kit}:${cert.certified ? 'ok' : 'FAILING'}`).join(', ')
+      : 'no bake certifications found — run venues:bake before the display stage',
+    confidence: 'high',
+    falsifier: 'a kit whose style-cert.json reports certified:false, or no bakes at all',
+    soWhat: 'an uncertified look must not ride the venue download',
+  }));
+  return rows;
+}
+
+/**
+ * The pack's tier list — what a renderer can actually load, sizes and gaps
+ * included. Pure: entries are {name, file?, bytes?, gap?, reason?, meta?}.
+ */
+export function tierManifest(entries) {
+  const tiers = {};
+  for (const e of entries) {
+    tiers[e.name] = e.gap
+      ? { gap: true, reason: e.reason }
+      : { file: e.file, bytes: e.bytes, ...(e.meta || {}) };
+  }
+  return { version: DISPLAY_VERSION, tiers };
+}
+
+const fileEntry = (name, file, meta) => (existsSync(file)
+  ? { name, file: path.basename(file), bytes: statSync(file).size, meta }
+  : { name, gap: true, reason: `${path.basename(file)} not built` });
+
+/**
  * The pipeline stage: compile + certify every active Skin for one venue and
  * write the pack sidecars. Publishing to `public/venues` stays a separate,
  * human-gated step — this writes builder data only.
@@ -366,6 +411,56 @@ export function runDisplayStage(id, opts = {}) {
     }));
   }
 
+  // Bake integration: fold each baked kit's style contract into this
+  // venue's certification (rows namespaced bake:<kit>:*), attempt the
+  // raster tier, and write the pack manifest naming every tier — present
+  // ones with sizes, absent ones as recorded gaps.
+  let bakes = null;
+  if (opts.bake) {
+    const bakeDir = opts.bake.dir || path.join(MONO_ROOT, 'artifacts', 'display-bake');
+    const certFiles = (existsSync(bakeDir)
+      ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
+      : []).sort();
+    const bakeCerts = certFiles.map((f) => ({
+      kit: f.slice(id.length + 2, -'.style-cert.json'.length),
+      cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
+    }));
+    venueChecks.push(...foldBakeCerts(bakeCerts));
+    bakes = Object.fromEntries(bakeCerts.map(({ kit, cert }) => [
+      kit, { certified: cert.certified, signature: cert.signature },
+    ]));
+
+    // The venue's primary bake is a meaningful choice, not directory order:
+    // the first active Skin's bakeKit binding (skins.json) wins — which kit
+    // fronts the credits carries real attribution weight — with the sorted
+    // first bake as the deterministic fallback.
+    const boundKits = Object.keys(templates).sort()
+      .map((skinId) => templates[skinId])
+      .filter((t) => t.status === 'active' && t.bakeKit && bakes[t.bakeKit])
+      .map((t) => t.bakeKit);
+    const primaryKit = boundKits[0] || bakeCerts[0]?.kit || null;
+    const primaryCert = bakeCerts.find((b) => b.kit === primaryKit)?.cert;
+    const raster = buildRasterTier({
+      bakePng: primaryKit ? path.join(bakeDir, `${id}--${primaryKit}.png`) : null,
+      bounds: opts.bake.bounds ?? primaryCert?.bounds ?? null,
+    });
+    const manifest = tierManifest([
+      fileEntry('vector', path.join(outDir, 'base.pmtiles')),
+      raster.ok
+        ? { name: 'raster', file: path.basename(raster.file), bytes: raster.sizeKb * 1024 }
+        : { name: 'raster', gap: true, reason: raster.reason },
+      ...bakeCerts.map(({ kit }) => fileEntry(`bake:${kit}`, path.join(bakeDir, `${id}--${kit}.png`), { kit })),
+      primaryKit
+        ? fileEntry('credits', path.join(bakeDir, `${id}--${primaryKit}.credits.json`), { kit: primaryKit })
+        : { name: 'credits', gap: true, reason: 'no baked kits — run venues:bake first' },
+    ]);
+    if (write) {
+      const manifestFile = path.join(outDir, 'manifest.json');
+      writeJson(manifestFile, manifest, true);
+      written.push(manifestFile);
+    }
+  }
+
   const certified = Object.values(packs).every((p) => p.certification.certified)
     && venueChecks.every((c) => c.pass);
   const summary = {
@@ -374,6 +469,7 @@ export function runDisplayStage(id, opts = {}) {
     certified,
     anchors,
     checks: venueChecks,
+    ...(bakes ? { bakes } : {}),
     skins: Object.fromEntries(
       Object.entries(packs).map(([skinId, p]) => [skinId, p.certification]),
     ),
@@ -384,5 +480,5 @@ export function runDisplayStage(id, opts = {}) {
     written.push(file);
   }
 
-  return { venue: id, certified, packs, anchors, tiles, written };
+  return { venue: id, certified, packs, anchors, tiles, bakes, written };
 }
