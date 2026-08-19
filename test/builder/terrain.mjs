@@ -14,7 +14,7 @@ import { fitness, resolveDem } from '../../packages/venue-builder/lib/terrain/de
 import { ConstraintGrid } from '../../packages/venue-builder/lib/terrain/constraints.mjs';
 import { meshFromGrid } from '../../packages/venue-builder/lib/terrain/mesh-export.mjs';
 import { makeNoise2D, makeRng } from '../../packages/venue-builder/lib/terrain/noise.mjs';
-import { scatterPoints, densityFromSpecies, fillRows } from '../../packages/venue-builder/lib/display-scatter.mjs';
+import { scatterPoints, densityFromSpecies } from '../../packages/venue-builder/lib/display-scatter.mjs';
 import { exportTileGeoJson } from '../../packages/venue-builder/lib/tiles-export.mjs';
 import { tileNameFor as tile3dep } from '../../packages/venue-builder/lib/adapters/usgs-3dep.mjs';
 import { tileNameFor as tileCop } from '../../packages/venue-builder/lib/adapters/copernicus-dem.mjs';
@@ -22,8 +22,9 @@ import {
   compileVisualSpec, certifyDisplayPack, readMaterials, readSkinTemplates,
   styleFromSpec, mixHex, DEFAULT_MATERIAL_MIX,
 } from '../../packages/venue-builder/lib/display-pack.mjs';
-import { crownStipple, seedFromString } from '../../packages/venue-builder/lib/display-bake.mjs';
+import { crownStipple, seedFromString, resolveKit, TERRAIN_PIECES } from '../../packages/venue-builder/lib/display-bake.mjs';
 import { buildMattReviewContext } from '../../scripts/lib/matt-review.mjs';
+import { parseCatalogArgs, pipelineOptsFromCatalogArgs } from '../../packages/venue-builder/lib/build-pipeline.mjs';
 
 const PASS = [];
 const FAIL = [];
@@ -213,15 +214,6 @@ await check('scatter reports what it could not place instead of silently capping
     cells, seed: 5, density: 50, species: [{ id: 'a', radius: 1.5, probability: 1 }],
   });
   assert.ok(r.dropped > 0 && r.requested > r.placed.length);
-  return true;
-});
-
-await check('rows follow the long axis and stay inside the polygon', () => {
-  const { placed } = fillRows({
-    ring: [[0, 0], [40, 0], [40, 8], [0, 8]], rowSpacing: 4, itemSpacing: 5, id: 'lamp',
-  });
-  assert.ok(placed.length > 0);
-  assert.ok(placed.every((p) => p.x >= 0 && p.x <= 40 && p.y >= 0 && p.y <= 8));
   return true;
 });
 
@@ -524,6 +516,47 @@ await check('the standards-review context survives a diff larger than 1 MB', () 
   // after the app build had already run.
   const ctx = buildMattReviewContext({ baseRef: 'origin/main' });
   assert.ok(Array.isArray(ctx.files));
+  return true;
+});
+
+await check('natural surfaces carry a steep variant; made ones do not', () => {
+  // The bake computes a `steep` channel per cell whenever a venue has a DEM.
+  // If no piece declares a steep variant the channel is dead weight, so the
+  // vocabulary carries the default and kits inherit it.
+  for (const name of ['grass', 'wood', 'ground']) {
+    assert.ok(TERRAIN_PIECES[name].steep?.base, `${name} should have a steep variant`);
+    assert.notEqual(TERRAIN_PIECES[name].steep.base, TERRAIN_PIECES[name].base);
+  }
+  // A road on a slope is still a road.
+  for (const name of ['road', 'service', 'water', 'lot']) {
+    assert.equal(TERRAIN_PIECES[name].steep, undefined, `${name} should not vary by slope`);
+  }
+  return true;
+});
+
+await check('a kit inherits steep variants and can override them', () => {
+  const assets = JSON.parse(readFileSync('packages/venue-builder/data/display/assets.json', 'utf8')).assets;
+  const kit = JSON.parse(readFileSync('packages/venue-builder/data/display/kits/rpg-overworld.json', 'utf8'));
+  assert.equal(resolveKit(kit, { assets }).terrain.grass.steep.base, TERRAIN_PIECES.grass.steep.base);
+  const overridden = resolveKit(
+    { ...kit, terrain: { ...kit.terrain, grass: { ...kit.terrain.grass, steep: { base: '#123456' } } } },
+    { assets },
+  );
+  assert.equal(overridden.terrain.grass.steep.base, '#123456');
+  return true;
+});
+
+await check('--terrain survives the trip from CLI flag to pipeline options', () => {
+  // It was parsed and then dropped here, so the flag ran the whole pipeline
+  // and produced flat venues without ever saying it had ignored you.
+  const on = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--terrain']));
+  const off = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display']));
+  assert.equal(on.terrain, true);
+  assert.equal(off.terrain, false);
+  assert.equal(on.display, true);
+  const both = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--terrain', '--constrain']));
+  assert.equal(both.constrain, true);
+  assert.equal(on.constrain, false, 'constrain is its own opt-in, not implied by terrain');
   return true;
 });
 

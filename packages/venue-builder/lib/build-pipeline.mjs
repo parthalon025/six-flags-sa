@@ -10,14 +10,18 @@
  *   6. attractions — entrance inventory and evidence sidecar
  *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
  *   8. certify   — report + compare + route-qa + ask; writes certification.json
- *   9. display   — per-Skin visual specs + display-certify (opt-in, --display)
+ *   9. display   — per-Skin visual specs + display-certify (opt-in, --display;
+ *                  add --terrain for a DEM-derived hillshade, --constrain to
+ *                  settle paths and water onto it. --mesh stays per-venue:
+ *                  batch-generating a 10 MB OBJ nothing renders, times 100
+ *                  parks, is a gigabyte of nothing.)
  */
 
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { readJson, VENUE_DIR } from './venue-io.mjs';
+import { readJson, VENUE_DIR, venueSidecar } from './venue-io.mjs';
 import { recipeFile } from './venue-recipe.mjs';
 import { ensureSourcesCatalogue, syncHeightsFromOfficial } from './heights-from-official.mjs';
 import { runResearchAgent } from './agents/research.mjs';
@@ -108,6 +112,8 @@ export async function runVenuePipeline(park, opts = {}) {
     agent = true,
     certify = true,
     display = false,
+    terrain: wantTerrain = false,
+    constrain = false,
     skip = [],
   } = opts;
 
@@ -332,12 +338,25 @@ export async function runVenuePipeline(park, opts = {}) {
   if (!skip.includes('display') && display) {
     console.error('  · display: visual specs + display-certify');
     try {
-      const { runDisplayStage } = await import('./display-pack.mjs');
-      const disp = runDisplayStage(park.id, { tiles: true });
+      const { runDisplayStage, loadTruthFor } = await import('./display-pack.mjs');
+      // Terrain needs the network, so it rides the same opt-in shape as the
+      // stage itself. Without it a venue compiles flat, which is declared in
+      // certification rather than silent.
+      let terrain = null;
+      if (wantTerrain) {
+        const { prepareVenueTerrain } = await import('./terrain/venue-terrain.mjs');
+        const { map } = loadTruthFor(park.id);
+        const prepared = await prepareVenueTerrain({
+          id: park.id, map, outDir: venueSidecar(park.id, 'display'), constrain,
+        });
+        terrain = prepared?.terrain || null;
+      }
+      const disp = runDisplayStage(park.id, { tiles: true, terrain });
       logStage('display', {
         certified: disp.certified,
         skins: Object.keys(disp.packs).length,
         tiles: disp.tiles?.ok ? `${disp.tiles.sizeKb} KB` : disp.tiles?.reason,
+        terrain: terrain ? `${terrain.source} @ ${terrain.resolution}m` : 'flat (no DEM)',
       });
       if (!disp.certified) {
         return {
@@ -428,6 +447,8 @@ export function parseCatalogArgs(argv) {
     agent: true,
     certify: true,
     display: false,
+    terrain: false,
+    constrain: false,
     applyAliases: true,
     openPr: false,
     json: false,
@@ -450,6 +471,8 @@ export function parseCatalogArgs(argv) {
     else if (a === '--no-agent') out.agent = false;
     else if (a === '--no-certify') out.certify = false;
     else if (a === '--display') out.display = true;
+    else if (a === '--terrain') out.terrain = true;
+    else if (a === '--constrain') out.constrain = true;
     else if (a === '--no-aliases') out.applyAliases = false;
     else if (a === '--pr') out.openPr = true;
     else if (a === '--json') out.json = true;
@@ -472,6 +495,8 @@ export function pipelineOptsFromCatalogArgs(args) {
     agent: args.agent,
     certify: args.certify,
     display: args.display,
+    terrain: args.terrain,
+    constrain: args.constrain,
     rebuildOnly: args.skipExisting,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };

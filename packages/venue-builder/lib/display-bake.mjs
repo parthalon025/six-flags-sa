@@ -51,11 +51,19 @@ export const BUILDING_STYLES = ['drop', 'flat', 'outline'];
 export const TREE_STYLES = ['round', 'dot', 'none'];
 export const TRACK_STYLES = ['tube', 'mono'];
 
+/**
+ * `steep` is the variant a natural surface takes where the ground is actually
+ * steep — a bank reads as a bank rather than as lawn drawn at an angle. It is
+ * only consulted when the venue has a DEM (the model's `steep` channel), so a
+ * flat park or one with no coverage never sees it, and a kit may override it
+ * like any other piece value. Made surfaces are deliberately absent: a road on
+ * a slope is still a road.
+ */
 export const TERRAIN_PIECES = {
   outside: { base: '#6B4E9B', texture: { kind: 'dot', color: '#7A5BAD', density: 0.35 } },
-  ground: { base: '#EBDDA8', texture: { kind: 'speckle', color: '#DFCE8F', density: 0.3 } },
-  grass: { base: '#7FB86B', texture: { kind: 'tuft', color: '#5F9C50', density: 0.35 } },
-  wood: { base: '#639E55', texture: { kind: 'tuft', color: '#4E8443', density: 0.35 } },
+  ground: { base: '#EBDDA8', texture: { kind: 'speckle', color: '#DFCE8F', density: 0.3 }, steep: { base: '#D3C293' } },
+  grass: { base: '#7FB86B', texture: { kind: 'tuft', color: '#5F9C50', density: 0.35 }, steep: { base: '#8FA163' } },
+  wood: { base: '#639E55', texture: { kind: 'tuft', color: '#4E8443', density: 0.35 }, steep: { base: '#6C8B4E' } },
   water: { base: '#58AEDC', texture: { kind: 'wave', color: '#8FCBE8', density: 0.3 } },
   lot: { base: '#B9B3A6', texture: { kind: 'stripe', color: '#E2DDD2', density: 0.33 } },
   // road cells never take the per-cell texture pass — they render as cased
