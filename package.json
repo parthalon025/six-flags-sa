@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -12,6 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
+    "prepare": "husky",
     "dev": "npm run dev -w @party-tracker/app",
     "build": "npm run build -w @party-tracker/app",
     "start": "npm run start -w @party-tracker/app",
@@ -115,6 +116,7 @@
     "@turf/union": "^7.4.0",
     "dependency-cruiser": "^18.2.0",
     "geotiff": "^3.0.5",
+    "husky": "^9.1.7",
     "maplibre-gl": "^6.4.1",
     "playwright": "^1.62.1",
     "pmtiles": "^4.5.0",

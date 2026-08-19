@@ -17,6 +17,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `../lib/local-ci-pass.mjs` | `localCiDecision()`, `STATIC_STEPS` | The tag: what a local CI run covers, and when GitHub may honour it |
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
+| `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 
@@ -64,6 +65,20 @@ Two things always run full CI regardless of the stamp:
 - **`full-ci`.** Label the PR `full-ci`, or put `[full-ci]` in its title, and the tag is ignored for that run.
 
 Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored, the `Select modules` job summary says why, and CI runs everything.
+
+### Pre-push hook
+
+`.husky/pre-push` calls `scripts/ci/pre-push.mjs`, which runs `npm run test:pre-merge-vertical` before every `git push`. The decision — skip for a push made up only of `refs/heads/main` updates (main always runs full CI regardless of the stamp) or a delete-only push, otherwise run — is `prePushDecision()` in `scripts/lib/pre-push.mjs` (tested in `test/scripts/pre-push.test.mjs`), judged from the refs git is actually pushing rather than the branch checked out locally. It exists so the stamp is never missing by accident — GitHub credits are only saved when the tag is actually there. `shouldSkipLocalPreMerge` makes a repeat push with no new commits cost nothing: the hook re-runs the script, and the script exits immediately once it sees the existing stamp still covers the tree.
+
+`PRE_PUSH_SKIP_BROWSER=1 git push` passes `--skip-browser` through for a faster local check; `test:pre-merge-vertical` still refuses to skip the browser vertical for a diff that touches app behaviour, so this only speeds up pushes that don't need it.
+
+Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
+
+### Auto-ready draft PRs
+
+The `auto-ready` job in `test-app.yml` marks a draft PR ready for review automatically once `select` reports `skip_ci == 'true'` — i.e. a fresh `local-ci-verified` tag covers the diff, so a human has nothing left to gate before review starts. It runs `gh pr ready` with the job's own `pull-requests: write` permission (scoped to that job only; the workflow's default is `contents: read`). It is not in the `ci` job's `needs:` list — it can never block a merge, whatever it does.
+
+The job is skipped entirely for a non-PR event, an already-ready PR, or no tag. For a draft PR from a **fork** that does carry a fresh tag, the job still runs — a fork's `GITHUB_TOKEN` on the `pull_request` event is read-only regardless of the permissions block, so `gh pr ready` fails there rather than being skipped. `continue-on-error: true` on that step is what keeps the expected failure from showing red on a job nothing depends on.
 
 ## Test app (`.github/workflows/test-app.yml`)
 
