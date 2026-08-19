@@ -7,6 +7,7 @@
  *   npm run store:release-plan -- --files apps/party-tracker/app/page.js
  */
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './lib/git-env.mjs';
 import {
   classifyStoreRelease,
   formatStoreReleasePlan,
@@ -42,12 +43,13 @@ Default diff: git diff --name-only <base>...<head>`);
 function gitChangedFiles(base, head) {
   try {
     const out = execFileSync('git', ['diff', '--name-only', `${base}...${head}`], {
+      env: scrubGitEnv(),
       encoding: 'utf8',
     });
     return out.split('\n').map((line) => line.trim()).filter(Boolean);
   } catch (err) {
     if (err.status === 128 || /bad revision|unknown revision/i.test(String(err.stderr || err.message))) {
-      const out = execFileSync('git', ['diff', '--name-only', base, head], { encoding: 'utf8' });
+      const out = execFileSync('git', ['diff', '--name-only', base, head], { env: scrubGitEnv(), encoding: 'utf8' });
       return out.split('\n').map((line) => line.trim()).filter(Boolean);
     }
     throw err;

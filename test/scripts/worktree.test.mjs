@@ -10,6 +10,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import {
   AGENT_DIR,
   branchName,
@@ -50,6 +51,9 @@ assert.equal(shouldDeleteBranch({ name: 'worktree-foo', aheadCount: 2, hasWorktr
 function git(cwd, args) {
   return execFileSync('git', args, {
     cwd,
+    // `cwd` is not isolation on its own: under a git hook the environment names
+    // the real repository and git prefers it. See scripts/lib/git-env.mjs.
+    env: scrubGitEnv(),
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
@@ -71,6 +75,8 @@ function run(cwd, args) {
   try {
     return execFileSync(process.execPath, [script, ...args], {
       cwd,
+      // worktree.mjs shells out to git; the same inherited-repo trap applies.
+      env: scrubGitEnv(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
     });

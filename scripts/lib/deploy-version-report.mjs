@@ -3,6 +3,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './git-env.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compareVersions } from '../../apps/party-tracker/lib/version.js';
@@ -27,7 +28,8 @@ export function latestStoreTag(repoRoot, prefix = 'store/') {
     const out = execFileSync(
       'git',
       ['tag', '-l', `${prefix}*`, '--sort=-v:refname'],
-      { cwd: repoRoot, encoding: 'utf8' },
+      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+      { cwd: repoRoot, env: scrubGitEnv(), encoding: 'utf8' },
     );
     return out.split('\n').map((line) => line.trim()).find(Boolean) ?? null;
   } catch {

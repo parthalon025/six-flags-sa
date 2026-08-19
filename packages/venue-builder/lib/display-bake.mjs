@@ -15,6 +15,37 @@
  */
 
 import { LINE_LAYERS } from './osm-tags.mjs';
+import { densityFromSpecies, fillRows, scatterPoints } from './display-scatter.mjs';
+
+/**
+ * Sprite footprints, in cells. Radius is what stops two trees sharing a
+ * trunk; probability is the mix within a terrain.
+ */
+const TREE_SPECIES = {
+  wood: [
+    { id: 'big', radius: 0.85, probability: 0.55, big: true },
+    { id: 'small', radius: 0.6, probability: 0.45 },
+  ],
+  grass: [
+    { id: 'big', radius: 0.9, probability: 0.2, big: true },
+    { id: 'small', radius: 0.65, probability: 0.8 },
+  ],
+};
+
+/** Woods saturate; grass is deliberately sparse ornamental planting. */
+const TREE_DENSITY_SCALE = { wood: 1, grass: 0.22 };
+
+/**
+ * Parking aisle geometry, in metres.
+ *
+ * Individual bays are ~2.6 m and the bake grid is 2.4-7.4 m per cell, so
+ * stalls are sub-cell and drawing them would be noise. Aisles are not: at
+ * ~16 m apart they land 2.2-6.6 cells apart at every shipped venue, which
+ * draws cleanly. This is depiction, not invention — the lot is in OSM, and
+ * aisles are what a lot looks like.
+ */
+const AISLE_METRES = 16;
+const AISLE_DASH_METRES = 4;
 
 /* ------------------------------------------------ the pieces vocabulary --
  * The bake decomposes into the smallest pieces the builder owns. A kit is
@@ -32,11 +63,19 @@ export const BUILDING_STYLES = ['drop', 'flat', 'outline'];
 export const TREE_STYLES = ['round', 'dot', 'none'];
 export const TRACK_STYLES = ['tube', 'mono'];
 
+/**
+ * `steep` is the variant a natural surface takes where the ground is actually
+ * steep — a bank reads as a bank rather than as lawn drawn at an angle. It is
+ * only consulted when the venue has a DEM (the model's `steep` channel), so a
+ * flat park or one with no coverage never sees it, and a kit may override it
+ * like any other piece value. Made surfaces are deliberately absent: a road on
+ * a slope is still a road.
+ */
 export const TERRAIN_PIECES = {
   outside: { base: '#6B4E9B', texture: { kind: 'dot', color: '#7A5BAD', density: 0.35 } },
-  ground: { base: '#EBDDA8', texture: { kind: 'speckle', color: '#DFCE8F', density: 0.3 } },
-  grass: { base: '#7FB86B', texture: { kind: 'tuft', color: '#5F9C50', density: 0.35 } },
-  wood: { base: '#639E55', texture: { kind: 'tuft', color: '#4E8443', density: 0.35 } },
+  ground: { base: '#EBDDA8', texture: { kind: 'speckle', color: '#DFCE8F', density: 0.3 }, steep: { base: '#D3C293' } },
+  grass: { base: '#7FB86B', texture: { kind: 'tuft', color: '#5F9C50', density: 0.35 }, steep: { base: '#8FA163' } },
+  wood: { base: '#639E55', texture: { kind: 'tuft', color: '#4E8443', density: 0.35 }, steep: { base: '#6C8B4E' } },
   water: { base: '#58AEDC', texture: { kind: 'wave', color: '#8FCBE8', density: 0.3 } },
   lot: { base: '#B9B3A6', texture: { kind: 'stripe', color: '#E2DDD2', density: 0.33 } },
   // road cells never take the per-cell texture pass — they render as cased
@@ -176,6 +215,23 @@ export function cellHash(...nums) {
   return ((h >>> 0) % 10000) / 10000;
 }
 
+/**
+ * Stable integer seed from a string. FNV-1a over char codes — a real hash, so
+ * two areas in one park get unrelated streams. (A seed built by shifting a
+ * byte right by 16, or by adding x to y, collapses to a handful of distinct
+ * values and shows up as diagonal banding in the bake.)
+ * @param {string} s
+ * @returns {number}
+ */
+export function seedFromString(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
 const TERRAIN = { outside: 0, ground: 1, grass: 2, wood: 3, water: 4, lot: 5, road: 6, service: 7 };
 export const TERRAIN_NAMES = Object.fromEntries(Object.entries(TERRAIN).map(([k, v]) => [v, k]));
 
@@ -311,6 +367,54 @@ function paintLine(cells, cols, rows, pts, terrain, halfWidth) {
   }
 }
 
+/**
+ * Dither vegetation into the surface beside it.
+ *
+ * A filled polygon ends on a hard vector edge, which is exactly what a park
+ * does not look like — planting fades into pavement. Rather than offset the
+ * polygon and fill a band (which needs boolean geometry), this walks the
+ * cells that could receive spill and flips them with a probability that falls
+ * off with distance from the nearest vegetated neighbour.
+ *
+ * The pattern is a hash of the cell and the terrain it is spilling, so it is
+ * stable across reruns and different for grass than for wood.
+ *
+ * @param {number[]} cells terrain grid, mutated in place
+ * @param {number} cols
+ * @param {number} rows
+ * @param {{ spread?: number[], over?: number[], reach?: number, strength?: number }} [opts]
+ */
+export function crownStipple(cells, cols, rows, opts = {}) {
+  const spread = opts.spread ?? [TERRAIN.wood, TERRAIN.grass];
+  const over = opts.over ?? [TERRAIN.ground, TERRAIN.lot];
+  const reach = opts.reach ?? 2;
+  const strength = opts.strength ?? 0.55;
+  const src = cells.slice();
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      const i = y * cols + x;
+      if (!over.includes(src[i])) continue;
+      let nearest = -1;
+      let dist = Infinity;
+      for (let dy = -reach; dy <= reach; dy += 1) {
+        for (let dx = -reach; dx <= reach; dx += 1) {
+          const cx = x + dx;
+          const cy = y + dy;
+          if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) continue;
+          const v = src[cy * cols + cx];
+          if (!spread.includes(v)) continue;
+          const d = Math.hypot(dx, dy);
+          if (d < dist) { dist = d; nearest = v; }
+        }
+      }
+      if (nearest < 0) continue;
+      const falloff = 1 - (dist - 1) / reach;
+      if (falloff <= 0) continue;
+      if (cellHash(x, y, nearest) < falloff * strength) cells[i] = nearest;
+    }
+  }
+}
+
 const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', shop: 'shop', show: 'show', service: 'service' };
 
 /**
@@ -334,6 +438,7 @@ export function bakeModel(map, pois = [], opts = {}) {
   }
 
   const treeCells = { wood: [], grass: [] };
+  const scatterNotes = [];
   for (const [layer, terrain] of AREA_TERRAIN) {
     const clipRing = boundaryRing && BOUNDARY_CLIPPED_LAYERS.has(layer) ? boundaryRing : null;
     for (const way of map[layer] || []) {
@@ -343,6 +448,10 @@ export function bakeModel(map, pois = [], opts = {}) {
       if (terrain === TERRAIN.grass) treeCells.grass.push(...painted);
     }
   }
+
+  // Soften vegetation edges before roads and lots are stamped, so paths stay
+  // crisp and only open ground receives the spill.
+  crownStipple(cells, cols, rows);
 
   // Ground truth (aerial imagery): a parking lot is one contiguous asphalt
   // expanse; OSM often maps it as separate row polygons. A cell flanked by
@@ -405,15 +514,49 @@ export function bakeModel(map, pois = [], opts = {}) {
     return false;
   };
 
-  // Trees: dense canopy in woods, scattered on grass — hash-jittered, never random.
-  const trees = [];
-  for (const [x, y] of treeCells.wood) {
-    if (cells[y * cols + x] !== TERRAIN.wood || isOccupied(x, y)) continue;
-    if (cellHash(x, y) < 0.65) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.4 });
+  // Parking aisles, along each lot's own long axis.
+  const lotRows = [];
+  for (const way of map.parking || []) {
+    if (!(way.r?.length >= 3)) continue;
+    const ring = way.r.map(toCell);
+    const { placed, axis } = fillRows({
+      ring,
+      rowSpacing: Math.max(1.4, AISLE_METRES / tileMetres),
+      itemSpacing: Math.max(0.8, AISLE_DASH_METRES / tileMetres),
+      id: 'aisle',
+      // Only over ground the lot actually covers — a lot polygon that overlaps
+      // a path or a building must not stripe across it.
+      reject: (x, y) => {
+        const cx = Math.round(x);
+        const cy = Math.round(y);
+        if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) return true;
+        return cells[cy * cols + cx] !== TERRAIN.lot || isOccupied(cx, cy);
+      },
+    });
+    for (const p of placed) lotRows.push({ x: p.x, y: p.y, dx: axis.ax, dy: axis.ay });
   }
-  for (const [x, y] of treeCells.grass) {
-    if (cells[y * cols + x] !== TERRAIN.grass || isOccupied(x, y)) continue;
-    if (cellHash(x, y) < 0.14) trees.push({ x: x + cellHash(x, y, 1), y: y + cellHash(x, y, 2), big: cellHash(x, y, 3) > 0.8 });
+  lotRows.sort((a, b) => a.y - b.y || a.x - b.x);
+
+  // Trees: dense canopy in woods, scattered on grass. Placement is a real
+  // scatter (area-derived count, non-overlapping discs, noise-biased darts)
+  // rather than a per-cell coin flip, so sprites stop stacking on each other
+  // and a wood reads as a thicket instead of wallpaper. See display-scatter.mjs.
+  const trees = [];
+  for (const kind of ['wood', 'grass']) {
+    const candidates = treeCells[kind].filter(
+      ([x, y]) => cells[y * cols + x] === TERRAIN[kind] && !isOccupied(x, y),
+    );
+    const species = TREE_SPECIES[kind];
+    const { placed, dropped, requested } = scatterPoints({
+      cells: candidates,
+      species,
+      seed: seedFromString(`${map.meta?.id || 'venue'}:${kind}`),
+      density: densityFromSpecies(species) * TREE_DENSITY_SCALE[kind],
+      reject: (x, y) => isOccupied(Math.floor(x), Math.floor(y)),
+    });
+    // No silent caps: a wood that could not be filled is worth knowing about.
+    if (dropped > 0) scatterNotes.push({ kind, requested, dropped });
+    for (const p of placed) trees.push({ x: p.x, y: p.y, big: p.big });
   }
   trees.sort((a, b) => a.y - b.y || a.x - b.x);
 
@@ -437,6 +580,25 @@ export function bakeModel(map, pois = [], opts = {}) {
     })
     .sort((a, b) => a.y - b.y || a.x - b.x);
 
+  // Terrain channels: relief shading and a steepness flag the kit may paint
+  // differently. Absent when the venue has no DEM — flat is a real answer.
+  let shade = null;
+  let steep = null;
+  if (opts.terrain?.grid && opts.terrain?.shade) {
+    const { grid } = opts.terrain;
+    const steepAt = opts.terrain.steepDegrees ?? 18;
+    shade = opts.terrain.shade;
+    steep = new Array(cols * rows).fill(0);
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        // Grid and bake share an aspect but not always a resolution.
+        const gx = ((x + 0.5) / cols) * grid.cols;
+        const gy = ((y + 0.5) / rows) * grid.rows;
+        steep[y * cols + x] = grid.slopeAt(gx, gy) >= steepAt ? 1 : 0;
+      }
+    }
+  }
+
   const model = cropModel({
     version: 1,
     venue: map.meta?.id,
@@ -445,11 +607,15 @@ export function bakeModel(map, pois = [], opts = {}) {
     tileMetres: Math.round(tileMetres * 100) / 100,
     terrains: TERRAIN_NAMES,
     cells,
+    ...(shade ? { shade } : {}),
+    ...(steep ? { steep } : {}),
     roads,
     trees,
+    lotRows,
     buildings,
     tracks,
     badges,
+    ...(scatterNotes.length ? { scatterNotes } : {}),
   }, boundaryRing, opts.margin ?? 6, toGeo);
   // Declutter after the crop so a cluster whose greedy keeper fell
   // outside the window still pins an in-window member.
@@ -512,12 +678,19 @@ function cropModel(model, boundaryRing, margin, toGeo) {
   const x0 = Math.max(0, Math.floor(minX) - margin); const y0 = Math.max(0, Math.floor(minY) - margin);
   const x1 = Math.min(cols - 1, Math.ceil(maxX) + margin); const y1 = Math.min(rows - 1, Math.ceil(maxY) + margin);
   const newCols = x1 - x0 + 1; const newRows = y1 - y0 + 1;
-  const newCells = new Array(newCols * newRows);
-  for (let y = 0; y < newRows; y += 1) {
-    for (let x = 0; x < newCols; x += 1) {
-      newCells[y * newCols + x] = cells[(y + y0) * cols + (x + x0)];
+  const cropCells = (src) => {
+    const out = new Array(newCols * newRows);
+    for (let y = 0; y < newRows; y += 1) {
+      for (let x = 0; x < newCols; x += 1) {
+        out[y * newCols + x] = src[(y + y0) * cols + (x + x0)];
+      }
     }
-  }
+    return out;
+  };
+  const newCells = cropCells(cells);
+  // Per-cell terrain channels ride along, or the shade lands on the wrong ground.
+  const newShade = model.shade ? cropCells(model.shade) : null;
+  const newSteep = model.steep ? cropCells(model.steep) : null;
   const shiftPt = ([x, y]) => [x - x0, y - y0];
   // Entities entirely outside the window (neighboring businesses inside the
   // map bbox but beyond the venue boundary) leave the model, not just the
@@ -530,8 +703,11 @@ function cropModel(model, boundaryRing, margin, toGeo) {
     rows: newRows,
     bounds: geoBounds(x0, y0, x1, y1),
     cells: newCells,
+    ...(newShade ? { shade: newShade } : {}),
+    ...(newSteep ? { steep: newSteep } : {}),
     roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })).filter((r) => anyIn(r.pts)),
     trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })).filter((t) => ptIn([t.x, t.y])),
+    lotRows: (model.lotRows || []).map((r) => ({ ...r, x: r.x - x0, y: r.y - y0 })).filter((r) => ptIn([r.x, r.y])),
     buildings: model.buildings.map((b) => ({ ...b, ring: b.ring.map(shiftPt) })).filter((b) => anyIn(b.ring)),
     tracks: model.tracks.map((t) => ({ ...t, pts: t.pts.map(shiftPt) })).filter((t) => anyIn(t.pts)),
     badges: model.badges.map((b) => ({ ...b, x: b.x - x0, y: b.y - y0 })).filter((b) => ptIn([b.x, b.y])),
