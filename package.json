@@ -49,6 +49,7 @@
     "ios:wire-watch": "node scripts/ios/wire-watch-target.mjs",
     "ios:check-watch": "node scripts/ios/wire-watch-target.mjs --check",
     "clerk:check": "node scripts/clerk-check.mjs",
+    "profile:max-rank": "node scripts/profile-max-rank.mjs",
     "databricks:e2e": "node scripts/databricks-e2e.mjs",
     "venues:discover-parks-api": "node packages/venue-builder/bin/discover-parks-api.mjs",
     "venues:geocode-catalog": "node packages/venue-builder/bin/geocode-catalog.mjs",
