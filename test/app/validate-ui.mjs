@@ -26,6 +26,7 @@
  */
 
 import { spawn, execFileSync } from 'node:child_process';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { cpus } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,7 +59,15 @@ const baseRef = baseIdx >= 0 ? args[baseIdx + 1] : process.env.TEST_BASE_REF || 
  * pool, sets the wall clock.
  */
 const jobsIdx = args.indexOf('--jobs');
-const DEFAULT_JOBS = Math.max(1, Math.min(3, (cpus().length || 2) - 1));
+// os.cpus() reads the host, not the cgroup: a 4-vCPU container with a small
+// CPU share still reports 4 and gets 3 parallel browsers, which starve each
+// suite's phone-boot wait. VALIDATE_UI_JOBS caps the default from outside
+// callers that cannot pass --jobs (pre-merge-vertical hardcodes its args).
+const envJobs = Number(process.env.VALIDATE_UI_JOBS);
+const DEFAULT_JOBS =
+  Number.isFinite(envJobs) && envJobs >= 1
+    ? Math.floor(envJobs)
+    : Math.max(1, Math.min(3, (cpus().length || 2) - 1));
 const jobs = jobsIdx >= 0 ? Math.max(1, Number(args[jobsIdx + 1]) || 1) : DEFAULT_JOBS;
 
 const manifest = loadModulesManifest();
@@ -67,10 +76,13 @@ function gitChangedFiles(ref) {
   try {
     const mergeBase = execFileSync('git', ['merge-base', 'HEAD', ref], {
       cwd: ROOT,
+      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+      env: scrubGitEnv(),
       encoding: 'utf8',
     }).trim();
     return execFileSync('git', ['diff', '--name-only', `${mergeBase}...HEAD`], {
       cwd: ROOT,
+      env: scrubGitEnv(),
       encoding: 'utf8',
     })
       .split('\n')

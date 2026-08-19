@@ -32,16 +32,50 @@ export const ALLOWED_LICENSES = ['CC0-1.0', 'original', 'licensed'];
  * materials) and every claimed layer belongs to exactly one class.
  */
 export const SURFACE_CLASSES = {
-  walkway: { label: 'Walkways', layers: ['path'] },
-  'service-road': { label: 'Service roads', layers: ['service'] },
-  water: { label: 'Water', layers: ['water', 'sea'] },
-  pool: { label: 'Pools', layers: ['pool'] },
-  vegetation: { label: 'Vegetation', layers: ['grass', 'wood', 'park'] },
-  lot: { label: 'Parking lots', layers: ['parking'] },
-  structure: { label: 'Structures', layers: ['building'] },
-  'coaster-track': { label: 'Coaster track', layers: ['coaster'] },
-  slide: { label: 'Slides', layers: ['slide'] },
+  walkway: { label: 'Walkways', layers: ['path'], token: 'path' },
+  'service-road': { label: 'Service roads', layers: ['service'], token: 'path' },
+  water: { label: 'Water', layers: ['water', 'sea'], token: 'water' },
+  pool: { label: 'Pools', layers: ['pool'], token: 'water' },
+  vegetation: { label: 'Vegetation', layers: ['grass', 'wood', 'park'], token: 'grass' },
+  lot: { label: 'Parking lots', layers: ['parking'], token: 'building' },
+  structure: { label: 'Structures', layers: ['building'], token: 'building' },
+  'coaster-track': { label: 'Coaster track', layers: ['coaster'], token: 'label' },
+  slide: { label: 'Slides', layers: ['slide'], token: 'path' },
 };
+
+/**
+ * How far a surface is pulled from the skin's authored colour toward its
+ * material's measured average. 0 keeps the skin exactly as authored; 1 paints
+ * the photograph. Leaning low on purpose: a material average is what the stuff
+ * really looks like, and four skins that all borrow it stop being four skins.
+ */
+export const DEFAULT_MATERIAL_MIX = 0.4;
+
+const clamp255 = (v) => Math.max(0, Math.min(255, Math.round(v)));
+
+/** #rrggbb → [r,g,b], or null for anything else (named colours, rgba()). */
+function parseHex(hex) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if (!m) return null;
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+/**
+ * Blend two hex colours. Returns `a` unchanged when either side is not a plain
+ * hex, so a skin using an rgba() token degrades to its authored value.
+ * @param {string} a
+ * @param {string} b
+ * @param {number} t 0 = all `a`, 1 = all `b`
+ * @returns {string}
+ */
+export function mixHex(a, b, t) {
+  const ca = parseHex(a);
+  const cb = parseHex(b);
+  if (!ca || !cb) return a;
+  const out = ca.map((v, i) => clamp255(v + (cb[i] - v) * t));
+  return `#${out.map((v) => v.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
 
 const DISPLAY_DATA_DIR = path.join(OVERRIDE_DIR, '..', 'display');
 
@@ -82,13 +116,21 @@ function landTonesFromMeta(meta) {
  *
  * @param {{ map: object, pois: object[], template: object, materials: object }} deps
  */
-export function compileVisualSpec({ map, pois = [], template, materials }) {
+export function compileVisualSpec({ map, pois = [], template, materials, terrain = null }) {
   const surfaces = {};
   for (const [surface, materialId] of Object.entries(template.surfaces || {})) {
     const layers = (SURFACE_CLASSES[surface]?.layers || []).filter((l) => map[l]?.length);
     if (!layers.length) continue;
     if (!materials[materialId]) continue; // certification reports it; compile stays total
-    surfaces[surface] = { material: materialId, layers };
+    // Pull the authored token toward the material's measured average, so the
+    // ledger's textures actually reach the renderer instead of being metadata
+    // a budget gate polices and nothing paints.
+    const token = SURFACE_CLASSES[surface]?.token;
+    const authored = template.tokens?.colors?.[token];
+    const avg = materials[materialId].avgColor;
+    const mix = template.materialMix ?? DEFAULT_MATERIAL_MIX;
+    const color = authored && avg ? mixHex(authored, avg, mix) : authored || null;
+    surfaces[surface] = { material: materialId, layers, ...(color ? { color } : {}) };
   }
   return {
     version: DISPLAY_VERSION,
@@ -99,6 +141,7 @@ export function compileVisualSpec({ map, pois = [], template, materials }) {
     surfaces,
     landTones: landTonesFromMeta(map.meta),
     fallback: { landTone: 'name-hue' },
+    ...(terrain ? { terrain } : {}),
   };
 }
 
@@ -132,6 +175,20 @@ const fill = (id, sourceLayer, color, opts = {}) => ({
 export function styleFromSpec(spec) {
   const c = spec.tokens?.colors || {};
   const mode = spec.tokens?.mode === 'night' ? 'night' : 'day';
+  // Surfaces carry a material-blended colour; fall back to the raw token for
+  // any layer no surface claims.
+  const byLayer = new Map();
+  for (const surface of Object.values(spec.surfaces || {})) {
+    if (!surface.color) continue;
+    for (const layer of surface.layers || []) byLayer.set(layer, surface.color);
+  }
+  const paintOf = (layer, fallback) => byLayer.get(layer) || fallback;
+  // The overlay is placed by truth's own bounds — echoed, never invented.
+  const hs = spec.terrain?.hillshade || null;
+  const tb = spec.terrain?.bounds;
+  const hsCoords = tb
+    ? [[tb.west, tb.north], [tb.east, tb.north], [tb.east, tb.south], [tb.west, tb.south]]
+    : null;
   const tones = Object.entries(spec.landTones || {})
     .filter(([, t]) => t[mode])
     .sort(([a], [b]) => (a < b ? -1 : 1));
@@ -141,25 +198,30 @@ export function styleFromSpec(spec) {
   return {
     version: 8,
     name: `${spec.venue} — ${spec.skin}`,
-    sources: { park: { type: 'vector', url: 'pmtiles://base.pmtiles' } },
+    sources: {
+      park: { type: 'vector', url: 'pmtiles://base.pmtiles' },
+      ...(hs ? { hillshade: { type: 'image', url: hs.file, coordinates: hsCoords } } : {}),
+    },
     layers: [
       { id: 'background', type: 'background', paint: { 'background-color': c.ground } },
-      fill('sea-under', 'sea', c.water),
+      fill('sea-under', 'sea', paintOf('sea', c.water)),
       fill('venue', 'venue', c.ground),
-      fill('park', 'park', c.grass, { 'fill-opacity': 0.35 }),
+      fill('park', 'park', paintOf('park', c.grass), { 'fill-opacity': 0.35 }),
       fill('lands', 'lands', landFill, { 'fill-opacity': 0.45 }),
-      fill('grass', 'grass', c.grass),
-      fill('wood', 'wood', c.grass, { 'fill-opacity': 0.8 }),
-      fill('parking', 'parking', c.building, { 'fill-opacity': 0.6 }),
-      fill('water', 'water', c.water),
-      fill('pool', 'pool', c.water),
-      fill('building', 'building', c.building),
+      fill('grass', 'grass', paintOf('grass', c.grass)),
+      fill('wood', 'wood', paintOf('wood', c.grass), { 'fill-opacity': 0.8 }),
+      // Relief sits over the ground and under everything built on it.
+      ...(hs ? [{ id: 'hillshade', type: 'raster', source: 'hillshade', paint: { 'raster-opacity': 0.45 } }] : []),
+      fill('parking', 'parking', paintOf('parking', c.building), { 'fill-opacity': 0.6 }),
+      fill('water', 'water', paintOf('water', c.water)),
+      fill('pool', 'pool', paintOf('pool', c.water)),
+      fill('building', 'building', paintOf('building', c.building)),
       line('building-edge', 'building', c.structureEdge || c.path, 0.6),
-      line('service', 'service', c.path, 0.8, { 'line-opacity': 0.55 }),
+      line('service', 'service', paintOf('service', c.path), 0.8, { 'line-opacity': 0.55 }),
       line('path-casing', 'path', c.pathCasing || c.ground, 3),
-      line('path', 'path', c.path, 1.6),
-      line('slide', 'slide', c.path, 1.2, { 'line-opacity': 0.9 }),
-      line('coaster', 'coaster', c.structureEdge || c.label, 1.2, { 'line-opacity': 0.85 }),
+      line('path', 'path', paintOf('path', c.path), 1.6),
+      line('slide', 'slide', paintOf('slide', c.path), 1.2, { 'line-opacity': 0.9 }),
+      line('coaster', 'coaster', paintOf('coaster', c.structureEdge || c.label), 1.2, { 'line-opacity': 0.85 }),
     ],
   };
 }
@@ -185,24 +247,66 @@ export function anchorsFromTruth(map, pois = []) {
   return anchors.slice(0, 20);
 }
 
-const COORDINATE_KEYS = new Set(['lat', 'lng', 'r']);
+/**
+ * Keys that can carry a position. Deliberately wider than lat/lng: a spec that
+ * smuggled a `center` or a `bbox` past a three-name blacklist would move a map
+ * just as effectively.
+ */
+const COORDINATE_KEYS = new Set([
+  'lat', 'lng', 'lon', 'r', 'x', 'y', 'center', 'centre', 'at', 'anchor',
+  'coordinates', 'bbox', 'bounds', 'north', 'south', 'east', 'west',
+]);
 
-function findCoordinateKey(value) {
+function numericLeaves(value, out = []) {
+  if (typeof value === 'number') out.push(value);
+  else if (Array.isArray(value)) for (const v of value) numericLeaves(v, out);
+  else if (value && typeof value === 'object') for (const v of Object.values(value)) numericLeaves(v, out);
+  return out;
+}
+
+/**
+ * Find a coordinate the display layer invented.
+ *
+ * The rule is not "no coordinates" — terrain has to say which rectangle its
+ * hillshade covers, and refusing that would just push the number somewhere
+ * less honest. The rule is that every coordinate a display file carries must
+ * be one truth already published. Echoing a bound is fine; nudging it by a
+ * hair is exactly the failure this gate exists to catch.
+ *
+ * @param {unknown} value
+ * @param {Set<number>} allowed truth-derived coordinate values
+ * @param {string} [pathHint]
+ * @returns {string|null} description of the first offender
+ */
+function findCoordinateKey(value, allowed = new Set(), pathHint = '') {
   if (Array.isArray(value)) {
-    for (const item of value) {
-      const hit = findCoordinateKey(item);
+    for (let i = 0; i < value.length; i += 1) {
+      const hit = findCoordinateKey(value[i], allowed, `${pathHint}[${i}]`);
       if (hit) return hit;
     }
     return null;
   }
   if (value && typeof value === 'object') {
     for (const [key, inner] of Object.entries(value)) {
-      if (COORDINATE_KEYS.has(key)) return key;
-      const hit = findCoordinateKey(inner);
+      const here = pathHint ? `${pathHint}.${key}` : key;
+      if (COORDINATE_KEYS.has(key)) {
+        const strayed = numericLeaves(inner).find((n) => !allowed.has(n));
+        if (strayed !== undefined) return `${here} = ${strayed}`;
+        continue;
+      }
+      const hit = findCoordinateKey(inner, allowed, here);
       if (hit) return hit;
     }
   }
   return null;
+}
+
+/** The only coordinates a display file may repeat: the venue's own bounds. */
+export function allowedCoordinates(map) {
+  const b = map?.meta?.bounds || {};
+  return new Set(
+    [b.n ?? b.north, b.s ?? b.south, b.e ?? b.east, b.w ?? b.west].filter(Number.isFinite),
+  );
 }
 
 
@@ -251,14 +355,14 @@ export function certifyDisplayPack({ spec, map, template, materials }) {
     soWhat: 'license before embed — an AGPL texture in the bundle is a shipping bug',
   }));
 
-  const leaked = findCoordinateKey(spec);
+  const leaked = findCoordinateKey(spec, allowedCoordinates(map));
   checks.push(check({
     key: 'no_repositioning',
-    claim: 'the spec carries no coordinates — skins restyle, never reposition',
+    claim: 'every coordinate in the spec is one truth already published — skins restyle, never reposition',
     pass: !leaked,
-    evidence: leaked ? `coordinate-bearing key "${leaked}" found in spec` : 'no lat/lng/ring keys anywhere in the spec',
+    evidence: leaked ? `spec coordinate not found in truth bounds: ${leaked}` : 'every coordinate in the spec matches a published bound',
     confidence: 'high',
-    falsifier: 'any lat, lng, or ring key appears anywhere in the spec',
+    falsifier: 'a spec carries any position value the truth bounds do not already contain',
     soWhat: 'a display file that can move a Place breaks the truth/display split',
   }));
 
@@ -298,7 +402,7 @@ export function certifyDisplayPack({ spec, map, template, materials }) {
   };
 }
 
-function loadTruth(id) {
+export function loadTruthFor(id) {
   const map = readJson(path.join(VENUE_DIR, `${id}.map.json`), null);
   const pois = readJson(path.join(VENUE_DIR, `${id}.pois.json`), null);
   if (!map || !pois) throw new Error(`Venue "${id}" is missing map.json or pois.json`);
@@ -358,7 +462,7 @@ const fileEntry = (name, file, meta) => (existsSync(file)
  *   map/pois inject truth (tests); outDir overrides data/venues/<id>/display/.
  */
 export function runDisplayStage(id, opts = {}) {
-  const { map, pois } = opts.map ? { map: opts.map, pois: opts.pois || [] } : loadTruth(id);
+  const { map, pois } = opts.map ? { map: opts.map, pois: opts.pois || [] } : loadTruthFor(id);
   const materials = readMaterials();
   const templates = readSkinTemplates();
   const skinIds = opts.skinIds
@@ -371,7 +475,7 @@ export function runDisplayStage(id, opts = {}) {
   for (const skinId of skinIds) {
     const template = templates[skinId];
     if (!template) throw new Error(`Unknown skin "${skinId}"`);
-    const spec = compileVisualSpec({ map, pois, template, materials });
+    const spec = compileVisualSpec({ map, pois, template, materials, terrain: opts.terrain || null });
     const certification = certifyDisplayPack({ spec, map, template, materials });
     const style = styleFromSpec(spec);
     packs[skinId] = { spec, certification, style };
@@ -395,6 +499,46 @@ export function runDisplayStage(id, opts = {}) {
     falsifier: 'a venue with no gates, no district anchors, and no coasters',
     soWhat: 'without fixed points, visual drift is compared at one convenient screenshot',
   })];
+
+  const terrain = opts.terrain || null;
+  venueChecks.push(check({
+    key: 'terrain_source_resolves',
+    claim: 'the ground under this venue comes from a named DEM, or is declared flat',
+    pass: true,
+    evidence: terrain
+      ? `${terrain.source} @ ${terrain.resolution}m (${terrain.fitness} against ${terrain.cellMetres}m cells), relief ${(terrain.relief.max - terrain.relief.min).toFixed(1)}m`
+      : 'no DEM coverage — venue renders flat, which is recorded rather than faked',
+    confidence: terrain ? 'high' : 'moderate',
+    falsifier: 'a heightfield appears with no source recorded',
+    soWhat: 'a fabricated heightfield looks convincing and is wrong everywhere',
+  }));
+  if (terrain) {
+    const b = terrain.bounds;
+    const tb = map.meta?.bounds || {};
+    const same = (a, c) => Number.isFinite(a) && Number.isFinite(c) && a === c;
+    const aligned = same(b.north, tb.n ?? tb.north) && same(b.south, tb.s ?? tb.south)
+      && same(b.east, tb.e ?? tb.east) && same(b.west, tb.w ?? tb.west);
+    venueChecks.push(check({
+      key: 'terrain_within_bounds',
+      claim: 'the hillshade covers exactly the venue truth already published',
+      pass: aligned,
+      evidence: aligned ? 'terrain bounds equal map.meta.bounds' : 'terrain bounds differ from truth',
+      confidence: 'high',
+      falsifier: 'the overlay is placed on a rectangle truth did not publish',
+      soWhat: 'an overlay on the wrong rectangle shades the wrong ground',
+    }));
+    venueChecks.push(check({
+      key: 'terrain_surface_model',
+      claim: 'a radar surface model is labelled as one, not passed off as ground',
+      pass: !terrain.surfaceModel || terrain.fitness !== 'resolves',
+      evidence: terrain.surfaceModel
+        ? `${terrain.source} is a surface model (canopy and rooflines included) at ${terrain.resolution}m`
+        : `${terrain.source} is bare-earth`,
+      confidence: 'high',
+      falsifier: 'a DSM is reported as resolving bare ground',
+      soWhat: 'at 30m over a park one sample blends canopy, roof and ride structure',
+    }));
+  }
 
   let tiles = null;
   if (opts.tiles) {

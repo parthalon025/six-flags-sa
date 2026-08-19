@@ -23,13 +23,15 @@
       "material": "paving-stones--warm",
       "layers": [
         "path"
-      ]
+      ],
+      "color": "#A9987D"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
-      ]
+      ],
+      "color": "#8C7B62"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -37,48 +39,83 @@
         "grass",
         "wood",
         "park"
-      ]
+      ],
+      "color": "#334126"
     },
     "water": {
       "material": "water--calm",
       "layers": [
         "water",
         "sea"
-      ]
+      ],
+      "color": "#35728F"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
-      ]
+      ],
+      "color": "#327A94"
     },
     "coaster-track": {
       "material": "steel--track",
       "layers": [
         "coaster"
-      ]
+      ],
+      "color": "#B8B8B4"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
-      ]
+      ],
+      "color": "#D2996C"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
-      ]
+      ],
+      "color": "#3A363F"
     },
     "lot": {
       "material": "concrete--lot",
       "layers": [
         "parking"
-      ]
+      ],
+      "color": "#5B5762"
     }
   },
   "landTones": {},
   "fallback": {
     "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n42w083/USGS_13_n42w083.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 7.44,
+    "fitness": "marginal",
+    "relief": {
+      "min": 173.3,
+      "max": 179.4
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 257
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 41.4926,
+      "south": 41.4753,
+      "east": -82.67521,
+      "west": -82.69661
+    },
+    "steepDegrees": 18
   }
 }
