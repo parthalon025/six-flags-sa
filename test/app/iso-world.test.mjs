@@ -4,6 +4,7 @@ import {
   ISO_ROTATIONS,
   assembleIsoMeshes,
   buildingHeightM,
+  buildingHitsLiftedTrack,
   buildingHitsTrack,
   depthKey,
   extrudeBuilding,
@@ -241,6 +242,45 @@ assert.equal(buildingHitsTrack(tallHall, railPastRoof, 10), false, 'ground pad m
 const afterRoof = assembleIsoMeshes([tallHall, stallBeside], [railPastRoof]);
 assert.equal(afterRoof.buildings.length, 1, 'lifted rail through the roof still drops the hall');
 assert.equal(afterRoof.buildings[0].i, 1);
+
+// A lifted rail that clips the hall's silhouette only at a non-zero rotation
+// must still be culled — the rotation-0-only check missed this class of clip
+// (#522). Verified against a fixed lift height (heightAmp 0) so per-point
+// height doesn't shift between rotations, isolating the projection effect:
+// this rail's screen silhouette clears the hall at r0/r2 but punches through
+// it at r1/r3 (confirmed by direct isoLocal/convexHull probing at each
+// rotation), so the any-of-4-rotations union is required to catch it.
+const skewRail = [
+  [15, -13],
+  [16, -13],
+];
+const skewLift = { heightAmp: 0, baseHeight: 8 };
+const skewHeightM = buildingHeightM(tallHall);
+assert.equal(
+  buildingHitsLiftedTrack(tallHall, skewRail, skewHeightM, 8, skewLift),
+  true,
+  'lifted rail that only clips at r1/r3 is still culled (#522)',
+);
+const afterSkew = assembleIsoMeshes([tallHall, stallBeside], [skewRail], {
+  heightAmp: skewLift.heightAmp,
+  baseHeight: skewLift.baseHeight,
+  liftedTrackPadM: 8,
+});
+assert.equal(afterSkew.buildings.length, 1, 'building culled via assembleIsoMeshes regardless of render rotation');
+assert.equal(afterSkew.buildings[0].i, 1, 'the hall (not the stall) is the one dropped');
+
+// No-collision control: shifting the rail well clear of the hall at every
+// rotation must not over-cull.
+const clearRail = [
+  [100, 100],
+  [101, 100],
+];
+assert.equal(
+  buildingHitsLiftedTrack(tallHall, clearRail, skewHeightM, 8, skewLift),
+  false,
+  'a rail nowhere near the hall at any rotation is not culled',
+);
+
 
 // Four quarter-turn views: isoInverse is the exact inverse of isoLocal.
 assert.equal(ISO_ROTATIONS, 4);
