@@ -74,6 +74,12 @@ Re-run `npm run test:pre-merge-vertical` after changing code or dependencies —
 
 Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
 
+### Auto-ready draft PRs
+
+The `auto-ready` job in `test-app.yml` marks a draft PR ready for review automatically once `select` reports `skip_ci == 'true'` — i.e. a fresh `local-ci-verified` tag covers the diff, so a human has nothing left to gate before review starts. It runs `gh pr ready` with the job's own `pull-requests: write` permission (scoped to that job only; the workflow's default is `contents: read`). It is not in the `ci` job's `needs:` list — it can never block a merge, whatever it does.
+
+The job is skipped entirely for a non-PR event, an already-ready PR, or no tag. For a draft PR from a **fork** that does carry a fresh tag, the job still runs — a fork's `GITHUB_TOKEN` on the `pull_request` event is read-only regardless of the permissions block, so `gh pr ready` fails there rather than being skipped. `continue-on-error: true` on that step is what keeps the expected failure from showing red on a job nothing depends on.
+
 ## Test app (`.github/workflows/test-app.yml`)
 
 **Touch-only policy:** PRs and `main` pushes run only modules matched by the diff — not the full matrix every time.
