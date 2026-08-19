@@ -286,3 +286,50 @@ In order of "prototype this first":
 - [`../adr/0013-display-pipeline.md`](../adr/0013-display-pipeline.md)
 - [GitHub issue #493](https://github.com/parthalon025/six-flags-sa/issues/493)
 - [PR #471](https://github.com/parthalon025/six-flags-sa/pull/471) (`claude/custom-maps-builder-venue-6y1fte`)
+
+---
+
+## Amendment (2026-08-18) — priority inverted after measurement
+
+The shortlist above ranks Copernicus DEM GLO-30 first and USGS 3DEP second, on
+coverage: Copernicus works everywhere, so it unblocks every venue. Implementing
+both showed that ordering is wrong for this pipeline, and [ADR-0015](../adr/0015-terrain-in-display.md)
+records the reversal.
+
+**The yardstick is the bake grid, not the park.** `display-bake.mjs` rasterises
+at `maxCols: 240`, which on the four shipped venues is **2.44–7.44 m per cell**:
+
+| Venue | bake cell | 3DEP 10 m | Copernicus 30 m |
+| --- | --- | --- | --- |
+| big-kahunas | 2.44 m | coarse | far coarser |
+| kings-island | 6.45 m | marginal | ~5× the cell |
+| six-flags-fiesta-texas | 6.64 m | marginal | ~4.5× the cell |
+| cedar-point | 7.44 m | marginal | ~4× the cell |
+
+A 30 m posting under a 6 m raster means every painted value between posts is
+interpolation. Building the terrain channel against that first would have baked
+in smoothing assumptions the finer path then had to undo.
+
+**The DSM caveat is disqualifying at this scale, not just a footnote.** §4 above
+notes correctly that Copernicus and SRTM are surface models. Over a *region*
+that costs some canopy height. Over a *park* at 30 m, one sample spans a midway,
+a tree line and a coaster's lift hill together — the reported "ground" sits on
+top of the ride. 3DEP's lidar-derived DTM is the only candidate that avoids it.
+
+**What shipped.** Both adapters, with `lib/terrain/dem-source.mjs` preferring
+3DEP where flown and falling back to Copernicus abroad, recording the chosen
+source, its resolution, and whether it actually resolves the grid. Live results:
+all four venues resolved to 3DEP at 10 m (Kings Island 48.4 m relief, Fiesta
+Texas 80.1 m, Big Kahuna's 15.5 m, Cedar Point 6.1 m).
+
+**Unchanged from this note:** the Truth-vs-Display determination (§"Truth vs.
+Display"), which was right and is now enforced by ADR-0015 and by
+`evidence_sources: []` on all five registry rows. The OpenTopography
+Enterprise-key question is also unchanged and still unresolved — its row is
+`evaluate`, and nothing depends on it, since the direct buckets need no key.
+
+**Still not done:** 3DEP's 1 m seamless collection (`S1M/`) is real and its
+tiles are named on a projected scheme that cannot be derived from lat/lng
+without the bucket's spatial-metadata index. Rather than guess a path, a venue
+may pin an explicit tile URL. Deriving S1M names is the natural next step and
+would move every US venue from `marginal` to `resolves`.

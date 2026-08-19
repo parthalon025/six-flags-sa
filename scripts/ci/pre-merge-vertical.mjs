@@ -14,6 +14,7 @@
  *   npm run test:pre-merge-vertical
  */
 import { spawn, spawnSync } from 'node:child_process';
+import { scrubGitEnv } from '../lib/git-env.mjs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,10 +59,13 @@ export function gitChangedFiles(baseRef = 'origin/main', cwd = root) {
   try {
     const mergeBase = execFileSync('git', ['merge-base', 'HEAD', baseRef], {
       cwd,
+      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+      env: scrubGitEnv(),
       encoding: 'utf8',
     }).trim();
     const out = execFileSync('git', ['diff', '--name-only', `${mergeBase}...HEAD`], {
       cwd,
+      env: scrubGitEnv(),
       encoding: 'utf8',
     });
     return out
