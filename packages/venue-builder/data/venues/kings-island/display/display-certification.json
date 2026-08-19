@@ -123,6 +123,15 @@
       "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
     },
     {
+      "key": "tiles",
+      "claim": "base.pmtiles builds and fits the 15 MB pack budget",
+      "pass": true,
+      "evidence": "base.pmtiles 100 KB",
+      "confidence": "high",
+      "falsifier": "tippecanoe fails or the archive exceeds the download budget",
+      "soWhat": "the display pack rides the venue download; an oversized or missing archive blocks it"
+    },
+    {
       "key": "bake:blueprint-survey:reference_profile_resolves",
       "claim": "kit \"blueprint-survey\" has a committed reference profile",
       "pass": true,
@@ -139,6 +148,15 @@
       "confidence": 0.9,
       "falsifier": "worst class grass beyond tolerance on a rerun",
       "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:blueprint-survey:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, lot, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
     },
     {
       "key": "bake:blueprint-survey:style_road_hierarchy",
@@ -207,7 +225,7 @@
       "key": "bake:blueprint-survey:style_bake_deterministic",
       "claim": "a fresh render of the same model samples byte-identical pixels",
       "pass": true,
-      "evidence": "render bccb7d98 vs rerender bccb7d98",
+      "evidence": "render 582e631e vs rerender 582e631e",
       "confidence": 1,
       "falsifier": "any clock or RNG sneaking into the compositor",
       "soWhat": "determinism is the bake’s core guarantee"
@@ -238,6 +256,15 @@
       "confidence": 0.9,
       "falsifier": "worst class wood beyond tolerance on a rerun",
       "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:island-brochure:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, lot, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
     },
     {
       "key": "bake:island-brochure:style_road_hierarchy",
@@ -306,7 +333,7 @@
       "key": "bake:island-brochure:style_bake_deterministic",
       "claim": "a fresh render of the same model samples byte-identical pixels",
       "pass": true,
-      "evidence": "render 6a3d21d5 vs rerender 6a3d21d5",
+      "evidence": "render 154d2439 vs rerender 154d2439",
       "confidence": 1,
       "falsifier": "any clock or RNG sneaking into the compositor",
       "soWhat": "determinism is the bake’s core guarantee"
@@ -337,6 +364,15 @@
       "confidence": 0.9,
       "falsifier": "worst class grass beyond tolerance on a rerun",
       "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:midnight-carnival:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, lot, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
     },
     {
       "key": "bake:midnight-carnival:style_road_hierarchy",
@@ -405,7 +441,7 @@
       "key": "bake:midnight-carnival:style_bake_deterministic",
       "claim": "a fresh render of the same model samples byte-identical pixels",
       "pass": true,
-      "evidence": "render 43432d5b vs rerender 43432d5b",
+      "evidence": "render e498d08b vs rerender e498d08b",
       "confidence": 1,
       "falsifier": "any clock or RNG sneaking into the compositor",
       "soWhat": "determinism is the bake’s core guarantee"
@@ -436,6 +472,15 @@
       "confidence": 0.9,
       "falsifier": "worst class wood beyond tolerance on a rerun",
       "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:rpg-overworld:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, lot, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
     },
     {
       "key": "bake:rpg-overworld:style_road_hierarchy",
@@ -504,7 +549,7 @@
       "key": "bake:rpg-overworld:style_bake_deterministic",
       "claim": "a fresh render of the same model samples byte-identical pixels",
       "pass": true,
-      "evidence": "render cf78e49c vs rerender cf78e49c",
+      "evidence": "render 09da2e4f vs rerender 09da2e4f",
       "confidence": 1,
       "falsifier": "any clock or RNG sneaking into the compositor",
       "soWhat": "determinism is the bake’s core guarantee"
@@ -531,19 +576,19 @@
   "bakes": {
     "blueprint-survey": {
       "certified": true,
-      "signature": "bccb7d98"
+      "signature": "582e631e"
     },
     "island-brochure": {
       "certified": true,
-      "signature": "6a3d21d5"
+      "signature": "154d2439"
     },
     "midnight-carnival": {
       "certified": true,
-      "signature": "43432d5b"
+      "signature": "e498d08b"
     },
     "rpg-overworld": {
       "certified": true,
-      "signature": "cf78e49c"
+      "signature": "09da2e4f"
     }
   },
   "skins": {

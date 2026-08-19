@@ -3,7 +3,7 @@
   "tiers": {
     "vector": {
       "file": "base.pmtiles",
-      "bytes": 27717
+      "bytes": 27749
     },
     "raster": {
       "gap": true,

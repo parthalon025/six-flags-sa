@@ -57,6 +57,15 @@
       "soWhat": "without fixed points, visual drift is compared at one convenient screenshot"
     },
     {
+      "key": "tiles",
+      "claim": "base.pmtiles builds and fits the 15 MB pack budget",
+      "pass": true,
+      "evidence": "base.pmtiles 27 KB",
+      "confidence": "high",
+      "falsifier": "tippecanoe fails or the archive exceeds the download budget",
+      "soWhat": "the display pack rides the venue download; an oversized or missing archive blocks it"
+    },
+    {
       "key": "bake:blueprint-survey:reference_profile_resolves",
       "claim": "kit \"blueprint-survey\" has a committed reference profile",
       "pass": true,
@@ -73,6 +82,15 @@
       "confidence": 0.9,
       "falsifier": "worst class grass beyond tolerance on a rerun",
       "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:blueprint-survey:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
     },
     {
       "key": "bake:blueprint-survey:style_road_hierarchy",
@@ -174,6 +192,15 @@
       "soWhat": "palette drift is the first way a design language stops matching its reference"
     },
     {
+      "key": "bake:island-brochure:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
+    },
+    {
       "key": "bake:island-brochure:style_road_hierarchy",
       "claim": "roads separate from the park floor (ΔE ≥ 15, darker)",
       "pass": true,
@@ -273,6 +300,15 @@
       "soWhat": "palette drift is the first way a design language stops matching its reference"
     },
     {
+      "key": "bake:midnight-carnival:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
+    },
+    {
       "key": "bake:midnight-carnival:style_road_hierarchy",
       "claim": "roads separate from the park floor (ΔE ≥ 25, lighter)",
       "pass": true,
@@ -370,6 +406,15 @@
       "confidence": 0.9,
       "falsifier": "worst class grass beyond tolerance on a rerun",
       "soWhat": "palette drift is the first way a design language stops matching its reference"
+    },
+    {
+      "key": "bake:rpg-overworld:style_terrain_coverage",
+      "claim": "every terrain class the venue truth implies (map.grass, map.parking, map.water, …) survives to the sampled render",
+      "pass": true,
+      "evidence": "truth implies grass, road, service, water, wood; all present",
+      "confidence": 1,
+      "falsifier": "a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)",
+      "soWhat": "a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world"
     },
     {
       "key": "bake:rpg-overworld:style_road_hierarchy",

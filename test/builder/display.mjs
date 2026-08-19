@@ -279,7 +279,9 @@ await check('buildTiles produces base.pmtiles, or records the gap honestly', () 
 
 /* ------------------------------------------------------- the bake pieces -- */
 
-const { bakeModel, declutterBadges, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS } = await import(
+const {
+  bakeModel, declutterBadges, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS, impliedTerrainClasses,
+} = await import(
   '../../packages/venue-builder/lib/display-bake.mjs'
 );
 
@@ -327,6 +329,81 @@ await check('the bake model is truth-locked and deterministic', () => {
   assert.ok(a.trees.every((t) => Number.isFinite(t.x) && t.x <= a.cols && t.y <= a.rows));
   assert.deepEqual(a.tracks.filter((t) => t.kind === 'slide').map((t) => t.idx), [0, 1],
     'slides carry indices; color belongs to the kit piece');
+  return true;
+});
+
+// Issue #518: a peninsula venue's map.water/map.sea is Lake Erie clipped to
+// the MAP BBOX, not to the venue boundary — the water polygon can span the
+// entire bbox even though the venue boundary is a much smaller box inside
+// it. Water painted last, unclipped, used to paint over that land. This
+// fixture reproduces the exact shape: a sea polygon spanning the whole bbox,
+// and a grass strip straddling the boundary's left edge, half outside it.
+const BOUNDARY_LEAK_MAP = {
+  meta: { id: 'peninsula-park', bounds: { n: 0.01, s: 0, e: 0.01, w: 0 } },
+  boundary: [[0.001, 0.001], [0.009, 0.001], [0.009, 0.009], [0.001, 0.009]],
+  grass: [{ r: [[0, 0.004], [0.002, 0.004], [0.002, 0.006], [0, 0.006]] }],
+  sea: [{ r: [[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01]] }],
+};
+
+await check('water/sea/pool paint only inside the venue boundary — the lake no longer erases the park', () => {
+  const m = bakeModel(BOUNDARY_LEAK_MAP, [], { maxCols: 60 });
+  const name = (t) => m.terrains[t];
+  const cellAt = (fx, fy) => m.cells[Math.floor(fy * m.rows) * m.cols + Math.floor(fx * m.cols)];
+  // Grass outside the boundary (but inside the bbox-spanning sea polygon):
+  // before the fix this painted as water, erasing land the venue never
+  // claimed the sea covers.
+  assert.equal(name(cellAt(0.02, 0.5)), 'grass', 'land outside the boundary must survive a bbox-spanning sea polygon');
+  // Beyond the boundary and outside any land layer: before the fix this
+  // painted as water too (the sea polygon reached every corner of the grid).
+  assert.equal(name(cellAt(0.98, 0.5)), 'outside', 'beyond the boundary with no land layer stays outside, not lake');
+  // A real lake genuinely inside the venue boundary still reads as water —
+  // clipping to the boundary is not the same as withholding the lake.
+  assert.equal(name(cellAt(0.5, 0.5)), 'water', 'water genuinely inside the boundary must still render as water');
+  return true;
+});
+
+await check('impliedTerrainClasses names every class the venue truth implies, using the paint-order vocabulary', () => {
+  const implied = impliedTerrainClasses(BAKE_MAP);
+  // BAKE_MAP carries water, wood, path (-> road) — no park/grass/parking/service.
+  assert.deepEqual([...implied].sort(), ['road', 'water', 'wood']);
+  assert.ok(impliedTerrainClasses({}).size === 0, 'a venue with no area/line truth implies no terrain class');
+  const full = impliedTerrainClasses({
+    park: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    grass: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    wood: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    parking: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    sea: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    water: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    pool: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    service: [{ r: [[0, 0], [1, 1]] }],
+    path: [{ r: [[0, 0], [1, 1]] }],
+  });
+  assert.deepEqual([...full].sort(), ['grass', 'lot', 'road', 'service', 'water', 'wood']);
+  // A way with too few vertices to paint (a degenerate ring, a single-point
+  // line) implies nothing — matches bakeModel's own paintability guard.
+  assert.equal(impliedTerrainClasses({ grass: [{ r: [[0, 0], [1, 1]] }] }).size, 0);
+  return true;
+});
+
+await check('Cedar Point regression (issue #518): the bake is not all water/road/service', async () => {
+  const { readFileSync: readFile } = await import('node:fs');
+  const mapFile = new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url);
+  const map = JSON.parse(readFile(mapFile, 'utf8'));
+  const model = bakeModel(map, []);
+  const hist = {};
+  for (const c of model.cells) hist[model.terrains[c]] = (hist[model.terrains[c]] || 0) + 1;
+  const total = model.cells.length;
+  // The bug's exact symptom: every cell classified as one of water/road/
+  // service, with grass/wood/lot/ground/outside entirely absent.
+  const landClasses = ['grass', 'wood', 'lot', 'ground', 'outside'];
+  assert.ok(landClasses.some((cls) => hist[cls] > 0), `bake still has no land classes: ${JSON.stringify(hist)}`);
+  // Water must still be a small share of the grid, not the whole park —
+  // the boundary wins over a lake that merely intersects the venue bbox.
+  assert.ok((hist.water || 0) < total * 0.5, `water still dominates the bake: ${JSON.stringify(hist)}`);
+  // Every class the venue's own truth implies must survive the composite.
+  const implied = impliedTerrainClasses(map);
+  const missing = [...implied].filter((cls) => !hist[cls]);
+  assert.deepEqual(missing, [], `truth implies ${[...implied].join(', ')} but the bake is missing: ${missing.join(', ')}`);
   return true;
 });
 

@@ -293,6 +293,7 @@ for (const id of ids) {
       kit: r.kit,
       target,
       skips: r.skips,
+      map,
     });
     // Geo bounds ride the cert so the display stage can place the baked
     // image (and attempt the raster tier) without re-baking the model.
