@@ -1420,13 +1420,21 @@ await check('a Thanks lands once per guest and never for yourself', async () => 
   };
 
   const first = await thank('usr_thx_fan');
-  if (first.counted !== true) throw new Error(`first thanks did not count: ${JSON.stringify(first)}`);
+  if (first.counted !== true || first.thanksCount !== 1) {
+    throw new Error(`first thanks did not count: ${JSON.stringify(first)}`);
+  }
   const repeat = await thank('usr_thx_fan');
-  if (repeat.counted !== false) throw new Error('repeat thanks double-counted');
+  if (repeat.counted !== false || repeat.thanksCount !== 1) {
+    throw new Error(`repeat thanks double-counted: ${JSON.stringify(repeat)}`);
+  }
   const second = await thank('usr_thx_other');
-  if (second.counted !== true) throw new Error('a second guest should count');
+  if (second.counted !== true || second.thanksCount !== 2) {
+    throw new Error(`a second guest should count: ${JSON.stringify(second)}`);
+  }
   const self = await thank('usr_thx_finder');
-  if (self.counted !== false || self.reason !== 'self') throw new Error('self-thanks must never count');
+  if (self.counted !== false || self.reason !== 'self' || self.thanksCount !== 2) {
+    throw new Error(`self-thanks must never count: ${JSON.stringify(self)}`);
+  }
 
   const missing = await fetch(`${BASE}/api/contributions/thanks`, {
     method: 'POST',

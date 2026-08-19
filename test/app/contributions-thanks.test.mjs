@@ -16,7 +16,7 @@ process.emitWarning = (warning, ...rest) => {
 
 delete process.env.DATABASE_URL;
 
-const { insertContribution, thankContribution } = await import(
+const { impactHelpedFor, insertContribution, thankContribution, thanksCountFor } = await import(
   '../../apps/party-tracker/lib/contributions/store.js'
 );
 
@@ -43,29 +43,41 @@ const finder = await insertContribution({
   payload: { heightIn: 48 },
 });
 
-await check('first thanks counts for the finder', async () => {
+await check('first thanks counts for the finder and moves impact by exactly one', async () => {
+  const before = await impactHelpedFor('usr_finder');
   const r = await thankContribution({ contributionId: finder.id, thankerId: 'usr_fan' });
   assert.equal(r.ok, true);
   assert.equal(r.counted, true);
+  assert.equal(r.thanksCount, 1);
+  assert.equal(await impactHelpedFor('usr_finder'), before + 1);
 });
 
 await check('a repeat from the same thanker counts nothing and is not an error', async () => {
+  const before = await impactHelpedFor('usr_finder');
   const r = await thankContribution({ contributionId: finder.id, thankerId: 'usr_fan' });
   assert.equal(r.ok, true);
   assert.equal(r.counted, false);
   assert.equal(r.reason, 'repeat');
+  assert.equal(r.thanksCount, 1);
+  assert.equal(await impactHelpedFor('usr_finder'), before);
 });
 
 await check('a second guest counts again — impact is per thanker, not per tap', async () => {
+  const before = await impactHelpedFor('usr_finder');
   const r = await thankContribution({ contributionId: finder.id, thankerId: 'usr_other' });
   assert.equal(r.counted, true);
+  assert.equal(r.thanksCount, 2);
+  assert.equal(await thanksCountFor(finder.id), 2);
+  assert.equal(await impactHelpedFor('usr_finder'), before + 1);
 });
 
-await check('self-thanks never counts', async () => {
+await check('self-thanks never counts and never moves impact', async () => {
+  const before = await impactHelpedFor('usr_finder');
   const r = await thankContribution({ contributionId: finder.id, thankerId: 'usr_finder' });
   assert.equal(r.ok, true);
   assert.equal(r.counted, false);
   assert.equal(r.reason, 'self');
+  assert.equal(await impactHelpedFor('usr_finder'), before);
 });
 
 await check('unknown contribution and missing thanker are refused', async () => {
