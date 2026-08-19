@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { distance, formatAge, formatDistance, formatWalk, project, unproject } from '@/lib/geo';
+import { distance, formatAge, formatDistance, formatWalk, localMetres, project, unproject } from '@/lib/geo';
 import { landTint, paletteFor } from '@/lib/theme';
 import Icon from '@/components/Icon';
 import { heightLabel, isRideable } from '@/lib/park';
@@ -111,11 +111,10 @@ const LABEL_SPOTS = (sx, sy, r, halfW, gap) => [
 /** Mercator-metre path, rebased to `origin` so SVG transforms stay precise. */
 function worldPathFromRing(ring, close = false, origin = [0, 0]) {
   if (!Array.isArray(ring) || ring.length < 2) return '';
-  const [ox, oy] = origin;
   let d = '';
   for (let i = 0; i < ring.length; i += 1) {
-    const [x, y] = project(ring[i][1], ring[i][0]);
-    d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
+    const [x, y] = localMetres(ring[i][1], ring[i][0], origin);
+    d += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
   }
   return close ? `${d}Z` : d;
 }
@@ -186,11 +185,10 @@ function pathFromLatLngs(points, to) {
  *  like venue geometry. Use vector-effect="non-scaling-stroke" for stroke width. */
 function worldPathFromLatLngs(points, origin = [0, 0]) {
   if (!Array.isArray(points) || points.length < 2) return '';
-  const [ox, oy] = origin;
   let d = '';
   for (let i = 0; i < points.length; i += 1) {
-    const [x, y] = project(points[i][0], points[i][1]);
-    d += `${i === 0 ? 'M' : 'L'}${(x - ox).toFixed(2)} ${(y - oy).toFixed(2)}`;
+    const [x, y] = localMetres(points[i][0], points[i][1], origin);
+    d += `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`;
   }
   return d;
 }

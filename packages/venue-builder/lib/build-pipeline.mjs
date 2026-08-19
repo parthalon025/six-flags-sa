@@ -10,7 +10,8 @@
  *   6. attractions — entrance inventory and evidence sidecar
  *   7. agent     — QA, GIS, vision, validation (--apply publishes entrances)
  *   8. certify   — report + compare + route-qa + ask; writes certification.json
- *   9. display   — per-Skin visual specs + display-certify (opt-in, --display).
+ *   9. display   — per-Skin visual specs + display-certify (on by default for
+ *                  DISPLAY_DEFAULT_VENUES, opt-in via --display elsewhere).
  *                  Terrain and the constraint solver are ON by default here, as
  *                  they are in venues:display: --no-terrain / --no-constrain opt
  *                  out. --mesh defaults by scale rather than by CLI: on for a
@@ -37,6 +38,15 @@ import { loadOfficialData } from './venue-official-site.mjs';
 const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
 const ATTRACTIONS_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'attractions.mjs');
+
+/**
+ * Worlds whose display pack ships certified, so the display stage runs by
+ * default for them (issue #527 Phase 1) — the spike renderer needs the pack
+ * reliably on disk. Everyone else keeps the stage opt-in (`--display`): it
+ * is slower and needs tippecanoe. The app-side twin of this policy is
+ * DISPLAY_SPIKE_VENUE in apps/party-tracker — the two grow together.
+ */
+export const DISPLAY_DEFAULT_VENUES = ['big-kahunas'];
 
 export const STAGES = [
   'sources',
@@ -113,7 +123,7 @@ export async function runVenuePipeline(park, opts = {}) {
     attractions = true,
     agent = true,
     certify = true,
-    display = false,
+    display = DISPLAY_DEFAULT_VENUES.includes(park.id),
     terrain: wantTerrain = true,
     constrain = true,
     mesh = false,
@@ -449,7 +459,10 @@ export function parseCatalogArgs(argv) {
     attractions: true,
     agent: true,
     certify: true,
-    display: false,
+    // Left undefined rather than false: runVenuePipeline's own default
+    // (on for big-kahunas, off elsewhere) only fires when opts.display is
+    // undefined. An explicit --display still forces every selected park on.
+    display: undefined,
     // Display capabilities are on by default; a bare run produces what ships.
     // mesh stays null until scale is known — see pipelineOptsFromCatalogArgs.
     terrain: true,
