@@ -18,7 +18,6 @@ import path from 'node:path';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
-import { worldcoverLandsCacheFile } from './adapters/esa-worldcover.mjs';
 import { buildRasterTier } from './display-raster.mjs';
 import { check } from './evidence.mjs';
 
@@ -110,7 +109,7 @@ export const LAND_COVER_STYLE = {
 
 /** Per-venue land-patch classification cache written by `venues:worldcover-lands`. */
 export function readLandCover(id) {
-  return readJson(worldcoverLandsCacheFile(id), { lands: {} }).lands;
+  return readJson(venueSidecar(id, 'esa-worldcover-lands-cache.json'), { lands: {} }).lands;
 }
 
 /**
