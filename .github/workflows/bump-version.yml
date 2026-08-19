@@ -55,11 +55,14 @@ jobs:
         id: merge
         env:
           GH_TOKEN: ${{ github.token }}
+          # env indirection: a squash-merge message with quotes/backticks
+          # executed as shell when inlined via ${{ }} — see the 2026-08-19 runs.
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
           PR=""
           if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
-            MSG="${{ github.event.head_commit.message }}"
+            MSG="$HEAD_COMMIT_MESSAGE"
             if [[ "$MSG" =~ ^Merge\ pull\ request\ \#([0-9]+) ]]; then
               PR="${BASH_REMATCH[1]}"
             elif [ -n "${{ github.sha }}" ]; then
@@ -73,9 +76,10 @@ jobs:
         id: note
         env:
           GH_TOKEN: ${{ github.token }}
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           set -euo pipefail
-          MSG="${{ github.event.head_commit.message }}"
+          MSG="$HEAD_COMMIT_MESSAGE"
           NOTE=$(printf '%s' "$MSG" | head -1)
           if [[ "$MSG" =~ ^Merge\ pull\ request\ \#([0-9]+) ]]; then
             PR="${BASH_REMATCH[1]}"
@@ -91,6 +95,8 @@ jobs:
 
       - name: Bump version
         id: bump
+        env:
+          RELEASE_NOTE: ${{ steps.note.outputs.note }}
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -101,7 +107,7 @@ jobs:
               echo "bump_to=$VERSION"
             } >> "$GITHUB_OUTPUT"
           else
-            node scripts/bump-version.mjs "${{ steps.note.outputs.note }}"
+            node scripts/bump-version.mjs "$RELEASE_NOTE"
           fi
 
       - name: Commit version bump

@@ -378,5 +378,11 @@
     "items": [
       "Display pipeline Phase 1: localMetres() seam + MapLibre spike renderer for Big Kahuna's (behind a flag) (#549)"
     ]
+  },
+  "1.21.0": {
+    "title": "What's new",
+    "items": [
+      "feat(ci): automation/docs train — GitNexus blast-radius in CI, hardened profile:max-rank, glossary CONTEXT.md, bump-version shell fix (#555)"
+    ]
   }
 }
