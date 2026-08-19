@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.19.0",
+  "version": "1.20.0",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -58,7 +58,7 @@
     "venues:pipeline": "node --env-file-if-exists=.env packages/venue-builder/bin/build-top-parks.mjs",
     "cdn:warm": "node scripts/warm-cdn.mjs",
     "test": "npm run test:builder && npm run test:app",
-    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/display.mjs && node test/builder/display-assets.mjs && node test/builder/display-references.mjs && node test/builder/display-style.mjs && node test/builder/llm-agent.mjs && node test/builder/mapillary-video.mjs && node test/builder/poly-haven.mjs && node test/builder/esa-worldcover.mjs && node test/builder/overture-buildings.mjs && node test/builder/footprint-fusion.mjs && node test/builder/iso-world.mjs && node test/builder/iso-track.mjs && node test/builder/display-iso.mjs && node test/builder/compare.mjs",
+    "test:builder": "node test/builder/world.mjs && node test/builder/unit.mjs && node test/builder/gaps-quests.mjs && node test/builder/display.mjs && node test/builder/display-assets.mjs && node test/builder/display-references.mjs && node test/builder/display-style.mjs && node test/builder/llm-agent.mjs && node test/builder/mapillary-video.mjs && node test/builder/poly-haven.mjs && node test/builder/esa-worldcover.mjs && node test/builder/overture-buildings.mjs && node test/builder/footprint-fusion.mjs && node test/builder/iso-world.mjs && node test/builder/iso-track.mjs && node test/builder/display-iso.mjs && node test/builder/terrain.mjs && node test/builder/compare.mjs",
     "test:app": "node test/app/functional.mjs",
     "test:validate-ui": "node test/app/validate-ui.mjs",
     "test:validate-ui:changed": "node test/app/validate-ui.mjs --changed",
@@ -106,7 +106,8 @@
     "venues:bake": "node --env-file-if-exists=.env packages/venue-builder/bin/display-bake.mjs",
     "venues:atlas": "node --env-file-if-exists=.env packages/venue-builder/bin/display-atlas.mjs",
     "venues:bake-review": "node --env-file-if-exists=.env packages/venue-builder/bin/display-contact-sheet.mjs",
-    "venues:vendor-assets": "node --env-file-if-exists=.env packages/venue-builder/bin/vendor-assets.mjs"
+    "venues:vendor-assets": "node --env-file-if-exists=.env packages/venue-builder/bin/vendor-assets.mjs",
+    "venues:swatches": "node --env-file-if-exists=.env packages/venue-builder/bin/display-swatches.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.4",

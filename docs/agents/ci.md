@@ -18,6 +18,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
 | `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
+| — | `scrubGitEnv()` (`scripts/lib/git-env.mjs`) | Strips git's inherited repository out of anything a hook spawns |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 
@@ -73,6 +74,14 @@ Re-run `npm run test:pre-merge-vertical` after changing code or dependencies —
 `PRE_PUSH_SKIP_BROWSER=1 git push` passes `--skip-browser` through for a faster local check; `test:pre-merge-vertical` still refuses to skip the browser vertical for a diff that touches app behaviour, so this only speeds up pushes that don't need it.
 
 Emergency bypass: `HUSKY=0 git push`. That skips the hook, not the requirement — GitHub runs full CI on that push instead of skipping the jobs a local run would have covered.
+
+#### The hook's repository does not belong to the suite
+
+Git resolves the repository *before* running a hook and passes it down in the environment (`GIT_DIR`, `GIT_INDEX_FILE`, and the rest — `scripts/lib/git-env.mjs` has the list). Those variables outrank `cwd`: with `GIT_DIR` set and no `GIT_WORK_TREE`, git treats the current directory as the work tree and the inherited `GIT_DIR` as the repository. Several script tests build a throwaway repo in a tmpdir, so unscrubbed they stage the tmpdir's fixtures and commit them onto the branch being pushed.
+
+That is not a hypothetical: on the first push after the hook landed it truncated `README.md` and `apps/party-tracker/app/page.js` to one line each and wrote `user.name = Test` into `.git/config`.
+
+So `pre-push.mjs` spawns the run through `scrubGitEnv()`, the `scripts/lib` modules that take an explicit repo directory scrub at their own `git()` wrapper, and `test/scripts/git-env.test.mjs` fails any test that calls `git init` without importing `scrubGitEnv`. The end-to-end legs in that test assert both directions — scrubbed leaves the outer repo alone, leaked corrupts it — so the guard cannot rot into a test that passes for the wrong reason.
 
 ### Auto-ready draft PRs
 
