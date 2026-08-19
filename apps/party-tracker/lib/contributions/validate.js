@@ -13,7 +13,8 @@ const DURABLE_KINDS = new Set([
   'drop_place',
 ]);
 
-const ID_RE = /^[a-zA-Z0-9._-]{1,64}$/;
+/** Identity-grade opaque token — shared by every field that lands in a users(id)-shaped column. */
+export const ID_RE = /^[a-zA-Z0-9._-]{1,64}$/;
 
 /**
  * @param {object} body

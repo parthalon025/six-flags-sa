@@ -108,6 +108,7 @@ import {
 } from '@/lib/mapVisual';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
+import { flushThanksQueue } from '@/lib/adventure/thanks';
 
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
@@ -365,11 +366,22 @@ function ParkApp({ isSignedIn }) {
     flushQuests();
   }, [authSession?.userId, flushQuests]);
   useEffect(() => {
-    window.addEventListener('online', flushQuests);
-    return () => window.removeEventListener('online', flushQuests);
+    const onOnline = () => {
+      flushQuests();
+      flushThanksQueue().catch(() => {});
+    };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
   }, [flushQuests]);
   const overlayCompletionsFor = useCallback(
-    (place) => completionsForPlace(displayOverlay, identityOf(place)).map(completionLine),
+    // Objects, not lines: PlaceDetail needs the id + author to offer the
+    // Thanks tap on facts somebody else settled.
+    (place) =>
+      completionsForPlace(displayOverlay, identityOf(place)).map((c) => ({
+        id: c.id,
+        authorId: c.authorId || null,
+        line: completionLine(c),
+      })),
     [displayOverlay],
   );
   const [status, setStatus] = useState('On the move');
@@ -3069,6 +3081,7 @@ function ParkApp({ isSignedIn }) {
                 onReport={party?.active ? reportRide : null}
                 onAddToPlan={addToPlan}
                 overlayCompletions={selected ? overlayCompletionsFor(selected) : []}
+                session={authSession}
               />
             )}
 

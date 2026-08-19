@@ -1342,6 +1342,167 @@ await check('complete a gap quest draws Overlay on the map', async () => {
   return true;
 });
 
+await check('a scored Side Quest pays XP into the Title ladder', async () => {
+  if (!profileReady) return true;
+  await dismissNavigation(a).catch(() => {});
+  await go(a, 'Quests');
+
+  // The Profile's progress card is the game surface: Title label, XP bar,
+  // and the walk to the next Title. It sits above the quest cards — the
+  // cards themselves stay meaning-first and never advertise XP.
+  await until(async () => (await a.locator('.titleProgress').count()) > 0, {
+    timeout: 10000,
+    label: 'Title progress card',
+  });
+  const card = a.locator('.titleProgress').first();
+  const xpBefore = Number(await card.getAttribute('data-xp')) || 0;
+  if ((await a.locator('.titleProgress .titleProgressFill').count()) < 1) {
+    throw new Error('XP bar missing from the Title progress card');
+  }
+  const cardText = await card.innerText();
+  if (!/\d+ XP/.test(cardText)) throw new Error(`no XP total on the card: ${cardText.slice(0, 120)}`);
+  if (!/XP to|Top of the ladder/i.test(cardText)) {
+    throw new Error(`no next-Title line on the card: ${cardText.slice(0, 120)}`);
+  }
+
+  // Answer the live "Ride up or down?" from the suite's standing fix — 62 m
+  // from Viking Fury, walked-near, first live report for that ride, so XP
+  // must land.
+  const liveRow = a.locator('.sideQuestRow', { hasText: 'Ride up or down?' });
+  await until(async () => (await liveRow.count()) > 0, { timeout: 10000, label: 'live ride quest' });
+  const reportBtn = liveRow.locator('button.sideQuestReportBtn');
+  if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
+    await reportBtn.click();
+    await a.waitForTimeout(200);
+  }
+  await reportBtn.click();
+  await a.waitForTimeout(400);
+  await liveRow.locator('.sideQuestSubmit').click();
+
+  // Output validation: the toast says what landed, and the card's number
+  // moved by exactly that amount — the reward is real, not decoration.
+  await until(async () => (await a.locator('.xpToast .xpToastDelta').count()) > 0, {
+    timeout: 10000,
+    label: 'XP reward toast',
+  });
+  const deltaText = await a.locator('.xpToast .xpToastDelta').innerText();
+  const m = deltaText.match(/\+(\d+)\s*XP/);
+  if (!m) throw new Error(`reward toast shows no +XP: "${deltaText}"`);
+  const delta = Number(m[1]);
+  await until(
+    async () => Number(await card.getAttribute('data-xp')) === xpBefore + delta,
+    { timeout: 10000, label: `Title card XP to rise ${xpBefore} -> ${xpBefore + delta}` },
+  );
+  return true;
+});
+
+await check('Me carries the journey: ladder, field stats, finder credit', async () => {
+  if (!profileReady) return true;
+
+  // The finder's name landed on the Overlay completions (first-to-find
+  // credit) — the gap submits above were made signed-in with sharing on.
+  const mine = await a.locator('[data-overlay-mine]').innerText({ timeout: 3000 }).catch(() => '');
+  if (mine && !/justin/i.test(mine)) {
+    throw new Error(`completions do not credit the finder: ${mine.slice(0, 120)}`);
+  }
+
+  await go(a, 'Settings');
+  await until(async () => (await a.locator('.profileJourney').count()) > 0, {
+    timeout: 10000,
+    label: 'journey card on Me',
+  });
+  if ((await a.locator('.profileJourney .titleProgress .titleProgressFill').count()) < 1) {
+    throw new Error('Me journey hero has no XP bar');
+  }
+
+  await a.locator('.journeyToggle').click();
+  await until(async () => (await a.locator('.journeyStep').count()) === 5, {
+    timeout: 5000,
+    label: 'five Title ladder steps',
+  });
+  const ladder = await a.locator('.journeyLadder').innerText();
+  for (const title of ['Visitor', 'Scout', 'Ranger', 'Cartographer', 'Steward']) {
+    if (!ladder.includes(title)) throw new Error(`ladder is missing ${title}: ${ladder.slice(0, 160)}`);
+  }
+  const stats = await a.locator('[data-journey-stats]').innerText();
+  if (!/fact/i.test(stats) || !/guest/i.test(stats)) {
+    throw new Error(`field stats missing: ${stats.slice(0, 120)}`);
+  }
+
+  // Finder credit is on by default, and the switch answers a tap both ways.
+  const share = a.locator('.journeyShare');
+  if ((await share.getAttribute('aria-checked')) !== 'true') {
+    throw new Error('finder credit should default on');
+  }
+  await share.click();
+  await until(async () => (await share.getAttribute('aria-checked')) === 'false', {
+    timeout: 5000,
+    label: 'finder credit toggles off',
+  });
+  if (!/fellow guest/i.test(await share.innerText())) {
+    throw new Error('opted-out copy should explain the anonymous line');
+  }
+  await share.click();
+  await until(async () => (await share.getAttribute('aria-checked')) === 'true', {
+    timeout: 5000,
+    label: 'finder credit toggles back on',
+  });
+  return true;
+});
+
+await check('a Thanks lands once per guest and never for yourself', async () => {
+  // The Death Stranding like, proven through the production server: create a
+  // Contribution, thank it as a stranger, and assert what actually counted.
+  const created = await fetch(`${BASE}/api/contributions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      authorId: 'usr_thx_finder',
+      venueId: 'kings-island',
+      placeId: 'orion',
+      kind: 'height',
+      payload: { heightIn: 48 },
+    }),
+  });
+  if (created.status !== 201) throw new Error(`contribution POST ${created.status}`);
+  const { contribution } = await created.json();
+
+  const thank = async (thankerId) => {
+    const res = await fetch(`${BASE}/api/contributions/thanks`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ contributionId: contribution.id, thankerId }),
+    });
+    if (!res.ok) throw new Error(`thanks POST ${res.status}`);
+    return res.json();
+  };
+
+  const first = await thank('usr_thx_fan');
+  if (first.counted !== true || first.thanksCount !== 1) {
+    throw new Error(`first thanks did not count: ${JSON.stringify(first)}`);
+  }
+  const repeat = await thank('usr_thx_fan');
+  if (repeat.counted !== false || repeat.thanksCount !== 1) {
+    throw new Error(`repeat thanks double-counted: ${JSON.stringify(repeat)}`);
+  }
+  const second = await thank('usr_thx_other');
+  if (second.counted !== true || second.thanksCount !== 2) {
+    throw new Error(`a second guest should count: ${JSON.stringify(second)}`);
+  }
+  const self = await thank('usr_thx_finder');
+  if (self.counted !== false || self.reason !== 'self' || self.thanksCount !== 2) {
+    throw new Error(`self-thanks must never count: ${JSON.stringify(self)}`);
+  }
+
+  const missing = await fetch(`${BASE}/api/contributions/thanks`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ contributionId: 'c_never_existed', thankerId: 'usr_thx_fan' }),
+  });
+  if (missing.status !== 404) throw new Error(`unknown contribution should 404, got ${missing.status}`);
+  return true;
+});
+
 await go(a, 'Party');
 await a.waitForTimeout(300);
 await a.locator('button:has-text("Start a party")').click();

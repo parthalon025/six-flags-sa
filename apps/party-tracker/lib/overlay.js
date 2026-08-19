@@ -60,6 +60,7 @@ export function normalizeContribution(raw = {}, now = Date.now()) {
     venueId: typeof raw.venueId === 'string' ? raw.venueId.slice(0, 80) : null,
     authorId: typeof raw.authorId === 'string' ? raw.authorId.slice(0, 80) : null,
     authorName: typeof raw.authorName === 'string' ? raw.authorName.slice(0, 40) : 'Someone',
+    authorTitle: typeof raw.authorTitle === 'string' && raw.authorTitle ? raw.authorTitle.slice(0, 24) : null,
     payload,
     lat: Number.isFinite(raw.lat) ? raw.lat : null,
     lng: Number.isFinite(raw.lng) ? raw.lng : null,
@@ -74,13 +75,14 @@ export function contributionFromGapSubmit({
   venueId = null,
   authorId = null,
   authorName = 'Someone',
+  authorTitle = null,
   payload = {},
   lat = null,
   lng = null,
   now = Date.now(),
 } = {}) {
   return normalizeContribution(
-    { id, type, placeId, venueId, authorId, authorName, payload, lat, lng, createdAt: now },
+    { id, type, placeId, venueId, authorId, authorName, authorTitle, payload, lat, lng, createdAt: now },
     now,
   );
 }
@@ -132,7 +134,10 @@ export function completionsForPlace(overlay = emptyOverlay(), placeId) {
 
 export function completionLine(c) {
   if (!c) return '';
-  const who = c.authorName || 'Someone';
+  // First-to-find credit: the finder's name (and Title, once earned) rides on
+  // the fact. Confirms and denies stay statistical — no names on those.
+  const name = c.authorName || 'Someone';
+  const who = c.authorTitle ? `${name} · ${c.authorTitle}` : name;
   if (c.type === 'height') {
     const n = c.payload?.heightIn;
     if (n === 0) return `${who} confirmed no minimum`;

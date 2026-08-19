@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import SignInCard from '@/components/SignInCard';
+import TitleProgress from '@/components/TitleProgress';
 import { awardQuestXp, readLocalSession, softGateBlocks } from '@/lib/auth/session';
 import { contributionStashCount, stashGapSubmission } from '@/lib/auth/contributionStash';
-import { readProfileCache } from '@/lib/auth/profileCache';
+import { readProfileCache, sharesName } from '@/lib/auth/profileCache';
 import {
   ADD_PLACE_TYPES,
   CAMPING_HOOKUPS,
@@ -22,7 +23,7 @@ import {
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
-import { pathScoreCell, rankReward, scoreKey } from '@party-tracker/shared/questScore.js';
+import { pathScoreCell, rankReward, scoreKey, titleFromXp } from '@party-tracker/shared/questScore.js';
 import { completionLine, contributionFromGapSubmit } from '@/lib/overlay';
 
 /**
@@ -39,6 +40,52 @@ const STATUS_OPTIONS = [
   { value: 'changed', label: 'Changed' },
   { value: 'issue', label: 'Problem here' },
 ];
+
+/**
+ * The moment after a submit. Meaning leads; the XP earned rides along.
+ * Rank-up is the celebration — the Title is the reward, not a number.
+ */
+function RewardToast({ reward }) {
+  if (reward.kind === 'rankUp') {
+    return (
+      <div className="xpToast rankUp" role="status" data-reward="rankUp">
+        <span className="xpToastGlyph" aria-hidden="true">
+          <Icon name="sparkles" size={22} />
+        </span>
+        <span className="rowText">
+          <b>You&apos;re a {reward.title} now.</b>
+          <span>The Title sits under your name — other guests see who kept this map honest.</span>
+        </span>
+        <span className="xpToastDelta">+{reward.deltaXp} XP</span>
+      </div>
+    );
+  }
+  if (reward.kind === 'xp') {
+    return (
+      <div className="xpToast" role="status" data-reward="xp">
+        <span className="xpToastGlyph" aria-hidden="true">
+          <Icon name="checkmark" size={18} />
+        </span>
+        <span className="rowText">
+          <b>Logged — other guests benefit.</b>
+          {reward.dailyBonus ? <span>First helpful report today, bonus included.</span> : null}
+        </span>
+        <span className="xpToastDelta">+{reward.deltaXp} XP</span>
+      </div>
+    );
+  }
+  const line =
+    reward.kind === 'stashed'
+      ? 'Saved on this phone. Sign in to upload.'
+      : reward.kind === 'repeat'
+        ? 'You already settled this one — it still helps, no new XP.'
+        : 'Report sent. XP needs you near enough to have seen it.';
+  return (
+    <p className="fine block sideQuestReward" role="status" data-reward={reward.kind}>
+      {line}
+    </p>
+  );
+}
 
 function inVenue(bounds, position) {
   if (!position || !Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return false;
@@ -67,17 +114,34 @@ export default function SideQuestsPanel({
   const gapNeedsAuth = softGateBlocks('adventure', session);
   const questBlocked = (quest) => (isLiveQuest(quest) ? false : gapNeedsAuth);
   const [scoredKeys, setScoredKeys] = useState([]);
-  const [rewardLine, setRewardLine] = useState(null);
+  // The reward moment after a submit: XP earned, daily bonus, rank-up. The
+  // quest cards themselves never advertise XP — the reward reads after the fact.
+  const [reward, setReward] = useState(null);
+  const [progressSnap, setProgressSnap] = useState(null);
 
   useEffect(() => {
     let alive = true;
     readProfileCache().then((snap) => {
-      if (alive && Array.isArray(snap?.scoredKeys)) setScoredKeys(snap.scoredKeys);
+      if (!alive) return;
+      if (Array.isArray(snap?.scoredKeys)) setScoredKeys(snap.scoredKeys);
+      if (snap?.userId) {
+        setProgressSnap({
+          xp: Number(snap.xp) || 0,
+          lastQuestDay: snap.lastQuestDay || null,
+          shareName: sharesName(snap),
+        });
+      }
     });
     return () => {
       alive = false;
     };
   }, [session?.userId]);
+
+  useEffect(() => {
+    if (!reward) return undefined;
+    const t = setTimeout(() => setReward(null), reward.rankUp ? 12000 : 7000);
+    return () => clearTimeout(t);
+  }, [reward]);
 
   const { durable: rawDurable, ambient, counts } = buildSideQuests({
     pois,
@@ -221,7 +285,7 @@ export default function SideQuestsPanel({
       });
       if (ok) {
         setStashed(contributionStashCount());
-        setRewardLine('Saved on this phone. Sign in to upload.');
+        setReward({ kind: 'stashed' });
       }
       setOpenQuestId(null);
       setLastSubmittedId(`stash-${Date.now()}`);
@@ -239,13 +303,23 @@ export default function SideQuestsPanel({
     });
     await queue.enqueue(report);
     if (!isLiveQuest(quest) && onContribution) {
+      // First-to-find credit rides on the Contribution unless the Profile
+      // opted out on Me — then the find reads as "a fellow guest". The Title
+      // badge is first-find only: re-answering a fact this Profile already
+      // settled keeps the name (provenance) but is not a find.
+      const named = progressSnap ? progressSnap.shareName : true;
+      const firstFind = !(key && scoredKeys.includes(key));
       const contrib = contributionFromGapSubmit({
         id: report.id,
         type: quest.type,
         placeId: target,
         venueId,
         authorId: session?.userId || null,
-        authorName: session?.displayName || 'Someone',
+        authorName: named ? session?.displayName || 'Someone' : 'a fellow guest',
+        authorTitle:
+          named && firstFind
+            ? titleFromXp(Number(progressSnap?.xp ?? session?.xp) || 0)
+            : null,
         payload: report.payload,
         lat: report.lat,
         lng: report.lng,
@@ -266,9 +340,22 @@ export default function SideQuestsPanel({
       now: Date.now(),
     });
     setScoredKeys(scored.profile.scoredKeys || []);
+    if (scored.deltaXp > 0) {
+      setProgressSnap((prev) => ({
+        xp: scored.profile.xp,
+        lastQuestDay: scored.profile.lastQuestDay,
+        shareName: prev ? prev.shareName : true,
+      }));
+    }
     if (scored.rankUp) {
       const title = rankReward(scored.profile.rank).title;
-      if (title) setRewardLine(`You're a ${title} now.`);
+      if (title) setReward({ kind: 'rankUp', rankUp: true, title, deltaXp: scored.deltaXp });
+    } else if (scored.deltaXp > 0) {
+      setReward({ kind: 'xp', deltaXp: scored.deltaXp, dailyBonus: scored.dailyBonus });
+    } else if (scored.reason === 'repeat') {
+      setReward({ kind: 'repeat' });
+    } else if (scored.reason === 'not_near') {
+      setReward({ kind: 'notNear' });
     }
     const nextSession = readLocalSession();
     if (nextSession) onSession?.(nextSession);
@@ -497,8 +584,13 @@ export default function SideQuestsPanel({
             </p>
           ) : null}
         </>
-      ) : null}
-      {rewardLine ? <p className="fine block sideQuestReward">{rewardLine}</p> : null}
+      ) : (
+        <TitleProgress
+          xp={progressSnap ? progressSnap.xp : Number(session?.xp) || 0}
+          lastQuestDay={progressSnap ? progressSnap.lastQuestDay : undefined}
+        />
+      )}
+      {reward ? <RewardToast reward={reward} /> : null}
 
       <div className="label">
         For {venueName || 'this park'}

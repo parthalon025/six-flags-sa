@@ -40,6 +40,35 @@ export async function writeProfileCache(profile) {
   });
 }
 
+/**
+ * Read-modify-write in ONE IndexedDB transaction, so two concurrent patches
+ * (the Me stats refresh, the finder-credit toggle) can never clobber each
+ * other's fields. Returns the merged snapshot, or null without a Profile.
+ */
+export async function patchProfileCache(patch) {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const store = tx.objectStore(STORE);
+    const req = store.get(KEY);
+    let next = null;
+    req.onsuccess = () => {
+      const snap = req.result;
+      if (!snap?.userId) return;
+      next = { ...snap, ...patch, cachedAt: new Date().toISOString() };
+      store.put(next, KEY);
+    };
+    tx.oncomplete = () => {
+      db.close();
+      resolve(next);
+    };
+    tx.onerror = () => {
+      db.close();
+      reject(tx.error);
+    };
+  });
+}
+
 export async function readProfileCache() {
   try {
     const db = await openDb();
@@ -78,6 +107,15 @@ export async function clearProfileCache() {
   } catch {
     return false;
   }
+}
+
+/**
+ * Finder-credit preference: named credit on Contributions. Unset means on —
+ * the display name is already public on the Party roster, and named credit
+ * is the social reward for finding. Explicit false means "a fellow guest".
+ */
+export function sharesName(snapshot) {
+  return snapshot?.shareName !== false;
 }
 
 /** @returns {Array<{ id: string, displayName: string, heightIn?: number, heightConfirmedAt?: string }>} */
