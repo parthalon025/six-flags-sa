@@ -7,9 +7,9 @@
  * Four OpenRCT2-style quarter-turn views: rotation r ∈ {0..3} spins the ground
  * plane before projection. Culling is rotation-invariant: the ground-space
  * checks are so structurally, and buildingHitsLiftedTrack (a screen-space
- * check) is pinned to rotation 0 — see its JSDoc for the trade-off. Paint
- * order comes from depthKey — larger is farther from the camera and paints
- * first.
+ * check) unions the check across all 4 rotations — see its JSDoc for the
+ * trade-off. Paint order comes from depthKey — larger is farther from the
+ * camera and paints first.
  */
 
 export const ISO_Y = 0.5;
@@ -193,13 +193,13 @@ export function convexHull(pts) {
   return lower.concat(upper);
 }
 
-function liftedPts(line, stepM, heightAmp, baseHeight) {
+function liftedPts(line, stepM, heightAmp, baseHeight, rotation = 0) {
   const pts = [];
   let travelled = 0;
   for (let i = 0; i < line.length; i += 1) {
     if (i > 0) travelled += dist2(line[i - 1], line[i]);
     const h = liftHeightAt(travelled, { heightAmp, baseHeight });
-    const g = isoLocal(line[i][0], line[i][1]);
+    const g = isoLocal(line[i][0], line[i][1], rotation);
     pts.push({ x: g.x, y: g.y + h });
   }
   return pts;
@@ -212,17 +212,25 @@ function distToHull(pt, hull) {
 }
 
 /**
- * True when a lifted rail punches through the extruded hall on screen.
- * Deliberately checked at rotation 0 so culling never varies per view.
+ * True when a lifted rail punches through the extruded hall on screen, at
+ * ANY of the 4 quarter-turn views. Checking every rotation (rather than
+ * pinning to rotation 0) keeps culling rotation-invariant — a building
+ * dropped for a clip only visible at r2 stays dropped at every view — while
+ * catching clips that r0's silhouette alone would miss.
  */
 export function buildingHitsLiftedTrack(ring, line, heightM, padM = 8, lift = {}) {
   if (!ring || ring.length < 3 || !line || line.length < 2) return false;
-  const foot = ring.map(([x, y]) => isoLocal(x, y));
-  const roof = foot.map((p) => ({ x: p.x, y: p.y + heightM }));
-  const hull = convexHull([...foot, ...roof]);
-  if (hull.length < 3) return false;
   const { stepM = 6, heightAmp = 9, baseHeight = 3 } = lift;
-  return liftedPts(line, stepM, heightAmp, baseHeight).some((pt) => distToHull(pt, hull) <= padM);
+  for (let rotation = 0; rotation < ISO_ROTATIONS; rotation += 1) {
+    const foot = ring.map(([x, y]) => isoLocal(x, y, rotation));
+    const roof = foot.map((p) => ({ x: p.x, y: p.y + heightM }));
+    const hull = convexHull([...foot, ...roof]);
+    if (hull.length < 3) continue;
+    if (liftedPts(line, stepM, heightAmp, baseHeight, rotation).some((pt) => distToHull(pt, hull) <= padM)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** True when a stall and a rail share ground — they must not both draw. */
