@@ -21,9 +21,12 @@
  *   --base <ref>        git base for --changed (default origin/main)
  *   --modules=a,b       run only these modules (functional ids + grandma + contract)
  *   --all               force every module (default when neither --changed nor --modules)
+ *   --jobs N            suites to run at once (default: CPUs-1, capped at 3).
+ *                       --jobs 1 runs them one at a time with live output.
  */
 
 import { spawn, execFileSync } from 'node:child_process';
+import { cpus } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -32,6 +35,7 @@ import {
   selectModulesFromFiles,
   partitionModules,
 } from './lib/module-select.mjs';
+import { buildQueue } from './lib/validate-ui-queue.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '../..');
@@ -45,6 +49,17 @@ const changed = args.includes('--changed');
 const wantAll = args.includes('--all');
 const baseIdx = args.indexOf('--base');
 const baseRef = baseIdx >= 0 ? args[baseIdx + 1] : process.env.TEST_BASE_REF || 'origin/main';
+
+/**
+ * Suites are independent processes against one already-running app — the same
+ * split CI runs as separate jobs — so locally they can overlap instead of
+ * queueing. Each one drives its own browser, so the cap is deliberately below
+ * the core count: past that they fight for CPU and the slowest suite, not the
+ * pool, sets the wall clock.
+ */
+const jobsIdx = args.indexOf('--jobs');
+const DEFAULT_JOBS = Math.max(1, Math.min(3, (cpus().length || 2) - 1));
+const jobs = jobsIdx >= 0 ? Math.max(1, Number(args[jobsIdx + 1]) || 1) : DEFAULT_JOBS;
 
 const manifest = loadModulesManifest();
 
@@ -105,23 +120,69 @@ async function healthCheck() {
   if (body.ok === false) throw new Error('health body not ok');
 }
 
-function runSuite(name, script, scriptArgs = []) {
+function banner(name) {
+  return `\n${'='.repeat(60)}\n  ${name}\n${'='.repeat(60)}\n`;
+}
+
+/**
+ * One suite, one process. Serially it streams straight through so a watched run
+ * reads as it always did; in parallel it buffers and prints as one block on
+ * completion, because interleaving several browser suites live is unreadable.
+ */
+function runSuite(name, script, scriptArgs = [], { buffered = false } = {}) {
   return new Promise((resolve, reject) => {
-    console.log(`\n${'='.repeat(60)}\n  ${name}\n${'='.repeat(60)}\n`);
+    if (!buffered) console.log(banner(name));
     const child = spawn(process.execPath, [path.join(HERE, script), ...scriptArgs], {
-      stdio: 'inherit',
+      stdio: buffered ? ['ignore', 'pipe', 'pipe'] : 'inherit',
       env: { ...process.env, BASE_URL: BASE },
     });
+    let output = '';
+    if (buffered) {
+      child.stdout.on('data', (d) => {
+        output += d;
+      });
+      child.stderr.on('data', (d) => {
+        output += d;
+      });
+    }
     child.on('error', reject);
     child.on('close', (code) => {
+      if (buffered) {
+        process.stdout.write(banner(`${name} — ${code ? 'FAILED' : 'ok'}`));
+        process.stdout.write(output.endsWith('\n') ? output : `${output}\n`);
+      }
       if (code) reject(new Error(`${script} exited with code ${code}`));
       else resolve();
     });
   });
 }
 
+/**
+ * Run the queue `limit` at a time, and let every suite finish even after one
+ * fails: a run that stops at the first red hides the other three reds behind it
+ * and costs another full pass to find them.
+ */
+async function runPool(queue, limit) {
+  const pending = [...queue];
+  const failures = [];
+  const passed = [];
+  const worker = async () => {
+    for (;;) {
+      const suite = pending.shift();
+      if (!suite) return;
+      try {
+        await runSuite(suite.name, suite.script, suite.args, { buffered: limit > 1 });
+        passed.push(suite.id);
+      } catch (err) {
+        failures.push(`${suite.id}: ${err.message}`);
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, pending.length) }, worker));
+  return { passed, failures };
+}
+
 const started = Date.now();
-const suites = [];
 
 try {
   if (!skipHealth) {
@@ -130,40 +191,39 @@ try {
     console.log('ok');
   }
 
-  if (runContract) {
-    await runSuite('Critical-path coverage contract', 'coverage-contract.mjs');
-    suites.push('coverage-contract');
-  }
+  const functionalIds = runFunctional
+    ? parts.functional.length
+      ? parts.functional
+      : partitionModules(manifest.modules.map((m) => m.id), manifest).functional
+    : [];
 
-  if (runFunctional) {
-    const functionalModules = selected
-      ? parts.functional.join(',')
-      : 'all';
-    const scriptArgs =
-      functionalModules && functionalModules !== 'all'
-        ? [`--modules=${functionalModules}`]
-        : [];
-    await runSuite(
-      `E2E functional suite (${functionalModules})`,
-      'functional.mjs',
-      scriptArgs,
-    );
-    suites.push(`functional:${functionalModules}`);
-  }
+  const queue = buildQueue({
+    contract: runContract,
+    functional: functionalIds,
+    grandma: runGrandma,
+    parallel: jobs > 1,
+  });
 
-  if (runGrandma) {
-    await runSuite('Grandma test (first-time visitor personas)', 'grandma.mjs');
-    suites.push('grandma');
-  }
-
-  if (!suites.length) {
+  if (!queue.length) {
     console.log('validate-ui: nothing to run for the selected modules');
+  } else if (jobs > 1) {
+    console.log(`validate-ui: ${queue.length} suites, ${jobs} at a time`);
   }
+
+  const { passed, failures } = await runPool(queue, jobs);
 
   const sec = ((Date.now() - started) / 1000).toFixed(0);
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`  UI validation passed (${suites.join(' + ') || 'empty'}) in ${sec}s`);
-  console.log(`${'='.repeat(60)}\n`);
+  if (failures.length) {
+    console.error(`\n${'='.repeat(60)}`);
+    console.error(`  UI validation FAILED after ${sec}s`);
+    for (const f of failures) console.error(`  ${f}`);
+    console.error(`${'='.repeat(60)}\n`);
+    process.exitCode = 1;
+  } else {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`  UI validation passed (${passed.join(' + ') || 'empty'}) in ${sec}s`);
+    console.log(`${'='.repeat(60)}\n`);
+  }
 } catch (err) {
   const sec = ((Date.now() - started) / 1000).toFixed(0);
   console.error(`\n${'='.repeat(60)}`);
