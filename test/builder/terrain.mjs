@@ -6,7 +6,10 @@
  *   node test/builder/terrain.mjs
  */
 import assert from 'node:assert/strict';
-import { readFileSync, rmSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { ElevationGrid, gridFromBounds } from '../../packages/venue-builder/lib/terrain/elevation-grid.mjs';
 import { shadeField, shadeRgba, encodePng } from '../../packages/venue-builder/lib/terrain/hillshade.mjs';
@@ -24,6 +27,7 @@ import {
 } from '../../packages/venue-builder/lib/display-pack.mjs';
 import { crownStipple, seedFromString, resolveKit, TERRAIN_PIECES, bakeModel } from '../../packages/venue-builder/lib/display-bake.mjs';
 import { buildMattReviewContext } from '../../scripts/lib/matt-review.mjs';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { parseCatalogArgs, pipelineOptsFromCatalogArgs } from '../../packages/venue-builder/lib/build-pipeline.mjs';
 
 const PASS = [];
@@ -514,8 +518,42 @@ await check('the standards-review context survives a diff larger than 1 MB', () 
   // It buffered the whole branch patch with node's 1 MB default, so any branch
   // big enough (or carrying one binary asset) died on `spawnSync git ENOBUFS`
   // after the app build had already run.
-  const ctx = buildMattReviewContext({ baseRef: 'origin/main' });
-  assert.ok(Array.isArray(ctx.files));
+  //
+  // Built on a scratch repo whose diff is deliberately over that line. Pointing
+  // this at the ambient branch proved nothing — it passes on any small diff, and
+  // it needs an `origin/main` ref that a shallow CI checkout does not have, which
+  // is exactly how it failed on GitHub while passing everywhere else.
+  const dir = mkdtempSync(join(tmpdir(), 'review-enobufs-'));
+  const git = (...args) =>
+    execFileSync('git', args, {
+      cwd: dir,
+      env: scrubGitEnv(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  try {
+    git('init', '-q', '-b', 'base');
+    git('config', 'user.email', 'test@example.com');
+    git('config', 'user.name', 'Test');
+    git('config', 'commit.gpgsign', 'false');
+    writeFileSync(join(dir, 'seed.txt'), 'seed\n');
+    git('add', '.');
+    git('commit', '-qm', 'base');
+
+    git('checkout', '-qb', 'feature');
+    // ~2.9 MB of distinct text lines, so the *patch* clears 1 MB rather than
+    // just the blob — the patch is what gets buffered.
+    const lines = Array.from({ length: 60_000 }, (_, i) => `line ${i} ${'x'.repeat(40)}`);
+    writeFileSync(join(dir, 'big.txt'), `${lines.join('\n')}\n`);
+    git('add', '.');
+    git('commit', '-qm', 'big');
+
+    const ctx = buildMattReviewContext({ baseRef: 'base', cwd: dir });
+    assert.deepEqual(ctx.files, ['big.txt']);
+    assert.equal(ctx.diffHash.length, 16);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
   return true;
 });
 
