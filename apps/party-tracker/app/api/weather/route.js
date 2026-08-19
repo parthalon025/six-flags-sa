@@ -8,8 +8,12 @@
  *
  * Open-Meteo, because it needs no key, no account and no environment variable,
  * which keeps the install story ("there is nothing to configure") true. If it
- * is unreachable — no signal, a blocked egress, the service down — this returns
- * 503 with a shaped body and the client falls back to its last reading. The
+ * is unreachable — no signal, a blocked egress, the service down — this falls
+ * back to the last cached reading for that coordinate, and if there is none
+ * (a cold cache), returns 200 with a gap body rather than a non-2xx status:
+ * missing weather is a gap in what the phone knows, not a failed request, and
+ * a non-2xx response is a browser-logged "failed to load resource" the app
+ * itself already tolerates — there is nothing to gain by surfacing it. The
  * feature degrades to the app that existed before it.
  *
  * The proxy is not decoration. It keeps the upstream host out of the browser's
@@ -106,16 +110,16 @@ export async function GET(request) {
       cache: 'no-store',
     });
   } catch {
-    return stale(hit) ?? json({ error: 'Weather unavailable', observed: null }, 503);
+    return stale(hit) ?? gap('unavailable', at);
   }
 
-  if (!upstream.ok) return stale(hit) ?? json({ error: 'Weather unavailable', observed: null }, 503);
+  if (!upstream.ok) return stale(hit) ?? gap('unavailable', at);
 
   let raw;
   try {
     raw = await upstream.json();
   } catch {
-    return stale(hit) ?? json({ error: 'Weather unreadable', observed: null }, 503);
+    return stale(hit) ?? gap('unreadable', at);
   }
 
   const body = shape(raw, at);
@@ -138,6 +142,21 @@ export async function GET(request) {
 function stale(hit) {
   if (!hit) return null;
   return json({ ...hit.body, cached: true, stale: true });
+}
+
+/**
+ * The cold-cache outage case: no prior reading to fall back on. HTTP 200,
+ * because there was no malformed request and no bug — only nothing to report
+ * right now. `observed: null` is what `useWeather.js` already reads as "no
+ * reading" without any client-side change; `gap: true` names why, matching
+ * how the rest of the app marks a known-missing value instead of hiding it.
+ *
+ * Deliberately not `cacheable`, for the same reason `stale` isn't: an outage
+ * is a moment, and pinning "no weather" into the shared CDN cache for ten
+ * minutes would hold the gap open long after the upstream recovers.
+ */
+function gap(reason, at) {
+  return json({ observed: null, gap: true, reason, at });
 }
 
 /**
