@@ -24,6 +24,7 @@
  * primary checkout on this host — work in the absolute `WORKTREE=` path.
  */
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './lib/git-env.mjs';
 import { existsSync, rmSync, statSync } from 'node:fs';
 import { join, normalize, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -87,8 +88,11 @@ export function removeDirSafe(dir) {
 }
 
 function git(cwd, args, opts = {}) {
+  // An inherited GIT_DIR outranks `cwd`, so a hook-spawned run would
+  // silently operate on the hook's repository. See scripts/lib/git-env.mjs.
   return execFileSync('git', args, {
     cwd,
+    env: scrubGitEnv(),
     encoding: 'utf8',
     stdio: opts.stdio ?? ['ignore', 'pipe', 'pipe'],
   }).trim();

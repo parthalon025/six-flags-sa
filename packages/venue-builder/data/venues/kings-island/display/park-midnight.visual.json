@@ -23,13 +23,15 @@
       "material": "paving-stones--warm",
       "layers": [
         "path"
-      ]
+      ],
+      "color": "#A9987D"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
-      ]
+      ],
+      "color": "#8C7B62"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -37,43 +39,50 @@
         "grass",
         "wood",
         "park"
-      ]
+      ],
+      "color": "#334126"
     },
     "water": {
       "material": "water--calm",
       "layers": [
         "water"
-      ]
+      ],
+      "color": "#35728F"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
-      ]
+      ],
+      "color": "#327A94"
     },
     "coaster-track": {
       "material": "steel--track",
       "layers": [
         "coaster"
-      ]
+      ],
+      "color": "#B8B8B4"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
-      ]
+      ],
+      "color": "#D2996C"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
-      ]
+      ],
+      "color": "#3A363F"
     },
     "lot": {
       "material": "concrete--lot",
       "layers": [
         "parking"
-      ]
+      ],
+      "color": "#5B5762"
     }
   },
   "landTones": {
@@ -116,5 +125,39 @@
   },
   "fallback": {
     "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n40w085/USGS_13_n40w085.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 6.45,
+    "fitness": "marginal",
+    "relief": {
+      "min": 190.5,
+      "max": 238.9
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 197
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 39.348,
+      "south": 39.3365,
+      "east": -84.2595,
+      "west": -84.2775
+    },
+    "steepDegrees": 18,
+    "constrained": {
+      "paths": 757,
+      "water": 24,
+      "pads": 206,
+      "nodes": 139445
+    }
   }
 }

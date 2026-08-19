@@ -6,73 +6,136 @@
       "label": "Warm paving stones",
       "license": "CC0-1.0",
       "source": "https://ambientcg.com/view?id=PavingStones070",
-      "maps": ["basecolor", "normal", "orm"],
+      "maps": [
+        "basecolor",
+        "normal",
+        "orm"
+      ],
       "resolution": 1024,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#817F76",
+      "swatch8": "AAAAtra2rq6jtrOrrauiqKihkpKSAAAAxsaqtbKlr62jsrGpoJ6Rn5qKkpCEgICArqmcrquhqqigqqWenpmOnZSHgXpudXVrsbClrKuhoaCbm5ePj4p9k5CGd3NpcW9qpqSZmZiOjYh9i4h+fXtxenlvaGVbVVRNoJ6Xm5iPjYmChYV8hoR5eHZuZGJZV1dTmYCAgX51d3ZsdHRsaWZbVlVOTk1EQEBAAAAAcXFVeHNtZ2VeXlxXT01JQEBAAAAA",
+      "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/PavingStones070.png",
+      "swatchSha256": "4005b85cb67b9aa24cb7c68fda69ed155c387bc63d2c73e31ada9d1a418f5799"
     },
     "asphalt--worn": {
       "label": "Worn asphalt",
       "license": "CC0-1.0",
-      "source": "https://ambientcg.com/view?id=Asphalt025",
-      "maps": ["basecolor", "normal", "orm"],
+      "source": "https://ambientcg.com/view?id=Asphalt025C",
+      "maps": [
+        "basecolor",
+        "normal",
+        "orm"
+      ],
       "resolution": 1024,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#383833",
+      "swatch8": "AAAAUFBQVFJNTk1HRkQ+Pjw2MDAwAAAAUFBAWVdSYF9ZWllTSUdCNzYxMjEsMDAwTExEYmFaa2pkYmFbUE9INTQvKCgkMzMvREM+UlBLWllTU1JMQ0I8Ly4pJSQgLi4qPj04QkE7RUQ/Pj04MzIuJyYjISEdLy4sNjQxOTgzOjg0NDMvLCsnIyIfJCMgMzMxMDAgMzIuNTMvMzEuKSglJiUiLCspMDAwAAAAMDAwNTMxNDQxMS8tLy8rMDAwAAAA",
+      "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Asphalt025C.png",
+      "swatchSha256": "7ab1000cde04d301e6e4cd1f6b37d20a88f41581bd6c48612b15ac6eafebc542"
     },
     "grass--meadow": {
       "label": "Meadow grass",
       "license": "CC0-1.0",
       "source": "https://ambientcg.com/view?id=Grass004",
-      "maps": ["basecolor", "normal", "orm"],
+      "maps": [
+        "basecolor",
+        "normal",
+        "orm"
+      ],
       "resolution": 1024,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#535A2F",
+      "swatch8": "AAAAamoqbno+anQ9YWo4Y2szdHQuAAAAamoqZm84X2c1X2o4WWM0V2EvZnE1aoBAY2s3YWg3XGQ0WmE4WmI2Vl8xXWYyZ3E3VVwwWWAzWmQ2YWtAY2w+WmI0WWExZG82S1IrWGA0WWI1ZW5AZG5BW2U2XGU0ZG02NjwgSlErWF8zXGU5Xmc6WGM1V2AwY2s3KioVOD4hR00oVFwyVV0yUlsuW2QzamoqAAAAJycUNjogQUYpRksrSU0oQFUqAAAA",
+      "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Grass004.png",
+      "swatchSha256": "9fed4143f8d02ee1dd941c80ac920e5b69cb28b072c61ce096c198213f42635d"
     },
     "water--calm": {
       "label": "Calm water",
       "license": "original",
       "source": "material-maker://graphs/water-calm",
-      "maps": ["basecolor", "normal"],
+      "maps": [
+        "basecolor",
+        "normal"
+      ],
       "resolution": 512,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#58AEDC",
+      "swatchSource": "authored"
     },
     "water--pool": {
       "label": "Pool water",
       "license": "original",
       "source": "material-maker://graphs/water-pool",
-      "maps": ["basecolor", "normal"],
+      "maps": [
+        "basecolor",
+        "normal"
+      ],
       "resolution": 512,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#4FC3E8",
+      "swatchSource": "authored"
     },
     "steel--track": {
       "label": "Coaster track steel",
       "license": "CC0-1.0",
       "source": "https://ambientcg.com/view?id=Metal032",
-      "maps": ["basecolor", "normal", "orm"],
+      "maps": [
+        "basecolor",
+        "normal",
+        "orm"
+      ],
       "resolution": 512,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#657078",
+      "swatch8": "AAAAYGBgrLS40dbaxMvPgY6WUGBgAAAAUFBgYmx1Y3B7ZnR+cYCMdYWRa3iBQFBQZXB4UV9qTVtlSFZgU2FtjJqloa63dICHbnyEVWRwXm15VGNuWWdyw8vS6e3vm6asY253VWNtVWNtWGdyWWhzk6Cpt8LJiZOcT1ZcS1dhUV9qWWhzWGZxaXiDbXuGXmdvMEBATVdeYG97ZnaCaXmEdoWQYWx1QEBQAAAAQFBQY290b32GdIKMcHyBUGBgAAAA",
+      "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Metal032.png",
+      "swatchSha256": "d53274b82919a9cdc3b5fa6276611b0e3b8d4edad58eed800efeb3b120134107"
     },
     "fiberglass--flume": {
       "label": "Slide flume fiberglass",
       "license": "original",
       "source": "material-maker://graphs/fiberglass-flume",
-      "maps": ["basecolor", "normal"],
+      "maps": [
+        "basecolor",
+        "normal"
+      ],
       "resolution": 512,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#E8834A",
+      "swatchSource": "authored"
     },
     "roofing--shingle": {
       "label": "Shingle roofing",
       "license": "CC0-1.0",
       "source": "https://ambientcg.com/view?id=RoofingTiles003",
-      "maps": ["basecolor", "normal", "orm"],
+      "maps": [
+        "basecolor",
+        "normal",
+        "orm"
+      ],
       "resolution": 1024,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#52524A",
+      "swatch8": "AAAAAAAAlJSInJyPoaGSkpKGAAAAAAAAAAAAjIyBlZSJl5eJoJ6Qp6aXm5mLAAAAcHBqhYV6hYV5gYB0j41/mpiJnJqNk5OGZ2lgb29mcXFmZ2dccXBkd3VohYN3iYd6WVxTUFFJTU1FTU1EVVZLVVRKZGNXeHVqTVNGPD03NzgyNzgyPD01QkI6T05FampdAAAAMTEuJCUiIiMgJCUhMDEqPzw1AAAAAAAAAAAAHh4eHBwaHh4cJCQeAAAAAAAA",
+      "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/RoofingTiles003.png",
+      "swatchSha256": "7f57420f231b9f46394b35da6a5fd6218b83a37a20c0579ef6c563b44e1d74d9"
     },
     "concrete--lot": {
       "label": "Parking lot concrete",
       "license": "CC0-1.0",
       "source": "https://ambientcg.com/view?id=Concrete034",
-      "maps": ["basecolor", "normal", "orm"],
+      "maps": [
+        "basecolor",
+        "normal",
+        "orm"
+      ],
       "resolution": 1024,
-      "seamless": true
+      "seamless": true,
+      "avgColor": "#A5A4A1",
+      "swatch8": "AAAA3d3d1tbV1NPQzs3KxcXBtra2AAAAzMzM19bU2NjV1NTRzMvIw8O/sLCspJKS09PP1tXT2NjW1NPQysrHvr26qKejkpCM0NDO0tLP09LQzczJwsG+tLOwmpmVg4J9yMbEysnGycjFw8PAtrWyrKuniYiEeXh0uLi0v767v767tbSxpqWilJOPdnVxdnRwqqqZq6unqqmloJ+ckpCNfXx5dHJvgICAAAAAiIiIkY+Ni4mGgH98e3l3gICAAAAA",
+      "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Concrete034.png",
+      "swatchSha256": "18802bf68661301fe12156b56a799d884363a60f87c2e591c580ca75fab5f744"
     }
   }
 }
