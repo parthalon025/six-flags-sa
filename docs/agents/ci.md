@@ -18,6 +18,7 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
 | `pre-push.mjs` | `main()` (`scripts/lib/pre-push.mjs`: `prePushDecision()`) | `.husky/pre-push` entry point — decides whether a `git push` owes a local CI run |
+| `agent-handoff-watch.mjs` | `check-trigger`, `gh` (`scripts/lib/agent-handoff-watch.mjs`: `shouldTriage()`, `assertScopedGhArgs()`) | Backs `agent-handoff-watch.yml` — trigger decision, and the only path Claude may reach `gh` through, scoped to the one issue that triggered the run |
 
 Workflow YAML calls the CLIs; tests import the exported functions.
 

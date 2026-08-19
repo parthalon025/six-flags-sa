@@ -31,6 +31,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
+  'test/scripts/agent-handoff-watch.test.mjs',
 ];
 
 /**
