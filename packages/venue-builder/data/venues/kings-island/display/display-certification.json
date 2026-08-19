@@ -148,6 +148,15 @@
       "confidence": "high",
       "falsifier": "a DSM is reported as resolving bare ground",
       "soWhat": "at 30m over a park one sample blends canopy, roof and ride structure"
+    },
+    {
+      "key": "tiles",
+      "claim": "base.pmtiles builds and fits the 15 MB pack budget, or the tiler is a recorded gap",
+      "pass": true,
+      "evidence": "tippecanoe not installed — GeoJSON + tippecanoe.sh recipe written; run it to build base.pmtiles",
+      "confidence": "low",
+      "falsifier": "tippecanoe runs and the archive is broken or exceeds the download budget",
+      "soWhat": "the display pack rides the venue download; an oversized or broken archive blocks it, and a missing tiler leaves the vector tier unbuilt"
     }
   ],
   "skins": {
@@ -197,7 +206,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 1942 bytes",
+          "evidence": "spec 2007 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -250,7 +259,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 1952 bytes",
+          "evidence": "spec 2017 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -303,7 +312,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 2022 bytes",
+          "evidence": "spec 2087 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"
@@ -356,7 +365,7 @@
           "key": "budget",
           "claim": "spec ≤ 64 KB and materials ≤ 1024px",
           "pass": true,
-          "evidence": "spec 2025 bytes",
+          "evidence": "spec 2090 bytes",
           "confidence": "high",
           "falsifier": "a spec or bound material exceeds the phone budget",
           "soWhat": "display packs ride the venue download budget; an oversized pack blocks the gate download"

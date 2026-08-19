@@ -74,9 +74,40 @@ both a 0.00001° nudge and a coordinate smuggled under a key like `center`.
   vocabulary with a new class.
 - The constraint solver (`lib/terrain/constraints.mjs`) exists so paths, water
   and pads sit properly on measured ground rather than inheriting DEM ripple.
-  It is opt-in (`--constrain`) because it moves ~66% of cells by a mean of
-  0.36 m and that should be a deliberate choice.
-- Mesh export exists and nothing renders it. That is stated rather than hidden:
-  the OBJ is gitignored (~10 MB per venue) and produced on demand.
+  It moves ~66% of cells by a mean of 0.36 m while leaving each venue's relief
+  envelope unchanged — the features settle into the terrain rather than
+  distorting it.
+- Mesh export exists; #512's isoWorld is the consumer, not yet wired. The OBJ is
+  gitignored (~10 MB per venue).
+
+**Amendment — every capability defaults on.** These began as opt-in flags, on
+the reasoning that terrain needs the network and the solver moves most cells, so
+both should be deliberate. In practice the default was the trap: the committed
+output was generated *with* `--terrain`, so a bare `venues:display` silently
+produced less than what ships — no terrain block, no hillshade, an unsolved
+heightfield — and regenerating looked like a large regression that was really a
+forgotten flag. A default that does not reproduce the committed artifact is the
+wrong default. `--no-terrain` / `--no-constrain` / `--no-mesh` opt out.
+
+Two capabilities differ. `--mesh` defaults **by scale rather than by CLI**: one
+venue gets a mesh, a catalog batch does not, because a 10 MB OBJ per park across
+a 100-park catalog is a gigabyte of output nothing reads. Keying that off which
+command you typed was the first attempt and it was wrong — `build-venue
+--pipeline` builds a single venue and would have disagreed with `venues:display`
+about that same venue. The scale is resolved where it is actually known, and an
+explicit `--mesh` / `--no-mesh` wins either way. `--bake` stays opt-in everywhere, because
+passing it *claims a bake tier* — and a pack that claims one without a certified
+bake is meant to fail, which is a rule with its own test. `venues:bake` needs a
+browser and writes to `artifacts/`, so defaulting the claim on would fail every
+venue on any machine that has not baked.
+
+Defaulting `--tiles` also required separating two things its gate had conflated.
+An **absent optional toolchain** is a recorded gap; a toolchain that **ran and
+produced something wrong** is a failure. tippecanoe is a `wrap` dependency CI
+does not install, so the old gate would have failed every venue on most machines
+while saying nothing about any venue. `buildTiles` already described itself as
+returning "a recorded gap, not a crash", and the sibling raster tier already
+gapped a missing `go-pmtiles`; the tiles gate now matches both, and still fails
+hard when tippecanoe runs and the archive is broken or over budget.
 - 3DEP is US-only. Non-US venues get 30 m Copernicus, and the difference is
   recorded per venue rather than smoothed over.
