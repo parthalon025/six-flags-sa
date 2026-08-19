@@ -1,19 +1,22 @@
 #!/usr/bin/env node
 /**
- * Local CI pass stamp — write after pre-merge-vertical, check before GitHub UI jobs.
+ * Local CI pass stamp — write after pre-merge-vertical, check before GitHub jobs.
  *
  *   node scripts/ci/local-ci-pass.mjs write [--base origin/main] [--no-browser]
- *   node scripts/ci/local-ci-pass.mjs check [--base origin/main] [--any-ui true|false]
+ *   node scripts/ci/local-ci-pass.mjs check [--base origin/main] [--any-ui true|false] [--force-full]
  *
- * On GitHub Actions, `check` writes `skip_ui=true|false` to GITHUB_OUTPUT.
+ * On GitHub Actions, `check` writes `skip_ci`, `skip_ui` and `local_ci_tag` to
+ * GITHUB_OUTPUT, and the reason for the decision to the job summary.
  */
 import { appendFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  LOCAL_CI_TAG,
+  TAG_SKIPPED_JOBS,
   buildLocalCiContext,
+  localCiDecision,
   readLocalCiPass,
-  shouldSkipGithubUi,
   writeLocalCiPass,
 } from '../lib/local-ci-pass.mjs';
 
@@ -24,16 +27,18 @@ function parseArgs(argv) {
     baseRef: 'origin/main',
     noBrowser: false,
     anyUi: false,
+    forceFull: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === '--base') opts.baseRef = argv[++i];
     else if (arg === '--no-browser') opts.noBrowser = true;
     else if (arg === '--any-ui') opts.anyUi = argv[++i] === 'true';
+    else if (arg === '--force-full') opts.forceFull = true;
     else if (arg === '--help' || arg === '-h') {
       console.log(`Usage:
   local-ci-pass.mjs write [--base origin/main] [--no-browser]
-  local-ci-pass.mjs check [--base origin/main] [--any-ui true|false]`);
+  local-ci-pass.mjs check [--base origin/main] [--any-ui true|false] [--force-full]`);
       process.exit(0);
     }
   }
@@ -47,41 +52,52 @@ function emitGithubOutput(key, value) {
   }
 }
 
+function emitGithubSummary(markdown) {
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n`);
+  }
+}
+
 /**
- * Hand-written stamp. It deliberately records **no** verticals — only a real
+ * Hand-written stamp. It records **no** verticals and **no** tag — only a real
  * `pre-merge-vertical` run may claim those — so a code diff still owes its
- * runs after this, and a hand stamp can never wave one through.
+ * runs after this, and a hand stamp can never skip a GitHub job.
  */
-export function runWrite({ baseRef, noBrowser, cwd = root } = {}) {
-  const context = buildLocalCiContext({ baseRef, cwd });
+export function runWrite({ baseRef, noBrowser, cwd = root, context } = {}) {
+  const ctx = context ?? buildLocalCiContext({ baseRef, cwd });
   const stamp = writeLocalCiPass(
-    { context, browserVertical: !noBrowser && context.needsBrowser },
+    { context: ctx, browserVertical: !noBrowser && ctx.needsBrowser, tag: null },
     cwd,
   );
-  console.log(`Wrote ${stamp.head.slice(0, 7)} → scripts/ci/local-ci-pass.json`);
+  console.log(`Wrote ${stamp.diffHash} → scripts/ci/local-ci-pass.json`);
   console.log(`  modules: ${stamp.modules.join(', ') || '(none)'}`);
   console.log(`  browserVertical: ${stamp.browserVertical}`);
-  if (context.verticals.length) {
+  console.log(
+    `  tag: (none) — only npm run test:pre-merge-vertical may write ${LOCAL_CI_TAG}`,
+  );
+  if (ctx.verticals.length) {
     console.log(
-      `  verticals: (none recorded) — this diff still owes ${context.verticals.join(', ')}; run npm run test:pre-merge-vertical`,
+      `  verticals: (none recorded) — this diff still owes ${ctx.verticals.join(', ')}; run npm run test:pre-merge-vertical`,
     );
   }
   return stamp;
 }
 
-export function runCheck({ baseRef, anyUi, cwd = root } = {}) {
+export function runCheck({ baseRef, anyUi, forceFull = false, cwd = root } = {}) {
   const context = buildLocalCiContext({ baseRef, cwd });
   const stamp = readLocalCiPass(cwd);
-  const skipUi = shouldSkipGithubUi(stamp, context, { anyUi });
-  if (skipUi) {
-    console.log('Local CI pass covers this tree — GitHub UI jobs may be skipped.');
-  } else if (stamp) {
-    console.log('Local CI pass stamp is stale or incomplete — GitHub UI jobs will run.');
-  } else {
-    console.log('No local CI pass stamp — GitHub UI jobs will run.');
-  }
-  emitGithubOutput('skip_ui', skipUi ? 'true' : 'false');
-  return { skipUi, context, stamp };
+  const decision = localCiDecision(stamp, context, { anyUi, forceFull });
+
+  console.log(decision.reason);
+  emitGithubOutput('skip_ci', decision.skipCi ? 'true' : 'false');
+  emitGithubOutput('skip_ui', decision.skipUi ? 'true' : 'false');
+  emitGithubOutput('local_ci_tag', LOCAL_CI_TAG);
+  emitGithubSummary(
+    decision.skipCi
+      ? `### \`${LOCAL_CI_TAG}\`\n\n${decision.reason}\n\nSkipped: ${TAG_SKIPPED_JOBS.join(', ')}.`
+      : `### \`${LOCAL_CI_TAG}\` not honoured\n\n${decision.reason}`,
+  );
+  return { ...decision, context, stamp };
 }
 
 async function main(argv = process.argv.slice(2)) {
@@ -92,7 +108,7 @@ async function main(argv = process.argv.slice(2)) {
     return;
   }
   if (cmd === 'check') {
-    runCheck({ baseRef: opts.baseRef, anyUi: opts.anyUi });
+    runCheck({ baseRef: opts.baseRef, anyUi: opts.anyUi, forceFull: opts.forceFull });
     return;
   }
   console.error('Usage: local-ci-pass.mjs <write|check> [options]');
