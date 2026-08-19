@@ -224,6 +224,12 @@ jobs:
       # human gate sees the map beside its reference, not just numbers. The
       # images ride this run's artifact; the certification rows and the tier
       # manifest ride the committed pack sidecars under data/venues.
+      #
+      # display-pack runs with --no-mesh because the terrain OBJ is gitignored:
+      # the ~10 MB it writes per venue is generated and thrown away with the
+      # runner. Terrain and the constraint solver stay on — this job is meant to
+      # commit the pack sidecars, so turning them off would ship display specs
+      # with no terrain block and a flat hillshade.
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
@@ -235,7 +241,7 @@ jobs:
           for id in $VENUE_IDS; do
             node packages/venue-builder/bin/display-bake.mjs "$id" \
               --kit island-brochure --kit rpg-overworld --kit blueprint-survey --kit midnight-carnival --ldtk
-            node packages/venue-builder/bin/display-pack.mjs "$id" --tiles --bake
+            node packages/venue-builder/bin/display-pack.mjs "$id" --tiles --bake --no-mesh
           done
           node packages/venue-builder/bin/display-contact-sheet.mjs
           {
