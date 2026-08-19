@@ -19,6 +19,7 @@ import { fromUrl } from 'geotiff';
 import { cachePath, readCache, writeCache } from './_cache.mjs';
 
 export const worldcoverCacheFile = (id) => cachePath(id, 'esa-worldcover');
+export const worldcoverLandsCacheFile = (id) => cachePath(id, 'esa-worldcover-lands');
 
 export const CLASS_NAMES = {
   10: 'tree_cover',
@@ -125,6 +126,70 @@ export function worldcoverClaims(histogram, center, { date } = {}) {
 const hasBounds = (b) =>
   Number.isFinite(b?.north) && Number.isFinite(b?.south) && Number.isFinite(b?.east) && Number.isFinite(b?.west);
 const hasCenter = (c) => Number.isFinite(c?.lat) && Number.isFinite(c?.lng);
+
+/** Pure: a `[[lng,lat], …]` ring → its bounding box. */
+export function boundsFromRing(ring) {
+  let north = -Infinity;
+  let south = Infinity;
+  let east = -Infinity;
+  let west = Infinity;
+  for (const point of ring || []) {
+    const [lng, lat] = point || [];
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    if (lat > north) north = lat;
+    if (lat < south) south = lat;
+    if (lng > east) east = lng;
+    if (lng < west) west = lng;
+  }
+  return { north, south, east, west };
+}
+
+/**
+ * Classify each land patch's dominant WorldCover class by sampling the
+ * raster over that patch's *own* bounding box — not the venue-wide bbox a
+ * single venue-level `run()` call uses. This is what lets a built-up
+ * district, a wooded district, and a lake district pick different classes
+ * instead of all sharing one venue-level dominant class. Best-effort per
+ * land: a land whose window fails to read (a tile edge, a network hiccup)
+ * is simply left out, so its caller falls back to a hand tint or name-hue.
+ */
+export async function classifyLands(lands, { openTiff = fromUrl } = {}) {
+  const out = {};
+  for (const land of lands || []) {
+    if (!land?.n || !Array.isArray(land.r) || land.r.length < 3) continue;
+    const bounds = boundsFromRing(land.r);
+    if (!hasBounds(bounds)) continue;
+    try {
+      const histogram = await classHistogram(bounds, { openTiff });
+      const dominant = dominantClass(histogram);
+      if (dominant) out[land.n] = dominant;
+    } catch {
+      // Best-effort — leave this land unclassified rather than fail the batch.
+    }
+  }
+  return out;
+}
+
+/**
+ * Classify every land in a venue and cache the result, or (offline) read
+ * back what was already cached. Separate cache file from the venue-level
+ * `run()` histogram — this is per-patch data, not a venue-wide summary.
+ */
+export async function classifyVenueLands(id, lands, { offline = false, openTiff = fromUrl } = {}) {
+  if (offline) {
+    const cached = readCache(id, 'esa-worldcover-lands');
+    return { ok: Boolean(cached?.lands), data: cached || { lands: {} } };
+  }
+  const classified = await classifyLands(lands, { openTiff });
+  const out = {
+    fetched: new Date().toISOString().slice(0, 10),
+    source: 'esa-worldcover.org',
+    license: 'CC BY 4.0',
+    lands: classified,
+  };
+  writeCache(id, 'esa-worldcover-lands', out);
+  return { ok: true, data: out };
+}
 
 export async function run(ctx = {}, { openTiff = fromUrl } = {}) {
   const id = ctx.venueId;

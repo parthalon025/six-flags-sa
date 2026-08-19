@@ -57,6 +57,42 @@ export function readSkinTemplates() {
   return skins;
 }
 
+/**
+ * ESA WorldCover class → land tone. The land-cover analogue of
+ * SURFACE_CLASSES: ties each classified district to the ledger material a
+ * guest would actually see underfoot there, plus the day/night wash that
+ * paints it before a texture ever loads. Classes with no real analogue
+ * among shipped materials (bare/sparse, snow/ice, cropland, …) are
+ * deliberately absent — an unmapped class invents no tone, see
+ * `landTonesFromCover`.
+ */
+export const LAND_COVER_STYLE = {
+  built_up: { material: 'roofing--shingle', tone: { day: '#C9B79E', night: '#39323F' } },
+  tree_cover: { material: 'grass--meadow', tone: { day: '#7CA35E', night: '#1D3320' } },
+  grassland: { material: 'grass--meadow', tone: { day: '#BFD79A', night: '#2B4527' } },
+  permanent_water: { material: 'water--calm', tone: { day: '#6FB8D9', night: '#1C4A5C' } },
+};
+
+/** Per-venue land-patch classification cache written by `venues:worldcover-lands`. */
+export function readLandCover(id) {
+  return readJson(venueSidecar(id, 'esa-worldcover-lands-cache.json'), { lands: {} }).lands;
+}
+
+/**
+ * Pure: WorldCover-classified lands → land tones, gated the same way
+ * `compileVisualSpec` gates surfaces — a class with no bound material (or no
+ * WorldCover data at all) invents no tone; certification stays total.
+ */
+function landTonesFromCover(landCover, materials) {
+  const tones = {};
+  for (const [name, cls] of Object.entries(landCover || {})) {
+    const style = LAND_COVER_STYLE[cls?.name];
+    if (!style || !materials[style.material]) continue;
+    tones[name] = { ...style.tone };
+  }
+  return tones;
+}
+
 function landTonesFromMeta(meta) {
   // Hand tints are either a fill string or a {fill, stroke, label} object
   // (Kings Island); the spec carries the fill — the phone keeps the richer
@@ -76,13 +112,17 @@ function landTonesFromMeta(meta) {
 
 /**
  * Compile one venue × Skin visual spec. Pure: no disk, no clock, no network.
- * Binds only surfaces whose layers the venue actually has; hand land tints
- * pass through and none are invented (unmapped lands fall back to the
- * renderer's deterministic name-hue).
+ * Binds only surfaces whose layers the venue actually has. Land tones come
+ * from two sources, curated over inferred: hand land tints pass through
+ * unchanged, then real ESA WorldCover classification (`landCover`, per
+ * district) fills in tones for every land a hand tint didn't already claim.
+ * Neither source invents a tone for a land it doesn't cover — a district
+ * with no hand tint and no (or unmapped) WorldCover class falls back to the
+ * renderer's deterministic name-hue, same as before this existed.
  *
- * @param {{ map: object, pois: object[], template: object, materials: object }} deps
+ * @param {{ map: object, pois: object[], template: object, materials: object, landCover?: object }} deps
  */
-export function compileVisualSpec({ map, pois = [], template, materials }) {
+export function compileVisualSpec({ map, pois = [], template, materials, landCover }) {
   const surfaces = {};
   for (const [surface, materialId] of Object.entries(template.surfaces || {})) {
     const layers = (SURFACE_CLASSES[surface]?.layers || []).filter((l) => map[l]?.length);
@@ -97,7 +137,7 @@ export function compileVisualSpec({ map, pois = [], template, materials }) {
     basedOn: { map: map.meta?.generated || null },
     tokens: template.tokens || {},
     surfaces,
-    landTones: landTonesFromMeta(map.meta),
+    landTones: { ...landTonesFromCover(landCover, materials), ...landTonesFromMeta(map.meta) },
     fallback: { landTone: 'name-hue' },
   };
 }
@@ -361,6 +401,7 @@ export function runDisplayStage(id, opts = {}) {
   const { map, pois } = opts.map ? { map: opts.map, pois: opts.pois || [] } : loadTruth(id);
   const materials = readMaterials();
   const templates = readSkinTemplates();
+  const landCover = opts.landCover || readLandCover(id);
   const skinIds = opts.skinIds
     || Object.keys(templates).filter((skinId) => templates[skinId].status === 'active');
   const outDir = opts.outDir || venueSidecar(id, 'display');
@@ -371,7 +412,7 @@ export function runDisplayStage(id, opts = {}) {
   for (const skinId of skinIds) {
     const template = templates[skinId];
     if (!template) throw new Error(`Unknown skin "${skinId}"`);
-    const spec = compileVisualSpec({ map, pois, template, materials });
+    const spec = compileVisualSpec({ map, pois, template, materials, landCover });
     const certification = certifyDisplayPack({ spec, map, template, materials });
     const style = styleFromSpec(spec);
     packs[skinId] = { spec, certification, style };
