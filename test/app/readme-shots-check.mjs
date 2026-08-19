@@ -8,6 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -69,6 +70,8 @@ if (base) {
   try {
     const out = execFileSync('git', ['diff', '--name-only', `${ref}...HEAD`], {
       cwd: root,
+      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+      env: scrubGitEnv(),
       encoding: 'utf8',
     });
     changed = out.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);

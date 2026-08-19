@@ -26,13 +26,15 @@
       "material": "paving-stones--warm",
       "layers": [
         "path"
-      ]
+      ],
+      "color": "#7A6E76"
     },
     "service-road": {
       "material": "asphalt--worn",
       "layers": [
         "service"
-      ]
+      ],
+      "color": "#5D515B"
     },
     "vegetation": {
       "material": "grass--meadow",
@@ -40,35 +42,68 @@
         "grass",
         "wood",
         "park"
-      ]
+      ],
+      "color": "#A3A17F"
     },
     "water": {
       "material": "water--calm",
       "layers": [
         "water"
-      ]
+      ],
+      "color": "#79B2CC"
     },
     "pool": {
       "material": "water--pool",
       "layers": [
         "pool"
-      ]
+      ],
+      "color": "#75BBD1"
     },
     "slide": {
       "material": "fiberglass--flume",
       "layers": [
         "slide"
-      ]
+      ],
+      "color": "#A36F64"
     },
     "structure": {
       "material": "roofing--shingle",
       "layers": [
         "building"
-      ]
+      ],
+      "color": "#8F8472"
     }
   },
   "landTones": {},
   "fallback": {
     "landTone": "name-hue"
+  },
+  "terrain": {
+    "source": "usgs-3dep",
+    "url": "https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n31w087/USGS_13_n31w087.tif",
+    "resolution": 10,
+    "surfaceModel": false,
+    "cellMetres": 2.44,
+    "fitness": "coarse",
+    "relief": {
+      "min": 2.1,
+      "max": 17.6
+    },
+    "grid": {
+      "cols": 240,
+      "rows": 271
+    },
+    "hillshade": {
+      "file": "hillshade.png",
+      "azimuth": 315,
+      "altitude": 45
+    },
+    "bounds": {
+      "north": 30.39219,
+      "south": 30.38621,
+      "east": -86.46936,
+      "west": -86.47545
+    },
+    "steepDegrees": 18
   }
 }
