@@ -1,14 +1,24 @@
 {
   "schema": 3,
   "tag": null,
-  "diffHash": "85caab419db69f07",
-  "head": "510af1923890c47388852dfaf9b2d9a6bbb01f55",
+  "diffHash": "b2c2022b79e3924c",
+  "head": "148e00926d9995c74cf349fdb208ef8e8ae5c520",
   "mergeBase": "0e66e6d2f2985854571d88da4b1d48f13025a186",
   "baseRef": "origin/main",
   "modules": [
+    "auth",
     "builder",
     "contract",
-    "venues"
+    "grandma",
+    "heights",
+    "intake",
+    "lint",
+    "offline",
+    "party",
+    "selector",
+    "smoke",
+    "venues",
+    "walk"
   ],
   "browserVertical": true,
   "verticals": [],
@@ -22,5 +32,5 @@
   ],
   "lockHash": "cb19cfc69bb8eaa3",
   "manifestHash": "8896c207e1eac635",
-  "recordedAt": "2026-08-19T00:41:38.545Z"
+  "recordedAt": "2026-08-19T00:41:05.535Z"
 }
