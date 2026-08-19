@@ -315,6 +315,19 @@ const MATERIAL_BUDGET_PX = 1024;
 const TILES_BUDGET_KB = 15 * 1024;
 
 /**
+ * Does a tiles result clear the gate?
+ *
+ * Exported because the gap-vs-failure distinction is the whole reason tiles can
+ * default on, and a test that restates the rule locally proves nothing about
+ * the rule the pack actually applies — it just drifts, budget constant and all.
+ *
+ * @param {{ ok?: boolean, gap?: boolean, sizeKb?: number }} tiles
+ */
+export const tilesGatePasses = (tiles) => Boolean(
+  tiles.gap || (tiles.ok && tiles.sizeKb <= TILES_BUDGET_KB),
+);
+
+/**
  * Certify one compiled spec against truth, the template, and the ledger.
  * Pure — same claim/evidence/confidence/falsifier/so-what contract as
  * `venue-certify.mjs`.
@@ -554,7 +567,7 @@ export function runDisplayStage(id, opts = {}) {
     venueChecks.push(check({
       key: 'tiles',
       claim: `base.pmtiles builds and fits the ${TILES_BUDGET_KB / 1024} MB pack budget, or the tiler is a recorded gap`,
-      pass: tiles.gap || (tiles.ok && tiles.sizeKb <= TILES_BUDGET_KB),
+      pass: tilesGatePasses(tiles),
       evidence: tiles.ok ? `base.pmtiles ${tiles.sizeKb} KB` : tiles.reason,
       confidence: tiles.gap ? 'low' : 'high',
       falsifier: 'tippecanoe runs and the archive is broken or exceeds the download budget',

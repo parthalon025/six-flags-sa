@@ -89,10 +89,13 @@ heightfield — and regenerating looked like a large regression that was really 
 forgotten flag. A default that does not reproduce the committed artifact is the
 wrong default. `--no-terrain` / `--no-constrain` / `--no-mesh` opt out.
 
-Two capabilities keep an exception. `--mesh` stays opt-in for a **catalog** run,
-where a 10 MB OBJ per park across a 100-park catalog is a gigabyte of output
-nothing reads; four shipped venues is 40 MB of gitignored files, so
-`venues:display` defaults it on. `--bake` stays opt-in everywhere, because
+Two capabilities differ. `--mesh` defaults **by scale rather than by CLI**: one
+venue gets a mesh, a catalog batch does not, because a 10 MB OBJ per park across
+a 100-park catalog is a gigabyte of output nothing reads. Keying that off which
+command you typed was the first attempt and it was wrong — `build-venue
+--pipeline` builds a single venue and would have disagreed with `venues:display`
+about that same venue. The scale is resolved where it is actually known, and an
+explicit `--mesh` / `--no-mesh` wins either way. `--bake` stays opt-in everywhere, because
 passing it *claims a bake tier* — and a pack that claims one without a certified
 bake is meant to fail, which is a rule with its own test. `venues:bake` needs a
 browser and writes to `artifacts/`, so defaulting the claim on would fail every

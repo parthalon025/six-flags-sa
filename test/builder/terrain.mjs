@@ -23,7 +23,7 @@ import { tileNameFor as tile3dep } from '../../packages/venue-builder/lib/adapte
 import { tileNameFor as tileCop } from '../../packages/venue-builder/lib/adapters/copernicus-dem.mjs';
 import {
   compileVisualSpec, certifyDisplayPack, readMaterials, readSkinTemplates,
-  styleFromSpec, mixHex, DEFAULT_MATERIAL_MIX,
+  styleFromSpec, mixHex, tilesGatePasses, DEFAULT_MATERIAL_MIX,
 } from '../../packages/venue-builder/lib/display-pack.mjs';
 import { crownStipple, seedFromString, resolveKit, TERRAIN_PIECES, bakeModel } from '../../packages/venue-builder/lib/display-bake.mjs';
 import { buildMattReviewContext } from '../../scripts/lib/matt-review.mjs';
@@ -603,10 +603,20 @@ await check('terrain and the solver default on, and --no-* still turns them off'
   assert.equal(explicit.terrain, true);
   assert.equal(explicit.constrain, true);
 
-  // Mesh is the one capability that stays opt-in at catalog scale: a 10 MB OBJ
-  // per park over a 100-park catalog is a gigabyte of output nothing reads.
-  assert.equal(bare.mesh, false, 'mesh must not default on for a catalog run');
-  assert.equal(pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--mesh'])).mesh, true);
+  // Mesh defaults by scale, not by which CLI was typed: one venue gets a mesh
+  // (matching venues:display for that same venue), a 100-park catalog batch
+  // does not. Keying this off the CLI meant build-venue --pipeline built one
+  // venue with mesh off while venues:display built it with mesh on.
+  const one = parseCatalogArgs(['--display']);
+  assert.equal(pipelineOptsFromCatalogArgs(one).mesh, true, 'a single venue gets a mesh');
+  assert.equal(pipelineOptsFromCatalogArgs(one, { batch: true }).mesh, false,
+    'a catalog batch does not');
+
+  // An explicit flag beats the scale default in both directions.
+  const forced = parseCatalogArgs(['--display', '--mesh']);
+  assert.equal(pipelineOptsFromCatalogArgs(forced, { batch: true }).mesh, true);
+  const refused = parseCatalogArgs(['--display', '--no-mesh']);
+  assert.equal(pipelineOptsFromCatalogArgs(refused).mesh, false);
   return true;
 });
 
@@ -637,15 +647,41 @@ await check('an absent tiler is a gap; a broken one is still a failure', () => {
   // Defaulting --tiles on would have failed certification for every venue on
   // every machine without tippecanoe — a `wrap` dependency CI does not install.
   // The gate now distinguishes "the toolchain cannot answer" from "this venue's
-  // tiles are wrong", so softening it must not have cost it its teeth.
-  const gate = (tiles) => tiles.gap || (tiles.ok && tiles.sizeKb <= 8 * 1024);
-  assert.equal(gate({ ok: false, gap: true, reason: 'tippecanoe not installed' }), true,
+  // tiles are wrong", so softening it must not have cost it its teeth. Driven
+  // through the exported gate, not a local restatement of it: the first version
+  // of this test hardcoded an 8 MB budget while the real one is 15 MB, and
+  // passed anyway.
+  assert.equal(tilesGatePasses({ ok: false, gap: true, reason: 'tippecanoe not installed' }), true,
     'a missing tiler is a recorded gap');
-  assert.equal(gate({ ok: false, reason: 'tippecanoe exited 1: bad geometry' }), false,
+  assert.equal(tilesGatePasses({ ok: false, reason: 'tippecanoe exited 1: bad geometry' }), false,
     'a tiler that ran and failed is still a failure');
-  assert.equal(gate({ ok: true, sizeKb: 99999 }), false,
-    'an oversized archive is still a failure');
-  assert.equal(gate({ ok: true, sizeKb: 512 }), true);
+  assert.equal(tilesGatePasses({ ok: true, sizeKb: 16 * 1024 }), false,
+    'an archive over the 15 MB budget is still a failure');
+  assert.equal(tilesGatePasses({ ok: true, sizeKb: 15 * 1024 }), true, 'exactly at budget passes');
+  assert.equal(tilesGatePasses({ ok: true, sizeKb: 512 }), true);
+  return true;
+});
+
+await check('a typo\'d capability flag is rejected, not silently ignored', () => {
+  // With capabilities on by default, an ignored `--no-tile` does *more* than
+  // asked while looking like it obeyed. Unknown flags must stop the run.
+  const run = (args) => {
+    try {
+      execFileSync(process.execPath, ['packages/venue-builder/bin/display-pack.mjs', ...args], {
+        env: scrubGitEnv(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      return { status: 0, stderr: '' };
+    } catch (e) {
+      return { status: e.status, stderr: String(e.stderr || '') };
+    }
+  };
+  const typo = run(['big-kahunas', '--no-tile']);
+  assert.equal(typo.status, 2, 'a typo must exit non-zero');
+  assert.match(typo.stderr, /unknown flag\(s\) --no-tile/);
+  assert.match(typo.stderr, /--no-tiles/, 'the error should name the real flag');
+
+  // A run with no targets still prints usage rather than the unknown-flag error.
+  assert.equal(run(['--no-tiles']).status, 2);
   return true;
 });
 

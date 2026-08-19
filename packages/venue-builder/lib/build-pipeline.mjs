@@ -13,10 +13,10 @@
  *   9. display   — per-Skin visual specs + display-certify (opt-in, --display).
  *                  Terrain and the constraint solver are ON by default here, as
  *                  they are in venues:display: --no-terrain / --no-constrain opt
- *                  out. --mesh is the one capability that stays opt-in, and only
- *                  at catalog scale: a 10 MB OBJ nothing renders, times 100
- *                  parks, is a gigabyte of nothing. venues:display defaults it on
- *                  because four shipped venues is 40 MB of gitignored output.
+ *                  out. --mesh defaults by scale rather than by CLI: on for a
+ *                  single venue, off for a catalog batch, where a 10 MB OBJ
+ *                  nothing renders times 100 parks is a gigabyte of nothing.
+ *                  --mesh / --no-mesh override either way.
  */
 
 import path from 'node:path';
@@ -451,10 +451,10 @@ export function parseCatalogArgs(argv) {
     certify: true,
     display: false,
     // Display capabilities are on by default; a bare run produces what ships.
-    // mesh is the exception at catalog scale — see the --mesh note in the header.
+    // mesh stays null until scale is known — see pipelineOptsFromCatalogArgs.
     terrain: true,
     constrain: true,
-    mesh: false,
+    mesh: null,
     applyAliases: true,
     openPr: false,
     json: false,
@@ -494,7 +494,17 @@ export function parseCatalogArgs(argv) {
   return out;
 }
 
-export function pipelineOptsFromCatalogArgs(args) {
+/**
+ * @param {object} args parsed by parseCatalogArgs
+ * @param {{ batch?: boolean }} [scale] true when this run covers the catalog
+ *
+ * `mesh` has no single right default, so it is resolved here where the scale
+ * is actually known rather than guessed from which CLI was typed. One venue
+ * gets a mesh, matching venues:display; a catalog batch does not, because a
+ * 10 MB OBJ per park across a 100-park catalog is a gigabyte nothing reads.
+ * An explicit --mesh / --no-mesh always wins over both.
+ */
+export function pipelineOptsFromCatalogArgs(args, { batch = false } = {}) {
   return {
     dryRun: args.dryRun,
     retries: args.retries,
@@ -507,7 +517,7 @@ export function pipelineOptsFromCatalogArgs(args) {
     display: args.display,
     terrain: args.terrain,
     constrain: args.constrain,
-    mesh: args.mesh,
+    mesh: args.mesh ?? !batch,
     rebuildOnly: args.skipExisting,
     skip: args.allowNoHeights ? ['research', 'aliases', 'heights', 'rebuild', 'agent'] : [],
   };
