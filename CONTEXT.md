@@ -109,7 +109,7 @@ The builder-produced visual assets for one **World** (implementation: one `venue
 _Avoid_: tile server (runtime HTTP on the phone); map pack (use **display pack**); baking truth into tiles (truth stays JSON)
 
 **Rendering tier**:
-How a **World**’s **display pack** actually draws on a device: baked (default, every device, zero shader cost) or real-time PBR (additive on capable devices — same visual result, no separate download, falls back to baked on a device-capability check). Not the **Custom map** replace/overlay distinction (that is *what* draws; this is *how* it renders) and not a **Skin template** (a template still resolves to whichever tier the device runs). Detail: ADR-0013 item 4.
+How a **World**’s **display pack** actually draws on a device: baked (default, every device, zero shader cost) or real-time PBR (additive on capable devices — live time-of-day and **Skin** swap with no separate download, falling back to baked on a device-capability check). Not the **Custom map** replace/overlay distinction (that is *what* draws; this is *how* it renders) and not a **Skin template** (a template still resolves to whichever tier the device runs). Detail: ADR-0013 item 4.
 _Avoid_: shader tier; graphics mode; LOD (zoom-band culling in the SVG renderer, a different mechanism); ADR-0014’s “game-tier” / “illustrated tier” (venue art fidelity — a different axis from this)
 
 **Skin template**:

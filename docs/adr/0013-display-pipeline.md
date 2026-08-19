@@ -75,7 +75,7 @@ Target: **MapLibre GL JS** in the Capacitor WebView reading local PMTiles. SVG `
 
 1. Lock bundle schema + `manifest.json`
 2. Wire `tiles-build` + `display-certify` into `runVenuePipeline`
-3. MapLibre renderer loading local PMTiles + global skin templates (baked-raster tier — default and
+3. MapLibre renderer loading local PMTiles + global skin templates (baked tier — default and
    low-end fallback; zero shader cost)
 4. Real-time PBR tier for capable devices: MapLibre custom style layer + three.js
    `MeshStandardMaterial` rendering KTX2-compressed material sets over extruded truth geometry — one
