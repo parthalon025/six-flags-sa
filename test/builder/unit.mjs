@@ -7745,24 +7745,43 @@ await check('new evidence sources fuse with expected weights', () => {
 await check('parks-api adapter maps cedar point', async () => {
   const { loadParksApiData, compareParksApiToBundle, PARK_ENTITY_IDS } = await import('../../packages/venue-builder/lib/adapters/parks-api.mjs');
   assert.ok(PARK_ENTITY_IDS['cedar-point']);
-  const data = await loadParksApiData('cedar-point', { fetch: true });
-  assert.ok(data.attractions?.length > 50);
-  const cmp = compareParksApiToBundle({ parksApi: data, pois: [{ n: 'Millennium Force', c: 'ride' }] });
-  assert.ok(cmp.matched >= 1);
+  // Live fetch against the real cedar-point ParksAPI entity, but the cache
+  // write is redirected to a temp dir so this exercise never mutates the
+  // committed data/venues/cedar-point/ sidecar (issue #510).
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'parks-api-'));
+  try {
+    const cacheFile = path.join(tmpDir, 'parks-api-cache.json');
+    const data = await loadParksApiData('cedar-point', { fetch: true, cacheFile });
+    assert.ok(data.attractions?.length > 50);
+    const cmp = compareParksApiToBundle({ parksApi: data, pois: [{ n: 'Millennium Force', c: 'ride' }] });
+    assert.ok(cmp.matched >= 1);
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
   return true;
 });
 
 await check('build-agent orchestrator runs offline', async () => {
   const { runBuildOrchestrator } = await import('../../packages/venue-builder/lib/agents/orchestrator.mjs');
-  const trace = await runBuildOrchestrator('cedar-point', {
-    offline: true,
-    fetch: false,
-    browser: false,
-    skip: ['vision'],
-  });
-  assert.equal(trace.venueId, 'cedar-point');
-  assert.ok(trace.agents.length >= 3);
-  assert.ok(trace.agents.some((a) => a.role === 'qa' && a.ok));
+  // The research agent's open-research step writes a sidecar even when the
+  // orchestrator itself is offline; redirect it to a temp file so this run
+  // never mutates the committed cedar-point research cache (issue #510).
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'orchestrator-research-'));
+  try {
+    const researchCacheFile = path.join(tmpDir, 'llm-research-cache.json');
+    const trace = await runBuildOrchestrator('cedar-point', {
+      offline: true,
+      fetch: false,
+      browser: false,
+      skip: ['vision'],
+      researchCacheFile,
+    });
+    assert.equal(trace.venueId, 'cedar-point');
+    assert.ok(trace.agents.length >= 3);
+    assert.ok(trace.agents.some((a) => a.role === 'qa' && a.ok));
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
   return true;
 });
 

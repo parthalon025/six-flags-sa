@@ -250,9 +250,13 @@ export function mergeOpenResearch(deterministic, llm, parkMap = null) {
  * Run open research for a venue: load official cache/pages, optional LLM,
  * required LLM park-map search when AI is on, write sidecar.
  *
+ * `cacheFile` overrides where the merged sidecar is written — tests that
+ * exercise a real venue's research step use it to redirect the write away
+ * from the committed `data/venues/<id>/llm-research-cache.json`.
+ *
  * @param {string} venueId
  * @param {object[]} pois
- * @param {{ fetch?: boolean, browser?: boolean, ai?: boolean, applyAliases?: boolean, applyMaps?: boolean, fetchMaps?: boolean, offline?: boolean }} opts
+ * @param {{ fetch?: boolean, browser?: boolean, ai?: boolean, applyAliases?: boolean, applyMaps?: boolean, fetchMaps?: boolean, offline?: boolean, cacheFile?: string }} opts
  */
 export async function runOpenResearch(venueId, pois, opts = {}) {
   const { data: catalog } = readSources(venueId);
@@ -301,7 +305,8 @@ export async function runOpenResearch(venueId, pois, opts = {}) {
 
   const merged = mergeOpenResearch(deterministic, llm, parkMap);
   merged.venue = venueId;
-  writeJson(llmResearchCacheFile(venueId), merged, true);
+  const cacheFile = opts.cacheFile || llmResearchCacheFile(venueId);
+  writeJson(cacheFile, merged, true);
 
   let aliasesApplied = 0;
   if (opts.applyAliases) {
@@ -342,7 +347,7 @@ export async function runOpenResearch(venueId, pois, opts = {}) {
   }
 
   return {
-    file: llmResearchCacheFile(venueId),
+    file: cacheFile,
     research: merged,
     aliasesApplied,
     mapsApplied,
