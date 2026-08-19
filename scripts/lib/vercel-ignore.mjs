@@ -11,6 +11,7 @@
  * Production merges with app-path changes use the automation pool (~75).
  */
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './git-env.mjs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isGitnexusOnlyChange } from './gitnexus-only.mjs';
@@ -139,7 +140,7 @@ export async function applyLiveAutomationGate(decision, liveGateOptions = {}) {
 
 function git(args) {
   try {
-    return execFileSync('git', args, { encoding: 'utf8' }).trim();
+    return execFileSync('git', args, { env: scrubGitEnv(), encoding: 'utf8' }).trim();
   } catch {
     return null;
   }

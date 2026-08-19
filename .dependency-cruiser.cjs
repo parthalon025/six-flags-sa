@@ -123,10 +123,18 @@ module.exports = {
     {
       name: "venue-builder-adapters-are-leaf",
       comment:
-        "lib/adapters/ never imports agents/ or operators/ — adapters are wrap layers around external tools/services, not orchestration.",
+        "lib/adapters/ never imports agents/, operators/ or terrain/ — adapters are wrap layers around external tools/services, not orchestration, and not consumers of the display maths built on top of them.",
       severity: "error",
       from: { path: "^packages/venue-builder/lib/adapters/" },
-      to: { path: "^packages/venue-builder/lib/(agents|operators)/" },
+      to: { path: "^packages/venue-builder/lib/(agents|operators|terrain)/" },
+    },
+    {
+      name: "venue-builder-terrain-is-display-only",
+      comment:
+        "lib/terrain/ is Display-layer maths (elevation, hillshade, constraints, mesh). It may read adapters/ for a DEM, but it must never reach agents/ or operators/, and — the rule that matters — never the evidence engine: height is not evidence, and a terrain module that imports evidence.mjs has started fusing it as if it were. See ADR-0015.",
+      severity: "error",
+      from: { path: "^packages/venue-builder/lib/terrain/" },
+      to: { path: "^packages/venue-builder/lib/(agents|operators|evidence|evidence-graph)" },
     },
     {
       name: "venue-builder-core-orchestration-is-sanctioned",

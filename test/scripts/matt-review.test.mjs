@@ -7,6 +7,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -68,7 +69,9 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
       cwd: dir,
       encoding: 'utf8',
       env: {
-        ...process.env,
+        // Not `process.env`: under a git hook that names the real repository,
+        // and git prefers it to `cwd`. See scripts/lib/git-env.mjs.
+        ...scrubGitEnv(),
         GIT_AUTHOR_NAME: 't',
         GIT_AUTHOR_EMAIL: 't@t',
         GIT_COMMITTER_NAME: 't',

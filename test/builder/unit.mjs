@@ -7852,7 +7852,7 @@ await check('certify writes data/venues/<id>/certification.json', () => {
 
 const { operatorForUrl, parseListingForUrl } = await import('../../packages/venue-builder/lib/operators/index.mjs');
 const { proposeAliases } = await import('../../packages/venue-builder/lib/auto-alias.mjs');
-const { recordReview, reviewGatePassed } = await import('../../packages/venue-builder/lib/venue-review.mjs');
+const { recordReview, reviewGatePassed, REVIEW_FILE } = await import('../../packages/venue-builder/lib/venue-review.mjs');
 const { mapThemePack, MAP_THEME_PACKS } = await import('../../apps/party-tracker/lib/mapThemeTokens.js');
 const { bboxInView, localViewTransform, float32ScreenError, stableCullView } = await import('../../apps/party-tracker/lib/mapViewport.js');
 
@@ -7876,8 +7876,18 @@ await check('auto-alias proposes claims with dissent for low confidence', () => 
 });
 
 await check('human review gate records approve decisions', () => {
-  const doc = recordReview('kings-island', { key: 'test-gate', decision: 'approve', who: 'unit-test', why: 'ok' });
-  assert.ok(doc.decisions.some((d) => d.key === 'test-gate' && d.decision === 'approve'));
+  // Against a throwaway venue, not a shipped one. This wrote into
+  // data/venues/kings-island/review.json — a committed file — and stamped each
+  // row with a wall clock, so every test run left the tree dirty with a diff
+  // that could never be reconciled, and `git add -A` swept it into whatever
+  // commit came next. See issue #510 for cleaning the rows it already left.
+  const venueId = '__review-gate-test';
+  try {
+    const doc = recordReview(venueId, { key: 'test-gate', decision: 'approve', who: 'unit-test', why: 'ok' });
+    assert.ok(doc.decisions.some((d) => d.key === 'test-gate' && d.decision === 'approve'));
+  } finally {
+    fs.rmSync(path.dirname(REVIEW_FILE(venueId)), { recursive: true, force: true });
+  }
   return true;
 });
 

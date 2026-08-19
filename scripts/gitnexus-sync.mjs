@@ -9,6 +9,7 @@
  * `--commit` is accepted and ignored so old CI callers do not fail.
  */
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from './lib/git-env.mjs';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,7 +25,8 @@ function run(nodeCmd, args) {
 }
 
 function git(args) {
-  return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
+  // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+  return execFileSync('git', args, { cwd: root, env: scrubGitEnv(), encoding: 'utf8' }).trim();
 }
 
 function analyze() {
