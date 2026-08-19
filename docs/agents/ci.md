@@ -13,7 +13,8 @@ Matt-standard layout: **workflows orchestrate; scripts own policy.** Do not dupl
 | `pre-merge-vertical.mjs` | `runPreMergeVertical()` | Agent merge gate — static + browser vertical; writes `scripts/ci/local-ci-pass.json` |
 | `../lib/clerk-e2e.mjs` | `clerkE2eBlockReason()` | Auth UI diffs require Clerk-on browser e2e before merge |
 | `../lib/vertical-e2e.mjs` | `requiredVerticals()`, `verticalE2eBlockReason()` | Which verticals a diff owes, and what blocks a merge without them |
-| `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Stamp after local vertical; skip GitHub UI jobs when stamp matches |
+| `local-ci-pass.mjs` | `runWrite()`, `runCheck()` | Writes the `local-ci-verified` stamp after a local vertical; tells GitHub which jobs it already proved |
+| `../lib/local-ci-pass.mjs` | `localCiDecision()`, `STATIC_STEPS` | The tag: what a local CI run covers, and when GitHub may honour it |
 | `matt-review.mjs` | `runCheck()`, `runWrite()`, `runPrompt()` | Sonnet standards-review stamp (`scripts/lib/matt-review.mjs`) — code PRs fail without a fresh stamp |
 | `../lib/matt-standards.mjs` | `runMattStandardsChecks()` | Gate — scripts/lib test presence, functional↔modules sync, venue-builder path-literal lint |
 
@@ -31,14 +32,38 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 
 | Phase | What runs |
 |-------|-----------|
-| Static (floor) | `test:ci-gate` → `test:unit` → `build -w @party-tracker/app` |
+| Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:coverage-contract` → `test:module-select` → `build -w @party-tracker/app` |
 | `automation` vertical | `test:ci-gate` — CI/deploy/stamp decisions through their exported functions |
 | `builder` vertical | `test:builder` — assertions over generated venue output |
 | `app` vertical | start app + `test:validate-ui:changed` — behaviour in a real browser |
 
 Docs-only branches owe nothing and skip straight through. `--skip-browser` is **refused** for diffs that touch app behaviour — static steps prove the build compiles, not that a guest can still use it. Code paths no vertical claims fail closed: the diff owes every vertical until a `VERTICALS` row claims the path. See [vertical-e2e policy](./policies/vertical-e2e.md).
 
-After a successful run, `scripts/ci/local-ci-pass.json` records the tree, the module selection, and the `verticals` that ran (schema 2 — a stamp without them never covers a code diff). Commit that file with your branch so GitHub Actions can skip the expensive Playwright jobs when the stamp still matches. Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored and CI runs the UI matrix. Use `--no-stamp` to validate without writing the file.
+After a successful run, `scripts/ci/local-ci-pass.json` records the diff, the module selection, the static steps and the `verticals` that ran, tagged `local-ci-verified` (schema 3 — a stamp without the tag or without the verticals never covers a code diff). Commit that file with your branch. Use `--no-stamp` to validate without writing the file.
+
+## `local-ci-verified` — skipping GitHub CI
+
+The tag means *local CI already ran everything the skipped jobs would have run, over this diff*. When `test-app.yml` finds it, the jobs named in `TAG_SKIPPED_JOBS` (`scripts/lib/local-ci-pass.mjs`) are skipped instead of run a second time.
+
+| Property | How it holds |
+|----------|--------------|
+| Same code | `diffHash` — the branch diff vs merge-base with the stamp files excluded, so committing the stamp never invalidates it and any code change does |
+| Same everything else | base ref, merge-base, module selection, `package-lock.json` and `modules.json` hashes all have to match |
+| Nothing waved through | the stamp must list every step in `STATIC_STEPS` and every vertical the diff owes; `pre-merge-vertical` writes it only after they all pass |
+| Not written by hand | `local-ci-pass.mjs write` (the hand path) records no tag and no verticals, so it can only ever skip the narrower UI matrix |
+
+`gate` and `select` never skip — `select` is the job that reads the tag, and something unskippable has to.
+
+`gitnexus` (soft) never skips either, on purpose: it exists to prove GitNexus still installs on a clean runner, which is exactly the thing a local run cannot vouch for — the agent's own session either has an index already or failed to build one.
+
+**The stamp is self-attested.** Anyone who can push to the branch can also write a `local-ci-verified` JSON by hand and skip those jobs; the checks above stop a *stale* or *incomplete* stamp, not a dishonest one. That is the same trust model as `matt-review-pass.json`, and it is why review and branch protection stay the real control on what merges. Label a PR `full-ci` when you want the jobs run regardless.
+
+Two things always run full CI regardless of the stamp:
+
+- **Pushes to `main`.** The merge commit is a different diff from any PR head, and it is the tree we ship.
+- **`full-ci`.** Label the PR `full-ci`, or put `[full-ci]` in its title, and the tag is ignored for that run.
+
+Re-run `npm run test:pre-merge-vertical` after changing code or dependencies — a stale stamp is ignored, the `Select modules` job summary says why, and CI runs everything.
 
 ## Test app (`.github/workflows/test-app.yml`)
 
@@ -61,7 +86,7 @@ Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run te
 | Gate — script invariants | `node scripts/ci/gate-tests.mjs` |
 | Gate — README gallery | `node test/app/readme-shots-check.mjs` |
 | Module selection | `node test/app/select-modules.mjs` |
-| Local CI pass check | `node scripts/ci/local-ci-pass.mjs check` |
+| `local-ci-verified` tag | `node scripts/ci/local-ci-pass.mjs check` |
 | Boundaries | `npm run lint:boundaries` |
 | Unit-ish layers | `npm run test:builder`, `npm run test:coverage-contract` |
 | UI unpack / start | `node scripts/ci/party-tracker-ui.mjs unpack\|start` |

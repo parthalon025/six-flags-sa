@@ -354,5 +354,11 @@
     "items": [
       "Custom map display factory: design doc + builder display stage with display-certify gate (#471)"
     ]
+  },
+  "1.18.0": {
+    "title": "What's new",
+    "items": [
+      "feat(ci): local-ci-verified tag skips GitHub jobs local CI already ran (#507)"
+    ]
   }
 }
