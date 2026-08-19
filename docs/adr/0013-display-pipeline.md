@@ -2,7 +2,8 @@
 
 **Status:** Accepted  
 **Date:** 2026-08-17  
-**Depends on:** [ADR-0012 map visual design](./0012-map-visual-design.md), [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md), [ADR-0005 store Capacitor shell](./0005-store-capacitor-shell.md)
+**Depends on:** [ADR-0012 map visual design](./0012-map-visual-design.md), [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md), [ADR-0005 store Capacitor shell](./0005-store-capacitor-shell.md)  
+**See also:** [custom map display factory](../research/2026-08-18-custom-map-display-factory.md) — PBR material pipeline and rendering-tier detail for implementation order item 4
 
 ## Context
 
@@ -58,7 +59,7 @@ Target: **MapLibre GL JS** in the Capacitor WebView reading local PMTiles. SVG `
 
 - New Venue bundle fields under `apps/party-tracker/public/venues/<id>/` (or CDN mirror): `display/`, `visual.json`, `manifest.json`.
 - `packages/venue-builder/lib/build-pipeline.mjs` gains display stages; `attractions.mjs --tiles` path becomes mandatory in CI for shipped venues.
-- Implementation backlog: MapLibre renderer, venue download manager, skin template compiler, display-certify matrix.
+- Implementation backlog: MapLibre renderer, real-time PBR tier (three.js), venue download manager, skin template compiler, display-certify matrix.
 - Databricks unchanged (ADR-0008/0010): batch ingest may feed better geometry; display baking stays Node/CI Tippecanoe.
 
 ## Non-goals
@@ -74,13 +75,20 @@ Target: **MapLibre GL JS** in the Capacitor WebView reading local PMTiles. SVG `
 
 1. Lock bundle schema + `manifest.json`
 2. Wire `tiles-build` + `display-certify` into `runVenuePipeline`
-3. MapLibre renderer loading local PMTiles + global skin templates
-4. Venue download manager (prefetch, cache, delta)
-5. Port `ParkMap.jsx`'s gesture handling (pinch/wheel zoom-about-point), Follow-mode/**Go** camera,
+3. MapLibre renderer loading local PMTiles + global skin templates (baked-raster tier — default and
+   low-end fallback; zero shader cost)
+4. Real-time PBR tier for capable devices: MapLibre custom style layer + three.js
+   `MeshStandardMaterial` rendering KTX2-compressed material sets over extruded truth geometry — one
+   sun + small IBL, no shadow maps (AO baked), DPR capped at 2. Additive to item 3, not a
+   replacement — gated behind a device-capability check, falls back to the baked tier. Enables live
+   time-of-day and Skin-swap without re-downloading raster pyramids. Detail:
+   [custom map display factory](../research/2026-08-18-custom-map-display-factory.md) §4, Slice 4.
+5. Venue download manager (prefetch, cache, delta)
+6. Port `ParkMap.jsx`'s gesture handling (pinch/wheel zoom-about-point), Follow-mode/**Go** camera,
    and **Overlay** pin rendering (route, queue pins) into the MapLibre renderer — item 3 covers
    drawing the map; nothing above names who ports the interaction layer that currently lives
-   entirely in the 1879-line SVG component, and item 6's "parity proven" gate is not met until this
+   entirely in the 1879-line SVG component, and item 7's "parity proven" gate is not met until this
    is done.
-6. Retire SVG base geometry once parity proven on store WebView
+7. Retire SVG base geometry once parity proven on store WebView
 
 Canonical language: root `CONTEXT.md`.
