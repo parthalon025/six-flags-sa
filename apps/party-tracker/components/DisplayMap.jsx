@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Map as MapLibreMap, addProtocol } from 'maplibre-gl';
+import { Map as MapLibreMap, addProtocol, setWorkerUrl } from 'maplibre-gl';
 import { Protocol } from 'pmtiles';
+import { DISPLAY_SPIKE_SKIN } from '@/lib/mapLibreConfigured';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Phase 1 display-pipeline spike (issue #527, ADR-0013): draws Big Kahuna's
@@ -18,16 +19,18 @@ import 'maplibre-gl/dist/maplibre-gl.css';
    test can check MapLibre agrees with the SVG renderer independently. */
 
 const DISPLAY_BASE = '/api/display-spike';
-const SKIN = 'watercolor-quest';
 
 let protocolRegistered = false;
 function ensurePmtilesProtocol() {
   if (protocolRegistered) return;
+  // Turbopack rewrites maplibre-gl's import.meta.url to a non-http value, so
+  // its default worker URL resolves to '' and new Worker('') fails silently —
+  // sources then load tiles never. The spike route serves the matching worker
+  // bundle same-origin instead (see lib/displaySpike.js).
+  setWorkerUrl(`${DISPLAY_BASE}/maplibre-gl-worker.mjs`);
   // Main-thread registration is enough even though vector tiles load in
   // MapLibre's worker pool: a worker that sees an unregistered scheme relays
-  // the fetch to the main thread (makeRequest's "GR" fallback), where this
-  // registry answers it. Do not setWorkerCount(0) to "avoid" workers — an
-  // empty pool leaves the dispatcher with no actors and tiles never load.
+  // the fetch back to the main thread, where this registry answers it.
   const protocol = new Protocol();
   addProtocol('pmtiles', protocol.tile);
   protocolRegistered = true;
@@ -60,7 +63,7 @@ export default function DisplayMap({ venue, pois, className = '', onMapReady = n
     let map = null;
 
     (async () => {
-      const res = await fetch(`${DISPLAY_BASE}/${SKIN}.style.json`);
+      const res = await fetch(`${DISPLAY_BASE}/${DISPLAY_SPIKE_SKIN}.style.json`);
       if (!res.ok) throw new Error(`display pack style unavailable (HTTP ${res.status})`);
       const style = await res.json();
       // The pack's style.json carries a repo-relative "pmtiles://base.pmtiles"
@@ -82,7 +85,6 @@ export default function DisplayMap({ venue, pois, className = '', onMapReady = n
         attributionControl: false,
       });
       mapRef.current = map;
-      window.__displayMap = map; // TEMP DEBUG — remove before ship
 
       map.on('load', () => {
         if (cancelled) return;

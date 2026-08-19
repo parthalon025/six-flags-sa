@@ -67,12 +67,12 @@ export function unproject(x, y) {
 
 /**
  * Mercator metres for (lat, lng), rebased onto a local `origin` (itself a
- * `project()` result) — the venue-relative frame SVG rendering needs so its
- * float32 transforms stay precise. Pure and renderer-agnostic: the reference
- * implementation an independent parity check calls to verify two renderers
- * agree on where a point sits, not something either renderer calls per-pin —
- * MapLibre projects raw [lng, lat] itself, and the SVG renderer already has
- * this rebase step inlined at every call site.
+ * `project()` result) — the venue-relative frame the SVG renderer builds its
+ * paths in so float32 transforms stay precise at max zoom. ParkMap calls it
+ * per-vertex (the rebase used to be inlined there); MapLibre never does — it
+ * takes raw [lng, lat] and projects internally with the same Web Mercator
+ * formula. That asymmetry is what makes this the reference implementation
+ * the renderer-parity check measures both renderers against independently.
  */
 export function localMetres(lat, lng, origin) {
   const [x, y] = project(lat, lng);

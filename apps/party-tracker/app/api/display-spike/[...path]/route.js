@@ -2,13 +2,14 @@
  * Byte server for the MapLibre display-pipeline spike (issue #527) — see
  * lib/displaySpike.js for why this exists instead of publishing to
  * public/venues. 404s outright unless mapLibreDisplayEnabled(); serves only
- * the two allow-listed files for Big Kahuna's one certified Skin, nothing
- * else on disk. Honors Range so pmtiles' own byte-range fetches work — it is
+ * the allow-listed files — Big Kahuna's one certified Skin's pack plus
+ * MapLibre's worker bundle (see lib/displaySpike.js for why), nothing else
+ * on disk. Honors Range so pmtiles' own byte-range fetches work — it is
  * a PMTiles archive, not a single blob a client downloads whole.
  */
 import { createReadStream, statSync } from 'node:fs';
 import { mapLibreDisplayEnabled } from '@/lib/mapLibreConfigured';
-import { displaySpikeContentType, displaySpikeFile } from '@/lib/displaySpike';
+import { displaySpikeContentType, displaySpikeFile, parseByteRange } from '@/lib/displaySpike';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,13 +56,11 @@ export async function GET(request, { params }) {
     });
   }
 
-  const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
-  if (!match) return new Response('Invalid range', { status: 416 });
-  const start = match[1] === '' ? 0 : Number(match[1]);
-  const end = match[2] === '' ? size - 1 : Math.min(Number(match[2]), size - 1);
-  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || start < 0) {
+  const span = parseByteRange(range, size);
+  if (!span) {
     return new Response('Invalid range', { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
   }
+  const { start, end } = span;
 
   return new Response(streamToWeb(createReadStream(file, { start, end })), {
     status: 206,

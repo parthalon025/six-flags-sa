@@ -36,6 +36,15 @@ const BUILDER_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'build-venue.mjs');
 const ATTRACTIONS_BIN = path.join(BUILDER_ROOT, '..', 'bin', 'attractions.mjs');
 
+/**
+ * Worlds whose display pack ships certified, so the display stage runs by
+ * default for them (issue #527 Phase 1) — the spike renderer needs the pack
+ * reliably on disk. Everyone else keeps the stage opt-in (`--display`): it
+ * is slower and needs tippecanoe. The app-side twin of this policy is
+ * DISPLAY_SPIKE_VENUE in apps/party-tracker — the two grow together.
+ */
+export const DISPLAY_DEFAULT_VENUES = ['big-kahunas'];
+
 export const STAGES = [
   'sources',
   'geometry',
@@ -111,11 +120,7 @@ export async function runVenuePipeline(park, opts = {}) {
     attractions = true,
     agent = true,
     certify = true,
-    // Big Kahuna's display pack ships certified today (issue #527 Phase 1) —
-    // the stage defaults on for it alone so the spike renderer always has a
-    // pack to load, without flipping every other World's pipeline run to a
-    // slower, tippecanoe-dependent stage it hasn't opted into.
-    display = park.id === 'big-kahunas',
+    display = DISPLAY_DEFAULT_VENUES.includes(park.id),
     terrain: wantTerrain = false,
     constrain = false,
     skip = [],
