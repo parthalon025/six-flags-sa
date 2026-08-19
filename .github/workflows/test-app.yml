@@ -341,6 +341,10 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: detect-changes below needs a merge-base against the
+          # base ref, which a shallow (fetch-depth: 1) checkout can't resolve.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -351,6 +355,23 @@ jobs:
 
       - name: GitNexus startup probe
         run: node scripts/gitnexus-sync.mjs startup
+
+      - name: Resolve base ref
+        id: base_ref
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "ref=HEAD^1" >> "$GITHUB_OUTPUT"
+          else
+            BASE_REF="${{ github.base_ref }}"
+            if [ -n "$BASE_REF" ]; then
+              echo "ref=origin/$BASE_REF" >> "$GITHUB_OUTPUT"
+            else
+              echo "ref=origin/main" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: GitNexus blast radius (detect-changes)
+        run: node scripts/gitnexus-detect-changes.mjs --base-ref "${{ steps.base_ref.outputs.ref }}"
 
   ci:
     name: CI
