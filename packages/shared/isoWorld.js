@@ -14,6 +14,18 @@
 
 export const ISO_Y = 0.5;
 
+/** Sin-hill wavelength divisor (metres) — travelled/28 gives ~88 m crest-to-crest at ride scale. */
+export const LIFT_HILL_PERIOD_M = 28;
+
+/**
+ * Lift-profile height (metres) at a travelled distance along a track.
+ * The single sin-hill implementation — liftCoaster's geometry and
+ * isoTrack.js's segment classification must agree on it.
+ */
+export function liftHeightAt(travelled, { heightAmp = 12, baseHeight = 3 } = {}) {
+  return baseHeight + heightAmp * Math.abs(Math.sin(travelled / LIFT_HILL_PERIOD_M));
+}
+
 /** Quarter-turn view count (OpenRCT2 convention). */
 export const ISO_ROTATIONS = 4;
 
@@ -178,7 +190,7 @@ function liftedPts(line, stepM, heightAmp, baseHeight) {
   let travelled = 0;
   for (let i = 0; i < line.length; i += 1) {
     if (i > 0) travelled += dist2(line[i - 1], line[i]);
-    const h = baseHeight + heightAmp * Math.abs(Math.sin(travelled / 28));
+    const h = liftHeightAt(travelled, { heightAmp, baseHeight });
     const g = isoLocal(line[i][0], line[i][1]);
     pts.push({ x: g.x, y: g.y + h });
   }
@@ -487,7 +499,7 @@ export function liftCoaster(line, { stepM = 18, heightAmp = 12, baseHeight = 3, 
   let travelled = 0;
   for (let i = 0; i < line.length; i += 1) {
     if (i > 0) travelled += dist2(line[i - 1], line[i]);
-    const h = baseHeight + heightAmp * Math.abs(Math.sin(travelled / 28));
+    const h = liftHeightAt(travelled, { heightAmp, baseHeight });
     const g = isoLocal(line[i][0], line[i][1], rotation);
     pts.push({ g, t: { x: g.x, y: g.y + h }, h, travelled });
   }
