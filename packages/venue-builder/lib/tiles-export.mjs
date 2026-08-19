@@ -16,23 +16,20 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 const LAYER_KEYS = ['path', 'building', 'water', 'coaster', 'slide', 'parking', 'pool'];
 
 function wayToLine(way) {
-  if (Array.isArray(way?.r) && way.r.length) {
-    return {
-      type: 'Feature',
-      geometry: { type: 'LineString', coordinates: way.r },
-      properties: { name: way.n || '', layer: way.layer || '' },
-    };
-  }
-  // Fallback for any internal caller that still produces the pre-contract
-  // `{lng, lat}` object shape under `p` instead of the shipped `r` rings.
-  if (way?.p?.length) {
-    return {
-      type: 'Feature',
-      geometry: { type: 'LineString', coordinates: way.p.map((pt) => [pt.lng, pt.lat]) },
-      properties: { name: way.n || '', layer: way.layer || '' },
-    };
-  }
-  return null;
+  // `r` is the shipped contract: a ring of [lng, lat] pairs, ready to use as
+  // LineString coordinates. `p` is a pre-contract `{lng, lat}` object shape —
+  // kept only as a fallback for any internal caller that still produces it.
+  const coordinates = Array.isArray(way?.r) && way.r.length
+    ? way.r
+    : way?.p?.length
+      ? way.p.map((pt) => [pt.lng, pt.lat])
+      : null;
+  if (!coordinates) return null;
+  return {
+    type: 'Feature',
+    geometry: { type: 'LineString', coordinates },
+    properties: { name: way.n || '', layer: way.layer || '' },
+  };
 }
 
 function poiToPoint(poi) {

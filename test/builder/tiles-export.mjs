@@ -76,10 +76,12 @@ await check('falls back to the legacy way.p {lng,lat} shape', () => {
 });
 
 await check('produces non-null, non-empty features for every layer of a real shipped bundle', () => {
-  const mapPath = path.join(process.cwd(), 'apps/party-tracker/public/venues/kings-island.map.json');
-  const poisPath = path.join(process.cwd(), 'apps/party-tracker/public/venues/kings-island.pois.json');
-  const map = JSON.parse(readFileSync(mapPath, 'utf8'));
-  const pois = JSON.parse(readFileSync(poisPath, 'utf8'));
+  const map = JSON.parse(
+    readFileSync(new URL('../../apps/party-tracker/public/venues/kings-island.map.json', import.meta.url), 'utf8'),
+  );
+  const pois = JSON.parse(
+    readFileSync(new URL('../../apps/party-tracker/public/venues/kings-island.pois.json', import.meta.url), 'utf8'),
+  );
 
   const dir = mkdtempSync(path.join(tmpdir(), 'tiles-export-kings-island-'));
   const written = exportTileGeoJson(dir, map, pois);
