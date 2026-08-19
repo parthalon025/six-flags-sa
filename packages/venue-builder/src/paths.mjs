@@ -1,14 +1,26 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+/**
+ * Directory containing this file (packages/venue-builder/src/), resolved once.
+ * Deliberately not computed by passing a relative path plus import.meta.url
+ * into the `URL` constructor — bundlers (Turbopack, webpack) statically
+ * detect that two-argument call and try to resolve the relative segment as
+ * an asset module, which fails with "Module not found" for a directory
+ * target that isn't a real file. Plain `fileURLToPath(import.meta.url)`
+ * isn't special-cased, so this computes the identical path while staying
+ * resolvable once this module is bundled into the Next.js app.
+ */
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
 /** Monorepo root (party-tracker/). */
-export const MONO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
+export const MONO_ROOT = path.join(HERE, '..', '..', '..');
 
 /** Next.js app package root. */
 export const APP_ROOT = path.join(MONO_ROOT, 'apps', 'party-tracker');
 
 /** Venue-builder package root. */
-export const BUILDER_ROOT = fileURLToPath(new URL('../', import.meta.url));
+export const BUILDER_ROOT = path.join(HERE, '..');
 
 export const VENUE_DIR = path.join(APP_ROOT, 'public', 'venues');
 export const OVERRIDE_DIR = path.join(BUILDER_ROOT, 'data', 'venues');
