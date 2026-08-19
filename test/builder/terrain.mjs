@@ -14,7 +14,7 @@ import { fitness, resolveDem } from '../../packages/venue-builder/lib/terrain/de
 import { ConstraintGrid } from '../../packages/venue-builder/lib/terrain/constraints.mjs';
 import { meshFromGrid } from '../../packages/venue-builder/lib/terrain/mesh-export.mjs';
 import { makeNoise2D, makeRng } from '../../packages/venue-builder/lib/terrain/noise.mjs';
-import { scatterPoints, densityFromSpecies } from '../../packages/venue-builder/lib/display-scatter.mjs';
+import { scatterPoints, densityFromSpecies, fillRows } from '../../packages/venue-builder/lib/display-scatter.mjs';
 import { exportTileGeoJson } from '../../packages/venue-builder/lib/tiles-export.mjs';
 import { tileNameFor as tile3dep } from '../../packages/venue-builder/lib/adapters/usgs-3dep.mjs';
 import { tileNameFor as tileCop } from '../../packages/venue-builder/lib/adapters/copernicus-dem.mjs';
@@ -22,7 +22,7 @@ import {
   compileVisualSpec, certifyDisplayPack, readMaterials, readSkinTemplates,
   styleFromSpec, mixHex, DEFAULT_MATERIAL_MIX,
 } from '../../packages/venue-builder/lib/display-pack.mjs';
-import { crownStipple, seedFromString, resolveKit, TERRAIN_PIECES } from '../../packages/venue-builder/lib/display-bake.mjs';
+import { crownStipple, seedFromString, resolveKit, TERRAIN_PIECES, bakeModel } from '../../packages/venue-builder/lib/display-bake.mjs';
 import { buildMattReviewContext } from '../../scripts/lib/matt-review.mjs';
 import { parseCatalogArgs, pipelineOptsFromCatalogArgs } from '../../packages/venue-builder/lib/build-pipeline.mjs';
 
@@ -557,6 +557,49 @@ await check('--terrain survives the trip from CLI flag to pipeline options', () 
   const both = pipelineOptsFromCatalogArgs(parseCatalogArgs(['--display', '--terrain', '--constrain']));
   assert.equal(both.constrain, true);
   assert.equal(on.constrain, false, 'constrain is its own opt-in, not implied by terrain');
+  return true;
+});
+
+await check('rows follow the long axis, stay inside, and report that axis', () => {
+  const ring = [[0, 0], [40, 0], [40, 8], [0, 8]];
+  const { placed, axis } = fillRows({ ring, rowSpacing: 3, itemSpacing: 5, id: 'aisle' });
+  assert.ok(placed.length > 0);
+  assert.ok(placed.every((p) => p.x >= 0 && p.x <= 40 && p.y >= 0 && p.y <= 8));
+  // The long axis of a 40x8 box is horizontal.
+  assert.ok(Math.abs(axis.ax) > Math.abs(axis.ay), 'axis should follow the long side');
+  return true;
+});
+
+await check('rows honour a reject, so a lot cannot stripe over a building', () => {
+  const ring = [[0, 0], [30, 0], [30, 12], [0, 12]];
+  const all = fillRows({ ring, rowSpacing: 3, itemSpacing: 3, id: 'a' }).placed.length;
+  const half = fillRows({
+    ring, rowSpacing: 3, itemSpacing: 3, id: 'a', reject: (x) => x > 15,
+  }).placed.length;
+  assert.ok(half > 0 && half < all, `${half} should be a strict subset of ${all}`);
+  return true;
+});
+
+await check('parking aisles land on lot cells and nowhere else', () => {
+  const map = JSON.parse(readFileSync('apps/party-tracker/public/venues/kings-island.map.json', 'utf8'));
+  const pois = JSON.parse(readFileSync('apps/party-tracker/public/venues/kings-island.pois.json', 'utf8'));
+  const model = bakeModel(map, pois);
+  assert.ok(model.lotRows.length > 0, 'Kings Island has parking; it should have aisles');
+  const lotId = Number(Object.entries(model.terrains).find(([, n]) => n === 'lot')[0]);
+  for (const r of model.lotRows) {
+    const cx = Math.round(r.x);
+    const cy = Math.round(r.y);
+    assert.equal(model.cells[cy * model.cols + cx], lotId, `aisle mark off-lot at ${cx},${cy}`);
+    assert.ok(Math.abs(Math.hypot(r.dx, r.dy) - 1) < 1e-6, 'direction must be a unit vector');
+  }
+  return true;
+});
+
+await check('a venue with no parking gets no aisles, not an empty-array crash', () => {
+  const map = JSON.parse(readFileSync('apps/party-tracker/public/venues/big-kahunas.map.json', 'utf8'));
+  const model = bakeModel(map, []);
+  assert.equal((map.parking || []).length, 0);
+  assert.deepEqual(model.lotRows, []);
   return true;
 });
 

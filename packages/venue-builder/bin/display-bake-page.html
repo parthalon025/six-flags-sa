@@ -173,6 +173,27 @@
     g.restore();
   }
 
+  // Parking aisles: short dashes along each lot's own long axis, so a lot
+  // reads as a lot. Spacing comes from real aisle geometry in display-bake.mjs,
+  // not from what looked right at one zoom.
+  if (model.lotRows && model.lotRows.length) {
+    const lotPiece = kit.terrain.lot || {};
+    g.save();
+    g.strokeStyle = (lotPiece.texture && lotPiece.texture.color) || 'rgba(255,255,255,0.7)';
+    g.lineWidth = Math.max(1, px * 0.09);
+    g.lineCap = 'round';
+    const half = px * 0.42;
+    for (const r of model.lotRows) {
+      const cx = r.x * px;
+      const cy = r.y * px;
+      g.beginPath();
+      g.moveTo(cx - r.dx * half, cy - r.dy * half);
+      g.lineTo(cx + r.dx * half, cy + r.dy * half);
+      g.stroke();
+    }
+    g.restore();
+  }
+
   const tiledPatterns = {};
   for (const [name, piece] of Object.entries(kit.terrain)) {
     if (piece.tiles && model.autotile?.[name]) tiledPatterns[name] = buildPatterns(piece.tiles);

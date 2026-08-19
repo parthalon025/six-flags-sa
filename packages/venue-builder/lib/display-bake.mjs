@@ -15,7 +15,7 @@
  */
 
 import { LINE_LAYERS } from './osm-tags.mjs';
-import { densityFromSpecies, scatterPoints } from './display-scatter.mjs';
+import { densityFromSpecies, fillRows, scatterPoints } from './display-scatter.mjs';
 
 /**
  * Sprite footprints, in cells. Radius is what stops two trees sharing a
@@ -34,6 +34,18 @@ const TREE_SPECIES = {
 
 /** Woods saturate; grass is deliberately sparse ornamental planting. */
 const TREE_DENSITY_SCALE = { wood: 1, grass: 0.22 };
+
+/**
+ * Parking aisle geometry, in metres.
+ *
+ * Individual bays are ~2.6 m and the bake grid is 2.4-7.4 m per cell, so
+ * stalls are sub-cell and drawing them would be noise. Aisles are not: at
+ * ~16 m apart they land 2.2-6.6 cells apart at every shipped venue, which
+ * draws cleanly. This is depiction, not invention — the lot is in OSM, and
+ * aisles are what a lot looks like.
+ */
+const AISLE_METRES = 16;
+const AISLE_DASH_METRES = 4;
 
 /* ------------------------------------------------ the pieces vocabulary --
  * The bake decomposes into the smallest pieces the builder owns. A kit is
@@ -456,6 +468,29 @@ export function bakeModel(map, pois = [], opts = {}) {
     return false;
   };
 
+  // Parking aisles, along each lot's own long axis.
+  const lotRows = [];
+  for (const way of map.parking || []) {
+    if (!(way.r?.length >= 3)) continue;
+    const ring = way.r.map(toCell);
+    const { placed, axis } = fillRows({
+      ring,
+      rowSpacing: Math.max(1.4, AISLE_METRES / tileMetres),
+      itemSpacing: Math.max(0.8, AISLE_DASH_METRES / tileMetres),
+      id: 'aisle',
+      // Only over ground the lot actually covers — a lot polygon that overlaps
+      // a path or a building must not stripe across it.
+      reject: (x, y) => {
+        const cx = Math.round(x);
+        const cy = Math.round(y);
+        if (cx < 0 || cy < 0 || cx >= cols || cy >= rows) return true;
+        return cells[cy * cols + cx] !== TERRAIN.lot || isOccupied(cx, cy);
+      },
+    });
+    for (const p of placed) lotRows.push({ x: p.x, y: p.y, dx: axis.ax, dy: axis.ay });
+  }
+  lotRows.sort((a, b) => a.y - b.y || a.x - b.x);
+
   // Trees: dense canopy in woods, scattered on grass. Placement is a real
   // scatter (area-derived count, non-overlapping discs, noise-biased darts)
   // rather than a per-cell coin flip, so sprites stop stacking on each other
@@ -530,6 +565,7 @@ export function bakeModel(map, pois = [], opts = {}) {
     ...(steep ? { steep } : {}),
     roads,
     trees,
+    lotRows,
     buildings,
     tracks,
     badges,
@@ -625,6 +661,7 @@ function cropModel(model, boundaryRing, margin, toGeo) {
     ...(newSteep ? { steep: newSteep } : {}),
     roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })).filter((r) => anyIn(r.pts)),
     trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })).filter((t) => ptIn([t.x, t.y])),
+    lotRows: (model.lotRows || []).map((r) => ({ ...r, x: r.x - x0, y: r.y - y0 })).filter((r) => ptIn([r.x, r.y])),
     buildings: model.buildings.map((b) => ({ ...b, ring: b.ring.map(shiftPt) })).filter((b) => anyIn(b.ring)),
     tracks: model.tracks.map((t) => ({ ...t, pts: t.pts.map(shiftPt) })).filter((t) => anyIn(t.pts)),
     badges: model.badges.map((b) => ({ ...b, x: b.x - x0, y: b.y - y0 })).filter((b) => ptIn([b.x, b.y])),

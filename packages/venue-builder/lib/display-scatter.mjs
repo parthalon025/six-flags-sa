@@ -24,6 +24,7 @@
  *     and not across them
  */
 
+import { pointInRing } from './geometry.mjs';
 import { makeNoise2D, makeRng } from './terrain/noise.mjs';
 
 /** Random disc packing saturates near 0.55; the optimistic 0.8 just makes the
@@ -163,4 +164,68 @@ export function scatterPoints({
   // Stable order so the model is byte-identical regardless of dart order.
   placed.sort((a, b) => a.y - b.y || a.x - b.x || (a.id < b.id ? -1 : 1));
   return { placed, requested, dropped: requested - placed.length };
+}
+
+/**
+ * The long axis of a ring, by principal component. Rows run along it.
+ * @param {[number, number][]} ring
+ * @returns {{ cx: number, cy: number, ax: number, ay: number }}
+ */
+export function principalAxis(ring) {
+  let cx = 0; let cy = 0;
+  for (const [x, y] of ring) { cx += x; cy += y; }
+  cx /= ring.length; cy /= ring.length;
+  let sxx = 0; let syy = 0; let sxy = 0;
+  for (const [x, y] of ring) {
+    const dx = x - cx; const dy = y - cy;
+    sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+  }
+  // Dominant eigenvector of the 2x2 covariance matrix.
+  const theta = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  return { cx, cy, ax: Math.cos(theta), ay: Math.sin(theta) };
+}
+
+/**
+ * Place items in rows across a polygon — planter rows, lamp posts along a
+ * midway, queue-rail stanchions, parking stripes.
+ *
+ * @param {object} opts
+ * @param {[number, number][]} opts.ring polygon in cell coordinates
+ * @param {number} opts.rowSpacing cells between rows
+ * @param {number} opts.itemSpacing cells between items along a row
+ * @param {string} [opts.id] sprite id to stamp on each item
+ * @param {(x: number, y: number) => boolean} [opts.reject]
+ * @returns {{ placed: object[] }}
+ */
+export function fillRows({ ring, rowSpacing, itemSpacing, id = 'prop', reject = () => false }) {
+  if (!ring?.length || !(rowSpacing > 0) || !(itemSpacing > 0)) return { placed: [] };
+  const { cx, cy, ax, ay } = principalAxis(ring);
+  // Across-axis is the perpendicular; extent bounds how far rows must reach.
+  const px = -ay; const py = ax;
+  let alongMin = Infinity; let alongMax = -Infinity;
+  let acrossMin = Infinity; let acrossMax = -Infinity;
+  for (const [x, y] of ring) {
+    const dx = x - cx; const dy = y - cy;
+    const a = dx * ax + dy * ay;
+    const b = dx * px + dy * py;
+    if (a < alongMin) alongMin = a;
+    if (a > alongMax) alongMax = a;
+    if (b < acrossMin) acrossMin = b;
+    if (b > acrossMax) acrossMax = b;
+  }
+  const placed = [];
+  for (let b = acrossMin + rowSpacing / 2; b <= acrossMax; b += rowSpacing) {
+    for (let a = alongMin + itemSpacing / 2; a <= alongMax; a += itemSpacing) {
+      const x = cx + ax * a + px * b;
+      const y = cy + ay * a + py * b;
+      if (!pointInRing([x, y], ring)) continue;
+      if (reject(x, y)) continue;
+      placed.push({ x, y, id });
+    }
+  }
+  placed.sort((p, q) => p.y - q.y || p.x - q.x);
+  // The axis comes back with the points: a caller drawing a line through them
+  // needs the direction, and re-deriving it from the ring would be a second
+  // chance to disagree.
+  return { placed, axis: { ax, ay } };
 }
