@@ -13,7 +13,7 @@ export function mapLibreDisplayEnabled() {
   return process.env.NEXT_PUBLIC_MAPLIBRE_DISPLAY === '1';
 }
 
-/** The one World with a certified display pack today. Builder-side twin: DISPLAY_DEFAULT_VENUES in packages/venue-builder/lib/build-pipeline.mjs. */
+/** The one World with a certified display pack today. Builder-side twin: the build pipeline's DISPLAY_DEFAULT_VENUES — the two grow together. */
 export const DISPLAY_SPIKE_VENUE = 'big-kahunas';
 
 /** The certified Skin the spike renders. */
