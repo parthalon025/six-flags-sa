@@ -7,6 +7,7 @@
     "@party-tracker/shared": "1.20.1"
   },
   "exports": {
+    "./bake-drift.js": "./src/bake-drift.mjs",
     "./compare.js": "./src/compare.mjs",
     "./paths.js": "./src/paths.mjs",
     "./routing-coverage.js": "./src/routing-coverage.mjs"

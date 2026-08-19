@@ -1,0 +1,67 @@
+{
+  "fetched": "2026-08-19",
+  "source": "esa-worldcover.org",
+  "license": "CC BY 4.0",
+  "lands": {
+    "Lighthouse Point": {
+      "code": 50,
+      "name": "built_up",
+      "count": 3478
+    },
+    "Frontier Town": {
+      "code": 50,
+      "name": "built_up",
+      "count": 2220
+    },
+    "Main Midway": {
+      "code": 50,
+      "name": "built_up",
+      "count": 3833
+    },
+    "Frontier Trail": {
+      "code": 50,
+      "name": "built_up",
+      "count": 1782
+    },
+    "Millennium Midway": {
+      "code": 50,
+      "name": "built_up",
+      "count": 2348
+    },
+    "Gemini Midway": {
+      "code": 50,
+      "name": "built_up",
+      "count": 3867
+    },
+    "Cedar Point Shores": {
+      "code": 50,
+      "name": "built_up",
+      "count": 1564
+    },
+    "Lakeside Midway": {
+      "code": 50,
+      "name": "built_up",
+      "count": 2494
+    },
+    "Camp Snoopy": {
+      "code": 50,
+      "name": "built_up",
+      "count": 270
+    },
+    "Kiddy Kingdom": {
+      "code": 50,
+      "name": "built_up",
+      "count": 192
+    },
+    "Planet Snoopy": {
+      "code": 50,
+      "name": "built_up",
+      "count": 154
+    },
+    "Professor Delbert's Frontier Fling": {
+      "code": 50,
+      "name": "built_up",
+      "count": 77
+    }
+  }
+}

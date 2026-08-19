@@ -3,30 +3,30 @@
   "tiers": {
     "vector": {
       "file": "base.pmtiles",
-      "bytes": 170878
+      "bytes": 170917
     },
     "raster": {
       "gap": true,
-      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 4897 KB PNG + bounds still ship in the manifest for direct image placement"
+      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 4072 KB PNG + bounds still ship in the manifest for direct image placement"
     },
     "bake:blueprint-survey": {
       "file": "six-flags-fiesta-texas--blueprint-survey.png",
-      "bytes": 3140881,
+      "bytes": 3356968,
       "kit": "blueprint-survey"
     },
     "bake:island-brochure": {
       "file": "six-flags-fiesta-texas--island-brochure.png",
-      "bytes": 5150887,
+      "bytes": 4227213,
       "kit": "island-brochure"
     },
     "bake:midnight-carnival": {
       "file": "six-flags-fiesta-texas--midnight-carnival.png",
-      "bytes": 5285267,
+      "bytes": 4629566,
       "kit": "midnight-carnival"
     },
     "bake:rpg-overworld": {
       "file": "six-flags-fiesta-texas--rpg-overworld.png",
-      "bytes": 5014979,
+      "bytes": 4169292,
       "kit": "rpg-overworld"
     },
     "credits": {

@@ -31,6 +31,7 @@ console.log('\ndisplay factory\n');
 const {
   SURFACE_CLASSES,
   ALLOWED_LICENSES,
+  LAND_COVER_STYLE,
   readSkinTemplates,
   readMaterials,
   compileVisualSpec,
@@ -70,6 +71,19 @@ await check('no map layer is claimed by two surface classes', () => {
       assert.ok(!seen.has(layer), `layer "${layer}" claimed by ${seen.get(layer)} and ${key}`);
       seen.set(layer, key);
     }
+  }
+  return true;
+});
+
+/* -------------------------------------------------- land-cover materials -- */
+
+await check('every WorldCover class binds a real ledger material', () => {
+  const materials = readMaterials();
+  assert.ok(Object.keys(LAND_COVER_STYLE).length >= 4, 'expected built-up/tree-cover/water/grassland at least');
+  for (const [cls, row] of Object.entries(LAND_COVER_STYLE)) {
+    assert.match(cls, /^[a-z][a-z_]*$/, `class key "${cls}" is not a WorldCover class name`);
+    assert.ok(materials[row.material], `${cls} binds unknown material "${row.material}"`);
+    assert.ok(row.tone.day && row.tone.night, `${cls} is missing a day/night tone`);
   }
   return true;
 });
@@ -158,6 +172,67 @@ await check('compiled spec carries no coordinates and no build date', () => {
 
 await check('compiling twice is byte-identical (deterministic)', () => {
   assert.equal(JSON.stringify(compiled()), JSON.stringify(compiled()));
+  return true;
+});
+
+/* -------------------------------------------- WorldCover land-cover tones -- */
+
+const FIXTURE_MAP_TWO_LANDS = {
+  ...FIXTURE_MAP,
+  meta: { ...FIXTURE_MAP.meta, lands: { day: {}, night: {} } }, // no hand tints
+  lands: [
+    { n: 'Midway', r: [[0, 0], [1, 0], [1, 1]] },
+    { n: 'Backwoods', r: [[2, 2], [3, 2], [3, 3]] },
+  ],
+};
+
+function compiledWithCover(landCover) {
+  const skins = readSkinTemplates();
+  return compileVisualSpec({
+    map: FIXTURE_MAP_TWO_LANDS,
+    pois: FIXTURE_POIS,
+    template: skins.trail,
+    materials: readMaterials(),
+    landCover,
+  });
+}
+
+await check('WorldCover classification picks a land tone when there is no hand tint', () => {
+  const spec = compiledWithCover({
+    Midway: { code: 50, name: 'built_up' },
+    Backwoods: { code: 10, name: 'tree_cover' },
+  });
+  assert.equal(spec.landTones.Midway.day, LAND_COVER_STYLE.built_up.tone.day);
+  assert.equal(spec.landTones.Backwoods.night, LAND_COVER_STYLE.tree_cover.tone.night);
+  return true;
+});
+
+await check('an unmapped WorldCover class invents no tone — falls to name-hue', () => {
+  const spec = compiledWithCover({ Midway: { code: 70, name: 'snow_ice' } });
+  assert.equal(spec.landTones.Midway, undefined);
+  return true;
+});
+
+await check('a hand tint always wins over an inferred WorldCover tone', () => {
+  const skins = readSkinTemplates();
+  const handTinted = {
+    ...FIXTURE_MAP_TWO_LANDS,
+    meta: { ...FIXTURE_MAP_TWO_LANDS.meta, lands: { day: { Midway: '#f2e8d0' }, night: { Midway: '#1a2233' } } },
+  };
+  const spec = compileVisualSpec({
+    map: handTinted,
+    pois: FIXTURE_POIS,
+    template: skins.trail,
+    materials: readMaterials(),
+    landCover: { Midway: { code: 50, name: 'built_up' } },
+  });
+  assert.equal(spec.landTones.Midway.day, '#f2e8d0', 'the curated hand tint must not be overwritten');
+  return true;
+});
+
+await check('omitting landCover behaves exactly as before (no WorldCover data)', () => {
+  const spec = compiledWithCover(undefined);
+  assert.equal(Object.keys(spec.landTones).length, 0);
   return true;
 });
 
@@ -279,7 +354,9 @@ await check('buildTiles produces base.pmtiles, or records the gap honestly', () 
 
 /* ------------------------------------------------------- the bake pieces -- */
 
-const { bakeModel, declutterBadges, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS } = await import(
+const {
+  bakeModel, declutterBadges, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS, impliedTerrainClasses,
+} = await import(
   '../../packages/venue-builder/lib/display-bake.mjs'
 );
 
@@ -327,6 +404,81 @@ await check('the bake model is truth-locked and deterministic', () => {
   assert.ok(a.trees.every((t) => Number.isFinite(t.x) && t.x <= a.cols && t.y <= a.rows));
   assert.deepEqual(a.tracks.filter((t) => t.kind === 'slide').map((t) => t.idx), [0, 1],
     'slides carry indices; color belongs to the kit piece');
+  return true;
+});
+
+// Issue #518: a peninsula venue's map.water/map.sea is Lake Erie clipped to
+// the MAP BBOX, not to the venue boundary — the water polygon can span the
+// entire bbox even though the venue boundary is a much smaller box inside
+// it. Water painted last, unclipped, used to paint over that land. This
+// fixture reproduces the exact shape: a sea polygon spanning the whole bbox,
+// and a grass strip straddling the boundary's left edge, half outside it.
+const BOUNDARY_LEAK_MAP = {
+  meta: { id: 'peninsula-park', bounds: { n: 0.01, s: 0, e: 0.01, w: 0 } },
+  boundary: [[0.001, 0.001], [0.009, 0.001], [0.009, 0.009], [0.001, 0.009]],
+  grass: [{ r: [[0, 0.004], [0.002, 0.004], [0.002, 0.006], [0, 0.006]] }],
+  sea: [{ r: [[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01]] }],
+};
+
+await check('water/sea/pool paint only inside the venue boundary — the lake no longer erases the park', () => {
+  const m = bakeModel(BOUNDARY_LEAK_MAP, [], { maxCols: 60 });
+  const name = (t) => m.terrains[t];
+  const cellAt = (fx, fy) => m.cells[Math.floor(fy * m.rows) * m.cols + Math.floor(fx * m.cols)];
+  // Grass outside the boundary (but inside the bbox-spanning sea polygon):
+  // before the fix this painted as water, erasing land the venue never
+  // claimed the sea covers.
+  assert.equal(name(cellAt(0.02, 0.5)), 'grass', 'land outside the boundary must survive a bbox-spanning sea polygon');
+  // Beyond the boundary and outside any land layer: before the fix this
+  // painted as water too (the sea polygon reached every corner of the grid).
+  assert.equal(name(cellAt(0.98, 0.5)), 'outside', 'beyond the boundary with no land layer stays outside, not lake');
+  // A real lake genuinely inside the venue boundary still reads as water —
+  // clipping to the boundary is not the same as withholding the lake.
+  assert.equal(name(cellAt(0.5, 0.5)), 'water', 'water genuinely inside the boundary must still render as water');
+  return true;
+});
+
+await check('impliedTerrainClasses names every class the venue truth implies, using the paint-order vocabulary', () => {
+  const implied = impliedTerrainClasses(BAKE_MAP);
+  // BAKE_MAP carries water, wood, path (-> road) — no park/grass/parking/service.
+  assert.deepEqual([...implied].sort(), ['road', 'water', 'wood']);
+  assert.ok(impliedTerrainClasses({}).size === 0, 'a venue with no area/line truth implies no terrain class');
+  const full = impliedTerrainClasses({
+    park: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    grass: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    wood: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    parking: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    sea: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    water: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    pool: [{ r: [[0, 0], [1, 0], [1, 1]] }],
+    service: [{ r: [[0, 0], [1, 1]] }],
+    path: [{ r: [[0, 0], [1, 1]] }],
+  });
+  assert.deepEqual([...full].sort(), ['grass', 'lot', 'road', 'service', 'water', 'wood']);
+  // A way with too few vertices to paint (a degenerate ring, a single-point
+  // line) implies nothing — matches bakeModel's own paintability guard.
+  assert.equal(impliedTerrainClasses({ grass: [{ r: [[0, 0], [1, 1]] }] }).size, 0);
+  return true;
+});
+
+await check('Cedar Point regression (issue #518): the bake is not all water/road/service', async () => {
+  const { readFileSync: readFile } = await import('node:fs');
+  const mapFile = new URL('../../apps/party-tracker/public/venues/cedar-point.map.json', import.meta.url);
+  const map = JSON.parse(readFile(mapFile, 'utf8'));
+  const model = bakeModel(map, []);
+  const hist = {};
+  for (const c of model.cells) hist[model.terrains[c]] = (hist[model.terrains[c]] || 0) + 1;
+  const total = model.cells.length;
+  // The bug's exact symptom: every cell classified as one of water/road/
+  // service, with grass/wood/lot/ground/outside entirely absent.
+  const landClasses = ['grass', 'wood', 'lot', 'ground', 'outside'];
+  assert.ok(landClasses.some((cls) => hist[cls] > 0), `bake still has no land classes: ${JSON.stringify(hist)}`);
+  // Water must still be a small share of the grid, not the whole park —
+  // the boundary wins over a lake that merely intersects the venue bbox.
+  assert.ok((hist.water || 0) < total * 0.5, `water still dominates the bake: ${JSON.stringify(hist)}`);
+  // Every class the venue's own truth implies must survive the composite.
+  const implied = impliedTerrainClasses(map);
+  const missing = [...implied].filter((cls) => !hist[cls]);
+  assert.deepEqual(missing, [], `truth implies ${[...implied].join(', ')} but the bake is missing: ${missing.join(', ')}`);
   return true;
 });
 
@@ -562,6 +714,19 @@ await check('runDisplayStage writes spec + certification, twice byte-identical',
   for (const [f, body] of snapshot) {
     assert.equal(readFileSync(path.join(outDir, f), 'utf8'), body, `${f} changed on a no-op rerun`);
   }
+  return true;
+});
+
+await check('runDisplayStage threads injected landCover into every skin spec', () => {
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const result = runDisplayStage('test-park', {
+    map: FIXTURE_MAP_TWO_LANDS,
+    pois: FIXTURE_POIS,
+    outDir,
+    landCover: { Midway: { code: 50, name: 'built_up' } },
+  });
+  assert.equal(result.certified, true);
+  assert.equal(result.packs.trail.spec.landTones.Midway.day, LAND_COVER_STYLE.built_up.tone.day);
   return true;
 });
 
