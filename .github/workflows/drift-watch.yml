@@ -1,4 +1,5 @@
-# Weekly drift watch — does OpenStreetMap still match what we shipped?
+# Weekly drift watch — does OpenStreetMap still match what we shipped, and
+# does a fresh bake still match the style certification we shipped with it?
 
 name: Drift watch
 
@@ -83,5 +84,93 @@ jobs:
 
           ## Suggested fix
           Rebuild affected venues, re-run `venues:certify`, open PRs for human review.
+          EOF
+          )"
+
+  # A committed `bakes.<kit>.signature` row (data/venues/*/display/
+  # display-certification.json, folded in by display-pack.mjs from a local
+  # or build-venue.yml bake) is only checked at bake time — nothing else in
+  # CI re-verifies it, so a later change to a kit, a reference profile, or
+  # the compositor can leave it claiming a pass that's no longer true (#509).
+  # Same shape as the `drift` job above, aimed at the bake tier instead: a
+  # weekly re-bake compares fresh signatures against what shipped.
+  bake-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      # Same Chromium install `build-venue.yml` already pays for to bake —
+      # reused here rather than inventing a second rendering path.
+      - run: npx playwright install chromium --with-deps
+
+      - name: Bake certification drift check
+        id: drift
+        run: |
+          set +e
+          npm run venues:bake-drift-watch -- --json > bake-drift-report.json
+          code=$?
+          echo "exit=$code" >> "$GITHUB_OUTPUT"
+          cat bake-drift-report.json
+          exit 0
+
+      - name: Check for existing bake drift issue
+        id: existing
+        if: steps.drift.outputs.exit != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NUMBER=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open \
+            --search 'in:title "Bake certification drift detected"' \
+            --json number --jq '.[0].number // empty')
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on existing bake drift issue
+        if: steps.drift.outputs.exit != '0' && steps.existing.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh issue comment "${{ steps.existing.outputs.number }}" \
+            --body "Bake drift still detected as of $(date -u +%Y-%m-%dT%H:%M:%SZ) — see this run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Open handoff issue on bake drift
+        if: steps.drift.outputs.exit != '0' && steps.existing.outputs.number == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create \
+            --title "Bake certification drift detected — a fresh bake no longer matches what shipped" \
+            --label agent-handoff \
+            --label needs-triage \
+            --body "$(cat <<'EOF'
+          ## What failed
+          Weekly bake drift watch re-baked every venue's committed kits and found a
+          signature that no longer matches its `display-certification.json` row.
+
+          ## Where
+          Workflow: `.github/workflows/drift-watch.yml` (`bake-drift` job)
+          Report: see workflow artifacts / `npm run venues:bake-drift-watch -- --json`
+
+          ## Reproduction
+          ```bash
+          npm run venues:bake-drift-watch
+          ```
+
+          ## Impact
+          Non-blocking for app runtime; the affected venue/kit's `bake_certs` row is no
+          longer trustworthy and should not be relied on until re-certified.
+
+          ## Suggested fix
+          Re-bake the affected venue(s) (`venues:bake`), re-run `venues:display --bake`,
+          open a PR with the refreshed certification for human review.
           EOF
           )"

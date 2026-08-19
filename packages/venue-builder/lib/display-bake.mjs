@@ -246,6 +246,42 @@ const AREA_TERRAIN = [
   ['pool', TERRAIN.water],
 ];
 
+// Water/sea/pool paint last (AREA_TERRAIN order) so a real lake still wins
+// over grass drawn under it — but a sea/water polygon is frequently just
+// the venue's bbox clipped against a coastline, and for a peninsula venue
+// that clip can cover nearly the whole grid. The venue's own boundary must
+// always win over a lake that merely intersects the bbox: these three
+// layers paint only inside it (when the venue has one at all).
+const BOUNDARY_CLIPPED_LAYERS = new Set(['sea', 'water', 'pool']);
+
+// Line layers (paintLine, not AREA_TERRAIN) that also imply a terrain
+// class — kept alongside AREA_TERRAIN so certification's truth-coverage
+// check (display-style-contract.mjs) can share one vocabulary with the
+// painter instead of re-guessing which map layer paints which class.
+const LINE_TERRAIN = [
+  ['service', TERRAIN.service],
+  ['path', TERRAIN.road],
+];
+
+/**
+ * Every terrain class a venue's truth geometry implies should appear in
+ * its bake — one map layer with at least one paintable way is one implied
+ * class, using the exact same paint-order vocabulary bakeModel() composits
+ * with (AREA_TERRAIN's polygons plus service/path's lines). Certification
+ * compares this against what a render actually samples: a class implied
+ * here and missing from the bake is a compositing bug, not a style choice.
+ */
+export function impliedTerrainClasses(map) {
+  const implied = new Set();
+  for (const [layer, terrain] of AREA_TERRAIN) {
+    if ((map[layer] || []).some((w) => Array.isArray(w.r) && w.r.length >= 3)) implied.add(TERRAIN_NAMES[terrain]);
+  }
+  for (const [layer, terrain] of LINE_TERRAIN) {
+    if ((map[layer] || []).some((w) => Array.isArray(w.r) && w.r.length >= 2)) implied.add(TERRAIN_NAMES[terrain]);
+  }
+  return implied;
+}
+
 function projector(map, maxCols) {
   const b = map.meta.bounds || {};
   const north = b.n ?? b.north;
@@ -284,7 +320,15 @@ function pointInRing(x, y, ring) {
   return inside;
 }
 
-function paintPolygon(cells, cols, rows, ring, terrain) {
+/**
+ * @param {number[]} cells terrain grid, mutated in place
+ * @param {[number, number][]} ring polygon to paint, cell space
+ * @param {number} terrain terrain code to paint
+ * @param {[number, number][]|null} [clipRing] when given, a cell only
+ *   paints if it is ALSO inside this ring — the venue boundary overruling
+ *   a polygon that merely intersects the map's bbox (water/sea/pool).
+ */
+function paintPolygon(cells, cols, rows, ring, terrain, clipRing = null) {
   let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity;
   for (const [x, y] of ring) {
     if (x < minX) minX = x; if (x > maxX) maxX = x;
@@ -295,7 +339,8 @@ function paintPolygon(cells, cols, rows, ring, terrain) {
   const painted = [];
   for (let y = y0; y <= y1; y += 1) {
     for (let x = x0; x <= x1; x += 1) {
-      if (pointInRing(x + 0.5, y + 0.5, ring)) {
+      const cx = x + 0.5; const cy = y + 0.5;
+      if (pointInRing(cx, cy, ring) && (!clipRing || pointInRing(cx, cy, clipRing))) {
         cells[y * cols + x] = terrain;
         painted.push([x, y]);
       }
@@ -395,9 +440,10 @@ export function bakeModel(map, pois = [], opts = {}) {
   const treeCells = { wood: [], grass: [] };
   const scatterNotes = [];
   for (const [layer, terrain] of AREA_TERRAIN) {
+    const clipRing = boundaryRing && BOUNDARY_CLIPPED_LAYERS.has(layer) ? boundaryRing : null;
     for (const way of map[layer] || []) {
       if (!Array.isArray(way.r) || way.r.length < 3) continue;
-      const painted = paintPolygon(cells, cols, rows, way.r.map(toCell), terrain);
+      const painted = paintPolygon(cells, cols, rows, way.r.map(toCell), terrain, clipRing);
       if (terrain === TERRAIN.wood) treeCells.wood.push(...painted);
       if (terrain === TERRAIN.grass) treeCells.grass.push(...painted);
     }
