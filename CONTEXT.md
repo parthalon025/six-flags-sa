@@ -108,6 +108,10 @@ _Avoid_: Theme (Trail / Park Midnight are the always-on palettes); map pack; par
 The builder-produced visual assets for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), optional per-**Skin** baked variants, `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`.
 _Avoid_: tile server (runtime HTTP on the phone); map pack (use **display pack**); baking truth into tiles (truth stays JSON)
 
+**Rendering tier**:
+How a **World**’s **display pack** actually draws on a device. **Baked** — raster pyramids per time-of-day, cross-faded — is the default on every device: zero shader cost, ADR-0013’s floor. **Real-time PBR** is additive on capable devices: a MapLibre custom style layer plus three.js paints KTX2-compressed material sets over extruded truth geometry, giving live time-of-day and **Skin** swap without re-downloading the baked pyramids; it falls back to **baked** on a device-capability check, never forks the **display pack** contract. Not the **Custom map** replace/overlay distinction (that is *what* draws; this is *how* it renders) and not a **Skin template** (a template still resolves to whichever tier the device runs).
+_Avoid_: shader tier; graphics mode; LOD (that is zoom-band culling in the SVG renderer, a different mechanism)
+
 **Skin template**:
 The global compile recipe for a **Skin** id — MapLibre style JSON, iso template parameters, and optional baked tile variant — not hand-tuned CSS per **World**. A **Profile** still earns the **Skin**; **Wear** selects which template loads atop the active **World** **display pack**. **World**-specific reward art overrides live in that **World**’s `visual.json`, not in forked app code.
 _Avoid_: per-park CSS; Theme (Trail / Park Midnight are palettes, not **Skin templates**)
