@@ -1,6 +1,6 @@
 {
   "name": "@party-tracker/app",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.5",
-    "@party-tracker/shared": "1.18.0",
+    "@party-tracker/shared": "1.19.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "next": "^16.3.0",

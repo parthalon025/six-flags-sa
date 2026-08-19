@@ -13,6 +13,12 @@ Agents must **not** add `[vercel build]`, set `VERCEL_USER_BUILD`, or push branc
 
 The remaining **~75 deploys/day** are for automation — mainly production `main` merges that touch app paths (`scripts/lib/vercel-ignore.mjs`).
 
+## Live stepped gate on the automation pool
+
+The 25/75 split above is structural (previews never build for automation). On top of that, `scripts/lib/vercel-deploy-gate.mjs` checks the account's actual deploy count for the day before an automation production build runs, so a burst of merges can't crowd the user reserve even if the categorical split has a gap — read that file for the exact tier cutoffs (`GATE_WARN_RATIO`, `GATE_APPROVAL_RATIO`). Below the warn cutoff it builds silently; between warn and block it still builds but logs a warning; at/above the block cutoff (or once the automation budget is exhausted) it **skips** — a human merging to `main` must add `[vercel build]` to force it through (that reclassifies the commit as user-directed, drawing from the 25 reserve instead).
+
+Needs `VERCEL_TOKEN` + `VERCEL_PROJECT_ID` (`VERCEL_TEAM_ID` optional) set on the Vercel project so the ignoreCommand step can query the Vercel API; without them it fails open and only the categorical split applies.
+
 ## Agents: no preview pushes by default
 
 - No branch or PR push just to "see it on Vercel" when `npm run build -w @party-tracker/app` and Playwright/manual checks suffice.

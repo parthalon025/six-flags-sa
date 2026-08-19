@@ -188,6 +188,22 @@ await check('answers referencing art outside the ledger never become kits', () =
   return true;
 });
 
+await check('iso-tier art never rides a flat kit brief', () => {
+  const ledger = readAssetLedger();
+  assert.ok(ledger['parkbound-palm-tree-iso'], 'the iso variant is in the ledger');
+  const system = kitBriefSystem(ledger);
+  assert.ok(!system.includes('parkbound-palm-tree-iso'), 'the menu never advertises iso art');
+  assert.ok(system.includes('parkbound-palm-tree'), 'the flat sibling still rides the menu');
+  assert.throws(
+    () => parseKitAnswer(
+      '{"id": "x", "sprites": {"tree": {"sprite": {"asset": "parkbound-palm-tree-iso"}}}}',
+      { assets: ledger },
+    ),
+    /unknown asset/,
+  );
+  return true;
+});
+
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);
 if (FAIL.length) {
   FAIL.forEach((f) => console.log(' !', f));
