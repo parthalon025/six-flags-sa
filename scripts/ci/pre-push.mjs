@@ -13,12 +13,12 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { scrubGitEnv } from '../lib/git-env.mjs';
+import { hasInheritedGitRepo, scrubGitEnv } from '../lib/git-env.mjs';
 import { parsePrePushRefs, prePushDecision } from '../lib/pre-push.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
-export function main({ stdin, cwd = root, env = process.env } = {}) {
+export function main({ stdin, cwd = root, env = process.env, spawn = spawnSync } = {}) {
   const refs = parsePrePushRefs(stdin);
   const decision = prePushDecision(refs);
   if (!decision.run) {
@@ -35,7 +35,12 @@ export function main({ stdin, cwd = root, env = process.env } = {}) {
   // and every process below inherits it. The suite builds scratch repos in
   // tmpdirs; without this scrub their commits land on the branch being pushed.
   // See scripts/lib/git-env.mjs.
-  const result = spawnSync('npm', args, { cwd, stdio: 'inherit', env: scrubGitEnv(env) });
+  if (hasInheritedGitRepo(env)) {
+    // Said out loud because the failure it prevents is silent: the suite would
+    // commit its fixtures onto the branch being pushed and nothing would say so.
+    console.log('pre-push: scrubbing git\'s inherited repository from the CI environment');
+  }
+  const result = spawn('npm', args, { cwd, stdio: 'inherit', env: scrubGitEnv(env) });
   return result.status ?? 1;
 }
 

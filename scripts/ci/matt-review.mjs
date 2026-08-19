@@ -7,6 +7,7 @@
  *   node scripts/ci/matt-review.mjs check  [--base origin/main]   # exit 1 when a code diff lacks a fresh stamp
  */
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from '../lib/git-env.mjs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -53,6 +54,8 @@ export function runPrompt({ baseRef = 'origin/main', cwd = root } = {}) {
   try {
     diffStat = execFileSync('git', ['diff', '--stat', `${context.mergeBase}...HEAD`], {
       cwd,
+      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+      env: scrubGitEnv(),
       encoding: 'utf8',
     }).trim();
   } catch {

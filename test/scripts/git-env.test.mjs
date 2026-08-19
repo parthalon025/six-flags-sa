@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GIT_ENV_VARS, hasInheritedGitRepo, scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 
@@ -107,22 +107,53 @@ try {
 /* ----------------------------------------------------------- structural -- */
 
 /**
- * The destructive shape is narrow and easy to name: a test that builds its own
- * repository with `git init`. Every one of those must scrub, because the whole
- * point of the scratch repo is that it is *not* the repository git handed the
- * hook. Grep for the shape rather than trusting anyone to remember.
+ * The narrow version of this guard — "tests that call `git init`" — would not
+ * have caught the holes the standards review found: scripts/ci/pre-merge-vertical.mjs
+ * and three test/app entry points shelled out to git unscrubbed, and none of
+ * them calls `git init`. So the guard tracks the real shape instead: any file
+ * under scripts/ or test/ that spawns git at all must scrub.
+ *
+ * Every one of those call sites means "the repository I was pointed at", and
+ * every one is reachable as a standalone npm script, so there is no legitimate
+ * exemption and no allowlist to rot. packages/ is out of scope on purpose:
+ * packages must not import repo tooling out of scripts/, so the one git caller
+ * there (venue-builder/lib/venue-pr.mjs) cannot use this module.
  */
-const suiteDir = join(dirname(fileURLToPath(import.meta.url)));
-for (const entry of readdirSync(suiteDir)) {
-  if (!entry.endsWith('.test.mjs')) continue;
-  const src = readFileSync(join(suiteDir, entry), 'utf8');
-  if (!/'init'/.test(src)) continue;
-  assert.match(
-    src,
-    /scrubGitEnv/,
-    `${entry} builds a scratch repo with git init but does not import scrubGitEnv — `
-      + 'under a git hook its commits land on the real branch (scripts/lib/git-env.mjs)',
-  );
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const SPAWNS_GIT = /(?:execFileSync|execSync|spawnSync|spawn|exec)\(\s*['"`]git['"`]/;
+
+function walk(dir, out = []) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) walk(full, out);
+    else if (/\.(mjs|js|cjs)$/.test(entry.name)) out.push(full);
+  }
+  return out;
 }
+
+const spawners = [];
+for (const dir of ['scripts', 'test']) {
+  for (const file of walk(join(repoRoot, dir))) {
+    const src = readFileSync(file, 'utf8');
+    if (!SPAWNS_GIT.test(src)) continue;
+    const rel = relative(repoRoot, file);
+    spawners.push(rel);
+    assert.match(
+      src,
+      /scrubGitEnv/,
+      `${rel} spawns git without importing scrubGitEnv — under a git hook the `
+        + 'inherited GIT_DIR outranks its cwd and it operates on the wrong '
+        + 'repository (scripts/lib/git-env.mjs)',
+    );
+  }
+}
+
+// A guard that silently matches nothing passes forever. Assert it has teeth.
+assert.ok(
+  spawners.length >= 10,
+  `expected the git-spawning file scan to find at least 10 files, found ${spawners.length} `
+    + '— the pattern probably stopped matching',
+);
 
 console.log('git-env.test.mjs: ok');

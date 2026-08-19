@@ -27,15 +27,19 @@ export function readAppVersion(repoRoot) {
  * Every git call below names its repository with `cwd: repoRoot`. An inherited
  * GIT_DIR outranks that, so under a git hook these would read the hook's
  * repository instead of the one asked for. See scripts/lib/git-env.mjs.
+ *
+ * Read per call, not cached at import: a caller that adjusts process.env before
+ * invoking should get the environment it set, not the one that happened to be
+ * live when the module first loaded.
  */
-const GIT_ENV = scrubGitEnv();
+const gitEnv = () => scrubGitEnv();
 
 export function latestStoreTag(repoRoot, prefix = 'store/') {
   try {
     const out = execFileSync(
       'git',
       ['tag', '-l', `${prefix}*`, '--sort=-v:refname'],
-      { cwd: repoRoot, env: GIT_ENV, encoding: 'utf8' },
+      { cwd: repoRoot, env: gitEnv(), encoding: 'utf8' },
     );
     const tag = out.split('\n').map((line) => line.trim()).find(Boolean);
     return tag ?? null;
@@ -48,7 +52,7 @@ function gitRefExists(repoRoot, ref) {
   try {
     execFileSync('git', ['rev-parse', '--verify', ref], {
       cwd: repoRoot,
-      env: GIT_ENV,
+      env: gitEnv(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });
@@ -61,7 +65,7 @@ function gitRefExists(repoRoot, ref) {
 function gitDiffNames(repoRoot, base, head = 'HEAD') {
   const out = execFileSync('git', ['diff', '--name-only', base, head], {
     cwd: repoRoot,
-    env: GIT_ENV,
+    env: gitEnv(),
     encoding: 'utf8',
   });
   return out.split('\n').map((line) => line.trim()).filter(Boolean);
