@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "bytes": 319354,
+  "files": [
+    {
+      "path": "/venues/kings-island.gaps.json",
+      "bytes": 5018,
+      "sha256": "a2deb52cf38114f1c4e25811b85f9435668049df0c2298140629ed166091c9ab"
+    },
+    {
+      "path": "/venues/kings-island.map.json",
+      "bytes": 283810,
+      "sha256": "504d84c9489c15adbfe880573971f248305ec1b75e2037cde00ac73152502e4f"
+    },
+    {
+      "path": "/venues/kings-island.pois.json",
+      "bytes": 30526,
+      "sha256": "711fcdbf2927c0c0a110b1d01ea1cce109fdd21397538f541e17e83ddbd16be8"
+    }
+  ]
+}

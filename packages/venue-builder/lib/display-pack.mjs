@@ -19,6 +19,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
 import { buildRasterTier } from './display-raster.mjs';
+import { writeBundleManifest } from './venue-bundle.mjs';
 import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
@@ -689,6 +690,17 @@ export function runDisplayStage(id, opts = {}) {
     const file = path.join(outDir, 'display-certification.json');
     writeJson(file, summary, true);
     written.push(file);
+    // The pack's download contract (ADR-0018): every shipped file of this
+    // pack, hash-pinned, enumerated from the tier manifest and the stage's
+    // own outputs — written last so it hashes what this run actually wrote.
+    const bundleFile = path.join(outDir, 'bundle.json');
+    writeBundleManifest(id, {
+      venueDir: VENUE_DIR,
+      displayDir: outDir,
+      outFile: bundleFile,
+      generated: map.meta?.generated ?? null,
+    });
+    written.push(bundleFile);
   }
 
   return { venue: id, certified, packs, anchors, tiles, bakes, written };

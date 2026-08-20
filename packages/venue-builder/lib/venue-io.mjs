@@ -37,6 +37,7 @@ import {
   VENUE_DIR,
 } from '../src/paths.mjs';
 import { shippedGapsForVenue } from './ship-gaps.mjs';
+import { writeBundleManifest } from './venue-bundle.mjs';
 import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
 
 export { APP_ROOT, BUILDER_ROOT, INDEX_FILE, MANIFEST_FILE, MONO_ROOT, OVERRIDE_DIR, VENUE_DIR };
@@ -169,11 +170,22 @@ export function reindex({ preferredDefault } = {}) {
     }
     const shipped = gapsDocumentFor({ meta: map.meta, pois, map });
     writeJson(path.join(VENUE_DIR, `${id}.gaps.json`), shipped, true);
+    // The bundle manifest is written after the gaps file so it hashes the
+    // bytes this reindex just shipped. It lists the truth trio plus whatever
+    // display files have been published under public/venues/<id>/display/ —
+    // the download manager's one trusted entry point per venue (ADR-0018).
+    writeBundleManifest(id, {
+      venueDir: VENUE_DIR,
+      displayDir: path.join(VENUE_DIR, id, 'display'),
+      outFile: path.join(VENUE_DIR, `${id}.bundle.json`),
+      generated: map.meta.generated ?? null,
+    });
     venues.push({
       ...map.meta,
       map: `/venues/${id}.map.json`,
       pois: `/venues/${id}.pois.json`,
       gaps: `/venues/${id}.gaps.json`,
+      bundle: `/venues/${id}.bundle.json`,
       counts: {
         pois: pois.length,
         rides: pois.filter((p) => p.c === 'coaster' || p.c === 'ride').length,

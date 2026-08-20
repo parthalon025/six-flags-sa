@@ -75,6 +75,10 @@ GoogleService-Info.plist
 # Display tiles are rebuilt from truth — GeoJSON export and PMTiles stay local
 packages/venue-builder/data/venues/*/display/tiles/
 packages/venue-builder/data/venues/*/display/base.pmtiles
+# The pack-side bundle manifest hashes whatever optional tiers this machine
+# built (pmtiles, worlds), so it differs per machine — the committed download
+# contract is public/venues/<id>.bundle.json, written by reindex.
+packages/venue-builder/data/venues/*/display/bundle.json
 packages/venue-builder/data/display/atlas/
 packages/venue-builder/assets/reference/
 artifacts/
