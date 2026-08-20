@@ -2293,10 +2293,103 @@ await check('a one-way service road says which way, and who is allowed down it',
   assert.ok(road.every((s) => hasWayFlag(s.flags, WAY_FLAGS.ONEWAY)));
   assert.ok(road.every((s) => hasWayFlag(s.flags, WAY_FLAGS.RESTRICTED)));
   assert.ok(road.every((s) => !hasWayFlag(s.flags, WAY_FLAGS.ONEWAY_BACK)));
-  // Read, not obeyed: index() still pushes both directions, unchanged.
+  // Read AND spent (#505): both edges still exist (the repair passes reason
+  // over drawn geometry, and a pocket ringed by outward one-ways must stay
+  // reachable — see WRONG_WAY in routing.js), but walking against the ring
+  // costs prohibitively more than walking with it.
   const [seg] = road;
-  assert.ok(g.nodes[seg.a].edges.some((e) => e.to === seg.b));
-  assert.ok(g.nodes[seg.b].edges.some((e) => e.to === seg.a));
+  const segIndex = g.segments.indexOf(seg);
+  const fwd = g.nodes[seg.a].edges.find((e) => e.to === seg.b && e.seg === segIndex);
+  const rev = g.nodes[seg.b].edges.find((e) => e.to === seg.a && e.seg === segIndex);
+  assert.ok(fwd && rev, 'both directions stay in the graph');
+  assert.ok(rev.cost > fwd.cost * 5, `wrong way costs ${rev.cost}, with the arrow ${fwd.cost}`);
+  return true;
+});
+
+/* #505: the one-way bits are spent. A square of midways with one flagged
+   side — the short way round obeys the arrow, the way against it walks the
+   other three sides, because WRONG_WAY prices the flagged span off the menu
+   while a legal alternative exists. The endpoints stand on the two UNflagged
+   neighbours so the proof exercises the graph, not the snap tails. */
+const ONEWAY_SQUARE = (f) => ({
+  path: [
+    // ~200 m sides at this latitude. South side P0→P1 carries the flag.
+    { r: [[-84.2680, 39.3400], [-84.2657, 39.3400]], n: 'South midway', ...(f ? { f } : {}) },
+    { r: [[-84.2657, 39.3400], [-84.2657, 39.3418]], n: 'East midway' },
+    { r: [[-84.2657, 39.3418], [-84.2680, 39.3418]], n: 'North midway' },
+    { r: [[-84.2680, 39.3418], [-84.2680, 39.3400]], n: 'West midway' },
+  ],
+});
+// On the west and east sides, a few paces up from the flagged south side.
+const SQ_FROM = { lat: 39.3402, lng: -84.2680 };
+const SQ_TO = { lat: 39.3402, lng: -84.2657 };
+
+await check('a ONEWAY way routes only the drawn direction; against it walks around (#505)', () => {
+  const g = buildRouteGraph(ONEWAY_SQUARE(WAY_FLAGS.ONEWAY));
+  const withArrow = findRoute(g, SQ_FROM, SQ_TO, {});
+  const against = findRoute(g, SQ_TO, SQ_FROM, {});
+  assert.equal(withArrow.mode, 'path');
+  assert.equal(against.mode, 'path');
+  assert.ok(withArrow.metres < 350, `with the arrow stays short (${Math.round(withArrow.metres)} m)`);
+  assert.ok(
+    against.metres > withArrow.metres * 1.8,
+    `against the arrow detours round the block (${Math.round(against.metres)} m vs ${Math.round(withArrow.metres)} m)`,
+  );
+  return true;
+});
+
+await check('ONEWAY_BACK is the same rule, mirrored (#505)', () => {
+  const g = buildRouteGraph(ONEWAY_SQUARE(WAY_FLAGS.ONEWAY_BACK));
+  const withArrow = findRoute(g, SQ_TO, SQ_FROM, {});
+  const against = findRoute(g, SQ_FROM, SQ_TO, {});
+  assert.equal(withArrow.mode, 'path');
+  assert.ok(withArrow.metres < 350, `against the ring is the allowed way (${Math.round(withArrow.metres)} m)`);
+  assert.ok(against.metres > withArrow.metres * 1.8, 'the drawn direction is the blocked one');
+  return true;
+});
+
+await check('an unflagged way stays two-way, byte for byte (#505)', () => {
+  const g = buildRouteGraph(ONEWAY_SQUARE(0));
+  const there = findRoute(g, SQ_FROM, SQ_TO, {});
+  const back = findRoute(g, SQ_TO, SQ_FROM, {});
+  assert.equal(there.mode, 'path');
+  assert.ok(there.metres < 350);
+  assert.ok(Math.abs(there.metres - back.metres) < 1, 'symmetric without a flag');
+  const south = g.segments.filter((s) => s.name === 'South midway');
+  assert.ok(south.every((seg) => {
+    const segIndex = g.segments.indexOf(seg);
+    const fwd = g.nodes[seg.a].edges.find((e) => e.to === seg.b && e.seg === segIndex);
+    const rev = g.nodes[seg.b].edges.find((e) => e.to === seg.a && e.seg === segIndex);
+    return fwd && rev && fwd.cost === rev.cost;
+  }), 'both directions present at the same price');
+  return true;
+});
+
+await check('a pocket only reachable against the arrow still routes (#505)', () => {
+  /* Kings Island's The Beast in miniature: the only drawn way to the spur's
+     end is one-way OUTWARD. A hard wall would strand the destination and
+     fall back to a straight line; the price keeps it reachable — this is
+     the shipped-data case that decided price-not-wall. */
+  const spur = {
+    path: [
+      { r: [[-84.2680, 39.3400], [-84.2657, 39.3400]], n: 'Midway' },
+      // Drawn from the ride exit back to the midway: oneway with the ring.
+      // Two segments, so reaching the far end must traverse the near one as
+      // a wrong-way EDGE — the snap tails alone cannot carry it.
+      { r: [[-84.2657, 39.3418], [-84.2657, 39.3409], [-84.2657, 39.3400]], n: 'Exit path', f: WAY_FLAGS.ONEWAY },
+    ],
+  };
+  const g = buildRouteGraph(spur);
+  const r = findRoute(g, { lat: 39.3400, lng: -84.2678 }, { lat: 39.3416, lng: -84.2657 }, {});
+  assert.equal(r.mode, 'path', 'the one-way spur is still a route, not a straight-line fallback');
+  return true;
+});
+
+await check('a contradictory f (ONEWAY|ONEWAY_BACK) degrades to two-way, not to a wall (#505)', () => {
+  const g = buildRouteGraph(ONEWAY_SQUARE(WAY_FLAGS.ONEWAY | WAY_FLAGS.ONEWAY_BACK));
+  const there = findRoute(g, SQ_FROM, SQ_TO, {});
+  const back = findRoute(g, SQ_TO, SQ_FROM, {});
+  assert.ok(there.metres < 350 && Math.abs(there.metres - back.metres) < 1);
   return true;
 });
 
@@ -2371,25 +2464,31 @@ await check('a venue built before the attributes existed still loads and routes'
   return true;
 });
 
-await check('carrying the attributes moves no route at all', () => {
-  /* The important one. This change puts data in the bundle and reads it into
-     the graph, and is not allowed to move a single route by a single metre —
-     so the same park is routed twice, once plain and once with an attribute on
-     every way, and the two answers are compared as bytes. */
+await check('carrying the unspent attributes moves no route at all', () => {
+  /* The original freeze: reading an attribute into the graph is not allowed
+     to move a route — spending one is a separate, deliberate change. STEPS,
+     BRIDGE, TUNNEL and RESTRICTED are still carried unspent by the graph
+     itself (profiles spend STEPS/RESTRICTED through opts.penalty, not here),
+     so the same park routed plain and marked must answer identically.
+     ONEWAY / ONEWAY_BACK are deliberately absent from the marking: since
+     #505 index() SPENDS them, and their route diff is asserted by the
+     one-way checks above instead. */
   const attributed = JSON.parse(JSON.stringify(PARK));
   let marked = 0;
   ['path', 'service'].forEach((key) => {
     (attributed[key] || []).forEach((feat, i) => {
       if (Array.isArray(feat)) return;
       // Deliberately heavy-handed: every third way is steps, every fifth a
-      // bridge two levels up, every seventh one-way and back of house.
+      // bridge two levels up, every seventh back of house.
       let f = 0;
       if (i % 3 === 0) f |= WAY_FLAGS.STEPS;
       if (i % 5 === 0) f |= WAY_FLAGS.BRIDGE;
-      if (i % 7 === 0) f |= WAY_FLAGS.ONEWAY | WAY_FLAGS.RESTRICTED;
+      if (i % 7 === 0) f |= WAY_FLAGS.RESTRICTED;
       if (i % 11 === 0) f |= WAY_FLAGS.TUNNEL;
       if (f) {
-        feat.f = f;
+        // Keep whatever one-way bits the real bundle carries: those ARE
+        // spent, so overwriting them would compare two different networks.
+        feat.f = f | ((feat.f || 0) & (WAY_FLAGS.ONEWAY | WAY_FLAGS.ONEWAY_BACK));
         marked += 1;
       }
     });
