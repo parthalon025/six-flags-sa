@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "skin": "layered-atlas",
+  "kit": "layered-atlas",
+  "projection": "top-down",
+  "bounds": {
+    "west": -84.2775,
+    "south": 39.3364963,
+    "east": -84.2595,
+    "north": 39.348
+  },
+  "file": "layered-atlas.world.png",
+  "credits": "kings-island--layered-atlas.credits.json"
+}
