@@ -42,7 +42,7 @@ rule — visual clarity for gameplay > minimize clutter > promote theme > surpri
 | **G-2 Greyscale survival** | Desaturated, the map still reads: 2–3 value masses visible; legible at reward-card thumbnail size |
 | **G-3 Color-alone** | No essential information carried by a fixed color alone (open/closed, node states); colorblind-simulator pass |
 | **G-4 Semantic honesty** | No terrain/vegetation/water treatment implies a false class (the "forested Death Valley" misread); feature classes mutually distinguishable |
-| **G-5 Zoom robustness** | The style holds at min and max shipped zoom; detail degrades gracefully, never into noise or blankness |
+| **G-5 Zoom robustness** | The style holds at min and max shipped zoom; detail degrades gracefully, never into noise or blankness. Mechanism: the three zoom bands (ADR-0019) — each band is scored against its own generalization level, and the band handoffs must not break the look |
 
 **Staged rating:** G-1 and G-2 are checked on a **blockout** (terrain + circulation only, greyscale)
 before the full styling pass spends its budget; all five gates plus the axis score run on the
@@ -64,7 +64,7 @@ are not the same 1.
 | A3 | Line, outline & edge control | Whether edges are drawn and how they behave: weight hierarchy, outline-vs-rim decision, hard/soft/lost edge hierarchy with the hardest edges at focal features |
 | A4 | Texture grain & visual rest | How surfaces carry texture (flat fill, mottle, hatch, painted dabs, grain, sprite repetition) *and* where the rest areas are — the detail-frequency budget |
 | A5 | Light, shadow & relief model | One consistent light source (upper-left bias for top-down); how height reads (flat, terraces, hillshade, strata, true 3D); no relief inversion, no content-obscuring cast shadows |
-| A6 | Projection & camera | Top-down, iso rotations, oblique aerial, chart-with-vignettes; declared per world (ADR-0016) |
+| A6 | Projection & camera | Top-down, oblique aerial, chart-with-vignettes; plus the declared camera preset — bearing, and how pitch eases with zoom (ADR-0019). Declared per world (ADR-0016) |
 | A7 | Framing & edge-of-world | How the map ends: enclosed border, bleed to sea, floating landmass, dissolving grid, continues-beyond-frame |
 
 **B — category vocabulary (6 axes):**
@@ -134,6 +134,9 @@ everything.
 ## Relationship to design requests (ADR-0017)
 
 A design request = pillar line + exemplar + a target (statement or declared negation) on all 17
-axes + reward wiring + size budget. A kit brief that leaves an axis unanswered is incomplete. The
-five Kings Island goal rubrics ([kings-island-goal-rubrics.md](./kings-island-goal-rubrics.md))
+axes + reward wiring + size budget. With zoom-banded worlds (ADR-0019) a request's "2" anchors
+may differ per band — overview answers with generalization (what survives the squint), close
+answers with authored micro-detail (what rewards the lean-in) — and the mid band is the default
+anchor when a band is not called out. A kit brief that leaves an axis unanswered is incomplete.
+The five Kings Island goal rubrics ([kings-island-goal-rubrics.md](./kings-island-goal-rubrics.md))
 are the first five instances of this schema.

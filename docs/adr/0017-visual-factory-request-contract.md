@@ -1,6 +1,6 @@
 # ADR-0017 — Visual factory: the request contract
 
-**Status:** Accepted (owner-confirmed point by point, 2026-08-20)
+**Status:** Accepted (owner-confirmed point by point, 2026-08-20) · Amended by [ADR-0019](./0019-zoomable-worlds.md) (distribution clause 4)
 **Depends on:** [ADR-0013](./0013-display-pipeline.md) · [ADR-0014](./0014-display-reference-contract.md) · [ADR-0016](./0016-custom-map-worlds.md) · [display factory design](../research/2026-08-18-custom-map-display-factory.md) · [OSM stylized-map research](../research/2026-08-20-osm-stylized-game-maps.md)
 
 ## Context
@@ -32,6 +32,11 @@ fixed as the contract.
 4. **Distribution.** Every certified look ships in the venue's pack — no lazy per-look download.
    Consequence: the per-look size budget becomes a hard certification row, because every look
    costs every guest's download.
+   *Amended 2026-08-20 by [ADR-0019](./0019-zoomable-worlds.md):* with zoom-banded worlds, "in
+   the pack" means the **mid band** — the map works offline day one in every owned look — while
+   overview/close pyramids stream by viewport and sync on wear through the download manager. The
+   size budget becomes per-band rows (pack budget for mid, pyramid budget for streamed bands);
+   guests pay bandwidth only for looks they wear.
 5. **Reward wiring is part of the request.** The design-request document must declare the look's
    role — earnable **Skin** (with unlock/share rungs), **Rank prize**, seasonal, or venue-bound
    art — or it is incomplete.

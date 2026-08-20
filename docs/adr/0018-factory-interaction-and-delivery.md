@@ -1,6 +1,6 @@
 # ADR-0018 — Factory interaction and delivery
 
-**Status:** Accepted (owner-confirmed point by point, 2026-08-20)
+**Status:** Accepted (owner-confirmed point by point, 2026-08-20) · Amended by [ADR-0019](./0019-zoomable-worlds.md) (delivery clauses 4–5)
 **Depends on:** [ADR-0008](./0008-databricks-back-office.md) · [ADR-0010](./0010-databricks-ops-free-tier.md) · [ADR-0013](./0013-display-pipeline.md) · [ADR-0016](./0016-custom-map-worlds.md) · [ADR-0017](./0017-visual-factory-request-contract.md)
 
 ## Context
@@ -29,6 +29,10 @@ inventing runtime infrastructure this repo has rejected before.
 5. **Publication: the deployed origin is the CDN.** Packs merge into
    `apps/party-tracker/public` through the freshness-gated PR and ship with the existing deploy
    pipeline (`cdn:warm` primes). No new hosting infra, no new credentials.
+   *Amended 2026-08-20 by [ADR-0019](./0019-zoomable-worlds.md):* the origin also serves the
+   zoom-band raster pyramids as PMTiles read by HTTP range requests — viewport streaming rides
+   the same deploy, still no new infra; the download manager's on-wear sync (clause 4) is what
+   makes a streamed pyramid fully offline.
 6. **Sequencing.** The download manager + manifest refresh + cache management is Train F,
    immediately after Train E; this ADR records it so Train E stays four slices.
 

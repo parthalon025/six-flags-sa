@@ -157,12 +157,16 @@ A **Profile**-owned cosmetic restyle of the **World** map — how it is painted,
 _Avoid_: Theme (Trail / Park Midnight are the always-on palettes); map pack; party theme; Map skin (use **Skin**)
 
 **Display pack**:
-The **Visual factory**'s output for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), optional per-**Skin** baked variants, `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`. See **Rendering tier** for how a device chooses baked vs real-time PBR.
+The **Visual factory**'s output for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), per-**Skin** baked worlds (the mid **Zoom band**; deeper bands stream and sync on **Wear**), `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`. See **Rendering tier** for how a device chooses baked vs real-time PBR.
 _Avoid_: tile server (runtime HTTP on the phone); map pack (use **display pack**); baking truth into tiles (truth stays JSON)
+
+**Zoom band**:
+One of the generalization levels a baked **Skin** world ships at — overview (bold shapes, landmarks only), mid (the everyday view), close (textures, props, signage). More detail is *authored*, not just magnified, the closer a guest zooms; the camera eases from flat to a gentle tilt on the way in. The mid band lives in the **display pack**; overview and close stream by viewport and become offline after **Wear**. Detail: ADR-0019.
+_Avoid_: zoom level (a tile coordinate, not a band); LOD (implementation vocabulary); quality setting (bands are content, not fidelity knobs)
 
 **Rendering tier**:
 How a **World**’s **display pack** actually draws on a device: baked (default, every device, zero shader cost) or real-time PBR (additive on capable devices — live time-of-day and **Skin** swap with no separate download, falling back to baked on a device-capability check). Not the **Custom map** replace/overlay distinction (that is *what* draws; this is *how* it renders) and not a **Skin template** (a template still resolves to whichever tier the device runs). Detail: ADR-0013 item 4.
-_Avoid_: shader tier; graphics mode; LOD (zoom-band culling in the SVG renderer, a different mechanism); ADR-0014’s “game-tier” / “illustrated tier” (venue art fidelity — a different axis from this)
+_Avoid_: shader tier; graphics mode; **Zoom band** (bands are per-zoom content within the baked tier, not a tier); ADR-0014’s “game-tier” / “illustrated tier” (venue art fidelity — a different axis from this)
 
 **Skin template**:
 The global compile recipe for a **Skin** id — MapLibre style JSON, iso template parameters, and optional baked tile variant — not hand-tuned CSS per **World**. A **Profile** still earns the **Skin**; **Wear** selects which template loads atop the active **World** **display pack**. **World**-specific reward art overrides live in that **World**’s `visual.json`, not in forked app code.

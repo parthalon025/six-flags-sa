@@ -24,11 +24,13 @@ the reason — do not relitigate casually).
 | Tool | Buys | Status |
 |---|---|---|
 | tippecanoe | vector tiles → PMTiles | **in** |
-| PMTiles (protomaps) | single-file tile archives over HTTP ranges | **in** |
+| PMTiles (protomaps) | single-file tile archives over HTTP ranges — vector tier today; zoom-band raster pyramids with viewport streaming per ADR-0019 | **in** |
+| maplibre-gl (app renderer) | the one map view: banded raster worlds, vector tier, pitch-eases-with-zoom camera, GL overlay layers | adopt: Train H (decided, ADR-0019) |
+| raster tiler (sharp-based, in-repo) | banded bake PNG → deterministic raster tile pyramid → PMTiles | adopt: Train H (ADR-0019) — deterministic and seeded like every certified stage |
 | @maplibre/maplibre-gl-style-spec | style.json validation in CI (gl-style-validate) | adopt: first style regression that certification misses |
 | spreet (rust) | MapLibre sprite atlases from SVGs | watch — display-atlas.mjs already covers this |
 | geojson-vt / vt-pbf | runtime tile slicing without tippecanoe | rejected — tippecanoe is installed and deterministic |
-| Planetiler / Tilemaker / PostGIS | planet-scale tiling | rejected (ADR-0016) — venues are park-bbox scale |
+| Planetiler / Tilemaker / PostGIS | planet-scale tiling | rejected (ADR-0016) — venues are park-bbox scale; ADR-0019's band pyramids use the in-repo tiler, not planet tooling |
 
 ## Bake rendering & imaging
 
@@ -40,8 +42,8 @@ the reason — do not relitigate casually).
 | headless Chromium canvas (material compile) | downsize/encode CC0 sets to the 512px budget — the swatch harvester's own path | **in** (slice 4, bin/display-materials.mjs) |
 | sharp (libvips) | faster resize/composite/encode without a browser | adopt: material compiles outgrow the browser path (fleet-scale or CI-side compiles) |
 | oxipng / pngquant | 30–70% smaller PNGs, lossless/near-lossless | adopt: with everything-in-the-pack, world files are per-guest bandwidth — run before commit; cheapest bandwidth lever in the system |
-| WebP/AVIF (via sharp) | world images at ~half PNG weight | adopt: same trigger; check WebView support floor first |
-| @maplibre/maplibre-gl-native | headless render of the real style.json — bake = exactly what phones render | watch — the one-renderer convergence play; costs moving certification to perceptual |
+| WebP/AVIF (via sharp) | world images at ~half PNG weight | adopt: Train H (trigger fired, ADR-0019) — banded pyramids ship WebP at equivalent visual quality; check WebView support floor first |
+| @maplibre/maplibre-gl-native | headless render of the real style.json — bake = exactly what phones render | watch — trigger armed per ADR-0019: adopt (with odiff) on the first visual regression that only manifests in engine rendering |
 | GDAL / gdaldem | reference-grade hillshade/contours | watch — current solver suffices until quality complaints |
 | maplibre-contour | contour lines from DEM at runtime | watch (pairs with the deferred PBR tier) |
 | rio-rgbify / terrain-RGB | encode DEM as tiles for 3D runtime terrain | watch (PBR tier only) |
@@ -92,7 +94,8 @@ the reason — do not relitigate casually).
 |---|---|---|
 | Playwright + 20-point matrix | screenshot/DOM assertions per skin | **in** |
 | pixelmatch | pixel diffs | adopt: first check that needs an image diff (nothing imports it today — certification samples pixels via getImageData instead) |
-| odiff | 10× faster perceptual diffs at fleet scale | adopt: perceptual certification (MapLibre-native or Blender tier) |
+| odiff | 10× faster perceptual diffs at fleet scale | adopt: perceptual certification (Blender tier, or the maplibre-gl-native trigger firing per ADR-0019) |
+| perf trace rows (Playwright + CPU throttle) | 60fps / time-to-first-map / zero-blank-tile gates as failing CI rows | adopt: Train H (ADR-0019 clause 8; spec in the perf playbook) |
 | SSIM.js | structural similarity — the §5 generative gate | adopt: generative tier certification |
 | LDtk debug export | inspectable bake models | **in** |
 | Maputnik | free visual MapLibre style editor — eye-pass tuning of style.json | adopt: first hands-on style tuning session; zero integration, it just opens the files |

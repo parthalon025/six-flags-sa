@@ -172,6 +172,22 @@ goal-specific interpretation.
   art (overlay's job).
 - **C4** 16-bit era joy; "world 3 unlocked."
 
+## Band anchors (ADR-0019)
+
+The anchors above describe the **mid band** — the everyday view. With zoom-banded worlds each
+goal also answers two more generalization levels, in the same language:
+
+- **Overview band**: only what survives the squint — G-1's figure (circulation/nodes), C1's
+  orienting landmarks, A2's value masses. Prop clutter (B6), texture grain (A4), and typography
+  (C3) generalize away or simplify; negating them *at this band* needs no extra declaration.
+- **Close band**: the lean-in reward — A4's grain becomes authored micro-texture, B6's props gain
+  variants, C3's signage becomes readable, without violating the declared rest areas or G-1.
+  Example (G1): at overview the village reads as green mass + tree-wall + plaza landmark; at
+  close, plank grain, individual flowers, and the INN sign are real painted detail.
+
+The eye pass scores the mid band on all axes and spot-checks overview/close against G-1/G-2 and
+the band handoffs (G-5).
+
 ## Using the rubric
 
 - **Kit briefs** answer the axes: a brief that leaves an axis unaddressed will score 0 there.

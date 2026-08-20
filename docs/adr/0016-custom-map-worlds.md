@@ -1,6 +1,6 @@
 # ADR-0016 — Custom map worlds: the bake reaches the phone
 
-**Status:** Accepted (owner-confirmed through a structured design review, 2026-08-20)
+**Status:** Accepted (owner-confirmed through a structured design review, 2026-08-20) · Amended by [ADR-0019](./0019-zoomable-worlds.md) (zoom bands, tiled streaming, iso retirement)
 **Depends on:** [ADR-0012](./0012-map-visual-design.md) · [ADR-0013](./0013-display-pipeline.md) · [ADR-0014](./0014-display-reference-contract.md) · [ADR-0015](./0015-terrain-in-display.md) · [display factory design](../research/2026-08-18-custom-map-display-factory.md) · [OSM stylized-map research](../research/2026-08-20-osm-stylized-game-maps.md)
 
 ## Context
@@ -48,6 +48,16 @@ color swap" — is the symptom: the expressive half of the factory never reaches
    gate. The runtime three.js/KTX2 tier stays deferred per ADR-0013 item 4 — this is
    bake-side only. Both factories remain request-driven and output-agnostic: any venue's
    truth from the **Map factory**, any prompted design visual from the **Visual factory**.
+
+8. **Zoom bands and streamed pyramids** (amended 2026-08-20 by [ADR-0019](./0019-zoomable-worlds.md),
+   owner-confirmed). Slice 6.1's "tiling only if budgets demand" clause has fired: a world is no
+   longer one image but **three zoom-banded bakes** (overview 4 px/cell · mid 12 px/cell · close
+   48 px/cell — LOD with real generalization per band), delivered as the mid band in the pack
+   plus streamed raster tile pyramids. Image-on-truth-bounds remains the geometric contract *per
+   band*; strictly geo-true and byte-identity are unchanged. Clause 5's iso projections resolve
+   to top-down bands plus a declared per-Skin camera preset — the live iso painter retires from
+   the map path (pixel-tycoon converts per the G5 goal). ADR-0019 carries the renderer, camera,
+   delivery, and performance contract.
 
 ## Rejected / deferred
 
