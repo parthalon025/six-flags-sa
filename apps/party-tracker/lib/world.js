@@ -22,6 +22,37 @@ export const SIGN_PHRASES = [
 
 export const MARK_TYPES = ['plaque', 'sign', 'lantern', 'sticker', 'cairn', 'beacon'];
 
+/* Which of the six a guest may put down, and which are put down for them.
+ *
+ * `recordSideQuest` below mints plaque + lantern for a settled height, a cairn
+ * for geometry or a path, and a sticker for anything answered at a Place — so
+ * those four are *evidence that a fact was settled*, and their whole worth is
+ * that nobody chose to leave them. `dropMark` is the only other way a Mark is
+ * born, and sign and beacon are the only two that reach it honestly.
+ *
+ * The split is a rule about authorship, not a display filter, which is why it
+ * lives beside MARK_TYPES rather than in the screen that draws the rows: a
+ * hand-placed plaque is indistinguishable from an earned one to `visibleMarks`
+ * and `thankMark`, so the only place to stop it is before it is made.
+ *
+ * MARK_TYPES itself stays all six — it is what the transport and the API
+ * validate against, and an earned plaque travels the same `world-mark` path a
+ * placed sign does.
+ */
+export const PLACEABLE_MARK_TYPES = ['sign', 'beacon'];
+export const EARNED_MARK_TYPES = ['plaque', 'lantern', 'cairn', 'sticker'];
+
+/** What each Mark is called in a sentence — `type[0].toUpperCase()` is a
+ *  transform, not a name, and it has no answer the day a type is two words. */
+export const MARK_LABELS = {
+  plaque: 'Plaque',
+  sign: 'Sign',
+  lantern: 'Lantern',
+  sticker: 'Sticker',
+  cairn: 'Cairn',
+  beacon: 'Beacon',
+};
+
 /** Icon.jsx names for Kit chrome — SF-style labels stay in KITS.glyph. */
 export const KIT_ICONS = {
   'porter-cuff': 'location.fill',

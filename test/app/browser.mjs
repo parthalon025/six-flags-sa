@@ -388,6 +388,7 @@ const TAB_OF = {
   Settings: 'settings',
   Me: 'settings',
   Day: 'settings',
+  Collection: 'settings',
 };
 const SETTINGS_ROWS = new Set([
   'Explore Worlds',
@@ -482,15 +483,43 @@ export async function go(page, dest) {
     await page.getByRole('slider', { name: /Resize panel/ }).click();
     await page.waitForTimeout(350);
   }
+  /* Me is the tab root now; Settings is a screen pushed under it, and so is
+     Collection. Anything asking for a preference has to walk through that row
+     first — "Me" itself is the only destination that stays on the root. */
+  if (tab === 'settings' && dest !== 'Me') {
+    const settingsRow = page.locator('.mePanel .row', { hasText: 'Settings' }).first();
+    // The Me root is a lazily imported panel, so it can arrive a frame or two
+    // after the tab does — wait for the row rather than reading a count of 0
+    // and walking on to a screen that is not up yet.
+    await settingsRow.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    if (await settingsRow.count()) {
+      await settingsRow.scrollIntoViewIfNeeded().catch(() => {});
+      await settingsRow.click();
+      await page.locator('.settingsPanel').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(250);
+    }
+  }
   if (dest === 'Rider height') {
     const heightsTab = page.locator('.settingsTopic', { hasText: 'Heights' });
     if (await heightsTab.count()) await heightsTab.click();
     await page.waitForTimeout(300);
   }
-  if (dest === 'Explore Worlds' || dest === 'On the map' || dest === 'Show on the map') {
+  if (
+    dest === 'Explore Worlds' ||
+    dest === 'On the map' ||
+    dest === 'Show on the map' ||
+    dest === 'Collection'
+  ) {
     const mapTab = page.locator('.settingsTopic', { hasText: 'Map' });
     if (await mapTab.count()) await mapTab.click();
     await page.waitForTimeout(300);
+  }
+  if (dest === 'Collection') {
+    const closetRow = page.locator('.settingsPanel .row', { hasText: 'Collection' }).first();
+    if (await closetRow.count()) {
+      await closetRow.click();
+      await page.waitForTimeout(350);
+    }
   }
   if (dest === 'Diagnostics') {
     const moreTopic = page.locator('.settingsTopic', { hasText: 'More' });

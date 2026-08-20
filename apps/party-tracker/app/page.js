@@ -119,7 +119,12 @@ import { flushThanksQueue } from '@/lib/adventure/thanks';
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
 const PlanPanel = dynamic(() => import('@/components/PlanPanel'), { ssr: false });
+const MePanel = dynamic(() => import('@/components/MePanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
+const WorldCloset = dynamic(() => import('@/components/WorldCloset'), { ssr: false });
+const WorldMarks = dynamic(() => import('@/components/WorldMarks'), { ssr: false });
+const PushSettings = dynamic(() => import('@/components/PushSettings'), { ssr: false });
+const HiddenCards = dynamic(() => import('@/components/HiddenCards'), { ssr: false });
 const SideQuestsPanel = dynamic(() => import('@/components/SideQuestsPanel'), { ssr: false });
 const MovementHistoryPanel = dynamic(() => import('@/components/MovementHistoryPanel'), { ssr: false });
 const Diagnostics = dynamic(() => import('@/components/Diagnostics'), { ssr: false });
@@ -150,6 +155,15 @@ const VIEW_TITLES = {
   diagnostics: 'Diagnostics',
   movement: 'Walk history',
   'watch-compass': 'Watch Compass',
+  /* Me is a root now (MePanel): the journey and the ladder are what the tab
+     opens on, and everything that used to be stacked inside Settings is a
+     screen under it. Collection sits between Me and Marks so backing out of a
+     Mark lands on the Skins and Kits it belongs with, not on the tab root. */
+  settings: 'Settings',
+  closet: 'Collection',
+  marks: 'Marks',
+  notifications: 'Notifications',
+  'hidden-cards': 'What the panel shows',
 };
 
 /* The tab bar, left to right. Parkbound's primary areas: Explore, Party,
@@ -668,17 +682,29 @@ function ParkApp({ isSignedIn }) {
     setMarkSpot(null);
   }, [venue?.id]);
 
-  /** The on-map OSM notice's tap target: Settings, straight to Credits. */
+  /** The on-map OSM notice's tap target: Settings, straight to Credits.
+   *
+   *  Settings is a pushed screen under Me now, so this is two moves at once —
+   *  land on the Me tab AND put Settings on top of it — and they are made as
+   *  one nav state rather than selectTab() followed by push(). They have to
+   *  be: `navRef` is refreshed in an effect, so a push in the same tick would
+   *  read the stack selectTab has not written yet and append to a stale one. */
   const openCredits = useCallback(() => {
-    selectTab('settings');
+    const { stacks: cur } = navRef.current;
+    goForward({ tab: 'settings', stacks: { ...cur, settings: ['settings'] } }, 'fromRight');
+    growSheet(stops.half);
     setSettingsOpenTopic({ topic: 'credits', nonce: Date.now() });
-  }, [selectTab]);
-  // Leaving Settings clears the request — otherwise a later, ordinary visit
-  // to Settings (tab bar, not the notice) would keep reopening on Credits
-  // instead of SettingsPanel's own default.
+  }, [goForward, growSheet, stops.half]);
+  // Leaving the Settings screen clears the request — otherwise a later,
+  // ordinary visit to Settings (through Me, not the notice) would keep
+  // reopening on Credits instead of SettingsPanel's own default. Keyed off the
+  // screen rather than the tab: Me is the tab now, and standing on Me's root
+  // is already "not in Settings".
   useEffect(() => {
-    if (tab !== 'settings' && settingsOpenTopic) setSettingsOpenTopic(null);
-  }, [tab, settingsOpenTopic]);
+    if (settingsOpenTopic && !(tab === 'settings' && view === 'settings')) {
+      setSettingsOpenTopic(null);
+    }
+  }, [tab, view, settingsOpenTopic]);
 
   // The browser handing back an earlier snapshot is the only thing that ever
   // moves this app backwards, whether the visitor pressed a button, swiped the
@@ -1378,6 +1404,21 @@ function ParkApp({ isSignedIn }) {
       cancelled = true;
     };
   }, [venue?.id, party?.partyId, party?.version]);
+
+  /* Signing in hands back a display name. It fills the park-day name only when
+     there is not one already — somebody who typed "Nan" on the roster is not
+     renamed to their Google account by signing in later. Shared by Me and by
+     Settings, which are two screens onto the same Profile. */
+  const onAuthSession = useCallback((next) => {
+    setAuthSession(next);
+    if (next?.displayName) {
+      setIdentity((i) => {
+        const cur = (i?.name || '').trim();
+        if (cur && cur !== 'Guest') return i;
+        return { ...i, name: next.displayName };
+      });
+    }
+  }, []);
 
   const publishMark = useCallback(
     (mark) => {
@@ -2473,21 +2514,21 @@ function ParkApp({ isSignedIn }) {
     [selectTab, growSheet, stops.full],
   );
 
-  /* Marks live inside Collection, which today is a section of Settings → Map
-     (SettingsPanel → WorldCloset). It is deep-linked the way the on-map ODbL
-     notice deep-links Credits, rather than pushed as its own screen, because
-     there is no Marks screen to push yet — D22 gives Me a real root with
-     Collection and Marks beneath it, and when that lands this becomes a
-     `push('marks')` and nothing else here changes. */
+  /* Marks is its own screen, under Collection, under Me. The whole path is
+     laid down in one move rather than pushed a screen at a time, for the same
+     reason openCredits does: `navRef` lags a tick behind, so three chained
+     pushes would each read the stack the one before it had not written yet.
+     Landing with Collection underneath means Back walks Marks → Collection →
+     Me, which is where those three things actually live. */
   const markAtSpot = useCallback(
     (at) => {
       setMarkSpot(at);
       setSpot(null);
-      selectTab('settings');
-      setSettingsOpenTopic({ topic: 'map', nonce: Date.now() });
+      const { stacks: cur } = navRef.current;
+      goForward({ tab: 'settings', stacks: { ...cur, settings: ['closet', 'marks'] } }, 'fromRight');
       growSheet(stops.full);
     },
-    [selectTab, growSheet, stops.full],
+    [goForward, growSheet, stops.full],
   );
 
   /** List row: select / toggle in place. The expanded row already carries
@@ -3457,7 +3498,25 @@ function ParkApp({ isSignedIn }) {
               />
             )}
 
+            {/* ---- the Me tab ----
+                Root is the guest's own standing (MePanel); Settings and
+                Collection are screens under it, and Marks a screen under
+                Collection. Each block below is one screen, and every prop a
+                screen needs is handed to it here — Settings does not forward
+                Collection's eleven, because Settings is no longer where
+                Collection lives. */}
             {view === null && tab === 'settings' && (
+              <MePanel
+                session={authSession}
+                onSession={onAuthSession}
+                profileXp={authSession?.xp ?? 0}
+                contributions={worldProgress?.meters?.contributions ?? 0}
+                onOpenCloset={() => push('closet', 'settings')}
+                onOpenSettings={() => push('settings', 'settings')}
+              />
+            )}
+
+            {view === 'settings' && (
               <SettingsPanel
                 identity={identity}
                 onName={(v) => setIdentity((i) => ({ ...i, name: v.trim() || 'Guest' }))}
@@ -3472,13 +3531,10 @@ function ParkApp({ isSignedIn }) {
                 onPush={push}
                 pushKinds={notifier.KINDS}
                 pushPrefs={pushPrefs}
-                onPushPref={(key, on) => setPushPrefs((p) => ({ ...p, [key]: on }))}
                 pushState={pushState}
-                onEnablePush={enablePush}
                 pushNeedsInstall={notifier.iosNeedsInstall()}
                 hiddenCards={hiddenHere}
-                cardLabels={CARD_LABELS}
-                onUnhideCard={unhideCard}
+                onOpenCloset={() => push('closet', 'settings')}
                 car={car}
                 onClearCar={() => {
                   clearCar();
@@ -3490,21 +3546,38 @@ function ParkApp({ isSignedIn }) {
                 movementEnabled={movement.enabled}
                 movementPending={movement.totals.pending}
                 session={authSession}
-                onSession={(next) => {
-                  setAuthSession(next);
-                  if (next?.displayName) {
-                    setIdentity((i) => {
-                      const cur = (i?.name || '').trim();
-                      if (cur && cur !== 'Guest') return i;
-                      return { ...i, name: next.displayName };
-                    });
-                  }
-                }}
-                profileXp={authSession?.xp ?? 0}
-                worldProgress={worldProgress}
+                onSession={onAuthSession}
+                onWatchCompass={() => push('watch-compass')}
+                openTopic={settingsOpenTopic}
+              />
+            )}
+
+            {view === 'notifications' && (
+              <PushSettings
+                pushKinds={notifier.KINDS}
+                pushPrefs={pushPrefs}
+                onPushPref={(key, on) => setPushPrefs((p) => ({ ...p, [key]: on }))}
+                pushState={pushState}
+                onEnablePush={enablePush}
+                pushNeedsInstall={notifier.iosNeedsInstall()}
+              />
+            )}
+
+            {view === 'hidden-cards' && (
+              <HiddenCards
+                hiddenCards={hiddenHere}
+                cardLabels={CARD_LABELS}
+                onUnhideCard={unhideCard}
+              />
+            )}
+
+            {view === 'closet' && (
+              <WorldCloset
+                progress={worldProgress}
                 world={mergedWorld}
                 acceptedOffer={acceptedOffer}
                 selfId={party?.selfId || null}
+                session={authSession}
                 venue={venue}
                 onWearOwn={(skinId) => {
                   setAcceptedOffer(null);
@@ -3513,30 +3586,45 @@ function ParkApp({ isSignedIn }) {
                 }}
                 onAcceptOffer={(offer) => setAcceptedOffer(offer)}
                 onClearWear={() => setAcceptedOffer(null)}
-                onOfferSkin={(skinId) => runtime.current?.offerSkin?.(skinId)}
-                onWithdrawOffer={(skinId) => runtime.current?.withdrawOffer?.(skinId)}
+                onOffer={(skinId) => runtime.current?.offerSkin?.(skinId)}
+                onWithdraw={(skinId) => runtime.current?.withdrawOffer?.(skinId)}
                 onEquipKit={(kit) => {
                   setWorldProgress((p) => ({ ...p, kit }));
                   runtime.current?.setKit?.(kit);
                 }}
+                onOpenMarks={() => push('marks', 'settings')}
+                /* Read for one line of copy — what the Marks row is standing
+                   over. Placement itself is the next screen down. */
+                spot={markSpot}
+              />
+            )}
+
+            {view === 'marks' && (
+              <WorldMarks
+                session={authSession}
+                onSession={onAuthSession}
+                world={mergedWorld}
+                spot={markSpot}
+                onClearSpot={() => setMarkSpot(null)}
                 onDropMark={(fields) => {
                   const now = Date.now();
                   publishMark({
                     ...fields,
-                    placeId: selected?.i || selected?.id || fields.placeId || null,
+                    /* The anchored spot wins. This used to read
+                       `selected?.i || selected?.id || fields.placeId`, which
+                       filed the Mark against whatever Place happened to be
+                       selected on the map — a pin left open behind the sheet
+                       silently stole every Mark dropped while it was. A Mark
+                       stands where the visitor put it, and `fields.placeId`
+                       is null on open ground by design (lib/spot.js), which
+                       is the honest answer, not a gap to fill in. */
+                    placeId: fields.placeId || null,
                     venueId: venue?.id,
                     createdAt: now,
                     authorId: authSession?.userId,
                     authorPartyId: party?.partyId || null,
                   });
                 }}
-                onWatchCompass={() => push('watch-compass')}
-                openTopic={settingsOpenTopic}
-                /* The ground the visitor tapped "Leave a Mark" on. Settings is
-                   only the current address of Collection — it forwards this to
-                   WorldCloset, which is where a Mark is actually placed. */
-                spot={markSpot}
-                onClearSpot={() => setMarkSpot(null)}
               />
             )}
 

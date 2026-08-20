@@ -357,10 +357,23 @@ await score('B', 'B12', 'a card she removes stays removed, and Me can put it bac
   // …and it has to be findable again, or removing it was a one-way door.
   await b.locator('.tabItem[data-tab="settings"]').click();
   await b.waitForTimeout(800);
+  // Me is the tab root; preferences are a screen under it.
+  const settingsRow = b.locator('.mePanel .row', { hasText: 'Settings' }).first();
+  if (await settingsRow.count()) {
+    await settingsRow.click();
+    await b.waitForTimeout(600);
+  }
   const phoneTopic = b.locator('.settingsTopic', { hasText: 'Phone' });
   if (await phoneTopic.count()) {
     await phoneTopic.click();
     await b.waitForTimeout(500);
+  }
+  // The list of what she swiped away is its own screen now — Phone keeps one
+  // row saying how many, and the undo lives behind it.
+  const shownRow = b.locator('.settingsPanel .row', { hasText: 'What the panel shows' }).first();
+  if (await shownRow.count()) {
+    await shownRow.click();
+    await b.waitForTimeout(600);
   }
   const row = b.locator('.row', { hasText: 'Nearest food' });
   if (!(await row.count())) return { score: 1, note: 'hidden for good — Me does not list it' };
@@ -553,6 +566,11 @@ await score('A', 'A8', 'the host is told the invite was copied', async () => {
 await score('A', 'A9', 'the app explains what a "party" even is in plain English', async () => {
   await a.locator('.tabItem[data-tab="settings"]').click();
   await a.waitForTimeout(700);
+  const settingsRow = a.locator('.mePanel .row', { hasText: 'Settings' }).first();
+  if (await settingsRow.count()) {
+    await settingsRow.click();
+    await a.waitForTimeout(600);
+  }
   if (!(await tapText(a, 'What all this means'))) return 0;
   const text = await a.locator('.sheet').innerText();
   return /party is optional|stick together|party is your group/i.test(text)
