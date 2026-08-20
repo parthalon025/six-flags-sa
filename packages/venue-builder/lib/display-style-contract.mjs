@@ -593,7 +593,75 @@ export function certifyStyleContract({
     certified: checks.every((c) => c.pass),
     checks,
     review,
+    // Structured pass-through of the projection's skip entries (occlusion
+    // tallies included), so a sweep aggregator can reason about starvation
+    // without parsing evidence strings. Absent on flat certs and on certs
+    // baked before this existed — consumers must treat absence as "nothing
+    // withdrawn".
+    ...(skips && skips.length ? { skips } : {}),
   };
+}
+
+/**
+ * The sweep-level occlusion rule (issue #521): across an iso rotation sweep,
+ * every ground class must survive to a real, un-withdrawn evaluation at
+ * AT LEAST ONE rotation. A class the per-rotation contract withdrew
+ * (`occlusion_starved`) at EVERY rotation was never actually held to the
+ * contract anywhere — its disclosure rows are honest, but nothing certified
+ * the class.
+ *
+ * The tradeoff, decided on #521: hard-failing the per-rotation cert for a
+ * starved class was rejected, because geometry legitimately starves classes
+ * at some cameras (big-kahunas r0/r2 put most road samples behind
+ * extrusions) and failing r0/r2 for that would block venues whose look is
+ * fine at the rotations a player actually gets shown. Per-rotation
+ * starvation therefore stays a withdrawal-with-disclosure; this row is where
+ * it hard-fails — when no rotation in the sweep ever covered the class.
+ *
+ * Pure. `sweep` is one entry per baked rotation: `{ rotation, skips }`,
+ * with `skips` the cert's structured skip entries (certifyStyleContract
+ * carries them; certs from before that carry none, which reads as "nothing
+ * withdrawn" — correct, since withdrawal always writes a skip entry).
+ * Fewer than two rotations is not a sweep: the row passes on the record,
+ * because demanding cross-rotation coverage of a single rotation would be
+ * exactly the per-rotation hard-fail the issue rejected.
+ *
+ * @param {{ rotation: number, skips?: {key: string, byClass?: object}[] }[]} sweep
+ * @returns a check() row keyed `style_occlusion_cross_rotation`
+ */
+export function crossRotationCoverageRow(sweep) {
+  const rotations = [...(sweep || [])].sort((a, b) => a.rotation - b.rotation);
+  const starvedAt = {};
+  for (const r of rotations) {
+    const starved = (r.skips || []).find((s) => s.key === 'occlusion_starved');
+    for (const cls of Object.keys(starved?.byClass || {})) {
+      (starvedAt[cls] = starvedAt[cls] || []).push(r.rotation);
+    }
+  }
+  const rname = (rs) => rs.map((r) => `r${r}`).join(',');
+  const uncovered = Object.entries(starvedAt)
+    .filter(([, rs]) => rs.length >= rotations.length)
+    .map(([cls]) => cls)
+    .sort();
+  const partial = Object.entries(starvedAt)
+    .filter(([, rs]) => rs.length < rotations.length)
+    .map(([cls, rs]) => `${cls} withdrawn at ${rname(rs)} only`)
+    .sort();
+  return check({
+    key: 'style_occlusion_cross_rotation',
+    claim: 'every occlusion-withdrawn class still certifies un-withdrawn at ≥1 rotation of the iso sweep',
+    pass: rotations.length < 2 || uncovered.length === 0,
+    evidence: rotations.length < 2
+      ? `${rotations.length} rotation(s) baked — not a sweep; per-rotation occlusion_starved rows carry the disclosure`
+      : uncovered.length
+        ? `starved at every rotation (${rname(rotations.map((r) => r.rotation))}): ${uncovered.join(', ')} — no rotation ever held these classes to the contract`
+        : partial.length
+          ? `${partial.join('; ')} — each survives elsewhere in the sweep`
+          : `no class withdrawn anywhere across ${rname(rotations.map((r) => r.rotation))}`,
+    confidence: 1,
+    falsifier: 'a venue whose extrusions hide a ground class from every quarter-turn camera at once',
+    soWhat: 'per-rotation withdrawal is disclosure, not certification — a class starved everywhere would ship with its look never checked at all',
+  });
 }
 
 /**

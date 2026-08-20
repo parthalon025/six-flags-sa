@@ -19,6 +19,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
 import { buildRasterTier } from './display-raster.mjs';
+import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
@@ -628,15 +629,32 @@ export function runDisplayStage(id, opts = {}) {
     // Iso-tier bakes (`<id>--<kit>--iso-r<N>.*`) stay out of the pack: they
     // would fold as a pseudo-kit otherwise. Iso pack-tier integration is
     // Phase C work.
-    const certFiles = (existsSync(bakeDir)
-      ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json')
-        && !/--iso-r\d+\.style-cert\.json$/.test(f))
+    const allCertFiles = (existsSync(bakeDir)
+      ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
       : []).sort();
+    const certFiles = allCertFiles.filter((f) => !/--iso-r\d+\.style-cert\.json$/.test(f));
     const bakeCerts = certFiles.map((f) => ({
       kit: f.slice(id.length + 2, -'.style-cert.json'.length),
       cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
     }));
     venueChecks.push(...foldBakeCerts(bakeCerts));
+
+    // The iso sweep's one venue-level demand (issue #521): per-rotation
+    // certs withdraw occlusion-starved classes rather than failing, so the
+    // fold is where "every class certifies somewhere in the sweep" can be
+    // held at all. This consumes only the iso certs' structured skips —
+    // their rows still do not fold as pack tiers (Phase C, above).
+    const isoSweeps = {};
+    for (const f of allCertFiles) {
+      const m = /^(.+)--iso-r(\d+)\.style-cert\.json$/.exec(f.slice(id.length + 2));
+      if (!m) continue;
+      const cert = readJson(path.join(bakeDir, f), null);
+      (isoSweeps[m[1]] = isoSweeps[m[1]] || []).push({ rotation: Number(m[2]), skips: cert?.skips || [] });
+    }
+    for (const [kitId, sweep] of Object.entries(isoSweeps).sort(([a], [b]) => (a < b ? -1 : 1))) {
+      const row = crossRotationCoverageRow(sweep);
+      venueChecks.push({ ...row, key: `bake:${kitId}:${row.key}` });
+    }
     bakes = Object.fromEntries(bakeCerts.map(({ kit, cert }) => [
       kit, { certified: cert.certified, signature: cert.signature },
     ]));
