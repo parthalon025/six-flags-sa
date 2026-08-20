@@ -6,7 +6,9 @@ import {
   hidesBaseLayer,
   resolveCustomMap,
   showsBaseMap,
+  worldImageRect,
 } from '../../apps/party-tracker/lib/customMap.js';
+import { localMetres } from '../../apps/party-tracker/lib/geo.js';
 import { ISO_MAP_TEMPLATES } from '../../packages/shared/isoWorld.js';
 
 assert.equal(resolveCustomMap('postcard'), null);
@@ -58,6 +60,52 @@ const sidecar = JSON.parse(
 assert.equal(sidecar.projection, 'top-down');
 assert.equal(sidecar.file, 'watercolor-quest.world.png');
 assert.ok(sidecar.bounds.west < sidecar.bounds.east && sidecar.bounds.south < sidecar.bounds.north);
+
+/* Placement math for the baked <image>: worldImageRect feeds the renderer's
+   own scale(1,-1) group nested in mapWorld's y-up scale(z,-z). The flips
+   cancel, so image coords ARE screen coords (×z): the rect's top-left must
+   land exactly where the outer transform puts the truth bounds' north-west
+   corner, and bottom-right on the south-east corner. A transposed or
+   mirrored implementation (y from the south edge, x from the east) fails
+   these equalities — the regression the double-flip invites. */
+{
+  const { bounds } = sidecar;
+  const origin = [0, 0];
+  const [xW, yN] = localMetres(bounds.north, bounds.west, origin);
+  const [xE, yS] = localMetres(bounds.south, bounds.east, origin);
+  const outer = ([x, y]) => [x, -y]; // mapWorld's scale(z,-z) at z=1
+  const rect = worldImageRect(bounds, origin);
+  assert.ok(rect, 'sane bounds produce a rect');
+  assert.deepEqual([rect.x, rect.y], outer([xW, yN]), 'top-left pins the NW truth corner');
+  assert.deepEqual(
+    [rect.x + rect.width, rect.y + rect.height],
+    outer([xE, yS]),
+    'bottom-right pins the SE truth corner',
+  );
+  assert.ok(rect.width > 0 && rect.height > 0, 'the world spans');
+  assert.ok(rect.y < rect.y + rect.height, 'north is above south on a y-down screen');
+
+  // A shifted venue origin translates the rect, never rescales it.
+  const shifted = worldImageRect(bounds, [1000, 2000]);
+  assert.ok(Math.abs(shifted.width - rect.width) < 1e-9);
+  assert.ok(Math.abs(shifted.height - rect.height) < 1e-9);
+  assert.ok(Math.abs(shifted.x - (rect.x - 1000)) < 1e-9);
+  assert.ok(Math.abs(shifted.y - (rect.y + 2000)) < 1e-9);
+
+  // Degenerate or transposed sidecars draw nothing, never a misplaced plate.
+  assert.equal(worldImageRect(null), null);
+  assert.equal(
+    worldImageRect({ west: bounds.east, east: bounds.west, south: bounds.south, north: bounds.north }),
+    null,
+    'transposed east/west is refused',
+  );
+  assert.equal(
+    worldImageRect({ west: bounds.west, east: bounds.east, south: bounds.north, north: bounds.south }),
+    null,
+    'transposed north/south is refused',
+  );
+  assert.equal(worldImageRect({ west: 0, east: 1, south: 0, north: Number.NaN }), null);
+}
 
 assert.equal(showsBaseMap(null), true);
 assert.equal(hidesBaseLayer(null, 'building'), false);

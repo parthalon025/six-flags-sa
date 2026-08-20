@@ -83,6 +83,20 @@ export function verifyCompiledMaterials(materials) {
 }
 
 /**
+ * Credit rows for the material ledger — the bake credits' `materials`
+ * block. Same shape as the asset ledger's creditsManifest rows; this
+ * ledger's `source` is already a plain URL string.
+ */
+export function materialsCreditsManifest(ids, materials) {
+  return ids.map((id) => ({
+    id,
+    label: materials[id].label,
+    license: materials[id].license,
+    source: materials[id].source,
+  }));
+}
+
+/**
  * The certification row: every material a spec binds either resolves its
  * compiled textures on disk (pin-verified) or carries a recorded factory
  * gap. license_gate's neighborhood — provenance on pixels, not promises.

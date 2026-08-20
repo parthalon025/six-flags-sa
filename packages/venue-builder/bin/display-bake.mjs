@@ -32,7 +32,7 @@ import {
   readAssetLedger, assetPath, assetsForTarget, creditsManifest,
 } from '../lib/display-assets.mjs';
 import { readMaterials } from '../lib/display-pack.mjs';
-import { compiledPath, verifyCompiledMaterials } from '../lib/display-materials.mjs';
+import { compiledPath, materialsCreditsManifest, verifyCompiledMaterials } from '../lib/display-materials.mjs';
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
 import { profileForKit, readReferenceProfiles } from '../lib/display-references.mjs';
@@ -290,12 +290,10 @@ for (const id of ids) {
       // license and source — the audit trail the asset ledger promises.
       // Material refs credit their own ledger (data/display/materials.json).
       credits = creditsManifest(kitAssetIds(kit), LEDGER);
-      const materialCredits = kitMaterialRefs(kit).map(({ id: mid }) => ({
-        id: mid,
-        label: MATERIALS[mid].label,
-        license: MATERIALS[mid].license,
-        source: typeof MATERIALS[mid].source === 'string' ? MATERIALS[mid].source : MATERIALS[mid].source?.url || null,
-      }));
+      const materialCredits = materialsCreditsManifest(
+        kitMaterialRefs(kit).map(({ id: mid }) => mid),
+        MATERIALS,
+      );
       if (materialCredits.length) credits.materials = materialCredits;
       server = serve({ model, kit, px, sheets: { ...flatSheets(kit), ...materialSheets(kit) }, points });
     }
@@ -352,7 +350,7 @@ for (const id of ids) {
       px,
     });
     // Geo bounds ride the cert so the display stage can place the baked
-    // image (and attempt the raster tier) without re-baking the model.
+    // image as the world tier without re-baking the model.
     cert.bounds = r.model.bounds ?? null;
     writeFileSync(path.join(outRoot, `${r.base}.style-cert.json`), `${JSON.stringify(cert, null, 2)}\n`);
     const failing = cert.checks.filter((c) => !c.pass);

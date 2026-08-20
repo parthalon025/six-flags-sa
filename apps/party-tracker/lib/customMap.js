@@ -19,6 +19,8 @@
  *           stays whole when it cannot.
  */
 
+import { localMetres } from './geo.js';
+
 export const PLACEMENT_OVERLAY = 'overlay';
 export const PLACEMENT_REPLACE = 'replace';
 
@@ -68,4 +70,21 @@ export function hidesBaseLayer(spec, layer) {
   if (!spec) return false;
   if (spec.placement === PLACEMENT_REPLACE) return true;
   return (spec.hideLayers || []).includes(layer);
+}
+
+/**
+ * The baked world <image> rect in venue-local metres, for the renderer's
+ * own scale(1,-1) group nested inside mapWorld's y-up scale(z,-z). The two
+ * flips compose to screen y-down, so the rect pins the truth bounds'
+ * north-west corner at its (x, y) top-left: x from the west edge,
+ * y = -(north metres). Returns null when the bounds don't span (degenerate
+ * or transposed sidecar) — the caller draws nothing rather than a wrongly
+ * placed plate.
+ */
+export function worldImageRect(bounds, origin = [0, 0]) {
+  if (!bounds) return null;
+  const [x0, yN] = localMetres(bounds.north, bounds.west, origin);
+  const [x1, yS] = localMetres(bounds.south, bounds.east, origin);
+  if (![x0, x1, yN, yS].every(Number.isFinite) || x1 <= x0 || yN <= yS) return null;
+  return { x: x0, y: -yN, width: x1 - x0, height: yN - yS };
 }

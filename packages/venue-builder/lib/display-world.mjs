@@ -38,7 +38,7 @@ export const WORLD_PROJECTIONS = ['top-down', 'iso'];
  * files that must place an image).
  */
 export function worldSidecar({ skin, kit, bounds, projection = 'top-down', file, credits = null }) {
-  if (!WORLD_PROJECTIONS.includes(typeof projection === 'string' ? projection : projection?.kind)) {
+  if (!WORLD_PROJECTIONS.includes(projection)) {
     throw new Error(`Unknown world projection "${JSON.stringify(projection)}"`);
   }
   if (!bounds || ![bounds.west, bounds.south, bounds.east, bounds.north].every(Number.isFinite)) {

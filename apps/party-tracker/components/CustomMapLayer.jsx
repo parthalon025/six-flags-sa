@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { stackIsoItems } from '@party-tracker/shared/isoWorld.js';
-import { localMetres } from '@/lib/geo';
+import { worldImageRect } from '@/lib/customMap';
 
 /**
  * Custom-map paint — sits on or instead of the OSM base (see customMap.js).
@@ -111,17 +111,16 @@ function BakedWorldLayer({ spec, venueId, worldOrigin = [0, 0] }) {
   if (!bounds || !world.file) return null;
   const projection = world.projection || spec.world?.projection || 'top-down';
   if (projection !== 'top-down') return null;
-  const [x0, yN] = localMetres(bounds.north, bounds.west, worldOrigin);
-  const [x1, yS] = localMetres(bounds.south, bounds.east, worldOrigin);
-  if (![x0, x1, yN, yS].every(Number.isFinite) || x1 <= x0 || yN <= yS) return null;
+  const rect = worldImageRect(bounds, worldOrigin);
+  if (!rect) return null;
   return (
     <g className={`lyr-custom lyr-baked-world lyr-${spec.id}`} transform="scale(1,-1)">
       <image
         href={`/venues/${venueId}/display/${world.file}`}
-        x={x0}
-        y={-yN}
-        width={x1 - x0}
-        height={yN - yS}
+        x={rect.x}
+        y={rect.y}
+        width={rect.width}
+        height={rect.height}
         preserveAspectRatio="none"
       />
     </g>
