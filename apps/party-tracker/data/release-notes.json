@@ -414,5 +414,11 @@
     "items": [
       "fix(app): factories never deploy — lazy builder seam unbreaks Vercel builds (#567)"
     ]
+  },
+  "1.26.0": {
+    "title": "What's new",
+    "items": [
+      "feat(app): Credits settings tab, generated attribution NOTICE, on-map ODbL notice (#566)"
+    ]
   }
 }
