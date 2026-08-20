@@ -140,6 +140,16 @@ _Avoid_: showing Rank ids in UI; leaderboard; level
 A **Skin** or **Kit** granted when **XP** crosses that **Rank** — never bought, never spent. The **Title** is separate.
 _Avoid_: loot box; store purchase; Member reward
 
+### Factories
+
+**Map factory**:
+The engine that derives a **World**'s truth from real-world data — geometry, **Places**, **Gaps** — for any venue on request. Output-agnostic: point it at a park and it produces that park's truth; it never invents what it cannot evidence. Implementation name: the universal venue builder.
+_Avoid_: builder (ambiguous in product talk); map generator
+
+**Visual factory**:
+The engine that produces everything a guest sees and earns on the map — **Display packs**, baked **Skin** worlds, materials, prize art — conditioned on the **Map factory**'s truth. Request-driven and output-agnostic: any venue × any design visual can be requested; a design prompt becomes a **Skin template** or kit, compiled and certified. Restyles, never repositions; never writes truth.
+_Avoid_: display factory (legacy header name); art pipeline
+
 ### Cosmetics and map look
 
 **Skin**:
@@ -147,7 +157,7 @@ A **Profile**-owned cosmetic restyle of the **World** map — how it is painted,
 _Avoid_: Theme (Trail / Park Midnight are the always-on palettes); map pack; party theme; Map skin (use **Skin**)
 
 **Display pack**:
-The builder-produced visual assets for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), optional per-**Skin** baked variants, `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`. See **Rendering tier** for how a device chooses baked vs real-time PBR.
+The **Visual factory**'s output for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), optional per-**Skin** baked variants, `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`. See **Rendering tier** for how a device chooses baked vs real-time PBR.
 _Avoid_: tile server (runtime HTTP on the phone); map pack (use **display pack**); baking truth into tiles (truth stays JSON)
 
 **Rendering tier**:
