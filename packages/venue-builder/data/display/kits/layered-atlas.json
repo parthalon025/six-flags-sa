@@ -1,0 +1,120 @@
+{
+  "id": "layered-atlas",
+  "label": "Layered atlas",
+  "terrain": {
+    "outside": {
+      "base": "#B7C2B4",
+      "texture": {
+        "kind": "dot",
+        "color": "#ADB8AA",
+        "density": 0.15
+      }
+    },
+    "ground": {
+      "base": "#C9D6C0",
+      "texture": {
+        "kind": "speckle",
+        "color": "#BCC9B2",
+        "density": 0.2
+      }
+    },
+    "grass": {
+      "base": "#A7C58E",
+      "texture": {
+        "kind": "speckle",
+        "color": "#96B57D",
+        "density": 0.25
+      }
+    },
+    "wood": {
+      "base": "#8FB278",
+      "texture": {
+        "kind": "tuft",
+        "color": "#7A9E64",
+        "density": 0.3
+      }
+    },
+    "water": {
+      "base": "#5CA8B3",
+      "texture": {
+        "kind": "hatch",
+        "color": "#8CC8D1",
+        "density": 1,
+        "lines": 2
+      }
+    },
+    "lot": {
+      "base": "#BEC7B4",
+      "texture": {
+        "kind": "stripe",
+        "color": "#D8DECE",
+        "density": 0.33
+      },
+      "material": {
+        "id": "concrete--lot",
+        "mix": 0.22
+      }
+    },
+    "road": {
+      "style": "double",
+      "base": "#E7EDDD",
+      "texture": {
+        "kind": "none",
+        "color": "#3F6570"
+      }
+    },
+    "service": {
+      "style": "dashed",
+      "base": "#6E8975",
+      "texture": {
+        "kind": "none"
+      }
+    }
+  },
+  "sprites": {
+    "tree": {
+      "style": "dot",
+      "canopy": "#5F8A4E",
+      "highlight": "#8FB278",
+      "shadow": "rgba(36,59,69,0.2)",
+      "scale": 1
+    },
+    "building": {
+      "style": "plan",
+      "roofs": [
+        "#C9B58D",
+        "#D6C49E",
+        "#BCA87F"
+      ],
+      "edge": "#7A6655",
+      "material": {
+        "id": "roofing--shingle",
+        "mix": 0.2
+      }
+    },
+    "slide": {
+      "style": "schematic",
+      "colors": [
+        "#3F6570",
+        "#4E7A85",
+        "#7A6655",
+        "#5C8A94",
+        "#6E8975",
+        "#8CB0B8"
+      ]
+    },
+    "coaster": {
+      "style": "schematic",
+      "rail": "#243B45"
+    },
+    "badge": {
+      "gate": "#B24A55",
+      "food": "#C07A3A",
+      "restroom": "#3F6570",
+      "shop": "#5F8A4E",
+      "show": "#7A5F8A",
+      "service": "#8A8F98"
+    }
+  },
+  "prompt": "Layered atlas plate: cool sage plate tint, ink double-stroke walkways with the paper reopened between two hairlines, dashed service lanes, teal water under pale crosshatching, plan-view building silhouettes with drafting corner ticks and a whisper of shingle texture, schematic ride lines with perpendicular tick marks, dot-stamped trees — axes (docs/goals/design-language-axes.md): 1 cool sage plate palette, 3 ink hairline hierarchy, 4 hatch/stipple grain, 7-8 crosshatched water with crisp seams, 10-11 plan-view silhouettes with corner ticks and no roof geometry (declared negation), 12-13 double-stroke circulation over dashed service lanes, 17 top-down plate"
+}

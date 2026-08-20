@@ -1,0 +1,138 @@
+{
+  "version": 1,
+  "id": "layered-atlas",
+  "kit": "layered-atlas",
+  "style": "layered-atlas-plate",
+  "inspiration": {
+    "summary": "Layered atlas plate — cool sage tint, hairline double-stroke walkways, dashed service lanes, crosshatched teal water, plan-view silhouettes with corner ticks, schematic ride lines",
+    "images": [],
+    "lineage": "PR #447's layered-atlas Skin palette (skins.json tokens), harvested per ADR-0014 from the kings-island bake (kings-island--layered-atlas.profile-draft.json medians); ADR-0016 style-pass research: line-work/hatching treatments"
+  },
+  "colorFamilies": {
+    "ground": {
+      "anchor": "#C9D6C0",
+      "members": [
+        "#BCC9B2"
+      ],
+      "deltaE": 12
+    },
+    "grass": {
+      "anchor": "#A7C58E",
+      "members": [
+        "#96B57D"
+      ],
+      "deltaE": 12
+    },
+    "wood": {
+      "anchor": "#8FB278",
+      "members": [
+        "#7A9E64"
+      ],
+      "deltaE": 12
+    },
+    "water": {
+      "anchor": "#5CA8B3",
+      "members": [
+        "#8CC8D1"
+      ],
+      "deltaE": 12
+    },
+    "lot": {
+      "anchor": "#BDC4B5",
+      "members": [
+        "#BEC7B4",
+        "#D8DECE"
+      ],
+      "deltaE": 12
+    },
+    "road": {
+      "anchor": "#E7EDDD",
+      "members": [
+        "#3F6570"
+      ],
+      "deltaE": 10
+    },
+    "service": {
+      "anchor": "#6E8975",
+      "deltaE": 10
+    },
+    "outside": {
+      "anchor": "#B7C2B4",
+      "members": [
+        "#ADB8AA"
+      ],
+      "deltaE": 12
+    },
+    "structure": {
+      "anchor": "#92856B",
+      "members": [
+        "#C9B58D",
+        "#D6C49E",
+        "#BCA87F",
+        "#7A6655"
+      ],
+      "deltaE": 16
+    },
+    "badge": {
+      "anchor": "#C07A6C",
+      "members": [
+        "#B24A55",
+        "#C07A3A",
+        "#3F6570",
+        "#5F8A4E",
+        "#7A5F8A",
+        "#8A8F98"
+      ],
+      "deltaE": 16
+    }
+  },
+  "roads": {
+    "vsGround": {
+      "minDeltaE": 8,
+      "polarity": "lighter"
+    },
+    "serviceLayer": "muted"
+  },
+  "ground": {
+    "outsideVsInside": {
+      "minDeltaE": 6
+    },
+    "waterVsVegetation": {
+      "minDeltaE": 15
+    }
+  },
+  "structures": {
+    "buildingStyle": "plan",
+    "trackStyle": "schematic",
+    "coasterVsUnderlay": {
+      "minDeltaE": 8
+    }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": [
+      "plate",
+      "hatching",
+      "roads",
+      "tracks",
+      "buildings",
+      "trees",
+      "badges"
+    ]
+  },
+  "agentReview": [
+    {
+      "key": "style_texture_language",
+      "prompt": "Atlas-plate read: water carries visible crosshatching, lots carry a whisper of concrete texture, buildings are flat plan silhouettes with drafting corner ticks — no fake extrusion anywhere"
+    },
+    {
+      "key": "style_wayfinding_language",
+      "prompt": "Walkways read as ink double-strokes with the paper reopened between the hairlines; service lanes are dashed and quieter than walkways"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Side-by-side with the worn layered-atlas Skin on the phone, a stranger says the baked plate and the palette skin are the same design language"
+    }
+  ]
+}

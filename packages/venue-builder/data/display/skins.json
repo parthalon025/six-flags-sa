@@ -95,7 +95,8 @@
         "slide": "fiberglass--flume",
         "structure": "roofing--shingle",
         "lot": "concrete--lot"
-      }
+      },
+      "bakeKit": "layered-atlas"
     },
     "watercolor-quest": {
       "label": "Watercolor quest",
