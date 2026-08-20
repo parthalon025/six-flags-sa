@@ -3293,6 +3293,10 @@ function ParkApp({ isSignedIn }) {
                 onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
                 onReport={party?.active ? reportRide : null}
                 onAddToPlan={addToPlan}
+                inPlan={
+                  Boolean(selected) &&
+                  planItems.some((s) => s.placeId === (selected.i || selected.id))
+                }
                 overlayCompletions={selected ? overlayCompletionsFor(selected) : []}
                 session={authSession}
               />

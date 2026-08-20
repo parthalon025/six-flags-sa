@@ -1551,29 +1551,117 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .placeActions .btn.iconOnly {
   width: 40px; height: 40px; min-width: 40px; min-height: 40px; padding: 0;
 }
+/* The same three actions with the words on, for the Place's own screen. A row
+   rather than a stack: they are alternatives, not a sequence, and the primary
+   has to be able to take the width it needs for "Walk me there" while the other
+   two shrink to their labels. .btn.rect is D1's shape for a major action —
+   these are the biggest buttons on the screen and the reason it exists.
+   Measured as SHEET_PLACE_ACTIONS_PX in lib/sheet.js: 44 of button plus the
+   12 above it. Change the padding here and change that. */
+.placeActions.labelled { gap: 8px; align-items: stretch; margin: 12px 0 0; }
+.btn.placeAction {
+  min-height: 44px; padding: 11px 12px;
+  font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+  white-space: nowrap;
+}
+/* The primary takes the slack; the other two hold their label width, so a long
+   Place name or a narrow phone never squeezes "Rally here" onto two lines. */
+.placeActions.labelled .btn.primary { flex: 1 1 auto; min-width: 0; }
+.btn.placeActionOutline {
+  flex: 0 0 auto;
+  background: var(--bg2); color: var(--label);
+  box-shadow: inset 0 0 0 1px var(--sep);
+}
+/* Already on the Plan. Reads as a state rather than an action, which is what it
+   is — the same fill .chip.on takes, for the same reason. */
+.btn.placeActionOutline.on { background: var(--fill3); color: var(--label2); box-shadow: none; }
 
-/* Full place sheet from a map tap — title + actions on one row, facts on the
-   next. Notes sit below so a lean height still shows the things you came to do. */
+/* The Place's own screen, read top to bottom: the live word, the name, where
+   and how far, then the actions.
+
+   The 30px left inset on the head and the body is the back chevron's — see
+   .navHead.placeNav above, which overlays a 36px target on this corner rather
+   than paying a whole nav bar for it. Everything on this screen shares the
+   inset so the column has one left edge.
+
+   No card. The twin wraps this in --bg2 with --shadow2 because in the twin it
+   is one block at the foot of a scroller that also holds the browse list, and
+   it has to separate itself from what is above it. Here it is a pushed view
+   that owns the whole sheet: a box drawn around the only thing on screen is a
+   border for its own sake, and it would have to be indented past the chevron
+   to boot. */
 .placeDetail { padding: 0 0 2px; }
 .placeDetailHead {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; flex-direction: column; align-items: flex-start;
   padding: 0 0 2px 30px;
 }
-.placeDetailHead .dot {
-  width: 8px; height: 8px; border-radius: 50%; flex: none;
+/* Footnote weight, but the loudest thing on the screen by colour: it is read
+   before the name, and it is the one fact that can make the rest pointless. */
+.placeEyebrow {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--display); font-size: 11px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; line-height: 14px;
+  color: var(--label2); margin-bottom: 3px;
 }
-.placeDetailText { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 0; }
+.placeEyebrow i { font-style: normal; font-size: 10px; }
+.placeEyebrow.ok { color: var(--green); }
+.placeEyebrow.warn { color: var(--orange); }
+.placeEyebrow.bad { color: var(--signal); }
 .placeDetailName {
-  font-size: 17px; font-weight: 700; letter-spacing: -.36px; line-height: 1.15;
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  font-size: 21px; font-weight: 700; letter-spacing: -.4px; line-height: 26px;
+}
+.placeDetailName .dot {
+  width: 9px; height: 9px; border-radius: 50%; flex: none;
 }
 .placeDetailLine {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--label2); letter-spacing: -.08px; line-height: 1.25;
+  font-size: 13px; color: var(--label2); letter-spacing: -.08px; line-height: 18px;
 }
 .placeDetailLine b { font-weight: 600; color: var(--label); }
-.placeDetailHead .placeActions { margin: 0; }
-.placeDetail .poiDetail { padding: 2px 0 0 30px; }
+.placeDetail .placeActions.labelled { padding-left: 30px; }
+.placeDetail .poiDetail { padding: 10px 0 0 30px; }
 .placeDetail .poiNote { font-size: 13px; margin: 0 0 6px; line-height: 18px; }
+
+/* ---- who can get on ----
+   Three columns, one line each: the person, the answer, the rule. The answer
+   is the column somebody scans, so it has a fixed width and cannot be pushed
+   about by a long name or a long reason. Ruled between rows the way a grouped
+   list is, because that is what this is — a table of people. */
+.eligRows {
+  list-style: none; margin: 0 0 10px; padding: 8px 0 0;
+  border-top: .5px solid var(--sep);
+}
+.eligRow {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 6px 0; border-bottom: .5px solid var(--sep);
+}
+.eligRow:last-child { border-bottom: none; }
+.eligWho {
+  flex: none; width: 62px; font-size: 14px; font-weight: 600; letter-spacing: -.16px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The verdict's ink without the verdict's pill: five of these stacked in a
+   column is five filled capsules, which reads as five warnings rather than one
+   answer per person. The colours are .verdict's, so the word means the same
+   thing here as it does on the row in the list. */
+.eligVerdict {
+  flex: none; width: 82px;
+  font-family: var(--display); font-size: 12.5px; font-weight: 700;
+  letter-spacing: -.08px; color: var(--label2);
+}
+.eligVerdict.ok { color: var(--green); }
+.eligVerdict.warn { color: var(--orange); }
+.eligVerdict.bad { color: var(--barred); }
+.eligVerdict.unknown { color: var(--gray); }
+.eligWhy {
+  flex: 1; min-width: 0; font-size: 12.5px; line-height: 17px;
+  color: var(--label3); letter-spacing: -.08px;
+}
+/* Was a paragraph of its own; now the third column of the row above it. The
+   class survives the move because test/app/functional.mjs reads the reason
+   through it, and the words it reads have not changed. */
+.eligibilityReason { display: block; }
 /* The parked-car pin. Same drop-in as the meet-up's, so the two read as the
    same kind of thing — a spot somebody chose — in two different colours. */
 .carPin { animation: popIn var(--t2) var(--easeOut) both; }

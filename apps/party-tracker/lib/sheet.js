@@ -99,16 +99,33 @@ export const SHEET_LIST_AT_PX =
 export const SHEET_OPEN = { half: 0.52, full: 0.88 };
 
 /**
- * Compact place card opened from a map tap — Google Maps' collapsed card:
- * name and icon actions on one row, one line of facts under it. The back
- * chevron overlays the title rather than taking a row of its own.
+ * The place card opened from a map tap, measured from globals.css:
+ *
+ *   head     .placeEyebrow — a 14px line over 3
+ *   title    .placeDetailName — 21px type on a 26px line, over 5 to the meta
+ *   meta     .placeDetailLine — one 18px line
+ *   actions  .placeActions.labelled — a 44px button under 12 of margin
+ *
+ * The back chevron overlays the title rather than taking a row of its own, so
+ * it costs nothing here — see .navHead.placeNav.
+ *
+ * These four are what the sheet opens at, so they are the four things to
+ * re-measure whenever this screen's type changes. It grew when the name went
+ * from 17px to 21 and the actions gained their words: an icon row that cost
+ * nothing because it sat beside the title now costs a row of its own, which is
+ * the price of a button somebody can read.
  */
-export const SHEET_PLACE_HEAD_PX = 0;
-export const SHEET_PLACE_TITLE_PX = 40;
+export const SHEET_PLACE_HEAD_PX = 17;
+export const SHEET_PLACE_TITLE_PX = 31;
 export const SHEET_PLACE_META_PX = 18;
-export const SHEET_PLACE_ACTIONS_PX = 0;
+export const SHEET_PLACE_ACTIONS_PX = 56;
 export const SHEET_PLACE_PX =
-  SHEET_CHROME_PX + SHEET_PLACE_TITLE_PX + SHEET_PLACE_META_PX + 8;
+  SHEET_CHROME_PX +
+  SHEET_PLACE_HEAD_PX +
+  SHEET_PLACE_TITLE_PX +
+  SHEET_PLACE_META_PX +
+  SHEET_PLACE_ACTIONS_PX +
+  8;
 
 /** How close to a stop a release has to land for the stop to take it. */
 export const SHEET_MAGNET_PX = 26;

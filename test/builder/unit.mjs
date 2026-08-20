@@ -189,7 +189,11 @@ const {
   SHEET_LOCATE_PX,
   SHEET_MAGNET_PX,
   SHEET_PEEK_PX,
+  SHEET_PLACE_ACTIONS_PX,
+  SHEET_PLACE_HEAD_PX,
+  SHEET_PLACE_META_PX,
   SHEET_PLACE_PX,
+  SHEET_PLACE_TITLE_PX,
   SHEET_SEARCH_PX,
   nextSheetStop,
   sheetCrowdsMap,
@@ -7215,15 +7219,25 @@ await check('the stops come out where the CSS puts them', () => {
 });
 
 await check('a map-tapped place card stays leaner than peek and half', () => {
-  // Google Maps' collapsed card: name, one line of facts, icon actions.
-  // It must not open at the half stop (half the screen) — the map stays
-  // the thing you look at, and pulling up is how you read the rest.
+  // It must not open at the half stop (half the screen) — the map stays the
+  // thing you look at, and pulling up is how you read the rest.
   assert.equal(SHEET_PLACE_PX < STOPS.peek, true);
   assert.equal(SHEET_PLACE_PX < STOPS.half, true);
   assert.equal(SHEET_PLACE_PX > SHEET_CHROME_PX, true);
-  // Title+actions on one row, facts on the next: no spare nav row, no
-  // empty band between the icons and the tab bar.
-  assert.equal(SHEET_PLACE_PX, SHEET_CHROME_PX + 40 + 18 + 8);
+  // Eyebrow, 21px name, one line of facts, and the labelled action row: the
+  // four measurements globals.css draws that head at, and nothing else. No
+  // spare nav row (the chevron overlays the title) and no empty band between
+  // the buttons and the tab bar.
+  assert.equal(
+    SHEET_PLACE_PX,
+    SHEET_CHROME_PX +
+      SHEET_PLACE_HEAD_PX +
+      SHEET_PLACE_TITLE_PX +
+      SHEET_PLACE_META_PX +
+      SHEET_PLACE_ACTIONS_PX +
+      8,
+  );
+  assert.equal(SHEET_PLACE_PX, 214);
   return true;
 });
 
