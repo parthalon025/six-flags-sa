@@ -34,15 +34,27 @@ assert.deepEqual(bandPixels('overview', span), { width: 625, height: 500 });
 assert.deepEqual(bandPixels('mid', span), { width: 2500, height: 2000 });
 assert.deepEqual(bandPixels('close', span), { width: 10000, height: 8000 });
 
+// A World whose span is NOT a round multiple of any band resolution. Rounding
+// each band independently would break the chain here -- 1000 / 2.4 rounds to
+// 417 and 1000 / 0.6 rounds to 1667, but 417 * 4 is 1668 -- so the finer bands
+// are derived from the coarsest instead of rounded on their own.
+const awkward = { spanXMetres: 1000, spanYMetres: 1000 };
+assert.deepEqual(bandPixels('overview', awkward), { width: 417, height: 417 });
+assert.deepEqual(bandPixels('mid', awkward), { width: 1668, height: 1668 });
+assert.deepEqual(bandPixels('close', awkward), { width: 6672, height: 6672 });
+
 // The power-of-two chain, stated as the invariant it is: each band is exactly
-// 4x its parent in each dimension, for any World.
-for (const band of BANDS) {
-  const parent = parentOf(band.id);
-  if (!parent) continue;
-  const here = bandPixels(band.id, span);
-  const up = bandPixels(parent, span);
-  assert.equal(here.width, up.width * 4, `${band.id} width is 4x ${parent}`);
-  assert.equal(here.height, up.height * 4, `${band.id} height is 4x ${parent}`);
+// 4x its parent in each dimension, for any World. The tiler's parent-band
+// placeholder upscales pixel-for-pixel, so "about 4x" would not do.
+for (const world of [span, awkward]) {
+  for (const band of BANDS) {
+    const parent = parentOf(band.id);
+    if (!parent) continue;
+    const here = bandPixels(band.id, world);
+    const up = bandPixels(parent, world);
+    assert.equal(here.width, up.width * 4, `${band.id} width is 4x ${parent}`);
+    assert.equal(here.height, up.height * 4, `${band.id} height is 4x ${parent}`);
+  }
 }
 
 // Band selection follows mip selection: take the coarsest band that is not

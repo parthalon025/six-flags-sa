@@ -36,8 +36,23 @@ dimensions, so nothing here needs the venue's cell size: `bandResolution` is the
 have carried it. Clause 3's alignment budget likewise needs no column — "≤ 1 px at that band" is
 `bandResolution(id)`, so the budget is derived rather than stored.
 
+**Two rules the interface enforces rather than documents.** Only the coarsest band rounds; finer
+bands are derived from it, so `bandPixels(child)` is *exactly* four times `bandPixels(parent)` for
+every World. Rounding each band independently drifts by a pixel on any span that is not a round
+multiple of the resolution, and the tiler's placeholder upscales pixel-for-pixel, so a pixel of
+drift is a visible seam. And the band boundaries move with latitude — Mercator pixels cover less
+ground away from the equator — so ADR-0021 clause 4's "the pitch ease must not overlap a band
+boundary" cannot be a hardcoded zoom range in the camera config. Seam 2 has to derive it from
+`bandForZoom` at the World's own latitude.
+
 **Deletion test.** Delete this module and the band table reappears in the baker, the tiler, the
 map view, and the certification rows — four copies that drift.
+
+**No adapters yet.** Nothing outside its own test imports this module: seams 2 and 3 are its
+consumers and neither is built. That makes it a table without a caller for now, which is worth
+naming — it is only defensible because every value is fixed by an accepted ADR rather than
+invented here, and because the whole interface is exercised through its own tests. It should not
+grow any surface a caller has not asked for before those seams land.
 
 ---
 

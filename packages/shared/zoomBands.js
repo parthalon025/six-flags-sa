@@ -6,16 +6,18 @@
  * upscale from.
  *
  * Nothing here touches the filesystem or a renderer: a caller passes in the
- * venue's cell size, this answers in metres and pixels. See
+ * World's ground span, this answers in metres and pixels. See
  * docs/train-h-seams.md seam 1 for why the table lives in `shared`.
  */
 
 /** Coarsest first — the order `parentOf` walks. */
-export const BANDS = [
-  { id: 'overview', metresPerPixel: 2.4 },
-  { id: 'mid', metresPerPixel: 0.6 },
-  { id: 'close', metresPerPixel: 0.15 },
-];
+export const BANDS = Object.freeze(
+  [
+    { id: 'overview', metresPerPixel: 2.4 },
+    { id: 'mid', metresPerPixel: 0.6 },
+    { id: 'close', metresPerPixel: 0.15 },
+  ].map(Object.freeze),
+);
 
 function indexOfBand(id) {
   const i = BANDS.findIndex((b) => b.id === id);
@@ -31,12 +33,22 @@ export function bandResolution(id) {
 }
 
 /** The bake's pixel dimensions for a World of this ground span. Pixel size is
- *  what floats between Worlds — a bigger park is a bigger bake. */
+ *  what floats between Worlds — a bigger park is a bigger bake.
+ *
+ *  Only the coarsest band rounds. Every finer band is derived by doubling twice
+ *  from its parent, so `bandPixels(child) === bandPixels(parent) * 4` exactly,
+ *  for every World. Rounding each band on its own would drift by a pixel on any
+ *  span that is not a round multiple of the resolution — a 1000 m span rounds
+ *  to 417 at overview and 1667 at mid, and 417 * 4 is 1668. The tiler's
+ *  parent-band placeholder upscales pixel-for-pixel, so a pixel of drift is a
+ *  seam in the picture. The cost is that a derived band's true resolution can
+ *  differ from its nominal one by well under a tenth of a percent. */
 export function bandPixels(id, { spanXMetres, spanYMetres }) {
-  const mpp = bandResolution(id);
+  const coarsest = BANDS[0].metresPerPixel;
+  const scale = Math.round(coarsest / bandResolution(id));
   return {
-    width: Math.round(spanXMetres / mpp),
-    height: Math.round(spanYMetres / mpp),
+    width: Math.round(spanXMetres / coarsest) * scale,
+    height: Math.round(spanYMetres / coarsest) * scale,
   };
 }
 
