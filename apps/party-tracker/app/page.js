@@ -79,6 +79,7 @@ import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
+import { placeContext } from '@/lib/venue/placeContext';
 import { navKeyOf } from '@/lib/navKey';
 import {
   applyMapSkin,
@@ -449,12 +450,29 @@ function ParkApp({ isSignedIn }) {
      a frame or two behind. */
   const mapHeight = useDeferredValue(height);
   const [withAdult, setWithAdult] = useState(true);
+  /* The Plan draft is not the only thing this phone knows before there is a
+     Party to tell. A rider height set while exploring alone is a fact about the
+     person holding the phone, and Eligibility switches to Party facts the
+     instant a Party exists — so without this the seat joins with no height, the
+     map quietly stops filtering on it, and the roster card offers "Set a
+     height" to someone whose height is right there in the filter badge.
+     Never clears: an unset height on this phone is not a claim that the seat
+     has none. */
+  const adoptHeight = useCallback(() => {
+    if (height == null) return;
+    runtime.current?.setMemberFacts({ height, withAdult });
+  }, [height, withAdult]);
   const [categories, setCategories] = useState(() => categoriesForGate());
   const [paletteMode, setPaletteMode] = useState('auto');
   // Tapping the on-map OSM notice opens Settings straight to Credits. `nonce`
   // changes on every tap so SettingsPanel re-syncs even when it is already
   // mounted on that topic — see SettingsPanel's `openTopic` prop.
   const [settingsOpenTopic, setSettingsOpenTopic] = useState(null);
+  /* A roster card's "Set a height" jumps to Plan → Heights with that Member
+     already picked. Same shape as settingsOpenTopic and for the same reason:
+     the nonce changes on every tap, so tapping the same card twice re-picks it
+     even when the panel is already mounted on that Member. */
+  const [heightFocus, setHeightFocus] = useState(null);
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
@@ -1105,10 +1123,12 @@ function ParkApp({ isSignedIn }) {
   const showToastRef = useRef(showToast);
   const selectTabRef = useRef(selectTab);
   const adoptDraftRef = useRef(adoptDraft);
+  const adoptHeightRef = useRef(adoptHeight);
   const shareOverlayRef = useRef(shareOverlay);
   showToastRef.current = showToast;
   selectTabRef.current = selectTab;
   adoptDraftRef.current = adoptDraft;
+  adoptHeightRef.current = adoptHeight;
   shareOverlayRef.current = shareOverlay;
 
   // One PartyRuntime for the page lifetime. Do not recreate when callback
@@ -1142,6 +1162,7 @@ function ParkApp({ isSignedIn }) {
         Promise.resolve(rt.resume({ memberName }))
           .then(() => {
             adoptDraftRef.current();
+            adoptHeightRef.current();
             shareOverlayRef.current();
           })
           .catch((err) =>
@@ -1183,6 +1204,7 @@ function ParkApp({ isSignedIn }) {
             : 'You’re in the party',
         );
         adoptDraftRef.current();
+        adoptHeightRef.current();
         shareOverlayRef.current();
       })
       .catch((err) => {
@@ -1242,6 +1264,37 @@ function ParkApp({ isSignedIn }) {
       placeId: first.placeId,
     };
   }, [planItems, POIS]);
+
+  /* The Zone and the walk time under each Plan stop, worked out here rather
+     than carried on the stop.
+
+     A Plan item's wire shape is `{id, placeId, label}` — lib/plan.js normalize
+     keeps it to that on purpose, because the list rides inside every Party
+     snapshot and a Zone name plus a walk time per stop would be sent to every
+     Member, over and over, to say something each phone can work out for itself
+     from the venue file and its own fix.
+
+     Keyed on the *deferred* position for the same reason mapHeight is deferred:
+     a fix lands every second or two, and re-walking the Plan against every POI
+     on each one is work done between frames for a number that changes by a
+     couple of feet. The stops stay responsive to reordering; the walk times
+     follow a beat behind. */
+  const planPosition = useDeferredValue(position);
+  const planContext = useMemo(() => {
+    if (!planItems.length) return null;
+    const out = {};
+    for (const step of planItems) {
+      const poi = POIS.find((p) => p.i === step.placeId || p.id === step.placeId);
+      if (!poi) continue;
+      const zone = placeContext(poi, venue, mapData)?.name || null;
+      const walk =
+        planPosition && Number.isFinite(poi.lat) && Number.isFinite(poi.lng)
+          ? formatWalk(distance(planPosition.lat, planPosition.lng, poi.lat, poi.lng))
+          : null;
+      out[step.placeId] = { zone, walk };
+    }
+    return out;
+  }, [planItems, POIS, venue, mapData, planPosition]);
 
   const commitPlan = useCallback(
     (next) => {
@@ -1799,6 +1852,7 @@ function ParkApp({ isSignedIn }) {
         `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
       );
       adoptDraft();
+      adoptHeight();
       shareOverlay();
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
@@ -1828,6 +1882,7 @@ function ParkApp({ isSignedIn }) {
       selectTab('party');
       showToast(`Joined ${snap.code}`);
       adoptDraft();
+      adoptHeight();
       shareOverlay();
     } catch (err) {
       const msg = err?.message || 'Could not join that party.';
@@ -3387,10 +3442,35 @@ function ParkApp({ isSignedIn }) {
                   runtime.current?.removeMember(id);
                   showToast('Removed from this party');
                 }}
+                car={car}
+                /* Same two-state affordance as the map's car FAB, worded: the
+                   first tap saves the spot, later ones walk you back to it
+                   through the existing nav.kind === 'car' target. */
+                onCar={() => {
+                  if (car) {
+                    startNav({ kind: 'car', label: 'Where I parked' });
+                    return;
+                  }
+                  if (!position) {
+                    setGateOpen(true);
+                    return;
+                  }
+                  putCar(position.lat, position.lng);
+                  showToast('Saved where you parked');
+                }}
+                onHeights={
+                  heights
+                    ? (id) => {
+                        setHeightFocus({ memberId: id, nonce: Date.now() });
+                        selectTab('rides');
+                      }
+                    : null
+                }
               />
               <IntelligencePanel
                 rides={partyRides || {}}
                 plan={planItems}
+                planContext={planContext}
                 inParty={active}
                 myGroupId={selfMember?.groupId}
                 onGroupId={(g) => runtime.current?.setGroupId?.(g)}
@@ -3437,6 +3517,7 @@ function ParkApp({ isSignedIn }) {
               <PlanPanel
                 rides={partyRides || {}}
                 plan={planItems}
+                planContext={planContext}
                 onSetPlan={commitPlan}
                 onWalkStop={(s) => {
                   const poi = POIS.find((p) => p.i === s.placeId || p.id === s.placeId);
@@ -3453,6 +3534,15 @@ function ParkApp({ isSignedIn }) {
                   setWithAdult(v);
                   if (party?.active) runtime.current?.setMemberFacts({ withAdult: v });
                 }}
+                /* Only ever a device-less seat: HeightPanel offers no editing
+                   for a Member holding their own phone, because state.js drops
+                   that patch in silence and the value would snap back. */
+                onMemberHeight={(id, h) => runtime.current?.setMemberFacts({ height: h }, id)}
+                onMemberWithAdult={(id, v) => runtime.current?.setMemberFacts({ withAdult: v }, id)}
+                members={roster}
+                myId={party?.selfId ?? null}
+                inParty={Boolean(party?.active)}
+                openHeights={heightFocus}
                 venue={venue}
               />
             )}

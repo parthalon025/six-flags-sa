@@ -678,11 +678,15 @@ await check('"with adult" changes the companion tally', async () => {
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(300);
   const withAdult = await a.locator('.ratioKey .warn b').innerText();
-  await a.locator('.chip:has-text("With adult")').click();
+  // "With an adult along" — the chip says the whole sentence now; "With adult"
+  // is the section label above it, and is not a chip.
+  await a.locator('.chip:has-text("With an adult along")').click();
   await a.waitForTimeout(400);
   const without = await a.locator('.ratioKey .warn b').innerText();
   if (withAdult === without) throw new Error(`companion count unchanged: ${withAdult}`);
-  await a.locator('.chip:has-text("With adult")').click();
+  // "With an adult along" — the chip says the whole sentence now; "With adult"
+  // is the section label above it, and is not a chip.
+  await a.locator('.chip:has-text("With an adult along")').click();
   await a.waitForTimeout(300);
   return true;
 });
@@ -1732,13 +1736,20 @@ await check('the joining phone is not serving the party mesh', async () => {
   return true;
 });
 
-await check('roster shows a real distance to phone B', async () => {
+/* The card leads with the walk, not the range, and carries the compass point
+   beside the Place. Asserted as two separate things on purpose: the old
+   `/\d+\s*(ft|mi)/` still passes against "3 min" — "mi" is inside "min" — so it
+   would have gone on reporting green after the rail stopped showing a distance
+   at all. */
+await check('roster shows a real walk and bearing to phone B', async () => {
   const t = await until(
     async () => {
       const row = await a.locator('.memberRow', { hasText: 'Ava' }).first().innerText();
-      return /\d+\s*(ft|mi)/.test(row) ? row : null;
+      const walk = /(\d+|<1)\s*min\b/.test(row);
+      const bearingShown = /(^|\s|·)(N|NE|E|SE|S|SW|W|NW)(\s|$)/.test(row);
+      return walk && bearingShown ? row : null;
     },
-    { timeout: JOIN_TIMEOUT, label: 'a range to phone B' },
+    { timeout: JOIN_TIMEOUT, label: 'a walk and a bearing to phone B' },
   );
   return Boolean(t);
 });

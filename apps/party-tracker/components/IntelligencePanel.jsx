@@ -37,6 +37,7 @@ function momentLabel(entry) {
 export default function IntelligencePanel({
   rides = {},
   plan = [],
+  planContext = null,
   inParty = false,
   onSetPlan,
   onWalkStop,
@@ -74,6 +75,7 @@ export default function IntelligencePanel({
       <PlanStops
         rides={rides}
         plan={plan}
+        context={planContext}
         onSetPlan={onSetPlan}
         onWalkStop={onWalkStop}
       />

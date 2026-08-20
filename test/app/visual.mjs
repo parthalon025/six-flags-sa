@@ -176,8 +176,11 @@ async function main() {
     await shot(page, 'roster-two-members');
     const rows = await page.locator('.memberRow').count();
     check(rows >= 2, `roster shows both phones (${rows} rows)`);
+    // The rail leads with the walk, not the range: "six minutes away" is the
+    // number a parent acts on, and the compass point moved down beside the
+    // Place it points at. formatWalk always says "min".
     const range = await page.locator('.memberRange b').nth(1).innerText().catch(() => '');
-    check(/ft|mi/.test(range), `range to the other phone computed: ${range}`);
+    check(/min/.test(range), `walk to the other phone computed: ${range}`);
     const helpTag = await until(() => page.locator('.chipTag.hot').count(), {
       timeout: 45000,
       label: 'the help tag',

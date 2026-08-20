@@ -6,7 +6,7 @@ import Icon from '@/components/Icon';
 import { GLYPHS, WORDS } from '@/lib/brand';
 import { shareInvite } from '@/lib/native';
 import { bearing, cardinal, distance, formatAge, formatDistance, formatWalk } from '@/lib/geo';
-import { PRECISE_MAX_MS, effectiveShareMode, locationCopy, placeAt } from '@/lib/location';
+import { PRECISE_MAX_MS, effectiveShareMode, placeAt } from '@/lib/location';
 import { usePois } from '@/lib/venue/useVenue';
 import { heightIsStale } from '@party-tracker/shared/schemas.js';
 
@@ -76,6 +76,28 @@ function InviteQr({ invite }) {
   );
 }
 
+/**
+ * Where a Member is, in one phrase, coloured by how much to trust it.
+ *
+ * Every live state the roster can be in needs a slot here, because the phrase
+ * is the only place the difference shows: a Member with no fix yet, one who has
+ * left the venue, one whose last position has gone stale, and one who is simply
+ * standing somewhere the venue has no name for are four different answers and
+ * used to collapse into a blank line.
+ */
+function standing({ m, isMe, located, stale, placeName }) {
+  if (m.status === HELP) return { text: 'Needs help', tone: 'help' };
+  if (m.deviceLess) return { text: 'No phone', tone: 'quiet' };
+  if (!located) return { text: isMe ? 'No fix yet' : 'Off site', tone: 'warn' };
+  if (stale) {
+    return {
+      text: placeName ? `Last seen at ${placeName}` : 'Last known position',
+      tone: 'warn',
+    };
+  }
+  return { text: placeName || 'On the map', tone: 'ok' };
+}
+
 export default function PartyPanel({
   code,
   invite,
@@ -113,6 +135,9 @@ export default function PartyPanel({
   guests = [],
   onSeedGuest = null,
   onSaveGuest = null,
+  car = null,
+  onCar = null,
+  onHeights = null,
 }) {
   const [entry, setEntry] = useState('');
   const [name, setName] = useState(myName === 'Guest' ? '' : myName || '');
@@ -167,7 +192,7 @@ export default function PartyPanel({
         </p>
         <button
           type="button"
-          className="btn primary"
+          className="btn primary rect"
           onClick={() => {
             onName?.(name);
             onCreate();
@@ -188,7 +213,7 @@ export default function PartyPanel({
           />
           <button
             type="button"
-            className="btn"
+            className="btn rect"
             onClick={() => {
               onName?.(name);
               onJoin(entry, name);
@@ -205,7 +230,7 @@ export default function PartyPanel({
             ? `Six characters — ${6 - entry.length} to go.`
             : 'Codes never use I, O, 0 or 1, so they can be read out loud without confusion. Typing the code works for about 10 minutes while Party is open; the invite link and QR always work.'}
         </p>
-        <button type="button" className="btn" onClick={() => setScanning((v) => !v)}>
+        <button type="button" className="btn rect" onClick={() => setScanning((v) => !v)}>
           {scanning ? 'Stop the camera' : 'Scan a party QR'}
         </button>
         {scanning && (
@@ -254,80 +279,16 @@ export default function PartyPanel({
 
   return (
     <div data-hosting={hosting ? 'self' : 'peer'}>
+      {/* The Party's own name for itself, and the code that lets someone in.
+          The code is the real one off the wire — six characters from
+          CODE_ALPHABET, which never carries a prefix and does not exist at all
+          until a Party has been started. It is read out loud at 26px under
+          Invite; up here it is identity, not an instruction. */}
       <div className="label">
-        Party Code
-        {hosting && onAllowJoins ? (
-          joinsLeft > 0 ? (
-            <span className="labelRight">Open to joining · {joinsLeft} min left</span>
-          ) : (
-            <button type="button" className="labelAction" onClick={onAllowJoins}>
-              Let someone join
-            </button>
-          )
-        ) : null}
+        Your Party · {sorted.length}
+        <span className="codeChip">{code}</span>
       </div>
-      <div className="codeBox">
-        <span className="codeText">{code}</span>
-        <button type="button" onClick={share}>
-          Send invite
-        </button>
-        <button
-          type="button"
-          className="danger"
-          onClick={() => (arming === 'leave' ? onLeave() : setArming('leave'))}
-        >
-          {arming === 'leave' ? 'Tap to confirm' : 'Leave'}
-        </button>
-      </div>
-      {arming === 'leave' ? (
-        <p className="fine warnText">
-          {hosting
-            ? 'Leaving hands the live roster to another phone in the party.'
-            : 'You will drop off everyone else’s map. Re-joining needs the code or the link again.'}
-        </p>
-      ) : null}
-      {hosting && onAllowJoins && joinsLeft === 0 ? (
-        <p className="fine">
-          Typing this code in only works while this phone is expecting someone. The invite link
-          and the QR keep working either way.
-        </p>
-      ) : null}
 
-      <div className="label">
-        Invite
-        <button type="button" className="labelAction" onClick={() => setShowQr((v) => !v)}>
-          {showQr ? 'Hide' : 'Show'}
-        </button>
-      </div>
-      {showQr ? (
-        <>
-          <InviteQr invite={invite} />
-          <p className="fine">
-            The other phone points its camera at this. Typing the six-character code works for
-            about 10 minutes while Party is open on this phone; the invite link and QR
-            always carry the key and keep working.
-          </p>
-        </>
-      ) : null}
-
-      {/* Asked here rather than on the way in: a permission prompt at cold open
-          is a question about nothing, and this is the first moment where the
-          answer obviously matters. */}
-      {onEnablePush && pushState !== 'granted' && pushState !== 'unsupported' ? (
-        <>
-          <div className="label">In Your Pocket</div>
-          <button type="button" className="btn" onClick={onEnablePush} disabled={pushNeedsInstall}>
-            Tell me on this phone
-          </button>
-          <p className="fine">
-            {pushNeedsInstall
-              ? 'On an iPhone this needs the app on your Home Screen first — Me → Install on this phone.'
-              : 'Right now a locked phone in a bag shows nothing at all when somebody needs you.'}
-          </p>
-        </>
-      ) : null}
-
-      <div className="label">Roster</div>
       {sorted.length === 0 ? (
         <p className="fine">Waiting for the first position to land.</p>
       ) : (
@@ -336,32 +297,47 @@ export default function PartyPanel({
             const isMe = m.id === myId;
             const located = m.visible;
             const live = located && m.live !== false;
-            const offSite = !located;
             const d = me && located && !isMe ? distance(me.lat, me.lng, m.lat, m.lng) : null;
             const b = d != null ? bearing(me.lat, me.lng, m.lat, m.lng) : null;
             const stale = located && !live;
-            const where = located
-              ? locationCopy({
-                  name: m.name,
-                  place: m.place || m.location?.place || placeAt(pois, m.lat, m.lng),
-                  live,
-                })
-              : null;
+            const placeName =
+              (located
+                ? m.place?.name || m.location?.place?.name || placeAt(pois, m.lat, m.lng)?.name
+                : null) || null;
+            const where = standing({ m, isMe, located, stale, placeName });
             const batt = Number.isFinite(m.battery?.level) ? Math.round(m.battery.level * 100) : null;
-            const Row = m.deviceLess ? 'div' : 'button';
+            /* Height is editable from here only for the seats this phone is
+               allowed to write — itself, and the Members with no phone.
+               lib/core/state.js `patch-member` drops anything else in silence,
+               so offering the tap would be offering nothing. */
+            const canSetHeight = Boolean(onHeights) && (isMe || m.deviceLess);
+            /* The compass point belongs beside the place, not in the rail: a
+               bearing is how you actually set off towards somebody, and nobody
+               navigates a park by 328°. The rail carries the walk time, which
+               is the same measurement said in the units a parent acts on, so
+               the range in feet does not need saying twice. */
+            const tail = [
+              m.status && m.status !== HELP ? m.status : null,
+              b != null ? cardinal(b) : null,
+            ]
+              .filter(Boolean)
+              .join(' · ');
+            /* Only somebody else's card, with a position to jump to, is worth
+               tapping — and only a card that is not itself a button may hold
+               the "Set a height" link, so the two rules are one rule. */
+            const tappable = !m.deviceLess && !isMe && located;
+            const Row = tappable ? 'button' : 'div';
             return (
               <Row
-                {...(m.deviceLess
-                  ? {}
-                  : { type: 'button', onClick: () => !isMe && located && onFocus(m) })}
+                {...(tappable ? { type: 'button', onClick: () => onFocus(m) } : {})}
                 key={m.id}
-                className={`memberRow ${stale ? 'stale' : ''}`}
+                className={`memberRow ${stale ? 'stale' : ''} ${m.status === HELP ? 'help' : ''}`}
               >
                 <span className="pip" style={{ background: isMe ? 'var(--adventure)' : m.colour }}>
                   {m.initials}
                   <span
                     className={`partyDot ${
-                      m.status === 'NEED HELP'
+                      m.status === HELP
                         ? 'separated'
                         : stale
                           ? 'onTheWay'
@@ -370,7 +346,7 @@ export default function PartyPanel({
                             : 'together'
                     }`}
                     title={
-                      m.status === 'NEED HELP'
+                      m.status === HELP
                         ? 'Separated'
                         : stale
                           ? 'On the way'
@@ -384,24 +360,33 @@ export default function PartyPanel({
                 <span className="memberText">
                   <b>
                     {m.name}
+                    {Number.isFinite(m.height) ? ` · ${m.height}"` : ''}
                     {isMe && <em className="chipTag">you</em>}
                     {m.groupId && <em className="chipTag">party {m.groupId}</em>}
                     {m.deviceLess && <em className="chipTag">no phone</em>}
-                    {Number.isFinite(m.height) && <em className="chipTag">{m.height}&quot;</em>}
                     {batt != null && (
                       <em className="chipTag">
                         {batt}%{m.battery?.charging ? '⚡' : ''}
                       </em>
                     )}
-                    {m.status === 'NEED HELP' && <em className="chipTag hot">help</em>}
+                    {/* Kept beside the card's red frame, not replaced by it: the
+                        tag pulses, and it is what the roster is scanned for when
+                        the screen is glanced at from arm's length. */}
+                    {m.status === HELP && <em className="chipTag hot">help</em>}
                   </b>
                   <span>
-                    {m.deviceLess
-                      ? 'No phone'
-                      : [where || (located ? null : 'No fix yet'), m.status, formatAge(Date.now() - m.ts)]
-                          .filter(Boolean)
-                          .join(' · ')}
+                    <i className={`memberTone ${where.tone}`}>{where.text}</i>
+                    {tail ? ` · ${tail}` : ''}
                   </span>
+                  {canSetHeight ? (
+                    <button
+                      type="button"
+                      className="memberHeightCta"
+                      onClick={() => onHeights(m.id)}
+                    >
+                      {Number.isFinite(m.height) ? `${m.height}" · tap to change` : 'Set a height'}
+                    </button>
+                  ) : null}
                   {m.deviceLess && (onTagDeviceLess || onRemoveDeviceLess) ? (
                     <span className="joinRow" style={{ marginTop: 6 }}>
                       {onTagDeviceLess && !(myGroupId && m.groupId === myGroupId) ? (
@@ -425,31 +410,201 @@ export default function PartyPanel({
                     </span>
                   ) : null}
                 </span>
-                <span className="memberRange">
-                  {isMe ? (
-                    <>
-                      <b style={{ color: 'var(--blue)' }}>•</b>
-                      <span>{located ? 'Here' : 'Off site'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <b>{formatDistance(d)}</b>
-                      <span>{/* The compass point, not the degrees. Nobody navigates a park by 328°. */}
-                    {b != null ? cardinal(b) : offSite ? 'Off site' : ''}</span>
-                    </>
-                  )}
-                </span>
+                {/* The walk leads, because "six minutes away" is the number a
+                    parent acts on; the age underneath says how much to trust
+                    it. A seat with no phone has no position and no fix age, so
+                    the rail says nothing rather than inventing "Off site" for
+                    somebody who is standing right beside you. */}
+                {m.deviceLess ? null : (
+                  <span className="memberRange">
+                    <b>
+                      {isMe
+                        ? located
+                          ? 'Here'
+                          : 'Off site'
+                        : d != null
+                          ? formatWalk(d)
+                          : located
+                            ? '—'
+                            : 'Off site'}
+                    </b>
+                    <span>{Number.isFinite(m.ts) ? formatAge(Date.now() - m.ts) : ''}</span>
+                  </span>
+                )}
+                {tappable && (
+                  <span className="memberGo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path
+                        d="M9 4.5 16.5 12 9 19.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                )}
               </Row>
             );
           })}
         </div>
       )}
 
+      {/* The two things a party does to itself. Rally is the same fair-midpoint
+          search the small button under Rally Point used to run — promoted, not
+          duplicated — and it keeps that button's rule about needing two people
+          and its busy label. The map's own Rally pin still arms a spot by hand. */}
+      <div className="joinRow partyActions">
+        <button
+          type="button"
+          className="btn primary rect"
+          disabled={!onSuggestReunification || reunifyBusy || sorted.length < 2}
+          onClick={() => onSuggestReunification?.()}
+        >
+          {reunifyBusy ? 'Finding a fair Rally Point…' : 'Rally the Party'}
+        </button>
+        {onCar ? (
+          <button type="button" className="btn rect" onClick={onCar}>
+            {car ? 'Where I parked' : 'Save where I parked'}
+          </button>
+        ) : null}
+      </div>
+      <p className="fine">
+        Location stays inside your Party.
+        {car ? '' : ' Where you parked stays on this phone — nobody in the party is told.'}
+      </p>
+
+      {/* Asked here rather than on the way in: a permission prompt at cold open
+          is a question about nothing, and this is the first moment where the
+          answer obviously matters. */}
+      {onEnablePush && pushState !== 'granted' && pushState !== 'unsupported' ? (
+        <>
+          <div className="label">In Your Pocket</div>
+          <button type="button" className="btn rect" onClick={onEnablePush} disabled={pushNeedsInstall}>
+            Tell me on this phone
+          </button>
+          <p className="fine">
+            {pushNeedsInstall
+              ? 'On an iPhone this needs the app on your Home Screen first — Me → Install on this phone.'
+              : 'Right now a locked phone in a bag shows nothing at all when somebody needs you.'}
+          </p>
+        </>
+      ) : null}
+
+      <div className="label">Rally Point</div>
+      {meet ? (
+        <div className="codeBox column">
+          <div>
+            <b>{meet.label}</b>
+            <span className="fine block">
+              {meetPlaceName(pois, meet.lat, meet.lng) ||
+                `${meet.lat.toFixed(4)}, ${meet.lng.toFixed(4)}`}{' '}
+              · set by {meet.by}
+            </span>
+            {me && (
+              <span className="meetRange">
+                {formatDistance(distance(me.lat, me.lng, meet.lat, meet.lng))}{' '}
+                {cardinal(bearing(me.lat, me.lng, meet.lat, meet.lng))} ·{' '}
+                {formatWalk(distance(me.lat, me.lng, meet.lat, meet.lng))} walk
+              </span>
+            )}
+          </div>
+          <div className="joinRow">
+            <button
+              type="button"
+              className="btn small primary iconOnly"
+              onClick={onNavigateMeet}
+              aria-label={WORDS.navigation}
+            >
+              <Icon name={GLYPHS.walk} size={18} />
+            </button>
+            <button type="button" className="btn small" onClick={() => onFocus(meet)}>
+              On the map
+            </button>
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => (arming === 'meet' ? onClearMeet() : setArming('meet'))}
+            >
+              {arming === 'meet' ? 'Clear for everyone?' : 'Clear'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="fine">
+          No Rally Point yet. Rally the Party finds a fair midpoint, or tap the pin button on the
+          map and choose a Place in Explore to set one by hand.
+        </p>
+      )}
+
+      <div className="label">Broadcast Status</div>
+      <div className="chips wrap">
+        {STATUSES.map((s) => (
+          <button
+            key={s}
+            type="button"
+            className={`chip ${status === s ? 'on' : ''}`}
+            onClick={() => onStatus(s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {status === HELP ? (
+        <button type="button" className="btn primary rect" onClick={() => onStatus(CALM)}>
+          I&apos;m OK now
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn danger rect"
+          onClick={() => (arming === 'help' ? onStatus(HELP) : setArming('help'))}
+        >
+          {arming === 'help' ? 'Tap again to alert everyone' : 'I need help'}
+        </button>
+      )}
+      <p className="fine" style={{ marginTop: 0 }}>
+        {status === HELP
+          ? 'Everyone in the party has been told, and can see how far away you are.'
+          : 'Buzzes every phone in the party and puts your name at the top of their screen.'}
+      </p>
+
+      <div className="label">
+        Your Location
+        {shareMode === 'precise' && shareLeft > 0 ? (
+          <span className="labelRight">{shareLeft} min left</span>
+        ) : null}
+      </div>
+      <div className="chips wrap">
+        <button
+          type="button"
+          className={`chip ${shareMode === 'approx' ? 'on' : ''}`}
+          onClick={() => onShareMode?.('approx')}
+        >
+          Approximate
+        </button>
+        <button
+          type="button"
+          className={`chip ${shareMode === 'precise' ? 'on' : ''}`}
+          onClick={() => onShareMode?.('precise')}
+        >
+          {`Precise · ${Math.round(PRECISE_MAX_MS / 60000)} min`}
+        </button>
+      </div>
+      <p className="fine" style={{ marginTop: 0 }}>
+        {shareMode === 'precise'
+          ? 'Sharing your exact spot with the party — it reverts to Approximate on its own.'
+          : 'Approximate rounds your dot for the family map. Precise shares your exact spot for 30 minutes.'}
+      </p>
+
       {onAddDeviceLess && (
         <>
           <div className="label">Add someone without a phone</div>
           <p className="fine" style={{ marginTop: 0 }}>
-            A device-less Member still counts for Eligibility. Height stays on the roster.
+            A device-less Member still counts for Eligibility. Height stays on the roster, and
+            this phone can set it for them.
           </p>
           {session?.userId && guests.length > 0 ? (
             <div className="chips wrap" style={{ marginBottom: 8 }}>
@@ -545,122 +700,64 @@ export default function PartyPanel({
         </>
       )}
 
-      <div className="label">Broadcast Status</div>
-      <div className="chips wrap">
-        {STATUSES.map((s) => (
-          <button
-            key={s}
-            type="button"
-            className={`chip ${status === s ? 'on' : ''}`}
-            onClick={() => onStatus(s)}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      {status === HELP ? (
-        <button type="button" className="btn primary" onClick={() => onStatus(CALM)}>
-          I&apos;m OK now
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="btn danger"
-          onClick={() => (arming === 'help' ? onStatus(HELP) : setArming('help'))}
-        >
-          {arming === 'help' ? 'Tap again to alert everyone' : 'I need help'}
-        </button>
-      )}
-      <p className="fine" style={{ marginTop: 0 }}>
-        {status === HELP
-          ? 'Everyone in the party has been told, and can see how far away you are.'
-          : 'Buzzes every phone in the party and puts your name at the top of their screen.'}
-      </p>
-
       <div className="label">
-        Your Location
-        {shareMode === 'precise' && shareLeft > 0 ? (
-          <span className="labelRight">{shareLeft} min left</span>
+        Invite
+        {hosting && onAllowJoins ? (
+          joinsLeft > 0 ? (
+            <span className="labelRight">Open to joining · {joinsLeft} min left</span>
+          ) : (
+            <button type="button" className="labelAction" onClick={onAllowJoins}>
+              Let someone join
+            </button>
+          )
         ) : null}
       </div>
-      <div className="chips wrap">
-        <button
-          type="button"
-          className={`chip ${shareMode === 'approx' ? 'on' : ''}`}
-          onClick={() => onShareMode?.('approx')}
-        >
-          Approximate
+      {/* The code at reading-out-loud size, beside the two things you do with
+          it. This is the one place it is a thing to say rather than a thing to
+          recognise, so it keeps its 26px monospace. */}
+      <div className="codeBox">
+        <span className="codeText">{code}</span>
+        <button type="button" onClick={share}>
+          Send invite
         </button>
         <button
           type="button"
-          className={`chip ${shareMode === 'precise' ? 'on' : ''}`}
-          onClick={() => onShareMode?.('precise')}
+          className="danger"
+          onClick={() => (arming === 'leave' ? onLeave() : setArming('leave'))}
         >
-          {`Precise · ${Math.round(PRECISE_MAX_MS / 60000)} min`}
+          {arming === 'leave' ? 'Tap to confirm' : 'Leave'}
         </button>
       </div>
-      <p className="fine" style={{ marginTop: 0 }}>
-        {shareMode === 'precise'
-          ? 'Sharing your exact spot with the party — it reverts to Approximate on its own.'
-          : 'Approximate rounds your dot for the family map. Precise shares your exact spot for 30 minutes.'}
-      </p>
-
-      <div className="label">Rally Point</div>
-      {onSuggestReunification ? (
-        <button
-          type="button"
-          className="btn small"
-          style={{ marginBottom: 8 }}
-          disabled={reunifyBusy || sorted.length < 2}
-          onClick={onSuggestReunification}
-        >
-          {reunifyBusy ? 'Finding a fair Rally Point…' : 'Suggest a Rally Point'}
-        </button>
-      ) : null}
-      {meet ? (
-        <div className="codeBox column">
-          <div>
-            <b>{meet.label}</b>
-            <span className="fine block">
-              {meetPlaceName(pois, meet.lat, meet.lng) ||
-                `${meet.lat.toFixed(4)}, ${meet.lng.toFixed(4)}`}{' '}
-              · set by {meet.by}
-            </span>
-            {me && (
-              <span className="meetRange">
-                {formatDistance(distance(me.lat, me.lng, meet.lat, meet.lng))}{' '}
-                {cardinal(bearing(me.lat, me.lng, meet.lat, meet.lng))} ·{' '}
-                {formatWalk(distance(me.lat, me.lng, meet.lat, meet.lng))} walk
-              </span>
-            )}
-          </div>
-          <div className="joinRow">
-            <button
-              type="button"
-              className="btn small primary iconOnly"
-              onClick={onNavigateMeet}
-              aria-label={WORDS.navigation}
-            >
-              <Icon name={GLYPHS.walk} size={18} />
-            </button>
-            <button type="button" className="btn small" onClick={() => onFocus(meet)}>
-              On the map
-            </button>
-            <button
-              type="button"
-              className="btn small"
-              onClick={() => (arming === 'meet' ? onClearMeet() : setArming('meet'))}
-            >
-              {arming === 'meet' ? 'Clear for everyone?' : 'Clear'}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p className="fine">
-          No Rally Point yet. Tap the pin button on the map, then choose a Place in Explore to Rally the Party.
+      {arming === 'leave' ? (
+        <p className="fine warnText">
+          {hosting
+            ? 'Leaving hands the live roster to another phone in the party.'
+            : 'You will drop off everyone else’s map. Re-joining needs the code or the link again.'}
         </p>
-      )}
+      ) : null}
+      {hosting && onAllowJoins && joinsLeft === 0 ? (
+        <p className="fine">
+          Typing this code in only works while this phone is expecting someone. The invite link
+          and the QR keep working either way.
+        </p>
+      ) : null}
+
+      <div className="label">
+        QR
+        <button type="button" className="labelAction" onClick={() => setShowQr((v) => !v)}>
+          {showQr ? 'Hide' : 'Show'}
+        </button>
+      </div>
+      {showQr ? (
+        <>
+          <InviteQr invite={invite} />
+          <p className="fine">
+            The other phone points its camera at this. Typing the six-character code works for
+            about 10 minutes while Party is open on this phone; the invite link and QR
+            always carry the key and keep working.
+          </p>
+        </>
+      ) : null}
     </div>
   );
 }

@@ -1496,15 +1496,17 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* Every list in the app already had a wrapper element, so the grouping is
    pure CSS: the container carries the card, the rows carry hairlines inset to
    line up with the text rather than running the full width. */
-.poiList, .roster, .venueList, .diagTable, .stepList {
+/* The roster left this family: a Member is now a card of its own rather than a
+   row inside a shared one — see the .roster block further down. */
+.poiList, .venueList, .diagTable, .stepList {
   background: transparent; border-radius: var(--r2);
   overflow: hidden; margin-bottom: 10px;
 }
-.sheet.full .poiList, .sheet.full .roster, .sheet.full .venueList,
+.sheet.full .poiList, .sheet.full .venueList,
 .sheet.full .diagTable, .sheet.full .stepList,
 .sheet.full .rowList { background: var(--grouped2); }
 .sheet.full .glanceCard { background: var(--grouped2); }
-.poiList > *, .roster > *, .venueList > *, .diagTable > *, .stepList > * {
+.poiList > *, .venueList > *, .diagTable > *, .stepList > * {
   border-radius: 0;
 }
 
@@ -1518,7 +1520,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 
 .poiRow { position: relative; transition: background var(--t1) var(--easeOut); }
-.poiRow::after, .memberRow::after, .venueRow::before, .diagRow::after, .stepRow::after {
+.poiRow::after, .venueRow::before, .diagRow::after, .stepRow::after {
   content: ''; position: absolute; right: 0; bottom: 0; height: .5px;
   background: var(--sep); pointer-events: none;
 }
@@ -1905,23 +1907,123 @@ html[data-skin-junior="1"] .poiMarker {
   color: var(--blue); text-decoration: none;
 }
 
-.roster { margin-bottom: 8px; }
+/* A Member is a card, not a row in a list. The hairline treatment was right
+   when the roster was one block of names; it is wrong now that a card can be
+   painted whole — "needs help" has to be legible across a moving park at arm's
+   length, and a tint that stops at a hairline reads as a rendering fault. */
+.roster { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; }
 .memberRow {
   display: flex; gap: 12px; align-items: center; width: 100%; text-align: left;
-  min-height: 56px; padding: 10px 16px; position: relative;
+  min-height: 56px; padding: 12px 13px; position: relative;
+  /* 18px: the twin's Member card. Rounder than a --r4 panel because it is a
+     free-standing object with air on all four sides, not a slab in a stack. */
+  border-radius: 18px;
+  background: var(--bg2); border: 1px solid var(--sep);
   transition: background var(--t1) var(--easeOut), opacity var(--t2) var(--easeOut);
 }
-.memberRow::after { left: 64px; }
-.memberRow:last-child::after { content: none; }
 .memberRow:active { background: var(--fill3); }
 .memberRow.stale { opacity: .4; }
 .memberRow.paused { opacity: .65; }
 .memberRow.paused .pip { filter: grayscale(1); }
+/* Somebody needs help. The whole card takes it, because the alert has to
+   survive a glance at a phone held low and moving. --red, not --barred: barred
+   is the map's "ruled out" ink and a person is never ruled out. */
+.memberRow.help { border-color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--bg2)); }
+.memberGo { flex: none; width: 13px; height: 13px; color: var(--label3); }
+.memberGo svg { width: 100%; height: 100%; display: block; }
+/* How much to trust where somebody is, said in colour before it is read. */
+.memberTone { font-style: normal; font-weight: 600; }
+.memberTone.ok { color: var(--green); }
+.memberTone.warn { color: var(--orange); }
+.memberTone.help { color: var(--red); }
+.memberTone.quiet { color: var(--label2); }
+/* Height is the one thing on a roster card you can change from here, so it gets
+   the accent and its own line rather than hiding inside the status sentence. */
+.memberHeightCta {
+  display: block; margin-top: 2px; padding: 0; border: 0; background: none;
+  font-size: 12px; font-weight: 700; letter-spacing: -.08px; text-transform: none;
+  color: var(--adventure); text-align: left;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.memberHeightCta:active { opacity: .5; }
+/* "With me" and "Remove" on a device-less seat. .joinRow sizes its buttons for
+   a full-width form row; inside a card they are two small corrections to the
+   thing above them and take the chip's scale instead. */
+.memberText .joinRow .btn.small {
+  padding: 7px 12px; min-height: 32px; font-size: 13px; border-radius: var(--rCapsule);
+}
+/* The Party's code where it is identity rather than something to read out: a
+   dashed chip beside the name, the way a wristband is worn rather than spoken. */
+.codeChip {
+  align-self: center; font-family: var(--mono);
+  font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: none;
+  color: var(--label); background: var(--fill2);
+  border: 1px dashed var(--sep); border-radius: 9px; padding: 4px 9px;
+  font-variant-numeric: tabular-nums;
+}
+.partyActions { margin: 4px 0 0; }
+.partyActions .btn { flex: 1; }
+/* "Where I parked" is the shorter of the pair and says so — it takes the width
+   its words need and leaves the rest to Rally, which is the one you reach for
+   when something has gone wrong. */
+.partyActions .btn:last-child:not(:only-child) { flex: none; white-space: nowrap; }
+
+/* ---- Plan stops ---- */
+/* The plain bulleted list the Plan used to be. It still draws the day trail in
+   the Party intelligence panel, which is a read-only list of moments and wants
+   nothing a stop card offers. */
 .planList { margin: 0 0 12px; padding-left: 20px; font-size: 14px; color: var(--label2); }
 .planList li { display: flex; align-items: center; gap: 8px; }
-.planList .linkish { flex: 1; text-align: left; background: none; border: 0; color: inherit; font: inherit; padding: 0; }
-.planMove { display: flex; gap: 4px; flex-shrink: 0; }
-.planList .struck { text-decoration: line-through; opacity: .55; }
+.planStops { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.planStop {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px; border-radius: var(--r4);
+  background: var(--bg2); border: 1px solid var(--sep);
+}
+/* The ordinal and the two controls that change it are one column: the number
+   says where the stop sits, the chevrons say which way it can move. Drag would
+   be nicer and is not what this is — these are the same two arrows that were
+   already here, given a shape that explains what they act on. */
+.planOrder { flex: none; display: flex; flex-direction: column; align-items: center; width: 26px; }
+.planPip {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--fill2);
+  color: var(--label2); display: grid; place-items: center;
+  font-size: 11.5px; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.planNudge {
+  width: 26px; height: 18px; padding: 0; border: 0; background: none;
+  color: var(--label3); display: grid; place-items: center;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.planNudge svg { width: 15px; height: 15px; display: block; }
+.planNudge:active { opacity: .5; }
+.planNudge:disabled { opacity: .22; }
+.planStopText { flex: 1; min-width: 0; }
+.planStopText b {
+  display: block; font-size: 15px; font-weight: 600; letter-spacing: -.24px; color: var(--label);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.planStopText > span {
+  display: block; font-size: 12px; letter-spacing: -.08px; color: var(--label2); margin-top: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* A down ride keeps its place in the order — the strike is on the name, so the
+   ordinal and the reason underneath stay readable. */
+.planStopText b.struck { text-decoration: line-through; color: var(--label3); }
+.planWalk {
+  flex: none; padding: 7px 10px; border: 0; border-radius: var(--r2);
+  background: var(--fill); color: var(--label);
+  font-size: 12.5px; font-weight: 700; letter-spacing: -.08px; text-transform: none;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.planWalk:active { opacity: .55; }
+.planDrop {
+  flex: none; width: 24px; height: 24px; padding: 0; border: 0; background: none;
+  color: var(--label3); display: grid; place-items: center;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.planDrop svg { width: 15px; height: 15px; display: block; }
+.planDrop:active { opacity: .5; }
 .intelPanel { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sep); }
 .pip {
   width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
@@ -1933,14 +2035,22 @@ html[data-skin-junior="1"] .poiMarker {
   width: 11px; height: 11px; border-radius: 50%;
   box-shadow: 0 0 0 2px var(--bg2);
 }
+/* A card says more than a row did — where, what they are doing, which way, how
+   old the fix is — so the type comes down to the twin's 15.5/12.5 card scale to
+   make room for it, and to keep eight Members scrollable at the peek stop. */
 .memberText { flex: 1; min-width: 0; }
 .memberText b {
   display: flex; align-items: center; gap: 6px;
-  font-size: 17px; font-weight: 400; letter-spacing: -.4px;
+  font-size: 15.5px; font-weight: 400; letter-spacing: -.24px;
 }
+/* Two lines, not one. Where somebody is, what they are doing and which way to
+   set off do not fit across 185px, and the compass point was the piece that
+   fell off the end — which is the piece you walk on. The clamp keeps a Place
+   with a very long name from growing the card without limit. */
 .memberText > span {
-  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2);
-  margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  font-size: 12.5px; line-height: 16px; letter-spacing: -.08px; color: var(--label2);
+  margin-top: 1px; overflow: hidden;
 }
 .chipTag {
   font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: 0;
@@ -1956,7 +2066,7 @@ html[data-skin-junior="1"] .poiMarker {
   50% { opacity: 1 }
 }
 .memberRange { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
-.memberRange b { display: block; font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
+.memberRange b { display: block; font-size: 14px; font-weight: 700; letter-spacing: -.24px; }
 .memberRange span { display: block; font-size: 11px; color: var(--label3); margin-top: 2px; }
 
 .venueList { display: block; }
@@ -2018,6 +2128,10 @@ html[data-skin-junior="1"] .poiMarker {
   .fine { color: color-mix(in srgb, var(--label) 58%, var(--label2)); }
 }
 .fine.block { display: block; margin-left: 0; margin-right: 0; }
+/* A second sentence inside one piece of fine print — used where the first line
+   is the thing to know and the second is an obligation that has to travel with
+   it, like a venue's attribution. One paragraph, because they are one note. */
+.fine .block { display: block; margin-top: 4px; }
 
 .rankPrizeCatalog { margin-top: 4px; }
 .rankPrizeList {
@@ -2585,26 +2699,39 @@ p.wxWhy.warn { color: var(--orange); }
 .reportRow .btn.on { background: var(--blue); color: var(--onTint); }
 
 /* ---- height tiers ---- */
+/* HEIGHT_TIERS is nine numbers — the thresholds that actually change what a
+   family can do — and nine segments of a 358px control are 39px each, which is
+   a number you hit by accident. So the row scrolls instead of dividing, and
+   each tier gets the width its digits need. Same masked overflow as .chips, so
+   the cut edge reads as "there is more" rather than as a clipped layout. */
 .tierRow {
-  display: flex; gap: 2px; margin-bottom: 14px; padding: 2px;
-  background: var(--fill3); border-radius: 9px;
+  display: flex; gap: 7px; margin: 0 -16px 14px; padding: 2px 16px 10px;
+  overflow-x: auto;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
 }
+.tierRow::-webkit-scrollbar { display: none; }
 .tier {
-  flex: 1; min-height: 32px; border-radius: 7px; border: none; background: none;
-  font-size: 15px; font-weight: 500; letter-spacing: -.24px; color: var(--label);
-  display: flex; align-items: center; justify-content: center;
+  flex: none; min-width: 58px; min-height: 44px; padding: 9px 10px;
+  border-radius: var(--r4); border: 1px solid var(--sep); background: var(--bg2);
+  font-size: 17px; font-weight: 700; letter-spacing: -.4px; color: var(--label);
+  display: flex; align-items: baseline; justify-content: center; gap: 1px;
   font-variant-numeric: tabular-nums;
-  transition: background var(--t1) var(--easeOut), opacity var(--t1) var(--easeOut);
+  transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut),
+              opacity var(--t1) var(--easeOut);
 }
 .tier:active { opacity: .5; }
-.tier em { font-style: normal; font-size: 11px; color: var(--label3); margin-left: 1px; }
-.tier.on { background: var(--bg3); box-shadow: var(--thumbShadow); font-weight: 600; }
-.tier.on em { color: var(--label2); }
+.tier em { font-style: normal; font-size: 11px; font-weight: 500; color: var(--label3); }
+/* Selected takes the ink, exactly as .chip.on does: the tier row and the With
+   adult chip sit on one screen, and two different languages for "this one is
+   picked" would read as two different meanings. Accent stays the action. */
+.tier.on { background: var(--label); border-color: var(--label); color: var(--bg2); }
+.tier.on em { color: var(--bg2); opacity: .65; }
 
 /* ---- proportion bar ---- */
 .ratioBar {
-  display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px;
-  margin: 6px 0 10px; background: var(--fill3);
+  display: flex; height: 10px; border-radius: 6px; overflow: hidden; gap: 3px;
+  margin: 6px 0 10px; background: var(--fill2);
 }
 .ratioBar .seg { display: block; transition: flex-grow var(--t3) var(--easeOut); }
 .ratioBar .seg.ok { background: var(--green); }
@@ -2632,6 +2759,19 @@ p.wxWhy.warn { color: var(--orange); }
   animation: fadeIn var(--t2) var(--easeOut) both;
 }
 .unlock b { color: var(--label); }
+/* The Members this phone is not allowed to edit, stated and left alone. No
+   chip, no tap target, nothing that looks like it would do something — the
+   protocol drops a patch aimed at another phone's Member in silence, so an
+   affordance here would animate and then quietly undo itself. */
+.heightPeers { list-style: none; margin: 0 0 4px; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.heightPeers li {
+  display: flex; align-items: center; gap: 9px; min-height: 32px; padding: 0 4px;
+  font-size: 15px; letter-spacing: -.24px;
+}
+.heightPeers b { flex: 1; min-width: 0; font-weight: 400; color: var(--label);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.heightPeers > li > span { flex: none; color: var(--label2); font-variant-numeric: tabular-nums; }
+.heightPeerDot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fill2); }
 
 /* ---- verdict + walk time in the list ---- */
 .poiOut {
@@ -2910,36 +3050,64 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .puckCone { filter: blur(.3px); }
 
 /* ---- the maneuver strip at the top ---- */
+/* Still at the top. The maneuver is what your eyes go up for and the controls
+   are what your thumb comes down to, so the split stays where it is; what
+   changes is that the banner stopped being a solid blue slab laid over the
+   park and became a card sitting on it, with the turn glyph in a tile of its
+   own. A slab that colour hid the route underneath it at exactly the moment
+   the route mattered. */
 .navBanner {
   position: absolute; left: 10px; right: 10px; top: calc(var(--top) + 58px); z-index: 41;
-  background: var(--blue); color: var(--onTint); border-radius: var(--r3); overflow: hidden;
+  background: var(--bg2); color: var(--label);
+  border: 1px solid var(--sep); border-radius: 16px; overflow: hidden;
   box-shadow: var(--shadow2);
   animation: riseIn var(--t2) var(--easeOut) both;
 }
-.navBanner.off { background: var(--red); }
-.navMain { display: flex; align-items: center; gap: 14px; padding: 12px 15px; }
-.navTurn { width: 36px; height: 36px; flex: none; display: grid; place-items: center; }
-.navIcon { width: 32px; height: 32px; display: block; }
+/* Off the route, the card keeps its ink — a slab of red is unreadable at the
+   moment you most need to read it — and the frame, the glyph tile and a wash
+   the same weight as the roster's "needs help" carry the alarm instead. */
+.navBanner.off {
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 10%, var(--bg2));
+}
+.navMain { display: flex; align-items: center; gap: 12px; padding: 11px 13px; }
+/* The glyph tile — aqua, the brand's way-finding colour, and a rounded square
+   rather than a circle so it reads as a sign rather than as a button. */
+.navTurn {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center;
+  border-radius: 11px; background: var(--aqua);
+  /* Ink, not the twin's white. --aqua is a light colour in both palettes:
+     white on it measures 2.5:1 after dark and 2.4:1 in sun, under the 3:1 a
+     graphical object needs, and this is the turn arrow read while walking.
+     #0B1829 is the app's darkest surface (night --bg) and clears 7:1 on aqua
+     whichever way the theme is set, so it is stated rather than themed. */
+  color: #0B1829;
+}
+.navBanner.off .navTurn { background: var(--red); }
+.navIcon { width: 22px; height: 22px; display: block; }
 .navText { flex: 1; min-width: 0; }
 .navDist {
-  display: block; font-size: 34px; font-weight: 700; line-height: 38px; letter-spacing: .4px;
-  font-variant-numeric: tabular-nums;
+  display: block; font-size: 28px; font-weight: 700; line-height: 32px; letter-spacing: -.4px;
+  color: var(--label); font-variant-numeric: tabular-nums;
 }
 .navStep {
-  display: block; font-size: 17px; font-weight: 400; letter-spacing: -.4px; margin-top: 1px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .92;
+  display: block; font-size: 15.5px; font-weight: 600; letter-spacing: -.24px; margin-top: 1px;
+  color: var(--label);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .navThen {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 15px 9px; background: rgba(0, 0, 0, .18);
-  font-size: 13px; font-weight: 500; letter-spacing: -.08px; text-transform: none;
+  padding: 8px 13px 9px; border-top: 1px solid var(--sep); background: var(--fill3);
+  font-size: 12.5px; font-weight: 500; letter-spacing: -.08px; text-transform: none;
+  color: var(--label2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.navThenIcon { width: 16px; height: 16px; flex: none; }
+.navThenIcon { width: 16px; height: 16px; flex: none; color: var(--label2); }
 .navThenIcon .navIcon { width: 16px; height: 16px; }
+.navThen.rerouting { color: var(--red); }
 .navSpinner {
   width: 12px; height: 12px; flex: none; border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, .35); border-top-color: #fff;
+  border: 2px solid var(--fill); border-top-color: var(--red);
   animation: navSpin .9s linear infinite;
 }
 @keyframes navSpin { to { transform: rotate(360deg) } }
@@ -2954,8 +3122,11 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   box-shadow: var(--lensEdge), var(--shadow3);
 }
 .navBarRow { display: flex; align-items: center; gap: 12px; }
+/* A rounded rect, not a capsule: this is a major action button and the twin
+   draws every one of those the same way. --red stays — it is the app's stop
+   colour, and --barred belongs to the map's "ruled out" places. */
 .navEnd {
-  flex: none; padding: 12px 20px; border-radius: var(--rCapsule);
+  flex: none; padding: 12px 20px; border-radius: var(--r4);
   background: var(--red); color: var(--onTint);
   font-size: 17px; font-weight: 600; letter-spacing: -.4px; text-transform: none;
   min-height: 44px;
@@ -2972,13 +3143,18 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .navTools { flex: none; display: flex; gap: 8px; }
+/* Off is an outline, on is a fill — the twin's treatment, which says "this is a
+   switch and it is currently off" without a second glance. 44px, not the
+   twin's 40: these are pressed while walking, one-handed, looking up. */
 .navTool {
-  width: 44px; height: 44px; border-radius: var(--rCapsule); border: none;
-  background: var(--fill3); color: var(--blue); display: grid; place-items: center;
-  transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut);
+  width: 44px; height: 44px; border-radius: var(--rCapsule);
+  border: 1px solid var(--sep); background: none; color: var(--label2);
+  display: grid; place-items: center;
+  transition: opacity var(--t1) var(--easeOut), background var(--t1) var(--easeOut),
+              color var(--t1) var(--easeOut), border-color var(--t1) var(--easeOut);
 }
 .navTool:active { opacity: .55; }
-.navTool.on { background: var(--blue); color: var(--onTint); }
+.navTool.on { background: var(--blue); border-color: var(--blue); color: var(--onTint); }
 .navCompass { width: 20px; height: 20px; }
 
 /* ---- the choice you make before setting off ---- */
@@ -3019,7 +3195,9 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .entranceHint, .navEntrance, .entranceNote { font-size: 13px; line-height: 1.35; color: var(--label2); margin: 8px 0 0; }
 .entranceHint.approx, .navEntrance.approx, .entranceNote.approx { color: var(--orange); }
 .entranceHint.confirmed, .navEntrance.confirmed, .entranceNote.confirmed { color: var(--green); }
-.navEntrance { margin: 0 12px 4px; font-weight: 600; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; }
+/* Inside the banner card now, so it carries the card's own inset rather than
+   sitting flush against a slab's top edge. */
+.navEntrance { margin: 10px 13px 0; font-weight: 600; font-size: 12px; letter-spacing: .02em; text-transform: uppercase; }
 .previewAlts { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; }
 .previewAlts::-webkit-scrollbar { display: none; }
 .previewAlt {
