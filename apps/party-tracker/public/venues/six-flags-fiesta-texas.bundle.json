@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "venue": "six-flags-fiesta-texas",
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "bytes": 364519,
+  "files": [
+    {
+      "path": "/venues/six-flags-fiesta-texas.gaps.json",
+      "bytes": 5085,
+      "sha256": "b92f965146bd3c4f36e6fcc83c017839d6cf65da80b9ea29625ef2b63a736040"
+    },
+    {
+      "path": "/venues/six-flags-fiesta-texas.map.json",
+      "bytes": 328051,
+      "sha256": "3b22005806e90e87fc252ba486c41e1dddaaee7ab15aff8ed8e7541d40aeea1f"
+    },
+    {
+      "path": "/venues/six-flags-fiesta-texas.pois.json",
+      "bytes": 31383,
+      "sha256": "be3aeeade159d133ada37adab359d70cd17487d0bc28ec41b16d42493f7c6cae"
+    }
+  ]
+}

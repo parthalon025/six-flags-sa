@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "venue": "cedar-point",
+  "basedOn": {
+    "map": "2026-08-09"
+  },
+  "bytes": 598653,
+  "files": [
+    {
+      "path": "/venues/cedar-point.gaps.json",
+      "bytes": 4281,
+      "sha256": "46195b7f32b365c0df792ce3888cb4aaa58abe78f528f0d612bdef20aefe7bc1"
+    },
+    {
+      "path": "/venues/cedar-point.map.json",
+      "bytes": 521645,
+      "sha256": "50cb73aca476fe57b851a35c968c67d566b0c0ed95f01cec73bb93a35b710fe6"
+    },
+    {
+      "path": "/venues/cedar-point.pois.json",
+      "bytes": 72727,
+      "sha256": "caea6a9a833bc28250fb833e29bbd468326a44224df86f1444e1066784f9af2b"
+    }
+  ]
+}

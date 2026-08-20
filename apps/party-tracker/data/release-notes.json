@@ -402,5 +402,11 @@
     "items": [
       "feat: custom map worlds — worlds in the pack, two painted kits, PBR materials, schema v2, zoom + imagery contracts (#558)"
     ]
+  },
+  "1.25.0": {
+    "title": "What's new",
+    "items": [
+      "feat(app): venue download manager — hash-addressed offline bundles, freshness gate, worlds in the download contract (#559)"
+    ]
   }
 }

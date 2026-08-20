@@ -21,6 +21,7 @@ import { buildTiles } from './display-tiles.mjs';
 import { buildWorldTier } from './display-world.mjs';
 import { materialTexturesRow, verifyCompiledMaterials } from './display-materials.mjs';
 import { crossRotationCoverageRow } from './display-style-contract.mjs';
+import { writeBundleManifest } from './venue-bundle.mjs';
 import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
@@ -736,6 +737,17 @@ export function runDisplayStage(id, opts = {}) {
     const file = path.join(outDir, 'display-certification.json');
     writeJson(file, summary, true);
     written.push(file);
+    // The pack's download contract (ADR-0018): every shipped file of this
+    // pack, hash-pinned, enumerated from the tier manifest and the stage's
+    // own outputs — written last so it hashes what this run actually wrote.
+    const bundleFile = path.join(outDir, 'bundle.json');
+    writeBundleManifest(id, {
+      venueDir: VENUE_DIR,
+      displayDir: outDir,
+      outFile: bundleFile,
+      generated: map.meta?.generated ?? null,
+    });
+    written.push(bundleFile);
   }
 
   return { venue: id, certified, packs, anchors, tiles, bakes, worlds, written };
