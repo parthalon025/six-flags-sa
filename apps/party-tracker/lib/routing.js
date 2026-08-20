@@ -11,7 +11,7 @@
 // uses a local equirectangular projection instead, which is accurate to well
 // under a metre across a park this size.
 
-import { wayFlagsOf, wayLayerOf } from './wayFlags.js';
+import { onewayDirOf, wayFlagsOf, wayLayerOf } from './wayFlags.js';
 import { MAX_SNAP_M, snapToGraph } from './routingSnap.js';
 
 export { MAX_SNAP_M, snapToGraph } from './routingSnap.js';
@@ -43,11 +43,29 @@ export const WALK_MPS = 1.15;
  */
 const FACTOR = { path: 1, service: 2.6, queue: 4.5, stitch: 1.4, bridge: 2, mend: 2.2 };
 
+/**
+ * The price of walking a one-way way against its arrow (#505).
+ *
+ * Deliberately a price, not a wall. Skipping the reverse edge outright was
+ * tried first and shipped data falsified it immediately: OSM tags ride exit
+ * paths `oneway=yes`, and Kings Island's The Beast is ringed by them — it has
+ * no legally-directed approach at all, so a hard wall left the flagship
+ * coaster unreachable and the router falling back to a straight line. At this
+ * multiplier the arrow wins whenever ANY legal alternative exists (it must be
+ * over 8× longer before wrong-way is cheaper), and a pocket only reachable
+ * against an arrow still routes instead of failing.
+ */
+const WRONG_WAY = 8;
+
 /* Note that `FACTOR.bridge` is not a bridge over anything. It is the price of
    the repair pass that links a marooned piece of network to the mainland. What
    OpenStreetMap calls a bridge arrives as `WAY_FLAGS.BRIDGE` on `seg.flags`,
-   and nothing here reads it: carrying the attributes and spending them are
-   separate changes on purpose, so that a route diff means something. */
+   and nothing here reads it: carrying an attribute and spending it are
+   separate changes on purpose, so that a route diff means something. The ones
+   that ARE spent, each its own change: `layer` gates welding at crossings,
+   ONEWAY / ONEWAY_BACK price edge direction in index() (#505, WRONG_WAY
+   above), and profiles spend STEPS / RESTRICTED through opts.penalty
+   (lib/routingProfiles.js). */
 
 const isQueue = (name) => /\b(queue|line)\b/i.test(name || '');
 
@@ -122,10 +140,12 @@ class Grid {
  *
  * Each segment carries whatever the bundle says about the way it came off —
  * `flags` and `layer`, see lib/wayFlags.js — so that a caller can tell a flight
- * of steps from flat midway and a bridge from the path underneath it. Nothing
- * in this file spends them yet, and that is deliberate: costs are unchanged by
- * this, so the routes are too. A bundle built before the attributes existed
- * carries none, every segment reads zero, and it routes exactly as it did.
+ * of steps from flat midway and a bridge from the path underneath it. Two of
+ * them are spent here: `layer` keeps a bridge from welding into the path
+ * underneath it, and the one-way flags price a flagged way's wrong direction
+ * off the menu whenever a legal alternative exists (#505; see WRONG_WAY and
+ * index()). A bundle built before the attributes existed carries none, every
+ * segment reads zero, and it routes exactly as it did.
  *
  * @param map a parsed venue map file, public/venues/{id}.map.json
  * @returns a graph, or null if the file carries no paths
@@ -240,8 +260,18 @@ function index(graph) {
     seg.len = hypot(a.x, a.y, b.x, b.y);
     seg.factor = FACTOR[seg.kind] ?? 1;
     const cost = seg.len * seg.factor;
-    a.edges.push({ to: seg.b, cost, len: seg.len, seg: segIndex });
-    b.edges.push({ to: seg.a, cost, len: seg.len, seg: segIndex });
+    // One-way ways are spent here (#505): the edge that walks a `oneway=yes`
+    // segment against its ring (or a `oneway=-1` one with it) costs
+    // WRONG_WAY times more, so the search takes the arrow whenever a legal
+    // alternative exists. `a → b` is the direction the ring was drawn —
+    // phases 1 and 2 both preserve it — and repair segments
+    // (stitch/bridge/mend) carry flags 0, so they stay symmetric. Both
+    // edges still exist, which keeps the repair passes (loose-end degree,
+    // island labelling, gap mending) reasoning about drawn geometry exactly
+    // as before.
+    const oneway = onewayDirOf(seg.flags);
+    a.edges.push({ to: seg.b, cost: oneway === -1 ? cost * WRONG_WAY : cost, len: seg.len, seg: segIndex });
+    b.edges.push({ to: seg.a, cost: oneway === 1 ? cost * WRONG_WAY : cost, len: seg.len, seg: segIndex });
     // A segment is registered in every cell its bounding box touches, so a
     // long midway is still found from a point standing in its middle.
     const cx0 = Math.floor(Math.min(a.x, b.x) / CELL_M);
@@ -591,6 +621,12 @@ function search(graph, from, to, penalty = null) {
     : (edge) => edge.cost;
 
   // Cost of the walk from a snap point to each end of the segment it sits on.
+  // Deliberately one-way-blind: the snap connector is synthetic — a ride
+  // marker sitting beside a one-way queue approach is not walking the queue —
+  // and enforcing direction here strands exactly those POIs (Kings Island's
+  // Beast and Mystic Timbers both snap onto `f:8` paths). The one-way rule
+  // lives on the graph edges (#505, index()), which every step BETWEEN the
+  // two snap segments still obeys.
   const tailsOf = (snap, seg) => {
     const s = segments[seg];
     return [
@@ -608,7 +644,8 @@ function search(graph, from, to, penalty = null) {
   let bestPath = null;
 
   // Standing on the same segment as the destination: walking straight along it
-  // is a candidate no graph search would ever produce.
+  // is a candidate no graph search would ever produce. (Connector-scale, so
+  // one-way-blind for the same reason as tailsOf.)
   if (from.seg === to.seg) {
     bestTotal = Math.abs(to.t - from.t) * startSeg.len * startSeg.factor;
     bestPath = [];
