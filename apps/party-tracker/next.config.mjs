@@ -63,10 +63,10 @@ const nextConfig = {
     NEXT_PUBLIC_APP_BUILT: versionDoc.built || '',
   },
   reactStrictMode: true,
-  // The factories never deploy (.vercelignore excludes packages/venue-builder):
-  // leave the package external so the bundler never resolves it at build time —
-  // the app's one seam to it (lib/venueCompare.js) imports it lazily and
-  // degrades when absent.
+  // The factories never deploy (the deploy ignore file excludes the builder
+  // package): leave it external so the bundler never resolves it at build
+  // time — the app's one seam to it (lib/venueCompare.js) imports it lazily
+  // and degrades when absent.
   serverExternalPackages: ['@party-tracker/venue-builder'],
   // Immutable static chunks break Vercel production deploys for this monorepo
   // (build succeeds locally; production target fails since Clerk merge #155).
