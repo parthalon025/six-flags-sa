@@ -929,7 +929,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sheet.shut .sheetStage,
 .sheet.shut .searchRow,
 .sheet.shut .brand,
-.sheet.shut .glanceRail,
+.sheet.shut .locateCard,
 .sheet.shut .moreHint,
 .sheet.shut .sheetHead,
 .sheet.shut .navHead { display: none; }
@@ -1566,29 +1566,137 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .placeActions .btn.iconOnly {
   width: 40px; height: 40px; min-width: 40px; min-height: 40px; padding: 0;
 }
+/* The same three actions with the words on, for the Place's own screen. A row
+   rather than a stack: they are alternatives, not a sequence, and the primary
+   has to be able to take the width it needs for "Walk me there" while the other
+   two shrink to their labels. .btn.rect is D1's shape for a major action —
+   these are the biggest buttons on the screen and the reason it exists.
+   Measured as SHEET_PLACE_ACTIONS_PX in lib/sheet.js: 44 of button plus the
+   12 above it. Change the padding here and change that. */
+/* Wraps rather than clips. Measured on a 390px phone: the three labels come to
+   136 + 112 + 100, which fits the 354 the sheet has only once the gap is 6 and
+   the side padding 8 — six pixels of slack, and none at all on a 375px phone,
+   where the third button drops to a second row. That is the right failure: a
+   second row of buttons is a great deal better than "Walk me the", and the
+   sheet body scrolls to it. SHEET_PLACE_ACTIONS_PX budgets the one-row case.
 
-/* Full place sheet from a map tap — title + actions on one row, facts on the
-   next. Notes sit below so a lean height still shows the things you came to do. */
+   Not indented past the back chevron either — that overlay sits on the title's
+   line, forty pixels above this. */
+.placeActions.labelled { flex-wrap: wrap; gap: 6px; align-items: stretch; margin: 12px 0 0; }
+/* 14.5px — the twin's own size for these buttons — over eight pixels of side
+   padding rather than the sixteen .btn.small carries. See the note above: the
+   row fits or it does not, by single figures. */
+.btn.placeAction {
+  min-height: 44px; padding: 11px 8px;
+  font-size: 14.5px; font-weight: 600; letter-spacing: -.24px;
+  white-space: nowrap;
+}
+/* The primary takes the slack; the other two hold their label width, so a long
+   Place name or a narrow phone never squeezes "Rally here" onto two lines. */
+.placeActions.labelled .btn.primary { flex: 1 1 auto; }
+.btn.placeActionOutline {
+  flex: 0 0 auto;
+  background: var(--bg2); color: var(--label);
+  box-shadow: inset 0 0 0 1px var(--sep);
+}
+/* Already on the Plan. Reads as a state rather than an action, which is what it
+   is — the same fill .chip.on takes, for the same reason. */
+.btn.placeActionOutline.on { background: var(--fill3); color: var(--label2); box-shadow: none; }
+
+/* The Place's own screen, read top to bottom: the live word, the name, where
+   and how far, then the actions.
+
+   The 30px left inset on the head and the body is the back chevron's — see
+   .navHead.placeNav above, which overlays a 36px target on this corner rather
+   than paying a whole nav bar for it. Everything on this screen shares the
+   inset so the column has one left edge.
+
+   No card. The twin wraps this in --bg2 with --shadow2 because in the twin it
+   is one block at the foot of a scroller that also holds the browse list, and
+   it has to separate itself from what is above it. Here it is a pushed view
+   that owns the whole sheet: a box drawn around the only thing on screen is a
+   border for its own sake, and it would have to be indented past the chevron
+   to boot. */
 .placeDetail { padding: 0 0 2px; }
 .placeDetailHead {
-  display: flex; align-items: center; gap: 8px;
+  display: flex; flex-direction: column; align-items: flex-start;
   padding: 0 0 2px 30px;
 }
-.placeDetailHead .dot {
-  width: 8px; height: 8px; border-radius: 50%; flex: none;
+/* The two top-line answers share a row above the name. The verdict keeps its
+   pill — it is the same mark the list row and the map wear, and one filled
+   capsule at the head of a screen is a headline rather than a warning strip. */
+.placeDetailTop {
+  display: flex; align-items: center; gap: 8px; min-height: 22px; margin-bottom: 2px;
 }
-.placeDetailText { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 0; }
+/* Footnote weight, but the loudest thing on the screen by colour: it is read
+   before the name, and it is the one fact that can make the rest pointless. */
+.placeEyebrow {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--display); font-size: 11px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; line-height: 14px;
+  color: var(--label2);
+}
+.placeEyebrow i { font-style: normal; font-size: 10px; }
+.placeEyebrow.ok { color: var(--green); }
+.placeEyebrow.warn { color: var(--orange); }
+.placeEyebrow.bad { color: var(--signal); }
+/* Held to the type's own width here rather than the list's 74px column: this
+   is one pill on a headline, not a column somebody reads down. */
+.placeDetailTop .verdict { min-width: 0; }
 .placeDetailName {
-  font-size: 17px; font-weight: 700; letter-spacing: -.36px; line-height: 1.15;
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  font-size: 21px; font-weight: 700; letter-spacing: -.4px; line-height: 26px;
+}
+.placeDetailName .dot {
+  width: 9px; height: 9px; border-radius: 50%; flex: none;
 }
 .placeDetailLine {
   display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--label2); letter-spacing: -.08px; line-height: 1.25;
+  font-size: 13px; color: var(--label2); letter-spacing: -.08px; line-height: 18px;
 }
 .placeDetailLine b { font-weight: 600; color: var(--label); }
-.placeDetailHead .placeActions { margin: 0; }
-.placeDetail .poiDetail { padding: 2px 0 0 30px; }
+.placeDetail .poiDetail { padding: 10px 0 0 30px; }
 .placeDetail .poiNote { font-size: 13px; margin: 0 0 6px; line-height: 18px; }
+
+/* ---- who can get on ----
+   Three columns, one line each: the person, the answer, the rule. The answer
+   is the column somebody scans, so it has a fixed width and cannot be pushed
+   about by a long name or a long reason. Ruled between rows the way a grouped
+   list is, because that is what this is — a table of people. */
+.eligRows {
+  list-style: none; margin: 0 0 10px; padding: 8px 0 0;
+  border-top: .5px solid var(--sep);
+}
+.eligRow {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 6px 0; border-bottom: .5px solid var(--sep);
+}
+.eligRow:last-child { border-bottom: none; }
+.eligWho {
+  flex: none; width: 62px; font-size: 14px; font-weight: 600; letter-spacing: -.16px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The verdict's ink without the verdict's pill: five of these stacked in a
+   column is five filled capsules, which reads as five warnings rather than one
+   answer per person. The colours are .verdict's, so the word means the same
+   thing here as it does on the row in the list. */
+.eligVerdict {
+  flex: none; width: 82px;
+  font-family: var(--display); font-size: 12.5px; font-weight: 700;
+  letter-spacing: -.08px; color: var(--label2);
+}
+.eligVerdict.ok { color: var(--green); }
+.eligVerdict.warn { color: var(--orange); }
+.eligVerdict.bad { color: var(--barred); }
+.eligVerdict.unknown { color: var(--gray); }
+.eligWhy {
+  flex: 1; min-width: 0; font-size: 12.5px; line-height: 17px;
+  color: var(--label3); letter-spacing: -.08px;
+}
+/* Was a paragraph of its own; now the third column of the row above it. The
+   class survives the move because test/app/functional.mjs reads the reason
+   through it, and the words it reads have not changed. */
+.eligibilityReason { display: block; }
 /* The parked-car pin. Same drop-in as the meet-up's, so the two read as the
    same kind of thing — a spot somebody chose — in two different colours. */
 .carPin { animation: popIn var(--t2) var(--easeOut) both; }
@@ -2515,16 +2623,121 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
   box-shadow: inset 0 0 0 1px var(--sep);
 }
 
-/* While the capsule is up, the map's own controls step aside — the same thing
-   .mapFurniture already does when the sheet crowds it. A full-width card on the
-   sheet's edge sits underneath the FAB column and the scale bar, and a Rally
-   button drawn on top of "Leave a Mark" is a mis-tap waiting to happen. One tap
-   on the map, or the ✕, brings them straight back. */
-.app[data-spot] .fabs { opacity: 0; pointer-events: none; }
-.app[data-spot] .mapFurniture { display: none; }
+/* ---- the selection capsule ----
+   The spot capsule's sibling: what a tap on a *Place* puts over the map. Same
+   edge, same lens, same z-index, same `--sheetFoot` ride, because they are the
+   same kind of object and only ever one of them is on screen — selecting a
+   Place clears the spot in page.js. See components/SelectionCapsule.jsx.
+
+   A pill rather than a card because there is one line to say: the spot capsule
+   has to introduce a patch of ground nobody has a name for, and this one is
+   naming something the visitor just pointed at. --rCapsule follows D1's rule —
+   small, inline, one row — while the actions inside it keep their own shapes. */
+.selCapsule {
+  position: absolute; left: 12px; right: 12px; z-index: 40;
+  bottom: calc(var(--sheetFoot) + 12px);
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 10px;
+  border-radius: var(--rCapsule);
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  animation: sheetUp var(--t3) var(--ease) both;
+  transition: bottom var(--t3) var(--ease);
+}
+/* The whole line is the way in to the Place view, so the whole line is the
+   button — not just the name. Baseline-aligned rather than centred: the name,
+   the range and the status pill are three sizes of type saying one thing. */
+.selBody {
+  flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 7px;
+  padding: 6px 2px; text-align: left;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.selBody:active { opacity: .55; }
+.selDot {
+  width: 11px; height: 11px; border-radius: 50%; flex: none; align-self: center;
+  /* The same halo the map's own markers wear, so the dot in the capsule and
+     the pin it came from are recognisably one mark. */
+  box-shadow: 0 0 0 2.5px var(--labelStroke);
+}
+.selName {
+  min-width: 0; font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+  color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The range gives way before the name does: a truncated distance is a wrong
+   number, but it is the name that tells you whether this is the right pin. */
+.selDist {
+  flex: none; font-style: normal; font-size: 13px; font-weight: 600;
+  letter-spacing: -.08px; color: var(--label2); font-variant-numeric: tabular-nums;
+}
+/* Everything that is not the name is held to its own width, and everything
+   that is not the name is trimmed: the name is the only part of this pill that
+   can shrink, so each pixel the badge and the button give back is a pixel of
+   the Place's name. 10px on the badge and 13 on the button is where "Adventure
+   Express" stops being "Adventu…" on a 390px phone. */
+.selCapsule .liveBadge {
+  flex: none; align-self: center;
+  font-size: 10px; letter-spacing: .06em; padding: 3px 6px;
+}
+.btn.selWalk { flex: none; padding: 8px 12px; font-size: 13px; font-weight: 700; }
+.selClose {
+  flex: none; display: grid; place-items: center;
+  min-width: 32px; min-height: 32px; margin-right: -4px;
+  color: var(--label3);
+  transition: opacity var(--t1) var(--easeOut);
+}
+.selClose:active { opacity: .5; }
+
+/* While either capsule is up, the map's own controls step aside — the same
+   thing .mapFurniture already does when the sheet crowds it. A full-width card
+   on the sheet's edge sits underneath the FAB column and the scale bar, and a
+   Rally button drawn on top of "Leave a Mark" is a mis-tap waiting to happen.
+   One tap on the map, or the ✕, brings them straight back. Two attributes
+   rather than one because the two capsules are two different states of the
+   screen, but they yield the same chrome for the same reason. */
+.app[data-spot] .fabs,
+.app[data-sel] .fabs { opacity: 0; pointer-events: none; }
+.app[data-spot] .mapFurniture,
+.app[data-sel] .mapFurniture { display: none; }
+
+/* ---- the locate card ----
+   What the resting sheet says on a phone with no fix. It replaced the glance
+   rail's `.glanceEmpty`, which said the same thing in a sentence with nothing
+   to press; this one carries the control, because "turn on location" is an
+   instruction the app can follow itself.
+
+   Opaque --bg2 with a hairline rather than the glass every other floating card
+   takes: this one is inside the sheet, on the sheet's own surface, and a lens
+   over a lens reads as a smudge. --shadow1 lifts it off the sheet by the same
+   amount .glanceCard used to be lifted off it.
+
+   Its height is SHEET_LOCATE_PX (80) in lib/sheet.js — 72 of card, measured on
+   a 390px phone where the hint wraps to a second line, plus the 8 that
+   separates it from the search field above. Change either number and change
+   both, and re-measure rather than guessing: it is the padding plus whatever
+   the hint wraps to, not the button. */
+.locateCard {
+  flex: none; display: flex; align-items: center; gap: 12px;
+  margin: 0 16px 8px; padding: 10px 12px;
+  border-radius: var(--r4);
+  background: var(--bg2); box-shadow: var(--lensEdge), var(--shadow1);
+  animation: fadeIn var(--t2) var(--easeOut) both;
+}
+.locateText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.locateText b { font-size: 15px; font-weight: 600; letter-spacing: -.24px; line-height: 18px; }
+.locateText span {
+  font-size: 13px; letter-spacing: -.08px; line-height: 17px; color: var(--label2);
+}
+/* The button never gives way — a two-line hint is allowed to wrap, the way out
+   is not allowed to shrink under the thumb. */
+.btn.locateGo { flex: none; }
 
 /* ============================================================
    glance rail — the live dashboard in the sheet's peek state
+   ---- NOT MOUNTED. Explore is search → context → list; components/GlanceRail
+   .jsx is still on disk but nothing renders it, so everything below this line
+   is dead paint. It stays with the component, and goes when the component
+   goes, so that removing the rail is one revert rather than two.
    ============================================================ */
 /* The rail's height is the collapsed sheet's height, and the collapsed sheet's
    height is map you cannot see. So the card carries what answers "which way,
@@ -2903,6 +3116,13 @@ p.wxWhy.warn { color: var(--orange); }
 /* ---- chips with a colour key ---- */
 .chip.withDot { display: inline-flex; align-items: center; gap: 7px; }
 .chip.withDot i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
+/* "All" is the one chip whose dot stands for no category, so it takes the
+   app's "nothing in particular to say" ink instead of a colour. It cannot be
+   an inline style like the category dots: those are saturated enough to hold
+   up against .chip.on's ink fill, and --label3 on --label is one grey on
+   another. Selected, it flips to the fill's own foreground. */
+.chip.withDot i.dotAny { background: var(--label3); }
+.chip.on.withDot i.dotAny { background: var(--bg2); opacity: .62; }
 
 /* ---- guest-profile chips: the tap target and the remove target sit side by
    side rather than nested, since a button cannot contain a button ---- */
@@ -3366,14 +3586,28 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   fill: none; stroke: var(--label3); stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .9;
 }
 
+/* One row across the foot of the map, not one column in its corner: the key on
+   the left and the scale on the right, both sitting on the sheet's top edge.
+   Stacked, the scale bar rode 44px above the sheet on a strip of park that is
+   the last thing the map has left to show, and the two most-glanced-at numbers
+   on the screen were in the same 300px column. Opposite ends is also how the
+   twin draws it, and it is what lets the key stay open with the scale still
+   readable — the key's body grows upward from the toggle, so it never crosses
+   the row they share. */
 .mapFurniture {
-  position: absolute; left: 12px; bottom: calc(var(--sheetFoot) + 30px); z-index: 6;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  pointer-events: none; max-width: min(300px, calc(100% - 24px));
+  /* Stops 68px short of the right edge, not 12: the FAB column stands there,
+     48px wide at right:12, and it and the scale bar share this band above the
+     sheet. The twin can run its scale to the edge because its two round
+     buttons are up in the top corner; ours are down here, and a scale bar
+     sliding under "where I parked" is a readout you cannot read. */
+  position: absolute; left: 12px; right: 68px; bottom: calc(var(--sheetFoot) + 30px);
+  z-index: 6;
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
+  pointer-events: none;
   transition: bottom var(--t3) var(--ease), opacity var(--t2) var(--easeOut),
               transform var(--t3) var(--ease);
 }
-.mapMeta { display: flex; align-items: center; gap: 8px; }
+.mapMeta { flex: none; display: flex; align-items: center; gap: 8px; }
 .app[data-sheet='half'] .mapFurniture,
 .app[data-sheet='full'] .mapFurniture,
 .app[data-crowded] .mapFurniture {
@@ -3447,7 +3681,13 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   background: var(--label4);
 }
 
-.mapKey { pointer-events: auto; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+/* In the bottom row the key is only as wide as its toggle — the open body is
+   taken out of flow below, so a 268px list cannot squeeze the scale bar that
+   shares the row with the button. */
+.mapKey {
+  position: relative; flex: none; pointer-events: auto;
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start;
+}
 .mapKeyToggle {
   display: flex; align-items: center; gap: 7px; min-height: 44px;
   padding: 6px 14px 6px 10px; border-radius: var(--rCapsule);
@@ -3460,19 +3700,15 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 .mapKeyToggle:active { transform: scale(.93); background: var(--glassTintDeep); }
 .mapKey.open .mapKeyToggle { background: var(--blue); color: var(--onTint); }
-/* Furniture is bottom-anchored, so a tall open key grows upward. Keep the
-   toggle where "Key" was (beside the scale) and let the list climb above it —
-   otherwise "Hide key" lands on the weather chip. */
-.mapKey.open {
-  flex-direction: column-reverse;
-  overflow: hidden;
-  max-height: calc(100dvh - var(--sheetFoot) - var(--top) - 118px);
-}
-.mapKey.open ~ .mapMeta {
-  opacity: 0; transform: translateY(6px); pointer-events: none;
-}
+/* Furniture is bottom-anchored, so the open key grows upward — out of flow,
+   from the toggle's top edge. Keep the toggle where "Key" was (on the bottom
+   row, opposite the scale) and let the list climb above it: otherwise "Hide
+   key" lands on the weather chip, and the list's width would fight the scale
+   bar for the row they share. */
 .mapKeyBody {
-  width: 268px; padding: 12px 12px 10px; border-radius: var(--r4);
+  position: absolute; bottom: calc(100% + 8px); left: 0;
+  width: 268px; max-width: calc(100vw - 24px);
+  padding: 12px 12px 10px; border-radius: var(--r4);
   background: var(--glassTintDeep); border: none;
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
   box-shadow: var(--lensEdge), var(--lensDrop);
@@ -3490,8 +3726,12 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 .mapKeyHead { margin-top: 12px; padding-top: 10px; border-top: .5px solid var(--sep); }
 .mapKeyList { list-style: none; margin: 0; padding: 0; }
+/* Symbol, then what it is and what it means, then how many. The count takes a
+   column of its own and spans both rows so it sits against the row's right
+   edge whatever the hint does — a number tucked after a wrapping sentence is a
+   number nobody can compare with the one below it. */
 .mapKeyRow {
-  display: grid; grid-template-columns: 26px 1fr; grid-template-rows: auto auto;
+  display: grid; grid-template-columns: 26px 1fr auto; grid-template-rows: auto auto;
   align-items: center; gap: 0 10px; width: 100%; text-align: left;
   min-height: 40px; padding: 6px 8px; border-radius: var(--r2); opacity: .42;
   transition: opacity var(--t2) var(--easeOut), background var(--t1) var(--easeOut);
@@ -3499,6 +3739,10 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .mapKeyRow svg { grid-row: 1 / 3; }
 .mapKeyRow b { font-size: 15px; font-weight: 400; letter-spacing: -.24px; }
 .mapKeyRow i { font-style: normal; font-size: 13px; color: var(--label2); letter-spacing: -.08px; }
+.mapKeyCount {
+  grid-column: 3; grid-row: 1 / 3; justify-self: end;
+  font-size: 13px; color: var(--label3); font-variant-numeric: tabular-nums;
+}
 .mapKeyRow.on { opacity: 1; background: var(--fill3); }
 .mapKeyRow.static { opacity: 1; }
 

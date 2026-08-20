@@ -9,8 +9,8 @@ import { DISPLAY_SPIKE_VENUE, mapLibreDisplayEnabled } from '@/lib/mapLibreConfi
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
-import GlanceRail from '@/components/GlanceRail';
 import SpotCapsule from '@/components/SpotCapsule';
+import SelectionCapsule from '@/components/SelectionCapsule';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
@@ -56,7 +56,7 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { syncVenueBundle } from '@/lib/venue/download';
-import { findPlace, identityOf } from '@/lib/venue/ids';
+import { findPlace, identityOf, placeNav } from '@/lib/venue/ids';
 import {
   capture,
   locationReadyToJoin,
@@ -112,6 +112,8 @@ import {
   resolvePalette,
 } from '@/lib/mapVisual';
 import { spotAt } from '@/lib/spot';
+import { liveFor, membersAt } from '@/lib/live';
+import { paletteFor } from '@/lib/theme';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
 import { flushThanksQueue } from '@/lib/adventure/thanks';
@@ -425,7 +427,7 @@ function ParkApp({ isSignedIn }) {
   const [filter, setFilter] = useState('all');
   const [onlyRideable, setOnlyRideable] = useState(false);
   // The sheet's height in pixels, and the only thing that decides either how it
-  // looks or what is on it. Starts at the glance stop; the effect below hands it
+  // looks or what is on it. Starts at the resting stop; the effect below hands it
   // whatever the visitor last left it at.
   const [sheetPx, setSheetPx] = useState(SHEET_PEEK_PX);
   const [follow, setFollow] = useState(true);
@@ -1647,30 +1649,17 @@ function ParkApp({ isSignedIn }) {
     });
   }, [venue?.id]);
 
-  const shedCard = useCallback(
-    (what) => {
-      if (what?.kind === 'selected') {
-        setSelected(null);
-        return;
-      }
-      if (what?.kind === 'car') {
-        clearCar();
-        showToast('Forgotten where you parked');
-        return;
-      }
-      if (what?.kind !== 'category' || !venue?.id) return;
-      setHiddenCards((prev) => {
-        const here = prev[venue.id] || [];
-        if (here.includes(what.category)) return prev;
-        const next = { ...prev, [venue.id]: [...here, what.category] };
-        localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
-        return next;
-      });
-      showToast('Hidden. Put it back under Me → What the panel shows.');
-    },
-    [venue?.id, showToast, clearCar],
-  );
+  /* `shedCard` stood here: the ✕ on a glance card, which wrote the category
+     into `hiddenCards`. The rail is no longer mounted on Explore, so nothing
+     can put a card into that list any more — see the note on `unhideCard`. */
 
+  /* Settings → Phone → "What the panel shows" reads `hiddenCards` and calls
+     this to put one back. With the rail unmounted the list can only ever
+     shrink: it still holds whatever a phone hid before this change, so the way
+     to undo that has to stay, but nothing new will ever join it. Left standing
+     rather than stripped so that a phone carrying hidden cards can still clear
+     them, and so removing the surface is a decision somebody makes on purpose
+     rather than a side effect of removing the rail. */
   const unhideCard = useCallback(
     (category) => {
       if (!venue?.id) return;
@@ -1924,7 +1913,7 @@ function ParkApp({ isSignedIn }) {
   };
 
   /* ---------- derived ---------- */
-  /* Map, list and glance share one Eligibility view. Callers pass Party or
+  /* Map, list and Place detail share one Eligibility view. Callers pass Party or
      solo facts only — Subgroup set selection and With adult live in the
      module. Empty people → silent cells, no marks. */
   const eligibilityFacts = useMemo(() => {
@@ -2627,7 +2616,12 @@ function ParkApp({ isSignedIn }) {
 
   const tabs = useMemo(() => {
     const out = [
-      { id: 'explore', label: 'Explore', icon: 'safari' },
+      /* The glyph is the search field's, not a compass: this tab opens on a
+         search field and the twin draws the same magnifier in both places. A
+         compass rose beside the word "Explore" promised a wayfinding screen
+         and delivered a text input. The id is untouched — data-tab is what the
+         browser suite navigates by. */
+      { id: 'explore', label: 'Explore', icon: 'magnifyingglass' },
       {
         id: 'party',
         label: 'Party',
@@ -2641,7 +2635,12 @@ function ParkApp({ isSignedIn }) {
       },
       {
         id: 'quests',
-        label: 'Side Quests',
+        /* "Quests" on the bar, "Side Quests" everywhere else. A tab label is
+           read at 10px in a five-column strip: the long form wrapped, and the
+           word that survived the wrap was the one shared with every other
+           quest in the app. ROOT_TITLES still says Side Quests, which is where
+           the full name belongs — on the screen it names. */
+        label: 'Quests',
         icon: 'flag.fill',
       },
     ];
@@ -2675,7 +2674,7 @@ function ParkApp({ isSignedIn }) {
   // While a route is running the sheet is out of the way unless it is asked
   // for: the map and the two HUD strips are the whole interface, and the sheet
   // comes back over them only when you open the steps. "Asked for" is anything
-  // above the glance stop, which is what a visitor who has pulled the sheet up
+  // above the resting stop, which is what a visitor who has pulled the sheet up
   // during a walk has done.
   const stowed = previewing || (walking && sheetPx <= stops.peek);
 
@@ -2685,10 +2684,14 @@ function ParkApp({ isSignedIn }) {
      directly during a drag so the map chrome rides the finger without a full
      page re-render every pointermove. */
   const form = sheetForm(sheetPx, stops);
-  const plan = sheetPlan(sheetPx);
+  /* The locate card's rung is only charged on a phone that has no fix, so the
+     budget has to be told which phone this is. While the gate is up the answer
+     is "one that is already being asked", and a second card underneath it
+     saying the same thing would be the app talking over itself. */
+  const plan = sheetPlan(sheetPx, { located: Boolean(position) || gateOpen });
 
   // `atMap` marks the screen that is read over the top of the map rather than
-  // instead of it — the one the glance stop is designed around.
+  // instead of it — the one the resting stop is designed around.
   const sheetClass = `sheet ${form} ${tab === 'explore' ? 'atMap' : ''} ${
     stowed ? 'stowed' : ''
   } ${drag.dragging ? 'dragging' : ''}`;
@@ -2705,6 +2708,22 @@ function ParkApp({ isSignedIn }) {
      same question in more detail — in every one of those cases the spot is
      already cleared, and this is the guard that says so out loud. */
   const spotShown = Boolean(spot) && !walking && !previewing && !selected;
+
+  /* The selection's own capsule, on the same edge and under the same rules.
+     It stands down once the Place view is open, because that view is the same
+     answer with everything in it — a pill repeating the name of the card
+     directly beneath it is chrome describing chrome. */
+  const selShown =
+    Boolean(selected) && !walking && !previewing && !(tab === 'explore' && view === 'place');
+  const selStatus = useMemo(() => {
+    if (!selShown || !selected) return null;
+    if (!isRideable(selected) && selected.c !== 'show') return null;
+    if (!weatherFeed.weather && !partyRides && !position) return null;
+    return liveFor(selected, partyRides?.[selected.id] ?? null, weatherFeed.weather, clock, {
+      metres: position ? distance(position.lat, position.lng, selected.lat, selected.lng) : null,
+      membersNear: membersAt(selected, others),
+    });
+  }, [selShown, selected, weatherFeed.weather, partyRides, position, others, clock]);
 
   return (
     // --sheetH is the sheet's live height, so the FABs, the toast, the zoom pad
@@ -2723,6 +2742,8 @@ function ParkApp({ isSignedIn }) {
          column and the scale bar already live. They step aside for it — see
          .app[data-spot] in globals.css. */
       data-spot={spotShown ? '1' : undefined}
+      /* And the same for the selection's pill, which rides the same edge. */
+      data-sel={selShown ? '1' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       {introOverlay === 'hold' && (
@@ -2918,6 +2939,29 @@ function ParkApp({ isSignedIn }) {
           onClose={() => setSpot(null)}
           onQuest={questAtSpot}
           onMark={markAtSpot}
+        />
+      )}
+
+      {/* The Place a pin or a list row put on the map, said over the map. Same
+          edge, same lens and same z-index as the spot capsule above — the two
+          never coexist, because selecting a Place clears the spot. */}
+      {selShown && (
+        <SelectionCapsule
+          poi={selected}
+          /* The one rule the list, the map and the Place head already share:
+             a ruled-out ride is red rather than its category colour dimmed. */
+          dot={
+            eligibilityView.at(identityOf(selected))?.blocks
+              ? paletteFor(theme).barred
+              : paletteFor(theme).categories[selected.c]
+          }
+          status={selStatus}
+          metres={
+            position ? distance(position.lat, position.lng, selected.lat, selected.lng) : null
+          }
+          onOpen={() => push('place', 'explore')}
+          onNavigate={(p) => startNav(placeNav(p))}
+          onClose={() => setSelected(null)}
         />
       )}
 
@@ -3144,28 +3188,25 @@ function ParkApp({ isSignedIn }) {
                   <div className="brandStatus">{headerLine()}</div>
                 </div>
               )}
-              {(plan.rail || plan.digest) && (
-                <GlanceRail
-                  me={position}
-                  members={others}
-                  meet={meet}
-                  car={car}
-                  selected={selected}
-                  heading={heading}
-                  theme={theme}
-                  onFocus={focusOn}
-                  onNavigate={startNav}
-                  navKey={navKeyOf(navTarget)}
-                  navMetres={progress?.remaining ?? route?.metres ?? null}
-                  onOpenParty={() => selectTab('party')}
-                  onDismiss={shedCard}
-                  hidden={hiddenHere}
-                  compact={plan.digest}
-                  weather={weatherFeed.weather}
-                  rides={partyRides}
-                  now={clock}
-                  eligibility={eligibilityView}
-                />
+              {/* The one card left on the resting sheet, and only on a phone
+                  that cannot answer anything else: without a fix the list has
+                  no walking times, the venue line has no district and the Party
+                  has no ranges, so the way out of that is the screen. It says
+                  what is wrong and offers the one control that fixes it. */}
+              {plan.locate && (
+                <div className="locateCard">
+                  <span className="locateText">
+                    <b>Location off</b>
+                    <span>Turn it on for walking times and your Party.</span>
+                  </span>
+                  <button
+                    type="button"
+                    className="btn small rect primary locateGo"
+                    onClick={() => setGateOpen(true)}
+                  >
+                    Turn on
+                  </button>
+                </div>
               )}
               {/* Where the list would be, when the list will not fit: it is not
                   merely scrolled off, it is not rendered, which is the right
@@ -3262,6 +3303,10 @@ function ParkApp({ isSignedIn }) {
                 onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
                 onReport={party?.active ? reportRide : null}
                 onAddToPlan={addToPlan}
+                inPlan={
+                  Boolean(selected) &&
+                  planItems.some((s) => s.placeId === (selected.i || selected.id))
+                }
                 overlayCompletions={selected ? overlayCompletionsFor(selected) : []}
                 session={authSession}
               />

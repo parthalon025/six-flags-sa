@@ -48,8 +48,7 @@ const CHROME_SELECTORS = [
   '.searchRow',
   '.grab',
   '.brand',
-  '.glanceRail',
-  '.glanceDigest',
+  '.locateCard',
 ];
 
 function area(r) {
@@ -188,7 +187,7 @@ function analyze(boxes) {
           other.kind === '.searchRow' ||
           other.kind === '.brand' ||
           other.kind === '.grab' ||
-          other.kind === '.glanceRail' ||
+          other.kind === '.locateCard' ||
           other.kind === '.mapKeyToggle' ||
           other.kind === '.scaleBar' ||
           other.kind === '.tabBar'

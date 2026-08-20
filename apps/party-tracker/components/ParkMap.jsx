@@ -459,7 +459,16 @@ function ParkMap({
   const venue = useVenueSelector((s) => s.venue);
   // What this venue has any of at all, so the key can offer switches for those
   // and only those. Cheap: it is one pass over a list of a few hundred.
-  const presentCategories = useMemo(() => new Set((pois || []).map((p) => p.c)), [pois]);
+  /* How many of each category this venue has. The key already only draws rows
+     for categories the venue has any of, so the count is the same pass with
+     the number kept instead of thrown away — and `presentCategories` is now
+     derived from it rather than computed twice. */
+  const categoryCounts = useMemo(() => {
+    const out = new Map();
+    (pois || []).forEach((p) => out.set(p.c, (out.get(p.c) || 0) + 1));
+    return out;
+  }, [pois]);
+  const presentCategories = useMemo(() => new Set(categoryCounts.keys()), [categoryCounts]);
   const wrapRef = useRef(null);
   const [size, setSize] = useState({ w: 360, h: 640 });
   // view is centred on a mercator metre coordinate at `scale` px per metre
@@ -2114,6 +2123,7 @@ function ParkMap({
               }),
           )}
           presentCategories={presentCategories}
+          categoryCounts={categoryCounts}
           hidden={mapKeyHidden}
         />
         <div className="mapMeta">

@@ -116,7 +116,7 @@ export default function PlaceList({
     return out;
   }, [POIS, venue]);
 
-  const list = useMemo(() => {
+  const matches = useMemo(() => {
     const q = (query || '').trim().toLowerCase();
     let out = POIS.filter((p) => {
       if (filter !== 'all' && p.c !== filter) return false;
@@ -150,9 +150,16 @@ export default function PlaceList({
        editorial cut. It has to sit above the largest venue's whole place list
        or the tail of the park quietly stops existing — and a category filter
        that removes fewer places than the cap hides then looks like it did
-       nothing at all. */
-    return out.slice(0, 400);
+       nothing at all.
+
+       `total` is what matched before the cap, because the count in the header
+       is a statement about the park rather than about the markup: a venue with
+       nine hundred pitches has nine hundred, and printing the cap's number
+       there would be the rendering budget talking. */
+    return { rows: out.slice(0, 400), total: out.length };
   }, [POIS, query, queryCats, campFacets, filter, onlyRideable, onlyRunning, statuses, eligibility, me]);
+
+  const list = matches.rows;
 
   const useVirtual = list.length > 50;
   const visibleStart = Math.floor(scrollTop / ROW_H);
@@ -283,12 +290,33 @@ export default function PlaceList({
 
   return (
     <div>
+      {/* What the rows below are, and how many of them there are. The count is
+          the answer to the question a filter chip raises — "did that do
+          anything?" — and it is the only way to tell a category that removed
+          nothing from one that removed everything.
+
+          A section header, not the twin's 11.5px uppercase eyebrow: .label is
+          deliberately larger and darker than that, and the note on it records
+          the lighter treatment already having failed on outdoor glare. This is
+          an app read in direct sun. */}
+      <div className="label">
+        {filter === 'all' && !(query || '').trim() ? 'Every place' : 'Matches'}
+        <span className="labelRight">
+          {matches.total} place{matches.total === 1 ? '' : 's'}
+        </span>
+      </div>
+
       <div className="chips">
+        {/* "All" wears a dot like every other chip so the row reads as one
+            family rather than a button followed by a legend. --label3 is the
+            "no colour in particular" ink the app already uses for a value it
+            has nothing to say about. */}
         <button
           type="button"
-          className={`chip ${filter === 'all' ? 'on' : ''}`}
+          className={`chip withDot ${filter === 'all' ? 'on' : ''}`}
           onClick={() => onFilter('all')}
         >
+          <i className="dotAny" />
           All
         </button>
         {/* Only the categories this venue has any of — a "Camping" chip that
