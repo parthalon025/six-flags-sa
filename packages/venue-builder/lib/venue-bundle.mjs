@@ -98,9 +98,11 @@ export function shippedDisplayFiles(displayDir) {
   }
 
   // Per-Skin stage outputs, from disk rather than a skin list: a new active
-  // Skin is new files, not new code.
+  // Skin is new files, not new code. Published world images (ADR-0016) land
+  // here via venues:publish-worlds without a manifest.json, so they are
+  // enumerated from disk too — the origin serves them, the bundle pins them.
   for (const f of readdirSync(displayDir)) {
-    if (f.endsWith('.visual.json') || f.endsWith('.style.json')) names.add(f);
+    if (f.endsWith('.visual.json') || f.endsWith('.style.json') || f.endsWith('.world.png')) names.add(f);
   }
 
   // Sidecar rule: a shipped binary's same-stem .json rides with it.

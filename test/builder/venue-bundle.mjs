@@ -155,6 +155,22 @@ await check('shippedDisplayFiles: no display dir means no display files, not a t
   return true;
 });
 
+await check('shippedDisplayFiles: published worlds without a manifest still ship, with sidecars', () => {
+  // venues:publish-worlds copies only <skin>.world.png + .world.json into the
+  // public display dir — no manifest.json. The origin serves those bytes, so
+  // the bundle must pin them (the kings-island E+F integration case).
+  const dir = mkdtempSync(path.join(tmpdir(), 'published-worlds-'));
+  writeFileSync(path.join(dir, 'watercolor-quest.world.png'), 'png-bytes');
+  writeFileSync(path.join(dir, 'watercolor-quest.world.json'), '{}');
+  writeFileSync(path.join(dir, 'layered-atlas.world.png'), 'png-bytes');
+  assert.deepEqual(shippedDisplayFiles(dir), [
+    'layered-atlas.world.png',
+    'watercolor-quest.world.json',
+    'watercolor-quest.world.png',
+  ]);
+  return true;
+});
+
 /* ------------------------------------------------------------ end to end -- */
 
 await check('writeBundleManifest: truth trio + display files, URL paths, verifying hashes', () => {
