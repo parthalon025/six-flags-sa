@@ -1472,8 +1472,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: var(--fill3);
   transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut);
 }
+/* Dark ink on the aqua, not white. White on --aqua measures 2.45:1 in both
+   palettes — under AA for label text, and these chips are how you steer the
+   whole of Settings and Plan. #0B1829 (the night --bg) clears 7.3:1 on the same
+   fill. Same correction the nav glyph tile carries, for the same reason. */
 .settingsTopic.on {
-  background: var(--aqua); color: var(--onAqua, #fff);
+  background: var(--aqua); color: var(--onAqua, #0B1829);
 }
 .settingsTopic:active { opacity: .72; }
 .planPanel .settingsTopics { margin-top: 0; }
