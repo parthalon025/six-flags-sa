@@ -237,8 +237,8 @@ export const SKINS = {
     },
     traits: { pixel: true },
   },
-  /* Reference-inspired map Skins — hexes ledgered in
-     packages/venue-builder/data/display/skins.json (harvested from PR #447). */
+  /* Reference-inspired map Skins — hexes ledgered in the builder's display
+     skins.json (harvested from PR #447); map-visual.test.mjs asserts parity. */
   'layered-atlas': {
     id: 'layered-atlas',
     label: 'Layered atlas',
