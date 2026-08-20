@@ -2616,7 +2616,12 @@ function ParkApp({ isSignedIn }) {
 
   const tabs = useMemo(() => {
     const out = [
-      { id: 'explore', label: 'Explore', icon: 'safari' },
+      /* The glyph is the search field's, not a compass: this tab opens on a
+         search field and the twin draws the same magnifier in both places. A
+         compass rose beside the word "Explore" promised a wayfinding screen
+         and delivered a text input. The id is untouched — data-tab is what the
+         browser suite navigates by. */
+      { id: 'explore', label: 'Explore', icon: 'magnifyingglass' },
       {
         id: 'party',
         label: 'Party',
@@ -2630,7 +2635,12 @@ function ParkApp({ isSignedIn }) {
       },
       {
         id: 'quests',
-        label: 'Side Quests',
+        /* "Quests" on the bar, "Side Quests" everywhere else. A tab label is
+           read at 10px in a five-column strip: the long form wrapped, and the
+           word that survived the wrap was the one shared with every other
+           quest in the app. ROOT_TITLES still says Side Quests, which is where
+           the full name belongs — on the screen it names. */
+        label: 'Quests',
         icon: 'flag.fill',
       },
     ];
