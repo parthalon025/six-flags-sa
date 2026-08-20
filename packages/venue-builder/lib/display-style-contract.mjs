@@ -646,6 +646,9 @@ export function certifyStyleContract({
     kit: kit.id,
     profile: profile.id,
     target,
+    // The signature is only reproducible at the resolution it sampled —
+    // drift watches must re-bake at this px, not their own default.
+    px,
     signature: sig,
     certified: checks.every((c) => c.pass),
     checks,

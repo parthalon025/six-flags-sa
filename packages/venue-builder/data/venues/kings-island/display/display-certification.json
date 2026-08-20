@@ -873,27 +873,33 @@
   "bakes": {
     "blueprint-survey": {
       "certified": true,
-      "signature": "17e5d45d"
+      "signature": "17e5d45d",
+      "px": 12
     },
     "island-brochure": {
       "certified": true,
-      "signature": "d938166b"
+      "signature": "d938166b",
+      "px": 12
     },
     "layered-atlas": {
       "certified": true,
-      "signature": "fd825d7c"
+      "signature": "fd825d7c",
+      "px": 12
     },
     "midnight-carnival": {
       "certified": true,
-      "signature": "a6f1200d"
+      "signature": "a6f1200d",
+      "px": 12
     },
     "rpg-overworld": {
       "certified": true,
-      "signature": "93f826f9"
+      "signature": "93f826f9",
+      "px": 12
     },
     "watercolor-quest": {
       "certified": true,
-      "signature": "cecd3db6"
+      "signature": "cecd3db6",
+      "px": 12
     }
   },
   "worlds": {

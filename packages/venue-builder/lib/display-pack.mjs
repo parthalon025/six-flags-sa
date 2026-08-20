@@ -645,7 +645,13 @@ export function runDisplayStage(id, opts = {}) {
     }));
     venueChecks.push(...foldBakeCerts(bakeCerts));
     bakes = Object.fromEntries(bakeCerts.map(({ kit, cert }) => [
-      kit, { certified: cert.certified, signature: cert.signature },
+      kit, {
+        certified: cert.certified,
+        signature: cert.signature,
+        // px rides the committed row so the bake-drift watch reproduces the
+        // signature at the resolution that made it, not its own default.
+        ...(cert.px ? { px: cert.px } : {}),
+      },
     ]));
 
     // The venue's primary bake is a meaningful choice, not directory order:
