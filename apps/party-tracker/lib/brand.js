@@ -25,10 +25,47 @@ export const BRAND = {
   promise: 'Explore a living map built by the community. Parkbound is your guide through every World.',
   shortDescription:
     'Choose a World, discover Places, and Rally your Party on a living map built for the day you are having.',
+  /*
+   * Three pitches, not one, because three screens ask three different
+   * questions. shortDescription is what the app is — it is also the OG and
+   * metadata description in app/layout.js, so it stays put. introPitch is the
+   * hero line under the wordmark on first open, where the reader has not
+   * agreed to anything yet and one image does more than a feature list.
+   * gatePitch is what the location gate promises in exchange for GPS, which is
+   * a narrower question and gets a narrower answer.
+   */
+  introPitch: 'A living map, drawn by the guests who walked it.',
+  gatePitch: 'Plan your trip, explore the World around you, and keep your Party together.',
   /** Public production host — invites, OG, and metadataBase use this. */
   canonicalHost: 'parkbound.kurat0r.ai',
   canonicalUrl: 'https://parkbound.kurat0r.ai',
 };
+
+/**
+ * The three things the intro claims, in the order it claims them.
+ *
+ * Data, not markup, because the intro is a scroll story: the numbering, the
+ * progress dashes in its footer and the "read enough" threshold all count the
+ * same list, and a fourth claim should be one entry here rather than four
+ * edits across a component.
+ */
+export const INTRO_CLAIMS = [
+  {
+    num: '01',
+    title: 'Know where everyone is',
+    copy: 'Explore together. Help other guests, unlock more.',
+  },
+  {
+    num: '02',
+    title: 'Only see what they can ride',
+    copy: 'Set a height once. The park filters itself.',
+  },
+  {
+    num: '03',
+    title: 'The day you look back on',
+    copy: 'Your trail, your finds, your Title.',
+  },
+];
 
 /** Where each brand visual belongs — keep call sites honest. */
 export const BRAND_ASSETS = {

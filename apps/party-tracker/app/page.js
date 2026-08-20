@@ -3700,6 +3700,9 @@ function ParkApp({ isSignedIn }) {
       {showIntroSplash && !showAuthGate && (
         <IntroSplash
           version={appUpdate.version}
+          /* Normally null here — first run is before any party exists — so the
+             intro's code panel stays off rather than inventing one. */
+          partyCode={code}
           onContinue={() => setLogoSplashDismissed(true)}
         />
       )}
@@ -3748,6 +3751,10 @@ function ParkApp({ isSignedIn }) {
             (introSeen === false && geo.status === 'idle' && !parkChoice)
           }
           nearestIntent={nearestIntent}
+          /* The World pick's "Location on" badge is a claim about the phone, so
+             it reads the fix rather than the fact that we asked: 'manual' is a
+             pin someone dropped by hand and 'denied' never got one. */
+          locationOn={geo.status === 'live'}
           parkChoice={
             showWelcomeGate
               ? null
