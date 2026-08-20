@@ -88,6 +88,20 @@ the reason — do not relitigate casually).
 | Gemini (AI Studio free tier) | concept/reference art for design briefs | adopt: first design request that wants visual references; outputs are `original`-class, eye-passed |
 | Local diffusion (SD/ComfyUI) | — | rejected: no GPU in the build environment; revisit only if hardware appears |
 
+## Imagery & ground truth (ADR-0020)
+
+| Tool | Buys | Status |
+|---|---|---|
+| NAIP (USDA, AWS open data) | public-domain ~0.6–1 m US aerial — the derivation-legal ground truth source | adopt: Train H grounding harvest (decided) |
+| USGS 3DEP | elevation truth | **in** (terrain solver) |
+| Sentinel-2 | 10 m multispectral — vegetation/water classes at venue scale | watch — NAIP covers the US catalog finer |
+| Mapillary / KartaView | derivation-licensed street-level; signage, materials at eye level | adopt: Train I evidence lane |
+| deterministic CV lane (seeded clustering, indices, edge alignment) | certifiable extraction — may write truth above a confidence bar | adopt: Train I; tool picks per the [imagery CV research](./research/2026-08-20-imagery-cv-research.md) |
+| pinned open recognition models | tree/object/segment extraction at scale | adopt-on-trigger per the research note's rows (license-gated; AGPL rejected) |
+| agent vision (Claude/Gemini, brief seam #471/#421) | semantic reads as evidence claims — never direct truth | adopt: Train I (steward-gated, #274) |
+| Google Maps API (owner key, back office) | geocoding/Places corroboration for venue bootstrap — place IDs only, free SKU caps, key in secrets | adopt: Train I evidence lane (ADR-0020 §7) |
+| Google / Bing / Esri basemap derivation | — | rejected (ADR-0020) — viewable is not derivable; an API key changes what we may call, not what we may keep |
+
 ## Verification & inspection
 
 | Tool | Buys | Status |

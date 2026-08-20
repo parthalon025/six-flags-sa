@@ -150,6 +150,10 @@ _Avoid_: builder (ambiguous in product talk); map generator
 The engine that produces everything a guest sees and earns on the map — **Display packs**, baked **Skin** worlds, materials, prize art — conditioned on the **Map factory**'s truth. Request-driven and output-agnostic: any venue × any design visual can be requested; a design prompt becomes a **Skin template** or kit, compiled and certified. Restyles, never repositions; never writes truth.
 _Avoid_: display factory (legacy header name); art pipeline
 
+**Grounding harvest**:
+A **World**'s real material and color relationships — which roofs are the blue ones, asphalt vs gravel, lawn vs plaza — read from openly licensed imagery into that World's reference profile. Every **Skin** re-expresses those relationships inside its own declared palette: design owns treatment, the venue owns relationships. Not truth (see **Map factory** — imagery evidence is a separate lane) and never a color override. Detail: ADR-0020.
+_Avoid_: satellite skin; real-color mode; texture pack
+
 ### Cosmetics and map look
 
 **Skin**:
