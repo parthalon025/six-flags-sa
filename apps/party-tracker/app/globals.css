@@ -921,7 +921,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sheet.shut .sheetStage,
 .sheet.shut .searchRow,
 .sheet.shut .brand,
-.sheet.shut .glanceRail,
+.sheet.shut .locateCard,
 .sheet.shut .moreHint,
 .sheet.shut .sheetHead,
 .sheet.shut .navHead { display: none; }
@@ -2286,8 +2286,42 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
 .app[data-spot] .fabs { opacity: 0; pointer-events: none; }
 .app[data-spot] .mapFurniture { display: none; }
 
+/* ---- the locate card ----
+   What the resting sheet says on a phone with no fix. It replaced the glance
+   rail's `.glanceEmpty`, which said the same thing in a sentence with nothing
+   to press; this one carries the control, because "turn on location" is an
+   instruction the app can follow itself.
+
+   Opaque --bg2 with a hairline rather than the glass every other floating card
+   takes: this one is inside the sheet, on the sheet's own surface, and a lens
+   over a lens reads as a smudge. --shadow1 lifts it off the sheet by the same
+   amount .glanceCard used to be lifted off it.
+
+   Its height is SHEET_LOCATE_PX (64) in lib/sheet.js — 36px of button between
+   10px of padding, plus the 8px that separates it from the search field above.
+   Change either number and change both. */
+.locateCard {
+  flex: none; display: flex; align-items: center; gap: 12px;
+  margin: 0 16px 8px; padding: 10px 12px;
+  border-radius: var(--r4);
+  background: var(--bg2); box-shadow: var(--lensEdge), var(--shadow1);
+  animation: fadeIn var(--t2) var(--easeOut) both;
+}
+.locateText { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.locateText b { font-size: 15px; font-weight: 600; letter-spacing: -.24px; line-height: 18px; }
+.locateText span {
+  font-size: 13px; letter-spacing: -.08px; line-height: 17px; color: var(--label2);
+}
+/* The button never gives way — a two-line hint is allowed to wrap, the way out
+   is not allowed to shrink under the thumb. */
+.btn.locateGo { flex: none; }
+
 /* ============================================================
    glance rail — the live dashboard in the sheet's peek state
+   ---- NOT MOUNTED. Explore is search → context → list; components/GlanceRail
+   .jsx is still on disk but nothing renders it, so everything below this line
+   is dead paint. It stays with the component, and goes when the component
+   goes, so that removing the rail is one revert rather than two.
    ============================================================ */
 /* The rail's height is the collapsed sheet's height, and the collapsed sheet's
    height is map you cannot see. So the card carries what answers "which way,

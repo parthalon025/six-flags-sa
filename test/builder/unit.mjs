@@ -183,12 +183,14 @@ const {
 } = await import('../../apps/party-tracker/lib/venue/store.js');
 const { CATEGORY_LABELS, landTint } = await import('../../apps/party-tracker/lib/theme.js');
 const {
+  SHEET_BRAND_PX,
   SHEET_CHROME_PX,
-  SHEET_DIGEST_PX,
   SHEET_LIST_AT_PX,
+  SHEET_LOCATE_PX,
   SHEET_MAGNET_PX,
   SHEET_PEEK_PX,
   SHEET_PLACE_PX,
+  SHEET_SEARCH_PX,
   nextSheetStop,
   sheetCrowdsMap,
   settleSheet,
@@ -7283,12 +7285,13 @@ await check('the form only calls itself full near the ceiling', () => {
 
 await check('the form agrees with the plan about whether anything is on the sheet', () => {
   // `shut` is not a midpoint: it ends exactly where the first rung becomes
-  // affordable, or the sheet would show a shape with nothing in it.
-  const edge = SHEET_CHROME_PX + SHEET_DIGEST_PX;
+  // affordable, or the sheet would show a shape with nothing in it. The first
+  // rung is the search field now that the glance rail is gone.
+  const edge = SHEET_CHROME_PX + SHEET_SEARCH_PX;
   assert.equal(sheetForm(edge - 1, STOPS), 'shut');
-  assert.equal(sheetPlan(edge - 1).digest, false);
+  assert.equal(sheetPlan(edge - 1).search, false);
   assert.equal(sheetForm(edge, STOPS), 'peek');
-  assert.equal(sheetPlan(edge).digest, true);
+  assert.equal(sheetPlan(edge).search, true);
   return true;
 });
 
@@ -7296,53 +7299,62 @@ await check('the shut stop pays for nothing at all', () => {
   const p = sheetPlan(STOPS.shut);
   assert.deepEqual(
     { ...p, spare: 0 },
-    { digest: false, rail: false, search: false, brand: false, list: false, hint: false, spare: 0 },
+    { search: false, locate: false, brand: false, list: false, hint: false, spare: 0 },
   );
   return true;
 });
 
-await check('the glance stop buys the rail, the search field, the venue line and the hint', () => {
+await check('nothing below the search field is offered on its own', () => {
+  // The hint is cheap enough to fit under the search field. Offering it there
+  // would put "pull up to explore" on a sheet with no way to explore.
+  const p = sheetPlan(SHEET_CHROME_PX + SHEET_SEARCH_PX - 1);
+  assert.equal(p.search, false);
+  assert.equal(p.hint, false);
+  assert.equal(p.spare, 0);
+  return true;
+});
+
+await check('the resting stop buys the search field, the venue line and the hint', () => {
   const p = sheetPlan(STOPS.peek);
-  assert.equal(p.rail, true);
-  assert.equal(p.digest, false);
   assert.equal(p.search, true);
+  assert.equal(p.locate, false);
   assert.equal(p.brand, true);
   assert.equal(p.list, false);
   assert.equal(p.hint, true);
   return true;
 });
 
-await check('the rail degrades to one line before it disappears', () => {
-  const p = sheetPlan(SHEET_CHROME_PX + SHEET_DIGEST_PX + 4);
-  assert.equal(p.digest, true);
-  assert.equal(p.rail, false);
-  assert.equal(p.search, false);
+await check('a phone with no fix rests on the search field and the locate card', () => {
+  // The one screen that most needs an answer must not be the one screen that
+  // rests too low to show it: SHEET_PEEK_PX clears the card by construction.
+  const p = sheetPlan(STOPS.peek, { located: false });
+  assert.equal(p.search, true);
+  assert.equal(p.locate, true);
+  // The card outbids the venue line, which without a fix has no district to
+  // name and no accuracy to report.
+  assert.equal(p.brand, false);
   return true;
 });
 
-await check('the rail is bought before the search field, and the search field before its cards', () => {
-  // The question a phone comes out of a pocket to ask is "which way, and how
-  // long", not "what is this place called" — so the rail's line comes first.
-  // Its upgrade to cards does not, because that would outbid a search field
-  // already on the sheet. See the monotonicity check below.
-  const line = sheetPlan(SHEET_CHROME_PX + SHEET_DIGEST_PX + 10);
-  assert.equal(line.digest, true);
-  assert.equal(line.search, false);
-
-  const both = sheetPlan(200);
-  assert.equal(both.digest, true);
-  assert.equal(both.search, true);
-  assert.equal(both.rail, false);
+await check('the locate card costs nothing on a phone that has a fix', () => {
+  // A rung nobody can see must not be charged for: the list arrives at exactly
+  // the same height it would if the card had never been written.
+  assert.equal(SHEET_LIST_AT_PX, SHEET_CHROME_PX + SHEET_SEARCH_PX + SHEET_BRAND_PX + 132);
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX).list, true);
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX).locate, false);
+  // With no fix the same list waits for the card's room on top.
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX, { located: false }).list, false);
+  assert.equal(sheetPlan(SHEET_LIST_AT_PX + SHEET_LOCATE_PX, { located: false }).list, true);
   return true;
 });
 
 await check('a rung that will not fit does not let a cheaper one below it in', () => {
-  // Room for the rail's line and the venue line, but not the search field
+  // Room for the search field and the venue line, but not the locate card
   // between them.
-  const p = sheetPlan(SHEET_CHROME_PX + SHEET_DIGEST_PX + 30);
-  assert.equal(p.digest, true);
-  assert.equal(p.search, false);
-  assert.equal(p.brand, false, 'the park name arrived with no way to search it');
+  const p = sheetPlan(SHEET_CHROME_PX + SHEET_SEARCH_PX + SHEET_BRAND_PX, { located: false });
+  assert.equal(p.search, true);
+  assert.equal(p.locate, false);
+  assert.equal(p.brand, false, 'the park name arrived over a phone that has no fix');
   return true;
 });
 
@@ -7355,18 +7367,21 @@ await check('the hint is only offered once the list has been turned down', () =>
 
 await check('the plan only ever grows as the sheet does', () => {
   // Nothing may drop out on the way up: a row that appears at 300px and is gone
-  // again at 320 is the arithmetic showing through the interface.
-  const rungs = ['digest', 'rail', 'search', 'brand', 'list'];
-  let best = 0;
-  for (let px = 0; px <= 900; px += 1) {
-    const p = sheetPlan(px);
-    // The digest is the rail's understudy, so count them as one rung.
-    const score = (p.rail || p.digest ? 1 : 0) + rungs.slice(2).filter((k) => p[k]).length;
-    assert.ok(score >= best, `the plan shrank at ${px}px`);
-    best = score;
-    if (p.rail) assert.equal(p.digest, false, `both rails at ${px}px`);
+  // again at 320 is the arithmetic showing through the interface. The hint is
+  // the stated exception — it is what the list looks like when the list will
+  // not fit — so it is not one of the rungs counted here.
+  const rungs = ['search', 'locate', 'brand', 'list'];
+  for (const located of [true, false]) {
+    let best = 0;
+    for (let px = 0; px <= 900; px += 1) {
+      const p = sheetPlan(px, { located });
+      const score = rungs.filter((k) => p[k]).length;
+      assert.ok(score >= best, `the plan shrank at ${px}px (located=${located})`);
+      best = score;
+      assert.equal(p.locate, !located && p.locate, `the card drew with a fix at ${px}px`);
+    }
+    assert.equal(best, located ? 3 : 4);
   }
-  assert.equal(best, 4);
   return true;
 });
 
@@ -7381,12 +7396,21 @@ await check('the map controls step aside before the sheet climbs into them', () 
 });
 
 await check('a short phone still reaches the list', () => {
-  // An SE at 667px: half is 347, which is under the list's floor, so the app
-  // has to send the sheet to the list's own height rather than to a named stop.
+  // An SE at 667px. Without the rail's 104px at the head of the budget, half
+  // (347) now clears the list's floor on its own — which it did not before,
+  // and is the whole gain: the smallest phone reaches the list at a named stop
+  // rather than at a height the app has to drive it to.
   const small = sheetStops(667);
-  assert.ok(small.half < SHEET_LIST_AT_PX);
+  assert.ok(small.half >= SHEET_LIST_AT_PX, 'the list is still out of reach at half');
   assert.ok(small.full >= SHEET_LIST_AT_PX, 'no height on this phone shows the list');
   assert.equal(sheetPlan(SHEET_LIST_AT_PX).list, true);
+  // With no fix the locate card is bought first, so on this phone the list
+  // waits for the full stop. That is the right order: on a phone that cannot
+  // say how far anything is, a list of walking times it cannot fill in is
+  // worth less than the one control that fills them in.
+  assert.ok(small.half < SHEET_LIST_AT_PX + SHEET_LOCATE_PX);
+  assert.ok(small.full >= SHEET_LIST_AT_PX + SHEET_LOCATE_PX);
+  assert.equal(sheetPlan(small.full, { located: false }).list, true);
   return true;
 });
 

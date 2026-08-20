@@ -9,7 +9,6 @@ import { DISPLAY_SPIKE_VENUE, mapLibreDisplayEnabled } from '@/lib/mapLibreConfi
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
-import GlanceRail from '@/components/GlanceRail';
 import SpotCapsule from '@/components/SpotCapsule';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
@@ -425,7 +424,7 @@ function ParkApp({ isSignedIn }) {
   const [filter, setFilter] = useState('all');
   const [onlyRideable, setOnlyRideable] = useState(false);
   // The sheet's height in pixels, and the only thing that decides either how it
-  // looks or what is on it. Starts at the glance stop; the effect below hands it
+  // looks or what is on it. Starts at the resting stop; the effect below hands it
   // whatever the visitor last left it at.
   const [sheetPx, setSheetPx] = useState(SHEET_PEEK_PX);
   const [follow, setFollow] = useState(true);
@@ -1647,30 +1646,17 @@ function ParkApp({ isSignedIn }) {
     });
   }, [venue?.id]);
 
-  const shedCard = useCallback(
-    (what) => {
-      if (what?.kind === 'selected') {
-        setSelected(null);
-        return;
-      }
-      if (what?.kind === 'car') {
-        clearCar();
-        showToast('Forgotten where you parked');
-        return;
-      }
-      if (what?.kind !== 'category' || !venue?.id) return;
-      setHiddenCards((prev) => {
-        const here = prev[venue.id] || [];
-        if (here.includes(what.category)) return prev;
-        const next = { ...prev, [venue.id]: [...here, what.category] };
-        localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
-        return next;
-      });
-      showToast('Hidden. Put it back under Me → What the panel shows.');
-    },
-    [venue?.id, showToast, clearCar],
-  );
+  /* `shedCard` stood here: the ✕ on a glance card, which wrote the category
+     into `hiddenCards`. The rail is no longer mounted on Explore, so nothing
+     can put a card into that list any more — see the note on `unhideCard`. */
 
+  /* Settings → Phone → "What the panel shows" reads `hiddenCards` and calls
+     this to put one back. With the rail unmounted the list can only ever
+     shrink: it still holds whatever a phone hid before this change, so the way
+     to undo that has to stay, but nothing new will ever join it. Left standing
+     rather than stripped so that a phone carrying hidden cards can still clear
+     them, and so removing the surface is a decision somebody makes on purpose
+     rather than a side effect of removing the rail. */
   const unhideCard = useCallback(
     (category) => {
       if (!venue?.id) return;
@@ -1924,7 +1910,7 @@ function ParkApp({ isSignedIn }) {
   };
 
   /* ---------- derived ---------- */
-  /* Map, list and glance share one Eligibility view. Callers pass Party or
+  /* Map, list and Place detail share one Eligibility view. Callers pass Party or
      solo facts only — Subgroup set selection and With adult live in the
      module. Empty people → silent cells, no marks. */
   const eligibilityFacts = useMemo(() => {
@@ -2675,7 +2661,7 @@ function ParkApp({ isSignedIn }) {
   // While a route is running the sheet is out of the way unless it is asked
   // for: the map and the two HUD strips are the whole interface, and the sheet
   // comes back over them only when you open the steps. "Asked for" is anything
-  // above the glance stop, which is what a visitor who has pulled the sheet up
+  // above the resting stop, which is what a visitor who has pulled the sheet up
   // during a walk has done.
   const stowed = previewing || (walking && sheetPx <= stops.peek);
 
@@ -2685,10 +2671,14 @@ function ParkApp({ isSignedIn }) {
      directly during a drag so the map chrome rides the finger without a full
      page re-render every pointermove. */
   const form = sheetForm(sheetPx, stops);
-  const plan = sheetPlan(sheetPx);
+  /* The locate card's rung is only charged on a phone that has no fix, so the
+     budget has to be told which phone this is. While the gate is up the answer
+     is "one that is already being asked", and a second card underneath it
+     saying the same thing would be the app talking over itself. */
+  const plan = sheetPlan(sheetPx, { located: Boolean(position) || gateOpen });
 
   // `atMap` marks the screen that is read over the top of the map rather than
-  // instead of it — the one the glance stop is designed around.
+  // instead of it — the one the resting stop is designed around.
   const sheetClass = `sheet ${form} ${tab === 'explore' ? 'atMap' : ''} ${
     stowed ? 'stowed' : ''
   } ${drag.dragging ? 'dragging' : ''}`;
@@ -3144,28 +3134,25 @@ function ParkApp({ isSignedIn }) {
                   <div className="brandStatus">{headerLine()}</div>
                 </div>
               )}
-              {(plan.rail || plan.digest) && (
-                <GlanceRail
-                  me={position}
-                  members={others}
-                  meet={meet}
-                  car={car}
-                  selected={selected}
-                  heading={heading}
-                  theme={theme}
-                  onFocus={focusOn}
-                  onNavigate={startNav}
-                  navKey={navKeyOf(navTarget)}
-                  navMetres={progress?.remaining ?? route?.metres ?? null}
-                  onOpenParty={() => selectTab('party')}
-                  onDismiss={shedCard}
-                  hidden={hiddenHere}
-                  compact={plan.digest}
-                  weather={weatherFeed.weather}
-                  rides={partyRides}
-                  now={clock}
-                  eligibility={eligibilityView}
-                />
+              {/* The one card left on the resting sheet, and only on a phone
+                  that cannot answer anything else: without a fix the list has
+                  no walking times, the venue line has no district and the Party
+                  has no ranges, so the way out of that is the screen. It says
+                  what is wrong and offers the one control that fixes it. */}
+              {plan.locate && (
+                <div className="locateCard">
+                  <span className="locateText">
+                    <b>Location off</b>
+                    <span>Turn it on for walking times and your Party.</span>
+                  </span>
+                  <button
+                    type="button"
+                    className="btn small rect primary locateGo"
+                    onClick={() => setGateOpen(true)}
+                  >
+                    Turn on
+                  </button>
+                </div>
               )}
               {/* Where the list would be, when the list will not fit: it is not
                   merely scrolled off, it is not rendered, which is the right
