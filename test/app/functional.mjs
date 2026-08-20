@@ -320,6 +320,25 @@ await check('park geometry is drawn', async () => {
   return true;
 });
 
+await check('the on-map OSM notice opens Settings straight to Credits, listing sourced attributions', async () => {
+  const notice = a.locator('.mapAttribution');
+  if (!(await notice.count())) throw new Error('no on-map OSM attribution notice');
+  const text = (await notice.textContent())?.trim() || '';
+  if (!/OpenStreetMap contributors/i.test(text)) throw new Error(`unexpected notice text: ${text}`);
+  await notice.click();
+  await until(
+    async () => (await a.locator('.settingsTopic.on', { hasText: 'Credits' }).count()) > 0,
+    { timeout: 8000, label: 'Credits topic selected after tap-through' },
+  );
+  const osmRow = a.locator('.rowList a.row', { hasText: 'OpenStreetMap contributors' });
+  if (!(await osmRow.count())) throw new Error('Credits screen missing the OpenStreetMap row');
+  const license = (await osmRow.locator('.rowValue').innerText()).trim();
+  if (!/ODbL/.test(license)) throw new Error(`OpenStreetMap row missing its license: ${license}`);
+  await a.locator('.tabItem[data-tab="explore"]').click();
+  await a.waitForTimeout(200);
+  return true;
+});
+
 await check('glance rail renders nearby fallback cards', async () => {
   await go(a, 'Places');
   return (await a.locator('.glanceCard').count()) >= 2;

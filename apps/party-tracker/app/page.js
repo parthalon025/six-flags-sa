@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import ParkMap from '@/components/ParkMap';
+import MapAttribution from '@/components/MapAttribution';
 import VenueLoadFade from '@/components/VenueLoadFade';
 import { DISPLAY_SPIKE_VENUE, mapLibreDisplayEnabled } from '@/lib/mapLibreConfigured';
 import Icon from '@/components/Icon';
@@ -437,6 +438,10 @@ function ParkApp({ isSignedIn }) {
   const [withAdult, setWithAdult] = useState(true);
   const [categories, setCategories] = useState(() => categoriesForGate());
   const [paletteMode, setPaletteMode] = useState('auto');
+  // Tapping the on-map OSM notice opens Settings straight to Credits. `nonce`
+  // changes on every tap so SettingsPanel re-syncs even when it is already
+  // mounted on that topic — see SettingsPanel's `openTopic` prop.
+  const [settingsOpenTopic, setSettingsOpenTopic] = useState(null);
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
@@ -639,6 +644,12 @@ function ParkApp({ isSignedIn }) {
     },
     [goForward, applyNav, growSheet, stops],
   );
+
+  /** The on-map OSM notice's tap target: Settings, straight to Credits. */
+  const openCredits = useCallback(() => {
+    selectTab('settings');
+    setSettingsOpenTopic({ topic: 'credits', nonce: Date.now() });
+  }, [selectTab]);
 
   // The browser handing back an earlier snapshot is the only thing that ever
   // moves this app backwards, whether the visitor pressed a button, swiped the
@@ -2663,6 +2674,12 @@ function ParkApp({ isSignedIn }) {
         />
       )}
 
+      {/* The ODbL notice OSM-derived geometry requires — always mounted beside
+          the map (not inside ParkMap.jsx's own furniture, which folds away
+          during preview/walking/full-sheet states) so it stays up whenever
+          the map itself is. Tapping it opens Settings → Credits. */}
+      <MapAttribution onOpenCredits={openCredits} />
+
       {/* Nothing runs across the top of a phone map. The two controls float in
           the corner and the rest of the frame is map. */}
       <header className="topbar">
@@ -3373,6 +3390,7 @@ function ParkApp({ isSignedIn }) {
                   });
                 }}
                 onWatchCompass={() => push('watch-compass')}
+                openTopic={settingsOpenTopic}
               />
             )}
 

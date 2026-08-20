@@ -19,6 +19,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/pre-push.test.mjs',
   'test/scripts/git-env.test.mjs',
   'test/scripts/agent-docs.test.mjs',
+  'test/scripts/credits.test.mjs',
   'test/scripts/clerk-e2e.test.mjs',
   'test/scripts/wire-watch-target.test.mjs',
   'test/scripts/clerk-apple-prod.test.mjs',

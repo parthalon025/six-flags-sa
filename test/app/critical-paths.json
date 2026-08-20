@@ -28,6 +28,13 @@
       "check": "the nearest-park button asks before building that park"
     },
     {
+      "id": "settings-credits",
+      "slice": "Navigate",
+      "user_action": "Tap the on-map OSM notice into Settings, see every sourced attribution with its license",
+      "suite": "functional",
+      "check": "the on-map OSM notice opens Settings straight to Credits, listing sourced attributions"
+    },
+    {
       "id": "heights-filter",
       "slice": "Navigate",
       "user_action": "Set rider height and see who can ride",

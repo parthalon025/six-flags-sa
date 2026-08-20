@@ -3001,6 +3001,24 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .app[data-crowded] .mapFurniture {
   display: none;
 }
+
+/* ---- map attribution ----
+   The ODbL notice OSM-derived geometry requires. Deliberately its own thing,
+   not part of .mapFurniture above: that cluster hides during route preview,
+   walking, and crowded/full-sheet states (a key nobody needs mid-turn is
+   fine to fold away; a license notice is not), and it has to stay visible
+   whenever the map itself is. Sits under the weather chip's top-left column
+   rather than beside it — a thumb-width capsule already claims that corner. */
+.mapAttribution {
+  position: absolute; z-index: 39; top: calc(var(--top) + 10px + 52px); left: 12px;
+  pointer-events: auto; padding: 5px 10px; border: none; border-radius: var(--rCapsule);
+  background: var(--glassTint);
+  -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--label3);
+  animation: riseIn var(--t3) var(--easeOut) both;
+}
+.mapAttribution:active { transform: scale(.96); color: var(--label2); }
 .northRose {
   display: none;
 }

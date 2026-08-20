@@ -90,6 +90,8 @@
     "skills:check": "node scripts/check-skills-lock.mjs",
     "agent-docs:build": "node scripts/agent-docs.mjs build",
     "agent-docs:check": "node scripts/agent-docs.mjs check",
+    "credits:build": "node scripts/credits-build.mjs build",
+    "credits:check": "node scripts/credits-build.mjs check",
     "cap:sync": "node scripts/stamp-native-version.mjs && npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
