@@ -2700,6 +2700,13 @@ p.wxWhy.warn { color: var(--orange); }
 /* ---- chips with a colour key ---- */
 .chip.withDot { display: inline-flex; align-items: center; gap: 7px; }
 .chip.withDot i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: none; }
+/* "All" is the one chip whose dot stands for no category, so it takes the
+   app's "nothing in particular to say" ink instead of a colour. It cannot be
+   an inline style like the category dots: those are saturated enough to hold
+   up against .chip.on's ink fill, and --label3 on --label is one grey on
+   another. Selected, it flips to the fill's own foreground. */
+.chip.withDot i.dotAny { background: var(--label3); }
+.chip.on.withDot i.dotAny { background: var(--bg2); opacity: .5; }
 
 /* ---- guest-profile chips: the tap target and the remove target sit side by
    side rather than nested, since a button cannot contain a button ---- */
