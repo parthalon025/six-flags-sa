@@ -30,12 +30,24 @@ function readJson(path) {
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
-/** Read the Display-factory vendor asset files the registry's ledgers point at. */
+/**
+ * Read the Display-factory vendor asset files the registry's ledgers point
+ * at. Fails closed on a missing file — a typo'd or moved path here would
+ * otherwise make computeVendorLedgers() silently skip that ledger and ship a
+ * Credits screen quietly missing a source, exactly the drift the registry's
+ * "missing attribution mode = generator refuses to build" rule exists to
+ * catch for registry rows themselves.
+ */
 function loadVendorFiles(registry, rootDir = root) {
   const files = {};
   for (const spec of registry.vendorLedgers || []) {
     const abs = join(rootDir, spec.file);
-    if (existsSync(abs)) files[spec.file] = readJson(abs);
+    if (!existsSync(abs)) {
+      throw new Error(
+        `credits: vendorLedgers entry "${spec.sourceId}" points at a missing file: ${spec.file}`,
+      );
+    }
+    files[spec.file] = readJson(abs);
   }
   return files;
 }
