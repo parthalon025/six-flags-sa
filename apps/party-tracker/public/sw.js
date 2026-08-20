@@ -9,7 +9,13 @@
    lives in the client's own replica and its outbox instead, which are
    versioned and know how to catch up. */
 /* Replaced by scripts/inject-version.mjs from package.json on prebuild/predev. */
-const CACHE = 'tracker-1.23.0';
+const CACHE = 'tracker-1.25.0';
+/* Hash-verified venue bundles, written by the page's download manager
+   (lib/venue/download.js — the name must match VENUE_BUNDLE_CACHE there).
+   Deliberately not version-stamped: bundle content is addressed by the
+   manifests' sha256 pins, so a deploy invalidates nothing that did not
+   change, and the map a phone verified yesterday survives today's update. */
+const BUNDLE_CACHE = 'tracker-venue-bundles-v1';
 const SHELL = [
   '/',
   '/join',
@@ -63,7 +69,9 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) =>
+        Promise.all(keys.filter((k) => k !== CACHE && k !== BUNDLE_CACHE).map((k) => caches.delete(k))),
+      )
       .then(() => self.clients.claim()),
   );
 });
@@ -120,7 +128,42 @@ self.addEventListener('fetch', (e) => {
   // Venue files are big, static and the whole point of the app working with no
   // signal, so they are held for as long as the cache lives.
   if (url.pathname.startsWith('/venues/')) {
-    e.respondWith(staleWhileRevalidate(e.request));
+    // The bundle manifest is the freshness point — CONTEXT.md's "updated when
+    // the app starts and a connection is available" — so it is network-first:
+    // the download manager's start-of-app check must see the deployed truth,
+    // and only offline falls back to the held copy.
+    if (url.pathname.endsWith('.bundle.json')) {
+      e.respondWith(
+        fetch(e.request)
+          .then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+            }
+            return res;
+          })
+          .catch(() => caches.match(e.request)),
+      );
+      return;
+    }
+    // A ?v=<hash> request is the download manager fetching bytes it is about
+    // to verify and store under the clean path itself — caching it here would
+    // duplicate every changed file into CACHE under a hash key that is never
+    // requested again. Pass it straight to the network.
+    if (url.searchParams.has('v')) {
+      e.respondWith(fetch(e.request));
+      return;
+    }
+    // Hash-verified bundle bytes answer first — they are exactly current, so
+    // revalidating them per request would spend park bandwidth to learn
+    // nothing. Anything the download manager has not verified keeps the old
+    // stale-while-revalidate path.
+    e.respondWith(
+      caches
+        .open(BUNDLE_CACHE)
+        .then((c) => c.match(e.request))
+        .then((hit) => hit || staleWhileRevalidate(e.request)),
+    );
     return;
   }
 

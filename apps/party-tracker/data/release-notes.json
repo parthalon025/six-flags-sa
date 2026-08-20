@@ -396,5 +396,17 @@
     "items": [
       "feat: triage sweep — venue CI paths, capture freshness, iso coverage, one-way routing, data seam, hermetic harness (#560)"
     ]
+  },
+  "1.24.0": {
+    "title": "What's new",
+    "items": [
+      "feat: custom map worlds — worlds in the pack, two painted kits, PBR materials, schema v2, zoom + imagery contracts (#558)"
+    ]
+  },
+  "1.25.0": {
+    "title": "What's new",
+    "items": [
+      "feat(app): venue download manager — hash-addressed offline bundles, freshness gate, worlds in the download contract (#559)"
+    ]
   }
 }

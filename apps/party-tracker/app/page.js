@@ -54,6 +54,7 @@ import {
   withinBounds,
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
+import { syncVenueBundle } from '@/lib/venue/download';
 import { findPlace, identityOf } from '@/lib/venue/ids';
 import {
   capture,
@@ -759,7 +760,13 @@ function ParkApp({ isSignedIn }) {
   // visitor's last choice, or the deployment's default; the first GPS fix gets
   // to correct that if it lands inside a different one.
   useEffect(() => {
-    bootVenue().catch((err) => setToast(err?.message || 'Could not load the map.'));
+    bootVenue()
+      // With the map on screen, complete it for offline: re-check the venue's
+      // bundle manifest and pull whatever changed (lib/venue/download.js).
+      // syncVenueBundle never throws — offline is an ordinary state — so the
+      // catch below is bootVenue's alone.
+      .then((venue) => syncVenueBundle(venue))
+      .catch((err) => setToast(err?.message || 'Could not load the map.'));
   }, []);
 
   // Deep-link from venue inspection: /?venue=cedar-point loads that park directly.

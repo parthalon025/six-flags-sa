@@ -490,6 +490,73 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
   return true;
 });
 
+await check('wearing Watercolor quest draws the baked world image under the overlay', async () => {
+  // ADR-0016 slice 2: a worn Skin whose CUSTOM_MAPS entry declares a baked
+  // world draws the display pack's world image on truth bounds, under the
+  // live overlay — and hides no base layers, so the map survives a missing
+  // image. Same demo-grant + Wear flow as the Pixel tycoon check above.
+  const P = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Baked',
+    label: 'BW',
+    venue: 'kings-island',
+  });
+  const p = P.page;
+  try {
+    await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
+    await p.reload({ waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+      timeout: 40000,
+    });
+    await closeGate(p);
+    await go(p, 'Settings');
+    await p.getByRole('tab', { name: 'Map' }).click();
+    await p.waitForTimeout(300);
+    const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
+    await row.scrollIntoViewIfNeeded();
+    if (/Locked|Out of season|This World/.test(await row.innerText())) {
+      throw new Error('Watercolor quest still locked after demo grant');
+    }
+    await row.click();
+    await p.waitForTimeout(500);
+    if ((await p.evaluate(() => document.documentElement.dataset.skinMap)) !== 'watercolor-quest') {
+      throw new Error('data-skin-map not set');
+    }
+    // The baked world image mounts inside the world transform once its pack
+    // sidecar answers…
+    await p.waitForSelector('.mapWorld .lyr-baked-world image', { timeout: 20000 });
+    const image = p.locator('.mapWorld .lyr-baked-world image').first();
+    const placed = await image.evaluate((el) => ({
+      href: el.getAttribute('href'),
+      w: Number(el.getAttribute('width')),
+      h: Number(el.getAttribute('height')),
+    }));
+    if (!placed.href?.endsWith('watercolor-quest.world.png')) {
+      throw new Error(`world image href is ${placed.href}`);
+    }
+    if (!(placed.w > 0 && placed.h > 0)) throw new Error(`degenerate placement ${placed.w}×${placed.h}`);
+    // …with real decodable pixels behind the href (nonzero natural size).
+    const natural = await p.evaluate(async (href) => {
+      const img = new Image();
+      await new Promise((ok, fail) => {
+        img.onload = ok;
+        img.onerror = () => fail(new Error('world PNG failed to decode'));
+        img.src = href;
+      });
+      return { w: img.naturalWidth, h: img.naturalHeight };
+    }, placed.href);
+    if (!(natural.w > 0 && natural.h > 0)) throw new Error('world PNG has no pixels');
+    // The base map stays whole under a baked world (nothing hidden).
+    if (!(await p.locator('.mapWorld .lyr-building').count())) {
+      throw new Error('baked world must not hide the base building layer');
+    }
+  } finally {
+    await P.context.close();
+  }
+  return true;
+});
+
 await check('Compass strip toggles on', async () => {
   await a.locator('button[aria-label="Show Compass"]').click();
   await a.waitForTimeout(400);

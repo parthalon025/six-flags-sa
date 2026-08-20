@@ -3,36 +3,70 @@
   "tiers": {
     "vector": {
       "file": "base.pmtiles",
-      "bytes": 102250
+      "bytes": 102234
     },
-    "raster": {
-      "gap": true,
-      "reason": "go-pmtiles binary not found — raster tier is a recorded gap; the 6189 KB PNG + bounds still ship in the manifest for direct image placement"
+    "world:layered-atlas": {
+      "file": "layered-atlas.world.png",
+      "bytes": 4675648,
+      "kit": "layered-atlas",
+      "projection": "top-down",
+      "certified": true
+    },
+    "world:park-midnight": {
+      "file": "park-midnight.world.png",
+      "bytes": 4415441,
+      "kit": "rpg-overworld",
+      "projection": "top-down",
+      "certified": true
+    },
+    "world:trail": {
+      "file": "trail.world.png",
+      "bytes": 4474685,
+      "kit": "island-brochure",
+      "projection": "top-down",
+      "certified": true
+    },
+    "world:watercolor-quest": {
+      "file": "watercolor-quest.world.png",
+      "bytes": 6659690,
+      "kit": "watercolor-quest",
+      "projection": "top-down",
+      "certified": true
     },
     "bake:blueprint-survey": {
       "file": "kings-island--blueprint-survey.png",
-      "bytes": 5377015,
+      "bytes": 3763859,
       "kit": "blueprint-survey"
     },
     "bake:island-brochure": {
       "file": "kings-island--island-brochure.png",
-      "bytes": 6431331,
+      "bytes": 4474685,
       "kit": "island-brochure"
+    },
+    "bake:layered-atlas": {
+      "file": "kings-island--layered-atlas.png",
+      "bytes": 4675648,
+      "kit": "layered-atlas"
     },
     "bake:midnight-carnival": {
       "file": "kings-island--midnight-carnival.png",
-      "bytes": 7288341,
+      "bytes": 5141016,
       "kit": "midnight-carnival"
     },
     "bake:rpg-overworld": {
       "file": "kings-island--rpg-overworld.png",
-      "bytes": 6337580,
+      "bytes": 4415441,
       "kit": "rpg-overworld"
     },
+    "bake:watercolor-quest": {
+      "file": "kings-island--watercolor-quest.png",
+      "bytes": 6659690,
+      "kit": "watercolor-quest"
+    },
     "credits": {
-      "file": "kings-island--rpg-overworld.credits.json",
-      "bytes": 1859,
-      "kit": "rpg-overworld"
+      "file": "kings-island--layered-atlas.credits.json",
+      "bytes": 1906,
+      "kit": "layered-atlas"
     }
   }
 }

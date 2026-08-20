@@ -31,6 +31,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/dependency-boundaries.test.mjs',
   'test/scripts/map-performance-contract.test.mjs',
   'test/scripts/venues-env-file.test.mjs',
+  'test/scripts/venue-freshness.test.mjs',
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/bake-drift-watch.test.mjs',
   'test/scripts/profile-max-rank.test.mjs',

@@ -270,6 +270,46 @@ await check('cross-kit distinctness compares this invocation, skips explicitly',
   return true;
 });
 
+// ADR-0016 world tier: badges are truth POIs projected into the model; the
+// app places the world image on the model's own bounds. The row proves the
+// two projections agree (image-on-truth-bounds is exact for painted
+// features) and that the kit's declared stroke displacement fits the budget.
+await check('style_world_geo: truth anchors project through the world bounds; displacement is budgeted', () => {
+  const bounds = { west: 0, south: 0, east: 0.012, north: 0.012 };
+  const named = {
+    ...model,
+    bounds,
+    badges: [{ kind: 'gate', name: 'Main Gate', x: 3, y: 8 }, { kind: 'food', name: 'Fries', x: 8, y: 8 }],
+  };
+  // POIs at exactly the lat/lng whose bounds-projection is the badge cell.
+  const pois = [
+    { c: 'gate', n: 'Main Gate', lng: 0.003, lat: 0.004 },
+    { c: 'food', n: 'Fries', lng: 0.008, lat: 0.004 },
+    { c: 'coaster', n: 'Not a badge', lng: 0.001, lat: 0.001 },
+  ];
+  const points = stylePoints(named, { perClass: 8 });
+  const good = certifyStyleContract({ model: named, points, samples: paint(points), profile, kit, pois });
+  const row = good.checks.find((c) => c.key === 'style_world_geo');
+  assert.ok(row, 'pois + bounds must produce the geo row');
+  assert.equal(row.pass, true, row.evidence);
+  assert.match(row.evidence, /2 truth anchor/);
+  // A badge that no longer derives from truth fails the row.
+  const moved = { ...named, badges: [{ ...named.badges[0], x: 3.6 }, named.badges[1]] };
+  const movedPoints = stylePoints(moved, { perClass: 8 });
+  const bad = certifyStyleContract({ model: moved, points: movedPoints, samples: paint(movedPoints), profile, kit, pois });
+  assert.equal(bad.checks.find((c) => c.key === 'style_world_geo').pass, false);
+  // A kit declaring displacement past the budget fails even with true anchors.
+  const wobbly = certifyStyleContract({
+    model: named, points, samples: paint(points), profile, pois,
+    kit: { id: 'test-kit', strokes: { displacement: { amplitude: 99 } } },
+  });
+  assert.equal(wobbly.checks.find((c) => c.key === 'style_world_geo').pass, false);
+  // No pois (or no bounds): no row — the flat certification set is unchanged.
+  const absent = certifyStyleContract({ model, points: stylePoints(model, { perClass: 8 }), samples: paint(stylePoints(model, { perClass: 8 })), profile, kit });
+  assert.ok(!absent.checks.some((c) => c.key === 'style_world_geo'));
+  return true;
+});
+
 /* Issue #521: per-rotation occlusion starvation withdraws-and-discloses (the
    per-rotation hard-fail was rejected — geometry legitimately starves classes
    at some cameras). The sweep-level rule is where it fails: a class withdrawn
