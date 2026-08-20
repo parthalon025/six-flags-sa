@@ -955,6 +955,58 @@ await check('publishWorlds copies exactly the named worlds to the app, and names
   return true;
 });
 
+await check('runDisplayStage with an iso sweep: a class starved at every rotation fails the pack (#521)', async () => {
+  const { writeFileSync } = await import('node:fs');
+  const flatCert = JSON.stringify({
+    certified: true,
+    signature: 'sig-flat',
+    bounds: { west: 0, south: 0, east: 0.01, north: 0.01 },
+    checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'fixture' }],
+  });
+  const isoCert = (starved) => JSON.stringify({
+    certified: true,
+    signature: 'sig-iso',
+    checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'iso fixture' }],
+    ...(starved.length ? {
+      skips: [{
+        key: 'occlusion_starved',
+        reason: 'fixture',
+        count: 9,
+        byClass: Object.fromEntries(starved.map((cls) => [cls, { kept: 1, culled: 8 }])),
+      }],
+    } : {}),
+  });
+  const stage = (writeCerts) => {
+    const bakeDir = mkdtempSync(path.join(tmpdir(), 'bakes-iso-'));
+    writeFileSync(path.join(bakeDir, 'test-park--rpg-overworld.style-cert.json'), flatCert);
+    writeFileSync(path.join(bakeDir, 'test-park--rpg-overworld.png'), 'png-bytes');
+    writeCerts(bakeDir);
+    return runDisplayStage('test-park', {
+      map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-iso-')), bake: { dir: bakeDir },
+    });
+  };
+  const starvedEverywhere = stage((dir) => {
+    writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r0.style-cert.json'), isoCert(['road']));
+    writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r2.style-cert.json'), isoCert(['road']));
+  });
+  const row = (r) => r.written
+    .filter((f) => f.endsWith('display-certification.json'))
+    .flatMap((f) => JSON.parse(readFileSync(f, 'utf8')).checks)
+    .find((c) => c.key === 'bake:rpg-overworld:style_occlusion_cross_rotation');
+  const failing = row(starvedEverywhere);
+  assert.ok(failing, 'the sweep rule folds into the venue certification');
+  assert.equal(failing.pass, false);
+  assert.match(failing.evidence, /road/);
+  assert.equal(starvedEverywhere.certified, false, 'a class no rotation ever certified fails the pack');
+  const covered = stage((dir) => {
+    writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r0.style-cert.json'), isoCert(['road']));
+    writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r2.style-cert.json'), isoCert([]));
+  });
+  assert.equal(row(covered).pass, true, 'surviving one rotation covers the class');
+  assert.equal(covered.certified, true, row(covered).evidence);
+  return true;
+});
+
 /* --------------------------------------------------------------- wiring -- */
 
 await check('display is a pipeline stage after certify, opt-in via --display', () => {

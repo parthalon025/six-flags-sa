@@ -21,10 +21,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 /** scripts/lib modules with no direct test yet — backfill tracked in #474. */
 export const SCRIPTS_LIB_TEST_ALLOWLIST = [];
 
-/** App files allowed to reference packages/venue-builder by path literal — seam refactor tracked in #475. */
-export const VENUE_BUILDER_PATH_ALLOWLIST = [
-  'apps/party-tracker/lib/venueCompare.js',
-];
+/** App files allowed to reference packages/venue-builder by path literal — none since #475 landed venueDataDir(). */
+export const VENUE_BUILDER_PATH_ALLOWLIST = [];
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {

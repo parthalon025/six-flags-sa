@@ -20,6 +20,7 @@ import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar }
 import { buildTiles } from './display-tiles.mjs';
 import { buildWorldTier } from './display-world.mjs';
 import { materialTexturesRow, verifyCompiledMaterials } from './display-materials.mjs';
+import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
@@ -472,6 +473,19 @@ export function loadTruthFor(id) {
  * every row re-keyed `bake:<kit>:<key>` plus one gate row over the set —
  * the pack certifies only when every requested bake did.
  */
+/**
+ * One place understands the bake cert filename convention
+ * `<id>--<kit>.style-cert.json` / `<id>--<kit>--iso-r<N>.style-cert.json`.
+ * Returns { kit, rotation } with rotation null for flat certs. The greedy
+ * kit capture deliberately claims everything before the LAST `--iso-r<N>`,
+ * so a kit id that itself contains the marker still parses.
+ */
+export function parseCertFilename(id, f) {
+  const stem = f.slice(id.length + 2, -'.style-cert.json'.length);
+  const m = /^(.+)--iso-r(\d+)$/.exec(stem);
+  return m ? { kit: m[1], rotation: Number(m[2]) } : { kit: stem, rotation: null };
+}
+
 export function foldBakeCerts(bakeCerts) {
   const rows = [];
   for (const { kit, cert } of bakeCerts) {
@@ -635,15 +649,34 @@ export function runDisplayStage(id, opts = {}) {
     // Iso-tier bakes (`<id>--<kit>--iso-r<N>.*`) stay out of the pack: they
     // would fold as a pseudo-kit otherwise. Iso pack-tier integration is
     // Phase C work.
-    const certFiles = (existsSync(bakeDir)
-      ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json')
-        && !/--iso-r\d+\.style-cert\.json$/.test(f))
+    const allCertFiles = (existsSync(bakeDir)
+      ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
       : []).sort();
-    const bakeCerts = certFiles.map((f) => ({
-      kit: f.slice(id.length + 2, -'.style-cert.json'.length),
-      cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
-    }));
+    const bakeCerts = allCertFiles
+      .map((f) => ({ f, ...parseCertFilename(id, f) }))
+      .filter(({ rotation }) => rotation === null)
+      .map(({ f, kit }) => ({
+        kit,
+        cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
+      }));
     venueChecks.push(...foldBakeCerts(bakeCerts));
+
+    // The iso sweep's one venue-level demand (issue #521): per-rotation
+    // certs withdraw occlusion-starved classes rather than failing, so the
+    // fold is where "every class certifies somewhere in the sweep" can be
+    // held at all. This consumes only the iso certs' structured skips —
+    // their rows still do not fold as pack tiers (Phase C, above).
+    const isoSweeps = {};
+    for (const f of allCertFiles) {
+      const { kit, rotation } = parseCertFilename(id, f);
+      if (rotation === null) continue;
+      const cert = readJson(path.join(bakeDir, f), null);
+      (isoSweeps[kit] = isoSweeps[kit] || []).push({ rotation, skips: cert?.skips || [] });
+    }
+    for (const [kitId, sweep] of Object.entries(isoSweeps).sort(([a], [b]) => (a < b ? -1 : 1))) {
+      const row = crossRotationCoverageRow(sweep);
+      venueChecks.push({ ...row, key: `bake:${kitId}:${row.key}` });
+    }
     bakes = Object.fromEntries(bakeCerts.map(({ kit, cert }) => [
       kit, {
         certified: cert.certified,

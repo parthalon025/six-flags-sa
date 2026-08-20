@@ -390,5 +390,11 @@
     "items": [
       "feat: app/iso train — rotation-safe culling, iso custom maps on shared isoWorld, layered-atlas & watercolor-quest Skins, rank prizes (#556)"
     ]
+  },
+  "1.23.0": {
+    "title": "What's new",
+    "items": [
+      "feat: triage sweep — venue CI paths, capture freshness, iso coverage, one-way routing, data seam, hermetic harness (#560)"
+    ]
   }
 }

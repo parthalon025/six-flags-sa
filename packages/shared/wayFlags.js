@@ -51,6 +51,20 @@ export const WAY_FLAGS = {
 /** Whether a way's bitfield asserts a given flag. */
 export const hasWayFlag = (flags, bit) => ((Number(flags) || 0) & bit) === bit;
 
+/**
+ * Which way a way may be walked, as the sign of travel along its ring:
+ * `1` forward only (ONEWAY), `-1` against the ring only (ONEWAY_BACK),
+ * `0` both ways. Both bits at once is a contradiction no tag can produce
+ * (`oneway=yes` and `oneway=-1` are one key), so it reads as unrestricted
+ * rather than as an unwalkable way — absent is not false, and corrupt is
+ * not a wall.
+ */
+export const onewayDirOf = (flags) => {
+  const fwd = hasWayFlag(flags, WAY_FLAGS.ONEWAY);
+  const back = hasWayFlag(flags, WAY_FLAGS.ONEWAY_BACK);
+  return fwd === back ? 0 : fwd ? 1 : -1;
+};
+
 /** A bundle feature's flags, as a number, whatever shape the feature is in. */
 export const wayFlagsOf = (feature) => (feature && Number(feature.f)) || 0;
 

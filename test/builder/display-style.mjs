@@ -25,7 +25,8 @@ async function check(name, fn) {
 console.log('\nstyle contract\n');
 
 const {
-  stylePoints, certifyStyleContract, harvestProfileDraft, deltaE, hexToRgb, signature,
+  stylePoints, certifyStyleContract, crossRotationCoverageRow, harvestProfileDraft,
+  deltaE, hexToRgb, signature,
 } = await import('../../packages/venue-builder/lib/display-style-contract.mjs');
 
 // A 12x12 synthetic world: outside frame, ground floor, quadrant patches of
@@ -306,6 +307,70 @@ await check('style_world_geo: truth anchors project through the world bounds; di
   // No pois (or no bounds): no row — the flat certification set is unchanged.
   const absent = certifyStyleContract({ model, points: stylePoints(model, { perClass: 8 }), samples: paint(stylePoints(model, { perClass: 8 })), profile, kit });
   assert.ok(!absent.checks.some((c) => c.key === 'style_world_geo'));
+  return true;
+});
+
+/* Issue #521: per-rotation occlusion starvation withdraws-and-discloses (the
+   per-rotation hard-fail was rejected — geometry legitimately starves classes
+   at some cameras). The sweep-level rule is where it fails: a class withdrawn
+   at EVERY rotation was never held to the contract anywhere. */
+const starvedSkip = (classes) => [{
+  key: 'occlusion_starved',
+  reason: 'fixture',
+  count: 10,
+  byClass: Object.fromEntries(classes.map((cls) => [cls, { kept: 1, culled: 9 }])),
+}];
+
+await check('cross-rotation: a class starved at every rotation fails the sweep, named', () => {
+  const row = crossRotationCoverageRow([
+    { rotation: 0, skips: starvedSkip(['road', 'water']) },
+    { rotation: 1, skips: starvedSkip(['road']) },
+    { rotation: 2, skips: starvedSkip(['road', 'water']) },
+    { rotation: 3, skips: starvedSkip(['road']) },
+  ]);
+  assert.equal(row.key, 'style_occlusion_cross_rotation');
+  assert.equal(row.pass, false);
+  assert.match(row.evidence, /\broad\b/, 'the never-covered class is named');
+  assert.ok(!/water[^ ]* starved at every/.test(row.evidence), 'water certifies at r1/r3');
+  return true;
+});
+
+await check('cross-rotation: starved at some rotations but surviving one passes with disclosure', () => {
+  const row = crossRotationCoverageRow([
+    { rotation: 0, skips: starvedSkip(['road']) },
+    { rotation: 1, skips: [] },
+    { rotation: 2, skips: starvedSkip(['road']) },
+    { rotation: 3, skips: [] },
+  ]);
+  assert.equal(row.pass, true, row.evidence);
+  assert.match(row.evidence, /road withdrawn at r0,r2 only/, 'partial starvation stays on the record');
+  const clean = crossRotationCoverageRow([
+    { rotation: 0, skips: [] },
+    { rotation: 2, skips: [] },
+  ]);
+  assert.equal(clean.pass, true);
+  assert.match(clean.evidence, /no class withdrawn/);
+  return true;
+});
+
+await check('cross-rotation: one rotation is not a sweep; legacy certs without skips read as nothing withdrawn', () => {
+  const single = crossRotationCoverageRow([{ rotation: 0, skips: starvedSkip(['road']) }]);
+  assert.equal(single.pass, true, 'demanding sweep coverage of one rotation would be the rejected per-rotation hard-fail');
+  assert.match(single.evidence, /not a sweep/);
+  const legacy = crossRotationCoverageRow([{ rotation: 0 }, { rotation: 2 }]);
+  assert.equal(legacy.pass, true, legacy.evidence);
+  return true;
+});
+
+await check('iso certs carry their skips structurally for the sweep aggregator', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  const skips = starvedSkip(['road']);
+  const cert = certifyStyleContract({
+    model, points, samples: paint(points), profile, kit, target: 'iso', skips,
+  });
+  assert.deepEqual(cert.skips, skips, 'skips ride the cert JSON, not just evidence strings');
+  const flat = certifyStyleContract({ model, points, samples: paint(points), profile, kit });
+  assert.ok(!('skips' in flat), 'flat certs stay byte-identical to before');
   return true;
 });
 
