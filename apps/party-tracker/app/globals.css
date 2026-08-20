@@ -2278,13 +2278,74 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
   box-shadow: inset 0 0 0 1px var(--sep);
 }
 
-/* While the capsule is up, the map's own controls step aside — the same thing
-   .mapFurniture already does when the sheet crowds it. A full-width card on the
-   sheet's edge sits underneath the FAB column and the scale bar, and a Rally
-   button drawn on top of "Leave a Mark" is a mis-tap waiting to happen. One tap
-   on the map, or the ✕, brings them straight back. */
-.app[data-spot] .fabs { opacity: 0; pointer-events: none; }
-.app[data-spot] .mapFurniture { display: none; }
+/* ---- the selection capsule ----
+   The spot capsule's sibling: what a tap on a *Place* puts over the map. Same
+   edge, same lens, same z-index, same `--sheetFoot` ride, because they are the
+   same kind of object and only ever one of them is on screen — selecting a
+   Place clears the spot in page.js. See components/SelectionCapsule.jsx.
+
+   A pill rather than a card because there is one line to say: the spot capsule
+   has to introduce a patch of ground nobody has a name for, and this one is
+   naming something the visitor just pointed at. --rCapsule follows D1's rule —
+   small, inline, one row — while the actions inside it keep their own shapes. */
+.selCapsule {
+  position: absolute; left: 12px; right: 12px; z-index: 40;
+  bottom: calc(var(--sheetFoot) + 12px);
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--rCapsule);
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  animation: sheetUp var(--t3) var(--ease) both;
+  transition: bottom var(--t3) var(--ease);
+}
+/* The whole line is the way in to the Place view, so the whole line is the
+   button — not just the name. Baseline-aligned rather than centred: the name,
+   the range and the status pill are three sizes of type saying one thing. */
+.selBody {
+  flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 7px;
+  padding: 6px 2px; text-align: left;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.selBody:active { opacity: .55; }
+.selDot {
+  width: 11px; height: 11px; border-radius: 50%; flex: none; align-self: center;
+  /* The same halo the map's own markers wear, so the dot in the capsule and
+     the pin it came from are recognisably one mark. */
+  box-shadow: 0 0 0 2.5px var(--labelStroke);
+}
+.selName {
+  min-width: 0; font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+  color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* The range gives way before the name does: a truncated distance is a wrong
+   number, but it is the name that tells you whether this is the right pin. */
+.selDist {
+  flex: none; font-style: normal; font-size: 13px; font-weight: 600;
+  letter-spacing: -.08px; color: var(--label2); font-variant-numeric: tabular-nums;
+}
+.selCapsule .liveBadge { flex: none; align-self: center; }
+.btn.selWalk { flex: none; padding: 8px 15px; font-size: 14px; font-weight: 700; }
+.selClose {
+  flex: none; display: grid; place-items: center;
+  min-width: 32px; min-height: 32px; margin-right: -4px;
+  color: var(--label3);
+  transition: opacity var(--t1) var(--easeOut);
+}
+.selClose:active { opacity: .5; }
+
+/* While either capsule is up, the map's own controls step aside — the same
+   thing .mapFurniture already does when the sheet crowds it. A full-width card
+   on the sheet's edge sits underneath the FAB column and the scale bar, and a
+   Rally button drawn on top of "Leave a Mark" is a mis-tap waiting to happen.
+   One tap on the map, or the ✕, brings them straight back. Two attributes
+   rather than one because the two capsules are two different states of the
+   screen, but they yield the same chrome for the same reason. */
+.app[data-spot] .fabs,
+.app[data-sel] .fabs { opacity: 0; pointer-events: none; }
+.app[data-spot] .mapFurniture,
+.app[data-sel] .mapFurniture { display: none; }
 
 /* ---- the locate card ----
    What the resting sheet says on a phone with no fix. It replaced the glance

@@ -10,6 +10,7 @@ import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
 import SpotCapsule from '@/components/SpotCapsule';
+import SelectionCapsule from '@/components/SelectionCapsule';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
@@ -55,7 +56,7 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { syncVenueBundle } from '@/lib/venue/download';
-import { findPlace, identityOf } from '@/lib/venue/ids';
+import { findPlace, identityOf, placeNav } from '@/lib/venue/ids';
 import {
   capture,
   locationReadyToJoin,
@@ -111,6 +112,8 @@ import {
   resolvePalette,
 } from '@/lib/mapVisual';
 import { spotAt } from '@/lib/spot';
+import { liveFor, membersAt } from '@/lib/live';
+import { paletteFor } from '@/lib/theme';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
 import { flushThanksQueue } from '@/lib/adventure/thanks';
@@ -2696,6 +2699,22 @@ function ParkApp({ isSignedIn }) {
      already cleared, and this is the guard that says so out loud. */
   const spotShown = Boolean(spot) && !walking && !previewing && !selected;
 
+  /* The selection's own capsule, on the same edge and under the same rules.
+     It stands down once the Place view is open, because that view is the same
+     answer with everything in it — a pill repeating the name of the card
+     directly beneath it is chrome describing chrome. */
+  const selShown =
+    Boolean(selected) && !walking && !previewing && !(tab === 'explore' && view === 'place');
+  const selStatus = useMemo(() => {
+    if (!selShown || !selected) return null;
+    if (!isRideable(selected) && selected.c !== 'show') return null;
+    if (!weatherFeed.weather && !partyRides && !position) return null;
+    return liveFor(selected, partyRides?.[selected.id] ?? null, weatherFeed.weather, clock, {
+      metres: position ? distance(position.lat, position.lng, selected.lat, selected.lng) : null,
+      membersNear: membersAt(selected, others),
+    });
+  }, [selShown, selected, weatherFeed.weather, partyRides, position, others, clock]);
+
   return (
     // --sheetH is the sheet's live height, so the FABs, the toast, the zoom pad
     // and the scale bar ride with it — under the finger too, which is why the
@@ -2713,6 +2732,8 @@ function ParkApp({ isSignedIn }) {
          column and the scale bar already live. They step aside for it — see
          .app[data-spot] in globals.css. */
       data-spot={spotShown ? '1' : undefined}
+      /* And the same for the selection's pill, which rides the same edge. */
+      data-sel={selShown ? '1' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       {introOverlay === 'hold' && (
@@ -2908,6 +2929,29 @@ function ParkApp({ isSignedIn }) {
           onClose={() => setSpot(null)}
           onQuest={questAtSpot}
           onMark={markAtSpot}
+        />
+      )}
+
+      {/* The Place a pin or a list row put on the map, said over the map. Same
+          edge, same lens and same z-index as the spot capsule above — the two
+          never coexist, because selecting a Place clears the spot. */}
+      {selShown && (
+        <SelectionCapsule
+          poi={selected}
+          /* The one rule the list, the map and the Place head already share:
+             a ruled-out ride is red rather than its category colour dimmed. */
+          dot={
+            eligibilityView.at(identityOf(selected))?.blocks
+              ? paletteFor(theme).barred
+              : paletteFor(theme).categories[selected.c]
+          }
+          status={selStatus}
+          metres={
+            position ? distance(position.lat, position.lng, selected.lat, selected.lng) : null
+          }
+          onOpen={() => push('place', 'explore')}
+          onNavigate={(p) => startNav(placeNav(p))}
+          onClose={() => setSelected(null)}
         />
       )}
 
