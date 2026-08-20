@@ -19,15 +19,16 @@ fixed as the contract.
 2. **One design-request document per look.** A design prompt compiles into a single request doc
    that the factory expands into all three ledger artifacts — the **Skin template** (skins.json
    row), the kit JSON, and an ADR-0014-harvested reference profile — with the request doc
-   committed beside the ledgers as provenance. A request states a target on all 20 design-language
-   axes ([docs/goals/design-language-axes.md](../goals/design-language-axes.md); declared negation
+   committed beside the ledgers as provenance. A request declares a reference anchor (pillar line,
+   touchpoints, exemplar) and states a target on every design-language axis
+   ([docs/goals/design-language-axes.md](../goals/design-language-axes.md); declared negation
    counts, silence scores zero). A request that changes only palette/tokens is **invalid**: the
    factory must not produce color-only looks, and certification gains a beyond-palette
    distinctness gate — structural/signature distinctness at the anchor points, not hue distance
    (extending `style_cross_kit_distinct`).
 3. **Quality gate.** A look's first ship requires full mechanical certification **plus** an owner
-   eye pass (scored on the 20 axes). Refreshes of an approved look re-certify mechanically without
-   re-approval.
+   eye pass (Tier-0 gates then the axis score, anchored to the request's exemplar). Refreshes of
+   an approved look re-certify mechanically without re-approval.
 4. **Distribution.** Every certified look ships in the venue's pack — no lazy per-look download.
    Consequence: the per-look size budget becomes a hard certification row, because every look
    costs every guest's download.
