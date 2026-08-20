@@ -33,6 +33,7 @@
       "map": "/venues/big-kahunas.map.json",
       "pois": "/venues/big-kahunas.pois.json",
       "gaps": "/venues/big-kahunas.gaps.json",
+      "bundle": "/venues/big-kahunas.bundle.json",
       "counts": {
         "pois": 32,
         "rides": 23,
@@ -86,6 +87,7 @@
       "map": "/venues/cedar-point.map.json",
       "pois": "/venues/cedar-point.pois.json",
       "gaps": "/venues/cedar-point.gaps.json",
+      "bundle": "/venues/cedar-point.bundle.json",
       "counts": {
         "pois": 428,
         "rides": 75,
@@ -220,6 +222,7 @@
       "map": "/venues/kings-island.map.json",
       "pois": "/venues/kings-island.pois.json",
       "gaps": "/venues/kings-island.gaps.json",
+      "bundle": "/venues/kings-island.bundle.json",
       "counts": {
         "pois": 164,
         "rides": 68,
@@ -258,6 +261,7 @@
       "map": "/venues/six-flags-fiesta-texas.map.json",
       "pois": "/venues/six-flags-fiesta-texas.pois.json",
       "gaps": "/venues/six-flags-fiesta-texas.gaps.json",
+      "bundle": "/venues/six-flags-fiesta-texas.bundle.json",
       "counts": {
         "pois": 160,
         "rides": 70,
