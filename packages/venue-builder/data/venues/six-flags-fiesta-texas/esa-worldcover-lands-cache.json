@@ -1,0 +1,37 @@
+{
+  "fetched": "2026-08-20",
+  "source": "esa-worldcover.org",
+  "license": "CC BY 4.0",
+  "lands": {
+    "Rockville": {
+      "code": 50,
+      "name": "built_up",
+      "count": 855
+    },
+    "DC Universe": {
+      "code": 50,
+      "name": "built_up",
+      "count": 519
+    },
+    "Spassburg": {
+      "code": 50,
+      "name": "built_up",
+      "count": 394
+    },
+    "Los Festivales": {
+      "code": 50,
+      "name": "built_up",
+      "count": 630
+    },
+    "Fiesta Bay Boardwalk": {
+      "code": 50,
+      "name": "built_up",
+      "count": 363
+    },
+    "Texas State Square": {
+      "code": 50,
+      "name": "built_up",
+      "count": 358
+    }
+  }
+}

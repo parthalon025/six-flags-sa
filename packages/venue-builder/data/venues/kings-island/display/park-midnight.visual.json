@@ -86,41 +86,45 @@
     }
   },
   "landTones": {
-    "International Street": {
-      "day": "#F1EEE4",
-      "night": "#2A271D"
+    "Soak City": {
+      "day": "#E4EEF1",
+      "night": "#1D272A"
     },
     "Coney Mall": {
       "day": "#F1EAE4",
       "night": "#2A231D"
     },
+    "International Street": {
+      "day": "#F1EEE4",
+      "night": "#2A271D"
+    },
     "Rivertown": {
       "day": "#E4F1E4",
       "night": "#1D2A1D"
-    },
-    "Action Zone": {
-      "day": "#E4ECF1",
-      "night": "#1D252A"
-    },
-    "Area 72": {
-      "day": "#EAE4F1",
-      "night": "#231D2A"
     },
     "Planet Snoopy": {
       "day": "#F1EFE4",
       "night": "#2A281D"
     },
+    "Action Zone": {
+      "day": "#E4ECF1",
+      "night": "#1D252A"
+    },
     "Camp Snoopy": {
       "day": "#ECF1E4",
       "night": "#252A1D"
+    },
+    "Oktoberfest": {
+      "day": "#C9B79E",
+      "night": "#39323F"
     },
     "Adventure Port": {
       "day": "#E4F1EF",
       "night": "#1D2A28"
     },
-    "Soak City": {
-      "day": "#E4EEF1",
-      "night": "#1D272A"
+    "Area 72": {
+      "day": "#EAE4F1",
+      "night": "#231D2A"
     }
   },
   "fallback": {

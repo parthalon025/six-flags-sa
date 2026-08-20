@@ -71,7 +71,26 @@
       "source": "park",
       "source-layer": "lands",
       "paint": {
-        "fill-color": "rgba(0,0,0,0)",
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "name"
+          ],
+          "DC Universe",
+          "#C9B79E",
+          "Fiesta Bay Boardwalk",
+          "#C9B79E",
+          "Los Festivales",
+          "#C9B79E",
+          "Rockville",
+          "#C9B79E",
+          "Spassburg",
+          "#C9B79E",
+          "Texas State Square",
+          "#C9B79E",
+          "rgba(0,0,0,0)"
+        ],
         "fill-opacity": 0.45
       }
     },
