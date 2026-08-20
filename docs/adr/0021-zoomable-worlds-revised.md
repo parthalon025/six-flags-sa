@@ -38,12 +38,30 @@ out of it.
 2. **Bands are specified in ground sample distance, on power-of-two steps.** Overview **2.4 m/px**
    · mid **0.6 m/px** (unchanged — Train E's existing bake) · close **0.15 m/px**. Each band sits
    exactly 4× (two zoom levels) from its neighbour, so the parent-band placeholder of playbook
-   row 5 has a real parent to upscale from. `px/cell` is retired as the specifying unit: nothing
-   in the repo states a cell's size directly, and it is only pinnable by working backwards from
-   ADR-0019's own "48 px/cell ≈ 15 cm/px" — which puts the old overview band at 1.8 m/px. So this
-   is not a pure restatement: mid and close land exactly where they were, and **overview coarsens
-   from 1.8 to 2.4 m/px** to buy the clean 4× chain. That band's job is bold generalized shapes,
-   which is why it is the one that can afford to move.
+   row 5 has a real parent to upscale from.
+
+   `px/cell` is retired as the specifying unit, and this is a real change of kind rather than a
+   restatement. A cell **is** defined — `display-bake.mjs`'s projector sets
+   `tileMetres = max(2, span / maxCols)` with `maxCols` 240 — but it is defined *per venue*, so
+   px/cell holds the bake's **pixel dimensions** constant and lets ground resolution float with
+   park size. Absolute GSD inverts that: ground resolution is constant and pixel dimensions float.
+   Measured across the four shipped venues:
+
+   | venue | cell | close band today | close band at 0.15 m/px |
+   |---|---|---|---|
+   | big-kahunas | 2.76 m | 0.057 m/px · 11,520 px | 0.15 m/px · 4,408 px |
+   | kings-island | 6.46 m | 0.135 m/px · 11,520 px | 0.15 m/px · 10,331 px |
+   | six-flags-fiesta-texas | 7.04 m | 0.147 m/px · 11,520 px | 0.15 m/px · 11,256 px |
+   | cedar-point | 7.97 m | 0.166 m/px · 11,520 px | 0.15 m/px · 12,753 px |
+
+   ADR-0019's "48 px/cell ≈ 15 cm/px" was true for a mid-size park and only for one. The trade
+   accepted here: **a metre means the same thing at every park** — authored close-band detail and
+   the clause 3 alignment budget are fixed ground distances rather than venue-dependent ones — at
+   the cost of Big Kahuna's dropping 2.6× of the close-band resolution it has today (small parks
+   were getting fine detail as an accident of the formula's 2 m floor), and of large venues
+   growing: a hypothetical 4 km park needs a 26,667 px side, ~29× kings-island's close-band area.
+   The per-band size budget rows are what hold that in check, and they now have to be expressed
+   per venue rather than once for the catalogue.
 3. **Generalization removes, never moves.** A band may drop a feature entirely; any feature it
    does draw sits where Truth says it sits. Per-band alignment budget, asserted against Truth
    centrelines by the `style_world_geo` row: close ≤ 1 px (0.15 m), mid ≤ 1 px (0.6 m), overview
