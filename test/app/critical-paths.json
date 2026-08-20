@@ -16,9 +16,9 @@
     {
       "id": "intake-welcome",
       "slice": "Navigate",
-      "user_action": "See brand welcome and nearest-World offer",
+      "user_action": "See what the app is for, and the nearest-World offer",
       "suite": "functional",
-      "check": "the welcome gate shows brand, pitch, and nearest-park on one card"
+      "check": "the welcome gate is step one of two: what the app is for, and the ask"
     },
     {
       "id": "intake-confirm-park",
