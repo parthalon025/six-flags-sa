@@ -161,7 +161,7 @@ A **Profile**-owned cosmetic restyle of the **World** map — how it is painted,
 _Avoid_: Theme (Trail / Park Midnight are the always-on palettes); map pack; party theme; Map skin (use **Skin**)
 
 **Display pack**:
-The **Visual factory**'s output for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), per-**Skin** baked worlds (the mid **Zoom band**; deeper bands stream and sync on **Wear**), `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`. See **Rendering tier** for how a device chooses baked vs real-time PBR.
+The **Visual factory**'s output for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), per-**Skin** baked worlds (the mid **Zoom band**; deeper bands stream by viewport and cache, or download on request), `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`. See **Rendering tier** for how a device chooses baked vs real-time PBR.
 _Avoid_: tile server (runtime HTTP on the phone); map pack (use **display pack**); baking truth into tiles (truth stays JSON)
 
 **Zoom band**:

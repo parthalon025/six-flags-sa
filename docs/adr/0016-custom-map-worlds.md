@@ -51,8 +51,9 @@ color swap" — is the symptom: the expressive half of the factory never reaches
 
 8. **Zoom bands and streamed pyramids** (amended 2026-08-20 by [ADR-0019](./0019-zoomable-worlds.md),
    owner-confirmed). Slice 6.1's "tiling only if budgets demand" clause has fired: a world is no
-   longer one image but **three zoom-banded bakes** (overview 4 px/cell · mid 12 px/cell · close
-   48 px/cell — LOD with real generalization per band), delivered as the mid band in the pack
+   longer one image but **three zoom-banded bakes** (overview 2.4 m/px · mid 0.6 m/px · close
+   0.15 m/px — LOD with real generalization per band; band units restated in ground sample
+   distance on power-of-two steps by [ADR-0021](./0021-zoomable-worlds-revised.md)), delivered as the mid band in the pack
    plus streamed raster tile pyramids. Image-on-truth-bounds remains the geometric contract *per
    band*; strictly geo-true and byte-identity are unchanged. Clause 5's iso projections resolve
    to top-down bands plus a declared per-Skin camera preset — the live iso painter retires from

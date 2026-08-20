@@ -36,7 +36,7 @@ Extend `runVenuePipeline` after `certify`:
 
 1. **tiles-export** — GeoJSON layers (`packages/venue-builder/lib/tiles-export.mjs`, existing)
 2. **tiles-build** — Tippecanoe → `display/base.pmtiles`
-3. **visual-spec** — merge `visual.json` (land tones, labels, landmark refs, quest-linked skin overrides)
+3. **visual-spec** — merge `visual.json` (land tones, label *styling*, landmark refs, quest-linked skin overrides — label strings come from `pois.json`, never from `visual.json`; see [ADR-0021](./0021-zoomable-worlds-revised.md))
 4. **skin-bake** — optional per-(Venue × **Skin**) raster or vector variants when parametric templates are insufficient
 5. **display-certify** — automated visual matrix (fixed camera points); fail build on drift
 6. **manifest** — hashes, sizes, versions for phone download manager
