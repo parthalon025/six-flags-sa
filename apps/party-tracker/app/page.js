@@ -85,6 +85,7 @@ import {
   grantShipSkins,
   mergeWorlds,
   recordSideQuest,
+  syncRankExPrizes,
   visibleMarks,
   wearMap,
 } from '@/lib/world';
@@ -1399,7 +1400,7 @@ function ParkApp({ isSignedIn }) {
   );
 
   const recordWorldQuest = useCallback(
-    ({ quest, report }) => {
+    ({ quest, report, rankUp = null }) => {
       const { progress: next, marks } = recordSideQuest(
         { ...worldProgress, userId: authSession?.userId || worldProgress.userId },
         {
@@ -1414,7 +1415,9 @@ function ParkApp({ isSignedIn }) {
           venuePlaceCount: POIS?.length || null,
         },
       );
-      setWorldProgress(next);
+      // Rank prizes ride the same seam: syncing through the new rank also
+      // backfills any earlier rank whose grant this phone never saw.
+      setWorldProgress(rankUp ? syncRankExPrizes(next, rankUp) : next);
       for (const mark of marks) publishMark(mark);
     },
     [worldProgress, authSession?.userId, venue?.id, venue?.kind, party?.partyId, POIS, publishMark],
@@ -3339,6 +3342,7 @@ function ParkApp({ isSignedIn }) {
                     });
                   }
                 }}
+                profileXp={authSession?.xp ?? 0}
                 worldProgress={worldProgress}
                 world={mergedWorld}
                 acceptedOffer={acceptedOffer}

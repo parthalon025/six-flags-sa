@@ -38,6 +38,7 @@ Entry points are the root files listed in `package.json` `exports`:
 - `mapSymbols.js`
 - `schemas.js`
 - `questScore.js`
+- `rankPrizes.js` — Rank prize catalog (Skins / Kits at XP thresholds)
 - `compass.js` — facing-relative Compass marks + Watch settings (ADR-0011)
 - `consolidateExport.js` — contribution kinds that graduate into the consolidate queue (E0.5)
 - `isoWorld.js` — RCT-style 2:1 dimetric projection, 4 view rotations, depthKey paint order (ADR-0012)

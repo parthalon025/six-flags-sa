@@ -6,6 +6,8 @@
  * here touches the DOM, storage, or the mesh.
  */
 
+import { rankPrizesForRank } from '@party-tracker/shared/rankPrizes.js';
+
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const FADE_DIM_MS = 7 * DAY_MS;
 export const FADE_GONE_MS = 28 * DAY_MS;
@@ -336,6 +338,7 @@ export function createProgress({ userId = null } = {}) {
     wearSkin: null,
     kit: null,
     fogMapEnabled: false,
+    rankPrizesGranted: [],
     meters: {
       contributions: 0,
       venues: [],
@@ -736,6 +739,83 @@ export function grantShipSkins(progress, { venueId = null, now = Date.now() } = 
     wearSkin: progress.wearSkin || 'postcard',
     meters,
   };
+}
+
+/** Bump meters so a Skin's unlock rule is satisfied (Rank ex-prize grants). */
+function meterFloorForSkinUnlock(meters, rule = {}) {
+  const m = { ...meters };
+  if (rule.contributions) m.contributions = Math.max(m.contributions || 0, rule.contributions);
+  if (rule.venues) {
+    const need = rule.venues;
+    const venues = [...(m.venues || [])];
+    while (venues.length < need) venues.push(`rank-venue-${venues.length}`);
+    m.venues = venues;
+  }
+  if (rule.venueGaps) {
+    m.gapByVenue = { ...(m.gapByVenue || {}) };
+    const key = 'rank-grant';
+    m.gapByVenue[key] = Math.max(m.gapByVenue[key] || 0, rule.venueGaps);
+  }
+  if (rule.pathGaps) m.pathGaps = Math.max(m.pathGaps || 0, rule.pathGaps);
+  if (rule.heightQuests) m.heightQuests = Math.max(m.heightQuests || 0, rule.heightQuests);
+  if (rule.nightQuests) m.nightQuests = Math.max(m.nightQuests || 0, rule.nightQuests);
+  if (rule.fogPct) {
+    m.fogByVenue = { ...(m.fogByVenue || {}) };
+    const key = 'rank-grant';
+    const places = m.fogByVenue[key] || [];
+    const need = Math.max(4, Math.ceil((rule.fogPct / 100) * 16));
+    if (places.length < need) {
+      m.fogByVenue[key] = Array.from({ length: need }, (_, i) => `fog-${i}`);
+    }
+    m.venuePlaceCount = { ...(m.venuePlaceCount || {}), [key]: Math.max(m.venuePlaceCount?.[key] || 0, 16) };
+  }
+  return m;
+}
+
+/**
+ * Grant Rank prizes (Skins / Kits) once per Profile rank.
+ * @param {object} progress world progress snapshot
+ * @param {string} rank scout | ranger | cartographer | steward
+ */
+export function grantRankExPrizes(progress, rank) {
+  if (!rank || rank === 'visitor') return progress;
+  const granted = new Set(progress.rankPrizesGranted || []);
+  if (granted.has(rank)) return progress;
+  const prizes = rankPrizesForRank(rank);
+  if (!prizes.length) {
+    return { ...progress, rankPrizesGranted: [...granted, rank] };
+  }
+  let next = {
+    ...progress,
+    rankPrizesGranted: [...granted, rank],
+    meters: { ...(progress.meters || {}) },
+  };
+  for (const prize of prizes) {
+    if (prize.kind === 'kit' && prize.id && !next.kit) {
+      next = { ...next, kit: prize.id };
+    }
+    if (prize.kind === 'skin' && prize.id) {
+      const skin = SKINS[prize.id];
+      if (skin?.unlock) {
+        next = { ...next, meters: meterFloorForSkinUnlock(next.meters, skin.unlock) };
+      }
+      if (!next.wearSkin) next = { ...next, wearSkin: prize.id };
+    }
+  }
+  return next;
+}
+
+const RANK_PRIZE_ORDER = ['scout', 'ranger', 'cartographer', 'steward'];
+
+/** Grant every Rank prize through `rank` (backfill on sign-in). */
+export function syncRankExPrizes(progress, rank) {
+  const i = RANK_PRIZE_ORDER.indexOf(rank);
+  if (i < 0) return progress;
+  let next = progress;
+  for (let j = 0; j <= i; j += 1) {
+    next = grantRankExPrizes(next, RANK_PRIZE_ORDER[j]);
+  }
+  return next;
 }
 
 export function mapThemeCssVars(pack) {

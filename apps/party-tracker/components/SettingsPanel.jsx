@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
 import BrandMark from '@/components/BrandMark';
 import ProfileJourney from '@/components/ProfileJourney';
+import RankPrizeCatalog from '@/components/RankPrizeCatalog';
 import SignInCard from '@/components/SignInCard';
 import WorldCloset from '@/components/WorldCloset';
 
@@ -48,6 +49,7 @@ export default function SettingsPanel({
   movementPending = 0,
   session = null,
   onSession = null,
+  profileXp = 0,
   worldProgress = null,
   world = null,
   acceptedOffer = null,
@@ -135,6 +137,8 @@ export default function SettingsPanel({
           <SignInCard session={session} onSession={onSession} />
 
           <ProfileJourney session={session} />
+
+          <RankPrizeCatalog xp={profileXp} />
         </>
       )}
 

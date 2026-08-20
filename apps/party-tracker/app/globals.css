@@ -1983,6 +1983,38 @@ html[data-skin-junior="1"] .poiMarker {
 }
 .fine.block { display: block; margin-left: 0; margin-right: 0; }
 
+.rankPrizeCatalog { margin-top: 4px; }
+.rankPrizeList {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.rankPrizeRow {
+  border: 1px solid color-mix(in srgb, var(--label) 12%, transparent);
+  border-radius: 12px; padding: 10px 12px;
+  background: color-mix(in srgb, var(--bg2) 88%, transparent);
+}
+.rankPrizeRow.earned {
+  border-color: color-mix(in srgb, var(--aqua) 35%, transparent);
+}
+.rankPrizeHead {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.rankPrizeXp {
+  font-size: 12px; font-variant-numeric: tabular-nums; color: var(--label2);
+}
+.rankPrizeItems {
+  list-style: none; margin: 8px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.rankPrizeItems li {
+  display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: 14px;
+}
+.rankPrizeKind {
+  font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--label2);
+}
+.rankPrizeItems .fine { margin: 0; grid-column: 2; font-size: 12px; }
+
 .warnText { color: var(--orange); }
 
 /* Four controls sit under the 44pt floor, and three of them cannot simply grow:

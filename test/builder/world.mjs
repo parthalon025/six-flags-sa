@@ -453,6 +453,22 @@ await check('local world save round-trips progress and accepted Offer', () => {
   return true;
 });
 
+await check('Rank Scout prize grants Porter cuff Kit', () => {
+  let p = progress();
+  p = world.grantRankExPrizes(p, 'scout');
+  assert.equal(p.kit, 'porter-cuff');
+  assert.ok(p.rankPrizesGranted.includes('scout'));
+  return true;
+});
+
+await check('syncRankExPrizes unlocks Skins through Ranger', () => {
+  let p = progress();
+  p = world.syncRankExPrizes(p, 'ranger');
+  assert.deepEqual(p.rankPrizesGranted, ['scout', 'ranger']);
+  assert.equal(world.skinRung(p, 'postcard'), 'unlock');
+  return true;
+});
+
 console.log('');
 console.log(PASS.length + ' passed,', FAIL.length + ' failed');
 if (FAIL.length) {
