@@ -18,7 +18,7 @@ import path from 'node:path';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
-import { buildRasterTier } from './display-raster.mjs';
+import { buildWorldTier } from './display-world.mjs';
 import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
@@ -619,10 +619,12 @@ export function runDisplayStage(id, opts = {}) {
   }
 
   // Bake integration: fold each baked kit's style contract into this
-  // venue's certification (rows namespaced bake:<kit>:*), attempt the
-  // raster tier, and write the pack manifest naming every tier — present
-  // ones with sizes, absent ones as recorded gaps.
+  // venue's certification (rows namespaced bake:<kit>:*), place each
+  // bakeKit-bound Skin's world into the pack (ADR-0016 world tier), and
+  // write the pack manifest naming every tier — present ones with sizes,
+  // absent ones as recorded gaps.
   let bakes = null;
+  let worlds = null;
   if (opts.bake) {
     const bakeDir = opts.bake.dir || path.join(MONO_ROOT, 'artifacts', 'display-bake');
     // Iso-tier bakes (`<id>--<kit>--iso-r<N>.*`) stay out of the pack: they
@@ -650,16 +652,16 @@ export function runDisplayStage(id, opts = {}) {
       .filter((t) => t.status === 'active' && t.bakeKit && bakes[t.bakeKit])
       .map((t) => t.bakeKit);
     const primaryKit = boundKits[0] || bakeCerts[0]?.kit || null;
-    const primaryCert = bakeCerts.find((b) => b.kit === primaryKit)?.cert;
-    const raster = buildRasterTier({
-      bakePng: primaryKit ? path.join(bakeDir, `${id}--${primaryKit}.png`) : null,
-      bounds: opts.bake.bounds ?? primaryCert?.bounds ?? null,
-    });
+    // World tier (ADR-0016): each bakeKit-bound Skin's bake lands in the
+    // pack as an image-on-truth-bounds world. This is what retired the
+    // raster-PMTiles seam (lib/display-raster.mjs): that path recorded a
+    // permanent gap on every call, and direct placement needs no tiler.
+    const worldTier = buildWorldTier({ id, templates, bakeDir, bakeCerts, outDir, write });
+    worlds = worldTier.worlds;
+    written.push(...worldTier.written);
     const manifest = tierManifest([
       fileEntry('vector', path.join(outDir, 'base.pmtiles')),
-      raster.ok
-        ? { name: 'raster', file: path.basename(raster.file), bytes: raster.sizeKb * 1024 }
-        : { name: 'raster', gap: true, reason: raster.reason },
+      ...worldTier.entries,
       ...bakeCerts.map(({ kit }) => fileEntry(`bake:${kit}`, path.join(bakeDir, `${id}--${kit}.png`), { kit })),
       primaryKit
         ? fileEntry('credits', path.join(bakeDir, `${id}--${primaryKit}.credits.json`), { kit: primaryKit })
@@ -681,6 +683,7 @@ export function runDisplayStage(id, opts = {}) {
     anchors,
     checks: venueChecks,
     ...(bakes ? { bakes } : {}),
+    ...(worlds && Object.keys(worlds).length ? { worlds } : {}),
     skins: Object.fromEntries(
       Object.entries(packs).map(([skinId, p]) => [skinId, p.certification]),
     ),
@@ -691,5 +694,5 @@ export function runDisplayStage(id, opts = {}) {
     written.push(file);
   }
 
-  return { venue: id, certified, packs, anchors, tiles, bakes, written };
+  return { venue: id, certified, packs, anchors, tiles, bakes, worlds, written };
 }

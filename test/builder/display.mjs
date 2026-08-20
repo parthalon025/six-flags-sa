@@ -770,11 +770,88 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
   assert.equal(manifest.tiers.credits.kit, 'rpg-overworld', 'skins bakeKit binding beats directory order');
   assert.ok(manifest.tiers['bake:island-brochure'].bytes > 0);
   assert.ok(!Object.keys(manifest.tiers).some((k) => k.includes('iso-r0')), 'iso bakes are not pack tiers');
-  assert.ok(manifest.tiers.raster.gap, 'raster stays an honest gap');
+  // ADR-0016 world tier: every bakeKit-bound Skin gets a world row — placed
+  // when its kit baked, a recorded gap otherwise. The raster-PMTiles tier is
+  // retired (its permanent gap is what the world tier closes).
+  assert.ok(!manifest.tiers.raster, 'the raster tier is retired in favor of worlds');
+  assert.equal(manifest.tiers['world:trail'].kit, 'island-brochure');
+  assert.equal(manifest.tiers['world:trail'].projection, 'top-down');
+  assert.ok(manifest.tiers['world:trail'].bytes > 0);
+  assert.equal(manifest.tiers['world:park-midnight'].kit, 'rpg-overworld');
+  const trailWorld = JSON.parse(readFileSync(path.join(outDir, 'trail.world.json'), 'utf8'));
+  assert.equal(trailWorld.file, 'trail.world.png');
+  assert.deepEqual(trailWorld.bounds, { west: 0, south: 0, east: 0.01, north: 0.01 }, 'sidecar echoes the bake bounds');
+  assert.equal(readFileSync(path.join(outDir, 'trail.world.png'), 'utf8'), 'png-bytes', 'the bake PNG lands in the pack');
+  assert.equal(result.worlds.trail.kit, 'island-brochure');
   const empty = runDisplayStage('test-park', {
     map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-')), bake: { dir: mkdtempSync(path.join(tmpdir(), 'nobakes-')) },
   });
   assert.equal(empty.certified, false, 'no bakes = recorded gap, stage fails honestly');
+  return true;
+});
+
+/* ----------------------------------------------------------- world tier -- */
+
+await check('every bakeKit-bound Skin gets a world row — placed or a recorded gap', async () => {
+  const { buildWorldTier } = await import('../../packages/venue-builder/lib/display-world.mjs');
+  const { writeFileSync } = await import('node:fs');
+  const bakeDir = mkdtempSync(path.join(tmpdir(), 'bakes-'));
+  const outDir = mkdtempSync(path.join(tmpdir(), 'world-'));
+  writeFileSync(path.join(bakeDir, 'test-park--kit-a.png'), 'png-a');
+  const templates = {
+    'skin-a': { id: 'skin-a', status: 'active', bakeKit: 'kit-a' },
+    'skin-b': { id: 'skin-b', status: 'active', bakeKit: 'kit-b' }, // never baked
+    'skin-c': { id: 'skin-c', status: 'active' }, // no bakeKit — no world row
+  };
+  const bakeCerts = [{ kit: 'kit-a', cert: { certified: true, bounds: { west: 1, south: 2, east: 3, north: 4 } } }];
+  const tier = buildWorldTier({ id: 'test-park', templates, bakeDir, bakeCerts, outDir });
+  const byName = Object.fromEntries(tier.entries.map((e) => [e.name, e]));
+  assert.ok(byName['world:skin-a'].bytes > 0, 'baked kit places its world');
+  assert.equal(byName['world:skin-a'].meta.kit, 'kit-a');
+  assert.ok(byName['world:skin-b'].gap, 'an unbaked kit is a recorded gap, never silent');
+  assert.match(byName['world:skin-b'].reason, /venues:bake/);
+  assert.ok(!byName['world:skin-c'], 'a Skin without a bakeKit claims no world');
+  assert.equal(tier.worlds['skin-a'].projection, 'top-down');
+  assert.equal(readFileSync(path.join(outDir, 'skin-a.world.png'), 'utf8'), 'png-a');
+  // A cert without bounds cannot place an image on truth — recorded gap.
+  const noBounds = buildWorldTier({
+    id: 'test-park', templates, bakeDir, outDir: mkdtempSync(path.join(tmpdir(), 'world-')),
+    bakeCerts: [{ kit: 'kit-a', cert: { certified: true } }],
+  });
+  assert.ok(noBounds.entries.find((e) => e.name === 'world:skin-a').gap);
+  return true;
+});
+
+await check('worldSidecar echoes bounds and rejects unknown projections', async () => {
+  const { worldSidecar } = await import('../../packages/venue-builder/lib/display-world.mjs');
+  const bounds = { west: -84.28, south: 39.33, east: -84.25, north: 39.35 };
+  const side = worldSidecar({ skin: 's', kit: 'k', bounds, file: 's.world.png', credits: 'c.json' });
+  assert.equal(side.projection, 'top-down');
+  assert.deepEqual(side.bounds, bounds);
+  assert.throws(() => worldSidecar({ skin: 's', kit: 'k', bounds, file: 'f', projection: 'oblique' }), /projection/);
+  assert.throws(() => worldSidecar({ skin: 's', kit: 'k', bounds: { west: 1 }, file: 'f' }), /bounds/);
+  return true;
+});
+
+await check('publishWorlds copies exactly the named worlds to the app, and names what is missing', async () => {
+  const { buildWorldTier, publishWorlds } = await import('../../packages/venue-builder/lib/display-world.mjs');
+  const { writeFileSync, existsSync } = await import('node:fs');
+  const bakeDir = mkdtempSync(path.join(tmpdir(), 'bakes-'));
+  const outDir = mkdtempSync(path.join(tmpdir(), 'world-'));
+  const publicDir = mkdtempSync(path.join(tmpdir(), 'public-'));
+  writeFileSync(path.join(bakeDir, 'test-park--kit-a.png'), 'png-a');
+  buildWorldTier({
+    id: 'test-park',
+    templates: { 'skin-a': { id: 'skin-a', status: 'active', bakeKit: 'kit-a' } },
+    bakeDir,
+    bakeCerts: [{ kit: 'kit-a', cert: { certified: true, bounds: { west: 1, south: 2, east: 3, north: 4 } } }],
+    outDir,
+  });
+  const res = publishWorlds('test-park', ['skin-a', 'skin-x'], { outDir, publicDir });
+  assert.ok(existsSync(path.join(publicDir, 'skin-a.world.png')));
+  assert.ok(existsSync(path.join(publicDir, 'skin-a.world.json')));
+  assert.deepEqual(res.missing, ['skin-x'], 'a world that is not in the pack is named, not invented');
+  assert.equal(res.published.length, 2);
   return true;
 });
 

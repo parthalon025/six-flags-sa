@@ -11,7 +11,9 @@
  */
 
 import { check } from './evidence.mjs';
-import { TERRAIN_NAMES, impliedTerrainClasses } from './display-bake.mjs';
+import {
+  TERRAIN_NAMES, impliedTerrainClasses, POI_BADGES, WORLD_DISPLACEMENT_BUDGET_PX,
+} from './display-bake.mjs';
 import {
   isoCellMap, isoCellToPixel, buildingHeightsM, trackVertexHeightsM,
   buildingScreenHulls, occludedByBuilding,
@@ -322,10 +324,15 @@ const groupMedians = (points, samples) => {
  * DID survive; a compositing bug that erases a class entirely (issue #518:
  * water painted over the whole park with no boundary clip) passed that
  * check clean because there was nothing sampled to fail on.
+ *
+ * `pois` (truth places) powers `style_world_geo` on the flat tier — the
+ * ADR-0016 geo-fidelity row for worlds placed image-on-truth-bounds.
+ * `px` is the bake's pixels-per-cell, needed to convert the kit's stroke
+ * displacement budget into cells.
  */
 export function certifyStyleContract({
   model, points, samples, rerunSamples = null, siblings = null, profile, kit,
-  target = 'flat', skips = null, map = null,
+  target = 'flat', skips = null, map = null, pois = null, px = 16,
 }) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
@@ -384,6 +391,51 @@ export function certifyStyleContract({
       confidence: 1,
       falsifier: 'a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)',
       soWhat: 'a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world',
+    }));
+  }
+
+  // Geo fidelity for the world tier (ADR-0016: strictly geo-true, bounded
+  // displacement certified). The app places the baked image on the model's
+  // truth-derived bounds, so a painted feature lands where the linear
+  // bounds→cell map puts it. What this row PROVES, given that the bake is
+  // deterministic (style_bake_deterministic) and the model is built from
+  // truth alone: (1) sampled truth anchors — every model badge matched back
+  // to its truth POI — sit where projecting that POI through the world's
+  // own bounds says they must, i.e. the image-on-truth-bounds placement is
+  // exact for painted features; (2) the only paint-time geometry wobble the
+  // kit is allowed (seeded stroke displacement) is bounded by the declared
+  // budget, so no painted edge sits further than that many pixels from its
+  // truth position. It does not judge looks — the palette rows do that.
+  if (pois && model.bounds && target === 'flat') {
+    const b = model.bounds;
+    const toCell = (lng, lat) => [
+      ((lng - b.west) / (b.east - b.west)) * model.cols,
+      ((b.north - lat) / (b.north - b.south)) * model.rows,
+    ];
+    const truthByKey = new Map();
+    for (const p of pois) {
+      if (POI_BADGES[p.c] && Number.isFinite(p.lat)) truthByKey.set(`${POI_BADGES[p.c]}|${p.n}`, p);
+    }
+    const errs = [];
+    for (const badge of model.badges || []) {
+      const poi = truthByKey.get(`${badge.kind}|${badge.name}`);
+      if (!poi) continue;
+      const [ex, ey] = toCell(poi.lng, poi.lat);
+      errs.push(Math.hypot(ex - badge.x, ey - badge.y));
+    }
+    // Anchors are never displaced (annotation passes last, undisplaced);
+    // the tolerance only absorbs the bounds' own 1e-7° rounding.
+    const anchorTol = 0.05;
+    const worstAnchor = errs.length ? Math.max(...errs) : 0;
+    const amplitude = kit.strokes?.displacement?.amplitude ?? 0;
+    checks.push(check({
+      key: 'style_world_geo',
+      claim: `world anchors project onto truth through the pack bounds (≤ ${anchorTol} cells) and stroke displacement stays within ${WORLD_DISPLACEMENT_BUDGET_PX} px`,
+      pass: worstAnchor <= anchorTol && amplitude <= WORLD_DISPLACEMENT_BUDGET_PX,
+      evidence: `${errs.length} truth anchor(s) sampled, worst offset ${Math.round(worstAnchor * 1000) / 1000} cells; declared stroke displacement ${amplitude} px (budget ${WORLD_DISPLACEMENT_BUDGET_PX} px, ${Math.round((amplitude / px) * 1000) / 1000} cells)`,
+      confidence: 0.9,
+      falsifier: 'a model whose badge positions no longer derive from truth through its own bounds, or a kit displacing strokes past the budget',
+      soWhat: 'a world image that drifts from truth bounds moves every Place a guest stands next to',
     }));
   }
 
