@@ -64,6 +64,11 @@ export default function SettingsPanel({
   onWithdrawOffer = null,
   onEquipKit = null,
   onDropMark = null,
+  /** The tapped spot a Mark is to be anchored to, and the way to let it go.
+   *  Settings does not read either: Collection (WorldCloset, below) is where a
+   *  Mark is placed, and this panel is only its current address. */
+  spot = null,
+  onClearSpot = null,
   onWatchCompass = null,
   /** Jump straight to a topic (e.g. the on-map OSM notice opening Credits) —
    * `{ topic, nonce }`, where `nonce` changes on every request so a repeat
@@ -192,6 +197,8 @@ export default function SettingsPanel({
             onWithdraw={onWithdrawOffer}
             onEquipKit={onEquipKit}
             onDropMark={onDropMark}
+            spot={spot}
+            onClearSpot={onClearSpot}
           />
 
           <div className="label">Explore Worlds</div>

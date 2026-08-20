@@ -406,6 +406,10 @@ function ParkMap({
   me,
   members,
   meet,
+  /** A patch of ground the visitor tapped and named — see lib/spot.js. Drawn
+   *  like the meet-up because it is the same kind of thing: a point somebody
+   *  chose, not a Place the park has. */
+  spot = null,
   car,
   selected,
   onSelectPoi,
@@ -1311,6 +1315,11 @@ function ParkMap({
     reserve(puck?.lat ?? me?.lat, puck?.lng ?? me?.lng, 15);
     (members || []).forEach((m) => reserve(m.lat, m.lng, 17));
     if (meet) reserve(meet.lat, meet.lng, 16);
+    // The spot is the answer to the tap that just happened, so it outranks the
+    // Place names around it — this keeps a label off the pin's own footprint.
+    // Its walk time floats higher than the box reaches; that type is stroked
+    // and survives a collision, which the pin's silhouette would not.
+    if (spot) reserve(spot.lat, spot.lng, 20);
     const routePts = route?.points;
     if (routePts?.length > 1) {
       const step = Math.max(1, Math.floor(routePts.length / 14));
@@ -1408,6 +1417,7 @@ function ParkMap({
     route?.points,
     members,
     meet,
+    spot,
     me,
     puck,
     shownLabels,
@@ -1808,6 +1818,38 @@ function ParkMap({
                 <path d={`M${-24 * s} 0 L${-17.2 * s} ${3.2 * s} V${-3.2 * s} Z`} fill="var(--aqua)" />
                 {/* Orange compass eye */}
                 <circle cx={0} cy={0} r={6.2 * s} fill="var(--adventure)" stroke="var(--markerEdge)" strokeWidth="1.2" />
+              </g>
+            );
+          })()}
+
+        {/* the tapped spot — aqua, and the plainest pin on the map, because it
+            is the only one that stands for nothing but "here". Two nested
+            groups on purpose: the outer one carries the position, the inner one
+            carries the drop, because pinDrop ends on `transform: none` and a
+            filled animation on the positioned element would reset it to the
+            map's origin. The walk time floats above it in the same stroked type
+            the Place labels use, so it survives whatever it lands on. */}
+        {spot &&
+          (() => {
+            const [sx, sy] = at(spot.lat, spot.lng);
+            return (
+              <g key="spot" transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)})`}>
+                <g className="spotPin">
+                  {spot.walk ? (
+                    <text className="spotPinWalk" x={0} y={-31}>
+                      {spot.walk}
+                    </text>
+                  ) : null}
+                  <ellipse cx={0} cy={1.5} rx={7} ry={2.4} fill="#000" opacity="0.28" />
+                  <path
+                    d="M0 0 l-8.4 -12.4 a10.4 10.4 0 1 1 16.8 0 Z"
+                    fill="var(--aqua)"
+                    stroke="var(--markerEdge)"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx={0} cy={-14.6} r={3.3} fill="var(--markerEdge)" />
+                </g>
               </g>
             );
           })()}

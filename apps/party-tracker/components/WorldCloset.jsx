@@ -34,6 +34,14 @@ export default function WorldCloset({
   onWithdraw = null,
   onEquipKit = null,
   onDropMark = null,
+  /** The patch of ground a Mark is being anchored to — `lib/spot.js`, set by
+   *  tapping "Leave a Mark" on the map's spot capsule, null when the visitor
+   *  arrived here through Settings. Nothing below reads it yet: the anchored
+   *  gate (Sign/Beacon reading "Pick a spot" until there is one, and the
+   *  placeable set narrowing to those two — D17) is the Marks pass's work.
+   *  Declared here so the wire from the map exists and is one prop, not five. */
+  spot = null,
+  onClearSpot = null,
 }) {
   const needsProfile = softGateBlocks('world', session);
   const offers = world?.offers || [];

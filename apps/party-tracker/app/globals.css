@@ -577,6 +577,26 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   animation: pinDrop var(--t3) var(--ease) both;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .35));
 }
+/* The tapped spot, dropped the same way the meet-up is — this is the same kind
+   of object (a point somebody chose) and it should arrive with the same weight.
+   No transform-box here: the group it is on carries no transform of its own,
+   because ParkMap keeps the position on the parent so pinDrop's closing
+   `transform: none` cannot reset it. */
+.spotPin {
+  animation: pinDrop var(--t3) var(--ease) both;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .35));
+  pointer-events: none;
+}
+/* Walk time floating over the pin. Stroked type, not a text-shadow: the same
+   paint-order idiom every other label on this map uses, so it stays readable
+   over path, water and grass alike, and inverts with the palette through
+   --labelFill / --labelStroke rather than needing a second rule. */
+.spotPinWalk {
+  font-family: var(--ui); font-size: 11px; font-weight: 700; letter-spacing: .01em;
+  fill: var(--labelFill); text-anchor: middle;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3.5px;
+  stroke-linejoin: round; pointer-events: none;
+}
 .rangeLine {
   stroke: var(--blue); stroke-width: 1.5; stroke-dasharray: 5 7; opacity: .7;
   animation: breathe 2.6s ease-in-out infinite;
@@ -1404,6 +1424,15 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   display: grid; place-items: center;
 }
 .btn.iconOnly .icn { display: block; }
+/* Shape, not weight. Two button shapes live side by side on purpose: a capsule
+   for anything chip-sized — filters, segmented toggles, small inline pills —
+   and a rounded rect for the full-width and major actions ("Rally the Party",
+   "Walk me there", "I'm ready", "Get started"). The capsule stays the base
+   because that is what .chip and .btn.small already are, so the rect is the
+   opt-in and only the big buttons carry it. --r4 (14px) is the radius those
+   buttons are drawn at; it is the same token .oauthBtn takes, which is the
+   other full-width pair on the same card. */
+.btn.rect { border-radius: var(--r4); }
 .btnQuiet {
   display: block; width: 100%; min-height: 44px; padding: 11px;
   color: var(--blue); font-size: 17px; letter-spacing: -.4px;
@@ -1450,7 +1479,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
               opacity var(--t1) var(--easeOut);
 }
 .chip:active { opacity: .55; }
-.chip.on { background: var(--blue); color: var(--onTint); }
+/* Selected takes the ink colour, not the accent: --blue is --adventure here,
+   and a row of orange chips sitting under an orange primary button made "on"
+   read as "this is the action" rather than "this is the filter". --label on
+   --bg2 also inverts cleanly in both palettes — cream on navy at night, navy
+   on white by day — and neither token is redefined by the reduced-transparency
+   or increased-contrast blocks below, so the pair holds in all four states.
+   Accent is still reserved for danger, which keeps its own rule underneath. */
+.chip.on { background: var(--label); color: var(--bg2); }
 .chip.danger { color: var(--red); }
 .chip.danger.on { background: var(--red); color: var(--onTint); }
 
@@ -2053,6 +2089,19 @@ html[data-skin-junior="1"] .poiMarker {
 .gate.gateFirstRun .gateCard {
   animation: none;
 }
+/* Every other gate is read over a painted map, so it takes the lens the sheet
+   takes rather than a flat fill — same --glassTintDeep, same --lensDeep, same
+   --lensEdge, because a gate and the sheet are the same piece of glass sliding
+   up from the same edge. Scoped off first run deliberately: the note above is
+   the reason — with the map hidden there is nothing behind the glass to bend,
+   so a translucent card ghosts PARKBOUND and reads as a broken load. Both
+   accessibility blocks at the foot of this file collapse these three tokens to
+   an opaque --bg2, so this rule degrades to the old flat card by itself. */
+.gate:not(.gateFirstRun) .gateCard {
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  box-shadow: var(--lensEdge), var(--shadow3);
+}
 /* The hold lives in the home SSR HTML because introSeen is null on the server.
    A head script stamps data-intro before first paint: returning phones skip
    the cover; first visits hide the map/sheet until that same stamp says seen. */
@@ -2064,7 +2113,10 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
 }
 .gateCard {
   width: 100%; background: var(--bg2);
-  border-radius: var(--r2) var(--r2) 0 0; padding: 22px 20px calc(24px + var(--bot));
+  /* The same corner the sheet wears (--rFloat), for the same reason: this is a
+     bottom sheet nesting into the curve of the display, not a docked panel.
+     --r2 was a dialog's radius on a surface that is not a dialog. */
+  border-radius: var(--rFloat) var(--rFloat) 0 0; padding: 22px 20px calc(24px + var(--bot));
   max-height: 92vh; overflow-y: auto;
   box-shadow: var(--shadow3);
   animation: sheetUp var(--t4) var(--ease) both;
@@ -2098,6 +2150,16 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
 }
 .brandLockup[data-size="lg"] .brandLockupName {
   font-size: 34px; font-weight: 800; line-height: 40px;
+}
+/* Wide tracking is a hero treatment, not the wordmark's default. It belongs to
+   the two cards where PARKBOUND is the largest thing on the screen and has a
+   whole line to itself — Sign in and the intro splash. The base rule keeps
+   -.02em because the same component is also worn at 15px in the sheet header
+   and the top bar, where .22em wraps the word, and by GpsGate, whose card
+   leads with "Plan your day" and shows no wordmark at all. */
+.authGateCard .brandLockup.stacked .brandLockupName,
+.introSplashCard .brandLockup.stacked .brandLockupName {
+  letter-spacing: .22em;
 }
 .gateSlogan {
   margin: 0 0 16px; font-family: var(--display); font-size: 17px; font-weight: 600;
@@ -2146,6 +2208,83 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
 }
 /* A selection toast over the route card covers Start — preview is one screen. */
 .app[data-nav='preview'] .toast { display: none; }
+
+/* ---- the spot capsule ----
+   What a tap on bare ground opens. It sits directly on the sheet's top edge,
+   full width, because it is a question about the pin a few centimetres above
+   it and both have to be in view at once — see components/SpotCapsule.jsx.
+
+   --glassTintDeep rather than --glassTint: the token note at the top of this
+   file draws that line at "carries words", and this carries three lines of
+   them over whatever the map happens to be painting. --lens / --lensEdge /
+   --lensDrop are the same three the .fab, .scaleBar and .wxChip take, so the
+   floating chrome is one material.
+
+   Above .fabs (38) and below the sheet (45): it never overlaps the sheet
+   geometrically, and the FAB column steps aside for it below. The twin's own
+   z-index of 9 is its stack, not ours — its sheet sits at 7. */
+.spotCapsule {
+  position: absolute; left: 12px; right: 12px; z-index: 40;
+  bottom: calc(var(--sheetFoot) + 12px);
+  padding: 14px;
+  border-radius: var(--r5);
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
+  box-shadow: var(--lensEdge), var(--lensDrop);
+  animation: sheetUp var(--t3) var(--ease) both;
+  transition: bottom var(--t3) var(--ease);
+}
+.spotCapsuleHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.spotText { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.spotName {
+  font-size: 17px; font-weight: 600; letter-spacing: -.4px; color: var(--label);
+}
+.spotZone { font-size: 13px; letter-spacing: -.08px; color: var(--label2); }
+/* The walk is the one line here that is a live measurement rather than a name,
+   so it takes --aqua — the same ink the route and the meet-up are drawn in.
+   Night only, though: --aqua clears 6.5:1 on --bg2 after dark but only 2.45:1
+   on the day surface, and this is a walking distance read outdoors in sun, not
+   a tagline. Day mixes it 60/40 toward --label for 4.9:1 — AA at 13px — which
+   keeps the ink recognisably aqua while making it legible. Same colour-mix
+   escape hatch .label uses a thousand lines up, for the same reason. */
+.spotReach {
+  font-size: 13px; font-weight: 600; letter-spacing: -.08px; color: var(--aqua);
+  margin-top: 2px;
+}
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  :root[data-theme='day'] .spotReach {
+    color: color-mix(in srgb, var(--aqua) 60%, var(--label));
+  }
+}
+.spotClose {
+  flex: none; display: grid; place-items: center; padding: 2px;
+  min-width: 32px; min-height: 32px; margin: -6px -4px 0 0;
+  color: var(--label3);
+  transition: opacity var(--t1) var(--easeOut);
+}
+.spotClose:active { opacity: .5; }
+.spotActions { display: flex; gap: 8px; margin-top: 12px; }
+/* Both are .btn.small.rect — the rounded-rect shape D1 reserves for major
+   actions — widened to share the row and held at the 44px thumb target,
+   because this is read one-handed while standing in a midway. */
+.btn.spotAction {
+  flex: 1 1 0; min-width: 0; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 8px; font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+  white-space: nowrap;
+}
+.btn.spotActionOutline {
+  background: var(--bg2); color: var(--label);
+  box-shadow: inset 0 0 0 1px var(--sep);
+}
+
+/* While the capsule is up, the map's own controls step aside — the same thing
+   .mapFurniture already does when the sheet crowds it. A full-width card on the
+   sheet's edge sits underneath the FAB column and the scale bar, and a Rally
+   button drawn on top of "Leave a Mark" is a mis-tap waiting to happen. One tap
+   on the map, or the ✕, brings them straight back. */
+.app[data-spot] .fabs { opacity: 0; pointer-events: none; }
+.app[data-spot] .mapFurniture { display: none; }
 
 /* ============================================================
    glance rail — the live dashboard in the sheet's peek state
@@ -2540,7 +2679,9 @@ p.wxWhy.warn { color: var(--orange); }
   transition: opacity var(--t1) var(--easeOut);
 }
 .chipRemove:active { opacity: .5; }
-.guestChip.on .chipRemove { background: var(--blue); color: var(--onTint); opacity: .85; }
+/* The two halves are one pill, so the remove half follows .chip.on's fill —
+   left on --blue it would draw a two-tone capsule. */
+.guestChip.on .chipRemove { background: var(--label); color: var(--bg2); opacity: .85; }
 .chip.chipAdd { color: var(--blue); }
 
 .labelAction {
@@ -3329,16 +3470,22 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+/* Logo beside name, not above it. Stacked, the pair cost 88px of a card that
+   already carries a lockup, a lead paragraph and a guest footnote, and pushed
+   the fine print under the fold on a small phone. Side by side they are one
+   44px row each — the app's thumb-target floor, and the same height as .field
+   and .btnQuiet, so the whole card reads as one rhythm. .oauthActions keeps its
+   1fr 1fr grid: two providers, equal weight (ADR-0010). */
 .oauthBtn {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 9px;
   width: 100%;
-  min-height: 88px;
+  min-height: 44px;
   margin: 0;
-  padding: 16px 10px;
+  padding: 12px 10px;
   border: none;
   border-radius: var(--r4);
   background: var(--fill3);
@@ -3347,7 +3494,9 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 }
 .oauthBtn:active { opacity: .7; }
 .oauthBtn:disabled { opacity: .35; }
-.oauthMark { width: 32px; height: 32px; display: block; }
+/* 18px beside the name rather than 32px above it — a provider logo is a
+   qualifier on the word, so it sits at the name's cap height. */
+.oauthMark { width: 18px; height: 18px; flex: none; display: block; }
 .oauthBtnName {
   font-size: 13px;
   font-weight: 700;

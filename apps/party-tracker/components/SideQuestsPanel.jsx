@@ -110,6 +110,13 @@ export default function SideQuestsPanel({
   onContribution = null,
   overlay = null,
   flushTick = 0,
+  /** The patch of ground this screen was opened from — `lib/spot.js`, set by
+   *  tapping "Side Quest here" on the map's spot capsule, null when the visitor
+   *  arrived by the tab bar. Nothing below reads it yet: the anchored banner
+   *  above the quest cards is the Side Quests pass's work. Declared here so the
+   *  wire from the map exists and stays one prop. */
+  spot = null,
+  onClearSpot = null,
 }) {
   const queue = defaultQuestQueue();
   const gapNeedsAuth = softGateBlocks('adventure', session);

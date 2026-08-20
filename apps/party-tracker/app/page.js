@@ -10,6 +10,7 @@ import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
 import GlanceRail from '@/components/GlanceRail';
+import SpotCapsule from '@/components/SpotCapsule';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
@@ -110,6 +111,7 @@ import {
   paletteToggleAria,
   resolvePalette,
 } from '@/lib/mapVisual';
+import { spotAt } from '@/lib/spot';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
 import { flushThanksQueue } from '@/lib/adventure/thanks';
@@ -428,6 +430,16 @@ function ParkApp({ isSignedIn }) {
   const [sheetPx, setSheetPx] = useState(SHEET_PEEK_PX);
   const [follow, setFollow] = useState(true);
   const [armMeet, setArmMeet] = useState(false);
+  /* A patch of ground the visitor tapped and named — see lib/spot.js. Three
+     pieces of state, not one, because they answer three different questions and
+     die at three different times. `spot` is the pin and its capsule, and lasts
+     until the next tap. `questSpot` and `markSpot` are what the tap was *for*:
+     they are handed to the screen the visitor chose and outlive the capsule,
+     so Side Quests and Marks can say what they are anchored to. Clearing them
+     belongs to those screens, which know when the report is filed. */
+  const [spot, setSpot] = useState(null);
+  const [questSpot, setQuestSpot] = useState(null);
+  const [markSpot, setMarkSpot] = useState(null);
   const [tapeOn, setTapeOn] = useState(false);
   const [toast, setToast] = useState(null);
   const [height, setHeight] = useState(null);
@@ -645,6 +657,16 @@ function ParkApp({ isSignedIn }) {
     },
     [goForward, applyNav, growSheet, stops],
   );
+
+  /* A spot is a coordinate in one park. Changing World leaves it pointing at a
+     patch of ground the visitor is no longer standing anywhere near, and an
+     anchored Side Quest or Mark filed against it would be filed against the
+     wrong place entirely — so all three go with the venue. */
+  useEffect(() => {
+    setSpot(null);
+    setQuestSpot(null);
+    setMarkSpot(null);
+  }, [venue?.id]);
 
   /** The on-map OSM notice's tap target: Settings, straight to Credits. */
   const openCredits = useCallback(() => {
@@ -2143,6 +2165,9 @@ function ParkApp({ isSignedIn }) {
       lastRoute.current = null;
       setPick(0);
       setSelected(null);
+      // A walk is a different question than "what is here" — the capsule that
+      // asked it goes with the selection it sat beside.
+      setSpot(null);
       dismissPlaceView();
       setToast(null);
       setNav(target);
@@ -2370,6 +2395,24 @@ function ParkApp({ isSignedIn }) {
     [shrinkSheet, stops.peek],
   );
 
+  /* One tap on the map, four things it can mean, in this order. The order is
+     the whole of the logic and it is not negotiable:
+
+     1. Rally is armed — the FAB said "tap the map", so the tap sets the meet
+        point and nothing else may steal it.
+     2. There is no fix to trust — a manual pin is the only way to place
+        yourself indoors, denied, or on a desktop, and it must stay reachable.
+     3. Something is open — a selected pin, a pushed Place screen, a spot
+        capsule. Tapping away from a thing is how every map on a phone says
+        "never mind", so the first press closes what is open rather than
+        opening something else. That includes the spot itself: one tap puts
+        the capsule away, and the tap after it drops a new one.
+     4. Nothing to dismiss — now the tap is about the ground itself, and it
+        drops a named spot there.
+
+     ParkMap.onPointerUp has already arbitrated pinch, fling, the marker
+     hit-test, the route hit-test and double-tap zoom by the time this runs, and
+     hands over a real coordinate. Nothing here reaches back into that. */
   const handleMapTap = useCallback(
     (lat, lng) => {
       if (armMeet) {
@@ -2386,13 +2429,65 @@ function ParkApp({ isSignedIn }) {
         geo.setManual(lat, lng);
         return;
       }
-      /* Tapping the map away from anything is how every map on a phone says
-         "never mind" — and until now this one had no way of saying it at all, so
-         a place you tapped once stayed on the rail until you tapped another. */
-      if (selected) setSelected(null);
-      dismissPlaceView();
+      // Read through the ref: this callback must not be rebuilt on every push
+      // and pop, and dismissPlaceView is a no-op that cannot report back.
+      const { tab: at, stacks: cur } = navRef.current;
+      const onIt = cur[at] || EMPTY_STACK;
+      const placeOpen = onIt[onIt.length - 1] === 'place';
+      if (selected || placeOpen || spot) {
+        if (selected) setSelected(null);
+        setSpot(null);
+        dismissPlaceView();
+        return;
+      }
+      // positionRef, not `position`: a fix arrives every second or two, and
+      // rebuilding this callback on each one re-renders the memoised map for
+      // nothing. The spot only needs where you were standing when you tapped.
+      setSpot(spotAt({ lat, lng, pois: POIS, venue, map: mapData, me: positionRef.current }));
     },
-    [armMeet, setMeetPoint, geo.status, geo.setManual, selected, dismissPlaceView],
+    [
+      armMeet,
+      setMeetPoint,
+      geo.status,
+      geo.setManual,
+      selected,
+      spot,
+      dismissPlaceView,
+      POIS,
+      venue,
+      mapData,
+    ],
+  );
+
+  /* Both carry-throughs do the same three things and differ only in where they
+     land: remember the spot for the screen that is about to read it, put the
+     capsule away, and open that screen far enough to work in. `selectTab` is
+     the app's own move along the tab bar, so back still retraces properly. */
+  const questAtSpot = useCallback(
+    (at) => {
+      setQuestSpot(at);
+      setSpot(null);
+      selectTab('quests');
+      growSheet(stops.full);
+    },
+    [selectTab, growSheet, stops.full],
+  );
+
+  /* Marks live inside Collection, which today is a section of Settings → Map
+     (SettingsPanel → WorldCloset). It is deep-linked the way the on-map ODbL
+     notice deep-links Credits, rather than pushed as its own screen, because
+     there is no Marks screen to push yet — D22 gives Me a real root with
+     Collection and Marks beneath it, and when that lands this becomes a
+     `push('marks')` and nothing else here changes. */
+  const markAtSpot = useCallback(
+    (at) => {
+      setMarkSpot(at);
+      setSpot(null);
+      selectTab('settings');
+      setSettingsOpenTopic({ topic: 'map', nonce: Date.now() });
+      growSheet(stops.full);
+    },
+    [selectTab, growSheet, stops.full],
   );
 
   /** List row: select / toggle in place. The expanded row already carries
@@ -2450,6 +2545,9 @@ function ParkApp({ isSignedIn }) {
       setSelected(poi);
       setFollow(false);
       setFocusPoint({ lat: poi.lat, lng: poi.lng });
+      // A Place answers the same question the spot capsule was asking, and
+      // better, so the capsule stands down rather than stacking under it.
+      setSpot(null);
 
       const { stacks: cur } = navRef.current;
       const exploreStack = cur.explore || EMPTY_STACK;
@@ -2601,6 +2699,13 @@ function ParkApp({ isSignedIn }) {
      still under a moving sheet is what it already did. */
   const floorPx = stowed ? STOWED_PX : sheetPx + SHEET_GAP[sheetForm(sheetPx, stops)];
 
+  /* The capsule is about the map, so it is only up while the map is what the
+     visitor is looking at. A route preview and a walk each own the bottom of
+     the screen with something more urgent, and a selected Place answers the
+     same question in more detail — in every one of those cases the spot is
+     already cleared, and this is the guard that says so out loud. */
+  const spotShown = Boolean(spot) && !walking && !previewing && !selected;
+
   return (
     // --sheetH is the sheet's live height, so the FABs, the toast, the zoom pad
     // and the scale bar ride with it — under the finger too, which is why the
@@ -2614,6 +2719,10 @@ function ParkApp({ isSignedIn }) {
          them into the buttons in the top corners. They step aside instead. */
       data-crowded={!stowed && sheetCrowdsMap(sheetPx, viewportH) ? '1' : undefined}
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
+      /* The spot capsule is full width on the sheet's edge, where the FAB
+         column and the scale bar already live. They step aside for it — see
+         .app[data-spot] in globals.css. */
+      data-spot={spotShown ? '1' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       {introOverlay === 'hold' && (
@@ -2649,6 +2758,7 @@ function ParkApp({ isSignedIn }) {
           me={mapMe}
           members={others}
           meet={meet}
+          spot={spot}
           car={car}
           selected={selected}
           onSelectPoi={handleSelectFromMap}
@@ -2796,6 +2906,18 @@ function ParkApp({ isSignedIn }) {
           heading={heading}
           theme={theme}
           lowered={Boolean(walking && navTarget)}
+        />
+      )}
+
+      {/* What a tap on bare ground opens: where you tapped, and the two things
+          you can do with it. Both hand the spot to the screen they open, which
+          is the whole reason the interaction exists — see components/SpotCapsule.jsx. */}
+      {spotShown && (
+        <SpotCapsule
+          spot={spot}
+          onClose={() => setSpot(null)}
+          onQuest={questAtSpot}
+          onMark={markAtSpot}
         />
       )}
 
@@ -3302,6 +3424,12 @@ function ParkApp({ isSignedIn }) {
                 onContribution={handleContribution}
                 overlay={localOverlay}
                 flushTick={questFlushTick}
+                /* The ground the visitor tapped "Side Quest here" on, or null
+                   when they arrived by the tab bar. The anchored-spot banner
+                   that reads it belongs to the Side Quests screen's own pass;
+                   this is the wire it reads from. */
+                spot={questSpot}
+                onClearSpot={() => setQuestSpot(null)}
               />
             )}
 
@@ -3404,6 +3532,11 @@ function ParkApp({ isSignedIn }) {
                 }}
                 onWatchCompass={() => push('watch-compass')}
                 openTopic={settingsOpenTopic}
+                /* The ground the visitor tapped "Leave a Mark" on. Settings is
+                   only the current address of Collection — it forwards this to
+                   WorldCloset, which is where a Mark is actually placed. */
+                spot={markSpot}
+                onClearSpot={() => setMarkSpot(null)}
               />
             )}
 
