@@ -7,6 +7,16 @@
  * placement:
  *   overlay — draw on the OSM base (minus hideLayers)
  *   replace — hide the OSM base; the custom drawing is the map
+ *
+ * renderer:
+ *   iso   — the live SVG iso painter (shared isoWorld meshes)
+ *   baked — the Visual factory's world image from this World's display pack
+ *           (ADR-0016), drawn on truth bounds under the live overlay. The
+ *           pack sidecar (<skin>.world.json) is authoritative for the
+ *           world's projection; `world` here is the fallback declaration
+ *           when a venue ships no sidecar. A baked Skin hides no base
+ *           layers: the image covers them when it loads, and the base map
+ *           stays whole when it cannot.
  */
 
 export const PLACEMENT_OVERLAY = 'overlay';
@@ -24,18 +34,16 @@ const CUSTOM_MAPS = {
   'layered-atlas': {
     id: 'layered-atlas',
     placement: PLACEMENT_OVERLAY,
-    camera: 'iso',
-    renderer: 'iso',
-    template: 'frisco-fields',
-    hideLayers: ['building', 'coaster'],
+    camera: 'mercator',
+    renderer: 'baked',
+    world: { projection: 'top-down' },
   },
   'watercolor-quest': {
     id: 'watercolor-quest',
     placement: PLACEMENT_OVERLAY,
-    camera: 'iso',
-    renderer: 'iso',
-    template: 'watercolor-quest',
-    hideLayers: ['building', 'coaster'],
+    camera: 'mercator',
+    renderer: 'baked',
+    world: { projection: 'top-down' },
   },
 };
 

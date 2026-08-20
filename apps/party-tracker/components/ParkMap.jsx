@@ -1639,6 +1639,8 @@ function ParkMap({
             buildings={isoMeshes.buildings}
             tracks={isoMeshes.tracks}
             highlightedTrackIds={litTrack}
+            venueId={venue?.id}
+            worldOrigin={worldOrigin}
           />
 
           {/* the selected ride's own track, so the red spaghetti has an owner */}
