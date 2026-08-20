@@ -650,6 +650,12 @@ function ParkApp({ isSignedIn }) {
     selectTab('settings');
     setSettingsOpenTopic({ topic: 'credits', nonce: Date.now() });
   }, [selectTab]);
+  // Leaving Settings clears the request — otherwise a later, ordinary visit
+  // to Settings (tab bar, not the notice) would keep reopening on Credits
+  // instead of SettingsPanel's own default.
+  useEffect(() => {
+    if (tab !== 'settings' && settingsOpenTopic) setSettingsOpenTopic(null);
+  }, [tab, settingsOpenTopic]);
 
   // The browser handing back an earlier snapshot is the only thing that ever
   // moves this app backwards, whether the visitor pressed a button, swiped the

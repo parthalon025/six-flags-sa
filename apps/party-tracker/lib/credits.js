@@ -10,10 +10,6 @@
 
 import catalog from '../data/credits.json' with { type: 'json' };
 
-/** The persistent on-map ODbL notice's text — the registry's `openstreetmap`
- * row is the single source of truth for it (scripts/lib/credits-registry.json). */
-export const OSM_NOTICE_TEXT = '© OpenStreetMap contributors';
-
 /**
  * @typedef {{id:string,name:string,license:string,url:string,attribution:string,detail?:string,credit?:string,note?:string,placement?:string}} CreditItem
  * @typedef {{role:string,label:string,items:CreditItem[]}} CreditGroup
@@ -49,4 +45,12 @@ export function creditItem(id, source = catalog) {
     if (hit) return hit;
   }
   return null;
+}
+
+/** The persistent on-map ODbL notice's text — sourced from the `openstreetmap`
+ * registry row's `credit` line (scripts/lib/credits-registry.json) rather than
+ * a second hardcoded copy, so editing the registry can't silently desync the
+ * two places that string appears. */
+export function osmNoticeText(source = catalog) {
+  return creditItem('openstreetmap', source)?.credit || '© OpenStreetMap contributors';
 }

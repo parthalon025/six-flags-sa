@@ -1,6 +1,6 @@
 'use client';
 
-import { OSM_NOTICE_TEXT } from '@/lib/credits';
+import { osmNoticeText } from '@/lib/credits';
 
 /**
  * The persistent ODbL notice ("© OpenStreetMap contributors") every venue
@@ -21,7 +21,7 @@ import { OSM_NOTICE_TEXT } from '@/lib/credits';
 export default function MapAttribution({ onOpenCredits }) {
   return (
     <button type="button" className="mapAttribution" onClick={onOpenCredits}>
-      {OSM_NOTICE_TEXT}
+      {osmNoticeText()}
     </button>
   );
 }
