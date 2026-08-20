@@ -829,11 +829,31 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   border-right: 2px solid var(--label3); border-top: 2px solid var(--label3);
   border-radius: 1px; transform: rotate(45deg);
 }
+/* A row that does not lead anywhere keeps its hairline and loses the chevron.
+   The chevron on .row is unconditional, which put a disclosure arrow on "App
+   version" and on every switch in Settings — an arrow that promises a screen
+   and delivers nothing. `flat` is the opt-out rather than the chevron being
+   the opt-in, because most rows in this app genuinely do push. */
+.row.flat::after { content: none; }
+/* Selected, on a row that is a choice rather than a link: the equipped Kit,
+   the worn Skin, the Mark standing at this spot. Same ink .chip.on takes. */
+.row.on { background: var(--fill3); }
+.row[aria-disabled='true'] { opacity: .55; }
 .rowText { flex: 1; min-width: 0; font-size: 17px; letter-spacing: -.4px; }
+/* What a row is for, under what it is called. Caption 1 — the same size and
+   ink .fine already uses in running text, so a list of rows with sub-labels
+   reads as one voice rather than two. */
+.rowText > .fine, .rowText > b + .fine {
+  display: block; margin: 2px 0 0; font-size: 13px; line-height: 17px;
+}
+.rowText > b { display: block; font-weight: 600; }
 .rowValue {
   flex: none; max-width: 55%; font-size: 17px; letter-spacing: -.4px; color: var(--label2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* The value on a row that is currently doing something. --blue is the app's
+   action ink and this is the only place a row's right-hand side earns it. */
+.rowValue.accent { color: var(--blue); font-weight: 600; }
 .iconBtn {
   pointer-events: auto; width: 44px; height: 44px; flex: none;
   display: grid; place-items: center;
@@ -1095,33 +1115,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   animation: popIn var(--t2) var(--easeOut) both, hotTag 1.4s ease-in-out infinite .3s;
 }
 
-/* Side Quests — mission rows inside the sheet */
-.sideQuestRow {
-  align-items: flex-start;
-  gap: 10px;
-}
-.sideQuestGlyph {
-  flex: none;
-  width: 28px;
-  height: 28px;
-  margin-top: 2px;
-  display: grid;
-  place-items: center;
-  color: var(--blue);
-}
-.sideQuestTitle {
-  display: block;
-  font-weight: 600;
-  color: var(--label);
-}
-.sideQuestBlurb {
-  display: block;
-  margin-top: 2px;
-  font-size: 13px;
-  line-height: 17px;
-  color: var(--label2);
-  font-weight: 400;
-}
+/* Side Quests — the chips a card's targets are picked from. The card itself
+   is .questCard, further down: a mission is a job, not a list item. */
 .sideQuestTargets {
   display: flex;
   flex-wrap: wrap;
@@ -1151,10 +1146,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .sideQuestChip:active {
   transform: scale(.97);
 }
-.sideQuestProgress {
-  font-weight: 500;
-  color: var(--label2);
-}
 .sideQuestReward { color: var(--blue); }
 .signInRank, .signInTitle { margin-top: 2px; font-weight: 600; }
 
@@ -1169,6 +1160,18 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .titleProgressHead {
   display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
 }
+/* The Me root's hero. Same card, read from further away: this is the first
+   thing on the tab and it is the answer to "how am I doing", so the Title gets
+   Title-2 size and the meaning of that Title gets a line of its own. On Side
+   Quests the same component stays at the small size, above a list of work. */
+.titleProgress.hero { padding: 16px 16px 14px; border-radius: var(--r5); }
+.titleProgressName { min-width: 0; }
+.titleProgress.hero .titleProgressLabel { font-size: 22px; line-height: 28px; }
+.titleProgress.hero .titleProgressXp { font-size: 15px; color: var(--adventure); }
+.titleProgressBlurb {
+  display: block; margin-top: 3px; font-size: 13px; line-height: 17px; color: var(--label2);
+}
+.titleProgress.hero .titleProgressBar { height: 8px; margin-top: 16px; }
 .titleProgressLabel {
   font-family: var(--display); font-size: 15px; font-weight: 700; letter-spacing: -.02em;
 }
@@ -1198,18 +1201,8 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fill2);
 }
 
-/* ---- Me: the journey card (ProfileJourney) ---- */
-.profileJourney { margin-top: 12px; }
-.journeyToggle { width: 100%; text-align: left; }
-.journeyDetail { animation: riseIn .25s ease-out; }
-.journeyStats {
-  display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 10px;
-}
-.journeyStat {
-  padding: 6px 12px; border-radius: 999px; background: var(--fill3);
-  font-size: 12.5px; color: var(--label2);
-}
-.journeyStat b { color: var(--label); font-variant-numeric: tabular-nums; }
+/* ---- Me: the journey (ProfileJourney) ---- */
+.profileJourney { margin-top: 4px; }
 .journeyLadder {
   margin: 0 0 4px; padding: 0; list-style: none;
   display: flex; flex-direction: column;
@@ -1246,6 +1239,167 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .journeySwitch.on { background: var(--adventure); }
 .journeySwitch.on i { transform: translateX(16px); }
 
+/* ---- Me: the tab root ----
+   Three numbers side by side, because they are the same kind of thing (a count
+   of what this Profile has done) and comparing them is the point. --fill2 is
+   the recessed tile the rest of the app uses for a read-only value; nothing
+   here is tappable, so nothing here takes a card or a shadow. */
+.mePanel { padding-bottom: 4px; }
+.meStats { display: flex; gap: 8px; margin: 12px 0 4px; }
+.meStat {
+  flex: 1 1 0; min-width: 0; padding: 12px 8px; border-radius: var(--r4);
+  background: var(--fill2); text-align: center;
+}
+.meStat b {
+  display: block; font-size: 19px; font-weight: 700; letter-spacing: -.4px;
+  color: var(--label); font-variant-numeric: tabular-nums;
+}
+.meStat span { display: block; margin-top: 1px; font-size: 12px; line-height: 15px; color: var(--label2); }
+
+/* The ladder is a row list now, so a rung can push its own disclosure open
+   under itself rather than the whole card being one toggle. Only the rung
+   being walked toward is a button — see ProfileJourney. */
+.journeyStep { display: block; padding: 0; color: inherit; }
+.journeyStep + .journeyStep { border-top: none; }
+.journeyStepRow { align-items: center; }
+.journeyStep.earned .journeyStepText b { color: var(--label2); }
+.journeyStep.next .journeyStepText b { color: var(--label); }
+.journeyStepText b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -.24px; }
+.journeyStepText span {
+  display: block; margin-top: 1px; font-size: 13px; line-height: 17px; color: var(--label2);
+}
+.journeyStepAt {
+  font-size: 13px; font-weight: 600; color: var(--label3); font-variant-numeric: tabular-nums;
+}
+.journeyStep.earned .journeyStepAt { color: var(--green); }
+.journeyStepDetail {
+  padding: 2px 16px 14px; border-bottom: .5px solid var(--sep);
+  animation: riseIn .25s ease-out;
+}
+.journeyStep:last-child .journeyStepDetail { border-bottom: none; }
+.journeyStepUnlock {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+}
+.journeyStepUnlock b { font-size: 14px; font-weight: 700; color: var(--label); }
+.journeyStepUnlock span { font-size: 13px; font-weight: 700; color: var(--adventure); }
+.journeyAwards { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+/* Not a .chip: a chip is something you press, and this is a price list. */
+.journeyAward {
+  padding: 5px 9px; border-radius: var(--r2); background: var(--fill3);
+  font-size: 12px; line-height: 16px; color: var(--label2);
+}
+.journeyAward b { color: var(--label); font-variant-numeric: tabular-nums; }
+
+/* ---- Collection ---- */
+/* Two colours off the Skin's own paint pack: the ground it lays down, edged in
+   the colour it draws paths in. Read through mapPaint(), never a table — see
+   WorldCloset. 22×14 is a map's aspect at chip size. */
+.skinSwatch {
+  /* A map's aspect at chip size. 4px, below every radius token: --r1 (6px) on
+     a 14px-tall box rounds it into a pill, and a pill does not read as a
+     patch of ground. */
+  flex: none; width: 22px; height: 14px; border-radius: 4px;
+  border: 1px solid; display: block;
+}
+.kitGlyph, .markGlyph, .meRowGlyph {
+  flex: none; width: 22px; height: 22px; display: grid; place-items: center;
+  color: var(--label3);
+}
+.kitGlyph.on, .markGlyph.accent { color: var(--blue); }
+
+/* ---- Marks ---- */
+/* Rows that are a choice, not a link, so they carry a state word on the right
+   instead of a chevron. Unanchored the whole group dims: the rows still read,
+   they just have nowhere to stand yet. */
+.worldMarks .markList.unanchored .markRow { opacity: .55; }
+.markRow { align-items: flex-start; }
+.markRow .markGlyph { margin-top: 2px; }
+.markRow.on .markGlyph { color: var(--adventure); }
+.markState { font-size: 13px; font-weight: 700; color: var(--label3); }
+.markState.on { color: var(--adventure); }
+.markCount {
+  font-size: 15px; font-weight: 700; color: var(--label2); font-variant-numeric: tabular-nums;
+}
+.markPhrases { margin: 10px 0 0; }
+.markPlace { margin-top: 10px; width: 100%; }
+.markFoot.ready { color: var(--green); }
+.markFoot.quiet { color: var(--label3); }
+
+/* ---- the anchored spot, inside a screen ----
+   The capsule's receipt. --fill2 rather than a card: this is a caption on the
+   screen behind it, not another surface stacked on top of one. */
+.spotBanner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; margin: 0 0 10px;
+  border-radius: var(--r4); background: var(--fill2);
+  animation: riseIn .25s ease-out;
+}
+.spotBannerGlyph { flex: none; display: grid; place-items: center; color: var(--aqua); }
+.spotBannerText { flex: 1; min-width: 0; }
+.spotBannerText b {
+  display: block; font-size: 15px; font-weight: 600; letter-spacing: -.24px; color: var(--label);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.spotBannerText span { display: block; font-size: 12px; line-height: 16px; color: var(--label2); }
+.spotBannerClear {
+  flex: none; min-width: 32px; min-height: 32px; margin: -4px -4px -4px 0;
+  display: grid; place-items: center; color: var(--label3);
+  transition: opacity var(--t1) var(--easeOut);
+}
+.spotBannerClear:active { opacity: .5; }
+
+/* ---- Side Quests: one card per mission ----
+   A row said "here is another item in a list"; a card says "here is a job".
+   The eyebrow names the kind, the pill names what answering it does for other
+   people, and neither ever says XP — the reward reads after a submit, in
+   .xpToast. Both take the ink of the category the quest is about, read off
+   lib/theme.js's signals through the semantic tokens (see QUEST_TONE). */
+.questList { display: flex; flex-direction: column; gap: 10px; margin-bottom: 10px; }
+.questCard {
+  padding: 14px; border-radius: var(--r5);
+  background: var(--grouped2); border: .5px solid var(--sep);
+  box-shadow: var(--shadow1);
+}
+.questCard.near { border-color: color-mix(in srgb, var(--aqua) 45%, var(--sep)); }
+.questCardHead { display: flex; align-items: flex-start; gap: 10px; }
+.questGlyph { flex: none; width: 22px; height: 22px; display: grid; place-items: center; }
+.questCardTitle { flex: 1; min-width: 0; }
+/* 12px / 700, not the twin's 11.5px / --label3. Same reason .label keeps its
+   size: this is read outdoors in sun, and the eyebrow carries a saturated
+   category ink rather than a 34%-opacity grey, so it holds contrast. */
+.questKind {
+  display: block; font-size: 12px; font-weight: 700; line-height: 15px; letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.questTitle {
+  display: block; margin-top: 3px; font-size: 16px; font-weight: 600; letter-spacing: -.3px;
+  color: var(--label);
+}
+.questGain {
+  flex: none; align-self: flex-start;
+  padding: 4px 9px; border-radius: var(--r2); border: 1px solid;
+  font-size: 12px; font-weight: 700; line-height: 15px; white-space: nowrap;
+}
+.questBlurb { margin: 8px 0 0; font-size: 13px; line-height: 18px; color: var(--label2); }
+.questMeta { display: flex; gap: 8px; margin: 8px 0 0; font-size: 12px; }
+.questNear { color: var(--aqua); font-weight: 600; }
+.questProgress { color: var(--label3); font-variant-numeric: tabular-nums; }
+.questCard .sideQuestTargets { margin-top: 10px; }
+.questCard .sideQuestForm { margin-top: 10px; }
+.questCardFoot { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+.btn.questAction {
+  min-height: 40px; padding: 9px 16px; font-size: 14px; font-weight: 700;
+  background: var(--fill2); color: var(--label);
+}
+/* No fix, no report: scoreSideQuest would answer not_near for anything filed
+   from nowhere, so the card says when rather than offering a dead button. */
+.questSoon { font-size: 13px; font-weight: 600; color: var(--label3); }
+
+/* The appearance control is one control, so it sits in one well. --fill2 is
+   the tray; .tab.on is the raised thumb inside it. */
+.segmented.tray { padding: 4px; gap: 5px; background: var(--fill2); border-radius: var(--r4); }
+.segmented.tray .tab { min-height: 36px; border-radius: var(--r2); }
+
 /* The moment after a submit: meaning leads, the XP rides on the right. */
 .xpToast {
   display: flex; align-items: center; gap: 10px;
@@ -1269,23 +1423,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
       color-mix(in srgb, var(--sun) 14%, var(--grouped2)));
 }
 .xpToast.rankUp .xpToastGlyph { color: var(--sun); animation: shimmer 1.8s ease-in-out infinite; }
-.sideQuestNear {
-  color: var(--adventure);
-  font-weight: 500;
-}
-.sideQuestReportBtn {
-  appearance: none;
-  border: none;
-  background: transparent;
-  color: var(--blue);
-  font-size: 15px;
-  font-weight: 500;
-  letter-spacing: -.24px;
-  padding: 0;
-}
-.sideQuestReportBtn:active {
-  opacity: .55;
-}
 .sideQuestForm {
   margin-top: 10px;
   width: 100%;

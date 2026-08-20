@@ -7,16 +7,18 @@ import {
   SKIN_IDS,
   KITS,
   KIT_ICONS,
-  MARK_TYPES,
-  MARK_ICONS,
-  SIGN_PHRASES,
+  mapPaint,
   skinRung,
   skinAllowedAt,
 } from '@/lib/world';
 
 /**
- * Collection: Skins (unlock / share / Offer / Wear), Kits, Marks at this Place.
- * Trail / Park Midnight stay the Light/Dark chrome above this list.
+ * Collection — Skins, Kits, and the way through to Marks.
+ *
+ * Skins and Kits are catalogue: a list of things you have or have not earned,
+ * read in one pass. Marks are a *place* you do something, so they sit behind a
+ * row rather than inside this one (components/WorldMarks.jsx). Trail and Park
+ * Midnight stay chrome above all of it, in Settings → Map, and are not Skins.
  */
 export default function WorldCloset({
   progress,
@@ -25,7 +27,6 @@ export default function WorldCloset({
   selfId = null,
   session = null,
   venue = null,
-  position = null,
   now = Date.now(),
   onWearOwn = null,
   onAcceptOffer = null,
@@ -33,26 +34,30 @@ export default function WorldCloset({
   onOffer = null,
   onWithdraw = null,
   onEquipKit = null,
-  onDropMark = null,
-  /** The patch of ground a Mark is being anchored to — `lib/spot.js`, set by
-   *  tapping "Leave a Mark" on the map's spot capsule, null when the visitor
-   *  arrived here through Settings. Nothing below reads it yet: the anchored
-   *  gate (Sign/Beacon reading "Pick a spot" until there is one, and the
-   *  placeable set narrowing to those two — D17) is the Marks pass's work.
-   *  Declared here so the wire from the map exists and is one prop, not five. */
+  onOpenMarks = null,
+  /** The anchored patch of ground, when the visitor arrived through the map's
+   *  "Leave a Mark". Read for one thing only — telling the Marks row what it
+   *  is about to open onto. Placement itself lives on that screen. */
   spot = null,
-  onClearSpot = null,
 }) {
   const needsProfile = softGateBlocks('world', session);
   const offers = world?.offers || [];
   const kit = progress?.kit || null;
 
+  /* What the Marks row is standing over. "By The Beast" → "by The Beast" so it
+     reads as a sentence; open ground has no name of its own and takes the Zone
+     instead — the same two phrasings WorldMarks uses for its own foot line. */
+  const marksSub = spot
+    ? spot.name.startsWith('By ')
+      ? `Anchored ${spot.name.replace(/^By /, 'by ')}`
+      : `Anchored in ${spot.zone}`
+    : 'Signs and beacons you place';
+
   return (
     <div className="worldCloset">
-      <div className="label">Collection</div>
       <p className="fine">
         Skins paint this map. Kits are how your Party sees you. Marks stay at a Place for
-        families you never meet. Light and Dark above are chrome, not Skins.
+        families you never meet. Light and Dark are chrome, not Skins.
       </p>
 
       {offers.length > 0 && (
@@ -67,14 +72,16 @@ export default function WorldCloset({
                 <button
                   key={`${o.fromMemberId}:${o.skinId}`}
                   type="button"
-                  className="row"
+                  className="row flat"
                   onClick={() => (wearing ? onClearWear?.() : onAcceptOffer?.(o))}
                 >
                   <span className="rowText">
                     {skin?.label || o.skinId}
                     <span className="fine"> — offered by a Member</span>
                   </span>
-                  <span className="rowValue">{wearing ? 'Wearing · tap to stop' : 'Wear'}</span>
+                  <span className={`rowValue ${wearing ? 'accent' : ''}`}>
+                    {wearing ? 'Wearing · tap to stop' : 'Wear'}
+                  </span>
                 </button>
               );
             })}
@@ -97,16 +104,28 @@ export default function WorldCloset({
           if (!allowed) value = skin.season ? 'Out of season' : 'This World';
           else if (rung === 'share') value = offering ? 'Offering' : 'Share earned';
           else if (rung === 'unlock') value = 'Unlocked';
+          /* The swatch is the paint, not a picture of it. `SKINS[].paint` is
+             the same object mapThemeCssVars and applyMapSkin hand the map, so
+             a two-colour chip read off it can never drift from what tapping
+             the row actually does to the ground under your thumb. */
+          const paint = mapPaint(id);
           return (
             <div key={id} className="worldSkinRow">
               <button
                 type="button"
-                className={`row ${wearingOwn ? 'on' : ''}`}
+                className={`row flat ${wearingOwn ? 'on' : ''}`}
                 disabled={!rung || !allowed}
                 onClick={() => rung && allowed && onWearOwn?.(id)}
               >
+                <span
+                  className="skinSwatch"
+                  aria-hidden="true"
+                  style={{ background: paint.ground, borderColor: paint.path.stroke }}
+                />
                 <span className="rowText">{skin.label}</span>
-                <span className="rowValue">{wearingOwn ? 'Wearing' : value}</span>
+                <span className={`rowValue ${wearingOwn ? 'accent' : ''}`}>
+                  {wearingOwn ? 'Wearing' : value}
+                </span>
               </button>
               {rung === 'share' && allowed && !needsProfile && (
                 <div className="worldSkinActions">
@@ -127,67 +146,42 @@ export default function WorldCloset({
       </div>
 
       <div className="label">Kits</div>
-      <p className="fine">Your Party sees this on your puck. Strangers never do. There is no Offer for Kits.</p>
+      <p className="fine">
+        Your Party sees this on your puck. Strangers never do — kitForViewer returns nothing
+        outside the Party — and there is no Offer for Kits.
+      </p>
       <div className="rowList">
         {Object.values(KITS).map((k) => (
           <button
             key={k.id}
             type="button"
-            className={`row ${kit === k.id ? 'on' : ''}`}
+            className={`row flat ${kit === k.id ? 'on' : ''}`}
             disabled={needsProfile}
             onClick={() => onEquipKit?.(kit === k.id ? null : k.id)}
           >
-            <span className="rowText">
-              <Icon name={KIT_ICONS[k.id] || 'location.fill'} size={18} /> {k.label}
+            <span className={`kitGlyph ${kit === k.id ? 'on' : ''}`} aria-hidden="true">
+              <Icon name={KIT_ICONS[k.id] || 'location.fill'} size={18} />
             </span>
-            <span className="rowValue">{kit === k.id ? 'Equipped' : needsProfile ? 'Sign in' : 'Equip'}</span>
+            <span className="rowText">{k.label}</span>
+            <span className={`rowValue ${kit === k.id ? 'accent' : ''}`}>
+              {kit === k.id ? 'Equipped' : needsProfile ? 'Sign in' : 'Equip'}
+            </span>
           </button>
         ))}
       </div>
 
-      <div className="label">Leave a Mark</div>
-      <p className="fine">
-        Signs use a closed phrase list. Party sees it now; other guests after a second Party Thanks.
-      </p>
-      {needsProfile ? (
-        <p className="fine">Sign in to leave a Mark.</p>
-      ) : (
-        <div className="chips wrap">
-          {MARK_TYPES.map((type) => (
-            <button
-              key={type}
-              type="button"
-              className="chip"
-              disabled={!position}
-              onClick={() => {
-                if (type === 'sign') {
-                  onDropMark?.({ type, phrase: SIGN_PHRASES[0], lat: position?.lat, lng: position?.lng });
-                  return;
-                }
-                onDropMark?.({ type, lat: position?.lat, lng: position?.lng });
-              }}
-            >
-              <Icon name={MARK_ICONS[type] || 'mappin.and.ellipse'} size={14} /> {type}
-            </button>
-          ))}
-        </div>
-      )}
-      {!needsProfile && (
-        <div className="chips wrap" style={{ marginTop: 8 }}>
-          {SIGN_PHRASES.map((phrase) => (
-            <button
-              key={phrase}
-              type="button"
-              className="chip"
-              disabled={!position}
-              onClick={() => onDropMark?.({ type: 'sign', phrase, lat: position?.lat, lng: position?.lng })}
-            >
-              {phrase}
-            </button>
-          ))}
-        </div>
-      )}
-      {!position && !needsProfile && <p className="fine">Stand somewhere on the map to drop a Mark.</p>}
+      <div className="label">Marks</div>
+      <div className="rowList">
+        <button type="button" className="row" onClick={() => onOpenMarks?.()}>
+          <span className="markGlyph accent" aria-hidden="true">
+            <Icon name="mappin.and.ellipse" size={18} />
+          </span>
+          <span className="rowText">
+            Marks
+            <span className="fine">{marksSub}</span>
+          </span>
+        </button>
+      </div>
     </div>
   );
 }

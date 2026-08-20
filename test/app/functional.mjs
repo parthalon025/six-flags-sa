@@ -443,7 +443,7 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
   // A dedicated phone keeps the Wear off the other checks. The demo/store
   // grant (grantShipSkins, `parkbound-demo-skins`) unlocks the ship-polish
   // Skins without farming fog quests; the Wear itself is the real user action:
-  // Settings -> Map -> Collection -> Pixel tycoon.
+  // Me -> Settings -> Map -> Collection -> Pixel tycoon.
   const P = await openPhone(browser, {
     lat: 39.34395,
     lng: -84.2673,
@@ -459,9 +459,7 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
       timeout: 40000,
     });
     await closeGate(p);
-    await go(p, 'Settings');
-    await p.getByRole('tab', { name: 'Map' }).click();
-    await p.waitForTimeout(300);
+    await go(p, 'Collection');
     const row = p.locator('.worldSkinRow .row', { hasText: 'Pixel tycoon' }).first();
     await row.scrollIntoViewIfNeeded();
     if (/Locked|Out of season|This World/.test(await row.innerText())) {
@@ -510,9 +508,7 @@ await check('wearing Watercolor quest draws the baked world image under the over
       timeout: 40000,
     });
     await closeGate(p);
-    await go(p, 'Settings');
-    await p.getByRole('tab', { name: 'Map' }).click();
-    await p.waitForTimeout(300);
+    await go(p, 'Collection');
     const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
     await row.scrollIntoViewIfNeeded();
     if (/Locked|Out of season|This World/.test(await row.innerText())) {
@@ -1269,13 +1265,13 @@ console.log('\n--- adventure: side quests ---');
 await check('Side Quest submit queues locally', async () => {
   await dismissNavigation(a).catch(() => {});
   await go(a, 'Quests');
-  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+  await until(async () => (await a.locator('.questCard').count()) > 0, {
     timeout: 15000,
     label: 'side quest rows',
   });
   if (!profileReady) {
     // ADR-0010: gap Side Quests need a Profile; CI has no Clerk — assert the soft gate.
-    const reportBtn = a.locator('.sideQuestRow').first().locator('button.sideQuestReportBtn');
+    const reportBtn = a.locator('.questCard').first().locator('button.questAction');
     if ((await reportBtn.count()) > 0) {
       await reportBtn.click();
       await a.waitForTimeout(300);
@@ -1286,7 +1282,7 @@ await check('Side Quest submit queues locally', async () => {
     return true;
   }
   // Soft-gate: Report only after sign-in (done above) and with live GPS.
-  const reportBtn = a.locator('.sideQuestRow').first().locator('button.sideQuestReportBtn, button[aria-expanded]');
+  const reportBtn = a.locator('.questCard').first().locator('button.questAction, button[aria-expanded]');
   await until(async () => (await reportBtn.count()) > 0, {
     timeout: 10000,
     label: 'side quest Report after sign-in',
@@ -1299,7 +1295,7 @@ await check('Side Quest submit queues locally', async () => {
     label: 'queued side quest feedback',
   }).catch(() => true);
   // Queue persistence is the vertical guarantee — pending count or form closed.
-  if ((await a.locator('.sideQuestSubmit').count()) > 0 && (await a.locator('.sideQuestRow .sideQuestSubmit').count()) > 0) {
+  if ((await a.locator('.sideQuestSubmit').count()) > 0 && (await a.locator('.questCard .sideQuestSubmit').count()) > 0) {
     const pending = await a.locator('.sheetBody').innerText();
     if (!/pending|queued|waiting/i.test(pending) && (await a.locator('.sideQuestSubmit').count())) {
       await a.waitForTimeout(300);
@@ -1314,7 +1310,7 @@ await check('queued Side Quest syncs once the network is back', async () => {
   if (!profileReady) return true;
   await dismissNavigation(a).catch(() => {});
   await go(a, 'Quests');
-  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+  await until(async () => (await a.locator('.questCard').count()) > 0, {
     timeout: 15000,
     label: 'side quest rows',
   });
@@ -1337,9 +1333,9 @@ await check('queued Side Quest syncs once the network is back', async () => {
     await route.fallback();
   });
 
-  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  const heightRow = a.locator('.questCard', { hasText: 'Confirm height on the sign' });
   await until(async () => (await heightRow.count()) > 0, { timeout: 10000, label: 'height gap quest' });
-  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  const reportBtn = heightRow.locator('button.questAction');
   await until(async () => (await reportBtn.count()) > 0, { timeout: 10000, label: 'height Report' });
   if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
     await reportBtn.click();
@@ -1376,16 +1372,16 @@ await check('complete a gap quest draws Overlay on the map', async () => {
   }
   await dismissNavigation(a).catch(() => {});
   await go(a, 'Quests');
-  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+  await until(async () => (await a.locator('.questCard').count()) > 0, {
     timeout: 15000,
     label: 'side quest rows',
   });
-  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  const heightRow = a.locator('.questCard', { hasText: 'Confirm height on the sign' });
   await until(async () => (await heightRow.count()) > 0, {
     timeout: 10000,
     label: 'height gap quest',
   });
-  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  const reportBtn = heightRow.locator('button.questAction');
   await until(async () => (await reportBtn.count()) > 0, {
     timeout: 10000,
     label: 'height Report after sign-in',
@@ -1454,9 +1450,9 @@ await check('a scored Side Quest pays XP into the Title ladder', async () => {
   // Answer the live "Ride up or down?" from the suite's standing fix — 62 m
   // from Viking Fury, walked-near, first live report for that ride, so XP
   // must land.
-  const liveRow = a.locator('.sideQuestRow', { hasText: 'Ride up or down?' });
+  const liveRow = a.locator('.questCard', { hasText: 'Ride up or down?' });
   await until(async () => (await liveRow.count()) > 0, { timeout: 10000, label: 'live ride quest' });
-  const reportBtn = liveRow.locator('button.sideQuestReportBtn');
+  const reportBtn = liveRow.locator('button.questAction');
   if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
     await reportBtn.click();
     await a.waitForTimeout(200);
@@ -1492,16 +1488,17 @@ await check('Me carries the journey: ladder, field stats, finder credit', async 
     throw new Error(`completions do not credit the finder: ${mine.slice(0, 120)}`);
   }
 
-  await go(a, 'Settings');
+  // Me is a root now: the journey is the screen, not a card three blocks
+  // inside Settings, and the ladder is open rather than behind a toggle.
+  await go(a, 'Me');
   await until(async () => (await a.locator('.profileJourney').count()) > 0, {
     timeout: 10000,
-    label: 'journey card on Me',
+    label: 'journey on the Me root',
   });
   if ((await a.locator('.profileJourney .titleProgress .titleProgressFill').count()) < 1) {
     throw new Error('Me journey hero has no XP bar');
   }
 
-  await a.locator('.journeyToggle').click();
   await until(async () => (await a.locator('.journeyStep').count()) === 5, {
     timeout: 5000,
     label: 'five Title ladder steps',
@@ -1511,11 +1508,13 @@ await check('Me carries the journey: ladder, field stats, finder credit', async 
     if (!ladder.includes(title)) throw new Error(`ladder is missing ${title}: ${ladder.slice(0, 160)}`);
   }
   const stats = await a.locator('[data-journey-stats]').innerText();
-  if (!/fact/i.test(stats) || !/guest/i.test(stats)) {
+  if (!/contribution/i.test(stats) || !/guest/i.test(stats)) {
     throw new Error(`field stats missing: ${stats.slice(0, 120)}`);
   }
 
   // Finder credit is on by default, and the switch answers a tap both ways.
+  // It moved to Settings -> You, under the name field it is about.
+  await go(a, 'Settings');
   const share = a.locator('.journeyShare');
   if ((await share.getAttribute('aria-checked')) !== 'true') {
     throw new Error('finder credit should default on');
