@@ -48,7 +48,10 @@ export const SHEET_CHROME_PX = 84;
  *   search  .searchRow — 2 + a 44px field + 8
  *   locate  .locateCard — the "Location off / Turn on" card. Only ever charged
  *           on a phone with no fix: on every other phone there is nothing to
- *           draw, and a rung nobody can see must not cost anything.
+ *           draw, and a rung nobody can see must not cost anything. Measured
+ *           at 72 on a 390px phone, where the second line wraps, plus its 8 of
+ *           margin. A narrower phone wraps it to three and eats into the
+ *           eighteen SHEET_PEEK_PX holds back.
  *   brand   the venue name and its status line — an 18px line over 8
  *   list    the place list. A floor rather than a height: the list is the
  *           flexible child and takes whatever is left, but under about this
@@ -62,7 +65,7 @@ export const SHEET_CHROME_PX = 84;
  * showing through the interface in its purest form.
  */
 export const SHEET_SEARCH_PX = 54;
-export const SHEET_LOCATE_PX = 64;
+export const SHEET_LOCATE_PX = 80;
 export const SHEET_BRAND_PX = 26;
 export const SHEET_LIST_PX = 132;
 export const SHEET_HINT_PX = 22;
@@ -101,7 +104,8 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
 /**
  * The place card opened from a map tap, measured from globals.css:
  *
- *   head     .placeEyebrow — a 14px line over 3
+ *   head     .placeDetailTop — the live word and the verdict pill on one
+ *            22px line, over 2
  *   title    .placeDetailName — 21px type on a 26px line, over 5 to the meta
  *   meta     .placeDetailLine — one 18px line
  *   actions  .placeActions.labelled — a 44px button under 12 of margin
@@ -115,7 +119,7 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
  * nothing because it sat beside the title now costs a row of its own, which is
  * the price of a button somebody can read.
  */
-export const SHEET_PLACE_HEAD_PX = 17;
+export const SHEET_PLACE_HEAD_PX = 24;
 export const SHEET_PLACE_TITLE_PX = 31;
 export const SHEET_PLACE_META_PX = 18;
 export const SHEET_PLACE_ACTIONS_PX = 56;

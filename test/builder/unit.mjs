@@ -7237,7 +7237,7 @@ await check('a map-tapped place card stays leaner than peek and half', () => {
       SHEET_PLACE_ACTIONS_PX +
       8,
   );
-  assert.equal(SHEET_PLACE_PX, 214);
+  assert.equal(SHEET_PLACE_PX, 221);
   return true;
 });
 

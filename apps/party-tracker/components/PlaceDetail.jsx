@@ -356,15 +356,30 @@ export default function PlaceDetail({
       data-overlay={poi.overlay ? '1' : undefined}
     >
       <div className="placeDetailHead">
-        {/* The live word, above the name and in the colour of what it means.
-            The twin colours this by category, which is decorative — a coaster
-            is orange whether it is running or stopped. Tone is the same three
-            inks the status pill and the weather note already use, so "PAUSED"
-            is red here for the same reason it is red everywhere else. */}
-        {showStatus && (
-          <span className={`placeEyebrow ${status.tone || ''}`}>
-            <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
-            {status.label}
+        {/* The two top-line answers, side by side above the name: is it
+            running, and can this party get on it. They are different questions
+            and keep different marks — but both are read before the name, and
+            both can make the rest of the screen moot.
+
+            The live word is coloured by tone, not by the twin's category
+            colour: a coaster is orange whether it is running or stopped, and
+            tone is the same three inks the status pill and the weather note
+            already use, so "PAUSED" is red here for the same reason it is red
+            everywhere else. */}
+        {(showStatus || v.label) && (
+          <span className="placeDetailTop">
+            {showStatus && (
+              <span className={`placeEyebrow ${status.tone || ''}`}>
+                <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
+                {status.label}
+              </span>
+            )}
+            {v.label && (
+              <span className={`verdict ${v.cls}`}>
+                <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
+                {v.label}
+              </span>
+            )}
           </span>
         )}
         <b className="placeDetailName">
@@ -382,16 +397,6 @@ export default function PlaceDetail({
               <b>{formatWalk(d)}</b>
               {` ${formatDistance(d)}${dir ? ` ${dir}` : ''}`}
             </>
-          )}
-          {/* The verdict stays on this line rather than joining the eyebrow:
-              whether a ride is running and whether your party can get on it are
-              two different questions, and the app has never let them share a
-              pill. */}
-          {v.label && (
-            <span className={`verdict ${v.cls}`}>
-              <i aria-hidden="true">{v.icon && <Icon name={v.icon} size={12} />}</i>
-              {v.label}
-            </span>
           )}
         </span>
       </div>
