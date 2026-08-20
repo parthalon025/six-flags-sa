@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "contact": "display factory \u2014 docs/research/2026-08-18-custom-map-display-factory.md",
+  "contact": "display factory — docs/research/2026-08-18-custom-map-display-factory.md",
   "skins": {
     "trail": {
       "label": "Trail",
@@ -128,7 +128,8 @@
         "slide": "fiberglass--flume",
         "structure": "roofing--shingle",
         "lot": "concrete--lot"
-      }
+      },
+      "bakeKit": "watercolor-quest"
     }
   }
 }
