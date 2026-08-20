@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "id": "watercolor-quest",
+  "kit": "watercolor-quest",
+  "style": "watercolor-quest",
+  "inspiration": {
+    "summary": "Watercolor quest map — cold-press paper grain, multiply washes pooling at shorelines, plum ink linework within a 2px hand-tremor, dashed quest-route paths",
+    "images": [],
+    "lineage": "PR #447's watercolor-quest Skin palette (skins.json tokens), harvested per ADR-0014 from the kings-island bake (kings-island--watercolor-quest.profile-draft.json medians); ADR-0016 style-pass research: seeded displacement + distance-field pigment pooling"
+  },
+  "colorFamilies": {
+    "ground": {
+      "anchor": "#EFE6CC",
+      "members": [
+        "#EFE8D4",
+        "#C9BFAE"
+      ],
+      "deltaE": 16
+    },
+    "grass": {
+      "anchor": "#BEB490",
+      "members": [
+        "#D9D0B5",
+        "#A9A27F",
+        "#BFB693"
+      ],
+      "deltaE": 14
+    },
+    "wood": {
+      "anchor": "#ACA579",
+      "members": [
+        "#C2BC96",
+        "#8F8A67"
+      ],
+      "deltaE": 14
+    },
+    "water": {
+      "anchor": "#7BA2AB",
+      "members": [
+        "#8FB5C2",
+        "#5E8CA0",
+        "#C6DCE3"
+      ],
+      "deltaE": 14
+    },
+    "lot": {
+      "anchor": "#DBD0B2",
+      "members": [
+        "#E6DEC8",
+        "#CFC5AB"
+      ],
+      "deltaE": 14
+    },
+    "road": {
+      "anchor": "#EFE8D4",
+      "members": [
+        "#756276"
+      ],
+      "deltaE": 12
+    },
+    "service": {
+      "anchor": "#C7BB9F",
+      "deltaE": 12
+    },
+    "outside": {
+      "anchor": "#DACEAE",
+      "members": [
+        "#C4B99C"
+      ],
+      "deltaE": 14
+    },
+    "structure": {
+      "anchor": "#7D6F76",
+      "members": [
+        "#C99B7C",
+        "#B8A68D",
+        "#8FA5A8",
+        "#8D7C6B"
+      ],
+      "deltaE": 16
+    },
+    "badge": {
+      "anchor": "#D08C7A",
+      "members": [
+        "#C05A5A",
+        "#D08A4A",
+        "#5E8CA0",
+        "#7FA36B",
+        "#9A6FB8",
+        "#8A8F98"
+      ],
+      "deltaE": 16
+    }
+  },
+  "roads": {
+    "centerlineVsPaper": {
+      "minDeltaE": 20
+    },
+    "serviceLayer": "muted"
+  },
+  "ground": {
+    "outsideVsInside": {
+      "minDeltaE": 6
+    },
+    "waterVsVegetation": {
+      "minDeltaE": 12
+    }
+  },
+  "structures": {
+    "buildingStyle": "drop",
+    "trackStyle": "tube",
+    "coasterVsUnderlay": {
+      "minDeltaE": 10
+    }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": [
+      "paper",
+      "washes",
+      "rims",
+      "roads",
+      "tracks",
+      "buildings",
+      "trees",
+      "badges"
+    ]
+  },
+  "agentReview": [
+    {
+      "key": "style_texture_language",
+      "prompt": "Watercolor read: washes pool darker along shorelines and lawn edges, paper grain shows through the ground, nothing looks like a flat vector fill"
+    },
+    {
+      "key": "style_wayfinding_language",
+      "prompt": "Paths read as pale ribbons with plum ink dashes — a quest route drawn by hand, wobble visible but nothing displaced past recognition"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Side-by-side with the worn watercolor-quest Skin on the phone, a stranger says the baked world and the palette skin are the same design language"
+    }
+  ]
+}

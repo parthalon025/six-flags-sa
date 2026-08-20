@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "7a091ba0ee3c1cdcae6a09307af08c11510d89f546bb5b27ce673d7121b3387a"
+    "sha256": "6db45a89320adb969e15ec3929829fc18883a693dee4ffff8e0bc2c0b483b8cf"
   },
   "paths": [
     {
@@ -264,6 +264,13 @@
       "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
       "suite": "functional",
       "check": "wearing Pixel tycoon draws the isometric custom map"
+    },
+    {
+      "id": "baked-world-map",
+      "slice": "Adventure",
+      "user_action": "Wear the Watercolor quest Skin and see its baked world drawn on truth bounds",
+      "suite": "functional",
+      "check": "wearing Watercolor quest draws the baked world image under the overlay"
     }
   ],
   "upcoming": []

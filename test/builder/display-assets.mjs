@@ -124,9 +124,13 @@ await check('kitAssetIds names every asset a resolved kit references', () => {
   return true;
 });
 
-await check('every kit on disk resolves against the ledger, bare and themed', async () => {
+await check('every kit on disk resolves against the ledgers, bare and themed', async () => {
   const { readdirSync, readFileSync } = await import('node:fs');
+  const { readMaterials } = await import('../../packages/venue-builder/lib/display-pack.mjs');
   const ledger = readAssetLedger();
+  // Kits may bind MaterialSet rows (compiled-albedo underlays) — resolve
+  // exactly as the bake does, against both ledgers.
+  const materials = readMaterials();
   const kitsDir = new URL('../../packages/venue-builder/data/display/kits/', import.meta.url);
   const themeUrl = new URL(
     '../../packages/venue-builder/data/venues/big-kahunas/display/theme.json',
@@ -137,8 +141,8 @@ await check('every kit on disk resolves against the ledger, bare and themed', as
   assert.ok(kits.length >= 3, 'expected the committed kits');
   for (const f of kits) {
     const spec = JSON.parse(readFileSync(new URL(f, kitsDir), 'utf8'));
-    assert.doesNotThrow(() => resolveKit(spec, { assets: ledger }), `${f} does not resolve`);
-    assert.doesNotThrow(() => resolveKit(spec, { assets: ledger, overlay }), `${f} + venue theme does not resolve`);
+    assert.doesNotThrow(() => resolveKit(spec, { assets: ledger, materials }), `${f} does not resolve`);
+    assert.doesNotThrow(() => resolveKit(spec, { assets: ledger, materials, overlay }), `${f} + venue theme does not resolve`);
   }
   return true;
 });

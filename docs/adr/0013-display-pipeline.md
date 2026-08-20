@@ -96,4 +96,8 @@ Target: **MapLibre GL JS** in the Capacitor WebView reading local PMTiles. SVG `
    is done.
 7. Retire SVG base geometry once parity proven on store WebView
 
+Items 3, 6, and 7 are subsumed by [ADR-0019](./0019-zoomable-worlds.md) (Train H: MapLibre as the
+one renderer, overlay port, camera, banded worlds, perf gate); item 5 landed as Train F. Item 4's
+real-time PBR tier remains deferred and additive.
+
 Canonical language: root `CONTEXT.md`.

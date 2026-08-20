@@ -16,7 +16,26 @@
       "avgColor": "#817F76",
       "swatch8": "AAAAtra2rq6jtrOrrauiqKihkpKSAAAAxsaqtbKlr62jsrGpoJ6Rn5qKkpCEgICArqmcrquhqqigqqWenpmOnZSHgXpudXVrsbClrKuhoaCbm5ePj4p9k5CGd3NpcW9qpqSZmZiOjYh9i4h+fXtxenlvaGVbVVRNoJ6Xm5iPjYmChYV8hoR5eHZuZGJZV1dTmYCAgX51d3ZsdHRsaWZbVlVOTk1EQEBAAAAAcXFVeHNtZ2VeXlxXT01JQEBAAAAA",
       "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/PavingStones070.png",
-      "swatchSha256": "4005b85cb67b9aa24cb7c68fda69ed155c387bc63d2c73e31ada9d1a418f5799"
+      "swatchSha256": "4005b85cb67b9aa24cb7c68fda69ed155c387bc63d2c73e31ada9d1a418f5799",
+      "compiled": {
+        "source": "https://ambientcg.com/get?file=PavingStones070_1K-JPG.zip",
+        "sourceSha256": "84be05ad935c2a8ea0dd3b82dd18c9e1faf7eeae222b85d96beb14ed16276132",
+        "basecolor": {
+          "path": "assets/vendor/materials/paving-stones--warm--basecolor.jpg",
+          "sha256": "33b1103746728f0207e88741de1b90c3dee345e93efe73bcd2e17e5a0b49dadd",
+          "px": 512
+        },
+        "normal": {
+          "path": "assets/vendor/materials/paving-stones--warm--normal.jpg",
+          "sha256": "038f119bab9aadc7a5e85f88e224b213934eb9192b7f0cb055f043ce5f29344d",
+          "px": 512
+        },
+        "roughness": {
+          "path": "assets/vendor/materials/paving-stones--warm--roughness.jpg",
+          "sha256": "d190c3c379e67e6a28c1f5fe0de6b536c9e56e0a8ba0d59c2f54693b92237420",
+          "px": 512
+        }
+      }
     },
     "asphalt--worn": {
       "label": "Worn asphalt",
@@ -32,7 +51,26 @@
       "avgColor": "#383833",
       "swatch8": "AAAAUFBQVFJNTk1HRkQ+Pjw2MDAwAAAAUFBAWVdSYF9ZWllTSUdCNzYxMjEsMDAwTExEYmFaa2pkYmFbUE9INTQvKCgkMzMvREM+UlBLWllTU1JMQ0I8Ly4pJSQgLi4qPj04QkE7RUQ/Pj04MzIuJyYjISEdLy4sNjQxOTgzOjg0NDMvLCsnIyIfJCMgMzMxMDAgMzIuNTMvMzEuKSglJiUiLCspMDAwAAAAMDAwNTMxNDQxMS8tLy8rMDAwAAAA",
       "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Asphalt025C.png",
-      "swatchSha256": "7ab1000cde04d301e6e4cd1f6b37d20a88f41581bd6c48612b15ac6eafebc542"
+      "swatchSha256": "7ab1000cde04d301e6e4cd1f6b37d20a88f41581bd6c48612b15ac6eafebc542",
+      "compiled": {
+        "source": "https://ambientcg.com/get?file=Asphalt025C_1K-JPG.zip",
+        "sourceSha256": "5a21213be4892b152c544ac20d2ee376fd6d332257ab4572920a459b9c4042e0",
+        "basecolor": {
+          "path": "assets/vendor/materials/asphalt--worn--basecolor.jpg",
+          "sha256": "6ee138c85ce04ea5406a86ff776ac37fd351fa7fcd76721ed3584ca663ca76fb",
+          "px": 512
+        },
+        "normal": {
+          "path": "assets/vendor/materials/asphalt--worn--normal.jpg",
+          "sha256": "5cdb6f8977522cb1296fccb2a86449fd605cc598e25dbc4fe718a33f9a029ec5",
+          "px": 512
+        },
+        "roughness": {
+          "path": "assets/vendor/materials/asphalt--worn--roughness.jpg",
+          "sha256": "9476bead2f074e341b234450851328bda438335a2ad7c504459c03869fff6b33",
+          "px": 512
+        }
+      }
     },
     "grass--meadow": {
       "label": "Meadow grass",
@@ -48,7 +86,26 @@
       "avgColor": "#535A2F",
       "swatch8": "AAAAamoqbno+anQ9YWo4Y2szdHQuAAAAamoqZm84X2c1X2o4WWM0V2EvZnE1aoBAY2s3YWg3XGQ0WmE4WmI2Vl8xXWYyZ3E3VVwwWWAzWmQ2YWtAY2w+WmI0WWExZG82S1IrWGA0WWI1ZW5AZG5BW2U2XGU0ZG02NjwgSlErWF8zXGU5Xmc6WGM1V2AwY2s3KioVOD4hR00oVFwyVV0yUlsuW2QzamoqAAAAJycUNjogQUYpRksrSU0oQFUqAAAA",
       "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Grass004.png",
-      "swatchSha256": "9fed4143f8d02ee1dd941c80ac920e5b69cb28b072c61ce096c198213f42635d"
+      "swatchSha256": "9fed4143f8d02ee1dd941c80ac920e5b69cb28b072c61ce096c198213f42635d",
+      "compiled": {
+        "source": "https://ambientcg.com/get?file=Grass004_1K-JPG.zip",
+        "sourceSha256": "4b63495f459db8481f4d5144e4e9069345c81cf898cc71f2216f5dd3bb344469",
+        "basecolor": {
+          "path": "assets/vendor/materials/grass--meadow--basecolor.jpg",
+          "sha256": "20c812cfd92da6666d41ab22693ac3223587769443d641042d45855b01ef67e3",
+          "px": 512
+        },
+        "normal": {
+          "path": "assets/vendor/materials/grass--meadow--normal.jpg",
+          "sha256": "6b69ce96646851bd48553ff44262c3dd5ad0f3dc84640a68d88f7ff5919afd74",
+          "px": 512
+        },
+        "roughness": {
+          "path": "assets/vendor/materials/grass--meadow--roughness.jpg",
+          "sha256": "e9343d4532f659011a7e3b3615fc802dfbe4a54257ec379121086597e50a36a7",
+          "px": 512
+        }
+      }
     },
     "water--calm": {
       "label": "Calm water",
@@ -61,7 +118,10 @@
       "resolution": 512,
       "seamless": true,
       "avgColor": "#58AEDC",
-      "swatchSource": "authored"
+      "swatchSource": "authored",
+      "compiled": {
+        "gap": "no fetchable source (material-maker://graphs/water-calm) — authored graphs render flat until exported by hand"
+      }
     },
     "water--pool": {
       "label": "Pool water",
@@ -74,7 +134,10 @@
       "resolution": 512,
       "seamless": true,
       "avgColor": "#4FC3E8",
-      "swatchSource": "authored"
+      "swatchSource": "authored",
+      "compiled": {
+        "gap": "no fetchable source (material-maker://graphs/water-pool) — authored graphs render flat until exported by hand"
+      }
     },
     "steel--track": {
       "label": "Coaster track steel",
@@ -90,7 +153,26 @@
       "avgColor": "#657078",
       "swatch8": "AAAAYGBgrLS40dbaxMvPgY6WUGBgAAAAUFBgYmx1Y3B7ZnR+cYCMdYWRa3iBQFBQZXB4UV9qTVtlSFZgU2FtjJqloa63dICHbnyEVWRwXm15VGNuWWdyw8vS6e3vm6asY253VWNtVWNtWGdyWWhzk6Cpt8LJiZOcT1ZcS1dhUV9qWWhzWGZxaXiDbXuGXmdvMEBATVdeYG97ZnaCaXmEdoWQYWx1QEBQAAAAQFBQY290b32GdIKMcHyBUGBgAAAA",
       "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Metal032.png",
-      "swatchSha256": "d53274b82919a9cdc3b5fa6276611b0e3b8d4edad58eed800efeb3b120134107"
+      "swatchSha256": "d53274b82919a9cdc3b5fa6276611b0e3b8d4edad58eed800efeb3b120134107",
+      "compiled": {
+        "source": "https://ambientcg.com/get?file=Metal032_1K-JPG.zip",
+        "sourceSha256": "9e4f363905a647958c273154fa125d2a6440892d0e583f9b3af24bb08b5afc3c",
+        "basecolor": {
+          "path": "assets/vendor/materials/steel--track--basecolor.jpg",
+          "sha256": "d67a55ba09d2e2d3316ee49cf9ed7c679125cd310f9dd9852bc8bd7de14677f8",
+          "px": 512
+        },
+        "normal": {
+          "path": "assets/vendor/materials/steel--track--normal.jpg",
+          "sha256": "5c3fa99689221a011cd6644329f55640bf29d864202719e7e67ae94f645125d5",
+          "px": 512
+        },
+        "roughness": {
+          "path": "assets/vendor/materials/steel--track--roughness.jpg",
+          "sha256": "caac6308b113d0e39a5879c9992636c2003e67c0c22746638bcefde0e8997b3d",
+          "px": 512
+        }
+      }
     },
     "fiberglass--flume": {
       "label": "Slide flume fiberglass",
@@ -103,7 +185,10 @@
       "resolution": 512,
       "seamless": true,
       "avgColor": "#E8834A",
-      "swatchSource": "authored"
+      "swatchSource": "authored",
+      "compiled": {
+        "gap": "no fetchable source (material-maker://graphs/fiberglass-flume) — authored graphs render flat until exported by hand"
+      }
     },
     "roofing--shingle": {
       "label": "Shingle roofing",
@@ -119,7 +204,26 @@
       "avgColor": "#52524A",
       "swatch8": "AAAAAAAAlJSInJyPoaGSkpKGAAAAAAAAAAAAjIyBlZSJl5eJoJ6Qp6aXm5mLAAAAcHBqhYV6hYV5gYB0j41/mpiJnJqNk5OGZ2lgb29mcXFmZ2dccXBkd3VohYN3iYd6WVxTUFFJTU1FTU1EVVZLVVRKZGNXeHVqTVNGPD03NzgyNzgyPD01QkI6T05FampdAAAAMTEuJCUiIiMgJCUhMDEqPzw1AAAAAAAAAAAAHh4eHBwaHh4cJCQeAAAAAAAA",
       "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/RoofingTiles003.png",
-      "swatchSha256": "7f57420f231b9f46394b35da6a5fd6218b83a37a20c0579ef6c563b44e1d74d9"
+      "swatchSha256": "7f57420f231b9f46394b35da6a5fd6218b83a37a20c0579ef6c563b44e1d74d9",
+      "compiled": {
+        "source": "https://ambientcg.com/get?file=RoofingTiles003_1K-JPG.zip",
+        "sourceSha256": "0fd7342268bf9e5949331a9a8e679762516605f79a3a3e4cabea1dce68ce15c4",
+        "basecolor": {
+          "path": "assets/vendor/materials/roofing--shingle--basecolor.jpg",
+          "sha256": "dfcf56275dcea5a0091308a3c30fdfa7cb08b56a5cf627e05a2ad6708351f0b3",
+          "px": 512
+        },
+        "normal": {
+          "path": "assets/vendor/materials/roofing--shingle--normal.jpg",
+          "sha256": "d75bc6213086f0cbb4a92dd4b66e07794818f8935140625d574999875df76a63",
+          "px": 512
+        },
+        "roughness": {
+          "path": "assets/vendor/materials/roofing--shingle--roughness.jpg",
+          "sha256": "f76fb67c870a537a06866857b44e5f7dc8cc2ed8dcaf101d04839ece637dff38",
+          "px": 512
+        }
+      }
     },
     "concrete--lot": {
       "label": "Parking lot concrete",
@@ -135,7 +239,26 @@
       "avgColor": "#A5A4A1",
       "swatch8": "AAAA3d3d1tbV1NPQzs3KxcXBtra2AAAAzMzM19bU2NjV1NTRzMvIw8O/sLCspJKS09PP1tXT2NjW1NPQysrHvr26qKejkpCM0NDO0tLP09LQzczJwsG+tLOwmpmVg4J9yMbEysnGycjFw8PAtrWyrKuniYiEeXh0uLi0v767v767tbSxpqWilJOPdnVxdnRwqqqZq6unqqmloJ+ckpCNfXx5dHJvgICAAAAAiIiIkY+Ni4mGgH98e3l3gICAAAAA",
       "swatchSource": "https://acg-media.struffelproductions.com/file/ambientCG-Web/media/thumbnail/64-PNG/Concrete034.png",
-      "swatchSha256": "18802bf68661301fe12156b56a799d884363a60f87c2e591c580ca75fab5f744"
+      "swatchSha256": "18802bf68661301fe12156b56a799d884363a60f87c2e591c580ca75fab5f744",
+      "compiled": {
+        "source": "https://ambientcg.com/get?file=Concrete034_1K-JPG.zip",
+        "sourceSha256": "5839d284d94ffb8d2a56df742ec522b13dd311c52dbd42b8fd33f0409ceedb81",
+        "basecolor": {
+          "path": "assets/vendor/materials/concrete--lot--basecolor.jpg",
+          "sha256": "16bc2d240c880aa21a101801fb475f08e8c21a508d9d9687f5a1578fe4139863",
+          "px": 512
+        },
+        "normal": {
+          "path": "assets/vendor/materials/concrete--lot--normal.jpg",
+          "sha256": "8350b148b54752effffe9c7e23c4f0575bcace4094440f01dc896ae65c349592",
+          "px": 512
+        },
+        "roughness": {
+          "path": "assets/vendor/materials/concrete--lot--roughness.jpg",
+          "sha256": "be4921996fd5c7cc96e92ceab8dafcdc9f0a1a27fe8fc131c32143d6fcbb2204",
+          "px": 512
+        }
+      }
     }
   }
 }
