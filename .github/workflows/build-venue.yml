@@ -135,7 +135,12 @@ jobs:
           # rather than guessing at how a name was slugified. Plural, because
           # "--rebuild all" writes one line per venue and reporting on only the
           # last of them would quietly hide the rest.
-          ids=$(sed -n 's|^Wrote public/venues/\(.*\)\.map\.json$|\1|p' build.log | sort -u | tr '\n' ' ')
+          #
+          # Anchored on the FILENAME (<id>.map.json — only the map bundle ends
+          # that way), not the directory, so the next move of VENUE_DIR
+          # (packages/venue-builder/src/paths.mjs) cannot silently empty $ids
+          # again (#553).
+          ids=$(sed -n 's|^Wrote .*/\([^/]*\)\.map\.json$|\1|p' build.log | sort -u | tr '\n' ' ')
           ids=${ids% }
           if [ -z "$ids" ]; then
             echo "::error::The build wrote no map file. See the log above."
@@ -281,7 +286,14 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add public/venues lib/venueIndex.js data/venues
+          # The pathspecs come from the builder's own paths module — the one
+          # place that knows where venues live (src/paths.mjs, re-exported by
+          # lib/venue-io.mjs) — rather than being restated here to go stale
+          # again (#553; scripts-over-instructions).
+          git add $(node --input-type=module -e "
+            import { VENUE_DIR, INDEX_FILE, OVERRIDE_DIR } from '@party-tracker/venue-builder/paths.js';
+            console.log([VENUE_DIR, INDEX_FILE, OVERRIDE_DIR].join('\n'));
+          ")
           if git diff --cached --quiet; then
             # For a rebuild this is the good answer rather than a wasted run: it
             # means OpenStreetMap still says what we shipped.
