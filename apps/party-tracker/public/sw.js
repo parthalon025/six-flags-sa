@@ -146,6 +146,14 @@ self.addEventListener('fetch', (e) => {
       );
       return;
     }
+    // A ?v=<hash> request is the download manager fetching bytes it is about
+    // to verify and store under the clean path itself — caching it here would
+    // duplicate every changed file into CACHE under a hash key that is never
+    // requested again. Pass it straight to the network.
+    if (url.searchParams.has('v')) {
+      e.respondWith(fetch(e.request));
+      return;
+    }
     // Hash-verified bundle bytes answer first — they are exactly current, so
     // revalidating them per request would spend park bandwidth to learn
     // nothing. Anything the download manager has not verified keeps the old

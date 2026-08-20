@@ -288,6 +288,10 @@ await check('sw.js names the same bundle cache and preserves it on activate', ()
     'activate never deletes the bundle cache',
   );
   assert.ok(sw.includes(".endsWith('.bundle.json')"), 'bundle manifests are network-first');
+  assert.ok(
+    sw.includes("url.searchParams.has('v')"),
+    'hash-addressed fetches bypass the SW caches — the download manager stores those bytes itself',
+  );
   assert.doesNotMatch(
     sw,
     /BUNDLE_CACHE = 'tracker-__APP_VERSION__/,

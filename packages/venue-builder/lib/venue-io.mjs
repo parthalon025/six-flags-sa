@@ -178,7 +178,7 @@ export function reindex({ preferredDefault } = {}) {
       venueDir: VENUE_DIR,
       displayDir: path.join(VENUE_DIR, id, 'display'),
       outFile: path.join(VENUE_DIR, `${id}.bundle.json`),
-      generated: map.meta.generated ?? null,
+      generated: map.meta?.generated ?? null,
     });
     venues.push({
       ...map.meta,
