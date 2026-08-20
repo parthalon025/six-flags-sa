@@ -6,7 +6,14 @@
 import { labelWantedAtZoom } from './mapSymbols.js';
 
 /** First ship-polish Skins (store + delight tier). */
-export const SHIP_SKIN_IDS = ['postcard', 'marquee', 'junior', 'pixel-tycoon'];
+export const SHIP_SKIN_IDS = [
+  'postcard',
+  'marquee',
+  'junior',
+  'pixel-tycoon',
+  'layered-atlas',
+  'watercolor-quest',
+];
 
 /** Categories on at gate before the visitor opens the key. */
 export const GATE_CATEGORY_ORDER = [

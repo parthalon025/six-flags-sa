@@ -76,6 +76,19 @@ assert.ok(ride.supports[0].d.startsWith('M'));
 const rctTemplate = resolveIsoMapTemplate('rct-classic');
 assert.equal(rctTemplate.id, 'rct-classic');
 assert.equal(rctTemplate.coasterStepM, 6);
+const frisco = resolveIsoMapTemplate('frisco-fields');
+assert.equal(frisco.id, 'frisco-fields');
+assert.equal(frisco.coasterBaseM, 2);
+assert.equal(frisco.coasterHeightAmp, 6);
+assert.equal(frisco.coasterStepM, 9);
+assert.equal(frisco.buildingTrackPadM, 10, 'unset fields inherit rct-classic');
+const watercolor = resolveIsoMapTemplate('watercolor-quest');
+assert.equal(watercolor.id, 'watercolor-quest');
+assert.equal(watercolor.coasterBaseM, 4);
+assert.equal(watercolor.coasterHeightAmp, 5);
+assert.equal(watercolor.coasterStepM, 10);
+assert.equal(watercolor.buildingTrackPadM, 8);
+assert.equal(watercolor.liftedTrackPadM, 6);
 const sparseTemplate = resolveIsoMapTemplate({
   id: 'sparse-demo',
   coasterStepM: 30,

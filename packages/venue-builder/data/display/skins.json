@@ -68,7 +68,7 @@
       "label": "Layered atlas",
       "status": "active",
       "harvestedFrom": "PR #447 cursor/map-skins-reference-6c37",
-      "isoTemplate": "rct-classic",
+      "isoTemplate": "frisco-fields",
       "tokens": {
         "contrastFloor": 4.5,
         "labelHalo": true,
@@ -101,7 +101,7 @@
       "label": "Watercolor quest",
       "status": "active",
       "harvestedFrom": "PR #447 cursor/map-skins-reference-6c37",
-      "isoTemplate": "rct-classic",
+      "isoTemplate": "watercolor-quest",
       "tokens": {
         "contrastFloor": 4.5,
         "labelHalo": true,

@@ -74,6 +74,7 @@
     "test:compare": "node test/builder/compare.mjs",
     "test:visual": "node test/app/visual.mjs",
     "test:display-parity": "node test/app/display-parity.mjs",
+    "test:map-skin-points": "node test/app/map-skin-visual-points.mjs",
     "readme:shots": "node test/app/readme-shots.mjs",
     "readme:shots:check": "node test/app/readme-shots-check.mjs",
     "test:theme": "node test/app/theme.mjs",

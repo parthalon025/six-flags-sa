@@ -41,8 +41,26 @@ const RCT_CLASSIC_TEMPLATE = Object.freeze({
   buildingTrackPadM: 10,
   liftedTrackPadM: 8,
 });
+const FRISCO_FIELDS_TEMPLATE = Object.freeze({
+  ...RCT_CLASSIC_TEMPLATE,
+  id: 'frisco-fields',
+  coasterBaseM: 2,
+  coasterHeightAmp: 6,
+  coasterStepM: 9,
+});
+const WATERCOLOR_QUEST_TEMPLATE = Object.freeze({
+  ...RCT_CLASSIC_TEMPLATE,
+  id: 'watercolor-quest',
+  coasterBaseM: 4,
+  coasterHeightAmp: 5,
+  coasterStepM: 10,
+  buildingTrackPadM: 8,
+  liftedTrackPadM: 6,
+});
 export const ISO_MAP_TEMPLATES = Object.freeze({
   'rct-classic': RCT_CLASSIC_TEMPLATE,
+  'frisco-fields': FRISCO_FIELDS_TEMPLATE,
+  'watercolor-quest': WATERCOLOR_QUEST_TEMPLATE,
 });
 
 /**

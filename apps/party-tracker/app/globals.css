@@ -1695,6 +1695,148 @@ html[data-skin-pixel="1"] .isoCoasterSelected .isoTrack {
   stroke: #F6A43A;
   stroke-width: 3.4;
 }
+
+/* Reference-inspired map Skins: analytical atlas and watercolor quest. */
+html[data-skin-map="layered-atlas"] .mapWrap {
+  background: #C9D6C0;
+}
+html[data-skin-map="layered-atlas"] .lyr-park path {
+  fill: #B8C9B6;
+  stroke: #6E8975;
+  stroke-width: 1;
+}
+html[data-skin-map="layered-atlas"] .lyr-land path {
+  opacity: .78;
+}
+html[data-skin-map="layered-atlas"] .lyr-pathcase path {
+  stroke: #E5E8D9;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+html[data-skin-map="layered-atlas"] .lyr-path path {
+  stroke: #3F6570;
+  stroke-width: 2.2;
+}
+html[data-skin-map="layered-atlas"] .lyr-service path {
+  stroke: #8D3E8A;
+  stroke-width: 2;
+  opacity: .85;
+}
+html[data-skin-map="layered-atlas"] .lyr-iso-map .isoFoot {
+  fill: #8F806A;
+  opacity: .2;
+  stroke: none;
+}
+html[data-skin-map="layered-atlas"] .lyr-iso-map .isoWallL {
+  fill: #B49A70;
+  stroke: #75624F;
+  stroke-width: 1;
+}
+html[data-skin-map="layered-atlas"] .lyr-iso-map .isoWallR {
+  fill: #967B5A;
+  stroke: #75624F;
+  stroke-width: 1;
+}
+html[data-skin-map="layered-atlas"] .lyr-iso-map .isoRoof {
+  fill: #C9B58D;
+  stroke: #7A6655;
+  stroke-width: 1.2;
+}
+html[data-skin-map="layered-atlas"] .lyr-iso-map .isoShadow {
+  fill: none;
+  stroke: #506A68;
+  stroke-width: 3;
+  opacity: .22;
+}
+html[data-skin-map="layered-atlas"] .lyr-iso-map .isoSupport {
+  fill: none;
+  stroke: #667B7D;
+  stroke-width: 1.1;
+}
+html[data-skin-map="layered-atlas"] .lyr-iso-map .isoTrack {
+  fill: none;
+  stroke: #D13C58;
+  stroke-width: 2.4;
+}
+html[data-skin-map="layered-atlas"] .landLabel {
+  fill: #243B45;
+  paint-order: stroke;
+  stroke: #E4E9DA;
+  stroke-width: 4px;
+}
+
+html[data-skin-map="watercolor-quest"] .mapWrap {
+  background: #F4EFDF;
+}
+html[data-skin-map="watercolor-quest"] .mapWorld {
+  filter: saturate(.72) contrast(.9) brightness(1.05);
+}
+html[data-skin-map="watercolor-quest"] .lyr-park path {
+  fill: #E6DFC8;
+  stroke: #C9BFAE;
+  stroke-width: 1.2;
+}
+html[data-skin-map="watercolor-quest"] .lyr-land path {
+  opacity: .42;
+}
+html[data-skin-map="watercolor-quest"] .lyr-pathcase path {
+  stroke: #F4EFDF;
+  stroke-width: 8;
+  opacity: .88;
+  stroke-linecap: round;
+}
+html[data-skin-map="watercolor-quest"] .lyr-path path {
+  stroke: #756276;
+  stroke-width: 2.3;
+  opacity: .82;
+}
+html[data-skin-map="watercolor-quest"] .lyr-service {
+  display: none;
+}
+html[data-skin-map="watercolor-quest"] .lyr-iso-map .isoFoot {
+  fill: #6F6570;
+  opacity: .16;
+  stroke: none;
+}
+html[data-skin-map="watercolor-quest"] .lyr-iso-map .isoWallL {
+  fill: #A99482;
+  stroke: #756276;
+  stroke-width: 1;
+}
+html[data-skin-map="watercolor-quest"] .lyr-iso-map .isoWallR {
+  fill: #897765;
+  stroke: #756276;
+  stroke-width: 1;
+}
+html[data-skin-map="watercolor-quest"] .lyr-iso-map .isoRoof {
+  fill: #B8A68D;
+  stroke: #756276;
+  stroke-width: 1.3;
+}
+html[data-skin-map="watercolor-quest"] .lyr-iso-map .isoShadow {
+  fill: none;
+  stroke: #756276;
+  stroke-width: 3.6;
+  opacity: .18;
+}
+html[data-skin-map="watercolor-quest"] .lyr-iso-map .isoSupport {
+  fill: none;
+  stroke: #887B88;
+  stroke-width: 1;
+  opacity: .7;
+}
+html[data-skin-map="watercolor-quest"] .lyr-iso-map .isoTrack {
+  fill: none;
+  stroke: #7A5D83;
+  stroke-width: 2.2;
+}
+html[data-skin-map="watercolor-quest"] .landLabel {
+  fill: #57485C;
+  paint-order: stroke;
+  stroke: #F4EFDF;
+  stroke-width: 5px;
+}
+
 html[data-skin-neon="1"] .lyr-coaster path {
   filter: drop-shadow(0 0 2px var(--track));
 }

@@ -50,6 +50,8 @@ const fog = fogMapStyle(
 assert.ok(fog && fog.saturate < 1);
 
 assert.equal(SHIP_SKIN_IDS.includes('pixel-tycoon'), true);
+assert.equal(SHIP_SKIN_IDS.includes('layered-atlas'), true);
+assert.equal(SHIP_SKIN_IDS.includes('watercolor-quest'), true);
 
 const tycoon = mapPaint('pixel-tycoon');
 assert.equal(tycoon.traits.pixel, true);
@@ -57,6 +59,13 @@ assert.equal(tycoon.ground, '#4FA83A');
 assert.equal(tycoon.midway, '#C8C8C0');
 const land = landTint('Rivertown', 'pixel-tycoon');
 assert.match(land.fill, /^hsl\(1\d{2} /);
+assert.match(landTint('Rivertown', 'layered-atlas').fill, /^#/);
+assert.match(landTint('Rivertown', 'watercolor-quest').fill, /^#/);
+assert.notEqual(
+  landTint('Rivertown', 'layered-atlas').fill,
+  landTint('Rivertown', 'night').fill,
+  'reference atlas does not inherit dark district fills',
+);
 
 /* markerWantsLabel is a policy layer over the shared zoom decision, not a
    fork of it: at every zoom around the enter threshold — including the band
