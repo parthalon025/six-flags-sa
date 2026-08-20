@@ -597,7 +597,9 @@ export function certifyStyleContract({
     // tallies included), so a sweep aggregator can reason about starvation
     // without parsing evidence strings. Absent on flat certs and on certs
     // baked before this existed — consumers must treat absence as "nothing
-    // withdrawn".
+    // withdrawn". Two valid states, by design: `skips` is either a
+    // non-empty array or missing entirely, never [] — guard reads with
+    // `cert.skips || []` like crossRotationCoverageRow and display-pack do.
     ...(skips && skips.length ? { skips } : {}),
   };
 }

@@ -8,6 +8,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -15,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 import {
   capturedManifestRel,
   mediaFiles,
+  mediaRel,
   missingFromReadme,
   refreshedShots,
   shotsNeedingRefresh,
@@ -92,6 +94,25 @@ assert.match(readme, /walkthrough/i, 'README should include a walkthrough');
   assert.deepEqual(refreshedShots(entry, {}), ['party.png'], 'new entries count as refreshed');
   assert.deepEqual(refreshedShots(entry, entry), [], 'identical entries refresh nothing');
   assert.deepEqual(refreshedShots({}, {}), [], 'empty manifests change nothing');
+
+  // The hash guard: an entry only vouches for pixels it matches. A missing
+  // or wrong sha256 (hand-typed row, bad merge) cannot clear the gate.
+  const hashed = { 'party.png': { commit: 'ccc', capturedAt: '2026-08-20T00:00:00Z', sha256: 'aa11' } };
+  assert.deepEqual(
+    refreshedShots(hashed, {}, { hashOf: () => 'aa11' }),
+    ['party.png'],
+    'a matching on-disk hash clears the shot',
+  );
+  assert.deepEqual(
+    refreshedShots(hashed, {}, { hashOf: () => 'bb22' }),
+    [],
+    'a drifted on-disk hash refreshes nothing',
+  );
+  assert.deepEqual(
+    refreshedShots(entry, {}, { hashOf: () => 'aa11' }),
+    [],
+    'an entry with no recorded hash refreshes nothing when verification is on',
+  );
   const stale = shotsNeedingRefresh(['apps/party-tracker/components/ParkMap.jsx'], manifest, { refreshed: [] });
   assert.ok(stale.includes('map-day.png'), 'no refreshed entries: staleness is unchanged');
 }
@@ -128,8 +149,19 @@ if (base) {
     } catch {
       // No manifest at the base ref (or thin clone): nothing counts as refreshed.
     }
+    // A manifest entry only vouches for the pixels it hashes: hand-typed
+    // rows and rows carried over a bad merge fail the on-disk comparison.
+    const hashOf = (file) => {
+      try {
+        return createHash('sha256')
+          .update(readFileSync(join(root, mediaRel(manifest, file))))
+          .digest('hex');
+      } catch {
+        return null;
+      }
+    };
     const stale = shotsNeedingRefresh(changed, manifest, {
-      refreshed: refreshedShots(captured, capturedBase),
+      refreshed: refreshedShots(captured, capturedBase, { hashOf }),
     });
     assert.equal(
       stale.length,

@@ -469,6 +469,19 @@ export function loadTruthFor(id) {
  * every row re-keyed `bake:<kit>:<key>` plus one gate row over the set —
  * the pack certifies only when every requested bake did.
  */
+/**
+ * One place understands the bake cert filename convention
+ * `<id>--<kit>.style-cert.json` / `<id>--<kit>--iso-r<N>.style-cert.json`.
+ * Returns { kit, rotation } with rotation null for flat certs. The greedy
+ * kit capture deliberately claims everything before the LAST `--iso-r<N>`,
+ * so a kit id that itself contains the marker still parses.
+ */
+export function parseCertFilename(id, f) {
+  const stem = f.slice(id.length + 2, -'.style-cert.json'.length);
+  const m = /^(.+)--iso-r(\d+)$/.exec(stem);
+  return m ? { kit: m[1], rotation: Number(m[2]) } : { kit: stem, rotation: null };
+}
+
 export function foldBakeCerts(bakeCerts) {
   const rows = [];
   for (const { kit, cert } of bakeCerts) {
@@ -632,11 +645,13 @@ export function runDisplayStage(id, opts = {}) {
     const allCertFiles = (existsSync(bakeDir)
       ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
       : []).sort();
-    const certFiles = allCertFiles.filter((f) => !/--iso-r\d+\.style-cert\.json$/.test(f));
-    const bakeCerts = certFiles.map((f) => ({
-      kit: f.slice(id.length + 2, -'.style-cert.json'.length),
-      cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
-    }));
+    const bakeCerts = allCertFiles
+      .map((f) => ({ f, ...parseCertFilename(id, f) }))
+      .filter(({ rotation }) => rotation === null)
+      .map(({ f, kit }) => ({
+        kit,
+        cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
+      }));
     venueChecks.push(...foldBakeCerts(bakeCerts));
 
     // The iso sweep's one venue-level demand (issue #521): per-rotation
@@ -646,10 +661,10 @@ export function runDisplayStage(id, opts = {}) {
     // their rows still do not fold as pack tiers (Phase C, above).
     const isoSweeps = {};
     for (const f of allCertFiles) {
-      const m = /^(.+)--iso-r(\d+)\.style-cert\.json$/.exec(f.slice(id.length + 2));
-      if (!m) continue;
+      const { kit, rotation } = parseCertFilename(id, f);
+      if (rotation === null) continue;
       const cert = readJson(path.join(bakeDir, f), null);
-      (isoSweeps[m[1]] = isoSweeps[m[1]] || []).push({ rotation: Number(m[2]), skips: cert?.skips || [] });
+      (isoSweeps[kit] = isoSweeps[kit] || []).push({ rotation, skips: cert?.skips || [] });
     }
     for (const [kitId, sweep] of Object.entries(isoSweeps).sort(([a], [b]) => (a < b ? -1 : 1))) {
       const row = crossRotationCoverageRow(sweep);

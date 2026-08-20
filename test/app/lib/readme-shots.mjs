@@ -21,9 +21,11 @@ export function capturedManifestRel(manifest) {
 /**
  * Record one shot's capture. Pure: returns a new entries object with keys
  * sorted, so the written manifest diffs stably however capture order moves.
+ * `sha256` is the shot file's content hash — the manifest's tie to the
+ * pixels it vouches for, not just to the writer's word.
  */
-export function recordCapture(entries, file, { commit, capturedAt }) {
-  const next = { ...(entries || {}), [file]: { commit, capturedAt } };
+export function recordCapture(entries, file, { commit, capturedAt, sha256 = null }) {
+  const next = { ...(entries || {}), [file]: { commit, capturedAt, sha256 } };
   return Object.fromEntries(Object.entries(next).sort(([a], [b]) => (a < b ? -1 : 1)));
 }
 
@@ -36,11 +38,17 @@ export function recordCapture(entries, file, { commit, capturedAt }) {
  * entry it captures (fresh commit + timestamp) whether or not the pixels
  * moved. With no manifest on either side this returns [] and staleness
  * behaves exactly as before the manifest existed.
+ *
+ * `hashOf(file)` — when given — must return the shot's current on-disk
+ * sha256; an entry only counts as refreshed when its recorded hash matches,
+ * so a hand-typed entry (or one carried over a bad merge onto different
+ * pixels) cannot clear the gate.
  */
-export function refreshedShots(entries, baseEntries) {
+export function refreshedShots(entries, baseEntries, { hashOf } = {}) {
   const base = baseEntries || {};
   return Object.entries(entries || {})
     .filter(([file, entry]) => JSON.stringify(entry) !== JSON.stringify(base[file] ?? null))
+    .filter(([file, entry]) => !hashOf || (entry.sha256 && hashOf(file) === entry.sha256))
     .map(([file]) => file);
 }
 

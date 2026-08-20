@@ -2302,7 +2302,9 @@ await check('a one-way service road says which way, and who is allowed down it',
   const fwd = g.nodes[seg.a].edges.find((e) => e.to === seg.b && e.seg === segIndex);
   const rev = g.nodes[seg.b].edges.find((e) => e.to === seg.a && e.seg === segIndex);
   assert.ok(fwd && rev, 'both directions stay in the graph');
-  assert.ok(rev.cost > fwd.cost * 5, `wrong way costs ${rev.cost}, with the arrow ${fwd.cost}`);
+  // Exactly the documented multiplier (routing.js WRONG_WAY = 8): the issue's
+  // rationale prices detours against it, so a silent change must fail here.
+  assert.equal(rev.cost, fwd.cost * 8, `wrong way costs ${rev.cost}, with the arrow ${fwd.cost}`);
   return true;
 });
 

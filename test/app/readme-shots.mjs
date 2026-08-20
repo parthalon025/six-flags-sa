@@ -9,6 +9,7 @@
  *   npm run readme:shots
  */
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -132,6 +133,7 @@ function recordShot(name) {
   const next = recordCapture(entries, name, {
     commit: CAPTURED_COMMIT,
     capturedAt: new Date().toISOString(),
+    sha256: createHash('sha256').update(fs.readFileSync(path.join(OUT, name))).digest('hex'),
   });
   fs.writeFileSync(CAPTURED_FILE, `${JSON.stringify(next, null, 2)}\n`);
 }
