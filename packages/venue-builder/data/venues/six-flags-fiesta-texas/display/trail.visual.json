@@ -85,7 +85,32 @@
       "color": "#CDC8C0"
     }
   },
-  "landTones": {},
+  "landTones": {
+    "Rockville": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "DC Universe": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Spassburg": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Los Festivales": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Fiesta Bay Boardwalk": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    },
+    "Texas State Square": {
+      "day": "#C9B79E",
+      "night": "#39323F"
+    }
+  },
   "fallback": {
     "landTone": "name-hue"
   },
