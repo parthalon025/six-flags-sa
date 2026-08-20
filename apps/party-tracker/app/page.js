@@ -85,7 +85,7 @@ import {
   grantShipSkins,
   mergeWorlds,
   recordSideQuest,
-  syncRankExPrizes,
+  syncRankPrizes,
   visibleMarks,
   wearMap,
 } from '@/lib/world';
@@ -1417,7 +1417,7 @@ function ParkApp({ isSignedIn }) {
       );
       // Rank prizes ride the same seam: syncing through the new rank also
       // backfills any earlier rank whose grant this phone never saw.
-      setWorldProgress(rankUp ? syncRankExPrizes(next, rankUp) : next);
+      setWorldProgress(rankUp ? syncRankPrizes(next, rankUp) : next);
       for (const mark of marks) publishMark(mark);
     },
     [worldProgress, authSession?.userId, venue?.id, venue?.kind, party?.partyId, POIS, publishMark],

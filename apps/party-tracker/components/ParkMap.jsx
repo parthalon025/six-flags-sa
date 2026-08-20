@@ -1646,17 +1646,13 @@ function ParkMap({
             <>
               <g className="lyr-trackglow">
                 {litTrack.map((i) => {
-                  const d = iso
-                    ? isoMeshesAll.tracks.find((t) => t.i === i)?.track.d
-                    : world.coaster.find((f) => f.i === i)?.d;
+                  const d = world.coaster.find((f) => f.i === i)?.d;
                   return d ? <path key={`tg${i}`} d={d} /> : null;
                 })}
               </g>
               <g className="lyr-trackpick">
                 {litTrack.map((i) => {
-                  const d = iso
-                    ? isoMeshesAll.tracks.find((t) => t.i === i)?.track.d
-                    : world.coaster.find((f) => f.i === i)?.d;
+                  const d = world.coaster.find((f) => f.i === i)?.d;
                   return d ? <path key={`tp${i}`} d={d} /> : null;
                 })}
               </g>

@@ -84,20 +84,20 @@ await check('nextRankPrizeRow after scout is Ranger', () => {
   return true;
 });
 
-await check('grantRankExPrizes applies scout Kit once', () => {
+await check('grantRankPrizes applies scout Kit once', () => {
   let p = world.createProgress({ userId: 'u1' });
-  p = world.grantRankExPrizes(p, 'scout');
+  p = world.grantRankPrizes(p, 'scout');
   assert.equal(p.kit, 'porter-cuff');
   assert.deepEqual(p.rankPrizesGranted, ['scout']);
-  p = world.grantRankExPrizes(p, 'scout');
+  p = world.grantRankPrizes(p, 'scout');
   assert.equal(p.kit, 'porter-cuff');
   assert.deepEqual(p.rankPrizesGranted, ['scout']);
   return true;
 });
 
-await check('syncRankExPrizes backfills through ranger', () => {
+await check('syncRankPrizes backfills through ranger', () => {
   let p = world.createProgress({ userId: 'u1' });
-  p = world.syncRankExPrizes(p, 'ranger');
+  p = world.syncRankPrizes(p, 'ranger');
   assert.deepEqual(p.rankPrizesGranted, ['scout', 'ranger']);
   assert.equal(p.kit, 'porter-cuff');
   assert.equal(world.skinRung(p, 'postcard'), 'unlock');

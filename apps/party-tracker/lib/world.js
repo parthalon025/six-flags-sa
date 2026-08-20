@@ -91,7 +91,6 @@ export const SKINS = {
     unlock: { contributions: 1 },
     share: { venues: 3 },
     paint: paint('#C45C4A', '#F4E4C8', '#7EB8D4', '#C8D48A', '#E8C9A0', '#5A2A22'),
-    traits: { landTint: 1.08 },
   },
   handbill: {
     id: 'handbill',
@@ -134,7 +133,7 @@ export const SKINS = {
     unlock: { nightQuests: 5 },
     share: { nightQuests: 20 },
     paint: paint('#FF6B9A', '#0A0614', '#1A2050', '#120818', '#2A1840', '#FFE8F0'),
-    traits: { neon: true, landTint: 1.15 },
+    traits: { neon: true },
   },
   haunt: {
     id: 'haunt',
@@ -165,7 +164,7 @@ export const SKINS = {
     unlock: { deviceLessHeight: true, heightQuests: 1 },
     share: { heightQuests: 5 },
     paint: paint('#FF6B6B', '#FFF5D6', '#7EC8FF', '#B8F0A0', '#FFE0A0', '#3A2060'),
-    traits: { markerBoost: 1.12 },
+    traits: { markerBoost: true },
   },
   'sticker-book': {
     id: 'sticker-book',
@@ -777,7 +776,7 @@ function meterFloorForSkinUnlock(meters, rule = {}) {
  * @param {object} progress world progress snapshot
  * @param {string} rank scout | ranger | cartographer | steward
  */
-export function grantRankExPrizes(progress, rank) {
+export function grantRankPrizes(progress, rank) {
   if (!rank || rank === 'visitor') return progress;
   const granted = new Set(progress.rankPrizesGranted || []);
   if (granted.has(rank)) return progress;
@@ -808,12 +807,12 @@ export function grantRankExPrizes(progress, rank) {
 const RANK_PRIZE_ORDER = ['scout', 'ranger', 'cartographer', 'steward'];
 
 /** Grant every Rank prize through `rank` (backfill on sign-in). */
-export function syncRankExPrizes(progress, rank) {
+export function syncRankPrizes(progress, rank) {
   const i = RANK_PRIZE_ORDER.indexOf(rank);
   if (i < 0) return progress;
   let next = progress;
   for (let j = 0; j <= i; j += 1) {
-    next = grantRankExPrizes(next, RANK_PRIZE_ORDER[j]);
+    next = grantRankPrizes(next, RANK_PRIZE_ORDER[j]);
   }
   return next;
 }

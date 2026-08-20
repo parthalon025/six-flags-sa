@@ -3,7 +3,7 @@
 import { rankPrizeCatalog } from '@party-tracker/shared/rankPrizes.js';
 
 /**
- * Rank ladder with exclusive Ex prizes — what leveling grants beyond XP.
+ * Rank ladder with its prizes — what leveling grants beyond XP.
  */
 export default function RankPrizeCatalog({ xp = 0 }) {
   const rows = rankPrizeCatalog();

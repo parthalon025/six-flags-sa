@@ -101,4 +101,27 @@ assert.equal(markerWantsLabel({ isSelected: true, rank: 1, zPlan: 9, wasShown: t
 assert.equal(markerWantsLabel({ isNav: true, rank: 5, zPlan: 0, wasShown: false }), true);
 assert.equal(markerWantsLabel({ isPlanNext: true, rank: 5, zPlan: 0, wasShown: false }), true);
 
+
+// The reference Skins' palette lives twice — the display ledger compiles the
+// builder side, world.js paints the phone — so parity is asserted, not assumed.
+{
+  const { readFileSync } = await import('node:fs');
+  const ledger = JSON.parse(
+    readFileSync(new URL('../../packages/venue-builder/data/display/skins.json', import.meta.url)),
+  ).skins;
+  for (const id of ['layered-atlas', 'watercolor-quest']) {
+    const colors = ledger[id].tokens.colors;
+    const p = mapPaint(id);
+    assert.equal(p.path.stroke, colors.path, `${id} path`);
+    assert.equal(p.path.casing, colors.pathCasing, `${id} path casing`);
+    assert.equal(p.ground, colors.ground, `${id} ground`);
+    assert.equal(p.water.fill, colors.water, `${id} water`);
+    assert.equal(p.grass.fill, colors.grass, `${id} grass`);
+    assert.equal(p.building.fill, colors.building, `${id} building`);
+    assert.equal(p.label.fill, colors.label, `${id} label`);
+    assert.equal(p.structureEdge, colors.structureEdge, `${id} structure edge`);
+    assert.equal(p.groundEdge, colors.groundEdge, `${id} ground edge`);
+  }
+}
+
 console.log('map-visual.test: ok');
