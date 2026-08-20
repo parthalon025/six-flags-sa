@@ -56,6 +56,13 @@ ship. Consequence: the design doc's §5 generative tier is deferred only on its 
 (perceptual gates), not on economics; the hybrid decision's authored flagship overrides may be
 produced through subscription-funded briefs.
 
+*Correction (2026-08-20, free-tier survey):* Gemini's free tier no longer includes image-generation
+models (billing required) and its free text tier trains on submitted content with an EEA/UK
+geofence — admissible for non-sensitive prompt/caption work only. The confirmed recurring free
+image-generation path is **Cloudflare Workers AI** (daily neuron quota, outputs owned, per-model
+license check before ledger entry). Quotas, terms, and the per-stage source shortlist:
+[free-tier API catalog](../research/2026-08-20-free-tier-api-catalog.md).
+
 ## Rejected / deferred
 
 - Runtime look delivery (feature-flag or server-pushed looks) — looks are releases.

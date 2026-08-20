@@ -122,3 +122,12 @@ New tool → new row with a **trigger**, not a silent import: the trigger is the
 Anything touching shipped bytes obeys the ledger (license + sha pin). Anything in the certified
 path must be deterministic (seeded, version-pinned) or certify perceptually with a stated
 threshold. Rejected rows carry their reason; overturning one is an ADR amendment, not a PR remark.
+
+**License classes** (2026-08-20): CC0/public-domain preferred; plain **CC-BY** acceptable with
+attribution wired per the attribution policy; **AGPL, GPL, NC (non-commercial), and CC-BY-SA
+(share-alike)** are rejected for shipped assets — GPL joins AGPL in the same copyleft spirit, and
+share-alike is not "CC-BY" (an explicit policy decision would be needed to admit it). Sources
+whose terms ban redistribution of raw files (textures.com, CraftPix) are rejected outright.
+Hosted API sources with free tiers — quotas, traps, and the per-stage shortlist — live in the
+[free-tier API catalog](./research/2026-08-20-free-tier-api-catalog.md), which also records the
+generated-credits attribution policy.
