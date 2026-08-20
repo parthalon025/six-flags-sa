@@ -1,0 +1,57 @@
+{
+  "fetched": "2026-08-20",
+  "source": "esa-worldcover.org",
+  "license": "CC BY 4.0",
+  "lands": {
+    "Soak City": {
+      "code": 50,
+      "name": "built_up",
+      "count": 1899
+    },
+    "Coney Mall": {
+      "code": 50,
+      "name": "built_up",
+      "count": 1805
+    },
+    "International Street": {
+      "code": 50,
+      "name": "built_up",
+      "count": 1524
+    },
+    "Rivertown": {
+      "code": 50,
+      "name": "built_up",
+      "count": 1101
+    },
+    "Planet Snoopy": {
+      "code": 50,
+      "name": "built_up",
+      "count": 795
+    },
+    "Action Zone": {
+      "code": 50,
+      "name": "built_up",
+      "count": 979
+    },
+    "Camp Snoopy": {
+      "code": 50,
+      "name": "built_up",
+      "count": 341
+    },
+    "Oktoberfest": {
+      "code": 50,
+      "name": "built_up",
+      "count": 222
+    },
+    "Adventure Port": {
+      "code": 50,
+      "name": "built_up",
+      "count": 229
+    },
+    "Area 72": {
+      "code": 50,
+      "name": "built_up",
+      "count": 256
+    }
+  }
+}
