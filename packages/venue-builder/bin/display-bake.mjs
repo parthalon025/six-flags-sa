@@ -26,11 +26,13 @@ import path from 'node:path';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson } from '../lib/venue-io.mjs';
-import { bakeModel, kitAssetIds, resolveKit } from '../lib/display-bake.mjs';
+import { bakeModel, boundaryDistanceField, kitAssetIds, resolveKit } from '../lib/display-bake.mjs';
 import { kitBriefSystem, parseKitAnswer } from '../lib/display-kit-brief.mjs';
 import {
   readAssetLedger, assetPath, assetsForTarget, creditsManifest,
 } from '../lib/display-assets.mjs';
+import { readMaterials } from '../lib/display-pack.mjs';
+import { compiledPath, verifyCompiledMaterials } from '../lib/display-materials.mjs';
 import { dualGridIndices } from '../lib/display-autotile.mjs';
 import { chatCompletion } from '../lib/venue-llm.mjs';
 import { profileForKit, readReferenceProfiles } from '../lib/display-references.mjs';
@@ -47,6 +49,11 @@ import { isoBakeGeometry } from '../lib/display-iso.mjs';
 const FULL_LEDGER = readAssetLedger();
 const LEDGER = assetsForTarget(FULL_LEDGER, 'flat');
 const ISO_LEDGER = assetsForTarget(FULL_LEDGER, 'iso');
+// Kit material refs resolve against the MaterialSet ledger; only rows whose
+// compiled textures verify on disk actually paint (a gap paints authored
+// flat and the pack's material_textures_resolve row reports it).
+const MATERIALS = readMaterials();
+const MATERIAL_REPORT = verifyCompiledMaterials(MATERIALS);
 
 const KITS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'kits');
 
@@ -95,7 +102,7 @@ function loadKit(id) {
   const file = path.join(KITS_DIR, `${id}.json`);
   const spec = readJson(file, null);
   if (!spec) throw new Error(`No kit "${id}" under data/display/kits/`);
-  return resolveKit(spec, { assets: LEDGER });
+  return resolveKit(spec, { assets: LEDGER, materials: MATERIALS });
 }
 
 async function kitFromPrompt(text) {
@@ -141,6 +148,29 @@ function flatSheets(kit) {
   return sheets;
 }
 
+/** Material refs a kit binds — terrain pieces plus building roofs. */
+function kitMaterialRefs(kit) {
+  const refs = [
+    ...Object.values(kit.terrain).map((p) => p.material),
+    kit.sprites.building?.material,
+  ].filter(Boolean);
+  return [...new Map(refs.map((r) => [r.id, r])).values()];
+}
+
+// Compiled albedos ride the sheet list (flagged `material`) so the painter
+// loads them like any art; unresolved ones paint authored flat, on the record.
+function materialSheets(kit) {
+  const sheets = {};
+  for (const ref of kitMaterialRefs(kit)) {
+    if (MATERIAL_REPORT.resolved.includes(ref.id)) {
+      sheets[ref.id] = { url: `/material/${ref.id}`, material: true };
+    } else {
+      console.error(`  material gap: ${ref.id} — ${MATERIAL_REPORT.gaps[ref.id] || 'compiled bytes unverified'}; painting authored flat`);
+    }
+  }
+  return sheets;
+}
+
 // The iso painter uses no terrain tiles (diamonds are flat fills): only
 // badge icon glyphs plus the tree sprite's iso sibling when one exists.
 function isoSheets(kit, treeAsset) {
@@ -162,6 +192,13 @@ function serve(payload, { page = PAGE, ledger = LEDGER } = {}) {
       if (row) {
         res.setHeader('content-type', row.path.endsWith('.svg') ? 'image/svg+xml' : 'image/png');
         return res.end(readFileSync(assetPath(row)));
+      }
+    }
+    if (url.startsWith('/material/')) {
+      const row = MATERIALS[url.slice('/material/'.length)];
+      if (row?.compiled?.basecolor) {
+        res.setHeader('content-type', 'image/jpeg');
+        return res.end(readFileSync(compiledPath(row.compiled.basecolor.path)));
       }
     }
     res.statusCode = 404;
@@ -205,7 +242,7 @@ for (const id of ids) {
   // files from an older code version.
   const results = [];
   for (const kitId of kitIds) {
-    const kit = resolveKit(kitSpecs[kitId], { assets: LEDGER, overlay });
+    const kit = resolveKit(kitSpecs[kitId], { assets: LEDGER, overlay, materials: MATERIALS });
     const model = bakeModel(map, pois, { maxCols });
     let base;
     let server;
@@ -238,12 +275,29 @@ for (const id of ids) {
           model.autotile[name] = Array.from(dualGridIndices(model.cells, model.cols, model.rows, terrainId[name]));
         }
       }
+      // Pigment-pooling rims read a lib-computed distance field, like
+      // autotile masks — the painter page stays a consumer.
+      const rim = {};
+      for (const [name, piece] of Object.entries(kit.terrain)) {
+        if (piece.rim) {
+          rim[name] = boundaryDistanceField(model.cells, model.cols, model.rows, terrainId[name], piece.rim.reach);
+        }
+      }
+      if (Object.keys(rim).length) model.rim = rim;
       points = stylePoints(model);
       base = `${id}--${kitId}`;
       // Credits ride every bake: each ledger asset the kit touched, with its
       // license and source — the audit trail the asset ledger promises.
+      // Material refs credit their own ledger (data/display/materials.json).
       credits = creditsManifest(kitAssetIds(kit), LEDGER);
-      server = serve({ model, kit, px, sheets: flatSheets(kit), points });
+      const materialCredits = kitMaterialRefs(kit).map(({ id: mid }) => ({
+        id: mid,
+        label: MATERIALS[mid].label,
+        license: MATERIALS[mid].license,
+        source: typeof MATERIALS[mid].source === 'string' ? MATERIALS[mid].source : MATERIALS[mid].source?.url || null,
+      }));
+      if (materialCredits.length) credits.materials = materialCredits;
+      server = serve({ model, kit, px, sheets: { ...flatSheets(kit), ...materialSheets(kit) }, points });
     }
     await new Promise((r) => server.listen(0, '127.0.0.1', r));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);

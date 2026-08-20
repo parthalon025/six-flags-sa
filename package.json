@@ -112,7 +112,8 @@
     "venues:bake-review": "node --env-file-if-exists=.env packages/venue-builder/bin/display-contact-sheet.mjs",
     "venues:publish-worlds": "node --env-file-if-exists=.env packages/venue-builder/bin/display-publish.mjs",
     "venues:vendor-assets": "node --env-file-if-exists=.env packages/venue-builder/bin/vendor-assets.mjs",
-    "venues:swatches": "node --env-file-if-exists=.env packages/venue-builder/bin/display-swatches.mjs"
+    "venues:swatches": "node --env-file-if-exists=.env packages/venue-builder/bin/display-swatches.mjs",
+    "venues:materials": "node --env-file-if-exists=.env packages/venue-builder/bin/display-materials.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.4",

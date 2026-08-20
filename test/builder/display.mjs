@@ -790,6 +790,106 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
   return true;
 });
 
+/* ------------------------------------------- style-pass kit vocabulary -- */
+
+await check('style-pass switches validate: road/service styles, rim, displacement, wash', () => {
+  const atlas = resolveKit({
+    id: 'atlas',
+    terrain: { road: { style: 'double' }, service: { style: 'dashed' }, water: { rim: { color: '#123456', alpha: 0.4, reach: 2 } } },
+    sprites: { building: { style: 'plan' }, coaster: { style: 'schematic' } },
+  });
+  assert.equal(atlas.terrain.road.style, 'double');
+  assert.equal(atlas.sprites.building.style, 'plan');
+  assert.throws(() => resolveKit({ terrain: { road: { style: 'triple' } } }), /Unknown road style/);
+  assert.throws(() => resolveKit({ terrain: { service: { style: 'dotted' } } }), /Unknown service style/);
+  assert.throws(() => resolveKit({ terrain: { water: { rim: { color: '#123', alpha: 0.4, reach: 9 } } } }), /rim.reach/);
+  assert.throws(() => resolveKit({ terrain: { water: { rim: { color: '#123', alpha: 2, reach: 2 } } } }), /rim.alpha/);
+  const wobbly = resolveKit({ id: 'w', strokes: { displacement: { amplitude: 2, wavelength: 3 } }, wash: { mode: 'multiply', paper: '#F7F2E4' } });
+  assert.equal(wobbly.strokes.displacement.amplitude, 2);
+  assert.equal(wobbly.wash.paper, '#F7F2E4');
+  assert.throws(() => resolveKit({ strokes: { displacement: { amplitude: 99 } } }), /amplitude/);
+  assert.throws(() => resolveKit({ wash: { mode: 'screen', paper: '#fff' } }), /wash mode/);
+  return true;
+});
+
+await check('kit material refs resolve against the MaterialSet ledger or fail loudly', () => {
+  const materials = readMaterials();
+  const kit = resolveKit({
+    id: 'm',
+    terrain: { grass: { material: { id: 'grass--meadow', mix: 0.3 } } },
+    sprites: { building: { material: { id: 'roofing--shingle', mix: 0.35 } } },
+  }, { materials });
+  assert.equal(kit.terrain.grass.material.id, 'grass--meadow');
+  assert.throws(() => resolveKit({ terrain: { grass: { material: { id: 'lava--fake' } } } }, { materials }), /unknown material/);
+  assert.throws(() => resolveKit({ terrain: { grass: { material: { id: 'grass--meadow', mix: 3 } } } }, { materials }), /mix/);
+  assert.throws(() => resolveKit({ terrain: { grass: { material: { id: 'grass--meadow' } } } }), /needs the materials ledger/);
+  return true;
+});
+
+await check('boundaryDistanceField: interior distance saturates, other classes carry 0', async () => {
+  const { boundaryDistanceField } = await import('../../packages/venue-builder/lib/display-bake.mjs');
+  // 5x5: water block in the middle 3x3, ground frame.
+  const W = 4; const G = 1;
+  const grid = [
+    G, G, G, G, G,
+    G, W, W, W, G,
+    G, W, W, W, G,
+    G, W, W, W, G,
+    G, G, G, G, G,
+  ];
+  const field = boundaryDistanceField(grid, 5, 5, W, 3);
+  assert.equal(field[0], 0, 'ground cells carry 0');
+  assert.equal(field[6], 1, 'water touching the shore is distance 1');
+  assert.equal(field[12], 2, 'the centre cell is 2 from the shore');
+  assert.deepEqual(field, boundaryDistanceField(grid, 5, 5, W, 3), 'deterministic');
+  return true;
+});
+
+/* ------------------------------------------------------------ materials -- */
+
+await check('compiled material pins verify; gaps are recorded, drift fails', async () => {
+  const { verifyCompiledMaterials, materialTexturesRow } = await import(
+    '../../packages/venue-builder/lib/display-materials.mjs'
+  );
+  const materials = readMaterials();
+  const report = verifyCompiledMaterials(materials);
+  assert.deepEqual(report.problems, [], report.problems.join('; '));
+  assert.ok(report.resolved.includes('grass--meadow'), 'fetched materials verify');
+  assert.match(report.gaps['water--calm'] || '', /material-maker/, 'authored graphs are recorded gaps');
+  // A row claiming bytes that do not exist is a problem, not a gap.
+  const broken = verifyCompiledMaterials({
+    'ghost--tex': { compiled: { basecolor: { path: 'assets/vendor/materials/ghost.jpg', sha256: '0'.repeat(64) } } },
+  });
+  assert.equal(broken.problems.length, 1);
+  assert.match(broken.problems[0], /missing/);
+  // The certification row: bound gaps pass on the record; bound problems fail.
+  const spec = { surfaces: { vegetation: { material: 'grass--meadow' }, water: { material: 'water--calm' } } };
+  const row = materialTexturesRow({ spec, report });
+  assert.equal(row.key, 'material_textures_resolve');
+  assert.equal(row.pass, true);
+  assert.match(row.evidence, /water--calm/);
+  const failRow = materialTexturesRow({
+    spec: { surfaces: { x: { material: 'ghost--tex' } } },
+    report: broken,
+  });
+  assert.equal(failRow.pass, false);
+  return true;
+});
+
+await check('the display stage carries material_textures_resolve on every skin', () => {
+  const cert = certified();
+  assert.equal(cert.checks.some((c) => c.key === 'material_textures_resolve'), false,
+    'pure certify without an injected report carries no row');
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const staged = runDisplayStage('test-park', { map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir });
+  for (const [skinId, pack] of Object.entries(staged.packs)) {
+    const row = pack.certification.checks.find((c) => c.key === 'material_textures_resolve');
+    assert.ok(row, `${skinId} lacks the textures row`);
+    assert.equal(row.pass, true, row.evidence);
+  }
+  return true;
+});
+
 /* ----------------------------------------------------------- world tier -- */
 
 await check('every bakeKit-bound Skin gets a world row — placed or a recorded gap', async () => {

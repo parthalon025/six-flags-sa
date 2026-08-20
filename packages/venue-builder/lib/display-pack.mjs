@@ -19,6 +19,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
 import { buildWorldTier } from './display-world.mjs';
+import { materialTexturesRow, verifyCompiledMaterials } from './display-materials.mjs';
 import { check } from './evidence.mjs';
 
 export const DISPLAY_VERSION = 1;
@@ -370,12 +371,15 @@ export const tilesGatePasses = (tiles) => Boolean(
 /**
  * Certify one compiled spec against truth, the template, and the ledger.
  * Pure — same claim/evidence/confidence/falsifier/so-what contract as
- * `venue-certify.mjs`.
+ * `venue-certify.mjs`. `textures` is verifyCompiledMaterials' report,
+ * injected (disk truth stays the caller's job); absent, the row is absent
+ * — runDisplayStage always injects it, so shipped packs always carry it.
  *
- * @param {{ spec: object, map: object, template: object, materials: object }} deps
+ * @param {{ spec: object, map: object, template: object, materials: object, textures?: object }} deps
  */
-export function certifyDisplayPack({ spec, map, template, materials }) {
+export function certifyDisplayPack({ spec, map, template, materials, textures = null }) {
   const checks = [];
+  if (textures) checks.push(materialTexturesRow({ spec, report: textures }));
 
   const unresolved = Object.entries(spec.surfaces || {})
     .filter(([surface, row]) => !materials[row.material] || !SURFACE_CLASSES[surface])
@@ -526,13 +530,14 @@ export function runDisplayStage(id, opts = {}) {
 
   const packs = {};
   const written = [];
+  const textures = verifyCompiledMaterials(materials);
   for (const skinId of skinIds) {
     const template = templates[skinId];
     if (!template) throw new Error(`Unknown skin "${skinId}"`);
     const spec = compileVisualSpec({
       map, pois, template, materials, landCover, terrain: opts.terrain || null,
     });
-    const certification = certifyDisplayPack({ spec, map, template, materials });
+    const certification = certifyDisplayPack({ spec, map, template, materials, textures });
     const style = styleFromSpec(spec);
     packs[skinId] = { spec, certification, style };
     if (write) {

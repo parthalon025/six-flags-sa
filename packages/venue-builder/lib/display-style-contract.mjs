@@ -412,16 +412,21 @@ export function certifyStyleContract({
       ((lng - b.west) / (b.east - b.west)) * model.cols,
       ((b.north - lat) / (b.north - b.south)) * model.rows,
     ];
-    const truthByKey = new Map();
+    // Parks repeat names ("Restrooms" × 12), so a badge matches the NEAREST
+    // truth POI of its kind: every badge must coincide with some real place
+    // of that kind — the model cannot invent or nudge a position.
+    const truthByKind = new Map();
     for (const p of pois) {
-      if (POI_BADGES[p.c] && Number.isFinite(p.lat)) truthByKey.set(`${POI_BADGES[p.c]}|${p.n}`, p);
+      if (!POI_BADGES[p.c] || !Number.isFinite(p.lat)) continue;
+      const kind = POI_BADGES[p.c];
+      if (!truthByKind.has(kind)) truthByKind.set(kind, []);
+      truthByKind.get(kind).push(toCell(p.lng, p.lat));
     }
     const errs = [];
     for (const badge of model.badges || []) {
-      const poi = truthByKey.get(`${badge.kind}|${badge.name}`);
-      if (!poi) continue;
-      const [ex, ey] = toCell(poi.lng, poi.lat);
-      errs.push(Math.hypot(ex - badge.x, ey - badge.y));
+      const candidates = truthByKind.get(badge.kind);
+      if (!candidates) continue;
+      errs.push(Math.min(...candidates.map(([ex, ey]) => Math.hypot(ex - badge.x, ey - badge.y))));
     }
     // Anchors are never displaced (annotation passes last, undisplaced);
     // the tolerance only absorbs the bounds' own 1e-7° rounding.

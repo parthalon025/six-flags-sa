@@ -36,6 +36,19 @@ color swap" — is the symptom: the expressive half of the factory never reaches
    (the hillshade mechanism), tiling only if budgets demand; (2) app consumption behind `Wear`;
    (3) the two style-pass kits; (4) Blender / generative tiers.
 
+7. **PBR textures reach the bake** (amended 2026-08-20, owner-confirmed). The MaterialSet
+   ledger's declared texture sets become real: `venues:materials --fetch` pulls each row's CC0
+   set from its declared source (ambientCG today), compiles albedo + normal/roughness to a
+   512 px phone budget under `assets/vendor/materials/` with sha256 pins (the vendor-assets
+   discipline), and the bake compositor tiles a bound material's compiled albedo under the
+   skin's authored tint — preserving the `mixHex(authored, avgColor, materialMix)` relation
+   with the pattern standing in for the average. A source that cannot be fetched (authored
+   material-maker graphs) records a `compiled.gap`, the missing-tippecanoe pattern.
+   Certification gains `material_textures_resolve`; byte-identical double-render stays the
+   gate. The runtime three.js/KTX2 tier stays deferred per ADR-0013 item 4 — this is
+   bake-side only. Both factories remain request-driven and output-agnostic: any venue's
+   truth from the **Map factory**, any prompted design visual from the **Visual factory**.
+
 ## Rejected / deferred
 
 - Runtime world generation on the phone (battery, art ceiling, duplication of the factory).
