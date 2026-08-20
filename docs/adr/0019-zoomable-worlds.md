@@ -52,9 +52,8 @@ viewport, cached aggressively.
    triggers the download manager's background bundle sync (Train F, hash-verified) so the full
    pyramid lands for offline. Parent-band upscale is the placeholder while sharper tiles arrive —
    blank tiles never show.
-   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md):* the on-wear background sync
-   is withdrawn. Bands stream by viewport (cellular included) and cache normally; offline
-   close-band coverage is an explicit guest download that states its size before it runs.
+   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md) (clause 5):* on-wear sync is
+   withdrawn — bands stream by viewport and cache; offline coverage is a guest-chosen download.
 6. **Iso retires from the map path.** pixel-tycoon converts to top-down banded art with the iso
    flavor painted into the sprites (the G5 pixel-overworld reference's own convention) plus a
    camera preset; the live iso painter and per-rotation sweeps leave the map path. ADR-0016's

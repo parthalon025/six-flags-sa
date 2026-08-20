@@ -2,7 +2,7 @@
 
 *Companion perf spec for the painted-map + live-overlay stack (MapLibre GL, 3-band raster pyramid, PMTiles CDN streaming, offline venue pack). Every claim below is traced to Lens A (90s game dev) or Lens B (Google Maps / MapLibre / Mapbox GL) research dumps — no outside recall.*
 
-> **Amended 2026-08-20 by [ADR-0021](../adr/0021-zoomable-worlds-revised.md).** Automatic on-wear pyramid sync is withdrawn, so rows 2 and 14 and the sync half of row 12 lapse with it, as does the sync-under-load gate row. Band units are restated in ground sample distance (2.4 / 0.6 / 0.15 m/px) on power-of-two steps. The zero-blank-tiles gate drops from correctness to polish: Truth ships offline, so a missing tile is ugly, not wrong. Every row marked **Lapsed** below stays in the table as the record of why it existed.
+> **Amended 2026-08-20 by [ADR-0021](../adr/0021-zoomable-worlds-revised.md).** Automatic on-wear pyramid sync is withdrawn, so rows 2 and 14 and the sync half of row 12 lapse with it, as does the sync-under-load gate row. Band units are restated in ground sample distance (2.4 / 0.6 / 0.15 m/px) on power-of-two steps. ADR-0021 clause 1 removes this row's *correctness* rationale — Truth ships offline, so a missing tile is ugly rather than wrong — but the gate-row structure is an open question there, so the row stands as written until it is answered. Every row marked **Lapsed** below stays in the table as the record of why it existed.
 
 ---
 
@@ -49,7 +49,7 @@ CI enforces all rows via Playwright + CPU-throttled traces, per project constrai
 | Frame rate floor, low-end | 30fps sustained on low-end device profile | Same trace harness, low-end CPU/GPU throttle profile | Rows 6, 7, 8 (LRU budget sized to low-end floor), 9 |
 | Time-to-first-map, warm | ≤2s | Playwright trace from navigation start to first-paint-with-tiles, warm cache (in-memory + disk tier per Lens B §7) | Rows 1 (band selection, no runtime compute), 13 (WebP bandwidth), 8 (LRU cache hit path) |
 | Time-to-first-map, cold | ≤4s | Same trace, cold cache — no in-memory or disk-tier hit | Rows 4 (prefetch ring), 13 (WebP), 14 (offline pack availability for mid band) |
-| Blank tiles during normal pan (polish gate, not correctness — ADR-0021) | Zero | Trace asserts no viewport cell renders empty during a scripted normal-speed pan across all 3 bands | Rows 4 (prefetch), 5 (parent-band placeholder + crossfade) — this is the gate row 5 exists to satisfy |
+| Blank tiles during normal pan | Zero | Trace asserts no viewport cell renders empty during a scripted normal-speed pan across all 3 bands | Rows 4 (prefetch), 5 (parent-band placeholder + crossfade) — this is the gate row 5 exists to satisfy |
 
 ---
 

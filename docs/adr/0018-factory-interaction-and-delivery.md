@@ -33,9 +33,8 @@ inventing runtime infrastructure this repo has rejected before.
    zoom-band raster pyramids as PMTiles read by HTTP range requests — viewport streaming rides
    the same deploy, still no new infra; the download manager's on-wear sync (clause 4) is what
    makes a streamed pyramid fully offline.
-   *Corrected 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md):* the on-wear sync
-   is withdrawn. A streamed pyramid becomes fully offline through an explicit, size-stated
-   guest download instead — the download manager still owns it, the trigger is the guest.
+   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md) (clause 5):* on-wear sync
+   is withdrawn; the download manager still owns the job, the guest is now the trigger.
 6. **Sequencing.** The download manager + manifest refresh + cache management is Train F,
    immediately after Train E; this ADR records it so Train E stays four slices.
 
