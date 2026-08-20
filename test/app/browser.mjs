@@ -287,8 +287,12 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   do {
     const intro = page.locator('#intro-splash-title');
     if (await intro.count()) {
+      // The intro is a scroll story now: "Get started" only appears once the
+      // reader has been most of the way down, and until then the way out is
+      // "Skip intro". Both are here so this helper works whichever the phone
+      // is showing when it arrives.
       const primary = page.locator(
-        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
+        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started"), .gate:has(#intro-splash-title) .introSkip',
       );
       await primary.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
@@ -314,7 +318,11 @@ export async function closeGate(page) {
   await dismissAuthGate(page);
   await dismissIntroSplash(page);
   await dismissUpdateSplash(page);
-  const nearest = page.locator('button:has-text("Go to nearest World"), button:has-text("Go to nearest park")');
+  // "I'm ready" is what the first intake step calls the nearest-World shortcut
+  // now; the older labels stay so a phone on an earlier build still gets past.
+  const nearest = page.locator(
+    'button:has-text("m ready"), button:has-text("Go to nearest World"), button:has-text("Go to nearest park")',
+  );
   const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("Enter"), .gate .btn.primary:has-text("set up")');
   const quiet = page.locator(

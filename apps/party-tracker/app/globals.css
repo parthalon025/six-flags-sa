@@ -736,6 +736,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-family: var(--display); font-weight: 600; letter-spacing: -.01em;
   color: var(--adventure); line-height: 1.2;
 }
+/* A word above the wordmark, naming what the card is for. Same size, weight and
+   tracking as .gateEyebrow, because it is the same object in a different
+   place — it moved inside the lockup so the mark still reads first. */
+.brandLockupEyebrow {
+  font-family: var(--display); font-size: 12px; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--adventure); line-height: 1.2;
+}
 .brandLockup[data-size="sm"] .brandLockupName { font-size: 15px; }
 .brandLockup[data-size="sm"] .brandLockupTagline { font-size: 11px; font-weight: 500; color: var(--aqua); }
 .brandLockup[data-size="md"] .brandLockupName { font-size: 22px; }
@@ -1440,6 +1448,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   transition: opacity var(--t1) var(--easeOut);
 }
 .btnQuiet:active { opacity: .5; }
+/* A way out, not an offer. The base .btnQuiet is tinted because most of them
+   are the second thing you might want to do; these sit under a filled primary
+   on an intake card, where a second orange line reads as a second offer and the
+   two compete. Ink instead, one size down. */
+.btnQuiet.muted {
+  color: var(--label2); font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+}
 .field {
   width: 100%; min-height: 44px; padding: 11px 14px; border-radius: var(--r2);
   background: var(--fill3);
@@ -2187,6 +2202,228 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
 }
 .gateVersionBtn:hover,
 .gateVersionBtn:focus-visible { color: var(--aqua); }
+
+/* ---- sign in ----
+   Centred, because the card is a title page: mark, what this is, who we are,
+   then the ask. Left-aligned, the eye had to travel back up past the lockup to
+   find the sentence explaining why it was being asked to sign in. */
+.authGateCard { text-align: center; }
+.authGateCard .brandLockup.stacked {
+  align-items: center; gap: 12px; margin: 6px 0 14px;
+}
+/* The lockup's own 2px gap is for a wordmark sitting straight on its tagline.
+   With PROFILE above it there are three lines, and the eyebrow needs air or it
+   reads as part of the wordmark. */
+.authGateCard .brandLockupText { gap: 5px; align-items: center; }
+.authGateCard .brandLockupEyebrow { margin-bottom: 3px; }
+/* The tagline is --adventure everywhere else because it is the only accent on
+   the line. Here PROFILE already holds that colour three lines up, and two
+   oranges bracketing the wordmark made the slogan read as a second heading. */
+.authGateCard .brandLockupTagline { color: var(--label2); }
+.authGateCard p { margin-left: auto; margin-right: auto; max-width: 32ch; }
+.authGateError { margin: 8px 0 0; }
+
+/* ---- first run ----
+   The intro is the one gate that is a page, not a sheet: it scrolls, and the
+   card's flex-end alignment would pin it to the bottom of the viewport. It
+   stays a .gate because the first-run hold at the top of this section hides the
+   app behind anything that is not one — drop the class and the map leaks
+   through the story. */
+.introGate { align-items: stretch; }
+.introScroll {
+  flex: 1; min-height: 0; width: 100%;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column;
+}
+.introPage {
+  flex: 1 0 auto;
+  display: flex; flex-direction: column; gap: 56px;
+  padding: calc(48px + var(--top)) 24px 24px;
+}
+.introHero { display: flex; flex-direction: column; gap: 14px; }
+.introMark { display: block; line-height: 0; }
+.introWordmark {
+  font-family: var(--display); font-size: 22px; font-weight: 800;
+  /* The hero tracking the sign-in card uses, one notch wider: this wordmark has
+     a whole screen to itself and nothing below it competing for the line. */
+  letter-spacing: .24em; line-height: 1.05; text-transform: uppercase;
+  color: var(--label); margin: 0;
+}
+.introSlogan {
+  margin: 6px 0 0; font-family: var(--display); font-size: 14px; font-weight: 600;
+  letter-spacing: .02em; color: var(--label2);
+}
+.introPitch {
+  margin: 6px 0 0; font-size: 16px; line-height: 24px;
+  color: var(--label); max-width: 30ch; text-wrap: pretty;
+}
+/* The story only works if the reader knows there is one. */
+.introNudge {
+  display: flex; align-items: center; gap: 8px; margin: 4px 0 0;
+  font-family: var(--display); font-size: 12px; font-weight: 800;
+  letter-spacing: .14em; color: var(--sun);
+  animation: introNudge 2.2s var(--ease) infinite;
+}
+.introNudgeArrow { color: var(--sun); }
+/* --sun is the brightest ink in the palette and reads as a highlight on Park
+   Midnight; on Trail paper it is yellow on off-white and all but vanishes. Day
+   mixes it toward --label, the same escape hatch .spotReach and .label take a
+   few hundred lines up, so the accent survives the change of ground. */
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  :root[data-theme='day'] .introNudge,
+  :root[data-theme='day'] .introNudgeArrow,
+  :root[data-theme='day'] .introInviteEyebrow {
+    color: color-mix(in srgb, var(--sun) 46%, var(--label));
+  }
+}
+@keyframes introNudge {
+  0%, 100% { transform: translateY(0); opacity: .9 }
+  50% { transform: translateY(4px); opacity: 1 }
+}
+.introClaim { max-width: 32ch; }
+.introClaimNum {
+  display: block; font-family: var(--display); font-size: 12px; font-weight: 800;
+  letter-spacing: .16em; color: var(--adventure);
+}
+.introClaimTitle {
+  margin: 10px 0 0; font-family: var(--display); font-size: 30px; font-weight: 800;
+  letter-spacing: -.8px; line-height: 36px; color: var(--label); text-wrap: pretty;
+}
+.introClaimCopy {
+  margin: 11px 0 0; font-size: 16px; line-height: 23px;
+  color: var(--label2); text-wrap: pretty;
+}
+/* What a Party is, said before anyone has one. A card rather than a fourth
+   claim because it is the first thing the app will ask them to do. */
+.introInvite {
+  padding: 20px; border-radius: var(--rFloat);
+  background: var(--fill3); border: 1px solid var(--sep);
+}
+.introInviteEyebrow { color: var(--sun); margin-bottom: 0; }
+.introInviteCopy {
+  margin: 9px 0 0; font-size: 15px; line-height: 22px;
+  color: var(--label2); text-wrap: pretty;
+}
+.introInviteCode { margin: 14px 0 0; }
+/* The footer is the navigation: how far is left, or the one thing to do. */
+.introFoot {
+  position: sticky; bottom: 0; z-index: 1;
+  padding: 14px 20px calc(14px + var(--bot));
+  background: var(--bg);
+}
+/* Solid under the controls, faded above them. A gradient that reaches into the
+   row itself lets a claim heading show through the words on top of it, which is
+   how the footer stopped reading as a footer. */
+.introFoot::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 32px;
+  background: linear-gradient(to top, var(--bg), transparent);
+  pointer-events: none;
+}
+.introFootRow { display: flex; align-items: center; gap: 12px; }
+.introDots { display: flex; align-items: center; gap: 6px; }
+.introDot {
+  display: block; width: 10px; height: 5px; border-radius: 3px;
+  background: var(--fill2);
+  transition: width var(--t2) var(--easeOut), background var(--t2) var(--easeOut);
+}
+.introDot.on { width: 22px; background: var(--adventure); }
+.introFootHint { flex: 1; font-size: 13px; font-weight: 600; color: var(--label2); }
+.introSkip { flex: none; margin: 0; }
+.introStart { margin: 0; }
+.introFoot .gateVersionBtn { margin-top: 10px; }
+
+/* ---- the intake, in two steps ----
+   Two bars and a count, because the ask only makes sense as a first half: this
+   card wants a permission, and the World pick is what the permission is for.
+   The label is 12px rather than the mock's 10.5, and --label2 rather than
+   --label3, for the reason .label carries a few hundred lines up — this app is
+   read outdoors, and the mock was drawn on a desk. */
+.gateSteps { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; width: 100%; }
+.gateStep { flex: 1; height: 4px; border-radius: 3px; background: var(--fill2); }
+.gateStep.on { background: var(--adventure); }
+.gateStepLabel {
+  flex: none; font-family: var(--display); font-size: 12px; font-weight: 700;
+  letter-spacing: .1em; color: var(--label2);
+}
+.gateStepHead { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.gateStepIcon {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--fill2); border: 1px solid var(--sep);
+  display: grid; place-items: center; margin-bottom: 14px;
+  color: var(--adventure);
+}
+/* The waypoint arrow points north; here it is a phone finding itself, which is
+   the same glyph off-axis. Rotating beats drawing a second arrow. */
+.gateStepIcon .icn { transform: rotate(45deg); }
+/* Scoped to this head only. The global .gateCard h2 is 34px because most gates
+   lead with a question; this one leads with a promise and shares the card with
+   an icon, a step row and an install pitch. */
+.gateCard h2.gateStepTitle {
+  font-size: 25px; line-height: 31px; letter-spacing: -.5px; margin: 0;
+}
+.gateCard p.gateStepBody {
+  margin: 9px auto 0; font-size: 15px; line-height: 21px;
+  max-width: 30ch; text-wrap: pretty;
+}
+/* .gateCard p is 17px and outranks .gateFine's own 13px, so on every gate the
+   fine print has been reading at body size — dimmer than the paragraph above it
+   and exactly as loud. On these three cards it goes back to being fine print.
+   Scoped rather than global: /join and the update splash wear .gateCard too and
+   are not part of this pass. */
+.gateStepHead .gateFine,
+.worldPick .gateFine,
+.authGateCard .gateFine,
+.gpsGateCard > .gateFine {
+  font-size: 13px; line-height: 18px; margin: 16px auto 0;
+}
+.gateStepHead .gateFine { max-width: 34ch; }
+.gateStepHead + .gatePhoneSetup { margin-top: 20px; }
+
+/* ---- step two: which World ---- */
+.worldPickHead { display: flex; flex-direction: column; align-items: center; text-align: center; }
+/* Only ever shown for a live fix. A dropped pin and a refusal both put someone
+   on this screen, and neither of them has Location on. */
+.worldFix {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .04em;
+  color: var(--label2);
+}
+.worldFixMark { color: var(--green); }
+.gateCard h2.worldHeading {
+  font-size: 25px; line-height: 31px; letter-spacing: -.5px; margin: 0;
+}
+.gateCard p.worldBody {
+  margin: 9px auto 0; font-size: 15px; line-height: 21px;
+  max-width: 32ch; text-wrap: pretty;
+}
+/* The numbers the manifest already carries, as a pill rather than a sentence:
+   it is the answer to "how much am I downloading", and it wants to be scanned. */
+.gateCard p.worldCounts {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin: 12px 0 0; padding: 6px 12px;
+  border-radius: var(--rCapsule); background: var(--fill2); border: 1px solid var(--sep);
+  font-size: 13px; font-weight: 600; color: var(--label2); letter-spacing: -.08px;
+}
+.worldCounts i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex: none; }
+.worldPickHead .btn { margin: 16px 0 0; }
+.worldPickHead .gateError { margin-top: 12px; }
+.worldSearch { margin-top: 4px; }
+/* The rows become a card the way every other grouped list in the app does, so
+   the World pick reads as a list and not as a stack of buttons. */
+.worldList {
+  background: var(--bg2); border: 1px solid var(--sep);
+  border-radius: var(--r4); margin-bottom: 12px;
+}
+/* Distance earns its own column: it is the one thing being compared down the
+   list, and buried in the locality line it could not be read as a column. */
+.worldList .venueRow { grid-template-columns: 1fr auto auto; column-gap: 12px; }
+.worldList .venueRow::after { grid-column: 3; }
+.worldList .venueRow > span.venueAway {
+  grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-top: 0;
+  font-size: 13px; font-weight: 600; color: var(--label2);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.worldNone { margin: 0; padding: 14px 16px; font-size: 15px; color: var(--label2); }
 
 .toast {
   position: absolute; z-index: 80;

@@ -7503,7 +7503,7 @@ await check('clerkOAuthReady waits for Clerk JS, not useSignIn isLoaded', () => 
   return true;
 });
 
-await check('Profile gate is Sign in or Guest — Sign in routes to Clerk /sign-in', async () => {
+await check('Profile gate offers Google, Apple or Guest — no /sign-in bounce', async () => {
   const { AUTH_COPY } = await import('../../apps/party-tracker/lib/auth/authCopy.js');
   assert.equal(AUTH_COPY.loginLabel, 'Sign in');
   assert.equal(AUTH_COPY.guestLabel, 'Guest');
@@ -7512,12 +7512,73 @@ await check('Profile gate is Sign in or Guest — Sign in routes to Clerk /sign-
     new URL('../../apps/party-tracker/components/AuthGateActions.jsx', import.meta.url),
     'utf8',
   );
+  // The gate is the card; the actions own the providers. Splitting them is what
+  // lets AuthGate stay renderable without a Clerk key.
   assert.match(gate, /AuthGateActions/);
   assert.doesNotMatch(gate, /OAuthButtons/);
   assert.doesNotMatch(gate, /useClerkOAuth/);
-  assert.match(gateActions, /href="\/sign-in"/);
-  assert.match(gateActions, /AUTH_COPY\.loginLabel/);
+  // Google and Apple start here rather than on /sign-in. That route still
+  // exists — useClerkOAuth redirects the browser through it — so what must not
+  // come back is a link that makes the reader visit it by hand first.
+  assert.match(gateActions, /OAuthButtons/);
+  assert.match(gateActions, /useClerkOAuth/);
+  assert.doesNotMatch(gateActions, /href="\/sign-in"/);
   assert.match(gateActions, /AUTH_COPY\.guestLabel/);
+  const signInRoute = new URL(
+    '../../apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx',
+    import.meta.url,
+  );
+  assert.equal(fs.existsSync(signInRoute), true, 'OAuth redirects still land on /sign-in');
+  return true;
+});
+
+await check('The World pick is one component, mounted by both intake paths', () => {
+  const picker = new URL('../../apps/party-tracker/components/WorldPicker.jsx', import.meta.url);
+  assert.equal(fs.existsSync(picker), true, 'missing WorldPicker');
+  const src = fs.readFileSync(picker, 'utf8');
+  // Fabricated data must not ship: the manifest carries four Worlds, and the
+  // badge is a claim about the phone rather than about the screen.
+  assert.doesNotMatch(src, /100\+/);
+  assert.match(src, /locationOn/);
+  for (const name of ['GpsGate', 'ParkPrompt']) {
+    const host = fs.readFileSync(
+      new URL(`../../apps/party-tracker/components/${name}.jsx`, import.meta.url),
+      'utf8',
+    );
+    assert.match(host, /WorldPicker/, `${name} does not mount WorldPicker`);
+    assert.doesNotMatch(host, /Explore another World/, `${name} still draws its own list`);
+  }
+  // The manual pick has no fix behind it and the twin never drew it; it is a
+  // flag on the shared component, not a second copy of the screen.
+  const prompt = fs.readFileSync(
+    new URL('../../apps/party-tracker/components/ParkPrompt.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(prompt, /explore/);
+  return true;
+});
+
+await check('The intro is scroll-read and never invents a party code', async () => {
+  const { BRAND, INTRO_CLAIMS } = await import('../../apps/party-tracker/lib/brand.js');
+  // D6: the gate and the intro ask different questions, and shortDescription is
+  // also the app's metadata description — three keys, not one overwritten.
+  assert.equal(typeof BRAND.introPitch, 'string');
+  assert.equal(typeof BRAND.gatePitch, 'string');
+  assert.notEqual(BRAND.introPitch, BRAND.shortDescription);
+  assert.equal(INTRO_CLAIMS.length, 3);
+  const src = fs.readFileSync(
+    new URL('../../apps/party-tracker/components/IntroSplash.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(src, /PB-/, 'the mock party code must not ship');
+  assert.match(src, /partyCode/);
+  // Content that fits without scrolling is content that has been read; without
+  // this the primary action is unreachable on a tall phone.
+  assert.match(src, /scrollHeight - el\.clientHeight <= 1/);
+  // Still a .gate: the first-run hold hides the app behind anything that is not
+  // one, so dropping the class would leak the map through the intro.
+  assert.match(src, /gate gateFirstRun introGate/);
+  assert.match(src, /gateVersionBtn/);
   return true;
 });
 

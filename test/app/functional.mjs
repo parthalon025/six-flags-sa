@@ -2116,17 +2116,22 @@ await check('the logo splash opens first and release notes stay behind the versi
 await dismissIntroSplash(e);
 await dismissUpdateSplash(e);
 
-await check('the welcome gate shows brand, pitch, and nearest-park on one card', async () => {
+await check('the welcome gate is step one of two: what the app is for, and the ask', async () => {
   const card = await e.locator('.gate').innerText();
-  const heading = (await e.locator('.brandLockupName').innerText()).trim();
-  if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
-  const said = card.indexOf('Explore more. Stress less.');
-  const pitch = /World|Rally|living map/i.test(card);
-  if (said < 0 || !pitch) {
-    throw new Error('the welcome gate is missing slogan or pitch');
+  const heading = (await e.locator('.gate h2').innerText()).trim();
+  // The brand lockup moved to the intro, which is the screen before this one.
+  // This card leads with what the day looks like and what it needs to do it.
+  if (heading !== 'Plan your day') throw new Error(`opened on: "${heading}"`);
+  if (!/1 OF 2/.test(card)) {
+    throw new Error('the welcome gate should say it is the first of two steps');
   }
-  if (!/Go to nearest World/i.test(card)) {
-    throw new Error('the welcome gate should offer nearest World on the first card');
+  const pitch = /World|Party|plan/i.test(card);
+  if (!pitch) throw new Error('the welcome gate is missing its pitch');
+  if (!/m ready/.test(card)) {
+    throw new Error('the welcome gate should offer the nearest World on the first card');
+  }
+  if (!/stays on your phone/i.test(card)) {
+    throw new Error('the gate that asks for GPS must still say where the fix goes');
   }
   const paths = await e.locator('.mapSvg path').count();
   if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
@@ -2136,7 +2141,7 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
 });
 
 await check('the nearest-park button asks before building that park', async () => {
-  await e.locator('button:has-text("Go to nearest World")').click();
+  await e.locator('button:has-text("m ready")').click();
   // Confirm the nearest World — never auto-download the wrong map.
   await until(
     async () => (await e.locator('.gate .btn.primary:has-text("Enter")').count()) > 0,
@@ -2186,8 +2191,13 @@ await check('the park question is inline when the venue is not yet confirmed', a
     const heading = (await p.locator('.gate h2').innerText().catch(() => '')).trim();
     return /headed to.*fiesta texas/i.test(heading);
   }, { timeout: 25000, label: 'the park question' });
-  const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
-  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
+  // Distance is its own column in the row now, so it reads bare: the word
+  // "away" was carrying a column heading's worth of meaning inside the text.
+  const row = p.locator('.gate .venueRow', { hasText: 'Kings Island' });
+  const other = await row.innerText();
+  if (!/\d+ mi/i.test(other)) throw new Error(`other park row: "${other}"`);
+  const away = (await row.locator('.venueAway').innerText()).trim();
+  if (!/^[\d,]+ mi$/.test(away)) throw new Error(`distance column: "${away}"`);
   await p.locator('.gate .btn.primary:has-text("Enter")').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await p.locator('.brandName, .brand b').first().innerText();

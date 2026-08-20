@@ -94,6 +94,7 @@ const GLYPHS = {
   'chevron.left': <path d="M15 4.5 7.5 12 15 19.5" {...STROKE} strokeWidth="2.6" />,
   'chevron.right': <path d="M9 4.5 16.5 12 9 19.5" {...STROKE} strokeWidth="2.6" />,
   'chevron.up': <path d="M4.5 15 12 7.5 19.5 15" {...STROKE} strokeWidth="2.6" />,
+  'arrow.down': <path d="M12 4v13.4M4.5 12 12 19.5 19.5 12" {...STROKE} strokeWidth="2.2" />,
   xmark: <path d="M6 6l12 12M18 6 6 18" {...STROKE} strokeWidth="2.4" />,
   'qrcode.viewfinder': (
     <g {...STROKE} strokeWidth="2">
