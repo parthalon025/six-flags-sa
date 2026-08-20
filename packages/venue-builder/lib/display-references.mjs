@@ -34,7 +34,7 @@ const STYLE_CHECK_KEYS = new Set([
   'style_terrain_palette', 'style_road_hierarchy', 'style_water_legibility',
   'style_outside_distinct', 'style_structure_presence', 'style_track_presence',
   'style_annotation_on_top', 'style_badge_dedup', 'style_bake_deterministic',
-  'style_cross_kit_distinct',
+  'style_cross_kit_distinct', 'style_world_geo',
 ]);
 
 /**

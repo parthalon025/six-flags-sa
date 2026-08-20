@@ -19,6 +19,18 @@
     im.src = s.url;
   })));
 
+  // Compiled material albedos (sheets flagged `material`) → repeat patterns
+  // on a fixed 4-cell tile: physical-ish grain scale, anchored at the canvas
+  // origin — deterministic, no random offsets.
+  const materialPatterns = {};
+  for (const [sid, s] of Object.entries(sheets || {})) {
+    if (!s.material) continue;
+    const tile = document.createElement('canvas');
+    tile.width = px * 4; tile.height = px * 4;
+    tile.getContext('2d').drawImage(sheetImages[sid], 0, 0, tile.width, tile.height);
+    materialPatterns[sid] = g.createPattern(tile, 'repeat');
+  }
+
   // Dual-grid corner patterns: 16 mask variants cut from one seamless full
   // tile. Bits: NW=1, NE=2, SW=4, SE=8 — which quadrants hold the terrain.
   function buildPatterns(ref) {
@@ -90,6 +102,49 @@
   const NAME = terrains;
   const at = (x, y) => (x < 0 || y < 0 || x >= cols || y >= rows) ? T.outside : cells[y * cols + x];
 
+  // 2D value noise over the hash lattice — the seeded "hand tremor" for
+  // stroke displacement (research: multi-octave noise displacement).
+  // Position-keyed, so closed rings stay closed and reruns stay identical.
+  const vnoise = (x, y, salt) => {
+    const x0 = Math.floor(x); const y0 = Math.floor(y);
+    const fx = x - x0; const fy = y - y0;
+    const sx = fx * fx * (3 - 2 * fx); const sy = fy * fy * (3 - 2 * fy);
+    const a = hash(x0, y0, salt); const b = hash(x0 + 1, y0, salt);
+    const cN = hash(x0, y0 + 1, salt); const d = hash(x0 + 1, y0 + 1, salt);
+    const top = a + (b - a) * sx; const bot = cN + (d - cN) * sx;
+    return top + (bot - top) * sy; // 0..1
+  };
+
+  // Bounded stroke displacement (kit.strokes.displacement): resample a
+  // polyline/ring and push each point along its local normal by two-octave
+  // value noise. |offset| never exceeds amplitude — the style_world_geo
+  // budget certification holds the kit to.
+  const disp = kit.strokes && kit.strokes.displacement || null;
+  const dispWl = disp ? (disp.wavelength || 3) : 3;
+  const dispAmpCells = disp ? disp.amplitude / px : 0;
+  function displaced(pts, close, salt) {
+    if (!disp || pts.length < 2) return pts;
+    const src = close ? [...pts, pts[0]] : pts;
+    const out = [];
+    for (let i = 1; i < src.length; i += 1) {
+      const [ax, ay] = src[i - 1];
+      const [bx, by] = src[i];
+      const len = Math.hypot(bx - ax, by - ay) || 1;
+      const nx = -(by - ay) / len; const ny = (bx - ax) / len;
+      const steps = Math.max(1, Math.round(len / 1.2));
+      for (let s = (i === 1 ? 0 : 1); s <= steps; s += 1) {
+        const x = ax + ((bx - ax) * s) / steps;
+        const y = ay + ((by - ay) * s) / steps;
+        const n = 0.65 * vnoise(x / dispWl, y / dispWl, salt)
+          + 0.35 * vnoise((2 * x) / dispWl, (2 * y) / dispWl, salt + 13);
+        const off = (n * 2 - 1) * dispAmpCells;
+        out.push([x + nx * off, y + ny * off]);
+      }
+    }
+    if (close) out.pop(); // tracePoly closes the ring itself
+    return out;
+  }
+
   // Texture primitives — one small painter per kind, params from the piece.
   const TEXTURES = {
     none() {},
@@ -121,6 +176,23 @@
     hatch(x, y, tx) {
       g.strokeStyle = tx.color; g.lineWidth = 1;
       g.beginPath(); g.moveTo(x * px, y * px + px); g.lineTo(x * px + px, y * px); g.stroke();
+      // `lines` densifies the hatch: parallel diagonals in both half-cells
+      // (atlas-plate water). Absent, the single diagonal above is unchanged.
+      for (let i = 1; i < (tx.lines || 1); i += 1) {
+        const o = (px / (tx.lines)) * i;
+        g.beginPath(); g.moveTo(x * px + o, y * px + px); g.lineTo(x * px + px, y * px + o); g.stroke();
+        g.beginPath(); g.moveTo(x * px, y * px + px - o); g.lineTo(x * px + px - o, y * px); g.stroke();
+      }
+    },
+    grain(x, y, tx) {
+      // Paper grain: two short hash-placed flecks at hash-picked alpha —
+      // the tooth of cold-press paper under a wash, never a pattern tile.
+      g.fillStyle = tx.color;
+      for (let i = 0; i < 2; i += 1) {
+        g.globalAlpha = 0.25 + 0.45 * hash(x, y, 45 + i);
+        g.fillRect(x * px + hash(x, y, 21 + i) * px, y * px + hash(x, y, 33 + i) * px, 1.6, 1);
+      }
+      g.globalAlpha = 1;
     },
     dash(x, y, tx, t) {
       const hRun = at(x - 1, y) === t && at(x + 1, y) === t;
@@ -139,6 +211,14 @@
   // Terrain base. Where the venue has a DEM, a cell may take the kit's `steep`
   // variant instead of its base -- slope-aware material choice, so a bank reads
   // as bank and not as lawn painted at an angle.
+  // A kit with a wash (watercolor) paints paper first and multiplies its
+  // terrain fills over it -- pigment over paper, not opaque flats.
+  const wash = kit.wash || null;
+  if (wash) {
+    g.fillStyle = wash.paper;
+    g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = 'multiply';
+  }
   const steepCells = model.steep || null;
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
@@ -148,6 +228,24 @@
       g.fillRect(x * px, y * px, px, px);
     }
   }
+  // Material underlay (ADR-0016 PBR pass): a piece bound to a compiled
+  // albedo tiles it over its own cells at `mix` opacity -- the pattern
+  // stands in for the ledger's avgColor in the mixHex(authored, avg, mix)
+  // relation, so the texture reaches the paint without replacing the skin.
+  for (const [name, piece] of Object.entries(kit.terrain)) {
+    const pattern = materialPatterns[piece.material && piece.material.id];
+    if (!pattern) continue;
+    const t = T[name];
+    g.fillStyle = pattern;
+    g.globalAlpha = piece.material.mix != null ? piece.material.mix : 0.4;
+    for (let y = 0; y < rows; y += 1) {
+      for (let x = 0; x < cols; x += 1) {
+        if (at(x, y) === t) g.fillRect(x * px, y * px, px, px);
+      }
+    }
+    g.globalAlpha = 1;
+  }
+  if (wash) g.globalCompositeOperation = 'source-over';
   // Relief. Mirrors the mean-centred falloff in lib/terrain/hillshade.mjs
   // (shadeRgba); that one paints a PNG for MapLibre, this one paints the bake.
   // Change one, change the other.
@@ -206,6 +304,7 @@
       }
     }
   }
+  if (wash) g.globalCompositeOperation = 'multiply'; // edge blobs are pigment too
   for (const name of ['grass', 'wood', 'water']) {
     const t = T[name];
     if (tiledPatterns[name]) {
@@ -231,6 +330,26 @@
         g.fill();
       }
     }
+  }
+  if (wash) g.globalCompositeOperation = 'source-over';
+  // Pigment-pooling rim: where a piece declares one, its cells darken near
+  // their own boundary with alpha falling off along the lib-computed
+  // distance field (model.rim) — the drying edge of a watercolor wash.
+  if (model.rim) {
+    for (const [name, piece] of Object.entries(kit.terrain)) {
+      const field = model.rim[name];
+      if (!field || !piece.rim) continue;
+      g.fillStyle = piece.rim.color;
+      for (let y = 0; y < rows; y += 1) {
+        for (let x = 0; x < cols; x += 1) {
+          const d = field[y * cols + x];
+          if (d < 1 || d > piece.rim.reach) continue;
+          g.globalAlpha = piece.rim.alpha * (1 - (d - 1) / piece.rim.reach);
+          g.fillRect(x * px, y * px, px, px);
+        }
+      }
+    }
+    g.globalAlpha = 1;
   }
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < cols; x += 1) {
@@ -262,63 +381,139 @@
 
   // Roads as smooth polylines: service lanes quiet, walkways cased with a
   // dashed centerline — crisp diagonals the cell grid cannot give.
+  // Displaced geometry is computed once per road so every pass (casing,
+  // fill, centerline) wobbles identically.
   g.lineJoin = 'round'; g.lineCap = 'round';
   const roadPiece = kit.terrain.road; const servicePiece = kit.terrain.service;
-  for (const r of model.roads.filter((x) => x.kind === 'service')) {
-    traceLine(r.pts); g.strokeStyle = servicePiece.base; g.lineWidth = px * 0.4; g.stroke();
+  const roadPts = model.roads.map((r) => displaced(r.pts, false, 101));
+  const eachRoad = (kind, fn) => model.roads.forEach((r, i) => { if (r.kind === kind) fn(roadPts[i]); });
+  eachRoad('service', (pts) => {
+    if (servicePiece.style === 'dashed') g.setLineDash([px * 0.5, px * 0.42]);
+    traceLine(pts); g.strokeStyle = servicePiece.base; g.lineWidth = px * 0.4; g.stroke();
+    g.setLineDash([]);
+  });
+  if (roadPiece.style === 'double') {
+    // Hairline double-stroke walkways: ink casing with the paper base
+    // reopened inside leaves two crisp parallel hairlines. No centerline.
+    eachRoad('path', (pts) => { traceLine(pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = px * 0.5; g.stroke(); });
+    eachRoad('path', (pts) => { traceLine(pts); g.strokeStyle = roadPiece.base; g.lineWidth = px * 0.36; g.stroke(); });
+  } else {
+    eachRoad('path', (pts) => { traceLine(pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = px * 0.95; g.stroke(); });
+    eachRoad('path', (pts) => { traceLine(pts); g.strokeStyle = roadPiece.base; g.lineWidth = px * 0.72; g.stroke(); });
+    g.setLineDash([px * 0.55, px * 0.75]);
+    eachRoad('path', (pts) => { traceLine(pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = Math.max(1.2, px * 0.08); g.stroke(); });
+    g.setLineDash([]);
   }
-  for (const r of model.roads.filter((x) => x.kind === 'path')) {
-    traceLine(r.pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = px * 0.95; g.stroke();
-  }
-  for (const r of model.roads.filter((x) => x.kind === 'path')) {
-    traceLine(r.pts); g.strokeStyle = roadPiece.base; g.lineWidth = px * 0.72; g.stroke();
-  }
-  g.setLineDash([px * 0.55, px * 0.75]);
-  for (const r of model.roads.filter((x) => x.kind === 'path')) {
-    traceLine(r.pts); g.strokeStyle = roadPiece.texture.color; g.lineWidth = Math.max(1.2, px * 0.08); g.stroke();
-  }
-  g.setLineDash([]);
 
   const B = kit.sprites.building;
+  const buildingPattern = materialPatterns[B.material && B.material.id] || null;
   g.lineJoin = 'round';
   for (const b of buildings) {
+    const ring = displaced(b.ring, true, 202);
     if (B.style === 'outline') {
-      tracePoly(b.ring); g.strokeStyle = B.edge; g.lineWidth = 2; g.stroke();
+      tracePoly(ring); g.strokeStyle = B.edge; g.lineWidth = 2; g.stroke();
+      continue;
+    }
+    if (B.style === 'plan') {
+      // Plan-view silhouette: flat fill, hairline edge, and corner ticks —
+      // the drafting-table read, not a fake extrusion.
+      tracePoly(ring);
+      g.fillStyle = B.roofs[b.roof % B.roofs.length]; g.fill();
+      if (buildingPattern) {
+        g.fillStyle = buildingPattern;
+        g.globalAlpha = B.material.mix != null ? B.material.mix : 0.4;
+        g.fill();
+        g.globalAlpha = 1;
+      }
+      g.strokeStyle = B.edge; g.lineWidth = 1.1; g.stroke();
+      g.lineWidth = 1;
+      const tick = px * 0.24;
+      for (let vi = 0; vi < ring.length; vi += 1) {
+        const [vx, vy] = ring[vi];
+        for (const [nx2, ny2] of [ring[(vi + ring.length - 1) % ring.length], ring[(vi + 1) % ring.length]]) {
+          const len = Math.hypot(vx - nx2, vy - ny2) || 1;
+          g.beginPath();
+          g.moveTo(vx * px, vy * px);
+          g.lineTo(vx * px + ((vx - nx2) / len) * tick, vy * px + ((vy - ny2) / len) * tick);
+          g.stroke();
+        }
+      }
       continue;
     }
     if (B.style !== 'flat') {
-      g.fillStyle = B.wall; tracePoly(b.ring, 0, px * B.drop); g.fill();
+      g.fillStyle = B.wall; tracePoly(ring, 0, px * B.drop); g.fill();
     }
-    g.fillStyle = B.roofs[b.roof % B.roofs.length]; tracePoly(b.ring); g.fill();
+    g.fillStyle = B.roofs[b.roof % B.roofs.length]; tracePoly(ring); g.fill();
+    if (buildingPattern) {
+      g.fillStyle = buildingPattern;
+      g.globalAlpha = B.material.mix != null ? B.material.mix : 0.4;
+      g.fill();
+      g.globalAlpha = 1;
+      tracePoly(ring);
+    }
     g.strokeStyle = B.edge; g.lineWidth = 1.6; g.stroke();
   }
 
   const CO = kit.sprites.coaster;
   const SL = kit.sprites.slide;
   g.lineCap = 'round';
-  for (const tr of tracks) {
-    const mono = (tr.kind === 'coaster' ? CO : SL).style === 'mono';
-    if (mono) continue;
-    traceLine(tr.pts); g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = px * 0.62; g.stroke();
-  }
-  for (const tr of tracks.filter((t) => t.kind === 'coaster')) {
-    if (CO.style === 'mono') {
-      traceLine(tr.pts); g.strokeStyle = CO.rail; g.lineWidth = Math.max(1.4, px * 0.12); g.stroke();
-      continue;
+  const trackPts = tracks.map((tr) => displaced(tr.pts, false, 303));
+  // Schematic tracks: perpendicular tick marks along the run — the atlas
+  // plate's ride notation. Deterministic: ticks pace the arc length.
+  const drawTicks = (pts, color, half) => {
+    g.strokeStyle = color; g.lineWidth = 1;
+    let carry = 0;
+    for (let i = 1; i < pts.length; i += 1) {
+      const [ax, ay] = pts[i - 1]; const [bx, by] = pts[i];
+      const len = Math.hypot(bx - ax, by - ay);
+      if (!len) continue;
+      const nx = -(by - ay) / len; const ny = (bx - ax) / len;
+      let s = carry;
+      while (s <= len) {
+        const x = (ax + ((bx - ax) * s) / len) * px;
+        const y = (ay + ((by - ay) * s) / len) * px;
+        g.beginPath(); g.moveTo(x - nx * half, y - ny * half); g.lineTo(x + nx * half, y + ny * half); g.stroke();
+        s += 0.6;
+      }
+      carry = s - len;
     }
-    traceLine(tr.pts); g.strokeStyle = CO.rail; g.lineWidth = px * 0.42; g.stroke();
-    g.setLineDash([2.5, px * 0.4]); traceLine(tr.pts); g.strokeStyle = CO.tie; g.lineWidth = px * 0.2; g.stroke();
+  };
+  tracks.forEach((tr, i) => {
+    if ((tr.kind === 'coaster' ? CO : SL).style !== 'tube') return; // flat styles cast no shadow
+    traceLine(trackPts[i]); g.strokeStyle = 'rgba(0,0,0,0.18)'; g.lineWidth = px * 0.62; g.stroke();
+  });
+  tracks.forEach((tr, i) => {
+    if (tr.kind !== 'coaster') return;
+    const pts = trackPts[i];
+    if (CO.style === 'mono') {
+      traceLine(pts); g.strokeStyle = CO.rail; g.lineWidth = Math.max(1.4, px * 0.12); g.stroke();
+      return;
+    }
+    if (CO.style === 'schematic') {
+      traceLine(pts); g.strokeStyle = CO.rail; g.lineWidth = Math.max(1.2, px * 0.1); g.stroke();
+      drawTicks(pts, CO.rail, px * 0.17);
+      return;
+    }
+    traceLine(pts); g.strokeStyle = CO.rail; g.lineWidth = px * 0.42; g.stroke();
+    g.setLineDash([2.5, px * 0.4]); traceLine(pts); g.strokeStyle = CO.tie; g.lineWidth = px * 0.2; g.stroke();
     g.setLineDash([]);
-  }
-  for (const tr of tracks.filter((t) => t.kind === 'slide')) {
+  });
+  tracks.forEach((tr, i) => {
+    if (tr.kind !== 'slide') return;
+    const pts = trackPts[i];
     const color = SL.colors[tr.idx % SL.colors.length];
     if (SL.style === 'mono') {
-      traceLine(tr.pts); g.strokeStyle = color; g.lineWidth = Math.max(1.4, px * 0.14); g.stroke();
-      continue;
+      traceLine(pts); g.strokeStyle = color; g.lineWidth = Math.max(1.4, px * 0.14); g.stroke();
+      return;
     }
-    traceLine(tr.pts); g.strokeStyle = SL.casing; g.lineWidth = px * 0.56 * SL.width; g.stroke();
-    traceLine(tr.pts); g.strokeStyle = color; g.lineWidth = px * 0.36 * SL.width; g.stroke();
-  }
+    if (SL.style === 'schematic') {
+      traceLine(pts); g.strokeStyle = color; g.lineWidth = Math.max(1.2, px * 0.1); g.stroke();
+      drawTicks(pts, color, px * 0.17);
+      return;
+    }
+    traceLine(pts); g.strokeStyle = SL.casing; g.lineWidth = px * 0.56 * SL.width; g.stroke();
+    traceLine(pts); g.strokeStyle = color; g.lineWidth = px * 0.36 * SL.width; g.stroke();
+  });
 
   const TR = kit.sprites.tree;
   const treeImg = TR.sprite ? sheetImages[TR.sprite.asset] : null;

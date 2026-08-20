@@ -25,7 +25,8 @@ async function check(name, fn) {
 console.log('\nstyle contract\n');
 
 const {
-  stylePoints, certifyStyleContract, harvestProfileDraft, deltaE, hexToRgb, signature,
+  stylePoints, certifyStyleContract, crossRotationCoverageRow, harvestProfileDraft,
+  deltaE, hexToRgb, signature,
 } = await import('../../packages/venue-builder/lib/display-style-contract.mjs');
 
 // A 12x12 synthetic world: outside frame, ground floor, quadrant patches of
@@ -266,6 +267,110 @@ await check('cross-kit distinctness compares this invocation, skips explicitly',
   const aloneRow = alone.checks.find((c) => c.key === 'style_cross_kit_distinct');
   assert.equal(aloneRow.pass, true);
   assert.match(aloneRow.evidence, /no sibling kits/, 'skip is recorded, never silent');
+  return true;
+});
+
+// ADR-0016 world tier: badges are truth POIs projected into the model; the
+// app places the world image on the model's own bounds. The row proves the
+// two projections agree (image-on-truth-bounds is exact for painted
+// features) and that the kit's declared stroke displacement fits the budget.
+await check('style_world_geo: truth anchors project through the world bounds; displacement is budgeted', () => {
+  const bounds = { west: 0, south: 0, east: 0.012, north: 0.012 };
+  const named = {
+    ...model,
+    bounds,
+    badges: [{ kind: 'gate', name: 'Main Gate', x: 3, y: 8 }, { kind: 'food', name: 'Fries', x: 8, y: 8 }],
+  };
+  // POIs at exactly the lat/lng whose bounds-projection is the badge cell.
+  const pois = [
+    { c: 'gate', n: 'Main Gate', lng: 0.003, lat: 0.004 },
+    { c: 'food', n: 'Fries', lng: 0.008, lat: 0.004 },
+    { c: 'coaster', n: 'Not a badge', lng: 0.001, lat: 0.001 },
+  ];
+  const points = stylePoints(named, { perClass: 8 });
+  const good = certifyStyleContract({ model: named, points, samples: paint(points), profile, kit, pois });
+  const row = good.checks.find((c) => c.key === 'style_world_geo');
+  assert.ok(row, 'pois + bounds must produce the geo row');
+  assert.equal(row.pass, true, row.evidence);
+  assert.match(row.evidence, /2 truth anchor/);
+  // A badge that no longer derives from truth fails the row.
+  const moved = { ...named, badges: [{ ...named.badges[0], x: 3.6 }, named.badges[1]] };
+  const movedPoints = stylePoints(moved, { perClass: 8 });
+  const bad = certifyStyleContract({ model: moved, points: movedPoints, samples: paint(movedPoints), profile, kit, pois });
+  assert.equal(bad.checks.find((c) => c.key === 'style_world_geo').pass, false);
+  // A kit declaring displacement past the budget fails even with true anchors.
+  const wobbly = certifyStyleContract({
+    model: named, points, samples: paint(points), profile, pois,
+    kit: { id: 'test-kit', strokes: { displacement: { amplitude: 99 } } },
+  });
+  assert.equal(wobbly.checks.find((c) => c.key === 'style_world_geo').pass, false);
+  // No pois (or no bounds): no row — the flat certification set is unchanged.
+  const absent = certifyStyleContract({ model, points: stylePoints(model, { perClass: 8 }), samples: paint(stylePoints(model, { perClass: 8 })), profile, kit });
+  assert.ok(!absent.checks.some((c) => c.key === 'style_world_geo'));
+  return true;
+});
+
+/* Issue #521: per-rotation occlusion starvation withdraws-and-discloses (the
+   per-rotation hard-fail was rejected — geometry legitimately starves classes
+   at some cameras). The sweep-level rule is where it fails: a class withdrawn
+   at EVERY rotation was never held to the contract anywhere. */
+const starvedSkip = (classes) => [{
+  key: 'occlusion_starved',
+  reason: 'fixture',
+  count: 10,
+  byClass: Object.fromEntries(classes.map((cls) => [cls, { kept: 1, culled: 9 }])),
+}];
+
+await check('cross-rotation: a class starved at every rotation fails the sweep, named', () => {
+  const row = crossRotationCoverageRow([
+    { rotation: 0, skips: starvedSkip(['road', 'water']) },
+    { rotation: 1, skips: starvedSkip(['road']) },
+    { rotation: 2, skips: starvedSkip(['road', 'water']) },
+    { rotation: 3, skips: starvedSkip(['road']) },
+  ]);
+  assert.equal(row.key, 'style_occlusion_cross_rotation');
+  assert.equal(row.pass, false);
+  assert.match(row.evidence, /\broad\b/, 'the never-covered class is named');
+  assert.ok(!/water[^ ]* starved at every/.test(row.evidence), 'water certifies at r1/r3');
+  return true;
+});
+
+await check('cross-rotation: starved at some rotations but surviving one passes with disclosure', () => {
+  const row = crossRotationCoverageRow([
+    { rotation: 0, skips: starvedSkip(['road']) },
+    { rotation: 1, skips: [] },
+    { rotation: 2, skips: starvedSkip(['road']) },
+    { rotation: 3, skips: [] },
+  ]);
+  assert.equal(row.pass, true, row.evidence);
+  assert.match(row.evidence, /road withdrawn at r0,r2 only/, 'partial starvation stays on the record');
+  const clean = crossRotationCoverageRow([
+    { rotation: 0, skips: [] },
+    { rotation: 2, skips: [] },
+  ]);
+  assert.equal(clean.pass, true);
+  assert.match(clean.evidence, /no class withdrawn/);
+  return true;
+});
+
+await check('cross-rotation: one rotation is not a sweep; legacy certs without skips read as nothing withdrawn', () => {
+  const single = crossRotationCoverageRow([{ rotation: 0, skips: starvedSkip(['road']) }]);
+  assert.equal(single.pass, true, 'demanding sweep coverage of one rotation would be the rejected per-rotation hard-fail');
+  assert.match(single.evidence, /not a sweep/);
+  const legacy = crossRotationCoverageRow([{ rotation: 0 }, { rotation: 2 }]);
+  assert.equal(legacy.pass, true, legacy.evidence);
+  return true;
+});
+
+await check('iso certs carry their skips structurally for the sweep aggregator', () => {
+  const points = stylePoints(model, { perClass: 8 });
+  const skips = starvedSkip(['road']);
+  const cert = certifyStyleContract({
+    model, points, samples: paint(points), profile, kit, target: 'iso', skips,
+  });
+  assert.deepEqual(cert.skips, skips, 'skips ride the cert JSON, not just evidence strings');
+  const flat = certifyStyleContract({ model, points, samples: paint(points), profile, kit });
+  assert.ok(!('skips' in flat), 'flat certs stay byte-identical to before');
   return true;
 });
 

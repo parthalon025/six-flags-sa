@@ -50,22 +50,36 @@ function parseArgs(argv) {
   return out;
 }
 
-/** Re-bake every committed kit for one venue into a scratch dir; read the fresh signatures back. */
-function rebakeVenue(id, kitIds) {
+/**
+ * Re-bake every committed kit for one venue into a scratch dir; read the
+ * fresh signatures back. A signature is only reproducible at the px it was
+ * sampled, so kits re-bake grouped by their committed row's px (16 for rows
+ * from before px rode the cert).
+ */
+function rebakeVenue(id, committed) {
+  const kitIds = Object.keys(committed);
+  const byPx = new Map();
+  for (const kitId of kitIds) {
+    const px = committed[kitId].px || 16;
+    if (!byPx.has(px)) byPx.set(px, []);
+    byPx.get(px).push(kitId);
+  }
   const outRoot = mkdtempSync(path.join(tmpdir(), `bake-drift-${id}-`));
   try {
-    const args = [BAKE_BIN, id, ...kitIds.flatMap((k) => ['--kit', k]), '--out', outRoot];
-    const res = spawnSync(process.execPath, args, { encoding: 'utf8' });
     const fresh = {};
-    for (const kitId of kitIds) {
-      const cert = readJson(path.join(outRoot, `${id}--${kitId}.style-cert.json`), null);
-      if (cert) fresh[kitId] = { signature: cert.signature, certified: cert.certified };
+    let exitCode = 0;
+    let log = '';
+    for (const [px, kits] of byPx) {
+      const args = [BAKE_BIN, id, ...kits.flatMap((k) => ['--kit', k]), '--px', String(px), '--out', outRoot];
+      const res = spawnSync(process.execPath, args, { encoding: 'utf8' });
+      exitCode = exitCode || res.status;
+      log += `${res.stdout || ''}${res.stderr || ''}`;
+      for (const kitId of kits) {
+        const cert = readJson(path.join(outRoot, `${id}--${kitId}.style-cert.json`), null);
+        if (cert) fresh[kitId] = { signature: cert.signature, certified: cert.certified };
+      }
     }
-    return {
-      fresh,
-      exitCode: res.status,
-      log: `${res.stdout || ''}${res.stderr || ''}`.trim().slice(-800),
-    };
+    return { fresh, exitCode, log: log.trim().slice(-800) };
   } finally {
     rmSync(outRoot, { recursive: true, force: true });
   }
@@ -77,7 +91,7 @@ function checkVenue(id) {
   if (!kitIds.length) {
     return { venue: id, checked: 0, drifted: [], note: 'no committed bake certifications for this venue' };
   }
-  const { fresh, exitCode, log } = rebakeVenue(id, kitIds);
+  const { fresh, exitCode, log } = rebakeVenue(id, committed);
   const drifted = driftedBakes(id, committed, fresh);
   const missing = kitIds.filter((k) => !fresh[k]);
   return {

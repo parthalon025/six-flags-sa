@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "skin": "park-midnight",
+  "kit": "rpg-overworld",
+  "projection": "top-down",
+  "bounds": {
+    "west": -84.2775,
+    "south": 39.3364963,
+    "east": -84.2595,
+    "north": 39.348
+  },
+  "file": "park-midnight.world.png",
+  "credits": "kings-island--rpg-overworld.credits.json"
+}

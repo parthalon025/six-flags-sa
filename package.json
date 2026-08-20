@@ -1,6 +1,6 @@
 {
   "name": "parkbound",
-  "version": "1.22.0",
+  "version": "1.24.0",
   "license": "MIT",
   "private": true,
   "packageManager": "npm@10.9.2",
@@ -110,8 +110,10 @@
     "venues:bake": "node --env-file-if-exists=.env packages/venue-builder/bin/display-bake.mjs",
     "venues:atlas": "node --env-file-if-exists=.env packages/venue-builder/bin/display-atlas.mjs",
     "venues:bake-review": "node --env-file-if-exists=.env packages/venue-builder/bin/display-contact-sheet.mjs",
+    "venues:publish-worlds": "node --env-file-if-exists=.env packages/venue-builder/bin/display-publish.mjs",
     "venues:vendor-assets": "node --env-file-if-exists=.env packages/venue-builder/bin/vendor-assets.mjs",
-    "venues:swatches": "node --env-file-if-exists=.env packages/venue-builder/bin/display-swatches.mjs"
+    "venues:swatches": "node --env-file-if-exists=.env packages/venue-builder/bin/display-swatches.mjs",
+    "venues:materials": "node --env-file-if-exists=.env packages/venue-builder/bin/display-materials.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.4.4",

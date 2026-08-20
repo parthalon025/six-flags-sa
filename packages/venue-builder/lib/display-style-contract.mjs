@@ -11,7 +11,9 @@
  */
 
 import { check } from './evidence.mjs';
-import { TERRAIN_NAMES, impliedTerrainClasses } from './display-bake.mjs';
+import {
+  TERRAIN_NAMES, impliedTerrainClasses, POI_BADGES, WORLD_DISPLACEMENT_BUDGET_PX,
+} from './display-bake.mjs';
 import {
   isoCellMap, isoCellToPixel, buildingHeightsM, trackVertexHeightsM,
   buildingScreenHulls, occludedByBuilding,
@@ -322,10 +324,15 @@ const groupMedians = (points, samples) => {
  * DID survive; a compositing bug that erases a class entirely (issue #518:
  * water painted over the whole park with no boundary clip) passed that
  * check clean because there was nothing sampled to fail on.
+ *
+ * `pois` (truth places) powers `style_world_geo` on the flat tier — the
+ * ADR-0016 geo-fidelity row for worlds placed image-on-truth-bounds.
+ * `px` is the bake's pixels-per-cell, needed to convert the kit's stroke
+ * displacement budget into cells.
  */
 export function certifyStyleContract({
   model, points, samples, rerunSamples = null, siblings = null, profile, kit,
-  target = 'flat', skips = null, map = null,
+  target = 'flat', skips = null, map = null, pois = null, px = 16,
 }) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
@@ -384,6 +391,56 @@ export function certifyStyleContract({
       confidence: 1,
       falsifier: 'a terrain class present in truth geometry vanishing from the composited render (e.g. a boundary-unaware paint order painting over it)',
       soWhat: 'a bake that silently drops a class can certify clean while shipping an empty or wrong-looking world',
+    }));
+  }
+
+  // Geo fidelity for the world tier (ADR-0016: strictly geo-true, bounded
+  // displacement certified). The app places the baked image on the model's
+  // truth-derived bounds, so a painted feature lands where the linear
+  // bounds→cell map puts it. What this row PROVES, given that the bake is
+  // deterministic (style_bake_deterministic) and the model is built from
+  // truth alone: (1) sampled truth anchors — every model badge matched back
+  // to its truth POI — sit where projecting that POI through the world's
+  // own bounds says they must, i.e. the image-on-truth-bounds placement is
+  // exact for painted features; (2) the only paint-time geometry wobble the
+  // kit is allowed (seeded stroke displacement) is bounded by the declared
+  // budget, so no painted edge sits further than that many pixels from its
+  // truth position. It does not judge looks — the palette rows do that.
+  if (pois && model.bounds && target === 'flat') {
+    const b = model.bounds;
+    const toCell = (lng, lat) => [
+      ((lng - b.west) / (b.east - b.west)) * model.cols,
+      ((b.north - lat) / (b.north - b.south)) * model.rows,
+    ];
+    // Parks repeat names ("Restrooms" × 12), so a badge matches the NEAREST
+    // truth POI of its kind: every badge must coincide with some real place
+    // of that kind — the model cannot invent or nudge a position.
+    const truthByKind = new Map();
+    for (const p of pois) {
+      if (!POI_BADGES[p.c] || !Number.isFinite(p.lat)) continue;
+      const kind = POI_BADGES[p.c];
+      if (!truthByKind.has(kind)) truthByKind.set(kind, []);
+      truthByKind.get(kind).push(toCell(p.lng, p.lat));
+    }
+    const errs = [];
+    for (const badge of model.badges || []) {
+      const candidates = truthByKind.get(badge.kind);
+      if (!candidates) continue;
+      errs.push(Math.min(...candidates.map(([ex, ey]) => Math.hypot(ex - badge.x, ey - badge.y))));
+    }
+    // Anchors are never displaced (annotation passes last, undisplaced);
+    // the tolerance only absorbs the bounds' own 1e-7° rounding.
+    const anchorTol = 0.05;
+    const worstAnchor = errs.length ? Math.max(...errs) : 0;
+    const amplitude = kit.strokes?.displacement?.amplitude ?? 0;
+    checks.push(check({
+      key: 'style_world_geo',
+      claim: `world anchors project onto truth through the pack bounds (≤ ${anchorTol} cells) and stroke displacement stays within ${WORLD_DISPLACEMENT_BUDGET_PX} px`,
+      pass: worstAnchor <= anchorTol && amplitude <= WORLD_DISPLACEMENT_BUDGET_PX,
+      evidence: `${errs.length} truth anchor(s) sampled, worst offset ${Math.round(worstAnchor * 1000) / 1000} cells; declared stroke displacement ${amplitude} px (budget ${WORLD_DISPLACEMENT_BUDGET_PX} px, ${Math.round((amplitude / px) * 1000) / 1000} cells)`,
+      confidence: 0.9,
+      falsifier: 'a model whose badge positions no longer derive from truth through its own bounds, or a kit displacing strokes past the budget',
+      soWhat: 'a world image that drifts from truth bounds moves every Place a guest stands next to',
     }));
   }
 
@@ -589,11 +646,84 @@ export function certifyStyleContract({
     kit: kit.id,
     profile: profile.id,
     target,
+    // The signature is only reproducible at the resolution it sampled —
+    // drift watches must re-bake at this px, not their own default.
+    px,
     signature: sig,
     certified: checks.every((c) => c.pass),
     checks,
     review,
+    // Structured pass-through of the projection's skip entries (occlusion
+    // tallies included), so a sweep aggregator can reason about starvation
+    // without parsing evidence strings. Absent on flat certs and on certs
+    // baked before this existed — consumers must treat absence as "nothing
+    // withdrawn". Two valid states, by design: `skips` is either a
+    // non-empty array or missing entirely, never [] — guard reads with
+    // `cert.skips || []` like crossRotationCoverageRow and display-pack do.
+    ...(skips && skips.length ? { skips } : {}),
   };
+}
+
+/**
+ * The sweep-level occlusion rule (issue #521): across an iso rotation sweep,
+ * every ground class must survive to a real, un-withdrawn evaluation at
+ * AT LEAST ONE rotation. A class the per-rotation contract withdrew
+ * (`occlusion_starved`) at EVERY rotation was never actually held to the
+ * contract anywhere — its disclosure rows are honest, but nothing certified
+ * the class.
+ *
+ * The tradeoff, decided on #521: hard-failing the per-rotation cert for a
+ * starved class was rejected, because geometry legitimately starves classes
+ * at some cameras (big-kahunas r0/r2 put most road samples behind
+ * extrusions) and failing r0/r2 for that would block venues whose look is
+ * fine at the rotations a player actually gets shown. Per-rotation
+ * starvation therefore stays a withdrawal-with-disclosure; this row is where
+ * it hard-fails — when no rotation in the sweep ever covered the class.
+ *
+ * Pure. `sweep` is one entry per baked rotation: `{ rotation, skips }`,
+ * with `skips` the cert's structured skip entries (certifyStyleContract
+ * carries them; certs from before that carry none, which reads as "nothing
+ * withdrawn" — correct, since withdrawal always writes a skip entry).
+ * Fewer than two rotations is not a sweep: the row passes on the record,
+ * because demanding cross-rotation coverage of a single rotation would be
+ * exactly the per-rotation hard-fail the issue rejected.
+ *
+ * @param {{ rotation: number, skips?: {key: string, byClass?: object}[] }[]} sweep
+ * @returns a check() row keyed `style_occlusion_cross_rotation`
+ */
+export function crossRotationCoverageRow(sweep) {
+  const rotations = [...(sweep || [])].sort((a, b) => a.rotation - b.rotation);
+  const starvedAt = {};
+  for (const r of rotations) {
+    const starved = (r.skips || []).find((s) => s.key === 'occlusion_starved');
+    for (const cls of Object.keys(starved?.byClass || {})) {
+      (starvedAt[cls] = starvedAt[cls] || []).push(r.rotation);
+    }
+  }
+  const rname = (rs) => rs.map((r) => `r${r}`).join(',');
+  const uncovered = Object.entries(starvedAt)
+    .filter(([, rs]) => rs.length >= rotations.length)
+    .map(([cls]) => cls)
+    .sort();
+  const partial = Object.entries(starvedAt)
+    .filter(([, rs]) => rs.length < rotations.length)
+    .map(([cls, rs]) => `${cls} withdrawn at ${rname(rs)} only`)
+    .sort();
+  return check({
+    key: 'style_occlusion_cross_rotation',
+    claim: 'every occlusion-withdrawn class still certifies un-withdrawn at ≥1 rotation of the iso sweep',
+    pass: rotations.length < 2 || uncovered.length === 0,
+    evidence: rotations.length < 2
+      ? `${rotations.length} rotation(s) baked — not a sweep; per-rotation occlusion_starved rows carry the disclosure`
+      : uncovered.length
+        ? `starved at every rotation (${rname(rotations.map((r) => r.rotation))}): ${uncovered.join(', ')} — no rotation ever held these classes to the contract`
+        : partial.length
+          ? `${partial.join('; ')} — each survives elsewhere in the sweep`
+          : `no class withdrawn anywhere across ${rname(rotations.map((r) => r.rotation))}`,
+    confidence: 1,
+    falsifier: 'a venue whose extrusions hide a ground class from every quarter-turn camera at once',
+    soWhat: 'per-rotation withdrawal is disclosure, not certification — a class starved everywhere would ship with its look never checked at all',
+  });
 }
 
 /**

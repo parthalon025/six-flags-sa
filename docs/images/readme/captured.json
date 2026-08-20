@@ -1,0 +1,32 @@
+{
+  "height-filter.png": {
+    "commit": "7ae9e5653c9c8640193182239d364834b1aff454",
+    "capturedAt": "2026-08-20T05:39:00.231Z",
+    "sha256": "662d40359b3dc036ea80a6d3497abc8a65cba13a74a39f596d07f8bff9c5a658"
+  },
+  "map-day.png": {
+    "commit": "7ae9e5653c9c8640193182239d364834b1aff454",
+    "capturedAt": "2026-08-20T05:38:35.243Z",
+    "sha256": "de5a9f24da88a41ea3c802b520a6ddd19848b60ddf742f96a3a32defaffb4085"
+  },
+  "map-night.png": {
+    "commit": "7ae9e5653c9c8640193182239d364834b1aff454",
+    "capturedAt": "2026-08-20T05:38:36.855Z",
+    "sha256": "04d6aec29ccb599401258d7e0d9a85c3ee373f9ceb9c3671e3925ee2c9c5f021"
+  },
+  "party.png": {
+    "commit": "7ae9e5653c9c8640193182239d364834b1aff454",
+    "capturedAt": "2026-08-20T05:39:42.084Z",
+    "sha256": "f6615e2438e0fa6cfd5ceccb542a788e9888ef174680f0e23a7f1c4af7bf8ce3"
+  },
+  "ride-callout.png": {
+    "commit": "7ae9e5653c9c8640193182239d364834b1aff454",
+    "capturedAt": "2026-08-20T05:38:56.768Z",
+    "sha256": "dba1a87f7faf24288267dc009ecfd0ca1066525c23f5404d7c013a7e54cf2fc6"
+  },
+  "walking.png": {
+    "commit": "7ae9e5653c9c8640193182239d364834b1aff454",
+    "capturedAt": "2026-08-20T05:39:06.398Z",
+    "sha256": "beca5d9f67d00d9350cc81c78256ed585317d198a4c2c6b8323957d6aa489434"
+  }
+}

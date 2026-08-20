@@ -24,6 +24,16 @@ export const BUILDER_ROOT = path.join(HERE, '..');
 
 export const VENUE_DIR = path.join(APP_ROOT, 'public', 'venues');
 export const OVERRIDE_DIR = path.join(BUILDER_ROOT, 'data', 'venues');
+
+/**
+ * The builder's per-venue data packages (sidecars: recipe.json,
+ * overrides.json, …) — the app-facing seam for the one thing outside this
+ * package that legitimately needs the directory (issue #475). App code must
+ * call this instead of composing the path itself, so the builder can
+ * restructure data/ without silently breaking the app; the matt-standards
+ * path-literal lint (scripts/lib/matt-standards.mjs) holds the line.
+ */
+export const venueDataDir = () => OVERRIDE_DIR;
 export const INDEX_FILE = path.join(APP_ROOT, 'lib', 'venueIndex.js');
 export const MANIFEST_FILE = path.join(VENUE_DIR, 'manifest.json');
 /** App Store Connect routing coverage — stamped by `reindex()`, not hand-edited. */

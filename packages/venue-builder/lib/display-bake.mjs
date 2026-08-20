@@ -56,12 +56,23 @@ const AISLE_DASH_METRES = 4;
  */
 
 /** Texture primitives the compositor knows how to paint. */
-export const TEXTURE_KINDS = ['none', 'speckle', 'tuft', 'wave', 'dot', 'stripe', 'dash', 'hatch'];
+export const TEXTURE_KINDS = ['none', 'speckle', 'tuft', 'wave', 'dot', 'stripe', 'dash', 'hatch', 'grain'];
 
 /** Structural design switches — different drawing, not different color. */
-export const BUILDING_STYLES = ['drop', 'flat', 'outline'];
+export const BUILDING_STYLES = ['drop', 'flat', 'outline', 'plan'];
 export const TREE_STYLES = ['round', 'dot', 'none'];
-export const TRACK_STYLES = ['tube', 'mono'];
+export const TRACK_STYLES = ['tube', 'mono', 'schematic'];
+export const ROAD_STYLES = ['cased', 'double'];
+export const SERVICE_STYLES = ['solid', 'dashed'];
+
+/**
+ * ADR-0016's "strictly geo-true" as a number: the most any painted stroke
+ * may wander from its truth-projected position, in bake pixels. A kit's
+ * seeded-noise displacement (`strokes.displacement.amplitude`) validates
+ * against this at resolve time, and certification's style_world_geo row
+ * re-asserts it against the bake, so the budget is a proof, not a promise.
+ */
+export const WORLD_DISPLACEMENT_BUDGET_PX = 3;
 
 /**
  * `steep` is the variant a natural surface takes where the ground is actually
@@ -130,8 +141,12 @@ const merged = (base, over) => {
  * can restyle any kit — custom quest-prize sprites included — without
  * forking it. Overlays restyle; they cannot move geometry any more than
  * kits can.
+ *
+ * `materials` is the MaterialSet ledger (data/display/materials.json):
+ * pieces binding a `material` (tiled compiled-albedo underlay, ADR-0016
+ * PBR pass) can only reference ledger rows, exactly like tile/sprite art.
  */
-export function resolveKit(spec = {}, { assets, overlay } = {}) {
+export function resolveKit(spec = {}, { assets, overlay, materials } = {}) {
   if (overlay) {
     spec = {
       ...spec,
@@ -139,11 +154,34 @@ export function resolveKit(spec = {}, { assets, overlay } = {}) {
       sprites: merged(spec.sprites || {}, overlay.sprites || {}),
     };
   }
+  const checkMaterial = (owner, ref) => {
+    if (!ref) return;
+    if (!materials) throw new Error(`${owner}.material needs the materials ledger to resolve`);
+    if (!materials[ref.id]) throw new Error(`${owner}.material references unknown material "${ref.id}"`);
+    if (ref.mix != null && !(ref.mix >= 0 && ref.mix <= 1)) {
+      throw new Error(`${owner}.material.mix must sit in [0, 1]`);
+    }
+  };
   for (const key of Object.keys(spec.terrain || {})) {
     if (!TERRAIN_PIECES[key]) throw new Error(`Unknown terrain piece "${key}"`);
     const piece = spec.terrain[key] || {};
     const kind = piece.texture?.kind;
     if (kind && !TEXTURE_KINDS.includes(kind)) throw new Error(`Unknown texture kind "${kind}" on ${key}`);
+    if (key === 'road' && piece.style && !ROAD_STYLES.includes(piece.style)) {
+      throw new Error(`Unknown road style "${piece.style}"`);
+    }
+    if (key === 'service' && piece.style && !SERVICE_STYLES.includes(piece.style)) {
+      throw new Error(`Unknown service style "${piece.style}"`);
+    }
+    if (piece.rim) {
+      // Pigment-pooling rim: a darker second pass inside a terrain's own
+      // boundary, falling off with cell distance. Bounded so a kit cannot
+      // turn a rim into a fill (reach) or opaque repaint (alpha).
+      if (!(piece.rim.reach >= 1 && piece.rim.reach <= 4)) throw new Error(`${key}.rim.reach must sit in [1, 4]`);
+      if (!(piece.rim.alpha > 0 && piece.rim.alpha <= 1)) throw new Error(`${key}.rim.alpha must sit in (0, 1]`);
+      if (!piece.rim.color) throw new Error(`${key}.rim needs a color`);
+    }
+    checkMaterial(key, piece.material);
     if (piece.tiles) {
       if (!assets) throw new Error(`${key}.tiles needs the asset ledger to resolve`);
       const row = assets[piece.tiles.asset];
@@ -176,10 +214,30 @@ export function resolveKit(spec = {}, { assets, overlay } = {}) {
     const style = spec.sprites?.[k]?.style;
     if (style && !allowed.includes(style)) throw new Error(`Unknown ${k} style "${style}"`);
   }
+  checkMaterial('building', spec.sprites?.building?.material);
+  const amp = spec.strokes?.displacement?.amplitude;
+  if (spec.strokes?.displacement) {
+    // Seeded-noise hand-tremor on drawn edges (buildings, roads, tracks).
+    // The amplitude is the geo-truth budget: certification's
+    // style_world_geo row holds the bake to the same number.
+    if (!(amp > 0 && amp <= WORLD_DISPLACEMENT_BUDGET_PX)) {
+      throw new Error(`strokes.displacement.amplitude must sit in (0, ${WORLD_DISPLACEMENT_BUDGET_PX}] px`);
+    }
+    const wavelength = spec.strokes.displacement.wavelength;
+    if (wavelength != null && !(wavelength >= 1 && wavelength <= 8)) {
+      throw new Error('strokes.displacement.wavelength must sit in [1, 8] cells');
+    }
+  }
+  if (spec.wash) {
+    if (spec.wash.mode !== 'multiply') throw new Error(`Unknown wash mode "${spec.wash.mode}"`);
+    if (!spec.wash.paper) throw new Error('wash needs a paper color under the multiply pass');
+  }
   return {
     id: spec.id || 'default',
     label: spec.label || spec.id || 'Default',
     prompt: spec.prompt || null,
+    ...(spec.strokes ? { strokes: spec.strokes } : {}),
+    ...(spec.wash ? { wash: spec.wash } : {}),
     terrain: merged(TERRAIN_PIECES, spec.terrain),
     sprites: merged(SPRITE_PIECES, spec.sprites),
   };
@@ -415,7 +473,47 @@ export function crownStipple(cells, cols, rows, opts = {}) {
   }
 }
 
-const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', shop: 'shop', show: 'show', service: 'service' };
+/**
+ * Distance-to-boundary field for one terrain class, in cells: for every
+ * cell of `terrain`, the chebyshev distance to the nearest cell of any
+ * other class (1 = touching the boundary), capped at `reach + 1`; cells of
+ * other classes carry 0. This is the research note's "watercolor via
+ * distance-field boundary lookup" made concrete: the compositor's
+ * pigment-pooling rim darkens a class near its own edge with an alpha that
+ * falls off along this field. Pure and deterministic — computed lib-side
+ * (like autotile masks) so the painter page stays a consumer.
+ *
+ * @param {number[]} cells terrain grid
+ * @param {number} cols
+ * @param {number} rows
+ * @param {number} terrain terrain code the field describes
+ * @param {number} [reach] cells past which distance saturates
+ * @returns {number[]}
+ */
+export function boundaryDistanceField(cells, cols, rows, terrain, reach = 3) {
+  const out = new Array(cols * rows).fill(0);
+  const at = (x, y) => ((x < 0 || y < 0 || x >= cols || y >= rows) ? -1 : cells[y * cols + x]);
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < cols; x += 1) {
+      if (at(x, y) !== terrain) continue;
+      let d = reach + 1;
+      ring: for (let r = 1; r <= reach; r += 1) {
+        for (let dy = -r; dy <= r; dy += 1) {
+          for (let dx = -r; dx <= r; dx += 1) {
+            if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+            if (at(x + dx, y + dy) !== terrain) { d = r; break ring; }
+          }
+        }
+      }
+      out[y * cols + x] = d;
+    }
+  }
+  return out;
+}
+
+/** POI category → badge kind. Exported so certification (style_world_geo)
+ *  can match model badges back to the truth POIs they derive from. */
+export const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', shop: 'shop', show: 'show', service: 'service' };
 
 /**
  * Build the bake model for one venue.

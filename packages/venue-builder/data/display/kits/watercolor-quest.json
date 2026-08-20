@@ -1,0 +1,156 @@
+{
+  "id": "watercolor-quest",
+  "label": "Watercolor quest",
+  "wash": {
+    "mode": "multiply",
+    "paper": "#FAF6EA"
+  },
+  "strokes": {
+    "displacement": {
+      "amplitude": 2,
+      "wavelength": 3
+    }
+  },
+  "terrain": {
+    "outside": {
+      "base": "#DFD6BE",
+      "texture": {
+        "kind": "grain",
+        "color": "#C4B99C",
+        "density": 0.4
+      }
+    },
+    "ground": {
+      "base": "#F4EFDF",
+      "texture": {
+        "kind": "grain",
+        "color": "#C9BFAE",
+        "density": 0.5
+      },
+      "material": {
+        "id": "paving-stones--warm",
+        "mix": 0.1
+      }
+    },
+    "grass": {
+      "base": "#D9D0B5",
+      "texture": {
+        "kind": "tuft",
+        "color": "#BFB693",
+        "density": 0.22
+      },
+      "rim": {
+        "color": "#A9A27F",
+        "alpha": 0.45,
+        "reach": 2
+      },
+      "material": {
+        "id": "grass--meadow",
+        "mix": 0.12
+      }
+    },
+    "wood": {
+      "base": "#C2BC96",
+      "texture": {
+        "kind": "tuft",
+        "color": "#A6A07C",
+        "density": 0.3
+      },
+      "rim": {
+        "color": "#8F8A67",
+        "alpha": 0.45,
+        "reach": 2
+      },
+      "material": {
+        "id": "grass--meadow",
+        "mix": 0.15
+      }
+    },
+    "water": {
+      "base": "#8FB5C2",
+      "texture": {
+        "kind": "wave",
+        "color": "#C6DCE3",
+        "density": 0.22
+      },
+      "rim": {
+        "color": "#5E8CA0",
+        "alpha": 0.55,
+        "reach": 3
+      }
+    },
+    "lot": {
+      "base": "#E6DEC8",
+      "texture": {
+        "kind": "stripe",
+        "color": "#CFC5AB",
+        "density": 0.33
+      },
+      "material": {
+        "id": "concrete--lot",
+        "mix": 0.1
+      }
+    },
+    "road": {
+      "base": "#EFE8D4",
+      "texture": {
+        "kind": "dash",
+        "color": "#756276"
+      }
+    },
+    "service": {
+      "base": "#CBC2AD",
+      "texture": {
+        "kind": "none"
+      }
+    }
+  },
+  "sprites": {
+    "tree": {
+      "canopy": "#9BA871",
+      "highlight": "#C6CE9C",
+      "shadow": "rgba(87,72,92,0.16)",
+      "scale": 1.05
+    },
+    "building": {
+      "style": "drop",
+      "roofs": [
+        "#C99B7C",
+        "#B8A68D",
+        "#8FA5A8"
+      ],
+      "edge": "#756276",
+      "wall": "#8D7C6B",
+      "drop": 0.22,
+      "material": {
+        "id": "roofing--shingle",
+        "mix": 0.18
+      }
+    },
+    "slide": {
+      "casing": "rgba(250,246,234,0.9)",
+      "colors": [
+        "#B77FA8",
+        "#6FA3B8",
+        "#D8A75C",
+        "#8FBF8F",
+        "#C97F6F",
+        "#7F86C0"
+      ],
+      "width": 1
+    },
+    "coaster": {
+      "rail": "#57485C",
+      "tie": "#C9BFAE"
+    },
+    "badge": {
+      "gate": "#C05A5A",
+      "food": "#D08A4A",
+      "restroom": "#5E8CA0",
+      "shop": "#7FA36B",
+      "show": "#9A6FB8",
+      "service": "#8A8F98"
+    }
+  },
+  "prompt": "Watercolor quest map: warm cold-press paper with visible grain, multiply washes pooling darker at every shoreline and lawn edge, hand-tremor linework within a two-pixel wobble, plum ink paths dashed like a quest route, muted sage lawns and dusty blue water, soft terracotta roofs — axes (docs/goals/design-language-axes.md): A1 warm muted paper palette, A3 plum ink line with 2px tremor, A4 paper grain, B1 wash-over-paper ground, B2 watercolor water with pooled drying edges, B5 dashed quest-route ribbons, A6 top-down plate"
+}

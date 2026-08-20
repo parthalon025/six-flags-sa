@@ -11,6 +11,11 @@
  * BASE_URL points the suites at an app on another port:
  *
  *   BASE_URL=http://127.0.0.1:3711 node test/functional.mjs
+ *
+ * Phones opened here are HERMETIC by default: every request that would leave
+ * the app's origin is aborted in the browser (see hermeticize), because a
+ * sandboxed network that resets a TLS handshake mid-suite has taken the whole
+ * browser process down with it (#534). HERMETIC=0 opts back into real egress.
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -40,6 +45,39 @@ export const ignoreHTTPSErrors = BASE.startsWith('https://') || process.env.CLER
  */
 export const IGNORABLE_CONSOLE =
   /ERR_CERT|fonts\.(googleapis|gstatic)|net::ERR_(FAILED|BLOCKED)_BY_CLIENT|\/_vercel\/(insights|speed-insights)\/|favicon\.ico|Failed to load resource.*\b404\b|Refused to execute script.*(text\/plain|application\/json)|Blocked call to navigator\.vibrate/;
+
+/** Cross-origin egress is aborted in-test unless HERMETIC=0 says otherwise. */
+export const HERMETIC = process.env.HERMETIC !== '0';
+
+/**
+ * Abort every request that would leave the app's origin (#534).
+ *
+ * The functional suites depend on no third-party host: weather is a
+ * same-origin API route that degrades to a 200 gap body when its upstream is
+ * unreachable (#502/#544), GPS is mocked, and the map is venue files. What
+ * live egress DID contribute was flakes — in an agent sandbox the proxy reset
+ * an outbound TLS handshake and Chromium took the whole browser context down
+ * mid-suite, failing every test behind it. Aborting at the route layer makes
+ * the abort a clean, ignorable resource error (net::ERR_BLOCKED_BY_CLIENT is
+ * already in IGNORABLE_CONSOLE) instead of a browser crash.
+ *
+ * Context-level, so every page the phone opens inherits it; page-level route
+ * stubs (e.g. a weather fulfil) are checked first and keep working. Non-http
+ * schemes (data:, blob:) never leave the machine and fall through.
+ */
+export async function hermeticize(context, appUrl = BASE) {
+  const origin = new URL(appUrl).origin;
+  await context.route('**/*', (route) => {
+    let target = null;
+    try {
+      target = new URL(route.request().url());
+    } catch {
+      return route.abort('blockedbyclient');
+    }
+    if (!/^https?:$/.test(target.protocol) || target.origin === origin) return route.fallback();
+    return route.abort('blockedbyclient');
+  });
+}
 
 /** Poll `fn` until it returns something truthy. Returns that value. */
 export async function until(fn, { timeout = 30000, step = 500, label = 'condition' } = {}) {
@@ -90,6 +128,7 @@ export async function openPhone(
     locale: 'en-US',
     ignoreHTTPSErrors,
   });
+  if (HERMETIC) await hermeticize(context, url);
   // The update splash is driven by a client effect that runs after hydration,
   // so seed the seen-version key before the first paint rather than racing it.
   await context.addInitScript(({ version, venueId }) => {
