@@ -408,5 +408,11 @@
     "items": [
       "feat(app): venue download manager — hash-addressed offline bundles, freshness gate, worlds in the download contract (#559)"
     ]
+  },
+  "1.25.1": {
+    "title": "What's new",
+    "items": [
+      "fix(app): factories never deploy — lazy builder seam unbreaks Vercel builds (#567)"
+    ]
   }
 }

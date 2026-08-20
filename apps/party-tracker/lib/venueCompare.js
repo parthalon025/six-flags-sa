@@ -5,9 +5,28 @@
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+
 // The builder's entry-point seam for its venue data packages (issue #475) —
-// never compose that path by hand from here.
-import { venueDataDir } from '@party-tracker/venue-builder/paths.js';
+// never compose that path by hand from here. Resolved lazily because the
+// factories never ship to deployments (.vercelignore excludes the package):
+// locally the seam resolves and the recipe check runs; on a deployment the
+// package is absent, so the check reports itself unavailable instead of the
+// static import breaking the build.
+let builderPathsPromise;
+function builderPaths() {
+  builderPathsPromise ??= (async () => {
+    try {
+      // createRequire keeps the specifier invisible to the bundler (Turbopack
+      // resolves even dynamic import() literals at build time); Node ≥ 22
+      // require()s the ESM seam fine when it is on disk.
+      const { createRequire } = await import('node:module');
+      return createRequire(import.meta.url)('@party-tracker/venue-builder/paths.js');
+    } catch {
+      return null;
+    }
+  })();
+  return builderPathsPromise;
+}
 
 function appRoot() {
   const cwd = process.cwd();
@@ -35,7 +54,7 @@ export function readManifest() {
   return JSON.parse(readFileSync(path.join(VENUE_DIR(), 'manifest.json'), 'utf8'));
 }
 
-export function compareVenue(venue) {
+export async function compareVenue(venue) {
   const id = venue.id;
   const poisPath = path.join(VENUE_DIR(), `${id}.pois.json`);
   const mapPath = path.join(VENUE_DIR(), `${id}.map.json`);
@@ -92,7 +111,10 @@ export function compareVenue(venue) {
 
   // Sidecars live in the builder's venue data packages, one directory per
   // venue with recipe.json inside it (not <id>.recipe.json at the root).
-  if (!existsSync(path.join(venueDataDir(), id, 'recipe.json'))) {
+  const builder = await builderPaths();
+  if (!builder) {
+    stats.recipeCheck = 'skipped — builder not in this deployment';
+  } else if (!existsSync(path.join(builder.venueDataDir(), id, 'recipe.json'))) {
     issues.push('no recipe on disk — cannot rebuild');
     stats.ok = false;
   }
@@ -106,7 +128,7 @@ export function compareVenue(venue) {
 }
 
 export function compareAll() {
-  return readManifest().venues.map((v) => compareVenue(v));
+  return Promise.all(readManifest().venues.map((v) => compareVenue(v)));
 }
 
 export function summary(reports) {
