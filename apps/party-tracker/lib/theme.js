@@ -78,6 +78,7 @@ const DAY_TONES = new Set([
   'chalk-lot',
   'sunrise',
   'woodblock',
+  'pixel-tycoon',
   'block-park',
   'redline',
 ]);
@@ -122,6 +123,28 @@ const GENERATED = {
   }),
 };
 
+/* Reference-inspired map Skins carry their own district washes: the whole
+   point of the Skin is its plate of tones, so it wins even over venue-authored
+   lands (unlike every other Skin, which defers to them). */
+const REFERENCE_LAND_TONES = {
+  'layered-atlas': [
+    ['#A6D979', '#5D914F'],
+    ['#E5D84B', '#A39A2E'],
+    ['#E97A72', '#A84D4D'],
+    ['#55C8C1', '#2D8F8B'],
+    ['#7B94E8', '#4B5EA8'],
+    ['#C98CE0', '#86539B'],
+    ['#F2A24D', '#AD6E32'],
+  ],
+  'watercolor-quest': [
+    ['#D8E5CB', '#A2B89B'],
+    ['#EAD6E3', '#BCA2B6'],
+    ['#D8C9E9', '#A89ABB'],
+    ['#D9E0E8', '#A7B4C3'],
+    ['#E9DCC5', '#BDAF93'],
+  ],
+};
+
 /**
  * The fill, stroke and label colour for a named district under a theme.
  *
@@ -130,8 +153,25 @@ const GENERATED = {
  *   what a venue nobody has hand-tuned looks like and is fine.
  */
 export function landTint(name, theme, venue = null) {
+  const referenceTones = REFERENCE_LAND_TONES[theme];
+  if (referenceTones) {
+    const [fill, stroke] = referenceTones[hueOf(name || 'land') % referenceTones.length];
+    return {
+      fill,
+      stroke,
+      label: theme === 'layered-atlas' ? '#243B45' : '#57485C',
+    };
+  }
   const named = venue?.lands?.[theme] || venue?.lands?.night || venue?.lands?.day || null;
-  if (name && named && named[name]) return named[name];
+  if (name && named && named[name] && theme !== 'pixel-tycoon') return named[name];
+  if (theme === 'pixel-tycoon') {
+    const h = 95 + (hueOf(name || 'land') % 28);
+    return {
+      fill: `hsl(${h} 54% 40%)`,
+      stroke: `hsl(${h} 42% 30%)`,
+      label: '#2A2418',
+    };
+  }
   const band = theme === 'day' || DAY_TONES.has(theme) ? 'day' : 'night';
   const make = GENERATED[band] || GENERATED.night;
   return make(hueOf(name || 'land'));

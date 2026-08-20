@@ -46,6 +46,29 @@ await check('rct-classic resolves with its documented defaults', () => {
   return true;
 });
 
+await check('reference-skin recipes spread rct-classic with their own geometry', () => {
+  const frisco = resolveIsoMapTemplate('frisco-fields');
+  assert.equal(frisco.id, 'frisco-fields');
+  assert.equal(frisco.coasterBaseM, 2);
+  assert.equal(frisco.coasterHeightAmp, 6);
+  assert.equal(frisco.coasterStepM, 9);
+  assert.equal(frisco.buildingTrackPadM, 10, 'unset fields inherit rct-classic');
+  assert.equal(frisco.liftedTrackPadM, 8, 'unset fields inherit rct-classic');
+  const watercolor = resolveIsoMapTemplate('watercolor-quest');
+  assert.equal(watercolor.id, 'watercolor-quest');
+  assert.equal(watercolor.coasterBaseM, 4);
+  assert.equal(watercolor.coasterHeightAmp, 5);
+  assert.equal(watercolor.coasterStepM, 10);
+  assert.equal(watercolor.buildingTrackPadM, 8);
+  assert.equal(watercolor.liftedTrackPadM, 6);
+  for (const recipe of [frisco, watercolor]) {
+    assert.equal(typeof recipe.buildingHeightM, 'function');
+    assert.equal(ISO_MAP_TEMPLATES[recipe.id], recipe, 'registered under its own id');
+    assert.ok(Object.isFrozen(recipe));
+  }
+  return true;
+});
+
 await check('an object template overrides fields without losing the base recipe', () => {
   const recipe = resolveIsoMapTemplate({ id: 'sparse-demo', coasterStepM: 30 });
   assert.equal(recipe.id, 'sparse-demo');
