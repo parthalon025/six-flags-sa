@@ -8,11 +8,13 @@
  *   npm run start   # or npm run dev
  *   npm run readme:shots
  */
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
+import { recordCapture } from './lib/readme-shots.mjs';
 import {
   closeGate,
   dismissNavigation,
@@ -104,12 +106,43 @@ async function setSheet(page, stop) {
   }
 }
 
+/* Freshness manifest (#550): the harness is deterministic, so a recapture
+   after a pixel-neutral source change writes byte-identical PNGs that never
+   land in the branch diff — captured.json records the recapture out-of-band
+   (shot → the HEAD commit and time it was taken) so readme-shots-check can
+   see it. Written only for shots this run actually captured. */
+const CAPTURED_FILE = path.join(OUT, 'captured.json');
+const CAPTURED_COMMIT = (() => {
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: root,
+      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
+      env: scrubGitEnv(),
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    return null;
+  }
+})();
+
+function recordShot(name) {
+  const entries = fs.existsSync(CAPTURED_FILE)
+    ? JSON.parse(fs.readFileSync(CAPTURED_FILE, 'utf8'))
+    : {};
+  const next = recordCapture(entries, name, {
+    commit: CAPTURED_COMMIT,
+    capturedAt: new Date().toISOString(),
+  });
+  fs.writeFileSync(CAPTURED_FILE, `${JSON.stringify(next, null, 2)}\n`);
+}
+
 async function shot(page, name) {
   const file = path.join(OUT, name);
   await page.screenshot({ path: file, fullPage: false });
   const paths = await page.locator('svg.mapSvg path').count();
   console.log(`  ${name}  (${paths} map paths)`);
   if (paths < 200) throw new Error(`${name}: map not drawn (${paths} paths)`);
+  recordShot(name);
 }
 
 const FFMPEG_BIN = process.env.FFMPEG_BIN || 'ffmpeg';
