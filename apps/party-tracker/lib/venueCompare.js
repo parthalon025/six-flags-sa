@@ -1,8 +1,13 @@
 /**
- * Venue bundle comparison for the app admin API (no import.meta — safe for Next bundler).
+ * Venue bundle comparison for the app admin API (no import.meta of its own —
+ * safe for the Next bundler; the builder-data seam below handles bundling on
+ * its side of the boundary).
  */
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+// The builder's entry-point seam for its venue data packages (issue #475) —
+// never compose that path by hand from here.
+import { venueDataDir } from '@party-tracker/venue-builder/paths.js';
 
 function appRoot() {
   const cwd = process.cwd();
@@ -11,8 +16,6 @@ function appRoot() {
 }
 
 const VENUE_DIR = () => path.join(appRoot(), 'public', 'venues');
-const OVERRIDE_DIR = () =>
-  path.join(appRoot(), '..', '..', 'packages', 'venue-builder', 'data', 'venues');
 
 const hasHeights = (pois) => pois.some((p) => p.h);
 
@@ -87,9 +90,9 @@ export function compareVenue(venue) {
   tol(heights, expected.heights, 'height count', 2);
   tol(paths, venue.coverage?.ways, 'path count', 0);
 
-  // Sidecars live under packages/venue-builder/data/venues/<id>/recipe.json
-  // (not <id>.recipe.json at the venues root).
-  if (!existsSync(path.join(OVERRIDE_DIR(), id, 'recipe.json'))) {
+  // Sidecars live in the builder's venue data packages, one directory per
+  // venue with recipe.json inside it (not <id>.recipe.json at the root).
+  if (!existsSync(path.join(venueDataDir(), id, 'recipe.json'))) {
     issues.push('no recipe on disk — cannot rebuild');
     stats.ok = false;
   }
