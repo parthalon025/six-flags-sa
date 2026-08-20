@@ -7,11 +7,13 @@ import ProfileJourney from '@/components/ProfileJourney';
 import RankPrizeCatalog from '@/components/RankPrizeCatalog';
 import SignInCard from '@/components/SignInCard';
 import WorldCloset from '@/components/WorldCloset';
+import { creditGroups, creditsOverarchingNote } from '@/lib/credits';
 
 const TOPICS = [
   { id: 'you', label: 'You' },
   { id: 'map', label: 'Map' },
   { id: 'phone', label: 'Phone' },
+  { id: 'credits', label: 'Credits' },
   { id: 'more', label: 'More' },
 ];
 
@@ -63,8 +65,12 @@ export default function SettingsPanel({
   onEquipKit = null,
   onDropMark = null,
   onWatchCompass = null,
+  /** Jump straight to a topic (e.g. the on-map OSM notice opening Credits) —
+   * `{ topic, nonce }`, where `nonce` changes on every request so a repeat
+   * tap re-fires even if the panel is already mounted on that topic's tab. */
+  openTopic = null,
 }) {
-  const [topic, setTopic] = useState('you');
+  const [topic, setTopic] = useState(openTopic?.topic || 'you');
   const [helpOpen, setHelpOpen] = useState(false);
   const [armDiag, setArmDiag] = useState(false);
   useEffect(() => {
@@ -72,6 +78,10 @@ export default function SettingsPanel({
     const t = setTimeout(() => setArmDiag(false), 5000);
     return () => clearTimeout(t);
   }, [armDiag]);
+  useEffect(() => {
+    if (openTopic?.topic) setTopic(openTopic.topic);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openTopic?.nonce]);
 
   return (
     <div className="settingsPanel">
@@ -337,6 +347,38 @@ export default function SettingsPanel({
             pins for entrances and exits you can upload to help map real midways. The Home Screen app
             keeps the park map when the midway wifi dies — we only ask when you are not already running
             from the icon.
+          </p>
+        </>
+      )}
+
+      {topic === 'credits' && (
+        <>
+          <p className="fine">{creditsOverarchingNote()}</p>
+          {creditGroups().map((group) => (
+            <div key={group.role}>
+              <div className="label">{group.label}</div>
+              <div className="rowList">
+                {group.items.map((item) => (
+                  <a
+                    key={item.id}
+                    className="row"
+                    href={item.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="rowText">
+                      {item.name}
+                      {item.detail ? ` — ${item.detail}` : ''}
+                    </span>
+                    <span className="rowValue">{item.license}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+          <p className="fine block">
+            The map itself is drawn from OpenStreetMap geometry — see the “© OpenStreetMap
+            contributors” notice over the map, which opens back here.
           </p>
         </>
       )}
