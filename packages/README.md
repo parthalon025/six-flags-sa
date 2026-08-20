@@ -57,3 +57,5 @@ Public surface:
 `lib/` is implementation. `bin/` and `src/` are subfolders, so other packages must not import them — reach CLIs with `npm run venues:*`. `data/venues/<id>/` is builder **input** (hand-edit). The phone app must not import this package.
 
 Shipped venue JSON is builder **output** under `apps/party-tracker/public/venues/` plus generated `apps/party-tracker/lib/venueIndex.js` and App Store `fastlane/metadata/ios/routing_app_coverage.geojson`. Fix output at the source, then regenerate — see the builder ↔ app contract in `AGENTS.md`.
+
+Display-side tooling (what the Visual factory uses, and the trigger for adopting anything new) is registered in [docs/visual-factory-tools.md](../docs/visual-factory-tools.md).
