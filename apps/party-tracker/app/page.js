@@ -82,8 +82,10 @@ import {
   applyThanksToProgress,
   createProgress,
   emptyWorld,
+  grantShipSkins,
   mergeWorlds,
   recordSideQuest,
+  syncRankPrizes,
   visibleMarks,
   wearMap,
 } from '@/lib/world';
@@ -99,6 +101,13 @@ import {
   saveOverlay,
   unionOverlays,
 } from '@/lib/overlay';
+import {
+  categoriesForGate,
+  cyclePaletteMode,
+  fogMapStyle,
+  paletteToggleAria,
+  resolvePalette,
+} from '@/lib/mapVisual';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
 import { flushThanksQueue } from '@/lib/adventure/thanks';
@@ -426,7 +435,8 @@ function ParkApp({ isSignedIn }) {
      a frame or two behind. */
   const mapHeight = useDeferredValue(height);
   const [withAdult, setWithAdult] = useState(true);
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState(() => categoriesForGate());
+  const [paletteMode, setPaletteMode] = useState('auto');
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
@@ -461,11 +471,13 @@ function ParkApp({ isSignedIn }) {
     });
   }, []);
   const [focusPoint, setFocusPoint] = useState(null);
-  const [theme, setTheme] = useState('night');
   const [worldProgress, setWorldProgress] = useState(() => createProgress());
   const [acceptedOffer, setAcceptedOffer] = useState(null);
   const [parkWorld, setParkWorld] = useState(() => emptyWorld());
   const worldHydrated = useRef(false);
+  /* The demo-skins grant needs the venue id, but world hydration and the venue
+     fetch race — a ref reads whichever venue is loaded when hydration lands. */
+  const demoVenueRef = useRef(null);
   const [nav, setNav] = useState(null); // where we are walking to, by reference
   const [navPhase, setNavPhase] = useState('idle'); // idle -> preview -> go
   const [routesList, setRoutes] = useState([]); // the choice, best first
@@ -849,8 +861,9 @@ function ParkApp({ isSignedIn }) {
     setIdentity(next);
     if (saved?.height != null) setHeight(saved.height);
     // Follow the phone's own appearance setting until the visitor overrides it.
-    if (saved?.theme) setTheme(saved.theme);
-    else if (window.matchMedia?.('(prefers-color-scheme: light)').matches) setTheme('day');
+    if (saved?.paletteMode) setPaletteMode(saved.paletteMode);
+    else if (saved?.theme) setPaletteMode(saved.theme === 'day' ? 'day' : 'night');
+    else setPaletteMode('auto');
   }, []);
 
   useEffect(() => {
@@ -880,12 +893,17 @@ function ParkApp({ isSignedIn }) {
   useEffect(() => {
     if (!identity) return;
     identityRef.current = identity;
-    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height: mapHeight, theme }));
-  }, [identity, mapHeight, theme]);
+    localStorage.setItem(IDENTITY_KEY, JSON.stringify({ ...identity, height: mapHeight, paletteMode }));
+  }, [identity, mapHeight, paletteMode]);
 
   useEffect(() => {
     partyRef.current = party;
   }, [party]);
+
+  const theme = useMemo(
+    () => resolvePalette({ paletteMode, manualTheme: paletteMode, now: clock }),
+    [paletteMode, clock],
+  );
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -900,7 +918,11 @@ function ParkApp({ isSignedIn }) {
     loadWorld({ userId: authSession?.userId || null }).then((saved) => {
       if (cancelled) return;
       worldHydrated.current = true;
-      setWorldProgress(saved.progress);
+      let prog = saved.progress;
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('parkbound-demo-skins') === '1') {
+        prog = grantShipSkins(prog, { venueId: demoVenueRef.current });
+      }
+      setWorldProgress(prog);
       setAcceptedOffer(saved.acceptedOffer);
     });
     return () => {
@@ -1281,6 +1303,11 @@ function ParkApp({ isSignedIn }) {
     [mergedWorld, party?.partyId],
   );
 
+  const mapFogFilter = useMemo(
+    () => fogMapStyle(worldProgress, venue?.id),
+    [worldProgress, venue?.id],
+  );
+
   useEffect(() => {
     applyMapSkin(document.documentElement, mapWear);
   }, [mapWear]);
@@ -1373,7 +1400,7 @@ function ParkApp({ isSignedIn }) {
   );
 
   const recordWorldQuest = useCallback(
-    ({ quest, report }) => {
+    ({ quest, report, rankUp = null }) => {
       const { progress: next, marks } = recordSideQuest(
         { ...worldProgress, userId: authSession?.userId || worldProgress.userId },
         {
@@ -1388,7 +1415,9 @@ function ParkApp({ isSignedIn }) {
           venuePlaceCount: POIS?.length || null,
         },
       );
-      setWorldProgress(next);
+      // Rank prizes ride the same seam: syncing through the new rank also
+      // backfills any earlier rank whose grant this phone never saw.
+      setWorldProgress(rankUp ? syncRankPrizes(next, rankUp) : next);
       for (const mark of marks) publishMark(mark);
     },
     [worldProgress, authSession?.userId, venue?.id, venue?.kind, party?.partyId, POIS, publishMark],
@@ -1901,6 +1930,18 @@ function ParkApp({ isSignedIn }) {
      about what is out there, so all three are answered from the venue rather
      than from the vocabulary. */
   const presentCategories = useMemo(() => new Set(POIS.map((p) => p.c)), [POIS]);
+
+  useEffect(() => {
+    if (!venue?.id) return;
+    setCategories(categoriesForGate({ roster, presentCategories }));
+  }, [venue?.id, roster, presentCategories]);
+
+  useEffect(() => {
+    demoVenueRef.current = venue?.id || null;
+    if (typeof localStorage === 'undefined' || localStorage.getItem('parkbound-demo-skins') !== '1') return;
+    if (!venue?.id) return;
+    setWorldProgress((p) => grantShipSkins(p, { venueId: venue.id }));
+  }, [venue?.id]);
 
   const rideableCount = useMemo(() => {
     if (!eligibilityPeople.length) return null;
@@ -2617,6 +2658,8 @@ function ParkApp({ isSignedIn }) {
           selfKit={worldProgress.kit || selfMember?.kit || null}
           onThankMark={thankAMark}
           overlayPins={overlayPins}
+          planNextPlaceId={walking ? null : planNextPlace?.placeId}
+          fogFilter={mapFogFilter}
         />
       )}
 
@@ -2642,8 +2685,8 @@ function ParkApp({ isSignedIn }) {
           <button
             type="button"
             className="iconBtn"
-            onClick={() => setTheme((t) => (t === 'day' ? 'night' : 'day'))}
-            aria-label={theme === 'day' ? 'Switch to night map' : 'Switch to daylight map'}
+            onClick={() => setPaletteMode((m) => cyclePaletteMode(m))}
+            aria-label={paletteToggleAria(paletteMode, theme)}
           >
             <Icon name={theme === 'day' ? 'moon.fill' : 'sun.max.fill'} />
           </button>
@@ -3263,8 +3306,8 @@ function ParkApp({ isSignedIn }) {
                 onNameCommit={(v) => runtime.current?.setMemberName(v.trim() || 'Guest')}
                 position={position}
                 onLocationSettings={() => setGateOpen(true)}
-                theme={theme}
-                onTheme={setTheme}
+                paletteMode={paletteMode}
+                onPaletteMode={setPaletteMode}
                 categoryCount={[...categories].filter((c) => presentCategories.has(c)).length}
                 categoryTotal={Object.keys(CATEGORIES).filter((c) => presentCategories.has(c)).length}
                 venueName={venue?.name}
@@ -3299,6 +3342,7 @@ function ParkApp({ isSignedIn }) {
                     });
                   }
                 }}
+                profileXp={authSession?.xp ?? 0}
                 worldProgress={worldProgress}
                 world={mergedWorld}
                 acceptedOffer={acceptedOffer}

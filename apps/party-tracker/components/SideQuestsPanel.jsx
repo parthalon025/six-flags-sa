@@ -23,7 +23,8 @@ import {
 import { findPlace, titleOf } from '@/lib/venue/ids';
 import { withinBounds } from '@/lib/venue/store';
 import { createReport, defaultQuestQueue } from '@/lib/adventure/questQueue';
-import { pathScoreCell, rankReward, scoreKey, titleFromXp } from '@party-tracker/shared/questScore.js';
+import { pathScoreCell, scoreKey, titleFromXp } from '@party-tracker/shared/questScore.js';
+import { rankUpRewardLine } from '@party-tracker/shared/rankPrizes.js';
 import { completionLine, contributionFromGapSubmit } from '@/lib/overlay';
 
 /**
@@ -348,7 +349,7 @@ export default function SideQuestsPanel({
       }));
     }
     if (scored.rankUp) {
-      const title = rankReward(scored.profile.rank).title;
+      const title = rankUpRewardLine(scored.profile.rank);
       if (title) setReward({ kind: 'rankUp', rankUp: true, title, deltaXp: scored.deltaXp });
     } else if (scored.deltaXp > 0) {
       setReward({ kind: 'xp', deltaXp: scored.deltaXp, dailyBonus: scored.dailyBonus });
@@ -359,7 +360,7 @@ export default function SideQuestsPanel({
     }
     const nextSession = readLocalSession();
     if (nextSession) onSession?.(nextSession);
-    onWorldProgress?.({ quest, report });
+    onWorldProgress?.({ quest, report, rankUp: scored.rankUp ? scored.profile.rank : null });
     setOpenQuestId(null);
     setLastSubmittedId(report.id);
   }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import InstallCard from '@/components/InstallCard';
 import BrandMark from '@/components/BrandMark';
 import ProfileJourney from '@/components/ProfileJourney';
+import RankPrizeCatalog from '@/components/RankPrizeCatalog';
 import SignInCard from '@/components/SignInCard';
 import WorldCloset from '@/components/WorldCloset';
 
@@ -25,8 +26,8 @@ export default function SettingsPanel({
   onNameCommit,
   position,
   onLocationSettings,
-  theme,
-  onTheme,
+  paletteMode = 'auto',
+  onPaletteMode = null,
   categoryCount,
   categoryTotal,
   venueName,
@@ -48,6 +49,7 @@ export default function SettingsPanel({
   movementPending = 0,
   session = null,
   onSession = null,
+  profileXp = 0,
   worldProgress = null,
   world = null,
   acceptedOffer = null,
@@ -135,6 +137,8 @@ export default function SettingsPanel({
           <SignInCard session={session} onSession={onSession} />
 
           <ProfileJourney session={session} />
+
+          <RankPrizeCatalog xp={profileXp} />
         </>
       )}
 
@@ -143,24 +147,24 @@ export default function SettingsPanel({
           <div className="label">Map Appearance</div>
           <div className="segmented" role="group" aria-label="Map appearance">
             {[
+              ['auto', 'Auto'],
               ['day', 'Light'],
               ['night', 'Dark'],
             ].map(([key, labelText]) => (
               <button
                 key={key}
                 type="button"
-                className={`tab ${theme === key ? 'on' : ''}`}
-                aria-pressed={theme === key}
-                onClick={() => onTheme(key)}
+                className={`tab ${paletteMode === key ? 'on' : ''}`}
+                aria-pressed={paletteMode === key}
+                onClick={() => onPaletteMode?.(key)}
               >
                 {labelText}
               </button>
             ))}
           </div>
           <p className="fine">
-            Light is the one to use outdoors — white midways on pale ground, dark type, and
-            deeper marker colours that survive direct sun. Dark is easier on the eyes once the
-            park lights come on. Skins below restyle the map; they do not replace Light and Dark chrome.
+            Auto follows local sunset (Trail by day, Park Midnight after dark). Light is best outdoors;
+            Dark is easier once park lights come on. Skins below restyle the map paint.
           </p>
 
           <WorldCloset

@@ -6,6 +6,8 @@
  * here touches the DOM, storage, or the mesh.
  */
 
+import { rankPrizesForRank } from '@party-tracker/shared/rankPrizes.js';
+
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const FADE_DIM_MS = 7 * DAY_MS;
 export const FADE_GONE_MS = 28 * DAY_MS;
@@ -130,7 +132,8 @@ export const SKINS = {
     label: 'Marquee',
     unlock: { nightQuests: 5 },
     share: { nightQuests: 20 },
-    paint: paint('#FF6B9A', '#120818', '#1A2050', '#1A1028', '#2A1840', '#FFE8F0'),
+    paint: paint('#FF6B9A', '#0A0614', '#1A2050', '#120818', '#2A1840', '#FFE8F0'),
+    traits: { neon: true },
   },
   haunt: {
     id: 'haunt',
@@ -161,6 +164,7 @@ export const SKINS = {
     unlock: { deviceLessHeight: true, heightQuests: 1 },
     share: { heightQuests: 5 },
     paint: paint('#FF6B6B', '#FFF5D6', '#7EC8FF', '#B8F0A0', '#FFE0A0', '#3A2060'),
+    traits: { markerBoost: true },
   },
   'sticker-book': {
     id: 'sticker-book',
@@ -218,7 +222,52 @@ export const SKINS = {
     label: 'Pixel tycoon',
     unlock: { fogPct: 25 },
     share: { fogPct: 100 },
-    paint: paint('#5A8A3A', '#3A5A20', '#3A6A8A', '#4A7A28', '#6A5A3A', '#E8F0C8'),
+    /* RCT Classic: lush grass, grey stone paths, tan stalls, terracotta roofs. */
+    paint: {
+      ...paint('#C8C8C0', '#4FA83A', '#3AA8D0', '#6BC04A', '#E8C878', '#2A2418'),
+      wood: '#2E7A28',
+      groundEdge: '#3A8A28',
+      midway: '#C8C8C0',
+      midwayCase: '#8A8A80',
+      structure: '#E8C878',
+      structureEdge: '#C45C38',
+      lot: '#A8A090',
+      lotEdge: '#787060',
+      backOfHouse: '#C4B898',
+    },
+    traits: { pixel: true },
+  },
+  /* Reference-inspired map Skins — hexes ledgered in the builder's display
+     skins.json (harvested from PR #447); map-visual.test.mjs asserts parity. */
+  'layered-atlas': {
+    id: 'layered-atlas',
+    label: 'Layered atlas',
+    unlock: { fogPct: 25 },
+    share: { fogPct: 100 },
+    paint: {
+      ...paint('#3F6570', '#C9D6C0', '#5CA8B3', '#A7C58E', '#C9B58D', '#243B45'),
+      midway: '#3F6570',
+      midwayCase: '#C9D6C0',
+      structure: '#C9B58D',
+      structureEdge: '#7A6655',
+      groundEdge: '#6E8975',
+    },
+    traits: { mapSkin: 'layered-atlas', mapStyle: 'analytical' },
+  },
+  'watercolor-quest': {
+    id: 'watercolor-quest',
+    label: 'Watercolor quest',
+    unlock: { fogPct: 25 },
+    share: { fogPct: 100 },
+    paint: {
+      ...paint('#756276', '#F4EFDF', '#8FB5C2', '#D9D0B5', '#B8A68D', '#57485C'),
+      midway: '#756276',
+      midwayCase: '#F4EFDF',
+      structure: '#B8A68D',
+      structureEdge: '#756276',
+      groundEdge: '#C9BFAE',
+    },
+    traits: { mapSkin: 'watercolor-quest', mapStyle: 'watercolor' },
   },
   'block-park': {
     id: 'block-park',
@@ -287,6 +336,8 @@ export function createProgress({ userId = null } = {}) {
     userId: userId || null,
     wearSkin: null,
     kit: null,
+    fogMapEnabled: false,
+    rankPrizesGranted: [],
     meters: {
       contributions: 0,
       venues: [],
@@ -656,11 +707,114 @@ export function kitForViewer({ kit, viewerInParty }) {
 }
 
 export function mapPaint(id) {
-  if (id === 'day') return { id: 'day', label: 'Trail (light)', ...DAY_PAINT };
-  if (id === 'night') return { id: 'night', label: 'Park Midnight (dark)', ...NIGHT_PAINT };
+  if (id === 'day') return { id: 'day', label: 'Trail (light)', traits: {}, ...DAY_PAINT };
+  if (id === 'night') return { id: 'night', label: 'Park Midnight (dark)', traits: {}, ...NIGHT_PAINT };
   const skin = SKINS[id];
-  if (!skin) return { id: 'night', label: 'Park Midnight (dark)', ...NIGHT_PAINT };
-  return { id: skin.id, label: skin.label, ...skin.paint };
+  if (!skin) return { id: 'night', label: 'Park Midnight (dark)', traits: {}, ...NIGHT_PAINT };
+  return { id: skin.id, label: skin.label, traits: skin.traits || {}, ...skin.paint };
+}
+
+/** Demo / store capture — unlock ship-polish Skins without farming. */
+export function grantShipSkins(progress, { venueId = null, now = Date.now() } = {}) {
+  const meters = { ...progress.meters };
+  meters.contributions = Math.max(meters.contributions || 0, 3);
+  meters.venues = [...new Set([...(meters.venues || []), 'demo-a', 'demo-b', 'demo-c'])];
+  meters.nightQuests = Math.max(meters.nightQuests || 0, 20);
+  meters.deviceLessHeight = true;
+  meters.heightQuests = Math.max(meters.heightQuests || 0, 5);
+  if (venueId) {
+    const fog = meters.fogByVenue?.[venueId] || [];
+    meters.fogByVenue = {
+      ...(meters.fogByVenue || {}),
+      [venueId]: fog.length >= 4 ? fog : ['fog-0', 'fog-1', 'fog-2', 'fog-3'],
+    };
+    meters.venuePlaceCount = {
+      ...(meters.venuePlaceCount || {}),
+      [venueId]: Math.max(meters.venuePlaceCount?.[venueId] || 0, 16),
+    };
+  }
+  return {
+    ...progress,
+    wearSkin: progress.wearSkin || 'postcard',
+    meters,
+  };
+}
+
+/** Bump meters so a Skin's unlock rule is satisfied (Rank ex-prize grants). */
+function meterFloorForSkinUnlock(meters, rule = {}) {
+  const m = { ...meters };
+  if (rule.contributions) m.contributions = Math.max(m.contributions || 0, rule.contributions);
+  if (rule.venues) {
+    const need = rule.venues;
+    const venues = [...(m.venues || [])];
+    while (venues.length < need) venues.push(`rank-venue-${venues.length}`);
+    m.venues = venues;
+  }
+  if (rule.venueGaps) {
+    m.gapByVenue = { ...(m.gapByVenue || {}) };
+    const key = 'rank-grant';
+    m.gapByVenue[key] = Math.max(m.gapByVenue[key] || 0, rule.venueGaps);
+  }
+  if (rule.pathGaps) m.pathGaps = Math.max(m.pathGaps || 0, rule.pathGaps);
+  if (rule.heightQuests) m.heightQuests = Math.max(m.heightQuests || 0, rule.heightQuests);
+  if (rule.nightQuests) m.nightQuests = Math.max(m.nightQuests || 0, rule.nightQuests);
+  if (rule.fogPct) {
+    m.fogByVenue = { ...(m.fogByVenue || {}) };
+    const key = 'rank-grant';
+    const places = m.fogByVenue[key] || [];
+    const need = Math.max(4, Math.ceil((rule.fogPct / 100) * 16));
+    if (places.length < need) {
+      m.fogByVenue[key] = Array.from({ length: need }, (_, i) => `fog-${i}`);
+    }
+    m.venuePlaceCount = { ...(m.venuePlaceCount || {}), [key]: Math.max(m.venuePlaceCount?.[key] || 0, 16) };
+  }
+  return m;
+}
+
+/**
+ * Grant Rank prizes (Skins / Kits) once per Profile rank.
+ * @param {object} progress world progress snapshot
+ * @param {string} rank scout | ranger | cartographer | steward
+ */
+export function grantRankPrizes(progress, rank) {
+  if (!rank || rank === 'visitor') return progress;
+  const granted = new Set(progress.rankPrizesGranted || []);
+  if (granted.has(rank)) return progress;
+  const prizes = rankPrizesForRank(rank);
+  if (!prizes.length) {
+    return { ...progress, rankPrizesGranted: [...granted, rank] };
+  }
+  let next = {
+    ...progress,
+    rankPrizesGranted: [...granted, rank],
+    meters: { ...(progress.meters || {}) },
+  };
+  for (const prize of prizes) {
+    if (prize.kind === 'kit' && prize.id && !next.kit) {
+      next = { ...next, kit: prize.id };
+    }
+    if (prize.kind === 'skin' && prize.id) {
+      const skin = SKINS[prize.id];
+      if (skin?.unlock) {
+        next = { ...next, meters: meterFloorForSkinUnlock(next.meters, skin.unlock) };
+      }
+      if (!next.wearSkin) next = { ...next, wearSkin: prize.id };
+    }
+  }
+  return next;
+}
+
+const RANK_PRIZE_ORDER = ['scout', 'ranger', 'cartographer', 'steward'];
+
+/** Grant every Rank prize through `rank` (backfill on sign-in). */
+export function syncRankPrizes(progress, rank) {
+  const i = RANK_PRIZE_ORDER.indexOf(rank);
+  if (i < 0) return progress;
+  let next = progress;
+  for (let j = 0; j <= i; j += 1) {
+    next = grantRankPrizes(next, RANK_PRIZE_ORDER[j]);
+  }
+  return next;
 }
 
 export function mapThemeCssVars(pack) {
@@ -696,9 +850,17 @@ export function mapThemeCssVars(pack) {
 
 export function applyMapSkin(el, skinId) {
   if (!el?.style) return;
-  const vars = mapThemeCssVars(mapPaint(skinId));
+  const pack = mapPaint(skinId);
+  const vars = mapThemeCssVars(pack);
   for (const [k, v] of Object.entries(vars)) el.style.setProperty(k, v);
-  if (el.dataset) el.dataset.skin = skinId;
+  if (el.dataset) {
+    el.dataset.skin = skinId;
+    el.dataset.skinPixel = pack.traits?.pixel ? '1' : '';
+    el.dataset.skinNeon = pack.traits?.neon ? '1' : '';
+    el.dataset.skinJunior = pack.traits?.markerBoost ? '1' : '';
+    el.dataset.skinMap = pack.traits?.mapSkin || '';
+    el.dataset.skinMapStyle = pack.traits?.mapStyle || '';
+  }
 }
 
 export function applyThanksToProgress(progress, world, authorId) {

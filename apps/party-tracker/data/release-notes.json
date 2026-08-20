@@ -384,5 +384,11 @@
     "items": [
       "feat(ci): automation/docs train — GitNexus blast-radius in CI, hardened profile:max-rank, glossary CONTEXT.md, bump-version shell fix (#555)"
     ]
+  },
+  "1.22.0": {
+    "title": "What's new",
+    "items": [
+      "feat: app/iso train — rotation-safe culling, iso custom maps on shared isoWorld, layered-atlas & watercolor-quest Skins, rank prizes (#556)"
+    ]
   }
 }
