@@ -131,6 +131,9 @@ export const getSnapshot = () => snapshot;
 
 /* --------------------------------------------------------------- overlay - */
 
+/** An Overlay with no drawn facts. Painting one is the identity function. */
+const paintsNothing = (o) => !o || !Object.keys(o.drawn || {}).length;
+
 /**
  * Hand the store the Overlay this phone should be drawing, and repaint Places.
  *
@@ -142,15 +145,30 @@ export const getSnapshot = () => snapshot;
  * un-testable in bare node. So the app composes and pushes the answer down;
  * the store owns the once-only paint.
  *
- * Identity, not deep equality, decides whether anything changed: the caller
- * derives the display Overlay with a memo, so an unchanged Overlay arrives as
- * the same object. Emitting anyway would hand every subscriber a fresh `pois`
- * array on every party heartbeat and re-render the map for nothing.
+ * Two guards, both about not republishing Places that would come out the same.
+ *
+ * Identity first: the caller derives the display Overlay with a memo, so an
+ * unchanged Overlay arrives as the same object. Emitting anyway would hand
+ * every subscriber a fresh `pois` array on every party heartbeat and re-render
+ * the map for nothing.
+ *
+ * Then blankness, which is not a micro-optimisation — it is what keeps the app
+ * hydratable. A phone with no Contributions still pushes an Overlay on mount,
+ * and `emptyOverlay()` is a fresh object every time, so identity never catches
+ * it. Repainting on that push swaps `state.pois` for an array with the same
+ * contents and a new identity, and the emit lands while React is still
+ * hydrating the tree that read the old one: React gives up on the server HTML
+ * and regenerates the whole page (hydration error #418, three phones in the
+ * functional suite). Painting nothing over nothing cannot change a Place, so
+ * the store says nothing. Going blank → drawn, or drawn → blank (a Member
+ * leaves a Party and the Host's Contributions go with them), both repaint.
  */
 export function setOverlay(next) {
   const composed = next || emptyOverlay();
   if (composed === overlay) return;
+  const wasBlank = paintsNothing(overlay);
   overlay = composed;
+  if (wasBlank && paintsNothing(composed)) return;
   repaint();
   emit();
 }

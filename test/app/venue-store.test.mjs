@@ -172,6 +172,31 @@ await check('the latest Contribution per Place wins, through the store', async (
   assert.equal(orion().h.min, 36);
 });
 
+await check('a blank Overlay over a blank one publishes nothing', async () => {
+  /* The guard that keeps the app hydratable: a phone with no Contributions
+     still pushes an Overlay on mount, emptyOverlay() is a fresh object every
+     time, and republishing Places with the same contents and a new identity
+     mid-hydration makes React throw away the server HTML. */
+  setOverlay(emptyOverlay());
+  const before = places();
+  let emitted = 0;
+  const off = subscribe(() => { emitted += 1; });
+  setOverlay(emptyOverlay());
+  off();
+  assert.equal(emitted, 0);
+  assert.equal(places(), before, 'the Places array keeps its identity');
+});
+
+await check('going blank after a Contribution does repaint', async () => {
+  setOverlay(heightOverlay(50, 'c9', 9000));
+  assert.equal(orion().h.min, 50);
+  /* A Member leaves a Party and the Host's Contributions go with them. The
+     shipped rule has to come back, so blankness must not be a dead end. */
+  setOverlay(emptyOverlay());
+  assert.equal(orion().h.min, 48);
+  assert.equal(orion().overlay, undefined);
+});
+
 await check('an unchanged Overlay does not repaint', async () => {
   const overlay = heightOverlay(36, 'c3', 3000);
   setOverlay(overlay);
