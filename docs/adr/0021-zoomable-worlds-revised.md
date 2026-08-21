@@ -157,5 +157,15 @@ Recorded so the next session does not mistake silence for agreement:
   real device joins the gate, or what a drain budget would be. The fate of the zero-blank-tiles
   row (see Consequences) belongs to this same question.
 - **Train I.** Only clauses 8 and 9 above touch it. The evidence lane, the steward review budget,
-  the `GOOGLE_MAPS_API` key's exposure through public workflow triggers, Mapillary's share-alike
-  reach into derived venue data, and the OSM write-back path are all un-reviewed.
+  Mapillary's share-alike reach into derived venue data, and the OSM write-back path are all
+  un-reviewed.
+
+  *Corrected 2026-08-21:* this list originally named "the `GOOGLE_MAPS_API` key's exposure through
+  public workflow triggers" as an open risk. Checked, and it was overstated on both counts. The key
+  is not referenced by any workflow or any code in the repo — it exists only as a stored secret. And
+  no workflow uses `pull_request_target`, the one trigger that hands secrets to a fork's pull
+  request; `build-venue.yml` is `workflow_dispatch`, which requires write access, so it is not
+  public-triggerable. When Train I does wire the key, the guard to keep is that rule: no
+  `pull_request_target`, and the corroboration step reachable only from triggers that already
+  require write access. The call-budget guard in ADR-0020 clause 7 remains worthwhile as defence in
+  depth, not as the only defence.
