@@ -13,7 +13,7 @@
 
 import { registerHooks } from 'node:module';
 import { existsSync } from 'node:fs';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 const APP_ROOT = new URL('../../../apps/party-tracker/', import.meta.url);
 
@@ -35,5 +35,3 @@ export function installAppAlias() {
     },
   });
 }
-
-export const appModule = (rest) => pathToFileURL(fileURLToPath(new URL(rest, APP_ROOT))).href;

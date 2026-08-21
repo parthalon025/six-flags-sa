@@ -42,9 +42,6 @@ export function createBus() {
     attach(id, service) {
       peers.set(id, service);
     },
-    detach(id) {
-      peers.delete(id);
-    },
     /** This peer neither sends nor receives — a phone in a locker. */
     partition(id) {
       offline.add(id);
@@ -52,7 +49,6 @@ export function createBus() {
     heal(id) {
       offline.delete(id);
     },
-    isPartitioned: (id) => offline.has(id),
 
     /**
      * The transport facade hostService and client are handed. Mirrors the
@@ -138,8 +134,6 @@ export function captureTimers() {
   globalThis.clearTimeout = (id) => timeouts.delete(id);
 
   return {
-    intervals,
-    timeouts,
     /** Run every live interval callback once, as one wall-clock tick would. */
     tick() {
       for (const { fn } of [...intervals.values()]) fn();
@@ -147,6 +141,5 @@ export function captureTimers() {
     restore() {
       Object.assign(globalThis, real);
     },
-    real,
   };
 }
