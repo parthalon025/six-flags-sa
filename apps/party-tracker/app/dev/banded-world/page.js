@@ -12,12 +12,38 @@ import {
   bandedWorldPreviewEnabled,
 } from '@/lib/bandedWorldPreview';
 
+/* Inline rather than globals.css — see the note in BandedWorldMap.jsx. */
+const S = {
+  page: { position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#0d1b22' },
+  bar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '0.5rem 0.75rem',
+    background: '#10242d',
+    color: '#e8f1f2',
+    font: '500 0.85rem/1.2 system-ui, sans-serif',
+  },
+  venue: { opacity: 0.7 },
+  skins: { display: 'flex', gap: '0.35rem', marginLeft: 'auto' },
+  skin: (on) => ({
+    padding: '0.3rem 0.6rem',
+    border: '1px solid #2b4c58',
+    borderRadius: '999px',
+    background: on ? '#2b4c58' : 'transparent',
+    color: 'inherit',
+    font: 'inherit',
+    cursor: 'pointer',
+  }),
+  off: { margin: '2rem', padding: '0.6rem 0.8rem', borderRadius: '0.5rem', background: '#10242d', color: '#cfe3e8', font: '500 0.8rem/1.4 system-ui, sans-serif' },
+};
+
 export default function BandedWorldPreviewPage() {
   const [skin, setSkin] = useState(PREVIEW_SKINS[0]);
 
   if (!bandedWorldPreviewEnabled()) {
     return (
-      <main className="bandedWorldOff" data-testid="banded-world-disabled">
+      <main style={S.off} data-testid="banded-world-disabled">
         <p>
           Banded world preview is off. Set <code>NEXT_PUBLIC_BANDED_WORLD_PREVIEW=1</code> and
           restart to enable it.
@@ -27,16 +53,17 @@ export default function BandedWorldPreviewPage() {
   }
 
   return (
-    <main className="bandedWorldPage">
-      <header className="bandedWorldBar">
-        <span className="bandedWorldVenue">{PREVIEW_VENUE}</span>
-        <div className="bandedWorldSkins" role="group" aria-label="Skin">
+    <main style={S.page}>
+      <header style={S.bar}>
+        <span style={S.venue}>{PREVIEW_VENUE}</span>
+        <div style={S.skins} role="group" aria-label="Skin">
           {PREVIEW_SKINS.map((id) => (
             <button
               key={id}
               type="button"
               onClick={() => setSkin(id)}
               aria-pressed={skin === id}
+              style={S.skin(skin === id)}
               data-testid={`skin-${id}`}
             >
               {id}

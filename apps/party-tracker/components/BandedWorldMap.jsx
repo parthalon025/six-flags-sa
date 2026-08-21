@@ -19,6 +19,41 @@ import { pitchEaseRange, pitchForZoom } from '@party-tracker/shared/mapCamera.js
 import { previewWorldPaths } from '@/lib/bandedWorldPreview';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+/* Inline, not globals.css: this preview is dev-only behind a flag, and
+   globals.css is a watched path for the README map shots — appending to it
+   stales map-day.png and map-night.png for a change that cannot affect the
+   shipped map. Inline style objects are the established pattern here
+   (DisplayMap.jsx, GlanceRail.jsx). */
+const S = {
+  wrap: { position: 'relative', flex: 1 },
+  canvas: { position: 'absolute', inset: 0 },
+  hud: {
+    position: 'absolute',
+    left: '0.75rem',
+    bottom: '0.75rem',
+    margin: 0,
+    padding: '0.5rem 0.7rem',
+    borderRadius: '0.5rem',
+    background: 'rgba(6, 18, 24, 0.82)',
+    color: '#cfe3e8',
+    font: '500 0.75rem/1.5 ui-monospace, monospace',
+  },
+  row: { display: 'flex', gap: '0.5rem' },
+  term: { opacity: 0.6, minWidth: '4.5rem' },
+  def: { margin: 0 },
+  error: {
+    position: 'absolute',
+    right: '0.75rem',
+    bottom: '0.75rem',
+    left: '0.75rem',
+    padding: '0.6rem 0.8rem',
+    borderRadius: '0.5rem',
+    background: '#5b1a1a',
+    color: '#ffe8e8',
+    font: '500 0.8rem/1.4 system-ui, sans-serif',
+  },
+};
+
 function worldStyle(sidecar, imageUrl) {
   const { west, south, east, north } = sidecar.bounds;
   return {
@@ -119,25 +154,25 @@ export default function BandedWorldMap({ skin, onReady = null }) {
   }, [skin]);
 
   return (
-    <div className="bandedWorldWrap" data-testid="banded-world-map">
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+    <div style={S.wrap} data-testid="banded-world-map">
+      <div ref={containerRef} style={S.canvas} />
       {hud && (
-        <dl className="bandedWorldHud" data-testid="banded-world-hud">
-          <div><dt>zoom</dt><dd data-testid="hud-zoom">{hud.zoom.toFixed(2)}</dd></div>
-          <div><dt>band</dt><dd data-testid="hud-band">{hud.band}</dd></div>
-          <div><dt>pitch</dt><dd data-testid="hud-pitch">{hud.pitch.toFixed(1)}&deg;</dd></div>
-          <div>
-            <dt>ease</dt>
-            <dd>{hud.easeRange.startZoom.toFixed(2)}&ndash;{hud.easeRange.endZoom.toFixed(2)}</dd>
+        <dl style={S.hud} data-testid="banded-world-hud">
+          <div style={S.row}><dt style={S.term}>zoom</dt><dd style={S.def} data-testid="hud-zoom">{hud.zoom.toFixed(2)}</dd></div>
+          <div style={S.row}><dt style={S.term}>band</dt><dd style={S.def} data-testid="hud-band">{hud.band}</dd></div>
+          <div style={S.row}><dt style={S.term}>pitch</dt><dd style={S.def} data-testid="hud-pitch">{hud.pitch.toFixed(1)}&deg;</dd></div>
+          <div style={S.row}>
+            <dt style={S.term}>ease</dt>
+            <dd style={S.def}>{hud.easeRange.startZoom.toFixed(2)}&ndash;{hud.easeRange.endZoom.toFixed(2)}</dd>
           </div>
-          <div>
-            <dt>handoffs</dt>
-            <dd>{hud.boundaries.map((b) => b.toFixed(2)).join(', ')}</dd>
+          <div style={S.row}>
+            <dt style={S.term}>handoffs</dt>
+            <dd style={S.def}>{hud.boundaries.map((b) => b.toFixed(2)).join(', ')}</dd>
           </div>
         </dl>
       )}
       {error && (
-        <div className="bandedWorldError" role="alert" data-testid="banded-world-error">
+        <div style={S.error} role="alert" data-testid="banded-world-error">
           Baked world unavailable: {error}
         </div>
       )}
