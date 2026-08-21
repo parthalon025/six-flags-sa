@@ -871,6 +871,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* Selected, on a row that is a choice rather than a link: the equipped Kit,
    the worn Skin, the Mark standing at this spot. Same ink .chip.on takes. */
 .row.on { background: var(--fill3); }
+/* A row that happens to be an anchor is still a row. Privacy and World
+   inspection were rendering as underlined blue browser links inside a card of
+   rows that all look the same in the design — the only two rows in Settings
+   that announced they were a different kind of thing, for no reason a guest
+   could act on. */
+a.row { color: inherit; text-decoration: none; }
+a.row .rowText, a.row .rowValue { text-decoration: none; }
 .row[aria-disabled='true'] { opacity: .55; }
 .rowText { flex: 1; min-width: 0; font-size: 17px; letter-spacing: -.4px; }
 /* What a row is for, under what it is called. Caption 1 — the same size and
@@ -1776,8 +1783,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    one is also drawn quiet — a --bg2 card edged in --sep with --label ink,
    rather than a second accent-coloured button beside the primary. */
 .partyActions { gap: 9px; }
-.partyActions .btn { white-space: nowrap; }
-.partyActions .btn.primary { flex: 1 1 auto; padding: 13px 10px; }
+/* 15px, the design's size for this pair. At the .btn default of 17px the two
+   labels wanted 372px of a 358px row and the second one hung off the edge. */
+.partyActions .btn { white-space: nowrap; font-size: 15px; letter-spacing: -.24px; }
+.partyActions .btn.primary { flex: 1 1 auto; padding: 13px 10px; font-weight: 700; }
 .partyActions .btn:not(.primary) {
   flex: 0 0 auto; padding: 13px 16px;
   background: var(--bg2); border: 1px solid var(--sep); color: var(--label);
@@ -1826,6 +1835,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* The design's 16 above the adult toggle and 6 below: it belongs to the tally
    it changes, not to the footnote under it. */
 .adultChip { margin: 16px 0 6px; padding-bottom: 0; }
+
+/* ---- the quiet pill ----
+   The design's shape for a small correction that is not the point of the
+   screen: an outlined capsule on the sheet's own ground, not a filled tray the
+   width of the panel. Collection draws "Offer to Party" this way; Plan's
+   "Clear plan" is the same kind of thing and now says so. */
+.pillGhost {
+  padding: 6px 12px; border-radius: 999px;
+  border: 1px solid var(--sep); background: none; color: var(--label);
+  font-size: 12.5px; font-weight: 600; letter-spacing: -.08px; white-space: nowrap;
+  transition: opacity var(--t1) var(--easeOut);
+}
+.pillGhost:active { opacity: .55; }
+.planClearRow { display: flex; margin: 10px 2px 0; }
 
 /* ============================================================
    lists — iOS inset-grouped rows
@@ -3754,15 +3777,17 @@ p.wxWhy.warn { color: var(--orange); }
    a number you hit by accident. So the row scrolls instead of dividing, and
    each tier gets the width its digits need. Same masked overflow as .chips, so
    the cut edge reads as "there is more" rather than as a clipped layout. */
+/* The design draws the tiers as one full-width row with nothing off-screen.
+   This venue publishes nine common heights where the design assumed five, so
+   they wrap onto two rows rather than scroll: scrolling put 36, 38 and 40 —
+   the three a parent of a small child actually reaches for — off the left edge
+   the moment a taller tier was picked, which is the one thing this row exists
+   to prevent. Five to a row, so the first row is the design's own. */
 .tierRow {
-  display: flex; gap: 7px; margin: 0 -16px 14px; padding: 2px 16px 10px;
-  overflow-x: auto;
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
-  mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+  display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 14px; padding: 2px 0 0;
 }
-.tierRow::-webkit-scrollbar { display: none; }
 .tier {
-  flex: none; min-width: 58px; min-height: 44px; padding: 9px 10px;
+  flex: 1 1 calc(20% - 6px); min-width: 54px; min-height: 44px; padding: 11px 8px 9px;
   border-radius: var(--r4); border: 1px solid var(--sep); background: var(--bg2);
   font-size: 17px; font-weight: 700; letter-spacing: -.4px; color: var(--label);
   display: flex; align-items: baseline; justify-content: center; gap: 1px;
@@ -4008,9 +4033,18 @@ p.wxWhy.warn { color: var(--orange); }
 .heightRow input[type='range']::-webkit-slider-thumb { margin-top: -12px; }
 
 /* ---- install card ---- */
+/* The offline-map pitch, at the design's scale: an 18px card edged in --sep at
+   15px of padding, with the hook as 13.5px running prose rather than a 15px
+   semibold headline. It was the loudest thing in Settings → Phone and it is a
+   suggestion, not the point of the topic. */
 .installCard {
   background: var(--grouped2);
-  border: none; border-radius: var(--r2); padding: 14px 16px;
+  border: 1px solid var(--sep); border-radius: 18px; padding: 15px;
+  margin-top: 14px;
+}
+.installCard .installHook {
+  font-size: 13.5px; line-height: 19px; font-weight: 400; letter-spacing: -.08px;
+  text-wrap: pretty;
 }
 .installCard .btn { margin: 0; }
 .steps { margin: 0 0 4px; padding-left: 20px; font-size: 15px; line-height: 24px; color: var(--label2); }
@@ -4044,7 +4078,14 @@ p.wxWhy.warn { color: var(--orange); }
 .gateInstallHint b { color: var(--label); font-weight: 600; }
 .gateInstallSkip { margin: 0; align-self: center; }
 .gateInstallSteps { margin: 0; padding-left: 18px; }
-.installCard .installHook { margin: 0 0 10px; }
+.installCard .installHook { margin: 0 0 12px; }
+/* The fix's own coordinates are a diagnostic, not a paragraph. Kept — the
+   design never drew this screen's debug line — but sized and inked as the aside
+   it is, and set in the numerals it is read as. */
+.settingsPanel .coordLine {
+  margin: 9px 2px 0; font-size: 12px; line-height: 17px;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---- mobile-only hardening ---- */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -4235,28 +4276,35 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   background: var(--glassTintDeep);
   -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
   border-top: none;
-  border-radius: var(--r4) var(--r4) 0 0; padding: 12px 16px calc(14px + var(--bot));
+  /* The sheet's own 28px corner. This bar stands in the sheet's place while a
+     route runs, and the design draws it with the same shoulder — a 14px corner
+     read as a different, smaller surface sliding under the map. */
+  border-radius: 28px 28px 0 0; padding: 14px 14px calc(16px + var(--bot));
   box-shadow: var(--lensEdge), var(--shadow3);
 }
-.navBarRow { display: flex; align-items: center; gap: 12px; }
+.navBarRow { display: flex; align-items: center; gap: 11px; }
 /* A rounded rect, not a capsule: this is a major action button and the twin
    draws every one of those the same way. --red stays — it is the app's stop
    colour, and --barred belongs to the map's "ruled out" places. */
 .navEnd {
-  flex: none; padding: 12px 20px; border-radius: var(--r4);
+  flex: none; padding: 13px 17px; border-radius: var(--r4);
   background: var(--red); color: var(--onTint);
-  font-size: 17px; font-weight: 600; letter-spacing: -.4px; text-transform: none;
+  font-size: 15px; font-weight: 700; letter-spacing: -.24px; text-transform: none;
   min-height: 44px;
   transition: opacity var(--t1) var(--easeOut);
 }
 .navEnd:active { opacity: .55; }
 .navSummary { flex: 1; min-width: 0; text-align: left; }
+/* The arrival clock in ink, not in green. The design sets it --label, and the
+   green was saying "good news" about a number that is simply the answer — it
+   also has to survive being read at a glance on translucent glass over a park
+   map, which --label does at any skin and --green does not. */
 .navSummary b {
-  display: block; font-size: 22px; font-weight: 700; line-height: 26px; letter-spacing: -.26px;
-  color: var(--green); font-variant-numeric: tabular-nums;
+  display: block; font-size: 21px; font-weight: 700; line-height: 25px; letter-spacing: -.4px;
+  color: var(--label); font-variant-numeric: tabular-nums;
 }
 .navSummary span {
-  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2); margin-top: 2px;
+  display: block; font-size: 12.5px; letter-spacing: -.08px; color: var(--label2); margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .navTools { flex: none; display: flex; gap: 8px; }

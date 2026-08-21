@@ -268,7 +268,7 @@ export default function SettingsPanel({
             )}
           </div>
           {position && (
-            <p className="fine">
+            <p className="fine coordLine">
               {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
             </p>
           )}

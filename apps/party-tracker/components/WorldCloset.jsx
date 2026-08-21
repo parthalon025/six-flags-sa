@@ -55,6 +55,11 @@ export default function WorldCloset({
 
   return (
     <div className="worldCloset">
+      {/* Named the way every other section on these screens is. Collection is
+          three lists deep — Skins, Kits, Marks — and the paragraph under this
+          is what they have in common, so it reads as this section's own note
+          rather than as an unowned sentence at the top of a screen. */}
+      <div className="label eyebrow">Collection</div>
       <p className="fine">
         Skins paint this map. Kits are how your Party sees you. Marks stay at a Place for
         families you never meet. Light and Dark are chrome, not Skins.
