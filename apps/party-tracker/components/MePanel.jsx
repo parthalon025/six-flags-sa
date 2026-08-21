@@ -37,8 +37,11 @@ export default function MePanel({
 
       <ProfileJourney session={session} contributions={contributions} />
 
-      <div className="label">Everything else</div>
-      <div className="rowList">
+      {/* No heading over these two. The design runs them straight on from the
+          Title rung as one more grouped card — "Everything else" named a
+          category that has exactly two members, both of which say what they
+          are on their own row. */}
+      <div className="rowList meRoutes">
         <button type="button" className="row" onClick={() => onOpenCloset?.()}>
           <span className="rowText">
             Collection

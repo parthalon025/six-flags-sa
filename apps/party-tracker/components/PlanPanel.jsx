@@ -65,7 +65,7 @@ export default function PlanPanel({
 
       {(!hasHeights || section === 'stops') && (
         <>
-          <div className="label">Today&apos;s stops</div>
+          <div className="label eyebrow">Today&apos;s stops</div>
           <PlanStops
             rides={rides}
             plan={plan}
