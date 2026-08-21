@@ -462,5 +462,11 @@
     "items": [
       "Keep the ride-alone line when a height Contribution lands (#588)"
     ]
+  },
+  "1.26.8": {
+    "title": "What's new",
+    "items": [
+      "The introduction never showed up locally: Next 16 dev 403s every chunk at 127.0.0.1 (#591)"
+    ]
   }
 }
