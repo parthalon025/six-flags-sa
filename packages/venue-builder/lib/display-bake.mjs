@@ -542,8 +542,15 @@ export function bakeModel(map, pois = [], opts = {}) {
     for (const way of map[layer] || []) {
       if (!Array.isArray(way.r) || way.r.length < 3) continue;
       const painted = paintPolygon(cells, cols, rows, way.r.map(toCell), terrain, clipRing);
-      if (terrain === TERRAIN.wood) treeCells.wood.push(...painted);
-      if (terrain === TERRAIN.grass) treeCells.grass.push(...painted);
+      // Appended one at a time, never spread. `push(...painted)` passes every
+      // cell as an argument, and the engine caps that near 125k — under the
+      // 47,520-cell grid a 240-column bake produces, so it never fired, and
+      // over it the moment ADR-0021 clause 2's close band asks for 646 columns
+      // and 344,964 cells. A meadow covering a third of the park is enough.
+      const sink = terrain === TERRAIN.wood ? treeCells.wood
+        : terrain === TERRAIN.grass ? treeCells.grass
+          : null;
+      if (sink) for (const cell of painted) sink.push(cell);
     }
   }
 
