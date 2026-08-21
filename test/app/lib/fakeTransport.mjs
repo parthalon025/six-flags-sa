@@ -40,17 +40,14 @@ export function fakeTransport({
   sendFails = false,
   probeDelayMs = 0,
 } = {}) {
-  const log = { probes: 0, opens: 0, closes: 0, sent: [], probeStartedAt: [], probeEndedAt: [] };
+  const log = { opens: 0, closes: 0, sent: [] };
   const knobs = { available, reason, openFails, sendFails, probeDelayMs, carries };
 
   const transport = defineTransport({
     name,
     rank,
     probe: async () => {
-      log.probes += 1;
-      log.probeStartedAt.push(Date.now());
       if (knobs.probeDelayMs) await new Promise((r) => setTimeout(r, knobs.probeDelayMs));
-      log.probeEndedAt.push(Date.now());
       return { available: knobs.available, reason: knobs.reason };
     },
     open: async () => {
@@ -105,7 +102,6 @@ export function fakeOfflineQueue({ name = 'offline', rank = 99 } = {}) {
     return out;
   };
   transport.size = () => queue.length;
-  transport.peek = () => queue[0] ?? null;
   transport.contents = () => [...queue];
   return transport;
 }
@@ -116,7 +112,6 @@ export function fakeClock(startAt = 1_700_000_000_000) {
   let at = startAt;
   Date.now = () => at;
   return {
-    now: () => at,
     advance: (ms) => {
       at += ms;
       return at;

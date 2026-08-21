@@ -183,7 +183,7 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
     startClient(better || null);
   }
 
-  return Object.assign(peer, { startHost, startClient, promote, stepDown, service, assertHost });
+  return Object.assign(peer, { startHost, startClient, promote, stepDown, service });
 }
 
 /** A party with one host and N clients, all joined and adopted. */
