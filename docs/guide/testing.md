@@ -58,19 +58,20 @@ All the suites take `BASE_URL`, and `CHROMIUM_PATH` points them at a browser alr
 machine instead of Playwright's own copy.
 
 For UI work, see [docs/ui-enhancement-validation.md](../ui-enhancement-validation.md) —
-`npm run test:validate-ui` runs the critical-path coverage contract, then the
-functional e2e suite and the grandma test together. The contract
-(`test/app/critical-paths.json`) is the middle ground: not every UI action, but
-every shipped vertical capability (intake, walk, party, offline, grandma toilet
-path) must keep a named check. New epics add a row + check in the same PR —
-build vertically, don’t leave feature PRs without their user-action coverage.
+`npm run test:validate-ui` runs the functional e2e suite and the grandma test
+together. `test/app/critical-paths.json` is the written inventory beside them:
+not every UI action, but every shipped vertical capability (intake, walk, party,
+offline, grandma toilet path) with the named check that covers it. New epics add
+a row + check in the same PR — build vertically, don’t leave feature PRs without
+their user-action coverage.
 
-The contract also pins the domain context it was reviewed against:
-`critical-paths.json` stores a sha256 fingerprint of `CONTEXT.md` +
-`docs/adr/*.md`. A diff that builds new context selects the coverage-contract
-CI job, and the job fails until the rows are reviewed against the new
-capabilities and restamped with `node test/app/coverage-contract.mjs --stamp` —
-so the user-action e2e contract is always updated when new context lands.
+Nothing enforces that inventory: reading a row against its check is a review
+job, not a job for a substring match.
+
+What is enforced is that every suite runs at all. `scripts/ci/test-estate.mjs`
+lists every `.mjs` under `test/` with the job that runs it, or the written
+reason nothing does; `scripts/lib/test-estate.mjs` checks each claim against
+package.json and the workflow, in the CI gate.
 
 CI splits that suite into **modules** (`test/app/modules.json`) and only runs
 the ones that match the PR’s changed paths — including lint — see

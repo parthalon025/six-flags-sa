@@ -7,8 +7,10 @@ import {
   pathMatches,
   selectModulesFromFiles,
   parseModulesArg,
+  partitionModules,
   wantModule,
   loadModulesManifest,
+  MODULE_KINDS,
   toGithubOutputs,
 } from './lib/module-select.mjs';
 
@@ -38,7 +40,6 @@ const manifest = loadModulesManifest();
 {
   const sel = selectModulesFromFiles(['docs/readme-only.md'], manifest);
   assert(sel.modules.length === 0, 'docs select nothing');
-  assert(!sel.modules.includes('contract'), 'docs do not run contract');
   assert(!sel.modules.includes('lint'), 'docs do not run lint');
   assert(!sel.fullSuite, 'docs not full suite');
 }
@@ -49,7 +50,6 @@ const manifest = loadModulesManifest();
     manifest,
   );
   assert(sel.modules.length === 0, 'gitnexus-only select nothing');
-  assert(!sel.modules.includes('contract'), 'gitnexus do not run contract');
   assert(!sel.modules.includes('party'), 'gitnexus do not pull party');
   assert(!sel.fullSuite, 'gitnexus not full suite');
 }
@@ -67,7 +67,6 @@ const manifest = loadModulesManifest();
   const sel = selectModulesFromFiles(['apps/party-tracker/lib/party/client.js'], manifest);
   assert(sel.modules.includes('party'), 'party path → party');
   assert(sel.modules.includes('grandma'), 'party path → grandma via pulls');
-  assert(sel.modules.includes('contract'), 'UI module pulls contract');
   assert(sel.modules.includes('lint'), 'party JS runs lint');
   assert(!sel.modules.includes('walk'), 'party path skips walk');
 }
@@ -82,7 +81,6 @@ const manifest = loadModulesManifest();
   const sel = selectModulesFromFiles(['fastlane/metadata/ios/routing_app_coverage.geojson'], manifest);
   assert(sel.modules.includes('builder'), 'routing coverage geojson → builder');
   assert(sel.modules.includes('venues'), 'routing coverage geojson → venues');
-  assert(sel.modules.includes('contract'), 'venues pulls contract');
   assert(!sel.modules.includes('party'), 'routing coverage skips party');
 }
 
@@ -121,7 +119,6 @@ const manifest = loadModulesManifest();
 {
   const sel = selectModulesFromFiles(['apps/party-tracker/components/HeightPanel.jsx'], manifest);
   assert(sel.modules.includes('heights'), 'height panel → heights');
-  assert(sel.modules.includes('contract'), 'height panel pulls contract');
   assert(sel.modules.includes('lint'), 'height panel runs lint');
   assert(!sel.modules.includes('party'), 'height panel skips party');
   assert(!sel.modules.includes('grandma'), 'height panel does not pull grandma');
@@ -140,7 +137,6 @@ const manifest = loadModulesManifest();
   assert(gh.builder === 'false', 'github builder false');
   assert(gh.any_ui === 'true', 'github any_ui');
   assert(gh.lint === 'true', 'github lint');
-  assert(gh.contract === 'true', 'github contract');
   assert(gh.selector === 'false', 'github selector skipped');
   const matrix = JSON.parse(gh.ui_matrix);
   assert(matrix.includes('party'), 'matrix has party');
@@ -150,7 +146,6 @@ const manifest = loadModulesManifest();
   const sel = selectModulesFromFiles(['eslint.config.mjs'], manifest);
   assert(sel.modules.includes('lint'), 'eslint config → lint');
   assert(!sel.modules.includes('party'), 'eslint config skips UI');
-  assert(!sel.modules.includes('contract'), 'eslint config skips contract');
   const gh = toGithubOutputs(sel, manifest);
   assert(gh.lint === 'true', 'eslint config github lint');
   assert(gh.any_ui === 'false', 'eslint config no UI matrix');
@@ -166,28 +161,17 @@ const manifest = loadModulesManifest();
 {
   const sel = selectModulesFromFiles(['packages/shared/ontology.js'], manifest);
   assert(sel.modules.includes('smoke'), 'shared package → UI default');
-  assert(sel.modules.includes('contract'), 'shared package pulls contract');
   assert(!sel.modules.includes('lint'), 'shared package is not eslint-covered');
 }
 
+// Domain-context and inventory documents are read by people, not by a suite:
+// nothing runs for them, and nothing pretends to.
 {
-  const sel = selectModulesFromFiles(['test/app/critical-paths.json'], manifest);
-  assert(sel.modules.includes('contract'), 'contract file → contract');
-  assert(!sel.modules.includes('party'), 'contract file skips UI');
-}
-
-{
-  const sel = selectModulesFromFiles(['CONTEXT.md'], manifest);
-  assert(sel.modules.includes('contract'), 'CONTEXT.md → contract (context stamp re-check)');
-  assert(!sel.modules.includes('smoke'), 'CONTEXT.md skips UI');
-  assert(!sel.fullSuite, 'CONTEXT.md is not full suite');
-}
-
-{
-  const sel = selectModulesFromFiles(['docs/adr/0013-display-pipeline.md'], manifest);
-  assert(sel.modules.includes('contract'), 'ADR → contract (context stamp re-check)');
-  assert(!sel.modules.includes('party'), 'ADR skips UI');
-  assert(!sel.fullSuite, 'ADR is not full suite');
+  for (const doc of ['test/app/critical-paths.json', 'CONTEXT.md', 'docs/adr/0013-display-pipeline.md']) {
+    const sel = selectModulesFromFiles([doc], manifest);
+    assert(sel.modules.length === 0, `${doc} selects no module`);
+    assert(!sel.fullSuite, `${doc} is not full suite`);
+  }
 }
 
 {
@@ -202,9 +186,41 @@ const manifest = loadModulesManifest();
   const gh = toGithubOutputs(sel, manifest);
   assert(gh.modules === '', 'docs github modules empty');
   assert(gh.lint === 'false', 'docs github lint false');
-  assert(gh.contract === 'false', 'docs github contract false');
   assert(gh.any_ui === 'false', 'docs github any_ui false');
   assert(gh.ui_matrix === '[]', 'docs github empty matrix');
+}
+
+// Fail closed on an unrouted kind. partitionModules is the only place that
+// turns a selected module into a job, so a kind it does not recognise would be
+// selected, printed in the CI summary, and run by nothing at all.
+{
+  const rogue = {
+    modules: [{ id: 'ghost', title: 'Ghost suite', kind: 'ghost', paths: ['ghost/**'] }],
+  };
+  let threw = null;
+  try {
+    partitionModules(['ghost'], rogue);
+  } catch (err) {
+    threw = err;
+  }
+  assert(threw !== null, 'an unrecognised module kind throws instead of selecting nothing');
+  assert(/ghost/.test(threw?.message || ''), 'the error names the offending kind');
+  assert(
+    MODULE_KINDS.every((k) => (threw?.message || '').includes(k)),
+    'the error lists the kinds a runner does claim',
+  );
+}
+
+// Every kind the shipped manifest uses is one partitionModules routes — so the
+// throw above can never fire on a normal run.
+{
+  const manifestKinds = [...new Set(manifest.modules.map((m) => m.kind))];
+  for (const kind of manifestKinds) {
+    assert(MODULE_KINDS.includes(kind), `modules.json kind "${kind}" is routed to a runner`);
+  }
+  const parts = partitionModules(manifest.modules.map((m) => m.id), manifest);
+  assert(parts.unknown.length === 0, 'every manifest id partitions');
+  assert(parts.functional.length > 0 && parts.grandma && parts.builder, 'the full set routes');
 }
 
 if (failed) {

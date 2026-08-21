@@ -167,24 +167,19 @@ export function selectModulesFromFiles(files, manifest = loadModulesManifest()) 
     }
   }
 
-  // Coverage contract rides with any UI module (functional / grandma).
-  const byId = new Map(manifest.modules.map((m) => [m.id, m]));
-  const uiSelected = [...selected].some((id) => {
-    const kind = byId.get(id)?.kind;
-    return kind === 'functional' || kind === 'grandma';
-  });
-  if (uiSelected && !selected.has('contract')) {
-    selected.add('contract');
-    reasons.contract = 'pulled by UI module';
-  }
-
   return { modules: [...selected], reasons, fullSuite: false };
 }
+
+/**
+ * Every kind `partitionModules` knows how to route to a runner. A module whose
+ * kind is missing here is selected and reported but run by nothing, so adding a
+ * kind to modules.json without adding it here has to be an error, not a shrug.
+ */
+export const MODULE_KINDS = ['builder', 'lint', 'selector', 'functional', 'grandma'];
 
 export function partitionModules(moduleIds, manifest = loadModulesManifest()) {
   const byId = new Map(manifest.modules.map((m) => [m.id, m]));
   const out = {
-    contract: false,
     builder: false,
     lint: false,
     selector: false,
@@ -198,12 +193,19 @@ export function partitionModules(moduleIds, manifest = loadModulesManifest()) {
       out.unknown.push(id);
       continue;
     }
-    if (m.kind === 'contract') out.contract = true;
-    else if (m.kind === 'builder') out.builder = true;
+    if (m.kind === 'builder') out.builder = true;
     else if (m.kind === 'lint') out.lint = true;
     else if (m.kind === 'selector') out.selector = true;
     else if (m.kind === 'functional') out.functional.push(id);
     else if (m.kind === 'grandma') out.grandma = true;
+    else {
+      throw new Error(
+        `module "${id}" has kind "${m.kind}", which no runner claims. ` +
+          `Selection would report it and then run nothing. ` +
+          `Known kinds: ${MODULE_KINDS.join(', ')}. ` +
+          `Route the new kind in partitionModules and give it a job in .github/workflows/test-app.yml.`,
+      );
+    }
   }
   return out;
 }
@@ -215,7 +217,6 @@ export function toGithubOutputs(selection, manifest = loadModulesManifest()) {
   if (parts.grandma) uiMatrix.push('grandma');
   return {
     builder: parts.builder ? 'true' : 'false',
-    contract: parts.contract ? 'true' : 'false',
     lint: parts.lint ? 'true' : 'false',
     selector: parts.selector ? 'true' : 'false',
     any_ui: uiMatrix.length ? 'true' : 'false',
