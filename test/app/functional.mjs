@@ -920,7 +920,14 @@ await check('tapping a map icon opens place details and navigation', async () =>
   });
   const title = await a.locator('.placeDetailName').innerText();
   if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
-  const go = a.locator('[data-place-detail] button[aria-label="Walk me there"]');
+  // Match the accessible name, not the aria-label. Place detail now says
+  // "Walk me there" in visible text, so it carries no aria-label — duplicating
+  // a visible label in ARIA is the shape that goes stale. The capsule and the
+  // list's expanded row still use the icon-only button, which does. getByRole
+  // reads both.
+  const go = a
+    .locator('[data-place-detail]')
+    .getByRole('button', { name: 'Walk me there', exact: true });
   if (!(await go.count())) throw new Error('no navigate control on place detail');
   await go.click();
   await a.waitForTimeout(900);
