@@ -104,12 +104,38 @@ async function striped(period) {
   }
 }
 
+// --- A gate that cannot pass is not a gate. Only A1-A4 are measured, and the
+// document asks for 6 distinct axes, so a verdict that reports FAIL on the
+// total can never be right — proven on a genuinely contrasting pair
+// (watercolor-quest vs midnight-carnival) that clears all three heavy axes and
+// still could not reach 6. The verdict reports what is PROVABLE: a lower bound
+// from axes measured distinct, an upper bound that also allows every unmeasured
+// axis whose spec declares a difference, and INDETERMINATE in between.
+{
+  const axes = Object.keys(AXIS_KNOBS);
+  // Everything declared; only A1-A4 painted. Unmeasured axes might still differ.
+  const spec = Object.fromEntries(axes.map((a) => [a, { differs: true, knobs: ['k'] }]));
+  const pixel = { A1: 1, A2: 1, A3: 1, A4: 1 };
+  const thresholds = { A1: 0.05, A2: 0.09, A3: 0.07, A4: 0.02 };
+  const v = verdict({ spec, pixel, thresholds });
+  assert.equal(v.outcome, 'INDETERMINATE', 'cannot claim fail while 7 axes are unseen');
+  assert.equal(v.distinct.length, 4, 'four axes proven distinct');
+  assert.ok(v.upperBound >= 6, 'and the unmeasured ones could carry it over the line');
+}
+{
+  // Nothing declared anywhere: the upper bound cannot reach 6, so FAIL is provable.
+  const axes = Object.keys(AXIS_KNOBS);
+  const spec = Object.fromEntries(axes.map((a) => [a, { differs: false, knobs: [] }]));
+  const v = verdict({ spec, pixel: { A1: 0, A2: 0, A3: 0, A4: 0 }, thresholds: { A1: 0.05, A2: 0.09, A3: 0.07, A4: 0.02 } });
+  assert.equal(v.outcome, 'FAIL', 'with nothing declared and nothing painted, fail is provable');
+}
+
 // --- The gate: an axis counts only when spec AND pixel agree it moved.
 {
   const specOnly = { A1: { differs: true, knobs: ['x'] }, A3: { differs: true, knobs: ['y'] } };
   const pixelNone = { A1: 0, A3: 0 };
   const v = verdict({ spec: specOnly, pixel: pixelNone, thresholds: { A1: 0.05, A3: 0.05 } });
-  assert.equal(v.pass, false, 'declared-but-unpainted cannot pass');
+  assert.notEqual(v.outcome, 'PASS', 'declared-but-unpainted cannot pass');
   assert.equal(v.states.A1, 'DECLARED-NOT-PAINTED', 'the #577 shape gets its own state');
   assert.deepEqual(v.distinct, [], 'no axis is earned by the spec alone');
 }
@@ -126,7 +152,7 @@ async function striped(period) {
     thresholds: Object.fromEntries(Object.keys(AXIS_KNOBS).map((a) => [a, 0.05])),
   };
   const v = verdict(both);
-  assert.equal(v.pass, true, 'agreement on every axis passes');
+  assert.equal(v.outcome, 'PASS', 'agreement on every axis passes');
   assert.ok(v.heavyDistinct.length >= 3, 'and clears the heavy-axis floor');
   assert.ok(HEAVY_AXES.every((a) => AXIS_KNOBS[a]), 'every heavy axis has knobs mapped');
 }

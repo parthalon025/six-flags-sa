@@ -85,7 +85,13 @@ for (const axis of Object.keys(AXIS_KNOBS)) {
 }
 console.log('  ' + '─'.repeat(84));
 console.log(`\n  * heavy axis. ✓ both sides agree · ! declared, not painted · ? painted, not declared\n`);
-console.log(`  distinct: ${result.distinct.length}/${REQUIRED_AXES}   heavy: ${result.heavyDistinct.length}/${REQUIRED_HEAVY}`);
+console.log(
+  `  proven distinct: ${result.lowerBound}/${REQUIRED_AXES}   heavy: ${result.heavyDistinct.length}/${REQUIRED_HEAVY}`,
+);
+console.log(
+  `  could still reach: ${result.upperBound}/${REQUIRED_AXES}   heavy: ${result.heavyPossible.length}/${REQUIRED_HEAVY}`
+    + `   (unmeasured axes that declare a difference)`,
+);
 
 const notPainted = Object.entries(result.states).filter(([, s]) => s === 'DECLARED-NOT-PAINTED');
 if (notPainted.length) {
@@ -95,5 +101,14 @@ if (notPainted.length) {
 const unmeasured = Object.keys(AXIS_KNOBS).filter((a) => !PIXEL_MEASURED.includes(a));
 console.log(`\n  Not measured in pixels, so never earned: ${unmeasured.join(', ')}`);
 console.log(`  These need per-class segmentation; until then they cannot count toward the gate.\n`);
-console.log(`  ${result.pass ? 'PASS' : 'FAIL'}\n`);
-process.exit(result.pass ? 0 : 1);
+const EXPLAIN = {
+  PASS: 'the proven axes already clear the gate',
+  FAIL: 'even crediting every unmeasured axis, the gate cannot be reached',
+  INDETERMINATE:
+    'the proven axes do not clear the gate, but the unmeasured ones could — '
+    + 'this is a statement about the instrument, not about the art',
+};
+console.log(`  ${result.outcome} — ${EXPLAIN[result.outcome]}\n`);
+// 0 pass, 1 fail, 3 indeterminate: a gate that cannot see an axis must not
+// report a clean pass, and must not claim a failure it has not proven.
+process.exit(result.outcome === 'PASS' ? 0 : result.outcome === 'FAIL' ? 1 : 3);

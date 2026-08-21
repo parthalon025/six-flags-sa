@@ -217,11 +217,26 @@ export async function pixelAxisDeltas(bakeA, bakeB) {
   };
 }
 
-/** Roll spec and pixel evidence into per-axis states and a pass/fail.
- *  An axis is DISTINCT only when both sides moved. */
+/** Roll spec and pixel evidence into per-axis states and a provable outcome.
+ *
+ *  Only A1-A4 are measured in pixels, so a verdict phrased as pass/fail would
+ *  be wrong in both directions: it could never reach the 6 distinct axes the
+ *  document asks for, and it would report FAIL on pairs that are obviously
+ *  different worlds. Proven on watercolor-quest vs midnight-carnival, which
+ *  clears all three heavy axes and still cannot reach 6.
+ *
+ *  So this reports bounds instead:
+ *    lower — axes where spec and pixels agree. Proven distinct.
+ *    upper — lower, plus every unmeasured axis whose spec declares a
+ *            difference, since those could turn out painted.
+ *  PASS when the lower bound already satisfies the gate, FAIL when the upper
+ *  bound cannot, INDETERMINATE when the measurement cannot decide. An
+ *  INDETERMINATE is a statement about the instrument, not about the art.
+ */
 export function verdict({ spec, pixel, thresholds }) {
   const states = {};
   const distinct = [];
+  const couldBeDistinct = [];
   for (const axis of Object.keys(spec)) {
     const declared = spec[axis]?.differs === true;
     const measurable = Object.prototype.hasOwnProperty.call(pixel, axis);
@@ -234,12 +249,30 @@ export function verdict({ spec, pixel, thresholds }) {
     else state = 'SAME';
     states[axis] = state;
     if (state === 'DISTINCT') distinct.push(axis);
+    // An unmeasured axis that declares a difference is the only kind that
+    // might still be earned once the instrument can see it. A measured axis
+    // has already had its chance.
+    if (state === 'DISTINCT' || state === 'DECLARED-UNMEASURED') couldBeDistinct.push(axis);
   }
-  const heavyDistinct = distinct.filter((a) => HEAVY_AXES.includes(a));
+  const heavy = (list) => list.filter((a) => HEAVY_AXES.includes(a));
+  const lowerBound = distinct.length;
+  const upperBound = couldBeDistinct.length;
+  const heavyDistinct = heavy(distinct);
+  const heavyPossible = heavy(couldBeDistinct);
+
+  const provablePass = lowerBound >= REQUIRED_AXES && heavyDistinct.length >= REQUIRED_HEAVY;
+  const provableFail = upperBound < REQUIRED_AXES || heavyPossible.length < REQUIRED_HEAVY;
+  const outcome = provablePass ? 'PASS' : provableFail ? 'FAIL' : 'INDETERMINATE';
+
   return {
     states,
     distinct,
     heavyDistinct,
-    pass: distinct.length >= REQUIRED_AXES && heavyDistinct.length >= REQUIRED_HEAVY,
+    lowerBound,
+    upperBound,
+    heavyPossible,
+    outcome,
+    /** Kept for callers that only care whether the gate is definitely cleared. */
+    pass: outcome === 'PASS',
   };
 }
