@@ -14,7 +14,8 @@
  *   node test/builder/naip.mjs
  */
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync, rmSync } from 'node:fs';
+import path from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 
 const PASS = [];
 const FAIL = [];
@@ -49,6 +50,7 @@ const {
   sha256OfRaster,
   signHref,
   naipCacheFile,
+  naipClaims,
   run,
 } = await import('../../packages/venue-builder/lib/adapters/naip-planetary.mjs');
 
@@ -441,6 +443,142 @@ await check('run() gaps when the STAC search finds no NAIP item over the venue',
   assert.equal(res.meta.gap, true);
   assert.match(res.error, /no NAIP/i);
   scrub(id);
+});
+
+/* ------------------------------------------------------------------ wiring --
+ * The adapter above is only reachable if the registry carries a row for the id,
+ * implementations.mjs maps that id to this run(), and the sync catalogue knows
+ * it. These checks go through `runAdapter` — the seam the build pipeline calls
+ * — rather than importing the adapter, so a registry row that resolves to
+ * defineAdapter's placeholder still fails.
+ */
+
+const { getAdapter } = await import('../../packages/venue-builder/lib/adapters/index.mjs');
+const { getAdapterImplementation } = await import(
+  '../../packages/venue-builder/lib/adapters/implementations.mjs'
+);
+const { runAdapter } = await import('../../packages/venue-builder/lib/adapters/runner.mjs');
+const { adapterCacheFile } = await import('../../packages/venue-builder/lib/adapters/_cache.mjs');
+const { WEIGHTS } = await import('../../packages/venue-builder/lib/evidence.mjs');
+const { KNOWN_EXTERNAL_ADAPTER_IDS, DEFAULT_EXTERNAL_ADAPTERS, readSources } = await import(
+  '../../packages/venue-builder/lib/venue-sources.mjs'
+);
+
+await check('the registry files NAIP as Truth-layer aerial under an existing licence class', () => {
+  const row = getAdapter('naip-planetary');
+  assert.ok(row, 'no registry row — runAdapter answers unknown_adapter without one');
+  assert.equal(row.id, ID);
+  // `vision`, not `display`: registry.mjs throws on a display row carrying
+  // evidence_sources, and this row does carry them.
+  assert.equal(row.stage, 'vision');
+  assert.deepEqual(row.evidence_sources, ['aerial']);
+  // ADR-0020 clause 2 — derivation-licensed public domain, commercial fine.
+  assert.equal(row.license, 'public-domain');
+  assert.equal(row.license, LICENSE, 'the row and the ledger row the adapter writes must agree');
+  assert.equal(row.commercial_ok, true);
+  // Not a new licence class: rows carried this exact string before NAIP
+  // existed, so no allowed-licence list widened to admit it.
+  assert.equal(getAdapter('usgs-3dep').license, 'public-domain');
+  // `reject` is refused by runAdapter with error 'license_rejected'.
+  assert.equal(row.adopt, 'wrap');
+});
+
+await check('the row reuses the existing `aerial` evidence weight and mints none', () => {
+  const row = getAdapter('naip-planetary');
+  assert.equal(WEIGHTS.aerial, 4, 'aerial already resolved to 4 before this adapter existed');
+  for (const source of row.evidence_sources) {
+    assert.ok(Object.hasOwn(WEIGHTS, source), `evidence source '${source}' has no weight`);
+  }
+  // The claim the adapter emits keys the same weight the row advertises.
+  const claim = naipClaims(
+    { sha256: 'abc', tile: 'oh_m_3908427_sw_16_060_20230716', gsd: 0.6, captured: '2023-07-16', complete: true },
+    { lat: 39.34224815, lng: -84.2685 },
+  )[0];
+  assert.equal(claim.source, 'aerial');
+  assert.ok(row.evidence_sources.includes(claim.source));
+  assert.equal(Object.hasOwn(WEIGHTS, 'naip'), false, 'no NAIP-specific weight was minted');
+  assert.equal(Object.hasOwn(WEIGHTS, 'naip_aerial'), false);
+});
+
+await check('runAdapter resolves the id to this adapter, offline, without a network call', async () => {
+  const id = '__test-naip-wired__';
+  scrub(id);
+  // A ledger row written by hand, not replayed out of the adapter: every value
+  // here is a literal this suite already pins.
+  mkdirSync(path.dirname(naipCacheFile(id)), { recursive: true });
+  writeFileSync(
+    naipCacheFile(id),
+    `${JSON.stringify({
+      fetched: '2026-08-21',
+      source: 'planetary-computer:naip',
+      tile: 'oh_m_3908427_sw_16_060_20230716',
+      captured: '2023-07-16',
+      gsd: 0.6,
+      license: 'public-domain',
+      sha256: BANDS_SHA256,
+      bandCount: 4,
+      complete: true,
+      bounds: KI,
+    }, null, 2)}\n`,
+  );
+
+  const realFetch = globalThis.fetch;
+  let fetches = 0;
+  globalThis.fetch = async (url) => {
+    fetches += 1;
+    throw new Error(`no network in this suite — something fetched ${url}`);
+  };
+  let res;
+  try {
+    res = await runAdapter('naip-planetary', { venueId: id, offline: true });
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+
+  assert.notEqual(res.error, 'unknown_adapter', 'the registry does not know this id');
+  assert.notEqual(res.error, 'license_rejected');
+  // defineAdapter's placeholder answers `not_implemented`; the real run() does not.
+  assert.notEqual(res.error, 'not_implemented', 'the id resolved to the registry stub, not the adapter');
+  assert.equal(res.ok, true, res.error || '');
+  assert.equal(res.adapterId, 'naip-planetary');
+  assert.equal(res.data.sha256, BANDS_SHA256, 'the pinned ledger row, replayed through the runner');
+  assert.equal(res.data.tile, 'oh_m_3908427_sw_16_060_20230716');
+  assert.equal(res.claims.length, 1);
+  assert.equal(res.claims[0].source, 'aerial');
+  assert.equal(res.claims[0].date, '2023-07-16');
+  // Centre of the pinned bounds, by hand: (39.348 + 39.3364963) / 2 and
+  // (-84.2595 + -84.2775) / 2.
+  assert.deepEqual(res.claims[0].at, { lat: 39.34224815, lng: -84.2685 });
+  assert.ok(res.claims[0].note.includes('oh_m_3908427_sw_16_060_20230716'));
+  assert.equal(fetches, 0, 'an offline replay must not touch the network');
+  scrub(id);
+});
+
+await check('naip-planetary is opt-in: known to sync, absent from every scaffolded default', () => {
+  assert.ok(KNOWN_EXTERNAL_ADAPTER_IDS.includes('naip-planetary'), 'sync drops ids it does not know');
+  assert.equal(typeof getAdapterImplementation('naip-planetary'), 'function');
+  // ADR-0020 clause 5: registering a source must not move a Place. The offline
+  // scaffold list is what it was before this row landed, so no venue gains an
+  // evidence source by being rebuilt.
+  assert.deepEqual(DEFAULT_EXTERNAL_ADAPTERS, [
+    'parks-api',
+    'queue-times',
+    'wikidata',
+    'rcdb',
+    'open-meteo',
+    'openhistoricalmap',
+    'project-sidewalk',
+    'esa-worldcover',
+  ]);
+  assert.equal(DEFAULT_EXTERNAL_ADAPTERS.includes('naip-planetary'), false);
+  // Nor does any venue already shipping declare it.
+  for (const venue of ['kings-island', 'cedar-point', 'six-flags-fiesta-texas', 'big-kahunas']) {
+    const declared = readSources(venue).data?.datasets?.external || [];
+    assert.equal(declared.includes('naip-planetary'), false, `${venue} declares naip-planetary`);
+  }
+  // Certification resolves a declared adapter's cache by registry id; the
+  // adapter writes its own path. They must be the same file.
+  assert.equal(adapterCacheFile('kings-island', 'naip-planetary'), naipCacheFile('kings-island'));
 });
 
 console.log(`\n==== ${PASS.length} passed, ${FAIL.length} failed ====`);

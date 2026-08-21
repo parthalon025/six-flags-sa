@@ -51,19 +51,35 @@ export const KNOWN_EXTERNAL_ADAPTER_IDS = Object.freeze([
   'mapillary-tools',
   'esa-worldcover',
   'overture-buildings',
+  'naip-planetary',
   'openrouteservice',
 ]);
 
 /**
- * Default open-data adapters for a theme-park venue when scaffolding offline.
- * Excludes RopeDrop (Disney/Universal only), token-gated adapters,
- * mapillary-tools (needs a manually supplied `ctx.videoPath`), and
- * overture-buildings (needs the `duckdb` CLI and takes ~2 minutes per venue —
- * an opt-in adapter, not something a fast offline scaffold should run by
- * default).
+ * Adapters a venue must ask for by name. Each is runnable and each is a bad
+ * default for its own reason:
+ *   ropedrop          — Disney/Universal open data only, wrong parks entirely.
+ *   mapillary-tools   — needs a walkthrough video supplied by hand (ctx.videoPath).
+ *   overture-buildings — needs the `duckdb` CLI, ~2 minutes per venue.
+ *   naip-planetary    — a venue window is tens of MB of aerial pixels, and the
+ *                       extraction lane that would read evidence out of them is
+ *                       a later slice. Defaulting it would also put the id in
+ *                       every newly scaffolded sources.json, where certification
+ *                       then wants a cache or a gap note for it.
+ */
+const OPT_IN_ADAPTERS = Object.freeze([
+  'ropedrop',
+  'mapillary-tools',
+  'overture-buildings',
+  'naip-planetary',
+]);
+
+/**
+ * Default open-data adapters for a theme-park venue when scaffolding offline —
+ * everything known, minus the opt-in list above and minus token-gated adapters.
  */
 export const DEFAULT_EXTERNAL_ADAPTERS = KNOWN_EXTERNAL_ADAPTER_IDS.filter(
-  (id) => id !== 'ropedrop' && id !== 'mapillary-tools' && id !== 'overture-buildings' && !TOKEN_GATED_ADAPTERS.includes(id),
+  (id) => !OPT_IN_ADAPTERS.includes(id) && !TOKEN_GATED_ADAPTERS.includes(id),
 );
 
 /**
