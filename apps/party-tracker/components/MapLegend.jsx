@@ -36,6 +36,8 @@ export default function MapLegend({
   onToggleCategory,
   heightFilterOn,
   presentCategories = null,
+  /** How many places each category has, keyed by category. Optional. */
+  categoryCounts = null,
   /** Route preview and turn-by-turn HUD need the map clear — the key folds away. */
   hidden = false,
 }) {
@@ -82,6 +84,7 @@ export default function MapLegend({
           <ul className="mapKeyList">
             {ORDER.filter((key) => SYMBOLS[key] && (!presentCategories || presentCategories.has(key))).map((key) => {
               const on = visibleCategories.has(key);
+              const count = categoryCounts?.get?.(key) ?? null;
               return (
                 <li key={key}>
                   <button
@@ -93,6 +96,13 @@ export default function MapLegend({
                     <LegendMark category={key} colour={palette.categories[key]} size={22} />
                     <b>{CATEGORY_LABELS[key]}</b>
                     <i>{SYMBOLS[key].hint}</i>
+                    {/* How many there are, beside — not instead of — what the
+                        symbol means. The twin drops the hint and keeps only
+                        the count, which answers "how many of these" for a
+                        symbol you still cannot name; the count is the second
+                        question, not the first. It also says out loud which
+                        rows are worth switching off. */}
+                    {count != null && <span className="mapKeyCount">{count}</span>}
                   </button>
                 </li>
               );

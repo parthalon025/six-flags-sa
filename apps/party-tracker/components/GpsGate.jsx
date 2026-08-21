@@ -1,9 +1,10 @@
 'use client';
 
 import BrandLockup from '@/components/BrandLockup';
+import Icon from '@/components/Icon';
 import InstallCard from '@/components/InstallCard';
+import WorldPicker from '@/components/WorldPicker';
 import { BRAND } from '@/lib/brand';
-import { formatDistance } from '@/lib/geo';
 
 const PARTY_LOCK = {
   title: 'Turn Location back on',
@@ -40,95 +41,21 @@ const COPY = {
 };
 
 const NEAREST_PARK_HINT =
-  'Go to nearest World uses your GPS once to find the closest map we have, shows you which World that is, and asks you to confirm before anything downloads — so you never pull the wrong map by accident.';
-
-const MILE_M = 1609.344;
-
-/** Park-scale distances read in feet; drive-scale ones read in whole miles. */
-function awayText(metres) {
-  if (metres == null || Number.isNaN(metres)) return null;
-  const miles = metres / MILE_M;
-  if (miles >= 10) return `${Math.round(miles).toLocaleString()} mi away`;
-  return `${formatDistance(metres)} away`;
-}
-
-function dataText(venue) {
-  const counts = venue?.counts || {};
-  const bits = [];
-  if (counts.rides) bits.push(`${counts.rides} rides`);
-  if (counts.pois) bits.push(`${counts.pois} places`);
-  return bits.join(' · ');
-}
+  'I’m ready uses your GPS once to find the closest map we have, shows you which World that is, and asks you to confirm before anything downloads — so you never pull the wrong map by accident.';
 
 /*
- * First-run landing: brand lockup, optional install pitch, and a clear nearest-park
- * path. Nearest-park always confirms before download — wrong park is costly on
- * park wifi. GPS enable and Add to Home Screen sit together on first open.
+ * The intake, in two steps and said once.
+ *
+ * Step one is this card: what the app is for, and the one permission it needs
+ * to do it. Step two is the World pick, which is why the progress row counts to
+ * two and why the primary here asks for the fix rather than skipping it — the
+ * fix is what makes step two answerable.
+ *
+ * Everything below idle — asking, denied, insecure, unsupported, and the party
+ * lock — keeps the older head and the fuller set of ways out. Those are the
+ * troubleshooting states, and the person reading one is looking for the
+ * paragraph that names their phone, not for a tidier screen.
  */
-function ParkSection({
-  choice,
-  options = [],
-  busy = false,
-  error = null,
-  onConfirm,
-}) {
-  const venue = choice?.venue;
-  if (!venue) return null;
-  const inside = Boolean(choice.inside);
-  const distanceText = inside ? 'you are here' : awayText(choice.metres);
-  const data = dataText(venue);
-
-  return (
-    <>
-      <p>
-        {inside
-          ? `Your GPS says you are inside ${venue.name}, ${venue.locality}. Tap below and we will load this World.`
-          : `${venue.name} in ${venue.locality} is the closest World we have (${distanceText}). Headed that way?`}
-      </p>
-      {error && <p className="gateError">{error}</p>}
-
-      <button
-        type="button"
-        className="btn primary"
-        disabled={busy}
-        onClick={() => onConfirm?.(venue.id)}
-      >
-        {busy ? 'Getting it ready…' : `Yes! Enter ${venue.name}`}
-      </button>
-
-      {options.length > 0 && (
-        <>
-          <div className="label">Explore another World</div>
-          <div className="venueList">
-            {options.map(({ venue: other, metres, inside: within }) => (
-              <button
-                key={other.id}
-                type="button"
-                className="venueRow"
-                disabled={busy}
-                onClick={() => onConfirm?.(other.id)}
-              >
-                <b>{other.name}</b>
-                <span>
-                  {[other.locality, within ? 'you are here' : awayText(metres)]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {data && (
-        <p className="gateFine">
-          {venue.name} has {data}. Everything downloads once and stays on this phone.
-        </p>
-      )}
-    </>
-  );
-}
-
 export default function GpsGate({
   status,
   error,
@@ -146,6 +73,7 @@ export default function GpsGate({
   nearestIntent = false,
   partyLock = false,
   firstRun = false,
+  locationOn = false,
 }) {
   const copy = partyLock
     ? {
@@ -159,13 +87,20 @@ export default function GpsGate({
   const welcomeIdle = welcome && status === 'idle' && !nearestIntent && !showParkQuestion && !partyLock;
   const welcomeSearching = welcome && nearestIntent && status === 'asking' && !showParkQuestion && !partyLock;
   const showPhoneSetup = !showParkQuestion;
+  /* Step one of the intake proper. Not every welcome state: a phone that has
+     already refused is not being asked "shall we start", it is being told how
+     to undo a refusal, and that card needs its own words. */
+  const stepOne = welcomeIdle || welcomeSearching;
 
   let primaryLabel = copy.action;
   let primaryAction = onRequest;
   let primaryDisabled = false;
 
   if (welcomeIdle) {
-    primaryLabel = 'Go to nearest World';
+    // The label is the twin's; the handler is the one that already existed and
+    // already leads to step two — it asks for the fix, then offers the nearest
+    // World for confirmation before anything downloads.
+    primaryLabel = 'I’m ready';
     primaryAction = onGoNearest || onRequest;
   } else if (welcomeSearching || (welcome && status === 'asking' && nearestIntent && !showParkQuestion)) {
     primaryLabel = 'Finding your location…';
@@ -176,86 +111,103 @@ export default function GpsGate({
 
   return (
     <div className={firstRun ? 'gate gateFirstRun' : 'gate'}>
-      <div className="gateCard">
-        {welcome && !showParkQuestion && !partyLock ? (
-          <>
-            <div className="gateEyebrow">Welcome</div>
-            <BrandLockup size="lg" stacked showTagline className="gateBrandLockup" />
-            <p>{BRAND.shortDescription}</p>
-            {welcomeIdle && <p className="gateFine">{NEAREST_PARK_HINT}</p>}
-            {welcomeSearching && (
-              <p className="gateFine">
-                When your phone shares a fix, we will show the nearest World and ask you to
-                confirm before the map downloads.
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <div className="gateEyebrow">
-              {welcome
-                ? 'Welcome'
-                : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
-            </div>
-            <h2>
-              {showParkQuestion
-                ? parkChoice.inside
-                  ? `You’re at ${parkVenue.name}!`
-                  : `Headed to ${parkVenue.name}?`
-                : copy.title}
-            </h2>
-            {!showParkQuestion && <p>{copy.body}</p>}
-          </>
-        )}
-
-        {showParkQuestion && (
-          <ParkSection
+      <div className="gateCard gpsGateCard">
+        {showParkQuestion ? (
+          <WorldPicker
+            step
+            locationOn={locationOn}
             choice={parkChoice}
             options={parkOptions}
             busy={setupBusy}
-            error={setupError}
+            /* A download that failed says so; otherwise whatever the fix itself
+               is complaining about, which is the same order this card used
+               before the picker was pulled out of it. */
+            error={setupError || error}
             onConfirm={onConfirmPark}
+            onSkip={onDismiss}
           />
-        )}
-
-        {error && !setupError && <p className="gateError">{error}</p>}
-
-        {showPhoneSetup && (
-          <div className="gatePhoneSetup">
-            <button
-              type="button"
-              className="btn primary"
-              disabled={primaryDisabled}
-              onClick={primaryAction}
-            >
-              {primaryLabel}
-            </button>
-            {welcome && !nearestIntent && !partyLock && <InstallCard compact />}
-          </div>
-        )}
-
-        {!showParkQuestion && !partyLock && (
+        ) : (
           <>
-            <button type="button" className="btn" onClick={onManual}>
-              Explore Worlds
-            </button>
-            <button type="button" className="btnQuiet" onClick={onDismiss}>
-              {venueName ? `Just browsing ${venueName}` : 'Just show me the map'}
-            </button>
+            {stepOne ? (
+              <div className="gateStepHead">
+                <div className="gateSteps" aria-hidden="true">
+                  <span className="gateStep on" />
+                  <span className="gateStep" />
+                  <span className="gateStepLabel">1 OF 2</span>
+                </div>
+                <span className="gateStepIcon" aria-hidden="true">
+                  <Icon name="location.north.fill" size={24} />
+                </span>
+                <h2 className="gateStepTitle">Plan your day</h2>
+                <p className="gateStepBody">{BRAND.gatePitch}</p>
+                {welcomeIdle && <p className="gateFine">{NEAREST_PARK_HINT}</p>}
+                {welcomeSearching && (
+                  <p className="gateFine">
+                    When your phone shares a fix, we will show the nearest World and ask you to
+                    confirm before the map downloads.
+                  </p>
+                )}
+              </div>
+            ) : welcome && !partyLock ? (
+              <>
+                <div className="gateEyebrow">Welcome</div>
+                <BrandLockup size="lg" stacked showTagline className="gateBrandLockup" />
+                <p>{BRAND.shortDescription}</p>
+              </>
+            ) : (
+              <>
+                <div className="gateEyebrow">
+                  {welcome
+                    ? 'Welcome'
+                    : `${venueName ? `${venueName} · ` : ''}${BRAND.nameUpper}`}
+                </div>
+                <h2>{copy.title}</h2>
+                <p>{copy.body}</p>
+              </>
+            )}
+
+            {error && !setupError && <p className="gateError">{error}</p>}
+
+            {showPhoneSetup && (
+              <div className="gatePhoneSetup">
+                <button
+                  type="button"
+                  className="btn primary rect"
+                  disabled={primaryDisabled}
+                  onClick={primaryAction}
+                >
+                  {primaryLabel}
+                </button>
+                {welcome && !nearestIntent && !partyLock && <InstallCard compact />}
+              </div>
+            )}
+
+            {!partyLock &&
+              (stepOne ? (
+                /* One way out, not two. "Browse Worlds" is the manual pick, which
+                   is the only other answer to "where are you" this card can take;
+                   the dismiss path keeps its button on every troubleshooting
+                   state below, where someone stuck without a fix needs it. */
+                <button type="button" className="btnQuiet muted" onClick={onManual}>
+                  Browse Worlds
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="btn" onClick={onManual}>
+                    Explore Worlds
+                  </button>
+                  <button type="button" className="btnQuiet" onClick={onDismiss}>
+                    {venueName ? `Just browsing ${venueName}` : 'Just show me the map'}
+                  </button>
+                </>
+              ))}
+
+            <p className="gateFine">
+              Your location stays on your phone. Join a party and it goes only to your crew,
+              encrypted in transit — nobody in the middle can peek.
+            </p>
           </>
         )}
-
-        {showParkQuestion && !partyLock && (
-          <button type="button" className="btnQuiet" onClick={onDismiss}>
-            Skip for now — just show me the map
-          </button>
-        )}
-
-        <p className="gateFine">
-          Your location stays on your phone. Join a party and it goes only to your crew,
-          encrypted in transit — nobody in the middle can peek.
-          {showParkQuestion ? ' Switch Worlds any time under Me → Explore Worlds.' : ''}
-        </p>
       </div>
     </div>
   );

@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #ded8cc; font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #E85D2C; text-decoration: none; }
+  a:hover { color: #FF6B35; }
+  button { font: inherit; color: inherit; }
+  .pb[data-theme="day"] {
+    --stage: #E7E2D8; --bg: #F7F4EC; --bg2: #FFFFFF; --bg3: #E8F5F7;
+    --label: #10233F; --label2: rgba(16,35,63,.62); --label3: rgba(16,35,63,.36);
+    --sep: rgba(16,35,63,.16); --fill: rgba(16,35,63,.10); --fill2: rgba(16,35,63,.06);
+    --green: #4FA854; --red: #D64545; --yellow: #E6B040; --teal: #1FA59E; --indigo: #4A68E8;
+    --glass: rgba(255,255,255,.80); --glassThin: rgba(255,255,255,.58); --glassRim: rgba(255,255,255,.92);
+    --shadow1: 0 1px 2px rgba(16,35,63,.08), 0 4px 14px rgba(16,35,63,.08);
+    --shadow2: 0 2px 6px rgba(16,35,63,.08), 0 10px 30px rgba(16,35,63,.12);
+    --shadow3: 0 -1px 0 rgba(16,35,63,.05), 0 -12px 40px rgba(16,35,63,.10);
+    --mapBg: #EDE8DC; --ground: #F7F4EC; --groundEdge: #E0D9C8; --grass: #D6ECC0; --wood: #C5DFB0;
+    --water: #B5DDE8; --waterEdge: #8FC8D8; --midway: #FFFFFF; --midwayCase: #D8D0BE;
+    --structure: #E8E2D4; --structureEdge: #D4CDBA; --trackCase: #FFFFFF;
+    --labelFill: #10233F; --labelStroke: #F7F4EC; --barred: #D64545;
+    --cat-coaster: #E85D2C; --cat-ride: #8B5CF0; --cat-food: #D4A017; --cat-restroom: #1FA59E;
+    --cat-service: #4FA854; --cat-gate: #6B7C90; --cat-landmark: #E84B78; --cat-show: #4A68E8; --cat-shop: #9A7A55;
+  }
+  .pb[data-theme="night"] {
+    --stage: #071120; --bg: #0B1829; --bg2: #10233F; --bg3: #1A3354;
+    --label: #F7F4EC; --label2: rgba(247,244,236,.62); --label3: rgba(247,244,236,.34);
+    --sep: rgba(120,150,180,.28); --fill: rgba(120,150,180,.22); --fill2: rgba(120,150,180,.14);
+    --green: #66B56A; --red: #E55353; --yellow: #FFC857; --teal: #27B8B0; --indigo: #5B7CFF;
+    --glass: rgba(11,24,41,.80); --glassThin: rgba(16,35,63,.62); --glassRim: rgba(247,244,236,.22);
+    --shadow1: 0 1px 3px rgba(0,0,0,.30), 0 4px 14px rgba(0,0,0,.28);
+    --shadow2: 0 2px 6px rgba(0,0,0,.34), 0 10px 30px rgba(0,0,0,.40);
+    --shadow3: 0 -1px 0 rgba(247,244,236,.06), 0 -12px 40px rgba(0,0,0,.44);
+    --mapBg: #0E1F35; --ground: #142845; --groundEdge: #1A3354; --grass: #163828; --wood: #143024;
+    --water: #0E4A5C; --waterEdge: #176A7F; --midway: #4A6A88; --midwayCase: #1A3354;
+    --structure: #1A2E48; --structureEdge: #243A58; --trackCase: #0B1829;
+    --labelFill: #F7F4EC; --labelStroke: #0B1829; --barred: #FF6B6B;
+    --cat-coaster: #FF6B35; --cat-ride: #9B6BFF; --cat-food: #FFC857; --cat-restroom: #27B8B0;
+    --cat-service: #66B56A; --cat-gate: #8A9BB0; --cat-landmark: #FF5C8A; --cat-show: #5B7CFF; --cat-shop: #B8956A;
+  }
+  .pb { --adventure: #FF6B35; --aqua: #27B8B0; --sun: #FFC857; --meadow: #66B56A; --signal: #E55353; }
+  .pbScroll::-webkit-scrollbar { width: 0; height: 0; }
+  .pbScroll { scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+  .pb *::-webkit-scrollbar { width: 0; height: 0; }
+  @keyframes pbPuck { 0%,100% { transform: scale(1); opacity: .55; } 50% { transform: scale(1.9); opacity: 0; } }
+  @keyframes pbNudge { 0%,100% { transform: translateY(0); opacity: .9; } 50% { transform: translateY(4px); opacity: 1; } }
+  @keyframes pbDrift { 0% { transform: scale(1.06) translate(0,0); } 100% { transform: scale(1.12) translate(-10px,-14px); } }
+</style>
+</helmet>
+
+<div class="pb" data-theme="{{theme}}" style="min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:22px;padding:34px 16px 60px;background:var(--stage);transition:background .35s ease">
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:14px;max-width:760px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="28" height="28" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M22 14 L32 6 L42 14 M50 22 L58 32 L50 42 M42 50 L32 58 L22 50 M14 42 L6 32 L14 22" stroke="#27B8B0" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"></path><path d="M32 2 L35.4 9.2 H28.6 Z" fill="#27B8B0"></path><path d="M62 32 L54.8 28.6 V35.4 Z" fill="#27B8B0"></path><path d="M32 62 L28.6 54.8 H35.4 Z" fill="#27B8B0"></path><path d="M2 32 L9.2 35.4 V28.6 Z" fill="#27B8B0"></path><circle cx="32" cy="32" r="8" fill="#FF6B35"></circle></svg>
+      <span style="font-size:19px;font-weight:800;letter-spacing:.22em;color:var(--label)">PARKBOUND</span>
+    </div>
+    <p style="margin:0;font-size:15px;line-height:21px;color:var(--label2);text-align:center;max-width:44ch;text-wrap:pretty">Every screen the app ships, in both palettes.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding-top:2px">
+      <sc-for list="{{screens}}" as="s" hint-placeholder-count="8">
+        <button type="button" onClick="{{s.go}}" style="border:1px solid {{s.border}};background:{{s.bg}};color:{{s.fg}};padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;letter-spacing:.01em;cursor:pointer;white-space:nowrap">{{s.label}}</button>
+      </sc-for>
+      <button type="button" onClick="{{toggleTheme}}" style="border:1px solid var(--sep);background:var(--bg2);color:var(--label);padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.4" fill="var(--sun)"></circle><g fill="none" stroke="var(--sun)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.4v2.2M12 19.4v2.2M21.6 12h-2.2M4.6 12H2.4"></path><path d="M18.8 5.2 17.2 6.8M6.8 17.2 5.2 18.8M18.8 18.8 17.2 17.2M6.8 6.8 5.2 5.2"></path></g></svg>
+        {{themeLabel}}
+      </button>
+    </div>
+  </div>
+
+  <div style="width:390px;height:844px;box-sizing:border-box;padding:11px;border-radius:56px;background:linear-gradient(160deg,#3a3d42,#121316 32%,#0a0a0c);box-shadow:0 40px 90px rgba(16,35,63,.34),0 3px 0 rgba(255,255,255,.14) inset;position:relative;flex:none">
+    <div style="position:relative;width:368px;height:822px;border-radius:45px;overflow:hidden;background:var(--mapBg);isolation:isolate">
+
+      <div style="position:absolute;inset:0;animation:pbDrift 40s ease-in-out infinite alternate">
+        <svg width="100%" height="100%" viewBox="0 0 368 822" preserveAspectRatio="xMidYMid slice" aria-label="Park map">
+          <rect x="0" y="0" width="368" height="822" fill="var(--ground)"></rect>
+          <path d="M-20 60 C 60 30 120 110 90 190 C 60 270 -10 250 -20 200 Z" fill="var(--grass)"></path>
+          <path d="M250 -10 C 330 20 390 90 380 170 C 300 190 240 120 250 40 Z" fill="var(--grass)"></path>
+          <path d="M-10 470 C 70 440 130 490 120 560 C 60 620 -10 600 -10 540 Z" fill="var(--wood)"></path>
+          <path d="M240 640 C 320 620 380 660 384 740 C 320 790 250 760 236 700 Z" fill="var(--grass)"></path>
+          <rect x="120" y="300" width="130" height="66" rx="10" fill="var(--structure)" stroke="var(--structureEdge)"></rect>
+          <rect x="40" y="196" width="86" height="58" rx="8" fill="var(--structure)" stroke="var(--structureEdge)"></rect>
+          <rect x="252" y="230" width="82" height="52" rx="8" fill="var(--structure)" stroke="var(--structureEdge)"></rect>
+          <rect x="62" y="616" width="104" height="60" rx="8" fill="var(--structure)" stroke="var(--structureEdge)"></rect>
+          <rect x="228" y="520" width="96" height="48" rx="8" fill="var(--structure)" stroke="var(--structureEdge)"></rect>
+          <rect x="146" y="712" width="120" height="54" rx="8" fill="var(--structure)" stroke="var(--structureEdge)"></rect>
+          <path d="M118 120 C 176 96 236 108 268 140 C 240 178 168 186 122 164 Z" fill="var(--water)" stroke="var(--waterEdge)" stroke-width="1.4"></path>
+          <path d="M214 396 C 268 378 322 392 336 424 C 306 462 240 462 212 436 Z" fill="var(--water)" stroke="var(--waterEdge)" stroke-width="1.4"></path>
+          <rect x="52" y="470" width="128" height="34" rx="16" transform="rotate(-16 116 487)" fill="var(--water)" stroke="var(--waterEdge)" stroke-width="1.2"></rect>
+          <g fill="none" stroke="var(--midwayCase)" stroke-width="17" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M184 800 L184 660 C 184 610 150 588 128 556 C 104 520 108 470 140 440 L200 400 C 236 376 244 330 232 292"></path>
+            <path d="M140 440 L60 402 L28 330"></path>
+            <path d="M232 292 L300 250 L336 180"></path>
+            <path d="M232 292 L272 340 L330 420"></path>
+            <path d="M184 660 L280 620 L322 552"></path>
+            <path d="M128 556 L60 596 L30 660"></path>
+            <path d="M200 400 L166 300 L172 190 L228 140"></path>
+          </g>
+          <g fill="none" stroke="var(--midway)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M184 800 L184 660 C 184 610 150 588 128 556 C 104 520 108 470 140 440 L200 400 C 236 376 244 330 232 292"></path>
+            <path d="M140 440 L60 402 L28 330"></path>
+            <path d="M232 292 L300 250 L336 180"></path>
+            <path d="M232 292 L272 340 L330 420"></path>
+            <path d="M184 660 L280 620 L322 552"></path>
+            <path d="M128 556 L60 596 L30 660"></path>
+            <path d="M200 400 L166 300 L172 190 L228 140"></path>
+          </g>
+          <g fill="none" stroke="var(--trackCase)" stroke-width="7" stroke-linecap="round">
+            <path d="M244 150 C 300 120 348 168 320 210 C 296 246 258 226 268 190"></path>
+            <path d="M52 240 C 96 208 132 246 108 282 C 88 312 54 300 58 272"></path>
+            <path d="M86 508 C 130 470 196 494 200 548 C 204 596 148 610 122 580"></path>
+          </g>
+          <g fill="none" stroke="var(--adventure)" stroke-width="3.2" stroke-linecap="round">
+            <path d="M244 150 C 300 120 348 168 320 210 C 296 246 258 226 268 190"></path>
+            <path d="M52 240 C 96 208 132 246 108 282 C 88 312 54 300 58 272"></path>
+            <path d="M86 508 C 130 470 196 494 200 548 C 204 596 148 610 122 580"></path>
+          </g>
+          <g font-family="'Plus Jakarta Sans'" font-size="11" font-weight="800" letter-spacing="2.6" fill="var(--labelFill)" opacity=".55">
+            <text x="238" y="112" transform="rotate(-38 238 112)">ACTION ZONE</text>
+            <text x="152" y="392" transform="rotate(-62 152 392)">OKTOBERFEST</text>
+            <text x="46" y="640" transform="rotate(-16 46 640)">RIVERTOWN</text>
+            <text x="196" y="742">CONEY MALL</text>
+          </g>
+        </svg>
+      </div>
+
+      <svg style="position:absolute;inset:0;pointer-events:none" width="100%" height="100%" viewBox="0 0 368 822" aria-hidden="true">
+        <sc-if value="{{walking}}" hint-placeholder-val="{{false}}">
+          <g>
+            <path d="{{routePath}}" fill="none" stroke="var(--aqua)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".28"></path>
+            <path d="{{routePath}}" fill="none" stroke="var(--aqua)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </g>
+        </sc-if>
+      </svg>
+
+      <button type="button" onClick="{{tapGround}}" aria-label="Drop a pin on the map" style="position:absolute;inset:0;border:0;background:none;padding:0;cursor:crosshair"></button>
+
+      <div style="position:absolute;inset:0;pointer-events:none">
+        <sc-for list="{{pins}}" as="p" hint-placeholder-count="10">
+          <button type="button" onClick="{{p.tap}}" title="{{p.n}}" style="position:absolute;left:{{p.left}};top:{{p.top}};transform:translate(-50%,-50%);border:0;background:none;padding:0;cursor:pointer;pointer-events:auto;opacity:{{p.opacity}};display:flex;flex-direction:column;align-items:center;gap:3px">
+            <span style="width:{{p.size}};height:{{p.size}};border-radius:50%;background:{{p.fill}};box-shadow:0 0 0 2.5px var(--labelStroke),0 2px 6px rgba(0,0,0,.28);display:block"></span>
+            <span style="font-size:10.5px;font-weight:700;letter-spacing:.01em;color:var(--labelFill);text-shadow:0 1px 0 var(--labelStroke),0 -1px 0 var(--labelStroke),1px 0 0 var(--labelStroke),-1px 0 0 var(--labelStroke);white-space:nowrap">{{p.label}}</span>
+          </button>
+        </sc-for>
+        <div style="position:absolute;left:50%;top:63%;transform:translate(-50%,-50%);width:18px;height:18px;display:{{puckShown}}">
+          <span style="position:absolute;inset:0;border-radius:50%;background:var(--indigo);animation:pbPuck 2.6s ease-out infinite"></span>
+          <span style="position:absolute;inset:0;border-radius:50%;background:var(--indigo);box-shadow:0 0 0 3px #fff,0 2px 8px rgba(0,0,0,.3)"></span>
+        </div>
+      </div>
+
+      <sc-if value="{{inApp}}" hint-placeholder-val="{{true}}">
+        <div style="position:absolute;left:0;right:0;bottom:{{furnitureBottom}};z-index:4;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:0 14px;pointer-events:none">
+          <div style="pointer-events:auto;max-width:214px">
+            <sc-if value="{{keyOpen}}" hint-placeholder-val="{{false}}">
+              <div style="margin-bottom:8px;padding:12px;border-radius:18px;background:var(--glass);backdrop-filter:blur(20px) saturate(170%);border:1px solid var(--glassRim);box-shadow:var(--shadow1)">
+                <p style="margin:0 0 8px;font-size:11px;color:var(--label3)">Tap a row to show or hide it.</p>
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <sc-for list="{{keyRows}}" as="k" hint-placeholder-count="6">
+                    <button type="button" onClick="{{k.tap}}" style="display:flex;align-items:center;gap:8px;border:0;background:none;padding:5px 2px;cursor:pointer;opacity:{{k.opacity}};text-align:left">
+                      <i style="width:10px;height:10px;border-radius:50%;background:{{k.dot}};box-shadow:0 0 0 2px var(--labelStroke);flex:none;display:block"></i>
+                      <b style="flex:1;font-size:12.5px;font-weight:600;color:var(--label)">{{k.label}}</b>
+                      <span style="font-size:11px;color:var(--label3)">{{k.count}}</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+            <button type="button" onClick="{{toggleKey}}" style="display:flex;align-items:center;gap:8px;padding:8px 13px;border-radius:999px;border:1px solid var(--glassRim);background:var(--glass);backdrop-filter:blur(20px) saturate(170%);box-shadow:var(--shadow1);cursor:pointer">
+              <svg width="34" height="12" viewBox="0 0 34 12" aria-hidden="true"><circle cx="6" cy="6" r="4.6" fill="var(--cat-coaster)" stroke="var(--labelStroke)" stroke-width="1.6"></circle><circle cx="17" cy="6" r="4.4" fill="var(--cat-food)" stroke="var(--labelStroke)" stroke-width="1.6"></circle><circle cx="28" cy="6" r="4.4" fill="var(--cat-restroom)" stroke="var(--labelStroke)" stroke-width="1.6"></circle></svg>
+              <span style="font-size:13px;font-weight:700;color:var(--adventure)">{{keyLabel}}</span>
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 11px;border-radius:999px;background:var(--glass);border:1px solid var(--glassRim);backdrop-filter:blur(20px);box-shadow:var(--shadow1)">
+            <span style="width:44px;height:3px;border-radius:2px;background:var(--label2);display:block"></span>
+            <span style="font-size:11px;font-weight:600;color:var(--label2)">{{scaleLabel}}</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 6px;font-size:14px;font-weight:700;color:var(--labelFill);pointer-events:none;z-index:6">
+        <span>10:42</span>
+        <span style="display:flex;align-items:center;gap:5px">
+          <svg width="17" height="11" viewBox="0 0 17 11" aria-hidden="true"><g fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"></rect><rect x="4.5" y="5" width="3" height="6" rx="1"></rect><rect x="9" y="2.5" width="3" height="8.5" rx="1"></rect><rect x="13.5" y="0" width="3" height="11" rx="1" opacity=".35"></rect></g></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" aria-hidden="true"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".4"></rect><rect x="2" y="2" width="14" height="8" rx="2" fill="currentColor"></rect><path d="M23 4v4a2 2 0 0 0 0-4z" fill="currentColor" opacity=".4"></path></svg>
+        </span>
+      </div>
+
+      <sc-if value="{{inApp}}" hint-placeholder-val="{{true}}">
+        <div style="position:absolute;top:56px;left:0;right:0;z-index:5;pointer-events:none;opacity:{{railOpacity}};transition:opacity .2s linear">
+          <div style="display:flex;align-items:center;justify-content:center;gap:0;height:22px;margin:0 46px;overflow:hidden;position:relative">
+            <sc-for list="{{tape}}" as="t" hint-placeholder-count="9">
+              <span style="flex:1;text-align:center;font-size:9.5px;font-weight:700;letter-spacing:.16em;color:var(--labelFill);opacity:{{t.opacity}}">{{t.label}}</span>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:center;margin-top:-3px"><svg width="12" height="7" viewBox="0 0 12 7" aria-hidden="true"><path d="M6 0 L11.4 7 L0.6 7 Z" fill="var(--adventure)"></path></svg></div>
+
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:10px 14px 0;pointer-events:auto">
+            <div style="display:flex;align-items:center;gap:9px;padding:9px 15px 9px 12px;border-radius:999px;background:var(--glass);border:1px solid var(--glassRim);box-shadow:var(--shadow1);backdrop-filter:blur(20px) saturate(170%)">
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.4" fill="var(--sun)"></circle><g fill="none" stroke="var(--sun)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.4v2.2M12 19.4v2.2M21.6 12h-2.2M4.6 12H2.4"></path><path d="M18.8 5.2 17.2 6.8M6.8 17.2 5.2 18.8M18.8 18.8 17.2 17.2M6.8 6.8 5.2 5.2"></path></g></svg>
+              <b style="font-size:16px;color:var(--label)">74°</b>
+              <span style="font-size:11px;font-weight:600;color:var(--label2);letter-spacing:.04em">CLEAR</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button type="button" onClick="{{focusMe}}" aria-label="Centre on me" style="width:42px;height:42px;border-radius:50%;border:1px solid var(--glassRim);background:var(--glass);box-shadow:var(--shadow1);backdrop-filter:blur(20px);display:grid;place-items:center;cursor:pointer">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 3.9 4.3 10.6c-1.2.5-1 2.2.2 2.5l6.1 1.4 1.4 6.1c.3 1.2 2 1.4 2.5.2l6.7-16.5c.4-1-.5-1.8-1.4-1.4Z" fill="var(--indigo)"></path></svg>
+              </button>
+              <button type="button" onClick="{{openParty}}" aria-label="Rally the Party" style="width:42px;height:42px;border-radius:50%;border:1px solid var(--glassRim);background:var(--adventure);box-shadow:var(--shadow2);display:grid;place-items:center;cursor:pointer">
+                <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6a5.6 5.6 0 0 0-5.6 5.6c0 4 5.6 9.4 5.6 9.4s5.6-5.4 5.6-9.4A5.6 5.6 0 0 0 12 2.6Z" fill="#fff"></path><circle cx="12" cy="8.2" r="2.1" fill="var(--adventure)"></circle><ellipse cx="12" cy="19.6" rx="6.4" ry="2.1" fill="none" stroke="#fff" stroke-width="1.7"></ellipse></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{spotOnMap}}" hint-placeholder-val="{{false}}">
+        <div style="position:absolute;left:{{spotLeft}};top:{{spotTop}};transform:translate(-50%,-100%);z-index:5;pointer-events:none;display:flex;flex-direction:column;align-items:center">
+          <span style="font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--labelFill);text-shadow:0 1px 0 var(--labelStroke),0 -1px 0 var(--labelStroke),1px 0 0 var(--labelStroke),-1px 0 0 var(--labelStroke);white-space:nowrap;margin-bottom:3px">{{spotWalk}}</span>
+          <svg width="22" height="26" viewBox="0 0 24 28" aria-hidden="true"><path d="M12 27 L12 17" stroke="var(--aqua)" stroke-width="2" stroke-linecap="round"></path><path d="M12 1.6a7.4 7.4 0 0 0-7.4 7.4c0 5.2 7.4 12 7.4 12s7.4-6.8 7.4-12A7.4 7.4 0 0 0 12 1.6Z" fill="var(--aqua)" stroke="var(--labelStroke)" stroke-width="1.6"></path><circle cx="12" cy="9" r="2.8" fill="var(--labelStroke)"></circle></svg>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{spotShown}}" hint-placeholder-val="{{false}}">
+        <div style="position:absolute;left:14px;right:14px;bottom:{{capsuleBottom}};z-index:9;padding:14px;border-radius:22px;background:var(--glass);backdrop-filter:blur(24px) saturate(170%);border:1px solid var(--glassRim);box-shadow:var(--shadow2)">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+            <span>
+              <b style="display:block;font-size:15.5px;color:var(--label)">{{spotName}}</b>
+              <span style="font-size:12.5px;color:var(--label3)">{{spotZoneLine}}</span>
+              <span style="display:block;font-size:12.5px;font-weight:600;color:var(--aqua);margin-top:2px">{{spotReach}}</span>
+            </span>
+            <button type="button" onClick="{{closeSpot}}" aria-label="Close" style="flex:none;border:0;background:none;color:var(--label3);padding:2px;cursor:pointer;display:grid;place-items:center">
+              <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.4" fill="currentColor"></circle><path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="var(--glass)" stroke-width="2" stroke-linecap="round"></path></svg>
+            </button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button type="button" onClick="{{spotQuest}}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:13px;background:var(--adventure);color:#fff;padding:12px 0;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 3.4v17.2" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"></path><path d="M6.4 4.2h9.2c.7 0 1.1.8.7 1.4L14.8 8.6l1.5 3c.4.6 0 1.4-.7 1.4H6.4Z" fill="#fff"></path></svg>
+              Side Quest here
+            </button>
+            <button type="button" onClick="{{spotMark}}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--sep);border-radius:13px;background:var(--bg2);color:var(--label);padding:12px 0;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6a5.6 5.6 0 0 0-5.6 5.6c0 4 5.6 9.4 5.6 9.4s5.6-5.4 5.6-9.4A5.6 5.6 0 0 0 12 2.6Z" fill="currentColor"></path><circle cx="12" cy="8.2" r="2.1" fill="var(--bg2)"></circle><ellipse cx="12" cy="19.6" rx="6.4" ry="2.1" fill="none" stroke="currentColor" stroke-width="1.7"></ellipse></svg>
+              Leave a Mark
+            </button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{capsuleShown}}" hint-placeholder-val="{{false}}">
+        <div style="position:absolute;left:14px;right:14px;bottom:{{capsuleBottom}};z-index:6;display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:999px;background:var(--glass);backdrop-filter:blur(24px) saturate(170%);border:1px solid var(--glassRim);box-shadow:var(--shadow2)">
+          <span style="width:11px;height:11px;border-radius:50%;background:{{capsuleDot}};box-shadow:0 0 0 2.5px var(--labelStroke);flex:none;display:block"></span>
+          <span style="flex:1;min-width:0;display:flex;align-items:baseline;gap:7px">
+            <b style="font-size:15px;color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{capsuleName}}</b>
+            <em style="font-size:12.5px;font-style:normal;font-weight:600;color:var(--label2);flex:none">{{capsuleDist}}</em>
+            <span style="font-size:9.5px;font-weight:800;letter-spacing:.06em;color:{{capsuleLiveFg}};background:{{capsuleLiveBg}};border-radius:6px;padding:3px 6px;flex:none">{{capsuleLive}}</span>
+          </span>
+          <button type="button" onClick="{{startWalk}}" style="flex:none;border:0;border-radius:999px;background:var(--adventure);color:#fff;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer">Walk</button>
+          <button type="button" onClick="{{hideCapsule}}" aria-label="Dismiss" style="flex:none;border:0;background:none;color:var(--label3);padding:2px;cursor:pointer;display:grid;place-items:center">
+            <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.4" fill="currentColor"></circle><path d="M9 9l6 6M15 9l-6 6" fill="none" stroke="var(--glass)" stroke-width="2" stroke-linecap="round"></path></svg>
+          </button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{sheetOpen}}" hint-placeholder-val="{{true}}">
+        <section style="position:absolute;left:0;right:0;bottom:0;height:{{sheetH}};z-index:7;display:flex;flex-direction:column;background:{{sheetBg}};backdrop-filter:blur(30px) saturate(170%);border-top:1px solid var(--glassRim);border-radius:28px 28px 0 0;box-shadow:var(--shadow3);transition:{{sheetTransition}};touch-action:none">
+          <button type="button" onClick="{{toggleSheet}}" onPointerDown="{{dragStart}}" onPointerMove="{{dragMove}}" onPointerUp="{{dragEnd}}" onPointerCancel="{{dragEnd}}" aria-label="Resize sheet" style="border:0;background:none;padding:9px 0 6px;cursor:grab;display:flex;justify-content:center;touch-action:none;width:100%">
+            <span style="width:44px;height:5px;border-radius:3px;background:var(--label3);display:block;transition:background .2s ease"></span>
+          </button>
+
+          <div class="pbScroll" style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:2px 16px 10px">
+
+            <sc-if value="{{isExplore}}" hint-placeholder-val="{{true}}">
+              <div style="opacity:{{headOpacity}};max-height:{{headMax}};overflow:hidden;transition:opacity .16s linear">
+                <label style="display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:15px;background:var(--fill2);border:1px solid var(--sep);flex:none;box-sizing:border-box">
+                  <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--label3)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="6.4"></circle><path d="M15.4 15.4 20.6 20.6"></path></g></svg>
+                  <input type="text" value="{{query}}" onChange="{{setQuery}}" placeholder="{{searchPlaceholder}}" style="flex:1;border:0;background:none;outline:none;font-size:16px;color:var(--label)">
+                </label>
+                <p style="margin:0 2px;padding-top:{{contextPad}};font-size:13px;line-height:18px;color:var(--label2);opacity:{{contextOpacity}};max-height:{{contextMax}};overflow:hidden;transition:opacity .16s linear"><b style="color:var(--label);font-size:14px">{{venueName}}</b> · Coney Mall · near the Eiffel Tower</p>
+
+                <sc-if value="{{browsing}}" hint-placeholder-val="{{false}}">
+                  <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:18px;background:var(--bg2);border:1px solid var(--sep);box-shadow:var(--shadow1)">
+                    <span style="flex:1"><b style="display:block;font-size:14.5px;color:var(--label)">Location off</b><span style="font-size:12.5px;color:var(--label3)">Turn it on for walking times and your Party.</span></span>
+                    <button type="button" onClick="{{goGate}}" style="flex:none;border:0;border-radius:11px;background:var(--adventure);color:#fff;padding:9px 12px;font-size:13px;font-weight:700;cursor:pointer">Turn on</button>
+                  </div>
+                </sc-if>
+
+
+                <sc-if value="{{listMounted}}" hint-placeholder-val="{{false}}">
+                  <div style="padding-top:6px;opacity:{{listOpacity}};transition:opacity .16s linear">
+                    <div style="display:flex;align-items:baseline;justify-content:space-between;margin:6px 2px 8px">
+                      <span style="font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">EVERY PLACE</span>
+                      <span style="font-size:12px;color:var(--label3)">{{listCount}}</span>
+                    </div>
+                    <div class="pbScroll" style="display:flex;gap:7px;overflow-x:auto;margin:0 -16px;padding:0 16px 10px">
+                      <sc-for list="{{chips}}" as="ch" hint-placeholder-count="6">
+                        <button type="button" onClick="{{ch.tap}}" style="flex:none;display:flex;align-items:center;gap:6px;border:1px solid {{ch.border}};background:{{ch.bg}};color:{{ch.fg}};padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer">
+                          <i style="width:8px;height:8px;border-radius:50%;background:{{ch.dot}};display:block"></i>{{ch.label}}
+                        </button>
+                      </sc-for>
+                    </div>
+                    <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+                      <div style="border-bottom:1px solid var(--sep)">
+                        <button type="button" onClick="{{r.tap}}" style="width:100%;display:flex;align-items:center;gap:11px;border:0;background:none;padding:11px 2px;text-align:left;cursor:pointer">
+                          <span style="width:10px;height:10px;border-radius:50%;background:{{r.dot}};flex:none"></span>
+                          <span style="flex:1;min-width:0">
+                            <b style="display:block;font-size:15.5px;font-weight:600;color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{r.n}}</b>
+                            <span style="font-size:12.5px;color:var(--label3)">{{r.sub}}</span>
+                          </span>
+                          <span style="display:flex;align-items:center;gap:8px;flex:none">
+                            <span style="text-align:right"><b style="display:block;font-size:14px;color:var(--label)">{{r.walk}}</b><em style="font-size:11px;font-style:normal;color:var(--label3)">{{r.dist}}</em></span>
+                            <span style="font-size:11px;font-weight:700;letter-spacing:.03em;padding:4px 8px;border-radius:8px;color:{{r.vFg}};background:{{r.vBg}}">{{r.vLabel}}</span>
+                          </span>
+                        </button>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{isPlan}}" hint-placeholder-val="{{false}}">
+              <div>
+                <div style="display:flex;gap:6px;padding:2px 0 14px">
+                  <button type="button" onClick="{{showStops}}" style="flex:1;padding:9px 0;border-radius:12px;border:1px solid {{stopsBorder}};background:{{stopsBg}};color:{{stopsFg}};font-size:13.5px;font-weight:700;cursor:pointer">{{stopsLabel}}</button>
+                  <button type="button" onClick="{{showHeights}}" style="flex:1;padding:9px 0;border-radius:12px;border:1px solid {{heightsBorder}};background:{{heightsBg}};color:{{heightsFg}};font-size:13.5px;font-weight:700;cursor:pointer">Heights</button>
+                </div>
+
+                <sc-if value="{{planSection}}" hint-placeholder-val="{{false}}">
+                  <div>
+                    <div style="margin:0 2px 10px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">TODAY’S STOPS</div>
+                    <sc-if value="{{planEmpty}}" hint-placeholder-val="{{false}}">
+                      <p style="margin:0 2px;font-size:13px;line-height:19px;color:var(--label3)">No stops yet. Star a Place from Explore to build today’s Plan.</p>
+                    </sc-if>
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <sc-for list="{{planStops}}" as="p" hint-placeholder-count="3">
+                        <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:15px;background:var(--bg2);border:1px solid var(--sep)">
+                          <span style="width:22px;height:22px;border-radius:50%;background:var(--fill2);color:var(--label2);display:grid;place-items:center;font-size:11.5px;font-weight:800;flex:none">{{p.n}}</span>
+                          <span style="flex:1;min-width:0">
+                            <b style="display:block;font-size:15px;color:{{p.fg}};text-decoration:{{p.strike}}">{{p.label}}</b>
+                            <span style="font-size:12px;color:var(--label3)">{{p.sub}}</span>
+                          </span>
+                          <button type="button" onClick="{{p.walk}}" style="border:0;border-radius:10px;background:var(--fill);color:var(--label);padding:7px 10px;font-size:12.5px;font-weight:700;cursor:pointer;flex:none">Walk</button>
+                          <button type="button" onClick="{{p.drop}}" aria-label="Remove from Plan" style="border:0;background:none;color:var(--label3);padding:4px;cursor:pointer;flex:none">
+                            <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg>
+                          </button>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <p style="margin:12px 2px 0;font-size:12px;line-height:17px;color:var(--label3);text-wrap:pretty">The Plan is shared with your Party. Anyone can reorder it; tapping a stop walks there.</p>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{heightSection}}" hint-placeholder-val="{{false}}">
+              <div>
+                <div style="display:flex;align-items:baseline;justify-content:space-between;margin:4px 2px 10px">
+                  <span style="font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">PARTY HEIGHTS</span>
+                  <button type="button" onClick="{{clearHeight}}" style="border:0;background:none;font-size:13px;font-weight:600;color:var(--adventure);cursor:pointer">Clear</button>
+                </div>
+                <div class="pbScroll" style="display:flex;gap:7px;overflow-x:auto;margin:0 -16px 12px;padding:0 16px">
+                  <sc-for list="{{whoChips}}" as="w" hint-placeholder-count="4">
+                    <button type="button" onClick="{{w.tap}}" style="flex:none;display:flex;align-items:center;gap:6px;border:1px solid {{w.border}};background:{{w.bg}};color:{{w.fg}};padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer">
+                      <i style="width:8px;height:8px;border-radius:50%;background:{{w.dot}};display:block"></i>{{w.label}}
+                    </button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:7px">
+                  <sc-for list="{{tiers}}" as="t" hint-placeholder-count="5">
+                    <button type="button" onClick="{{t.tap}}" style="flex:1;padding:12px 0 10px;border-radius:14px;border:1px solid {{t.border}};background:{{t.bg}};color:{{t.fg}};font-size:17px;font-weight:700;cursor:pointer">{{t.label}}<em style="font-size:11px;font-style:normal;opacity:.6">in</em></button>
+                  </sc-for>
+                </div>
+
+                <sc-if value="{{hasHeight}}" hint-placeholder-val="{{false}}">
+                  <div>
+                    <div style="display:flex;align-items:center;gap:14px;margin:16px 2px 12px">
+                      <input type="range" min="30" max="76" step="1" value="{{height}}" onChange="{{setHeight}}" aria-label="Rider height in inches" style="flex:1;accent-color:var(--adventure)">
+                      <div style="display:flex;align-items:baseline;gap:3px"><b style="font-size:26px;letter-spacing:-.6px;color:var(--label)">{{height}}</b><span style="font-size:12px;color:var(--label3)">in</span></div>
+                    </div>
+                    <div style="display:flex;gap:3px;height:10px;border-radius:6px;overflow:hidden;background:var(--fill2)">
+                      <span style="flex-grow:{{cYes}};background:var(--green)"></span>
+                      <span style="flex-grow:{{cComp}};background:var(--yellow)"></span>
+                      <span style="flex-grow:{{cNo}};background:var(--barred)"></span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:9px;font-size:12.5px;color:var(--label2)">
+                      <span><b style="color:var(--green)">{{cYes}}</b> can ride</span>
+                      <span><b style="color:var(--yellow)">{{cComp}}</b> with adult</span>
+                      <span><b style="color:var(--barred)">{{cNo}}</b> too short</span>
+                    </div>
+                    <p style="margin:11px 2px 0;font-size:13.5px;color:var(--label)"><b>{{unlockCount}} more</b> unlock at {{unlockAt}}</p>
+                  </div>
+                </sc-if>
+
+                <div style="display:flex;gap:7px;margin:16px 0 6px;flex-wrap:wrap">
+                  <button type="button" onClick="{{toggleAdult}}" style="border:1px solid {{adultBorder}};background:{{adultBg}};color:{{adultFg}};padding:8px 13px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer">{{adultLabel}}</button>
+                </div>
+
+                <p style="margin:12px 2px 0;font-size:12px;line-height:17px;color:var(--label3);text-wrap:pretty">Each Member carries their own height; the map shows the most restrictive one. The operator measures at the gate.</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{isParty}}" hint-placeholder-val="{{false}}">
+              <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 2px 12px">
+                  <span style="font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3);white-space:nowrap">YOUR PARTY · 4</span>
+                  <span style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--label);background:var(--fill2);border:1px dashed var(--sep);padding:5px 10px;border-radius:9px">PB-4K9T</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <sc-for list="{{members}}" as="m" hint-placeholder-count="4">
+                    <button type="button" onClick="{{m.tap}}" style="width:100%;display:flex;align-items:center;gap:12px;padding:12px 13px;border-radius:18px;background:{{m.bg}};border:1px solid {{m.border}};text-align:left;cursor:pointer">
+                      <span style="width:38px;height:38px;border-radius:50%;background:{{m.colour}};color:#fff;display:grid;place-items:center;font-size:14px;font-weight:800;flex:none">{{m.initials}}</span>
+                      <span style="flex:1;min-width:0">
+                        <b style="display:block;font-size:15.5px;color:var(--label)">{{m.name}}</b>
+                        <span style="font-size:12.5px;color:{{m.statusFg}};font-weight:600">{{m.status}}</span>
+                        <span style="font-size:12.5px;color:var(--label3)"> · {{m.where}}</span><span style="display:block;font-size:11.5px;font-weight:700;color:var(--adventure)">{{m.heightCta}}</span>
+                      </span>
+                      <span style="text-align:right;flex:none;min-width:52px"><b style="display:block;font-size:14px;color:var(--label)">{{m.walk}}</b><em style="font-size:11px;font-style:normal;color:var(--label3)">{{m.age}}</em></span>
+                      <svg width="13" height="13" viewBox="0 0 24 24" style="flex:none" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="var(--label3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </button>
+                  </sc-for>
+                </div>
+                <div style="display:flex;gap:9px;margin-top:14px">
+                  <button type="button" onClick="{{setRally}}" style="flex:1;border:0;border-radius:14px;background:var(--adventure);color:#fff;padding:13px 0;font-size:15px;font-weight:700;cursor:pointer">Rally the Party</button>
+                  <button type="button" onClick="{{setRally}}" style="flex:none;border:1px solid var(--sep);border-radius:14px;background:var(--bg2);color:var(--label);padding:13px 16px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap">Where I parked</button>
+                </div>
+                <p style="margin:12px 2px 0;font-size:12px;line-height:17px;color:var(--label3);text-wrap:pretty">Location stays inside your Party.</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{isMe}}" hint-placeholder-val="{{false}}">
+              <div>
+                <sc-if value="{{noPanel}}" hint-placeholder-val="{{true}}">
+                  <div>
+                    <span style="font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">YOUR JOURNEY</span>
+                    <div style="margin-top:10px;padding:16px;border-radius:20px;background:var(--bg2);border:1px solid var(--sep);box-shadow:var(--shadow1)">
+                      <div style="display:flex;align-items:center;justify-content:space-between">
+                        <div>
+                          <b style="font-size:22px;letter-spacing:-.4px;color:var(--label)">Scout</b>
+                          <span style="display:block;font-size:12.5px;line-height:17px;color:var(--label2);margin-top:3px">The Title under your name.</span>
+                        </div>
+                        <b style="font-size:15px;color:var(--adventure)">180 XP</b>
+                      </div>
+                      <div style="height:8px;border-radius:5px;background:var(--fill2);margin-top:18px;overflow:hidden"><span style="display:block;width:65%;height:100%;background:var(--adventure)"></span></div>
+                      <p style="margin:9px 0 0;font-size:12.5px;color:var(--label2)">70 XP to Ranger</p>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:12px">
+                      <div style="flex:1;padding:12px;border-radius:16px;background:var(--fill2);text-align:center"><b style="display:block;font-size:19px;color:var(--label)">18</b><span style="font-size:11.5px;color:var(--label3)">guests helped</span></div>
+                      <div style="flex:1;padding:12px;border-radius:16px;background:var(--fill2);text-align:center"><b style="display:block;font-size:19px;color:var(--label)">7</b><span style="font-size:11px;color:var(--label3)">Contributions</span></div>
+                      <div style="flex:1;padding:12px;border-radius:16px;background:var(--fill2);text-align:center"><b style="display:block;font-size:19px;color:var(--label)">3</b><span style="font-size:11.5px;color:var(--label3)">reputation</span></div>
+                    </div>
+                    <div style="margin:16px 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">NEXT TITLE</div>
+                    <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                      <sc-for list="{{ladder}}" as="l" hint-placeholder-count="1">
+                        <button type="button" onClick="{{toggleRank}}" aria-expanded="{{rankOpen}}" style="display:flex;align-items:center;gap:11px;padding:11px 13px;background:var(--bg2);border:0;width:100%;text-align:left;cursor:pointer">
+                          <i style="width:9px;height:9px;border-radius:50%;background:{{l.dot}};flex:none"></i>
+                          <span style="flex:1"><b style="font-size:14.5px;color:var(--label)">{{l.label}}</b><span style="display:block;font-size:12px;color:var(--label3)">{{l.copy}}</span></span>
+                          <span style="font-size:12.5px;font-weight:700;color:{{l.atFg}};white-space:nowrap;flex:none">{{l.at}}</span>
+                          <svg width="13" height="13" viewBox="0 0 24 24" style="transform:rotate({{rankChevron}}deg)" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="var(--label3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        </button>
+                      </sc-for>
+                      <sc-if value="{{rankOpen}}" hint-placeholder-val="{{false}}">
+                        <div style="padding:12px 13px;background:var(--bg2);border-top:1px solid var(--sep)">
+                          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+                            <b style="font-size:13.5px;color:var(--label)">{{rankUnlock}}</b>
+                            <span style="font-size:12.5px;font-weight:700;color:var(--adventure)">{{rankToGo}}</span>
+                          </div>
+                          <p style="margin:8px 0 0;font-size:12px;line-height:17px;color:var(--label2);text-wrap:pretty">{{rankNote}}</p>
+                          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+                            <sc-for list="{{xpAwards}}" as="x" hint-placeholder-count="4">
+                              <span style="font-size:11.5px;font-weight:600;color:var(--label2);background:var(--fill2);border-radius:8px;padding:5px 8px">{{x.label}} <b style="color:var(--label)">{{x.xp}}</b></span>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </sc-if>
+                    </div>
+                    <div style="margin-top:14px;display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                      <button type="button" onClick="{{openCloset}}" style="display:flex;align-items:center;gap:10px;border:0;background:var(--bg2);padding:14px 13px;font-size:15px;font-weight:600;cursor:pointer;text-align:left">
+                        <span style="flex:1;color:var(--label)">Collection<span style="display:block;font-size:12px;font-weight:500;color:var(--label3)">Skins, Kits, Marks</span></span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="var(--label3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                      </button>
+                      <button type="button" onClick="{{openSettings}}" style="display:flex;align-items:center;gap:10px;border:0;background:var(--bg2);padding:14px 13px;font-size:15px;font-weight:600;cursor:pointer;text-align:left">
+                        <span style="flex:1;color:var(--label)">Settings<span style="display:block;font-size:12px;font-weight:500;color:var(--label3)">You, Map, Phone, More</span></span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="var(--label3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                      </button>
+                    </div>
+                  </div>
+                </sc-if>
+
+
+                <sc-if value="{{isMarks}}" hint-placeholder-val="{{false}}">
+                  <div>
+                    <button type="button" onClick="{{openCloset}}" style="display:flex;align-items:center;gap:7px;border:0;background:none;padding:2px 0 12px;font-size:14px;font-weight:600;color:var(--adventure);cursor:pointer">
+                      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                      Collection
+                    </button>
+                    <div style="margin:0 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">LEAVE A MARK</div>
+                    <p style="margin:0 2px 12px;font-size:12.5px;line-height:18px;color:var(--label2);text-wrap:pretty">Two of the six are yours to place. Party sees it now; other guests after a second Party Thanks. Marks dim after a week and go after four.</p>
+                    <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                      <sc-for list="{{placeable}}" as="mk" hint-placeholder-count="2">
+                        <button type="button" onClick="{{mk.tap}}" style="display:flex;align-items:flex-start;gap:11px;border:0;background:{{mk.bg}};padding:13px;text-align:left;cursor:{{mk.cursor}};opacity:{{mk.opacity}}">
+                          <span style="width:19px;height:19px;display:grid;place-items:center;flex:none;color:{{mk.fg}};margin-top:1px">
+                            <sc-if value="{{mk.isFlag}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 3.4v17.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path><path d="M6.4 4.2h9.2c.7 0 1.1.8.7 1.4L14.8 8.6l1.5 3c.4.6 0 1.4-.7 1.4H6.4Z" fill="currentColor"></path></svg></sc-if>
+                            <sc-if value="{{mk.isNorth}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 19 20.4 12 16.6 5 20.4Z" fill="currentColor"></path></svg></sc-if>
+                          </span>
+                          <span style="flex:1;min-width:0">
+                            <b style="display:block;font-size:15px;color:var(--label)">{{mk.title}}</b>
+                            <span style="font-size:12.5px;line-height:17px;color:var(--label3)">{{mk.copy}}</span>
+                          </span>
+                          <span style="font-size:12.5px;font-weight:700;color:{{mk.stateFg}};flex:none;white-space:nowrap">{{mk.state}}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+
+                    <sc-if value="{{signOpen}}" hint-placeholder-val="{{false}}">
+                      <div style="margin-top:10px">
+                        <div style="margin:0 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">CHOOSE THE PHRASE</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:6px">
+                          <sc-for list="{{signPhrases}}" as="ph" hint-placeholder-count="5">
+                            <button type="button" onClick="{{ph.tap}}" style="border:1px solid {{ph.border}};background:{{ph.bg}};color:{{ph.fg}};border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">{{ph.label}}</button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                    <p style="margin:12px 2px 0;font-size:12.5px;line-height:18px;color:{{markFootFg}};text-wrap:pretty">{{markFoot}}</p>
+
+                    <div style="margin:18px 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">LEFT BY YOUR CONTRIBUTIONS</div>
+                    <p style="margin:0 2px 10px;font-size:12.5px;line-height:18px;color:var(--label2);text-wrap:pretty">The other four are placed for you when a Side Quest settles. You never pick these.</p>
+                    <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                      <sc-for list="{{earned}}" as="mk" hint-placeholder-count="4">
+                        <div style="display:flex;align-items:flex-start;gap:11px;background:var(--bg2);padding:13px">
+                          <span style="width:19px;height:19px;display:grid;place-items:center;flex:none;color:var(--label3);margin-top:1px">
+                            <sc-if value="{{mk.isCoaster}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.4 20c3.6 0 3.6-9 9.6-9s6 9 9.6 9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path><rect x="8.2" y="4.4" width="7.6" height="4.9" rx="1.5" fill="currentColor"></rect><circle cx="10.2" cy="10" r="1.15" fill="currentColor"></circle><circle cx="13.8" cy="10" r="1.15" fill="currentColor"></circle></svg></sc-if>
+                            <sc-if value="{{mk.isBolt}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.6 1.8 5.2 13.4h5l-2.4 8.8 8.8-12.2h-5.2l2.2-8.2Z" fill="currentColor"></path></svg></sc-if>
+                            <sc-if value="{{mk.isPin}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6a5.6 5.6 0 0 0-5.6 5.6c0 4 5.6 9.4 5.6 9.4s5.6-5.4 5.6-9.4A5.6 5.6 0 0 0 12 2.6Z" fill="currentColor"></path><circle cx="12" cy="8.2" r="2.1" fill="var(--bg2)"></circle><ellipse cx="12" cy="19.6" rx="6.4" ry="2.1" fill="none" stroke="currentColor" stroke-width="1.7"></ellipse></svg></sc-if>
+                            <sc-if value="{{mk.isCamera}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.4 4.4a1.4 1.4 0 0 0-1.2.7l-.9 1.5H4.6a2.2 2.2 0 0 0-2.2 2.2v8.6a2.2 2.2 0 0 0 2.2 2.2h14.8a2.2 2.2 0 0 0 2.2-2.2V8.8a2.2 2.2 0 0 0-2.2-2.2h-2.7l-.9-1.5a1.4 1.4 0 0 0-1.2-.7Z" fill="currentColor"></path><circle cx="12" cy="13.2" r="3.4" fill="var(--bg2)"></circle></svg></sc-if>
+                          </span>
+                          <span style="flex:1;min-width:0">
+                            <b style="display:block;font-size:15px;color:var(--label)">{{mk.title}}</b>
+                            <span style="font-size:12.5px;line-height:17px;color:var(--label3)">{{mk.copy}}</span>
+                          </span>
+                          <span style="font-size:12.5px;font-weight:700;color:var(--label2);flex:none;white-space:nowrap">{{mk.count}}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{isCloset}}" hint-placeholder-val="{{false}}">
+                  <div>
+                    <button type="button" onClick="{{openSettings}}" style="display:flex;align-items:center;gap:7px;border:0;background:none;padding:2px 0 12px;font-size:14px;font-weight:600;color:var(--adventure);cursor:pointer">
+                      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                      Settings
+                    </button>
+                    <div style="margin:0 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">COLLECTION</div>
+                    <p style="margin:0 2px 14px;font-size:12.5px;line-height:18px;color:var(--label2);text-wrap:pretty">Skins paint this map. Kits are how your Party sees you. Marks stay at a Place for families you never meet. Light and Dark above are chrome, not Skins.</p>
+
+                    <div style="margin:0 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">OFFERS IN THIS PARTY</div>
+                    <button type="button" onClick="{{toggleOffer}}" style="width:100%;display:flex;align-items:center;gap:10px;border:1px solid {{offerBorder}};border-radius:14px;background:var(--bg2);padding:12px 13px;text-align:left;cursor:pointer">
+                      <span style="flex:1;font-size:15px;color:var(--label)">Drafting<span style="font-size:12.5px;color:var(--label3)"> — offered by a Member</span></span>
+                      <span style="font-size:13px;font-weight:700;color:{{offerFg}};white-space:nowrap">{{offerValue}}</span>
+                    </button>
+
+                    <div style="margin:16px 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">SKINS</div>
+                    <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                      <sc-for list="{{skins}}" as="sk" hint-placeholder-count="6">
+                        <div style="background:var(--bg2)">
+                          <button type="button" onClick="{{sk.tap}}" style="width:100%;display:flex;align-items:center;gap:10px;border:0;background:none;padding:12px 13px;text-align:left;cursor:{{sk.cursor}};opacity:{{sk.opacity}}">
+                            <span style="width:22px;height:14px;border-radius:4px;background:{{sk.swatch}};border:1px solid {{sk.swatchEdge}};flex:none;display:block"></span>
+                            <span style="flex:1;font-size:15px;color:var(--label)">{{sk.label}}</span>
+                            <span style="font-size:13px;font-weight:700;color:{{sk.valueFg}};white-space:nowrap">{{sk.value}}</span>
+                          </button>
+                          <sc-if value="{{sk.canOffer}}" hint-placeholder-val="{{false}}">
+                            <div style="padding:0 13px 11px">
+                              <button type="button" onClick="{{sk.offer}}" style="border:1px solid var(--sep);border-radius:999px;background:none;color:var(--label);padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap">{{sk.offerCta}}</button>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div style="margin:16px 2px 8px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">KITS</div>
+                    <p style="margin:0 2px 10px;font-size:12px;line-height:17px;color:var(--label3);text-wrap:pretty">Your Party sees this on your puck.</p>
+                    <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                      <sc-for list="{{kits}}" as="kt" hint-placeholder-count="6">
+                        <button type="button" onClick="{{kt.tap}}" style="display:flex;align-items:center;gap:10px;border:0;background:var(--bg2);padding:12px 13px;text-align:left;cursor:pointer">
+                          <span style="width:20px;height:20px;display:grid;place-items:center;flex:none;color:{{kt.glyphFg}}">
+                            <sc-if value="{{kt.isLocation}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 3.9 4.3 10.6c-1.2.5-1 2.2.2 2.5l6.1 1.4 1.4 6.1c.3 1.2 2 1.4 2.5.2l6.7-16.5c.4-1-.5-1.8-1.4-1.4Z" fill="currentColor"></path></svg></sc-if>
+                            <sc-if value="{{kt.isPerson}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.4" fill="currentColor"></circle><circle cx="12" cy="9.8" r="3.1" fill="var(--bg2)"></circle><path d="M5.9 18.6a9.4 9.4 0 0 0 12.2 0c-1-2.1-3.4-3.3-6.1-3.3s-5.1 1.2-6.1 3.3Z" fill="var(--bg2)"></path></svg></sc-if>
+                            <sc-if value="{{kt.isNorth}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 19 20.4 12 16.6 5 20.4Z" fill="currentColor"></path></svg></sc-if>
+                            <sc-if value="{{kt.isFlag}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 3.4v17.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path><path d="M6.4 4.2h9.2c.7 0 1.1.8.7 1.4L14.8 8.6l1.5 3c.4.6 0 1.4-.7 1.4H6.4Z" fill="currentColor"></path></svg></sc-if>
+                            <sc-if value="{{kt.isPin}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6a5.6 5.6 0 0 0-5.6 5.6c0 4 5.6 9.4 5.6 9.4s5.6-5.4 5.6-9.4A5.6 5.6 0 0 0 12 2.6Z" fill="currentColor"></path><circle cx="12" cy="8.2" r="2.1" fill="var(--bg3)"></circle><ellipse cx="12" cy="19.6" rx="6.4" ry="2.1" fill="none" stroke="currentColor" stroke-width="1.7"></ellipse></svg></sc-if>
+                            <sc-if value="{{kt.isSafari}}" hint-placeholder-val="{{false}}"><svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.1" fill="none" stroke="currentColor" stroke-width="1.9"></circle><path d="M16.4 7.6 10.9 10.9 7.6 16.4 13.1 13.1Z" fill="currentColor"></path></svg></sc-if>
+                          </span>
+                          <span style="flex:1;font-size:15px;color:var(--label)">{{kt.label}}</span>
+                          <span style="font-size:13px;font-weight:700;color:{{kt.valueFg}};white-space:nowrap">{{kt.value}}</span>
+                        </button>
+                      </sc-for>
+                    </div>
+
+                    <button type="button" onClick="{{openMarks}}" style="width:100%;display:flex;align-items:center;gap:10px;border:1px solid var(--sep);border-radius:16px;background:var(--bg2);padding:13px;margin-top:16px;text-align:left;cursor:pointer">
+                      <span style="width:20px;height:20px;display:grid;place-items:center;flex:none;color:var(--adventure)">
+                        <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6a5.6 5.6 0 0 0-5.6 5.6c0 4 5.6 9.4 5.6 9.4s5.6-5.4 5.6-9.4A5.6 5.6 0 0 0 12 2.6Z" fill="currentColor"></path><circle cx="12" cy="8.2" r="2.1" fill="var(--bg2)"></circle><ellipse cx="12" cy="19.6" rx="6.4" ry="2.1" fill="none" stroke="currentColor" stroke-width="1.7"></ellipse></svg>
+                      </span>
+                      <span style="flex:1;font-size:15px;color:var(--label)">Marks<span style="display:block;font-size:12px;color:var(--label3);font-weight:500">{{marksSub}}</span></span>
+                      <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="var(--label3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    </button>
+                  </div>
+                </sc-if>
+                <sc-if value="{{isSettings}}" hint-placeholder-val="{{false}}">
+                  <div>
+                    <button type="button" onClick="{{closePanel}}" style="display:flex;align-items:center;gap:7px;border:0;background:none;padding:2px 0 12px;font-size:14px;font-weight:600;color:var(--adventure);cursor:pointer">
+                      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5 7.5 12 15 19.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                      Me
+                    </button>
+                    <div style="display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:16px;background:var(--fill2);margin-bottom:14px">
+                      <svg width="22" height="22" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M22 14 L32 6 L42 14 M50 22 L58 32 L50 42 M42 50 L32 58 L22 50 M14 42 L6 32 L14 22" stroke="var(--aqua)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="32" cy="32" r="8" fill="var(--adventure)"></circle></svg>
+                      <span><b style="display:block;font-size:14px;color:var(--label)">Explore more. Stress less.</b><span style="font-size:12px;color:var(--label3)">Your World, appearance, and this phone.</span></span>
+                    </div>
+                    <div style="display:flex;gap:5px;margin-bottom:14px">
+                      <sc-for list="{{topics}}" as="tp" hint-placeholder-count="4">
+                        <button type="button" onClick="{{tp.tap}}" style="flex:1;padding:8px 0;border-radius:11px;border:1px solid {{tp.border}};background:{{tp.bg}};color:{{tp.fg}};font-size:13px;font-weight:700;cursor:pointer">{{tp.label}}</button>
+                      </sc-for>
+                    </div>
+
+                    <sc-if value="{{topicYou}}" hint-placeholder-val="{{true}}">
+                      <div>
+                        <div style="margin:0 2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">HOW PARKBOUND WORKS</div>
+                        <button type="button" onClick="{{toggleHelp}}" aria-expanded="{{helpOpen}}" style="width:100%;display:flex;align-items:center;gap:10px;border:1px solid var(--sep);border-radius:14px;background:var(--bg2);padding:13px;font-size:15px;font-weight:600;cursor:pointer;text-align:left">
+                          <span style="flex:1;color:var(--label)">What all this means</span>
+                          <span style="font-size:13px;font-weight:700;color:var(--adventure)">{{helpCta}}</span>
+                        </button>
+                        <sc-if value="{{helpOpen}}" hint-placeholder-val="{{false}}">
+                          <p style="margin:10px 2px 0;font-size:12.5px;line-height:18px;color:var(--label2);text-wrap:pretty">Start on Explore — Places, Trails and map Zones inside your current World. A Party is your group: one phone starts one and reads out the six-character code, and each phone then shows the others as coloured markers with the walk to reach them. Side Quests are on-the-ground missions for facts open maps cannot settle. Rally brings everyone to one shared Place.</p>
+                        </sc-if>
+                        <div style="margin:16px 2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">YOUR NAME</div>
+                        <input type="text" value="{{name}}" onChange="{{setName}}" maxlength="14" placeholder="Name" style="width:100%;box-sizing:border-box;padding:12px 13px;border-radius:14px;border:1px solid var(--sep);background:var(--bg2);font-size:16px;color:var(--label);outline:none">
+                        <p style="margin:9px 2px 0;font-size:12px;line-height:17px;color:var(--label3)">Shown on the map and roster when you join a Party.</p>
+                        <div style="margin:16px 2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">SIGNED IN</div>
+                        <div style="display:flex;align-items:center;gap:11px;padding:13px;border-radius:16px;background:var(--bg2);border:1px solid var(--sep)">
+                          <span style="width:34px;height:34px;border-radius:50%;background:var(--indigo);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;flex:none">SM</span>
+                          <span style="flex:1"><b style="display:block;font-size:14.5px;color:var(--label)">Sam</b><span style="font-size:12px;color:var(--adventure);font-weight:700">Scout</span></span>
+                          <button type="button" onClick="{{goAuth}}" style="flex:none;border:1px solid var(--sep);border-radius:11px;background:none;color:var(--label2);padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Sign out</button>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{topicMap}}" hint-placeholder-val="{{false}}">
+                      <div>
+                        <div style="margin:0 2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">MAP APPEARANCE</div>
+                        <div style="display:flex;gap:5px;padding:4px;border-radius:14px;background:var(--fill2)">
+                          <sc-for list="{{appearances}}" as="ap" hint-placeholder-count="3">
+                            <button type="button" onClick="{{ap.tap}}" style="flex:1;padding:9px 0;border-radius:11px;border:0;background:{{ap.bg}};color:{{ap.fg}};font-size:13.5px;font-weight:700;cursor:pointer">{{ap.label}}</button>
+                          </sc-for>
+                        </div>
+                        <p style="margin:10px 2px 0;font-size:12px;line-height:17px;color:var(--label3);text-wrap:pretty">{{appearanceSub}} Light suits direct sun; dark reads better once the park lights come on.</p>
+                        <div style="margin:16px 2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">WORLD</div>
+                        <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                          <sc-for list="{{mapRows}}" as="r" hint-placeholder-count="4">
+                            <button type="button" onClick="{{r.tap}}" style="display:flex;align-items:center;gap:10px;border:0;background:var(--bg2);padding:13px;text-align:left;cursor:pointer">
+                              <span style="flex:1;font-size:15px;color:var(--label)">{{r.label}}</span>
+                              <span style="font-size:13.5px;font-weight:600;color:var(--label2)">{{r.value}}</span>
+                              <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="var(--label3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            </button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{topicPhone}}" hint-placeholder-val="{{false}}">
+                      <div>
+                        <div style="margin:0 2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">THIS PHONE</div>
+                        <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                          <sc-for list="{{phoneRows}}" as="r" hint-placeholder-count="4">
+                            <button type="button" onClick="{{r.tap}}" style="display:flex;align-items:center;gap:10px;border:0;background:var(--bg2);padding:13px;text-align:left;cursor:pointer">
+                              <span style="flex:1;font-size:15px;color:var(--label)">{{r.label}}<span style="display:block;font-size:12px;color:var(--label3);font-weight:500">{{r.sub}}</span></span>
+                              <span style="font-size:13.5px;font-weight:600;color:{{r.valueFg}}">{{r.value}}</span>
+                            </button>
+                          </sc-for>
+                        </div>
+                        <div style="margin-top:14px;padding:15px;border-radius:18px;background:var(--bg2);border:1px solid var(--sep)">
+                          <p style="margin:0;font-size:13.5px;line-height:19px;color:var(--label);text-wrap:pretty">When the park wifi drops mid-queue, the Home Screen app still has the map. Full screen — no browser chrome eating the midway.</p>
+                          <button type="button" onClick="{{noop}}" style="width:100%;margin-top:12px;border:0;border-radius:13px;background:var(--adventure);color:#fff;padding:12px 0;font-size:14.5px;font-weight:700;cursor:pointer">Keep the map offline</button>
+                          <p style="margin:10px 0 0;font-size:12px;line-height:17px;color:var(--label3)">Location and Party sync need a connection. The drawn map does not.</p>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{topicMore}}" hint-placeholder-val="{{false}}">
+                      <div>
+                        <div style="margin:0 2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">ADVANCED</div>
+                        <div style="display:flex;flex-direction:column;gap:1px;border-radius:16px;overflow:hidden;border:1px solid var(--sep)">
+                          <sc-for list="{{moreRows}}" as="r" hint-placeholder-count="4">
+                            <button type="button" onClick="{{r.tap}}" style="display:flex;align-items:center;gap:10px;border:0;background:var(--bg2);padding:13px;text-align:left;cursor:pointer">
+                              <span style="flex:1;font-size:15px;color:var(--label)">{{r.label}}</span>
+                              <span style="font-size:13.5px;font-weight:600;color:{{r.valueFg}}">{{r.value}}</span>
+                            </button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{isQuests}}" hint-placeholder-val="{{false}}">
+              <div>
+                  <span style="font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">SIDE QUESTS · NEAR YOU</span>
+                <sc-if value="{{questSpotShown}}" hint-placeholder-val="{{false}}">
+                  <div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:15px;background:var(--fill2);border:1px solid var(--sep);margin-bottom:12px">
+                    <svg width="17" height="17" viewBox="0 0 24 24" style="flex:none" aria-hidden="true"><path d="M12 2.6a5.6 5.6 0 0 0-5.6 5.6c0 4 5.6 9.4 5.6 9.4s5.6-5.4 5.6-9.4A5.6 5.6 0 0 0 12 2.6Z" fill="var(--aqua)"></path><circle cx="12" cy="8.2" r="2.1" fill="var(--bg2)"></circle></svg>
+                    <span style="flex:1;min-width:0"><b style="display:block;font-size:14px;color:var(--label)">{{questSpotLine}}</b><span style="font-size:12px;color:var(--label3)">{{questSpotReach}}</span></span>
+                    <button type="button" onClick="{{clearQuestSpot}}" style="flex:none;border:0;background:none;color:var(--label3);padding:3px;cursor:pointer;display:grid;place-items:center">
+                      <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path></svg>
+                    </button>
+                  </div>
+                </sc-if>
+
+                <div style="display:flex;flex-direction:column;gap:10px;margin-top:11px">
+                  <sc-for list="{{quests}}" as="q" hint-placeholder-count="3">
+                    <div style="padding:14px;border-radius:18px;background:var(--bg2);border:1px solid var(--sep);box-shadow:var(--shadow1)">
+                      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                        <div>
+                          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;color:{{q.colour}};white-space:nowrap">{{q.kind}}</span>
+                          <b style="display:block;font-size:16px;color:var(--label);margin-top:4px">{{q.title}}</b>
+                        </div>
+                        <span style="font-size:11.5px;font-weight:700;color:{{q.colour}};border:1px solid {{q.colour}};border-radius:9px;padding:4px 8px;flex:none">{{q.gain}}</span>
+                      </div>
+                      <p style="margin:8px 0 0;font-size:13px;line-height:18px;color:var(--label2);text-wrap:pretty">{{q.copy}}</p>
+                      <div style="display:flex;align-items:center;gap:9px;margin-top:12px">
+                        <button type="button" onClick="{{q.go}}" style="border:0;border-radius:11px;background:var(--fill);color:var(--label);padding:9px 13px;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap">Walk me there</button>
+                        <span style="font-size:12px;color:var(--label3)">{{q.walk}} · {{q.where}}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <p style="margin:12px 2px 0;font-size:12px;line-height:17px;color:var(--label3);text-wrap:pretty">Go to the spot, report what you see. Your Profile keeps the credit.</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{hasSel}}" hint-placeholder-val="{{false}}">
+              <div style="margin-top:14px;padding:15px;border-radius:20px;background:var(--bg2);border:1px solid var(--sep);box-shadow:var(--shadow2)">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+                  <div>
+                    <span style="font-size:11px;font-weight:800;letter-spacing:.08em;color:{{selColour}}">{{selEyebrow}}</span>
+                    <b style="display:block;font-size:21px;letter-spacing:-.4px;color:var(--label);margin-top:3px">{{selName}}</b>
+                    <span style="font-size:13px;color:var(--label2)">{{selSub}}</span>
+                  </div>
+                  <button type="button" onClick="{{closeSel}}" aria-label="Close" style="border:0;background:var(--fill2);width:30px;height:30px;border-radius:50%;color:var(--label2);font-size:15px;cursor:pointer;flex:none">✕</button>
+                </div>
+                <div style="height:104px;border-radius:14px;margin-top:13px;background:var(--fill2);border:1px dashed var(--sep);display:grid;place-items:center;font-size:12px;color:var(--label3)">Photo — {{selName}} entrance</div>
+                <div style="display:flex;gap:8px;margin-top:13px">
+                  <button type="button" onClick="{{startWalk}}" style="flex:1;border:0;border-radius:13px;background:var(--adventure);color:#fff;padding:12px 0;font-size:14.5px;font-weight:700;cursor:pointer">Walk me there</button>
+                  <button type="button" onClick="{{addToPlan}}" style="border:1px solid var(--sep);border-radius:13px;background:none;color:var(--label);padding:12px 14px;font-size:14.5px;font-weight:600;cursor:pointer">{{planCta}}</button>
+                  <button type="button" onClick="{{setRally}}" style="border:1px solid var(--sep);border-radius:13px;background:none;color:var(--label);padding:12px 14px;font-size:14.5px;font-weight:600;cursor:pointer">Rally here</button>
+                </div>
+                <sc-if value="{{selRideable}}" hint-placeholder-val="{{false}}">
+                  <div style="margin-top:13px;padding-top:12px;border-top:1px solid var(--sep);display:flex;flex-direction:column;gap:7px">
+                    <sc-for list="{{selPeople}}" as="pp" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:baseline;gap:8px">
+                        <b style="font-size:13.5px;color:var(--label);width:52px;flex:none">{{pp.name}}</b>
+                        <span style="font-size:12px;font-weight:700;color:{{pp.fg}};width:74px;flex:none">{{pp.label}}</span>
+                        <span style="flex:1;font-size:12px;color:var(--label3)">{{pp.why}}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <div style="display:flex;align-items:center;gap:9px;margin-top:13px;padding-top:12px;border-top:1px solid var(--sep)">
+                  <span style="flex:1;font-size:12.5px;color:var(--label2)">Tell the party what you see</span>
+                  <button type="button" onClick="{{closeSel}}" style="border:1px solid var(--sep);background:none;border-radius:10px;padding:7px 11px;font-size:12.5px;font-weight:700;color:var(--green);cursor:pointer">Running</button>
+                  <button type="button" onClick="{{closeSel}}" style="border:1px solid var(--sep);background:none;border-radius:10px;padding:7px 11px;font-size:12.5px;font-weight:700;color:var(--barred);cursor:pointer">Down</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <nav role="tablist" aria-label="Sections" style="display:flex;align-items:stretch;border-top:1px solid var(--sep);padding:0 4px 10px;background:transparent;flex:none">
+            <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+              <button type="button" role="tab" aria-selected="{{t.on}}" onClick="{{t.tap}}" style="flex:1;min-height:44px;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:{{t.fg}};cursor:pointer">
+                <span style="width:23px;height:23px;display:grid;place-items:center" data-tabicon="{{t.id}}">
+                  <sc-if value="{{t.explore}}" hint-placeholder-val="{{false}}"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="6.4"></circle><path d="M15.4 15.4 20.6 20.6"></path></g></svg></sc-if>
+                  <sc-if value="{{t.party}}" hint-placeholder-val="{{false}}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="17" cy="8.6" r="3" fill="currentColor" opacity=".55"></circle><path d="M15.8 13.8c3.4 0 5.8 1.7 5.8 4.4a.9.9 0 0 1-.9.9h-3.4c.1-.4.1-.8.1-1.2 0-1.7-.6-3.1-1.6-4.1Z" fill="currentColor" opacity=".55"></path><circle cx="9.4" cy="7.8" r="3.8" fill="currentColor"></circle><path d="M2.4 19.4c0-3.4 3.1-5.4 7-5.4s7 2 7 5.4a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1Z" fill="currentColor"></path></svg></sc-if>
+                  <sc-if value="{{t.plan}}" hint-placeholder-val="{{false}}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.4 20c3.6 0 3.6-9 9.6-9s6 9 9.6 9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path><rect x="8.2" y="4.4" width="7.6" height="4.9" rx="1.5" fill="currentColor"></rect><circle cx="10.2" cy="10" r="1.15" fill="currentColor"></circle><circle cx="13.8" cy="10" r="1.15" fill="currentColor"></circle></svg></sc-if>
+                  <sc-if value="{{t.quests}}" hint-placeholder-val="{{false}}"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="M5.2 3.4v17.2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path><path d="M6.4 4.2h9.2c.7 0 1.1.8.7 1.4L14.8 8.6l1.5 3c.4.6 0 1.4-.7 1.4H6.4Z" fill="currentColor"></path></svg></sc-if>
+                  <sc-if value="{{t.me}}" hint-placeholder-val="{{false}}"><svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.4" fill="currentColor"></circle><circle cx="12" cy="9.8" r="3.1" fill="var(--glass)"></circle><path d="M5.9 18.6a9.4 9.4 0 0 0 12.2 0c-1-2.1-3.4-3.3-6.1-3.3s-5.1 1.2-6.1 3.3Z" fill="var(--glass)"></path></svg></sc-if>
+                </span>
+                <span style="font-size:10px;font-weight:{{t.weight}};letter-spacing:.01em">{{t.label}}</span>
+              </button>
+            </sc-for>
+          </nav>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{walking}}" hint-placeholder-val="{{false}}">
+        <section style="position:absolute;left:0;right:0;bottom:0;z-index:8;padding:14px 14px 26px;background:var(--glass);backdrop-filter:blur(30px) saturate(170%);border-top:1px solid var(--glassRim);border-radius:28px 28px 0 0;box-shadow:var(--shadow3)">
+          <div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:16px;background:var(--bg2);border:1px solid var(--sep);margin-bottom:12px">
+            <span style="width:36px;height:36px;border-radius:11px;background:var(--aqua);display:grid;place-items:center;flex:none">
+              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 19 20.4 12 16.6 5 20.4Z" fill="#fff"></path></svg>
+            </span>
+            <span style="flex:1"><b style="display:block;font-size:15.5px;color:var(--label)">Bear right at the fountain</b><span style="font-size:12.5px;color:var(--label3)">then {{navStepDist}} along Coney Mall</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:11px">
+            <button type="button" onClick="{{stopWalk}}" style="border:0;border-radius:14px;background:var(--barred);color:#fff;padding:13px 17px;font-size:15px;font-weight:700;cursor:pointer">Stop</button>
+            <button type="button" onClick="{{stopWalk}}" style="flex:1;border:0;background:none;text-align:left;cursor:pointer"><b style="display:block;font-size:21px;letter-spacing:-.4px;color:var(--label)">{{navEta}}</b><span style="font-size:12.5px;color:var(--label2)">{{navSummary}}</span></button>
+            <div style="display:flex;gap:7px">
+              <span style="width:40px;height:40px;border-radius:50%;border:1px solid var(--sep);display:grid;place-items:center"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M11.4 3.6 6.6 7.6H3.4a1 1 0 0 0-1 1v6.8a1 1 0 0 0 1 1h3.2l4.8 4a.9.9 0 0 0 1.5-.7V4.3a.9.9 0 0 0-1.5-.7Z" fill="var(--label2)"></path><g fill="none" stroke="var(--label2)" stroke-width="1.9" stroke-linecap="round"><path d="M16.4 9.2a4 4 0 0 1 0 5.6"></path><path d="M19.2 6.4a8 8 0 0 1 0 11.2"></path></g></svg></span>
+              <span style="width:40px;height:40px;border-radius:50%;border:1px solid var(--sep);display:grid;place-items:center"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 3.9 4.3 10.6c-1.2.5-1 2.2.2 2.5l6.1 1.4 1.4 6.1c.3 1.2 2 1.4 2.5.2l6.7-16.5c.4-1-.5-1.8-1.4-1.4Z" fill="var(--adventure)"></path></svg></span>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+
+      <sc-if value="{{isGate}}" hint-placeholder-val="{{false}}">
+        <div style="position:absolute;inset:0;z-index:10;display:flex;align-items:flex-end;background:linear-gradient(to bottom,rgba(11,24,41,.10),rgba(11,24,41,.52))">
+          <div style="width:100%;padding:24px 20px 30px;border-radius:28px 28px 0 0;background:var(--glass);backdrop-filter:blur(30px) saturate(170%);border-top:1px solid var(--glassRim);box-shadow:var(--shadow3)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+              <span style="flex:1;height:4px;border-radius:3px;background:var(--adventure);display:block"></span>
+              <span style="flex:1;height:4px;border-radius:3px;background:var(--fill);display:block"></span>
+              <span style="font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">1 OF 2</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:0">
+              <span style="width:52px;height:52px;border-radius:50%;background:var(--fill2);border:1px solid var(--sep);display:grid;place-items:center;margin-bottom:14px">
+                <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 3.9 4.3 10.6c-1.2.5-1 2.2.2 2.5l6.1 1.4 1.4 6.1c.3 1.2 2 1.4 2.5.2l6.7-16.5c.4-1-.5-1.8-1.4-1.4Z" fill="var(--adventure)"></path></svg>
+              </span>
+              <h2 style="margin:0;font-size:25px;line-height:31px;letter-spacing:-.5px;color:var(--label)">Plan your day</h2>
+              <p style="margin:9px 0 0;font-size:14.5px;line-height:21px;color:var(--label2);max-width:30ch;text-wrap:pretty">Plan your trip, explore the World around you, and keep your Party together.</p>
+              <div style="display:flex;flex-direction:column;gap:4px;width:100%;margin-top:20px">
+                <button type="button" onClick="{{browseApp}}" style="border:0;border-radius:15px;background:var(--adventure);color:#fff;padding:15px 0;font-size:16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow1)">I’m ready</button>
+                <button type="button" onClick="{{enterApp}}" style="border:0;background:none;padding:12px 0;font-size:14.5px;font-weight:600;color:var(--label2);cursor:pointer">Browse Worlds</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isWorld}}" hint-placeholder-val="{{false}}">
+        <div class="pbScroll" style="position:absolute;inset:0;z-index:10;overflow-y:auto;display:flex;align-items:flex-end;background:linear-gradient(to bottom,rgba(11,24,41,.10),rgba(11,24,41,.56))">
+          <div style="width:100%;padding:24px 20px 30px;border-radius:28px 28px 0 0;background:var(--glass);backdrop-filter:blur(30px) saturate(170%);border-top:1px solid var(--glassRim);box-shadow:var(--shadow3)">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+              <span style="flex:1;height:4px;border-radius:3px;background:var(--adventure);display:block"></span>
+              <span style="flex:1;height:4px;border-radius:3px;background:var(--adventure);display:block"></span>
+              <span style="font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">2 OF 2</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;text-align:center">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+                <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 12.6 9.6 17.4 19.2 6.6" fill="none" stroke="var(--green)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:11.5px;font-weight:700;letter-spacing:.04em;color:var(--label2)">Location on</span>
+              </div>
+              <h2 style="margin:0;font-size:25px;line-height:31px;letter-spacing:-.5px;color:var(--label)">{{worldHeading}}</h2>
+              <p style="margin:9px 0 0;font-size:14.5px;line-height:21px;color:var(--label2);max-width:32ch;text-wrap:pretty">{{worldBody}}</p>
+              <div style="display:flex;align-items:center;gap:7px;margin-top:12px;padding:6px 12px;border-radius:999px;background:var(--fill2);border:1px solid var(--sep)">
+                <i style="width:7px;height:7px;border-radius:50%;background:var(--green);display:block"></i>
+                <span style="font-size:12px;font-weight:600;color:var(--label2)">{{worldCounts}}</span>
+              </div>
+              <button type="button" onClick="{{confirmWorld}}" style="width:100%;margin-top:16px;border:0;border-radius:15px;background:var(--adventure);color:#fff;padding:15px 0;font-size:16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow1)">{{worldCta}}</button>
+            </div>
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin:20px 2px 9px">
+              <span style="font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--label3)">EXPLORE ANOTHER WORLD</span>
+              <span style="font-size:12px;color:var(--label3)">{{worldCount}}</span>
+            </div>
+            <label style="display:flex;align-items:center;gap:9px;padding:10px 13px;border-radius:14px;background:var(--fill2);border:1px solid var(--sep);margin-bottom:9px">
+              <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--label3)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="6.4"></circle><path d="M15.4 15.4 20.6 20.6"></path></g></svg>
+              <input type="text" value="{{worldQuery}}" onChange="{{setWorldQuery}}" placeholder="Search 100+ Worlds" style="flex:1;border:0;background:none;outline:none;font-size:15px;color:var(--label)">
+            </label>
+            <div style="display:flex;flex-direction:column;gap:1px;border-radius:14px;overflow:hidden;border:1px solid var(--sep);background:var(--bg2)">
+              <sc-for list="{{worldOptions}}" as="w" hint-placeholder-count="4">
+                <button type="button" onClick="{{w.tap}}" style="display:flex;align-items:center;gap:10px;border:0;background:var(--bg2);padding:12px 13px;text-align:left;cursor:pointer" style-hover="background:var(--fill3, var(--fill2))">
+                  <span style="flex:1"><b style="display:block;font-size:15px;color:var(--label)">{{w.name}}</b><span style="font-size:12px;color:var(--label3)">{{w.sub}}</span></span>
+                  <span style="font-size:12.5px;font-weight:600;color:var(--label2)">{{w.away}}</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="var(--label3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </button>
+              </sc-for>
+            </div>
+            <button type="button" onClick="{{skipWorld}}" style="width:100%;margin-top:12px;border:0;background:none;padding:6px 0;font-size:14.5px;font-weight:600;color:var(--label2);cursor:pointer">Skip for now — show me the map</button>
+            <p style="margin:12px 2px 0;font-size:12px;line-height:17px;color:var(--label3);text-wrap:pretty">{{worldFine}}</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isAuth}}" hint-placeholder-val="{{false}}">
+        <div style="position:absolute;inset:0;z-index:12;display:flex;align-items:flex-end;background:linear-gradient(to bottom,rgba(11,24,41,.42),rgba(11,24,41,.86))">
+          <div style="width:100%;padding:26px 20px 30px;border-radius:28px 28px 0 0;background:var(--glass);backdrop-filter:blur(30px) saturate(170%);border-top:1px solid var(--glassRim);box-shadow:var(--shadow3);display:flex;flex-direction:column;align-items:center;text-align:center">
+            <svg width="40" height="45" viewBox="0 0 64 72" fill="none" aria-hidden="true"><path d="M32 52 L38 62 L32 70 L26 62 Z" fill="#27B8B0"></path><path d="M32 6 L54 32 L32 58 L10 32 Z" fill="none" stroke="#27B8B0" stroke-width="3.2" stroke-linejoin="round"></path><circle cx="32" cy="30" r="7.5" fill="#FF6B35"></circle><path d="M32 14 L35.2 20.5 H28.8 Z" fill="#FF6B35"></path><path d="M48 32 L41.5 28.8 V35.2 Z" fill="#FF6B35"></path><path d="M32 46 L28.8 39.5 H35.2 Z" fill="#FF6B35"></path><path d="M16 32 L22.5 35.2 V28.8 Z" fill="#FF6B35"></path></svg>
+            <div style="font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--adventure);margin-top:12px">PROFILE</div>
+            <div style="font-size:17px;font-weight:800;letter-spacing:.22em;color:var(--label);margin-top:8px">PARKBOUND</div>
+            <div style="font-size:13px;font-weight:600;color:var(--label2);margin-top:5px">Explore more. Stress less.</div>
+            <p style="margin:12px 0 0;font-size:14.5px;line-height:21px;color:var(--label2);max-width:32ch;text-wrap:pretty">Sign in to save XP and Side Quest progress, or explore as a guest — your World and Party work either way.</p>
+            <div style="display:flex;gap:9px;width:100%;margin-top:18px">
+              <button type="button" onClick="{{goIntro}}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--sep);border-radius:14px;background:var(--bg2);color:var(--label);padding:13px 0;font-size:14.5px;font-weight:700;cursor:pointer">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"></path><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"></path><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"></path></svg>
+                Google
+              </button>
+              <button type="button" onClick="{{goIntro}}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--sep);border-radius:14px;background:var(--bg2);color:var(--label);padding:13px 0;font-size:14.5px;font-weight:700;cursor:pointer">
+                <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.37 12.23c-.03-2.27 1.85-3.36 1.94-3.41-1.06-1.55-2.7-1.76-3.28-1.78-1.4-.14-2.72.82-3.43.82-.71 0-1.8-.8-2.97-.78-1.53.02-2.94.89-3.73 2.26-1.59 2.76-.41 6.84 1.14 9.08.76 1.1 1.66 2.32 2.84 2.28 1.14-.05 1.57-.74 2.95-.74 1.37 0 1.76.74 2.97.71 1.23-.02 2-1.12 2.75-2.22.87-1.27 1.23-2.5 1.25-2.56-.03-.01-2.4-.92-2.43-3.66zM14.7 5.88c.63-.76 1.05-1.82.93-2.88-.9.04-1.99.6-2.63 1.36-.58.67-1.08 1.76-.95 2.8 1 .08 2.03-.51 2.65-1.28z"></path></svg>
+                Apple
+              </button>
+            </div>
+            <button type="button" onClick="{{goIntro}}" style="width:100%;border:0;background:none;padding:13px 0 2px;font-size:14.5px;font-weight:600;color:var(--label2);cursor:pointer;white-space:nowrap">Guest</button>
+            <p style="margin:6px 0 0;font-size:11.5px;line-height:16px;color:var(--label3);max-width:34ch">Guests can explore Worlds and join a Party by name. Sign in later from Me.</p>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isIntro}}" hint-placeholder-val="{{false}}">
+        <div class="pbScroll" onScroll="{{onIntroScroll}}" style="position:absolute;inset:0;z-index:11;overflow-y:auto;background:linear-gradient(to bottom,rgba(11,24,41,.86) 0,rgba(11,24,41,.80) 24%,rgba(11,24,41,.88) 48%,rgba(11,24,41,.95) 72%,rgba(11,24,41,.98) 100%)">
+          <div style="min-height:822px;box-sizing:border-box;padding:78px 24px 130px;display:flex;flex-direction:column;gap:64px">
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <svg width="44" height="49.5" viewBox="0 0 64 72" fill="none" aria-hidden="true"><path d="M32 52 L38 62 L32 70 L26 62 Z" fill="#27B8B0"></path><path d="M32 6 L54 32 L32 58 L10 32 Z" fill="none" stroke="#27B8B0" stroke-width="3.2" stroke-linejoin="round"></path><circle cx="32" cy="30" r="7.5" fill="#FF6B35"></circle><path d="M32 14 L35.2 20.5 H28.8 Z" fill="#FF6B35"></path><path d="M48 32 L41.5 28.8 V35.2 Z" fill="#FF6B35"></path><path d="M32 46 L28.8 39.5 H35.2 Z" fill="#FF6B35"></path><path d="M16 32 L22.5 35.2 V28.8 Z" fill="#FF6B35"></path></svg>
+              <div>
+                <div style="font-size:22px;font-weight:800;letter-spacing:.24em;color:#F7F4EC">PARKBOUND</div>
+                <div style="font-size:14px;font-weight:600;color:rgba(247,244,236,.66);margin-top:6px;letter-spacing:.02em">Explore more. Stress less.</div>
+              </div>
+              <p style="margin:6px 0 0;font-size:16px;line-height:24px;color:rgba(247,244,236,.82);max-width:30ch;text-wrap:pretty">A living map, drawn by the guests who walked it.</p>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:4px;animation:pbNudge 2.2s ease-in-out infinite">
+                <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v13.4M4.5 12 12 19.5 19.5 12" fill="none" stroke="#FFC857" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                <span style="font-size:12px;font-weight:800;letter-spacing:.14em;color:#FFC857">SCROLL</span>
+              </div>
+            </div>
+
+            <sc-for list="{{claims}}" as="c" hint-placeholder-count="3">
+              <div style="max-width:32ch">
+                <span style="font-size:12px;font-weight:800;letter-spacing:.16em;color:#FF6B35">{{c.num}}</span>
+                <h2 style="margin:10px 0 0;font-size:30px;line-height:36px;letter-spacing:-.8px;color:#F7F4EC;text-wrap:pretty">{{c.title}}</h2>
+                <p style="margin:11px 0 0;font-size:15.5px;line-height:23px;color:rgba(247,244,236,.74);text-wrap:pretty">{{c.copy}}</p>
+              </div>
+            </sc-for>
+
+            <div style="padding:20px;border-radius:24px;background:rgba(247,244,236,.10);border:1px solid rgba(247,244,236,.20);backdrop-filter:blur(18px)">
+              <span style="font-size:11.5px;font-weight:800;letter-spacing:.12em;color:#FFC857">INVITE YOUR PARTY</span>
+              <p style="margin:9px 0 0;font-size:15px;line-height:22px;color:rgba(247,244,236,.82);text-wrap:pretty">One link. Everyone joins from their own phone and adds their height.</p>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:14px;padding:14px;border-radius:16px;background:rgba(11,24,41,.34);border:1px solid rgba(247,244,236,.14)">
+                <div style="flex:1">
+                  <span style="font-size:11px;font-weight:700;letter-spacing:.1em;color:rgba(247,244,236,.56)">YOUR PARTY CODE</span>
+                  <b style="display:block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:24px;letter-spacing:.2em;color:#F7F4EC;margin-top:5px">PB-4K9T</b>
+                </div>
+                <span style="width:58px;height:58px;border-radius:12px;background:#F7F4EC;display:grid;place-items:center;flex:none">
+                  <svg width="42" height="42" viewBox="0 0 42 42" aria-hidden="true"><g fill="#10233F"><rect x="3" y="3" width="11" height="11" rx="2"></rect><rect x="6" y="6" width="5" height="5" fill="#F7F4EC"></rect><rect x="28" y="3" width="11" height="11" rx="2"></rect><rect x="31" y="6" width="5" height="5" fill="#F7F4EC"></rect><rect x="3" y="28" width="11" height="11" rx="2"></rect><rect x="6" y="31" width="5" height="5" fill="#F7F4EC"></rect><rect x="18" y="4" width="4" height="4"></rect><rect x="18" y="12" width="4" height="4"></rect><rect x="18" y="20" width="4" height="4"></rect><rect x="26" y="18" width="4" height="4"></rect><rect x="34" y="18" width="4" height="4"></rect><rect x="18" y="28" width="4" height="4"></rect><rect x="26" y="26" width="4" height="4"></rect><rect x="34" y="26" width="4" height="4"></rect><rect x="26" y="34" width="4" height="4"></rect><rect x="34" y="34" width="4" height="4"></rect><rect x="4" y="18" width="4" height="4"></rect><rect x="10" y="18" width="4" height="4"></rect></g></svg>
+                </span>
+              </div>
+              <div style="display:flex;gap:9px;margin-top:12px">
+                <button type="button" onClick="{{goGate}}" style="flex:1;border:0;border-radius:13px;background:#FF6B35;color:#fff;padding:12px 0;font-size:14.5px;font-weight:700;cursor:pointer">Share the invite</button>
+                <button type="button" onClick="{{goGate}}" style="border:1px solid rgba(247,244,236,.28);border-radius:13px;background:none;color:#F7F4EC;padding:12px 15px;font-size:14.5px;font-weight:600;cursor:pointer">Skip for now</button>
+              </div>
+              <button type="button" onClick="{{goGate}}" style="width:100%;margin-top:10px;border:0;background:none;padding:4px 0;font-size:13.5px;font-weight:600;color:rgba(247,244,236,.7);cursor:pointer">Got a code? Join their party</button>
+            </div>
+          </div>
+          <div style="position:sticky;bottom:0;padding:14px 20px 26px;background:linear-gradient(to top,rgba(11,24,41,.96),rgba(11,24,41,0))">
+            <sc-if value="{{introRead}}" hint-placeholder-val="{{false}}">
+              <button type="button" onClick="{{goGate}}" style="width:100%;border:0;border-radius:16px;background:#F7F4EC;color:#10233F;padding:15px 0;font-size:16.5px;font-weight:700;cursor:pointer">Get started</button>
+            </sc-if>
+            <sc-if value="{{introUnread}}" hint-placeholder-val="{{true}}">
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="display:flex;align-items:center;gap:6px;flex:1">
+                  <sc-for list="{{introDots}}" as="d" hint-placeholder-count="3">
+                    <span style="width:{{d.w}};height:5px;border-radius:3px;background:{{d.bg}};display:block;transition:all .3s ease"></span>
+                  </sc-for>
+                  <span style="margin-left:6px;font-size:12.5px;font-weight:600;color:rgba(247,244,236,.62)">Keep scrolling</span>
+                </div>
+                <button type="button" onClick="{{goGate}}" style="border:1px solid rgba(247,244,236,.28);border-radius:13px;background:rgba(247,244,236,.08);color:#F7F4EC;padding:11px 16px;font-size:14.5px;font-weight:600;cursor:pointer">Skip intro</button>
+              </div>
+            </sc-if>
+            <div style="text-align:center;margin-top:10px;font-size:12px;color:rgba(247,244,236,.52)">Version 2.14.0</div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+    <div style="position:absolute;top:22px;left:50%;transform:translateX(-50%);width:106px;height:30px;border-radius:16px;background:#0a0a0c;z-index:20"></div>
+  </div>
+
+  <p style="margin:0;font-size:12.5px;color:var(--label3);text-align:center;max-width:60ch">Built from apps/party-tracker. Chips jump between screens; everything inside works.</p>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:760,&quot;height&quot;:1080},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;day&quot;,&quot;night&quot;],&quot;default&quot;:&quot;day&quot;,&quot;tsType&quot;:&quot;'day' | 'night'&quot;},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;intro&quot;,&quot;gate&quot;,&quot;app&quot;],&quot;default&quot;:&quot;intro&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;units&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ft&quot;,&quot;m&quot;],&quot;default&quot;:&quot;ft&quot;,&quot;tsType&quot;:&quot;'ft' | 'm'&quot;}}">
+class Component extends DCLogic {
+  state = {
+    theme: this.props.theme || 'day',
+    screen: this.props.startScreen || 'auth',
+    tab: 'explore',
+    sheet: 'peek',
+    sel: null,
+    previewId: 'maya',
+    members: [
+      { id: 'you', name: 'You', initials: 'SM', colour: 'var(--indigo)', height: null, withAdult: true, status: 'Coney Mall', where: 'here', walk: 'here', age: 'now', tone: 'ok' },
+      { id: 'maya', name: 'Maya', initials: 'MA', colour: 'var(--cat-ride)', height: 48, withAdult: true, status: 'Diamondback', where: 'queue', walk: '4 min', age: '20s ago', tone: 'ok' },
+      { id: 'theo', name: 'Theo', initials: 'TH', colour: 'var(--cat-food)', height: 38, withAdult: true, status: 'International Street', where: 'walking', walk: '2 min', age: '1 min ago', tone: 'warn' },
+      { id: 'nan', name: 'Nan', initials: 'NA', colour: 'var(--signal)', height: null, withAdult: true, status: 'Needs help', where: 'Delirium', walk: '6 min', age: '30s ago', tone: 'help' },
+    ],
+    onlyRideable: false,
+    filter: 'all',
+    query: '',
+    walking: false,
+    panel: null,
+    venue: 'Kings Island',
+    worldQuery: '',
+    worldPicked: false,
+    introSeen: 0,
+    located: true,
+    keyOpen: false,
+    hiddenCats: [],
+    planSection: 'stops',
+    dragH: null,
+    capsuleHidden: false,
+    rankOpen: false,
+    appearance: 'auto',
+    wearSkin: 'postcard',
+    wornOffer: false,
+    offering: null,
+    kit: 'meet-flag',
+    markType: null,
+    spot: null,
+    questSpot: null,
+    markSpot: null,
+    signPhrase: null,
+    authed: false,
+    settingsTopic: 'you',
+    helpOpen: false,
+    armDiag: false,
+    name: 'Sam',
+    plan: ['banshee', 'auntie', 'diamondback'],
+  };
+
+  venues = [
+    { name: 'Kings Island', locality: 'Mason, OH', away: 'you are here', inside: true, counts: '48 rides · 312 places' },
+    { name: 'Cedar Point', locality: 'Sandusky, OH', away: '214 mi', counts: '68 rides · 402 places' },
+    { name: 'Carowinds', locality: 'Charlotte, NC', away: '412 mi', counts: '43 rides · 286 places' },
+    { name: 'Six Flags Over Texas', locality: 'Arlington, TX', away: '936 mi', counts: '45 rides · 274 places' },
+    { name: 'Kennywood', locality: 'West Mifflin, PA', away: '287 mi', counts: '28 rides · 190 places' },
+    { name: 'Dollywood', locality: 'Pigeon Forge, TN', away: '318 mi', counts: '34 rides · 224 places' },
+  ];
+
+  pois = [
+    { id: 'banshee', n: 'Banshee', c: 'coaster', req: 52, alone: 52, x: 74, y: 20, zone: 'Action Zone', m: 340, live: 'GO NOW', big: true },
+    { id: 'invertigo', n: 'Invertigo', c: 'coaster', req: 48, alone: 48, x: 22, y: 30, zone: 'Action Zone', m: 420, live: 'OPEN', big: true },
+    { id: 'delirium', n: 'Delirium', c: 'ride', req: 54, alone: 54, x: 66, y: 40, zone: 'Oktoberfest', m: 210, live: 'PAUSED' },
+    { id: 'congo', n: 'Congo Falls', c: 'ride', req: 42, alone: 46, x: 46, y: 16, zone: 'Adventure Port', m: 520, live: 'OPEN', big: true },
+    { id: 'eiffel', n: 'Eiffel Tower', c: 'landmark', x: 52, y: 84, zone: 'International Street', m: 90, live: 'OPEN', big: true },
+    { id: 'diamondback', n: 'Diamondback', c: 'coaster', req: 54, alone: 54, x: 30, y: 60, zone: 'Rivertown', m: 260, live: 'BUSY', big: true },
+    { id: 'beast', n: 'The Beast', c: 'coaster', req: 48, alone: 48, x: 16, y: 10, zone: 'Rivertown', m: 780, live: 'OPEN', big: true },
+    { id: 'express', n: 'Adventure Express', c: 'coaster', req: 40, alone: 46, x: 82, y: 62, zone: 'Oktoberfest', m: 300, live: 'OPEN' },
+    { id: 'race', n: 'Race for Your Life', c: 'ride', req: 36, alone: 40, x: 86, y: 34, zone: 'Planet Snoopy', m: 460, live: 'OPEN' },
+    { id: 'auntie', n: "Auntie Anne's", c: 'food', x: 58, y: 74, zone: 'International Street', m: 26, live: 'OPEN' },
+    { id: 'skyline', n: 'Skyline Chili', c: 'food', x: 40, y: 68, zone: 'Coney Mall', m: 120, live: 'OPEN' },
+    { id: 'larosas', n: "LaRosa's Pizzeria", c: 'food', x: 63, y: 52, zone: 'Oktoberfest', m: 190, live: 'BUSY' },
+    { id: 'rest1', n: 'Restrooms', c: 'restroom', x: 36, y: 44, zone: 'Adventure Port', m: 137, live: 'OPEN' },
+    { id: 'rest2', n: 'Restrooms', c: 'restroom', x: 62, y: 88, zone: 'Coney Mall', m: 64, live: 'OPEN' },
+    { id: 'aid', n: 'First Aid', c: 'service', x: 48, y: 70, zone: 'Coney Mall', m: 110, live: 'OPEN' },
+    { id: 'theater', n: 'Kings Island Theater', c: 'show', x: 74, y: 78, zone: 'Coney Mall', m: 240, live: 'LATER' },
+    { id: 'emporium', n: 'International Emporium', c: 'shop', x: 44, y: 90, zone: 'International Street', m: 150, live: 'OPEN' },
+    { id: 'gate', n: 'Front Gate', c: 'gate', x: 50, y: 96, zone: 'International Street', m: 320, live: 'OPEN' },
+  ];
+
+  tiers = [36, 42, 46, 48, 54];
+
+  catLabel = {
+    coaster: 'Coasters', ride: 'Rides', food: 'Food', restroom: 'Restrooms',
+    service: 'Services', landmark: 'Landmarks', show: 'Shows', shop: 'Shops', gate: 'Gates',
+  };
+
+  set(patch) { this.setState(patch); }
+
+  dist(m) {
+    if ((this.props.units || 'ft') === 'm') return Math.round(m) + ' m';
+    const ft = Math.round(m * 3.28084 / 5) * 5;
+    return ft + ' ft';
+  }
+
+  walk(m) {
+    const min = m / 78;
+    if (min < 1) return '<1 min';
+    return Math.round(min) + ' min';
+  }
+
+  /* lib/eligibility.js — one person against one rule. Unset height is not
+     height-constrained; unset With adult means accompanied. */
+  judge(p, person) {
+    if (person.height == null) return { kind: 'eligible', why: 'No height set — not height-constrained.' };
+    const inches = person.height;
+    if (p.req != null && inches < p.req) {
+      return { kind: 'not', why: 'Riders must be at least ' + p.req + '" tall.' };
+    }
+    if (p.alone != null && inches < p.alone) {
+      if (person.withAdult !== false) {
+        return { kind: 'companion', why: 'Under ' + p.alone + '" rides with an adult along.' };
+      }
+      return { kind: 'not', why: 'Under ' + p.alone + '" needs an adult riding along.' };
+    }
+    return { kind: 'eligible', why: 'Meets the ' + (p.req || 0) + '" minimum.' };
+  }
+
+  paintFor(kind) {
+    if (kind === 'eligible') return { label: 'Can ride', fg: 'var(--green)', bg: 'var(--fill2)', blocks: false };
+    if (kind === 'companion') return { label: 'With adult', fg: 'var(--yellow)', bg: 'var(--fill2)', blocks: false };
+    if (kind === 'not') return { label: 'Too short', fg: 'var(--barred)', bg: 'var(--fill2)', blocks: true };
+    return { label: '', fg: 'var(--label3)', bg: 'transparent', blocks: false };
+  }
+
+  /** The set is this phone's Party; the verdict is its most restrictive Member. */
+  rows(p) {
+    const RANK = { not: 0, companion: 1, eligible: 2 };
+    return this.state.members
+      .map((m) => ({ ...this.judge(p, m), name: m.name, id: m.id }))
+      .sort((a, b) => RANK[a.kind] - RANK[b.kind]);
+  }
+
+  verdict(p) {
+    if (!p.req) return { label: '', fg: 'var(--label3)', bg: 'transparent', blocks: false };
+    const constrained = this.state.members.some((m) => m.height != null);
+    if (!constrained) return { label: '', fg: 'var(--label3)', bg: 'transparent', blocks: false };
+    return this.paintFor(this.rows(p)[0].kind);
+  }
+
+  preview() {
+    return this.state.members.find((m) => m.id === this.state.previewId) || this.state.members[0];
+  }
+
+  setMember(patch) {
+    this.setState((s) => ({
+      members: s.members.map((m) => (m.id === s.previewId ? { ...m, ...patch } : m)),
+    }));
+  }
+
+  livePaint(live) {
+    if (live === 'GO NOW') return { fg: '#fff', bg: 'var(--adventure)' };
+    if (live === 'BUSY') return { fg: 'var(--label)', bg: 'var(--fill)' };
+    if (live === 'PAUSED') return { fg: '#fff', bg: 'var(--barred)' };
+    if (live === 'LATER') return { fg: 'var(--label2)', bg: 'var(--fill2)' };
+    return { fg: 'var(--label2)', bg: 'var(--fill2)' };
+  }
+
+  chipPaint(on) {
+    return on
+      ? { bg: 'var(--label)', fg: 'var(--bg2)', border: 'var(--label)' }
+      : { bg: 'var(--bg2)', fg: 'var(--label)', border: 'var(--sep)' };
+  }
+
+  visible() {
+    const { filter, query, onlyRideable } = this.state;
+    const q = query.trim().toLowerCase();
+    return this.pois.filter((p) => {
+      if (filter !== 'all' && p.c !== filter) return false;
+      if (q && !(p.n.toLowerCase().includes(q) || (this.catLabel[p.c] || '').toLowerCase().includes(q))) return false;
+      if (onlyRideable && this.verdict(p).blocks) return false;
+      return true;
+    }).sort((a, b) => a.m - b.m);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const app = s.screen === 'app';
+    const sel = s.sel ? this.pois.find((p) => p.id === s.sel) : null;
+    const heights = { 'you': null, 'maya': 48, 'theo': 38 };
+
+    const screens = [
+      ['auth', 'Sign in'], ['intro', 'Intro'], ['gate', 'Location'], ['world', 'World'], ['explore', 'Explore'], ['plan', 'Plan'],
+      ['party', 'Party'], ['me', 'Me'], ['quests', 'Quests'], ['settings', 'Settings'], ['closet', 'Collection'], ['marks', 'Marks'], ['walking', 'Walking'],
+    ].map(([id, label]) => {
+      const on = (id === 'auth' && s.screen === 'auth')
+        || (id === 'intro' && s.screen === 'intro')
+        || (id === 'gate' && s.screen === 'gate')
+        || (id === 'world' && s.screen === 'world')
+        || (id === 'walking' && app && s.walking)
+        || (app && !s.walking && (
+          (id === 'quests' && s.tab === 'me' && s.panel === 'quests')
+          || (id === 'closet' && s.tab === 'me' && s.panel === 'closet')
+        || (id === 'marks' && s.tab === 'me' && s.panel === 'marks')
+        || (id === 'settings' && s.tab === 'me' && s.panel === 'settings')
+          || (id === 'me' && s.tab === 'me' && !s.panel)
+          || (id === s.tab && id !== 'me')));
+      return {
+        label, ...(on
+          ? { bg: 'var(--label)', fg: 'var(--stage)', border: 'var(--label)' }
+          : { bg: 'transparent', fg: 'var(--label2)', border: 'var(--sep)' }),
+        go: () => this.jump(id),
+      };
+    });
+
+    const pins = this.pois.map((p) => {
+      const v = this.verdict(p);
+      const hiddenCat = s.hiddenCats.includes(p.c);
+      const dimmed = hiddenCat || (s.filter !== 'all' && p.c !== s.filter) || (s.onlyRideable && v.blocks);
+      return {
+        n: p.n,
+        left: p.x + '%',
+        top: p.y + '%',
+        fill: v.blocks ? 'var(--barred)' : 'var(--cat-' + p.c + ')',
+        size: p.big ? '13px' : '10px',
+        opacity: hiddenCat ? 0 : (dimmed ? 0.28 : 1),
+        label: p.big && s.screen !== 'intro' ? p.n : '',
+        tap: () => this.setState({
+          sel: p.id, screen: 'app', walking: false, capsuleHidden: false, spot: null,
+          tab: 'explore', panel: null, sheet: 'full',
+        }),
+      };
+    });
+
+    const cardSpecs = [
+      { poi: 'rest2', eyebrow: 'NEAREST RESTROOM', colour: 'var(--cat-restroom)', deg: -34 },
+      { poi: 'auntie', eyebrow: 'NEAREST FOOD', colour: 'var(--cat-food)', deg: 18 },
+      { poi: 'banshee', eyebrow: 'GO NOW', colour: 'var(--adventure)', deg: 62 },
+      { poi: 'aid', eyebrow: 'FIRST AID', colour: 'var(--cat-service)', deg: -8 },
+    ];
+    const cards = cardSpecs.map((c) => {
+      const p = this.pois.find((x) => x.id === c.poi);
+      return {
+        eyebrow: c.eyebrow, colour: c.colour, deg: c.deg, title: p.n,
+        walk: this.walk(p.m), dist: this.dist(p.m),
+        foot: c.poi === 'banshee' ? 'shortest queue of the day' : p.zone,
+        go: () => this.setState({ sel: p.id, walking: true, screen: 'app' }),
+      };
+    });
+
+    const chips = [{ key: 'all', label: 'All', dot: 'var(--label3)' }].concat(
+      Object.keys(this.catLabel)
+        .filter((k) => this.pois.some((p) => p.c === k))
+        .map((k) => ({ key: k, label: this.catLabel[k], dot: 'var(--cat-' + k + ')' })),
+    ).map((c) => ({ ...c, ...this.chipPaint(s.filter === c.key), tap: () => this.setState({ filter: c.key }) }));
+
+    const rows = this.visible().map((p) => {
+      const v = this.verdict(p);
+      const lp = this.livePaint(p.live);
+      return {
+        n: p.n,
+        sub: (p.req ? p.req + '" min' : this.catLabel[p.c]) + ' · ' + p.zone,
+        walk: this.walk(p.m), dist: this.dist(p.m),
+        dot: v.blocks ? 'var(--barred)' : 'var(--cat-' + p.c + ')',
+        vLabel: v.label, vFg: v.fg, vBg: v.label ? v.bg : 'transparent',
+        live: p.live, liveFg: lp.fg, liveBg: lp.bg,
+        tap: () => this.setState({ sel: p.id, capsuleHidden: false }),
+      };
+    });
+
+    const rideables = this.pois.filter((p) => p.req);
+    const who = this.preview();
+    let cYes = 0; let cComp = 0; let cNo = 0;
+    rideables.forEach((p) => {
+      const kind = this.judge(p, who).kind;
+      if (kind === 'eligible') cYes += 1;
+      else if (kind === 'companion') cComp += 1;
+      else cNo += 1;
+    });
+    const nextTier = this.tiers.find((t) => who.height != null && t > who.height) || null;
+    let unlockCount = 0;
+    if (nextTier) {
+      unlockCount = rideables.filter((p) => {
+        const now = this.judge(p, who).kind;
+        const then = this.judge(p, { ...who, height: nextTier }).kind;
+        return now === 'not' && then !== 'not';
+      }).length;
+    }
+
+    const members = s.members.map((m) => ({
+      ...m,
+      name: m.height != null ? m.name + ' · ' + m.height + '"' : m.name,
+      heightCta: m.height != null ? m.height + '" · tap to change' : 'Set a height',
+      tap: () => this.setState({
+        previewId: m.id, tab: 'plan', planSection: 'heights', sheet: 'full', sel: null, panel: null,
+      }),
+    })).map((m) => ({
+      ...m,
+      statusFg: m.tone === 'help' ? 'var(--barred)' : m.tone === 'warn' ? 'var(--yellow)' : 'var(--green)',
+      bg: m.tone === 'help' ? 'var(--fill2)' : 'var(--bg2)',
+      border: m.tone === 'help' ? 'var(--barred)' : 'var(--sep)',
+    }));
+
+    const ladder = [
+      { label: 'Visitor', copy: 'Your Profile keeps every XP.', xp: 0 },
+      { label: 'Scout', copy: 'The Title under your name.', xp: 50 },
+      { label: 'Ranger', copy: 'A Title other guests notice.', xp: 250 },
+      { label: 'Cartographer', copy: 'The mapmaker\u2019s Title.', xp: 1000 },
+      { label: 'Steward', copy: 'Top of the ladder \u2014 thank you.', xp: 3000 },
+    ].filter((l) => 180 < l.xp).slice(0, 1).map((l) => ({
+      ...l,
+      dot: 'var(--adventure)',
+      at: l.xp + ' XP',
+      atFg: 'var(--label3)',
+    }));
+
+    const quests = [
+      { kind: 'LIVE · RIDE REPORT', gain: 'Tell the Party', colour: 'var(--adventure)', title: 'Is Delirium running?', xp: 30, walk: '3 min', where: 'Oktoberfest', copy: 'One guest reported it held ten minutes ago. Confirm what you see.', poi: 'delirium' },
+      { kind: 'GAP · FOOD', gain: 'Name a Place', colour: 'var(--cat-ride)', title: 'Unnamed food stand on Coney Mall', xp: 40, walk: '1 min', where: 'Coney Mall', copy: 'A building with no name. Read the sign, type it in.', poi: 'skyline' },
+      { kind: 'GAP · HEIGHT', gain: 'Settle a Gap', colour: 'var(--cat-restroom)', title: 'Height sign at Adventure Express', xp: 20, walk: '5 min', where: 'Oktoberfest', copy: 'Our file says 46 inches, from a 2019 sign. Photograph today\u2019s.', poi: 'express' },
+    ].map((q) => ({ ...q, go: () => this.setState({ sel: q.poi, walking: true, panel: null }) }));
+
+    const appearanceValue = s.appearance === 'auto' ? 'Automatic' : (s.appearance === 'day' ? 'Trail' : 'Park Midnight');
+    const appearanceSub = s.appearance === 'auto'
+      ? 'Trail by day, Park Midnight after dark'
+      : 'Held on one palette all day';
+    const topicIds = [['you', 'You'], ['map', 'Map'], ['phone', 'Phone'], ['more', 'More']];
+    const topics = topicIds.map(([id, label]) => ({
+      label,
+      tap: () => this.setState({ settingsTopic: id }),
+      ...this.chipPaint(s.settingsTopic === id),
+    }));
+    const appearances = [['auto', 'Automatic'], ['day', 'Light'], ['night', 'Dark']].map(([id, label]) => ({
+      label,
+      tap: () => this.setState({ appearance: id, theme: id === 'auto' ? this.autoTheme() : id }),
+      bg: s.appearance === id ? 'var(--bg2)' : 'transparent',
+      fg: s.appearance === id ? 'var(--label)' : 'var(--label2)',
+    }));
+    const mapRows = [
+      { label: 'Explore Worlds', value: s.venue, tap: () => this.setState({ screen: 'world' }) },
+      { label: 'Collection', value: 'Skins, Kits, Marks', tap: () => this.setState({ panel: 'closet' }) },
+      { label: 'Watch Compass', value: 'Settings', tap: () => {} },
+      { label: 'On the map', value: (9 - s.hiddenCats.length) + ' of 9', tap: () => this.setState({ keyOpen: true, tab: 'explore', sheet: 'shut', panel: null }) },
+    ];
+    const phoneRows = [
+      { label: 'Location (GPS)', sub: 'Drops your dot on the World', value: s.located === false ? 'Off' : 'On', tap: () => this.setState({ screen: 'gate' }) },
+      { label: 'Walk history', sub: 'Private path log, opt-in', value: 'Off', tap: () => {} },
+      { label: 'Notifications', sub: 'When somebody needs you', value: 'On', tap: () => {} },
+      { label: 'Where I parked', sub: 'Stays on this phone', value: 'Nothing saved', tap: () => {} },
+    ].map((r) => ({ ...r, valueFg: 'var(--label2)' }));
+    const moreRows = [
+      { label: 'Privacy', value: 'What we collect', tap: () => {} },
+      { label: 'App version', value: '2.14.0', tap: () => {} },
+      { label: 'Diagnostics', value: s.armDiag ? 'Tap again to open' : 'For fault-finding', tap: () => this.setState({ armDiag: !s.armDiag }) },
+    ].map((r) => ({ ...r, valueFg: r.label === 'Diagnostics' && s.armDiag ? 'var(--adventure)' : 'var(--label2)' }));
+
+
+    // page.js TAB_ORDER — Explore, Party, Side Quests, Plan, Me
+    const tabs = [
+      { id: 'explore', label: 'Explore' }, { id: 'party', label: 'Party' },
+      { id: 'quests', label: 'Quests' }, { id: 'plan', label: 'Plan' }, { id: 'me', label: 'Me' },
+    ].map((t) => ({
+      ...t,
+      on: s.tab === t.id,
+      fg: s.tab === t.id ? 'var(--adventure)' : 'var(--label3)',
+      weight: s.tab === t.id ? 700 : 500,
+      explore: t.id === 'explore', party: t.id === 'party', plan: t.id === 'plan', me: t.id === 'me',
+      quests: t.id === 'quests',
+      tap: () => this.setState({ tab: t.id, panel: null, sel: null, sheet: t.id === 'explore' ? 'peek' : 'full' }),
+    }));
+
+    const tape = ['W', 'NW', 'N', 'NE', 'E', 'SE', 'S'].map((label, i) => ({
+      label, opacity: i === 3 ? 0.9 : 0.34,
+    }));
+
+    const claims = [
+      { num: '01', title: 'Know where everyone is', copy: 'Explore together. Help other guests, unlock more.' },
+      { num: '02', title: 'Only see what they can ride', copy: 'Set a height once. The park filters itself.' },
+      { num: '03', title: 'The day you look back on', copy: 'Your trail, your finds, your Title.' },
+    ];
+
+    const h = s.dragH != null ? s.dragH : this.stopFor(s.sheet);
+    const clamp = (v) => Math.max(0, Math.min(1, v));
+    const nearest = this.venues.find((v) => v.name === s.venue) || this.venues[0];
+    const navTarget = sel || this.pois.find((p) => p.id === 'banshee');
+    const eta = new Date(Date.now() + (navTarget.m / 78) * 60000);
+
+    return {
+      theme: s.theme,
+      themeLabel: s.theme === 'day' ? 'Trail' : 'Park Midnight',
+      toggleTheme: () => this.toggleTheme(),
+      screens,
+      isIntro: s.screen === 'intro',
+      isGate: s.screen === 'gate',
+      inApp: app,
+      sheetOpen: app && !s.walking,
+      walking: app && s.walking,
+      sheetH: s.dragH != null ? s.dragH + 'px' : this.stopFor(s.sheet) + 'px',
+      sheetTransition: s.dragH != null ? 'none' : 'height .42s cubic-bezier(.32,.72,0,1), background .3s ease',
+      sheetBg: h < 210 ? 'var(--glassThin)' : 'var(--glass)',
+      dragStart: (e) => {
+        this.drag = { y: e.clientY, h: this.stopFor(s.sheet), moved: false };
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+      },
+      dragMove: (e) => {
+        if (!this.drag) return;
+        const dy = this.drag.y - e.clientY;
+        if (!this.drag.moved && Math.abs(dy) < 6) return;
+        this.drag.moved = true;
+        const raw = this.drag.h + dy;
+        // Soft resistance past the end stops rather than a hard wall.
+        const min = 118; const max = 660;
+        const h = raw < min ? min - (min - raw) * 0.3 : raw > max ? max + (raw - max) * 0.3 : raw;
+        this.setState({ dragH: Math.round(h) });
+      },
+      dragEnd: (e) => {
+        const d = this.drag;
+        this.drag = null;
+        e.currentTarget.releasePointerCapture?.(e.pointerId);
+        if (!d || !d.moved) return this.setState({ dragH: null });
+        const h = this.state.dragH ?? d.h;
+        const stops = [['shut', 118], ['peek', 268], ['full', 640]];
+        let best = stops[0];
+        stops.forEach((st) => { if (Math.abs(st[1] - h) < Math.abs(best[1] - h)) best = st; });
+        this.setState({ dragH: null, sheet: best[0] });
+      },
+      sheetFull: s.sheet === 'full',
+      headOpacity: 1,
+      headMax: '900px',
+      railOpacity: s.walking ? 1 : clamp((520 - h) / 90),
+      contextOpacity: clamp((h - 148) / 62),
+      contextMax: h < 152 ? '0px' : '60px',
+      contextPad: h < 152 ? '0px' : '11px',
+      listMounted: s.tab === 'explore' && h > 208,
+      listOpacity: clamp((h - 216) / 76),
+      capsuleShown: app && !s.walking && Boolean(sel) && !s.capsuleHidden,
+      capsuleBottom: (h + 14) + 'px',
+      capsuleName: sel ? sel.n : '',
+      capsuleDist: sel ? this.dist(sel.m) : '',
+      capsuleDot: sel ? (this.verdict(sel).blocks ? 'var(--barred)' : 'var(--cat-' + sel.c + ')') : 'var(--label3)',
+      capsuleLive: sel ? sel.live : '',
+      capsuleLiveFg: sel ? this.livePaint(sel.live).fg : 'var(--label2)',
+      capsuleLiveBg: sel ? this.livePaint(sel.live).bg : 'var(--fill2)',
+      hideCapsule: () => this.setState({ capsuleHidden: true }),
+      spotShown: app && !s.walking && Boolean(s.spot) && !sel,
+      spotZoneLine: s.spot ? s.spot.zone + ' · ' + s.spot.near : '',
+      spotOnMap: app && !s.walking && Boolean(s.spot) && !sel,
+      closeSpot: () => this.setState({ spot: null }),
+      // Both actions carry the tapped point, so the next screen knows where it is
+      spotQuest: () => this.setState({ questSpot: s.spot, spot: null, tab: 'quests', panel: null, sheet: 'full' }),
+      spotMark: () => this.setState({
+        markSpot: s.spot, spot: null, tab: 'me', panel: 'marks', sheet: 'full',
+        markType: null, signPhrase: null,
+      }),
+      questSpotShown: Boolean(s.questSpot),
+      questSpotLine: s.questSpot ? s.questSpot.name + ' · ' + s.questSpot.zone : '',
+      questSpotReach: s.questSpot ? s.questSpot.reach : '',
+      clearQuestSpot: () => this.setState({ questSpot: null }),
+      tapGround: (e) => {
+        const box = e.currentTarget.getBoundingClientRect();
+        const x = ((e.clientX - box.left) / box.width) * 100;
+        const y = ((e.clientY - box.top) / box.height) * 100;
+        this.setState({ spot: this.spotAt(x, y), sel: null, capsuleHidden: false });
+      },
+      spotLeft: s.spot ? s.spot.x + '%' : '50%',
+      spotTop: s.spot ? s.spot.y + '%' : '50%',
+      spotName: s.spot ? s.spot.name : '',
+      spotNear: s.spot ? s.spot.near : '',
+      spotWalk: s.spot ? s.spot.walk : '',
+      spotReach: s.spot ? s.spot.reach : '',
+      toggleSheet: () => this.setState({
+        sheet: s.sheet === 'full' ? 'peek' : (s.sheet === 'peek' ? 'shut' : 'full'),
+      }),
+      isExplore: s.tab === 'explore',
+      isPlan: s.tab === 'plan',
+      isParty: s.tab === 'party',
+      isMe: s.tab === 'me',
+      noPanel: !s.panel,
+      isQuests: s.tab === 'quests',
+      isSettings: s.panel === 'settings',
+      openSettings: () => this.setState({ panel: 'settings' }),
+      openCloset: () => this.setState({ panel: 'closet' }),
+      closePanel: () => this.setState({ panel: null }),
+      openParty: () => this.setState({ tab: 'party', sheet: 'full', panel: null, sel: null }),
+      focusMe: () => this.setState({ sheet: 'peek', sel: null }),
+      enterApp: () => this.setState({ screen: 'world', located: true }),
+      browseApp: () => this.setState({ screen: 'app', located: false, tab: 'explore', sheet: 'peek', panel: null, sel: null }),
+      browsing: app && s.located === false,
+      located: s.located !== false,
+      puckShown: s.located === false ? 'none' : 'block',
+      goGate: () => this.setState({ screen: 'gate' }),
+      onIntroScroll: (e) => {
+        const el = e.currentTarget;
+        const p = el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight);
+        if (Math.abs(p - s.introSeen) > 0.02) this.setState({ introSeen: p });
+      },
+      introRead: s.introSeen > 0.82,
+      introUnread: s.introSeen <= 0.82,
+      introDots: [0.22, 0.5, 0.78].map((at) => ({
+        w: s.introSeen >= at ? '22px' : '10px',
+        bg: s.introSeen >= at ? '#FF6B35' : 'rgba(247,244,236,.28)',
+      })),
+      isWorld: s.screen === 'world',
+      venueName: s.venue,
+      searchPlaceholder: 'Search ' + s.venue,
+      worldHeading: nearest.inside ? 'You\u2019re at ' + nearest.name + '!' : 'Headed to ' + nearest.name + '?',
+      worldBody: nearest.inside
+        ? 'You are inside ' + nearest.name + ', ' + nearest.locality + '. Load this World and start walking.'
+        : nearest.name + ' in ' + nearest.locality + ' is the closest, ' + nearest.away + ' out. Load it now.',
+      worldCta: (nearest.inside ? 'Yes! Enter ' : 'Enter ') + nearest.name,
+      worldCounts: nearest.counts,
+      worldFine: 'Downloads once and works offline. Switch Worlds from Me.',
+      worldCount: this.venues.length - 1 + ' nearby',
+      worldQuery: s.worldQuery,
+      setWorldQuery: (e) => this.setState({ worldQuery: e.target.value }),
+      worldOptions: this.venues
+        .filter((v) => v.name !== nearest.name)
+        .filter((v) => !s.worldQuery.trim() || (v.name + ' ' + v.locality).toLowerCase().includes(s.worldQuery.trim().toLowerCase()))
+        .map((v) => ({ name: v.name, sub: v.locality, away: v.away, tap: () => this.enterWorld(v.name) })),
+      confirmWorld: () => this.enterWorld(nearest.name),
+      skipWorld: () => this.setState({ screen: 'app' }),
+      pins, cards, chips, rows, tabs, tape, claims, members, ladder, quests,
+      topics, appearances, mapRows, phoneRows, moreRows, appearanceSub,
+      topicYou: s.settingsTopic === 'you',
+      topicMap: s.settingsTopic === 'map',
+      topicPhone: s.settingsTopic === 'phone',
+      topicMore: s.settingsTopic === 'more',
+      helpOpen: s.helpOpen,
+      helpCta: s.helpOpen ? 'Hide' : 'Read',
+      toggleHelp: () => this.setState({ helpOpen: !s.helpOpen }),
+      name: s.name,
+      setName: (e) => this.setState({ name: e.target.value }),
+      isAuth: s.screen === 'auth',
+      goAuth: () => this.setState({ screen: 'auth' }),
+      goIntro: () => this.setState({ screen: 'intro', authed: true }),
+      noop: () => {},
+      isCloset: s.panel === 'closet',
+      isMarks: s.panel === 'marks',
+      openMarks: () => this.setState({ panel: 'marks' }),
+      marksSub: s.markSpot
+        ? (s.markSpot.name.startsWith('By ')
+          ? 'Anchored ' + s.markSpot.name.replace(/^By /, 'by ')
+          : 'Anchored in ' + s.markSpot.zone)
+        : 'Signs and beacons you place',
+      ...this.closetVals(),
+      rankOpen: s.rankOpen,
+      rankChevron: s.rankOpen ? 90 : 0,
+      toggleRank: () => this.setState({ rankOpen: !s.rankOpen }),
+      // packages/shared/questScore.js — RANK_REWARDS, rankProgress, XP_AWARDS
+      rankUnlock: 'Title: Ranger',
+      rankToGo: '70 XP to go',
+      rankNote: 'At 250 XP the Title Ranger sits under your name for the Party.',
+      xpAwards: [
+        { label: 'First answer', xp: '12 XP' },
+        { label: 'Confirm or deny', xp: '2 XP' },
+        { label: 'Live Ride report', xp: '2 XP' },
+        { label: 'First help of the day', xp: '+5 XP' },
+      ],
+      keyOpen: s.keyOpen,
+      keyLabel: s.keyOpen ? 'Hide key' : 'Key',
+      toggleKey: () => this.setState({ keyOpen: !s.keyOpen }),
+      furnitureBottom: s.walking ? '150px' : (h + 12) + 'px',
+      scaleLabel: (this.props.units || 'ft') === 'm' ? '80 m' : '250 ft',
+      keyRows: ['coaster', 'ride', 'landmark', 'gate', 'food', 'restroom', 'show', 'service', 'shop']
+        .filter((k) => this.pois.some((p) => p.c === k))
+        .map((k) => ({
+          label: this.catLabel[k],
+          dot: 'var(--cat-' + k + ')',
+          count: this.pois.filter((p) => p.c === k).length,
+          opacity: s.hiddenCats.includes(k) ? 0.34 : 1,
+          tap: () => this.setState({
+            hiddenCats: s.hiddenCats.includes(k)
+              ? s.hiddenCats.filter((x) => x !== k)
+              : s.hiddenCats.concat(k),
+          }),
+        })),
+      planSection: s.tab === 'plan' && s.planSection === 'stops',
+      heightSection: s.tab === 'plan' && s.planSection !== 'stops',
+      showStops: () => this.setState({ planSection: 'stops' }),
+      showHeights: () => this.setState({ planSection: 'heights' }),
+      stopsLabel: s.plan.length ? 'Stops (' + s.plan.length + ')' : 'Stops',
+      ...this.prefixed('stops', s.planSection === 'stops'),
+      ...this.prefixed('heights', s.planSection !== 'stops'),
+      planEmpty: s.plan.length === 0,
+      planStops: s.plan.map((id, i) => {
+        const p = this.pois.find((x) => x.id === id);
+        if (!p) return { n: i + 1, label: id, sub: '', fg: 'var(--label)', strike: 'none', walk: () => {}, drop: () => {} };
+        const down = p.live === 'PAUSED';
+        return {
+          n: i + 1,
+          label: p.n,
+          sub: down ? 'Reported down · ' + p.zone : p.zone + ' · ' + this.walk(p.m),
+          fg: down ? 'var(--label3)' : 'var(--label)',
+          strike: down ? 'line-through' : 'none',
+          walk: () => this.setState({ sel: p.id, walking: true, panel: null }),
+          drop: () => this.setState({ plan: s.plan.filter((x) => x !== id) }),
+        };
+      }),
+      planCta: sel && s.plan.includes(sel.id) ? 'In your Plan' : 'Add to Plan',
+      addToPlan: () => {
+        if (!sel) return;
+        this.setState({ plan: s.plan.includes(sel.id) ? s.plan.filter((x) => x !== sel.id) : s.plan.concat(sel.id) });
+      },
+      listCount: rows.length + ' places',
+      query: s.query,
+      setQuery: (e) => this.setState({ query: e.target.value }),
+      tiers: this.tiers.map((t) => ({
+        label: t,
+        tap: () => this.setMember({ height: t }),
+        ...(who.height === t
+          ? { bg: 'var(--adventure)', fg: '#fff', border: 'var(--adventure)' }
+          : { bg: 'var(--bg2)', fg: 'var(--label)', border: 'var(--sep)' }),
+      })),
+      hasHeight: who.height != null,
+      height: who.height == null ? 48 : who.height,
+      setHeight: (e) => this.setMember({ height: Number(e.target.value) }),
+      clearHeight: () => this.setMember({ height: null }),
+      whoName: who.name,
+      whoLabel: who.height != null ? who.name + ' · ' + who.height + '"' : who.name + ' · no height',
+      whoChips: s.members.map((m) => ({
+        label: m.height != null ? m.name + ' ' + m.height + '"' : m.name,
+        tap: () => this.setState({ previewId: m.id }),
+        dot: m.colour,
+        ...this.chipPaint(m.id === s.previewId),
+      })),
+      adultLabel: 'With an adult along',
+      cYes, cComp, cNo,
+      unlockCount, unlockAt: nextTier ? nextTier + '"' : '—',
+      toggleAdult: () => this.setMember({ withAdult: who.withAdult === false }),
+      ...this.prefixed('adult', who.withAdult !== false),
+      toggleOnly: () => this.setState({ onlyRideable: !s.onlyRideable }),
+      ...this.prefixed('only', s.onlyRideable),
+      hasSel: Boolean(sel),
+      selName: sel ? sel.n : '',
+      selSub: sel ? ((sel.req ? sel.req + '" minimum height' : this.catLabel[sel.c]) + ' · ' + sel.zone + ' · ' + this.walk(sel.m) + ' walk') : '',
+      selEyebrow: sel ? (sel.live === 'GO NOW' ? 'GO NOW · SHORT QUEUE' : sel.live) : '',
+      selColour: sel ? (sel.live === 'PAUSED' ? 'var(--barred)' : 'var(--cat-' + sel.c + ')') : 'var(--label3)',
+      closeSel: () => this.setState({ sel: null }),
+      selRideable: Boolean(sel && sel.req),
+      selPeople: sel && sel.req
+        ? this.rows(sel).map((r) => ({
+            name: r.name,
+            why: r.why,
+            label: this.paintFor(r.kind).label,
+            fg: this.paintFor(r.kind).fg,
+          }))
+        : [],
+      startWalk: () => this.setState({ walking: true }),
+      stopWalk: () => this.setState({ walking: false, sheet: 'peek' }),
+      setRally: () => this.setState({ tab: 'party', sheet: 'full', sel: null, panel: null }),
+      routePath: 'M184 518 C 176 470 150 452 140 440 L200 400 C 236 376 244 330 232 292 L272 200 L262 168',
+      navEta: eta.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+      navSummary: this.walk(navTarget.m) + ' · ' + this.dist(navTarget.m) + ' · ' + navTarget.n,
+      navStepDist: this.dist(navTarget.m * 0.4),
+      heights,
+    };
+  }
+
+  componentDidMount() {
+    if (this.state.appearance === 'auto' && !this.props.theme) {
+      this.setState({ theme: this.autoTheme() });
+    }
+  }
+
+  /* lib/world.js — SKINS with their real unlock/share rules, KITS, MARK_TYPES,
+     SIGN_PHRASES. Rungs below reflect this Profile's meters: 12 Contributions,
+     3 Worlds, 10 Ride reports, 3 agrees, 5 night quests, 25% fog. */
+  closetSkins() {
+    return [
+      { id: 'postcard', label: 'Postcard', rung: 'share', swatch: '#F4E4C8', edge: '#C45C4A' },
+      { id: 'woodblock', label: 'Woodblock', rung: 'unlock', swatch: '#E8D0A8', edge: '#2A1810' },
+      { id: 'operator', label: 'Operator', rung: 'unlock', swatch: '#2A2A28', edge: '#C4B896' },
+      { id: 'down-line', label: 'Down-line', rung: 'share', swatch: '#2A2A20', edge: '#E6C200' },
+      { id: 'marquee', label: 'Marquee', rung: 'unlock', swatch: '#120818', edge: '#FF6B9A' },
+      { id: 'sticker-book', label: 'Sticker book', rung: 'unlock', swatch: '#E8D4B8', edge: '#C45C8A' },
+      { id: 'drafting', label: 'Drafting', rung: null, swatch: '#1B3A6B', edge: '#D8E6F0' },
+      { id: 'ticket-stub', label: 'Ticket stub', rung: null, swatch: '#F7EFE4', edge: '#B03030' },
+      { id: 'haunt', label: 'Haunt', rung: 'unlock', season: true, swatch: '#140C10', edge: '#E07020' },
+      { id: 'water-slick', label: 'Water slick', rung: 'unlock', wrongWorld: true, swatch: '#7EC8E8', edge: '#FF6B9A' },
+    ];
+  }
+
+  closetVals() {
+    const s = this.state;
+    const wear = s.wearSkin;
+    const skins = this.closetSkins().map((sk) => {
+      let value = 'Locked';
+      let valueFg = 'var(--label3)';
+      if (sk.season) { value = 'Out of season'; }
+      else if (sk.wrongWorld) { value = 'This World'; }
+      else if (sk.rung === 'share') { value = s.offering === sk.id ? 'Offering' : 'Share earned'; valueFg = 'var(--label2)'; }
+      else if (sk.rung === 'unlock') { value = 'Unlocked'; valueFg = 'var(--label2)'; }
+      const wearable = Boolean(sk.rung) && !sk.season && !sk.wrongWorld;
+      const wearing = wearable && wear === sk.id && !s.wornOffer;
+      return {
+        label: sk.label,
+        swatch: sk.swatch,
+        swatchEdge: sk.edge,
+        value: wearing ? 'Wearing' : value,
+        valueFg: wearing ? 'var(--adventure)' : valueFg,
+        opacity: wearable ? 1 : 0.5,
+        cursor: wearable ? 'pointer' : 'default',
+        canOffer: sk.rung === 'share' && !sk.season && !sk.wrongWorld,
+        offerCta: s.offering === sk.id ? 'Withdraw Offer' : 'Offer to Party',
+        offer: () => this.setState({ offering: s.offering === sk.id ? null : sk.id }),
+        tap: () => wearable && this.setState({ wearSkin: wearing ? null : sk.id, wornOffer: false }),
+      };
+    });
+
+    // lib/world.js KIT_ICONS — one Icon.jsx glyph per Kit
+    const kits = [
+      ['porter-cuff', 'Porter cuff', 'location.fill'],
+      ['buddy', 'Buddy', 'person.crop.circle.fill'],
+      ['street-arrow', 'Street arrow', 'location.north.fill'],
+      ['meet-flag', 'Meet flag', 'flag.fill'],
+      ['cairn-trail', 'Cairn trail', 'mappin.and.ellipse'],
+      ['quest-sensor', 'Quest sensor', 'safari'],
+    ].map(([id, label, icon]) => ({
+      label,
+      isLocation: icon === 'location.fill',
+      isPerson: icon === 'person.crop.circle.fill',
+      isNorth: icon === 'location.north.fill',
+      isFlag: icon === 'flag.fill',
+      isPin: icon === 'mappin.and.ellipse',
+      isSafari: icon === 'safari',
+      value: s.kit === id ? 'Equipped' : 'Equip',
+      valueFg: s.kit === id ? 'var(--adventure)' : 'var(--label2)',
+      glyphFg: s.kit === id ? 'var(--adventure)' : 'var(--label3)',
+      tap: () => this.setState({ kit: s.kit === id ? null : id }),
+    }));
+
+    /* lib/world.js: recordSideQuest decides which Mark a Contribution leaves —
+       height → plaque + lantern, geometry/path → cairn, any Place → sticker.
+       Only sign and beacon are ever placed by hand. */
+    const anchored = Boolean(s.markSpot);
+    const placeable = [
+      {
+        id: 'sign', title: 'Sign', icon: 'flag.fill',
+        copy: 'A phrase from the closed list, standing at this spot.',
+      },
+      {
+        id: 'beacon', title: 'Beacon', icon: 'location.north.fill',
+        copy: 'Points at something worth walking to. No words.',
+      },
+    ].map((m) => {
+      const on = s.markType === m.id;
+      return {
+        title: m.title,
+        copy: m.copy,
+        isFlag: m.icon === 'flag.fill',
+        isNorth: m.icon === 'location.north.fill',
+        bg: on ? 'var(--fill2)' : 'var(--bg2)',
+        fg: on ? 'var(--adventure)' : 'var(--label3)',
+        state: on ? (m.id === 'sign' && !s.signPhrase ? 'Pick a phrase' : 'Placed') : (anchored ? 'Place' : 'Pick a spot'),
+        stateFg: on ? 'var(--adventure)' : (anchored ? 'var(--label2)' : 'var(--label3)'),
+        opacity: anchored ? 1 : 0.55,
+        cursor: anchored ? 'pointer' : 'default',
+        tap: () => anchored && this.setState({
+          markType: on ? null : m.id,
+          signPhrase: m.id === 'sign' ? s.signPhrase : null,
+        }),
+      };
+    });
+
+    const earned = [
+      { id: 'plaque', title: 'Plaque', icon: 'figure.rollercoaster', copy: 'A height rule you settled at a ride.', count: '4' },
+      { id: 'lantern', title: 'Lantern', icon: 'bolt.fill', copy: 'Rides beside a settled height, lit for the next family.', count: '4' },
+      { id: 'cairn', title: 'Cairn', icon: 'mappin.and.ellipse', copy: 'A path or shape the map was missing.', count: '2' },
+      { id: 'sticker', title: 'Sticker', icon: 'camera.fill', copy: 'Anything you reported at a Place.', count: '7' },
+    ].map((m) => ({
+      title: m.title,
+      copy: m.copy,
+      count: m.count,
+      isCoaster: m.icon === 'figure.rollercoaster',
+      isBolt: m.icon === 'bolt.fill',
+      isPin: m.icon === 'mappin.and.ellipse',
+      isCamera: m.icon === 'camera.fill',
+    }));
+
+    const signPhrases = ['Queue this way', 'Rest here', 'Height checked', 'Nice view', 'This way to restrooms']
+      .map((p) => ({
+        label: p,
+        ...this.chipPaint(s.signPhrase === p),
+        tap: () => this.setState({ signPhrase: p }),
+      }));
+
+    const where = s.markSpot
+      ? (s.markSpot.name.startsWith('By ')
+        ? s.markSpot.name.replace(/^By /, 'by ') + ', ' + s.markSpot.zone
+        : 'on open ground in ' + s.markSpot.zone)
+      : '';
+    let dropped = 'Tap a spot on the map first — a Mark stands somewhere, not everywhere.';
+    let markFootFg = 'var(--label3)';
+    if (anchored && !s.markType) {
+      dropped = 'Anchored ' + where + '. Pick which Mark stands here.';
+      markFootFg = 'var(--label2)';
+    } else if (anchored && s.markType === 'sign') {
+      dropped = s.signPhrase
+        ? 'Sign standing ' + where + ' — “' + s.signPhrase + '”.'
+        : 'Pick one of the five phrases for this sign.';
+      markFootFg = s.signPhrase ? 'var(--green)' : 'var(--label2)';
+    } else if (anchored && s.markType === 'beacon') {
+      dropped = 'Beacon standing ' + where + '. Your Party sees it now.';
+      markFootFg = 'var(--green)';
+    }
+
+    return {
+      skins, kits, placeable, earned, signPhrases,
+      signOpen: s.markType === 'sign' && anchored,
+      markFoot: dropped,
+      markFootFg,
+      offerValue: s.wornOffer ? 'Wearing · tap to stop' : 'Wear',
+      offerFg: s.wornOffer ? 'var(--adventure)' : 'var(--label2)',
+      offerBorder: s.wornOffer ? 'var(--adventure)' : 'var(--sep)',
+      toggleOffer: () => this.setState({ wornOffer: !s.wornOffer }),
+    };
+  }
+
+  /** A tapped point on the map, named by what it is standing next to. */
+  spotAt(x, y) {
+    const ZONES = [
+      { name: 'Action Zone', x: 74, y: 20 }, { name: 'Adventure Port', x: 44, y: 18 },
+      { name: 'Oktoberfest', x: 66, y: 46 }, { name: 'Rivertown', x: 24, y: 58 },
+      { name: 'Planet Snoopy', x: 84, y: 34 }, { name: 'Coney Mall', x: 52, y: 78 },
+      { name: 'International Street', x: 50, y: 92 },
+    ];
+    const near = (list) => list
+      .map((p) => ({ ...p, d: Math.hypot(p.x - x, p.y - y) }))
+      .sort((a, b) => a.d - b.d)[0];
+    const zone = near(ZONES);
+    const place = near(this.pois);
+    // The puck sits at 50% / 63% of the frame; ~8.4 m per percent of frame.
+    const metres = Math.round(Math.hypot(x - 50, y - 63) * 8.4);
+    const gap = Math.round(place.d * 8.4);
+    return {
+      x: Math.round(x * 10) / 10,
+      y: Math.round(y * 10) / 10,
+      zone: zone.name,
+      name: gap < 34 ? 'By ' + place.n : 'Open ground',
+      near: gap < 34 ? place.n : this.dist(gap) + ' from ' + place.n,
+      dist: this.dist(metres),
+      walk: this.walk(metres),
+      reach: this.walk(metres) + ' walk · ' + this.dist(metres),
+    };
+  }
+
+  stopFor(stop) {
+    if (stop === 'full') return 640;
+    if (stop === 'shut') return 118;
+    return 268;
+  }
+
+  prefixed(name, on) {
+    const p = this.chipPaint(on);
+    const out = {};
+    out[name + 'Bg'] = p.bg;
+    out[name + 'Fg'] = p.fg;
+    out[name + 'Border'] = p.border;
+    return out;
+  }
+
+  toggleTheme() {
+    this.setState((s) => ({
+      appearance: s.theme === 'day' ? 'night' : 'day',
+      theme: s.theme === 'day' ? 'night' : 'day',
+    }));
+  }
+
+  /** Automatic follows the clock: Trail from 06:00, Park Midnight after 19:00. */
+  autoTheme() {
+    const hour = new Date().getHours();
+    return hour >= 6 && hour < 19 ? 'day' : 'night';
+  }
+
+  cycleAppearance() {
+    this.setState((s) => {
+      const next = s.appearance === 'auto' ? 'day' : (s.appearance === 'day' ? 'night' : 'auto');
+      return { appearance: next, theme: next === 'auto' ? this.autoTheme() : next };
+    });
+  }
+
+  enterWorld(name) {
+    this.setState({ venue: name, worldPicked: true, located: true, screen: 'app', tab: 'explore', sheet: 'peek', panel: null, sel: null });
+  }
+
+  jump(id) {
+    if (id === 'auth') return this.setState({ screen: 'auth' });
+    if (id === 'intro') return this.setState({ screen: 'intro' });
+    if (id === 'gate') return this.setState({ screen: 'gate' });
+    if (id === 'world') return this.setState({ screen: 'world' });
+    if (id === 'walking') return this.setState({ screen: 'app', walking: true, sel: 'banshee' });
+    if (id === 'quests') return this.setState({ screen: 'app', walking: false, tab: 'quests', panel: null, sheet: 'full', sel: null });
+    if (id === 'settings') return this.setState({ screen: 'app', walking: false, tab: 'me', panel: 'settings', sheet: 'full', sel: null });
+    if (id === 'closet') return this.setState({ screen: 'app', walking: false, tab: 'me', panel: 'closet', sheet: 'full', sel: null });
+    if (id === 'marks') return this.setState({ screen: 'app', walking: false, tab: 'me', panel: 'marks', sheet: 'full', sel: null });
+    return this.setState({
+      screen: 'app', walking: false, tab: id, panel: null, sel: null, located: true,
+      sheet: id === 'explore' ? 'peek' : 'full',
+      height: id === 'plan' && this.state.height == null ? 48 : this.state.height,
+    });
+  }
+}
+
+</script>
+</body>
+</html>

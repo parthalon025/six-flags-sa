@@ -432,5 +432,11 @@
     "items": [
       "Train H thin vertical: banded world through MapLibre with the staged pitch ease"
     ]
+  },
+  "1.26.3": {
+    "title": "What's new",
+    "items": [
+      "Design-twin import: reconcile apps/party-tracker with the Parkbound App design (#575)"
+    ]
   }
 }

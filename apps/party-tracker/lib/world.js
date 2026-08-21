@@ -22,6 +22,37 @@ export const SIGN_PHRASES = [
 
 export const MARK_TYPES = ['plaque', 'sign', 'lantern', 'sticker', 'cairn', 'beacon'];
 
+/* Which of the six a guest may put down, and which are put down for them.
+ *
+ * `recordSideQuest` below mints plaque + lantern for a settled height, a cairn
+ * for geometry or a path, and a sticker for anything answered at a Place — so
+ * those four are *evidence that a fact was settled*, and their whole worth is
+ * that nobody chose to leave them. `dropMark` is the only other way a Mark is
+ * born, and sign and beacon are the only two that reach it honestly.
+ *
+ * The split is a rule about authorship, not a display filter, which is why it
+ * lives beside MARK_TYPES rather than in the screen that draws the rows: a
+ * hand-placed plaque is indistinguishable from an earned one to `visibleMarks`
+ * and `thankMark`, so the only place to stop it is before it is made.
+ *
+ * MARK_TYPES itself stays all six — it is what the transport and the API
+ * validate against, and an earned plaque travels the same `world-mark` path a
+ * placed sign does.
+ */
+export const PLACEABLE_MARK_TYPES = ['sign', 'beacon'];
+export const EARNED_MARK_TYPES = ['plaque', 'lantern', 'cairn', 'sticker'];
+
+/** What each Mark is called in a sentence — `type[0].toUpperCase()` is a
+ *  transform, not a name, and it has no answer the day a type is two words. */
+export const MARK_LABELS = {
+  plaque: 'Plaque',
+  sign: 'Sign',
+  lantern: 'Lantern',
+  sticker: 'Sticker',
+  cairn: 'Cairn',
+  beacon: 'Beacon',
+};
+
 /** Icon.jsx names for Kit chrome — SF-style labels stay in KITS.glyph. */
 export const KIT_ICONS = {
   'porter-cuff': 'location.fill',
@@ -699,6 +730,32 @@ export function visibleMarks({ world, viewerPartyId, now = Date.now() }) {
     out.push({ ...mark, opacity: markOpacity(mark, now) });
   }
   return out;
+}
+
+/**
+ * One author's Marks of one type — the earned tally the Marks screen prints.
+ *
+ * Sits beside `visibleMarks` rather than in the screen that counts them for
+ * the reason the placeable/earned split does: `world.marks` is one flat list
+ * that the mesh, the venue API and `recordSideQuest` all append to, and every
+ * question asked of it — who left it, what kind it is, is it still visible —
+ * is answered here or nowhere.
+ *
+ * Unfiltered by fade and evidence, unlike `visibleMarks`: those two rules
+ * decide what a stranger is shown on the map, and a tally of what you have
+ * earned must not shrink because nobody has Thanked it yet.
+ *
+ * Returns the Marks, like `visibleMarks` does. The screen that only wants the
+ * number takes its length; a screen that wants to list them does not have to
+ * re-derive the filter to get it.
+ *
+ * @param {object|null} world  merged park + party world
+ * @param {string} type        one of MARK_TYPES
+ * @param {string|null} authorId  the Profile whose Marks to count
+ */
+export function marksByType(world, type, authorId) {
+  if (!type || !authorId) return [];
+  return (world?.marks || []).filter((m) => m.type === type && m.authorId === authorId);
 }
 
 export function kitForViewer({ kit, viewerInParty }) {

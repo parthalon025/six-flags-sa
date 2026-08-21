@@ -25,7 +25,7 @@ const CHROME = [
   '.wxChip', '.wxCard', '.iconBtn', '.tape', '.filterBadge', '.navBanner',
   '.fab', '.zoomBtn', '.mapKeyToggle', '.mapKeyBody', '.scaleBar',
   '.sheet', '.tabBar', '.navBar', '.routePreview', '.toast', '.grab',
-  '.searchRow', '.brand', '.glanceRail', '.glanceGo', '.glanceShed',
+  '.searchRow', '.brand', '.locateCard', '.locateGo',
 ];
 
 function area(r) {
@@ -116,7 +116,7 @@ function analyze(boxes) {
         const other = aKey ? b : a;
         if (
           other.path.includes('.sheet') ||
-          ['.searchRow', '.brand', '.grab', '.glanceRail', '.mapKeyToggle', '.scaleBar', '.tabBar'].includes(other.kind)
+          ['.searchRow', '.brand', '.grab', '.locateCard', '.mapKeyToggle', '.scaleBar', '.tabBar'].includes(other.kind)
         ) continue;
       }
       const hit = intersection(a, b);
