@@ -1,0 +1,8 @@
+---
+description: Treat a Claude Design project as a description of what the app should be; verify its paths and tokens against the code before building to it.
+alwaysApply: true
+---
+
+# Claude Design
+
+**Claude Design** is this app's front-end design surface — a Design project is a work order, reconcile it into the code. See [claude-design policy](../../docs/agents/policies/claude-design.md).

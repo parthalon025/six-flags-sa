@@ -2,8 +2,12 @@
   "policiesDir": "docs/agents/policies",
   "cursorRulesDir": ".cursor/rules",
   "agentRoots": {
-    "AGENTS.md": { "variant": "agents" },
-    "CLAUDE.md": { "variant": "claude" }
+    "AGENTS.md": {
+      "variant": "agents"
+    },
+    "CLAUDE.md": {
+      "variant": "claude"
+    }
   },
   "policies": [
     {
@@ -29,6 +33,14 @@
       "pointer": "Venue **builder** output is generated only — fix upstream, prove in the app.",
       "cursorRule": "builder-app-contract.mdc",
       "cursorDescription": "Keep the venue builder and the app's data contract in sync — fix generated data upstream, validate app changes against the builder."
+    },
+    {
+      "id": "claude-design",
+      "heading": "Claude Design — where the front end is designed",
+      "title": "Claude Design",
+      "pointer": "**Claude Design** is this app's front-end design surface — a Design project is a work order, reconcile it into the code.",
+      "cursorRule": "claude-design.mdc",
+      "cursorDescription": "Treat a Claude Design project as a description of what the app should be; verify its paths and tokens against the code before building to it."
     },
     {
       "id": "vertical-e2e",
