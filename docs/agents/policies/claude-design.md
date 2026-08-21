@@ -10,18 +10,38 @@ prototype's mistakes into a real app.
 
 ## Which side is the truth
 
-Both, about different things.
+**Claude Design is canon for what it specializes in.** Inside its own subject — how the front end
+looks and reads: structure, layout, hierarchy, spacing, copy, information architecture, and what
+an interaction is *for* — the design is the authority and the code conforms to it. That is not a
+negotiation between two opinions. If the app disagrees with the design about how a screen is laid
+out, **the app is wrong and gets changed.**
 
-**The design owns:** structure, layout, hierarchy, copy, information architecture, and what an
-interaction is *for*.
+Do not argue a design decision back on taste, familiarity, or "the current code does it this way".
+The owner designs the front end in Claude Design; that is where those calls get made.
 
-**The repo owns:** the data model, the permission model, the token values, accessibility floors,
-and every state a flat prototype never drew.
+The repo is canon only for what a canvas structurally cannot know:
+
+- **The data model.** What a real party code looks like, what a venue actually contains.
+- **The permission model.** Who is allowed to change what; `lib/core/state.js` is the authority.
+- **Token *values*.** The design owns which token a thing wears; `globals.css` owns what that
+  token resolves to.
+- **Accessibility floors.** Contrast is measured, not judged — this app is used in direct sun.
+- **Every state a flat prototype never drew** — empty, offline, no-fix, error, mid-sync.
+
+So the honest reading of a disagreement is almost always: *the design is right about the intent
+and wrong about a detail it had no way to see.* Build the intent; fix the detail against the code.
+The one case where the design is simply wrong is when it contradicts itself — see
+[prototype wiring](#what-a-prototype-gets-wrong-every-time) below.
 
 A Design canvas is generated from a moment in the repo's life and drifts from it immediately.
 Ours already had, on arrival: its screen map named a `WorldPicker.jsx` that did not exist, its
 `--cat-*` colour tokens were invented, and its `judge()` was a lossy copy of `lib/eligibility.js`.
-**Verify every path and every token against the code before you build to it.**
+**Verify every path and every token against the code before you build to it** — that is checking
+the design's *facts*, not overruling its *judgement*.
+
+Drift runs both ways, so the twin is generated rather than drawn: `npm run design:twin` rebuilds
+it from the running app, and `npm run design:push` puts it back in front of the designer. A
+hand-kept mirror is a mirror that lies.
 
 ## What a prototype gets wrong, every time
 

@@ -63,7 +63,7 @@ Venue **builder** output is generated only — fix upstream, prove in the app. S
 
 ## Claude Design — where the front end is designed
 
-**Claude Design** is this app's front-end design surface — a Design project is a work order, reconcile it into the code. See [claude-design policy](./docs/agents/policies/claude-design.md).
+**Claude Design** is canon for how the front end looks and reads — the code conforms to it; the repo is canon only for what a canvas cannot see. See [claude-design policy](./docs/agents/policies/claude-design.md).
 
 ## Vertical e2e — output validation
 
