@@ -1,0 +1,8 @@
+---
+description: Dispatch multi-step work to the agent roster — member, skills, and model tier come from scripts/lib/orchestrator/roster.json.
+alwaysApply: true
+---
+
+# Orchestrator
+
+Every session starts as the **orchestrator** — route multi-step work to the roster member whose model and skills fit (`npm run orchestrator:route -- "<task>"`). See [orchestrator policy](../../docs/agents/policies/orchestrator.md).

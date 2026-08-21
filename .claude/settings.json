@@ -29,6 +29,12 @@
             "command": "node scripts/worktree.mjs status",
             "timeout": 15,
             "statusMessage": "Listing agent worktrees"
+          },
+          {
+            "type": "command",
+            "command": "node scripts/orchestrator.mjs brief",
+            "timeout": 15,
+            "statusMessage": "Loading the agent roster"
           }
         ]
       }
