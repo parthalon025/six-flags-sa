@@ -73,12 +73,13 @@ export default function BandedWorldPreviewPage() {
       </header>
       <BandedWorldMap
         skin={skin}
-        /* Dev-only handle, same shape as DisplayMap's onMapReady: it lets a
-           Playwright driver or a perf trace set the camera directly instead of
-           synthesising pinch gestures. The route's flag is what keeps this out
-           of the shipped experience. */
-        onReady={(map) => {
-          window.__bandedMap = map;
+        /* Dev-only handle on the map view seam (lib/mapView.js): it lets a
+           Playwright driver or a perf trace call setCamera directly instead of
+           synthesising pinch gestures, and read state() back to see which band
+           the seam chose. The route's flag is what keeps this out of the
+           shipped experience. */
+        onReady={(view) => {
+          window.__bandedView = view;
         }}
       />
     </main>

@@ -65,11 +65,31 @@ real-time PBR tier is the third adapter this seam is being shaped for.
 
 **Interface.** What a caller must know, and no more:
 
-- `mount(container, { venue, skin, palette })` → a view handle.
-- `setCamera({ center, zoom, pitch, bearing })` and an eased variant.
+- `mountMapView(container, { renderer, world, skin, palette, places, camera, available, maxPitch })`
+  → a view handle.
+- `setCamera({ center, zoom, bearing })` and `easeCamera(camera, { durationMs })`.
+- `setAvailableBands(ids)` — what the device holds, as the cache learns it.
 - `setOverlay(model)` — party dots, route, quest nodes as *data*, never draw calls.
 - `hitTest(point)` → the Place at a screen point, or null.
+- `state()` → the last camera and band plan, for a HUD or a perf trace.
 - `destroy()`.
+
+**Pitch is not in that list, deliberately.** ADR-0019 clause 2 makes pitch a function of zoom and
+ADR-0021 clause 4 stages that ease clear of every band handoff, so a caller that could set pitch
+per frame could land a tilt and a restyle in the same instant — the one thing clause 4 exists to
+prevent. The Skin's declared camera feel enters at mount instead, as `maxPitch`, which is where a
+per-Skin trait belongs.
+
+**What crosses to the renderer**, and nothing else: the World and Skin, the camera with its pitch
+already derived, the band plan (`primary`, `placeholder`, `primaryReady`, `draw` bottom-to-top),
+Places as frozen positions, and a normalised Overlay. A renderer is asked for one thing back —
+`pick(point)` → an id — and the Place itself is looked up this side of the seam, so a renderer can
+never hand a caller a Place the venue has not got.
+
+**The renderer is also where camera moves come from.** Gestures happen inside it, and a caller
+hands one straight back through `setCamera`. That would echo forever, so a camera equal to the one
+already held is not a move; pitch is excluded from that comparison precisely because it is derived,
+which is what makes the round trip settle.
 
 **Depth.** Everything ADR-0019 clauses 3–4 converge lives behind those five: which renderer draws,
 raster band sources and their crossfade, the pitch ease and its staging off band boundaries
@@ -109,5 +129,13 @@ interface is already the right shape.
 
 ## Status
 
-Seam 1 is built and tested (`test/app/zoom-bands.test.mjs`). Seams 2 and 3 are designed here and
-not yet implemented — they are the next slices of #563.
+Seam 1 is built and tested (`test/app/zoom-bands.test.mjs`), and now has callers: the band chooser
+(`apps/party-tracker/lib/bandPlan.js`) and seam 2 both read the table.
+
+Seam 2 is built — `apps/party-tracker/lib/mapView.js`, tested through a recording stand-in renderer
+in `test/app/map-view.test.mjs`, with `apps/party-tracker/lib/mapViewMaplibre.js` as the MapLibre
+adapter and `components/BandedWorldMap.jsx` as its first caller. The SVG map (`ParkMap.jsx`) has not
+been ported behind it yet; that is the retirement slice, and until it happens the second adapter is
+the design's, not the code's.
+
+Seam 3 is designed here and not yet implemented.
