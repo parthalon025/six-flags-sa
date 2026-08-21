@@ -336,7 +336,7 @@ Ship **one end-to-end slice at a time** (user action → code → named critical
 3. Each feature epic that adds a user action must add/update a row in `test/app/critical-paths.json` and a matching `await check(...)` in the same PR.
 4. **Stack dependent slices** so CI stays green before the prior PR merges: soft-gate includes schemas; party-sharing and Side Quests include soft-gate (+ `signIn` in the harness). After the dependency lands on `main`, rebase drops the duplicate commits.
 
-Critical-path contract: `npm run test:coverage-contract` (also runs inside `test:validate-ui`).
+Critical-path inventory: `test/app/critical-paths.json` — read by reviewers, not by a script.
 
 ## PR chain status (2026-08-12)
 

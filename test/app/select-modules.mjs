@@ -82,7 +82,7 @@ if (wantAll) {
       fullSuite: true,
     };
   } else if (!files.length) {
-    // Empty diff (e.g. workflow_dispatch on same commit) — still run contract.
+    // Empty diff (e.g. workflow_dispatch on same commit) — selects nothing.
     selection = selectModulesFromFiles([], manifest);
   } else {
     selection = selectModulesFromFiles(files, manifest);

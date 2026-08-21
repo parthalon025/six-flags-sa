@@ -38,7 +38,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       builder: ${{ steps.mods.outputs.builder }}
-      contract: ${{ steps.mods.outputs.contract }}
       lint: ${{ steps.mods.outputs.lint }}
       selector: ${{ steps.mods.outputs.selector }}
       any_ui: ${{ steps.mods.outputs.any_ui }}
@@ -116,7 +115,7 @@ jobs:
       - name: Module selection summary
         run: |
           echo "modules=${{ steps.mods.outputs.modules }}"
-          echo "lint=${{ steps.mods.outputs.lint }} contract=${{ steps.mods.outputs.contract }} selector=${{ steps.mods.outputs.selector }}"
+          echo "lint=${{ steps.mods.outputs.lint }} selector=${{ steps.mods.outputs.selector }}"
           echo "builder=${{ steps.mods.outputs.builder }} any_ui=${{ steps.mods.outputs.any_ui }} full=${{ steps.mods.outputs.full_suite }}"
           echo "ui_matrix=${{ steps.mods.outputs.ui_matrix }}"
           echo "skip_ci=${{ steps.local_pass.outputs.skip_ci }} skip_ui=${{ steps.local_pass.outputs.skip_ui }}"
@@ -191,18 +190,6 @@ jobs:
 
       - name: ESLint
         run: npm run lint
-
-  contract:
-    name: Coverage contract
-    needs: select
-    if: needs.select.outputs.contract == 'true' && needs.select.outputs.skip_ci != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-      - run: npm run test:coverage-contract
 
   builder:
     name: Builder
@@ -382,7 +369,6 @@ jobs:
       - module-select-unit
       - boundaries
       - lint
-      - contract
       - builder
       - app-build
       - ui

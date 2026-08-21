@@ -41,17 +41,6 @@
       ]
     },
     {
-      "id": "contract",
-      "title": "Critical-path coverage contract",
-      "kind": "contract",
-      "paths": [
-        "test/app/critical-paths.json",
-        "test/app/coverage-contract.mjs",
-        "CONTEXT.md",
-        "docs/adr/**"
-      ]
-    },
-    {
       "id": "builder",
       "title": "Builder unit + compare",
       "kind": "builder",

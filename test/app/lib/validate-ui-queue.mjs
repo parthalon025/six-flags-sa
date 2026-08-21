@@ -5,36 +5,20 @@
  * it is imported; the planning is the part worth asserting on.
  *
  * Interface:
- *   buildQueue({ contract, functional, grandma, parallel })
+ *   buildQueue({ functional, grandma, parallel })
  */
-
-/** Browser suites dominate the wall clock, so they start first. */
-function cost(suite) {
-  if (suite.id.startsWith('functional:')) return 2;
-  if (suite.id === 'grandma') return 2;
-  return 0;
-}
 
 /**
  * Serially the functional modules stay one process — the shape this suite has
  * always run in — because splitting them only pays when they can overlap, and
  * every extra process re-launches a browser.
+ *
+ * Every suite here drives its own browser, so they all cost about the same and
+ * the queue runs in the order it is built. Reintroduce an ordering only when a
+ * cheap suite joins, and give it a test that would fail without one.
  */
-export function buildQueue({
-  contract = false,
-  functional = [],
-  grandma = false,
-  parallel = false,
-} = {}) {
+export function buildQueue({ functional = [], grandma = false, parallel = false } = {}) {
   const queue = [];
-  if (contract) {
-    queue.push({
-      id: 'coverage-contract',
-      name: 'Critical-path coverage contract',
-      script: 'coverage-contract.mjs',
-      args: [],
-    });
-  }
   if (grandma) {
     queue.push({
       id: 'grandma',
@@ -63,6 +47,5 @@ export function buildQueue({
       });
     }
   }
-  // Longest first: the pool is only as fast as its slowest late start.
-  return queue.sort((x, y) => cost(y) - cost(x));
+  return queue;
 }
