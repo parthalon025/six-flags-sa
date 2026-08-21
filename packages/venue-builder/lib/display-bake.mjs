@@ -14,6 +14,7 @@
  * same model — it is the semantic layout the design doc's §5 requires.
  */
 
+import { bandResolution } from '@party-tracker/shared/zoomBands.js';
 import { LINE_LAYERS } from './osm-tags.mjs';
 import { densityFromSpecies, fillRows, scatterPoints } from './display-scatter.mjs';
 
@@ -66,13 +67,53 @@ export const ROAD_STYLES = ['cased', 'double'];
 export const SERVICE_STYLES = ['solid', 'dashed'];
 
 /**
- * ADR-0016's "strictly geo-true" as a number: the most any painted stroke
- * may wander from its truth-projected position, in bake pixels. A kit's
- * seeded-noise displacement (`strokes.displacement.amplitude`) validates
- * against this at resolve time, and certification's style_world_geo row
- * re-asserts it against the bake, so the budget is a proof, not a promise.
+ * ADR-0021 clause 3's alignment budget — the most any painted feature may
+ * wander from where Truth says it sits — in GROUND METRES.
+ *
+ * It used to be `WORLD_DISPLACEMENT_BUDGET_PX = 3`, and a pixel budget cannot
+ * state this rule: a pixel is a different ground distance at every band and
+ * every venue. kings-island's shipped world is 2880 px across a 1549.65 m
+ * span — 0.5381 m/px — so 3 px licensed 1.614 m of drift there, 2.69x the mid
+ * budget and 10.76x the close budget, while the same 3 px at the close band is
+ * 0.45 m. One number cannot mean both, so the band supplies the conversion.
+ *
+ * Clause 3 writes the budget as one band pixel: 0.15 m at close, 0.6 m at mid.
+ * `bandResolution` is the only place those metres-per-pixel live, so the two
+ * cannot drift apart.
  */
-export const WORLD_DISPLACEMENT_BUDGET_PX = 3;
+export const WORLD_DISPLACEMENT_BUDGET_BAND_PIXELS = 1;
+
+/**
+ * The bands clause 3 leaves unconstrained: "overview unconstrained because
+ * departing from Truth is that band's job."
+ */
+export const UNBUDGETED_BANDS = Object.freeze(['overview']);
+
+/**
+ * The alignment budget for one band, in ground metres — `Infinity` where
+ * clause 3 sets no budget at all. Throws on a band that is not in the shared
+ * table, so a typo cannot silently buy an unconstrained band.
+ * @param {string} bandId
+ * @returns {number} metres
+ */
+export function worldDisplacementBudgetMetres(bandId) {
+  const metresPerPixel = bandResolution(bandId); // throws on an unknown band
+  if (UNBUDGETED_BANDS.includes(bandId)) return Infinity;
+  return WORLD_DISPLACEMENT_BUDGET_BAND_PIXELS * metresPerPixel;
+}
+
+/**
+ * The widest hand tremor a kit may declare, in bake pixels.
+ *
+ * This is an authoring range like `rim.reach` or `wavelength`, NOT the geo
+ * budget above, and the difference is load-bearing: a kit says pixels, and
+ * only a bake knows what one of its pixels is worth on the ground, so
+ * `resolveKit` cannot judge clause 3 and does not claim to. Certification's
+ * `style_world_geo` row does the conversion against the bake it is looking at,
+ * and it bites harder than this ceiling — `watercolor-quest`'s declared 2 px
+ * is 1.076 m at kings-island's 0.5381 m/px world, 1.79x the mid budget.
+ */
+export const MAX_DECLARED_DISPLACEMENT_PX = 3;
 
 /**
  * `steep` is the variant a natural surface takes where the ground is actually
@@ -217,11 +258,14 @@ export function resolveKit(spec = {}, { assets, overlay, materials } = {}) {
   checkMaterial('building', spec.sprites?.building?.material);
   const amp = spec.strokes?.displacement?.amplitude;
   if (spec.strokes?.displacement) {
-    // Seeded-noise hand-tremor on drawn edges (buildings, roads, tracks).
-    // The amplitude is the geo-truth budget: certification's
-    // style_world_geo row holds the bake to the same number.
-    if (!(amp > 0 && amp <= WORLD_DISPLACEMENT_BUDGET_PX)) {
-      throw new Error(`strokes.displacement.amplitude must sit in (0, ${WORLD_DISPLACEMENT_BUDGET_PX}] px`);
+    // Seeded-noise hand tremor on drawn edges (buildings, roads, tracks). The
+    // amplitude is in bake pixels — bin/display-bake-page.html divides it by
+    // px-per-cell to displace in cells — so this bound is an authoring range,
+    // not ADR-0021 clause 3's ground budget. The budget is metres and needs a
+    // resolution to compare against; certification's style_world_geo row has
+    // one and holds the bake to `worldDisplacementBudgetMetres`.
+    if (!(amp > 0 && amp <= MAX_DECLARED_DISPLACEMENT_PX)) {
+      throw new Error(`strokes.displacement.amplitude must sit in (0, ${MAX_DECLARED_DISPLACEMENT_PX}] px`);
     }
     const wavelength = spec.strokes.displacement.wavelength;
     if (wavelength != null && !(wavelength >= 1 && wavelength <= 8)) {

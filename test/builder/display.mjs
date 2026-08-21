@@ -812,6 +812,167 @@ await check('style-pass switches validate: road/service styles, rim, displacemen
   return true;
 });
 
+/* ------------------------- ADR-0021 clause 3: the budget in ground metres --
+ * "Generalization removes, never moves. A band may drop a feature entirely;
+ * any feature it does draw sits where Truth says it sits. Per-band alignment
+ * budget, asserted against Truth centrelines by the `style_world_geo` row:
+ * close ≤ 1 px (0.15 m), mid ≤ 1 px (0.6 m), overview unconstrained because
+ * departing from Truth is that band's job."
+ *
+ * A pixel budget cannot say that: a pixel is a different ground distance at
+ * every band and every venue. kings-island's shipped world is 2880 px across
+ * a 1549.65 m span — 0.5381 m/px — so the old 3 px licensed 1.614 m there,
+ * 2.7x the mid budget and 10.8x the close one, while the same 3 px at the
+ * close band is 0.45 m.
+ */
+
+const { worldDisplacementBudgetMetres, MAX_DECLARED_DISPLACEMENT_PX } = await import(
+  '../../packages/venue-builder/lib/display-bake.mjs'
+);
+const { stylePoints, certifyStyleContract, hexToRgb } = await import(
+  '../../packages/venue-builder/lib/display-style-contract.mjs'
+);
+
+/* A 12x12 synthetic world on bounds a metre can be counted by hand:
+ *
+ *   metres per degree of longitude   111320 · cos(0.0006°) = 111320.0 (8 s.f.)
+ *   ground span across               0.0012° × 111320      = 133.584 m
+ *   one cell                         133.584 / 12          =  11.132 m
+ *   one bake pixel at 16 px per cell 11.132 / 16           =   0.69575 m
+ *
+ * So a badge a tenth of a cell off Truth is 1.1132 m off Truth, and a kit
+ * declaring watercolor-quest's 2 px of hand tremor wanders 1.3915 m. Both bust
+ * the 0.6 m mid budget and the 0.15 m close budget, and at overview neither is
+ * anything at all. Every number above is arithmetic on the fixture, never a
+ * value read back out of the module under test.
+ */
+const BUDGET_TERRAIN = { outside: 0, ground: 1, grass: 2, wood: 3, water: 4, lot: 5, road: 6, service: 7 };
+const BUDGET_COLS = 12;
+const BUDGET_CELLS = new Array(BUDGET_COLS * BUDGET_COLS).fill(BUDGET_TERRAIN.ground);
+for (let y = 0; y < BUDGET_COLS; y += 1) {
+  for (let x = 0; x < BUDGET_COLS; x += 1) {
+    const edge = x === 0 || y === 0 || x === BUDGET_COLS - 1 || y === BUDGET_COLS - 1;
+    if (edge) BUDGET_CELLS[y * BUDGET_COLS + x] = BUDGET_TERRAIN.outside;
+  }
+}
+const BUDGET_WORLD = {
+  cols: BUDGET_COLS,
+  rows: BUDGET_COLS,
+  cells: BUDGET_CELLS,
+  terrains: Object.fromEntries(Object.entries(BUDGET_TERRAIN).map(([k, v]) => [v, k])),
+  buildings: [],
+  tracks: [],
+  roads: [],
+  bounds: { west: 0, south: 0, east: 0.0012, north: 0.0012 },
+};
+// Truth: the gate projects to cell x 3.1 (0.00031° / 0.0012° × 12), the food
+// place to cell x 8; both to cell y 8 ((0.0012 - 0.0004) / 0.0012 × 12).
+const BUDGET_POIS = [
+  { c: 'gate', n: 'Main Gate', lng: 0.00031, lat: 0.0004 },
+  { c: 'food', n: 'Fries', lng: 0.0008, lat: 0.0004 },
+];
+const BADGES_ON_TRUTH = [{ kind: 'gate', x: 3.1, y: 8 }, { kind: 'food', x: 8, y: 8 }];
+// The gate badge hand-placed a tenth of a cell — 1.1132 m — off its POI.
+const BADGES_OFF_TRUTH = [{ kind: 'gate', x: 3, y: 8 }, { kind: 'food', x: 8, y: 8 }];
+const BUDGET_PROFILE = { version: 1, id: 'budget-profile', kit: 'budget-kit', style: 'test', colorFamilies: {} };
+
+const geoRow = ({ band, badges, kit = { id: 'budget-kit' } }) => {
+  const model = { ...BUDGET_WORLD, badges };
+  const points = stylePoints(model, { perClass: 4 });
+  const samples = points.map(() => [...hexToRgb('#EBD9A4'), 255]);
+  const cert = certifyStyleContract({
+    model, points, samples, profile: BUDGET_PROFILE, kit, pois: BUDGET_POIS, band, px: 16,
+  });
+  return cert.checks.find((c) => c.key === 'style_world_geo');
+};
+
+await check('the alignment budget is ground metres per band, derived from the band resolution', () => {
+  // Literals from clause 3's own parentheses.
+  assert.equal(worldDisplacementBudgetMetres('close'), 0.15);
+  assert.equal(worldDisplacementBudgetMetres('mid'), 0.6);
+  assert.equal(worldDisplacementBudgetMetres('overview'), Infinity, 'clause 3 leaves overview unconstrained');
+  assert.throws(() => worldDisplacementBudgetMetres('gigantic'), /unknown band/i);
+  return true;
+});
+
+await check('style_world_geo: an off-Truth anchor passes at overview and fails at mid and close', () => {
+  const overview = geoRow({ band: 'overview', badges: BADGES_OFF_TRUTH });
+  assert.equal(overview.pass, true, `overview is unconstrained, yet: ${overview.evidence}`);
+  // Unconstrained means unconstrained, not "a coarser number": the gate badge
+  // at cell 0 is 3.1 cells — 34.5092 m — off its POI and still passes at
+  // overview. Any finite overview budget, one band pixel of 2.4 m included,
+  // would reject it.
+  const wild = geoRow({ band: 'overview', badges: [{ kind: 'gate', x: 0, y: 8 }, { kind: 'food', x: 8, y: 8 }] });
+  assert.equal(wild.pass, true, `overview must carry no budget at all: ${wild.evidence}`);
+  assert.match(wild.evidence, /worst offset 34\.509 m/, wild.evidence);
+  for (const band of ['mid', 'close']) {
+    const row = geoRow({ band, badges: BADGES_OFF_TRUTH });
+    assert.equal(row.pass, false, `${band} must reject a 1.1132 m anchor offset: ${row.evidence}`);
+  }
+  // The evidence has to be in the unit the budget is in. "0.1 cells" is
+  // unreadable across venues — it is 1.11 m here and 0.65 m at kings-island.
+  const close = geoRow({ band: 'close', badges: BADGES_OFF_TRUTH });
+  assert.match(close.evidence, /worst offset 1\.113 m/, close.evidence);
+  assert.match(close.evidence, /budget 0\.15 m/, close.evidence);
+  assert.doesNotMatch(close.evidence, /cells/, `the row still measures in cells: ${close.evidence}`);
+  const mid = geoRow({ band: 'mid', badges: BADGES_OFF_TRUTH });
+  assert.match(mid.evidence, /budget 0\.6 m/, mid.evidence);
+  return true;
+});
+
+await check('style_world_geo: a kit tremor is judged in metres at the bake\'s own resolution', () => {
+  const clean = geoRow({ band: 'close', badges: BADGES_ON_TRUTH });
+  assert.equal(clean.pass, true, `truth-exact anchors, no tremor: ${clean.evidence}`);
+  // watercolor-quest's declared amplitude: 2 px × 0.69575 m/px = 1.3915 m.
+  const kit = { id: 'budget-kit', strokes: { displacement: { amplitude: 2, wavelength: 3 } } };
+  assert.equal(geoRow({ band: 'overview', badges: BADGES_ON_TRUTH, kit }).pass, true);
+  for (const band of ['mid', 'close']) {
+    const row = geoRow({ band, badges: BADGES_ON_TRUTH, kit });
+    assert.equal(row.pass, false, `${band}: 2 px is 1.3915 m at 0.69575 m/px: ${row.evidence}`);
+  }
+  const mid = geoRow({ band: 'mid', badges: BADGES_ON_TRUTH, kit });
+  assert.match(mid.evidence, /2 px = 1\.391 m/, mid.evidence);
+  assert.match(mid.evidence, /0\.696 m\/px/, mid.evidence);
+  return true;
+});
+
+await check('the kit resolve ceiling is an authoring range, not the clause 3 budget', () => {
+  // A kit declares pixels; only a bake knows what a pixel is worth on the
+  // ground, so resolveKit cannot judge clause 3 and must not claim to. It
+  // bounds what may be authored, like rim.reach or wavelength do.
+  assert.equal(MAX_DECLARED_DISPLACEMENT_PX, 3);
+  assert.doesNotThrow(() => resolveKit({ strokes: { displacement: { amplitude: 2 } } }));
+  assert.throws(() => resolveKit({ strokes: { displacement: { amplitude: 3.5 } } }), /amplitude/);
+  // The two numbers are not the same gate: an amplitude the ceiling admits is
+  // one the budget rejects, which is exactly why the budget lives elsewhere.
+  const admitted = { id: 'budget-kit', strokes: { displacement: { amplitude: 2 } } };
+  const row = geoRow({ band: 'close', badges: BADGES_ON_TRUTH, kit: admitted });
+  assert.equal(row.pass, false, `resolveKit admits 2 px; the close budget must still reject it: ${row.evidence}`);
+  return true;
+});
+
+await check('every shipped kit is measured against the close-band budget by name', () => {
+  const dir = new URL('../../packages/venue-builder/data/display/kits/', import.meta.url);
+  const kits = readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
+  assert.equal(kits.length, 6, 'six kits ship; a seventh belongs in this audit');
+  // A close-band pixel IS 0.15 m of ground (ADR-0021 clause 2), so a kit's
+  // px amplitude is close-band pixels and its cost is amplitude × 0.15 m.
+  const over = {};
+  for (const file of kits) {
+    const spec = JSON.parse(readFileSync(new URL(file, dir), 'utf8'));
+    const metres = (spec.strokes?.displacement?.amplitude ?? 0) * 0.15;
+    if (metres > 0.15) over[file.replace(/\.json$/, '')] = Math.round(metres * 1000) / 1000;
+  }
+  // Measured 2026-08-21. watercolor-quest is the only shipped kit that
+  // declares displacement at all, and its 2 px is 0.30 m against a 0.15 m
+  // close budget — twice over, and 1.076 m (7.2x that budget) at kings-island's
+  // shipped 0.5381 m/px world. Re-authoring the art is a decision for a person;
+  // this list is where it sits on the record so a build never discovers it.
+  assert.deepEqual(over, { 'watercolor-quest': 0.3 },
+    `kits over the 0.15 m close-band budget: ${JSON.stringify(over)} — re-author the art, do not widen the budget`);
+  return true;
+});
+
 await check('kit material refs resolve against the MaterialSet ledger or fail loudly', () => {
   const materials = readMaterials();
   const kit = resolveKit({

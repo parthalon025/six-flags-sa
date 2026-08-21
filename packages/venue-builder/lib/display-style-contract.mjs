@@ -12,8 +12,9 @@
 
 import { check } from './evidence.mjs';
 import {
-  TERRAIN_NAMES, impliedTerrainClasses, POI_BADGES, WORLD_DISPLACEMENT_BUDGET_PX,
+  TERRAIN_NAMES, impliedTerrainClasses, POI_BADGES, worldDisplacementBudgetMetres,
 } from './display-bake.mjs';
+import { venueSpanMetres } from './display-bands.mjs';
 import {
   isoCellMap, isoCellToPixel, buildingHeightsM, trackVertexHeightsM,
   buildingScreenHulls, occludedByBuilding,
@@ -327,12 +328,16 @@ const groupMedians = (points, samples) => {
  *
  * `pois` (truth places) powers `style_world_geo` on the flat tier — the
  * ADR-0016 geo-fidelity row for worlds placed image-on-truth-bounds.
- * `px` is the bake's pixels-per-cell, needed to convert the kit's stroke
- * displacement budget into cells.
+ * `px` is the bake's pixels-per-cell; with the model's bounds it turns cells
+ * and bake pixels into the ground metres ADR-0021 clause 3 budgets in.
+ *
+ * `band` names which band's alignment budget that row asserts. It defaults to
+ * the strictest constrained band: a bake that does not say which band it
+ * serves has to satisfy the whole pyramid, and `close` is the tightest rung.
  */
 export function certifyStyleContract({
   model, points, samples, rerunSamples = null, siblings = null, profile, kit,
-  target = 'flat', skips = null, map = null, pois = null, px = 16,
+  target = 'flat', skips = null, map = null, pois = null, px = 16, band = 'close',
 }) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
@@ -394,8 +399,8 @@ export function certifyStyleContract({
     }));
   }
 
-  // Geo fidelity for the world tier (ADR-0016: strictly geo-true, bounded
-  // displacement certified). The app places the baked image on the model's
+  // Geo fidelity for the world tier (ADR-0021 clause 3: "Generalization
+  // removes, never moves"). The app places the baked image on the model's
   // truth-derived bounds, so a painted feature lands where the linear
   // bounds→cell map puts it. What this row PROVES, given that the bake is
   // deterministic (style_bake_deterministic) and the model is built from
@@ -403,9 +408,17 @@ export function certifyStyleContract({
   // to its truth POI — sit where projecting that POI through the world's
   // own bounds says they must, i.e. the image-on-truth-bounds placement is
   // exact for painted features; (2) the only paint-time geometry wobble the
-  // kit is allowed (seeded stroke displacement) is bounded by the declared
-  // budget, so no painted edge sits further than that many pixels from its
-  // truth position. It does not judge looks — the palette rows do that.
+  // kit is allowed (seeded stroke displacement) stays inside the same budget.
+  // It does not judge looks — the palette rows do that.
+  //
+  // Both are measured in GROUND METRES, because that is the unit clause 3's
+  // budget is in and the only unit that means the same thing at two venues.
+  // A cell runs 2.76 m at big-kahunas to 7.97 m at cedar-point (ADR-0021
+  // clause 2's table), and a bake pixel is a cell over `px`, so the identical
+  // "0.1 cells" is 0.28 m at one park and 0.80 m at another. `venueSpanMetres`
+  // is the one owner of a venue's ground span, shared with the band planner so
+  // this row and the painter's own projector cannot disagree about how big a
+  // metre is.
   if (pois && model.bounds && target === 'flat') {
     const b = model.bounds;
     const toCell = (lng, lat) => [
@@ -428,18 +441,40 @@ export function certifyStyleContract({
       if (!candidates) continue;
       errs.push(Math.min(...candidates.map(([ex, ey]) => Math.hypot(ex - badge.x, ey - badge.y))));
     }
-    // Anchors are never displaced (annotation passes last, undisplaced);
-    // the tolerance only absorbs the bounds' own 1e-7° rounding.
-    const anchorTol = 0.05;
     const worstAnchor = errs.length ? Math.max(...errs) : 0;
     const amplitude = kit.strokes?.displacement?.amplitude ?? 0;
+
+    // The projector lays one square `tileMetres` over both axes and `cropModel`
+    // takes the window's bounds from that grid's own corners, so the span
+    // across divided by the columns IS that tile, to the 1e-7° those corners
+    // are rounded to. No second definition of how big a cell is.
+    const metresPerCell = venueSpanMetres(model).spanXMetres / model.cols;
+    const metresPerPixel = metresPerCell / px;
+    const budget = worldDisplacementBudgetMetres(band); // throws on an unknown band
+    // Anchors are never displaced (annotation passes last, undisplaced), so a
+    // faithful bake's offset is only what `cropModel` rounds its bounds to:
+    // 5e-8° of corner shift plus 1e-7° of span, about a centimetre each, under
+    // 2 cm together at all four shipped venues. Even the 0.15 m close budget
+    // swallows that, so no separate rounding tolerance is needed — which is
+    // the point of a budget in metres. The old 0.05-cell tolerance was 0.32 m
+    // at kings-island and 0.14 m at big-kahunas: two different rules.
+    const anchorMetres = worstAnchor * metresPerCell;
+    const tremorMetres = amplitude * metresPerPixel;
+    const m = (v) => Math.round(v * 1000) / 1000;
+    const unbudgeted = !Number.isFinite(budget);
+    const measured = `${errs.length} truth anchor(s) sampled, worst offset ${m(anchorMetres)} m; `
+      + `kit tremor ${amplitude} px = ${m(tremorMetres)} m at ${m(metresPerPixel)} m/px`;
     checks.push(check({
       key: 'style_world_geo',
-      claim: `world anchors project onto truth through the pack bounds (≤ ${anchorTol} cells) and stroke displacement stays within ${WORLD_DISPLACEMENT_BUDGET_PX} px`,
-      pass: worstAnchor <= anchorTol && amplitude <= WORLD_DISPLACEMENT_BUDGET_PX,
-      evidence: `${errs.length} truth anchor(s) sampled, worst offset ${Math.round(worstAnchor * 1000) / 1000} cells; declared stroke displacement ${amplitude} px (budget ${WORLD_DISPLACEMENT_BUDGET_PX} px, ${Math.round((amplitude / px) * 1000) / 1000} cells)`,
+      claim: unbudgeted
+        ? `ADR-0021 clause 3 leaves the ${band} band unconstrained; the row records what was measured`
+        : `every painted feature sits within ${budget} m of where Truth says it sits — the ${band} band's alignment budget`,
+      pass: anchorMetres <= budget && tremorMetres <= budget,
+      evidence: unbudgeted
+        ? `${band} band: unconstrained — departing from Truth is this band's job; ${measured}`
+        : `${band} band: budget ${budget} m; ${measured}`,
       confidence: 0.9,
-      falsifier: 'a model whose badge positions no longer derive from truth through its own bounds, or a kit displacing strokes past the budget',
+      falsifier: 'a model whose badge positions no longer derive from truth through its own bounds, or a kit whose declared tremor costs more ground than the band allows',
       soWhat: 'a world image that drifts from truth bounds moves every Place a guest stands next to',
     }));
   }
