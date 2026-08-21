@@ -14,7 +14,9 @@
  * same model — it is the semantic layout the design doc's §5 requires.
  */
 
+import { bandResolution } from '@party-tracker/shared/zoomBands.js';
 import { LINE_LAYERS } from './osm-tags.mjs';
+import { bandBakePlan } from './display-bands.mjs';
 import { densityFromSpecies, fillRows, scatterPoints } from './display-scatter.mjs';
 
 /**
@@ -340,7 +342,37 @@ export function impliedTerrainClasses(map) {
   return implied;
 }
 
-function projector(map, maxCols) {
+/** The column budget a bake uses when nothing asks for another one. */
+export const DEFAULT_MAX_COLS = 240;
+
+/** Pixels a cell occupies when nothing asks for another number. */
+export const DEFAULT_PX = 16;
+
+/**
+ * The venue's cell grid, and the two maps between geo and cell space.
+ *
+ * `grid` says how big a cell is, in one of two ways:
+ *
+ *   - `{ tileMetres }` — ground metres per cell, stated outright. This is what
+ *     a band plan carries (`lib/display-bands.mjs`), because ADR-0021 clause 2
+ *     fixes ground resolution rather than pixel counts.
+ *   - `{ maxCols }`, or a bare number for the callers that predate plans — a
+ *     column budget for the LONGER axis, floored at 2 m a cell.
+ *
+ * A budget cannot express every plan and never will: it is an integer, and it
+ * divides both axes, so the resolutions it can reach are quantised. At
+ * six-flags-fiesta-texas the overview band needs a cell in
+ * (2.39949, 2.40001] m and no integer budget lands inside — 704 gives 2.3977,
+ * 703 gives 2.4011. `tileMetres` is therefore the primary spelling and the
+ * budget the derived one, not the other way round. `test/builder/display-bands.mjs`
+ * pins both.
+ *
+ * Given both, `tileMetres` wins — bakeModel's callers layer options and the
+ * explicit resolution is the more specific statement. A caller that must not
+ * conflate the two (the bin, whose flags are a user's words) should refuse the
+ * pair up front with `assertBakeGridFlags`.
+ */
+export function projector(map, grid = DEFAULT_MAX_COLS) {
   const b = map.meta.bounds || {};
   const north = b.n ?? b.north;
   const south = b.s ?? b.south;
@@ -354,7 +386,19 @@ function projector(map, maxCols) {
   const mPerLat = 110574;
   const spanX = (east - west) * mPerLng;
   const spanY = (north - south) * mPerLat;
-  const tileMetres = Math.max(2, spanX / maxCols, spanY / maxCols);
+  const { maxCols = null, tileMetres: fixed = null } = typeof grid === 'number'
+    ? { maxCols: grid }
+    : (grid ?? {});
+  let tileMetres;
+  if (fixed != null) {
+    if (!(Number.isFinite(fixed) && fixed > 0)) {
+      throw new Error(`tileMetres must be a positive finite number of ground metres, got ${fixed}`);
+    }
+    tileMetres = fixed;
+  } else {
+    const budget = maxCols || DEFAULT_MAX_COLS;
+    tileMetres = Math.max(2, spanX / budget, spanY / budget);
+  }
   const cols = Math.max(1, Math.round(spanX / tileMetres));
   const rows = Math.max(1, Math.round(spanY / tileMetres));
   const toCell = ([lng, lat]) => [
@@ -366,6 +410,58 @@ function projector(map, maxCols) {
     north - (y * tileMetres) / mPerLat,
   ];
   return { cols, rows, tileMetres, toCell, toGeo };
+}
+
+/**
+ * Refuse a grid stated two ways at once.
+ *
+ * `--band` fixes both the cell size and the pixels a cell draws at, which is
+ * exactly what `--max-cols` and `--px` set by hand. Resolving the pair either
+ * way makes the losing flag a lie the caller never sees, and the two are not
+ * interchangeable — a band's cell size is often unreachable from any integer
+ * column budget (see `projector`). So this refuses rather than picks.
+ *
+ * Venue-independent on purpose: the bin can call it before it loads a map or
+ * launches a browser, which is what makes the refusal cheap enough to test as
+ * a process.
+ *
+ * @param {{band?: string|null, maxCols?: number|null, px?: number|null}} flags
+ *   `null`/absent means the flag was not given on the command line.
+ */
+export function assertBakeGridFlags({ band = null, maxCols = null, px = null } = {}) {
+  if (band == null) return;
+  bandResolution(band); // throws `unknown band: <id>` before anything else
+  const clashing = [maxCols != null && '--max-cols', px != null && '--px'].filter(Boolean);
+  if (clashing.length) {
+    throw new Error(
+      `--band ${band} already fixes the grid, so ${clashing.join(' and ')} would silently `
+        + 'overrule it — pass one or the other, not both',
+    );
+  }
+}
+
+/**
+ * One venue's grid flags, resolved into what `bakeModel` and the painter page
+ * need: a cell size and a pixels-per-cell.
+ *
+ * Bands are per venue — a band is a ground resolution, and how many cells that
+ * is depends on how big the park is — so this takes the venue's `map.meta` and
+ * must be called once per venue rather than once per invocation.
+ *
+ * @param {object} mapMeta the venue's `map.meta` (or the whole map)
+ * @param {{band?: string|null, maxCols?: number|null, px?: number|null}} flags
+ * @returns {{band: string|null, tileMetres: number|null, maxCols: number|null, px: number}}
+ *   `tileMetres` and `maxCols` are mutually exclusive: exactly one is set, and
+ *   both spread into `bakeModel` opts unchanged.
+ */
+export function resolveBakeGrid(mapMeta, flags = {}) {
+  assertBakeGridFlags(flags);
+  const { band = null, maxCols = null, px = null } = flags;
+  if (band == null) {
+    return { band: null, tileMetres: null, maxCols: maxCols ?? DEFAULT_MAX_COLS, px: px ?? DEFAULT_PX };
+  }
+  const plan = bandBakePlan(mapMeta, band);
+  return { band, tileMetres: plan.tileMetres, maxCols: null, px: plan.px };
 }
 
 function pointInRing(x, y, ring) {
@@ -520,10 +616,18 @@ export const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', sh
  *
  * @param {object} map map.json body
  * @param {object[]} pois pois.json
- * @param {{ maxCols?: number }} opts grid budget (default 240 cells across)
+ * @param {{ maxCols?: number, tileMetres?: number, margin?: number }} opts
+ *   How big a cell is — `tileMetres` outright (what a band plan carries), or
+ *   `maxCols` as a column budget for the longer axis (default 240). Given
+ *   both, `tileMetres` wins; see `projector` for why it has to be the primary
+ *   spelling. `margin` is the crop padding in cells (default 6); `Infinity`
+ *   opens the window to the whole grid.
  */
 export function bakeModel(map, pois = [], opts = {}) {
-  const { cols, rows, tileMetres, toCell, toGeo } = projector(map, opts.maxCols || 240);
+  const { cols, rows, tileMetres, toCell, toGeo } = projector(map, {
+    maxCols: opts.maxCols,
+    tileMetres: opts.tileMetres,
+  });
   const cells = new Array(cols * rows).fill(TERRAIN.outside);
 
   // Ground inside the venue boundary (or everywhere when no boundary).
