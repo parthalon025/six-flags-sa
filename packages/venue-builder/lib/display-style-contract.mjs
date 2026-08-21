@@ -12,7 +12,8 @@
 
 import { check } from './evidence.mjs';
 import {
-  TERRAIN_NAMES, impliedTerrainClasses, POI_BADGES, WORLD_DISPLACEMENT_BUDGET_PX,
+  TERRAIN_NAMES, impliedTerrainClasses, POI_BADGES, SPRITE_PIECES,
+  WORLD_DISPLACEMENT_BUDGET_PX,
 } from './display-bake.mjs';
 import {
   isoCellMap, isoCellToPixel, buildingHeightsM, trackVertexHeightsM,
@@ -302,6 +303,75 @@ const groupMedians = (points, samples) => {
   return { groups, medians };
 };
 
+/* ------------------------------------------- ADR-0021 clause 1: no words */
+
+/**
+ * Keys whose STRING value would be readable copy on the map. `label` and
+ * `labels` are here because clause 1 draws the line inside the label itself:
+ * a Skin may style one, never write one.
+ */
+const LABEL_COPY_KEYS = new Set([
+  'label', 'labels', 'text', 'text-field', 'textField', 'title', 'caption',
+  'name', 'displayName', 'subtitle', 'abbr', 'string',
+]);
+
+/** A colour is not a word: `tokens.colors.label` is the ink, not the copy. */
+const COLOR_LITERAL = /^(#[0-9a-fA-F]{3,8}|(?:rgb|hsl)a?\([^)]*\))$/;
+
+const quote = (s) => JSON.stringify(s.length > 48 ? `${s.slice(0, 48)}…` : s);
+
+/**
+ * ADR-0021 clause 1's second certification row: no label strings in
+ * `visual.json`. The spec may STYLE a label — ink, halo, the zoom it appears
+ * at, per-Skin suppression — but the words come from `pois.json`, so two
+ * Members on different Skins never read different names for the same Place
+ * while trying to Rally, and a rename never means re-baking a Skin.
+ *
+ * A violation is a string VALUE under a key that names readable copy. Two
+ * exemptions, both deliberate:
+ *   - object KEYS are selectors, not copy. `landTones["Coney Mall"]` matches
+ *     a district name the vector tiles already carry from truth, and
+ *     display-pack's `references_resolve` row already holds every one of
+ *     them to a district the venue actually has.
+ *   - a colour literal under a copy key is styling: `tokens.colors.label` is
+ *     the ink a label is drawn in. A word parked in that slot still fails.
+ *
+ * Pure; takes a parsed `<skin>.visual.json` body.
+ *
+ * @returns a check() row keyed `style_no_label_strings`
+ */
+export function visualLabelStringsRow(spec) {
+  const found = [];
+  let strings = 0;
+  const walk = (value, key, path) => {
+    if (typeof value === 'string') {
+      strings += 1;
+      if (LABEL_COPY_KEYS.has(key) && !COLOR_LITERAL.test(value)) found.push(`${path} = ${quote(value)}`);
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((v, i) => walk(v, key, `${path}[${i}]`));
+      return;
+    }
+    if (value && typeof value === 'object') {
+      for (const [k, v] of Object.entries(value)) walk(v, k, path ? `${path}.${k}` : k);
+    }
+  };
+  walk(spec, null, '');
+  const named = [spec?.venue, spec?.skin].filter(Boolean).join(' × ') || 'spec';
+  return check({
+    key: 'style_no_label_strings',
+    claim: 'visual.json styles labels but supplies none of their words (ADR-0021 clause 1)',
+    pass: found.length === 0,
+    evidence: found.length
+      ? `label copy in ${named}: ${found.join('; ')} — every string on the map comes from pois.json`
+      : `${named}: ${strings} string value(s) scanned, none supplies label copy`,
+    confidence: 1,
+    falsifier: 'a spec that carries the words for a Place, so a Skin can rename what another Skin calls the same thing',
+    soWhat: 'two Members on different Skins reading different names for one Place cannot Rally to it',
+  });
+}
+
 /**
  * The mechanical style-contract rows + the agent-review items, from one
  * bake's sampled pixels. Pure: everything it needs rides its arguments.
@@ -329,10 +399,16 @@ const groupMedians = (points, samples) => {
  * ADR-0016 geo-fidelity row for worlds placed image-on-truth-bounds.
  * `px` is the bake's pixels-per-cell, needed to convert the kit's stroke
  * displacement budget into cells.
+ *
+ * `visual` is the venue × Skin spec (`<skin>.visual.json` body) — optional,
+ * and when given it adds ADR-0021 clause 1's `style_no_label_strings` row
+ * (see visualLabelStringsRow). Clause 1's other row, `style_no_baked_text`,
+ * needs nothing extra: the model's badge kinds and the kit's icon ledger are
+ * already here, and they are exactly what the painter reads.
  */
 export function certifyStyleContract({
   model, points, samples, rerunSamples = null, siblings = null, profile, kit,
-  target = 'flat', skips = null, map = null, pois = null, px = 16,
+  target = 'flat', skips = null, map = null, pois = null, px = 16, visual = null,
 }) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
@@ -588,6 +664,35 @@ export function certifyStyleContract({
     falsifier: 'duplicate pins stacked on one POI',
     soWhat: 'ADR-0012 declutter rule, model-side',
   }));
+
+  // ADR-0021 clause 1, first row: no text glyphs in any baked band. The only
+  // mark the painter puts inside a badge disc is an icon from the ledger —
+  // bin/display-bake-page.html used to letter a kind whose icon was missing
+  // (`fillText(LETTER[kind] || '?')`), which is a painted word by any other
+  // name. Icons resolve here exactly the way the painter reads them:
+  // resolveKit merges SPRITE_PIECES over every kit spec key by key, so a kind
+  // the kit itself never names still inherits the module default, and only a
+  // kind with no default anywhere — a POI_BADGES kind shipped without art —
+  // has nothing to draw.
+  const paintedKinds = [...new Set((model.badges || []).map((b) => b.kind))].sort();
+  const glyphFor = (kind) => (kit.sprites?.badge?.icons?.[kind] ?? SPRITE_PIECES.badge.icons[kind])?.asset;
+  const unglyphed = paintedKinds.filter((kind) => !glyphFor(kind));
+  checks.push(check({
+    key: 'style_no_baked_text',
+    claim: 'nothing readable is baked into the band — every painted badge kind resolves to an icon glyph, never a letter',
+    pass: unglyphed.length === 0,
+    evidence: unglyphed.length
+      ? `badge kind(s) with no icon glyph: ${unglyphed.join(', ')} — an unresolvable badge is a missing asset, not a letter to paint`
+      : paintedKinds.length
+        ? `${paintedKinds.length} painted badge kind(s) resolve to icon glyphs: ${paintedKinds.map((k) => `${k}→${glyphFor(k)}`).join(', ')}`
+        : 'no badges in the model — nothing to letter',
+    confidence: 1,
+    falsifier: 'a painter falling back to a character when a badge kind has no icon, or a POI badge kind shipped with no glyph art',
+    soWhat: 'a baked word cannot be read aloud, cannot change language, cannot dodge a party dot, and cannot survive a rename without re-baking every Skin',
+  }));
+
+  // Clause 1's second row rides along only when the caller has the spec.
+  if (visual) checks.push(visualLabelStringsRow(visual));
 
   if (rerunSamples) {
     checks.push(check({

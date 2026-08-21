@@ -10,7 +10,8 @@
  *   { feature_id|ride, place, source, kind, at?, date, uri?, note, type? }
  *
  * Publish kinds: queue_entrance | ride_exit (only when `at` is present).
- * Never publish: inventory | metadata | open-meteo climate | wait minutes.
+ * Never publish: inventory | metadata | open-meteo climate | wait minutes |
+ * esa-worldcover land cover.
  */
 
 import { isRideable } from '@party-tracker/shared/ontology.js';
@@ -26,6 +27,7 @@ import { queueTimesCacheFile, compareQueueTimesToBundle } from './adapters/queue
 import { ohmCacheFile } from './adapters/openhistoricalmap.mjs';
 import { openMeteoCacheFile } from './adapters/open-meteo.mjs';
 import { ropedropCacheFile } from './adapters/ropedrop.mjs';
+import { worldcoverCacheFile, worldcoverClaims } from './adapters/esa-worldcover.mjs';
 import { llmResearchCacheFile } from './open-research.mjs';
 
 /** Metres — Mapillary / a11y points beyond this do not attach to a ride. */
@@ -228,7 +230,30 @@ export function openMeteoMetadataClaims(raw) {
 }
 
 /**
- * Inventory-only claims (Queue-Times names, RCDB, Wikidata, RopeDrop, OHM) — never geometry.
+ * ESA WorldCover — the venue's own ground, classified from 10 m aerial raster.
+ *
+ * The adapter has always emitted this claim and nothing read it: the cache was
+ * the one external payload `loadExternalCaches` did not open, so the repo's
+ * only live COG source produced evidence that went nowhere.
+ *
+ * It arrives here and not through `snapClaimsToRides`, which is the whole
+ * point. That function's `source === 'aerial'` branch turns an imagery point
+ * into a queue entrance for any ride within SNAP_RADIUS_M — correct for a
+ * Mapillary photo taken outside a queue, wrong for this, which is anchored at
+ * the venue centre and says something about the park rather than about
+ * whichever ride happens to stand near the middle of it. Routed that way it
+ * would hand a real entrance coordinate, and +4 of confidence, to an arbitrary
+ * ride. `metadata` is what it is, so `metadata` is where it goes.
+ */
+export function worldcoverMetadataClaims(raw) {
+  if (!raw?.histogram || !raw?.center) return [];
+  return worldcoverClaims(raw.histogram, raw.center, { date: raw.fetched })
+    .map((claim) => toEvidenceClaim({ ...claim, type: null }));
+}
+
+/**
+ * Inventory-only claims (Queue-Times names, RCDB, Wikidata, RopeDrop, OHM,
+ * Open-Meteo, ESA WorldCover) — never geometry.
  */
 export function inventoryMetadataClaims({
   queueTimes,
@@ -239,6 +264,7 @@ export function inventoryMetadataClaims({
   ropedropRaw,
   ohmRaw,
   openMeteoRaw,
+  worldcoverRaw,
 } = {}) {
   const out = [
     ...queueTimesInventoryClaims(queueTimes, queueTimes?.fetched),
@@ -247,6 +273,7 @@ export function inventoryMetadataClaims({
     ...ropedropInventoryClaims(ropedropRaw),
     ...ohmMetadataClaims(ohmRaw),
     ...openMeteoMetadataClaims(openMeteoRaw),
+    ...worldcoverMetadataClaims(worldcoverRaw),
   ];
   for (const gap of llm?.inventoryGaps || []) {
     out.push(toEvidenceClaim({
@@ -266,7 +293,8 @@ export function inventoryMetadataClaims({
  *
  * Matching order: ParksAPI / Queue-Times / RCDB / RopeDrop by name;
  * Mapillary / a11y / sidewalk by nearest Rideable within SNAP_RADIUS_M;
- * Wikidata / OHM / Open-Meteo as venue-level metadata (never entrance fusion).
+ * Wikidata / OHM / Open-Meteo / ESA WorldCover as venue-level metadata (never
+ * entrance fusion).
  *
  * @param {string} venueId
  * @param {{ pois?: object[], external?: object }} opts
@@ -293,6 +321,7 @@ export function normalizeExternalClaims(venueId, { pois = [], external = null } 
     ropedropRaw: ext.ropedropRaw,
     ohmRaw: ext.ohmRaw,
     openMeteoRaw: ext.openMeteoRaw,
+    worldcoverRaw: ext.worldcoverRaw,
   });
 
   const claims = [...entrance, ...metadata];
@@ -334,6 +363,7 @@ function loadExternalCaches(venueId, pois) {
   const ohmRaw = readJson(ohmCacheFile(venueId), null);
   const openMeteoRaw = readJson(openMeteoCacheFile(venueId), null);
   const ropedropRaw = readJson(ropedropCacheFile(venueId), null);
+  const worldcoverRaw = readJson(worldcoverCacheFile(venueId), null);
   const llm = readJson(llmResearchCacheFile(venueId), null);
 
   return {
@@ -349,6 +379,7 @@ function loadExternalCaches(venueId, pois) {
     ohmRaw,
     openMeteoRaw,
     ropedropRaw,
+    worldcoverRaw,
     llm,
   };
 }

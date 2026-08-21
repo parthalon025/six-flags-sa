@@ -539,8 +539,6 @@
   }
 
   const BD = kit.sprites.badge;
-  const LETTER = { gate: 'E', food: 'F', restroom: 'R', shop: 'S', show: 'W', service: 'i' };
-  g.textAlign = 'center'; g.textBaseline = 'middle';
   for (const b of badges) {
     // Pinned marker: the tail's tip sits on the exact truth coordinate.
     const x = b.x * px; const y = b.y * px;
@@ -553,17 +551,18 @@
     g.fillStyle = color;
     g.beginPath(); g.arc(x, cy, r, 0, 7); g.fill();
     g.strokeStyle = '#FFFFFF'; g.lineWidth = 1.5; g.stroke();
-    // Glyph from the icon ledger (white-on-transparent); letter fallback.
+    // Glyph from the icon ledger (white-on-transparent), and nothing else.
+    // ADR-0021 clause 1 bakes no legible text into any band, so a kind whose
+    // icon does not resolve paints a bare disc rather than a letter — an
+    // unresolvable badge is a missing asset, not a glyph. What makes that
+    // loud is the style contract's `style_no_baked_text` row, which reads
+    // this same icon ledger and fails naming the kind.
     const icon = sheetImages[BD.icons?.[b.kind]?.asset];
     if (icon) {
       // 1.1r leaves a clear disc-ink moat between glyph edge and ring —
       // the style contract samples that moat (display-style-contract.mjs).
       const s = r * 1.1;
       g.drawImage(icon, x - s / 2, cy - s / 2, s, s);
-    } else {
-      g.fillStyle = '#FFFFFF';
-      g.font = `bold ${Math.round(px * 0.5)}px system-ui, sans-serif`;
-      g.fillText(LETTER[b.kind] || '?', x, cy + 0.5);
     }
   }
 
