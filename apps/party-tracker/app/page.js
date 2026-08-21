@@ -176,11 +176,6 @@ const VIEW_TITLES = {
    and moving left slides it back. */
 const TAB_ORDER = ['explore', 'party', 'quests', 'rides', 'settings'];
 
-/* A tab root gets a large title instead of the search field. Explore is the
-   exception — its title is the search field, because searching a map is the
-   thing you came to that screen to do. */
-const ROOT_TITLES = { party: 'Party', quests: 'Side Quests', rides: 'Plan', settings: 'Me' };
-
 const EMPTY_STACK = [];
 /** The navigation state the app opens on, and the one back returns it to. */
 const HOME_STACKS = { explore: [], party: [], quests: [], rides: [], settings: [] };
@@ -1274,6 +1269,17 @@ function ParkApp({ isSignedIn }) {
   const active = Boolean(party?.active);
   const code = party?.code ?? null;
   const locationLocked = active && locationRevokedInParty(geo.status);
+  /* Whether the two-step intake is the screen. Named once here because two
+     places need the same answer: the gate itself, and the `.app` element, which
+     has to let the park paint behind it — the design draws both intake steps
+     over the map, not over a flat page. */
+  const showIntakeGate =
+    gateOpen &&
+    introSeen !== null &&
+    !showAuthGate &&
+    !showExplorePrompt &&
+    !showIntroSplash &&
+    !locationLocked;
   const planItems = useMemo(
     () => planView({ party: active ? party : null, draft: planDraft }),
     [active, party, planDraft],
@@ -2682,29 +2688,6 @@ function ParkApp({ isSignedIn }) {
     return [where, nearest ? `near ${nearest.p.n}` : null, acc].filter(Boolean).join(' · ');
   };
 
-  /**
-   * One line under a tab's large title, saying where that tab stands right now.
-   * It is the value that used to sit on the right of the row this tab replaced
-   * — the same answer, in the place it now belongs.
-   */
-  const rootSubtitle = useMemo(() => {
-    if (tab === 'party') return active ? `${visibleOnMap} on the map` : 'Not started';
-    if (tab === 'quests') {
-      const n = Array.isArray(venueGaps) ? venueGaps.length : 0;
-      return n
-        ? `${n} gap${n === 1 ? '' : 's'} guests can fill`
-        : 'Live reports while you walk';
-    }
-    if (tab === 'rides') {
-      if (height == null) return 'No rider height set';
-      return rideableCount != null
-        ? `${height}" · ${rideableCount} of ${totalRides} rides`
-        : `${height}"`;
-    }
-    if (tab === 'settings') return identity?.name ? `${identity.name} · ${BRAND.slogan}` : BRAND.slogan;
-    return '';
-  }, [tab, active, visibleOnMap, height, rideableCount, totalRides, identity?.name, venueGaps]);
-
   /* ---------- the tab bar ---------- */
 
   /** Somebody in the party is in trouble — the Party tab has to say so. */
@@ -2734,8 +2717,8 @@ function ParkApp({ isSignedIn }) {
         /* "Quests" on the bar, "Side Quests" everywhere else. A tab label is
            read at 10px in a five-column strip: the long form wrapped, and the
            word that survived the wrap was the one shared with every other
-           quest in the app. ROOT_TITLES still says Side Quests, which is where
-           the full name belongs — on the screen it names. */
+           quest in the app. The full name is on the screen it names, in that
+           panel's own SIDE QUESTS · NEAR YOU eyebrow. */
         label: 'Quests',
         icon: 'flag.fill',
       },
@@ -2840,6 +2823,16 @@ function ParkApp({ isSignedIn }) {
       data-spot={spotShown ? '1' : undefined}
       /* And the same for the selection's pill, which rides the same edge. */
       data-sel={selShown ? '1' : undefined}
+      /* The intro is read over the painted park — see the first-run hold in
+         globals.css. Only the intro lifts the hold off the map, and only for
+         the map: a returning phone never mounts it, so the cover stays whole. */
+      data-intro-map={showIntroSplash ? '1' : undefined}
+      /* And for the intake gates, which the design also reads over the park:
+         their scrim is .10 at the top precisely so the World being asked about
+         is the thing behind the question. Separate from data-intro-map because
+         the two want different amounts of park — the intro dims it to a wash
+         under a .86 scrim, the intake shows it. */
+      data-gate-map={showIntakeGate || showAuthGate ? '1' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       {introOverlay === 'hold' && (
@@ -3163,7 +3156,15 @@ function ParkApp({ isSignedIn }) {
       {/* The height is stated rather than left to a class, because there are
           no longer four of them to have a class each: it is whatever the
           visitor pulled it to. */}
-      <section className={sheetClass} style={{ height: stowed ? 0 : 'var(--sheetH)' }}>
+      <section
+        className={sheetClass}
+        style={{ height: stowed ? 0 : 'var(--sheetH)' }}
+        /* The whole sheet pulls, not just its handle — see useSheetDrag. The
+           ref owns the non-passive touchmove that decides, once per gesture,
+           whether a swipe belongs to the sheet or to a list inside it. */
+        ref={drag.attachBody}
+        {...drag.bodyHandlers}
+      >
         {/* A slider, because that is now what it is: the height is a value on a
             range rather than a choice between four, and the only way to say
             that to a screen reader — or to a keyboard, which has no finger to
@@ -3242,7 +3243,7 @@ function ParkApp({ isSignedIn }) {
                     </span>
                     <input
                       className="field"
-                      placeholder={`Explore ${venue?.name || 'the park'}`}
+                      placeholder={`Search ${venue?.name || 'the park'}`}
                       value={query}
                       /* Typing is asking for the list, so the sheet comes up far
                          enough to be one. */
@@ -3271,17 +3272,26 @@ function ParkApp({ isSignedIn }) {
                   </div>
                 </div>
               )}
+              {/* Where you are, on one line: the World in bold, then the
+                  district and the nearest Place after it. The design sets it
+                  that way and the sheet's own arithmetic agrees — SHEET_BRAND_PX
+                  budgets "an 18px line over 8", which is what this is. The
+                  stacked version it replaces was a 20px lockup row above the
+                  same 18px line and cost 48, so the resting sheet was quietly
+                  22px over the budget the peek stop is derived from. */}
               {plan.brand && (
                 <div className="brand">
                   {venue?.name ? (
-                    <div className="brandRow">
-                      <BrandMark variant="glyph" size={18} aqua="var(--aqua)" className="brandGlyph" />
+                    <p className="brandStatus brandWhere">
                       <b className="brandName">{venue.name}</b>
-                    </div>
+                      {` · ${headerLine()}`}
+                    </p>
                   ) : (
-                    <BrandLockup size="sm" showTagline className="sheetBrandLockup" />
+                    <>
+                      <BrandLockup size="sm" showTagline className="sheetBrandLockup" />
+                      <div className="brandStatus">{headerLine()}</div>
+                    </>
                   )}
-                  <div className="brandStatus">{headerLine()}</div>
                 </div>
               )}
               {/* The one card left on the resting sheet, and only on a phone
@@ -3321,13 +3331,19 @@ function ParkApp({ isSignedIn }) {
               )}
             </>
           ) : (
-            /* A tab's own root: the large title a phone puts at the top of a
-               screen you arrived at rather than drilled into, and one line
-               underneath saying where that tab currently stands. */
-            <header className="sheetHead">
-              <h2>{ROOT_TITLES[tab]}</h2>
-              <span>{rootSubtitle}</span>
-            </header>
+            /* A tab's own root opens straight on its content. The design names
+               these screens with the section eyebrow at the top of the panel —
+               TODAY'S STOPS, YOUR PARTY · 4, YOUR JOURNEY, SIDE QUESTS · NEAR
+               YOU — and leaves the "which tab am I on" job to the tab bar,
+               which is already lit. A 34px title plus a subtitle above that
+               eyebrow said the same thing three times and cost the sheet its
+               first 60px, on the four screens that carry the most rows.
+
+               Nothing the subtitle said is lost: the Plan's height rides on the
+               map's own filter badge, Side Quests keeps its "For <World> · N
+               waiting" line, Settings opens on the slogan strip, and "N on the
+               map" was a tally of what each roster card states for itself. */
+            null
           )}
 
           <div className={`sheetBody${view === 'place' ? ' placeBody' : ''}`}>
@@ -3962,7 +3978,7 @@ function ParkApp({ isSignedIn }) {
       )}
 
       {/* The intake: brand welcome, install pitch, location, and park confirm on one gate. */}
-      {gateOpen && introSeen !== null && !showAuthGate && !showExplorePrompt && !showIntroSplash && !locationLocked && (
+      {showIntakeGate && (
         <GpsGate
           firstRun={firstRunSession}
           venueName={venue?.name}
