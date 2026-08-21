@@ -125,7 +125,7 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
 // Simulate the other machine by forcing each plausible width.
 {
   const dir = mkdtempSync(join(tmpdir(), 'matt-abbrev-'));
-  const git = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'pipe' });
+  const git = (...a) => execFileSync('git', a, { cwd: dir, env: scrubGitEnv(), stdio: 'pipe' });
   git('init', '-qb', 'main');
   git('config', 'user.email', 't@e.st');
   git('config', 'user.name', 'T');

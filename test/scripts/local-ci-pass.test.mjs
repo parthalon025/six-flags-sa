@@ -7,6 +7,7 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { scrubGitEnv } from '../../scripts/lib/git-env.mjs';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -260,7 +261,7 @@ try {
 // tree read as a changed diff. `--full-index` pins the ids at 40 digits.
 {
   const dir = mkdtempSync(join(tmpdir(), 'localci-abbrev-'));
-  const git = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'pipe' });
+  const git = (...a) => execFileSync('git', a, { cwd: dir, env: scrubGitEnv(), stdio: 'pipe' });
   git('init', '-qb', 'main');
   git('config', 'user.email', 't@e.st');
   git('config', 'user.name', 'T');
