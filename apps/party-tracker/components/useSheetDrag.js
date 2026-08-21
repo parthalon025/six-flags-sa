@@ -46,19 +46,93 @@ export default function useSheetDrag({ stops, height, onHeight, rootRef = null }
     [cssDrag, rootRef],
   );
 
-  const onPointerDown = useCallback(
-    (e) => {
+  // Which path began the press: the handle has its own handlers, the body has
+  // its own, and both are on the same bubble path because the handle sits
+  // inside the sheet. Recorded at press time rather than sniffed from the
+  // event on every move, because pointer capture re-targets later events to
+  // the capturing element and the original target is gone by then.
+  const source = useRef(null); // 'handle' | 'body' | null
+
+  // Set when the press must not take pointer capture yet — see beginPress.
+  const deferCapture = useRef(false);
+
+  // The sheet root, so the scroll arbiter below can walk up to it. Set by
+  // attachBody, which is the only thing that knows the element.
+  const bodyEl = useRef(null);
+
+  // Who owns this gesture: the sheet, or a list inside it that can still
+  // scroll the way the finger is going. Decided once, on the first move that
+  // clears the threshold, and then held for the rest of the gesture — a sheet
+  // that changed its mind halfway through a swipe would be worse than one that
+  // never moved. Both the pointer path (which moves the sheet) and the touch
+  // path (which stops the browser scrolling instead of us) read this one ref,
+  // so the two can never disagree about whose gesture it is.
+  const owner = useRef(null); // 'sheet' | 'scroll' | null
+  const pressTarget = useRef(null); // the element actually under the finger
+
+  const scrollerFor = useCallback((target) => {
+    const root = bodyEl.current;
+    if (!root) return null;
+    for (let n = target; n && n !== root.parentNode; n = n.parentElement) {
+      if (!(n instanceof HTMLElement)) continue;
+      const oy = getComputedStyle(n).overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return n;
+    }
+    return null;
+  }, []);
+
+  /** Decide once per gesture, then answer from the decision. dy is up-positive. */
+  const ownerFor = useCallback(
+    (dy) => {
+      if (owner.current === null) {
+        const sc = scrollerFor(pressTarget.current);
+        // Can the scroller still take this direction? Swiping up scrolls the
+        // list down (scrollTop grows), so it absorbs until it hits the end;
+        // swiping down only absorbs while there is something above.
+        const absorbs =
+          sc &&
+          (dy > 0
+            ? Math.ceil(sc.scrollTop) < sc.scrollHeight - sc.clientHeight - 1
+            : sc.scrollTop > 0);
+        owner.current = absorbs ? 'scroll' : 'sheet';
+      }
+      return owner.current;
+    },
+    [scrollerFor],
+  );
+
+  /**
+   * Begin a press. `defer` holds the pointer capture back until the gesture
+   * proves itself a drag.
+   *
+   * Capture is normally taken on the press rather than on the first move: the
+   * handle is barely twenty pixels tall, so the pointer is off it before the
+   * drag has travelled far enough to be one, and without the capture every
+   * move after that lands on the map instead. Touch captures itself; a mouse
+   * does not, and this is what makes the two behave alike.
+   *
+   * The body is the exception. Capturing there on press re-targets the click
+   * the browser emits afterwards to the capturing element, so every tap on a
+   * list row would be delivered to the sheet and the row would never open. The
+   * body is big enough that waiting costs nothing: capture is taken on the
+   * first move that clears the threshold instead.
+   */
+  const beginPress = useCallback(
+    (e, { defer = false } = {}) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      // Captured on the press rather than on the first move: the handle is
-      // barely twenty pixels tall, so the pointer is off it before the drag has
-      // travelled far enough to be one, and without the capture every move
-      // after that lands on the map instead. Touch captures itself; a mouse
-      // does not, and this is what makes the two behave alike.
-      e.currentTarget.setPointerCapture?.(e.pointerId);
+      // Written on every press, never merely left over from the last one: a
+      // gesture that ends without reaching end() — a row that unmounts under
+      // the finger, a swipe handed to a scroller — would otherwise leave the
+      // flag standing and make the *next* press defer a capture the handle
+      // needs at once.
+      deferCapture.current = defer ? 'pending' : false;
+      if (!defer) e.currentTarget.setPointerCapture?.(e.pointerId);
       // Cleared here rather than only when a click arrives: a touch drag that
       // ends off the handle produces no click at all, and a flag left standing
       // would eat the next real tap instead of the drag's own phantom one.
       dragged.current = false;
+      owner.current = null;
+      pressTarget.current = e.target;
       from.current = { y: e.clientY, h: height };
       last.current = { y: e.clientY, t: e.timeStamp, v: 0 };
       moved.current = false;
@@ -66,13 +140,31 @@ export default function useSheetDrag({ stops, height, onHeight, rootRef = null }
     [height],
   );
 
+  const onPointerDown = useCallback((e) => {
+    source.current = 'handle';
+    beginPress(e);
+  }, [beginPress]);
+
   const onPointerMove = useCallback(
     (e) => {
       if (!from.current) return;
       const dy = from.current.y - e.clientY; // up is positive: the sheet grows
       if (!moved.current) {
         if (Math.abs(dy) < 5) return;
+        // A press that began in the body asks whose gesture this is before it
+        // moves anything. The handle never asks: it *is* the sheet's control,
+        // and it sits outside every list.
+        if (source.current === 'body' && ownerFor(dy) === 'scroll') {
+          from.current = null; // the list has it — and a scroll eats no clicks
+          return;
+        }
         moved.current = true;
+        // Now it is a drag, so take the capture the press deferred — from here
+        // on the finger owns the sheet even if it leaves the sheet's bounds.
+        if (deferCapture.current === 'pending') {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+          deferCapture.current = true;
+        }
         if (cssDrag) setDragging(true);
       }
       const dt = Math.max(1, e.timeStamp - last.current.t);
@@ -89,7 +181,7 @@ export default function useSheetDrag({ stops, height, onHeight, rootRef = null }
       at.current = next;
       publishHeight(next);
     },
-    [stops, cssDrag, publishHeight],
+    [stops, cssDrag, publishHeight, ownerFor],
   );
 
   const end = useCallback(
@@ -107,6 +199,7 @@ export default function useSheetDrag({ stops, height, onHeight, rootRef = null }
         setLive(null);
       }
       e.currentTarget.releasePointerCapture?.(e.pointerId);
+      deferCapture.current = false;
       if (!was) return; // a tap — the caller's onClick still owns it
       dragged.current = true;
       onHeight(settleSheet(px, stops, v));
@@ -121,6 +214,108 @@ export default function useSheetDrag({ stops, height, onHeight, rootRef = null }
     return true;
   }, []);
 
+  /**
+   * The whole sheet drags, not just the handle.
+   *
+   * A handle twenty pixels tall is a small target for a thumb on a phone held
+   * one-handed, and a sheet you can only move by its handle does not feel like
+   * a sheet. So a press anywhere on it pulls it — *unless* the press began in
+   * something that can scroll in the direction the finger is going, which is
+   * the rule every native bottom sheet follows: mid-list a swipe scrolls the
+   * list, and at the top of the list the same swipe pulls the sheet down. That
+   * arbitration lives in ownerFor above; this listener only asks it.
+   *
+   * Native touch listeners, attached here rather than through React's props,
+   * because the call that stops the browser scrolling instead of us only counts
+   * on a listener registered non-passive, and React's are passive by default.
+   * Pointer events still drive the drag itself; touchmove exists only to say
+   * "this one is ours" before the scroller acts on it.
+   */
+  const attachBody = useCallback(
+    (el) => {
+      if (!el) return undefined;
+      bodyEl.current = el;
+
+      let startY = 0;
+
+      const onTouchStart = (e) => {
+        if (e.touches.length !== 1) return;
+        startY = e.touches[0].clientY;
+      };
+
+      const onTouchMove = (e) => {
+        if (e.touches.length !== 1) return;
+        if (source.current !== 'body') return; // the handle stops nothing
+        const dy = startY - e.touches[0].clientY; // up positive: sheet grows
+        if (owner.current === null && Math.abs(dy) < 5) return;
+        if (ownerFor(dy) !== 'sheet') return;
+        // Ours: keep the browser from scrolling the page underneath the drag.
+        if (e.cancelable) e.preventDefault();
+      };
+
+      el.addEventListener('touchstart', onTouchStart, { passive: true });
+      el.addEventListener('touchmove', onTouchMove, { passive: false });
+      return () => {
+        el.removeEventListener('touchstart', onTouchStart);
+        el.removeEventListener('touchmove', onTouchMove);
+        if (bodyEl.current === el) bodyEl.current = null;
+      };
+    },
+    [ownerFor],
+  );
+
+  /**
+   * Handlers for the sheet body. The same press-is-a-tap-until-it-travels rule
+   * the handle already follows, applied to the whole surface: a press on a list
+   * row that never moves opens the row, and the same press dragged 5px pulls the
+   * sheet and eats the click the browser emits after it. Buttons are therefore
+   * NOT excluded — most of the sheet is buttons, and excluding them would mean
+   * "drag anywhere except the nine tenths of it you would actually touch".
+   *
+   * What is excluded is anything that owns its own drag, because two gestures on
+   * one finger cannot both win: a range input (the height slider), the handle
+   * (which has these handlers already), and anything opting out by hand.
+   *
+   * Every handler here is gated on the press having begun in the body. The
+   * handle is a child of the sheet, so its own pointermove bubbles up to these
+   * same props; without the gate the shared move handler would run twice for
+   * one native event, and the second run — reading a timestamp the first run
+   * had already stored — would compute a zero release velocity and kill the
+   * fling on the one control most likely to be dragged.
+   */
+  const OWNS_ITS_GESTURE = 'input[type="range"], .grab, [data-own-drag]';
+
+  const bodyHandlers = {
+    onPointerDown: (e) => {
+      if (e.target.closest?.(OWNS_ITS_GESTURE)) return;
+      source.current = 'body';
+      beginPress(e, { defer: true });
+    },
+    onPointerMove: (e) => {
+      if (source.current !== 'body') return;
+      onPointerMove(e);
+    },
+    onPointerUp: (e) => {
+      if (source.current !== 'body') return;
+      end(e);
+    },
+    onPointerCancel: (e) => {
+      if (source.current !== 'body') return;
+      end(e);
+    },
+    /* Capture, so it runs before the control's own handler: a drag that ends on
+       a button still produces a click, and without this the sheet would move
+       AND the row would open. The handle solves this by asking swallowClick()
+       inside its own onClick; every other control on the sheet knows nothing
+       about dragging, so the sheet answers for them here. */
+    onClickCapture: (e) => {
+      if (!dragged.current) return;
+      dragged.current = false;
+      e.stopPropagation();
+      e.preventDefault();
+    },
+  };
+
   return {
     height: cssDrag ? null : live,
     dragging: cssDrag ? dragging : live != null,
@@ -131,5 +326,9 @@ export default function useSheetDrag({ stops, height, onHeight, rootRef = null }
       onPointerUp: end,
       onPointerCancel: end,
     },
+    /** Spread on the sheet root so the whole surface pulls, not just the handle. */
+    bodyHandlers,
+    /** ref callback for the sheet root — owns the non-passive touch listeners. */
+    attachBody,
   };
 }

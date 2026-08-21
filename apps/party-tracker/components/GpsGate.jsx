@@ -109,8 +109,21 @@ export default function GpsGate({
     primaryLabel = 'Ask again';
   }
 
+  /* `intakeGate` is what tells globals.css this is one of the two intake steps
+     rather than a troubleshooting gate: the design draws both of them as a
+     glass card over the painted park, and step two goes a shade deeper because
+     it is a longer card with a list on it. */
+  const intake = [
+    'gate',
+    firstRun ? 'gateFirstRun' : '',
+    'intakeGate',
+    showParkQuestion ? 'intakeGateWorld' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={firstRun ? 'gate gateFirstRun' : 'gate'}>
+    <div className={intake}>
       <div className="gateCard gpsGateCard">
         {showParkQuestion ? (
           <WorldPicker
