@@ -136,12 +136,17 @@ export function gitChangedFiles(baseRef = 'origin/main', cwd = repoRootFrom()) {
  * Content identity of the branch's code work. The stamp files are excluded so
  * that committing the stamp — the last thing an agent does — does not
  * invalidate the very run it records.
+ *
+ * `--full-index` keeps the hash the same on every machine. Abbreviated blob
+ * ids in the patch's `index` lines are sized by `core.abbrev=auto`, which git
+ * scales with the repository's object count, so an identical tree hashes
+ * differently on a worktree and on a CI runner holding every branch.
  */
 export function diffHashFor(mergeBase, cwd = repoRootFrom()) {
   if (!mergeBase) return null;
   try {
     const excludes = STAMP_FILES.map((p) => `:(exclude)${p}`);
-    const patch = git(cwd, ['diff', `${mergeBase}...HEAD`, '--', '.', ...excludes]);
+    const patch = git(cwd, ['diff', '--full-index', `${mergeBase}...HEAD`, '--', '.', ...excludes]);
     return createHash('sha256').update(patch).digest('hex').slice(0, 16);
   } catch {
     return null;

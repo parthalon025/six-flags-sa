@@ -444,5 +444,11 @@
     "items": [
       "Measure Skin distinctness from both the spec and the pixels"
     ]
+  },
+  "1.26.5": {
+    "title": "What's new",
+    "items": [
+      "Close six defects the distinctness instrument had in itself, and one CI stamps had"
+    ]
   }
 }
