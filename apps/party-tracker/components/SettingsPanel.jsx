@@ -106,7 +106,7 @@ export default function SettingsPanel({
 
       {topic === 'you' && (
         <>
-          <div className="label">How Parkbound works</div>
+          <div className="label eyebrow">How Parkbound works</div>
           <div className="rowList">
             <button type="button" className="row flat" onClick={() => setHelpOpen((v) => !v)} aria-expanded={helpOpen}>
               <span className="rowText">What all this means</span>
@@ -126,7 +126,7 @@ export default function SettingsPanel({
             </p>
           )}
 
-          <div className="label">Your name</div>
+          <div className="label eyebrow">Your name</div>
           <input
             className="field"
             maxLength={14}
@@ -148,7 +148,7 @@ export default function SettingsPanel({
 
       {topic === 'map' && (
         <>
-          <div className="label">Map appearance</div>
+          <div className="label eyebrow">Map appearance</div>
           {/* A tray, not three loose buttons: the segmented control reads as one
               control with a selected segment, which is what a choice of three
               exclusive options is. --fill2 is the recessed well the raised
@@ -178,7 +178,7 @@ export default function SettingsPanel({
             Collection, restyle the map paint underneath either one.
           </p>
 
-          <div className="label">World</div>
+          <div className="label eyebrow">World</div>
           <div className="rowList">
             <button type="button" className="row" onClick={() => onPush('venues')}>
               <span className="rowText">Explore Worlds</span>
@@ -214,7 +214,7 @@ export default function SettingsPanel({
               own name, and the two that have more to say than a value — which
               notifications, which hidden cards — lead to their own screen
               rather than unrolling four more rows into this one. */}
-          <div className="label">This phone</div>
+          <div className="label eyebrow">This phone</div>
           <div className="rowList">
             <button type="button" className="row flat" onClick={onLocationSettings}>
               <span className="rowText">
@@ -288,7 +288,7 @@ export default function SettingsPanel({
           <p className="fine">{creditsOverarchingNote()}</p>
           {creditGroups().map((group) => (
             <div key={group.role}>
-              <div className="label">{group.label}</div>
+              <div className="label eyebrow">{group.label}</div>
               <div className="rowList">
                 {group.items.map((item) => (
                   <a
@@ -317,7 +317,7 @@ export default function SettingsPanel({
 
       {topic === 'more' && (
         <>
-          <div className="label">Advanced</div>
+          <div className="label eyebrow">Advanced</div>
           <div className="rowList">
             <a href="/privacy" className="row">
               <span className="rowText">Privacy</span>

@@ -712,6 +712,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   flex: none; font-family: var(--display); font-size: 15px; font-weight: 700;
   line-height: 20px; letter-spacing: -.02em; color: var(--label);
 }
+/* The one-line form: the World's name leads in bold at the line's own size,
+   the district and the nearest Place follow in the line's own ink. 14px, not
+   the lockup's 15 — this is a sentence with a bold opening, not a wordmark
+   with a caption. */
+.brandWhere { margin: 0; padding: 0 2px; }
+.brandWhere .brandName {
+  font-size: 14px; line-height: 18px;
+}
 .brandSlogan {
   flex: none; font-size: 11px; font-weight: 500; line-height: 14px;
   letter-spacing: .01em; color: var(--aqua);
@@ -777,8 +785,27 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   flex: none; display: flex; align-items: center; gap: 10px;
   padding: 2px 16px 8px;
 }
-.searchRow .searchField { flex: 1; min-width: 0; margin-bottom: 0; }
-.searchRow .field { border-radius: var(--rCapsule); }
+/* The design draws Explore's search as a bordered rounded rect on the sheet's
+   own fill — one field, icon inside it — not as the pill the rest of the app
+   uses. The border is what separates it from the glass it sits on; a capsule
+   with no edge read as a hole in the sheet at the peek stop, which is where
+   this screen spends most of its life. The box moves to the grid wrapper so the
+   icon lives inside the outline the way the design has it, and the input itself
+   goes transparent. */
+.searchRow .searchField {
+  flex: 1; min-width: 0; margin-bottom: 0;
+  border-radius: 15px; background: var(--fill2); border: 1px solid var(--sep);
+}
+.searchRow .field {
+  background: none; border-radius: 0;
+  /* 16px is the design's, and also the size below which mobile Safari zooms the
+     viewport on focus — the one place those two agree, so take it. */
+  font-size: 16px;
+}
+.searchRow .field:focus { box-shadow: none; }
+.searchRow .searchField:focus-within {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 18%, transparent);
+}
 
 /* ---- a pushed screen's nav bar: back on the left, title centred ---- */
 .navHead {
@@ -860,6 +887,73 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 /* The value on a row that is currently doing something. --blue is the app's
    action ink and this is the only place a row's right-hand side earns it. */
 .rowValue.accent { color: var(--blue); font-weight: 600; }
+
+/* ---- the design's grouped card, on the screens it drew ----
+   Plan, Party, Me, Side Quests, Settings, Collection and Marks all carry the
+   same list in the design: a 16px card edged in --sep, rows on --bg2 at 13px of
+   padding, a 15px label with a 12px sub under it, and a 13.5px value on the
+   right. It is a full step tighter than the 17px iOS-inset row this app uses
+   everywhere else, which is what lets Settings show a topic's whole group
+   without a scroll and lets Me hold the journey, the rung and both routes above
+   the fold.
+
+   Scoped to these panels rather than to `.row` itself: Explore, World and Place
+   detail draw the same class and are being measured against their own
+   artboards. Promote it when both halves agree. */
+.mePanel .rowList,
+.settingsPanel .rowList,
+.worldCloset .rowList,
+.worldMarks .rowList,
+.profileJourney .rowList {
+  border-radius: 16px; border: 1px solid var(--sep);
+  margin-bottom: 0;
+}
+.mePanel .row,
+.settingsPanel .row,
+.worldCloset .row,
+.worldMarks .row,
+.profileJourney .row {
+  min-height: 44px; padding: 13px; gap: 10px;
+}
+/* The hairline starts at the padding edge, not 16px in: these rows are 13px
+   inset and a separator that began 3px past the text read as a misalignment. */
+.mePanel .row::before,
+.settingsPanel .row::before,
+.worldCloset .row::before,
+.worldMarks .row::before,
+.profileJourney .row::before { left: 13px; }
+.mePanel .rowText,
+.settingsPanel .rowText,
+.worldCloset .rowText,
+.worldMarks .rowText,
+.profileJourney .rowText { font-size: 15px; letter-spacing: -.24px; }
+.mePanel .rowText > .fine,
+.settingsPanel .rowText > .fine,
+.worldCloset .rowText > .fine,
+.worldMarks .rowText > .fine,
+.profileJourney .rowText > .fine {
+  margin-top: 1px; font-size: 12px; line-height: 16px; font-weight: 500;
+}
+.mePanel .rowValue,
+.settingsPanel .rowValue,
+.worldCloset .rowValue,
+.worldMarks .rowValue,
+.profileJourney .rowValue { font-size: 13.5px; font-weight: 600; letter-spacing: -.08px; }
+/* The name field is one of these cards too, in the design: --bg2 behind a --sep
+   edge at 14px, not the flat --fill3 tray. Same ground as the row above it, so
+   the You topic reads as one column of cards rather than a card, a tray and a
+   card. 16px of type stays — anything smaller and iOS zooms the page on focus. */
+.settingsPanel .field {
+  padding: 12px 13px; border-radius: 14px;
+  background: var(--bg2); border: 1px solid var(--sep);
+  font-size: 16px; letter-spacing: -.24px; margin-bottom: 0;
+}
+/* A grouped card sits 8px under the eyebrow that names it and 16px above the
+   next one, which the eyebrow's own top margin already supplies. */
+.mePanel .rowList + .label.eyebrow,
+.settingsPanel .rowList + .label.eyebrow,
+.worldCloset .rowList + .label.eyebrow,
+.worldMarks .rowList + .label.eyebrow { margin-top: 16px; }
 .iconBtn {
   pointer-events: auto; width: 44px; height: 44px; flex: none;
   display: grid; place-items: center;
@@ -1058,7 +1152,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    screen, which is exactly when a tab bar is in the way. */
 .tabBar {
   flex: none; display: flex; align-items: stretch;
-  padding: 4px 6px 6px; border-top: .5px solid var(--sep);
+  /* The design's own: nothing above the tabs, ten below them, four at the
+     sides, over a full-weight rule. The bar was carrying four pixels of top
+     padding and a half-pixel rule, which read as a strip stuck to the sheet
+     rather than the sheet's own foot. */
+  padding: 0 4px 10px; border-top: 1px solid var(--sep);
   /* The map scrolls past behind the glass, so the bar needs its own footing or
      the labels sit on whatever colour happens to be under them. A token, not a
      literal, because the reduced-transparency and increased-contrast blocks
@@ -1067,7 +1165,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .sheet.full .tabBar {
   background: var(--grouped);
-  padding-bottom: calc(6px + var(--bot));
+  padding-bottom: calc(10px + var(--bot));
 }
 .tabItem {
   flex: 1; min-width: 0; min-height: 44px;
@@ -1078,22 +1176,24 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .tabItem.on { color: var(--blue); }
 .tabItem:active { transform: scale(.92); }
-.tabGlyph { position: relative; display: grid; place-items: center; height: 26px; }
+.tabGlyph { position: relative; display: grid; place-items: center; height: 23px; }
 /* The selected tab's glyph is fractionally larger. It is barely perceptible on
    its own and completely obvious next to its neighbours, which is the point. */
 .tabGlyph .icn {
   transition: transform var(--t2) var(--ease);
 }
 .tabItem.on .tabGlyph .icn { transform: scale(1.06); }
-/* Caption 2. Apple's own tab-bar label is 10pt and is not in the published
-   table; this is the nearest style that is, and one point larger is no loss on
-   a control this size. Its tracking is positive because the curve opens back
-   up below the minimum as well as above it. */
+/* 10px at 500, the design's own — Apple's tab-bar label size, not the caption
+   style one point above it that this used to borrow. Tracking opens up slightly
+   because the curve does so below the minimum as well as above it. */
 .tabLabel {
-  font-size: 11px; font-weight: 500; line-height: 13px; letter-spacing: .06px;
+  font-size: 10px; font-weight: 500; line-height: 13px; letter-spacing: .01em;
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.tabItem.on .tabLabel { font-weight: 600; }
+/* The selected label goes to 700, not 600: at 10px, one step of weight is the
+   only thing besides colour separating the tab you are on from the four you
+   are not. */
+.tabItem.on .tabLabel { font-weight: 700; }
 /* The Day tab wears the visitor's own initials rather than a glyph — it is the
    screen with their name and their day on it. */
 .tabAvatar {
@@ -1464,29 +1564,40 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 }
 .tab.on { background: var(--bg3); box-shadow: var(--thumbShadow); }
 .tab:active { opacity: .5; }
+/* ---- topic switch: Settings' topics and Plan's Stops/Heights ----
+   The design draws this as one control that spans the sheet, not a scrolling
+   rail of chips: every topic gets an equal share of the width, so the set is
+   readable in one glance and the switch reads as "these are the parts of this
+   screen" rather than "here is a list you can push sideways". Five topics at
+   390px leave ~70px each, which the design's 13px/700 label clears.
+
+   Paint is the design's chipPaint: the selected topic takes --label as its
+   ground and --bg2 as its ink — the highest-contrast pair the palette holds,
+   at 11.4:1 by day and 12.6:1 at night. That replaces the --aqua fill this
+   carried, which was itself a correction of white-on-aqua; the design's own
+   answer needs no correction. */
 .settingsTopics {
-  display: flex; gap: 8px; margin: 8px 0 12px;
-  overflow-x: auto; overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  display: flex; gap: 5px; margin: 8px 0 14px;
 }
-.settingsTopics::-webkit-scrollbar { display: none; }
 .settingsTopic {
-  flex: 0 0 auto; min-height: 34px; padding: 7px 14px;
-  font-size: 14px; font-weight: 650; letter-spacing: -.08px;
-  color: var(--label); border-radius: 999px;
-  background: var(--fill3);
-  transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut);
+  flex: 1 1 0; min-width: 0; min-height: 34px; padding: 8px 4px;
+  font-size: 13px; font-weight: 700; letter-spacing: -.08px;
+  color: var(--label); border-radius: 11px;
+  background: var(--bg2); border: 1px solid var(--sep);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background var(--t1) var(--easeOut), color var(--t1) var(--easeOut),
+              border-color var(--t1) var(--easeOut);
 }
-/* Dark ink on the aqua, not white. White on --aqua measures 2.45:1 in both
-   palettes — under AA for label text, and these chips are how you steer the
-   whole of Settings and Plan. #0B1829 (the night --bg) clears 7.3:1 on the same
-   fill. Same correction the nav glyph tile carries, for the same reason. */
 .settingsTopic.on {
-  background: var(--aqua); color: var(--onAqua, #0B1829);
+  background: var(--label); color: var(--bg2); border-color: var(--label);
 }
 .settingsTopic:active { opacity: .72; }
-.planPanel .settingsTopics { margin-top: 0; }
+/* Plan's pair is the same control one size up: two segments have the room the
+   design spends on them — 12px corners, 9px of height, 13.5px type — where five
+   Settings topics do not. The 14px below the pair is the design's, and it is
+   what separates the switch from the section eyebrow underneath it. */
+.planPanel .settingsTopics { gap: 6px; margin: 2px 0 14px; }
+.planPanel .settingsTopic { padding: 9px 4px; border-radius: 12px; font-size: 13.5px; }
 /* min-height: 0, or a flex child with a long list inside refuses to shrink and
    pushes the tab bar off the bottom of the sheet. */
 .sheetBody {
@@ -1551,6 +1662,40 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   .label { color: color-mix(in srgb, var(--label) 78%, var(--label2)); }
 }
 .label:first-child { margin-top: 8px; }
+/* ---- eyebrow: the design's own section heading ----
+   Every section on Plan, Party, Me, Side Quests, Settings, Collection and Marks
+   is introduced the same way in the design — TODAY'S STOPS, YOUR PARTY · 4,
+   NEXT TITLE, SIGNED IN — at 11.5px, weight 800, .1em of tracking, upper case.
+   It is a whisper that names the block rather than a sentence that competes
+   with it, which is what lets those screens carry four or five sections in one
+   sheet without a stack of headings shouting over each other.
+
+   The design paints it --label3. That is 2.16:1 on Trail's paper and this app
+   is read in direct sun, so the ink is the repo's call, not the canvas's: a
+   30/70 mix of --label into --label2 measures 6.3:1 by day and 9.1:1 at night,
+   clearing AA for 11.5px text with room to spare while still reading as the
+   quiet layer the design wants. The plain --label2 the design's grey is nearest
+   to lands at 4.42:1 — under the floor, which is why it is not used here.
+
+   Margins are the design's: 16px above a section that follows one, 8px under
+   the words, and 2px of side inset so the eyebrow lines up with the copy under
+   it rather than with the cards. */
+.label.eyebrow {
+  font-size: 11.5px; font-weight: 800; line-height: 15px;
+  letter-spacing: .1em; text-transform: uppercase;
+  margin: 16px 2px 8px; padding: 0;
+  color: var(--label2);
+}
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  .label.eyebrow { color: color-mix(in srgb, var(--label) 30%, var(--label2)); }
+}
+/* First in a panel there is nothing above to clear — the design opens its
+   sheets on the eyebrow with 4px of air, not 16. */
+.label.eyebrow:first-child { margin-top: 4px; }
+/* Whatever rides on the right of an eyebrow — Clear on Party Heights, the
+   party code, the share countdown — is a control or a value, not part of the
+   heading, so it keeps its own case and tracking. */
+.label.eyebrow > * { text-transform: none; letter-spacing: normal; font-weight: 600; }
 .labelRight { text-transform: none; letter-spacing: -.08px; }
 .btn {
   display: block; width: 100%; min-height: 50px; padding: 14px;
@@ -1624,6 +1769,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   background: var(--fill3);
   color: var(--label3);
 }
+/* Rally and the car, as the design pairs them: the loud one takes whatever
+   width is left, the quiet one takes exactly what its words need and never
+   wraps. Both sized by content, "Rally the Party" lost the race to "Save where
+   I parked" and broke over two lines while the secondary sat on one. The quiet
+   one is also drawn quiet — a --bg2 card edged in --sep with --label ink,
+   rather than a second accent-coloured button beside the primary. */
+.partyActions { gap: 9px; }
+.partyActions .btn { white-space: nowrap; }
+.partyActions .btn.primary { flex: 1 1 auto; padding: 13px 10px; }
+.partyActions .btn:not(.primary) {
+  flex: 0 0 auto; padding: 13px 16px;
+  background: var(--bg2); border: 1px solid var(--sep); color: var(--label);
+  font-weight: 600;
+}
 
 .chips {
   display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px;
@@ -1651,6 +1810,22 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .chip.on { background: var(--label); color: var(--bg2); }
 .chip.danger { color: var(--red); }
 .chip.danger.on { background: var(--red); color: var(--onTint); }
+
+/* ---- Plan · Heights ----
+   Whose height you are setting, drawn the way the design draws it: the chip
+   carries the Member's marker colour so the roster, the map puck and this row
+   are visibly the same person. Off-state takes the card's own ground and edge
+   rather than a flat fill — the design's chipPaint, and it keeps a row of
+   unselected names from reading as a row of buttons. */
+.whoChips .chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg2); border: 1px solid var(--sep);
+}
+.whoChips .chip.on { background: var(--label); color: var(--bg2); border-color: var(--label); }
+.whoDot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: block; }
+/* The design's 16 above the adult toggle and 6 below: it belongs to the tally
+   it changes, not to the footnote under it. */
+.adultChip { margin: 16px 0 6px; padding-bottom: 0; }
 
 /* ============================================================
    lists — iOS inset-grouped rows
@@ -1707,7 +1882,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .poiDist { font-size: 15px; color: var(--label2); font-variant-numeric: tabular-nums; }
-.poiDetail { padding: 0 16px 14px 38px; animation: fadeIn var(--t2) var(--easeOut) both; }
+/* Indented to the name above it, which is now 24px in rather than 38 — the row
+   lost its extra sixteen of side padding, and an expanded body that stayed at
+   38 hung off the name it belongs to. */
+.poiDetail { padding: 0 2px 14px 24px; animation: fadeIn var(--t2) var(--easeOut) both; }
 .poiNote { font-size: 15px; color: var(--label2); margin: 0 0 10px; line-height: 20px; }
 
 /* Walk / meet-up / Plan as the same icons used on the map and the tab bar. */
@@ -2245,9 +2423,12 @@ html[data-skin-junior="1"] .poiMarker {
 .planList { margin: 0 0 12px; padding-left: 20px; font-size: 14px; color: var(--label2); }
 .planList li { display: flex; align-items: center; gap: 8px; }
 .planStops { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+/* The design's own stop card: 15px corners and 11/12 of padding, which is the
+   room the ordinal, the name, Walk and the remove cross need to sit on one line
+   without any of them touching. */
 .planStop {
   display: flex; align-items: center; gap: 10px;
-  padding: 9px 11px; border-radius: var(--r4);
+  padding: 11px 12px; border-radius: 15px;
   background: var(--bg2); border: 1px solid var(--sep);
 }
 /* The ordinal and the two controls that change it are one column: the number
@@ -2473,6 +2654,46 @@ html[data-skin-junior="1"] .poiMarker {
 .gate.gateFirstRun .gateCard {
   animation: none;
 }
+/* ---- the intake, over the park ----
+   The two intake steps are the design's own scrim, not a flat page: .10 at the
+   top opening onto the World the card is asking about, closing to .52 where the
+   card meets it (.56 on step two, whose card is taller and carries a list — the
+   deeper foot is what keeps the rows off the midways behind them). Night ink at
+   both stops in both palettes, because what is under the scrim is a painted map
+   and never the page colour.
+
+   This overrides .gate.gateFirstRun's flat --bg above. The note there is about a
+   glass CARD floating on nothing ghosting PARKBOUND; neither of these cards
+   shows the wordmark at all — step one leads with "Plan your day" — so the
+   objection does not reach them, and the design is explicit that the park shows
+   through. */
+.gate.intakeGate,
+.gate.gateFirstRun.intakeGate {
+  background: linear-gradient(to bottom, rgba(11, 24, 41, .10), rgba(11, 24, 41, .52));
+}
+.gate.intakeGateWorld,
+.gate.gateFirstRun.intakeGateWorld {
+  background: linear-gradient(to bottom, rgba(11, 24, 41, .10), rgba(11, 24, 41, .56));
+}
+/* And the card on top of it is the same piece of glass every other gate wears —
+   first run included, now that there is a park behind it to bend. The rule a
+   hundred lines down excludes .gateFirstRun precisely because the map used to be
+   hidden underneath it; on the intake it no longer is. */
+.gate.gateFirstRun.intakeGate .gateCard {
+  background: var(--glassTintDeep);
+  -webkit-backdrop-filter: var(--lensDeep); backdrop-filter: var(--lensDeep);
+  box-shadow: var(--lensEdge), var(--shadow3);
+}
+/* The design's own card metrics: 24 above the step row, 30 below the fine print,
+   over whatever inset the device adds. */
+.intakeGate .gateCard {
+  padding: 24px 20px calc(30px + var(--bot));
+}
+/* No grabber. Every other .gateCard borrows the sheet's, but the intake is a
+   question with two answers on it, not a panel you can drag — a handle here
+   promises a gesture that does nothing, and the design draws the step row as
+   the first thing in the card. */
+.intakeGate .gateCard::before { content: none; }
 /* Every other gate is read over a painted map, so it takes the lens the sheet
    takes rather than a flat fill — same --glassTintDeep, same --lensDeep, same
    --lensEdge, because a gate and the sheet are the same piece of glass sliding
@@ -2505,6 +2726,33 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
    phone, which never mounts it, keeps the original cover. */
 html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
   visibility: visible;
+}
+/* …and for the intake, for the same reason and with a lighter hand. The design
+   draws step one and step two as glass cards over the park, under a scrim that
+   starts at .10: "Plan your day" and "You're at Kings Island!" are questions
+   about a place, and the place is what is behind them. The hold still covers
+   the sheet and the tab bar, so only scenery paints. No dim here — the intake
+   scrim is a tenth of the intro's at the top, and dimming under it would leave
+   a grey rectangle rather than a park. */
+html:not([data-intro="seen"]) .app[data-gate-map] > .mapWrap {
+  visibility: visible;
+}
+/* The other half of the same idea, and it has to hold on a returning phone too.
+   The design draws the intake over the park and nothing else — no sheet, no tab
+   bar, no weather chip, no FAB column. Step one got that for free from the
+   first-run hold; step two did not, because answering step one marks the intro
+   seen and lifts it, and the tab bar then ghosted up through the card's glass.
+   So the intake states it for itself, for both steps and both kinds of phone. */
+.app[data-gate-map] > :not(.gate):not(.mapWrap) {
+  visibility: hidden;
+}
+/* The map's own furniture lives inside .mapWrap, so it survives the rule above
+   and has to be named. The zoom pad, the key and the scale bar are all controls
+   for a map you are not being offered yet — the design draws the park under
+   these three screens as scenery, with nothing on it to press. */
+.app[data-gate-map] > .mapWrap > .zoomPad,
+.app[data-gate-map] > .mapWrap > .mapFurniture {
+  visibility: hidden;
 }
 .gateCard {
   width: 100%; background: var(--bg2);
@@ -2586,10 +2834,50 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
 /* ---- sign in ----
    Centred, because the card is a title page: mark, what this is, who we are,
    then the ask. Left-aligned, the eye had to travel back up past the lockup to
-   find the sentence explaining why it was being asked to sign in. */
+   find the sentence explaining why it was being asked to sign in.
+
+   Read over the park like the intake steps, but under a much deeper scrim —
+   .42 to .86, the design's own. This is the first screen the app ever shows and
+   the card is the only thing on it that can be acted on; the park behind is
+   there to say what the app is for, not to be browsed. Deeper at the foot than
+   the intake because the card is taller and the wordmark has to hold. */
+.gate.authGate {
+  background: linear-gradient(to bottom, rgba(11, 24, 41, .42), rgba(11, 24, 41, .86));
+  animation: none;
+}
 .authGateCard { text-align: center; }
+/* The design's card metrics, and no grabber — the same reasoning as the intake:
+   this is a question, not a panel that drags. */
+.authGate .gateCard { padding: 26px 20px calc(30px + var(--bot)); }
+.authGate .gateCard::before { content: none; }
+/* PROFILE is a label on the card, not a heading: 11px at 800, a size down and a
+   weight up from the app's default eyebrow, so it names the card without
+   competing with the wordmark three pixels below it. */
+.authGateCard .brandLockupEyebrow { font-size: 11px; font-weight: 800; }
+/* 17px. The wordmark is not the hero here — the mark above it is — and at 22px
+   with .22em tracking PARKBOUND ran nearly the full card width and turned the
+   lockup into a banner. */
+.authGateCard .brandLockup[data-size="md"] .brandLockupName {
+  font-size: 17px; line-height: 22px;
+}
+/* The lead is a caption under a lockup, not a gate's opening question, so it
+   takes the design's 14.5/21 rather than .gateCard p's 17/22. */
+.authGateCard p { font-size: 14.5px; line-height: 21px; margin-bottom: 0; margin-top: 12px; }
+.authGateCard .authGateActions { margin-top: 18px; }
+.authGateCard .oauthActions { gap: 9px; }
+/* Outlined on the card's own surface, the way the design draws them: --fill3
+   with no edge read as two disabled buttons against the filled primary the rest
+   of the app trains you on, and these are the only offer on the screen. */
+.authGateCard .oauthBtn {
+  background: var(--bg2); border: 1px solid var(--sep); padding: 13px 10px;
+}
+.authGateCard .oauthBtnName { font-size: 14.5px; }
+.authGateCard .btnQuiet.muted { font-size: 14.5px; padding: 13px 0 2px; min-height: 34px; }
 .authGateCard .brandLockup.stacked {
-  align-items: center; gap: 12px; margin: 6px 0 14px;
+  /* No bottom margin: the lead paragraph below carries the design's own 12, and
+     the lockup's 14 on top of it opened a 26px hole between the tagline and the
+     sentence it introduces. */
+  align-items: center; gap: 12px; margin: 6px 0 0;
 }
 /* The lockup's own 2px gap is for a wordmark sitting straight on its tagline.
    With PROFILE above it there are three lines, and the eyebrow needs air or it
@@ -2811,10 +3099,14 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
    --label3, for the reason .label carries a few hundred lines up — this app is
    read outdoors, and the mock was drawn on a desk. */
 .gateSteps { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; width: 100%; }
-.gateStep { flex: 1; height: 4px; border-radius: 3px; background: var(--fill2); }
+.gateStep { flex: 1; height: 4px; border-radius: 3px; background: var(--fill); }
 .gateStep.on { background: var(--adventure); }
+/* 10.5px / 800, the design's own — a step counter, not a caption. It keeps
+   --label2 rather than the design's --label3: --label3 is .36 alpha, which is
+   2.1:1 on this card and fails AA outright. Same tracking, same weight, same
+   size; an ink that survives direct sun. */
 .gateStepLabel {
-  flex: none; font-family: var(--display); font-size: 12px; font-weight: 700;
+  flex: none; font-family: var(--display); font-size: 10.5px; font-weight: 800;
   letter-spacing: .1em; color: var(--label2);
 }
 .gateStepHead { display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -2834,7 +3126,7 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
   font-size: 25px; line-height: 31px; letter-spacing: -.5px; margin: 0;
 }
 .gateCard p.gateStepBody {
-  margin: 9px auto 0; font-size: 15px; line-height: 21px;
+  margin: 9px auto 0; font-size: 14.5px; line-height: 21px;
   max-width: 30ch; text-wrap: pretty;
 }
 /* .gateCard p is 17px and outranks .gateFine's own 13px, so on every gate the
@@ -2844,12 +3136,37 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
    are not part of this pass. */
 .gateStepHead .gateFine,
 .worldPick .gateFine,
-.authGateCard .gateFine,
 .gpsGateCard > .gateFine {
-  font-size: 13px; line-height: 18px; margin: 16px auto 0;
+  font-size: 12px; line-height: 17px; margin: 16px auto 0;
+}
+/* Sign in sets its footnote a half-point smaller and tucks it right under the
+   Guest line it qualifies — the design's 11.5/16 at six pixels, not sixteen. */
+.authGateCard .gateFine {
+  font-size: 11.5px; line-height: 16px; margin: 6px auto 0; max-width: 34ch;
 }
 .gateStepHead .gateFine { max-width: 34ch; }
 .gateStepHead + .gatePhoneSetup { margin-top: 20px; }
+/* ---- the intake's two buttons ----
+   The design draws one loud answer and one quiet one, four pixels apart. The
+   primary is its own shape here — 15px corner, 15px of vertical padding, 16px
+   at 700 — a size up in weight and a size down in type from the app's base
+   .btn, which is what makes it read as the answer to the question above it
+   rather than as a row in a form. --shadow1 lifts it off the glass the way the
+   design does; on a card that is itself translucent, a flat orange rectangle
+   sits *in* the scrim instead of on it. */
+.intakeGate .btn.primary.rect {
+  border-radius: 15px; padding: 15px 0;
+  font-size: 16px; font-weight: 700; letter-spacing: -.24px;
+  box-shadow: var(--shadow1);
+}
+/* Four pixels, not twelve: the quiet way out belongs to the primary above it,
+   not to the fine print below. */
+.intakeGate .gatePhoneSetup { margin-bottom: 4px; }
+.intakeGate .btnQuiet.muted { font-size: 14.5px; }
+/* The World pick's skip sits closer to the list it is escaping than the step
+   one pair does — 12 above, and half the padding, because there is no filled
+   button under it to balance against. */
+.worldPick > .btnQuiet.muted { margin-top: 12px; min-height: 34px; padding: 6px 0; }
 
 /* ---- step two: which World ---- */
 .worldPickHead { display: flex; flex-direction: column; align-items: center; text-align: center; }
@@ -2857,7 +3174,7 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
    on this screen, and neither of them has Location on. */
 .worldFix {
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .04em;
+  margin: 0 0 10px; font-size: 11.5px; font-weight: 700; letter-spacing: .04em;
   color: var(--label2);
 }
 .worldFixMark { color: var(--green); }
@@ -2865,7 +3182,7 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
   font-size: 25px; line-height: 31px; letter-spacing: -.5px; margin: 0;
 }
 .gateCard p.worldBody {
-  margin: 9px auto 0; font-size: 15px; line-height: 21px;
+  margin: 9px auto 0; font-size: 14.5px; line-height: 21px;
   max-width: 32ch; text-wrap: pretty;
 }
 /* The numbers the manifest already carries, as a pill rather than a sentence:
@@ -2874,7 +3191,7 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
   display: inline-flex; align-items: center; gap: 7px;
   margin: 12px 0 0; padding: 6px 12px;
   border-radius: var(--rCapsule); background: var(--fill2); border: 1px solid var(--sep);
-  font-size: 13px; font-weight: 600; color: var(--label2); letter-spacing: -.08px;
+  font-size: 12px; font-weight: 600; color: var(--label2); letter-spacing: -.08px;
 }
 .worldCounts i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex: none; }
 .worldPickHead .btn { margin: 16px 0 0; }
@@ -2882,17 +3199,46 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
 .worldSearch { margin-top: 4px; }
 /* The rows become a card the way every other grouped list in the app does, so
    the World pick reads as a list and not as a stack of buttons. */
+/* The design's eyebrow over the second offer: 11.5px / 800 / .1em uppercase,
+   with the count opposite at 12px. The ink is --label2, not the design's
+   --label3 — .36 alpha is 2.1:1 on this card and fails AA, and this is an app
+   read in direct sun. Size, case and tracking are the design's; only the value
+   is the repo's. */
+.label.worldListLabel {
+  font-family: var(--display); font-size: 11.5px; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase; line-height: 16px;
+  color: var(--label2);
+  margin: 20px 2px 9px; padding: 0;
+}
+.label.worldListLabel .labelRight {
+  font-family: var(--ui); font-size: 12px; font-weight: 400;
+  letter-spacing: -.08px; text-transform: none;
+}
 .worldList {
   background: var(--bg2); border: 1px solid var(--sep);
   border-radius: var(--r4); margin-bottom: 12px;
 }
+/* Tighter than the app's other venue lists, because this one is read as a
+   choice between four names rather than browsed: the design sets the name at
+   15px, the locality at 12, and rules the rows edge to edge instead of under
+   the text. */
+.worldList .venueRow {
+  min-height: 52px; padding: 12px 13px;
+}
+.worldList .venueRow > b {
+  font-size: 15px; font-weight: 700; letter-spacing: -.24px;
+}
+.worldList .venueRow > span:not(.venueAway) {
+  font-size: 12px; letter-spacing: -.08px;
+}
+.worldList .venueRow::before { left: 0; }
 /* Distance earns its own column: it is the one thing being compared down the
    list, and buried in the locality line it could not be read as a column. */
 .worldList .venueRow { grid-template-columns: 1fr auto auto; column-gap: 12px; }
 .worldList .venueRow::after { grid-column: 3; }
 .worldList .venueRow > span.venueAway {
   grid-column: 2; grid-row: 1 / span 2; align-self: center; margin-top: 0;
-  font-size: 13px; font-weight: 600; color: var(--label2);
+  font-size: 12.5px; font-weight: 600; color: var(--label2);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .worldNone { margin: 0; padding: 14px 16px; font-size: 15px; color: var(--label2); }
@@ -2998,10 +3344,13 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
    naming something the visitor just pointed at. --rCapsule follows D1's rule —
    small, inline, one row — while the actions inside it keep their own shapes. */
 .selCapsule {
-  position: absolute; left: 12px; right: 12px; z-index: 40;
+  /* 14 from each edge and 11 between the parts, the design's own measure: the
+     capsule lines up with the sheet's corner below it and the name gets room to
+     be a name rather than an ellipsis. */
+  position: absolute; left: 14px; right: 14px; z-index: 40;
   bottom: calc(var(--sheetFoot) + 12px);
-  display: flex; align-items: center; gap: 7px;
-  padding: 8px 10px;
+  display: flex; align-items: center; gap: 11px;
+  padding: 10px 12px;
   border-radius: var(--rCapsule);
   background: var(--glassTintDeep);
   -webkit-backdrop-filter: var(--lens); backdrop-filter: var(--lens);
@@ -3025,13 +3374,13 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
   box-shadow: 0 0 0 2.5px var(--labelStroke);
 }
 .selName {
-  min-width: 0; font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+  min-width: 0; font-size: 15px; font-weight: 700; letter-spacing: -.24px;
   color: var(--label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* The range gives way before the name does: a truncated distance is a wrong
    number, but it is the name that tells you whether this is the right pin. */
 .selDist {
-  flex: none; font-style: normal; font-size: 13px; font-weight: 600;
+  flex: none; font-style: normal; font-size: 12.5px; font-weight: 600;
   letter-spacing: -.08px; color: var(--label2); font-variant-numeric: tabular-nums;
 }
 /* Everything that is not the name is held to its own width, and everything
@@ -3039,11 +3388,14 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
    can shrink, so each pixel the badge and the button give back is a pixel of
    the Place's name. 10px on the badge and 13 on the button is where "Adventure
    Express" stops being "Adventu…" on a 390px phone. */
+/* A tag, not a capsule — the design gives the live word a 6px corner here, the
+   same call it makes for the verdict in the list. A pill beside a pill-shaped
+   Walk button made the two read as a pair of actions. */
 .selCapsule .liveBadge {
-  flex: none; align-self: center;
-  font-size: 10px; letter-spacing: .06em; padding: 3px 6px;
+  flex: none; align-self: center; border-radius: 6px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: .06em; padding: 3px 6px;
 }
-.btn.selWalk { flex: none; padding: 8px 12px; font-size: 13px; font-weight: 700; }
+.btn.selWalk { flex: none; padding: 8px 14px; font-size: 13px; font-weight: 700; }
 .selClose {
   flex: none; display: grid; place-items: center;
   min-width: 32px; min-height: 32px; margin-right: -4px;
@@ -3288,15 +3640,15 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
   background: #fff; box-shadow: var(--thumbShadow);
 }
 
-.heightVal { flex: none; text-align: right; font-variant-numeric: tabular-nums; }
-.heightVal b {
-  display: block; font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: .38px;
-  color: var(--label);
+/* 26px and "in" on the same baseline beside it, the way the design draws it —
+   stacked, the unit read as a second line of the panel rather than as part of
+   the number, and the pair was taller than the slider it sits next to. */
+.heightVal {
+  flex: none; display: flex; align-items: baseline; gap: 3px;
+  font-variant-numeric: tabular-nums;
 }
-.heightVal span {
-  display: block; font-size: 13px; letter-spacing: -.08px; color: var(--label2);
-  text-transform: none; margin-top: 4px;
-}
+.heightVal b { font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: -.6px; color: var(--label); }
+.heightVal span { font-size: 12px; letter-spacing: -.08px; color: var(--label2); text-transform: none; }
 
 /* ---- weather / live status ----
    The banner is only in the tree when something is actually wrong, so the
@@ -3440,25 +3792,36 @@ p.wxWhy.warn { color: var(--orange); }
    it wears the same red the map now uses for it. Grey was the tally quietly
    agreeing with the old hollow marker that being ruled out is a minor key. */
 .ratioBar .seg.bad { background: var(--barred); }
+/* The verdict colour is on the count, not on the words. That is the design's
+   own split, and it is also the only version that measures: --green on Trail's
+   paper is 2.6:1, so "can ride" set in it fails AA, while the same green on a
+   17px bold numeral clears the 3:1 floor for large text. The words take --label2
+   and read at 5.9:1 — the tally stays colour-coded and stays legible in sun.
+   Spread the three across the row the way the design does, so each pair sits
+   over its own segment of the bar above. */
 .ratioKey {
-  display: flex; gap: 16px; font-size: 13px; letter-spacing: -.08px;
-  text-transform: none; margin-bottom: 10px;
+  display: flex; justify-content: space-between; gap: 10px;
+  font-size: 12.5px; letter-spacing: -.08px; color: var(--label2);
+  text-transform: none; margin: 9px 2px 0;
 }
-.ratioKey b { font-size: 15px; font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
-.ratioKey .ok { color: var(--green); }
-.ratioKey .warn { color: var(--orange); }
-.ratioKey .bad { color: var(--barred); }
+.ratioKey b { font-size: 15px; font-weight: 700; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.ratioKey .ok b { color: var(--green); }
+.ratioKey .warn b { color: var(--orange); }
+.ratioKey .bad b { color: var(--barred); }
 .tally { display: flex; gap: 16px; margin-bottom: 12px; font-size: 13px; }
 .tally .ok { color: var(--green); }
 .tally .warn { color: var(--orange); }
 .tally .bad { color: var(--barred); }
+/* "3 more unlock at 52\"" is a sentence the tally above it finishes, and the
+   design writes it as one — 13.5px of running text at 11px under the key, with
+   the count in bold. The card it used to sit in gave a one-line remark the same
+   weight as the Plan's stop cards and broke the block of numbers in two. */
 .unlock {
-  font-size: 15px; letter-spacing: -.24px; color: var(--label2); margin: 0 0 14px;
-  padding: 12px 14px; border-radius: var(--r2);
-  background: var(--grouped2);
+  font-size: 13.5px; line-height: 19px; letter-spacing: -.08px;
+  color: var(--label); margin: 11px 2px 0;
   animation: fadeIn var(--t2) var(--easeOut) both;
 }
-.unlock b { color: var(--label); }
+.unlock b { font-weight: 700; }
 /* The Members this phone is not allowed to edit, stated and left alone. No
    chip, no tap target, nothing that looks like it would do something — the
    protocol drops a patch aimed at another phone's Member in silence, so an
@@ -3473,15 +3836,58 @@ p.wxWhy.warn { color: var(--orange); }
 .heightPeers > li > span { flex: none; color: var(--label2); font-variant-numeric: tabular-nums; }
 .heightPeerDot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--fill2); }
 
+/* ---- Explore's list, to the design's own measure ----
+   Every number below is the design's. The list is the densest thing in the app
+   and it was being drawn a size up throughout: a 17px name over a 13px line
+   fits four rows on the peek stop where the design fits six, which is the
+   difference between a list and a preview of one. */
+.label.placesLabel {
+  font-family: var(--display); font-size: 11.5px; font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase; line-height: 16px;
+  color: var(--label2);
+  margin: 6px 2px 8px; padding: 0;
+}
+.label.placesLabel .labelRight {
+  font-family: var(--ui); font-size: 12px; font-weight: 400;
+  letter-spacing: -.08px; text-transform: none;
+}
+/* Outlined, not filled. The design draws the unselected filters as the sheet's
+   own surface inside a hairline, which is what lets the one selected chip read
+   as selected: a row of grey fills next to one dark fill is a row of buttons
+   with one pressed, and the eye has to compare tones to find it. Scoped to
+   Explore so the chips on Plan, Party and Me keep the shape they were given. */
+.placeChips .chip {
+  background: var(--bg2); border: 1px solid var(--sep);
+  padding: 6px 11px; gap: 6px;
+}
+.placeChips .chip.on { background: var(--label); border-color: var(--label); color: var(--bg2); }
+.placeChips .chip.withDot i { width: 8px; height: 8px; }
+/* Line heights, not just sizes. Both lines were inheriting the body's 22px, so
+   a 15.5px name and a 12.5px sub each stood in a 22px box and the row came to
+   67 — eleven more than the design's, which is the difference between six rows
+   at the list stop and five. */
+.poiText b { font-size: 15.5px; font-weight: 600; letter-spacing: -.24px; line-height: 20px; }
+.poiText span { font-size: 12.5px; line-height: 16px; }
+/* Two pixels of side padding, not sixteen. The design lines the row's dot up
+   with the left edge of the eyebrow and the chips above it, so the list reads
+   as one column with the rest of the sheet; the extra sixteen indented every
+   row past the header that counts them. The sheet's own 16px is doing that job
+   already. */
+.poiMain { padding: 11px 2px; }
+/* The hairline runs the full width of the row, not from the text in. The dot is
+   a colour key rather than an avatar, so there is nothing at 38px for a rule to
+   line up with — inset, it looked like the dots were hanging off the list. */
+.poiRow::after { left: 0; }
+
 /* ---- verdict + walk time in the list ---- */
 .poiOut {
-  display: flex; align-items: center; gap: 10px; flex: none; text-align: right;
+  display: flex; align-items: center; gap: 8px; flex: none; text-align: right;
   justify-content: flex-end;
 }
 .poiRight { display: flex; align-items: center; gap: 10px; flex: none; text-align: right; }
 .poiWalk { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; font-variant-numeric: tabular-nums; }
-.poiWalk b { font-size: 15px; font-weight: 600; letter-spacing: -.24px; }
-.poiWalk em { font-style: normal; font-size: 12px; color: var(--label3); margin-top: 4px; }
+.poiWalk b { font-size: 14px; font-weight: 700; letter-spacing: -.24px; }
+.poiWalk em { font-style: normal; font-size: 11px; color: var(--label2); margin-top: 4px; }
 .verdict {
   display: inline-flex; align-items: center; gap: 4px; font-style: normal;
   font-family: var(--display); font-size: 11px; font-weight: 700;
@@ -3500,6 +3906,11 @@ p.wxWhy.warn { color: var(--orange); }
 /* Height data the venue never sent — not a verdict against the rider, so it
    stays as muted as the app's other "nothing to say" ink. */
 .verdict.unknown { color: var(--gray); background: color-mix(in srgb, var(--gray) 14%, transparent); }
+/* A tag on a row, not a capsule: the design gives the verdict an 8px corner in
+   the list and keeps the capsule for the pills that float on the map. The 74px
+   column stays — it is what makes "Can ride" and "Too short" line up down a
+   list of twenty, which a flat mock with one visible row has no way to show. */
+.poiRow .verdict { border-radius: 8px; padding: 4px 8px; letter-spacing: .03em; }
 .poiRow.bad .poiText b { color: var(--label); }
 .poiRow.bad .dot { opacity: 1; }
 
@@ -4129,7 +4540,10 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
   color: var(--blue); background: var(--glassTint); border: none;
   -webkit-backdrop-filter: var(--lensLite); backdrop-filter: var(--lensLite);
   box-shadow: var(--lensEdge), var(--lensDrop);
-  font-size: 13px; font-weight: 600; letter-spacing: -.08px; text-transform: none;
+  /* 700 — the design's. This is the one word of accent-coloured type floating
+     over the park, and at 600 on glass it read as a caption rather than a
+     control. */
+  font-size: 13px; font-weight: 700; letter-spacing: -.08px; text-transform: none;
   transition: transform var(--t1) var(--easeOut), background var(--t1) var(--easeOut),
               color var(--t1) var(--easeOut);
 }
@@ -4355,16 +4769,20 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .partyDot.onTheWay { background: var(--sun); }
 .partyDot.separated { background: var(--orange); }
 .partyDot.meetHere { background: var(--aqua); }
+/* The slogan strip that opens Settings. The design gives it --fill2 — a
+   recessed tile that says "this is what this screen is about" — rather than the
+   --bg2 card every tappable group on the same screen wears. It leads nowhere,
+   so it should not look like the rows under it that do. */
 .dayMoment {
-  display: flex; align-items: flex-start; gap: 12px;
-  padding: 12px 16px; border-radius: var(--r3);
-  background: var(--grouped2); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 11px;
+  padding: 12px 13px; border-radius: 16px;
+  background: var(--fill2); margin-bottom: 14px;
 }
 .dayMoment b {
-  display: block; font-family: var(--display); font-size: 15px; font-weight: 700;
+  display: block; font-family: var(--display); font-size: 14px; font-weight: 700;
   letter-spacing: -.02em;
 }
-.dayMoment span { display: block; font-size: 13px; color: var(--label2); margin-top: 2px; }
+.dayMoment span { display: block; font-size: 12px; line-height: 16px; color: var(--label2); margin-top: 2px; }
 .signInCard {
   margin: 8px 0 16px;
   padding: 4px 0 8px;
