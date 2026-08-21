@@ -391,6 +391,32 @@ const BAKE_MAP = {
   slide: [{ r: [[0.002, 0.006], [0.003, 0.007]] }, { r: [[0.003, 0.006], [0.004, 0.007]] }],
 };
 
+// A polygon big enough to matter cannot be spread into push(). The engine caps
+// `a.push(...b)` at ~125k arguments; today's whole grid is 47,520 cells at
+// maxCols 240, so no single polygon can reach it and the bug cannot fire. The
+// close band of ADR-0021 clause 2 needs maxCols 646 at kings-island — 344,964
+// cells — where one large meadow overruns the cap and bakeModel dies with
+// "Maximum call stack size exceeded" before a pixel is drawn.
+await check('a meadow larger than the argument cap does not blow the stack', () => {
+  const SPREAD_CAP = 125_274;
+  const big = {
+    // ~2.2 km on a side, so span/646 clears the projector's 2 m cell floor
+    // and the grid really is 646 columns — the close band's own shape.
+    meta: { id: 'big-park', bounds: { n: 0.02, s: 0, e: 0.02, w: 0 } },
+    boundary: [[0, 0], [0.02, 0], [0.02, 0.02], [0, 0.02]],
+    // One meadow covering the whole park: cells painted === cols * rows.
+    grass: [{ r: [[0, 0], [0.02, 0], [0.02, 0.02], [0, 0.02]] }],
+  };
+  const maxCols = 646;
+  const model = bakeModel(big, [], { maxCols });
+  assert.ok(
+    model.cols * model.rows > SPREAD_CAP,
+    `fixture must exceed the ${SPREAD_CAP} argument cap to prove anything, got ${model.cols * model.rows}`,
+  );
+  assert.equal(model.cols, maxCols);
+  return true;
+});
+
 await check('the bake model is truth-locked and deterministic', () => {
   const a = bakeModel(BAKE_MAP, FIXTURE_POIS, { maxCols: 60 });
   const b = bakeModel(BAKE_MAP, FIXTURE_POIS, { maxCols: 60 });
