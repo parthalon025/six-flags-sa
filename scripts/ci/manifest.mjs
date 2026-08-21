@@ -20,7 +20,12 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/git-env.test.mjs',
   'test/scripts/agent-docs.test.mjs',
   'test/scripts/credits.test.mjs',
-  'test/scripts/design-bundle.test.mjs',
+  // design-bundle.test.mjs is deliberately NOT here. Every other entry is a
+  // pure script test, which is what lets the Gate job run before a workspace
+  // install. The design bundle derives its skin swatches by calling mapPaint()
+  // for real rather than transcribing hexes, so it reaches lib/world.js and on
+  // into @party-tracker/shared — unresolvable this early. It runs in test:unit,
+  // where the workspace exists.
   'test/scripts/clerk-e2e.test.mjs',
   'test/scripts/wire-watch-target.test.mjs',
   'test/scripts/clerk-apple-prod.test.mjs',
@@ -47,4 +52,6 @@ export const GATE_SCRIPT_TESTS = [
 export const GATE_EXCLUDED_TESTS = {
   'test/scripts/store-app-preview.test.mjs':
     'needs ffmpeg on PATH — runs via npm run test:unit where the toolchain has it (#474)',
+  'test/scripts/design-bundle.test.mjs':
+    'reaches app source — the bundle calls mapPaint() for its skin swatches rather than copying hexes, so it imports lib/world.js and on into @party-tracker/shared, which the Gate job runs too early to resolve. Runs via npm run test:unit where the workspace is installed.',
 };
