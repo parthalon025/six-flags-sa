@@ -65,17 +65,13 @@ offline, grandma toilet path) with the named check that covers it. New epics add
 a row + check in the same PR — build vertically, don’t leave feature PRs without
 their user-action coverage.
 
-Nothing enforces that inventory, deliberately. It used to be grepped for check
-titles, which could only prove the strings still existed — never that the check
-still asserted the capability — while a sha256 stamp of `CONTEXT.md` +
-`docs/adr/*.md` demanded a two-line restamp commit every time the domain model
-grew. Reading a row against its check is a review job, not a job for a substring
-match.
+Nothing enforces that inventory: reading a row against its check is a review
+job, not a job for a substring match.
 
-What *is* enforced is that every suite runs at all: `scripts/ci/test-estate.mjs`
-lists every `.mjs` under `test/` with the job that runs it, or the written reason
-nothing does, and `test/scripts/test-estate.test.mjs` checks each claim against
-package.json and the workflow.
+What is enforced is that every suite runs at all. `scripts/ci/test-estate.mjs`
+lists every `.mjs` under `test/` with the job that runs it, or the written
+reason nothing does; `scripts/lib/test-estate.mjs` checks each claim against
+package.json and the workflow, in the CI gate.
 
 CI splits that suite into **modules** (`test/app/modules.json`) and only runs
 the ones that match the PR’s changed paths — including lint — see

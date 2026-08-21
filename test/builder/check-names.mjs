@@ -31,7 +31,7 @@ const FIXTURE = path.join(HERE, 'check-names.json');
 const pinned = JSON.parse(readFileSync(FIXTURE, 'utf8'));
 
 /** The harness in these suites prints `--- section ---` then `  PASS name`. */
-export function parseCheckNames(stdout) {
+function parseCheckNames(stdout) {
   const names = [];
   let group = '';
   for (const line of String(stdout).split('\n')) {

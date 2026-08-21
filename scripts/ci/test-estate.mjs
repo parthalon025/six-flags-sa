@@ -12,11 +12,12 @@
  *   TEST_ESTATE          — the run list: which runner(s) execute this file.
  *   TEST_ESTATE_EXCLUDED — path → the written reason nothing runs it.
  *
- * `test/scripts/test-estate.test.mjs` fails when a file is in neither, in both,
- * or is listed but missing from disk — and it does not take the run list on
- * trust: it checks each claim against package.json, the gate manifest and
- * .github/workflows/test-app.yml, so an entry cannot name a runner that does
- * not run it.
+ * This file is the data. The audit is `scripts/lib/test-estate.mjs`, run by
+ * `test/scripts/test-estate.test.mjs`: it fails when a file is in neither list,
+ * in both, or listed but missing from disk — and it does not take the run list
+ * on trust, checking each claim against package.json, the gate manifest and
+ * .github/workflows/test-app.yml so an entry cannot name a job that does not
+ * run it.
  *
  * Interface:
  *   TEST_RUNNERS / TEST_ESTATE / TEST_ESTATE_EXCLUDED
@@ -69,7 +70,6 @@ export const TEST_RUNNERS = {
     label:
       'the `visual` GitHub job — soft: it is continue-on-error and the `ci` aggregator treats it as non-blocking, so it reports and never gates.',
     job: 'visual',
-    soft: true,
   },
   'app-vertical': {
     label:
