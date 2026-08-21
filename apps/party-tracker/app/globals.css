@@ -42,6 +42,11 @@
 
   /* ---- backgrounds (Park Midnight) ---- */
   --bg: #0B1829;
+  /* The same ink as --bg, as channels, because a scrim is that colour at an
+     opacity and CSS cannot take a hex apart. Every rgba() scrim over the map
+     reads this rather than restating the triplet, so the night background has
+     one place to change. */
+  --bgRgb: 11, 24, 41;
   --bg2: #10233F;
   --bg3: #1A3354;
   --grouped: #0B1829;
@@ -174,7 +179,7 @@
      --glassTintDeep for anything with words on it, which needs the extra
      opacity to stay legible over a busy patch of map. */
   --glassTint: rgba(16, 35, 63, .48);
-  --glassTintDeep: rgba(11, 24, 41, .82);
+  --glassTintDeep: rgba(var(--bgRgb), .82);
   --glassRim: rgba(247, 244, 236, .28);
   --glassRimLo: rgba(247, 244, 236, .08);
   --glassRing: rgba(39, 184, 176, .18);
@@ -190,7 +195,7 @@
 
   /* ---- materials ---- */
   --matThin: rgba(16, 35, 63, .64);
-  --matRegular: rgba(11, 24, 41, .78);
+  --matRegular: rgba(var(--bgRgb), .78);
   --matThick: rgba(8, 18, 32, .88);
   --matChrome: rgba(8, 18, 32, .94);
   --glass: var(--matRegular);
@@ -2705,11 +2710,11 @@ html[data-skin-junior="1"] .poiMarker {
    through. */
 .gate.intakeGate,
 .gate.gateFirstRun.intakeGate {
-  background: linear-gradient(to bottom, rgba(11, 24, 41, .10), rgba(11, 24, 41, .52));
+  background: linear-gradient(to bottom, rgba(var(--bgRgb), .10), rgba(var(--bgRgb), .52));
 }
 .gate.intakeGateWorld,
 .gate.gateFirstRun.intakeGateWorld {
-  background: linear-gradient(to bottom, rgba(11, 24, 41, .10), rgba(11, 24, 41, .56));
+  background: linear-gradient(to bottom, rgba(var(--bgRgb), .10), rgba(var(--bgRgb), .56));
 }
 /* And the card on top of it is the same piece of glass every other gate wears —
    first run included, now that there is a park behind it to bend. The rule a
@@ -2878,7 +2883,7 @@ html:not([data-intro="seen"]) .app[data-gate-map] > .mapWrap {
    there to say what the app is for, not to be browsed. Deeper at the foot than
    the intake because the card is taller and the wordmark has to hold. */
 .gate.authGate {
-  background: linear-gradient(to bottom, rgba(11, 24, 41, .42), rgba(11, 24, 41, .86));
+  background: linear-gradient(to bottom, rgba(var(--bgRgb), .42), rgba(var(--bgRgb), .86));
   animation: none;
 }
 .authGateCard { text-align: center; }
@@ -2950,11 +2955,11 @@ html:not([data-intro="seen"]) .app[data-gate-map] > .mapWrap {
   align-items: stretch;
   background: linear-gradient(
     to bottom,
-    rgba(11, 24, 41, .86) 0,
-    rgba(11, 24, 41, .80) 24%,
-    rgba(11, 24, 41, .88) 48%,
-    rgba(11, 24, 41, .95) 72%,
-    rgba(11, 24, 41, .98) 100%
+    rgba(var(--bgRgb), .86) 0,
+    rgba(var(--bgRgb), .80) 24%,
+    rgba(var(--bgRgb), .88) 48%,
+    rgba(var(--bgRgb), .95) 72%,
+    rgba(var(--bgRgb), .98) 100%
   );
 }
 /* The intro is a night surface in BOTH palettes — the design renders it
@@ -3010,7 +3015,7 @@ html:not([data-intro="seen"]) .app[data-gate-map] > .mapWrap {
    stuck above it. */
 .gate.gateFirstRun.introGate .introFoot {
   padding-bottom: calc(26px + var(--bot));
-  background: linear-gradient(to top, rgba(11, 24, 41, .96), rgba(11, 24, 41, 0));
+  background: linear-gradient(to top, rgba(var(--bgRgb), .96), rgba(var(--bgRgb), 0));
 }
 .gate.gateFirstRun.introGate .introFoot::before { content: none; }
 /* The park behind is scenery, not content. Under the day map's light ground the
