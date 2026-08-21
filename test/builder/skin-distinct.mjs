@@ -16,6 +16,8 @@ import {
   THRESHOLDS,
   HEAVY_AXES,
   AXIS_KNOBS,
+  UNMAPPED_AXES,
+  PIXEL_MEASURED,
   specAxesDiffering,
   pixelAxisDeltas,
   verdict,
@@ -219,6 +221,14 @@ for (const axis of Object.keys(THRESHOLDS)) {
     }
     return node !== undefined;
   };
+  for (const bare of SCHEMA_ONLY_KNOBS) {
+    assert.ok(
+      !kits.some((k) => resolves(k, bare)),
+      `SCHEMA_ONLY_KNOBS lists '${bare}', but a shipped kit populates it — the escape `
+        + 'hatch is for unpopulated slots, and a stale entry silences the invented-knob '
+        + 'check for a path that no longer needs exempting',
+    );
+  }
   for (const [axis, paths] of Object.entries(AXIS_KNOBS)) {
     for (const path of paths) {
       const bare = path.replace(/^!/, '');
@@ -241,6 +251,81 @@ for (const axis of Object.keys(THRESHOLDS)) {
   const v = verdict({ spec, pixel: {}, thresholds: {} });
   assert.equal(v.states.C1, 'NO-KIT-KNOB', 'and the state says so rather than SAME');
   assert.ok(!v.heavyPossible.includes('C1'), 'an inexpressible axis can never be earned');
+}
+
+// --- The instrument must account for every axis the document defines.
+// Six axes (A5, A6, A7, B6, C3, C4) were absent from AXIS_KNOBS entirely, and
+// because the "never earned" banner is derived from AXIS_KNOBS' own keys, they
+// were not even reported as missing — the tool read as having checked eleven of
+// eleven when the document defines seventeen. Parse the document rather than
+// restating its list here, so the two cannot drift apart again.
+{
+  const doc = readFileSync(
+    new URL('../../docs/goals/design-language-axes.md', import.meta.url),
+    'utf8',
+  );
+  // Scope to the scored-axis table. The document carries a second table with
+  // the same shape — the v1 -> v2 mapping — and matching both would let a typo
+  // there satisfy this check while a real omission in Tier 1 went unnoticed.
+  const start = doc.indexOf('## Tier 1');
+  const end = doc.indexOf('## Distinctness gate');
+  assert.ok(start >= 0 && end > start, 'the axis table headings moved; rescope this test');
+  const table = doc.slice(start, end);
+  const declared = new Set([...table.matchAll(/^\| ([A-C]\d) \|/gm)].map((m) => m[1]));
+  assert.equal(declared.size, 17, `parsed ${declared.size} axes from Tier 1, expected 17`);
+
+  const modelled = new Set([...Object.keys(AXIS_KNOBS), ...Object.keys(UNMAPPED_AXES)]);
+  const missing = [...declared].filter((a) => !modelled.has(a));
+  const invented = [...modelled].filter((a) => !declared.has(a));
+  assert.deepEqual(missing, [], 'every documented axis must be mapped or declared unmapped');
+  assert.deepEqual(invented, [], 'the instrument must not name an axis the document does not');
+
+  const both = Object.keys(AXIS_KNOBS).filter((a) => a in UNMAPPED_AXES);
+  assert.deepEqual(both, [], 'an axis is either mapped or unmapped, never both');
+
+  for (const [axis, why] of Object.entries(UNMAPPED_AXES)) {
+    assert.ok(
+      typeof why === 'string' && why.length > 40,
+      `${axis} is unmapped without a reason a reader can act on`,
+    );
+  }
+}
+
+// --- Pixel-measured axes must be a subset of the mapped ones, or the "never
+// earned" banner would omit an axis that is in fact measured.
+{
+  const mapped = Object.keys(AXIS_KNOBS);
+  const stray = PIXEL_MEASURED.filter((a) => !mapped.includes(a));
+  assert.deepEqual(stray, [], 'PIXEL_MEASURED names an axis AXIS_KNOBS does not map');
+}
+
+// --- An unset knob does not make its axis dead, and a comment claiming
+// otherwise sends a maintainer to stop measuring a live axis. B3 and C2 each
+// carry a SCHEMA_ONLY_KNOBS path no kit sets, and each has other knobs that do
+// vary: both differ on every pair of the shipped catalogue. A5's only knob is
+// unset everywhere, so it reads SAME — checked and identical, which is true —
+// rather than being hidden as unmodelled.
+{
+  const dir = new URL('../../packages/venue-builder/data/display/kits/', import.meta.url);
+  const kits = readdirSync(dir)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => JSON.parse(readFileSync(new URL(f, dir), 'utf8')));
+  assert.equal(kits.length, 6, 'the shipped catalogue is six kits');
+
+  const pairs = [];
+  for (let i = 0; i < kits.length; i += 1) {
+    for (let j = i + 1; j < kits.length; j += 1) pairs.push(specAxesDiffering(kits[i], kits[j]));
+  }
+  assert.equal(pairs.length, 15);
+
+  for (const axis of ['B3', 'C2']) {
+    const n = pairs.filter((s) => s[axis]?.differs).length;
+    assert.equal(n, 15, `${axis} differs on ${n}/15 shipped pairs, not 0 — it is not a dead axis`);
+  }
+
+  const a5 = pairs.filter((s) => s.A5?.differs).length;
+  assert.equal(a5, 0, 'no kit overrides a steep variant yet, so A5 is SAME across the catalogue');
+  assert.equal(pairs[0].A5.representable, true, 'A5 is mapped, not inexpressible');
 }
 
 console.log('skin-distinct: ok');
