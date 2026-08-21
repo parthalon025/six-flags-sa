@@ -2,10 +2,22 @@
   "policiesDir": "docs/agents/policies",
   "cursorRulesDir": ".cursor/rules",
   "agentRoots": {
-    "AGENTS.md": { "variant": "agents" },
-    "CLAUDE.md": { "variant": "claude" }
+    "AGENTS.md": {
+      "variant": "agents"
+    },
+    "CLAUDE.md": {
+      "variant": "claude"
+    }
   },
   "policies": [
+    {
+      "id": "orchestrator",
+      "heading": "Orchestrator — dispatch to the team",
+      "title": "Orchestrator",
+      "pointer": "Every session starts as the **orchestrator** — route multi-step work to the roster member whose model and skills fit (`npm run orchestrator:route -- \"<task>\"`).",
+      "cursorRule": "orchestrator.mdc",
+      "cursorDescription": "Dispatch multi-step work to the agent roster — member, skills, and model tier come from scripts/lib/orchestrator/roster.json."
+    },
     {
       "id": "worktree",
       "heading": "Isolate in a worktree",

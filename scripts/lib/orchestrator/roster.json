@@ -1,0 +1,344 @@
+{
+  "schema": 1,
+  "models": {
+    "opus": {
+      "id": "claude-opus-5",
+      "use": "Ambiguous, cross-cutting, or design-heavy work where a wrong call is expensive."
+    },
+    "sonnet": {
+      "id": "claude-sonnet-5",
+      "use": "Well-scoped work with a clear success signal — review, diagnosis, verification, docs."
+    },
+    "haiku": {
+      "id": "claude-haiku-4-5-20251001",
+      "use": "High-volume mechanical passes — search, listing, labelling."
+    }
+  },
+  "members": [
+    {
+      "id": "scout",
+      "role": "Codebase scout",
+      "agent": "Explore",
+      "model": "haiku",
+      "effort": "low",
+      "brief": "Find where something lives before anyone edits it.",
+      "skills": [
+        "gitnexus-exploring"
+      ],
+      "reads": [
+        ".claude/skills/gitnexus/gitnexus-exploring/SKILL.md",
+        ".claude/skills/gitnexus/gitnexus-guide/SKILL.md"
+      ],
+      "returns": "file:line map of the relevant seams — no edits, no opinions.",
+      "triggers": [
+        "where",
+        "find",
+        "locate",
+        "search",
+        "which file",
+        "how does",
+        "overview",
+        "explore",
+        "map out"
+      ]
+    },
+    {
+      "id": "architect",
+      "role": "Design architect",
+      "agent": "Plan",
+      "model": "opus",
+      "effort": "high",
+      "brief": "Choose the seam and the interface before code is written.",
+      "skills": [
+        "codebase-design",
+        "domain-modeling",
+        "grilling"
+      ],
+      "reads": [
+        "docs/agents/matt-standards.md",
+        "docs/agents/policies/scripts-over-instructions.md",
+        "packages/README.md",
+        "CONTEXT.md"
+      ],
+      "returns": "Ordered plan with the module boundary named, plus the interface it exposes.",
+      "triggers": [
+        "design",
+        "plan",
+        "architecture",
+        "seam",
+        "interface",
+        "module",
+        "package",
+        "adr",
+        "refactor",
+        "restructure",
+        "split",
+        "domain"
+      ]
+    },
+    {
+      "id": "implementer",
+      "role": "Feature implementer",
+      "agent": "general-purpose",
+      "model": "opus",
+      "effort": "high",
+      "brief": "Write the change inside a worktree, test-first where tests already live nearby.",
+      "skills": [
+        "implement",
+        "tdd",
+        "codebase-design"
+      ],
+      "reads": [
+        "docs/agents/policies/worktree.md",
+        "docs/agents/policies/version-on-merge.md",
+        ".claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md"
+      ],
+      "returns": "Committed diff on a worktree branch, with the impact analysis it ran before editing.",
+      "triggers": [
+        "implement",
+        "build",
+        "add",
+        "write",
+        "feature",
+        "wire",
+        "migrate",
+        "port",
+        "rename",
+        "extract"
+      ]
+    },
+    {
+      "id": "bug-hunter",
+      "role": "Bug diagnostician",
+      "agent": "general-purpose",
+      "model": "sonnet",
+      "effort": "high",
+      "brief": "Reproduce first, then name the cause — never patch on a hunch.",
+      "skills": [
+        "diagnosing-bugs",
+        "tdd"
+      ],
+      "reads": [
+        ".claude/skills/gitnexus/gitnexus-debugging/SKILL.md",
+        "docs/agents/policies/vertical-e2e.md"
+      ],
+      "returns": "Reproduction command, root cause at file:line, and the failing assertion that proves it.",
+      "triggers": [
+        "bug",
+        "broken",
+        "failing",
+        "fails",
+        "crash",
+        "regression",
+        "flaky",
+        "slow",
+        "error",
+        "throws",
+        "diagnose",
+        "debug"
+      ]
+    },
+    {
+      "id": "reviewer",
+      "role": "Standards reviewer",
+      "agent": "general-purpose",
+      "model": "sonnet",
+      "effort": "high",
+      "brief": "The pre-merge Sonnet standards pass — advisory findings, enforced run.",
+      "skills": [
+        "code-review",
+        "codebase-design"
+      ],
+      "reads": [
+        "docs/agents/matt-standards.md"
+      ],
+      "command": "node scripts/ci/matt-review.mjs prompt",
+      "returns": "Advisory findings by severity; stamp with `node scripts/ci/matt-review.mjs write` once addressed.",
+      "triggers": [
+        "review",
+        "pr",
+        "diff",
+        "standards",
+        "smell",
+        "critique",
+        "audit"
+      ]
+    },
+    {
+      "id": "verifier",
+      "role": "Vertical e2e verifier",
+      "agent": "general-purpose",
+      "model": "sonnet",
+      "effort": "medium",
+      "brief": "Prove the change end to end and assert what the run produced.",
+      "skills": [
+        "tdd"
+      ],
+      "reads": [
+        "docs/agents/policies/vertical-e2e.md",
+        "docs/agents/policies/vercel-previews.md",
+        "docs/agents/ci.md"
+      ],
+      "command": "npm run test:pre-merge-vertical",
+      "returns": "Command output with the asserted artefact — a green run that would be red if the change were wrong.",
+      "triggers": [
+        "verify",
+        "validate",
+        "prove",
+        "e2e",
+        "end to end",
+        "pre-merge",
+        "screenshot",
+        "smoke",
+        "ci"
+      ]
+    },
+    {
+      "id": "scribe",
+      "role": "Agent-docs scribe",
+      "agent": "general-purpose",
+      "model": "sonnet",
+      "effort": "medium",
+      "brief": "Policy source under docs/agents/policies, then regenerate — never hand-edit generated docs.",
+      "skills": [
+        "writing-for-agents",
+        "domain-modeling"
+      ],
+      "reads": [
+        "docs/agents/policies/scripts-over-instructions.md",
+        "docs/agents/templates/policy.md",
+        "docs/agents/domain.md"
+      ],
+      "command": "npm run agent-docs:build",
+      "returns": "Edited policy source plus the regenerated AGENTS.md / CLAUDE.md / .cursor/rules hunks.",
+      "triggers": [
+        "docs",
+        "documentation",
+        "agents.md",
+        "claude.md",
+        "policy",
+        "skill",
+        "readme",
+        "context.md",
+        "cursor rule"
+      ]
+    },
+    {
+      "id": "venue-smith",
+      "role": "Venue pipeline engineer",
+      "agent": "general-purpose",
+      "model": "sonnet",
+      "effort": "high",
+      "brief": "Venue output is generated — fix the builder upstream, prove it in the app.",
+      "skills": [
+        "codebase-design",
+        "diagnosing-bugs"
+      ],
+      "reads": [
+        "docs/agents/policies/builder-app-contract.md",
+        "docs/agents/policies/venue-builder-lib-boundaries.md"
+      ],
+      "command": "npm run venues:build",
+      "returns": "Builder-side fix, regenerated venue output, and the app assertion that consumes it.",
+      "triggers": [
+        "venue",
+        "builder",
+        "park",
+        "tiles",
+        "bake",
+        "terrain",
+        "overture",
+        "mapillary",
+        "display pack",
+        "atlas",
+        "map data"
+      ]
+    },
+    {
+      "id": "triager",
+      "role": "Issue triager",
+      "agent": "general-purpose",
+      "model": "haiku",
+      "effort": "low",
+      "brief": "Sort the tracker and file agent-handoff issues for out-of-scope failures.",
+      "skills": [],
+      "reads": [
+        "docs/agents/policies/github-issue-tracker.md",
+        "docs/agents/policies/github-triage-labels.md",
+        "docs/agents/policies/agent-handoff.md"
+      ],
+      "returns": "Issue numbers touched and the triage label applied to each.",
+      "triggers": [
+        "issue",
+        "issues",
+        "triage",
+        "label",
+        "handoff",
+        "backlog",
+        "tracker",
+        "duplicate"
+      ]
+    }
+  ],
+  "workflow": {
+    "change": [
+      "scout",
+      "architect",
+      "implementer",
+      "reviewer",
+      "verifier"
+    ],
+    "question": [
+      "scout"
+    ],
+    "bug": [
+      "scout",
+      "bug-hunter",
+      "implementer",
+      "reviewer",
+      "verifier"
+    ],
+    "docs": [
+      "scribe",
+      "reviewer"
+    ],
+    "venue": [
+      "scout",
+      "venue-smith",
+      "reviewer",
+      "verifier"
+    ],
+    "triage": [
+      "triager"
+    ],
+    "review": [
+      "reviewer",
+      "verifier"
+    ]
+  },
+  "kinds": {
+    "scout": "question",
+    "architect": "change",
+    "implementer": "change",
+    "bug-hunter": "bug",
+    "reviewer": "review",
+    "verifier": "review",
+    "scribe": "docs",
+    "venue-smith": "venue",
+    "triager": "triage"
+  },
+  "kindPriority": [
+    "bug",
+    "venue",
+    "docs",
+    "triage",
+    "review",
+    "change",
+    "question"
+  ],
+  "repoRules": [
+    "Work inside the git worktree you were given — see docs/agents/policies/worktree.md.",
+    "Run GitNexus impact analysis before editing any symbol, and detect_changes before committing — see the GitNexus block in AGENTS.md.",
+    "Never hand-edit generated files (AGENTS.md, CLAUDE.md, .cursor/rules, venue output, version stamps) — fix the source and regenerate."
+  ]
+}

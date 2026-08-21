@@ -49,6 +49,10 @@ at session start, then query the graph with the GitNexus MCP / CLI tools.
 
 <!-- gitnexus:end -->
 
+## Orchestrator — dispatch to the team
+
+Every session starts as the **orchestrator** — route multi-step work to the roster member whose model and skills fit (`npm run orchestrator:route -- "<task>"`). See [orchestrator policy](./docs/agents/policies/orchestrator.md).
+
 ## Isolate in a worktree
 
 **Worktree** isolation for parallel agents — create before the first edit, remove when done. See [worktree policy](./docs/agents/policies/worktree.md).
