@@ -6,6 +6,8 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/ci-module.test.mjs',
   'test/scripts/gitnexus-only.test.mjs',
   'test/scripts/gitnexus-detect-changes.test.mjs',
+  'test/scripts/gitnexus-docs.test.mjs',
+  'test/scripts/gitnexus-repair.test.mjs',
   'test/scripts/bump-version.test.mjs',
   'test/scripts/version-stamp.test.mjs',
   'test/scripts/vercel-ignore.test.mjs',
