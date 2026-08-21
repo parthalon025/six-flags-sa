@@ -9,6 +9,7 @@ import {
   EARNED_MARK_TYPES,
   MARK_ICONS,
   MARK_LABELS,
+  marksByType,
   PLACEABLE_MARK_TYPES,
   SIGN_PHRASES,
 } from '@/lib/world';
@@ -124,9 +125,6 @@ export default function WorldMarks({
     return 'Place';
   }
 
-  const marksByType = (type) =>
-    (world?.marks || []).filter((m) => m.type === type && m.authorId === session?.userId).length;
-
   return (
     <div className="worldMarks">
       {spot ? <SpotBanner spot={spot} onClear={onClearSpot} /> : null}
@@ -225,7 +223,7 @@ export default function WorldMarks({
             {/* An em dash, not a zero: with no Profile there is nothing to
                 count, and "0" reads as "you have earned none". */}
             <span className="rowValue markCount">
-              {session?.userId ? marksByType(type) : '—'}
+              {session?.userId ? marksByType(world, type, session.userId).length : '—'}
             </span>
           </div>
         ))}

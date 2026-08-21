@@ -600,6 +600,64 @@ export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
   return hit.name;
 }
 
+/**
+ * Tap the map where there is nothing — the gesture that drops a spot.
+ *
+ * The opposite of `tapMapPoi`, and it has to work as hard: ParkMap tries every
+ * marker it drew (`pickAt`) before it will read a tap as ground, and the FAB
+ * column, the scale bar and the OSM notice all float over the map and swallow
+ * a click before the wrapper ever hears it. So the point is chosen in the page
+ * — inside the band of map left visible above the sheet, far enough from any
+ * marker, with nothing but the map under it.
+ *
+ * `clear` is in screen pixels. ParkMap's own hit radius is a marker's r + 6
+ * (13 px at the smallest), so 60 keeps the tap outside both the marker and
+ * the name drawn beside it; the search takes the freest point it can find
+ * rather than the first, so a busy midway still lands on ground.
+ *
+ * Returns the point tapped, and the distance to the nearest drawn marker —
+ * which is NOT the nearest Place: zoom decides what is drawn, and the spot is
+ * named from the venue's own list (lib/spot.js), not from the screen.
+ */
+export async function tapBareGround(page, { timeout = 15000, clear = 60 } = {}) {
+  const hit = await until(
+    () =>
+      page.evaluate((gap) => {
+        const wrap = document.querySelector('.mapWrap');
+        if (!wrap) return null;
+        const box = wrap.getBoundingClientRect();
+        const sheet = document.querySelector('.sheet');
+        const sheetTop = sheet ? sheet.getBoundingClientRect().top : box.bottom;
+        const markers = [...document.querySelectorAll('g.poiMarker')].map((g) => {
+          const r = g.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        const onlyMap = (x, y) => {
+          const el = document.elementFromPoint(x, y);
+          if (!el || !wrap.contains(el)) return false;
+          return !el.closest(
+            'button, a, g.poiMarker, .mePulse, .fabs, .mapAttribution, .scaleBar, .selCapsule, .spotCapsule, .navBanner, .glanceRail',
+          );
+        };
+        let best = null;
+        for (let y = Math.max(box.top + 90, 90); y <= sheetTop - 60; y += 10) {
+          for (let x = box.left + 60; x <= box.right - 60; x += 10) {
+            if (!onlyMap(x, y)) continue;
+            let near = Infinity;
+            for (const m of markers) near = Math.min(near, Math.hypot(m.x - x, m.y - y));
+            if (near < gap) continue;
+            if (!best || near > best.near) best = { x, y, near };
+          }
+        }
+        return best;
+      }, clear),
+    { timeout, label: `bare ground at least ${clear}px from any marker` },
+  );
+  await page.mouse.click(hit.x, hit.y);
+  await page.waitForTimeout(400);
+  return hit;
+}
+
 /** Set the roster name through Me, as a visitor would, and come back to Explore. */
 export async function setName(page, name) {
   await closeGate(page);

@@ -168,6 +168,27 @@
       "check": "complete a gap quest draws Overlay on the map"
     },
     {
+      "id": "spot-capsule",
+      "slice": "Adventure",
+      "user_action": "Tap bare ground and see the spot named by the venue's own Zone and nearest Place",
+      "suite": "functional",
+      "check": "tapping bare ground names the spot from the venue data"
+    },
+    {
+      "id": "spot-side-quest",
+      "slice": "Adventure",
+      "user_action": "Carry that spot into Side Quests as the anchor the screen sorts by",
+      "suite": "functional",
+      "check": "Side Quest here carries the spot into Side Quests"
+    },
+    {
+      "id": "spot-mark",
+      "slice": "Adventure",
+      "user_action": "Leave a Mark standing at the tapped spot — an anchor is what unlocks placement",
+      "suite": "functional",
+      "check": "Leave a Mark places a Mark at the tapped spot"
+    },
+    {
       "id": "e5-eligibility",
       "slice": "E5",
       "user_action": "See structured eligibility reason on a ride",

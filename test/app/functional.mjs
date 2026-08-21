@@ -36,12 +36,14 @@ import {
   partyRosterNames,
   searchPlaces,
   until,
+  tapBareGround,
   tapMapPoi,
   waitForHeightsReady,
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
+import { distance, formatDistance } from '../../apps/party-tracker/lib/geo.js';
 import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
 import { PRECISE_MAX_MS } from '../../apps/party-tracker/lib/location.js';
 
@@ -595,6 +597,202 @@ await check('the sheet cycles peek -> half -> full', async () => {
   if (!(peek < half && half < full)) throw new Error(`peek ${peek}, half ${half}, full ${full}`);
   return true;
 });
+
+/* ---- the anchored spot: bare ground -> capsule -> Side Quests / Marks ---- */
+
+/* Its own phone, with a Profile written straight into the session the app
+   reads (`resolveSession`). Not a shortcut around the sign-in: Clerk is off on
+   CI and sandbox boxes, and without a Profile `stateOf` in WorldMarks answers
+   "Sign in" before it ever reaches "Pick a spot" — the anchor gate this
+   section exists to prove would be invisible behind the auth one. The id is
+   minted per run because the Marks it drops land in the venue's world store,
+   which outlives the browser this suite opens. */
+console.log('\n--- phone SP: anchored spots ---');
+const SPOT_FIX = { lat: 39.34395, lng: -84.2673 };
+const spotAuthor = `usr_spot_${Date.now().toString(36)}`;
+const SP = await openPhone(browser, {
+  lat: SPOT_FIX.lat,
+  lng: SPOT_FIX.lng,
+  name: 'Spot',
+  label: 'SP',
+  venue: 'kings-island',
+});
+const sp = SP.page;
+try {
+  await sp.evaluate((userId) => {
+    sessionStorage.setItem(
+      'parkbound.session',
+      JSON.stringify({ userId, email: `${userId}@parkbound.example`, displayName: 'Spot', rank: 'visitor', title: null, xp: 0 }),
+    );
+  }, spotAuthor);
+  await sp.reload({ waitUntil: 'domcontentloaded' });
+  await hydrated(sp);
+  await closeGate(sp);
+
+  /* Every check below reads the capsule for itself and holds the strings it
+     read. The claim being tested is that the screen the capsule opens says the
+     same thing about the same patch of ground, so the two readings have to
+     come from one tap — never from a remembered one. */
+  const readCapsule = async () => {
+    const capsule = sp.locator('.spotCapsule');
+    await capsule.waitFor({ state: 'visible', timeout: 10000 });
+    // name, then "Zone · nearest named thing", then "N min walk · N ft" —
+    // the last two are dropped by SpotCapsule when it has nothing to say.
+    const context = (await capsule.locator('.spotZone').innerText().catch(() => '')).trim();
+    const reach = (await capsule.locator('.spotReach').innerText().catch(() => '')).trim();
+    return {
+      name: (await capsule.locator('.spotName').innerText()).trim(),
+      context,
+      zone: context.split(' · ')[0] || '',
+      near: context.split(' · ')[1] || '',
+      dist: reach.split(' · ')[1] || '',
+      reach,
+    };
+  };
+
+  await check('tapping bare ground names the spot from the venue data', async () => {
+    await ensurePeek(sp);
+    await tapBareGround(sp);
+    const spot = await readCapsule();
+
+    // `spotAt` has two words for a tap and no third: inside SPOT_NEAR_M it is
+    // "By <the Place>", beyond it the ground is open.
+    if (!/^(By .+|Open ground)$/.test(spot.name)) throw new Error(`spot name reads "${spot.name}"`);
+    if (!spot.zone) throw new Error(`no Zone on the capsule: "${spot.context}"`);
+    if (!spot.dist) throw new Error(`no walk on the capsule: "${spot.reach}"`);
+
+    /* The name and the Zone have to be the venue's, not a placeholder that
+       happens to be a string. The nearest named thing is the one record this
+       capsule and the Explore list both read, so ask the list: its row for
+       that Place must stand in the Zone the capsule just claimed. */
+    const neighbour = spot.name.startsWith('By ')
+      ? spot.name.slice(3)
+      : spot.near.replace(/^.*\bfrom\s+/, '');
+    if (!neighbour) throw new Error(`capsule named nothing nearby: "${spot.context}"`);
+    await go(sp, 'Places');
+    await searchPlaces(sp, neighbour);
+    const row = sp.locator('.poiRow', { hasText: neighbour }).first();
+    await row.waitFor({ state: 'visible', timeout: 15000 });
+    const rowText = (await row.innerText()).replace(/\n/g, ' ');
+    if (!rowText.includes(`· ${spot.zone}`)) {
+      throw new Error(`the list puts ${neighbour} somewhere else: "${rowText}" vs capsule "${spot.context}"`);
+    }
+    await clearSearch(sp);
+    await ensurePeek(sp);
+    return true;
+  });
+
+  await check('Side Quest here carries the spot into Side Quests', async () => {
+    // Tabbing away and back leaves the capsule up, so the one the last check
+    // dropped is usually still here; drop another if anything took it away.
+    if (!(await sp.locator('.spotCapsule').count())) {
+      await ensurePeek(sp);
+      await tapBareGround(sp);
+    }
+    const spot = await readCapsule();
+    await sp.locator('.spotCapsule button:has-text("Side Quest here")').click();
+    await until(async () => (await sp.evaluate(() => document.querySelector('.tabItem.on')?.dataset.tab)) === 'quests', {
+      timeout: 10000,
+      label: 'Side Quests to open from the capsule',
+    });
+    const banner = sp.locator('[aria-label="Quest spot"]');
+    await banner.waitFor({ state: 'visible', timeout: 10000 });
+    const line = (await banner.locator('b').innerText()).trim();
+    // SpotBanner says the same spot in one line: name · Zone.
+    if (line !== `${spot.name} · ${spot.zone}`) {
+      throw new Error(`Side Quests is anchored to "${line}", the capsule said "${spot.name} · ${spot.zone}"`);
+    }
+    if (await sp.locator('.spotCapsule').count()) throw new Error('the capsule stayed up behind the screen it opened');
+    return true;
+  });
+
+  await check('Marks stay inert until a spot anchors them', async () => {
+    // Arrived by the tab bar rather than by a tap on the ground: no anchor,
+    // and placement is the one thing this screen must not offer.
+    await go(sp, 'Collection');
+    await sp.locator('.worldCloset .row:has-text("Marks")').click();
+    const rows = sp.locator('.markList.placeable .markRow');
+    await rows.first().waitFor({ state: 'visible', timeout: 10000 });
+    const states = await sp.locator('.markList.placeable .markState').allInnerTexts();
+    if (states.length !== 2 || states.some((s) => s.trim() !== 'Pick a spot')) {
+      throw new Error(`un-anchored rows read ${JSON.stringify(states)}`);
+    }
+    const disabled = await rows.evaluateAll((els) => els.map((e) => e.getAttribute('aria-disabled')));
+    if (disabled.some((d) => d !== 'true')) throw new Error(`rows announce as ${JSON.stringify(disabled)}`);
+    // Forced, because Playwright honours aria-disabled and would never let a
+    // real thumb through either — the point is what happens if one does.
+    await rows.first().click({ force: true });
+    await sp.waitForTimeout(400);
+    if (await sp.locator('.markPhrases').count()) throw new Error('a sign phrase list opened with no spot to stand on');
+    const after = await sp.locator('.markList.placeable .markState').allInnerTexts();
+    if (after.some((s) => /Placed/.test(s))) throw new Error(`an un-anchored row placed a Mark: ${JSON.stringify(after)}`);
+
+    /* The other four Marks are inert by design — a tally of what this Profile
+       earned (`marksByType`), with nothing to tap. Signed in they are numbers;
+       the em dash belongs to a phone with no Profile to count for. */
+    const earned = await sp.locator('.earnedList .markCount').allInnerTexts();
+    if (earned.length !== 4 || earned.some((n) => !/^\d+$/.test(n.trim()))) {
+      throw new Error(`the earned tally reads ${JSON.stringify(earned)}`);
+    }
+    return true;
+  });
+
+  await check('Leave a Mark places a Mark at the tapped spot', async () => {
+    await ensurePeek(sp);
+    await tapBareGround(sp);
+    const spot = await readCapsule();
+    await sp.locator('.spotCapsule button:has-text("Leave a Mark")').click();
+    const marks = sp.locator('.worldMarks');
+    await marks.waitFor({ state: 'visible', timeout: 15000 });
+    const line = (await marks.locator('.spotBanner b').innerText()).trim();
+    if (line !== `${spot.name} · ${spot.zone}`) {
+      throw new Error(`Marks is anchored to "${line}", the capsule said "${spot.name} · ${spot.zone}"`);
+    }
+
+    // The gate the whole feature turns on: the same two rows, now placeable.
+    const states = await sp.locator('.markList.placeable .markState').allInnerTexts();
+    if (states.length !== 2 || states.some((s) => s.trim() !== 'Place')) {
+      throw new Error(`anchored rows read ${JSON.stringify(states)}`);
+    }
+    if (((await sp.locator('.markList.placeable').getAttribute('class')) || '').includes('unanchored')) {
+      throw new Error('the anchored list still draws as unanchored');
+    }
+
+    const beacon = sp.locator('.markList.placeable .markRow', { hasText: 'Beacon' }).first();
+    await beacon.click();
+    await until(async () => /Placed/.test((await beacon.locator('.markState').innerText()) || ''), {
+      timeout: 10000,
+      label: 'the beacon to read Placed',
+    });
+    const foot = (await sp.locator('.markFoot').innerText()).trim();
+    if (!foot.includes('Beacon standing') || !foot.includes(spot.zone)) {
+      throw new Error(`the screen does not say where the Beacon stands: "${foot}"`);
+    }
+
+    /* And it stands where the visitor tapped, not where the phone is. The
+       venue's world store is the far end of the chain that started with a tap
+       on bare ground, so read the Mark back out of it and measure: the same
+       range the capsule printed, from the same fix, to the coordinate the
+       Mark was filed at. */
+    const world = await (await fetch(`${BASE}/api/world/kings-island`)).json();
+    const mine = (world?.world?.marks || []).filter((m) => m.authorId === spotAuthor);
+    if (mine.length !== 1) throw new Error(`world store holds ${mine.length} Marks for this run`);
+    const [mark] = mine;
+    if (mark.type !== 'beacon') throw new Error(`filed a ${mark.type}`);
+    const away = formatDistance(distance(SPOT_FIX.lat, SPOT_FIX.lng, mark.lat, mark.lng));
+    if (away !== spot.dist) {
+      throw new Error(`the Mark is ${away} from the phone, the capsule said the spot was ${spot.dist}`);
+    }
+    // "By …" is spotAt's word for a tap inside SPOT_NEAR_M of a Place, and
+    // only that spot carries a Place id for the Mark to be filed against.
+    if (spot.name.startsWith('By ') && !mark.placeId) {
+      throw new Error(`"${spot.name}" filed with no Place id`);
+    }
+    return true;
+  });
+} finally {
+  await SP.context.close().catch(() => {});
+}
 } // end smoke
 
 if (want('heights')) {

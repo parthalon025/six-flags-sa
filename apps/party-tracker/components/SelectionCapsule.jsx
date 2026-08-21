@@ -3,6 +3,7 @@
 import Icon from '@/components/Icon';
 import { WORDS } from '@/lib/brand';
 import { formatDistance } from '@/lib/geo';
+import { statusPillClasses } from '@/lib/live';
 
 /**
  * The card that answers a tap on a Place.
@@ -35,31 +36,11 @@ export default function SelectionCapsule({
 }) {
   if (!poi) return null;
 
-  /* The same status classes the list row and the Place head build, from the
-     same `liveFor` result — the repo's set is a superset of the twin's three,
-     and a capsule that invented a fourth colour for the same fact would be a
-     third opinion about one ride. */
-  const live = status?.label
-    ? [
-        'liveBadge',
-        'statusPill',
-        status.live === 'goNow' || status.key === 'goNow' ? 'goNow' : '',
-        status.live === 'busy' || status.key === 'busy' ? 'busy' : '',
-        status.live === 'later' || status.key === 'later' || status.key === 'watch' ? 'later' : '',
-        status.live === 'open' || status.key === 'open' ? 'open' : '',
-        status.live === 'paused' ||
-        status.key === 'down' ||
-        status.key === 'hold' ||
-        status.key === 'paused'
-          ? 'paused'
-          : '',
-        status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
-        status.source === 'weather' ? 'guess' : '',
-        status.stale ? 'stale' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
-    : null;
+  /* The same pill the list row draws: one `liveFor` result, turned into
+     classes in the one place that knows how (lib/live.js). A capsule that
+     coloured the ride itself would be a second opinion nobody asked for. No
+     label, no pill — `liveFor` has nothing to say about a bench. */
+  const live = status?.label ? statusPillClasses(status) : null;
 
   return (
     <div className="selCapsule" role="group" aria-label={poi.n}>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '@/components/Icon';
 import { WORDS } from '@/lib/brand';
-import { liveFor, membersAt } from '@/lib/live';
+import { liveFor, membersAt, statusPillClasses } from '@/lib/live';
 import { CATEGORY_LABELS, paletteFor } from '@/lib/theme';
 import {
   categoriesFor,
@@ -240,25 +240,7 @@ export default function PlaceList({
               </span>
             )}
             {showStatus && (
-              <span
-                className={[
-                  'liveBadge',
-                  'statusPill',
-                  st.live === 'goNow' || st.key === 'goNow' ? 'goNow' : '',
-                  st.live === 'busy' || st.key === 'busy' ? 'busy' : '',
-                  st.live === 'later' || st.key === 'later' || st.key === 'watch' ? 'later' : '',
-                  st.live === 'open' || st.key === 'open' ? 'open' : '',
-                  st.live === 'paused' || st.key === 'down' || st.key === 'hold' || st.key === 'paused'
-                    ? 'paused'
-                    : '',
-                  st.live === 'weather' || st.key === 'closed' ? 'weather' : '',
-                  st.source === 'weather' ? 'guess' : '',
-                  st.stale ? 'stale' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                title={st.detail || undefined}
-              >
+              <span className={statusPillClasses(st)} title={st.detail || undefined}>
                 <i aria-hidden="true">{st.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {st.label}
               </span>

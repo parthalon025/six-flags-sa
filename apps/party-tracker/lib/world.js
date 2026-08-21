@@ -732,6 +732,32 @@ export function visibleMarks({ world, viewerPartyId, now = Date.now() }) {
   return out;
 }
 
+/**
+ * One author's Marks of one type — the earned tally the Marks screen prints.
+ *
+ * Sits beside `visibleMarks` rather than in the screen that counts them for
+ * the reason the placeable/earned split does: `world.marks` is one flat list
+ * that the mesh, the venue API and `recordSideQuest` all append to, and every
+ * question asked of it — who left it, what kind it is, is it still visible —
+ * is answered here or nowhere.
+ *
+ * Unfiltered by fade and evidence, unlike `visibleMarks`: those two rules
+ * decide what a stranger is shown on the map, and a tally of what you have
+ * earned must not shrink because nobody has Thanked it yet.
+ *
+ * Returns the Marks, like `visibleMarks` does. The screen that only wants the
+ * number takes its length; a screen that wants to list them does not have to
+ * re-derive the filter to get it.
+ *
+ * @param {object|null} world  merged park + party world
+ * @param {string} type        one of MARK_TYPES
+ * @param {string|null} authorId  the Profile whose Marks to count
+ */
+export function marksByType(world, type, authorId) {
+  if (!type || !authorId) return [];
+  return (world?.marks || []).filter((m) => m.type === type && m.authorId === authorId);
+}
+
 export function kitForViewer({ kit, viewerInParty }) {
   if (!viewerInParty) return null;
   return KITS[kit] ? kit : null;
