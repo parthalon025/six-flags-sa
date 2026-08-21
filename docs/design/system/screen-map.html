@@ -254,25 +254,21 @@
   }
 
 
-  /* The typeface is the one docs/design/parkbound-twin already vendored for
-     its viewer — the same @fontsource latin subset, referenced across rather
-     than copied, so there is one set of woff2 in the repo and not two.
-
-     A page pushed to a Design project travels without that folder, and the
-     fallbacks below are the real --display / --ui stacks out of globals.css,
-     so an unresolved font degrades to the same system faces the app uses on a
-     phone that never loaded a webfont. */
+  /* The typeface ships INSIDE this directory, at vendor/fonts/, and is
+     referenced relatively — so this page renders correctly wherever the
+     directory is pushed, with nothing above it. The fallbacks in --display /
+     --ui below are the app's real stacks out of globals.css. */
   @font-face {
     font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 400; font-display: swap;
-    src: url('../parkbound-twin/vendor/fonts/plus-jakarta-sans-latin-400-normal.woff2') format('woff2');
+    src: url('vendor/fonts/plus-jakarta-sans-latin-400-normal.woff2') format('woff2');
   }
   @font-face {
     font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 600; font-display: swap;
-    src: url('../parkbound-twin/vendor/fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2');
+    src: url('vendor/fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2');
   }
   @font-face {
     font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 800; font-display: swap;
-    src: url('../parkbound-twin/vendor/fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2');
+    src: url('vendor/fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2');
   }
 
   * { box-sizing: border-box; }

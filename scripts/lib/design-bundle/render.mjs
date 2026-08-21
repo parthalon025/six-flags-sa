@@ -59,27 +59,42 @@ function paletteCss(rows) {
   return `  :root, .pal-night {\n${night}\n  }\n\n  .pal-day {\n${day}\n  }`;
 }
 
-const SHELL_CSS = `
-  /* The typeface is the one docs/design/parkbound-twin already vendored for
-     its viewer — the same @fontsource latin subset, referenced across rather
-     than copied, so there is one set of woff2 in the repo and not two.
+/* Where the typeface lives *inside the pushable unit*, and which weights the
+   shell actually asks for.
 
-     A page pushed to a Design project travels without that folder, and the
-     fallbacks below are the real --display / --ui stacks out of globals.css,
-     so an unresolved font degrades to the same system faces the app uses on a
-     phone that never loaded a webfont. */
-  @font-face {
-    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 400; font-display: swap;
-    src: url('../parkbound-twin/vendor/fonts/plus-jakarta-sans-latin-400-normal.woff2') format('woff2');
-  }
-  @font-face {
-    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 600; font-display: swap;
-    src: url('../parkbound-twin/vendor/fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2');
-  }
-  @font-face {
-    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 800; font-display: swap;
-    src: url('../parkbound-twin/vendor/fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2');
-  }
+   DesignSync pushes files to project-relative paths, so a page that reaches
+   sideways with `../` resolves to nothing once it is pushed on its own and the
+   typeface silently falls back. The woff2 therefore ship *inside*
+   docs/design/system/, and every reference below is relative to the page.
+
+   The weight list is the whole contract between the CSS and the bytes: these
+   three faces are what the shell declares, and compose.mjs vendors exactly
+   these three files. @fontsource ships five (400/500/600/700/800) and the twin
+   keeps all five for its viewer; the bundle carries three because those are the
+   only ones ever declared here. 500 and 700 are NOT dropped weights — they were
+   never declared, so 700-weight text already matches to the 800 face by the CSS
+   font-matching algorithm today. Adding them would change how the pages render;
+   omitting them changes nothing and saves ~24 KB per push. */
+export const FONT_FAMILY = 'Plus Jakarta Sans';
+export const FONT_WEIGHTS = [400, 600, 800];
+export const FONT_DIR = 'vendor/fonts';
+/* @fontsource's own filename shape. Derived rather than listed so the vendoring
+   in compose.mjs and the `src` below cannot drift apart. */
+export const fontFile = (weight) => `plus-jakarta-sans-latin-${weight}-normal.woff2`;
+
+const fontFaceCss = FONT_WEIGHTS.map(
+  (w) => `  @font-face {
+    font-family: '${FONT_FAMILY}'; font-style: normal; font-weight: ${w}; font-display: swap;
+    src: url('${FONT_DIR}/${fontFile(w)}') format('woff2');
+  }`,
+).join('\n');
+
+const SHELL_CSS = `
+  /* The typeface ships INSIDE this directory, at ${FONT_DIR}/, and is
+     referenced relatively — so this page renders correctly wherever the
+     directory is pushed, with nothing above it. The fallbacks in --display /
+     --ui below are the app's real stacks out of globals.css. */
+${fontFaceCss}
 
   * { box-sizing: border-box; }
   body {

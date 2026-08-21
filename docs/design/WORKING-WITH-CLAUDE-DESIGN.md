@@ -30,20 +30,80 @@ intent, then look the value up.
 
 ### Connecting a project
 
-1. Point the Design project at `parthalon025/six-flags-sa`, path
-   `apps/party-tracker`, on the default branch.
-2. Give it `docs/design/system/` as the design-system source. It is generated —
-   see below — so it is the one place where a mock and the app cannot disagree
-   about a token.
-3. Keep a sync contract in the project, the way
-   [`parkbound-twin/sync-contract.md`](./parkbound-twin/sync-contract.md) does:
-   a screen map from project screen → repo files, plus the timestamp it was last
-   reconciled at. On a sync, rebuild only the screens whose mapped files moved.
+**The push is yours to make, and it has to be made from your own machine.**
+
+DesignSync cannot authenticate anywhere else. `/design-login` needs an
+interactive terminal, so no remote or background session can sign in, and
+therefore none can push. That is not a limitation being worked around — it is
+the reason the connection step is a wizard rather than a paragraph.
+
+    npm run design:push
+
+That walks five stages, checking state at each one rather than reciting
+instructions:
+
+1. **Are you local?** It looks for `CLAUDE_CODE_REMOTE`,
+   `CLAUDE_CODE_REMOTE_SESSION_ID`, `CODESPACES`, `SSH_CONNECTION` and a real
+   tty, and refuses outright if you are not on your own machine — because
+   finding that out at the push itself leaves you nowhere to go.
+2. **A fresh bundle.** It runs `design:build`, then `design:check`, then
+   `design:plan`, so what you push is generated from the tree you are standing
+   in. It stops if any of the three fails.
+3. **`/design-login`, then the project.** Note that **a project's type is fixed
+   at creation.** A regular Design project can never become a design system;
+   if that is what you have, create a new one. There is no conversion.
+4. **The push.** `list_files` → `finalize_plan` (the writes are the bundle's
+   paths) → `write_files` with a `localPath` and `mimeType` per file. The
+   wizard prints every path and mime type, read out of `design:plan --json`, so
+   nothing has to be derived by hand.
+5. **Verification.** Nine cards in the right groups, and the type actually
+   rendering in Plus Jakarta Sans rather than a fallback.
+
+It is safe to re-run. It rebuilds rather than assumes, remembers the project
+name, and `write_files` overwrites by path.
+
+Then keep a sync contract in the project, the way
+[`parkbound-twin/sync-contract.md`](./parkbound-twin/sync-contract.md) does: a
+screen map from project screen → repo files, plus the timestamp it was last
+reconciled at. On a sync, rebuild only the screens whose mapped files moved.
+
+### What has NOT been proved
+
+**The round trip has never been exercised from this environment, because it
+cannot be.** DesignSync is not reachable from a remote session at all, so no
+agent working on this repo has pushed this bundle, seen the Design System pane,
+or watched a card render. Everything below the push — how the cards group, how
+the pages look once the project renders them — is inference from the format,
+not observation.
+
+What *has* been checked here, locally and mechanically:
+
+- the bundle is self-contained: every reference in every page resolves to a
+  file inside the push root, verified by `design:plan` and by
+  `test/scripts/design-bundle.test.mjs`;
+- the vendored typeface really loads and really paints, measured in headless
+  Chromium against a server rooted at `docs/design/system/` with nothing above
+  it, in both palettes;
+- the bundle satisfies DesignSync's documented per-file, per-call and
+  path-length limits.
+
+So the **first real push is yours**, and stage 5 of the wizard is not a
+formality. Expect to verify it rather than assume it, and if a card is missing
+or the type looks wrong, that is new information nobody has had yet — say so.
+
+One thing is transcribed rather than derived and is the known drift risk:
+`DESIGN_SYNC_LIMITS` in `scripts/lib/design-bundle/compose.mjs` holds
+DesignSync's 256 KiB per-file, 256-file per-call and 256-character path limits,
+copied from the documented contract because the tool's schema cannot be read
+from here. If a push fails on a limit, correct it there — the wizard, the CLI
+gate and the test all read it.
 
 ### The generated bundle
 
 `docs/design/system/` is built by `npm run design:build` and verified by
-`npm run design:check`. Nothing in it is written by hand:
+`npm run design:check`. `npm run design:plan` shows it as DesignSync would push
+it and fails if it is not pushable; `npm run design:push` walks the push itself.
+Nothing in it is written by hand:
 
 | Page | Derived from |
 | --- | --- |
@@ -59,6 +119,33 @@ intent, then look the value up.
 Change a token in `globals.css`, and regenerating changes the bundle. Fail to
 regenerate, and `design:check` fails and names the file. That is the whole
 mechanism: the bundle cannot be right and stale at the same time.
+
+The directory also carries its own typeface, at
+`docs/design/system/vendor/fonts/`. That is not tidiness — it is the difference
+between the bundle being correct on disk and being correct once pushed.
+DesignSync writes to **project-relative** paths, so a page that reaches sideways
+with `../` resolves to nothing in the project. Every page used to carry
+`url('../parkbound-twin/vendor/fonts/…')`, and every page would have fallen back
+to system faces the moment it was pushed — silently, since a webfont that fails
+to load does not announce itself and the fallback stack is close enough to pass
+a glance. **A design system that misrepresents its own typeface is the same
+class of failure as a glyph page that omits a glyph.**
+
+So the push root is self-contained, and that is *checked* rather than intended:
+`design:plan` and the test both require every reference in every page to resolve
+to a file in the push plan. That one rule covers `../`, absolute paths, http(s)
+URLs and dangling links at once, and cannot be satisfied by a shape nobody
+thought to ban.
+
+Three weights travel — 400, 600, 800 — because those are the three
+`@font-face` rules the shell declares, generated from the same `FONT_WEIGHTS`
+list that decides which files get vendored. @fontsource ships five. 500 and 700
+are not *dropped*: they were never declared, so 700-weight text already matches
+to the 800 face and renders today exactly as it will after the push. Adding them
+would change how the pages render; leaving them out changes nothing and saves
+~24 KB on every push. `docs/design/parkbound-twin/` keeps all five for its own
+offline viewer, and remains the upstream copy the bundle vendors from — it is a
+separate thing and is not the push unit.
 
 It also cross-checks a few things the app has no other assertion for, and prints
 what it finds. Those are reported, never thrown — a mirror that refuses to
@@ -277,7 +364,9 @@ at 2.45:1".
    to the thing that owns it. That comment is what stops the next round
    re-proposing the same change.
 6. `npm run design:check`, `npm run lint`, `npm run test:unit`.
-7. Update the sync contract's screen map and its timestamp.
+7. `npm run design:push` if the Design project needs the refreshed bundle —
+   from your own machine, since nothing else can authenticate.
+8. Update the sync contract's screen map and its timestamp.
 
 Step 5 is the one that compounds. Every comment of that kind is a round of
 argument the next import does not have to repeat — and this document is mostly
