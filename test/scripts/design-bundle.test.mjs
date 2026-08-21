@@ -28,6 +28,7 @@ import {
   CONTRAST_PAIRS,
   VOCABULARY_TERMS,
   SCREEN_MAP,
+  PALETTE_LABELS,
 } from '../../scripts/lib/design-bundle/sources.mjs';
 import {
   renderPages,
@@ -153,7 +154,7 @@ assert.match(sun.svg, /stroke-width="2\.1"/, 'the override wins, not the spread'
 assert.ok(!/strokeWidth|<>|\{/.test(sun.svg), 'no JSX left in the emitted markup');
 
 /* ---- skins ------------------------------------------------------------- */
-const skins = await readSkins({ night: 'Park Midnight', day: 'Trail' });
+const skins = await readSkins(PALETTE_LABELS);
 assert.ok(skins.skins.length > 5, 'skins enumerated from SKINS');
 
 const postcard = skins.skins.find((s) => s.id === 'postcard');
@@ -168,7 +169,7 @@ for (const s of [...skins.skins, ...skins.palettes]) {
 }
 assert.deepEqual(
   skins.palettes.map((p) => p.label),
-  ['Park Midnight', 'Trail'],
+  [PALETTE_LABELS.night, PALETTE_LABELS.day],
   'the two always-on palettes are named, not read off the shadowed mapPaint label',
 );
 

@@ -64,6 +64,15 @@ const PALETTE_BLOCKS = [
   { key: 'day', selector: ":root[data-theme='day'] {", label: 'Trail', theme: 'day' },
 ];
 
+/* The palette's own names, keyed the way every other reader keys a palette.
+   These blocks are the only place the pair is written down; a page heading, a
+   toggle button and a test that each retyped "Park Midnight" would be three
+   more chances to disagree with the stylesheet, which is the drift this whole
+   module exists to prevent. */
+export const PALETTE_LABELS = Object.fromEntries(
+  PALETTE_BLOCKS.map((b) => [b.key, b.label]),
+);
+
 /** Pull one brace-balanced block starting at a column-0 selector. */
 function blockAt(css, selector) {
   const at = css.indexOf(`\n${selector}`);

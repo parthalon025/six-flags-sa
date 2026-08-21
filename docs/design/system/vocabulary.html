@@ -173,6 +173,7 @@
     --barred: #FF6B6B;
     --trackLit: var(--aqua);
     --vignette: rgba(8, 18, 32, .36);
+    --onAqua: #0B1829;
   }
 
   .pal-day {
@@ -251,6 +252,7 @@
     --barred: #D64545;
     --trackLit: var(--aqua);
     --vignette: rgba(16, 35, 63, .05);
+    --onAqua: #0B1829;
   }
 
 
@@ -355,7 +357,7 @@
     padding: 7px 14px; border-radius: var(--rCapsule);
     background: var(--fill3); color: var(--label); border: 1px solid var(--sep); cursor: pointer;
   }
-  .toggle button[aria-pressed='true'] { background: var(--aqua); color: #0B1829; border-color: transparent; }
+  .toggle button[aria-pressed='true'] { background: var(--aqua); color: var(--onAqua); border-color: transparent; }
   .toggle .where { margin-right: auto; font-size: 12px; color: var(--label3); font-family: var(--mono); }
 
   nav.bundle { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
@@ -364,7 +366,7 @@
     padding: 6px 12px; border-radius: var(--rCapsule);
     background: var(--fill3); border: 1px solid var(--sep); color: var(--label);
   }
-  nav.bundle a[aria-current] { background: var(--aqua); color: #0B1829; border-color: transparent; }
+  nav.bundle a[aria-current] { background: var(--aqua); color: var(--onAqua); border-color: transparent; }
   footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--sep); font-size: 12px; color: var(--label3); }
 
 </style>

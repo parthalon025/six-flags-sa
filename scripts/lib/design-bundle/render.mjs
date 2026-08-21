@@ -12,6 +12,7 @@
  * Interface:
  *   renderPages(model) → Map<relPath, contents>   (includes _ds_manifest.json)
  */
+import { PALETTE_LABELS } from './sources.mjs';
 
 /* Each preview page opens with this marker — a Claude Design design-system
    project reads the first line of every preview HTML to build its card index,
@@ -56,7 +57,22 @@ function paletteCss(rows) {
   const day = rows
     .filter((t) => t.dayValue !== null)
     .map((t) => `    ${t.name}: ${t.dayValue};`).join('\n');
-  return `  :root, .pal-night {\n${night}\n  }\n\n  .pal-day {\n${day}\n  }`;
+  /* Ink for text sitting on an --aqua fill, in both palettes.
+
+     The shell's toggle and its current nav link are the only chrome painted on
+     --aqua, and white on that measures 2.45:1 — under AA, which is the same
+     failure the app corrected in globals.css. The app's answer is the night
+     background, and it holds either way round because --bg's night value is
+     dark in both palettes' company: ~7:1 on the aqua.
+
+     Read off the token model rather than transcribed, so a repaint of --bg
+     carries here too. globals.css writes it as var(--onAqua, #0B1829) — same
+     relationship, same reason; this is the bundle's copy of that rule and it
+     derives where the app can only fall back. */
+  const onAqua = rows.find((t) => t.name === '--bg')?.value;
+  if (!onAqua) throw new Error('design-bundle: --bg missing from the token model');
+  const ink = `    --onAqua: ${onAqua};`;
+  return `  :root, .pal-night {\n${night}\n${ink}\n  }\n\n  .pal-day {\n${day}\n${ink}\n  }`;
 }
 
 /* Where the typeface lives *inside the pushable unit*, and which weights the
@@ -180,7 +196,7 @@ ${fontFaceCss}
     padding: 7px 14px; border-radius: var(--rCapsule);
     background: var(--fill3); color: var(--label); border: 1px solid var(--sep); cursor: pointer;
   }
-  .toggle button[aria-pressed='true'] { background: var(--aqua); color: #0B1829; border-color: transparent; }
+  .toggle button[aria-pressed='true'] { background: var(--aqua); color: var(--onAqua); border-color: transparent; }
   .toggle .where { margin-right: auto; font-size: 12px; color: var(--label3); font-family: var(--mono); }
 
   nav.bundle { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; }
@@ -189,7 +205,7 @@ ${fontFaceCss}
     padding: 6px 12px; border-radius: var(--rCapsule);
     background: var(--fill3); border: 1px solid var(--sep); color: var(--label);
   }
-  nav.bundle a[aria-current] { background: var(--aqua); color: #0B1829; border-color: transparent; }
+  nav.bundle a[aria-current] { background: var(--aqua); color: var(--onAqua); border-color: transparent; }
   footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--sep); font-size: 12px; color: var(--label3); }
 `;
 
@@ -258,8 +274,8 @@ ${SHELL_CSS}
 <div class="wrap">
   <div class="toggle">
     <span class="where">${esc(file)}</span>
-    <button type="button" data-pal="night" aria-pressed="true">Park Midnight</button>
-    <button type="button" data-pal="day" aria-pressed="false">Trail</button>
+    <button type="button" data-pal="night" aria-pressed="true">${PALETTE_LABELS.night}</button>
+    <button type="button" data-pal="day" aria-pressed="false">${PALETTE_LABELS.day}</button>
   </div>
 
   <header class="top">
@@ -311,7 +327,7 @@ function tokenTable(rows) {
     .join('\n');
   return `<div class="scroll"><table>
     <thead><tr>
-      <th colspan="2">Swatch</th><th>Token</th><th>Park Midnight</th><th>Trail</th><th>Why</th>
+      <th colspan="2">Swatch</th><th>Token</th><th>${PALETTE_LABELS.night}</th><th>${PALETTE_LABELS.day}</th><th>Why</th>
     </tr></thead>
     <tbody>${body}</tbody>
   </table></div>`;

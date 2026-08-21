@@ -38,6 +38,7 @@ import {
   crossCheckIconMaps,
   contrast,
   CONTRAST_PAIRS,
+  PALETTE_LABELS,
 } from './sources.mjs';
 import { renderPages, PAGES, FONT_WEIGHTS, FONT_DIR, fontFile } from './render.mjs';
 
@@ -168,7 +169,7 @@ function spacingModel(tokens, sheet) {
 
 export async function buildModel() {
   const tokens = readTokens();
-  const paletteNames = { night: 'Park Midnight', day: 'Trail' };
+  const paletteNames = PALETTE_LABELS;
   const skins = await readSkins(paletteNames);
   const icons = readIcons();
   const vocabulary = readVocabulary();
