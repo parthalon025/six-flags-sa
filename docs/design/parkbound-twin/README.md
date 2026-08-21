@@ -78,3 +78,10 @@ Its screen map was accurate when written but drifts. At import it already pointe
 `components/WorldPicker.jsx` and `lib/worlds.js`, neither of which existed — that screen was
 split across `GpsGate`'s inner `ParkSection` and `ParkPrompt.jsx`. Verify a path before trusting
 it.
+
+That map has since been corrected and put under a check: it lives in
+`scripts/lib/design-bundle/sources.mjs` as well, where `npm run design:check` re-verifies every
+path against the working tree. For the next round of design work, start from
+[`../WORKING-WITH-CLAUDE-DESIGN.md`](../WORKING-WITH-CLAUDE-DESIGN.md) and the generated system
+bundle in [`../system/`](../system/) — this directory is the snapshot that was reconciled
+against, and the bundle is the thing that stays current.
