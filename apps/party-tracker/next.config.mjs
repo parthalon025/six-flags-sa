@@ -83,7 +83,7 @@ const nextConfig = {
      fine while a local one was not. */
   allowedDevOrigins: [
     '127.0.0.1',
-    '::1',
+    /* Bracketed: the check reads URL.hostname, which keeps them on a v6 literal. */
     '[::1]',
     '10.*.*.*',
     '192.168.*.*',
