@@ -2495,6 +2495,17 @@ html[data-intro="seen"] [data-intro-hold] {
 html:not([data-intro="seen"]) .app > :not(.gate) {
   visibility: hidden;
 }
+/* …except the map, on the intro. The design reads the story over a painted
+   park — the gradient below is translucent precisely so ACTION ZONE, the
+   midways and the coaster tracks show through it, and without them the intro
+   is a flat document rather than a window onto the World the copy is
+   describing. The hold above still covers the sheet, the tab bar and every
+   other control, so nothing interactive is reachable behind the story; only
+   the scenery paints. `.introShown` is set alongside the intro so a returning
+   phone, which never mounts it, keeps the original cover. */
+html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
+  visibility: visible;
+}
 .gateCard {
   width: 100%; background: var(--bg2);
   /* The same corner the sheet wears (--rFloat), for the same reason: this is a
@@ -2594,11 +2605,98 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
 
 /* ---- first run ----
    The intro is the one gate that is a page, not a sheet: it scrolls, and the
-   card's flex-end alignment would pin it to the bottom of the viewport. It
-   stays a .gate because the first-run hold at the top of this section hides the
-   app behind anything that is not one — drop the class and the map leaks
-   through the story. */
-.introGate { align-items: stretch; }
+   card's flex-end alignment would pin it to the bottom of the viewport.
+
+   It is read over the painted map, so it overrides .gate.gateFirstRun's flat
+   --bg with the design's five-stop scrim. The stops are the design's own, and
+   they are not decoration: .86 at the top holds the wordmark, .80 at 24% opens
+   a window on the park at exactly the height the hero clears, then .88/.95/.98
+   close again so the claims below read on near-solid ground. The ink is night
+   ink at every stop because this is a dark hero over a dark scrim in both
+   palettes — the surface underneath is the scrim, never the page.
+
+   This corrects an earlier reading of the note above .gate.gateFirstRun, which
+   argued a translucent first run "ghosts PARKBOUND and reads as a broken
+   load". That is true of a glass CARD floating on nothing; it is not true of a
+   full-bleed scrim at .86–.98 over a painted map, which is what the design
+   actually specifies and what the wordmark is legible against. */
+/* Three classes deep on purpose: .gate.gateFirstRun sets `background: var(--bg)`
+   a hundred lines up, and a single .introGate loses to it on specificity. */
+.gate.gateFirstRun.introGate {
+  align-items: stretch;
+  background: linear-gradient(
+    to bottom,
+    rgba(11, 24, 41, .86) 0,
+    rgba(11, 24, 41, .80) 24%,
+    rgba(11, 24, 41, .88) 48%,
+    rgba(11, 24, 41, .95) 72%,
+    rgba(11, 24, 41, .98) 100%
+  );
+}
+/* The intro is a night surface in BOTH palettes — the design renders it
+   identically on Trail and Park Midnight, because the scrim is the ground here,
+   not the page. Rather than repaint each child, re-declare the palette for the
+   subtree: the footer, its buttons, the progress dashes and the version line all
+   read --bg/--label/--sep and land correctly without knowing they are on a
+   scrim. These are :root's own night values, not new colour.
+
+   --sun is restated for the same reason .spotReach mixes it: the day palette
+   bends --sun toward --label so yellow survives Trail paper, and on this scrim
+   that mix turns the SCROLL nudge muddy. Here the ground is dark, so the
+   unmixed brand yellow is both correct and legible. */
+.gate.gateFirstRun.introGate {
+  --bg: #0B1829;
+  --bg2: #10233F;
+  --bg3: #1A3354;
+  --label: #F7F4EC;
+  --label2: rgba(247, 244, 236, .62);
+  --label3: rgba(247, 244, 236, .34);
+  --sep: rgba(120, 150, 180, .28);
+  --fill: rgba(120, 150, 180, .28);
+  --fill2: rgba(120, 150, 180, .22);
+  --fill3: rgba(120, 150, 180, .16);
+  --sun: #FFC857;
+  /* Re-declaring the tokens only reaches declarations that spell out var(--…).
+     Anything that merely inherits `color` — the footer hint, the version line —
+     would still take the day ink set further up the tree, so the subtree is
+     given its inherited ink here too. */
+  color: var(--label);
+}
+/* Outlined on the scrim, not the filled accent .btn.rect gives it: the design
+   draws Skip as the quiet way out of the story, with Get started as the loud
+   one. A solid orange pill here competes with the primary it sits beside. */
+.gate.gateFirstRun.introGate .introSkip {
+  background: rgba(247, 244, 236, .08);
+  border: 1px solid rgba(247, 244, 236, .28);
+  color: var(--label);
+  font-size: 14.5px; font-weight: 600;
+  padding: 11px 16px;
+}
+.gate.gateFirstRun.introGate .introFootHint { color: var(--label2); }
+/* One gradient across the footer itself, .96 at the controls fading to nothing
+   at its top edge — the design's own treatment, replacing the solid bar plus
+   separate fade this had.
+
+   The rule it replaces argued a gradient "lets a claim heading show through the
+   words on top of it". That is true, and it is deliberate: the design lets the
+   next claim ghost up behind the footer so the story reads as continuous rather
+   than sitting in a tray. The controls stay legible because they ride the .96
+   end; only the empty space above them is see-through. Keeping the fade inside
+   the element also means there is one surface here, not a bar with a gradient
+   stuck above it. */
+.gate.gateFirstRun.introGate .introFoot {
+  padding-bottom: calc(26px + var(--bot));
+  background: linear-gradient(to top, rgba(11, 24, 41, .96), rgba(11, 24, 41, 0));
+}
+.gate.gateFirstRun.introGate .introFoot::before { content: none; }
+/* The park behind is scenery, not content. Under the day map's light ground the
+   Place labels are near-black and punch through the scrim to fight the copy —
+   the design's park is a dim wash you read the story over. Dim and soften it so
+   it stays texture at any palette; the map is never interactive here anyway. */
+html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
+  filter: saturate(.55) contrast(.82);
+  opacity: .62;
+}
 .introScroll {
   flex: 1; min-height: 0; width: 100%;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -2606,8 +2704,13 @@ html:not([data-intro="seen"]) .app > :not(.gate) {
 }
 .introPage {
   flex: 1 0 auto;
-  display: flex; flex-direction: column; gap: 56px;
-  padding: calc(48px + var(--top)) 24px 24px;
+  /* The design's own rhythm: 78/24/130 with 64 between blocks. The bottom 130
+     is the load-bearing number — it is what keeps the last claim clear of the
+     sticky footer, so the footer fades over empty scrim rather than over 30px
+     type. Shrink it and the fade has to become a solid tray to stay legible,
+     which is a different design. --top/--bot carry the device insets on top. */
+  display: flex; flex-direction: column; gap: 64px;
+  padding: calc(78px + var(--top)) 24px calc(130px + var(--bot));
 }
 .introHero { display: flex; flex-direction: column; gap: 14px; }
 .introMark { display: block; line-height: 0; }

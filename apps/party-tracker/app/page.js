@@ -2840,6 +2840,10 @@ function ParkApp({ isSignedIn }) {
       data-spot={spotShown ? '1' : undefined}
       /* And the same for the selection's pill, which rides the same edge. */
       data-sel={selShown ? '1' : undefined}
+      /* The intro is read over the painted park — see the first-run hold in
+         globals.css. Only the intro lifts the hold off the map, and only for
+         the map: a returning phone never mounts it, so the cover stays whole. */
+      data-intro-map={showIntroSplash ? '1' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       {introOverlay === 'hold' && (
