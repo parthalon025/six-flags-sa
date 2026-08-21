@@ -176,10 +176,31 @@ export function applyOverlayToPlaces(pois = [], overlay = emptyOverlay()) {
     if (!fact || !FIELD.has(fact.type)) continue;
     const target = fact.placeId;
     if (fact.type === 'height' && target && byId.has(target)) {
-      const inches = fact.payload?.heightIn;
+      const answer = fact.payload?.heightIn;
+      const inches = answer == null || answer === '' ? Number.NaN : Number(answer);
       const p = byId.get(target);
-      p.h = inches === 0 ? { min: 'none' } : { min: inches };
-      p.overlay = true;
+      // A height Contribution answers one question — the posted minimum. The
+      // Side Quest sends only `heightIn`, so the fact cannot speak to `alone`
+      // (the ride-alone line), `max` or `advisory`. Merge over the shipped
+      // rule; replacing it erased `alone`, and Eligibility — computed, never
+      // stored — then faithfully recomputed a plain eligible where the rider
+      // was Companion. The app stopped telling a family the child needs an
+      // adult riding along, and nothing later healed it.
+      //
+      // `heightIn === 0` is "no minimum posted", a fact about the minimum
+      // only — not a claim that this Attraction has no height rule at all. It
+      // clears `min` to 'none' and leaves the rest of the rule standing:
+      // keeping an `alone` line the Contribution did not contradict can only
+      // over-ask for an adult, while dropping a real one under-warns.
+      //
+      // A payload with no usable inches speaks to nothing, so it paints
+      // nothing and leaves `p.overlay` off. An absent answer is spelt out
+      // rather than coerced: `Number(null)` and `Number('')` are both 0, and
+      // 0 here would read as "no minimum posted" and clear a real one.
+      if (Number.isFinite(inches)) {
+        p.h = { ...(p.h || {}), min: inches === 0 ? 'none' : inches };
+        p.overlay = true;
+      }
     } else if (fact.type === 'queue' && Number.isFinite(fact.lat) && Number.isFinite(fact.lng)) {
       if (target && byId.has(target)) {
         const p = byId.get(target);

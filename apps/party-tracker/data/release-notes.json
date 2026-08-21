@@ -456,5 +456,11 @@
     "items": [
       "Design audit: reconcile every screen against the rendered canvas (#586)"
     ]
+  },
+  "1.26.7": {
+    "title": "What's new",
+    "items": [
+      "Keep the ride-alone line when a height Contribution lands (#588)"
+    ]
   }
 }
