@@ -19,6 +19,13 @@
  * Everything here is deterministic: no sampling, no RNG, no wall clock.
  *
  * Known limitations, stated rather than discovered later:
+ *   - Five of the seventeen axes the document defines are not modelled here at
+ *     all: A6, A7, B6, C3 and C4, each with its reason in UNMAPPED_AXES.
+ *     They are absent from `spec`, so they never enter lowerBound, upperBound
+ *     or heavyPossible — a real difference on one of them cannot move the
+ *     verdict in either direction. This is a narrower claim than C1's empty
+ *     knob list, which asserts the kit schema has no field and earns
+ *     NO-KIT-KNOB; UNMAPPED_AXES only says this tool makes no claim.
  *   - Only A1-A4 are measured in pixels. B1-B5, C1 and C2 need per-class
  *     segmentation against the venue truth and are spec-side only, so they can
  *     never be *earned*. B4 and C1 are heavy axes, which means the gate is
@@ -52,6 +59,11 @@ export const AXIS_KNOBS = {
   A2: ['terrain.*.base', 'sprites.building.wall', 'sprites.building.drop'],
   A3: ['!wash', 'strokes.displacement.amplitude', 'strokes.displacement.wavelength', 'sprites.building.edge', 'terrain.road.style', 'terrain.service.style'],
   A4: ['!wash', 'terrain.*.texture.kind', 'terrain.*.texture.density', 'terrain.*.tiles.asset', 'terrain.*.material.id', 'terrain.*.material.mix', 'sprites.building.material.id'],
+  // Only the relief-variant half of A5 is kit-expressible. The light direction
+  // is DEFAULT_LIGHT in terrain/hillshade.mjs and the hillshade itself is
+  // recorded per skin in <skin>.visual.json — neither is a kit field. What a kit
+  // can say is how a steep surface reads, which is A5's "how height reads".
+  A5: ['terrain.*.steep.base'],
   B1: ['terrain.*.base', 'terrain.*.tiles.asset', 'terrain.*.material.id'],
   B2: ['terrain.water.base', 'terrain.water.texture.kind', 'terrain.water.texture.color'],
   B3: ['sprites.tree.style', 'sprites.tree.sprite.asset', 'sprites.tree.canopy', 'sprites.tree.scale'],
@@ -67,16 +79,57 @@ export const AXIS_KNOBS = {
   C2: ['sprites.badge.icons.*.asset', 'sprites.badge.*'],
 };
 
-/** Paths the builder genuinely reads that no shipped kit populates yet — real
- *  slots awaiting art (#578), not invented vocabulary. `kitAssetIds()` in
- *  display-bake.mjs is the proof for all three. Anything mapped in AXIS_KNOBS
- *  that neither resolves on a kit nor appears here is invented, and the suite
- *  fails on it. */
+/** Paths the builder genuinely reads that no shipped kit sets — real vocabulary
+ *  the painter consults, not invented paths. Anything mapped in AXIS_KNOBS that
+ *  neither resolves on a kit nor appears here is invented, and the suite fails
+ *  on it. The suite also fails an entry here that DOES resolve on a kit: this
+ *  list exempts paths no kit sets, and a stale entry silences the invented-knob
+ *  check for one that no longer needs exempting.
+ *
+ *  `terrain.*.tiles.asset` used to sit here and was wrong — island-brochure and
+ *  rpg-overworld both bind ground/grass/wood/water to kenney-roguelike-sheet.
+ *  It resolves live and needs no exemption.
+ *
+ *  The three below are unset for two different reasons, and the distinction
+ *  matters to anyone deciding what to build next:
+ *    - `sprites.tree.sprite.asset` is an empty slot awaiting art (#578).
+ *    - `sprites.badge.icons.*.asset` is NOT empty — display-bake.mjs binds all
+ *      six badge kinds to parkbound-badge-* by default and the painter draws
+ *      them. What no kit does is override that default.
+ *    - `terrain.*.steep.base` likewise ships defaults for the natural surfaces;
+ *      no kit overrides them, so A5 reads SAME rather than differing.
+ *  None of that makes their axes dead: B3 and C2 differ on all 15 pairs of the
+ *  six shipped kits through their other knobs, and the suite pins that. */
 export const SCHEMA_ONLY_KNOBS = [
-  'terrain.*.tiles.asset',
   'sprites.tree.sprite.asset',
   'sprites.badge.icons.*.asset',
+  'terrain.*.steep.base',
 ];
+
+/** Axes `docs/goals/design-language-axes.md` defines that this instrument does
+ *  not model at all — distinct from an axis mapped to `[]` (C1), which asserts
+ *  the kit schema has no field for it and earns the NO-KIT-KNOB verdict state.
+ *  These are weaker: the tool makes no claim either way, so it must not let
+ *  them pass unmentioned. `display-distinct` prints this on every run, and the
+ *  suite asserts these keys plus AXIS_KNOBS' cover the document exactly, so the
+ *  two can never drift apart in silence again.
+ *
+ *  Wiring any of them is a decision about what a kit should be able to say, not
+ *  a mechanical mapping — inventing knob paths to fill the table is the exact
+ *  defect #578 corrected. A6 is the one the document itself calls
+ *  machine-checkable, so it is the first worth having. */
+export const UNMAPPED_AXES = {
+  A6: 'projection and camera — no kit field; projection is recorded per baked world '
+    + '(*.world.json) and the pitch/zoom preset lives in mapCamera, not the kit. '
+    + 'Named machine-checkable by the document',
+  A7: 'framing and edge-of-world — no kit field of any kind',
+  B6: 'props and ornament density — kits express density only for terrain texture '
+    + '(already A4); there is no prop class to budget',
+  C3: 'typography and labeling — no kit field; a kit\'s `label` is its own display '
+    + 'name, and the app draws labels from venue truth, not from the kit',
+  C4: 'mood signature and pillar fidelity — the document defines this as the axis '
+    + 'the other sixteen must add up to, so it is an eye-pass by construction',
+};
 
 /** What an identical world scores against a lossy re-encode of itself —
  *  encoding noise and nothing else. Measured on kings-island/watercolor-quest

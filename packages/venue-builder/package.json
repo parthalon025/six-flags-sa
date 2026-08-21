@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@party-tracker/shared": "1.26.4"
+    "@party-tracker/shared": "1.26.4",
+    "sharp": "^0.35.3"
   },
   "exports": {
     "./bake-drift.js": "./src/bake-drift.mjs",
