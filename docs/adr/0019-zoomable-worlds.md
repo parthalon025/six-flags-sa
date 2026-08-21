@@ -1,6 +1,7 @@
 # ADR-0019 — Zoomable worlds: banded LOD, one GL renderer, streamed pyramids
 
-**Status:** Accepted (owner-confirmed through a structured design review, 2026-08-20)
+**Status:** Accepted (owner-confirmed through a structured design review, 2026-08-20) ·
+Amended by [ADR-0021](./0021-zoomable-worlds-revised.md) (clauses 1, 2, 5, 10)
 **Amends:** [ADR-0016](./0016-custom-map-worlds.md) (delivery slice 6.1, projection clause 5) ·
 [ADR-0017](./0017-visual-factory-request-contract.md) (distribution clause 4) ·
 [ADR-0018](./0018-factory-interaction-and-delivery.md) (delivery clauses 4–5)
@@ -27,9 +28,16 @@ viewport, cached aggressively.
    (12 px/cell — today's bake, unchanged), **close** (48 px/cell ≈ 15 cm/px — path textures,
    props, signage). Content changes per band (cartographic generalization), not just sharpness.
    Schema v2's G-5 zoom-robustness gate certifies each band; per-band style-contract rows apply.
+   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md):* bands are specified in
+   ground sample distance on power-of-two steps — overview 2.4 m/px · mid 0.6 m/px · close
+   0.15 m/px — and "signage" means sign *objects*, never legible words. No band bakes text;
+   every string on the map comes from `pois.json`.
 2. **Camera: pitch eases with zoom.** Flat top-down when zoomed out, easing toward ~30–45° tilt
    as the guest zooms in; bands cross-fade, pan has inertia. Camera feel (bearing/pitch presets)
    is a per-Skin declared trait of the design request.
+   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md):* the pitch ease occupies a
+   zoom range that does not overlap a band boundary, and content a closer band adds ramps in
+   across the crossfade rather than at its edge — tilt and restyle never land in one instant.
 3. **Renderer: MapLibre GL, converged.** The engine already shipping in the pack contract becomes
    *the* map view: vector tier, banded raster worlds (as raster tile sources), and camera all in
    one renderer. The SVG world viewer retires.
@@ -44,6 +52,8 @@ viewport, cached aggressively.
    triggers the download manager's background bundle sync (Train F, hash-verified) so the full
    pyramid lands for offline. Parent-band upscale is the placeholder while sharper tiles arrive —
    blank tiles never show.
+   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md) (clause 5):* on-wear sync is
+   withdrawn — bands stream by viewport and cache; offline coverage is a guest-chosen download.
 6. **Iso retires from the map path.** pixel-tycoon converts to top-down banded art with the iso
    flavor painted into the sprites (the G5 pixel-overworld reference's own convention) plus a
    camera preset; the live iso painter and per-rotation sweeps leave the map path. ADR-0016's
@@ -72,6 +82,9 @@ viewport, cached aggressively.
     one venue proves every layer end to end *and* makes the beyond-palette distinctness gate
     visible: each Skin unmistakably its own world at every zoom. Fan-out to other venues follows
     as mechanical repeats.
+    *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md):* the first ship is
+    kings-island × **three contrasting Skins**, pixel-tycoon first; the full catalogue is the
+    second milestone. "Mechanical repeats" is load-bearing — no per-venue close-band art.
 
 ## Rejected
 

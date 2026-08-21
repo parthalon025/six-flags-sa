@@ -1,6 +1,6 @@
 # Display pipeline — builder-owned map beauty, phone-owned overlay
 
-**Status:** Accepted — amended 2026-08-19 (item 4, real-time PBR tier)  
+**Status:** Accepted — amended 2026-08-19 (item 4, real-time PBR tier) · Amended by [ADR-0021](./0021-zoomable-worlds-revised.md) (visual-spec step 3)  
 **Date:** 2026-08-17  
 **Depends on:** [ADR-0002 dual-layer park truth](./0002-dual-layer-park-truth.md), [ADR-0005 store Capacitor shell](./0005-store-capacitor-shell.md)  
 **Extended by:** [ADR-0015 terrain in display](./0015-terrain-in-display.md)  
@@ -37,6 +37,8 @@ Extend `runVenuePipeline` after `certify`:
 1. **tiles-export** — GeoJSON layers (`packages/venue-builder/lib/tiles-export.mjs`, existing)
 2. **tiles-build** — Tippecanoe → `display/base.pmtiles`
 3. **visual-spec** — merge `visual.json` (land tones, labels, landmark refs, quest-linked skin overrides)
+   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md) (clause 1):* `visual.json`
+   carries label *styling* only. Label strings come from `pois.json`.
 4. **skin-bake** — optional per-(Venue × **Skin**) raster or vector variants when parametric templates are insufficient
 5. **display-certify** — automated visual matrix (fixed camera points); fail build on drift
 6. **manifest** — hashes, sizes, versions for phone download manager

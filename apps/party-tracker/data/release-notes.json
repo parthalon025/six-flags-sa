@@ -420,5 +420,11 @@
     "items": [
       "feat(app): Credits settings tab, generated attribution NOTICE, on-map ODbL notice (#566)"
     ]
+  },
+  "1.26.1": {
+    "title": "What's new",
+    "items": [
+      "Train H: ADR-0021 design review, seam design pass, and the zoom band table"
+    ]
   }
 }

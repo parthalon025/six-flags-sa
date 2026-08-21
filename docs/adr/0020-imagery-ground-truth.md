@@ -1,6 +1,7 @@
 # ADR-0020 — Open imagery: ground truth evidence and visual grounding
 
-**Status:** Accepted (owner-confirmed through a structured design review, 2026-08-20)
+**Status:** Accepted (owner-confirmed through a structured design review, 2026-08-20) ·
+Amended by [ADR-0021](./0021-zoomable-worlds-revised.md) (clauses 2, 6)
 **Depends on:** [ADR-0014](./0014-display-reference-contract.md) ·
 [ADR-0017](./0017-visual-factory-request-contract.md) ·
 [ADR-0019](./0019-zoomable-worlds.md) · evidence graph (#274) · vision-agent seam (#421)
@@ -27,6 +28,10 @@ never repositions.
    catalog), USGS 3DEP (already in), Sentinel-2 (classes at 10 m), and Mapillary/KartaView
    street-level (derivation-licensed). Google, Bing, and Esri basemaps are **rejected for
    derivation** — viewable is not derivable. Every ingested tile is ledger-pinned.
+   *Corrected 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md):* NAIP is fetched from
+   Microsoft Planetary Computer (STAC, anonymous short-lived SAS). The AWS Open Data NAIP
+   buckets are Requester-Pays with no anonymous path — this clause previously implied they
+   were freely reachable.
 3. **Extraction runs in three lanes by certainty** (tooling detail in the
    [imagery CV research note](../research/2026-08-20-imagery-cv-research.md)):
    - **Deterministic CV** — seeded, replayable passes (indices, contours, texture descriptors);
@@ -51,6 +56,10 @@ never repositions.
 6. **Sequencing: the grounding harvest rides Train H** (kings-island's banded worlds ship already
    grounded in that park's real relationships); the **evidence lane is Train I** after H —
    extraction passes, evidence-graph wiring, the steward gate, and the OSM feedback loop.
+   *Amended 2026-08-20 by [ADR-0021](./0021-zoomable-worlds-revised.md):* the harvest grounds the
+   overview and mid bands only — NAIP's ~1 m GSD is ample for the relationships that make a
+   park recognizable and roughly 7× too coarse to texture a 0.15 m/px band. Close-band
+   specificity comes from kit vocabulary positioned by Places truth.
 7. **Google Maps API: back-office corroboration only** (owner holds a key). Geocoding/Places
    cross-checks inside the Map factory's build pipeline as a second opinion against
    Nominatim/OSM — an evidence-graph corroboration source, ToS-bounded: place IDs may be stored,

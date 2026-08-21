@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "8b90705abd57ec1476c2c532f8e6ccbc0d3d5756dc57c5f936e7c7bc3e4567f5"
+    "sha256": "402dc0dc0dc2b76767fee55ba0b97ce7a5c815b2e5bb49236eb5564ceb03bae2"
   },
   "paths": [
     {
@@ -280,5 +280,20 @@
       "check": "wearing Watercolor quest draws the baked world image under the overlay"
     }
   ],
-  "upcoming": []
+  "upcoming": [
+    {
+      "id": "train-h-zoom-bands",
+      "slice": "Navigate",
+      "user_action": "Pinch from park overview in to one ride and see detail emerge, never a hard band cut or a tilt and restyle in the same instant",
+      "suite": "functional",
+      "check": "TODO (Train H, ADR-0021 clauses 2/4): crossing each band boundary keeps a parent placeholder drawn, ramps added content across the crossfade, and holds the pitch ease off the boundary"
+    },
+    {
+      "id": "train-h-offline-download",
+      "slice": "Navigate",
+      "user_action": "Choose 'make this park available offline' and see the download size stated before it runs",
+      "suite": "functional",
+      "check": "TODO (Train H, ADR-0021 clause 5): the offline action states its size, runs only on the guest's choice, and no pyramid downloads on Skin wear"
+    }
+  ]
 }
