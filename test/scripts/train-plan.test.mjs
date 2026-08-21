@@ -36,8 +36,11 @@ import {
   REPO,
   SLICES,
   blocked,
+  decisionGated,
+  gatedBy,
   next,
   progress,
+  reachable,
   status,
   treeAt,
   waiting,
@@ -293,7 +296,7 @@ const rows = status(empty);
 assert.equal(rows.length, SLICES.length);
 assert.ok(rows.every((r) => r.done === false), 'nothing is built in an empty tree');
 
-const bucketed = [...next(rows), ...waiting(rows), ...blocked(rows)].map((r) => r.id);
+const bucketed = [...next(rows), ...waiting(rows), ...decisionGated(rows)].map((r) => r.id);
 const notDone = rows.filter((r) => !r.done).map((r) => r.id);
 assert.equal(
   new Set(bucketed).size,
@@ -328,7 +331,7 @@ assert.deepEqual(
 assert.deepEqual(blocked(synthetic).map((r) => r.id), ['sb']);
 assert.deepEqual(waiting(synthetic).map((r) => r.id), ['sc']);
 
-const synthBuckets = [...next(synthetic), ...waiting(synthetic), ...blocked(synthetic)].map((r) => r.id);
+const synthBuckets = [...next(synthetic), ...waiting(synthetic), ...decisionGated(synthetic)].map((r) => r.id);
 assert.equal(
   new Set(synthBuckets).size,
   synthBuckets.length,
@@ -349,6 +352,64 @@ const rowsWithBomb = withBomb.map((s) => {
 assert.equal(rowsWithBomb.at(-1).done, false);
 assert.equal(rowsWithBomb.at(-1).probeError, 'boom', 'a throwing probe records why, rather than reading as merely unbuilt');
 
+// ------------------------------------------- how far a chain of sessions gets
+
+// The case that makes this worth computing: `sg` is not blocked itself and its
+// dependency is not blocked either, but the dependency's dependency is. A
+// count of directly-blocked slices calls sg reachable, a chain of sessions is
+// then planned as if it can finish, and it stalls one slice short with no
+// explanation. Depth two, because depth one is the case a wrong implementation
+// still gets right.
+const chain = [
+  { id: 'sroot', train: 'H', size: 'S', title: 'blocked at the root', needs: [], blocked: 'crop', done: false, probeError: null },
+  { id: 'smid', train: 'H', size: 'S', title: 'needs the blocked root', needs: ['sroot'], blocked: null, done: false, probeError: null },
+  { id: 'sg', train: 'H', size: 'S', title: 'two hops from a decision', needs: ['smid'], blocked: null, done: false, probeError: null },
+  { id: 'sfree', train: 'I', size: 'S', title: 'nothing in its past is blocked', needs: [], blocked: null, done: false, probeError: null },
+  { id: 'sdonedep', train: 'I', size: 'S', title: 'needs something already built', needs: ['sbuilt'], blocked: null, done: false, probeError: null },
+  { id: 'sbuilt', train: 'I', size: 'S', title: 'built, and was once blocked', needs: [], blocked: 'a', done: true, probeError: null },
+];
+
+assert.equal(gatedBy('sg', chain), 'crop',
+  'a slice two hops from a blocked one must report the decision that gates it — '
+  + 'reporting null makes it look startable and a session will pick it up, get '
+  + 'stuck, and have nothing to say about why');
+assert.equal(gatedBy('smid', chain), 'crop');
+assert.equal(gatedBy('sroot', chain), 'crop');
+assert.equal(gatedBy('sfree', chain), null);
+assert.equal(gatedBy('sbuilt', chain), null, 'a built slice is not gated, whatever it was blocked on while it was being built');
+assert.equal(gatedBy('sdonedep', chain), null,
+  'a dependency that is already BUILT cannot gate anything, even if it carries a '
+  + 'blocked marker — otherwise every decision poisons its slice forever and the '
+  + 'ceiling only ever falls');
+
+assert.deepEqual(reachable(chain).map((r) => r.id).sort(), ['sdonedep', 'sfree']);
+assert.deepEqual(decisionGated(chain).map((r) => r.id).sort(), ['sg', 'smid', 'sroot']);
+
+const chainBuckets = [...next(chain), ...waiting(chain), ...decisionGated(chain)].map((r) => r.id);
+assert.equal(
+  new Set(chainBuckets).size,
+  chainBuckets.length,
+  `a transitively gated slice landed in two buckets: ${chainBuckets.join(', ')}. It `
+    + 'reads as merely waiting AND as gated, so every report lists it twice and every '
+    + 'sum counts it twice',
+);
+assert.deepEqual(
+  [...chainBuckets].sort(),
+  ['sdonedep', 'sfree', 'sg', 'smid', 'sroot'],
+  'every unbuilt slice must land in exactly one of ready/waiting/gated',
+);
+
+const chainProgress = progress(chain);
+assert.equal(chainProgress.done, 1);
+assert.equal(chainProgress.ceiling, 3, 'ceiling is what unattended work can reach: built plus reachable');
+assert.equal(chainProgress.gated, 3);
+assert.equal(
+  chainProgress.ceiling + chainProgress.gated,
+  chainProgress.total,
+  'every slice is either built, reachable, or gated — if these do not sum, some '
+  + 'slice is uncounted and the ceiling is a guess',
+);
+
 // --------------------------------------------------------- progress adds up
 
 const p = progress(rows);
@@ -362,6 +423,16 @@ assert.equal(
 // ------------------------------------------------- the real checkout is sane
 
 const live = status();
+// The real board: the same sum has to hold, or the number reported to the owner
+// as "what a chain of sessions can finish" is wrong.
+const liveProgress = progress(live);
+assert.equal(
+  liveProgress.ceiling + liveProgress.gated,
+  liveProgress.total,
+  'the live board does not partition into built/reachable/gated',
+);
+assert.ok(liveProgress.ceiling >= liveProgress.done);
+
 assert.ok(
   live.every((r) => r.probeError === null),
   `probe error in the real checkout: ${live.filter((r) => r.probeError).map((r) => `${r.id}: ${r.probeError}`).join('; ')}`,
@@ -374,6 +445,18 @@ for (const cmd of ['status', 'next', 'blocked', 'session']) {
   const out = execFileSync('node', [path.join(REPO, 'scripts/train-plan.mjs'), cmd], { encoding: 'utf8' });
   assert.ok(out.trim().length > 0, `train-plan.mjs ${cmd} printed nothing`);
 }
+// The buckets partition, but the report is what a session reads. Assert on the
+// rendered text too: this exact defect was introduced in the CLI while the
+// function-level partition above stayed green.
+const board = execFileSync('node', [path.join(REPO, 'scripts/train-plan.mjs'), 'status'], { encoding: 'utf8' });
+const listed = [...board.matchAll(/^ {2}([hi]\d+) /gm)].map((m) => m[1]);
+assert.equal(
+  new Set(listed).size,
+  listed.length,
+  `the status board lists a slice under two headings: ${listed.filter((x, i) => listed.indexOf(x) !== i).join(', ')}`,
+);
+assert.equal(listed.length, SLICES.length, 'the status board must account for every slice exactly once');
+
 const asJson = JSON.parse(
   execFileSync('node', [path.join(REPO, 'scripts/train-plan.mjs'), 'status', '--json'], { encoding: 'utf8' }),
 );

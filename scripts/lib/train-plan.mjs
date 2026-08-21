@@ -312,21 +312,71 @@ export function blocked(rows = status()) {
   return rows.filter((r) => !r.done && r.blocked);
 }
 
-/** Slices waiting on other slices rather than on a decision. */
+/** Slices waiting on other slices rather than on a decision.
+ *
+ *  "Rather than" is transitive, and it has to be: h9 is not itself blocked and
+ *  its unmet dependency is h4, which is. Excluding only directly-blocked slices
+ *  lists h9 as merely waiting AND as gated, so it appears twice in the same
+ *  report and is counted twice by anything summing the buckets. */
 export function waiting(rows = status()) {
   const doneIds = new Set(rows.filter((r) => r.done).map((r) => r.id));
-  return rows.filter((r) => !r.done && !r.blocked && !r.needs.every((n) => doneIds.has(n)));
+  return rows.filter(
+    (r) => !r.done && !gatedBy(r.id, rows) && !r.needs.every((n) => doneIds.has(n)),
+  );
 }
 
-/** How far the two trains are, as counts a session can print in one line. */
+/** Which decision, if any, stands between a slice and being buildable — its
+ *  own, or one gating anything in its dependency closure.
+ *
+ *  This is the number that actually matters for planning. A slice can be
+ *  unblocked itself and still be unreachable because something it needs is
+ *  waiting on a person: h9 is not blocked, but it needs h4, and h4 waits on
+ *  `crop`. Counting only the directly-blocked slices flatters the plan and
+ *  makes a chain of sessions look like it can finish when it cannot. */
+export function gatedBy(id, rows = status()) {
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const walk = (at, seen) => {
+    const r = byId.get(at);
+    if (!r || r.done || seen.has(at)) return null;
+    if (r.blocked) return r.blocked;
+    seen.add(at);
+    for (const need of r.needs) {
+      const found = walk(need, seen);
+      if (found) return found;
+    }
+    return null;
+  };
+  return walk(id, new Set());
+}
+
+/** Unbuilt slices that no amount of session time can reach. */
+export function decisionGated(rows = status()) {
+  return rows
+    .filter((r) => !r.done)
+    .map((r) => ({ ...r, gatedBy: gatedBy(r.id, rows) }))
+    .filter((r) => r.gatedBy);
+}
+
+/** Unbuilt slices a chain of sessions can reach on its own, in some order. */
+export function reachable(rows = status()) {
+  return rows.filter((r) => !r.done && !gatedBy(r.id, rows));
+}
+
+/** How far the two trains are, as counts a session can print in one line.
+ *
+ *  `ceiling` is what the work can reach unattended - built plus reachable. The
+ *  gap between it and `total` is the owner's to close, not a session's. */
 export function progress(rows = status()) {
   const per = (train) => {
     const of = rows.filter((r) => r.train === train);
     return { train, done: of.filter((r) => r.done).length, total: of.length };
   };
+  const done = rows.filter((r) => r.done).length;
   return {
     total: rows.length,
-    done: rows.filter((r) => r.done).length,
+    done,
+    ceiling: done + reachable(rows).length,
+    gated: decisionGated(rows).length,
     trains: [per('H'), per('I')],
   };
 }

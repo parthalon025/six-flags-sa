@@ -23,6 +23,7 @@ import {
   DECISIONS,
   REPO,
   blocked,
+  decisionGated,
   next,
   progress,
   status,
@@ -54,7 +55,11 @@ const label = (r) => `${r.id.padEnd(4)} ${r.train}  ${r.size.padEnd(1)}  ${r.tit
 function printStatus(rows) {
   const p = progress(rows);
   const trains = p.trains.map((t) => `${t.train} ${t.done}/${t.total}`).join('   ');
-  console.log(`Trains H+I — ${p.done}/${p.total} built    (${trains})\n`);
+  console.log(`Trains H+I — ${p.done}/${p.total} built    (${trains})`);
+  console.log(
+    `Unattended ceiling: ${p.ceiling}/${p.total}. ${p.gated} slice(s) cannot be reached `
+      + 'without an owner decision, however many sessions run.\n',
+  );
 
   const section = (heading, list, note) => {
     if (list.length === 0) return;
@@ -72,7 +77,9 @@ function printStatus(rows) {
     const doneIds = new Set(rows.filter((x) => x.done).map((x) => x.id));
     return `  <- needs ${r.needs.filter((n) => !doneIds.has(n)).join(', ')}`;
   });
-  section('BLOCKED ON AN OWNER DECISION', blocked(rows), (r) => `  <- decision ${r.blocked}`);
+  const gated = decisionGated(rows);
+  section('BLOCKED ON AN OWNER DECISION', gated, (r) =>
+    r.blocked ? `  <- decision ${r.blocked}` : `  <- decision ${r.gatedBy}, via ${r.needs.join(', ')}`);
 }
 
 function printBlocked(rows) {
@@ -107,13 +114,22 @@ function printSession(rows) {
 Checkout: ${REPO}
 Branch:   ${branch} @ ${head}
 Progress: ${p.done}/${p.total} slices built${p.trains.map((t) => `, ${t.train} ${t.done}/${t.total}`).join('')}
+Ceiling:  ${p.ceiling}/${p.total} without an owner decision — ${p.gated} slice(s) are gated
 `);
 
   if (ready.length === 0) {
-    console.log(`No slice is startable. Either both trains are built, or everything
-left is waiting on another slice or on an owner decision — run
-\`node scripts/train-plan.mjs status\` and \`... blocked\` to see which, then stop.
-Do not decide a blocked question on the owner's behalf.`);
+    const gated = decisionGated(rows);
+    console.log(`No slice is startable.
+
+${gated.length === 0
+    ? 'Both trains are built.'
+    : `${gated.length} slice(s) are waiting on an owner decision and cannot be reached
+without one: ${gated.map((r) => `${r.id} (${r.gatedBy})`).join(', ')}.
+Run \`node scripts/train-plan.mjs blocked\` for the questions themselves.`}
+
+Do not decide a blocked question on the owner's behalf, and do not start a slice
+by assuming an answer. Report the state and stop — that is the correct outcome
+for this session, not a failure.`);
     return;
   }
 
