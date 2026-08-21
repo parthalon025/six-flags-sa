@@ -1,0 +1,297 @@
+{
+  "version": 8,
+  "name": "six-flags-fiesta-texas — blueprint-survey",
+  "sources": {
+    "park": {
+      "type": "vector",
+      "url": "pmtiles://base.pmtiles"
+    },
+    "hillshade": {
+      "type": "image",
+      "url": "hillshade.png",
+      "coordinates": [
+        [
+          -98.61789,
+          29.60751
+        ],
+        [
+          -98.60144,
+          29.60751
+        ],
+        [
+          -98.60144,
+          29.59224
+        ],
+        [
+          -98.61789,
+          29.59224
+        ]
+      ]
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#FBF7EC"
+      }
+    },
+    {
+      "id": "sea-under",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "sea",
+      "paint": {
+        "fill-color": "#E3EDF6"
+      }
+    },
+    {
+      "id": "venue",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "venue",
+      "paint": {
+        "fill-color": "#FBF7EC"
+      }
+    },
+    {
+      "id": "park",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "park",
+      "paint": {
+        "fill-color": "#B1B69A",
+        "fill-opacity": 0.35
+      }
+    },
+    {
+      "id": "lands",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "lands",
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "get",
+            "name"
+          ],
+          "DC Universe",
+          "#F3EFE4",
+          "Fiesta Bay Boardwalk",
+          "#F3F0E5",
+          "Los Festivales",
+          "#E9E5DB",
+          "Rockville",
+          "#E9E5DB",
+          "Spassburg",
+          "#F3EFE4",
+          "Texas State Square",
+          "#F3F0E5",
+          "rgba(0,0,0,0)"
+        ],
+        "fill-opacity": 0.45
+      }
+    },
+    {
+      "id": "grass",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "grass",
+      "paint": {
+        "fill-color": "#B1B69A"
+      }
+    },
+    {
+      "id": "wood",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "wood",
+      "paint": {
+        "fill-color": "#B1B69A",
+        "fill-opacity": 0.8
+      }
+    },
+    {
+      "id": "hillshade",
+      "type": "raster",
+      "source": "hillshade",
+      "paint": {
+        "raster-opacity": 0.45
+      }
+    },
+    {
+      "id": "parking",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "parking",
+      "paint": {
+        "fill-color": "#D9D6CE",
+        "fill-opacity": 0.6
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "#ABD4EC"
+      }
+    },
+    {
+      "id": "pool",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "pool",
+      "paint": {
+        "fill-color": "#A8DCF0"
+      }
+    },
+    {
+      "id": "building",
+      "type": "fill",
+      "source": "park",
+      "source-layer": "building",
+      "paint": {
+        "fill-color": "#B7B5AB"
+      }
+    },
+    {
+      "id": "building-edge",
+      "type": "line",
+      "source": "park",
+      "source-layer": "building",
+      "paint": {
+        "line-color": "#39567E",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0.6,
+          18,
+          1.56
+        ]
+      }
+    },
+    {
+      "id": "service",
+      "type": "line",
+      "source": "park",
+      "source-layer": "service",
+      "paint": {
+        "line-color": "#394A60",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          0.8,
+          18,
+          2.08
+        ],
+        "line-opacity": 0.55
+      }
+    },
+    {
+      "id": "path-casing",
+      "type": "line",
+      "source": "park",
+      "source-layer": "path",
+      "paint": {
+        "line-color": "#FBF7EC",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          3,
+          18,
+          7.800000000000001
+        ]
+      }
+    },
+    {
+      "id": "path",
+      "type": "line",
+      "source": "park",
+      "source-layer": "path",
+      "paint": {
+        "line-color": "#56667B",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.6,
+          18,
+          4.16
+        ]
+      }
+    },
+    {
+      "id": "slide",
+      "type": "line",
+      "source": "park",
+      "source-layer": "slide",
+      "paint": {
+        "line-color": "#7F6869",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.2,
+          18,
+          3.12
+        ],
+        "line-opacity": 0.9
+      }
+    },
+    {
+      "id": "coaster",
+      "type": "line",
+      "source": "park",
+      "source-layer": "coaster",
+      "paint": {
+        "line-color": "#4B607C",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          14,
+          1.2,
+          18,
+          3.12
+        ],
+        "line-opacity": 0.85
+      }
+    }
+  ]
+}

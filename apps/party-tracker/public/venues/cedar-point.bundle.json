@@ -4,7 +4,7 @@
   "basedOn": {
     "map": "2026-08-09"
   },
-  "bytes": 598653,
+  "bytes": 624208,
   "files": [
     {
       "path": "/venues/cedar-point.gaps.json",
@@ -13,13 +13,43 @@
     },
     {
       "path": "/venues/cedar-point.map.json",
-      "bytes": 521645,
-      "sha256": "50cb73aca476fe57b851a35c968c67d566b0c0ed95f01cec73bb93a35b710fe6"
+      "bytes": 521644,
+      "sha256": "b349911c15ba310395762253bb89d47ed235bccb3d8fe6afe9aa9deba15d2a0c"
     },
     {
       "path": "/venues/cedar-point.pois.json",
       "bytes": 72727,
       "sha256": "caea6a9a833bc28250fb833e29bbd468326a44224df86f1444e1066784f9af2b"
+    },
+    {
+      "path": "/venues/cedar-point/display/blueprint-survey.visual.json",
+      "bytes": 4286,
+      "sha256": "d21d7cdfc444571f397a65c420c2f4a6f07ad9d28b47426f1177ae2e3bcddb89"
+    },
+    {
+      "path": "/venues/cedar-point/display/layered-atlas.visual.json",
+      "bytes": 4283,
+      "sha256": "3ba0dc224dd0f3faee8281aa00f3f682a5364ee0ee733e45fe3edd295354b217"
+    },
+    {
+      "path": "/venues/cedar-point/display/midnight-carnival.visual.json",
+      "bytes": 4312,
+      "sha256": "ec2f4025815410580c18a8031eacd36c975ec563c1132aa4b2b4986ed1a05355"
+    },
+    {
+      "path": "/venues/cedar-point/display/park-midnight.visual.json",
+      "bytes": 4212,
+      "sha256": "3ba0f017698addf6b375519e115521245660e5c9e96155a00799fb63ce77cf05"
+    },
+    {
+      "path": "/venues/cedar-point/display/trail.visual.json",
+      "bytes": 4179,
+      "sha256": "adf722e51c734607e1eed630e99fb48022432f2a68372ba464325e16aaba5e97"
+    },
+    {
+      "path": "/venues/cedar-point/display/watercolor-quest.visual.json",
+      "bytes": 4284,
+      "sha256": "5e15e2c99522402224263cbdd631221602cc358101b92187f21e154f0911849d"
     }
   ]
 }

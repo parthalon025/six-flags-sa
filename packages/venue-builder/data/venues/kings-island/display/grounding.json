@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "venue": "kings-island",
+  "_comment": "Grounding harvest for Kings Island — what each Zone IS, never what colour it should be (ADR-0020: design owns treatment, the venue owns relationships). This replaces the hand-picked {fill, stroke, label} table that used to ride in overrides.json and land in map.json's meta.lands. Those 54 hex literals were only ever a proxy for the fact recorded here: Rivertown is the wooded one, Soak City and Adventure Port are the water ones, Action Zone and Area 72 are the steel quarter (Area 72 was carved out of Action Zone in 2019), Coney Mall and Planet Snoopy are midway, International Street is the civic boulevard you enter through. Every Skin now re-expresses those relationships in its own palette, so the park still reads as itself under Trail, Park Midnight, or any earned Skin. Oktoberfest stays deliberately unlisted: it has always taken whatever a Zone nobody characterised looks like, and that is still what it is supposed to look like.",
+  "zones": {
+    "International Street": { "character": "civic" },
+    "Coney Mall": { "character": "midway" },
+    "Planet Snoopy": { "character": "midway" },
+    "Rivertown": { "character": "woodland" },
+    "Camp Snoopy": { "character": "woodland" },
+    "Action Zone": { "character": "steel" },
+    "Area 72": { "character": "steel" },
+    "Adventure Port": { "character": "water" },
+    "Soak City": { "character": "water" }
+  }
+}

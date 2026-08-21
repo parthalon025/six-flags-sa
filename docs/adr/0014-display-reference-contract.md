@@ -1,7 +1,7 @@
 # ADR-0014: Display reference contract
 
 Date: 2026-08-18
-Status: accepted
+Status: accepted — amended 2026-08-21 (clause 1: where a venue-scoped observation lives)
 
 ## Context
 
@@ -23,6 +23,16 @@ ecosystem for ground truth and materials.
    styles), structure treatment, ADR-0012's layer invariants, and
    agent-review prompts for what pixels cannot judge. A kit without a
    profile does not certify.
+
+   *Amended 2026-08-21:* this clause is written for **kit** profiles, which
+   are per-design-language, and it was silent on where a *venue*-scoped hand
+   observation may live — a silence that let `data/venues/<id>/overrides.json`
+   carry a table of guessed per-district hex, outside this rule's stated scope
+   and therefore breaking none of it, while doing exactly what the rule
+   forbids. A venue-scoped observation lives in that World's **grounding
+   harvest** (`data/venues/<id>/display/grounding.json`, ADR-0020 clause 1) and
+   states a **relationship** — this Zone is the wooded one, those roofs are the
+   blue ones — never a tone. Guessed hex is not a venue input anywhere.
 
 2. **Reference images pin by sha256 whether or not git carries them.**
    `references/images.json` uses the asset-ledger grammar. Rows with

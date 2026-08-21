@@ -16,6 +16,7 @@ import {
   labelZoomFor,
 } from '@party-tracker/shared/mapSymbols.js';
 import { landTint } from '../../apps/party-tracker/lib/theme.js';
+import { ledgerSkinFor, tonesFromSpec, zoneTonesUrl } from '../../apps/party-tracker/lib/zoneTones.js';
 import { mapPaint } from '../../apps/party-tracker/lib/world.js';
 
 assert.equal(autoPalette(Date.UTC(2026, 5, 15, 14, 0, 0)), 'day');
@@ -59,13 +60,37 @@ assert.equal(tycoon.ground, '#4FA83A');
 assert.equal(tycoon.midway, '#C8C8C0');
 const land = landTint('Rivertown', 'pixel-tycoon');
 assert.match(land.fill, /^hsl\(1\d{2} /);
-assert.match(landTint('Rivertown', 'layered-atlas').fill, /^#/);
-assert.match(landTint('Rivertown', 'watercolor-quest').fill, /^#/);
-assert.notEqual(
-  landTint('Rivertown', 'layered-atlas').fill,
-  landTint('Rivertown', 'night').fill,
-  'reference atlas does not inherit dark district fills',
-);
+
+/* A reference Skin restyles a Zone, and the colours come from that Skin's
+   compiled pack rather than a table in app code. This is the phone-side half
+   of the builder's "two Skins over one World paint its Zones differently":
+   the same Zone, the same World, two published specs, two answers. */
+{
+  const { readFileSync } = await import('node:fs');
+  const specOf = (skin) => JSON.parse(readFileSync(new URL(
+    `../../packages/venue-builder/data/venues/kings-island/display/${skin}.visual.json`,
+    import.meta.url,
+  )));
+  const tonesOf = (skin) => tonesFromSpec(specOf(skin));
+  const atlas = tonesOf('layered-atlas');
+  const watercolor = tonesOf('watercolor-quest');
+  const midnight = tonesOf('park-midnight');
+  for (const tones of [atlas, watercolor, midnight]) {
+    assert.match(tones.Rivertown.fill, /^#[0-9A-F]{6}$/i, 'a published Zone tone is a hex');
+  }
+  assert.notEqual(atlas.Rivertown.fill, watercolor.Rivertown.fill, 'two Skins must not paint one Zone alike');
+  assert.notEqual(atlas.Rivertown.fill, midnight.Rivertown.fill);
+  assert.equal(landTint('Rivertown', 'layered-atlas', atlas).fill, atlas.Rivertown.fill);
+  assert.equal(landTint('Rivertown', 'watercolor-quest', watercolor).fill, watercolor.Rivertown.fill);
+  // Without the pack the app invents nothing per Skin — it falls to name-hue.
+  assert.match(landTint('Rivertown', 'layered-atlas').fill, /^hsl\(/);
+  // The Palettes map onto their ledger Skin ids; every other id is itself.
+  assert.equal(ledgerSkinFor('day'), 'trail');
+  assert.equal(ledgerSkinFor('night'), 'park-midnight');
+  assert.equal(ledgerSkinFor('layered-atlas'), 'layered-atlas');
+  assert.equal(zoneTonesUrl('kings-island', 'day'), '/venues/kings-island/display/trail.visual.json');
+  assert.equal(zoneTonesUrl(null, 'day'), null);
+}
 
 /* markerWantsLabel is a policy layer over the shared zoom decision, not a
    fork of it: at every zoom around the enter threshold — including the band

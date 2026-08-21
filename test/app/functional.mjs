@@ -561,6 +561,75 @@ await check('wearing Watercolor quest draws the baked world image under the over
   return true;
 });
 
+await check("wearing a Skin repaints the World's Zones from its own display pack", async () => {
+  /* The approved principle, on a phone: a Skin restyles a Zone. Before the
+     Visual factory owned Zone tone, every Skin of a World painted its Zones
+     identically — the tints came from map truth (`meta.lands`) and the Skin
+     was not an input at all. This asserts the output of the run: the same
+     Zone paths, under two different worn looks, carry different fills, and
+     the fills are the ones this World's published `<skin>.visual.json` says
+     — not a table in app code and not a colour out of truth. */
+  const P = await openPhone(browser, {
+    lat: 39.34395,
+    lng: -84.2673,
+    name: 'Tones',
+    label: 'TZ',
+    venue: 'kings-island',
+  });
+  const p = P.page;
+  try {
+    await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
+    await p.reload({ waitUntil: 'domcontentloaded' });
+    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+      timeout: 40000,
+    });
+    await closeGate(p);
+    // Zone fills as drawn, keyed by nothing but paint order — the map is the
+    // same drawing either way, so position N is the same Zone either way.
+    const zoneFills = () => p.evaluate(() =>
+      [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill')));
+    const palette = await zoneFills();
+    if (palette.length < 5) throw new Error(`expected Kings Island's Zones, drew ${palette.length}`);
+
+    await go(p, 'Collection');
+    const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
+    await row.scrollIntoViewIfNeeded();
+    if (/Locked|Out of season|This World/.test(await row.innerText())) {
+      throw new Error('Watercolor quest still locked after demo grant');
+    }
+    await row.click();
+    // The spec is fetched, so wait for the paint to actually change rather
+    // than for a timer — a green run here must mean the tones arrived.
+    await p.waitForFunction((before) => {
+      const now = [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill'));
+      return now.length === before.length && now.some((f, i) => f !== before[i]);
+    }, palette, { timeout: 20000 });
+    const worn = await zoneFills();
+
+    // Every fill the Skin painted is one its own published spec declares.
+    const spec = await p.evaluate(async () => {
+      const res = await fetch('/venues/kings-island/display/watercolor-quest.visual.json');
+      return res.ok ? res.json() : null;
+    });
+    if (!spec) throw new Error('the World never published watercolor-quest.visual.json');
+    const mode = spec.tokens?.mode === 'night' ? 'night' : 'day';
+    const declared = new Set(
+      Object.values(spec.landTones || {}).map((byMode) => byMode?.[mode]?.fill).filter(Boolean),
+    );
+    if (declared.size < 5) throw new Error(`spec declares ${declared.size} Zone fills`);
+    const fromSpec = worn.filter((f) => declared.has(String(f).toUpperCase()));
+    if (fromSpec.length < 5) {
+      throw new Error(`only ${fromSpec.length} Zone fills came from the Skin's own spec`);
+    }
+    // …and they are genuinely a restyle, not the palette's own answer.
+    const changed = worn.filter((f, i) => f !== palette[i]).length;
+    if (changed < 5) throw new Error(`wearing the Skin repainted only ${changed} Zones`);
+  } finally {
+    await P.context.close();
+  }
+  return true;
+});
+
 await check('Compass strip toggles on', async () => {
   await a.locator('button[aria-label="Show Compass"]').click();
   await a.waitForTimeout(400);

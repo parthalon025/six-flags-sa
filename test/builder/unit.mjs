@@ -5778,15 +5778,19 @@ await check('with a fix intakeChoiceFor defers to venueChoiceFor', () => {
   return true;
 });
 
-await check('a district is tinted by its own venue, or by its own name', () => {
-  /* The curated tints belong to the venue now, not to the renderer. Two parks
-     can and do use the same district name — Cedar Point's water park was Soak
-     City until 2017 and Kings Island's still is — so a table in shared code
-     would paint one park in the other's colours. */
-  const ki = { lands: { day: { 'Coney Mall': { fill: '#F1EAE4', stroke: '#E0D5CC', label: '#7E5C44' } } } };
-  assert.equal(landTint('Coney Mall', 'day', ki).fill, '#F1EAE4');
-  // The same name at a venue that has not named it is generated, not borrowed.
-  assert.notEqual(landTint('Coney Mall', 'day', null).fill, '#F1EAE4');
+await check('a Zone is painted by the Visual factory, or by its own name', () => {
+  /* Treatment belongs to the Skin, and the Skin's answer for this World comes
+     out of its display pack — not from truth, and not from a table in shared
+     code. Two parks can and do use the same Zone name (Cedar Point's water
+     park was Soak City until 2017 and Kings Island's still is), which a
+     per-World pack handles and a shared table cannot. */
+  const packed = { 'Coney Mall': { fill: '#C6BCAF', stroke: '#908779', label: '#2C2416' } };
+  assert.equal(landTint('Coney Mall', 'day', packed).fill, '#C6BCAF');
+  assert.equal(landTint('Coney Mall', 'day', packed).stroke, '#908779');
+  assert.equal(landTint('Coney Mall', 'day', packed).label, '#2C2416');
+  // The same name at a World whose pack says nothing is generated, not borrowed.
+  assert.notEqual(landTint('Coney Mall', 'day', null).fill, '#C6BCAF');
+  assert.notEqual(landTint('Coney Mall', 'day', {}).fill, '#C6BCAF');
 
   const made = landTint('Los Festivales', 'day');
   assert.equal(made.fill, landTint('Los Festivales', 'day').fill); // stable
@@ -5795,17 +5799,17 @@ await check('a district is tinted by its own venue, or by its own name', () => {
   return true;
 });
 
-await check('every named district is one this venue actually has', () => {
+await check('map truth carries no Zone treatment', () => {
+  /* `meta.lands` held a {fill, stroke, label} table per Zone, day and night —
+     treatment in the artifact that carries geometry, Places and Gaps. It rode
+     the manifest to the phone and outranked the Visual factory's own
+     derivation, so no Skin could restyle a Zone. Nothing may put it back. */
   readVenues().forEach((v) => {
-    if (!v.lands) return;
-    const map = JSON.parse(fs.readFileSync(new URL(`../../apps/party-tracker/public${v.map}`, import.meta.url)));
-    const drawn = new Set((map.lands || []).map((l) => l.n));
-    for (const theme of ['night', 'day']) {
-      const strays = Object.keys(v.lands[theme] || {}).filter((n) => !drawn.has(n));
-      // A tint for a district that is not on the map is a colour nobody will
-      // ever see, and usually the sign of a park that renamed an area.
-      assert.deepEqual(strays, [], `${v.id}/${theme}: tints for absent districts: ${strays.join(', ')}`);
-    }
+    assert.equal(v.lands, undefined, `${v.id}: manifest row still carries lands`);
+    const body = fs.readFileSync(new URL(`../../apps/party-tracker/public${v.map}`, import.meta.url), 'utf8');
+    const map = JSON.parse(body);
+    assert.equal(map.meta.lands, undefined, `${v.id}: map.json still carries meta.lands`);
+    assert.equal(/#[0-9a-f]{6}/i.test(body), false, `${v.id}: map.json carries a colour literal`);
   });
   return true;
 });

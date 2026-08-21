@@ -13,8 +13,9 @@
  * image placement instead of a tiler.
  *
  * Publishing stays human-gated: buildWorldTier writes builder data only;
- * publishWorlds copies named worlds to the app's public/venues/<id>/display/
- * and the PR that commits them is the gate.
+ * publishWorlds copies a named Skin's pack files (its baked world and its
+ * visual spec) to the app's public/venues/<id>/display/ and the PR that
+ * commits them is the gate.
  */
 
 import path from 'node:path';
@@ -127,29 +128,49 @@ export function buildWorldTier({ id, templates, bakeDir, bakeCerts, outDir, writ
 }
 
 /**
- * Copy named world files from a venue's pack into the app's public venue
- * directory. Deliberately minimal and explicit: the caller names the Skins
- * the app actually consumes, and the PR committing the copies is the gate.
+ * Copy a Skin's pack files from a venue's display pack into the app's public
+ * venue directory. Deliberately minimal and explicit: the caller names the
+ * Skins the app actually consumes, and the PR committing the copies is the
+ * gate.
+ *
+ * Two kinds of file travel. The baked world (`<skin>.world.png` plus its
+ * sidecar) is what the phone draws instead of the OSM base. The visual spec
+ * (`<skin>.visual.json`) is what the phone reads to paint Zones in this
+ * Skin's own colours — the Visual factory's answer, published rather than
+ * re-derived in app code. A Skin with neither is reported missing rather
+ * than silently skipped; a Palette with a spec but no bake publishes its
+ * spec alone, which is exactly what Trail and Park Midnight need.
+ *
+ * `kinds` narrows what travels — a spec is a few kilobytes and a baked world
+ * is megabytes, so publishing a Skin's tones must not drag a re-bake along
+ * with it.
  *
  * @param {string} id venue id
- * @param {string[]} skinIds skins whose worlds publish
- * @param {{ outDir?: string, publicDir?: string }} [opts]
+ * @param {string[]} skinIds skins whose pack files publish
+ * @param {{ outDir?: string, publicDir?: string, kinds?: ('spec'|'world')[] }} [opts]
  * @returns {{ published: string[], missing: string[] }}
  */
 export function publishWorlds(id, skinIds, opts = {}) {
   const outDir = opts.outDir || venueSidecar(id, 'display');
   const publicDir = opts.publicDir || path.join(APP_ROOT, 'public', 'venues', id, 'display');
+  const kinds = new Set(opts.kinds?.length ? opts.kinds : ['spec', 'world']);
   const published = [];
   const missing = [];
   for (const skin of skinIds) {
-    const sidecarFile = path.join(outDir, `${skin}.world.json`);
-    const sidecar = readJson(sidecarFile, null);
-    if (!sidecar || !existsSync(path.join(outDir, sidecar.file))) {
+    const names = [];
+    if (kinds.has('spec') && existsSync(path.join(outDir, `${skin}.visual.json`))) {
+      names.push(`${skin}.visual.json`);
+    }
+    const sidecar = kinds.has('world') ? readJson(path.join(outDir, `${skin}.world.json`), null) : null;
+    if (sidecar && existsSync(path.join(outDir, sidecar.file))) {
+      names.push(`${skin}.world.json`, sidecar.file);
+    }
+    if (!names.length) {
       missing.push(skin);
       continue;
     }
     mkdirSync(publicDir, { recursive: true });
-    for (const name of [`${skin}.world.json`, sidecar.file]) {
+    for (const name of names) {
       const dest = path.join(publicDir, name);
       copyFileSync(path.join(outDir, name), dest);
       published.push(dest);
