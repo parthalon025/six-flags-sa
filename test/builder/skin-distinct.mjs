@@ -9,7 +9,9 @@
    comparatively still. */
 import assert from 'node:assert/strict';
 import sharp from 'sharp';
+import { readFileSync, readdirSync } from 'node:fs';
 import {
+  SCHEMA_ONLY_KNOBS,
   ENCODE_NULL,
   THRESHOLDS,
   HEAVY_AXES,
@@ -193,6 +195,52 @@ for (const axis of Object.keys(THRESHOLDS)) {
   assert.ok(d.A2 > THRESHOLDS.A2, 'the degenerate-histogram case is known to exceed the A2 bar');
   assert.ok(d.A1 < THRESHOLDS.A1, 'and it is specific to A2 — palette is unaffected');
   assert.ok(d.A4 < THRESHOLDS.A4, 'and grain is unaffected');
+}
+
+// --- No invented knobs. Every mapped path must either resolve on a shipped kit
+// or be one the builder genuinely reads and no kit populates yet. Anything else
+// is a path pointing at a vocabulary that does not exist, which makes its axis
+// permanently SAME — a false negative the gate cannot see. Caught `palette`,
+// `landmarks` and `sprites.landmark.asset`, all invented.
+{
+  const dir = 'packages/venue-builder/data/display/kits/';
+  const kits = readdirSync(dir).map((f) => JSON.parse(readFileSync(dir + f, 'utf8')));
+  const resolves = (kit, path) => {
+    const parts = path.replace(/^!/, '').split('.');
+    let node = kit;
+    for (let i = 0; i < parts.length; i += 1) {
+      if (node === undefined || node === null) return false;
+      if (parts[i] === '*') {
+        if (typeof node !== 'object') return false;
+        const rest = parts.slice(i + 1).join('.');
+        return Object.values(node).some((v) => (rest ? resolves(v, rest) : v !== undefined));
+      }
+      node = node[parts[i]];
+    }
+    return node !== undefined;
+  };
+  for (const [axis, paths] of Object.entries(AXIS_KNOBS)) {
+    for (const path of paths) {
+      const bare = path.replace(/^!/, '');
+      const live = kits.some((k) => resolves(k, bare));
+      assert.ok(
+        live || SCHEMA_ONLY_KNOBS.includes(bare),
+        `${axis} maps '${bare}', which no kit populates and the builder does not read — `
+          + 'either it is invented, or add it to SCHEMA_ONLY_KNOBS with the reader that proves it real',
+      );
+    }
+  }
+}
+
+// --- An axis the kit schema cannot express must say so, not report SAME.
+// C1 (landmark iconography) is a heavy axis with no kit-level field at all;
+// calling it SAME would claim it was checked and found identical.
+{
+  const spec = specAxesDiffering({}, {});
+  assert.equal(spec.C1.representable, false, 'C1 has no kit-level knob today');
+  const v = verdict({ spec, pixel: {}, thresholds: {} });
+  assert.equal(v.states.C1, 'NO-KIT-KNOB', 'and the state says so rather than SAME');
+  assert.ok(!v.heavyPossible.includes('C1'), 'an inexpressible axis can never be earned');
 }
 
 console.log('skin-distinct: ok');

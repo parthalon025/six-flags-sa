@@ -2,6 +2,7 @@
 /** Is Skin B a different world from Skin A, or the same drawing recoloured?
  *
  *   node packages/venue-builder/bin/display-distinct.mjs <venue> <skinA> <skinB> [--json]
+ *   node packages/venue-builder/bin/display-distinct.mjs <venue> <skin> --null
  *
  * Reads the two kit specs and the two baked worlds, scores every design axis
  * from both sides, and requires them to agree before crediting an axis. Exits
@@ -18,7 +19,9 @@ import {
   PIXEL_MEASURED,
   REQUIRED_AXES,
   REQUIRED_HEAVY,
+  ENCODE_NULL,
   THRESHOLDS,
+  assertPixelMeasuredMatches,
   pixelAxisDeltas,
   specAxesDiffering,
   verdict,
@@ -29,12 +32,42 @@ const REPO = path.resolve(BUILDER, '../..');
 
 const [venue, skinA, skinB] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const asJson = process.argv.includes('--json');
-if (!venue || !skinA || !skinB) {
+const asNull = process.argv.includes('--null');
+if (!venue || !skinA || (!skinB && !asNull)) {
   console.error('usage: display-distinct <venue> <skinA> <skinB> [--json]');
+  console.error('       display-distinct <venue> <skin> --null');
   process.exit(2);
 }
 
 const kitPath = (skin) => path.join(BUILDER, 'data/display/kits', `${skin}.json`);
+const bakeOnly = (skin) =>
+  path.join(REPO, 'apps/party-tracker/public/venues', venue, 'display', `${skin}.world.png`);
+
+// --null: what one world scores against a lossy re-encode of itself. This is
+// the floor every threshold must clear, and it is what ENCODE_NULL records —
+// runnable rather than a number somebody measured once by hand.
+if (asNull) {
+  const { default: sharp } = await import('sharp');
+  const file = bakeOnly(skinA);
+  if (!existsSync(file)) {
+    console.error(`missing ${path.relative(REPO, file)}`);
+    process.exit(2);
+  }
+  const reencoded = await sharp(file).webp({ quality: 90 }).toBuffer();
+  const measured = await pixelAxisDeltas(file, reencoded);
+  assertPixelMeasuredMatches(measured);
+  console.log(`\n  encode null for ${venue}/${skinA} (webp q90)\n`);
+  console.log('  axis   measured    checked in    threshold   ratio');
+  for (const axis of Object.keys(measured)) {
+    const ratio = measured[axis] > 0 ? (THRESHOLDS[axis] / measured[axis]).toFixed(1) : 'inf';
+    console.log(
+      `  ${axis}     ${measured[axis].toFixed(4)}      ${String(ENCODE_NULL[axis]).padEnd(9)}     `
+        + `${String(THRESHOLDS[axis]).padEnd(9)}   ${ratio}x`,
+    );
+  }
+  console.log('\n  A threshold must clear 3x its null, or encoding reads as style.\n');
+  process.exit(0);
+}
 const bakePath = (skin) =>
   path.join(REPO, 'apps/party-tracker/public/venues', venue, 'display', `${skin}.world.png`);
 
@@ -64,6 +97,7 @@ const MARK = {
   'DECLARED-NOT-PAINTED': '!',
   'PAINTED-NOT-DECLARED': '?',
   'DECLARED-UNMEASURED': '·',
+  'NO-KIT-KNOB': '×',
   SAME: ' ',
 };
 
@@ -73,9 +107,11 @@ console.log('  ' + '─'.repeat(84));
 for (const axis of Object.keys(AXIS_KNOBS)) {
   const heavy = HEAVY_AXES.includes(axis) ? '*' : ' ';
   const state = result.states[axis];
-  const knobs = spec[axis].knobs.length
-    ? `${spec[axis].knobs.length} knob${spec[axis].knobs.length > 1 ? 's' : ''}: ${spec[axis].knobs.slice(0, 2).join(', ')}`
-    : 'no knob differs';
+  const knobs = spec[axis].representable === false
+    ? 'the kit schema cannot express this'
+    : spec[axis].knobs.length
+      ? `${spec[axis].knobs.length} knob${spec[axis].knobs.length > 1 ? 's' : ''}: ${spec[axis].knobs.slice(0, 2).join(', ')}`
+      : 'no knob differs';
   const measured = PIXEL_MEASURED.includes(axis)
     ? `${pixel[axis].toFixed(4)} / ${THRESHOLDS[axis]}`
     : 'not measured';
@@ -84,7 +120,10 @@ for (const axis of Object.keys(AXIS_KNOBS)) {
   );
 }
 console.log('  ' + '─'.repeat(84));
-console.log(`\n  * heavy axis. ✓ both sides agree · ! declared, not painted · ? painted, not declared\n`);
+console.log(
+  `\n  * heavy axis. ✓ both sides agree · ! declared, not painted · ? painted, not declared`
+    + `\n  × the kit schema has no field for this axis at all\n`,
+);
 console.log(
   `  proven distinct: ${result.lowerBound}/${REQUIRED_AXES}   heavy: ${result.heavyDistinct.length}/${REQUIRED_HEAVY}`,
 );

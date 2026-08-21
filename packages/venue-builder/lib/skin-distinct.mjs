@@ -48,7 +48,7 @@ export const REQUIRED_HEAVY = 3;
  *  Wildcard `*` walks every key at that level, so terrain classes stay covered
  *  as the vocabulary grows. */
 export const AXIS_KNOBS = {
-  A1: ['palette', 'terrain.*.base', 'terrain.*.texture.color', 'sprites.building.roofs', 'sprites.tree.canopy', 'sprites.slide.colors', 'sprites.badge.*'],
+  A1: ['terrain.*.base', 'terrain.*.texture.color', 'sprites.building.roofs', 'sprites.tree.canopy', 'sprites.slide.colors', 'sprites.badge.*'],
   A2: ['terrain.*.base', 'sprites.building.wall', 'sprites.building.drop'],
   A3: ['!wash', 'strokes.displacement.amplitude', 'strokes.displacement.wavelength', 'sprites.building.edge', 'terrain.road.style', 'terrain.service.style'],
   A4: ['!wash', 'terrain.*.texture.kind', 'terrain.*.texture.density', 'terrain.*.tiles.asset', 'terrain.*.material.id', 'terrain.*.material.mix', 'sprites.building.material.id'],
@@ -57,9 +57,26 @@ export const AXIS_KNOBS = {
   B3: ['sprites.tree.style', 'sprites.tree.sprite.asset', 'sprites.tree.canopy', 'sprites.tree.scale'],
   B4: ['sprites.building.style', 'sprites.building.roofs', 'sprites.building.material.id', 'sprites.building.drop'],
   B5: ['sprites.coaster.style', 'sprites.slide.style', 'terrain.road.style', 'terrain.service.style'],
-  C1: ['landmarks', 'sprites.landmark.asset'],
+  // C1 (landmark iconography and salience) has NO kit-level field today. It is
+  // not "no kit sets it" — the builder has no such concept: `landmark` appears
+  // nowhere in display-bake.mjs, and in this codebase it is a venue-truth POI
+  // category, not style vocabulary. An empty list is the honest encoding, and
+  // verdict() reports it as NO-KIT-KNOB rather than SAME so the gate cannot
+  // quietly treat an inexpressible heavy axis as "checked, identical".
+  C1: [],
   C2: ['sprites.badge.icons.*.asset', 'sprites.badge.*'],
 };
+
+/** Paths the builder genuinely reads that no shipped kit populates yet — real
+ *  slots awaiting art (#578), not invented vocabulary. `kitAssetIds()` in
+ *  display-bake.mjs is the proof for all three. Anything mapped in AXIS_KNOBS
+ *  that neither resolves on a kit nor appears here is invented, and the suite
+ *  fails on it. */
+export const SCHEMA_ONLY_KNOBS = [
+  'terrain.*.tiles.asset',
+  'sprites.tree.sprite.asset',
+  'sprites.badge.icons.*.asset',
+];
 
 /** What an identical world scores against a lossy re-encode of itself —
  *  encoding noise and nothing else. Measured on kings-island/watercolor-quest
@@ -74,10 +91,22 @@ export const ENCODE_NULL = { A1: 0.0104, A2: 0.0283, A3: 0.0232, A4: 0.0057 };
  *  shipped pair's verdict — it makes it defensible. */
 export const THRESHOLDS = { A1: 0.05, A2: 0.09, A3: 0.07, A4: 0.02 };
 
-/** Axes this version measures in pixels. The rest are spec-side only and can
- *  never be earned — stated rather than silently skipped, because a gate that
- *  quietly cannot see an axis reads as that axis being fine. */
-export const PIXEL_MEASURED = ['A1', 'A2', 'A3', 'A4'];
+/** Axes this version measures in pixels. Derived from the one function that
+ *  decides it, so the CLI's "not measured, so never earned" banner and
+ *  verdict()'s notion of measurable cannot drift apart. The rest are spec-side
+ *  only and can never be earned — stated rather than silently skipped, because
+ *  a gate that quietly cannot see an axis reads as that axis being fine. */
+export const PIXEL_MEASURED = Object.freeze(['A1', 'A2', 'A3', 'A4']);
+
+/** Guard for the above: pixelAxisDeltas is the authority, and this asserts the
+ *  published list still matches what it returns. */
+export function assertPixelMeasuredMatches(deltas) {
+  const actual = Object.keys(deltas).sort().join(',');
+  const declared = [...PIXEL_MEASURED].sort().join(',');
+  if (actual !== declared) {
+    throw new Error(`PIXEL_MEASURED says ${declared} but pixelAxisDeltas returned ${actual}`);
+  }
+}
 
 function readPath(obj, path) {
   const parts = path.replace(/^!/, '').split('.');
@@ -111,7 +140,9 @@ export function specAxesDiffering(kitA, kitB) {
         : JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
       if (differs) knobs.push(path.replace(/^!/, ''));
     }
-    out[axis] = { differs: knobs.length > 0, knobs };
+    // An axis with no mapped knob cannot be expressed by a kit at all, which is
+    // a different fact from "expressed and identical".
+    out[axis] = { differs: knobs.length > 0, knobs, representable: paths.length > 0 };
   }
   return out;
 }
@@ -177,7 +208,14 @@ function edgeDensity(g, w, h) {
       const i = y * w + x;
       const gx = -g[i - w - 1] - 2 * g[i - 1] - g[i + w - 1] + g[i - w + 1] + 2 * g[i + 1] + g[i + w + 1];
       const gy = -g[i - w - 1] - 2 * g[i - w] - g[i - w + 1] + g[i + w - 1] + 2 * g[i + w] + g[i + w + 1];
-      if (Math.hypot(gx, gy) > 64) strong += 1;
+      // 64 on a 0..~1442 Sobel magnitude: about a 16/255 step across a pixel
+      // pair, which is the smallest luma step that survives the bake's own
+      // quantisation and reads as a drawn edge rather than a gradient. The
+      // epsilon matters because the luma weights do not sum to exactly 1 in
+      // IEEE754 — an intended-64 step computes to 64.00000000000009, so a
+      // strict comparison would classify neighbouring integer colours on
+      // rounding noise rather than on the boundary.
+      if (Math.hypot(gx, gy) >= EDGE_MAGNITUDE - 1e-9) strong += 1;
     }
   }
   return strong / ((w - 2) * (h - 2));
@@ -202,6 +240,9 @@ function grain(g, w, h, block = 8) {
   }
   return blocks ? total / blocks / 128 : 0; // normalised into roughly 0..1
 }
+
+/** Sobel magnitude above which a pixel counts as sitting on a drawn edge. */
+const EDGE_MAGNITUDE = 64;
 
 const l1 = (a, b) => a.reduce((acc, v, i) => acc + Math.abs(v - b[i]), 0) / 2;
 
@@ -239,10 +280,12 @@ export function verdict({ spec, pixel, thresholds }) {
   const couldBeDistinct = [];
   for (const axis of Object.keys(spec)) {
     const declared = spec[axis]?.differs === true;
+    const representable = spec[axis]?.representable !== false;
     const measurable = Object.prototype.hasOwnProperty.call(pixel, axis);
     const painted = measurable && pixel[axis] >= (thresholds[axis] ?? Infinity);
     let state;
-    if (!measurable) state = declared ? 'DECLARED-UNMEASURED' : 'SAME';
+    if (!representable) state = 'NO-KIT-KNOB';
+    else if (!measurable) state = declared ? 'DECLARED-UNMEASURED' : 'SAME';
     else if (declared && painted) state = 'DISTINCT';
     else if (declared && !painted) state = 'DECLARED-NOT-PAINTED';
     else if (!declared && painted) state = 'PAINTED-NOT-DECLARED';
