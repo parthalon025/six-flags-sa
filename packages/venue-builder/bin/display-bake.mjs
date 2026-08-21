@@ -13,6 +13,16 @@
  *   npm run venues:bake -- big-kahunas --prompt "sunny hand-drawn brochure"
  *   npm run venues:bake -- kings-island --kit rpg-overworld --max-cols 320
  *
+ * `--band overview|mid|close` bakes one band of the World's zoom pyramid
+ * (ADR-0021 clause 2). A band is a ground sample distance — 2.4, 0.6 or
+ * 0.15 m per pixel — resolved against this venue's own span into a cell size
+ * and a pixels-per-cell, so `close` means the same number of ground metres at
+ * every park. It replaces `--max-cols`/`--px` rather than combining with them:
+ * passing both is refused, because a band's cell size is often unreachable
+ * from any integer column budget (lib/display-bands.mjs explains why).
+ *
+ *   npm run venues:bake -- kings-island --kit rpg-overworld --band overview
+ *
  * `--target iso` renders the RCT-style isometric bake of the SAME model —
  * depth-sorted extrusions and lifted tracks (lib/display-iso.mjs), the
  * flat tier's kit palette, certified through the same style contract.
@@ -26,7 +36,10 @@ import path from 'node:path';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson } from '../lib/venue-io.mjs';
-import { bakeModel, boundaryDistanceField, kitAssetIds, resolveKit } from '../lib/display-bake.mjs';
+import {
+  DEFAULT_MAX_COLS, DEFAULT_PX, assertBakeGridFlags, bakeModel, boundaryDistanceField,
+  kitAssetIds, resolveBakeGrid, resolveKit,
+} from '../lib/display-bake.mjs';
 import { kitBriefSystem, parseKitAnswer } from '../lib/display-kit-brief.mjs';
 import {
   readAssetLedger, assetPath, assetsForTarget, creditsManifest,
@@ -61,8 +74,12 @@ const argv = process.argv.slice(2);
 const ids = [];
 const kitIdsArg = [];
 let prompt = null;
-let maxCols = 240;
-let px = 16;
+// null means "not given on the command line" — `resolveBakeGrid` needs to tell
+// an unset flag from one set to its default, so it can refuse a grid stated
+// two ways at once rather than silently picking a winner.
+let band = null;
+let maxColsFlag = null;
+let pxFlag = null;
 let harvestProfile = false;
 let ldtk = false;
 let target = 'flat';
@@ -73,8 +90,9 @@ for (let i = 0; i < argv.length; i += 1) {
   const a = argv[i];
   if (a === '--kit') kitIdsArg.push(argv[++i]);
   else if (a === '--prompt') prompt = argv[++i];
-  else if (a === '--max-cols') maxCols = Number(argv[++i]) || 240;
-  else if (a === '--px') px = Number(argv[++i]) || 16;
+  else if (a === '--band') band = argv[++i];
+  else if (a === '--max-cols') maxColsFlag = Number(argv[++i]) || DEFAULT_MAX_COLS;
+  else if (a === '--px') pxFlag = Number(argv[++i]) || DEFAULT_PX;
   else if (a === '--harvest-profile') harvestProfile = true;
   else if (a === '--ldtk') ldtk = true;
   else if (a === '--target') target = argv[++i];
@@ -83,7 +101,7 @@ for (let i = 0; i < argv.length; i += 1) {
   else if (!a.startsWith('--')) ids.push(a);
 }
 if (!ids.length || (!kitIdsArg.length && !prompt)) {
-  console.error('usage: display-bake.mjs <venueId>… (--kit <id> [--kit <id>…] | --prompt "…") [--target flat|iso] [--rotation 0..3] [--max-cols N] [--px N] [--out dir]');
+  console.error('usage: display-bake.mjs <venueId>… (--kit <id> [--kit <id>…] | --prompt "…") [--target flat|iso] [--rotation 0..3] [--band overview|mid|close | --max-cols N --px N] [--out dir]');
   const kits = existsSync(KITS_DIR) ? readdirSync(KITS_DIR).map((f) => f.replace(/\.json$/, '')) : [];
   if (kits.length) console.error(`kits on disk: ${kits.join(', ')}`);
   process.exit(2);
@@ -97,6 +115,15 @@ if (!Number.isInteger(rotation) || rotation < 0 || rotation > 3) {
   process.exit(2);
 }
 if (rotationSet && target !== 'iso') console.error('--rotation only applies to --target iso — ignored');
+// Before a map is read or a browser is launched: a grid stated two ways is a
+// question, not a default. `--band` is per venue, so the plan itself resolves
+// inside the loop — only the flags can be judged here.
+try {
+  assertBakeGridFlags({ band, maxCols: maxColsFlag, px: pxFlag });
+} catch (err) {
+  console.error(err.message);
+  process.exit(2);
+}
 
 function loadKit(id) {
   const file = path.join(KITS_DIR, `${id}.json`);
@@ -230,10 +257,28 @@ for (const id of ids) {
   const overlay = readJson(path.join(OVERRIDE_DIR, id, 'display', 'theme.json'), null);
   if (overlay) console.error(`  venue theme: data/venues/${id}/display/theme.json`);
 
+  // How big a cell is, for THIS venue. A band is a ground resolution
+  // (ADR-0021 clause 2), so the cell count it implies depends on the park's
+  // own span and has to be planned per venue, not once per invocation.
+  let grid;
+  try {
+    grid = resolveBakeGrid(map.meta, { band, maxCols: maxColsFlag, px: pxFlag });
+  } catch (err) {
+    // A venue whose bounds cannot carry this band is a real failure, but not
+    // one worth stranding the open browser over: say so, fail the run, move on.
+    console.error(`${id}: ${err.message}`);
+    process.exitCode = 1;
+    continue;
+  }
+  const { px } = grid;
+  // Exactly one of the two is set; both spread into bakeModel unchanged.
+  const gridOpts = grid.tileMetres != null ? { tileMetres: grid.tileMetres } : { maxCols: grid.maxCols };
+  if (band) console.error(`  band ${band}: ${grid.tileMetres.toFixed(4)} m a cell, ${px} px a cell`);
+
   if (ldtk) {
     // Kit-independent (the model is), so one file per venue suffices.
     const ldtkFile = path.join(outRoot, `${id}.ldtk`);
-    writeFileSync(ldtkFile, `${JSON.stringify(ldtkProject(bakeModel(map, pois, { maxCols })), null, 2)}\n`);
+    writeFileSync(ldtkFile, `${JSON.stringify(ldtkProject(bakeModel(map, pois, gridOpts)), null, 2)}\n`);
     console.error(`  LDtk debug export: ${ldtkFile}`);
   }
 
@@ -243,7 +288,7 @@ for (const id of ids) {
   const results = [];
   for (const kitId of kitIds) {
     const kit = resolveKit(kitSpecs[kitId], { assets: LEDGER, overlay, materials: MATERIALS });
-    const model = bakeModel(map, pois, { maxCols });
+    const model = bakeModel(map, pois, gridOpts);
     let base;
     let server;
     let points;
