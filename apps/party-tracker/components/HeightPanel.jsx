@@ -210,7 +210,7 @@ export default function HeightPanel({
 
   return (
     <div>
-      <div className="label">
+      <div className="label eyebrow">
         {inParty ? 'Party Heights' : 'Rider Height'}
         {pickedHeight != null && (
           <button
@@ -224,7 +224,7 @@ export default function HeightPanel({
       </div>
 
       {showPicker ? (
-        <div className="chips" role="group" aria-label="Whose height to set">
+        <div className="chips whoChips" role="group" aria-label="Whose height to set">
           {editable.map((w) => (
             <button
               key={w.id}
@@ -233,6 +233,15 @@ export default function HeightPanel({
               aria-pressed={pickId === w.id}
               onClick={() => setPickId(w.id)}
             >
+              {/* The Member's own marker colour, the way the design draws this
+                  row: the chip and the puck on the map are the same person, and
+                  a name alone makes you read to find that out. Self wears the
+                  accent its own puck wears. */}
+              <i
+                className="whoDot"
+                style={{ background: w.self ? 'var(--adventure)' : w.colour }}
+                aria-hidden="true"
+              />
               {w.name}
               {w.height != null ? ` ${w.height}"` : ''}
             </button>
@@ -317,8 +326,10 @@ export default function HeightPanel({
         </p>
       )}
 
-      <div className="label">With adult</div>
-      <div className="chips">
+      {/* No heading over one toggle. The design puts the adult chip straight
+          under the tally it changes, because "With an adult along" already says
+          what it is — a label above it only repeated the chip's own words. */}
+      <div className="chips wrap adultChip">
         <button
           type="button"
           className={`chip ${pickedWithAdult ? 'on' : ''}`}
@@ -331,7 +342,7 @@ export default function HeightPanel({
 
       {peers.length > 0 ? (
         <>
-          <div className="label">Everyone else</div>
+          <div className="label eyebrow">Everyone else</div>
           {/* Read-only on purpose: a phone may not patch another phone's
               Member, and a tier row here would animate, update this screen and
               then revert on the host's next snapshot. They set their own. */}

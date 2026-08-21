@@ -169,13 +169,13 @@ export default function PartyPanel({
     const named = Boolean(name.trim());
     return (
       <div>
-        <div className="label">Your Party</div>
+        <div className="label eyebrow">Your Party</div>
         <p className="fine">
           Explore toilets, food and rides on your own first — a party is optional when the
           family wants to stick together. One phone starts it; everyone else joins by
           scanning the QR, opening the link, or typing the six-character code.
         </p>
-        <div className="label">Your Name</div>
+        <div className="label eyebrow">Your Name</div>
         <input
           className="field"
           maxLength={14}
@@ -201,7 +201,7 @@ export default function PartyPanel({
         >
           {busy ? 'Starting…' : 'Start a party'}
         </button>
-        <div className="label">Join an Existing One</div>
+        <div className="label eyebrow">Join an Existing One</div>
         <div className="joinRow">
           <input
             className="field code"
@@ -284,7 +284,7 @@ export default function PartyPanel({
           CODE_ALPHABET, which never carries a prefix and does not exist at all
           until a Party has been started. It is read out loud at 26px under
           Invite; up here it is identity, not an instruction. */}
-      <div className="label">
+      <div className="label eyebrow">
         Your Party · {sorted.length}
         <span className="codeChip">{code}</span>
       </div>
@@ -480,7 +480,7 @@ export default function PartyPanel({
           answer obviously matters. */}
       {onEnablePush && pushState !== 'granted' && pushState !== 'unsupported' ? (
         <>
-          <div className="label">In Your Pocket</div>
+          <div className="label eyebrow">In Your Pocket</div>
           <button type="button" className="btn rect" onClick={onEnablePush} disabled={pushNeedsInstall}>
             Tell me on this phone
           </button>
@@ -492,7 +492,7 @@ export default function PartyPanel({
         </>
       ) : null}
 
-      <div className="label">Rally Point</div>
+      <div className="label eyebrow">Rally Point</div>
       {meet ? (
         <div className="codeBox column">
           <div>
@@ -538,7 +538,7 @@ export default function PartyPanel({
         </p>
       )}
 
-      <div className="label">Broadcast Status</div>
+      <div className="label eyebrow">Broadcast Status</div>
       <div className="chips wrap">
         {STATUSES.map((s) => (
           <button
@@ -571,7 +571,7 @@ export default function PartyPanel({
           : 'Buzzes every phone in the party and puts your name at the top of their screen.'}
       </p>
 
-      <div className="label">
+      <div className="label eyebrow">
         Your Location
         {shareMode === 'precise' && shareLeft > 0 ? (
           <span className="labelRight">{shareLeft} min left</span>
@@ -601,7 +601,7 @@ export default function PartyPanel({
 
       {onAddDeviceLess && (
         <>
-          <div className="label">Add someone without a phone</div>
+          <div className="label eyebrow">Add someone without a phone</div>
           <p className="fine" style={{ marginTop: 0 }}>
             A device-less Member still counts for Eligibility. Height stays on the roster, and
             this phone can set it for them.
@@ -700,7 +700,7 @@ export default function PartyPanel({
         </>
       )}
 
-      <div className="label">
+      <div className="label eyebrow">
         Invite
         {hosting && onAllowJoins ? (
           joinsLeft > 0 ? (
@@ -742,7 +742,7 @@ export default function PartyPanel({
         </p>
       ) : null}
 
-      <div className="label">
+      <div className="label eyebrow">
         QR
         <button type="button" className="labelAction" onClick={() => setShowQr((v) => !v)}>
           {showQr ? 'Hide' : 'Show'}

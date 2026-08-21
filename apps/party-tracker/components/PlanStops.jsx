@@ -127,8 +127,12 @@ export default function PlanStops({
           );
         })}
       </ol>
-      <div className="joinRow">
-        <button type="button" className="btn small" onClick={() => onSetPlan?.([])}>
+      {/* The design never drew this, so it takes the shape it gives every other
+          quiet correction on these screens — the outlined pill Collection uses
+          for "Offer to Party". A full-width button here sat between the stops
+          and the note about them with more weight than either. */}
+      <div className="planClearRow">
+        <button type="button" className="pillGhost" onClick={() => onSetPlan?.([])}>
           Clear plan
         </button>
       </div>

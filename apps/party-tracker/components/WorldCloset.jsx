@@ -55,6 +55,11 @@ export default function WorldCloset({
 
   return (
     <div className="worldCloset">
+      {/* Named the way every other section on these screens is. Collection is
+          three lists deep — Skins, Kits, Marks — and the paragraph under this
+          is what they have in common, so it reads as this section's own note
+          rather than as an unowned sentence at the top of a screen. */}
+      <div className="label eyebrow">Collection</div>
       <p className="fine">
         Skins paint this map. Kits are how your Party sees you. Marks stay at a Place for
         families you never meet. Light and Dark are chrome, not Skins.
@@ -62,7 +67,7 @@ export default function WorldCloset({
 
       {offers.length > 0 && (
         <>
-          <div className="label">Offers in this Party</div>
+          <div className="label eyebrow">Offers in this Party</div>
           <div className="rowList">
             {offers.map((o) => {
               const skin = SKINS[o.skinId];
@@ -89,7 +94,7 @@ export default function WorldCloset({
         </>
       )}
 
-      <div className="label">Skins</div>
+      <div className="label eyebrow">Skins</div>
       {needsProfile && (
         <p className="fine">Sign in to unlock, share, and Offer. You can still Wear an Offer by name.</p>
       )}
@@ -145,7 +150,7 @@ export default function WorldCloset({
         })}
       </div>
 
-      <div className="label">Kits</div>
+      <div className="label eyebrow">Kits</div>
       <p className="fine">
         Your Party sees this on your puck. Strangers never do — kitForViewer returns nothing
         outside the Party — and there is no Offer for Kits.
@@ -170,7 +175,7 @@ export default function WorldCloset({
         ))}
       </div>
 
-      <div className="label">Marks</div>
+      <div className="label eyebrow">Marks</div>
       <div className="rowList">
         <button type="button" className="row" onClick={() => onOpenMarks?.()}>
           <span className="markGlyph accent" aria-hidden="true">

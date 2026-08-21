@@ -129,7 +129,7 @@ export default function WorldMarks({
     <div className="worldMarks">
       {spot ? <SpotBanner spot={spot} onClear={onClearSpot} /> : null}
 
-      <div className="label">Leave a Mark</div>
+      <div className="label eyebrow">Leave a Mark</div>
       <p className="fine">
         Two of the six are yours to place. Your Party sees it now; other guests after a second
         Party Thanks it. Marks dim after a week and go after four.
@@ -175,7 +175,7 @@ export default function WorldMarks({
 
       {!needsProfile && signOpen && anchored ? (
         <div className="markPhrases">
-          <div className="label">Choose the phrase</div>
+          <div className="label eyebrow">Choose the phrase</div>
           <div className="chips wrap">
             {SIGN_PHRASES.map((phraseOption) => (
               <button
@@ -206,7 +206,7 @@ export default function WorldMarks({
 
       <p className={`fine block markFoot ${footTone}`}>{foot}</p>
 
-      <div className="label">Left by your Contributions</div>
+      <div className="label eyebrow">Left by your Contributions</div>
       <p className="fine">
         The other four are placed for you when a Side Quest settles. You never pick these.
       </p>
