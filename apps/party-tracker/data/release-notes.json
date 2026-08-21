@@ -438,5 +438,11 @@
     "items": [
       "Design-twin import: reconcile apps/party-tracker with the Parkbound App design (#575)"
     ]
+  },
+  "1.26.4": {
+    "title": "What's new",
+    "items": [
+      "Measure Skin distinctness from both the spec and the pixels"
+    ]
   }
 }
