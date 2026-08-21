@@ -44,7 +44,16 @@ const USAGE = `Usage:
  *  wrong repo is worse than not printing it. */
 const git = (...args) => {
   try {
-    return execFileSync('git', args, { cwd: REPO, encoding: 'utf8', env: scrubGitEnv() }).trim();
+    return execFileSync('git', args, {
+      cwd: REPO,
+      encoding: 'utf8',
+      env: scrubGitEnv(),
+      // stderr discarded, not inherited: the brief is read by a session that
+      // has just landed, and "fatal: not a git repository" printed above the
+      // heading reads as the tool being broken rather than as one optional
+      // line of provenance being unavailable.
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
   } catch {
     return '';
   }
