@@ -81,7 +81,10 @@ function discIndex(cellSize) {
       for (let dy = -reach; dy <= reach; dy += 1) {
         for (let dx = -reach; dx <= reach; dx += 1) {
           const list = buckets.get(key(cx + dx, cy + dy));
-          if (list) out.push(...list);
+          // One at a time: spreading caps near 125k arguments (see
+          // display-bake.mjs's meadow note), and a close-band scatter list
+          // passes that.
+          if (list) for (const item of list) out.push(item);
         }
       }
       return out;
