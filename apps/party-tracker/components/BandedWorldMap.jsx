@@ -111,7 +111,12 @@ export default function BandedWorldMap({ skin, onReady = null }) {
       map?.remove();
       mapRef.current = null;
     };
-  }, [skin, onReady]);
+    // Only the Skin changes what is drawn. onReady is deliberately absent:
+    // callers pass it inline, so depending on its identity would tear down and
+    // rebuild the WebGL context on every unrelated parent render — the same
+    // reason DisplayMap.jsx keeps onMapReady out of its own deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skin]);
 
   return (
     <div className="bandedWorldWrap" data-testid="banded-world-map">

@@ -56,9 +56,21 @@ export function bandPixels(id, { spanXMetres, spanYMetres }) {
  *  tiles, so its zoom z has the density of slippy zoom z + 1. */
 const EQUATOR_METRES_PER_PIXEL = 156543.03392804097;
 
+/** Web Mercator is only defined to about this latitude — past it the
+ *  projection runs away, and past 90 the cosine turns negative, which would
+ *  hand `NaN` to whatever asked. Clamp rather than extrapolate. */
+export const MAX_MERCATOR_LATITUDE = 85.051129;
+
+/** The cosine every resolution here scales by. One definition, so the two
+ *  callers cannot drift if the projection maths ever changes. */
+function mercatorCosLatitude(latitude) {
+  if (!Number.isFinite(latitude)) throw new Error(`latitude must be a finite number: ${latitude}`);
+  const clamped = Math.min(MAX_MERCATOR_LATITUDE, Math.max(-MAX_MERCATOR_LATITUDE, latitude));
+  return Math.cos((clamped * Math.PI) / 180);
+}
+
 function screenResolution(zoom, latitude) {
-  const cos = Math.cos((latitude * Math.PI) / 180);
-  return (EQUATOR_METRES_PER_PIXEL * cos) / 2 ** (zoom + 1);
+  return (EQUATOR_METRES_PER_PIXEL * mercatorCosLatitude(latitude)) / 2 ** (zoom + 1);
 }
 
 /** The band a camera at this zoom should draw.
@@ -82,7 +94,7 @@ export function bandForZoom(zoom, { latitude = 0 } = {}) {
  *  overlap one, so the camera has to ask rather than hardcode a zoom range.
  */
 export function bandBoundaryZooms({ latitude = 0 } = {}) {
-  const cos = Math.cos((latitude * Math.PI) / 180);
+  const cos = mercatorCosLatitude(latitude);
   // Invert screenResolution: the zoom at which a screen pixel covers exactly
   // this band's metres. Below it the band is coarser than the screen.
   return BANDS.slice(0, -1).map((band) =>

@@ -108,4 +108,23 @@ for (const z of boundaries) {
 const north = bandBoundaryZooms({ latitude: 60 });
 assert.ok(north[0] < boundaries[0], 'a boundary sits at a lower zoom away from the equator');
 
+// Latitude outside the projection's range must not silently poison the maths.
+// Past +-90 the cosine goes negative and log2 of a negative ratio is NaN, which
+// would reach a live map.setPitch() unguarded. Clamp to Web Mercator's limit.
+for (const latitude of [95, -95, 179]) {
+  for (const z of bandBoundaryZooms({ latitude })) {
+    assert.ok(Number.isFinite(z), `boundary stays finite at latitude ${latitude}`);
+  }
+}
+assert.deepEqual(
+  bandBoundaryZooms({ latitude: 95 }),
+  bandBoundaryZooms({ latitude: 85.051129 }),
+  'beyond the limit clamps to it rather than extrapolating',
+);
+
+// A latitude that is not a number at all is a caller bug, not something to
+// paper over with a default.
+assert.throws(() => bandBoundaryZooms({ latitude: Number.NaN }), /latitude/i);
+assert.throws(() => bandForZoom(16, { latitude: 'north' }), /latitude/i);
+
 console.log('zoom-bands: ok');

@@ -21,16 +21,18 @@ export const DEFAULT_MAX_PITCH = 45;
  *  handoff. Picks the widest gap bounded by two handoffs and insets it. */
 export function pitchEaseRange({ latitude = 0, margin = DEFAULT_EASE_MARGIN } = {}) {
   const boundaries = bandBoundaryZooms({ latitude });
-  let widest = null;
-  for (let i = 0; i < boundaries.length - 1; i += 1) {
-    const gap = { low: boundaries[i], high: boundaries[i + 1] };
-    if (!widest || gap.high - gap.low > widest.high - widest.low) widest = gap;
+  // Needs two handoffs to have a gap bounded on both sides to sit inside. The
+  // shipped table has three bands and so always does; a table that stopped
+  // having one should say so rather than quietly easing across a handoff.
+  if (boundaries.length < 2) {
+    throw new Error(
+      `pitch ease needs a gap bounded by two band handoffs; got ${boundaries.length}`,
+    );
   }
-  // With a single handoff there is no bounded gap; ease above it instead,
-  // which still clears the handoff by the same margin.
-  if (!widest) {
-    const only = boundaries[boundaries.length - 1] ?? 0;
-    return { startZoom: only + margin, endZoom: only + margin + 1 };
+  let widest = { low: boundaries[0], high: boundaries[1] };
+  for (let i = 1; i < boundaries.length - 1; i += 1) {
+    const gap = { low: boundaries[i], high: boundaries[i + 1] };
+    if (gap.high - gap.low > widest.high - widest.low) widest = gap;
   }
   return { startZoom: widest.low + margin, endZoom: widest.high - margin };
 }
