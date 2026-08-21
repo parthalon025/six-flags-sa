@@ -45,18 +45,27 @@ export const SHEET_CHROME_PX = 84;
  * is worth showing. These track globals.css and are the first thing to check if
  * a row in the collapsed sheet grows.
  *
- *   rail    the glance cards: .glanceRail's min-height, padding included
- *   digest  one line of the rail, for when a whole card will not fit
  *   search  .searchRow — 2 + a 44px field + 8
+ *   locate  .locateCard — the "Location off / Turn on" card. Only ever charged
+ *           on a phone with no fix: on every other phone there is nothing to
+ *           draw, and a rung nobody can see must not cost anything. Measured
+ *           at 72 on a 390px phone, where the second line wraps, plus its 8 of
+ *           margin. A narrower phone wraps it to three and eats into the
+ *           eighteen SHEET_PEEK_PX holds back.
  *   brand   the venue name and its status line — an 18px line over 8
  *   list    the place list. A floor rather than a height: the list is the
  *           flexible child and takes whatever is left, but under about this
  *           much it is two rows and a scrollbar, which is not a list.
  *   hint    the "pull up for every place" line that stands in for the list
+ *
+ * The glance rail's two rungs — 104px of cards and a 26px one-line understudy —
+ * used to head this list. Explore is search → context → list now, so they are
+ * gone rather than merely unrendered: leaving them in the budget would charge
+ * the sheet 104px for a band with nothing drawn in it, which is the arithmetic
+ * showing through the interface in its purest form.
  */
-export const SHEET_RAIL_PX = 104;
-export const SHEET_DIGEST_PX = 26;
 export const SHEET_SEARCH_PX = 54;
+export const SHEET_LOCATE_PX = 80;
 export const SHEET_BRAND_PX = 26;
 export const SHEET_LIST_PX = 132;
 export const SHEET_HINT_PX = 22;
@@ -69,31 +78,58 @@ export const SHEET_HINT_PX = 22;
 export const SHEET_SHUT_PX = SHEET_CHROME_PX;
 
 /**
- * The glance stop: the rail, the search field, the venue line, the hint, and
- * eighteen pixels so none of them sit on the tab bar. Derived rather than
- * typed, so it cannot drift from the rungs it is the sum of.
+ * The resting stop: the search field, the venue line, the hint, and eighteen
+ * pixels so none of them sit on the tab bar. Derived rather than typed, so it
+ * cannot drift from the rungs it is the sum of.
+ *
+ * It also has to clear the locate card, because that is what a phone with no
+ * fix gets in place of the venue line and the hint — and the one screen that
+ * most needs an answer must not be the one screen that rests too low to show
+ * it. The two ways of spending the same room are held side by side here rather
+ * than added up: only one of them is ever drawn.
  */
 export const SHEET_PEEK_PX =
-  SHEET_CHROME_PX + SHEET_RAIL_PX + SHEET_SEARCH_PX + SHEET_BRAND_PX + SHEET_HINT_PX + 18;
+  SHEET_CHROME_PX +
+  SHEET_SEARCH_PX +
+  Math.max(SHEET_BRAND_PX + SHEET_HINT_PX, SHEET_LOCATE_PX) +
+  18;
 
 /** The height at which the place list first earns its room. */
 export const SHEET_LIST_AT_PX =
-  SHEET_CHROME_PX + SHEET_RAIL_PX + SHEET_SEARCH_PX + SHEET_BRAND_PX + SHEET_LIST_PX;
+  SHEET_CHROME_PX + SHEET_SEARCH_PX + SHEET_BRAND_PX + SHEET_LIST_PX;
 
 /** The two open stops, as a fraction of the viewport. */
 export const SHEET_OPEN = { half: 0.52, full: 0.88 };
 
 /**
- * Compact place card opened from a map tap — Google Maps' collapsed card:
- * name and icon actions on one row, one line of facts under it. The back
- * chevron overlays the title rather than taking a row of its own.
+ * The place card opened from a map tap, measured from globals.css:
+ *
+ *   head     .placeDetailTop — the live word and the verdict pill on one
+ *            22px line, over 2
+ *   title    .placeDetailName — 21px type on a 26px line, over 5 to the meta
+ *   meta     .placeDetailLine — one 18px line
+ *   actions  .placeActions.labelled — a 44px button under 12 of margin
+ *
+ * The back chevron overlays the title rather than taking a row of its own, so
+ * it costs nothing here — see .navHead.placeNav.
+ *
+ * These four are what the sheet opens at, so they are the four things to
+ * re-measure whenever this screen's type changes. It grew when the name went
+ * from 17px to 21 and the actions gained their words: an icon row that cost
+ * nothing because it sat beside the title now costs a row of its own, which is
+ * the price of a button somebody can read.
  */
-export const SHEET_PLACE_HEAD_PX = 0;
-export const SHEET_PLACE_TITLE_PX = 40;
+export const SHEET_PLACE_HEAD_PX = 24;
+export const SHEET_PLACE_TITLE_PX = 31;
 export const SHEET_PLACE_META_PX = 18;
-export const SHEET_PLACE_ACTIONS_PX = 0;
+export const SHEET_PLACE_ACTIONS_PX = 56;
 export const SHEET_PLACE_PX =
-  SHEET_CHROME_PX + SHEET_PLACE_TITLE_PX + SHEET_PLACE_META_PX + 8;
+  SHEET_CHROME_PX +
+  SHEET_PLACE_HEAD_PX +
+  SHEET_PLACE_TITLE_PX +
+  SHEET_PLACE_META_PX +
+  SHEET_PLACE_ACTIONS_PX +
+  8;
 
 /** How close to a stop a release has to land for the stop to take it. */
 export const SHEET_MAGNET_PX = 26;
@@ -188,7 +224,7 @@ export function nextSheetStop(px, stops) {
 export function sheetForm(px, stops) {
   if (px >= stops.full - 12) return 'full';
   if (px >= Math.round((stops.peek + stops.half) / 2)) return 'half';
-  if (px >= SHEET_CHROME_PX + SHEET_DIGEST_PX) return 'peek';
+  if (px >= SHEET_CHROME_PX + SHEET_SEARCH_PX) return 'peek';
   return 'shut';
 }
 
@@ -218,18 +254,12 @@ export function sheetCrowdsMap(px, viewportH) {
 /**
  * What the Explore screen shows at this height.
  *
- * A budget, spent in importance order. The rail goes first because it is the
- * answer to the question a phone comes out of a pocket to ask — which way, and
- * how long — but it goes first as a *line*: the twenty-six pixels that buy the
- * arrow, the time and the name. Then the search field. Only then does the rail
- * spend the seventy-eight more it takes to become a row of cards, and only then
- * the venue's line and the list.
- *
- * Buying the rail whole before the search field is what the ladder used to do,
- * and it meant the search field appeared at 164px and vanished again at 188 as
- * the rail's cards outbid it. Nothing may drop out on the way up — a row that
- * appears and then leaves as you pull is the arithmetic showing through the
- * interface — so the rail's upgrade waits its turn like everything else.
+ * A budget, spent in importance order. Search goes first, because searching is
+ * the way into a map and it is the one row that is worth having on a sheet
+ * pulled almost shut. Then the locate card on a phone that has no fix, because
+ * until there is one every other row on this screen is a worse version of
+ * itself — no walking times in the list, no district in the venue line. Then
+ * the venue's own line, then the list.
  *
  * The ladder stops at the first rung it cannot afford rather than skipping to a
  * cheaper one below: the brand line costs half what the search field does, and
@@ -240,14 +270,22 @@ export function sheetCrowdsMap(px, viewportH) {
  * like when the list will not fit, so it is only ever offered once the list has
  * been turned down, out of whatever is left over.
  *
- * @returns {{digest:boolean, rail:boolean, search:boolean, brand:boolean,
+ * Nothing may drop out on the way up — a row that appears at 300px and is gone
+ * again at 320 is the arithmetic showing through the interface — so every rung
+ * above is bought in one go, in one order, and `located` is fixed for the whole
+ * of a drag.
+ *
+ * @param px                the sheet's height
+ * @param [opts.located]    whether this phone has a fix. False buys the locate
+ *                          card its rung; true means there is nothing to draw
+ *                          and therefore nothing to charge for.
+ * @returns {{search:boolean, locate:boolean, brand:boolean,
  *            list:boolean, hint:boolean, spare:number}}
  */
-export function sheetPlan(px) {
+export function sheetPlan(px, { located = true } = {}) {
   const show = {
-    digest: false,
-    rail: false,
     search: false,
+    locate: false,
     brand: false,
     list: false,
     hint: false,
@@ -260,20 +298,18 @@ export function sheetPlan(px) {
     return true;
   };
 
-  if (!take(SHEET_DIGEST_PX)) return show;
-  show.digest = true;
+  /* Nothing below the first rung. The hint is cheap enough to fit under the
+     search field, and offering it there would put "pull up to explore" on a
+     sheet with no way to explore anything on it — a shape with nothing in it,
+     which is exactly what `shut` means. */
+  if (!take(SHEET_SEARCH_PX)) return show;
+  show.search = true;
 
-  if (take(SHEET_SEARCH_PX)) {
-    show.search = true;
-    if (take(SHEET_RAIL_PX - SHEET_DIGEST_PX)) {
-      // The line becomes the cards. It was never two rungs, only one bought in
-      // two goes, so the understudy stands down.
-      show.rail = true;
-      show.digest = false;
-      if (take(SHEET_BRAND_PX)) {
-        show.brand = true;
-        show.list = take(SHEET_LIST_PX);
-      }
+  if (located || take(SHEET_LOCATE_PX)) {
+    show.locate = !located;
+    if (take(SHEET_BRAND_PX)) {
+      show.brand = true;
+      show.list = take(SHEET_LIST_PX);
     }
   }
   if (!show.list) show.hint = take(SHEET_HINT_PX);

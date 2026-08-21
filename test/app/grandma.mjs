@@ -9,8 +9,12 @@
  *
  * An actual grandma with no technical understanding needs:
  * 1. Zero mandatory search or typing: critical needs (toilets, food, family,
- *    Rally Points) must be immediately discoverable on screen via the Glance Rail
- *    and one-tap category chips.
+ *    Rally Points) must be reachable by tapping words she can read, never by
+ *    typing. Explore is search -> context -> list now (D24 removed the glance
+ *    rail), so the resting screen no longer *holds* the answer — it names the
+ *    way to it. Checks that used to score 2 for "it was already on screen"
+ *    score 1 for "one tap on words that say it", and that drop is the honest
+ *    cost of the rail, not a bar that was lowered to fit.
  * 2. No deep scrolling: immediate amenities and nearby options must appear at
  *    the top of lists and cards.
  * 3. Outdoor readability: text font sizes, map labels, and marker icons
@@ -148,21 +152,63 @@ console.log('\n--- B, on her own at Six Flags Fiesta Texas ---');
 const B = await arrive(FIESTA, { venue: 'six-flags-fiesta-texas' });
 const b = B.page;
 
-await score('B', 'B1', 'finds a toilet without typing or searching', async () => {
-  const rail = await b.locator('.glanceRail').innerText().catch(() => '');
-  if (/restroom|toilet/i.test(rail)) return { score: 2, note: 'offered on the resting screen' };
-  await b.locator('.grab').click();
-  await b.waitForTimeout(600);
-  const after = await b.locator('.sheet').innerText().catch(() => '');
-  return /restroom|toilet/i.test(after) ? { score: 1, note: 'only after opening the panel' } : 0;
-});
+/**
+ * The rail put "nearest restroom" and "nearest food" on the resting screen as
+ * cards. It is gone, and what stands in its place is `.moreHint` — one line
+ * that names those two needs in words and is itself the handle that opens the
+ * list. So the task is still doable without typing, but it costs taps.
+ *
+ * The 2 is deliberately left where it was: an answer she does not have to open
+ * anything for. Nothing scores it any more, and that is the finding. 1 is the
+ * new best case — the resting screen says the word, and tapping the word gets
+ * her there. 0 is what it always was: she would have to type.
+ */
+const restSheet = async (page) => {
+  // Back to the height the app opens at, using the handle she is meant to use
+  // rather than a helper that knows the tab bar. The tap cycle wraps, so six
+  // taps reaches every stop from any of them.
+  for (let i = 0; i < 6 && !(await page.locator('.moreHint').count()); i += 1) {
+    await page.locator('.grab').click().catch(() => {});
+    await page.waitForTimeout(400);
+  }
+};
 
-await score('B', 'B2', 'finds nearest food without typing or deep scrolling', async () => {
-  const rail = await b.locator('.glanceRail').innerText().catch(() => '');
-  if (/nearest food|food/i.test(rail)) return { score: 2, note: 'offered on resting glance rail' };
-  const rows = await b.locator('.poiRow').allInnerTexts();
-  return rows.some((r) => /food/i.test(r)) ? { score: 1, note: 'only after browsing place list' } : 0;
-});
+const reachByWord = async (page, want, chip) => {
+  await restSheet(page);
+  const resting = await page.locator('.sheet').innerText().catch(() => '');
+  const restingRows = await page.locator('.poiRow', { hasText: want }).count();
+  if (restingRows) return { score: 2, note: 'offered on the resting screen' };
+  const hint = page.locator('.moreHint');
+  if (!(await hint.count())) {
+    return { score: 0, note: `nothing on the resting screen names it: ${resting.split('\n')[0]}` };
+  }
+  const words = (await hint.innerText()).trim();
+  if (!want.test(words)) return { score: 0, note: `the way in does not say it: ${words}` };
+  await hint.click();
+  await page.waitForTimeout(800);
+  // The list opens on what is nearest, which on a midway is rarely a toilet, so
+  // the second tap is the category chip wearing the same word.
+  const catChip = page.locator(`.chip:has-text("${chip}")`).first();
+  if (!(await catChip.count())) return { score: 0, note: `no ${chip} chip once the list is up` };
+  await catChip.click();
+  await page.waitForTimeout(700);
+  const rows = await page.locator('.poiRow').allInnerTexts();
+  const found = rows.some((r) => want.test(r));
+  const allChip = page.locator('.chip:has-text("All")').first();
+  if (await allChip.count()) await allChip.click();
+  await page.waitForTimeout(300);
+  return found
+    ? { score: 1, note: `named on the resting screen, two taps to it (hint, ${chip})` }
+    : { score: 0, note: `the ${chip} chip did not bring one up` };
+};
+
+await score('B', 'B1', 'finds a toilet without typing or searching', () =>
+  reachByWord(b, /restroom|toilet/i, 'Restrooms'),
+);
+
+await score('B', 'B2', 'finds nearest food without typing or deep scrolling', () =>
+  reachByWord(b, /food|cantina|grill|pizza|burger|snack/i, 'Food'),
+);
 
 await score('B', 'B3', 'tapping category chips filters places without typing', async () => {
   // Opening the panel to see the category chips
@@ -195,18 +241,24 @@ await score('B', 'B5', 'starts walking with a clear route preview and simple sto
   await b.locator('button:has-text("Stop"), button:has-text("Cancel"), .navEnd').first().click().catch(() => {});
   await b.waitForTimeout(500);
   await typeSearch(b, '');
-  // Tap the walk button on the nearest toilet glance card or list item
-  const glanceToiletGo = b.locator('.glanceCard', { hasText: /restroom|toilet/i }).locator('.glanceGo').first();
-  if (await glanceToiletGo.count()) {
-    await glanceToiletGo.click().catch(() => {});
+  /* The walk used to start from the rail's Go button. With the rail gone the
+     list row is where a walk begins: open the row, and the row's own worded
+     action starts it. `Walk me there` is the aria-label the button carries
+     everywhere in the app (WORDS.navigation), so this asks for it by the
+     words rather than by a class. */
+  const restroomChip = b.locator('.chip:has-text("Restrooms")').first();
+  if (await restroomChip.count()) {
+    await restroomChip.click();
+    await b.waitForTimeout(700);
   } else {
     await typeSearch(b, 'toilet');
-    await b.locator('.poiRow .poiMain').first().click();
-    await b.waitForTimeout(800);
-    const goBtn = b.locator('.poiRow.open button[aria-label="Walk me there"]').first();
-    if (await goBtn.count()) await goBtn.click();
-    else if (!(await tapText(b, 'Walk me there'))) return 0;
   }
+  if (!(await b.locator('.poiRow .poiMain').count())) return { score: 0, note: 'no place to walk to' };
+  await b.locator('.poiRow .poiMain').first().click();
+  await b.waitForTimeout(800);
+  const goBtn = b.locator('.poiRow.open button[aria-label="Walk me there"]').first();
+  if (await goBtn.count()) await goBtn.click();
+  else if (!(await tapText(b, 'Walk me there'))) return { score: 0, note: 'the open row offers no walk' };
   await b.waitForTimeout(1000);
   const preview = b.locator('.routePreview');
   if (!(await preview.count())) return { score: 0, note: 'no route preview shown' };
@@ -250,6 +302,11 @@ await score('B', 'B7', 'the list says which part of the park things are in', asy
 
 await score('B', 'B8', 'the things she must tap are big enough to tap (44px target floor)', async () => {
   await typeSearch(b, '');
+  /* The hint line is the resting screen's only worded way into the list, so it
+     has to be measured in the state it appears in — typing in the search field
+     grows the sheet past it, and a floor check that never sees the control is
+     not a check. */
+  await restSheet(b);
   const small = await b.evaluate(() => {
     const out = [];
     for (const el of document.querySelectorAll('.chip, .navBack, .filterBadge, .btn.small')) {
@@ -259,8 +316,11 @@ await score('B', 'B8', 'the things she must tap are big enough to tap (44px targ
       const grow = Math.abs(parseFloat(before.top || '0') || 0) + Math.abs(parseFloat(before.bottom || '0') || 0);
       if (r.height + grow < 44) out.push(`${el.className.split(' ')[0]} ${Math.round(r.height + grow)}px`);
     }
-    // Glance card actions and tab items use centered ::after pseudo-elements with max(100%, 44px)
-    for (const el of document.querySelectorAll('.tabItem, .glanceGo, .glanceShed')) {
+    /* Tab items and the map capsule's controls use centered ::after
+       pseudo-elements with max(100%, 44px) — the rail's .glanceGo/.glanceShed
+       took the same treatment and were replaced by the selection capsule's
+       Walk and Close, plus the hint line that is now the sheet's own handle. */
+    for (const el of document.querySelectorAll('.tabItem, .selWalk, .selClose, .moreHint, .fab')) {
       const r = el.getBoundingClientRect();
       if (!r.height) continue;
       const after = getComputedStyle(el, '::after');
@@ -277,6 +337,19 @@ await score('B', 'B8', 'the things she must tap are big enough to tap (44px targ
 });
 
 await score('B', 'B9', 'reading text and icon sizes are large enough for arm’s length outdoors', async () => {
+  /* The capsule only exists once a Place is picked, and a size check that
+     silently skips the element it is there to measure proves nothing — so this
+     puts one on screen first, then reads every piece of type at once. */
+  if (!(await b.locator('.selCapsule').count())) {
+    if (!(await b.locator('.poiRow .poiMain').count()) && (await b.locator('.moreHint').count())) {
+      await b.locator('.moreHint').click();
+      await b.waitForTimeout(800);
+    }
+    if (await b.locator('.poiRow .poiMain').count()) {
+      await b.locator('.poiRow .poiMain').first().click();
+      await b.waitForTimeout(900);
+    }
+  }
   const checks = await b.evaluate(() => {
     const issues = [];
     const poiName = document.querySelector('.poiName');
@@ -284,10 +357,13 @@ await score('B', 'B9', 'reading text and icon sizes are large enough for arm’s
       const size = parseFloat(getComputedStyle(poiName).fontSize || '0');
       if (size < 13.5) issues.push(`poiName ${size}px (<13.5px)`);
     }
-    const glanceTitle = document.querySelector('.glanceTitle');
-    if (glanceTitle) {
-      const size = parseFloat(getComputedStyle(glanceTitle).fontSize || '0');
-      if (size < 13.5) issues.push(`glanceTitle ${size}px (<13.5px)`);
+    /* .glanceTitle named the place on a rail card. The selection capsule's
+       .selName is the same job on the same screen — the name of the place she
+       just tapped, read over the map. */
+    const selName = document.querySelector('.selName');
+    if (selName) {
+      const size = parseFloat(getComputedStyle(selName).fontSize || '0');
+      if (size < 13.5) issues.push(`selName ${size}px (<13.5px)`);
     }
     const tabLabel = document.querySelector('.tabLabel');
     if (tabLabel) {
@@ -296,6 +372,8 @@ await score('B', 'B9', 'reading text and icon sizes are large enough for arm’s
     }
     return issues;
   });
+  await b.locator('.selCapsule .selClose').click().catch(() => {});
+  await b.waitForTimeout(400);
   return checks.length ? { score: 1, note: checks.join(', ') } : 2;
 });
 
@@ -323,52 +401,81 @@ await score('B', 'B10', 'can get the panel out of the way to see the map, and ge
 });
 
 await score('B', 'B11', 'a place she taps can be un-tapped', async () => {
+  // The rail answered a tap with a `.glanceCard.selected` carrying a ✕. The
+  // selection capsule is that answer now — same job, said over the map where
+  // the pin is, and it carries its own Close.
   await typeSearch(b, 'rattler');
   await b.locator('.poiRow .poiMain').first().click();
   await b.waitForTimeout(1000);
-  const on = await b.locator('.glanceCard.selected').count();
-  if (!on) return { score: 0, note: 'tapping a place put nothing on the rail' };
-  const shed = b.locator('.glanceCard.selected .glanceShed');
-  if (!(await shed.count())) return { score: 0, note: 'no way to remove it' };
-  await shed.click();
+  if (!(await b.locator('.selCapsule').count())) {
+    return { score: 0, note: 'tapping a place said nothing over the map' };
+  }
+  const name = (await b.locator('.selCapsule .selName').innerText().catch(() => '')).trim();
+  const close = b.locator('.selCapsule .selClose');
+  if (!(await close.count())) return { score: 0, note: `${name || 'the capsule'} has no way out` };
+  await close.click();
   await b.waitForTimeout(700);
-  return (await b.locator('.glanceCard.selected').count()) ? 0 : 2;
+  return (await b.locator('.selCapsule').count()) ? 0 : 2;
 });
 
-await score('B', 'B12', 'a card she removes stays removed, and Me can put it back', async () => {
+/**
+ * B12 has changed what it asks, and it has to be read knowing that.
+ *
+ * It used to test the rail's ✕: swipe a card away, and Me lists it so it can
+ * come back. D24 removed the rail, and with it the only thing that ever wrote
+ * to `hiddenCards` — so the task this scored no longer exists anywhere in the
+ * app, and there is no successor gesture to re-aim it at. Scoring the old flow
+ * would be a permanent 0 for a feature the product deliberately dropped, which
+ * is a lie in the other direction.
+ *
+ * What survived the removal is the *surface*: Me -> Settings -> Phone still
+ * offers "What the panel shows", which now governs only whatever a phone hid
+ * before the change. So the question B12 asks now is the one that is left and
+ * still matters to a first-time visitor: does Me tell her the truth about it,
+ * or does it hand her instructions for a gesture the app cannot perform? A
+ * control that describes a thing she cannot do is worse than no control.
+ *
+ * This is not the old score. Do not compare the two rows across the D24 merge.
+ */
+await score('B', 'B12', 'Me tells the truth about what it can put back', async () => {
   await typeSearch(b, '');
-  const food = b.locator('.glanceCard', { hasText: 'Nearest food' }).first();
-  if (!(await food.count())) return { score: 0, note: 'no food card to remove' };
-  await food.locator('.glanceShed').click();
-  await b.waitForTimeout(700);
-  if (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) {
-    return { score: 0, note: 'still there after removing it' };
-  }
-  await b.reload({ waitUntil: 'domcontentloaded' });
-  await b.waitForTimeout(2500);
-  await b.locator('button:has-text("Share my location"), button:has-text("Allow location")').click().catch(() => {});
-  await b.waitForTimeout(2500);
-  await b.locator('.gate .btn.primary:has-text("Enter"), .gate .btn.primary:has-text("set up")').click().catch(() => {});
-  await b.waitForFunction(() => !document.querySelector('.gate'), null, { timeout: 25000 }).catch(() => {});
-  await b.waitForTimeout(2000);
-  if (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) {
-    return { score: 1, note: 'came back on its own after a reload' };
-  }
-  // …and it has to be findable again, or removing it was a one-way door.
   await b.locator('.tabItem[data-tab="settings"]').click();
   await b.waitForTimeout(800);
-  const phoneTopic = b.locator('.settingsTopic', { hasText: 'Phone' });
-  if (await phoneTopic.count()) {
-    await phoneTopic.click();
-    await b.waitForTimeout(500);
+  // Me is the tab root; preferences are a screen under it.
+  const settingsRow = b.locator('.mePanel .row', { hasText: 'Settings' }).first();
+  if (await settingsRow.count()) {
+    await settingsRow.click();
+    await b.waitForTimeout(600);
   }
-  const row = b.locator('.row', { hasText: 'Nearest food' });
-  if (!(await row.count())) return { score: 1, note: 'hidden for good — Me does not list it' };
-  await row.click();
-  await b.waitForTimeout(600);
+  const phoneTopic = b.locator('.settingsTopic', { hasText: 'Phone' });
+  if (!(await phoneTopic.count())) return { score: 0, note: 'no Phone screen under Me' };
+  await phoneTopic.click();
+  await b.waitForTimeout(500);
+  const shownRow = b.locator('.settingsPanel .row', { hasText: 'What the panel shows' }).first();
+  if (!(await shownRow.count())) {
+    // Removing the surface with the rail is a legitimate answer to the same
+    // question, and a better one than a row governing nothing.
+    await b.locator('.tabItem[data-tab="explore"]').click();
+    await b.waitForTimeout(600);
+    return { score: 2, note: 'the surface went with the rail' };
+  }
+  const rowText = (await shownRow.innerText()).replace(/\n/g, ' · ');
+  await shownRow.click();
+  await b.waitForTimeout(700);
+  const screen = await b.locator('.hiddenCards').innerText().catch(() => '');
+  if (!screen.trim()) return { score: 0, note: 'the row leads nowhere' };
   await b.locator('.tabItem[data-tab="explore"]').click();
-  await b.waitForTimeout(1200);
-  return (await b.locator('.glanceCard', { hasText: 'Nearest food' }).count()) ? 2 : { score: 1, note: 'listed, but would not come back' };
+  await b.waitForTimeout(800);
+  /* The rail is the only thing that ever put a card in this list, and it is
+     gone. Anything telling her to swipe or ✕ a card is describing an app she
+     does not have. */
+  const promises = /swipe|tap its|✕/i.test(`${rowText} ${screen}`);
+  if (promises) {
+    return { score: 0, note: `tells her to do something the app cannot: ${screen.split('\n').pop().slice(0, 60)}` };
+  }
+  return /nothing hidden|all showing/i.test(`${rowText} ${screen}`)
+    ? 2
+    : { score: 1, note: rowText.slice(0, 60) };
 });
 
 await score('B', 'B13', 'checking rider height for a grandchild gives plain-English verdicts', async () => {
@@ -474,10 +581,29 @@ await score('A', 'A3', 'appears as herself, not as "Guest"', async () => {
 });
 
 await score('A', 'A4', 'can see where a family member is on the resting screen', async () => {
+  /* The rail carried a card per member, which said how far away they were but
+     not where. The map has always drawn them by name, and with the rail gone
+     the map is what the resting screen mostly is — so this asks the map, which
+     is the better answer to "where" anyway. The tab bar's count is the
+     fallback: it proves the app knows, but not where. */
   await a.locator('.tabItem[data-tab="explore"]').click();
-  await a.waitForTimeout(1500);
-  const rail = await a.locator('.glanceRail').innerText().catch(() => '');
-  return /Grandad/.test(rail) ? 2 : { score: 0, note: rail.replace(/\n/g, ' | ').slice(0, 70) };
+  // The mesh has to land his position before the map can draw it, and a party
+  // an hour old has no reason to be quick about it.
+  const named = await until(
+    async () => {
+      // SVG <text> has no innerText, so textContent is the only way to read it.
+      const txt = (await a.locator('svg.mapSvg .memMarker .memName').allTextContents()).join(' ');
+      return /Grandad/.test(txt) ? txt : false;
+    },
+    { timeout: 25000, step: 1000, label: 'Grandad on the map' },
+  ).catch(async () => (await a.locator('svg.mapSvg .memMarker .memName').allTextContents()).join(' '));
+  if (/Grandad/.test(named)) return { score: 2, note: 'drawn on the map by name' };
+  const badge = await a
+    .locator('.tabItem[data-tab="party"] .tabBadge')
+    .innerText()
+    .catch(() => '');
+  if (badge.trim()) return { score: 1, note: `only a count on the Party tab (${badge.trim()})` };
+  return { score: 0, note: named ? `map shows: ${named.slice(0, 60)}` : 'nobody on the map' };
 });
 
 await score('A', 'A5', 'family Rally Point is clearly visible on the resting screen', async () => {
@@ -490,30 +616,62 @@ await score('A', 'A5', 'family Rally Point is clearly visible on the resting scr
   }
   await h.locator('.tabItem[data-tab="explore"]').click();
   await h.waitForTimeout(600);
-  const carouselRow = h.locator('.poiRow').filter({ hasText: /Carousel|Eiffel|Fountain|Tower/i }).first();
-  if (await carouselRow.count()) {
-    await carouselRow.locator('.poiMain').click();
-    await h.waitForTimeout(600);
-    const meetBtn = h.locator('button[aria-label*="Rally"], button[aria-label="Rally the Party"]').first();
-    if (await meetBtn.count()) {
-      await meetBtn.click();
-      await h.waitForTimeout(1200);
-    }
+  /* Explore rests below the height the place list earns its room at, so the
+     list has to be asked for before there is a row to rally on. This used to
+     work by accident because the rail sat above the list and the sheet came to
+     rest higher; the hint line is the way up now. */
+  await restSheet(h);
+  if (await h.locator('.moreHint').count()) {
+    await h.locator('.moreHint').click();
+    await h.waitForTimeout(900);
   }
-  // On Grandma's screen, the glance rail shows the Rally card.
+  /* The list opens on what is nearest and virtualises the rest, so a landmark
+     across the park is not in the DOM to be filtered for. The host is stage
+     dressing rather than a persona, so he is allowed to type for it. */
+  let carouselRow = h.locator('.poiRow').filter({ hasText: /Carousel|Eiffel|Fountain|Tower/i }).first();
+  for (const term of ['Eiffel', 'Carousel', 'Tower', 'Fountain']) {
+    if (await carouselRow.count()) break;
+    if (!(await typeSearch(h, term))) break;
+    carouselRow = h.locator('.poiRow').filter({ hasText: /Carousel|Eiffel|Fountain|Tower/i }).first();
+  }
+  if (!(await carouselRow.count())) return { score: 0, note: 'the host could not find a place to rally on' };
+  await carouselRow.locator('.poiMain').click();
+  await h.waitForTimeout(800);
+  const meetBtn = h.locator('.poiRow.open button[aria-label="Rally the Party"]').first();
+  if (!(await meetBtn.count())) return { score: 0, note: 'the open row offers no Rally action' };
+  await meetBtn.click();
+  await h.waitForTimeout(1500);
+  /* On Grandma's screen the rail used to carry a Rally card, in words. What is
+     left is the map's `.meetPin` — which shows her where, but says nothing, and
+     the word "Rally" is a tab away. That is the honest 1: the resting screen
+     points at it without naming it. 2 is reserved for a resting screen that
+     both shows it and says what it is, and nothing does that now. */
   await a.locator('.tabItem[data-tab="explore"]').click();
-  await a.waitForTimeout(2000);
-  const rail = await a.locator('.glanceRail').innerText().catch(() => '');
-  if (/RALLY|Rally Point/i.test(rail)) return { score: 2, note: 'Rally Point offered on resting glance rail' };
+  const pinned = await until(
+    async () => (await a.locator('svg.mapSvg .meetPin').count()) > 0,
+    { timeout: 25000, step: 1000, label: 'the Rally pin on the map' },
+  ).catch(() => false);
+  const resting = await a.locator('.sheet').innerText().catch(() => '');
+  if (pinned && /RALLY|Rally Point/i.test(resting)) {
+    return { score: 2, note: 'pinned on the map and named on the resting screen' };
+  }
   // Check if it's on the party tab if mesh sync was slow
   await a.locator('.tabItem[data-tab="party"]').click();
   await a.waitForTimeout(800);
   const partyText = await a.locator('.sheet').innerText().catch(() => '');
   await a.locator('.tabItem[data-tab="explore"]').click();
-  if (/Rally Point/i.test(partyText)) {
-    return { score: 1, note: 'visible in Party tab' };
+  await a.waitForTimeout(400);
+  if (pinned) {
+    return { score: 1, note: 'pinned on the map, but the word is only in the Party tab' };
   }
-  return { score: 1, note: rail.replace(/\n/g, ' · ').slice(0, 60) || 'Rally card not at front of rail' };
+  /* Nothing on her map. The Party tab always carries the words "Rally Point"
+     — it is the label on the control that sets one — so reading them there is
+     not evidence that one exists. The host's own map is: if the pin is not on
+     his either, the Rally was never set and this is a broken step rather than
+     a screen that failed to show it. */
+  const onHost = await h.locator('svg.mapSvg .meetPin').count();
+  if (!onHost) return { score: 0, note: 'no Rally pin on either phone — none was ever set' };
+  return { score: 0, note: 'set on the host, never reached her map' };
 });
 
 await score('A', 'A6', 'calling for help takes intent, and can be taken back', async () => {
@@ -532,13 +690,26 @@ await score('A', 'A6', 'calling for help takes intent, and can be taken back', a
 });
 
 await score('A', 'A7', 'a help alert cannot be swiped away by others', async () => {
-  // A dismissable help card is a missed help card. Checked on the phone that
-  // can see it — the host's, since A is the one who raised it.
+  /* A dismissable help card is a missed help card. The rail's help card was the
+     signal; D24 made the Party tab's badge the primary one, and the whole point
+     of putting it there is that a tab bar cannot be swiped away — so this now
+     asks whether the badge fires at all, and whether anything on it offers a
+     way to make it go away. Checked on the phone that can see it: the host's,
+     since A is the one who raised it. */
   await h.locator('.tabItem[data-tab="explore"]').click();
-  await h.waitForTimeout(1500);
-  const help = h.locator('.glanceCard.help');
-  if (!(await help.count())) return { score: 1, note: 'no help card on the rail to check' };
-  return (await help.locator('.glanceShed').count()) ? { score: 0, note: 'it has a remove button' } : 2;
+  await h.waitForTimeout(2000);
+  const tab = h.locator('.tabItem[data-tab="party"]');
+  const badge = tab.locator('.tabBadge.alert');
+  if (!(await badge.count())) {
+    const said = (await tab.getAttribute('aria-label')) || '';
+    return { score: 0, note: `the Party tab never raised the alert (${said})` };
+  }
+  const said = (await tab.getAttribute('aria-label')) || '';
+  if (!/needs help/i.test(said)) return { score: 1, note: `alert shown but unlabelled: ${said}` };
+  // Nothing inside the badge may be its own dismiss, and the map's help ring
+  // is not dismissable either — the tab is the whole control.
+  const dismiss = await badge.locator('button, [role="button"]').count();
+  return dismiss ? { score: 0, note: 'the alert carries its own dismiss' } : 2;
 });
 
 await score('A', 'A8', 'the host is told the invite was copied', async () => {
@@ -553,6 +724,11 @@ await score('A', 'A8', 'the host is told the invite was copied', async () => {
 await score('A', 'A9', 'the app explains what a "party" even is in plain English', async () => {
   await a.locator('.tabItem[data-tab="settings"]').click();
   await a.waitForTimeout(700);
+  const settingsRow = a.locator('.mePanel .row', { hasText: 'Settings' }).first();
+  if (await settingsRow.count()) {
+    await settingsRow.click();
+    await a.waitForTimeout(600);
+  }
   if (!(await tapText(a, 'What all this means'))) return 0;
   const text = await a.locator('.sheet').innerText();
   return /party is optional|stick together|party is your group/i.test(text)

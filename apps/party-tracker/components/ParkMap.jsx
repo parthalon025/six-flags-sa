@@ -406,6 +406,10 @@ function ParkMap({
   me,
   members,
   meet,
+  /** A patch of ground the visitor tapped and named — see lib/spot.js. Drawn
+   *  like the meet-up because it is the same kind of thing: a point somebody
+   *  chose, not a Place the park has. */
+  spot = null,
   car,
   selected,
   onSelectPoi,
@@ -455,7 +459,16 @@ function ParkMap({
   const venue = useVenueSelector((s) => s.venue);
   // What this venue has any of at all, so the key can offer switches for those
   // and only those. Cheap: it is one pass over a list of a few hundred.
-  const presentCategories = useMemo(() => new Set((pois || []).map((p) => p.c)), [pois]);
+  /* How many of each category this venue has. The key already only draws rows
+     for categories the venue has any of, so the count is the same pass with
+     the number kept instead of thrown away — and `presentCategories` is now
+     derived from it rather than computed twice. */
+  const categoryCounts = useMemo(() => {
+    const out = new Map();
+    (pois || []).forEach((p) => out.set(p.c, (out.get(p.c) || 0) + 1));
+    return out;
+  }, [pois]);
+  const presentCategories = useMemo(() => new Set(categoryCounts.keys()), [categoryCounts]);
   const wrapRef = useRef(null);
   const [size, setSize] = useState({ w: 360, h: 640 });
   // view is centred on a mercator metre coordinate at `scale` px per metre
@@ -1311,6 +1324,11 @@ function ParkMap({
     reserve(puck?.lat ?? me?.lat, puck?.lng ?? me?.lng, 15);
     (members || []).forEach((m) => reserve(m.lat, m.lng, 17));
     if (meet) reserve(meet.lat, meet.lng, 16);
+    // The spot is the answer to the tap that just happened, so it outranks the
+    // Place names around it — this keeps a label off the pin's own footprint.
+    // Its walk time floats higher than the box reaches; that type is stroked
+    // and survives a collision, which the pin's silhouette would not.
+    if (spot) reserve(spot.lat, spot.lng, 20);
     const routePts = route?.points;
     if (routePts?.length > 1) {
       const step = Math.max(1, Math.floor(routePts.length / 14));
@@ -1408,6 +1426,7 @@ function ParkMap({
     route?.points,
     members,
     meet,
+    spot,
     me,
     puck,
     shownLabels,
@@ -1812,6 +1831,38 @@ function ParkMap({
             );
           })()}
 
+        {/* the tapped spot — aqua, and the plainest pin on the map, because it
+            is the only one that stands for nothing but "here". Two nested
+            groups on purpose: the outer one carries the position, the inner one
+            carries the drop, because pinDrop ends on `transform: none` and a
+            filled animation on the positioned element would reset it to the
+            map's origin. The walk time floats above it in the same stroked type
+            the Place labels use, so it survives whatever it lands on. */}
+        {spot &&
+          (() => {
+            const [sx, sy] = at(spot.lat, spot.lng);
+            return (
+              <g key="spot" transform={`translate(${sx.toFixed(1)} ${sy.toFixed(1)})`}>
+                <g className="spotPin">
+                  {spot.walk ? (
+                    <text className="spotPinWalk" x={0} y={-31}>
+                      {spot.walk}
+                    </text>
+                  ) : null}
+                  <ellipse cx={0} cy={1.5} rx={7} ry={2.4} fill="#000" opacity="0.28" />
+                  <path
+                    d="M0 0 l-8.4 -12.4 a10.4 10.4 0 1 1 16.8 0 Z"
+                    fill="var(--aqua)"
+                    stroke="var(--markerEdge)"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx={0} cy={-14.6} r={3.3} fill="var(--markerEdge)" />
+                </g>
+              </g>
+            );
+          })()}
+
         {/* where the car is — a pin, like the meet-up, because both are a spot
             somebody chose rather than a place the park has. Violet and carrying
             a car, so it is never mistaken for the crimson meet-up pin at a
@@ -2072,6 +2123,7 @@ function ParkMap({
               }),
           )}
           presentCategories={presentCategories}
+          categoryCounts={categoryCounts}
           hidden={mapKeyHidden}
         />
         <div className="mapMeta">

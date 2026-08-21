@@ -16,9 +16,9 @@
     {
       "id": "intake-welcome",
       "slice": "Navigate",
-      "user_action": "See brand welcome and nearest-World offer",
+      "user_action": "See what the app is for, and the nearest-World offer",
       "suite": "functional",
-      "check": "the welcome gate shows brand, pitch, and nearest-park on one card"
+      "check": "the welcome gate is step one of two: what the app is for, and the ask"
     },
     {
       "id": "intake-confirm-park",
@@ -168,6 +168,27 @@
       "check": "complete a gap quest draws Overlay on the map"
     },
     {
+      "id": "spot-capsule",
+      "slice": "Adventure",
+      "user_action": "Tap bare ground and see the spot named by the venue's own Zone and nearest Place",
+      "suite": "functional",
+      "check": "tapping bare ground names the spot from the venue data"
+    },
+    {
+      "id": "spot-side-quest",
+      "slice": "Adventure",
+      "user_action": "Carry that spot into Side Quests as the anchor the screen sorts by",
+      "suite": "functional",
+      "check": "Side Quest here carries the spot into Side Quests"
+    },
+    {
+      "id": "spot-mark",
+      "slice": "Adventure",
+      "user_action": "Leave a Mark standing at the tapped spot — an anchor is what unlocks placement",
+      "suite": "functional",
+      "check": "Leave a Mark places a Mark at the tapped spot"
+    },
+    {
       "id": "e5-eligibility",
       "slice": "E5",
       "user_action": "See structured eligibility reason on a ride",
@@ -186,7 +207,7 @@
       "slice": "E8",
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
-      "check": "GO NOW card carries a Why? explanation"
+      "check": "a GO NOW verdict in the list carries a Why? explanation"
     },
     {
       "id": "ride-status-stale-marker",
@@ -226,9 +247,9 @@
     {
       "id": "party-location-roster",
       "slice": "Party",
-      "user_action": "Roster shows a live distance to another Member (Location)",
+      "user_action": "Roster shows a live walk and bearing to another Member (Location)",
       "suite": "functional",
-      "check": "roster shows a real distance to phone B"
+      "check": "roster shows a real walk and bearing to phone B"
     },
     {
       "id": "party-rally-point",

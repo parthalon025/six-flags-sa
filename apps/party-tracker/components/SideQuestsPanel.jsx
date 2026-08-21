@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/Icon';
 import SignInCard from '@/components/SignInCard';
+import SpotBanner from '@/components/SpotBanner';
 import TitleProgress from '@/components/TitleProgress';
 import { awardQuestXp, readLocalSession, softGateBlocks } from '@/lib/auth/session';
 import { contributionStashCount, stashGapSubmission } from '@/lib/auth/contributionStash';
@@ -41,6 +42,60 @@ const STATUS_OPTIONS = [
   { value: 'changed', label: 'Changed' },
   { value: 'issue', label: 'Problem here' },
 ];
+
+/* What kind of thing a card is, said before its title.
+   Live quests are answerable any time you are standing near one; a Gap is a
+   hole the builder shipped and stays until somebody fills it. Naming the two
+   is the difference between "this list is long" and "this list has two halves". */
+const LIVE_KIND = {
+  ride_status: 'LIVE · RIDE REPORT',
+  queue_band: 'LIVE · QUEUE',
+  amenity_outage: 'LIVE · AMENITY',
+};
+
+/**
+ * The eyebrow's ink.
+ *
+ * Not invented and not a new token: lib/theme.js's category signals ARE the
+ * repo's semantic colours in both palettes — ride is --purple (#9B6BFF /
+ * #8B5CF0), restroom is --aqua (#27B8B0 / #1FA59E), gate is --gray, food and
+ * campsite share the sun. So a quest wears the ink of the thing it is about,
+ * and the pins on the map it sends you to are already that colour.
+ *
+ * `path` is the one type with no category behind it — a missing walkway is
+ * geometry, not a Place — so it takes --aqua as the abstract case, which is
+ * also restroom's own ink. Two types sharing a colour is the palette telling
+ * the truth, not a collision to design around.
+ */
+const QUEST_TONE = {
+  height: 'var(--purple)',
+  queue: 'var(--purple)',
+  path: 'var(--aqua)',
+  restroom: 'var(--aqua)',
+  food: 'var(--yellow)',
+  gate: 'var(--gray)',
+  camping: 'var(--yellow)',
+};
+const LIVE_TONE = 'var(--adventure)';
+
+/**
+ * What answering this card is worth — in what it does for other people.
+ *
+ * Never XP. XP reads *after* a submit, in RewardToast, because a card that
+ * advertises a number is a card you answer for the number; the doc comment at
+ * the top of this file and the design twin both hold this line, and a later
+ * reader with a spreadsheet will be tempted to "improve" it. Do not.
+ */
+function questGain(quest) {
+  if (isLiveQuest(quest)) return 'Tell the Party';
+  if (ADD_PLACE_TYPES.includes(quest.type)) return 'Name a Place';
+  return 'Settle a Gap';
+}
+
+function questKind(quest) {
+  if (isLiveQuest(quest)) return LIVE_KIND[quest.id] || 'LIVE';
+  return `GAP · ${String(quest.type || '').toUpperCase()}`;
+}
 
 /**
  * The moment after a submit. Meaning leads; the XP earned rides along.
@@ -110,6 +165,13 @@ export default function SideQuestsPanel({
   onContribution = null,
   overlay = null,
   flushTick = 0,
+  /** The patch of ground this screen was opened from — `lib/spot.js`, set by
+   *  tapping "Side Quest here" on the map's spot capsule, null when the visitor
+   *  arrived by the tab bar. It is a *sort hint*: it puts the quests near that
+   *  ground at the top and says so in a banner. It never becomes the target of
+   *  a report — see the ordering below. */
+  spot = null,
+  onClearSpot = null,
 }) {
   const queue = defaultQuestQueue();
   const gapNeedsAuth = softGateBlocks('adventure', session);
@@ -158,7 +220,22 @@ export default function SideQuestsPanel({
     if (q.type === 'path' && offPath) return { ...q, nearby: true };
     return q;
   });
-  const durable = position ? sortByProximity(withLocationHints, pois, position) : withLocationHints;
+  const located = position ? sortByProximity(withLocationHints, pois, position) : withLocationHints;
+  /* An anchored spot re-orders this list and does nothing else. `nearby` — and
+     through it `walkedNear`, which is the whole anti-farm rule scoreSideQuest
+     enforces — stays measured from this phone's own fix: tapping a patch of
+     ground on the far side of the park is not standing on it. So the spot's
+     ordering is taken and the position's answers are put straight back. */
+  const durable = spot
+    ? sortByProximity(located, pois, spot).map((q) => {
+        const asLocated = located.find((l) => l.id === q.id);
+        return {
+          ...q,
+          nearby: asLocated ? asLocated.nearby : false,
+          distanceM: asLocated ? asLocated.distanceM : null,
+        };
+      })
+    : located;
 
   const [openQuestId, setOpenQuestId] = useState(null);
   const [note, setNote] = useState('');
@@ -471,44 +548,58 @@ export default function SideQuestsPanel({
   const renderQuest = (q) => {
     const open = openQuestId === q.id;
     const blocked = questBlocked(q);
-    let action;
-    if (position) {
-      action = (
-        <button
-          type="button"
-          className="sideQuestReportBtn"
-          aria-expanded={open}
-          onClick={() => toggleQuest(q)}
-        >
-          {open ? 'Cancel' : 'Report'}
-        </button>
-      );
-    } else {
-      action = <span className="rowValue">Soon</span>;
-    }
+    const tone = isLiveQuest(q) ? LIVE_TONE : QUEST_TONE[q.type] || 'var(--aqua)';
     const progress =
       isGapQuest(q) && q.progress?.total > 1
-        ? ` · ${q.progress.done}/${q.progress.total}`
+        ? `${q.progress.done}/${q.progress.total}`
         : '';
+    /* `Soon` rather than a disabled Report: without a fix there is nothing to
+       measure walkedNear against, so scoreSideQuest would return not_near for
+       anything filed here. The card is still worth reading — that is the whole
+       reason it draws at all with location off. */
+    const action = position ? (
+      <button
+        type="button"
+        className="btn small rect questAction"
+        aria-expanded={open}
+        onClick={() => toggleQuest(q)}
+      >
+        {open ? 'Cancel' : 'Report'}
+      </button>
+    ) : (
+      <span className="questSoon">Soon</span>
+    );
     return (
-      <div key={q.id} className="row sideQuestRow" role="listitem">
-        <span className="sideQuestGlyph" aria-hidden="true">
-          <Icon name={q.icon} size={20} />
-        </span>
-        <span className="rowText">
-          <b className="sideQuestTitle">
-            {q.title}
-            {progress ? <span className="sideQuestProgress">{progress}</span> : null}
-            {q.nearby && <span className="sideQuestNear"> · nearby</span>}
-          </b>
-          <span className="sideQuestBlurb">{q.blurb}</span>
-          {q.targets?.length > 0 && (
-            <span className="sideQuestTargets">
-              {q.targets.slice(0, 4).map((target) => {
-                const place = findPlace(pois, target);
-                const label = titleOf(place) || target;
-                const selected = selectedTarget === target && open;
-                return (
+      <div key={q.id} className={`questCard ${q.nearby ? 'near' : ''}`} role="listitem">
+        <div className="questCardHead">
+          <span className="questGlyph" style={{ color: tone }} aria-hidden="true">
+            <Icon name={q.icon} size={18} />
+          </span>
+          <span className="questCardTitle">
+            <span className="questKind" style={{ color: tone }}>
+              {questKind(q)}
+            </span>
+            <b className="questTitle">{q.title}</b>
+          </span>
+          {/* The gain, not the XP — see questGain. */}
+          <span className="questGain" style={{ color: tone, borderColor: tone }}>
+            {questGain(q)}
+          </span>
+        </div>
+        <p className="questBlurb">{q.blurb}</p>
+        {(progress || q.nearby) && (
+          <p className="questMeta">
+            {q.nearby ? <span className="questNear">Nearby</span> : null}
+            {progress ? <span className="questProgress">{progress} settled</span> : null}
+          </p>
+        )}
+        {q.targets?.length > 0 && (
+          <div className="sideQuestTargets">
+            {q.targets.slice(0, 4).map((target) => {
+              const place = findPlace(pois, target);
+              const label = titleOf(place) || target;
+              const selected = selectedTarget === target && open;
+              return (
                 <button
                   key={target}
                   type="button"
@@ -524,37 +615,36 @@ export default function SideQuestsPanel({
                 >
                   {label}
                 </button>
-                );
-              })}
-              {q.targets.length > 4 ? (
-                <span className="fine">+{q.targets.length - 4} more</span>
-              ) : null}
-            </span>
-          )}
-          {open && !blocked && (
-            <div className="sideQuestForm">
-              {renderForm(q)}
-              <textarea
-                className="field sideQuestNote"
-                rows={2}
-                maxLength={280}
-                placeholder="What did you see? (optional)"
-                aria-label="Note for this report"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn small primary sideQuestSubmit"
-                disabled={!factReady(q)}
-                onClick={() => submit(q)}
-              >
-                <Icon name="checkmark" size={16} /> Submit
-              </button>
-            </div>
-          )}
-        </span>
-        <span className="rowValue">{action}</span>
+              );
+            })}
+            {q.targets.length > 4 ? (
+              <span className="fine">+{q.targets.length - 4} more</span>
+            ) : null}
+          </div>
+        )}
+        {open && !blocked && (
+          <div className="sideQuestForm">
+            {renderForm(q)}
+            <textarea
+              className="field sideQuestNote"
+              rows={2}
+              maxLength={280}
+              placeholder="What did you see? (optional)"
+              aria-label="Note for this report"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn small primary rect sideQuestSubmit"
+              disabled={!factReady(q)}
+              onClick={() => submit(q)}
+            >
+              <Icon name="checkmark" size={16} /> Submit
+            </button>
+          </div>
+        )}
+        <div className="questCardFoot">{action}</div>
       </div>
     );
   };
@@ -599,6 +689,8 @@ export default function SideQuestsPanel({
         {pending > 0 ? ` · ${pending} pending` : ''}
       </div>
 
+      {spot ? <SpotBanner spot={spot} onClear={onClearSpot} label="Quest spot" /> : null}
+
       {!position && (
         <p className="fine block">
           Turn on location to report from where you&apos;re standing. Cards below are still
@@ -612,11 +704,11 @@ export default function SideQuestsPanel({
           you walk.
         </p>
       ) : (
-        <div className="rowList">{durable.map(renderQuest)}</div>
+        <div className="questList" role="list">{durable.map(renderQuest)}</div>
       )}
 
       <div className="label">While you walk</div>
-      <div className="rowList">{ambient.map(renderQuest)}</div>
+      <div className="questList" role="list">{ambient.map(renderQuest)}</div>
 
       {myCompletions.length > 0 && (
         <>
@@ -627,7 +719,7 @@ export default function SideQuestsPanel({
               .reverse()
               .slice(0, 8)
               .map((c) => (
-                <div key={c.id} className="row" data-overlay-completion={c.id}>
+                <div key={c.id} className="row flat" data-overlay-completion={c.id}>
                   <span className="rowText">{completionLine(c)}</span>
                 </div>
               ))}

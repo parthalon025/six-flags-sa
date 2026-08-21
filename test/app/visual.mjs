@@ -78,11 +78,14 @@ async function main() {
   await page.waitForSelector('.gate', { timeout: 10000 });
   await shot(page, 'gps-gate');
   const first = await page.locator('.gate').innerText();
-  check(/PARKBOUND/i.test(first), 'the welcome gate shows the brand lockup');
-  check(/Go to nearest World/i.test(first), 'the welcome gate offers the nearest-World shortcut');
+  // Step one of the intake. The brand lockup lives on the intro before it now;
+  // this card leads with the promise and the one permission it needs.
+  check(/Plan your day/i.test(first), 'the welcome gate leads with what the day looks like');
+  check(/1 OF 2/.test(first), 'the welcome gate says it is the first of two steps');
+  check(/m ready/.test(first), 'the welcome gate offers the nearest-World shortcut');
 
   await context.grantPermissions(['geolocation']);
-  await page.getByRole('button', { name: 'Go to nearest World' }).click();
+  await page.locator('button:has-text("m ready")').click();
   await page.waitForTimeout(2000);
 
   // Confirm nearest World before download (no silent auto-setup).
@@ -176,8 +179,11 @@ async function main() {
     await shot(page, 'roster-two-members');
     const rows = await page.locator('.memberRow').count();
     check(rows >= 2, `roster shows both phones (${rows} rows)`);
+    // The rail leads with the walk, not the range: "six minutes away" is the
+    // number a parent acts on, and the compass point moved down beside the
+    // Place it points at. formatWalk always says "min".
     const range = await page.locator('.memberRange b').nth(1).innerText().catch(() => '');
-    check(/ft|mi/.test(range), `range to the other phone computed: ${range}`);
+    check(/min/.test(range), `walk to the other phone computed: ${range}`);
     const helpTag = await until(() => page.locator('.chipTag.hot').count(), {
       timeout: 45000,
       label: 'the help tag',

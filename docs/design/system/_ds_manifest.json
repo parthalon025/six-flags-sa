@@ -1,0 +1,85 @@
+{
+  "name": "Parkbound design system",
+  "generatedFrom": {
+    "repo": "parthalon025/six-flags-sa",
+    "app": "apps/party-tracker"
+  },
+  "generator": "scripts/design-bundle.mjs",
+  "note": "Generated. The repo is authoritative — edit the source a card derives from, then run `npm run design:build`.",
+  "cards": [
+    {
+      "file": "index.html",
+      "group": "Overview",
+      "title": "Contents",
+      "derivedFrom": [
+        "apps/party-tracker/app/globals.css"
+      ]
+    },
+    {
+      "file": "tokens-color.html",
+      "group": "Tokens",
+      "title": "Colour",
+      "derivedFrom": [
+        "apps/party-tracker/app/globals.css"
+      ]
+    },
+    {
+      "file": "tokens-type.html",
+      "group": "Tokens",
+      "title": "Type",
+      "derivedFrom": [
+        "apps/party-tracker/app/globals.css"
+      ]
+    },
+    {
+      "file": "tokens-spacing.html",
+      "group": "Tokens",
+      "title": "Spacing",
+      "derivedFrom": [
+        "apps/party-tracker/app/globals.css",
+        "apps/party-tracker/lib/sheet.js"
+      ]
+    },
+    {
+      "file": "tokens-radius.html",
+      "group": "Tokens",
+      "title": "Radius",
+      "derivedFrom": [
+        "apps/party-tracker/app/globals.css"
+      ]
+    },
+    {
+      "file": "map-skins.html",
+      "group": "Map",
+      "title": "Skins",
+      "derivedFrom": [
+        "apps/party-tracker/lib/world.js"
+      ]
+    },
+    {
+      "file": "icons.html",
+      "group": "Icons",
+      "title": "Glyphs",
+      "derivedFrom": [
+        "apps/party-tracker/components/Icon.jsx",
+        "apps/party-tracker/lib/world.js"
+      ]
+    },
+    {
+      "file": "vocabulary.html",
+      "group": "Language",
+      "title": "Vocabulary",
+      "derivedFrom": [
+        "CONTEXT.md"
+      ]
+    },
+    {
+      "file": "screen-map.html",
+      "group": "Overview",
+      "title": "Screen map",
+      "derivedFrom": [
+        "(working tree)"
+      ]
+    }
+  ]
+}

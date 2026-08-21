@@ -10,14 +10,22 @@ import { XP_AWARDS, rankProgress, utcDay } from '@party-tracker/shared/questScor
  * on the quest cards themselves: cards stay meaning-first, the reward reads
  * here. Titles are sub-names (Scout → Steward), not levels, and XP is never
  * spent. The full Title ladder lives on Me (ProfileJourney).
+ *
+ * Two sizes, one component. On Side Quests this is a strip above a list of
+ * missions and stays small. On Me it *is* the top of the screen, so `hero`
+ * grows the Title and `blurb` puts that Title's meaning under it — the same
+ * line the ladder below repeats against the rung it belongs to.
  */
-export default function TitleProgress({ xp = 0, lastQuestDay }) {
+export default function TitleProgress({ xp = 0, lastQuestDay, blurb = null, hero = false }) {
   const p = rankProgress(xp);
   const dailyReady = lastQuestDay !== undefined && lastQuestDay !== utcDay();
   return (
-    <div className="titleProgress" data-xp={p.xp}>
+    <div className={`titleProgress${hero ? ' hero' : ''}`} data-xp={p.xp}>
       <div className="titleProgressHead">
-        <b className="titleProgressLabel">{p.title || 'Visitor'}</b>
+        <span className="titleProgressName">
+          <b className="titleProgressLabel">{p.title || 'Visitor'}</b>
+          {blurb ? <span className="titleProgressBlurb">{blurb}</span> : null}
+        </span>
         <span className="titleProgressXp">{p.xp} XP</span>
       </div>
       <div

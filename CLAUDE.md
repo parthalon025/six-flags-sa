@@ -61,6 +61,10 @@ File **agent-handoff** issues for out-of-scope failures instead of fixing inline
 
 Venue **builder** output is generated only — fix upstream, prove in the app. See [builder-app-contract policy](./docs/agents/policies/builder-app-contract.md).
 
+## Claude Design — where the front end is designed
+
+**Claude Design** is canon for how the front end looks and reads — the code conforms to it; the repo is canon only for what a canvas cannot see. See [claude-design policy](./docs/agents/policies/claude-design.md).
+
 ## Vertical e2e — output validation
 
 All code work is proven **end to end** with the run's output asserted — `npm run test:pre-merge-vertical` gates it. See [vertical-e2e policy](./docs/agents/policies/vertical-e2e.md).

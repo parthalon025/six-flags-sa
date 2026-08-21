@@ -287,8 +287,12 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   do {
     const intro = page.locator('#intro-splash-title');
     if (await intro.count()) {
+      // The intro is a scroll story now: "Get started" only appears once the
+      // reader has been most of the way down, and until then the way out is
+      // "Skip intro". Both are here so this helper works whichever the phone
+      // is showing when it arrives.
       const primary = page.locator(
-        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
+        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started"), .gate:has(#intro-splash-title) .introSkip',
       );
       await primary.first().click({ force: true }).catch(() => {});
       await page.waitForTimeout(600);
@@ -314,7 +318,11 @@ export async function closeGate(page) {
   await dismissAuthGate(page);
   await dismissIntroSplash(page);
   await dismissUpdateSplash(page);
-  const nearest = page.locator('button:has-text("Go to nearest World"), button:has-text("Go to nearest park")');
+  // "I'm ready" is what the first intake step calls the nearest-World shortcut
+  // now; the older labels stay so a phone on an earlier build still gets past.
+  const nearest = page.locator(
+    'button:has-text("m ready"), button:has-text("Go to nearest World"), button:has-text("Go to nearest park")',
+  );
   const allow = page.locator('button:has-text("Allow location")');
   const yes = page.locator('.gate .btn.primary:has-text("Enter"), .gate .btn.primary:has-text("set up")');
   const quiet = page.locator(
@@ -388,6 +396,7 @@ const TAB_OF = {
   Settings: 'settings',
   Me: 'settings',
   Day: 'settings',
+  Collection: 'settings',
 };
 const SETTINGS_ROWS = new Set([
   'Explore Worlds',
@@ -482,15 +491,43 @@ export async function go(page, dest) {
     await page.getByRole('slider', { name: /Resize panel/ }).click();
     await page.waitForTimeout(350);
   }
+  /* Me is the tab root now; Settings is a screen pushed under it, and so is
+     Collection. Anything asking for a preference has to walk through that row
+     first — "Me" itself is the only destination that stays on the root. */
+  if (tab === 'settings' && dest !== 'Me') {
+    const settingsRow = page.locator('.mePanel .row', { hasText: 'Settings' }).first();
+    // The Me root is a lazily imported panel, so it can arrive a frame or two
+    // after the tab does — wait for the row rather than reading a count of 0
+    // and walking on to a screen that is not up yet.
+    await settingsRow.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    if (await settingsRow.count()) {
+      await settingsRow.scrollIntoViewIfNeeded().catch(() => {});
+      await settingsRow.click();
+      await page.locator('.settingsPanel').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(250);
+    }
+  }
   if (dest === 'Rider height') {
     const heightsTab = page.locator('.settingsTopic', { hasText: 'Heights' });
     if (await heightsTab.count()) await heightsTab.click();
     await page.waitForTimeout(300);
   }
-  if (dest === 'Explore Worlds' || dest === 'On the map' || dest === 'Show on the map') {
+  if (
+    dest === 'Explore Worlds' ||
+    dest === 'On the map' ||
+    dest === 'Show on the map' ||
+    dest === 'Collection'
+  ) {
     const mapTab = page.locator('.settingsTopic', { hasText: 'Map' });
     if (await mapTab.count()) await mapTab.click();
     await page.waitForTimeout(300);
+  }
+  if (dest === 'Collection') {
+    const closetRow = page.locator('.settingsPanel .row', { hasText: 'Collection' }).first();
+    if (await closetRow.count()) {
+      await closetRow.click();
+      await page.waitForTimeout(350);
+    }
   }
   if (dest === 'Diagnostics') {
     const moreTopic = page.locator('.settingsTopic', { hasText: 'More' });
@@ -561,6 +598,64 @@ export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
   await page.mouse.click(hit.x, hit.y);
   await page.waitForTimeout(400);
   return hit.name;
+}
+
+/**
+ * Tap the map where there is nothing — the gesture that drops a spot.
+ *
+ * The opposite of `tapMapPoi`, and it has to work as hard: ParkMap tries every
+ * marker it drew (`pickAt`) before it will read a tap as ground, and the FAB
+ * column, the scale bar and the OSM notice all float over the map and swallow
+ * a click before the wrapper ever hears it. So the point is chosen in the page
+ * — inside the band of map left visible above the sheet, far enough from any
+ * marker, with nothing but the map under it.
+ *
+ * `clear` is in screen pixels. ParkMap's own hit radius is a marker's r + 6
+ * (13 px at the smallest), so 60 keeps the tap outside both the marker and
+ * the name drawn beside it; the search takes the freest point it can find
+ * rather than the first, so a busy midway still lands on ground.
+ *
+ * Returns the point tapped, and the distance to the nearest drawn marker —
+ * which is NOT the nearest Place: zoom decides what is drawn, and the spot is
+ * named from the venue's own list (lib/spot.js), not from the screen.
+ */
+export async function tapBareGround(page, { timeout = 15000, clear = 60 } = {}) {
+  const hit = await until(
+    () =>
+      page.evaluate((gap) => {
+        const wrap = document.querySelector('.mapWrap');
+        if (!wrap) return null;
+        const box = wrap.getBoundingClientRect();
+        const sheet = document.querySelector('.sheet');
+        const sheetTop = sheet ? sheet.getBoundingClientRect().top : box.bottom;
+        const markers = [...document.querySelectorAll('g.poiMarker')].map((g) => {
+          const r = g.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+        });
+        const onlyMap = (x, y) => {
+          const el = document.elementFromPoint(x, y);
+          if (!el || !wrap.contains(el)) return false;
+          return !el.closest(
+            'button, a, g.poiMarker, .mePulse, .fabs, .mapAttribution, .scaleBar, .selCapsule, .spotCapsule, .navBanner, .glanceRail',
+          );
+        };
+        let best = null;
+        for (let y = Math.max(box.top + 90, 90); y <= sheetTop - 60; y += 10) {
+          for (let x = box.left + 60; x <= box.right - 60; x += 10) {
+            if (!onlyMap(x, y)) continue;
+            let near = Infinity;
+            for (const m of markers) near = Math.min(near, Math.hypot(m.x - x, m.y - y));
+            if (near < gap) continue;
+            if (!best || near > best.near) best = { x, y, near };
+          }
+        }
+        return best;
+      }, clear),
+    { timeout, label: `bare ground at least ${clear}px from any marker` },
+  );
+  await page.mouse.click(hit.x, hit.y);
+  await page.waitForTimeout(400);
+  return hit;
 }
 
 /** Set the roster name through Me, as a visitor would, and come back to Explore. */
