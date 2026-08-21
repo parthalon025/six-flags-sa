@@ -31,9 +31,10 @@ Code the map does not claim fails closed: the diff owes *every* vertical until a
 | The change touches… | Assert on… |
 |---------------------|------------|
 | Guest-visible behaviour | a functional check in `test/app/functional.mjs`, and a grandma task when discoverability is the point ([ui-enhancement-validation.md](../../ui-enhancement-validation.md)) |
-| A shipped vertical capability | a named row + check in `test/app/critical-paths.json` — new epics add theirs in the same PR |
+| A shipped vertical capability | a named row + check in `test/app/critical-paths.json` — a written inventory a reviewer reads, not a gate; new epics add theirs in the same PR |
 | Venue generation | the regenerated files, via `test/builder/` — never the builder internals ([builder-app-contract policy](./builder-app-contract.md)) |
 | CI, deploy or stamp decisions | the exported function's return value, via `test/scripts/*.test.mjs` wired into `scripts/ci/manifest.mjs` |
+| A new suite anywhere under `test/` | itself — add it to a run list in `scripts/ci/test-estate.mjs`, or record why nothing runs it |
 
 ## Never
 

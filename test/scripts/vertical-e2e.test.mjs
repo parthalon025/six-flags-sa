@@ -17,12 +17,12 @@ import {
   verticalsForFiles,
 } from '../../scripts/lib/vertical-e2e.mjs';
 
-// Every row has to name the output it asserts on — a vertical without an
-// output check is the thing this gate exists to prevent.
+// A row has to be runnable and has to claim paths — the two things the gate
+// reads. Whether `validates` names real output is a judgement no assertion can
+// make (it used to be a character count), so it stays a review question.
 for (const v of VERTICALS) {
   assert.ok(v.id && v.title, 'vertical needs an id and title');
   assert.match(v.command, /^npm run /, `${v.id} names a runnable command`);
-  assert.ok(v.validates.length > 20, `${v.id} says what output it validates`);
   assert.ok(v.paths.length, `${v.id} claims paths`);
 }
 

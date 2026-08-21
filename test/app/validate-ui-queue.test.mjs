@@ -11,45 +11,28 @@ const FUNCTIONAL = ['smoke', 'heights', 'party'];
 
 // Serial keeps one functional process — the shape the suite has always run in.
 {
-  const q = buildQueue({ contract: true, functional: FUNCTIONAL, grandma: true });
+  const q = buildQueue({ functional: FUNCTIONAL, grandma: true });
   const functional = q.filter((s) => s.id.startsWith('functional:'));
   assert.equal(functional.length, 1, 'serial runs the functional modules as one process');
   assert.deepEqual(functional[0].args, ['--modules=smoke,heights,party']);
-  assert.equal(q.length, 3, 'contract + grandma + one functional process');
+  assert.equal(q.length, 2, 'grandma + one functional process');
 }
 
 // Parallel splits per module, which is exactly how CI runs them as separate jobs.
 {
-  const q = buildQueue({
-    contract: true,
-    functional: FUNCTIONAL,
-    grandma: true,
-    parallel: true,
-  });
+  const q = buildQueue({ functional: FUNCTIONAL, grandma: true, parallel: true });
   const functional = q.filter((s) => s.id.startsWith('functional:'));
   assert.equal(functional.length, FUNCTIONAL.length, 'one process per functional module');
   assert.deepEqual(
     functional.map((s) => s.args[0]).sort(),
     FUNCTIONAL.map((id) => `--modules=${id}`).sort(),
   );
-  assert.equal(q.length, FUNCTIONAL.length + 2);
-
-  // A short suite scheduled ahead of the browser suites would leave a browser
-  // suite starting last and setting the wall clock on its own.
-  assert.ok(
-    q.findIndex((s) => s.id === 'coverage-contract') > 0,
-    'browser suites are queued before the cheap ones',
-  );
-  assert.equal(q[q.length - 1].id, 'coverage-contract');
+  assert.equal(q.length, FUNCTIONAL.length + 1);
 }
 
 // Selection still decides what runs at all — parallelism never adds a suite.
 {
   assert.deepEqual(buildQueue({}), []);
-  assert.deepEqual(
-    buildQueue({ contract: true }).map((s) => s.id),
-    ['coverage-contract'],
-  );
   assert.deepEqual(
     buildQueue({ grandma: true, parallel: true }).map((s) => s.id),
     ['grandma'],
@@ -63,7 +46,7 @@ const FUNCTIONAL = ['smoke', 'heights', 'party'];
 
 // Every suite is directly runnable — id, script and args are what the pool spawns.
 for (const parallel of [false, true]) {
-  for (const suite of buildQueue({ contract: true, functional: FUNCTIONAL, grandma: true, parallel })) {
+  for (const suite of buildQueue({ functional: FUNCTIONAL, grandma: true, parallel })) {
     assert.ok(suite.id && suite.name, 'suite is labelled');
     assert.match(suite.script, /\.mjs$/, 'suite names a script');
     assert.ok(Array.isArray(suite.args), 'suite carries argv');

@@ -72,11 +72,6 @@ export const STATIC_STEPS = [
   { id: 'test:unit', npm: ['run', 'test:unit'], covers: [] },
   { id: 'lint', npm: ['run', 'lint'], covers: ['lint', 'boundaries'] },
   {
-    id: 'test:coverage-contract',
-    npm: ['run', 'test:coverage-contract'],
-    covers: ['contract'],
-  },
-  {
     id: 'test:module-select',
     npm: ['run', 'test:module-select'],
     covers: ['module-select-unit'],

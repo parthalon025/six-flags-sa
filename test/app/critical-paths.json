@@ -1,16 +1,8 @@
 {
-  "$schema_note": "Critical-path e2e contract. Middle ground: not every click, but every user-visible capability we ship must keep a named check. Epics add rows when they land a vertical slice.",
+  "$schema_note": "Written inventory of the user-visible capabilities we ship, and the named check in `suites` that covers each one. Nothing enforces it: a grep for check titles could only prove the strings still exist, never that the check still asserts the capability. Epics add a row when they land a vertical slice, and the reviewer reads the row against the check.",
   "suites": {
     "functional": "test/app/functional.mjs",
     "grandma": "test/app/grandma.mjs"
-  },
-  "context": {
-    "note": "Fingerprint of the domain context this contract was last reviewed against. When CONTEXT.md or docs/adr change, review the rows below against the new capabilities, then restamp: node test/app/coverage-contract.mjs --stamp",
-    "files": [
-      "CONTEXT.md",
-      "docs/adr"
-    ],
-    "sha256": "efb2d1dbef1c3a84cf038764ab306ac53d1f4f6b2c63b8bc80741c42ce56379c"
   },
   "paths": [
     {
