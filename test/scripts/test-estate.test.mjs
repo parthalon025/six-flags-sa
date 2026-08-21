@@ -3,140 +3,119 @@
  * Test-estate accounting — every suite under test/ is run by something named,
  * or excluded for a written reason.
  *
- * The completeness half is the same shape as ci-module.test.mjs, widened from
- * test/scripts to the whole tree. The half that matters more is the evidence:
- * a run list is only worth having if it cannot lie, so each claimed runner is
- * checked against package.json, the gate manifest and the workflow rather than
- * being taken at its word.
+ * Two halves. The real estate must audit clean, which is the gate. And the
+ * audit must catch each way an estate can lie, which is what makes the clean
+ * result worth anything — asserted against worlds broken on purpose, since the
+ * real one is (hopefully) never broken.
  *
  *   node test/scripts/test-estate.test.mjs
  */
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GATE_SCRIPT_TESTS } from '../../scripts/ci/manifest.mjs';
 import { TEST_ESTATE, TEST_ESTATE_EXCLUDED, TEST_RUNNERS } from '../../scripts/ci/test-estate.mjs';
+import { readTestEstateWorld, testEstateProblems } from '../../scripts/lib/test-estate.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..');
-const WORKFLOW_REL = '.github/workflows/test-app.yml';
 
-const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts;
-const workflow = readFileSync(join(ROOT, WORKFLOW_REL), 'utf8');
+const world = readTestEstateWorld(ROOT, {
+  estate: TEST_ESTATE,
+  excluded: TEST_ESTATE_EXCLUDED,
+  runners: TEST_RUNNERS,
+  gateTests: GATE_SCRIPT_TESTS,
+});
 
-function testFilesOnDisk(dir = join(ROOT, 'test')) {
-  const out = [];
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const abs = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...testFilesOnDisk(abs));
-    else if (entry.name.endsWith('.mjs')) out.push(relative(ROOT, abs).replace(/\\/g, '/'));
-  }
-  return out.sort();
+assert.deepEqual(
+  testEstateProblems(world),
+  [],
+  'the test estate accounts for every suite under test/',
+);
+
+/** A tiny world that audits clean, so each case below breaks exactly one thing. */
+function fixture(overrides = {}) {
+  return {
+    estate: { 'test/a/one.mjs': ['gate'] },
+    excluded: { 'test/a/two.mjs': 'plumbing imported by one.mjs, never run alone' },
+    runners: { gate: { label: 'the gate job', gateManifest: true, job: 'gate' } },
+    gateTests: ['test/a/one.mjs'],
+    files: ['test/a/one.mjs', 'test/a/two.mjs'],
+    scripts: { 'test:ci-gate': 'node scripts/ci/gate-tests.mjs' },
+    workflow: '\n  gate:\n    steps:\n      - run: node test/a/one.mjs\n',
+    readFile: () => '',
+    ...overrides,
+  };
 }
 
-/** The body of one workflow job: from its `  <name>:` line to the next job. */
-function jobBody(name) {
-  const start = workflow.indexOf(`\n  ${name}:\n`);
-  if (start < 0) return null;
-  const rest = workflow.slice(start + 1);
-  const next = rest.slice(1).search(/\n {2}[a-z][\w-]*:\n/);
-  return next < 0 ? rest : rest.slice(0, next + 1);
+assert.deepEqual(testEstateProblems(fixture()), [], 'the fixture world is clean to begin with');
+
+/** The problem list has to name the file and say what to do, so match on both. */
+const cases = [
+  ['a suite in neither list', { files: ['test/a/one.mjs', 'test/a/two.mjs', 'test/a/orphan.mjs'] }, /orphan\.mjs is in neither/],
+  ['a listed file that is gone', { files: ['test/a/two.mjs'] }, /one\.mjs is listed .* but missing on disk/],
+  ['run and excluded at once', { excluded: { 'test/a/one.mjs': 'both' } }, /one\.mjs is both run and excluded/],
+  ['an exclusion with no reason', { excluded: { 'test/a/two.mjs': '   ' } }, /two\.mjs is excluded with no written reason/],
+  ['an unknown runner', { estate: { 'test/a/one.mjs': ['ghost'] } }, /names unknown runner "ghost"/],
+  ['a file with no runner at all', { estate: { 'test/a/one.mjs': [] } }, /one\.mjs names no runner/],
+  ['a declared runner nothing uses', { runners: { gate: { label: 'g', gateManifest: true }, idle: { label: 'i' } } }, /"idle" is declared but runs nothing/],
+];
+
+for (const [name, override, pattern] of cases) {
+  const problems = testEstateProblems(fixture(override));
+  assert.ok(problems.some((p) => pattern.test(p)), `${name} is caught: got ${JSON.stringify(problems)}`);
 }
 
-/** npm scripts a workflow job shells out to, resolved to their commands. */
-function commandsInJob(body) {
-  const commands = [body];
-  for (const m of body.matchAll(/npm run ([\w:-]+)/g)) {
-    if (pkg[m[1]]) commands.push(pkg[m[1]]);
-  }
-  return commands;
-}
-
-const onDisk = testFilesOnDisk();
-const listed = Object.keys(TEST_ESTATE);
-const excluded = Object.keys(TEST_ESTATE_EXCLUDED);
-
-// 1. Completeness — a suite in neither list is a suite nobody is accountable for.
-for (const rel of onDisk) {
+// The evidence half: a claim is only worth having if an unbacked one fails.
+{
+  // In the gate manifest, but the workflow's gate job runs something else.
+  const drifted = testEstateProblems(
+    fixture({ gateTests: [], workflow: '\n  gate:\n    steps:\n      - run: node test/a/other.mjs\n' }),
+  );
   assert.ok(
-    rel in TEST_ESTATE || rel in TEST_ESTATE_EXCLUDED,
-    `${rel} is in neither TEST_ESTATE nor TEST_ESTATE_EXCLUDED (scripts/ci/test-estate.mjs) — name the job that runs it, or write down why nothing does`,
+    drifted.some((p) => /one\.mjs claims runner "gate" but nothing invokes it there/.test(p)),
+    'a runner that no longer runs the file is caught',
+  );
+
+  // The job the runner names has been deleted from the workflow.
+  const goneJob = testEstateProblems(fixture({ workflow: '\n  other:\n    steps: []\n' }));
+  assert.ok(
+    goneJob.some((p) => /names job "gate", which .* does not declare/.test(p)),
+    'a runner naming a job the workflow lost is caught',
+  );
+
+  // An npm script channel that package.json no longer defines.
+  const goneScript = testEstateProblems(
+    fixture({ runners: { gate: { label: 'g', npmScript: 'test:missing' } } }),
+  );
+  assert.ok(
+    goneScript.some((p) => /names npm script "test:missing"/.test(p)),
+    'a runner naming a missing npm script is caught',
+  );
+
+  // A job invoking the file only through an npm script still counts.
+  const viaScript = testEstateProblems(
+    fixture({
+      gateTests: [],
+      scripts: { 'test:one': 'node test/a/one.mjs' },
+      workflow: '\n  gate:\n    steps:\n      - run: npm run test:one\n',
+    }),
+  );
+  assert.deepEqual(viaScript, [], 'a job that shells out to an npm script proves the claim');
+
+  // A hand-run exclusion whose npm script runs a different file.
+  const wrongTool = testEstateProblems(
+    fixture({
+      excluded: { 'test/a/two.mjs': 'hand-run: npm run test:one' },
+      scripts: { 'test:ci-gate': 'x', 'test:one': 'node test/a/elsewhere.mjs' },
+    }),
+  );
+  assert.ok(
+    wrongTool.some((p) => /two\.mjs sends a human to "npm run test:one", which runs something else/.test(p)),
+    'an exclusion pointing at the wrong command is caught',
   );
 }
 
-// 2. Both lists describe files that are really there.
-for (const rel of [...listed, ...excluded]) {
-  assert.ok(onDisk.includes(rel), `${rel} is listed in the test estate but missing on disk`);
-}
-
-// 3. Never both.
-for (const rel of excluded) {
-  assert.ok(!(rel in TEST_ESTATE), `${rel} is both run and excluded`);
-}
-
-// 4. Excluded entries carry a reason, and every listed file names a real runner.
-for (const [rel, reason] of Object.entries(TEST_ESTATE_EXCLUDED)) {
-  assert.equal(typeof reason, 'string', `${rel} needs a written reason`);
-  assert.ok(reason.trim(), `${rel} needs a written reason`);
-}
-for (const [rel, runners] of Object.entries(TEST_ESTATE)) {
-  assert.ok(Array.isArray(runners) && runners.length, `${rel} names no runner`);
-  for (const id of runners) {
-    assert.ok(id in TEST_RUNNERS, `${rel} names unknown runner "${id}"`);
-  }
-}
-
-// 5. Every declared runner is used — an unused one is a job that no longer runs.
-{
-  const used = new Set(Object.values(TEST_ESTATE).flat());
-  for (const id of Object.keys(TEST_RUNNERS)) {
-    assert.ok(used.has(id), `runner "${id}" is declared but runs nothing`);
-  }
-}
-
-// 6. The evidence. Each claim is checked where the run really lives, so the
-//    run list cannot drift away from package.json or the workflow.
-for (const [rel, runners] of Object.entries(TEST_ESTATE)) {
-  for (const id of runners) {
-    const runner = TEST_RUNNERS[id];
-    const proofs = [];
-
-    if (runner.npmScript) {
-      assert.ok(pkg[runner.npmScript], `runner "${id}" names missing npm script ${runner.npmScript}`);
-      if (pkg[runner.npmScript].includes(rel)) proofs.push(`npm run ${runner.npmScript}`);
-    }
-    if (runner.gateManifest && GATE_SCRIPT_TESTS.includes(rel)) {
-      proofs.push('GATE_SCRIPT_TESTS');
-    }
-    if (runner.job) {
-      const body = jobBody(runner.job);
-      assert.ok(body, `runner "${id}" names job "${runner.job}", which ${WORKFLOW_REL} does not declare`);
-      if (commandsInJob(body).some((c) => c.includes(rel))) proofs.push(`job ${runner.job}`);
-    }
-    if (runner.spawnedFrom) {
-      const src = readFileSync(join(ROOT, runner.spawnedFrom), 'utf8');
-      if (src.includes(rel.split('/').pop())) proofs.push(runner.spawnedFrom);
-    }
-
-    assert.ok(
-      proofs.length,
-      `${rel} claims runner "${id}" but nothing proves it: ${runner.label}`,
-    );
-  }
-}
-
-// 7. The tools kept out of CI are kept runnable: each one a person is expected
-//    to run by hand has the npm script its reason names.
-for (const [rel, reason] of Object.entries(TEST_ESTATE_EXCLUDED)) {
-  for (const m of reason.matchAll(/npm run ([\w:-]+)/g)) {
-    assert.ok(pkg[m[1]], `${rel} tells a human to run "npm run ${m[1]}", which package.json does not define`);
-    assert.ok(
-      pkg[m[1]].includes(rel),
-      `${rel} tells a human to run "npm run ${m[1]}", which runs something else`,
-    );
-  }
-}
-
 console.log(
-  `test-estate: ${listed.length} run by a named job, ${excluded.length} excluded with a reason, ${onDisk.length} on disk`,
+  `test-estate: ${Object.keys(TEST_ESTATE).length} run by a named job, ` +
+    `${Object.keys(TEST_ESTATE_EXCLUDED).length} excluded with a reason, ${world.files.length} on disk`,
 );
