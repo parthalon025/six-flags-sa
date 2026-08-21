@@ -43,6 +43,14 @@
       "cursorDescription": "Keep the venue builder and the app's data contract in sync — fix generated data upstream, validate app changes against the builder."
     },
     {
+      "id": "claude-design",
+      "heading": "Claude Design — where the front end is designed",
+      "title": "Claude Design",
+      "pointer": "**Claude Design** is canon for how the front end looks and reads — the code conforms to it; the repo is canon only for what a canvas cannot see.",
+      "cursorRule": "claude-design.mdc",
+      "cursorDescription": "Claude Design is authoritative for front-end design; verify its facts against the code, but do not overrule its judgement on layout, hierarchy or copy."
+    },
+    {
       "id": "vertical-e2e",
       "heading": "Vertical e2e — output validation",
       "title": "Vertical e2e",

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parkbound design twin — local viewer</title>
+<!--
+  Local host page for `parkbound-app.dc.html`.
+
+  The .dc.html is an imported Claude Design artifact and must stay byte-identical,
+  so nothing here edits it. It ships only `support.js` (the generated dc-runtime),
+  which requires two globals — `window.React` and `window.ReactDOM` — and would
+  otherwise pull React 18.3.1 UMD off unpkg. We vendor those two UMD bundles into
+  ./vendor so the canvas renders with no network at all.
+
+  Bootstrap order matters: support.js boots itself the moment it executes (it calls
+  __dcBoot() immediately when document.readyState !== 'loading'), and boot() needs
+  the x-dc template plus the script[data-dc-script] logic block already in the
+  document. So we fetch the .dc.html, graft those two nodes in, and only then append
+  support.js. React is loaded first, synchronously, so the runtime's own CDN fetch
+  short-circuits (loadReactUmd() returns early when both globals exist).
+
+  Serve over http (e.g. `python3 -m http.server`) — the fetch below is blocked on file://.
+-->
+<script>
+  // The runtime resolves every CDN dependency through window.__resources first
+  // (see cdnScriptFor in support.js), so this map keeps React local.
+  // Its presence also suppresses boot()'s re-fetch of location.href — that pass
+  // re-parses the *host* page as a canvas, which this file is not.
+  window.__resources = {
+    'https://unpkg.com/react@18.3.1/umd/react.production.min.js': './vendor/react.production.min.js',
+    'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js': './vendor/react-dom.production.min.js'
+  };
+</script>
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<style>
+  /* The canvas asks for Plus Jakarta Sans via a Google Fonts <link> inside its own
+     helmet block. That host is unreachable offline, so the same faces are vendored
+     here (@fontsource/plus-jakarta-sans, latin subset) under the identical family
+     name — the canvas keeps its typography without the canvas file changing. */
+  @font-face {
+    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 400; font-display: block;
+    src: url('./vendor/fonts/plus-jakarta-sans-latin-400-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 500; font-display: block;
+    src: url('./vendor/fonts/plus-jakarta-sans-latin-500-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 600; font-display: block;
+    src: url('./vendor/fonts/plus-jakarta-sans-latin-600-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 700; font-display: block;
+    src: url('./vendor/fonts/plus-jakarta-sans-latin-700-normal.woff2') format('woff2');
+  }
+  @font-face {
+    font-family: 'Plus Jakarta Sans'; font-style: normal; font-weight: 800; font-display: block;
+    src: url('./vendor/fonts/plus-jakarta-sans-latin-800-normal.woff2') format('woff2');
+  }
+
+  html, body { margin: 0; }
+  #viewer-error {
+    display: none; margin: 0; padding: 24px; white-space: pre-wrap;
+    font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #E55353; background: #0B1829;
+  }
+</style>
+</head>
+<body>
+<pre id="viewer-error"></pre>
+<script>
+(function () {
+  var CANVAS = './parkbound-app.dc.html';
+
+  function fail(err) {
+    var box = document.getElementById('viewer-error');
+    box.style.display = 'block';
+    box.textContent = 'viewer.html could not mount the canvas:\n\n' + (err && err.stack || err);
+    console.error('[viewer]', err);
+  }
+
+  fetch(CANVAS)
+    .then(function (res) {
+      if (!res.ok) throw new Error('GET ' + CANVAS + ' -> HTTP ' + res.status);
+      return res.text();
+    })
+    .then(function (src) {
+      // Same slice the runtime's own parseDcText() does: take the raw template text
+      // between the x-dc open tag and the LAST x-dc close tag, so nested markup survives verbatim.
+      var open = new RegExp('<x-' + 'dc(?:\\s[^>]*)?>').exec(src);
+      var close = src.lastIndexOf('</x-' + 'dc>');
+      if (!open || close === -1 || close < open.index) throw new Error('no x-dc block in ' + CANVAS);
+      var template = src.slice(open.index + open[0].length, close);
+
+      var host = document.createElement('x-' + 'dc');
+      host.innerHTML = template;
+      document.body.appendChild(host);
+
+      // The logic block travels as-is, `data-props` included — those props carry the
+      // component's defaults (theme, startScreen, units) that boot() feeds to the root.
+      var parsed = new DOMParser().parseFromString(src, 'text/html');
+      var logic = parsed.querySelector('script[data-dc-script]');
+      if (!logic) throw new Error('no <script data-dc-script> in ' + CANVAS);
+      var carried = document.createElement('script');
+      for (var i = 0; i < logic.attributes.length; i++) {
+        carried.setAttribute(logic.attributes[i].name, logic.attributes[i].value);
+      }
+      carried.textContent = logic.textContent;
+      document.body.appendChild(carried);
+
+      var runtime = document.createElement('script');
+      runtime.src = './support.js';
+      runtime.onerror = function () { fail(new Error('failed to load ./support.js')); };
+      document.head.appendChild(runtime);
+    })
+    .catch(fail);
+})();
+</script>
+</body>
+</html>

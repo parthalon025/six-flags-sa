@@ -36,12 +36,14 @@ import {
   partyRosterNames,
   searchPlaces,
   until,
+  tapBareGround,
   tapMapPoi,
   waitForHeightsReady,
 } from './browser.mjs';
 import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
+import { distance, formatDistance } from '../../apps/party-tracker/lib/geo.js';
 import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
 import { PRECISE_MAX_MS } from '../../apps/party-tracker/lib/location.js';
 
@@ -339,12 +341,24 @@ await check('the on-map OSM notice opens Settings straight to Credits, listing s
   return true;
 });
 
-await check('glance rail renders nearby fallback cards', async () => {
+// The rail's fallback cards were "nearest food / nearest toilet" over the map.
+// Explore is search -> context -> list now (D24), so the browse list is what
+// has to come up with something nearby when nothing has been asked for.
+await check('the browse list opens on nearby places with no query typed', async () => {
   await go(a, 'Places');
-  return (await a.locator('.glanceCard').count()) >= 2;
+  await until(async () => (await a.locator('.poiRow').count()) >= 2, {
+    timeout: 15000,
+    label: 'nearby rows in the browse list',
+  });
+  const rows = await a.locator('.poiRow').allInnerTexts();
+  // A row without a walking time is a name in a list, not a nearby place.
+  if (!rows.some((r) => /\bmin\b|\bft\b|\bmi\b|\bm\b/.test(r))) {
+    throw new Error(`no ranges in the list: ${rows[0]?.replace(/\n/g, ' / ')}`);
+  }
+  return true;
 });
 
-await check('GO NOW card carries a Why? explanation', async () => {
+await check('a GO NOW verdict in the list carries a Why? explanation', async () => {
   // Deterministic clear/day sky so outdoor GO NOW is not suppressed by night
   // or a stormy Open-Meteo reading during CI.
   await a.route('**/api/weather**', async (route) => {
@@ -387,35 +401,29 @@ await check('GO NOW card carries a Why? explanation', async () => {
   await a.locator('.tier:has-text("48")').click();
   await a.waitForTimeout(500);
   await go(a, 'Places');
-  await until(async () => (await a.locator('.glanceCard').count()) >= 2, {
+  await until(async () => (await a.locator('.poiRow').count()) >= 2, {
     timeout: 15000,
-    label: 'glance rail cards',
+    label: 'the browse list',
   });
-  await a.locator('.tabItem[data-tab="explore"]').click();
-  await root(a);
-  // Peek so the glance rail is visible.
-  for (let i = 0; i < 4; i += 1) {
-    const stop = await a.locator('.sheet').evaluate((e) =>
-      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
-    );
-    if (stop === 'peek') break;
-    await a.getByRole('slider', { name: /Resize panel/ }).click();
-    await a.waitForTimeout(300);
-  }
   // useWeather only reads localStorage on mount; a bare fetch does not update
   // React state. `online` is the hook's public refresh signal (same as a phone
   // regaining signal). Retry while waiting — an in-flight poll can no-op once.
-  const goNowHit = a.locator('.glanceCard.goNow .glanceHit[title]');
-  const whyHit = a.locator('.glanceHit[title*="Why"]');
+  //
+  // The rail's GO NOW card carried the reason in a `title` on its hit area.
+  // The status pill in the browse list is where that verdict is read now, and
+  // it takes the same `st.detail` string from the same `liveFor` result — see
+  // components/PlaceList.jsx.
+  const goNowPill = a.locator('.poiRow .liveBadge.goNow[title]');
+  const anyPill = a.locator('.poiRow .liveBadge[title]');
   await until(
     async () => {
       await a.evaluate(() => window.dispatchEvent(new Event('online')));
-      return (await goNowHit.count()) > 0 || (await whyHit.count()) > 0;
+      return (await goNowPill.count()) > 0 || (await anyPill.count()) > 0;
     },
-    { timeout: 20000, label: 'a glance card with Why title' },
+    { timeout: 20000, label: 'a live status pill carrying its reason' },
   );
-  const hit = (await goNowHit.count()) > 0 ? goNowHit.first() : whyHit.first();
-  const why = (await hit.getAttribute('title')) || '';
+  const pill = (await goNowPill.count()) > 0 ? goNowPill.first() : anyPill.first();
+  const why = (await pill.getAttribute('title')) || '';
   if (!why || why.length < 6) throw new Error(`missing Why? title: "${why}"`);
   return true;
 });
@@ -443,7 +451,7 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
   // A dedicated phone keeps the Wear off the other checks. The demo/store
   // grant (grantShipSkins, `parkbound-demo-skins`) unlocks the ship-polish
   // Skins without farming fog quests; the Wear itself is the real user action:
-  // Settings -> Map -> Collection -> Pixel tycoon.
+  // Me -> Settings -> Map -> Collection -> Pixel tycoon.
   const P = await openPhone(browser, {
     lat: 39.34395,
     lng: -84.2673,
@@ -459,9 +467,7 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
       timeout: 40000,
     });
     await closeGate(p);
-    await go(p, 'Settings');
-    await p.getByRole('tab', { name: 'Map' }).click();
-    await p.waitForTimeout(300);
+    await go(p, 'Collection');
     const row = p.locator('.worldSkinRow .row', { hasText: 'Pixel tycoon' }).first();
     await row.scrollIntoViewIfNeeded();
     if (/Locked|Out of season|This World/.test(await row.innerText())) {
@@ -510,9 +516,7 @@ await check('wearing Watercolor quest draws the baked world image under the over
       timeout: 40000,
     });
     await closeGate(p);
-    await go(p, 'Settings');
-    await p.getByRole('tab', { name: 'Map' }).click();
-    await p.waitForTimeout(300);
+    await go(p, 'Collection');
     const row = p.locator('.worldSkinRow .row', { hasText: 'Watercolor quest' }).first();
     await row.scrollIntoViewIfNeeded();
     if (/Locked|Out of season|This World/.test(await row.innerText())) {
@@ -593,6 +597,202 @@ await check('the sheet cycles peek -> half -> full', async () => {
   if (!(peek < half && half < full)) throw new Error(`peek ${peek}, half ${half}, full ${full}`);
   return true;
 });
+
+/* ---- the anchored spot: bare ground -> capsule -> Side Quests / Marks ---- */
+
+/* Its own phone, with a Profile written straight into the session the app
+   reads (`resolveSession`). Not a shortcut around the sign-in: Clerk is off on
+   CI and sandbox boxes, and without a Profile `stateOf` in WorldMarks answers
+   "Sign in" before it ever reaches "Pick a spot" — the anchor gate this
+   section exists to prove would be invisible behind the auth one. The id is
+   minted per run because the Marks it drops land in the venue's world store,
+   which outlives the browser this suite opens. */
+console.log('\n--- phone SP: anchored spots ---');
+const SPOT_FIX = { lat: 39.34395, lng: -84.2673 };
+const spotAuthor = `usr_spot_${Date.now().toString(36)}`;
+const SP = await openPhone(browser, {
+  lat: SPOT_FIX.lat,
+  lng: SPOT_FIX.lng,
+  name: 'Spot',
+  label: 'SP',
+  venue: 'kings-island',
+});
+const sp = SP.page;
+try {
+  await sp.evaluate((userId) => {
+    sessionStorage.setItem(
+      'parkbound.session',
+      JSON.stringify({ userId, email: `${userId}@parkbound.example`, displayName: 'Spot', rank: 'visitor', title: null, xp: 0 }),
+    );
+  }, spotAuthor);
+  await sp.reload({ waitUntil: 'domcontentloaded' });
+  await hydrated(sp);
+  await closeGate(sp);
+
+  /* Every check below reads the capsule for itself and holds the strings it
+     read. The claim being tested is that the screen the capsule opens says the
+     same thing about the same patch of ground, so the two readings have to
+     come from one tap — never from a remembered one. */
+  const readCapsule = async () => {
+    const capsule = sp.locator('.spotCapsule');
+    await capsule.waitFor({ state: 'visible', timeout: 10000 });
+    // name, then "Zone · nearest named thing", then "N min walk · N ft" —
+    // the last two are dropped by SpotCapsule when it has nothing to say.
+    const context = (await capsule.locator('.spotZone').innerText().catch(() => '')).trim();
+    const reach = (await capsule.locator('.spotReach').innerText().catch(() => '')).trim();
+    return {
+      name: (await capsule.locator('.spotName').innerText()).trim(),
+      context,
+      zone: context.split(' · ')[0] || '',
+      near: context.split(' · ')[1] || '',
+      dist: reach.split(' · ')[1] || '',
+      reach,
+    };
+  };
+
+  await check('tapping bare ground names the spot from the venue data', async () => {
+    await ensurePeek(sp);
+    await tapBareGround(sp);
+    const spot = await readCapsule();
+
+    // `spotAt` has two words for a tap and no third: inside SPOT_NEAR_M it is
+    // "By <the Place>", beyond it the ground is open.
+    if (!/^(By .+|Open ground)$/.test(spot.name)) throw new Error(`spot name reads "${spot.name}"`);
+    if (!spot.zone) throw new Error(`no Zone on the capsule: "${spot.context}"`);
+    if (!spot.dist) throw new Error(`no walk on the capsule: "${spot.reach}"`);
+
+    /* The name and the Zone have to be the venue's, not a placeholder that
+       happens to be a string. The nearest named thing is the one record this
+       capsule and the Explore list both read, so ask the list: its row for
+       that Place must stand in the Zone the capsule just claimed. */
+    const neighbour = spot.name.startsWith('By ')
+      ? spot.name.slice(3)
+      : spot.near.replace(/^.*\bfrom\s+/, '');
+    if (!neighbour) throw new Error(`capsule named nothing nearby: "${spot.context}"`);
+    await go(sp, 'Places');
+    await searchPlaces(sp, neighbour);
+    const row = sp.locator('.poiRow', { hasText: neighbour }).first();
+    await row.waitFor({ state: 'visible', timeout: 15000 });
+    const rowText = (await row.innerText()).replace(/\n/g, ' ');
+    if (!rowText.includes(`· ${spot.zone}`)) {
+      throw new Error(`the list puts ${neighbour} somewhere else: "${rowText}" vs capsule "${spot.context}"`);
+    }
+    await clearSearch(sp);
+    await ensurePeek(sp);
+    return true;
+  });
+
+  await check('Side Quest here carries the spot into Side Quests', async () => {
+    // Tabbing away and back leaves the capsule up, so the one the last check
+    // dropped is usually still here; drop another if anything took it away.
+    if (!(await sp.locator('.spotCapsule').count())) {
+      await ensurePeek(sp);
+      await tapBareGround(sp);
+    }
+    const spot = await readCapsule();
+    await sp.locator('.spotCapsule button:has-text("Side Quest here")').click();
+    await until(async () => (await sp.evaluate(() => document.querySelector('.tabItem.on')?.dataset.tab)) === 'quests', {
+      timeout: 10000,
+      label: 'Side Quests to open from the capsule',
+    });
+    const banner = sp.locator('[aria-label="Quest spot"]');
+    await banner.waitFor({ state: 'visible', timeout: 10000 });
+    const line = (await banner.locator('b').innerText()).trim();
+    // SpotBanner says the same spot in one line: name · Zone.
+    if (line !== `${spot.name} · ${spot.zone}`) {
+      throw new Error(`Side Quests is anchored to "${line}", the capsule said "${spot.name} · ${spot.zone}"`);
+    }
+    if (await sp.locator('.spotCapsule').count()) throw new Error('the capsule stayed up behind the screen it opened');
+    return true;
+  });
+
+  await check('Marks stay inert until a spot anchors them', async () => {
+    // Arrived by the tab bar rather than by a tap on the ground: no anchor,
+    // and placement is the one thing this screen must not offer.
+    await go(sp, 'Collection');
+    await sp.locator('.worldCloset .row:has-text("Marks")').click();
+    const rows = sp.locator('.markList.placeable .markRow');
+    await rows.first().waitFor({ state: 'visible', timeout: 10000 });
+    const states = await sp.locator('.markList.placeable .markState').allInnerTexts();
+    if (states.length !== 2 || states.some((s) => s.trim() !== 'Pick a spot')) {
+      throw new Error(`un-anchored rows read ${JSON.stringify(states)}`);
+    }
+    const disabled = await rows.evaluateAll((els) => els.map((e) => e.getAttribute('aria-disabled')));
+    if (disabled.some((d) => d !== 'true')) throw new Error(`rows announce as ${JSON.stringify(disabled)}`);
+    // Forced, because Playwright honours aria-disabled and would never let a
+    // real thumb through either — the point is what happens if one does.
+    await rows.first().click({ force: true });
+    await sp.waitForTimeout(400);
+    if (await sp.locator('.markPhrases').count()) throw new Error('a sign phrase list opened with no spot to stand on');
+    const after = await sp.locator('.markList.placeable .markState').allInnerTexts();
+    if (after.some((s) => /Placed/.test(s))) throw new Error(`an un-anchored row placed a Mark: ${JSON.stringify(after)}`);
+
+    /* The other four Marks are inert by design — a tally of what this Profile
+       earned (`marksByType`), with nothing to tap. Signed in they are numbers;
+       the em dash belongs to a phone with no Profile to count for. */
+    const earned = await sp.locator('.earnedList .markCount').allInnerTexts();
+    if (earned.length !== 4 || earned.some((n) => !/^\d+$/.test(n.trim()))) {
+      throw new Error(`the earned tally reads ${JSON.stringify(earned)}`);
+    }
+    return true;
+  });
+
+  await check('Leave a Mark places a Mark at the tapped spot', async () => {
+    await ensurePeek(sp);
+    await tapBareGround(sp);
+    const spot = await readCapsule();
+    await sp.locator('.spotCapsule button:has-text("Leave a Mark")').click();
+    const marks = sp.locator('.worldMarks');
+    await marks.waitFor({ state: 'visible', timeout: 15000 });
+    const line = (await marks.locator('.spotBanner b').innerText()).trim();
+    if (line !== `${spot.name} · ${spot.zone}`) {
+      throw new Error(`Marks is anchored to "${line}", the capsule said "${spot.name} · ${spot.zone}"`);
+    }
+
+    // The gate the whole feature turns on: the same two rows, now placeable.
+    const states = await sp.locator('.markList.placeable .markState').allInnerTexts();
+    if (states.length !== 2 || states.some((s) => s.trim() !== 'Place')) {
+      throw new Error(`anchored rows read ${JSON.stringify(states)}`);
+    }
+    if (((await sp.locator('.markList.placeable').getAttribute('class')) || '').includes('unanchored')) {
+      throw new Error('the anchored list still draws as unanchored');
+    }
+
+    const beacon = sp.locator('.markList.placeable .markRow', { hasText: 'Beacon' }).first();
+    await beacon.click();
+    await until(async () => /Placed/.test((await beacon.locator('.markState').innerText()) || ''), {
+      timeout: 10000,
+      label: 'the beacon to read Placed',
+    });
+    const foot = (await sp.locator('.markFoot').innerText()).trim();
+    if (!foot.includes('Beacon standing') || !foot.includes(spot.zone)) {
+      throw new Error(`the screen does not say where the Beacon stands: "${foot}"`);
+    }
+
+    /* And it stands where the visitor tapped, not where the phone is. The
+       venue's world store is the far end of the chain that started with a tap
+       on bare ground, so read the Mark back out of it and measure: the same
+       range the capsule printed, from the same fix, to the coordinate the
+       Mark was filed at. */
+    const world = await (await fetch(`${BASE}/api/world/kings-island`)).json();
+    const mine = (world?.world?.marks || []).filter((m) => m.authorId === spotAuthor);
+    if (mine.length !== 1) throw new Error(`world store holds ${mine.length} Marks for this run`);
+    const [mark] = mine;
+    if (mark.type !== 'beacon') throw new Error(`filed a ${mark.type}`);
+    const away = formatDistance(distance(SPOT_FIX.lat, SPOT_FIX.lng, mark.lat, mark.lng));
+    if (away !== spot.dist) {
+      throw new Error(`the Mark is ${away} from the phone, the capsule said the spot was ${spot.dist}`);
+    }
+    // "By …" is spotAt's word for a tap inside SPOT_NEAR_M of a Place, and
+    // only that spot carries a Place id for the Mark to be filed against.
+    if (spot.name.startsWith('By ') && !mark.placeId) {
+      throw new Error(`"${spot.name}" filed with no Place id`);
+    }
+    return true;
+  });
+} finally {
+  await SP.context.close().catch(() => {});
+}
 } // end smoke
 
 if (want('heights')) {
@@ -678,11 +878,15 @@ await check('"with adult" changes the companion tally', async () => {
   await a.locator('.tier:has-text("36")').click();
   await a.waitForTimeout(300);
   const withAdult = await a.locator('.ratioKey .warn b').innerText();
-  await a.locator('.chip:has-text("With adult")').click();
+  // "With an adult along" — the chip says the whole sentence now; "With adult"
+  // is the section label above it, and is not a chip.
+  await a.locator('.chip:has-text("With an adult along")').click();
   await a.waitForTimeout(400);
   const without = await a.locator('.ratioKey .warn b').innerText();
   if (withAdult === without) throw new Error(`companion count unchanged: ${withAdult}`);
-  await a.locator('.chip:has-text("With adult")').click();
+  // "With an adult along" — the chip says the whole sentence now; "With adult"
+  // is the section label above it, and is not a chip.
+  await a.locator('.chip:has-text("With an adult along")').click();
   await a.waitForTimeout(300);
   return true;
 });
@@ -914,7 +1118,14 @@ await check('tapping a map icon opens place details and navigation', async () =>
   });
   const title = await a.locator('.placeDetailName').innerText();
   if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
-  const go = a.locator('[data-place-detail] button[aria-label="Walk me there"]');
+  // Match the accessible name, not the aria-label. Place detail now says
+  // "Walk me there" in visible text, so it carries no aria-label — duplicating
+  // a visible label in ARIA is the shape that goes stale. The capsule and the
+  // list's expanded row still use the icon-only button, which does. getByRole
+  // reads both.
+  const go = a
+    .locator('[data-place-detail]')
+    .getByRole('button', { name: 'Walk me there', exact: true });
   if (!(await go.count())) throw new Error('no navigate control on place detail');
   await go.click();
   await a.waitForTimeout(900);
@@ -1047,7 +1258,7 @@ await check('picking another way changes the trip', async () => {
 });
 
 // Cedar Point coverage stops at preview/alts. The walk UX checks below still
-// assume Kings Island GPS (Beast arrival, glance rail, party rides), so leave
+// assume Kings Island GPS (Beast arrival, browse list, party rides), so leave
 // CP before Start — otherwise a live Gemini walk + KI fix never shortens.
 await check('return to Kings Island before walk UX coverage', async () => {
   await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
@@ -1203,23 +1414,30 @@ await check('arriving ends the route on its own', async () => {
   return true;
 });
 
-await check('a glance card walks you to a place and stops again', async () => {
+// The rail's Go button started a walk and the card then wore `.walking`. The
+// list row's own `Walk me there` is that button now, and the walking state is
+// the nav chrome itself — NavBanner at the top, NavBar at the foot (D11).
+await check('a list row walks you to a place and stops again', async () => {
   await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await a.waitForTimeout(1200);
   await go(a, 'Places');
-  const goBtn = a.locator('.glanceGo').first();
-  await until(async () => (await goBtn.count()) > 0, { timeout: 15000, label: 'glance Go button' });
+  await until(async () => (await a.locator('.poiRow .poiMain').count()) > 0, {
+    timeout: 15000,
+    label: 'the browse list',
+  });
+  await a.locator('.poiRow .poiMain').first().click();
+  const goBtn = a.locator('.poiRow.open button[aria-label="Walk me there"]').first();
+  await until(async () => (await goBtn.count()) > 0, { timeout: 15000, label: 'the row’s Walk button' });
   await goBtn.click();
   await until(async () => (await a.locator('.routePreview').count()) > 0, {
     timeout: 15000,
-    label: 'route preview from glance Go',
-  });
-  await until(async () => (await a.locator('.glanceCard.walking').count()) > 0, {
-    timeout: 15000,
-    label: 'glance card walking state',
+    label: 'route preview from the row’s Walk button',
   });
   await a.locator('.previewGo').click();
-  await a.waitForTimeout(900);
+  await until(async () => (await a.locator('.navBanner, .navBar').count()) > 0, {
+    timeout: 20000,
+    label: 'the walking chrome',
+  });
   await a.locator('.navEnd').click();
   await a.waitForTimeout(500);
   if (await a.locator('.navBanner').count()) throw new Error('End left the banner up');
@@ -1269,13 +1487,13 @@ console.log('\n--- adventure: side quests ---');
 await check('Side Quest submit queues locally', async () => {
   await dismissNavigation(a).catch(() => {});
   await go(a, 'Quests');
-  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+  await until(async () => (await a.locator('.questCard').count()) > 0, {
     timeout: 15000,
     label: 'side quest rows',
   });
   if (!profileReady) {
     // ADR-0010: gap Side Quests need a Profile; CI has no Clerk — assert the soft gate.
-    const reportBtn = a.locator('.sideQuestRow').first().locator('button.sideQuestReportBtn');
+    const reportBtn = a.locator('.questCard').first().locator('button.questAction');
     if ((await reportBtn.count()) > 0) {
       await reportBtn.click();
       await a.waitForTimeout(300);
@@ -1286,7 +1504,7 @@ await check('Side Quest submit queues locally', async () => {
     return true;
   }
   // Soft-gate: Report only after sign-in (done above) and with live GPS.
-  const reportBtn = a.locator('.sideQuestRow').first().locator('button.sideQuestReportBtn, button[aria-expanded]');
+  const reportBtn = a.locator('.questCard').first().locator('button.questAction, button[aria-expanded]');
   await until(async () => (await reportBtn.count()) > 0, {
     timeout: 10000,
     label: 'side quest Report after sign-in',
@@ -1299,7 +1517,7 @@ await check('Side Quest submit queues locally', async () => {
     label: 'queued side quest feedback',
   }).catch(() => true);
   // Queue persistence is the vertical guarantee — pending count or form closed.
-  if ((await a.locator('.sideQuestSubmit').count()) > 0 && (await a.locator('.sideQuestRow .sideQuestSubmit').count()) > 0) {
+  if ((await a.locator('.sideQuestSubmit').count()) > 0 && (await a.locator('.questCard .sideQuestSubmit').count()) > 0) {
     const pending = await a.locator('.sheetBody').innerText();
     if (!/pending|queued|waiting/i.test(pending) && (await a.locator('.sideQuestSubmit').count())) {
       await a.waitForTimeout(300);
@@ -1314,7 +1532,7 @@ await check('queued Side Quest syncs once the network is back', async () => {
   if (!profileReady) return true;
   await dismissNavigation(a).catch(() => {});
   await go(a, 'Quests');
-  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+  await until(async () => (await a.locator('.questCard').count()) > 0, {
     timeout: 15000,
     label: 'side quest rows',
   });
@@ -1337,9 +1555,9 @@ await check('queued Side Quest syncs once the network is back', async () => {
     await route.fallback();
   });
 
-  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  const heightRow = a.locator('.questCard', { hasText: 'Confirm height on the sign' });
   await until(async () => (await heightRow.count()) > 0, { timeout: 10000, label: 'height gap quest' });
-  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  const reportBtn = heightRow.locator('button.questAction');
   await until(async () => (await reportBtn.count()) > 0, { timeout: 10000, label: 'height Report' });
   if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
     await reportBtn.click();
@@ -1376,16 +1594,16 @@ await check('complete a gap quest draws Overlay on the map', async () => {
   }
   await dismissNavigation(a).catch(() => {});
   await go(a, 'Quests');
-  await until(async () => (await a.locator('.sideQuestRow').count()) > 0, {
+  await until(async () => (await a.locator('.questCard').count()) > 0, {
     timeout: 15000,
     label: 'side quest rows',
   });
-  const heightRow = a.locator('.sideQuestRow', { hasText: 'Confirm height on the sign' });
+  const heightRow = a.locator('.questCard', { hasText: 'Confirm height on the sign' });
   await until(async () => (await heightRow.count()) > 0, {
     timeout: 10000,
     label: 'height gap quest',
   });
-  const reportBtn = heightRow.locator('button.sideQuestReportBtn');
+  const reportBtn = heightRow.locator('button.questAction');
   await until(async () => (await reportBtn.count()) > 0, {
     timeout: 10000,
     label: 'height Report after sign-in',
@@ -1454,9 +1672,9 @@ await check('a scored Side Quest pays XP into the Title ladder', async () => {
   // Answer the live "Ride up or down?" from the suite's standing fix — 62 m
   // from Viking Fury, walked-near, first live report for that ride, so XP
   // must land.
-  const liveRow = a.locator('.sideQuestRow', { hasText: 'Ride up or down?' });
+  const liveRow = a.locator('.questCard', { hasText: 'Ride up or down?' });
   await until(async () => (await liveRow.count()) > 0, { timeout: 10000, label: 'live ride quest' });
-  const reportBtn = liveRow.locator('button.sideQuestReportBtn');
+  const reportBtn = liveRow.locator('button.questAction');
   if ((await reportBtn.getAttribute('aria-expanded')) === 'true') {
     await reportBtn.click();
     await a.waitForTimeout(200);
@@ -1492,16 +1710,17 @@ await check('Me carries the journey: ladder, field stats, finder credit', async 
     throw new Error(`completions do not credit the finder: ${mine.slice(0, 120)}`);
   }
 
-  await go(a, 'Settings');
+  // Me is a root now: the journey is the screen, not a card three blocks
+  // inside Settings, and the ladder is open rather than behind a toggle.
+  await go(a, 'Me');
   await until(async () => (await a.locator('.profileJourney').count()) > 0, {
     timeout: 10000,
-    label: 'journey card on Me',
+    label: 'journey on the Me root',
   });
   if ((await a.locator('.profileJourney .titleProgress .titleProgressFill').count()) < 1) {
     throw new Error('Me journey hero has no XP bar');
   }
 
-  await a.locator('.journeyToggle').click();
   await until(async () => (await a.locator('.journeyStep').count()) === 5, {
     timeout: 5000,
     label: 'five Title ladder steps',
@@ -1511,11 +1730,13 @@ await check('Me carries the journey: ladder, field stats, finder credit', async 
     if (!ladder.includes(title)) throw new Error(`ladder is missing ${title}: ${ladder.slice(0, 160)}`);
   }
   const stats = await a.locator('[data-journey-stats]').innerText();
-  if (!/fact/i.test(stats) || !/guest/i.test(stats)) {
+  if (!/contribution/i.test(stats) || !/guest/i.test(stats)) {
     throw new Error(`field stats missing: ${stats.slice(0, 120)}`);
   }
 
   // Finder credit is on by default, and the switch answers a tap both ways.
+  // It moved to Settings -> You, under the name field it is about.
+  await go(a, 'Settings');
   const share = a.locator('.journeyShare');
   if ((await share.getAttribute('aria-checked')) !== 'true') {
     throw new Error('finder credit should default on');
@@ -1732,13 +1953,20 @@ await check('the joining phone is not serving the party mesh', async () => {
   return true;
 });
 
-await check('roster shows a real distance to phone B', async () => {
+/* The card leads with the walk, not the range, and carries the compass point
+   beside the Place. Asserted as two separate things on purpose: the old
+   `/\d+\s*(ft|mi)/` still passes against "3 min" — "mi" is inside "min" — so it
+   would have gone on reporting green after the rail stopped showing a distance
+   at all. */
+await check('roster shows a real walk and bearing to phone B', async () => {
   const t = await until(
     async () => {
       const row = await a.locator('.memberRow', { hasText: 'Ava' }).first().innerText();
-      return /\d+\s*(ft|mi)/.test(row) ? row : null;
+      const walk = /(\d+|<1)\s*min\b/.test(row);
+      const bearingShown = /(^|\s|·)(N|NE|E|SE|S|SW|W|NW)(\s|$)/.test(row);
+      return walk && bearingShown ? row : null;
     },
-    { timeout: JOIN_TIMEOUT, label: 'a range to phone B' },
+    { timeout: JOIN_TIMEOUT, label: 'a walk and a bearing to phone B' },
   );
   return Boolean(t);
 });
@@ -2116,17 +2344,22 @@ await check('the logo splash opens first and release notes stay behind the versi
 await dismissIntroSplash(e);
 await dismissUpdateSplash(e);
 
-await check('the welcome gate shows brand, pitch, and nearest-park on one card', async () => {
+await check('the welcome gate is step one of two: what the app is for, and the ask', async () => {
   const card = await e.locator('.gate').innerText();
-  const heading = (await e.locator('.brandLockupName').innerText()).trim();
-  if (heading !== 'PARKBOUND') throw new Error(`opened on: "${heading}"`);
-  const said = card.indexOf('Explore more. Stress less.');
-  const pitch = /World|Rally|living map/i.test(card);
-  if (said < 0 || !pitch) {
-    throw new Error('the welcome gate is missing slogan or pitch');
+  const heading = (await e.locator('.gate h2').innerText()).trim();
+  // The brand lockup moved to the intro, which is the screen before this one.
+  // This card leads with what the day looks like and what it needs to do it.
+  if (heading !== 'Plan your day') throw new Error(`opened on: "${heading}"`);
+  if (!/1 OF 2/.test(card)) {
+    throw new Error('the welcome gate should say it is the first of two steps');
   }
-  if (!/Go to nearest World/i.test(card)) {
-    throw new Error('the welcome gate should offer nearest World on the first card');
+  const pitch = /World|Party|plan/i.test(card);
+  if (!pitch) throw new Error('the welcome gate is missing its pitch');
+  if (!/m ready/.test(card)) {
+    throw new Error('the welcome gate should offer the nearest World on the first card');
+  }
+  if (!/stays on your phone/i.test(card)) {
+    throw new Error('the gate that asks for GPS must still say where the fix goes');
   }
   const paths = await e.locator('.mapSvg path').count();
   if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
@@ -2136,7 +2369,7 @@ await check('the welcome gate shows brand, pitch, and nearest-park on one card',
 });
 
 await check('the nearest-park button asks before building that park', async () => {
-  await e.locator('button:has-text("Go to nearest World")').click();
+  await e.locator('button:has-text("m ready")').click();
   // Confirm the nearest World — never auto-download the wrong map.
   await until(
     async () => (await e.locator('.gate .btn.primary:has-text("Enter")').count()) > 0,
@@ -2186,8 +2419,13 @@ await check('the park question is inline when the venue is not yet confirmed', a
     const heading = (await p.locator('.gate h2').innerText().catch(() => '')).trim();
     return /headed to.*fiesta texas/i.test(heading);
   }, { timeout: 25000, label: 'the park question' });
-  const other = await p.locator('.gate .venueRow', { hasText: 'Kings Island' }).innerText();
-  if (!/\d+ mi away/i.test(other)) throw new Error(`other park row: "${other}"`);
+  // Distance is its own column in the row now, so it reads bare: the word
+  // "away" was carrying a column heading's worth of meaning inside the text.
+  const row = p.locator('.gate .venueRow', { hasText: 'Kings Island' });
+  const other = await row.innerText();
+  if (!/\d+ mi/i.test(other)) throw new Error(`other park row: "${other}"`);
+  const away = (await row.locator('.venueAway').innerText()).trim();
+  if (!/^[\d,]+ mi$/.test(away)) throw new Error(`distance column: "${away}"`);
   await p.locator('.gate .btn.primary:has-text("Enter")').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   const shown = await p.locator('.brandName, .brand b').first().innerText();
@@ -2429,12 +2667,25 @@ await check('save where I parked and walk back to it', async () => {
   await ensurePeek(b);
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
-  // Clear a leftover pin via the glance ✕ (Forget under Me → Phone is easy to miss).
-  const forgetCar = b.locator('button[aria-label="Remove Your car from this list"]');
-  if (await forgetCar.count()) {
-    await forgetCar.click();
+  /* Clear a leftover pin. The rail's ✕ used to do this; with the rail gone the
+     only forget is the Phone row under Me → Settings, which says "Saved · tap
+     to forget" while there is something to forget. */
+  await go(b, 'Settings');
+  const phoneTopic = b.locator('.settingsTopic', { hasText: 'Phone' });
+  if (await phoneTopic.count()) {
+    await phoneTopic.click();
     await b.waitForTimeout(400);
   }
+  const forgetCar = b.locator('.settingsPanel .row', { hasText: 'Where I parked' }).first();
+  if ((await forgetCar.count()) && /tap to forget/i.test(await forgetCar.innerText())) {
+    await forgetCar.click();
+    await b.waitForTimeout(400);
+    if (/tap to forget/i.test(await forgetCar.innerText())) {
+      throw new Error('the Phone row would not forget the car');
+    }
+  }
+  await go(b, 'Places');
+  await ensurePeek(b);
   const saveBtn = b.locator('button[aria-label="Save where I parked"]');
   await until(async () => (await saveBtn.count()) > 0, {
     timeout: 15000,
@@ -2449,9 +2700,15 @@ await check('save where I parked and walk back to it', async () => {
     await B.context.setGeolocation(away);
     await b.waitForTimeout(400);
   }
-  await go(b, 'Places');
-  const carGo = b.locator('.glanceCard', { hasText: 'Your car' }).locator('.glanceGo');
-  await until(async () => (await carGo.count()) > 0, { timeout: 15000, label: 'car glance card' });
+  /* The walk back. The rail card's Go used to start it; the Party panel's
+     worded button is the only thing that calls startNav({kind:'car'}) now —
+     the map FAB takes the camera to the pin but does not route to it. */
+  await go(b, 'Party');
+  const carGo = b.locator('button:has-text("Where I parked")').first();
+  await until(async () => (await carGo.count()) > 0, {
+    timeout: 15000,
+    label: 'the Party panel’s Where I parked button',
+  });
   await carGo.click();
   await until(async () => (await b.locator('.routePreview').count()) > 0, {
     timeout: 15000,

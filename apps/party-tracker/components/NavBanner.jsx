@@ -6,7 +6,16 @@ import { formatDistance } from '@/lib/geo';
    distance to it, and a glance at the one after. Everything else — how long is
    left, when you get there, how to stop — lives on the bar at the bottom, the
    way both phone maps do it, because the top of a phone is where your eyes go
-   and the bottom is where your thumb goes. */
+   and the bottom is where your thumb goes.
+
+   The "then" line says how far the next leg runs, not what it is called. A
+   step out of lib/routing.js narrate() is `{turn, text, metres, at, atIndex,
+   landmark, fromStart}` — there is no per-step way name to quote, and there is
+   no way to invent one: the park's paths mostly have no names, which is why
+   viaName() names a whole route after the *land* nearest its middle rather
+   than after a path. So the leg is stated in feet and the maneuver names
+   itself, which is more use anyway — "445 ft, bear left at LaRosa's" tells you
+   what to look for; a path name you cannot read off a sign does not. */
 
 export function TurnIcon({ turn }) {
   // One arrow, rotated. A left turn is the right turn's mirror, and an arrival
@@ -50,8 +59,13 @@ export function TurnIcon({ turn }) {
 export default function NavBanner({ target, route, progress, offRoute, rerouted }) {
   if (!target) return null;
 
-  const step = progress?.step ?? route?.steps?.[0] ?? null;
-  const then = progress?.next ?? route?.steps?.[1] ?? null;
+  /* `progress` answers with an explicit null once there is no step after this
+     one, so it is asked first and taken at its word — `??` onto the raw route
+     turned that null back into steps[1], which on a two-step route is the
+     arrival itself and printed "Arrive at X / then arrive at X". The raw route
+     is only the stand-in for the moment before the first fix lands. */
+  const step = progress ? progress.step : (route?.steps?.[0] ?? null);
+  const then = progress ? progress.next : (route?.steps?.[1] ?? null);
   const toStep = progress?.toStep ?? null;
   const arriving = step?.turn === 'arrive';
 
@@ -83,7 +97,11 @@ export default function NavBanner({ target, route, progress, offRoute, rerouted 
             <span className={`navThenIcon ${then.turn}`}>
               <TurnIcon turn={then.turn} />
             </span>
-            then {then.text.charAt(0).toLowerCase() + then.text.slice(1)}
+            then{' '}
+            {Number.isFinite(step?.metres) && step.metres > 0
+              ? `${formatDistance(step.metres)}, `
+              : ''}
+            {then.text.charAt(0).toLowerCase() + then.text.slice(1)}
           </div>
         )
       )}

@@ -15,11 +15,71 @@ import { GLYPHS, WORDS } from '@/lib/brand';
 import { identityOf, placeNav } from '@/lib/venue/ids';
 import { placeContext } from '@/lib/venue/placeContext';
 
+const VERDICT = {
+  eligible: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
+  companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
+  advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
+  not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
+  unknown: { label: 'Unknown', cls: 'unknown', icon: null },
+};
+
 /**
- * Walk / Rally / Plan — the same glyphs as the map FAB and the Plan tab,
- * so the actions can be learned as icons rather than re-read as words.
+ * Walk / Rally / Plan.
+ *
+ * Two shapes of the same three actions, on one rule about how much screen the
+ * caller has. Inside a list row that has expanded under the place you tapped,
+ * the icons are enough: the row is one of twenty and the actions have to stay
+ * out of the way of the next name down. On the Place's own screen they are the
+ * reason the screen exists and there is a whole width to say them in, so they
+ * say them — the twin's `Walk me there` / `Add to Plan` / `Rally here`, which
+ * is also the first place in the app somebody can *learn* what those three
+ * glyphs mean.
+ *
+ * `labelled` is the opt-in rather than the default because the icon row is what
+ * every existing caller wants; only PlaceDetail's own head asks for words.
  */
-export function PlaceActions({ poi, onNavigate, onSetMeet, onAddToPlan = null }) {
+export function PlaceActions({
+  poi,
+  onNavigate,
+  onSetMeet,
+  onAddToPlan = null,
+  labelled = false,
+  inPlan = false,
+}) {
+  if (labelled) {
+    return (
+      <div className="placeActions labelled">
+        <button
+          type="button"
+          className="btn small rect primary placeAction"
+          onClick={() => onNavigate(placeNav(poi))}
+        >
+          {WORDS.navigation}
+        </button>
+        {onAddToPlan && (
+          <button
+            type="button"
+            className={`btn small rect placeAction placeActionOutline ${inPlan ? 'on' : ''}`}
+            onClick={() => onAddToPlan(poi)}
+            aria-pressed={inPlan}
+          >
+            {/* The plan is a set, so the second tap is not a second copy —
+                saying so on the button is cheaper than a toast that says it
+                after the fact. */}
+            {inPlan ? 'In your Plan' : WORDS.addToPlan}
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn small rect placeAction placeActionOutline"
+          onClick={() => onSetMeet(poi)}
+        >
+          Rally here
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="placeActions">
       <button
@@ -109,15 +169,35 @@ export function PlaceDetailBody({
           {status.source === 'weather' && ' — a guess from the forecast, not the park'}
         </p>
       )}
-      {rows.map((row) => {
-        const text = row.reasons?.[0];
-        if (!text) return null;
-        return (
-          <p key={row.id} className="poiNote eligibilityReason">
-            {rows.length > 1 ? `${row.name}: ${text}` : text}
-          </p>
-        );
-      })}
+      {/* Who can get on, one line each, in three columns: the person, the
+          answer, and the rule that produced it. It was a paragraph per person
+          reading "Maya: Riders must be at least 54\" tall", which puts three
+          different kinds of thing on one line and makes the party impossible to
+          scan — the answer is the column you read down, and it could only be
+          found by reading each sentence to its verb.
+
+          `explain` already returns the party most-restrictive-first, so the
+          person who cannot ride is the first line rather than a line somewhere
+          in the middle. Advisory and unknown keep their own rows: the twin has
+          three buckets and this app has five, and collapsing "the venue never
+          published a rule" into "can ride" is a claim nobody made. */}
+      {rows.length > 0 && (
+        <ul className="eligRows">
+          {rows.map((row) => {
+            const v = VERDICT[row.kind] || null;
+            return (
+              <li key={row.id} className="eligRow">
+                <b className="eligWho">{row.name}</b>
+                <span className={`eligVerdict ${v?.cls || ''}`}>{v?.label || ''}</span>
+                {/* Keeps .eligibilityReason: that is the class the browser
+                    suite reads this text through, and the text has not
+                    changed — only the box around it. */}
+                <span className="eligWhy eligibilityReason">{row.reasons?.[0] || ''}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
       {poi.note && <p className="poiNote">{poi.note}</p>}
       {camp.length > 0 && (
         <ul className="campChips">
@@ -197,22 +277,25 @@ export function PlaceDetailBody({
   );
 }
 
-const VERDICT = {
-  eligible: { label: 'Can ride', cls: 'ok', icon: 'checkmark' },
-  companion: { label: 'With adult', cls: 'warn', icon: 'checkmark' },
-  advisory: { label: 'Advisory', cls: 'warn', icon: 'checkmark' },
-  not: { label: 'Too short', cls: 'bad', icon: 'xmark' },
-  unknown: { label: 'Unknown', cls: 'unknown', icon: null },
-};
-
 /**
- * Full place sheet opened from a map icon: who it is, how far, what is known
- * about it, and a compact navigate control — the same answers the list expands
- * to, without requiring the visitor to find the row first.
+ * The Place's own screen: who it is, how far, whether it is running, who in
+ * the party can get on it, and the three things you came here to do.
  *
- * Laid out like a Maps collapsed card: name, one line of facts, icon actions.
- * Notes and reports sit below so a lean sheet still shows the things you came
- * to do; pull up to read the rest.
+ * Read top to bottom, in the order the questions arrive. The eyebrow answers
+ * "is it running" before the name has even been read, because that is the one
+ * fact that can make the rest of the screen pointless. The name is the biggest
+ * thing on it. The line under it is where and how far. Then the actions, in
+ * words — this is the screen with room for words, and the first place in the
+ * app where the three glyphs the list uses can be learned.
+ *
+ * It is a pushed view rather than a block at the foot of the browse list. The
+ * twin inlines it because the prototype has no navigation; this app has a nav
+ * stack, a back chevron and a sheet height measured for this screen, and all
+ * three depend on it being pushed.
+ *
+ * No photo. The twin draws a dashed "Photo — {name} entrance" box, which is a
+ * note-to-self in a prototype and a permanent missing-image on every Place in
+ * a shipped app. There is no place photography and no pipeline for it.
  */
 export default function PlaceDetail({
   poi,
@@ -227,6 +310,9 @@ export default function PlaceDetail({
   onSetMeet,
   onReport = null,
   onAddToPlan = null,
+  // Whether this Place is already one of today's stops — the Plan is a set, so
+  // the button says so rather than letting a second tap look like a second copy.
+  inPlan = false,
   overlayCompletions = [],
   session = null,
 }) {
@@ -270,46 +356,20 @@ export default function PlaceDetail({
       data-overlay={poi.overlay ? '1' : undefined}
     >
       <div className="placeDetailHead">
-        <span
-          className="dot"
-          style={{ background: v.cls === 'bad' ? palette.barred : palette.categories[poi.c] }}
-        />
-        <div className="placeDetailText">
-          <b className="placeDetailName">{poi.n}</b>
-          <span className="placeDetailLine">
-            {subtitle}
-            {d != null && (
-              <>
-                {subtitle ? ' · ' : ''}
-                <b>{formatWalk(d)}</b>
-                {` ${formatDistance(d)}${dir ? ` ${dir}` : ''}`}
-              </>
-            )}
+        {/* The two top-line answers, side by side above the name: is it
+            running, and can this party get on it. They are different questions
+            and keep different marks — but both are read before the name, and
+            both can make the rest of the screen moot.
+
+            The live word is coloured by tone, not by the twin's category
+            colour: a coaster is orange whether it is running or stopped, and
+            tone is the same three inks the status pill and the weather note
+            already use, so "PAUSED" is red here for the same reason it is red
+            everywhere else. */}
+        {(showStatus || v.label) && (
+          <span className="placeDetailTop">
             {showStatus && (
-              <span
-                className={[
-                  'liveBadge',
-                  'statusPill',
-                  status.live === 'goNow' || status.key === 'goNow' ? 'goNow' : '',
-                  status.live === 'busy' || status.key === 'busy' ? 'busy' : '',
-                  status.live === 'later' || status.key === 'later' || status.key === 'watch'
-                    ? 'later'
-                    : '',
-                  status.live === 'open' || status.key === 'open' ? 'open' : '',
-                  status.live === 'paused' ||
-                  status.key === 'down' ||
-                  status.key === 'hold' ||
-                  status.key === 'paused'
-                    ? 'paused'
-                    : '',
-                  status.live === 'weather' || status.key === 'closed' ? 'weather' : '',
-                  status.source === 'weather' ? 'guess' : '',
-                  status.stale ? 'stale' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                title={status.detail || undefined}
-              >
+              <span className={`placeEyebrow ${status.tone || ''}`}>
                 <i aria-hidden="true">{status.source === 'party' ? '\u25CF' : '\u2601'}</i>
                 {status.label}
               </span>
@@ -321,14 +381,34 @@ export default function PlaceDetail({
               </span>
             )}
           </span>
-        </div>
-        <PlaceActions
-          poi={poi}
-          onNavigate={onNavigate}
-          onSetMeet={onSetMeet}
-          onAddToPlan={onAddToPlan}
-        />
+        )}
+        <b className="placeDetailName">
+          <span
+            className="dot"
+            style={{ background: v.cls === 'bad' ? palette.barred : palette.categories[poi.c] }}
+          />
+          {poi.n}
+        </b>
+        <span className="placeDetailLine">
+          {subtitle}
+          {d != null && (
+            <>
+              {subtitle ? ' · ' : ''}
+              <b>{formatWalk(d)}</b>
+              {` ${formatDistance(d)}${dir ? ` ${dir}` : ''}`}
+            </>
+          )}
+        </span>
       </div>
+
+      <PlaceActions
+        poi={poi}
+        onNavigate={onNavigate}
+        onSetMeet={onSetMeet}
+        onAddToPlan={onAddToPlan}
+        labelled
+        inPlan={inPlan}
+      />
 
       <PlaceDetailBody
         poi={poi}

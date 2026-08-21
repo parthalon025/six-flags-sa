@@ -137,6 +137,45 @@ export function liveFor(poi, report, weather, now = Date.now(), opts = {}) {
   return { ...base, live: base.label ? base.key : 'none' };
 }
 
+/**
+ * The status pill's classes for one `liveFor` result.
+ *
+ * Both surfaces that draw the pill — the list row and the selection capsule —
+ * ask the same nine questions of the same object. While each kept its own
+ * copy of them, the answers could drift: one screen inventing a fourth colour
+ * for a ride the other already had an opinion about. The questions belong
+ * beside `liveFor`, which is what settled the facts they read.
+ *
+ * Both `live` and `key` are matched on every rung because callers do not all
+ * hold the same shape: `liveFor` sets `live` (and rewrites `key` with it),
+ * while a raw `statusFor` result carries only `key` — and `watch`, `down` and
+ * `hold` never become a `live` word at all, so they are only ever seen there.
+ *
+ * Returns a class string; the caller decides whether there is a label worth
+ * drawing at all.
+ *
+ * @param {object|null} st `liveFor` (or `statusFor`) result
+ */
+export function statusPillClasses(st) {
+  if (!st) return '';
+  return [
+    'liveBadge',
+    'statusPill',
+    st.live === 'goNow' || st.key === 'goNow' ? 'goNow' : '',
+    st.live === 'busy' || st.key === 'busy' ? 'busy' : '',
+    st.live === 'later' || st.key === 'later' || st.key === 'watch' ? 'later' : '',
+    st.live === 'open' || st.key === 'open' ? 'open' : '',
+    st.live === 'paused' || st.key === 'down' || st.key === 'hold' || st.key === 'paused'
+      ? 'paused'
+      : '',
+    st.live === 'weather' || st.key === 'closed' ? 'weather' : '',
+    st.source === 'weather' ? 'guess' : '',
+    st.stale ? 'stale' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
 /* -------------------------------------------------------------- Why? --- */
 
 /* One line each — "why" is a sentence a visitor can check against the park,

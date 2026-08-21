@@ -9,7 +9,8 @@ import { DISPLAY_SPIKE_VENUE, mapLibreDisplayEnabled } from '@/lib/mapLibreConfi
 import Icon from '@/components/Icon';
 import GpsGate from '@/components/GpsGate';
 import ParkPrompt from '@/components/ParkPrompt';
-import GlanceRail from '@/components/GlanceRail';
+import SpotCapsule from '@/components/SpotCapsule';
+import SelectionCapsule from '@/components/SelectionCapsule';
 import NavBanner from '@/components/NavBanner';
 import NavBar from '@/components/NavBar';
 import TabBar from '@/components/TabBar';
@@ -55,7 +56,7 @@ import {
 } from '@/lib/venue/store';
 import { useVenue } from '@/lib/venue/useVenue';
 import { syncVenueBundle } from '@/lib/venue/download';
-import { findPlace, identityOf } from '@/lib/venue/ids';
+import { findPlace, identityOf, placeNav } from '@/lib/venue/ids';
 import {
   capture,
   locationReadyToJoin,
@@ -78,6 +79,7 @@ import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 import * as notifier from '@/lib/push/client';
 import { bearing, cardinal, distance, formatDistance, formatWalk } from '@/lib/geo';
 import { bestEntrance, entranceMeta, entranceLine } from '@/lib/entrance';
+import { placeContext } from '@/lib/venue/placeContext';
 import { navKeyOf } from '@/lib/navKey';
 import {
   applyMapSkin,
@@ -110,6 +112,9 @@ import {
   paletteToggleAria,
   resolvePalette,
 } from '@/lib/mapVisual';
+import { spotAt } from '@/lib/spot';
+import { liveFor, membersAt } from '@/lib/live';
+import { paletteFor } from '@/lib/theme';
 import { defaultQuestQueue } from '@/lib/adventure/questQueue';
 import { flushQuestQueue } from '@/lib/adventure/questSync';
 import { flushThanksQueue } from '@/lib/adventure/thanks';
@@ -117,7 +122,12 @@ import { flushThanksQueue } from '@/lib/adventure/thanks';
 const PartyPanel = dynamic(() => import('@/components/PartyPanel'), { ssr: false });
 const PlaceList = dynamic(() => import('@/components/PlaceList'), { ssr: false });
 const PlanPanel = dynamic(() => import('@/components/PlanPanel'), { ssr: false });
+const MePanel = dynamic(() => import('@/components/MePanel'), { ssr: false });
 const SettingsPanel = dynamic(() => import('@/components/SettingsPanel'), { ssr: false });
+const WorldCloset = dynamic(() => import('@/components/WorldCloset'), { ssr: false });
+const WorldMarks = dynamic(() => import('@/components/WorldMarks'), { ssr: false });
+const PushSettings = dynamic(() => import('@/components/PushSettings'), { ssr: false });
+const HiddenCards = dynamic(() => import('@/components/HiddenCards'), { ssr: false });
 const SideQuestsPanel = dynamic(() => import('@/components/SideQuestsPanel'), { ssr: false });
 const MovementHistoryPanel = dynamic(() => import('@/components/MovementHistoryPanel'), { ssr: false });
 const Diagnostics = dynamic(() => import('@/components/Diagnostics'), { ssr: false });
@@ -148,6 +158,15 @@ const VIEW_TITLES = {
   diagnostics: 'Diagnostics',
   movement: 'Walk history',
   'watch-compass': 'Watch Compass',
+  /* Me is a root now (MePanel): the journey and the ladder are what the tab
+     opens on, and everything that used to be stacked inside Settings is a
+     screen under it. Collection sits between Me and Marks so backing out of a
+     Mark lands on the Skins and Kits it belongs with, not on the tab root. */
+  settings: 'Settings',
+  closet: 'Collection',
+  marks: 'Marks',
+  notifications: 'Notifications',
+  'hidden-cards': 'What the panel shows',
 };
 
 /* The tab bar, left to right. Parkbound's primary areas: Explore, Party,
@@ -423,11 +442,21 @@ function ParkApp({ isSignedIn }) {
   const [filter, setFilter] = useState('all');
   const [onlyRideable, setOnlyRideable] = useState(false);
   // The sheet's height in pixels, and the only thing that decides either how it
-  // looks or what is on it. Starts at the glance stop; the effect below hands it
+  // looks or what is on it. Starts at the resting stop; the effect below hands it
   // whatever the visitor last left it at.
   const [sheetPx, setSheetPx] = useState(SHEET_PEEK_PX);
   const [follow, setFollow] = useState(true);
   const [armMeet, setArmMeet] = useState(false);
+  /* A patch of ground the visitor tapped and named — see lib/spot.js. Three
+     pieces of state, not one, because they answer three different questions and
+     die at three different times. `spot` is the pin and its capsule, and lasts
+     until the next tap. `questSpot` and `markSpot` are what the tap was *for*:
+     they are handed to the screen the visitor chose and outlive the capsule,
+     so Side Quests and Marks can say what they are anchored to. Clearing them
+     belongs to those screens, which know when the report is filed. */
+  const [spot, setSpot] = useState(null);
+  const [questSpot, setQuestSpot] = useState(null);
+  const [markSpot, setMarkSpot] = useState(null);
   const [tapeOn, setTapeOn] = useState(false);
   const [toast, setToast] = useState(null);
   const [height, setHeight] = useState(null);
@@ -437,12 +466,29 @@ function ParkApp({ isSignedIn }) {
      a frame or two behind. */
   const mapHeight = useDeferredValue(height);
   const [withAdult, setWithAdult] = useState(true);
+  /* The Plan draft is not the only thing this phone knows before there is a
+     Party to tell. A rider height set while exploring alone is a fact about the
+     person holding the phone, and Eligibility switches to Party facts the
+     instant a Party exists — so without this the seat joins with no height, the
+     map quietly stops filtering on it, and the roster card offers "Set a
+     height" to someone whose height is right there in the filter badge.
+     Never clears: an unset height on this phone is not a claim that the seat
+     has none. */
+  const adoptHeight = useCallback(() => {
+    if (height == null) return;
+    runtime.current?.setMemberFacts({ height, withAdult });
+  }, [height, withAdult]);
   const [categories, setCategories] = useState(() => categoriesForGate());
   const [paletteMode, setPaletteMode] = useState('auto');
   // Tapping the on-map OSM notice opens Settings straight to Credits. `nonce`
   // changes on every tap so SettingsPanel re-syncs even when it is already
   // mounted on that topic — see SettingsPanel's `openTopic` prop.
   const [settingsOpenTopic, setSettingsOpenTopic] = useState(null);
+  /* A roster card's "Set a height" jumps to Plan → Heights with that Member
+     already picked. Same shape as settingsOpenTopic and for the same reason:
+     the nonce changes on every tap, so tapping the same card twice re-picks it
+     even when the panel is already mounted on that Member. */
+  const [heightFocus, setHeightFocus] = useState(null);
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
@@ -646,17 +692,39 @@ function ParkApp({ isSignedIn }) {
     [goForward, applyNav, growSheet, stops],
   );
 
-  /** The on-map OSM notice's tap target: Settings, straight to Credits. */
-  const openCredits = useCallback(() => {
-    selectTab('settings');
-    setSettingsOpenTopic({ topic: 'credits', nonce: Date.now() });
-  }, [selectTab]);
-  // Leaving Settings clears the request — otherwise a later, ordinary visit
-  // to Settings (tab bar, not the notice) would keep reopening on Credits
-  // instead of SettingsPanel's own default.
+  /* A spot is a coordinate in one park. Changing World leaves it pointing at a
+     patch of ground the visitor is no longer standing anywhere near, and an
+     anchored Side Quest or Mark filed against it would be filed against the
+     wrong place entirely — so all three go with the venue. */
   useEffect(() => {
-    if (tab !== 'settings' && settingsOpenTopic) setSettingsOpenTopic(null);
-  }, [tab, settingsOpenTopic]);
+    setSpot(null);
+    setQuestSpot(null);
+    setMarkSpot(null);
+  }, [venue?.id]);
+
+  /** The on-map OSM notice's tap target: Settings, straight to Credits.
+   *
+   *  Settings is a pushed screen under Me now, so this is two moves at once —
+   *  land on the Me tab AND put Settings on top of it — and they are made as
+   *  one nav state rather than selectTab() followed by push(). They have to
+   *  be: `navRef` is refreshed in an effect, so a push in the same tick would
+   *  read the stack selectTab has not written yet and append to a stale one. */
+  const openCredits = useCallback(() => {
+    const { stacks: cur } = navRef.current;
+    goForward({ tab: 'settings', stacks: { ...cur, settings: ['settings'] } }, 'fromRight');
+    growSheet(stops.half);
+    setSettingsOpenTopic({ topic: 'credits', nonce: Date.now() });
+  }, [goForward, growSheet, stops.half]);
+  // Leaving the Settings screen clears the request — otherwise a later,
+  // ordinary visit to Settings (through Me, not the notice) would keep
+  // reopening on Credits instead of SettingsPanel's own default. Keyed off the
+  // screen rather than the tab: Me is the tab now, and standing on Me's root
+  // is already "not in Settings".
+  useEffect(() => {
+    if (settingsOpenTopic && !(tab === 'settings' && view === 'settings')) {
+      setSettingsOpenTopic(null);
+    }
+  }, [tab, view, settingsOpenTopic]);
 
   // The browser handing back an earlier snapshot is the only thing that ever
   // moves this app backwards, whether the visitor pressed a button, swiped the
@@ -1083,10 +1151,12 @@ function ParkApp({ isSignedIn }) {
   const showToastRef = useRef(showToast);
   const selectTabRef = useRef(selectTab);
   const adoptDraftRef = useRef(adoptDraft);
+  const adoptHeightRef = useRef(adoptHeight);
   const shareOverlayRef = useRef(shareOverlay);
   showToastRef.current = showToast;
   selectTabRef.current = selectTab;
   adoptDraftRef.current = adoptDraft;
+  adoptHeightRef.current = adoptHeight;
   shareOverlayRef.current = shareOverlay;
 
   // One PartyRuntime for the page lifetime. Do not recreate when callback
@@ -1120,6 +1190,7 @@ function ParkApp({ isSignedIn }) {
         Promise.resolve(rt.resume({ memberName }))
           .then(() => {
             adoptDraftRef.current();
+            adoptHeightRef.current();
             shareOverlayRef.current();
           })
           .catch((err) =>
@@ -1161,6 +1232,7 @@ function ParkApp({ isSignedIn }) {
             : 'You’re in the party',
         );
         adoptDraftRef.current();
+        adoptHeightRef.current();
         shareOverlayRef.current();
       })
       .catch((err) => {
@@ -1220,6 +1292,37 @@ function ParkApp({ isSignedIn }) {
       placeId: first.placeId,
     };
   }, [planItems, POIS]);
+
+  /* The Zone and the walk time under each Plan stop, worked out here rather
+     than carried on the stop.
+
+     A Plan item's wire shape is `{id, placeId, label}` — lib/plan.js normalize
+     keeps it to that on purpose, because the list rides inside every Party
+     snapshot and a Zone name plus a walk time per stop would be sent to every
+     Member, over and over, to say something each phone can work out for itself
+     from the venue file and its own fix.
+
+     Keyed on the *deferred* position for the same reason mapHeight is deferred:
+     a fix lands every second or two, and re-walking the Plan against every POI
+     on each one is work done between frames for a number that changes by a
+     couple of feet. The stops stay responsive to reordering; the walk times
+     follow a beat behind. */
+  const planPosition = useDeferredValue(position);
+  const planContext = useMemo(() => {
+    if (!planItems.length) return null;
+    const out = {};
+    for (const step of planItems) {
+      const poi = POIS.find((p) => p.i === step.placeId || p.id === step.placeId);
+      if (!poi) continue;
+      const zone = placeContext(poi, venue, mapData)?.name || null;
+      const walk =
+        planPosition && Number.isFinite(poi.lat) && Number.isFinite(poi.lng)
+          ? formatWalk(distance(planPosition.lat, planPosition.lng, poi.lat, poi.lng))
+          : null;
+      out[step.placeId] = { zone, walk };
+    }
+    return out;
+  }, [planItems, POIS, venue, mapData, planPosition]);
 
   const commitPlan = useCallback(
     (next) => {
@@ -1356,6 +1459,21 @@ function ParkApp({ isSignedIn }) {
       cancelled = true;
     };
   }, [venue?.id, party?.partyId, party?.version]);
+
+  /* Signing in hands back a display name. It fills the park-day name only when
+     there is not one already — somebody who typed "Nan" on the roster is not
+     renamed to their Google account by signing in later. Shared by Me and by
+     Settings, which are two screens onto the same Profile. */
+  const onAuthSession = useCallback((next) => {
+    setAuthSession(next);
+    if (next?.displayName) {
+      setIdentity((i) => {
+        const cur = (i?.name || '').trim();
+        if (cur && cur !== 'Guest') return i;
+        return { ...i, name: next.displayName };
+      });
+    }
+  }, []);
 
   const publishMark = useCallback(
     (mark) => {
@@ -1625,30 +1743,17 @@ function ParkApp({ isSignedIn }) {
     });
   }, [venue?.id]);
 
-  const shedCard = useCallback(
-    (what) => {
-      if (what?.kind === 'selected') {
-        setSelected(null);
-        return;
-      }
-      if (what?.kind === 'car') {
-        clearCar();
-        showToast('Forgotten where you parked');
-        return;
-      }
-      if (what?.kind !== 'category' || !venue?.id) return;
-      setHiddenCards((prev) => {
-        const here = prev[venue.id] || [];
-        if (here.includes(what.category)) return prev;
-        const next = { ...prev, [venue.id]: [...here, what.category] };
-        localStorage.setItem(HIDDEN_CARDS_KEY, JSON.stringify(next));
-        return next;
-      });
-      showToast('Hidden. Put it back under Me → What the panel shows.');
-    },
-    [venue?.id, showToast, clearCar],
-  );
+  /* `shedCard` stood here: the ✕ on a glance card, which wrote the category
+     into `hiddenCards`. The rail is no longer mounted on Explore, so nothing
+     can put a card into that list any more — see the note on `unhideCard`. */
 
+  /* Settings → Phone → "What the panel shows" reads `hiddenCards` and calls
+     this to put one back. With the rail unmounted the list can only ever
+     shrink: it still holds whatever a phone hid before this change, so the way
+     to undo that has to stay, but nothing new will ever join it. Left standing
+     rather than stripped so that a phone carrying hidden cards can still clear
+     them, and so removing the surface is a decision somebody makes on purpose
+     rather than a side effect of removing the rail. */
   const unhideCard = useCallback(
     (category) => {
       if (!venue?.id) return;
@@ -1777,6 +1882,7 @@ function ParkApp({ isSignedIn }) {
         `Party ${snap.code} started — code works ~10 min while Party is open; link and QR always work`,
       );
       adoptDraft();
+      adoptHeight();
       shareOverlay();
     } catch (err) {
       showToast(err?.message || 'Could not start a party.');
@@ -1806,6 +1912,7 @@ function ParkApp({ isSignedIn }) {
       selectTab('party');
       showToast(`Joined ${snap.code}`);
       adoptDraft();
+      adoptHeight();
       shareOverlay();
     } catch (err) {
       const msg = err?.message || 'Could not join that party.';
@@ -1902,7 +2009,7 @@ function ParkApp({ isSignedIn }) {
   };
 
   /* ---------- derived ---------- */
-  /* Map, list and glance share one Eligibility view. Callers pass Party or
+  /* Map, list and Place detail share one Eligibility view. Callers pass Party or
      solo facts only — Subgroup set selection and With adult live in the
      module. Empty people → silent cells, no marks. */
   const eligibilityFacts = useMemo(() => {
@@ -2143,6 +2250,9 @@ function ParkApp({ isSignedIn }) {
       lastRoute.current = null;
       setPick(0);
       setSelected(null);
+      // A walk is a different question than "what is here" — the capsule that
+      // asked it goes with the selection it sat beside.
+      setSpot(null);
       dismissPlaceView();
       setToast(null);
       setNav(target);
@@ -2370,6 +2480,24 @@ function ParkApp({ isSignedIn }) {
     [shrinkSheet, stops.peek],
   );
 
+  /* One tap on the map, four things it can mean, in this order. The order is
+     the whole of the logic and it is not negotiable:
+
+     1. Rally is armed — the FAB said "tap the map", so the tap sets the meet
+        point and nothing else may steal it.
+     2. There is no fix to trust — a manual pin is the only way to place
+        yourself indoors, denied, or on a desktop, and it must stay reachable.
+     3. Something is open — a selected pin, a pushed Place screen, a spot
+        capsule. Tapping away from a thing is how every map on a phone says
+        "never mind", so the first press closes what is open rather than
+        opening something else. That includes the spot itself: one tap puts
+        the capsule away, and the tap after it drops a new one.
+     4. Nothing to dismiss — now the tap is about the ground itself, and it
+        drops a named spot there.
+
+     ParkMap.onPointerUp has already arbitrated pinch, fling, the marker
+     hit-test, the route hit-test and double-tap zoom by the time this runs, and
+     hands over a real coordinate. Nothing here reaches back into that. */
   const handleMapTap = useCallback(
     (lat, lng) => {
       if (armMeet) {
@@ -2386,13 +2514,65 @@ function ParkApp({ isSignedIn }) {
         geo.setManual(lat, lng);
         return;
       }
-      /* Tapping the map away from anything is how every map on a phone says
-         "never mind" — and until now this one had no way of saying it at all, so
-         a place you tapped once stayed on the rail until you tapped another. */
-      if (selected) setSelected(null);
-      dismissPlaceView();
+      // Read through the ref: this callback must not be rebuilt on every push
+      // and pop, and dismissPlaceView is a no-op that cannot report back.
+      const { tab: at, stacks: cur } = navRef.current;
+      const onIt = cur[at] || EMPTY_STACK;
+      const placeOpen = onIt[onIt.length - 1] === 'place';
+      if (selected || placeOpen || spot) {
+        if (selected) setSelected(null);
+        setSpot(null);
+        dismissPlaceView();
+        return;
+      }
+      // positionRef, not `position`: a fix arrives every second or two, and
+      // rebuilding this callback on each one re-renders the memoised map for
+      // nothing. The spot only needs where you were standing when you tapped.
+      setSpot(spotAt({ lat, lng, pois: POIS, venue, map: mapData, me: positionRef.current }));
     },
-    [armMeet, setMeetPoint, geo.status, geo.setManual, selected, dismissPlaceView],
+    [
+      armMeet,
+      setMeetPoint,
+      geo.status,
+      geo.setManual,
+      selected,
+      spot,
+      dismissPlaceView,
+      POIS,
+      venue,
+      mapData,
+    ],
+  );
+
+  /* Both carry-throughs do the same three things and differ only in where they
+     land: remember the spot for the screen that is about to read it, put the
+     capsule away, and open that screen far enough to work in. `selectTab` is
+     the app's own move along the tab bar, so back still retraces properly. */
+  const questAtSpot = useCallback(
+    (at) => {
+      setQuestSpot(at);
+      setSpot(null);
+      selectTab('quests');
+      growSheet(stops.full);
+    },
+    [selectTab, growSheet, stops.full],
+  );
+
+  /* Marks is its own screen, under Collection, under Me. The whole path is
+     laid down in one move rather than pushed a screen at a time, for the same
+     reason openCredits does: `navRef` lags a tick behind, so three chained
+     pushes would each read the stack the one before it had not written yet.
+     Landing with Collection underneath means Back walks Marks → Collection →
+     Me, which is where those three things actually live. */
+  const markAtSpot = useCallback(
+    (at) => {
+      setMarkSpot(at);
+      setSpot(null);
+      const { stacks: cur } = navRef.current;
+      goForward({ tab: 'settings', stacks: { ...cur, settings: ['closet', 'marks'] } }, 'fromRight');
+      growSheet(stops.full);
+    },
+    [goForward, growSheet, stops.full],
   );
 
   /** List row: select / toggle in place. The expanded row already carries
@@ -2450,6 +2630,9 @@ function ParkApp({ isSignedIn }) {
       setSelected(poi);
       setFollow(false);
       setFocusPoint({ lat: poi.lat, lng: poi.lng });
+      // A Place answers the same question the spot capsule was asking, and
+      // better, so the capsule stands down rather than stacking under it.
+      setSpot(null);
 
       const { stacks: cur } = navRef.current;
       const exploreStack = cur.explore || EMPTY_STACK;
@@ -2529,7 +2712,12 @@ function ParkApp({ isSignedIn }) {
 
   const tabs = useMemo(() => {
     const out = [
-      { id: 'explore', label: 'Explore', icon: 'safari' },
+      /* The glyph is the search field's, not a compass: this tab opens on a
+         search field and the twin draws the same magnifier in both places. A
+         compass rose beside the word "Explore" promised a wayfinding screen
+         and delivered a text input. The id is untouched — data-tab is what the
+         browser suite navigates by. */
+      { id: 'explore', label: 'Explore', icon: 'magnifyingglass' },
       {
         id: 'party',
         label: 'Party',
@@ -2543,7 +2731,12 @@ function ParkApp({ isSignedIn }) {
       },
       {
         id: 'quests',
-        label: 'Side Quests',
+        /* "Quests" on the bar, "Side Quests" everywhere else. A tab label is
+           read at 10px in a five-column strip: the long form wrapped, and the
+           word that survived the wrap was the one shared with every other
+           quest in the app. ROOT_TITLES still says Side Quests, which is where
+           the full name belongs — on the screen it names. */
+        label: 'Quests',
         icon: 'flag.fill',
       },
     ];
@@ -2577,7 +2770,7 @@ function ParkApp({ isSignedIn }) {
   // While a route is running the sheet is out of the way unless it is asked
   // for: the map and the two HUD strips are the whole interface, and the sheet
   // comes back over them only when you open the steps. "Asked for" is anything
-  // above the glance stop, which is what a visitor who has pulled the sheet up
+  // above the resting stop, which is what a visitor who has pulled the sheet up
   // during a walk has done.
   const stowed = previewing || (walking && sheetPx <= stops.peek);
 
@@ -2587,10 +2780,14 @@ function ParkApp({ isSignedIn }) {
      directly during a drag so the map chrome rides the finger without a full
      page re-render every pointermove. */
   const form = sheetForm(sheetPx, stops);
-  const plan = sheetPlan(sheetPx);
+  /* The locate card's rung is only charged on a phone that has no fix, so the
+     budget has to be told which phone this is. While the gate is up the answer
+     is "one that is already being asked", and a second card underneath it
+     saying the same thing would be the app talking over itself. */
+  const plan = sheetPlan(sheetPx, { located: Boolean(position) || gateOpen });
 
   // `atMap` marks the screen that is read over the top of the map rather than
-  // instead of it — the one the glance stop is designed around.
+  // instead of it — the one the resting stop is designed around.
   const sheetClass = `sheet ${form} ${tab === 'explore' ? 'atMap' : ''} ${
     stowed ? 'stowed' : ''
   } ${drag.dragging ? 'dragging' : ''}`;
@@ -2600,6 +2797,29 @@ function ParkApp({ isSignedIn }) {
      thing on this path expensive enough to drop frames, and a map that holds
      still under a moving sheet is what it already did. */
   const floorPx = stowed ? STOWED_PX : sheetPx + SHEET_GAP[sheetForm(sheetPx, stops)];
+
+  /* The capsule is about the map, so it is only up while the map is what the
+     visitor is looking at. A route preview and a walk each own the bottom of
+     the screen with something more urgent, and a selected Place answers the
+     same question in more detail — in every one of those cases the spot is
+     already cleared, and this is the guard that says so out loud. */
+  const spotShown = Boolean(spot) && !walking && !previewing && !selected;
+
+  /* The selection's own capsule, on the same edge and under the same rules.
+     It stands down once the Place view is open, because that view is the same
+     answer with everything in it — a pill repeating the name of the card
+     directly beneath it is chrome describing chrome. */
+  const selShown =
+    Boolean(selected) && !walking && !previewing && !(tab === 'explore' && view === 'place');
+  const selStatus = useMemo(() => {
+    if (!selShown || !selected) return null;
+    if (!isRideable(selected) && selected.c !== 'show') return null;
+    if (!weatherFeed.weather && !partyRides && !position) return null;
+    return liveFor(selected, partyRides?.[selected.id] ?? null, weatherFeed.weather, clock, {
+      metres: position ? distance(position.lat, position.lng, selected.lat, selected.lng) : null,
+      membersNear: membersAt(selected, others),
+    });
+  }, [selShown, selected, weatherFeed.weather, partyRides, position, others, clock]);
 
   return (
     // --sheetH is the sheet's live height, so the FABs, the toast, the zoom pad
@@ -2614,6 +2834,12 @@ function ParkApp({ isSignedIn }) {
          them into the buttons in the top corners. They step aside instead. */
       data-crowded={!stowed && sheetCrowdsMap(sheetPx, viewportH) ? '1' : undefined}
       data-nav={walking ? 'go' : previewing ? 'preview' : undefined}
+      /* The spot capsule is full width on the sheet's edge, where the FAB
+         column and the scale bar already live. They step aside for it — see
+         .app[data-spot] in globals.css. */
+      data-spot={spotShown ? '1' : undefined}
+      /* And the same for the selection's pill, which rides the same edge. */
+      data-sel={selShown ? '1' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       {introOverlay === 'hold' && (
@@ -2649,6 +2875,7 @@ function ParkApp({ isSignedIn }) {
           me={mapMe}
           members={others}
           meet={meet}
+          spot={spot}
           car={car}
           selected={selected}
           onSelectPoi={handleSelectFromMap}
@@ -2796,6 +3023,41 @@ function ParkApp({ isSignedIn }) {
           heading={heading}
           theme={theme}
           lowered={Boolean(walking && navTarget)}
+        />
+      )}
+
+      {/* What a tap on bare ground opens: where you tapped, and the two things
+          you can do with it. Both hand the spot to the screen they open, which
+          is the whole reason the interaction exists — see components/SpotCapsule.jsx. */}
+      {spotShown && (
+        <SpotCapsule
+          spot={spot}
+          onClose={() => setSpot(null)}
+          onQuest={questAtSpot}
+          onMark={markAtSpot}
+        />
+      )}
+
+      {/* The Place a pin or a list row put on the map, said over the map. Same
+          edge, same lens and same z-index as the spot capsule above — the two
+          never coexist, because selecting a Place clears the spot. */}
+      {selShown && (
+        <SelectionCapsule
+          poi={selected}
+          /* The one rule the list, the map and the Place head already share:
+             a ruled-out ride is red rather than its category colour dimmed. */
+          dot={
+            eligibilityView.at(identityOf(selected))?.blocks
+              ? paletteFor(theme).barred
+              : paletteFor(theme).categories[selected.c]
+          }
+          status={selStatus}
+          metres={
+            position ? distance(position.lat, position.lng, selected.lat, selected.lng) : null
+          }
+          onOpen={() => push('place', 'explore')}
+          onNavigate={(p) => startNav(placeNav(p))}
+          onClose={() => setSelected(null)}
         />
       )}
 
@@ -3022,28 +3284,25 @@ function ParkApp({ isSignedIn }) {
                   <div className="brandStatus">{headerLine()}</div>
                 </div>
               )}
-              {(plan.rail || plan.digest) && (
-                <GlanceRail
-                  me={position}
-                  members={others}
-                  meet={meet}
-                  car={car}
-                  selected={selected}
-                  heading={heading}
-                  theme={theme}
-                  onFocus={focusOn}
-                  onNavigate={startNav}
-                  navKey={navKeyOf(navTarget)}
-                  navMetres={progress?.remaining ?? route?.metres ?? null}
-                  onOpenParty={() => selectTab('party')}
-                  onDismiss={shedCard}
-                  hidden={hiddenHere}
-                  compact={plan.digest}
-                  weather={weatherFeed.weather}
-                  rides={partyRides}
-                  now={clock}
-                  eligibility={eligibilityView}
-                />
+              {/* The one card left on the resting sheet, and only on a phone
+                  that cannot answer anything else: without a fix the list has
+                  no walking times, the venue line has no district and the Party
+                  has no ranges, so the way out of that is the screen. It says
+                  what is wrong and offers the one control that fixes it. */}
+              {plan.locate && (
+                <div className="locateCard">
+                  <span className="locateText">
+                    <b>Location off</b>
+                    <span>Turn it on for walking times and your Party.</span>
+                  </span>
+                  <button
+                    type="button"
+                    className="btn small rect primary locateGo"
+                    onClick={() => setGateOpen(true)}
+                  >
+                    Turn on
+                  </button>
+                </div>
               )}
               {/* Where the list would be, when the list will not fit: it is not
                   merely scrolled off, it is not rendered, which is the right
@@ -3140,6 +3399,10 @@ function ParkApp({ isSignedIn }) {
                 onSetMeet={(p) => setMeetPoint(p.lat, p.lng, p.n)}
                 onReport={party?.active ? reportRide : null}
                 onAddToPlan={addToPlan}
+                inPlan={
+                  Boolean(selected) &&
+                  planItems.some((s) => s.placeId === (selected.i || selected.id))
+                }
                 overlayCompletions={selected ? overlayCompletionsFor(selected) : []}
                 session={authSession}
               />
@@ -3265,10 +3528,35 @@ function ParkApp({ isSignedIn }) {
                   runtime.current?.removeMember(id);
                   showToast('Removed from this party');
                 }}
+                car={car}
+                /* Same two-state affordance as the map's car FAB, worded: the
+                   first tap saves the spot, later ones walk you back to it
+                   through the existing nav.kind === 'car' target. */
+                onCar={() => {
+                  if (car) {
+                    startNav({ kind: 'car', label: 'Where I parked' });
+                    return;
+                  }
+                  if (!position) {
+                    setGateOpen(true);
+                    return;
+                  }
+                  putCar(position.lat, position.lng);
+                  showToast('Saved where you parked');
+                }}
+                onHeights={
+                  heights
+                    ? (id) => {
+                        setHeightFocus({ memberId: id, nonce: Date.now() });
+                        selectTab('rides');
+                      }
+                    : null
+                }
               />
               <IntelligencePanel
                 rides={partyRides || {}}
                 plan={planItems}
+                planContext={planContext}
                 inParty={active}
                 myGroupId={selfMember?.groupId}
                 onGroupId={(g) => runtime.current?.setGroupId?.(g)}
@@ -3302,6 +3590,12 @@ function ParkApp({ isSignedIn }) {
                 onContribution={handleContribution}
                 overlay={localOverlay}
                 flushTick={questFlushTick}
+                /* The ground the visitor tapped "Side Quest here" on, or null
+                   when they arrived by the tab bar. The anchored-spot banner
+                   that reads it belongs to the Side Quests screen's own pass;
+                   this is the wire it reads from. */
+                spot={questSpot}
+                onClearSpot={() => setQuestSpot(null)}
               />
             )}
 
@@ -3309,6 +3603,7 @@ function ParkApp({ isSignedIn }) {
               <PlanPanel
                 rides={partyRides || {}}
                 plan={planItems}
+                planContext={planContext}
                 onSetPlan={commitPlan}
                 onWalkStop={(s) => {
                   const poi = POIS.find((p) => p.i === s.placeId || p.id === s.placeId);
@@ -3325,11 +3620,38 @@ function ParkApp({ isSignedIn }) {
                   setWithAdult(v);
                   if (party?.active) runtime.current?.setMemberFacts({ withAdult: v });
                 }}
+                /* Only ever a device-less seat: HeightPanel offers no editing
+                   for a Member holding their own phone, because state.js drops
+                   that patch in silence and the value would snap back. */
+                onMemberHeight={(id, h) => runtime.current?.setMemberFacts({ height: h }, id)}
+                onMemberWithAdult={(id, v) => runtime.current?.setMemberFacts({ withAdult: v }, id)}
+                members={roster}
+                myId={party?.selfId ?? null}
+                inParty={Boolean(party?.active)}
+                openHeights={heightFocus}
                 venue={venue}
               />
             )}
 
+            {/* ---- the Me tab ----
+                Root is the guest's own standing (MePanel); Settings and
+                Collection are screens under it, and Marks a screen under
+                Collection. Each block below is one screen, and every prop a
+                screen needs is handed to it here — Settings does not forward
+                Collection's eleven, because Settings is no longer where
+                Collection lives. */}
             {view === null && tab === 'settings' && (
+              <MePanel
+                session={authSession}
+                onSession={onAuthSession}
+                profileXp={authSession?.xp ?? 0}
+                contributions={worldProgress?.meters?.contributions ?? 0}
+                onOpenCloset={() => push('closet', 'settings')}
+                onOpenSettings={() => push('settings', 'settings')}
+              />
+            )}
+
+            {view === 'settings' && (
               <SettingsPanel
                 identity={identity}
                 onName={(v) => setIdentity((i) => ({ ...i, name: v.trim() || 'Guest' }))}
@@ -3344,13 +3666,10 @@ function ParkApp({ isSignedIn }) {
                 onPush={push}
                 pushKinds={notifier.KINDS}
                 pushPrefs={pushPrefs}
-                onPushPref={(key, on) => setPushPrefs((p) => ({ ...p, [key]: on }))}
                 pushState={pushState}
-                onEnablePush={enablePush}
                 pushNeedsInstall={notifier.iosNeedsInstall()}
                 hiddenCards={hiddenHere}
-                cardLabels={CARD_LABELS}
-                onUnhideCard={unhideCard}
+                onOpenCloset={() => push('closet', 'settings')}
                 car={car}
                 onClearCar={() => {
                   clearCar();
@@ -3362,21 +3681,38 @@ function ParkApp({ isSignedIn }) {
                 movementEnabled={movement.enabled}
                 movementPending={movement.totals.pending}
                 session={authSession}
-                onSession={(next) => {
-                  setAuthSession(next);
-                  if (next?.displayName) {
-                    setIdentity((i) => {
-                      const cur = (i?.name || '').trim();
-                      if (cur && cur !== 'Guest') return i;
-                      return { ...i, name: next.displayName };
-                    });
-                  }
-                }}
-                profileXp={authSession?.xp ?? 0}
-                worldProgress={worldProgress}
+                onSession={onAuthSession}
+                onWatchCompass={() => push('watch-compass')}
+                openTopic={settingsOpenTopic}
+              />
+            )}
+
+            {view === 'notifications' && (
+              <PushSettings
+                pushKinds={notifier.KINDS}
+                pushPrefs={pushPrefs}
+                onPushPref={(key, on) => setPushPrefs((p) => ({ ...p, [key]: on }))}
+                pushState={pushState}
+                onEnablePush={enablePush}
+                pushNeedsInstall={notifier.iosNeedsInstall()}
+              />
+            )}
+
+            {view === 'hidden-cards' && (
+              <HiddenCards
+                hiddenCards={hiddenHere}
+                cardLabels={CARD_LABELS}
+                onUnhideCard={unhideCard}
+              />
+            )}
+
+            {view === 'closet' && (
+              <WorldCloset
+                progress={worldProgress}
                 world={mergedWorld}
                 acceptedOffer={acceptedOffer}
                 selfId={party?.selfId || null}
+                session={authSession}
                 venue={venue}
                 onWearOwn={(skinId) => {
                   setAcceptedOffer(null);
@@ -3385,25 +3721,45 @@ function ParkApp({ isSignedIn }) {
                 }}
                 onAcceptOffer={(offer) => setAcceptedOffer(offer)}
                 onClearWear={() => setAcceptedOffer(null)}
-                onOfferSkin={(skinId) => runtime.current?.offerSkin?.(skinId)}
-                onWithdrawOffer={(skinId) => runtime.current?.withdrawOffer?.(skinId)}
+                onOffer={(skinId) => runtime.current?.offerSkin?.(skinId)}
+                onWithdraw={(skinId) => runtime.current?.withdrawOffer?.(skinId)}
                 onEquipKit={(kit) => {
                   setWorldProgress((p) => ({ ...p, kit }));
                   runtime.current?.setKit?.(kit);
                 }}
+                onOpenMarks={() => push('marks', 'settings')}
+                /* Read for one line of copy — what the Marks row is standing
+                   over. Placement itself is the next screen down. */
+                spot={markSpot}
+              />
+            )}
+
+            {view === 'marks' && (
+              <WorldMarks
+                session={authSession}
+                onSession={onAuthSession}
+                world={mergedWorld}
+                spot={markSpot}
+                onClearSpot={() => setMarkSpot(null)}
                 onDropMark={(fields) => {
                   const now = Date.now();
                   publishMark({
                     ...fields,
-                    placeId: selected?.i || selected?.id || fields.placeId || null,
+                    /* The anchored spot wins. This used to read
+                       `selected?.i || selected?.id || fields.placeId`, which
+                       filed the Mark against whatever Place happened to be
+                       selected on the map — a pin left open behind the sheet
+                       silently stole every Mark dropped while it was. A Mark
+                       stands where the visitor put it, and `fields.placeId`
+                       is null on open ground by design (lib/spot.js), which
+                       is the honest answer, not a gap to fill in. */
+                    placeId: fields.placeId || null,
                     venueId: venue?.id,
                     createdAt: now,
                     authorId: authSession?.userId,
                     authorPartyId: party?.partyId || null,
                   });
                 }}
-                onWatchCompass={() => push('watch-compass')}
-                openTopic={settingsOpenTopic}
               />
             )}
 
@@ -3567,6 +3923,9 @@ function ParkApp({ isSignedIn }) {
       {showIntroSplash && !showAuthGate && (
         <IntroSplash
           version={appUpdate.version}
+          /* Normally null here — first run is before any party exists — so the
+             intro's code panel stays off rather than inventing one. */
+          partyCode={code}
           onContinue={() => setLogoSplashDismissed(true)}
         />
       )}
@@ -3615,6 +3974,10 @@ function ParkApp({ isSignedIn }) {
             (introSeen === false && geo.status === 'idle' && !parkChoice)
           }
           nearestIntent={nearestIntent}
+          /* The World pick's "Location on" badge is a claim about the phone, so
+             it reads the fix rather than the fact that we asked: 'manual' is a
+             pin someone dropped by hand and 'denied' never got one. */
+          locationOn={geo.status === 'live'}
           parkChoice={
             showWelcomeGate
               ? null

@@ -1,6 +1,6 @@
 {
   "name": "@party-tracker/shared",
-  "version": "1.26.1",
+  "version": "1.26.3",
   "private": true,
   "type": "module",
   "exports": {
@@ -15,6 +15,7 @@
     "./compass.js": "./compass.js",
     "./isoWorld.js": "./isoWorld.js",
     "./isoTrack.js": "./isoTrack.js",
-    "./zoomBands.js": "./zoomBands.js"
+    "./zoomBands.js": "./zoomBands.js",
+    "./mapCamera.js": "./mapCamera.js"
   }
 }
