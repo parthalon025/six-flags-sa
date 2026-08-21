@@ -1,9 +1,9 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "20a96987b18e3ede",
-  "head": "5ead06f27fef6b24c803b98ea9df8292baae135e",
-  "mergeBase": "e310652752b738331e579fef09c8e5f7ad48c200",
+  "diffHash": "789a9e707e17491c",
+  "head": "754710a2a77107137dd13d542fdfb9f520c731ff",
+  "mergeBase": "846c2d20b75fbf3a64c4f5770afde4f39427b0a7",
   "baseRef": "origin/main",
   "modules": [
     "auth",
@@ -33,7 +33,7 @@
     "test:module-select",
     "build"
   ],
-  "lockHash": "a71951c4bdc6d27d",
+  "lockHash": "3f9f748183fedc4c",
   "manifestHash": "76f5557226712f4a",
-  "recordedAt": "2026-08-21T03:57:07.181Z"
+  "recordedAt": "2026-08-21T05:36:40.831Z"
 }
