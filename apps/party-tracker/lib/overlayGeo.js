@@ -12,10 +12,13 @@
  * a function that reads Date.now() cannot be given a known answer.
  *
  * It is also meant to be the *one* place two conversions live. Both are
- * written out longhand today in `displayGeoJson`
- * (packages/venue-builder/lib/display-tiles.mjs) and in `placesGeoJson`
- * (apps/party-tracker/components/DisplayMap.jsx); both should end up calling
- * `lngLat` instead of keeping a third and fourth copy of these two rules:
+ * written out longhand today in the builder's `displayGeoJson` (its display
+ * tiles module) and in `placesGeoJson` (apps/party-tracker/components/
+ * DisplayMap.jsx); both should end up calling `lngLat` instead of keeping a
+ * third and fourth copy of these two rules. The builder module is named
+ * rather than pathed on purpose — the builder-app contract forbids app code
+ * from carrying a filesystem path into packages/, comments included, and
+ * test/scripts/matt-standards.test.mjs enforces that textually:
  *
  *   1. GeoJSON is lng-first. Every coordinate in this app is lat-first —
  *      `{lat, lng}` on members, Places and pins, `[lat, lng]` pairs on
