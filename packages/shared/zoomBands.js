@@ -41,8 +41,19 @@ export function bandResolution(id) {
  *  span that is not a round multiple of the resolution — a 1000 m span rounds
  *  to 417 at overview and 1667 at mid, and 417 * 4 is 1668. The tiler's
  *  parent-band placeholder upscales pixel-for-pixel, so a pixel of drift is a
- *  seam in the picture. The cost is that a derived band's true resolution can
- *  differ from its nominal one by well under a tenth of a percent. */
+ *  seam in the picture. The cost is that a band's realised resolution differs
+ *  from its nominal one by up to half a cell of the coarsest band.
+ *
+ *  That is proportional to venue size, so "well under a tenth of a percent" —
+ *  which this comment used to claim — holds for three of the four shipped
+ *  venues and not for the smallest. Measured: kings-island 0.048% across and
+ *  0.031% down, six-flags-fiesta-texas 0.065%/0.067%, cedar-point
+ *  0.054%/0.007%, big-kahunas 0.137%/0.176%, because half a cell is a larger
+ *  share of a 585 m park. The drift is identical at all three bands, which is
+ *  the same fact from the other side: the 4x chain is exact, and the whole
+ *  error is the coarsest band rounding to a whole cell.
+ *  test/builder/display-bands.mjs asserts the half-cell bound rather than a
+ *  percentage, so it holds at any venue size and tightens as a venue grows. */
 export function bandPixels(id, { spanXMetres, spanYMetres }) {
   const coarsest = BANDS[0].metresPerPixel;
   const scale = Math.round(coarsest / bandResolution(id));
