@@ -19,6 +19,7 @@ import { loadProjectSidewalkData, sidewalkClaims } from './adapters/project-side
 import { loadGuestTracesData, guestTraceClaims, guestGroundTruthClaims } from './adapters/guest-traces.mjs';
 import { loadMapillaryData, mapillaryClaims } from './adapters/mapillary-api.mjs';
 import { loadOrsRouteQa } from './adapters/openrouteservice.mjs';
+import { worldcoverCacheFile } from './adapters/esa-worldcover.mjs';
 import { WIKIDATA_QIDS } from './park-slug-map.mjs';
 import { readSources, externalAdaptersFromCatalog, DEFAULT_EXTERNAL_ADAPTERS } from './venue-sources.mjs';
 import { normalizeExternalClaims } from './external-claims.mjs';
@@ -133,6 +134,11 @@ export async function loadExternalResearch(venueId, opts = {}) {
   const guestTracesRaw = await loadGuestTracesData(venueId, { ...loadOpts });
   const mapillaryRaw = await loadMapillaryData(venueId, { bounds: ctx.bounds, ...loadOpts });
   const orsRaw = await loadOrsRouteQa(venueId, { samples: deriveOrsRouteSamples(pois), ...loadOpts });
+  /* esa-worldcover has no `load*Data` twin — its offline read lives inside the
+     adapter's own `run()`, which would need a ctx it does not have here. The
+     cache is the whole payload, so read it directly, exactly as
+     external-claims.mjs does. */
+  const worldcoverRaw = readJson(worldcoverCacheFile(venueId), null);
 
   const parksApi = compareParksApiToBundle({ parksApi: parksApiRaw, pois });
   const queueTimes = compareQueueTimesToBundle({ queueTimes: queueTimesRaw, pois });
@@ -153,6 +159,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
       rcdbCompare: rcdb,
       ohmRaw,
       openMeteoRaw,
+      worldcoverRaw,
       llm: null,
     },
   });
@@ -185,6 +192,7 @@ export async function loadExternalResearch(venueId, opts = {}) {
     guestTracesRaw,
     mapillaryRaw,
     orsRaw,
+    worldcoverRaw,
     claims,
     normalised,
     declaredAdapters: resolveExternalAdapterIds(venueId),
