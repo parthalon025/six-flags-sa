@@ -2459,14 +2459,27 @@ await check('the park answered stays answered across a reload', async () => {
     async () => {
       const confirmed = await e.evaluate(() => localStorage.getItem('tracker-venue-confirmed'));
       if (confirmed !== 'six-flags-fiesta-texas') return false;
-      // Clear a residual location/welcome gate if the map brand is already right.
+      // Clear a residual location/welcome gate. Read the brand with
+      // textContent, not innerText: the intake gate hides the chrome behind it
+      // (.app[data-gate-map] in globals.css, because the design draws the gate
+      // over the park and nothing else), and innerText returns '' for anything
+      // not rendered. The old peek used innerText and so could never satisfy
+      // its own guard once that landed — it waited for text it had just made
+      // invisible, and the gate it was meant to dismiss stayed up.
       if ((await e.locator('.gate').count()) > 0) {
-        const brandPeek = await e.locator('.brandName, .brand b').first().innerText().catch(() => '');
+        const brandPeek = await e
+          .locator('.brandName, .brand b')
+          .first()
+          .evaluate((el) => el.textContent || '')
+          .catch(() => '');
         if (/fiesta texas/i.test(brandPeek)) {
-          await e.locator('.gate .btn:has-text("Just show me the park map")').click().catch(() => {});
+          await e.locator('.gate button:has-text("Just browsing")').click().catch(() => {});
+          await e.locator('.gate button:has-text("Just show me the map")').click().catch(() => {});
           await e.locator('button:has-text("Allow location")').click().catch(() => {});
         }
       }
+      // Both halves, so this still proves what it always did: the venue survived
+      // the reload AND it is on screen rather than merely in the DOM.
       const brand = await e.locator('.brandName, .brand b').first().innerText().catch(() => '');
       return /fiesta texas/i.test(brand);
     },
