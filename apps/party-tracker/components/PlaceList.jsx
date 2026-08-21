@@ -286,7 +286,7 @@ export default function PlaceList({
           opposite. It keeps --label2 rather than the design's --label3, which
           is 2.1:1 here and fails AA — this is an app read in direct sun, and
           that is the half of the pairing the repo owns. */}
-      <div className="label placesLabel">
+      <div className="label eyebrow placesLabel">
         {filter === 'all' && !(query || '').trim() ? 'Every place' : 'Matches'}
         <span className="labelRight">
           {matches.total} place{matches.total === 1 ? '' : 's'}

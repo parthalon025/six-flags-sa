@@ -1918,6 +1918,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   font-size: 14.5px; font-weight: 600; letter-spacing: -.24px;
   white-space: nowrap;
 }
+/* The design sets the primary a weight above its two outlined siblings. All
+   three at 600 made the row read as three equal choices; "Walk me there" is the
+   one the screen exists for. */
+.btn.placeAction.primary { font-weight: 700; }
 /* The primary takes the slack; the other two hold their label width, so a long
    Place name or a narrow phone never squeezes "Rally here" onto two lines. */
 .placeActions.labelled .btn.primary { flex: 1 1 auto; }
@@ -2016,9 +2020,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .eligVerdict.warn { color: var(--orange); }
 .eligVerdict.bad { color: var(--barred); }
 .eligVerdict.unknown { color: var(--gray); }
+/* The rule behind the verdict. The design paints it --label3, which is 2.16:1
+   on Trail's paper — and this is the one sentence on the screen a parent reads
+   twice, in the sun, to find out why the answer was no. Secondary ink instead:
+   still the quietest of the three columns, and legible. */
 .eligWhy {
   flex: 1; min-width: 0; font-size: 12.5px; line-height: 17px;
-  color: var(--label3); letter-spacing: -.08px;
+  color: var(--label2); letter-spacing: -.08px;
 }
 /* Was a paragraph of its own; now the third column of the row above it. The
    class survives the move because test/app/functional.mjs reads the reason
@@ -3199,21 +3207,11 @@ html:not([data-intro="seen"]) .app[data-intro-map] > .mapWrap {
 .worldSearch { margin-top: 4px; }
 /* The rows become a card the way every other grouped list in the app does, so
    the World pick reads as a list and not as a stack of buttons. */
-/* The design's eyebrow over the second offer: 11.5px / 800 / .1em uppercase,
-   with the count opposite at 12px. The ink is --label2, not the design's
-   --label3 — .36 alpha is 2.1:1 on this card and fails AA, and this is an app
-   read in direct sun. Size, case and tracking are the design's; only the value
-   is the repo's. */
-.label.worldListLabel {
-  font-family: var(--display); font-size: 11.5px; font-weight: 800;
-  letter-spacing: .1em; text-transform: uppercase; line-height: 16px;
-  color: var(--label2);
-  margin: 20px 2px 9px; padding: 0;
-}
-.label.worldListLabel .labelRight {
-  font-family: var(--ui); font-size: 12px; font-weight: 400;
-  letter-spacing: -.08px; text-transform: none;
-}
+/* The same eyebrow the sheet's other sections wear, at the World pick's own
+   spacing: the design sets 20 above it, because it is separating a second offer
+   from the CTA that answers the question, not one section from the next. */
+.label.eyebrow.worldListLabel { margin: 20px 2px 9px; }
+.label.eyebrow.worldListLabel > .labelRight { font-size: 12px; font-weight: 400; }
 .worldList {
   background: var(--bg2); border: 1px solid var(--sep);
   border-radius: var(--r4); margin-bottom: 12px;
@@ -3841,16 +3839,10 @@ p.wxWhy.warn { color: var(--orange); }
    and it was being drawn a size up throughout: a 17px name over a 13px line
    fits four rows on the peek stop where the design fits six, which is the
    difference between a list and a preview of one. */
-.label.placesLabel {
-  font-family: var(--display); font-size: 11.5px; font-weight: 800;
-  letter-spacing: .1em; text-transform: uppercase; line-height: 16px;
-  color: var(--label2);
-  margin: 6px 2px 8px; padding: 0;
-}
-.label.placesLabel .labelRight {
-  font-family: var(--ui); font-size: 12px; font-weight: 400;
-  letter-spacing: -.08px; text-transform: none;
-}
+/* Explore's list header is the same eyebrow, six pixels down rather than four:
+   it follows the venue line rather than opening the panel. */
+.label.eyebrow.placesLabel { margin: 6px 2px 8px; }
+.label.eyebrow.placesLabel > .labelRight { font-size: 12px; font-weight: 400; }
 /* Outlined, not filled. The design draws the unselected filters as the sheet's
    own surface inside a hairline, which is what lets the one selected chip read
    as selected: a row of grey fills next to one dark fill is a row of buttons
