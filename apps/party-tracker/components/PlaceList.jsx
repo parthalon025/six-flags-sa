@@ -60,11 +60,14 @@ export default function PlaceList({
   now = Date.now(),
   members = null, // party members for BUSY clustering
   overlayCompletionsFor = null,
-  pois: poisOverride = null,
 }) {
   const palette = paletteFor(theme);
-  const venuePois = usePois();
-  const POIS = poisOverride || venuePois;
+  /* The list took a `pois` prop as well as calling the store, and the caller
+     passed the Overlay-painted array through it because the store's used to be
+     the shipped one. Now the store paints, so the prop was a second way of
+     answering the same question — the shape that let this screen and the map
+     disagree in the first place. */
+  const POIS = usePois();
   // The venue, for the half of a campsite's details that belong to the whole
   // campground rather than to one pitch.
   const venue = useVenueSelector((s) => s.venue);

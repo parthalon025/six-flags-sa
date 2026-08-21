@@ -49,6 +49,7 @@ import {
   confirmVenue,
   retargetForPosition,
   selectVenue,
+  setOverlay,
   unpinVenue,
   intakeChoiceFor,
   venuesByDistance,
@@ -96,7 +97,6 @@ import {
 import { loadWorld, saveWorld } from '@/lib/worldStore';
 import {
   applyContribution as applyOverlayFact,
-  applyOverlayToPlaces,
   completionLine,
   completionsForPlace,
   createHttpUploadAdapter,
@@ -267,7 +267,11 @@ function ParkApp({ isSignedIn }) {
     const {
       venue,
       map: mapData,
-      pois: shippedPois,
+      /* The World's Places, Overlay already painted on by the store. This
+         screen is not a privileged reader of them: HeightPanel and GlanceRail
+         ask the store for the same array and get the same answer. */
+      pois: POIS,
+      overlayPins,
       gaps: venueGaps,
       manifest,
       status: venueStatus,
@@ -275,7 +279,7 @@ function ParkApp({ isSignedIn }) {
       confirmed: venueConfirmed,
       pinned: venuePinned,
     } = useVenue();
-  const movement = useMovementLog({ position, venue, pois: shippedPois });
+  const movement = useMovementLog({ position, venue, pois: POIS });
   /* Parity-harness escape (issue #527 Testing Decisions): `?displayMap=svg`
      renders ParkMap even with the display flag on, so one flag-on build serves
      both renderers to test/app/display-parity.mjs. Post-mount state flip —
@@ -345,12 +349,15 @@ function ParkApp({ isSignedIn }) {
     [localOverlay, party?.active, party?.overlay],
   );
   overlayRef.current = localOverlay;
-  const painted = useMemo(
-    () => applyOverlayToPlaces(shippedPois, displayOverlay),
-    [shippedPois, displayOverlay],
-  );
-  const POIS = painted.places;
-  const overlayPins = painted.pins;
+  /* Push the composed Overlay down to the venue store, which owns painting it
+     onto Places. An effect rather than a render-time call because `setOverlay`
+     notifies every other subscriber, and a store that emits mid-render tears
+     the tree. The cost is that the first frame after a Contribution lands is
+     still the old Places; the alternative was every screen painting its own,
+     which is the bug this replaced. */
+  useEffect(() => {
+    setOverlay(displayOverlay);
+  }, [displayOverlay]);
   const [localMeet, setLocalMeet] = useState(null); // a meet-up marked before joining anything
   const [planDraft, setPlanDraft] = useState([]);
   useEffect(() => {
@@ -2127,7 +2134,7 @@ function ParkApp({ isSignedIn }) {
     let live = true;
     const build = async () => {
       const routing = await getRouting();
-      if (live) setGraph(routing.buildRouteGraphCached(venue?.id, mapData, shippedPois));
+      if (live) setGraph(routing.buildRouteGraphCached(venue?.id, mapData, POIS));
     };
     const idle = typeof window !== 'undefined' ? window.requestIdleCallback : null;
     const handle = idle ? idle(() => { build(); }, { timeout: 3000 }) : setTimeout(build, 400);
@@ -2136,7 +2143,7 @@ function ParkApp({ isSignedIn }) {
       if (idle) window.cancelIdleCallback?.(handle);
       else clearTimeout(handle);
     };
-  }, [mapData, venue?.id, shippedPois, getRouting]);
+  }, [mapData, venue?.id, POIS, getRouting]);
 
   // A destination is held by reference, not by coordinates: a party member
   // walks around while you are walking to them, and a Rally Point can be moved or
@@ -3383,7 +3390,6 @@ function ParkApp({ isSignedIn }) {
                   onAddToPlan={addToPlan}
                   now={clock}
                   overlayCompletionsFor={overlayCompletionsFor}
-                  pois={POIS}
                 />
               </>
             )}
