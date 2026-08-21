@@ -20,7 +20,7 @@
  * treated as non-standby and non-carrying.
  */
 
-import { defineTransport, STATUS } from '../../../apps/party-tracker/lib/transport/types.js';
+import { defineTransport, RANK, STATUS } from '../../../apps/party-tracker/lib/transport/types.js';
 
 /**
  * A transport whose every verb is a knob.
@@ -83,7 +83,7 @@ export function fakeTransport({
 }
 
 /** A minimal offline queue: the drain/size pair `replay()` requires. */
-export function fakeOfflineQueue({ name = 'offline', rank = 99 } = {}) {
+export function fakeOfflineQueue({ name = 'offline', rank = RANK.OFFLINE } = {}) {
   let queue = [];
   const transport = defineTransport({
     name,
@@ -122,4 +122,4 @@ export function fakeClock(startAt = 1_700_000_000_000) {
   };
 }
 
-export { STATUS };
+export { RANK, STATUS };
