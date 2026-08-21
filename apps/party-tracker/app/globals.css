@@ -3473,15 +3473,22 @@ p.wxWhy.warn { color: var(--orange); }
    the control, 44px in both directions, and taking the taps that land near
    enough to have been meant for it. Nothing moves, and nothing has to be aimed
    at. */
-.chip, .tier, .glanceGo, .navBack, .searchClear, .mapKeyToggle, .segmented .tab {
+.chip, .tier, .glanceGo, .navBack, .searchClear, .mapKeyToggle, .segmented .tab, .moreHint {
   position: relative;
 }
 .chip::after, .tier::after, .glanceGo::after, .navBack::after, .searchClear::after,
-.mapKeyToggle::after, .segmented .tab::after {
+.mapKeyToggle::after, .segmented .tab::after, .moreHint::after {
   content: '';
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: max(100%, 44px); height: max(100%, 44px);
 }
+/* The hint is 22px of type and it is the resting screen's only worded way into
+   the place list — the job the rail's Go buttons used to share. It grows the
+   same invisible 44px hit area they did rather than 44px of ink, because the
+   sheet budgets it at SHEET_HINT_PX and a taller line would push the resting
+   stop up. It may only grow upwards and downwards: full width already, and the
+   tab bar is directly beneath it. */
+.moreHint::after { width: 100%; }
 /* Two that may only grow upwards and downwards: the tiers sit shoulder to
    shoulder in one track and the segments of a segmented control do the same, so
    44px of width each would have them fighting their neighbours for the taps in

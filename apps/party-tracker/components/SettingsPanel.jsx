@@ -246,7 +246,7 @@ export default function SettingsPanel({
             <button type="button" className="row" onClick={() => onPush('hidden-cards')}>
               <span className="rowText">
                 What the panel shows
-                <span className="fine">Cards you swiped away here</span>
+                <span className="fine">Clears hides from an older Explore panel</span>
               </span>
               <span className="rowValue">
                 {hiddenCards?.length ? `${hiddenCards.length} hidden` : 'All showing'}

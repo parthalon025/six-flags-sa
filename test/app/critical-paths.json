@@ -186,7 +186,7 @@
       "slice": "E8",
       "user_action": "Next-best GO NOW + Why?",
       "suite": "functional",
-      "check": "GO NOW card carries a Why? explanation"
+      "check": "a GO NOW verdict in the list carries a Why? explanation"
     },
     {
       "id": "ride-status-stale-marker",

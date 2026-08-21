@@ -339,12 +339,24 @@ await check('the on-map OSM notice opens Settings straight to Credits, listing s
   return true;
 });
 
-await check('glance rail renders nearby fallback cards', async () => {
+// The rail's fallback cards were "nearest food / nearest toilet" over the map.
+// Explore is search -> context -> list now (D24), so the browse list is what
+// has to come up with something nearby when nothing has been asked for.
+await check('the browse list opens on nearby places with no query typed', async () => {
   await go(a, 'Places');
-  return (await a.locator('.glanceCard').count()) >= 2;
+  await until(async () => (await a.locator('.poiRow').count()) >= 2, {
+    timeout: 15000,
+    label: 'nearby rows in the browse list',
+  });
+  const rows = await a.locator('.poiRow').allInnerTexts();
+  // A row without a walking time is a name in a list, not a nearby place.
+  if (!rows.some((r) => /\bmin\b|\bft\b|\bmi\b|\bm\b/.test(r))) {
+    throw new Error(`no ranges in the list: ${rows[0]?.replace(/\n/g, ' / ')}`);
+  }
+  return true;
 });
 
-await check('GO NOW card carries a Why? explanation', async () => {
+await check('a GO NOW verdict in the list carries a Why? explanation', async () => {
   // Deterministic clear/day sky so outdoor GO NOW is not suppressed by night
   // or a stormy Open-Meteo reading during CI.
   await a.route('**/api/weather**', async (route) => {
@@ -387,35 +399,29 @@ await check('GO NOW card carries a Why? explanation', async () => {
   await a.locator('.tier:has-text("48")').click();
   await a.waitForTimeout(500);
   await go(a, 'Places');
-  await until(async () => (await a.locator('.glanceCard').count()) >= 2, {
+  await until(async () => (await a.locator('.poiRow').count()) >= 2, {
     timeout: 15000,
-    label: 'glance rail cards',
+    label: 'the browse list',
   });
-  await a.locator('.tabItem[data-tab="explore"]').click();
-  await root(a);
-  // Peek so the glance rail is visible.
-  for (let i = 0; i < 4; i += 1) {
-    const stop = await a.locator('.sheet').evaluate((e) =>
-      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
-    );
-    if (stop === 'peek') break;
-    await a.getByRole('slider', { name: /Resize panel/ }).click();
-    await a.waitForTimeout(300);
-  }
   // useWeather only reads localStorage on mount; a bare fetch does not update
   // React state. `online` is the hook's public refresh signal (same as a phone
   // regaining signal). Retry while waiting — an in-flight poll can no-op once.
-  const goNowHit = a.locator('.glanceCard.goNow .glanceHit[title]');
-  const whyHit = a.locator('.glanceHit[title*="Why"]');
+  //
+  // The rail's GO NOW card carried the reason in a `title` on its hit area.
+  // The status pill in the browse list is where that verdict is read now, and
+  // it takes the same `st.detail` string from the same `liveFor` result — see
+  // components/PlaceList.jsx.
+  const goNowPill = a.locator('.poiRow .liveBadge.goNow[title]');
+  const anyPill = a.locator('.poiRow .liveBadge[title]');
   await until(
     async () => {
       await a.evaluate(() => window.dispatchEvent(new Event('online')));
-      return (await goNowHit.count()) > 0 || (await whyHit.count()) > 0;
+      return (await goNowPill.count()) > 0 || (await anyPill.count()) > 0;
     },
-    { timeout: 20000, label: 'a glance card with Why title' },
+    { timeout: 20000, label: 'a live status pill carrying its reason' },
   );
-  const hit = (await goNowHit.count()) > 0 ? goNowHit.first() : whyHit.first();
-  const why = (await hit.getAttribute('title')) || '';
+  const pill = (await goNowPill.count()) > 0 ? goNowPill.first() : anyPill.first();
+  const why = (await pill.getAttribute('title')) || '';
   if (!why || why.length < 6) throw new Error(`missing Why? title: "${why}"`);
   return true;
 });
@@ -1047,7 +1053,7 @@ await check('picking another way changes the trip', async () => {
 });
 
 // Cedar Point coverage stops at preview/alts. The walk UX checks below still
-// assume Kings Island GPS (Beast arrival, glance rail, party rides), so leave
+// assume Kings Island GPS (Beast arrival, browse list, party rides), so leave
 // CP before Start — otherwise a live Gemini walk + KI fix never shortens.
 await check('return to Kings Island before walk UX coverage', async () => {
   await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
@@ -1203,23 +1209,30 @@ await check('arriving ends the route on its own', async () => {
   return true;
 });
 
-await check('a glance card walks you to a place and stops again', async () => {
+// The rail's Go button started a walk and the card then wore `.walking`. The
+// list row's own `Walk me there` is that button now, and the walking state is
+// the nav chrome itself — NavBanner at the top, NavBar at the foot (D11).
+await check('a list row walks you to a place and stops again', async () => {
   await A.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await a.waitForTimeout(1200);
   await go(a, 'Places');
-  const goBtn = a.locator('.glanceGo').first();
-  await until(async () => (await goBtn.count()) > 0, { timeout: 15000, label: 'glance Go button' });
+  await until(async () => (await a.locator('.poiRow .poiMain').count()) > 0, {
+    timeout: 15000,
+    label: 'the browse list',
+  });
+  await a.locator('.poiRow .poiMain').first().click();
+  const goBtn = a.locator('.poiRow.open button[aria-label="Walk me there"]').first();
+  await until(async () => (await goBtn.count()) > 0, { timeout: 15000, label: 'the row’s Walk button' });
   await goBtn.click();
   await until(async () => (await a.locator('.routePreview').count()) > 0, {
     timeout: 15000,
-    label: 'route preview from glance Go',
-  });
-  await until(async () => (await a.locator('.glanceCard.walking').count()) > 0, {
-    timeout: 15000,
-    label: 'glance card walking state',
+    label: 'route preview from the row’s Walk button',
   });
   await a.locator('.previewGo').click();
-  await a.waitForTimeout(900);
+  await until(async () => (await a.locator('.navBanner, .navBar').count()) > 0, {
+    timeout: 20000,
+    label: 'the walking chrome',
+  });
   await a.locator('.navEnd').click();
   await a.waitForTimeout(500);
   if (await a.locator('.navBanner').count()) throw new Error('End left the banner up');
@@ -2449,12 +2462,25 @@ await check('save where I parked and walk back to it', async () => {
   await ensurePeek(b);
   await B.context.setGeolocation({ latitude: 39.34395, longitude: -84.2673 });
   await b.waitForTimeout(800);
-  // Clear a leftover pin via the glance ✕ (Forget under Me → Phone is easy to miss).
-  const forgetCar = b.locator('button[aria-label="Remove Your car from this list"]');
-  if (await forgetCar.count()) {
-    await forgetCar.click();
+  /* Clear a leftover pin. The rail's ✕ used to do this; with the rail gone the
+     only forget is the Phone row under Me → Settings, which says "Saved · tap
+     to forget" while there is something to forget. */
+  await go(b, 'Settings');
+  const phoneTopic = b.locator('.settingsTopic', { hasText: 'Phone' });
+  if (await phoneTopic.count()) {
+    await phoneTopic.click();
     await b.waitForTimeout(400);
   }
+  const forgetCar = b.locator('.settingsPanel .row', { hasText: 'Where I parked' }).first();
+  if ((await forgetCar.count()) && /tap to forget/i.test(await forgetCar.innerText())) {
+    await forgetCar.click();
+    await b.waitForTimeout(400);
+    if (/tap to forget/i.test(await forgetCar.innerText())) {
+      throw new Error('the Phone row would not forget the car');
+    }
+  }
+  await go(b, 'Places');
+  await ensurePeek(b);
   const saveBtn = b.locator('button[aria-label="Save where I parked"]');
   await until(async () => (await saveBtn.count()) > 0, {
     timeout: 15000,
@@ -2469,9 +2495,15 @@ await check('save where I parked and walk back to it', async () => {
     await B.context.setGeolocation(away);
     await b.waitForTimeout(400);
   }
-  await go(b, 'Places');
-  const carGo = b.locator('.glanceCard', { hasText: 'Your car' }).locator('.glanceGo');
-  await until(async () => (await carGo.count()) > 0, { timeout: 15000, label: 'car glance card' });
+  /* The walk back. The rail card's Go used to start it; the Party panel's
+     worded button is the only thing that calls startNav({kind:'car'}) now —
+     the map FAB takes the camera to the pin but does not route to it. */
+  await go(b, 'Party');
+  const carGo = b.locator('button:has-text("Where I parked")').first();
+  await until(async () => (await carGo.count()) > 0, {
+    timeout: 15000,
+    label: 'the Party panel’s Where I parked button',
+  });
   await carGo.click();
   await until(async () => (await b.locator('.routePreview').count()) > 0, {
     timeout: 15000,
