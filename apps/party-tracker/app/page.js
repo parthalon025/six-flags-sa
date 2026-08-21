@@ -353,7 +353,12 @@ function ParkApp({ isSignedIn }) {
      notifies every other subscriber, and a store that emits mid-render tears
      the tree. The cost is that the first frame after a Contribution lands is
      still the old Places; the alternative was every screen painting its own,
-     which is the bug this replaced. */
+     which is the bug this replaced.
+
+     This fires on mount too, with an empty Overlay on a phone that has never
+     contributed. `setOverlay` drops that one rather than republishing Places —
+     the emit would otherwise land mid-hydration and cost the whole page. See
+     lib/venue/store.js. */
   useEffect(() => {
     setOverlay(displayOverlay);
   }, [displayOverlay]);
