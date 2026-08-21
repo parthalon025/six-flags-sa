@@ -1,8 +1,16 @@
 {
   "schema": 1,
+<<<<<<< HEAD
   "diffHash": "50f5321bbf16e330",
   "mergeBase": "60a2f416f8cbc5a0f9c011170adb8c8d9f017b2d",
   "model": "claude-sonnet-5",
   "gitnexus": "ok",
   "recordedAt": "2026-08-23T13:46:12.273Z"
+=======
+  "diffHash": "4cb32962f26eebda",
+  "mergeBase": "531d68ab3bacf10c39dcbcaaa350b8fae398d97c",
+  "model": "claude-sonnet-5",
+  "gitnexus": "ok",
+  "recordedAt": "2026-08-21T20:20:10.332Z"
+>>>>>>> 68332db8 (fix(ci): a missing spawnedFrom source is a finding, not a crash)
 }
