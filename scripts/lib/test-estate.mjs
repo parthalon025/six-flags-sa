@@ -93,8 +93,13 @@ function proveRunner(rel, runner, world) {
     }
   }
   if (runner.spawnedFrom) {
-    const src = world.readFile(runner.spawnedFrom);
-    if (src.includes(rel.split('/').pop())) proofs.push(runner.spawnedFrom);
+    let src = null;
+    try {
+      src = world.readFile(runner.spawnedFrom);
+    } catch {
+      broken.push(`spawns from "${runner.spawnedFrom}", which is not there any more`);
+    }
+    if (src !== null && src.includes(rel.split('/').pop())) proofs.push(runner.spawnedFrom);
   }
   return { proofs, broken };
 }
