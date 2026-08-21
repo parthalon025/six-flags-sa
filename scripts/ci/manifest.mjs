@@ -19,6 +19,12 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/pre-push.test.mjs',
   'test/scripts/git-env.test.mjs',
   'test/scripts/agent-docs.test.mjs',
+  // frontend-map.test.mjs IS here, unlike design-bundle.test.mjs below, and the
+  // difference is what each one reaches for. The map's paired-constant check
+  // imports apps/party-tracker/lib/sheet.js to read SHEET_PEEK_PX — a module of
+  // pure arithmetic with no imports at all, which resolves in a bare checkout.
+  // It never imports a component or anything that reaches @party-tracker/shared.
+  'test/scripts/frontend-map.test.mjs',
   'test/scripts/credits.test.mjs',
   // design-bundle.test.mjs is deliberately NOT here. Every other entry is a
   // pure script test, which is what lets the Gate job run before a workspace

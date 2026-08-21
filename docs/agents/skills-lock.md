@@ -5,7 +5,7 @@ Canonical install: [mattpocock/skills](https://github.com/mattpocock/skills) via
 ## Rules
 
 1. **Do not add** `.agents/skills/` or `skills-lock.json` in this repo. Those duplicate the global install and show up in every agent session.
-2. **Do not commit** agent junction/copy trees (`agent/`, `.claude/skills/<matt-skill>/`). Keep gitnexus skills under `.claude/skills/gitnexus/` only.
+2. **Do not commit** agent junction/copy trees (`agent/`, `.claude/skills/<matt-skill>/`). `.gitignore` ignores `.claude/skills/*` by default and allowlists the skills this repo authors back in one folder at a time — currently `gitnexus/` and `frontend/`. Add a skill of our own the same way; never un-ignore the directory as a whole.
 3. **Upgrade globally**, not in this repo — `node scripts/install-global-skills.mjs` (Cloud Agents run this from `.cursor/environment.json` `install` and `start` so `~/.cursor/skills` stays linked to the global Matt tree). Claude Code on the web installs on session start via `.claude/hooks/session-start.sh` (`--agent claude-code` → `~/.claude/skills`); local Claude Code sessions are skipped — install once with the same command.
 
 4. CI runs `npm run skills:check` so a vendored tree cannot land again.

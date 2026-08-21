@@ -21,8 +21,12 @@ scripts/lib/clerk-apple-connection.json
 agent/
 .agents/skills/
 .claude/skills/*
+# Skills this repo authors are allowlisted back in one by one, so the default
+# stays "a skill tree here came from skills.sh and does not belong in git".
 !.claude/skills/gitnexus/
 !.claude/skills/gitnexus/**
+!.claude/skills/frontend/
+!.claude/skills/frontend/**
 
 .turbo
 
