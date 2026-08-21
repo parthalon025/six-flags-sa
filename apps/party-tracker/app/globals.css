@@ -12,10 +12,16 @@
 
 :root {
   color-scheme: dark;
-  /* The peek stop has to stand the search field, the glance rail and the tab
-     bar at once. Tracked in page.js as PEEK_PX — the map lays its labels out
-     against the same number. */
-  --peek: 308px;
+  /* The peek stop has to stand the search field, the venue line and the tab bar
+     at once — or, on a phone with no fix, the locate card that replaces the
+     venue line. Those two ways of spending the same room are held side by side
+     in SHEET_PEEK_PX, not added up, because only one is ever drawn.
+     This must equal SHEET_PEEK_PX in lib/sheet.js, which is the number the map
+     lays its labels out against; page.js seeds the sheet from it directly. It
+     fell out of step when the glance rail left Explore and the rail's 104px
+     came out of the JS budget — a first-paint flash, at the one stop the app
+     rests on. */
+  --peek: 236px;
   /* The stop below peek. The tab bar and the handle above it and nothing else,
      so the map has the rest of the screen — a panel that cannot get out of the
      way is a map you can only ever see a third of. Kept in step with SHUT_PX in
