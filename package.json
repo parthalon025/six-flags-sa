@@ -94,6 +94,8 @@
     "credits:check": "node scripts/credits-build.mjs check",
     "design:build": "node scripts/design-bundle.mjs build",
     "design:check": "node scripts/design-bundle.mjs check",
+    "design:plan": "node scripts/design-bundle.mjs plan",
+    "design:push": "bash scripts/design-push-wizard.sh",
     "cap:sync": "node scripts/stamp-native-version.mjs && npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",

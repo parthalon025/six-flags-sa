@@ -29,8 +29,23 @@ import {
   VOCABULARY_TERMS,
   SCREEN_MAP,
 } from '../../scripts/lib/design-bundle/sources.mjs';
-import { renderPages, PAGES } from '../../scripts/lib/design-bundle/render.mjs';
-import { buildModel, checkDesignBundle, OUT_DIR } from '../../scripts/lib/design-bundle/compose.mjs';
+import {
+  renderPages,
+  PAGES,
+  FONT_WEIGHTS,
+  FONT_DIR,
+  fontFile,
+} from '../../scripts/lib/design-bundle/render.mjs';
+import {
+  buildModel,
+  checkDesignBundle,
+  designSyncPlan,
+  auditPushReadiness,
+  pageReferences,
+  mimeFor,
+  DESIGN_SYNC_LIMITS,
+  OUT_DIR,
+} from '../../scripts/lib/design-bundle/compose.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -200,10 +215,6 @@ for (const [file, group] of PAGES) {
     `${file} opens with its dsCard marker on the FIRST line — the index is built from it`,
   );
   assert.match(html, /<title>[^<]+<\/title>/, `${file} has a title`);
-  // Self-contained: the only external reference is the typeface the twin
-  // already vendored. Anything else would not render offline.
-  const external = [...html.matchAll(/(?:src|href)="(https?:)?\/\/[^"]*"/g)];
-  assert.deepEqual(external, [], `${file} references no remote asset`);
   assert.ok(!html.includes('undefined'), `${file} has no undefined leaking into copy`);
   assert.ok(!html.includes('[object Object]'), `${file} has no stringified object`);
 }
@@ -267,6 +278,169 @@ for (const [mapName, map] of [
 }
 assert.deepEqual(gaps, [], 'no Kit or Mark names a glyph that does not exist');
 assert.ok(Array.isArray(model.findings), 'findings collected for the CLI to echo');
+
+/* ---- push readiness ----------------------------------------------------
+
+   The bundle being correct on disk is not the same as it being pushable, and
+   the gap between the two was live: every page carried
+   `url('../parkbound-twin/vendor/fonts/…')`. DesignSync pushes files to
+   PROJECT-relative paths, so a page pushed on its own has no
+   `../parkbound-twin/` above it — the typeface fell back to the system stack
+   and the design system quietly misrepresented the app's own type. Nothing
+   failed, because nothing was looking.
+
+   These assertions are what looks. They are stated against `auditPushReadiness`
+   — the same function `design:plan` gates on — and then each rule is proved to
+   actually fire by feeding the auditor a bundle that breaks it. An assertion
+   that has never been seen to fail is a rumour.
+------------------------------------------------------------------------- */
+
+const plan = await designSyncPlan();
+const planPaths = plan.map((f) => f.projectPath);
+
+assert.deepEqual(
+  auditPushReadiness(plan, pages),
+  [],
+  'the bundle as generated is pushable',
+);
+
+// The push root is a self-contained unit: the fonts ship inside it.
+for (const weight of FONT_WEIGHTS) {
+  const projectPath = `${FONT_DIR}/${fontFile(weight)}`;
+  assert.ok(
+    planPaths.includes(projectPath),
+    `weight ${weight} is declared by the shell CSS, so ${projectPath} must travel with the pages`,
+  );
+}
+assert.equal(mimeFor('a.woff2'), 'font/woff2', 'binary files carry a mimeType for write_files');
+assert.equal(mimeFor('a.html'), 'text/html');
+assert.equal(mimeFor('a.json'), 'application/json');
+
+// The specific bug, named. No page may reach at the twin's folder again.
+for (const [file] of PAGES) {
+  assert.ok(
+    !pages.get(file).includes('parkbound-twin'),
+    `${file} reaches into docs/design/parkbound-twin — that folder is not pushed with the bundle`,
+  );
+}
+
+// Every reference resolves inside the push root, and every declared @font-face
+// points at a file that is actually in the plan.
+for (const [file] of PAGES) {
+  const refs = pageReferences(pages.get(file));
+  assert.ok(refs.length > 0, `${file} has references to check — the extractor is not blind`);
+  for (const ref of refs) {
+    assert.ok(
+      planPaths.includes(ref),
+      `${file} references ${ref}, which is not in the push plan`,
+    );
+  }
+}
+
+// DesignSync's own limits.
+assert.ok(
+  plan.length <= DESIGN_SYNC_LIMITS.maxFilesPerCall,
+  `${plan.length} files, over the ${DESIGN_SYNC_LIMITS.maxFilesPerCall}-file per-call limit`,
+);
+for (const f of plan) {
+  assert.ok(
+    f.bytes <= DESIGN_SYNC_LIMITS.maxFileBytes,
+    `${f.projectPath} is ${f.bytes} bytes, over the ${DESIGN_SYNC_LIMITS.maxFileBytes}-byte cap`,
+  );
+  assert.ok(
+    f.projectPath.length <= DESIGN_SYNC_LIMITS.maxProjectPathChars,
+    `${f.projectPath} is over the ${DESIGN_SYNC_LIMITS.maxProjectPathChars}-char path cap`,
+  );
+}
+
+/* ---- and now prove the auditor is not just saying yes -------------------
+
+   Each rule gets a bundle that violates it, and the auditor has to say so. The
+   cheapest way to make a "nothing is wrong" gate pass is for it to stop
+   looking, which is the same failure the glyph reader had — so it is tested the
+   same way.
+------------------------------------------------------------------------- */
+
+/** The real bundle with one page's HTML swapped for `html`. */
+const withPage = (file, html) => new Map([...pages, [file, html]]);
+const fires = (problems, needle, what) => {
+  assert.ok(
+    problems.some((p) => p.includes(needle)),
+    `${what}: expected a violation mentioning "${needle}", got ${JSON.stringify(problems)}`,
+  );
+};
+
+// 1. dsCard marker missing from the first line.
+{
+  const html = pages.get('icons.html').split('\n').slice(1).join('\n');
+  fires(auditPushReadiness(plan, withPage('icons.html', html)), '@dsCard', 'stripped marker');
+}
+// ...and present, but on the wrong line — the reader only looks at the first.
+{
+  const lines = pages.get('icons.html').split('\n');
+  const html = [lines[1], lines[0], ...lines.slice(2)].join('\n');
+  fires(auditPushReadiness(plan, withPage('icons.html', html)), '@dsCard', 'marker on line two');
+}
+// ...and with the wrong group, which would file the card in the wrong place.
+{
+  const html = pages.get('icons.html').replace('group="Icons"', 'group="Glyphs"');
+  fires(auditPushReadiness(plan, withPage('icons.html', html)), '@dsCard', 'wrong group');
+}
+
+// 2. references that leave the push root — the original bug and its neighbours.
+for (const [ref, what] of [
+  ['../parkbound-twin/vendor/fonts/plus-jakarta-sans-latin-400-normal.woff2', 'the original bug'],
+  ['/Users/someone/six-flags-sa/docs/design/system/index.html', 'absolute filesystem path'],
+  ['https://fonts.gstatic.com/s/plusjakartasans.woff2', 'remote https asset'],
+  ['//fonts.gstatic.com/s/plusjakartasans.woff2', 'protocol-relative asset'],
+  ['vendor/fonts/plus-jakarta-sans-latin-700-normal.woff2', 'a weight that is not vendored'],
+]) {
+  const html = pages.get('index.html').replace('</head>', `<link href="${ref}"></head>`);
+  fires(auditPushReadiness(plan, withPage('index.html', html)), ref, what);
+}
+// The same, through CSS url() rather than an attribute.
+{
+  const html = pages
+    .get('index.html')
+    .replace("url('vendor/fonts/", "url('../parkbound-twin/vendor/fonts/");
+  fires(auditPushReadiness(plan, withPage('index.html', html)), '../parkbound-twin', 'url() escape');
+}
+
+// 3. the per-file cap.
+{
+  const fat = plan.map((f) =>
+    f.projectPath === 'icons.html'
+      ? { ...f, bytes: DESIGN_SYNC_LIMITS.maxFileBytes + 1 }
+      : f,
+  );
+  fires(auditPushReadiness(fat, pages), 'per-file cap', 'oversized file');
+}
+
+// 4. the per-call file limit.
+{
+  const many = Array.from({ length: DESIGN_SYNC_LIMITS.maxFilesPerCall + 1 }, (_, n) => ({
+    ...plan[0],
+    projectPath: `filler-${n}.html`,
+  }));
+  fires(auditPushReadiness([...plan, ...many], pages), 'per-call limit', 'too many files');
+}
+
+// 5. the project-path length cap.
+{
+  const long = 'x'.repeat(DESIGN_SYNC_LIMITS.maxProjectPathChars + 1);
+  fires(
+    auditPushReadiness([...plan, { ...plan[0], projectPath: long }], pages),
+    'project-path cap',
+    'over-long path',
+  );
+}
+
+// 6. a page in PAGES that never rendered.
+{
+  const missing = new Map(pages);
+  missing.delete('vocabulary.html');
+  fires(auditPushReadiness(plan, missing), 'was not rendered', 'missing page');
+}
 
 /* ---- the staleness gate ------------------------------------------------ */
 // The whole reason the bundle is generated: a committed copy that no longer

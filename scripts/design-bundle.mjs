@@ -4,6 +4,7 @@
  *
  *   node scripts/design-bundle.mjs build
  *   node scripts/design-bundle.mjs check
+ *   node scripts/design-bundle.mjs plan [--json]
  *   npm run design:build
  *   npm run design:check
  *
@@ -15,7 +16,16 @@
  * would produce, so a token edited in globals.css and not regenerated is caught
  * in CI rather than in a design session three weeks later.
  */
-import { writeDesignBundle, checkDesignBundle, OUT_DIR } from './lib/design-bundle/compose.mjs';
+import {
+  writeDesignBundle,
+  checkDesignBundle,
+  composeDesignBundle,
+  designSyncPlan,
+  auditPushReadiness,
+  DESIGN_SYNC_LIMITS,
+  OUT_DIR,
+} from './lib/design-bundle/compose.mjs';
+import { renderPages } from './lib/design-bundle/render.mjs';
 
 const arg = process.argv[2] || 'check';
 const mode = arg.replace(/^--/, '');
@@ -51,5 +61,46 @@ if (mode === 'check') {
   process.exit(0);
 }
 
-console.error('Usage: node scripts/design-bundle.mjs <build|check>');
+/* `plan` prints the bundle exactly as DesignSync would push it, and exits
+   non-zero if any of its limits is breached. It exists so the push wizard and
+   the test can both read the real paths off the generator instead of each
+   keeping a copy of them — a list of nine filenames written down twice is a
+   list that is wrong once. */
+if (mode === 'plan') {
+  const plan = await designSyncPlan();
+  const { model } = await composeDesignBundle();
+  const problems = auditPushReadiness(plan, renderPages(model));
+  const asJson = process.argv.includes('--json');
+
+  /* --json puts NOTHING but JSON on stdout. The wizard pipes this straight into
+     JSON.parse, and an earlier version printed the human "pushable" line after
+     the object — which parsed fine by eye and threw on line 90. Anything for a
+     human goes to stderr in this mode. */
+  if (asJson) {
+    console.log(
+      JSON.stringify({ pushRoot: OUT_DIR, limits: DESIGN_SYNC_LIMITS, files: plan, problems }, null, 2),
+    );
+  } else {
+    console.log(`push root: ${OUT_DIR}/  (${plan.length} files)\n`);
+    const width = Math.max(...plan.map((f) => f.projectPath.length));
+    for (const f of plan) {
+      const kb = (f.bytes / 1024).toFixed(1).padStart(7);
+      console.log(`  ${f.projectPath.padEnd(width)}  ${kb} KiB  ${f.mimeType}`);
+    }
+    const total = plan.reduce((n, f) => n + f.bytes, 0);
+    console.log(`\n  ${'total'.padEnd(width)}  ${(total / 1024).toFixed(1).padStart(7)} KiB`);
+  }
+
+  if (problems.length) {
+    console.error('\ndesign-bundle: this bundle is NOT pushable:');
+    for (const o of problems) console.error(`  ${o}`);
+    process.exit(1);
+  }
+  if (!asJson) {
+    console.log('\ndesign-bundle: pushable — every reference resolves inside the push root.');
+  }
+  process.exit(0);
+}
+
+console.error('Usage: node scripts/design-bundle.mjs <build|check|plan>');
 process.exit(1);
