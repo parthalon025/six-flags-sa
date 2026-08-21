@@ -71,7 +71,12 @@ export default function PlaceList({
   const map = useVenueSelector((s) => s.map);
   const [onlyRunning, setOnlyRunning] = useState(false);
 
-  const ROW_H = 52;
+  /* The measured height of one .poiRow, and it has to stay measured: the
+     virtual window sizes its spacer from this, so a row that is really 59 and a
+     constant that says 52 leaves the list seven pixels short per row and the
+     tail of a 900-pitch campground unreachable. 11 + 20 + 1 + 16 + 11 in
+     globals.css. */
+  const ROW_H = 59;
   const [scrollTop, setScrollTop] = useState(0);
   const [containerHeight, setContainerHeight] = useState(400);
   const listRef = useRef(null);
@@ -277,18 +282,18 @@ export default function PlaceList({
           anything?" — and it is the only way to tell a category that removed
           nothing from one that removed everything.
 
-          A section header, not the twin's 11.5px uppercase eyebrow: .label is
-          deliberately larger and darker than that, and the note on it records
-          the lighter treatment already having failed on outdoor glare. This is
-          an app read in direct sun. */}
-      <div className="label">
+          The design's eyebrow: 11.5px / 800 / .1em uppercase with the count
+          opposite. It keeps --label2 rather than the design's --label3, which
+          is 2.1:1 here and fails AA — this is an app read in direct sun, and
+          that is the half of the pairing the repo owns. */}
+      <div className="label placesLabel">
         {filter === 'all' && !(query || '').trim() ? 'Every place' : 'Matches'}
         <span className="labelRight">
           {matches.total} place{matches.total === 1 ? '' : 's'}
         </span>
       </div>
 
-      <div className="chips">
+      <div className="chips placeChips">
         {/* "All" wears a dot like every other chip so the row reads as one
             family rather than a button followed by a legend. --label3 is the
             "no colour in particular" ink the app already uses for a value it
@@ -320,7 +325,7 @@ export default function PlaceList({
       </div>
 
       {(height != null || statuses.size > 0) && (
-        <div className="chips">
+        <div className="chips placeChips">
           {height != null && (
             <button
               type="button"

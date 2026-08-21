@@ -150,7 +150,10 @@ export default function WorldPicker({
 
       {options.length > 0 && (
         <>
-          <div className="label">
+          {/* An eyebrow, not a section title: the design sets this as small
+              uppercase with the count sitting opposite it, so the eye reads
+              the CTA above and then this as a quieter second offer. */}
+          <div className="label worldListLabel">
             Explore another World
             <span className="labelRight">{options.length} nearby</span>
           </div>
