@@ -1190,14 +1190,19 @@ a.row .rowText, a.row .rowValue { text-decoration: none; }
   transition: transform var(--t2) var(--ease);
 }
 .tabItem.on .tabGlyph .icn { transform: scale(1.06); }
-/* 10px at 500, the design's own — Apple's tab-bar label size, not the caption
-   style one point above it that this used to borrow. Tracking opens up slightly
-   because the curve does so below the minimum as well as above it. */
+/* 11px, not the design's 10. The design is right that a tab-bar label is a
+   smaller style than the caption one point above it, and its weight and
+   tracking are taken as drawn — but 11px is a floor here, not a preference:
+   test/app/grandma.mjs checks that reading sizes survive arm's length outdoors
+   and fails anything under it, which 10px does. That is the same class of thing
+   as a contrast floor, and it is something a canvas rendered on a desk cannot
+   see. Change this only by moving the floor, and only with a reason that
+   survives a phone held at arm's length in a car park in July. */
 .tabLabel {
-  font-size: 10px; font-weight: 500; line-height: 13px; letter-spacing: .01em;
+  font-size: 11px; font-weight: 500; line-height: 13px; letter-spacing: .01em;
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-/* The selected label goes to 700, not 600: at 10px, one step of weight is the
+/* The selected label goes to 700, not 600: at this size one step of weight is the
    only thing besides colour separating the tab you are on from the four you
    are not. */
 .tabItem.on .tabLabel { font-weight: 700; }
