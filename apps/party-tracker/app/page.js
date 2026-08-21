@@ -3156,7 +3156,15 @@ function ParkApp({ isSignedIn }) {
       {/* The height is stated rather than left to a class, because there are
           no longer four of them to have a class each: it is whatever the
           visitor pulled it to. */}
-      <section className={sheetClass} style={{ height: stowed ? 0 : 'var(--sheetH)' }}>
+      <section
+        className={sheetClass}
+        style={{ height: stowed ? 0 : 'var(--sheetH)' }}
+        /* The whole sheet pulls, not just its handle — see useSheetDrag. The
+           ref owns the non-passive touchmove that decides, once per gesture,
+           whether a swipe belongs to the sheet or to a list inside it. */
+        ref={drag.attachBody}
+        {...drag.bodyHandlers}
+      >
         {/* A slider, because that is now what it is: the height is a value on a
             range rather than a choice between four, and the only way to say
             that to a screen reader — or to a keyboard, which has no finger to
