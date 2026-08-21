@@ -92,6 +92,8 @@
     "agent-docs:check": "node scripts/agent-docs.mjs check",
     "credits:build": "node scripts/credits-build.mjs build",
     "credits:check": "node scripts/credits-build.mjs check",
+    "design:build": "node scripts/design-bundle.mjs build",
+    "design:check": "node scripts/design-bundle.mjs check",
     "cap:sync": "node scripts/stamp-native-version.mjs && npx cap sync",
     "cap:open:ios": "npx cap open ios",
     "cap:open:android": "npx cap open android",
