@@ -1,10 +1,7 @@
 export const meta = {
   name: 'train-slices',
   description: 'Build every startable Train H/I slice in its own worktree, then verify each landed',
-  whenToUse:
-    'A session that wants to advance Trains H and I. Reads the startable set from '
-    + 'scripts/train-plan.mjs, so it is safe to run repeatedly — slices already built '
-    + 'drop out of the list on their own.',
+  whenToUse: 'A session that wants to advance Trains H and I. The caller passes the startable set from scripts/train-plan.mjs, so it is safe to run repeatedly — slices already built drop out of the list on their own.',
   phases: [
     { title: 'Build', detail: 'one worktree-isolated agent per startable slice' },
     { title: 'Verify', detail: 'a second agent re-reads the diff against the slice probe' },

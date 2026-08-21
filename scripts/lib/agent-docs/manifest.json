@@ -81,6 +81,14 @@
       "pointer": "Put policy in **scripts**, not agent prose — one pointer beats a duplicated paragraph.",
       "cursorRule": "scripts-over-instructions.mdc",
       "cursorDescription": "Prefer repo scripts and workflows over duplicating the same steps in agent docs."
+    },
+    {
+      "id": "train-plan",
+      "heading": "Trains H and I",
+      "title": "Trains H and I — derive the plan, don't remember it",
+      "pointer": "Train **H/I** slice state is derived from the tree, never stored — run `npm run train:next` to see what is startable.",
+      "cursorRule": "train-plan.mdc",
+      "cursorDescription": "Trains H/I: doneness comes from probes over the tree; never mark a slice done, never answer a blocked decision."
     }
   ],
   "staticCursorRules": [
