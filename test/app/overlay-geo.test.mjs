@@ -384,4 +384,46 @@ assert.throws(() => overlayGeoJson(MODEL), /now/i);
 assert.throws(() => overlayGeoJson(MODEL, { now: null }), /now/i);
 assert.throws(() => overlayGeoJson(MODEL, { now: Number.NaN }), /now/i);
 
+// --- A Mark with no Place and no fix of its own must be DROPPED, not planted
+// on whichever Place happens to be first. The venue files use the compact
+// `{i,n,lat,lng,c,a}` shape with no `id` key, so a `p?.id === mark?.placeId`
+// arm compares `undefined === undefined` and matches the first POI in the list.
+// The failure is silent and reads as a real fix: a Mark about nothing lands on
+// a named ride, which is precisely what this module's header rails against.
+{
+  const orphan = overlayGeoJson(
+    { ...MODEL, marks: [{ id: 'mk_nowhere', type: 'sign', phrase: 'lost' }] },
+    { now: NOW },
+  );
+  assert.equal(
+    orphan.marks.features.length,
+    0,
+    'a Mark with neither its own fix nor a resolvable Place is dropped',
+  );
+}
+
+// --- A Mark dropped at a tapped location carries its OWN fix and must use it
+// rather than its Place's. Both fixture Marks are Place-anchored with null
+// lat/lng, so this branch had no coverage: replacing `lngLat(mark)` with `null`
+// left the suite green, and a regression snapping every free-standing Mark to
+// its placeId would have shipped silently.
+{
+  const own = overlayGeoJson(
+    {
+      ...MODEL,
+      marks: [{
+        id: 'mk_own', type: 'sign', phrase: 'here',
+        lat: 39.3395, lng: -84.2701, placeId: 'adventure-express',
+      }],
+    },
+    { now: NOW },
+  );
+  assert.equal(own.marks.features.length, 1);
+  assert.deepEqual(
+    own.marks.features[0].geometry.coordinates,
+    [-84.2701, 39.3395],
+    'its own fix wins over the Place it names',
+  );
+}
+
 console.log('overlay-geo: ok');

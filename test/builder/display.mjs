@@ -1132,18 +1132,26 @@ await check('the six shipped kits still certify clause 1 — every kind glyphs',
   return true;
 });
 
-await check('the flat bake painter carries no text call at all', () => {
-  const page = readFileSync(
-    new URL('../../packages/venue-builder/bin/display-bake-page.html', import.meta.url),
-    'utf8',
-  );
-  for (const call of ['fillText', 'strokeText', 'measureText', 'textAlign', 'textBaseline', 'LETTER']) {
-    assert.equal(page.includes(call), false, `display-bake-page.html still paints text: ${call}`);
-  }
-  assert.doesNotMatch(page, /\bfont\s*=/, 'a canvas font assignment means a word is coming');
-  assert.match(page, /BD\.icons/, 'the badge glyph must still come from the icon ledger');
-  return true;
-});
+// EVERY painter, not just the flat one. The iso page carried a byte-identical
+// copy of the letter fallback — same LETTER map, same fillText — and it
+// certifies through the same certifyStyleContract, so the row governed it while
+// the paint contradicted it. Checking one painter would have let the next copy
+// through; ADR-0021 clause 1 says "no band bakes legible text", and a band is
+// whatever a painter emits.
+for (const painter of ['display-bake-page.html', 'display-iso-page.html']) {
+  await check(`the ${painter} painter carries no text call at all`, () => {
+    const page = readFileSync(
+      new URL(`../../packages/venue-builder/bin/${painter}`, import.meta.url),
+      'utf8',
+    );
+    for (const call of ['fillText', 'strokeText', 'measureText', 'textAlign', 'textBaseline', 'LETTER']) {
+      assert.equal(page.includes(call), false, `${painter} still paints text: ${call}`);
+    }
+    assert.doesNotMatch(page, /\bfont\s*=/, 'a canvas font assignment means a word is coming');
+    assert.match(page, /BD\.icons/, 'the badge glyph must still come from the icon ledger');
+    return true;
+  });
+}
 
 const CLEAN_SPEC = {
   version: 1,

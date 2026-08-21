@@ -156,15 +156,23 @@ function routeFeatures(route, progress) {
 }
 
 /** Marks left at a Place carry no fix of their own — `world.js` makeMark()
- *  stores lat/lng null — so the Place list is where the coordinate comes from,
- *  exactly as ParkMap resolves it today. A Mark with neither is dropped. */
+ *  stores lat/lng null — so the Place list is where the coordinate comes from.
+ *  A Mark with neither its own fix nor a resolvable Place is dropped.
+ *
+ *  The `placeId != null` guard is load-bearing, not defensive. Venue files use
+ *  the compact `{i,n,lat,lng,c,a}` shape with no `id` key, so an unguarded
+ *  `p?.id === mark?.placeId` compares `undefined === undefined` and matches
+ *  whichever Place is first in the list. A Mark about nothing then renders on a
+ *  named ride — silently, and reading as a real fix rather than as missing
+ *  data. ParkMap.jsx carries the unguarded form; this does not inherit it. */
 function markFeatures(marks, pois) {
   const features = [];
   for (const mark of marks || []) {
     const own = lngLat(mark);
-    const place = own
+    const placeId = mark?.placeId;
+    const place = own || placeId == null
       ? null
-      : (pois || []).find((p) => p?.i === mark?.placeId || p?.id === mark?.placeId);
+      : (pois || []).find((p) => p?.i === placeId || p?.id === placeId);
     const coordinates = own || lngLat(place);
     if (!coordinates) continue;
     features.push(

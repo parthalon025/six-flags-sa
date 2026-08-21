@@ -152,8 +152,6 @@
   // Badges last (ADR-0012: annotation on top), screen space, flat-tier pin
   // geometry — the disc-ink moat the sample offsets target is identical.
   const BD = kit.sprites.badge;
-  const LETTER = { gate: 'E', food: 'F', restroom: 'R', shop: 'S', show: 'W', service: 'i' };
-  g.textAlign = 'center'; g.textBaseline = 'middle';
   for (const b of badges) {
     const x = b.sx; const y = b.sy;
     const r = px * 0.42;
@@ -169,11 +167,12 @@
     if (icon) {
       const s = r * 1.1;
       g.drawImage(icon, x - s / 2, cy - s / 2, s, s);
-    } else {
-      g.fillStyle = '#FFFFFF';
-      g.font = `bold ${Math.round(px * 0.5)}px system-ui, sans-serif`;
-      g.fillText(LETTER[b.kind] || '?', x, cy + 0.5);
     }
+    // No letter fallback. ADR-0021 clause 1: no band bakes legible text, and a
+    // badge kind whose icon does not resolve is a missing asset — the
+    // style_no_baked_text row fails the build naming the kind. The iso tier
+    // certifies through the same certifyStyleContract as the flat one, so the
+    // row already governs it; this removes the paint that contradicted it.
   }
 
   // Style-contract sampling: the iso plan's points already carry canvas
