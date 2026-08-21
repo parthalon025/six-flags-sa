@@ -63,11 +63,20 @@ function git(args, cwd) {
 /**
  * Hash of the branch diff vs merge-base, excluding the stamp files — so
  * committing a stamp never invalidates it, and any code change does.
+ *
+ * `--full-index` is load-bearing, not cosmetic. Without it `git diff` writes
+ * abbreviated blob ids into each `index abc1234..def5678` line, and the width
+ * of that abbreviation is `core.abbrev=auto`, which git scales with how many
+ * objects the repository holds. The same tree therefore hashes differently on
+ * a small worktree and on a CI runner that cloned every branch, so a stamp
+ * written locally could never be verified in CI — the stamp would read as
+ * "diff changed since the review" while the diff had not changed at all. Full
+ * 40-character ids are identical everywhere.
  */
 export function buildMattReviewContext({ baseRef = 'origin/main', cwd = root } = {}) {
   const mergeBase = git(['merge-base', 'HEAD', baseRef], cwd).trim();
   const excludes = STAMP_EXCLUDES.map((p) => `:(exclude)${p}`);
-  const patch = git(['diff', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd);
+  const patch = git(['diff', '--full-index', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd);
   const files = git(['diff', '--name-only', `${mergeBase}...HEAD`, '--', '.', ...excludes], cwd)
     .split('\n')
     .map((s) => s.trim())

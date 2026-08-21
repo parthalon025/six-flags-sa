@@ -116,4 +116,47 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   rmSync(dir, { recursive: true, force: true });
 }
 
+// --- The stamp has to verify on a machine other than the one that wrote it.
+// `git diff` abbreviates blob ids in its `index` lines to `core.abbrev=auto`
+// digits, and git scales that width with the repository's object count. Hashing
+// that patch made the stamp environment-dependent: written on a worktree with
+// 8-digit ids, checked on a CI runner holding every branch, the same tree read
+// as "diff changed since the review". `--full-index` pins the ids at 40 digits.
+// Simulate the other machine by forcing each plausible width.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'matt-abbrev-'));
+  const git = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'pipe' });
+  git('init', '-qb', 'main');
+  git('config', 'user.email', 't@e.st');
+  git('config', 'user.name', 'T');
+  mkdirSync(join(dir, 'scripts'), { recursive: true });
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  // The change has to live on a branch off main, or `main...HEAD` is empty and
+  // the hash is the hash of an empty patch — identical under every setting,
+  // which would make this test pass without proving anything.
+  git('checkout', '-qb', 'feature');
+  writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 2;\n');
+  git('add', '.');
+  git('commit', '-qm', 'change');
+  assert.ok(
+    buildMattReviewContext({ baseRef: 'main', cwd: dir }).files.length > 0,
+    'the fixture must actually produce a diff',
+  );
+
+  const hashes = new Set();
+  for (const abbrev of ['auto', '7', '8', '12', '40']) {
+    git('config', 'core.abbrev', abbrev);
+    hashes.add(buildMattReviewContext({ baseRef: 'main', cwd: dir }).diffHash);
+  }
+  assert.equal(
+    hashes.size,
+    1,
+    `diffHash must not depend on core.abbrev — got ${hashes.size} distinct hashes ${[...hashes].join(', ')}`,
+  );
+
+  rmSync(dir, { recursive: true, force: true });
+}
+
 console.log('matt-review: ok');

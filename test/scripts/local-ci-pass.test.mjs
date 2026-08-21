@@ -6,6 +6,7 @@
  *   node test/scripts/local-ci-pass.test.mjs
  */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -250,6 +251,43 @@ try {
 } finally {
   process.env.GITHUB_OUTPUT = prevOut;
   rmSync(outFile, { force: true });
+}
+
+// --- Same environment-dependence bug as matt-review's stamp: `git diff` sizes
+// the blob ids in its `index` lines by `core.abbrev=auto`, which git scales
+// with the repository's object count. Hashing that made a stamp written on a
+// worktree unverifiable on a CI runner holding every branch — the identical
+// tree read as a changed diff. `--full-index` pins the ids at 40 digits.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'localci-abbrev-'));
+  const git = (...a) => execFileSync('git', a, { cwd: dir, stdio: 'pipe' });
+  git('init', '-qb', 'main');
+  git('config', 'user.email', 't@e.st');
+  git('config', 'user.name', 'T');
+  writeFileSync(join(dir, 'a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  // On a branch, or `main...HEAD` is empty and every setting hashes the same
+  // empty patch — the test would pass while proving nothing.
+  git('checkout', '-qb', 'feature');
+  writeFileSync(join(dir, 'a.js'), 'export const a = 2;\n');
+  git('add', '.');
+  git('commit', '-qm', 'change');
+
+  const hashes = new Set();
+  for (const abbrev of ['auto', '7', '8', '12', '40']) {
+    git('config', 'core.abbrev', abbrev);
+    const ctx = buildLocalCiContext({ baseRef: 'main', cwd: dir });
+    assert.ok(ctx.diffHash, 'the fixture must actually produce a diff to hash');
+    hashes.add(ctx.diffHash);
+  }
+  assert.equal(
+    hashes.size,
+    1,
+    `diffHash must not depend on core.abbrev — got ${hashes.size} distinct hashes`,
+  );
+
+  rmSync(dir, { recursive: true, force: true });
 }
 
 console.log('local-ci-pass: ok');
