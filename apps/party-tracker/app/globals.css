@@ -3439,3 +3439,18 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* Train H banded-world preview (#563), dev-only route /dev/banded-world. */
+.bandedWorldPage { position: fixed; inset: 0; display: flex; flex-direction: column; background: #0d1b22; }
+.bandedWorldBar { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; background: #10242d; color: #e8f1f2; font: 500 0.85rem/1.2 system-ui, sans-serif; }
+.bandedWorldVenue { opacity: 0.7; }
+.bandedWorldSkins { display: flex; gap: 0.35rem; margin-left: auto; }
+.bandedWorldSkins button { padding: 0.3rem 0.6rem; border: 1px solid #2b4c58; border-radius: 999px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.bandedWorldSkins button[aria-pressed='true'] { background: #2b4c58; }
+.bandedWorldWrap { position: relative; flex: 1; }
+.bandedWorldHud { position: absolute; left: 0.75rem; bottom: 0.75rem; margin: 0; padding: 0.5rem 0.7rem; border-radius: 0.5rem; background: rgba(6, 18, 24, 0.82); color: #cfe3e8; font: 500 0.75rem/1.5 ui-monospace, monospace; }
+.bandedWorldHud > div { display: flex; gap: 0.5rem; }
+.bandedWorldHud dt { opacity: 0.6; min-width: 4.5rem; }
+.bandedWorldHud dd { margin: 0; }
+.bandedWorldError, .bandedWorldOff { position: absolute; inset: auto 0.75rem 0.75rem; padding: 0.6rem 0.8rem; border-radius: 0.5rem; background: #5b1a1a; color: #ffe8e8; font: 500 0.8rem/1.4 system-ui, sans-serif; }
+.bandedWorldOff { position: static; margin: 2rem; background: #10242d; color: #cfe3e8; }

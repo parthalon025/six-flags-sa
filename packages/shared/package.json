@@ -15,6 +15,7 @@
     "./compass.js": "./compass.js",
     "./isoWorld.js": "./isoWorld.js",
     "./isoTrack.js": "./isoTrack.js",
-    "./zoomBands.js": "./zoomBands.js"
+    "./zoomBands.js": "./zoomBands.js",
+    "./mapCamera.js": "./mapCamera.js"
   }
 }

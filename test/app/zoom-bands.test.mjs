@@ -5,7 +5,7 @@
    the venue bounds in apps/party-tracker/public/venues, never from re-running
    the module's own arithmetic. */
 import assert from 'node:assert/strict';
-import { BANDS, bandForZoom, bandPixels, bandResolution, parentOf } from '../../packages/shared/zoomBands.js';
+import { BANDS, bandBoundaryZooms, bandForZoom, bandPixels, bandResolution, parentOf } from '../../packages/shared/zoomBands.js';
 
 // The table is ordered coarsest first, and names the three bands ADR-0019 ships.
 assert.deepEqual(
@@ -80,5 +80,32 @@ assert.equal(bandForZoom(14, { latitude: 60 }), 'mid');
 // Latitude defaults to the equator rather than throwing, so a caller that has
 // not wired up a camera position still gets a usable band.
 assert.equal(bandForZoom(14), 'overview');
+
+// The zooms where the selected band changes. ADR-0021 clause 4 needs these:
+// the camera's pitch ease must not overlap one, or a guest gets tilt and
+// restyle in the same instant.
+const boundaries = bandBoundaryZooms({ latitude: 0 });
+assert.equal(boundaries.length, BANDS.length - 1, 'one boundary between each pair');
+
+// Independent check on the first boundary: the world is 512 * 2^z pixels
+// around at MapLibre zoom z, and the equator is 40,075,016.686 m, so the
+// overview band's 2.4 m/px is reached at z = log2(40075016.686 / (512 * 2.4)),
+// which is 14.99 to two decimals.
+assert.ok(
+  Math.abs(boundaries[0] - 14.99) < 0.01,
+  `overview->mid boundary near 14.99, got ${boundaries[0]}`,
+);
+
+// What a boundary *means*: the band just below it is the parent of the band
+// just above it. This is the property the camera relies on.
+for (const z of boundaries) {
+  const below = bandForZoom(z - 0.01, { latitude: 0 });
+  const above = bandForZoom(z + 0.01, { latitude: 0 });
+  assert.equal(parentOf(above), below, `band changes from ${below} to ${above} at z${z}`);
+}
+
+// Boundaries move with latitude, which is why the camera cannot hardcode them.
+const north = bandBoundaryZooms({ latitude: 60 });
+assert.ok(north[0] < boundaries[0], 'a boundary sits at a lower zoom away from the equator');
 
 console.log('zoom-bands: ok');

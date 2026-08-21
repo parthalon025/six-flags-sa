@@ -74,6 +74,22 @@ export function bandForZoom(zoom, { latitude = 0 } = {}) {
   return (fit ?? BANDS[BANDS.length - 1]).id;
 }
 
+/** The zooms at which `bandForZoom` changes its answer, coarsest boundary
+ *  first — one fewer than there are bands.
+ *
+ *  These move with latitude, because Mercator pixels cover less ground away
+ *  from the equator. ADR-0021 clause 4 requires the camera's pitch ease not to
+ *  overlap one, so the camera has to ask rather than hardcode a zoom range.
+ */
+export function bandBoundaryZooms({ latitude = 0 } = {}) {
+  const cos = Math.cos((latitude * Math.PI) / 180);
+  // Invert screenResolution: the zoom at which a screen pixel covers exactly
+  // this band's metres. Below it the band is coarser than the screen.
+  return BANDS.slice(0, -1).map((band) =>
+    Math.log2((EQUATOR_METRES_PER_PIXEL * cos) / band.metresPerPixel) - 1,
+  );
+}
+
 /** The band a placeholder upscales from, or null at the coarsest band. */
 export function parentOf(id) {
   const i = indexOfBand(id);
