@@ -44,27 +44,19 @@
  * remaining split of a running route, the heading cone and Kit badges, land
  * labels along their district, the scale bar, and a Skin's Custom map layer
  * (which ADR-0013 compiles into the display pack rather than drawing in
- * React). The perf HUD (`onMapStats`) reports from the SVG path only.
+ * React). The perf HUD (`onMapStats`) is not wired on the GL path yet.
  *
  * And the baked bands themselves. `worldFor()` answers `{id, bounds,
- * geometry}` with no `bands` key, because nothing in the app has a display
- * pack to hand it — `components/BandedWorldMap.jsx`, the #527 dev spike, is
- * the only place a `bands` map is built at all. So `bandedWorldStyle` makes
- * zero `band-*` layers here and the ported path ships the vector tier alone:
- * ADR-0019's never-fails fallback, drawing on its own rather than standing in
- * for art that has not arrived. Wiring a World's display pack into `worldFor`
- * is the slice that turns the band machinery on; until then every band test in
- * `test/app/map-view.test.mjs` drives a World the shipped map never builds.
+ * geometry, center}` with no `bands` key, because nothing in the app has a
+ * display pack to hand it — `components/BandedWorldMap.jsx` is the only place
+ * a `bands` map is built at all. So `bandedWorldStyle` makes zero `band-*`
+ * layers here and the shipped map draws the vector tier alone: ADR-0019's
+ * never-fails fallback. Wiring a World's display pack into `worldFor` is
+ * the slice that turns the band machinery on.
  *
- * And the opening camera differs. The SVG path opens on the venue's declared
- * `center`; the ported path opens on `frameBounds(world.bounds)`, the bbox's
- * geometric centre. Those are not the same point at any shipped venue —
- * measured against the committed `map.json` files: kings-island 291 m,
- * cedar-point 152 m, big-kahunas 115 m, six-flags-fiesta-texas 77 m. It costs
- * nothing while the SVG ships, and it is a silent regression on every venue's
- * first paint the day the renderer flips, so slice h18 has to resolve it or
- * accept it out loud rather than discover it. Named here because everything
- * else on this list was, and this one was found by a mutation sweep instead.
+ * The opening camera prefers `world.center` (the venue's declared centre)
+ * over the bbox midpoint. That is the h18 resolution of the 77–291 m gap
+ * the two renderers used to open on.
  */
 
 import { memo, useEffect, useMemo, useState } from 'react';
@@ -76,9 +68,8 @@ import { overlayGeoJson } from '@/lib/overlayGeo';
 import { parkMapRenderer } from '@/lib/mapLibreConfigured';
 import { boundsOfPoints, cameraRequest, overlayModel, worldFor } from '@/lib/parkMapView';
 
-/* MapLibre is a large dependency and the shipped renderer is still the SVG
-   one, so the engine loads only for the guest who is actually drawing through
-   it. `ssr: false` for the ordinary reason: it needs a canvas. */
+/* MapLibre is a large dependency and the shipped renderer. `ssr: false`
+   for the ordinary reason: it needs a canvas. */
 const ParkMapGl = dynamic(() => import('./ParkMapGl'), { ssr: false });
 
 /** Which renderer this phone is drawing through.

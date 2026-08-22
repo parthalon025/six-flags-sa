@@ -58,10 +58,14 @@ async function stillCss(page) {
   });
 }
 
-async function mapReady(page, minPaths = 700) {
-  await until(async () => (await page.locator('svg.mapSvg path').count()) >= minPaths, {
+async function mapReady(page) {
+  await until(async () => {
+    const canvas = await page.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
+    const ready = await page.locator('[data-testid="park-map-gl"]').getAttribute('data-map-ready').catch(() => null);
+    return canvas >= 1 && ready === '1';
+  }, {
     timeout: 45000,
-    label: `map geometry (>= ${minPaths} paths)`,
+    label: 'MapLibre canvas ready',
   });
   const drawing = page.locator('text=Drawing the map');
   if (await drawing.count()) {
@@ -141,9 +145,9 @@ function recordShot(name) {
 async function shot(page, name) {
   const file = path.join(OUT, name);
   await page.screenshot({ path: file, fullPage: false });
-  const paths = await page.locator('svg.mapSvg path').count();
-  console.log(`  ${name}  (${paths} map paths)`);
-  if (paths < 200) throw new Error(`${name}: map not drawn (${paths} paths)`);
+  const canvas = await page.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
+  console.log(`  ${name}  (${canvas} map canvas)`);
+  if (canvas < 1) throw new Error(`${name}: map not drawn (no MapLibre canvas)`);
   recordShot(name);
 }
 

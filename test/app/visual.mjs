@@ -99,8 +99,8 @@ async function main() {
   await page.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
   await shot(page, 'map-located');
 
-  const paths = await page.locator('.mapSvg path').count();
-  check(paths > 800, `park geometry drawn (${paths} vector paths)`);
+  const canvas = await page.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
+  check(canvas >= 1, `park geometry drawn (${canvas} MapLibre canvas)`);
   const meDot = await page.locator('.mePulse').count();
   check(meDot > 0, 'own position marker rendered from mocked GPS');
 

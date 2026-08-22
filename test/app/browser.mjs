@@ -232,18 +232,19 @@ export async function openPhone(
 }
 
 export async function mapIsDrawn(page) {
-  const features = await page.locator('[data-testid="park-map-gl"]').getAttribute('data-world-features').catch(() => null);
-  if (features != null && Number(features) >= 50) return true;
-  if (await page.locator('[data-testid="park-map-gl"] canvas').count()) return true;
-  return (await page.locator('svg.mapSvg path, svg.mapSvg circle').count()) >= 1;
+  const gl = page.locator('[data-testid="park-map-gl"]:not(.mapMissing)');
+  if (!(await gl.count())) return false;
+  if (await gl.locator('canvas').count()) return true;
+  return (await page.locator('svg.mapSvg circle.poiMarker, svg.mapSvg circle.memMarker, svg.mapSvg circle.mePulse, svg.mapSvg circle.meetPin').count()) >= 1;
 }
 
 export const hydrated = (page) =>
   page.waitForFunction(() => {
-    const gl = document.querySelector('[data-testid="park-map-gl"]');
+    const gl = document.querySelector('[data-testid="park-map-gl"]:not(.mapMissing)');
     if (gl?.querySelector('canvas')) return true;
-    if (Number(gl?.getAttribute('data-world-features') || 0) >= 50) return true;
-    return document.querySelectorAll('svg.mapSvg path, svg.mapSvg circle').length >= 1;
+    return document.querySelectorAll(
+      'svg.mapSvg circle.poiMarker, svg.mapSvg circle.memMarker, svg.mapSvg circle.mePulse, svg.mapSvg circle.meetPin',
+    ).length >= 1;
   }, null, {
     timeout: 40000,
   });

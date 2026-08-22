@@ -316,9 +316,8 @@ await check('GPS gate closes and position resolves', async () => {
 });
 
 await check('park geometry is drawn', async () => {
-  const features = Number(await a.locator('[data-testid="park-map-gl"]').getAttribute('data-world-features') || 0);
-  const canvas = await a.locator('[data-testid="park-map-gl"] canvas').count();
-  if (features < 50 && !canvas) throw new Error(`map not drawn (features=${features})`);
+  const canvas = await a.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
+  if (!canvas) throw new Error('map not drawn (no MapLibre canvas)');
   if (!(await a.locator('.mePulse').count())) throw new Error('no own-position marker');
   return true;
 });
