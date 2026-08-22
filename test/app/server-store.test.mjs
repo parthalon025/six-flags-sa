@@ -110,6 +110,11 @@ await check('a read evicts a member past the TTL and bumps the version doing it'
 });
 
 await check('the eviction is written back, so the next read is idempotent', async () => {
+  // serverStore.js:190 is the write-back, and only the STORED side can see it.
+  // Comparing versions across reads cannot: with the write-back gone the record
+  // in the Map still holds the stale member, so every read prunes the same
+  // untouched base and hands back the same version — identical answers, the
+  // work done over and over. So assert on the counters, which count the work.
   const id = idc();
   await store.writeParty(
     id,
@@ -118,9 +123,31 @@ await check('the eviction is written back, so the next read is idempotent', asyn
       { id, code: 'AAA224', agesMs: { 'm-gone': MEMBER_TTL_MS + 60_000 } },
     ),
   );
+  const settled = store.metrics();
+
   const first = await store.readParty(id);
+  const afterFirst = store.metrics();
+  assert.deepEqual(Object.keys(first.members), ['m-ana']);
+  assert.equal(
+    afterFirst.party_writes,
+    settled.party_writes + 1,
+    'the pruned state was never written back — the read only pretended to evict',
+  );
+  assert.equal(afterFirst.members_evicted, settled.members_evicted + 1);
+
   const second = await store.readParty(id);
   const third = await store.readParty(id);
+  const afterRest = store.metrics();
+  assert.equal(
+    afterRest.party_writes,
+    afterFirst.party_writes,
+    'a later read found something to evict again, so the first one did not stick',
+  );
+  assert.equal(
+    afterRest.members_evicted,
+    afterFirst.members_evicted,
+    'the same member was evicted more than once',
+  );
   assert.equal(second.version, first.version, 'a second read moved the version again');
   assert.equal(third.version, first.version, 'the version depends on how often you look');
   assert.deepEqual(Object.keys(third.members), ['m-ana']);

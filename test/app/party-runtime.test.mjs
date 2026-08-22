@@ -9,13 +9,22 @@
  * not.
  *
  * How the wire is observed. The runtime builds its own transport stack with no
- * seam to replace it (`buildTransports`, partyRuntime.js:519-532), so these
+ * seam to replace it (`buildTransports`, partyRuntime.js:523-533), so these
  * tests give it a browser with no network: every real transport probes
  * unavailable and the offline queue — always available by contract — becomes
  * the active path. Everything the runtime sends therefore lands in
  * `ki-outbox-<partyId>` in local storage, sealed under the party key the
  * snapshot hands out. Decrypting that is a faithful tap on what a phone would
  * have transmitted.
+ *
+ * NOT COVERED HERE: migration. `promote`, `stepDown` and `reconcile`
+ * (partyRuntime.js:598-727) are reachable only from a live client or host
+ * service, and with no network neither ever starts. Gutting all three to a
+ * bare `return;` leaves every test below green. The protocol they implement is
+ * covered in party-protocol.test.mjs, against the real client, host service
+ * and election — but a transcription of this module's own wiring, not this
+ * module. Closing that gap needs the injection seam the paragraph above
+ * describes, which is the partyRuntime simplification follow-up.
  */
 
 import assert from 'node:assert/strict';

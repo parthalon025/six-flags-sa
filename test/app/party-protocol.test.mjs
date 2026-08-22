@@ -1,19 +1,60 @@
 #!/usr/bin/env node
 /**
- * Host migration, end to end, in Node.
+ * The host-migration PROTOCOL, in Node.
  *
- * The sequence that keeps a party alive when the host walks off had exactly
- * one test before this file: test/app/functional.mjs:2149-2182, three real
- * browsers and a 75s timeout, in the module that same file records at :956 and
- * :1019 as hanging in CI and locally (#194). So the single test protecting
- * migration was the one known not to run.
+ * WHAT THIS COVERS
+ *   The wire protocol a migration is made of, driven through the shipped
+ *   modules: lib/party/client.js, lib/party/hostService.js,
+ *   lib/party/election.js and lib/core/state.js, over a fake wire
+ *   (lib/partyBus.mjs) carrying real AES-GCM envelopes. The election and its
+ *   claim window, WELCOME / VICTORY / CLAIM / BYE, snapshot adoption, the
+ *   reducer's set-leader patch and the unscored-is-unbeatable rule are all
+ *   real code. Mutation-checked: setting STEAL_STEPS = 0 at election.js:85
+ *   fails three of the tests below.
  *
- * This drives the real client, the real host service and the real election
- * over a fake wire (lib/partyBus.mjs) with real AES-GCM envelopes. The
- * promote/stepDown/reconcile wiring is reproduced here from partyRuntime.js
- * because that module builds its own transport stack with no seam to replace
- * it — see `buildTransports` (partyRuntime.js:519-532) and the PR body.
- * Every step below cites the line it stands in for.
+ * WHAT THIS DOES NOT COVER — read this before trusting the file
+ *   partyRuntime.js's own copy of the migration wiring. `makePeer` below
+ *   TRANSCRIBES `reconcile`, `startHost`, `startClient`, `promote` and
+ *   `stepDown` out of partyRuntime.js. Nothing here imports that module and
+ *   nothing here executes it, so all of the following is UNTESTED:
+ *
+ *     - the re-entrancy guards: `!client || host || destroyed`
+ *       (partyRuntime.js:700) and `!host || destroyed` (:717) — a second
+ *       promote arriving mid-migration, or either running after destroy()
+ *     - the ordering inside `startHost` (:634-667): seed before start, join
+ *       before set-leader, assert last, with openKeyWindow and persistSession
+ *       alongside
+ *     - the drop-then-stop ordering in `promote` (:702-703) and `stepDown`
+ *       (:720-721), which is what stops a `change` fired during teardown
+ *       reaching a service the runtime no longer owns
+ *     - the version guard at :723-724 that picks which snapshot the demoted
+ *       host hands to its new client
+ *     - `emit()`, `persistSession()`, and the runtime's own `link.reselect()`
+ *
+ *   Mutation-checked the other way round: gutting the real `promote` and
+ *   `stepDown` to a bare `return;` — which is deleting host migration from the
+ *   product — leaves every test in this file and every test in
+ *   party-runtime.test.mjs green.
+ *
+ * WHY IT IS LIKE THIS
+ *   `buildTransports` (partyRuntime.js:523-533) constructs all five transports
+ *   inline with no injection point, so the runtime cannot be started in Node
+ *   without a network; and `promote` / `stepDown` / `reconcile` are private to
+ *   the closure with no other way in. Opening that seam is the partyRuntime
+ *   simplification follow-up. This file is tests-only and must not move the
+ *   thing it measures, so it names the gap instead of closing it.
+ *
+ * WHEN A TITLE SAYS "TRANSCRIBED"
+ *   The rule under assertion is one `makePeer` copied. The parts it drives —
+ *   the client, the host service, the election, the reducer — are real, and a
+ *   change to those still fails the test; a change to partyRuntime's own copy
+ *   does not. `the transcribed wiring has not drifted from partyRuntime.js`
+ *   at the foot of this file is what catches that, within the limits stated
+ *   there.
+ *
+ *   The prior coverage this replaces is unchanged: test/app/functional.mjs
+ *   :2149-2182, three real browsers and a 75s timeout, in the module that
+ *   records at :956 and :1019 that it hangs in CI and locally (#194).
  */
 
 import assert from 'node:assert/strict';
@@ -51,11 +92,15 @@ const HOST_TIMEOUT_MS = 12000;
 const CLAIM_WINDOW_MS = 2500;
 
 /**
- * One phone, wired exactly as partyRuntime wires one.
+ * One phone, wired the way partyRuntime wires one.
  *
- * The bodies of `promote`, `startHost` and `stepDown` are transcriptions of
- * partyRuntime.js:697-728 and :636-668. If the follow-up reshapes those, this
- * harness is the thing that has to be reshaped with them — which is the point.
+ * `seedHost`, `assertHost`, `reconcile`, `startHost`, `startClient`, `promote`
+ * and `stepDown` below are TRANSCRIPTIONS of the same-named functions in
+ * partyRuntime.js — a copy, not the shipped code. Nothing that follows can
+ * fail because partyRuntime changed; only `the transcribed wiring has not
+ * drifted from partyRuntime.js` at the foot of this file can. Every function
+ * cites the lines it stands in for, and TRANSCRIBED_FROM at the foot is the
+ * list those citations have to stay true to.
  */
 function makePeer({ id, name, bus, key, partyId, clock }) {
   const session = { selfId: id, partyId, memberName: name, partyName: 'Party', role: 'client', hostId: null };
@@ -66,14 +111,14 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
   const service = () => peer.host || peer.client || null;
   bus.attach(id, (sealed) => service()?.handleSealed?.(sealed));
 
-  /** partyRuntime.js:557-568 — the host service offers no seam for an existing party. */
+  /** partyRuntime.js:558-570 — the host service offers no seam for an existing party. */
   function seedHost(svc, snapshot) {
     const state = svc.getState();
     Object.assign(state, adoptSnapshot(state, snapshot));
   }
 
   /**
-   * partyRuntime.js:576-580. The floor between unprompted re-assertions.
+   * partyRuntime.js:572-581. The floor between unprompted re-assertions.
    *
    * Load-bearing, and not obviously so: two hosts that will not stand down for
    * each other (see BUG #split-brain) answer each other's VICTORY forever. This
@@ -89,7 +134,7 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
     peer.host?.assert();
   }
 
-  /** partyRuntime.js:600-630. */
+  /** partyRuntime.js:598-627. */
   function reconcile(frame) {
     if (!peer.host || !frame?.from || frame.from === session.selfId) return;
     if (frame.kind !== CLAIM && frame.kind !== VICTORY && frame.kind !== PING) return;
@@ -111,7 +156,7 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
     assertHost();
   }
 
-  /** partyRuntime.js:636-668. */
+  /** partyRuntime.js:634-667. */
   function startHost(snapshot, rank = null) {
     session.role = 'host';
     session.hostId = session.selfId;
@@ -142,7 +187,7 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
     }
   }
 
-  /** partyRuntime.js:672-693. */
+  /** partyRuntime.js:671-694. */
   function startClient(snapshot = null) {
     session.role = 'client';
     peer.client = createClient({ session, key, transport: link, snapshot, now });
@@ -159,7 +204,7 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
     peer.client.start();
   }
 
-  /** partyRuntime.js:697-706. */
+  /** partyRuntime.js:699-706. */
   function promote(snapshot, rank = null) {
     if (!peer.client || peer.host) return;
     peer.events.push('promote');
@@ -169,7 +214,7 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
     startHost(snapshot, rank);
   }
 
-  /** partyRuntime.js:715-728. */
+  /** partyRuntime.js:716-727. */
   function stepDown(newHostId, snapshot = null) {
     if (!peer.host) return;
     peer.events.push('step-down');
@@ -245,7 +290,7 @@ async function framesFrom(party, id) {
 
 /* ------------------------------------------------------------ the party -- */
 
-console.log('a party forms');
+console.log('a party forms — real client, real host service');
 
 await check('clients join, adopt the roster, and agree who the leader is', async () => {
   const party = await makeParty({ clients: 2 });
@@ -279,9 +324,9 @@ await check('a joiner is welcomed with the snapshot, not left to resync for it',
 
 /* --------------------------------------------------------- host walks off */
 
-console.log('the host walks off');
+console.log('the host walks off — real election, transcribed wiring');
 
-await check('losing the host is noticed, and reselects the transport before campaigning', async () => {
+await check('TRANSCRIBED: host-lost is raised, and the wiring reselects before campaigning', async () => {
   // partyRuntime.js:683-688 — the path that was chosen to reach the host is
   // the thing that just went. Choose again before the claim goes out.
   const party = await makeParty({ clients: 2 });
@@ -299,7 +344,7 @@ await check('losing the host is noticed, and reselects the transport before camp
   }
 });
 
-await check('exactly one client promotes, and it is the one the order names', async () => {
+await check('the election settles on exactly one winner, and it is the one the order names', async () => {
   const party = await makeParty({ clients: 2 });
   try {
     party.bus.partition('phone-a');
@@ -320,7 +365,7 @@ await check('exactly one client promotes, and it is the one the order names', as
   }
 });
 
-await check('the party id, the roster and the version survive the swap', async () => {
+await check('the party id, the roster and the version survive the hand-over', async () => {
   const party = await makeParty({ clients: 2 });
   try {
     // Something to lose: a meet-up point set before the host vanished.
@@ -347,7 +392,7 @@ await check('the party id, the roster and the version survive the swap', async (
 });
 
 await check('leadership lands as a patch at exactly version + 1', async () => {
-  // partyRuntime.js:653-662 — the replica is adopted verbatim, old leader and
+  // partyRuntime.js:647-664 — the replica is adopted verbatim, old leader and
   // all, so taking leadership goes through the reducer. Every other replica
   // applies it without a resync and without ever seeing an empty roster.
   const party = await makeParty({ clients: 2 });
@@ -395,7 +440,7 @@ await check('the new host announces itself with VICTORY, carrying its snapshot a
   }
 });
 
-await check('CHARACTERISED: the promoted client posts a BYE to the host that just vanished', async () => {
+await check('CHARACTERISED: client.stop() posts a BYE to the host that just vanished', async () => {
   // client.stop() posts BYE unconditionally to toHost() (client.js:397), and
   // promote() calls stop() (partyRuntime.js:703). The addressee is the host
   // that has just been declared gone, so the frame is delivered to peers and
@@ -447,13 +492,13 @@ await check('the loser follows the winner without ever seeing an empty roster', 
 
 /* ------------------------------------------------------------ split brain */
 
-console.log('two hosts');
+console.log('two hosts — real election');
 
 await check('BUG #split-brain: two phones that promote at once BOTH keep hosting', async () => {
   // The claim windows overlap but the transport underneath is repairing
-  // itself, so neither hears the other in time (partyRuntime.js:583-598). The
+  // itself, so neither hears the other in time (partyRuntime.js:583-597). The
   // block says this "is survivable only if the pair can settle it afterwards
-  // without a human", and :626-628 claims "the total order admits exactly one
+  // without a human", and :624-626 claims "the total order admits exactly one
   // winner, so this cannot ping-pong".
   //
   // It cannot ping-pong. It also never resolves. `reconcile` stands a host
@@ -520,7 +565,7 @@ await check('BUG #split-brain: the order names a winner that the margin refuses 
   assert.ok(STEAL_STEPS * (1e12 / 100) > 1e10);
 });
 
-await check('a split brain DOES resolve once the battery gap clears the margin', async () => {
+await check('the election margin DOES resolve a split brain once the battery gap clears it', async () => {
   // The path that works, pinned so the follow-up keeps it. A phone six battery
   // steps better than the incumbent takes the party, and the loser stands down
   // within one assert.
@@ -555,9 +600,9 @@ await check('a split brain DOES resolve once the battery gap clears the margin',
   }
 });
 
-await check('a host with no claim of its own yields to any peer that says it is serving', async () => {
+await check('TRANSCRIBED: a host with no claim of its own yields to any peer that says it is serving', async () => {
   // The phone that started the party has no rank to compare and does not need
-  // one (partyRuntime.js:611-614).
+  // one (partyRuntime.js:611-615).
   const party = await makeParty({ clients: 1 });
   try {
     assert.equal(party.host.host.rank(), null, 'the founding host carries a claim');
@@ -574,7 +619,7 @@ await check('a host with no claim of its own yields to any peer that says it is 
   }
 });
 
-await check('stepDown keeps whichever snapshot has the higher version', async () => {
+await check('TRANSCRIBED: the hand-over keeps whichever snapshot has the higher version', async () => {
   // partyRuntime.js:723-724. The roster on screen must not blink while the new
   // host's WELCOME is in flight, so the better of the two pictures is handed on.
   const party = await makeParty({ clients: 1 });
@@ -592,7 +637,7 @@ await check('stepDown keeps whichever snapshot has the higher version', async ()
   }
 });
 
-await check('stepDown takes the offered snapshot when it is ahead', async () => {
+await check('TRANSCRIBED: the hand-over takes the offered snapshot when it is ahead', async () => {
   const party = await makeParty({ clients: 1 });
   try {
     const founder = party.host;
@@ -607,8 +652,8 @@ await check('stepDown takes the offered snapshot when it is ahead', async () => 
   }
 });
 
-await check('a CLAIM against a live host is answered, never yielded to', async () => {
-  // partyRuntime.js:606-610 — a claim is a peer that has not decided yet.
+await check('TRANSCRIBED: a CLAIM against a live host is answered, never yielded to', async () => {
+  // partyRuntime.js:604-609 — a claim is a peer that has not decided yet.
   const party = await makeParty({ clients: 1 });
   try {
     const founder = party.host;
@@ -728,10 +773,132 @@ await check('the dead path still works if anything ever does set it', async () =
   assert.ok(state.members['phone-a'], 'the documented path lost the old roster');
 });
 
+/* ------------------------------------------------------ the transcription -- */
+
+console.log('the transcription');
+
+/**
+ * Every function `makePeer` copies, the lines it stands in for, and a digest of
+ * the real source as it read when this file was written.
+ *
+ * WHAT THIS CATCHES: any change to the body of one of these functions, and any
+ * rename or deletion of one. That is the failure this file is otherwise wide
+ * open to — the copy quietly describing a partyRuntime that no longer exists,
+ * with 20 green tests on top of it.
+ *
+ * WHAT IT CANNOT DO, and this matters: it cannot tell you the copy is still
+ * EQUIVALENT to the original. It compares the original against its own past
+ * self, not against the transcription. A green run means "partyRuntime has not
+ * moved", never "the harness is faithful" — only reading both does that.
+ *
+ * The comparison is normalised: comments and whitespace are stripped, so
+ * re-wrapping a comment does not trip it. A local variable renamed DOES trip
+ * it, and that is the trade taken deliberately — a false alarm costs one
+ * re-read of two functions, and a missed change costs the whole claim.
+ *
+ * TO UPDATE A DIGEST: re-read the transcription above against the new source,
+ * change it where it has to change, and only then paste in the digest the
+ * failure message prints. Pasting the digest first is how this becomes
+ * decoration.
+ */
+const TRANSCRIBED_FROM = [
+  ['seedHost', 'partyRuntime.js:558-570', '4fb69935fdef7959'],
+  ['assertHost', 'partyRuntime.js:572-581', '57882eace55375dd'],
+  ['reconcile', 'partyRuntime.js:598-627', 'dde630159493ea42'],
+  ['startHost', 'partyRuntime.js:634-667', '2d2b03a6f4145427'],
+  ['startClient', 'partyRuntime.js:671-694', 'b0bcc3e55e2e5818'],
+  ['promote', 'partyRuntime.js:699-706', '4416f5d52f62c8c0'],
+  ['stepDown', 'partyRuntime.js:716-727', '527dccc95dc010ea'],
+];
+
+/**
+ * The source of one `function NAME(...) { ... }`, comments dropped and runs of
+ * whitespace collapsed to one space.
+ *
+ * Scanned character by character rather than matched with a regex: a brace
+ * inside a string or a comment would otherwise end the body early and hand
+ * back a digest of half a function, which would still be stable and would
+ * still catch nothing beyond the half it saw.
+ */
+function normalisedSource(src, name) {
+  const start = src.search(new RegExp(`\\bfunction\\s+${name}\\s*\\(`));
+  if (start < 0) return null;
+  let i = src.indexOf('{', start);
+  if (i < 0) return null;
+  const out = [src.slice(start, i)];
+  let depth = 0;
+  for (; i < src.length; i += 1) {
+    const c = src[i];
+    const next = src[i + 1];
+    if (c === '/' && next === '/') {
+      while (i < src.length && src[i] !== '\n') i += 1;
+      out.push(' ');
+      continue;
+    }
+    if (c === '/' && next === '*') {
+      i = src.indexOf('*/', i + 2) + 1;
+      out.push(' ');
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') {
+      let j = i + 1;
+      while (j < src.length && src[j] !== c) j += src[j] === '\\' ? 2 : 1;
+      out.push(src.slice(i, j + 1));
+      i = j;
+      continue;
+    }
+    out.push(c);
+    if (c === '{') depth += 1;
+    else if (c === '}' && (depth -= 1) === 0) break;
+  }
+  if (depth !== 0) return null;
+  return out.join('').replace(/\s+/g, ' ').trim();
+}
+
+await check('the transcribed wiring has not drifted from partyRuntime.js', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const { createHash } = await import('node:crypto');
+  const src = await readFile(new URL(`${APP}lib/partyRuntime.js`, import.meta.url), 'utf8');
+
+  const drifted = [];
+  for (const [name, where, expected] of TRANSCRIBED_FROM) {
+    const body = normalisedSource(src, name);
+    if (!body) {
+      drifted.push(`${name} (${where}) is gone or no longer a function declaration`);
+      continue;
+    }
+    const actual = createHash('sha256').update(body).digest('hex').slice(0, 16);
+    if (actual !== expected) drifted.push(`${name} (${where}) ${expected} -> ${actual}`);
+  }
+  assert.deepEqual(
+    drifted,
+    [],
+    `partyRuntime moved under the transcription in makePeer. Re-read the copy against the new source, fix it, then update the digest:\n  ${drifted.join('\n  ')}`,
+  );
+});
+
+/** The extractor has to be able to fail, or the guard above cannot. */
+await check('the drift check reads a whole function, not a prefix of one', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const src = await readFile(new URL(`${APP}lib/partyRuntime.js`, import.meta.url), 'utf8');
+
+  const stepDown = normalisedSource(src, 'stepDown');
+  assert.ok(stepDown.startsWith('function stepDown('), 'the extractor lost the signature');
+  assert.ok(stepDown.endsWith('}'), 'the extractor stopped before the closing brace');
+  assert.ok(stepDown.includes('startClient('), 'the extractor stopped before the last statement');
+  assert.equal(stepDown.includes('//'), false, 'comments survived the normalisation');
+  assert.equal(normalisedSource(src, 'noSuchFunctionAnywhere'), null);
+  // A brace inside a string must not end a body early: the outbox key at
+  // partyRuntime.js:525 is inside a template literal in buildTransports.
+  const build = normalisedSource(src, 'buildTransports');
+  assert.ok(build.endsWith('];\n }'.replace(/\s+/g, ' ')) || build.endsWith('}'));
+  assert.ok(build.includes('outbox,'), 'a quoted brace truncated the body');
+});
+
 if (FAIL.length) {
-  console.error(`party migration tests: ${FAIL.length} failed`);
+  console.error(`party protocol tests: ${FAIL.length} failed`);
   for (const f of FAIL) console.error(' !', f);
   process.exitCode = 1;
 } else {
-  console.log(`party migration tests: ${PASS.length} passed`);
+  console.log(`party protocol tests: ${PASS.length} passed`);
 }
