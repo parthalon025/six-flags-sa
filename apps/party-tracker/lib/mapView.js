@@ -173,7 +173,8 @@ export function mountMapView(
     });
   };
 
-  const planFor = (zoom) => Object.freeze(bandDrawPlan(zoom, { latitude, available: held }));
+  const planFor = (zoom, bands = held) =>
+    Object.freeze(bandDrawPlan(zoom, { latitude, available: bands }));
 
   /** Truth, indexed the way a hit test asks for it. `i` is pois.json's own id
    *  key, and a row without one cannot be the answer to anything — it would
@@ -219,8 +220,7 @@ export function mountMapView(
     && a.draw.length === b.draw.length
     && a.draw.every((id, i) => id === b.draw[i]);
 
-  const repaint = () => {
-    const next = planFor(current.zoom);
+  const repaint = (next = planFor(current.zoom)) => {
     if (sameAs(next, plan)) return;
     plan = next;
     renderer.paint(plan);
@@ -280,8 +280,15 @@ export function mountMapView(
      *  lands — and the only way the plan changes without the camera moving. */
     setAvailableBands: (ids) => {
       assertAlive();
-      held = [...ids];
-      repaint();
+      const arriving = [...ids];
+      // Planned before it is held, for the reason mount() validates before it
+      // attaches a renderer: a set the chooser refuses must cost this one call
+      // and nothing after it. Held first, a single typo out of the cache would
+      // sit in `held` and throw out of every later camera move — one bad frame
+      // becomes a dead map for the rest of the session.
+      const next = planFor(current.zoom, arriving);
+      held = arriving;
+      repaint(next);
     },
 
     /** The Place at a screen point, or null.

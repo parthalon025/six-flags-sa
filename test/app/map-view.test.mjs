@@ -183,6 +183,13 @@ const EASE_MIDPOINT = 15.622402608729476;
 
   view.setCamera({ center: CENTRE, zoom: 15.0001 });
   assert.equal(renderer.calls.length, 1, 'a tenth of a thousandth of a zoom is');
+
+  // A twist on the spot changes nothing but the way up, so it is the one move
+  // the echo guard could swallow whole without any other assertion noticing.
+  view.setCamera({ center: CENTRE, zoom: 15.0001, bearing: 90 });
+  const turned = renderer.calls.filter((c) => c.call === 'camera');
+  assert.equal(turned.length, 2, 'a turn at the same place and zoom is a move too');
+  assert.equal(turned[1].camera.bearing, 90, 'and it is the turn that reaches the renderer');
 }
 
 // A caller that sets pitch itself can land a tilt and a band handoff in the
@@ -264,6 +271,34 @@ const paints = (renderer) => renderer.calls.filter((c) => c.call === 'paint');
   assert.equal(paints(renderer).length, 2, 'the same held bands in another order are the same set');
 }
 
+// A band set the chooser refuses is refused whole. mount() validates before it
+// attaches a renderer for the same reason: a view that half-adopted a bad set
+// would carry it into every later frame, so one typo from the cache would brick
+// the map for the rest of the session rather than for one call.
+{
+  const renderer = recordingRenderer();
+  const view = mount({ renderer });
+  renderer.calls.length = 0;
+
+  const before = view.state().plan;
+  assert.throws(() => view.setAvailableBands(['midd']), /unknown band/i,
+    'a typo in the arriving bands is refused, as it is at mount');
+  assert.deepEqual(view.state().plan, before, 'and the plan it could not use is not adopted');
+  assert.deepEqual(renderer.calls, [], 'nothing reached the renderer');
+
+  // Still a working view: the bands it holds are the ones it held before.
+  view.setCamera({ center: CENTRE, zoom: 17 });
+  assert.deepEqual(paints(renderer)[0].plan, {
+    primary: 'close',
+    placeholder: 'mid',
+    primaryReady: false,
+    draw: ['mid'],
+  }, 'a later camera move still plans against the bands it actually holds');
+
+  view.setAvailableBands(['mid', 'close']);
+  assert.equal(view.state().plan.primaryReady, true, 'and a good set still lands after a bad one');
+}
+
 // The eased variant of a camera move. Same plan, same derivation — the caller
 // is only saying "take your time getting there".
 {
@@ -274,6 +309,21 @@ const paints = (renderer) => renderer.calls.filter((c) => c.call === 'paint');
   const [moved] = renderer.calls.filter((c) => c.call === 'camera');
   assert.deepEqual(moved.camera.ease, { durationMs: 600 }, 'the ease crosses as data too');
   near(moved.camera.pitch, 45, 'and the pitch comes off the same curve, eased or not');
+
+  // A duration a renderer cannot animate over is refused here rather than
+  // handed on: MapLibre reads a zero or a NaN duration as "no argument" and
+  // jumps, which is the tilt-and-restyle-at-once the ease exists to avoid.
+  renderer.calls.length = 0;
+  for (const bad of [0, -100, NaN, '600', undefined]) {
+    assert.throws(
+      () => view.easeCamera({ center: CENTRE, zoom: 16 }, { durationMs: bad }),
+      /durationMs/i,
+      `an ease of ${String(bad)}ms is refused`,
+    );
+  }
+  assert.throws(() => view.easeCamera({ center: CENTRE, zoom: 16 }), /durationMs/i,
+    'and so is an ease with no duration at all');
+  assert.deepEqual(renderer.calls, [], 'none of them moved the camera');
 }
 
 // ---------------------------------------------------------------------------
