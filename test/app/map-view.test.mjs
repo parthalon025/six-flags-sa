@@ -472,6 +472,21 @@ const OVERLAY = {
     0,
     'and none of them reached the renderer',
   );
+
+  // state() is the deliberate exception, and it is deliberate enough to pin.
+  // A React render can outlive the effect that tore the renderer down, and
+  // where the camera got to is a fact about the session rather than about the
+  // GL context — so reading it after destroy must NOT throw. Without this,
+  // adding assertAlive() to state() looks like consistency and silently breaks
+  // the render path the exception exists for.
+  const after = view.state();
+  assert.equal(after.camera.zoom, 15, 'state() survives destroy and still reports the last camera');
+  assert.ok(after.plan, 'and still reports the last band plan');
+
+  // The plan handed out is frozen. It is derived per frame and shared with
+  // whoever asked; a caller that mutated it would change what the next
+  // comparison sees, and the repaint dedup would then skip a real change.
+  assert.throws(() => { after.plan.bands = []; }, TypeError, 'the band plan is frozen');
 }
 
 // ---------------------------------------------------------------------------
