@@ -1,22 +1,27 @@
 'use client';
 
-/* Train H thin vertical (#563). Draws one baked World through MapLibre as a
-   raster image on its truth bounds — ADR-0016's image-on-truth-bounds contract,
-   which is exactly what MapLibre's `image` source takes — and applies the
-   pitch-eases-with-zoom camera from packages/shared/mapCamera.js.
+/* Train H thin vertical (#563). Draws one baked World on its truth bounds —
+   ADR-0016's image-on-truth-bounds contract — with the pitch-eases-with-zoom
+   camera of ADR-0019 clause 2.
 
-   Deliberately narrow: no Overlay, no gestures beyond MapLibre's own, one band
-   (the mid bake is what exists today). The point is to judge whether flat
-   painted art reads well pitched, and whether a mobile WebView holds up, before
-   the tiler and the close band get built. The HUD reports what the shared band
-   table would select at the current camera, so band selection can be validated
-   by eye against the art. */
+   This component holds no map knowledge of its own any more. It fetches the
+   World's sidecar, mounts the map view seam (lib/mapView.js) over the MapLibre
+   renderer, and hands the seam back the camera whenever a gesture moves it.
+   Which band that camera selects, what stands in for a band the device has not
+   got, and what tilt to hold are all the seam's answers — the HUD below reports
+   them, so band selection can be judged by eye against the art.
+
+   Deliberately narrow, still: no Overlay and one band, because the mid bake is
+   what the pack ships today. The point is to judge whether flat painted art
+   reads well pitched and whether a mobile WebView holds up, before the tiler
+   and the close band get built. */
 
 import { useEffect, useRef, useState } from 'react';
-import { Map as MapLibreMap } from 'maplibre-gl';
-import { bandForZoom, bandBoundaryZooms } from '@party-tracker/shared/zoomBands.js';
-import { pitchEaseRange, pitchForZoom } from '@party-tracker/shared/mapCamera.js';
-import { previewWorldPaths } from '@/lib/bandedWorldPreview';
+import { bandBoundaryZooms } from '@party-tracker/shared/zoomBands.js';
+import { pitchEaseRange } from '@party-tracker/shared/mapCamera.js';
+import { mountMapView } from '@/lib/mapView';
+import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
+import { previewWorldPaths, PREVIEW_VENUE } from '@/lib/bandedWorldPreview';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline, not globals.css: this preview is dev-only behind a flag, and
@@ -54,97 +59,70 @@ const S = {
   },
 };
 
-function worldStyle(sidecar, imageUrl) {
-  const { west, south, east, north } = sidecar.bounds;
-  return {
-    version: 8,
-    sources: {
-      world: {
-        type: 'image',
-        url: imageUrl,
-        // Clockwise from top-left, as MapLibre expects.
-        coordinates: [
-          [west, north],
-          [east, north],
-          [east, south],
-          [west, south],
-        ],
-      },
-    },
-    layers: [
-      { id: 'bg', type: 'background', paint: { 'background-color': '#0d1b22' } },
-      { id: 'world', type: 'raster', source: 'world', paint: { 'raster-fade-duration': 200 } },
-    ],
-  };
+/** What the pack actually ships for this Skin: the mid band, as one image on
+ *  truth bounds. Overview and close stream by viewport (ADR-0021 clause 5) and
+ *  are not built yet, so the seam is told the device holds mid and nothing
+ *  else — which is exactly the state a phone starts a park day in. */
+function previewWorld(sidecar, skin) {
+  const { image } = previewWorldPaths(skin);
+  return { id: PREVIEW_VENUE, bounds: sidecar.bounds, bands: { mid: { image } } };
 }
 
 export default function BandedWorldMap({ skin, onReady = null }) {
   const containerRef = useRef(null);
-  const mapRef = useRef(null);
   const [error, setError] = useState(null);
   const [hud, setHud] = useState(null);
 
   useEffect(() => {
     if (!containerRef.current) return undefined;
     let cancelled = false;
-    let map = null;
-    const { sidecar: sidecarUrl, image: imageUrl } = previewWorldPaths(skin);
+    let view = null;
 
     (async () => {
+      const { sidecar: sidecarUrl } = previewWorldPaths(skin);
       const res = await fetch(sidecarUrl);
       if (!res.ok) throw new Error(`world sidecar unavailable (HTTP ${res.status})`);
       const sidecar = await res.json();
       if (cancelled) return;
 
-      const { west, south, east, north } = sidecar.bounds;
+      const world = previewWorld(sidecar, skin);
+      const { west, south, east, north } = world.bounds;
       const latitude = (north + south) / 2;
-      const easeRange = pitchEaseRange({ latitude });
-      const boundaries = bandBoundaryZooms({ latitude });
 
-      map = new MapLibreMap({
-        container: containerRef.current,
-        style: worldStyle(sidecar, imageUrl),
-        center: [(west + east) / 2, latitude],
-        zoom: 14,
-        pitch: 0,
-        attributionControl: false,
-      });
-      mapRef.current = map;
-
-      // The camera contract: pitch is a function of zoom, staged clear of every
-      // band handoff (ADR-0021 clause 4). Reading it from the shared module
-      // rather than a local curve is the point — the gate can ask the same
-      // question without a browser.
-      const applyCamera = () => {
-        const zoom = map.getZoom();
-        const wanted = pitchForZoom(zoom, { latitude });
-        if (Math.abs(map.getPitch() - wanted) > 0.01) map.setPitch(wanted);
-        setHud({
-          zoom,
-          pitch: wanted,
-          band: bandForZoom(zoom, { latitude }),
-          easeRange,
-          boundaries,
-        });
+      const report = () => {
+        if (cancelled || !view) return;
+        setHud({ ...view.state(), easeRange: pitchEaseRange({ latitude }), boundaries: bandBoundaryZooms({ latitude }) });
       };
 
-      map.on('zoom', applyCamera);
-      map.on('load', () => {
-        if (cancelled) return;
-        applyCamera();
-        onReady?.(map);
+      view = mountMapView(containerRef.current, {
+        renderer: createMapLibreRenderer({
+          onError: (err) => {
+            if (!cancelled) setError(err.message || 'MapLibre error');
+          },
+          // A pinch happens inside the renderer; the seam only learns about it
+          // if it is handed back. It drops a camera it is already at, so this
+          // round trip settles instead of echoing.
+          onCameraMoved: (camera) => {
+            if (cancelled || !view) return;
+            view.setCamera(camera);
+            report();
+          },
+        }),
+        world,
+        skin,
+        camera: { center: { lng: (west + east) / 2, lat: latitude }, zoom: 14 },
       });
-      map.on('error', (e) => {
-        if (!cancelled) setError(e?.error?.message || 'MapLibre error');
-      });
+
+      report();
+      onReady?.(view);
     })().catch((err) => {
       if (!cancelled) setError(err.message);
     });
 
     return () => {
       cancelled = true;
-      map?.remove();
-      mapRef.current = null;
+      view?.destroy();
+      view = null;
     };
     // Only the Skin changes what is drawn. onReady is deliberately absent:
     // callers pass it inline, so depending on its identity would tear down and
@@ -158,9 +136,15 @@ export default function BandedWorldMap({ skin, onReady = null }) {
       <div ref={containerRef} style={S.canvas} />
       {hud && (
         <dl style={S.hud} data-testid="banded-world-hud">
-          <div style={S.row}><dt style={S.term}>zoom</dt><dd style={S.def} data-testid="hud-zoom">{hud.zoom.toFixed(2)}</dd></div>
-          <div style={S.row}><dt style={S.term}>band</dt><dd style={S.def} data-testid="hud-band">{hud.band}</dd></div>
-          <div style={S.row}><dt style={S.term}>pitch</dt><dd style={S.def} data-testid="hud-pitch">{hud.pitch.toFixed(1)}&deg;</dd></div>
+          <div style={S.row}><dt style={S.term}>zoom</dt><dd style={S.def} data-testid="hud-zoom">{hud.camera.zoom.toFixed(2)}</dd></div>
+          <div style={S.row}><dt style={S.term}>band</dt><dd style={S.def} data-testid="hud-band">{hud.plan.primary}</dd></div>
+          <div style={S.row}>
+            <dt style={S.term}>drawing</dt>
+            <dd style={S.def} data-testid="hud-drawing">
+              {hud.plan.draw.join(' + ')}{hud.plan.primaryReady ? '' : ' (placeholder)'}
+            </dd>
+          </div>
+          <div style={S.row}><dt style={S.term}>pitch</dt><dd style={S.def} data-testid="hud-pitch">{hud.camera.pitch.toFixed(1)}&deg;</dd></div>
           <div style={S.row}>
             <dt style={S.term}>ease</dt>
             <dd style={S.def}>{hud.easeRange.startZoom.toFixed(2)}&ndash;{hud.easeRange.endZoom.toFixed(2)}</dd>
