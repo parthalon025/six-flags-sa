@@ -457,17 +457,24 @@ await check('mirroring lapses 30s after the last peer was heard', async () => {
 });
 
 await check('a client never mirrors, however recently it heard a peer', async () => {
-  const cloud = relay();
-  const direct = rtc({ carries: true });
-  const mgr = manager([lan({ available: false }), direct, cloud], { session: { role: 'client' } });
+  // registry.js:402, the role guard, is the whole of this behaviour, so the
+  // shape has to be one where a client genuinely HAS something to mirror down:
+  // a warm transport that is not the active one and that a peer was just heard
+  // on. A client on the cloud relay has neither — `desiredWarm` (:341) grants
+  // the mailbox to hosts only — so the mirror set is empty for want of a
+  // candidate and the guard makes no difference. The standby WebRTC path does
+  // have both: the manager holds it warm for every role (:345).
+  const direct = rtc(); // standby, carries: false — warm, never active
+  const mgr = manager([lan(), direct], { session: { role: 'client' } });
   await mgr.connect();
   await settle();
-  // A client holds no warm mailbox at all, so there is nothing to mirror down.
-  assert.equal(mgr.warmNames().includes('relay'), false);
-  cloud.receive('inbound');
+  assert.equal(mgr.activeName(), 'lan');
+  assert.deepEqual(mgr.warmNames(), ['webrtc'], 'setup: the client holds nothing to mirror down');
+
+  direct.receive('inbound'); // inside the 30s window, so only the role stops it
   await mgr.send('env-1');
   await settle();
-  assert.deepEqual(cloud.log.sent, []);
+  assert.deepEqual(direct.log.sent, [], 'a client copied its traffic down a warm path');
   await mgr.close();
 });
 
