@@ -51,8 +51,9 @@ const mapMetaFor = (id) =>
 /* A venue whose ground span can be worked out on paper: sat on the equator so
  * cos(latMid) is exactly 1, the span is 0.004 * 111320 = 445.28 m across and
  * 0.002 * 110574 = 221.148 m down. The boundary is a rectangle covering the
- * middle half across and middle half down, so the crop window is computable
- * too. Used by the projector and bakeModel cases below. */
+ * middle half across and middle half down — plenty of slack inside the bbox,
+ * which is what makes it the fixture for "the picture is the whole extent".
+ * Used by the projector and bakeModel cases below. */
 const EQUATOR_MAP = {
   meta: { id: 'equator', bounds: { n: 0.001, s: -0.001, e: 0.002, w: -0.002 } },
   boundary: [
@@ -294,32 +295,42 @@ await check('a tileMetres that is not a positive number is refused', () => {
 
 await check('bakeModel bakes the plan grid when handed a tileMetres', () => {
   // The end-to-end one: a real venue, the real painter, no column budget
-  // anywhere. `margin: Infinity` opens the crop window to the whole grid so
-  // this measures the projector's answer rather than the venue's boundary.
+  // anywhere and no trim — the model the painter is handed is the grid the
+  // plan asked for, cell for cell.
   const map = mapFor('big-kahunas');
   const plan = bandBakePlan(map.meta, 'overview');
-  const model = bakeModel(map, [], { tileMetres: plan.tileMetres, margin: Infinity });
+  const model = bakeModel(map, [], { tileMetres: plan.tileMetres });
   assert.equal(model.cols, plan.cols, 'cols');
   assert.equal(model.rows, plan.rows, 'rows');
   assert.equal(model.cols, 244);
   assert.equal(model.rows, 276);
+  // big-kahunas is the venue the crop used to part company with the plan on:
+  // its boundary leaves slack inside the bbox, so the trim emitted 157x191.
+  // The picture now starts where truth's own bbox starts.
+  assert.equal(model.bounds.west, map.meta.bounds.west, 'the picture starts at truth\'s west edge');
+  assert.equal(model.bounds.north, map.meta.bounds.north, 'and at truth\'s north edge');
   return true;
 });
 
-await check('bakeModel crops to the venue; the plan describes the uncropped World', () => {
-  // Worth pinning because it is the one place a band bake and its plan part
-  // company. `cropModel` trims to the boundary ring's box plus a margin, so
-  // the PNG a venue with slack bounds emits is SMALLER than plan.width. The
-  // crop depends only on the boundary and the cell grid, both of which are
-  // band-independent, so the 4x chain between bands survives it intact.
-  const open = bakeModel(EQUATOR_MAP, [], { tileMetres: 3.7, margin: Infinity });
-  const cropped = bakeModel(EQUATOR_MAP, [], { tileMetres: 3.7 }); // default margin 6
-  assert.equal(open.cols, 120);
-  assert.equal(open.rows, 60);
-  // Hand-computed: the boundary spans cells x 30.0865..90.2595 and
-  // y 14.9424..44.8273, so a 6-cell margin gives x 24..97 and y 8..51.
-  assert.equal(cropped.cols, 74, 'cropped cols');
-  assert.equal(cropped.rows, 44, 'cropped rows');
+await check('the picture is the whole planned extent — the boundary trims nothing', () => {
+  // The decision this slice carries: a band plan describes the World, and so
+  // does the picture. The trim used to cut to the boundary ring's box plus a
+  // 6-cell margin, so a venue with slack bounds emitted a PNG smaller than
+  // plan.width and every georeferenced tile inherited the discrepancy.
+  //
+  // EQUATOR_MAP's boundary covers the middle half of the bbox in both axes,
+  // which is exactly the shape that used to shrink: 120x60 planned, 74x44
+  // emitted. Both dimensions now come out at the plan.
+  const model = bakeModel(EQUATOR_MAP, [], { tileMetres: 3.7 });
+  assert.equal(model.cols, 120, 'cols are the projector\'s, not the boundary\'s');
+  assert.equal(model.rows, 60, 'rows are the projector\'s, not the boundary\'s');
+  assert.equal(model.cells.length, 120 * 60, 'cells fill the planned grid exactly');
+  // And the geo bounds are the planned extent, not a trimmed window. The NW
+  // corner is truth's own; the SE corner is the grid's far edge, 444 m across
+  // (120 x 3.7) and 222 m down at this venue's metres-per-degree.
+  assert.deepEqual(model.bounds, {
+    west: -0.002, north: 0.001, east: 0.0019885, south: -0.0010077,
+  }, 'the model is georeferenced against the full planned extent');
   return true;
 });
 
@@ -496,7 +507,11 @@ await check('end to end on a real venue: a band bake generalizes, and certifies 
   assert.match(generalization.evidence, /overview \(floor 3 px\)/, generalization.evidence);
   const nesting = bandNestingRow({ coarse: overview, fine: mid });
   assert.equal(nesting.pass, true, nesting.evidence);
-  assert.match(nesting.evidence, /buildings 32\/32/, nesting.evidence);
+  // 74 is every building way big-kahunas' truth carries (`map.building`), which
+  // is the point: with nothing trimmed, the picture holds the whole World the
+  // plan described rather than a boundary-tight window of it.
+  assert.equal((map.building || []).filter((w) => w.r?.length >= 3).length, 74, 'truth\'s own count');
+  assert.match(nesting.evidence, /buildings 74\/74/, nesting.evidence);
   // The same row on the mid band's own bake: mid removes nothing, so it must
   // nest in the overview's SUPERSET rather than the other way round — running
   // it backwards is the sanity check that the row is directional at all.

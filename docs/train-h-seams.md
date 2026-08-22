@@ -117,18 +117,28 @@ gate it is waiting on is named: slice h15's perf rows, plus the browser suites' 
 **The seam.** The bake produces a PNG per band; delivery needs a raster PMTiles pyramid. Between
 them sits a deterministic transform with a lot of machinery and almost nothing a caller decides.
 
-**Interface.** One export:
+**Interface.** One export, as built:
 
-- `buildPyramid({ id, bandId, bakePng, outDir, cellMetres })` → written files plus the manifest
-  rows that pin them.
+- `buildPyramid({ id, bandId, bakePng, bounds, outDir })` → `{ ok, file, tiles, minzoom, maxzoom,
+  sizeKb, sha256 }`, or a failure. `bounds` rather than the `cellMetres` this note first sketched:
+  the archive georeferences against the bake's own extent, and handing it a cell size would make it
+  re-derive a rectangle the bake already knows.
 
-**Depth.** The sharp resize chain, tile cutting on MapLibre's 512 px convention, WebP encoding
-(playbook row 13), PMTiles assembly, and the byte-identity that certification asserts.
+**Depth.** The sharp resize chain, tile cutting on MapLibre's 512 px convention, PNG encoding with
+every knob pinned, PMTiles v3 assembly (Hilbert tile ids, varint directories, the leaf spill that
+keeps the root inside the reader's first 16 KiB read), and the byte-identity that certification
+asserts.
 
 **One adapter, deliberately.** There is no second tiler and none is planned, so this is a
 hypothetical seam by the two-adapter rule — it earns its place as a *module* (locality: the
 determinism rules live in one file) rather than as a swap point. If a second ever appears, the
 interface is already the right shape.
+
+**Where its caller draws the delivery line.** `display-pack.mjs`'s `buildPyramidTier` is the one
+consumer, and it writes the archive into the pack directory while naming it in `manifest.json` as a
+`stream` row rather than a `file` row. That is not a spelling: `venue-bundle.mjs` enumerates `file`
+rows into `bundle.json`, so a pyramid recorded as a file would ride the automatic venue download —
+which is precisely the prefetch ADR-0021 clause 5 withdrew.
 
 ---
 
@@ -180,4 +190,20 @@ browser suites still assert on `svg.mapSvg`. Set `NEXT_PUBLIC_PARKMAP_RENDERER=g
 `?parkMap=gl`, to draw through the ported one. The second adapter is now the code's, not the
 design's.
 
-Seam 3 is designed here and not yet implemented.
+Seam 3 is built (`packages/venue-builder/lib/display-pyramid.mjs`, tested through the shipped
+`PMTiles` reader in `test/builder/display-pyramid.mjs`) and has its caller since slice h4: the
+display stage cuts every band bake into `pyramid/<skin>/<band>.pmtiles`. `runDisplayStage` became
+async for it — the cut is `sharp`, and that is the only await in the stage.
+
+**What unblocked it.** The bake used to trim its model to the boundary ring plus a six-cell margin,
+so a venue whose boundary left slack inside its bbox planned one picture and emitted a smaller one
+(big-kahunas planned 244x276 and baked 157x191; kings-island agreed only because its boundary fills
+its bbox). A pyramid tile is addressed by ground position, so that discrepancy stops being cosmetic
+the moment tiles are georeferenced. The trim is gone rather than taught to the planner: plan and
+picture are one extent, and `bakeModel`'s `bounds` are the grid's own corners.
+
+**Still one band at a time on disk.** A bake writes `artifacts/display-bake/<id>--<kit>.png` with no
+band in the name, so baking `--band close` over `--band overview` replaces it, and the pack sees
+whichever band was baked last. The pyramid tier reads the band from the cert rather than the
+filename, so it cuts correctly for the band that is there — but a venue cannot hold two bands at
+once until the bake artifacts are band-addressed. That is the next thing in this seam's way.

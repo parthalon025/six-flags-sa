@@ -364,7 +364,7 @@ export async function runVenuePipeline(park, opts = {}) {
         });
         terrain = prepared?.terrain || null;
       }
-      const disp = runDisplayStage(park.id, { tiles: true, terrain });
+      const disp = await runDisplayStage(park.id, { tiles: true, terrain });
       logStage('display', {
         certified: disp.certified,
         skins: Object.keys(disp.packs).length,

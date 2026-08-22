@@ -18,7 +18,8 @@ import path from 'node:path';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
-import { buildWorldTier } from './display-world.mjs';
+import { boundSkins, buildWorldTier } from './display-world.mjs';
+import { buildPyramid } from './display-pyramid.mjs';
 import { materialTexturesRow, verifyCompiledMaterials } from './display-materials.mjs';
 import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
@@ -508,14 +509,28 @@ export function foldBakeCerts(bakeCerts) {
 
 /**
  * The pack's tier list — what a renderer can actually load, sizes and gaps
- * included. Pure: entries are {name, file?, bytes?, gap?, reason?, meta?}.
+ * included. Pure: entries are {name, file?, stream?, bytes?, gap?, reason?, meta?}.
+ *
+ * `file` and `stream` are the same archive addressed two different ways, and
+ * the difference is a delivery decision rather than a spelling. A `file` row
+ * ships inside the venue download: `venue-bundle.mjs` enumerates exactly those
+ * rows, so naming one pins its bytes into every guest's offline copy. A
+ * `stream` row is served from the deployed origin and fetched by viewport —
+ * ADR-0019 clause 5 puts the pyramids there, and ADR-0021 clause 5 withdrew the
+ * automatic prefetch that would have dragged them back into the download. A
+ * pyramid recorded as `file` would be that prefetch under another name, which
+ * is why the bundle reads the key rather than the extension.
  */
 export function tierManifest(entries) {
   const tiers = {};
   for (const e of entries) {
     tiers[e.name] = e.gap
       ? { gap: true, reason: e.reason }
-      : { file: e.file, bytes: e.bytes, ...(e.meta || {}) };
+      : {
+        ...(e.stream ? { stream: e.stream } : { file: e.file }),
+        bytes: e.bytes,
+        ...(e.meta || {}),
+      };
   }
   return { version: DISPLAY_VERSION, tiers };
 }
@@ -525,15 +540,127 @@ const fileEntry = (name, file, meta) => (existsSync(file)
   : { name, gap: true, reason: `${path.basename(file)} not built` });
 
 /**
+ * Does a set of pyramid cuts clear the gate?
+ *
+ * Exported for the same reason `tilesGatePasses` is: the gap-versus-failure
+ * distinction is the whole rule, and a test that restates it locally proves
+ * nothing about the rule the pack applies.
+ *
+ * `gap: true` is `buildPyramid`'s "sharp will not load" — an absent toolchain
+ * says nothing about this venue, so it is recorded rather than failed, exactly
+ * as an absent tippecanoe is. Anything else that is not `ok` is a fact about
+ * this venue's bytes and must fail. An empty set passes: a venue whose bakes
+ * declare no band is owed no pyramid, and that gap is carried in the manifest
+ * rows rather than in this predicate.
+ *
+ * @param {{ ok?: boolean, gap?: boolean }[]} cuts
+ */
+export const pyramidGatePasses = (cuts) => cuts.every((c) => Boolean(c.gap || c.ok));
+
+/**
+ * Cut every band bake in this venue into a streamed raster pyramid.
+ *
+ * ADR-0019 clause 5 splits the bands by delivery: the mid band ships in the
+ * venue pack (the world tier above), while overview and close are raster
+ * PMTiles on the deployed origin that stream by viewport. So a pyramid is
+ * written into the pack directory — `pyramid/<skin>/<band>.pmtiles`, beside the
+ * world images the download does carry — but named as a `stream` row, which is
+ * what keeps it out of `bundle.json`.
+ *
+ * Only a bake whose cert declares a band is cut. An unbanded bake is the
+ * one-band world Train E shipped, and calling it a band would invent the ground
+ * resolution its tiles are addressed at — the pyramid's `bandId` is not a label,
+ * it is the archive's own name and metadata. So that is a recorded gap.
+ *
+ * @param {{ id: string, templates: object, bakeDir: string,
+ *           bakeCerts: {kit: string, cert: object}[], outDir: string, write?: boolean }} deps
+ * @returns {Promise<{ entries: object[], cuts: object[], written: string[] }>}
+ */
+export async function buildPyramidTier({ id, templates, bakeDir, bakeCerts, outDir, write = true }) {
+  const certByKit = new Map(bakeCerts.map(({ kit, cert }) => [kit, cert]));
+  const entries = [];
+  const cuts = [];
+  const written = [];
+  // The same Skins the world tier places, from the same reading of skins.json:
+  // a band that streams and the world under it must be the same set.
+  for (const template of boundSkins(templates)) {
+    const skin = template.id;
+    const kit = template.bakeKit;
+    const cert = certByKit.get(kit);
+    const bakePng = path.join(bakeDir, `${id}--${kit}.png`);
+    if (!cert || !existsSync(bakePng)) {
+      entries.push({ name: `pyramid:${skin}`, gap: true, reason: `kit "${kit}" not baked — run venues:bake first` });
+      continue;
+    }
+    if (!cert.band) {
+      entries.push({
+        name: `pyramid:${skin}`,
+        gap: true,
+        reason: `bake of "${kit}" declares no band — rebake with --band so its tiles have a ground resolution to be addressed at`,
+      });
+      continue;
+    }
+    if (!cert.bounds) {
+      entries.push({
+        name: `pyramid:${skin}:${cert.band}`,
+        gap: true,
+        reason: `bake of "${kit}" carries no geo bounds — rebake with the current builder`,
+      });
+      continue;
+    }
+    if (!write) {
+      entries.push({
+        name: `pyramid:${skin}:${cert.band}`,
+        gap: true,
+        reason: 'dry run — a pyramid is files, and this stage wrote none',
+      });
+      continue;
+    }
+    const stream = ['pyramid', skin, `${cert.band}.pmtiles`].join('/');
+    const cut = await buildPyramid({
+      id,
+      bandId: cert.band,
+      bakePng,
+      bounds: cert.bounds,
+      outDir: path.join(outDir, 'pyramid', skin),
+    });
+    cuts.push({ skin, kit, band: cert.band, ...cut });
+    if (!cut.ok) {
+      entries.push({ name: `pyramid:${skin}:${cert.band}`, gap: true, reason: cut.reason });
+      continue;
+    }
+    written.push(cut.file);
+    entries.push({
+      name: `pyramid:${skin}:${cert.band}`,
+      stream,
+      bytes: statSync(cut.file).size,
+      meta: {
+        kit,
+        band: cert.band,
+        tiles: cut.tiles,
+        minzoom: cut.minzoom,
+        maxzoom: cut.maxzoom,
+        sha256: cut.sha256,
+      },
+    });
+  }
+  return { entries, cuts, written };
+}
+
+/**
  * The pipeline stage: compile + certify every active Skin for one venue and
  * write the pack sidecars. Publishing to `public/venues` stays a separate,
  * human-gated step — this writes builder data only.
+ *
+ * Async because the pyramid tier is: cutting a band into tiles is `sharp`,
+ * which decodes off-thread. Everything else here stays synchronous, so the
+ * single `await` sits where the work actually is.
  *
  * @param {string} id venue id
  * @param {{ map?: object, pois?: object[], skinIds?: string[], outDir?: string, write?: boolean }} opts
  *   map/pois inject truth (tests); outDir overrides data/venues/<id>/display/.
  */
-export function runDisplayStage(id, opts = {}) {
+export async function runDisplayStage(id, opts = {}) {
   const { map, pois } = opts.map ? { map: opts.map, pois: opts.pois || [] } : loadTruthFor(id);
   const materials = readMaterials();
   const templates = readSkinTemplates();
@@ -645,6 +772,7 @@ export function runDisplayStage(id, opts = {}) {
   // absent ones as recorded gaps.
   let bakes = null;
   let worlds = null;
+  let pyramids = null;
   if (opts.bake) {
     const bakeDir = opts.bake.dir || path.join(MONO_ROOT, 'artifacts', 'display-bake');
     // Iso-tier bakes (`<id>--<kit>--iso-r<N>.*`) stay out of the pack: they
@@ -704,9 +832,38 @@ export function runDisplayStage(id, opts = {}) {
     const worldTier = buildWorldTier({ id, templates, bakeDir, bakeCerts, outDir, write });
     worlds = worldTier.worlds;
     written.push(...worldTier.written);
+    // Pyramid tier (ADR-0019 clause 5): the bands that stream. Cut from the
+    // same bakes the world tier places, georeferenced on the same cert bounds
+    // — which is only sound now that the bake emits its whole planned extent,
+    // because a tile is addressed by ground position and a trimmed picture
+    // would have put every one of them somewhere truth did not.
+    const pyramidTier = await buildPyramidTier({
+      id, templates, bakeDir, bakeCerts, outDir, write,
+    });
+    pyramids = pyramidTier.cuts;
+    written.push(...pyramidTier.written);
+    const built = pyramidTier.cuts.filter((c) => c.ok);
+    const broken = pyramidTier.cuts.filter((c) => !c.ok && !c.gap);
+    const absent = pyramidTier.cuts.filter((c) => c.gap);
+    venueChecks.push(check({
+      key: 'pyramids',
+      claim: 'every band bake in this pack is cut into a raster pyramid the shipped PMTiles reader can address, or the cut is a recorded gap',
+      pass: pyramidGatePasses(pyramidTier.cuts),
+      evidence: pyramidTier.cuts.length
+        ? [
+          ...built.map((c) => `${c.skin}:${c.band} ${c.tiles} tiles z0-${c.maxzoom}, ${c.sizeKb} KB`),
+          ...broken.map((c) => `${c.skin}:${c.band} FAILED — ${c.reason}`),
+          ...absent.map((c) => `${c.skin}:${c.band} gap — ${c.reason}`),
+        ].join('; ')
+        : 'no band bakes — run venues:bake --band to cut the streamed bands',
+      confidence: broken.length || built.length ? 'high' : 'low',
+      falsifier: 'sharp runs and a band bake produces no archive, or one the reader cannot address',
+      soWhat: 'overview and close stream by viewport from the origin (ADR-0019 clause 5); a band with no pyramid is a zoom that never sharpens',
+    }));
     const manifest = tierManifest([
       fileEntry('vector', path.join(outDir, 'base.pmtiles')),
       ...worldTier.entries,
+      ...pyramidTier.entries,
       ...bakeCerts.map(({ kit }) => fileEntry(`bake:${kit}`, path.join(bakeDir, `${id}--${kit}.png`), { kit })),
       primaryKit
         ? fileEntry('credits', path.join(bakeDir, `${id}--${primaryKit}.credits.json`), { kit: primaryKit })
@@ -729,6 +886,7 @@ export function runDisplayStage(id, opts = {}) {
     checks: venueChecks,
     ...(bakes ? { bakes } : {}),
     ...(worlds && Object.keys(worlds).length ? { worlds } : {}),
+    ...(pyramids && pyramids.length ? { pyramids } : {}),
     skins: Object.fromEntries(
       Object.entries(packs).map(([skinId, p]) => [skinId, p.certification]),
     ),
@@ -750,5 +908,5 @@ export function runDisplayStage(id, opts = {}) {
     written.push(bundleFile);
   }
 
-  return { venue: id, certified, packs, anchors, tiles, bakes, worlds, written };
+  return { venue: id, certified, packs, anchors, tiles, bakes, worlds, pyramids, written };
 }

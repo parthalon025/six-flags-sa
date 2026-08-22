@@ -538,7 +538,7 @@ export function bandGeneralizationRow(model) {
  * ADR-0021 clause 3, as a row: generalization removes, never moves.
  *
  * A coarser band is only ever a SUBSET of the band below it — same cell grid,
- * same crop, and for the bands clause 3 holds to a position, the same
+ * same extent, and for the bands clause 3 holds to a position, the same
  * coordinates for everything both bands draw. So this holds the pair to
  * containment on exact marks: a coarse mark with no identical twin in the finer
  * band either moved or was invented, and both are the failure clause 3 exists

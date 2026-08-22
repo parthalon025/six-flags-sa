@@ -780,16 +780,41 @@ export function boundaryDistanceField(cells, cols, rows, terrain, reach = 3) {
 export const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', shop: 'shop', show: 'show', service: 'service' };
 
 /**
+ * The geo bounds of a whole cell grid, WSEN — what the raster tier, the
+ * pyramid and the pack manifest place the emitted image on.
+ *
+ * The grid's own far corner is `[cols, rows]`, not `[cols - 1, rows - 1]`:
+ * `toGeo` maps a cell's top-left, so the bottom-right cell's far edge is one
+ * cell beyond its origin. Off by one here and every tile of the pyramid is
+ * georeferenced a cell short.
+ */
+function gridBounds(cols, rows, toGeo) {
+  if (!toGeo) return null;
+  const [west, north] = toGeo([0, 0]);
+  const [east, south] = toGeo([cols, rows]);
+  const r = (v) => Math.round(v * 1e7) / 1e7;
+  return { west: r(west), south: r(south), east: r(east), north: r(north) };
+}
+
+/**
  * Build the bake model for one venue.
+ *
+ * The model covers the venue's whole planned extent: what `bandBakePlan`
+ * describes is what the painter emits, cell for cell. This used to be trimmed
+ * to the boundary ring's box plus a margin, so a venue whose boundary left
+ * slack inside its bbox planned one picture and baked a smaller one —
+ * big-kahunas planned 244x276 and emitted 157x191, and kings-island agreed
+ * only because its boundary happens to fill its bbox. The moment tiles are
+ * georeferenced that gap is a correctness bug, so the trim is gone rather than
+ * taught to the planner: plan and picture are one extent.
  *
  * @param {object} map map.json body
  * @param {object[]} pois pois.json
- * @param {{ maxCols?: number, tileMetres?: number, margin?: number, band?: string }} opts
+ * @param {{ maxCols?: number, tileMetres?: number, band?: string }} opts
  *   How big a cell is — `tileMetres` outright (what a band plan carries), or
  *   `maxCols` as a column budget for the longer axis (default 240). Given
  *   both, `tileMetres` wins; see `projector` for why it has to be the primary
- *   spelling. `margin` is the crop padding in cells (default 6); `Infinity`
- *   opens the window to the whole grid.
+ *   spelling.
  *
  *   `band` names which zoom band this model is for, and generalizes the content
  *   accordingly (`bandGeneralization`): the model then carries a `band` and a
@@ -983,13 +1008,17 @@ export function bakeModel(map, pois = [], opts = {}) {
     }
   }
 
-  const model = cropModel({
+  const model = {
     version: 1,
     venue: map.meta?.id,
     cols,
     rows,
     tileMetres: Math.round(tileMetres * 100) / 100,
     terrains: TERRAIN_NAMES,
+    // The picture is the whole planned extent, so its geo bounds are the grid's
+    // own corners — the raster tier, the pyramid and the pack manifest all
+    // place the image on these.
+    bounds: gridBounds(cols, rows, toGeo),
     cells,
     ...(shade ? { shade } : {}),
     ...(steep ? { steep } : {}),
@@ -1000,9 +1029,7 @@ export function bakeModel(map, pois = [], opts = {}) {
     tracks,
     badges,
     ...(scatterNotes.length ? { scatterNotes } : {}),
-  }, boundaryRing, opts.margin ?? 6, toGeo);
-  // Declutter after the crop so a cluster whose greedy keeper fell
-  // outside the window still pins an in-window member.
+  };
   model.badges = declutterBadges(model.badges);
   if (opts.band == null) return model;
   // Generalize last, on the finished model, so removal is one readable pass
@@ -1028,78 +1055,4 @@ export function declutterBadges(badges, reach = BADGE_DECLUTTER_REACH_CELLS) {
     kept.push(b);
   }
   return kept.sort((a, b) => a.y - b.y || a.x - b.x);
-}
-
-/**
- * Crop to the venue: the map fills the frame instead of floating in its
- * padded bounds. The window is the boundary ring's box plus a margin
- * (falling back to non-outside content when a venue has no boundary).
- */
-function cropModel(model, boundaryRing, margin, toGeo) {
-  const { cols, rows, cells } = model;
-  // Geo bounds of the window — the raster tier and pack manifest need to
-  // place the baked image on the map (WSEN, like everything MapLibre).
-  const geoBounds = (x0, y0, x1, y1) => {
-    if (!toGeo) return null;
-    const [west, north] = toGeo([x0, y0]);
-    const [east, south] = toGeo([x1 + 1, y1 + 1]);
-    const r = (v) => Math.round(v * 1e7) / 1e7;
-    return { west: r(west), south: r(south), east: r(east), north: r(north) };
-  };
-  let minX = cols; let minY = rows; let maxX = -1; let maxY = -1;
-  if (boundaryRing) {
-    for (const [x, y] of boundaryRing) {
-      if (x < minX) minX = x; if (x > maxX) maxX = x;
-      if (y < minY) minY = y; if (y > maxY) maxY = y;
-    }
-  } else {
-    for (let y = 0; y < rows; y += 1) {
-      for (let x = 0; x < cols; x += 1) {
-        if (TERRAIN_NAMES[cells[y * cols + x]] !== 'outside') {
-          if (x < minX) minX = x; if (x > maxX) maxX = x;
-          if (y < minY) minY = y; if (y > maxY) maxY = y;
-        }
-      }
-    }
-  }
-  if (maxX < 0) return { ...model, bounds: geoBounds(0, 0, cols - 1, rows - 1) };
-  // Boundary ring coords are floats — floor/ceil before the margin so the
-  // window (and every array size derived from it) stays integral.
-  const x0 = Math.max(0, Math.floor(minX) - margin); const y0 = Math.max(0, Math.floor(minY) - margin);
-  const x1 = Math.min(cols - 1, Math.ceil(maxX) + margin); const y1 = Math.min(rows - 1, Math.ceil(maxY) + margin);
-  const newCols = x1 - x0 + 1; const newRows = y1 - y0 + 1;
-  const cropCells = (src) => {
-    const out = new Array(newCols * newRows);
-    for (let y = 0; y < newRows; y += 1) {
-      for (let x = 0; x < newCols; x += 1) {
-        out[y * newCols + x] = src[(y + y0) * cols + (x + x0)];
-      }
-    }
-    return out;
-  };
-  const newCells = cropCells(cells);
-  // Per-cell terrain channels ride along, or the shade lands on the wrong ground.
-  const newShade = model.shade ? cropCells(model.shade) : null;
-  const newSteep = model.steep ? cropCells(model.steep) : null;
-  const shiftPt = ([x, y]) => [x - x0, y - y0];
-  // Entities entirely outside the window (neighboring businesses inside the
-  // map bbox but beyond the venue boundary) leave the model, not just the
-  // canvas — an off-crop building is not part of this world.
-  const ptIn = ([x, y]) => x >= 0 && y >= 0 && x < newCols && y < newRows;
-  const anyIn = (pts) => pts.some(ptIn);
-  return {
-    ...model,
-    cols: newCols,
-    rows: newRows,
-    bounds: geoBounds(x0, y0, x1, y1),
-    cells: newCells,
-    ...(newShade ? { shade: newShade } : {}),
-    ...(newSteep ? { steep: newSteep } : {}),
-    roads: model.roads.map((r) => ({ ...r, pts: r.pts.map(shiftPt) })).filter((r) => anyIn(r.pts)),
-    trees: model.trees.map((t) => ({ ...t, x: t.x - x0, y: t.y - y0 })).filter((t) => ptIn([t.x, t.y])),
-    lotRows: (model.lotRows || []).map((r) => ({ ...r, x: r.x - x0, y: r.y - y0 })).filter((r) => ptIn([r.x, r.y])),
-    buildings: model.buildings.map((b) => ({ ...b, ring: b.ring.map(shiftPt) })).filter((b) => anyIn(b.ring)),
-    tracks: model.tracks.map((t) => ({ ...t, pts: t.pts.map(shiftPt) })).filter((t) => anyIn(t.pts)),
-    badges: model.badges.map((b) => ({ ...b, x: b.x - x0, y: b.y - y0 })).filter((b) => ptIn([b.x, b.y])),
-  };
 }

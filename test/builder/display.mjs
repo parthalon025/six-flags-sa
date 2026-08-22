@@ -41,6 +41,7 @@ const {
   runDisplayStage,
   foldBakeCerts,
   tierManifest,
+  pyramidGatePasses,
 } = await import('../../packages/venue-builder/lib/display-pack.mjs');
 const { displayGeoJson, buildTiles, tippecanoeAvailable } = await import(
   '../../packages/venue-builder/lib/display-tiles.mjs'
@@ -568,31 +569,51 @@ await check('every Skin bakeKit binding names a kit on disk', async () => {
   return true;
 });
 
-await check('the crop window is integral and tightens to the boundary', () => {
+await check('the grid is the planned extent, whatever the boundary encloses', () => {
+  // A boundary covering a fifth of the bbox. It used to shrink the picture to
+  // its own box plus a margin; it now decides only which cells are inside the
+  // venue, never how big the picture is.
   const tight = {
     ...BAKE_MAP,
     boundary: [[0.004, 0.004], [0.006, 0.004], [0.006, 0.006], [0.004, 0.006]],
   };
-  const full = bakeModel({ ...tight, boundary: null }, [], { maxCols: 60 });
-  const cropped = bakeModel(tight, [], { maxCols: 60, margin: 2 });
-  assert.ok(Number.isInteger(cropped.cols) && Number.isInteger(cropped.rows), 'grid dims must be integers');
-  assert.equal(cropped.cells.length, cropped.cols * cropped.rows, 'cells must fill the grid exactly');
-  assert.ok(cropped.cols < full.cols && cropped.rows < full.rows, 'crop must tighten to the boundary');
-  assert.equal(JSON.stringify(cropped), JSON.stringify(bakeModel(tight, [], { maxCols: 60, margin: 2 })));
+  const boundless = bakeModel({ ...tight, boundary: null }, [], { maxCols: 60 });
+  const bounded = bakeModel(tight, [], { maxCols: 60 });
+  assert.ok(Number.isInteger(bounded.cols) && Number.isInteger(bounded.rows), 'grid dims must be integers');
+  assert.equal(bounded.cells.length, bounded.cols * bounded.rows, 'cells must fill the grid exactly');
+  assert.equal(bounded.cols, boundless.cols, 'the boundary must not narrow the picture');
+  assert.equal(bounded.rows, boundless.rows, 'nor shorten it');
+  // The boundary still does its real job: it is what makes cells "outside".
+  const outside = Number(Object.keys(bounded.terrains).find((v) => bounded.terrains[v] === 'outside'));
+  assert.ok(bounded.cells.some((c) => c === outside), 'ground beyond the boundary reads as outside');
+  assert.ok(!boundless.cells.some((c) => c === outside), 'and a venue with no boundary has none');
+  assert.equal(JSON.stringify(bounded), JSON.stringify(bakeModel(tight, [], { maxCols: 60 })));
   return true;
 });
 
-await check('the bake model carries geo bounds of its crop window', () => {
-  const full = bakeModel({ ...BAKE_MAP, boundary: null }, [], { maxCols: 60 });
-  const cropped = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 });
-  for (const m of [full, cropped]) {
+/* A boundary tucked into one corner of BAKE_MAP's bbox — small enough that a
+ * trim would bite, and clear of every bbox edge so a trimmed origin moves in
+ * both axes rather than clamping to zero. Cells x 18..30, y 12..24 on the
+ * 60x60 grid below. */
+const CORNER_BOUNDED = {
+  ...BAKE_MAP,
+  boundary: [[0.003, 0.006], [0.005, 0.006], [0.005, 0.008], [0.003, 0.008]],
+};
+
+await check('the bake model is georeferenced against its whole grid', () => {
+  const boundless = bakeModel({ ...BAKE_MAP, boundary: null }, [], { maxCols: 60 });
+  const bounded = bakeModel(CORNER_BOUNDED, [], { maxCols: 60 });
+  for (const m of [boundless, bounded]) {
     assert.ok(m.bounds, 'bounds ride every model');
     assert.ok(m.bounds.west < m.bounds.east && m.bounds.south < m.bounds.north, 'WSEN ordering');
-    assert.ok(m.bounds.west >= -0.001 && m.bounds.east <= 0.011, 'inside the map bbox');
+    // BAKE_MAP's bbox NW corner, straight off the fixture: the grid starts
+    // where truth's own rectangle starts, wherever the boundary happens to sit.
+    assert.equal(m.bounds.west, 0, 'the grid starts at the bbox west edge');
+    assert.equal(m.bounds.north, 0.01, 'and at its north edge');
   }
-  const span = (b) => (b.east - b.west) * (b.north - b.south);
-  assert.ok(span(cropped.bounds) < span(full.bounds), 'the crop window tightens the geo bounds');
-  assert.deepEqual(cropped.bounds, bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 1 }).bounds, 'deterministic');
+  assert.deepEqual(bounded.bounds, boundless.bounds,
+    'the boundary changes what is painted, never where the picture sits');
+  assert.deepEqual(bounded.bounds, bakeModel(CORNER_BOUNDED, [], { maxCols: 60 }).bounds, 'deterministic');
   return true;
 });
 
@@ -643,20 +664,33 @@ await check('the LDtk debug export mirrors the model exactly', async () => {
   return true;
 });
 
-await check('entities outside the crop window leave the model', () => {
+await check('everything truth places inside the bbox stays in the model', () => {
+  // The mirror of the case above. Cutting the picture to the boundary also cut
+  // the content: a footprint or a pin beyond the ring left the model entirely,
+  // and the plan still claimed the whole bbox. Both now survive, at the cell
+  // the projector puts them in.
   const withOutsider = {
     ...BAKE_MAP,
     boundary: [[0.004, 0.004], [0.009, 0.004], [0.009, 0.009], [0.004, 0.009]],
     building: [
-      { r: [[0.005, 0.005], [0.006, 0.005], [0.006, 0.006]] }, // inside the window
+      { r: [[0.005, 0.005], [0.006, 0.005], [0.006, 0.006]] }, // inside the ring
       { r: [[0.0005, 0.0005], [0.001, 0.0005], [0.001, 0.001]] }, // a neighboring business
     ],
   };
   const outsidePoi = { i: 'far-gate', n: 'Far Gate', c: 'gate', lat: 0.0005, lng: 0.0005 };
   const insidePoi = { i: 'near-food', n: 'Near Food', c: 'food', lat: 0.006, lng: 0.006 };
-  const model = bakeModel(withOutsider, [outsidePoi, insidePoi], { maxCols: 60, margin: 1 });
-  assert.equal(model.buildings.length, 1, 'the off-window footprint is not part of this world');
-  assert.deepEqual(model.badges.map((b) => b.kind), ['food'], 'the off-window pin is dropped');
+  const model = bakeModel(withOutsider, [outsidePoi, insidePoi], { maxCols: 60 });
+  assert.equal(model.buildings.length, 2, 'both footprints are in the picture the plan describes');
+  assert.deepEqual(model.badges.map((b) => b.kind).sort(), ['food', 'gate'], 'and both pins');
+  // Positions are the projector's, unshifted: there is no window origin left to
+  // subtract. The in-ring footprint's first vertex is lng/lat 0.005 — halfway
+  // across a bbox spanning 0..0.01 at 60 cells — so it belongs at column 30. Its
+  // row is not 30, and that is the projector being right rather than a fudge: a
+  // degree of latitude is 110574 m against longitude's 111320 at the equator,
+  // and one square cell is sized off the longer axis, so 30 x 110574/111320.
+  const [x, y] = model.buildings[0].ring[0];
+  assert.ok(Math.abs(x - 30) < 1e-6, `column 30 expected, got ${x}`);
+  assert.ok(Math.abs(y - 29.798958) < 1e-6, `row 29.798958 expected, got ${y}`);
   return true;
 });
 
@@ -802,23 +836,29 @@ await check('an unknown band is refused at the bake, not silently ignored', () =
   return true;
 });
 
-await check('crop shifts roads with the window', () => {
-  const model = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 2 });
+await check('roads are placed by the projector, on the grid the plan asked for', () => {
+  // The corner boundary is what makes this a claim: a trim would have moved
+  // the grid origin onto it and re-expressed every road point against that.
+  const model = bakeModel(CORNER_BOUNDED, [], { maxCols: 60 });
   assert.ok(model.roads.length >= 1, 'path polyline expected');
   for (const road of model.roads) {
     for (const [x, y] of road.pts) {
-      assert.ok(x >= -2 && x <= model.cols + 2 && y >= -2 && y <= model.rows + 2,
-        'road points must live in the cropped window');
+      assert.ok(x >= 0 && x <= model.cols && y >= 0 && y <= model.rows,
+        `road point ${x},${y} must live on the planned grid`);
     }
   }
+  // BAKE_MAP's path runs at lat 0.005 — the middle of a bbox 0.01 tall — so on
+  // the planned grid it crosses at mid height, corner boundary or not.
+  const [, y] = model.roads[0].pts[0];
+  assert.ok(Math.abs(y - model.rows / 2) < 1, `the path should cross mid-grid, got row ${y}`);
   return true;
 });
 
 /* ------------------------------------------------------------ the stage -- */
 
-await check('runDisplayStage writes spec + certification, twice byte-identical', () => {
+await check('runDisplayStage writes spec + certification, twice byte-identical', async () => {
   const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
-  const first = runDisplayStage('test-park', {
+  const first = await runDisplayStage('test-park', {
     map: FIXTURE_MAP,
     pois: FIXTURE_POIS,
     outDir,
@@ -828,7 +868,7 @@ await check('runDisplayStage writes spec + certification, twice byte-identical',
   const snapshot = new Map(
     readdirSync(outDir).map((f) => [f, readFileSync(path.join(outDir, f), 'utf8')]),
   );
-  const second = runDisplayStage('test-park', { map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir });
+  const second = await runDisplayStage('test-park', { map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir });
   assert.equal(second.certified, true);
   for (const [f, body] of snapshot) {
     assert.equal(readFileSync(path.join(outDir, f), 'utf8'), body, `${f} changed on a no-op rerun`);
@@ -836,9 +876,9 @@ await check('runDisplayStage writes spec + certification, twice byte-identical',
   return true;
 });
 
-await check('runDisplayStage threads injected landCover into every skin spec', () => {
+await check('runDisplayStage threads injected landCover into every skin spec', async () => {
   const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
-  const result = runDisplayStage('test-park', {
+  const result = await runDisplayStage('test-park', {
     map: FIXTURE_MAP_TWO_LANDS,
     pois: FIXTURE_POIS,
     outDir,
@@ -874,7 +914,7 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
     checks: [{ key: 'style_terrain_palette', pass: false, evidence: 'iso fixture' }],
   }));
   writeFileSync(path.join(bakeDir, 'test-park--rpg-overworld--iso-r0.png'), 'png-bytes');
-  const result = runDisplayStage('test-park', {
+  const result = await runDisplayStage('test-park', {
     map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir, bake: { dir: bakeDir },
   });
   assert.deepEqual(Object.keys(result.bakes).sort(), ['island-brochure', 'rpg-overworld'],
@@ -902,10 +942,177 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
   assert.deepEqual(trailWorld.bounds, { west: 0, south: 0, east: 0.01, north: 0.01 }, 'sidecar echoes the bake bounds');
   assert.equal(readFileSync(path.join(outDir, 'trail.world.png'), 'utf8'), 'png-bytes', 'the bake PNG lands in the pack');
   assert.equal(result.worlds.trail.kit, 'island-brochure');
-  const empty = runDisplayStage('test-park', {
+  const empty = await runDisplayStage('test-park', {
     map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-')), bake: { dir: mkdtempSync(path.join(tmpdir(), 'nobakes-')) },
   });
   assert.equal(empty.certified, false, 'no bakes = recorded gap, stage fails honestly');
+  return true;
+});
+
+/* ------------------------------------------------ the pyramid tier -- */
+
+/*
+ * ADR-0019 clause 5 / ADR-0021 clause 5. The mid band ships inside the venue
+ * download as the world tier; overview and close are cut into raster PMTiles
+ * that stream by viewport from the deployed origin, and the automatic prefetch
+ * that would have blurred the two was withdrawn. So the pack has to do three
+ * things these cases hold it to: cut a pyramid for every band bake, refuse to
+ * guess a band for a bake that does not declare one, and name the archive
+ * WITHOUT pinning it into the offline bundle.
+ */
+
+/** A flat-colour PNG of known size — a stand-in band bake sharp can really read. */
+async function paintBake(file, width, height, rgb) {
+  const sharp = (await import('sharp')).default;
+  const raw = Buffer.alloc(width * height * 3);
+  for (let i = 0; i < width * height; i += 1) {
+    raw[i * 3] = rgb[0]; raw[i * 3 + 1] = rgb[1]; raw[i * 3 + 2] = rgb[2];
+  }
+  await sharp(raw, { raw: { width, height, channels: 3 } }).png().toFile(file);
+  return file;
+}
+
+const BAND_BOUNDS = { west: 0, south: 0, east: 0.01, north: 0.01 };
+
+/** A bake dir holding one bake per named kit, each cert as given. */
+async function bakeDirWith(certs) {
+  const { writeFileSync } = await import('node:fs');
+  const dir = mkdtempSync(path.join(tmpdir(), 'bandbakes-'));
+  for (const [kit, spec] of Object.entries(certs)) {
+    const { band, png = 'real', bounds = BAND_BOUNDS } = spec;
+    writeFileSync(path.join(dir, `test-park--${kit}.style-cert.json`), JSON.stringify({
+      certified: true,
+      signature: `sig-${kit}`,
+      bounds,
+      ...(band ? { band } : {}),
+      checks: [{ key: 'style_terrain_palette', pass: true, evidence: 'fixture' }],
+    }));
+    writeFileSync(path.join(dir, `test-park--${kit}.credits.json`), '{"assets":[]}');
+    const bakePng = path.join(dir, `test-park--${kit}.png`);
+    if (png === 'real') await paintBake(bakePng, 640, 384, [40, 90, 160]);
+    else writeFileSync(bakePng, png);
+  }
+  return dir;
+}
+
+const stageWithBakes = async (bakeDir, outDir) => runDisplayStage('test-park', {
+  map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir, bake: { dir: bakeDir },
+});
+
+await check('an absent sharp is a pyramid gap; a band that will not cut is a failure', () => {
+  // Driven through the exported gate rather than a local restatement of it, for
+  // the reason the sibling tiles case gives: a test that re-implements the rule
+  // drifts from the rule the pack applies and passes anyway.
+  assert.equal(pyramidGatePasses([{ ok: false, gap: true, reason: 'sharp not installed' }]), true,
+    'an absent native module says nothing about this venue');
+  assert.equal(pyramidGatePasses([{ ok: false, reason: 'close pyramid failed: bake not found' }]), false,
+    'a cutter that ran and failed is a fact about this venue');
+  assert.equal(pyramidGatePasses([{ ok: true }, { ok: false, reason: 'boom' }]), false,
+    'one broken band fails the set');
+  assert.equal(pyramidGatePasses([{ ok: true }, { ok: false, gap: true, reason: 'no sharp' }]), true);
+  assert.equal(pyramidGatePasses([]), true, 'a venue owed no pyramid is not a failing one');
+  return true;
+});
+
+await check('a band bake is cut into a pyramid the shipped reader can address', async () => {
+  const { existsSync, openSync, readSync, fstatSync } = await import('node:fs');
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const bakeDir = await bakeDirWith({ 'island-brochure': { band: 'overview' } });
+  const result = await stageWithBakes(bakeDir, outDir);
+
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  const row = manifest.tiers['pyramid:trail:overview'];
+  assert.ok(row && !row.gap, `expected a pyramid tier, got ${JSON.stringify(row)}`);
+  assert.equal(row.stream, 'pyramid/trail/overview.pmtiles', 'streamed, so addressed by url path');
+  assert.equal(row.band, 'overview');
+  assert.equal(row.kit, 'island-brochure');
+  assert.ok(row.bytes > 0, 'the archive has bytes');
+  // 640x384 at 512 px tiles is two levels: z1 is the bake (2x1 tiles), z0 the
+  // whole band halved into one. Three tiles, and the row must say so.
+  assert.equal(row.minzoom, 0);
+  assert.equal(row.maxzoom, 1);
+  assert.equal(row.tiles, 3, '2x1 at native plus 1 overview tile');
+
+  const file = path.join(outDir, 'pyramid', 'trail', 'overview.pmtiles');
+  assert.ok(existsSync(file), 'the archive is on disk where the manifest says');
+  // Round-trip through the SHIPPED reader: a row that names an archive the
+  // client cannot open is the failure this tier exists to prevent.
+  const { PMTiles } = await import('pmtiles');
+  const fd = openSync(file, 'r');
+  const size = fstatSync(fd).size;
+  const archive = new PMTiles({
+    getKey: () => file,
+    getBytes: async (offset, length) => {
+      const len = Math.max(0, Math.min(length, size - offset));
+      const buf = Buffer.alloc(len);
+      if (len) readSync(fd, buf, 0, len, offset);
+      return { data: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) };
+    },
+  });
+  const header = await archive.getHeader();
+  assert.equal(header.maxZoom, 1);
+  assert.equal(header.minLon, BAND_BOUNDS.west, 'georeferenced on the bake bounds');
+  assert.equal(header.maxLat, BAND_BOUNDS.north);
+  const tile = await archive.getZxy(1, 0, 0);
+  assert.ok(tile && tile.data.byteLength > 0, 'the native-level tile reads back');
+  assert.equal(Buffer.from(tile.data).subarray(1, 4).toString('ascii'), 'PNG', 'and it is a PNG');
+
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  const gate = cert.checks.find((c) => c.key === 'pyramids');
+  assert.ok(gate, 'the pack certifies its pyramids');
+  assert.equal(gate.pass, true, gate.evidence);
+  assert.match(gate.evidence, /trail:overview/, gate.evidence);
+  assert.ok(result.written.includes(file), 'the stage reports the archive it wrote');
+  return true;
+});
+
+await check('an unbanded bake gets no guessed band — it is a recorded gap', async () => {
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const bakeDir = await bakeDirWith({ 'island-brochure': { band: null } });
+  const result = await stageWithBakes(bakeDir, outDir);
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  const row = manifest.tiers['pyramid:trail'];
+  assert.ok(row?.gap, `expected a gap row, got ${JSON.stringify(row)}`);
+  assert.match(row.reason, /band/i, row.reason);
+  assert.ok(!Object.values(manifest.tiers).some((t) => typeof t.stream === 'string'),
+    'nothing is offered for streaming');
+  // A venue that has only ever baked the one-band world still certifies: the
+  // missing pyramid costs prettiness, not function (ADR-0021 clause 1).
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  assert.equal(cert.checks.find((c) => c.key === 'pyramids').pass, true);
+  assert.equal(result.certified, true, 'an unbanded pack is not a broken pack');
+  return true;
+});
+
+await check('a band bake that will not cut fails the pack', async () => {
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  // Declares a band, so a pyramid is owed; the bytes are not a PNG, so sharp
+  // runs and fails. That is a fact about this venue, not an absent toolchain.
+  const bakeDir = await bakeDirWith({ 'island-brochure': { band: 'close', png: 'not-a-png' } });
+  const result = await stageWithBakes(bakeDir, outDir);
+  const cert = JSON.parse(readFileSync(path.join(outDir, 'display-certification.json'), 'utf8'));
+  const gate = cert.checks.find((c) => c.key === 'pyramids');
+  assert.equal(gate.pass, false, gate.evidence);
+  assert.match(gate.evidence, /close/, gate.evidence);
+  assert.equal(result.certified, false, 'a band the guest can never sharpen fails the gate');
+  return true;
+});
+
+await check('the streamed pyramid is named by the pack and not pinned into the download', async () => {
+  const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
+  const bakeDir = await bakeDirWith({ 'island-brochure': { band: 'overview' } });
+  await stageWithBakes(bakeDir, outDir);
+  const manifest = JSON.parse(readFileSync(path.join(outDir, 'manifest.json'), 'utf8'));
+  assert.ok(manifest.tiers['pyramid:trail:overview'].stream, 'the manifest names it');
+  // ADR-0021 clause 5 withdrew automatic prefetch: bands stream and cache, and
+  // offline coverage is a guest-chosen download. A pyramid inside bundle.json
+  // is that prefetch by another name.
+  const bundle = JSON.parse(readFileSync(path.join(outDir, 'bundle.json'), 'utf8'));
+  const pinned = bundle.files.map((f) => f.path);
+  assert.ok(!pinned.some((f) => f.endsWith('.pmtiles') && f.includes('/pyramid/')),
+    `the offline download must not carry a streamed pyramid: ${pinned.filter((f) => f.includes('pyramid'))}`);
+  // The world tier is the offline floor and does stay pinned.
+  assert.ok(pinned.some((f) => f.endsWith('/trail.world.png')), 'the mid-band world still ships offline');
   return true;
 });
 
@@ -995,12 +1202,12 @@ await check('compiled material pins verify; gaps are recorded, drift fails', asy
   return true;
 });
 
-await check('the display stage carries material_textures_resolve on every skin', () => {
+await check('the display stage carries material_textures_resolve on every skin', async () => {
   const cert = certified();
   assert.equal(cert.checks.some((c) => c.key === 'material_textures_resolve'), false,
     'pure certify without an injected report carries no row');
   const outDir = mkdtempSync(path.join(tmpdir(), 'display-'));
-  const staged = runDisplayStage('test-park', { map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir });
+  const staged = await runDisplayStage('test-park', { map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir });
   for (const [skinId, pack] of Object.entries(staged.packs)) {
     const row = pack.certification.checks.find((c) => c.key === 'material_textures_resolve');
     assert.ok(row, `${skinId} lacks the textures row`);
@@ -1095,7 +1302,7 @@ await check('runDisplayStage with an iso sweep: a class starved at every rotatio
       }],
     } : {}),
   });
-  const stage = (writeCerts) => {
+  const stage = async (writeCerts) => {
     const bakeDir = mkdtempSync(path.join(tmpdir(), 'bakes-iso-'));
     writeFileSync(path.join(bakeDir, 'test-park--rpg-overworld.style-cert.json'), flatCert);
     writeFileSync(path.join(bakeDir, 'test-park--rpg-overworld.png'), 'png-bytes');
@@ -1104,7 +1311,7 @@ await check('runDisplayStage with an iso sweep: a class starved at every rotatio
       map: FIXTURE_MAP, pois: FIXTURE_POIS, outDir: mkdtempSync(path.join(tmpdir(), 'display-iso-')), bake: { dir: bakeDir },
     });
   };
-  const starvedEverywhere = stage((dir) => {
+  const starvedEverywhere = await stage((dir) => {
     writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r0.style-cert.json'), isoCert(['road']));
     writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r2.style-cert.json'), isoCert(['road']));
   });
@@ -1117,7 +1324,7 @@ await check('runDisplayStage with an iso sweep: a class starved at every rotatio
   assert.equal(failing.pass, false);
   assert.match(failing.evidence, /road/);
   assert.equal(starvedEverywhere.certified, false, 'a class no rotation ever certified fails the pack');
-  const covered = stage((dir) => {
+  const covered = await stage((dir) => {
     writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r0.style-cert.json'), isoCert(['road']));
     writeFileSync(path.join(dir, 'test-park--rpg-overworld--iso-r2.style-cert.json'), isoCert([]));
   });

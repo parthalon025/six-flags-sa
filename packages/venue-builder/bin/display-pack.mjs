@@ -84,7 +84,7 @@ for (const id of targets) {
       terrain = prepared?.terrain || null;
       if (!json && !terrain) console.log(`${id}: no DEM coverage — compiling flat`);
     }
-    const result = runDisplayStage(id, { tiles, terrain, ...(bake ? { bake: {} } : {}) });
+    const result = await runDisplayStage(id, { tiles, terrain, ...(bake ? { bake: {} } : {}) });
     results.push(result);
     if (!json) {
       const mark = result.certified ? 'ok' : 'FAILED';

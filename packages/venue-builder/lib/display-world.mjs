@@ -32,10 +32,10 @@ export const WORLD_VERSION = 1;
 export const WORLD_PROJECTIONS = ['top-down', 'iso'];
 
 /**
- * Pure: one world's sidecar. Every coordinate it carries is the bake
- * model's crop-window bounds — derived from truth geometry by the bake,
- * echoed here, never invented (the no_repositioning rule's spirit for
- * files that must place an image).
+ * Pure: one world's sidecar. Every coordinate it carries is the bake model's
+ * own extent — the whole grid the band plan asked for, derived from truth
+ * geometry by the bake, echoed here, never invented (the no_repositioning
+ * rule's spirit for files that must place an image).
  */
 export function worldSidecar({ skin, kit, bounds, projection = 'top-down', file, credits = null }) {
   if (!WORLD_PROJECTIONS.includes(projection)) {
@@ -56,6 +56,23 @@ export function worldSidecar({ skin, kit, bounds, projection = 'top-down', file,
 }
 
 /**
+ * The Skins a bake tier is built for: active, bound to a bakeKit, in id order.
+ *
+ * Exported because the pack cuts a second tier from the same bakes — the
+ * streamed pyramids. Two copies of this filter is two answers to "which Skins
+ * does this venue paint", and the pair that goes wrong is the quiet one: a
+ * pyramid for a Skin with no world, or a world with no pyramid, from a
+ * `status` check that drifted in one place only.
+ *
+ * @param {object} templates skins.json rows, keyed by Skin id
+ */
+export function boundSkins(templates) {
+  return Object.keys(templates).sort()
+    .map((skinId) => templates[skinId])
+    .filter((t) => t.status === 'active' && t.bakeKit);
+}
+
+/**
  * Build the world tier for one venue: for each active Skin bound to a
  * bakeKit, place that kit's bake into the pack as `<skin>.world.png` +
  * `<skin>.world.json`. A Skin whose kit has not baked (or whose cert
@@ -71,10 +88,7 @@ export function buildWorldTier({ id, templates, bakeDir, bakeCerts, outDir, writ
   const entries = [];
   const worlds = {};
   const written = [];
-  const bound = Object.keys(templates).sort()
-    .map((skinId) => templates[skinId])
-    .filter((t) => t.status === 'active' && t.bakeKit);
-  for (const template of bound) {
+  for (const template of boundSkins(templates)) {
     const skin = template.id;
     const kit = template.bakeKit;
     const name = `world:${skin}`;
