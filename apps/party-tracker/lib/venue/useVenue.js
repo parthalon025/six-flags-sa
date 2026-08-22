@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useSyncExternalStore } from 'react';
-import { getSnapshot, subscribe } from './store';
+import { getSnapshot, placesAsShippedForResearchOnly, subscribe } from './store';
 
 /**
  * The whole venue snapshot:
@@ -32,4 +32,26 @@ export function useVenueSelector(selector) {
  */
 export function usePois() {
   return useVenueSelector((s) => s.pois);
+}
+
+/**
+ * Shipped Places for the guest ground-truth research lane — the one reader on
+ * this phone that must not see the Overlay, because it measures guests against
+ * what the *builder* shipped and uploads the delta as evidence about that pin.
+ * Painting it with this phone's Contributions would feed the map-improvement
+ * loop its own output back as independent confirmation. The failure is spelled
+ * out at `placesAsShippedForResearchOnly` in lib/venue/store.js.
+ *
+ * Subscribed rather than read straight off the module during render: the lane
+ * files every observation under the venue that was active when it was taken, so
+ * a torn read would measure a guest at one park against another park's pins.
+ *
+ * Anything that draws wants `usePois()`.
+ */
+export function usePlacesAsShippedForResearchOnly() {
+  return useSyncExternalStore(
+    subscribe,
+    placesAsShippedForResearchOnly,
+    placesAsShippedForResearchOnly,
+  );
 }

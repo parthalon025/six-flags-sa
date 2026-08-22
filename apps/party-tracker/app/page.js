@@ -55,7 +55,7 @@ import {
   venuesByDistance,
   withinBounds,
 } from '@/lib/venue/store';
-import { useVenue } from '@/lib/venue/useVenue';
+import { usePlacesAsShippedForResearchOnly, useVenue } from '@/lib/venue/useVenue';
 import { syncVenueBundle } from '@/lib/venue/download';
 import { findPlace, identityOf, placeNav } from '@/lib/venue/ids';
 import {
@@ -279,7 +279,14 @@ function ParkApp({ isSignedIn }) {
       confirmed: venueConfirmed,
       pinned: venuePinned,
     } = useVenue();
-  const movement = useMovementLog({ position, venue, pois: POIS });
+  /* Not POIS. This lane measures how far a guest stood from the pin the
+     *builder* shipped and uploads that delta for builder research; hand it this
+     phone's Overlay and a guest who has just contributed a queue pin is
+     measured against their own Contribution, so the map-improvement loop reads
+     its own output back as independent confirmation. The only reader on this
+     phone that wants unpainted Places — see lib/venue/store.js. */
+  const placesAsShipped = usePlacesAsShippedForResearchOnly();
+  const movement = useMovementLog({ position, venue, pois: placesAsShipped });
   /* Parity-harness escape (issue #527 Testing Decisions): `?displayMap=svg`
      renders ParkMap even with the display flag on, so one flag-on build serves
      both renderers to test/app/display-parity.mjs. Post-mount state flip —
