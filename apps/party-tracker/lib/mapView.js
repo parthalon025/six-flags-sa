@@ -18,7 +18,12 @@
  *   renderer a draw call, the renderer would be deciding what a Member's dot
  *   *means*. It gets positions in lng/lat and decides only how they look —
  *   which is also what keeps clause 3 enforceable, since an Overlay that
- *   cannot carry a screen coordinate cannot be snapped to art.
+ *   cannot carry a screen coordinate cannot be snapped to art. Since slice h11
+ *   that data is `lib/overlayGeo.js`'s FeatureCollections rather than bare
+ *   marks: GeoJSON is still Truth in lng/lat, still renderer-neutral, and it
+ *   is now the *one* conversion — ParkMap.jsx used to project the same rows a
+ *   second time by hand into SVG, and two projections of one Truth is how a
+ *   party dot and the route it is walking end up disagreeing on screen.
  *
  *   Pitch is derived, never passed. ADR-0019 clause 2 makes pitch a function of
  *   zoom and ADR-0021 clause 4 stages that ease clear of every band handoff, so
@@ -32,6 +37,7 @@
  */
 import { pitchForZoom } from '@party-tracker/shared/mapCamera.js';
 import { bandDrawPlan } from './bandPlan.js';
+import { OVERLAY_LAYERS } from './overlayGeo.js';
 
 /** What a renderer must answer before it can be mounted. */
 export const RENDERER_METHODS = Object.freeze([
@@ -78,66 +84,119 @@ function worldLatitude(world) {
   return (bounds.north + bounds.south) / 2;
 }
 
-/** The Overlay's groups. A model with anything else in it is refused rather
- *  than partly drawn: an unrecognised group is either a typo or a caller
- *  trying to smuggle instructions past the seam, and both want saying out
- *  loud. */
-export const OVERLAY_GROUPS = Object.freeze(['members', 'nodes', 'route']);
+/** The Overlay's collections — `overlayGeo.js`'s own list, so a collection
+ *  added there cannot arrive at a seam that does not know the name. A model
+ *  with anything else in it is refused rather than partly drawn: an
+ *  unrecognised key is either a typo or a caller trying to smuggle
+ *  instructions past the seam, and both want saying out loud. */
+export const OVERLAY_GROUPS = OVERLAY_LAYERS;
 
 /** Keys that mean "I have already worked out where this goes on screen".
  *  ADR-0021 clause 3: the live overlay draws from Truth and is never snapped
  *  to art, so a position the seam cannot check against Truth cannot cross it. */
 const SCREEN_KEYS = Object.freeze(['x', 'y', 'px', 'py', 'screen', 'point']);
 
-function frozenMark(mark, where, { needsId }) {
-  if (mark == null || typeof mark !== 'object' || Array.isArray(mark)) {
-    throw new Error(`${where} must be an object with a position`);
+/** A GeoJSON position, checked against Truth rather than trusted.
+ *
+ *  The range test is not belt-and-braces: MapLibre wraps a longitude past 180
+ *  and clamps a latitude past its Mercator limit, so an ordinate that is not
+ *  on Earth draws a plausible-looking mark somewhere else instead of failing. */
+function assertPosition(position, where) {
+  if (!Array.isArray(position)) {
+    throw new Error(`${where} is not a position: overlay geometry is [lng, lat] in Truth`);
   }
-  for (const [key, value] of Object.entries(mark)) {
+  const [lng, lat] = position;
+  if (!finite(lng) || !finite(lat)) {
+    throw new Error(`${where} needs a finite lng and lat, and has ${JSON.stringify(position)}`);
+  }
+  if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+    throw new Error(`${where} is not a position on Earth: ${JSON.stringify(position)}`);
+  }
+}
+
+function assertGeometry(geometry, where) {
+  if (geometry?.type === 'Point') {
+    assertPosition(geometry.coordinates, `${where}.coordinates`);
+    return;
+  }
+  if (geometry?.type === 'LineString') {
+    if (!Array.isArray(geometry.coordinates)) {
+      throw new Error(`${where}.coordinates must be a list of positions`);
+    }
+    geometry.coordinates.forEach((p, i) => assertPosition(p, `${where}.coordinates[${i}]`));
+    return;
+  }
+  throw new Error(`${where} must be a Point or a LineString, and is ${geometry?.type}`);
+}
+
+function frozenFeature(feature, where) {
+  if (feature == null || typeof feature !== 'object' || Array.isArray(feature)) {
+    throw new Error(`${where} must be a GeoJSON Feature`);
+  }
+  const properties = feature.properties ?? {};
+  for (const [key, value] of Object.entries(properties)) {
     if (typeof value === 'function') {
       throw new Error(
-        `${where}.${key} is a function: the overlay crosses this seam as data, never as a `
-          + 'draw call — the renderer decides how a mark looks, not what it means',
+        `${where}.properties.${key} is a function: the overlay crosses this seam as data, never `
+          + 'as a draw call — the renderer decides how a mark looks, not what it means',
       );
     }
     if (SCREEN_KEYS.includes(key)) {
       throw new Error(
-        `${where}.${key} is a screen coordinate: overlay positions are Truth in lng/lat, `
-          + 'never a place on the painted art (ADR-0021 clause 3)',
+        `${where}.properties.${key} is a screen coordinate: overlay positions are Truth in `
+          + 'lng/lat, never a place on the painted art (ADR-0021 clause 3)',
       );
     }
   }
-  if (needsId && (typeof mark.id !== 'string' || mark.id === '')) {
-    throw new Error(`${where} needs an id, so the renderer can be told the same mark moved`);
-  }
-  if (!finite(mark.lng) || !finite(mark.lat)) {
-    throw new Error(`${where} needs a finite lng and lat`);
-  }
-  return Object.freeze({ ...mark });
+  assertGeometry(feature.geometry, `${where}.geometry`);
+  // A copy, not the caller's own object frozen in place: the seam checks what
+  // crosses it, it does not reach back and change what the caller is holding.
+  return Object.freeze({ ...feature });
 }
 
-function frozenGroup(marks, where, options) {
-  if (!Array.isArray(marks)) throw new Error(`overlay ${where} must be an array`);
-  return Object.freeze(marks.map((mark, i) => frozenMark(mark, `${where}[${i}]`, options)));
+function frozenCollection(collection, where) {
+  if (collection?.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
+    throw new Error(`overlay ${where} must be a GeoJSON FeatureCollection`);
+  }
+  const seen = new Set();
+  const features = collection.features.map((feature, i) => {
+    const frozen = frozenFeature(feature, `${where}[${i}]`);
+    /* Unique inside the collection, and that is the rule rather than "every
+       feature has one". `overlayGeo` answers null for a mark nobody named and
+       a Party with two unnamed Members is an ordinary Party — but two features
+       sharing an id is how MapLibre's feature-state lights the wrong dot,
+       which on a map of people reads as a Member teleporting. */
+    if (frozen.id != null) {
+      if (seen.has(frozen.id)) {
+        throw new Error(`overlay ${where} has two features with id ${JSON.stringify(frozen.id)}`);
+      }
+      seen.add(frozen.id);
+    }
+    return frozen;
+  });
+  return Object.freeze({ type: 'FeatureCollection', features: Object.freeze(features) });
 }
 
 function normalizeOverlay(model) {
   if (model == null || typeof model !== 'object' || Array.isArray(model)) {
-    throw new Error('an overlay is an object of marks: { members, nodes, route }');
+    throw new Error(`an overlay is overlayGeoJson()'s answer: { ${OVERLAY_GROUPS.join(', ')} }`);
   }
   for (const key of Object.keys(model)) {
     if (!OVERLAY_GROUPS.includes(key)) {
       throw new Error(
-        `unknown overlay group: ${key}. The overlay crosses as data — `
+        `unknown overlay collection: ${key}. The overlay crosses as data — `
           + `${OVERLAY_GROUPS.join(', ')} — never as draw calls or layers`,
       );
     }
   }
-  return Object.freeze({
-    members: frozenGroup(model.members ?? [], 'members', { needsId: true }),
-    nodes: frozenGroup(model.nodes ?? [], 'nodes', { needsId: true }),
-    route: frozenGroup(model.route ?? [], 'route', { needsId: false }),
-  });
+  return Object.freeze(
+    Object.fromEntries(
+      OVERLAY_GROUPS.map((name) => [
+        name,
+        frozenCollection(model[name] ?? { type: 'FeatureCollection', features: [] }, name),
+      ]),
+    ),
+  );
 }
 
 export function mountMapView(
@@ -269,7 +328,11 @@ export function mountMapView(
       move(next, Object.freeze({ durationMs }));
     },
 
-    /** Members, quest nodes and the route, as Truth. */
+    /** Members, Marks, placed pins, Places and the route, as Truth —
+     *  `overlayGeoJson()`'s five FeatureCollections. A caller may send only
+     *  what changed; the ones it leaves out cross empty, because a collection
+     *  that simply went missing would leave the last frame's features on
+     *  screen with nothing left to clear them. */
     setOverlay: (model) => {
       assertAlive();
       renderer.overlay(normalizeOverlay(model));

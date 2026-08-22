@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const parkMap = readFileSync(
-  new URL('../../apps/party-tracker/components/ParkMap.jsx', import.meta.url),
+  new URL('../../apps/party-tracker/components/ParkMapSvg.jsx', import.meta.url),
   'utf8',
 );
 const page = readFileSync(
@@ -44,7 +44,7 @@ assert.match(
 );
 
 const staticWorldStart = parkMap.indexOf('const ParkMapStaticWorld = memo(');
-const parkMapStart = parkMap.indexOf('function ParkMap(', staticWorldStart);
+const parkMapStart = parkMap.indexOf('function ParkMapSvg(', staticWorldStart);
 const staticWorld = parkMap.slice(staticWorldStart, parkMapStart);
 for (const movingProp of ['me', 'members', 'heading', 'selected', 'route', 'puck']) {
   assert.doesNotMatch(

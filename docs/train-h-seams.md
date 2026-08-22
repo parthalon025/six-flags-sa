@@ -58,10 +58,11 @@ grow any surface a caller has not asked for before those seams land.
 
 ## 2. Map view — `apps/party-tracker/lib/mapView.js` + one component
 
-**The seam is already real.** Two adapters exist today: `ParkMap.jsx` draws the world as SVG, and
-`DisplayMap.jsx` draws it through MapLibre behind `mapLibreDisplayEnabled()` (the #527 spike).
-That is the two-adapters test passing on its own, before Train H adds anything. ADR-0013 item 4's
-real-time PBR tier is the third adapter this seam is being shaped for.
+**The seam is real, and both adapters now sit behind it.** `ParkMapSvg.jsx` draws the world as SVG;
+`ParkMapGl.jsx` draws it through MapLibre over this interface (slice h11), and `ParkMap.jsx` is the
+one caller that picks between them. `DisplayMap.jsx` is still there as the #527 spike behind
+`mapLibreDisplayEnabled()`, outside the seam. ADR-0013 item 4's real-time PBR tier is the third
+adapter this seam is being shaped for.
 
 **Interface.** What a caller must know, and no more:
 
@@ -69,7 +70,8 @@ real-time PBR tier is the third adapter this seam is being shaped for.
   → a view handle.
 - `setCamera({ center, zoom, bearing })` and `easeCamera(camera, { durationMs })`.
 - `setAvailableBands(ids)` — what the device holds, as the cache learns it.
-- `setOverlay(model)` — party dots, route, quest nodes as *data*, never draw calls.
+- `setOverlay(collections)` — Members, Marks, placed pins, Places and the route as *data*, never
+  draw calls: `lib/overlayGeo.js`'s five FeatureCollections, in Truth lng/lat.
 - `hitTest(point)` → the Place at a screen point, or null.
 - `state()` → the last camera and band plan, for a HUD or a perf trace.
 - `destroy()`.
@@ -82,7 +84,7 @@ per-Skin trait belongs.
 
 **What crosses to the renderer**, and nothing else: the World and Skin, the camera with its pitch
 already derived, the band plan (`primary`, `placeholder`, `primaryReady`, `draw` bottom-to-top),
-Places as frozen positions, and a normalised Overlay. A renderer is asked for one thing back —
+Places as frozen positions, the World's own Truth geometry, and a normalised Overlay. A renderer is asked for one thing back —
 `pick(point)` → an id — and the Place itself is looked up this side of the seam, so a renderer can
 never hand a caller a Place the venue has not got.
 
@@ -103,7 +105,10 @@ alignment rule enforceable — the overlay is drawn from Truth, never snapped to
 
 **Retirement, not deletion.** The SVG adapter stays behind this interface until the MapLibre one
 passes the gate. That is the escape hatch, and it costs nothing extra because the seam has to
-exist anyway.
+exist anyway. Since slice h11 the hatch has a switch — `parkMapRenderer()` in
+`lib/mapLibreConfigured.js`, answering `svg` unless a build or a reviewer asks for `gl` — and the
+gate it is waiting on is named: slice h15's perf rows, plus the browser suites' own assertions on
+`svg.mapSvg`.
 
 ---
 
@@ -130,12 +135,49 @@ interface is already the right shape.
 ## Status
 
 Seam 1 is built and tested (`test/app/zoom-bands.test.mjs`), and now has callers: the band chooser
-(`apps/party-tracker/lib/bandPlan.js`) and seam 2 both read the table.
+(`apps/party-tracker/lib/bandPlan.js`), seam 2, and — since the port — the camera arithmetic in
+`packages/shared/mapCamera.js`. Slice h11 gave it the two exports a caller finally asked for:
+`metresPerPixel` and `zoomForResolution`, the conversion `bandForZoom` and `bandBoundaryZooms` had
+been doing privately. Exported rather than copied, because the 512-px-tile offset that makes
+MapLibre's zoom `z` behave like slippy `z + 1` is the easy thing to get wrong in a second place.
 
 Seam 2 is built — `apps/party-tracker/lib/mapView.js`, tested through a recording stand-in renderer
 in `test/app/map-view.test.mjs`, with `apps/party-tracker/lib/mapViewMaplibre.js` as the MapLibre
-adapter and `components/BandedWorldMap.jsx` as its first caller. The SVG map (`ParkMap.jsx`) has not
-been ported behind it yet; that is the retirement slice, and until it happens the second adapter is
-the design's, not the code's.
+adapter and `components/BandedWorldMap.jsx` as its first caller.
+
+**The shipped map is now a caller too (slice h11).** `components/ParkMap.jsx` turns Truth into map
+data — `lib/worldGeo.js` for the World's own geometry, `lib/overlayGeo.js` for the live Overlay —
+and drives the seam through `components/ParkMapGl.jsx`. Three things changed behind the interface
+to make that possible, and each is worth naming because each removed a duplicate:
+
+- `setOverlay` carries `overlayGeoJson`'s FeatureCollections rather than bare marks. The adapter
+  used to convert marks to GeoJSON a second time, so the app had two conversions of one Truth
+  (ADR-0019 clause 4 says why that matters: the party dot and the route it walks must not
+  disagree). Every guard survives the change — functions refused, screen coordinates refused,
+  positions held to Truth in lng/lat — and one is added: ids unique inside a collection, since two
+  features sharing one is how feature-state lights the wrong dot.
+- The style grew the vector tier under the bands. A World with no baked band still draws, which is
+  ADR-0019's "never-fails fallback under every Skin" made true rather than assumed.
+- `packages/shared/mapCamera.js` grew `frameBounds` and `offsetCentre` — what camera shows this box
+  of ground, and where the centre goes so the puck sits low during Go. Pure, so the two answers the
+  SVG renderer worked out inline are now testable without a browser.
+
+**A day/night toggle rebuilds the GL context, and h15 should price that.**
+`ParkMapGl.jsx`'s mount effect is keyed `[world?.id, skin, laidOut]`, and `skin` is the Skin the
+caller passes (`theme ?? null`). MapLibre takes its style at construction, so keying the mount on
+the Skin is the honest way to restyle without a style-diff — but it means switching Skin destroys
+the WebGL context and builds a new one, where the SVG renderer simply repainted in place. Nobody
+has measured what that costs on a mid-range phone, and it is the one place the port is
+*structurally* slower than what it replaces rather than differently fast. Slice h15's perf rows
+should be written knowing it: either they measure a Skin switch as its own row, or they say
+explicitly that they do not. The fix, if the number is bad, is a `setPaintProperty` pass over the
+live style instead of a remount — which is a change behind this seam and not a change to it.
+
+**The SVG adapter is still the shipped one**, through `parkMapRenderer()` — the escape hatch this
+note has always named. Two things hold it open and neither is h11's to close: the gate is slice
+h15's perf rows, which wait on an owner decision (ADR-0021 Open, "The perf gate rows"), and the
+browser suites still assert on `svg.mapSvg`. Set `NEXT_PUBLIC_PARKMAP_RENDERER=gl`, or add
+`?parkMap=gl`, to draw through the ported one. The second adapter is now the code's, not the
+design's.
 
 Seam 3 is designed here and not yet implemented.
