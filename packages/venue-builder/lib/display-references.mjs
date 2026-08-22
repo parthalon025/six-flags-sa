@@ -20,6 +20,11 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { BUILDER_ROOT, OVERRIDE_DIR, readJson } from './venue-io.mjs';
 import { BUILDING_STYLES, TRACK_STYLES, TERRAIN_NAMES } from './display-bake.mjs';
+import { rgbToLab, hexToRgb, deltaE } from './display-style-contract.mjs';
+import {
+  AXES, DERIVATION_LICENSES, GROUNDING_BANDS, GROUNDING_CLASSES, GROUNDING_SOURCES, MAX_GROUPS,
+  MIN_WORLD_CONTRAST,
+} from './display-grounding.mjs';
 
 const REFS_DIR = path.join(OVERRIDE_DIR, '..', 'display', 'references');
 const IMAGES_FILE = path.join(REFS_DIR, 'images.json');
@@ -167,4 +172,229 @@ export function verifyReferenceImages(ledger = readReferenceImageLedger()) {
     if (sha !== row.sha256) problems.push(`${id}: sha256 drift (${sha.slice(0, 12)}… ≠ pinned)`);
   }
   return { problems, reports };
+}
+
+/* ------------------------------------------------------- grounding section
+ *
+ * ADR-0020's consequence — "the venue reference profile gains a grounding
+ * section" — as code. `lib/display-grounding.mjs` measures a World's real
+ * material relationships off aerial imagery; this half is what a reference
+ * profile does with them.
+ *
+ * The load-bearing rule is ADR-0020 clause 4: **design owns treatment, the
+ * venue owns relationships.** A Skin's palette always wins on treatment —
+ * saturation budget, temperature, quantization — and the harvest wins on
+ * relationships: which roofs are the blue ones, which paths are asphalt rather
+ * than gravel. So `groundKit` never introduces a colour; it decides which of
+ * the Skin's *own* declared colours each group of real roofs is painted in.
+ * Every Skin stays distinct, and every Skin stays unmistakably that park.
+ *
+ * Where a Skin's declared palette inverts a relationship the park really has,
+ * that is *disclosed* rather than corrected. Repainting the Skin to match the
+ * ground is the colour-swap failure mode ADR-0020 rejects by name; the reverse
+ * — pretending the park's lawn is lighter than its lot because the Skin says
+ * so — is the harvest lying about what it measured. A row in `disagreements`
+ * is neither.
+ */
+
+/** One World's grounding record — the venue reference profile's own file. */
+export const groundingFile = (venueId) => path.join(OVERRIDE_DIR, venueId, 'display', 'grounding.json');
+
+/** A World's grounding, or null. A World without one still bakes: grounding
+ *  makes a Skin recognisably that park, and its absence costs recognition
+ *  rather than function. */
+export const readVenueGrounding = (venueId) => readJson(groundingFile(venueId), null);
+
+/** Structural validation of a grounding record; returns problems, empty means
+ *  green. The walls the harvest enforces on the way in are re-checked here,
+ *  because a record on disk outlives the run that made it. */
+export function validateGrounding(record) {
+  const problems = [];
+  const at = record?.venue ? `${record.venue} grounding` : 'grounding';
+  if (!record || typeof record !== 'object') return [`${at}: not a record`];
+  if (!record.venue) problems.push(`${at}: names no World`);
+
+  const bands = record.bands || [];
+  for (const band of bands) {
+    if (!GROUNDING_BANDS.includes(band)) {
+      problems.push(`${at}: band "${band}" is not grounded — ADR-0021 clause 8 scopes grounding to ${GROUNDING_BANDS.join(' and ')}`);
+    }
+  }
+  if (!bands.length) problems.push(`${at}: names no bands`);
+
+  const src = record.source || {};
+  if (!GROUNDING_SOURCES.includes(src.source)) {
+    problems.push(`${at}: "${src.source}" is not a derivation-licensed grounding source`);
+  }
+  if (!DERIVATION_LICENSES.includes(src.license)) {
+    problems.push(`${at}: licence "${src.license}" does not permit derivation`);
+  }
+  if (!/^[0-9a-f]{64}$/.test(String(src.sha256 || ''))) {
+    problems.push(`${at}: no sha256 pin on the raster it read`);
+  }
+
+  const observed = [];
+  const classRows = Object.entries(record.classes || {});
+  for (const [cls, row] of classRows) {
+    if (!GROUNDING_CLASSES.includes(cls)) problems.push(`${at}: unknown grounding class "${cls}"`);
+    if (!(row.sampleShare > 0 && row.sampleShare <= 1)) problems.push(`${at}: class "${cls}" sampleShare out of range`);
+    if (!(row.samples > 0)) problems.push(`${at}: class "${cls}" was never sampled`);
+    for (const axis of AXES) {
+      if (!Number.isFinite(row[axis])) problems.push(`${at}: class "${cls}" has no ${axis}`);
+    }
+    if (/^#[0-9a-fA-F]{6}$/.test(String(row.observed || ''))) observed.push(hexToRgb(row.observed));
+    else problems.push(`${at}: class "${cls}" carries no observed colour, so its contrast cannot be re-checked`);
+  }
+
+  // Wall 5, and the emptiness under it. `harvestGrounding` refuses a record
+  // that measured nothing and one that reads the same everywhere; both are
+  // re-checked here because a record on disk outlives the run that made it,
+  // and a hand-edit or an older harvest leaves exactly these shapes behind.
+  // The re-check runs off `observed` — the measured medians the record carries
+  // as provenance — rather than trusting the `contrasts` the record asserts
+  // about itself.
+  if (!classRows.length) {
+    problems.push(`${at}: no usable ground was read — a record of no classes grounds every Skin in nothing`);
+  }
+  let widest = 0;
+  for (let i = 0; i < observed.length; i += 1) {
+    for (let j = i + 1; j < observed.length; j += 1) {
+      widest = Math.max(widest, deltaE(observed[i], observed[j]));
+    }
+  }
+  if (observed.length > 1 && widest < MIN_WORLD_CONTRAST) {
+    problems.push(
+      `${at}: this frame told the harvest nothing about this World — its widest contrast across `
+        + `${observed.length} classes is ΔE ${widest.toFixed(2)}, under ${MIN_WORLD_CONTRAST}`,
+    );
+  }
+
+  for (const [cls, block] of Object.entries(record.groups || {})) {
+    if (!record.classes?.[cls]) problems.push(`${at}: groups name unharvested class "${cls}"`);
+    if (!AXES.includes(block.axis)) problems.push(`${at}: "${cls}" groups split on unknown axis "${block.axis}"`);
+    const groups = block.groups || [];
+    if (groups.length > MAX_GROUPS) problems.push(`${at}: "${cls}" split into more groups than a Skin can spend`);
+    const seen = new Set();
+    for (const group of groups) {
+      if (!group.members?.length) problems.push(`${at}: "${cls}" group ${group.rank} has no members`);
+      for (const key of group.members || []) {
+        if (seen.has(key)) problems.push(`${at}: "${cls}" member ${key} is in two groups`);
+        seen.add(key);
+      }
+    }
+  }
+  return problems;
+}
+
+/**
+ * The Skin's own colours a class may be painted in, coolest-to-warmest order
+ * decided by the caller. Only structures give a Skin more than one: a terrain
+ * class declares a single base, and painting half a park's paths in a colour
+ * the Skin never declared is exactly the override ADR-0020 rejects. Those
+ * relationships reach the Skin through `disagreements` instead.
+ */
+const kitSlotsFor = (kit, cls) => (cls === 'structure' ? kit?.sprites?.building?.roofs || [] : []);
+
+const axisValue = (hex, axis) => rgbToLab(hexToRgb(hex))[AXES.indexOf(axis)];
+
+/** Lab units a relationship must clear at the park before a Skin can be said
+ *  to disagree with it — below this the park has no opinion to contradict. */
+const MIN_RELATION = 3;
+
+/**
+ * Re-express one World's grounding inside one Skin.
+ *
+ * @param kit       the kit spec (`data/display/kits/<id>.json`)
+ * @param grounding that World's grounding record
+ * @param band      which band this is being resolved for; grounding covers
+ *                  overview and mid only
+ * @returns the kit, unedited, plus a `grounding` section
+ * @throws if asked for a band grounding does not reach
+ */
+export function groundKit({ kit, grounding, band = 'mid' }) {
+  if (!GROUNDING_BANDS.includes(band)) {
+    throw new Error(
+      `grounding does not reach the "${band}" band — ADR-0021 clause 8 grounds ${GROUNDING_BANDS.join(' and ')} `
+        + 'only; close-band specificity comes from kit vocabulary positioned by Places truth',
+    );
+  }
+
+  const slots = {};
+  const review = [];
+  for (const [cls, block] of Object.entries(grounding?.groups || {})) {
+    // An out-of-vocabulary axis is not a slot ordering with a shrug in it:
+    // `axisValue` would index Lab at -1, every comparison would be NaN, and
+    // the Skin's colours would land on the park's roof families in whatever
+    // order the sort happened to leave them. `validateGrounding` catches this
+    // on disk; this catches it on a record that never went through validation.
+    if (!AXES.includes(block?.axis)) {
+      throw new Error(
+        `"${cls}" grounding splits on unknown axis "${block?.axis}" — a group ordering can only be read `
+          + `along ${AXES.join(', ')}`,
+      );
+    }
+    const palette = kitSlotsFor(kit, cls);
+    if (palette.length < 1) continue;
+    const ranked = [...palette].sort((a, b) => axisValue(a, block.axis) - axisValue(b, block.axis));
+    const groups = block.groups || [];
+    // Rank onto slot, both ordered along the axis the park actually splits on.
+    // More groups than slots collapses proportionally rather than truncating:
+    // a park with three roof families and two slots still gets its extremes
+    // at opposite ends of the Skin's range.
+    const slotFor = (rank) => (groups.length < 2
+      ? ranked[0]
+      : ranked[Math.round((rank * (ranked.length - 1)) / (groups.length - 1))]);
+    slots[cls] = {
+      axis: block.axis,
+      groups: groups.map((group) => ({
+        rank: group.rank,
+        color: slotFor(group.rank),
+        sampleShare: group.sampleShare,
+        members: group.members,
+      })),
+    };
+    if (groups.length > 1) {
+      review.push({
+        key: `grounding_${cls}`,
+        prompt: `This World's ${cls === 'structure' ? 'roofs' : cls} fall into ${groups.length} real families, `
+          + `split on ${block.axis}. In this Skin they are painted `
+          + `${slots[cls].groups.map((g) => g.color).join(' and ')} — does the split still read as the same `
+          + 'distinction a visitor would make standing in the park?',
+      });
+    }
+  }
+
+  const disagreements = [];
+  const classes = Object.keys(grounding?.classes || {}).filter((c) => kit?.terrain?.[c]?.base).sort();
+  for (let i = 0; i < classes.length; i += 1) {
+    for (let j = i + 1; j < classes.length; j += 1) {
+      const [a, b] = [classes[i], classes[j]];
+      for (const axis of AXES) {
+        const world = grounding.classes[a][axis] - grounding.classes[b][axis];
+        if (Math.abs(world) < MIN_RELATION) continue;
+        const skin = axisValue(kit.terrain[a].base, axis) - axisValue(kit.terrain[b].base, axis);
+        if (Math.sign(world) === Math.sign(skin)) continue;
+        disagreements.push({
+          pair: [a, b],
+          axis,
+          world: world < 0 ? `${a} < ${b}` : `${a} > ${b}`,
+          skin: skin < 0 ? `${a} < ${b}` : `${a} > ${b}`,
+          worldDelta: world,
+          skinDelta: skin,
+        });
+      }
+    }
+  }
+
+  return {
+    ...kit,
+    grounding: {
+      venue: grounding?.venue ?? null,
+      band,
+      source: grounding?.source ?? null,
+      slots,
+      disagreements,
+      review,
+    },
+  };
 }

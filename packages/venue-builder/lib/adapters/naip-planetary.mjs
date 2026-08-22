@@ -302,11 +302,17 @@ export function provenanceFor(item) {
 }
 
 /**
- * The item to read: one that fully covers the venue if any does, most recent
- * capture first. Coverage outranks recency because half a park from this year
- * is worth less than the whole park from two years ago.
+ * Every usable frame over this venue, best first: one that fully covers it
+ * ahead of one that does not, then most recent capture. Coverage outranks
+ * recency because half a park from this year is worth less than the whole park
+ * from two years ago.
+ *
+ * The whole ranked shelf rather than only its head, because the best frame is
+ * sometimes empty: big-kahunas' 2022 quarter-quad is nodata over the entire
+ * park while its 2019 one reads fine, and a caller that never saw past the top
+ * of the ranking would call that park unreadable.
  */
-export function pickItem(items, bounds) {
+export function rankItems(items, bounds) {
   const scored = [];
   for (const item of items || []) {
     if (!item?.assets?.image?.href) continue;
@@ -324,7 +330,12 @@ export function pickItem(items, bounds) {
     if (a.captured === b.captured) return 0;
     return a.captured < b.captured ? 1 : -1;
   });
-  return scored[0] || null;
+  return scored;
+}
+
+/** The one frame to read — the head of `rankItems`, or null when none fits. */
+export function pickItem(items, bounds) {
+  return rankItems(items, bounds)[0] || null;
 }
 
 /** One venue-level `aerial` claim recording which frame this venue was read from. */
@@ -419,4 +430,49 @@ export async function run(ctx = {}, { openTiff = fromUrl, fetchFn = fetch } = {}
   } catch (err) {
     return { adapterId: ID, ok: false, error: err.message };
   }
+}
+
+/**
+ * A probe over one NAIP window, addressed in degrees.
+ *
+ * Reading pixels is not extraction and not persistence — both of which this
+ * adapter deliberately leaves to its callers — it is *addressing*, in the one
+ * coordinate system only this file understands. The affine comes from the
+ * item's own footprint (`geographicToPixel`), never from its bounding box:
+ * trap 2 in this file's header, from the reading side — a rotated quadrilateral
+ * interpolated as a bbox lands hundreds of metres off, which for a caller
+ * sampling ground means reading the neighbouring field and calling it the
+ * midway.
+ *
+ * Zero across every channel this probe returns is NAIP's nodata, and it reads
+ * as nothing rather than as black. A quarter-quad is rotated in WGS84, so the
+ * axis-aligned image has zero-filled corners, and a venue can sit in that
+ * collar while `windowFor` still calls the read `complete` — the footprint
+ * does contain it; the pixels are simply absent. Big Kahuna's best-covering
+ * frame is nodata over the whole park. Handing those zeros back as a colour is
+ * how a harvest comes to report six classes of pure black and call itself
+ * certified. One non-zero channel is a reading: aerial imagery has no true
+ * black, but it does have very dark ground.
+ *
+ * The guard spans exactly the channels the reading spans. NAIP ships four
+ * bands and this probe returns three, so a guard over all four would let
+ * R=G=B=0 with NIR=120 through as `[0, 0, 0]` — pure black handed to the
+ * harvest as a genuine reading, the same failure through a narrower door.
+ */
+export function naipProbe({ item, window, bands, channels = [0, 1, 2] }) {
+  const { toPixel } = geographicToPixel(item);
+  const { left, top, width, height } = window;
+  return {
+    at(lng, lat) {
+      const [fx, fy] = toPixel(lng, lat);
+      const x = Math.floor(fx) - left;
+      const y = Math.floor(fy) - top;
+      if (!(x >= 0 && y >= 0 && x < width && y < height)) return null;
+      const i = y * width + x;
+      const rgb = channels.map((c) => bands?.[c]?.[i]);
+      if (!rgb.every((v) => Number.isFinite(v))) return null;
+      if (rgb.every((v) => v === 0)) return null;
+      return rgb;
+    },
+  };
 }
