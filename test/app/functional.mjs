@@ -240,19 +240,17 @@ const clerkOn = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 if (clerkOn) {
 console.log('\n--- auth (Clerk-on Profile OAuth) ---');
 
-await check('Profile gate shows Sign in and Guest', async () => {
+await check('first paint is the splash, not an in-place OAuth wall', async () => {
   await a.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
   await until(
-    async () => (await a.locator('.authGate .authGateLogin').count()) >= 1,
-    { timeout: 25000, label: 'Profile Sign in button' },
+    async () =>
+      (await a.locator('#intro-splash-title').count()) > 0 ||
+      (await a.locator('.mapSvg path').count()) > 100,
+    { timeout: 25000, label: 'splash or map, not a Clerk OAuth wall' },
   );
-  if (!(await a.locator('.authGate button:has-text("Guest")').count())) {
-    throw new Error('Profile gate missing Guest button');
+  if (await a.locator('.authGate .oauthBtn').count()) {
+    throw new Error('in-place Profile OAuth must not block first paint');
   }
-  const loginHref = await a.locator('.authGate .authGateLogin').getAttribute('href');
-  if (loginHref !== '/sign-in') throw new Error(`Sign in href expected /sign-in, got ${loginHref}`);
-  const shot = process.env.CLERK_E2E_SHOTS;
-  if (shot) await a.screenshot({ path: `${shot.replace(/\/+$/, '')}/profile_login_guest_gate.png`, fullPage: true });
   return true;
 });
 
@@ -2376,7 +2374,7 @@ const e = await intake.newPage();
 await e.goto(BASE, { waitUntil: 'domcontentloaded' });
 await hydrated(e);
 
-await check('the logo splash opens first and release notes stay behind the version control', async () => {
+await check('the logo splash opens first and a tap moves to the welcome gate', async () => {
   const fresh = await browser.newContext({
     viewport: { width: 390, height: 844 },
     permissions: ['geolocation'],
@@ -2389,6 +2387,9 @@ await check('the logo splash opens first and release notes stay behind the versi
     timeout: 10000,
     label: 'the logo splash',
   });
+  if (await p.locator('.authGate').count()) {
+    throw new Error('Profile gate must not sit in front of the splash');
+  }
   if (await p.locator('#update-splash-title').count()) {
     throw new Error('the update splash should not open automatically');
   }
@@ -2401,6 +2402,20 @@ await check('the logo splash opens first and release notes stay behind the versi
   });
   const notesTitle = (await p.locator('#intro-notes-title').innerText()).trim();
   if (!/what's new/i.test(notesTitle)) throw new Error(`notes title: "${notesTitle}"`);
+  await p.locator('.gate:has(#intro-notes-title) .btn').click();
+  await until(async () => (await p.locator('#intro-splash-title').count()) > 0, {
+    timeout: 8000,
+    label: 'back to the splash',
+  });
+  await p.locator('.introSplashCard').click();
+  await until(
+    async () =>
+      (await p.locator('#intro-splash-title').count()) === 0 &&
+      (await p.locator('.gate h2').count()) > 0,
+    { timeout: 10000, label: 'welcome after splash tap' },
+  );
+  const next = (await p.locator('.gate h2').innerText()).trim();
+  if (next !== 'Plan your day') throw new Error(`tap advanced to: "${next}"`);
   await fresh.close();
   return true;
 });

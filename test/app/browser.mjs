@@ -287,14 +287,15 @@ export async function dismissIntroSplash(page, { timeout = 12000 } = {}) {
   do {
     const intro = page.locator('#intro-splash-title');
     if (await intro.count()) {
-      // The intro is a scroll story now: "Get started" only appears once the
-      // reader has been most of the way down, and until then the way out is
-      // "Skip intro". Both are here so this helper works whichever the phone
-      // is showing when it arrives.
-      const primary = page.locator(
-        '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started"), .gate:has(#intro-splash-title) .introSkip',
-      );
-      await primary.first().click({ force: true }).catch(() => {});
+      // Logo splash: tap the card (not the version line) to move on.
+      const card = page.locator('.gate:has(#intro-splash-title) .introSplashCard');
+      if (await card.count()) await card.first().click({ force: true }).catch(() => {});
+      else {
+        const primary = page.locator(
+          '.gate:has(#intro-splash-title) .btn.primary, .gate .btn.primary:has-text("Get started")',
+        );
+        await primary.first().click({ force: true }).catch(() => {});
+      }
       await page.waitForTimeout(600);
       if (!(await intro.count())) return true;
     } else if (!(await page.locator('.gate').count())) {
