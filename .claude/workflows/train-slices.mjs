@@ -44,7 +44,12 @@ Repo rules that are not optional here:
 - Your worktree may have been cut from main. The work these slices build on is
   on branch ${BASE}, which is ahead of main and NOT yet merged. Before you read
   anything or plan anything, run:
-      git fetch origin ${BASE} && git checkout -B slice-work FETCH_HEAD
+      git fetch origin ${BASE} && git checkout -B slice-${slice.id} FETCH_HEAD
+  The branch name MUST carry your slice id. Worktrees in one repository share
+  branch refs, so two lanes on a branch of the same name share one pointer:
+  each commits on top of whatever the other last did, and each records the
+  other's files as deletions. That happened on this train — three lanes were
+  told to use `slice-work` and their commits had to be unpicked by hand.
   Then confirm you are on the right base: scripts/lib/train-plan.mjs must exist.
   If it does not, the fetch failed — stop and report that rather than building
   against the wrong tree. Building on main means rebuilding what already exists,

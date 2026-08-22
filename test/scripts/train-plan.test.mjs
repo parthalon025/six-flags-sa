@@ -309,6 +309,25 @@ assert.throws(
     + 'path too, and reading it from outside the tree is the same leak',
 );
 
+// A fan-out lane must branch under a name carrying its own slice id. Worktrees
+// in one repository share branch refs, so two lanes told to use the same name
+// share one pointer: each commits onto whatever the other last did, and each
+// records the other's files as deletions. Three lanes hit this on one run and
+// their commits had to be unpicked by hand. The prompt said `slice-work`, and
+// a comment saying "do not" would have been just as easy to write and just as
+// unenforced, so it is asserted instead.
+const slicesWf = readFileSync(path.join(REPO, '.claude/workflows/train-slices.mjs'), 'utf8');
+const checkouts = [...slicesWf.matchAll(/git checkout -[Bb] (\S+)/g)].map((m) => m[1]);
+assert.ok(checkouts.length > 0, 'train-slices.mjs no longer tells lanes to branch — move this guard with it');
+for (const name of checkouts) {
+  assert.match(
+    name,
+    /\$\{slice\.id\}|\$\{s\.id\}/,
+    `train-slices.mjs sends every lane to the branch "${name}". Two lanes on one `
+      + 'branch name share a ref and overwrite each other; interpolate the slice id',
+  );
+}
+
 // The two workflow prompts carry the same vacuous-test rubric because workflow
 // scripts have no module resolution and cannot share a constant. That is a
 // forced duplication, so it gets a guard rather than a comment asking nicely:
