@@ -81,7 +81,7 @@ export const DECISIONS = Object.freeze({
       'hold it until h5 lands, leaving the three-Skin distinctness gate unrunnable until then',
     ],
     source: 'ADR-0021 Open',
-    resolved: 'author now against the per-band knobs — h5 already landed, so holding it is obsolete',
+    resolved: 'Owner, 2026-08-22: after the per-band knobs, not twice. h5 has landed, so the wait is already over.',
   },
   b: {
     question: 'Perf gate rows — how are they structured?',
@@ -91,7 +91,8 @@ export const DECISIONS = Object.freeze({
     ],
     also: 'whether zero-blank-tiles survives as a row, now that ADR-0021 removed its correctness rationale',
     source: 'ADR-0021 Open',
-    resolved: 'regression-only CI throttle; zero-blank-tiles is the parent-placeholder functional check, not a correctness gate',
+    resolved: 'Owner, 2026-08-22: NO performance restriction for now. Do not build a perf gate. '
+      + 'Nothing measures frame rate, so a slow map ships unremarked until someone looks — accepted.',
   },
   c: {
     question: 'Train I evidence lane — how does a disputed path position reach a guest?',
@@ -102,7 +103,9 @@ export const DECISIONS = Object.freeze({
     ],
     also: 'the steward review budget, Mapillary share-alike reach, and the OSM write-back path',
     source: 'ADR-0021 Open',
-    resolved: 'extend SHIPPED_GAP_TYPES with path_disputed (ADR-0020 clause 5); OSM write-back stays steward-gated; Google is back-office metadata only',
+    resolved: 'Owner, 2026-08-22: disputes stay BUILDER-SIDE and are NEVER shown to guests. '
+      + 'The seven shipped Gap types stay frozen. NOTE: main already shipped an eighth type, '
+      + '`path_disputed`, decided the other way before this answer — see slice i18.',
   },
   crop: {
     question: 'Does a band plan describe the World, or the cropped PNG?',
@@ -114,7 +117,9 @@ export const DECISIONS = Object.freeze({
       + '244x276 and bakes 157x191; kings-island matches only because its boundary fills '
       + 'its bbox. Becomes a correctness bug the moment tiles are georeferenced.',
     source: 'surfaced while building slice h1',
-    resolved: 'the plan describes the World; the pyramid georeferences against cert.bounds (the crop)',
+    resolved: 'Owner, 2026-08-22: do not trim at all — emit the full planned extent, so the plan '
+      + 'and the picture are the same thing. NOTE: main still crops (cropModel is live), decided '
+      + 'the other way before this answer — see slice h19.',
   },
 });
 
@@ -269,6 +274,27 @@ export const SLICES = Object.freeze([
     probe: (t) => /fps|throttle/i.test(t.read('scripts/ci/pre-merge-vertical.mjs')),
   },
 
+  {
+    // Divergence, not new scope. main was built while `crop` was recorded the
+    // other way: cropModel is still live, so a venue whose boundary leaves slack
+    // plans one picture and emits a smaller one (big-kahunas plans 244x276,
+    // bakes 157x191). The owner's answer is to stop trimming, which makes the
+    // plan and the picture the same thing and deletes the reconciliation rather
+    // than getting it right.
+    //
+    // Anchored on display-bands.mjs so this cannot read as built on a tree that
+    // simply predates cropping: a removal is satisfied by any tree from before
+    // the thing existed, which is the trap the baseline check exists to catch.
+    id: 'h19',
+    train: 'H',
+    size: 'M',
+    title: 'Stop trimming the bake — emit the full planned extent (owner decision: crop)',
+    needs: ['h4'],
+    probe: (t) =>
+      t.has('packages/venue-builder/lib/display-bands.mjs')
+      && !t.read('packages/venue-builder/lib/display-bake.mjs').includes('cropModel'),
+  },
+
   // ---- Train I
   {
     id: 'i3',
@@ -323,6 +349,22 @@ export const SLICES = Object.freeze([
     blocked: 'c',
     probe: (t) =>
       t.read('packages/venue-builder/lib/adapters/registry.mjs').includes('google-places'),
+  },
+  {
+    // Divergence, not new scope. main shipped an eighth guest-facing Gap type,
+    // `path_disputed`, while `c` was recorded as "extend SHIPPED_GAP_TYPES".
+    // The owner's answer is the opposite: disputes stay builder-side and are
+    // never shown to guests, and the seven stay frozen. Removing a shipped type
+    // touches the phone's own vocabulary, so it is a slice rather than an edit.
+    id: 'i18',
+    train: 'I',
+    size: 'M',
+    title: 'Unship path_disputed — disputes stay builder-side (owner decision: c)',
+    needs: ['i16'],
+    probe: (t) =>
+      t.has('packages/venue-builder/lib/imagery-claims.mjs')
+      && t.read('packages/venue-builder/lib/ship-gaps.mjs').includes('SHIPPED_GAP_TYPES')
+      && !t.read('packages/venue-builder/lib/ship-gaps.mjs').includes('path_disputed'),
   },
 ]);
 

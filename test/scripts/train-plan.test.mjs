@@ -167,13 +167,42 @@ const FIXTURES = {
       'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['gl'];",
     },
   },
+  h15: {
+    before: [{ 'scripts/ci/pre-merge-vertical.mjs': 'await runBrowserVertical();' }],
+    after: { 'scripts/ci/pre-merge-vertical.mjs': 'await zoomSweep({ minFps: 30 });' },
+  },
+  h19: {
+    before: [
+      // cropping still live
+      { 'packages/venue-builder/lib/display-bands.mjs': 'export function bandBakePlan() {}',
+        'packages/venue-builder/lib/display-bake.mjs': 'const m = cropModel(model, 6);' },
+      // cropping gone, but on a tree from before band plans existed — a removal
+      // is true of any tree predating the thing, which is not the same as done
+      { 'packages/venue-builder/lib/display-bake.mjs': 'export function bakeModel() {}' },
+    ],
+    after: {
+      'packages/venue-builder/lib/display-bands.mjs': 'export function bandBakePlan() {}',
+      'packages/venue-builder/lib/display-bake.mjs': 'const bounds = gridBounds(cols, rows, toGeo);',
+    },
+  },
+  i18: {
+    before: [
+      { 'packages/venue-builder/lib/imagery-claims.mjs': 'export function claims() {}',
+        'packages/venue-builder/lib/ship-gaps.mjs': "export const SHIPPED_GAP_TYPES = ['path', 'path_disputed'];" },
+      // type gone, but the builder-side lane it was replaced by never landed
+      { 'packages/venue-builder/lib/ship-gaps.mjs': "export const SHIPPED_GAP_TYPES = ['path'];" },
+      // lane landed, but ship-gaps has no vocabulary at all
+      { 'packages/venue-builder/lib/imagery-claims.mjs': 'export function claims() {}',
+        'packages/venue-builder/lib/ship-gaps.mjs': 'export const NOTHING = 1;' },
+    ],
+    after: {
+      'packages/venue-builder/lib/imagery-claims.mjs': 'export function claims() {}',
+      'packages/venue-builder/lib/ship-gaps.mjs': "export const SHIPPED_GAP_TYPES = ['height', 'path'];",
+    },
+  },
   h14: {
     before: [{ 'packages/venue-builder/data/display/kits/iso.json': '{}' }],
     after: { 'packages/venue-builder/data/display/kits/pixel-tycoon.json': '{}' },
-  },
-  h15: {
-    before: [{ [VERTICAL]: 'await runBrowserVertical();' }],
-    after: { [VERTICAL]: 'await zoomSweep({ minFps: 30 });' },
   },
   i3: {
     before: [{ 'packages/venue-builder/lib/external-claims.mjs': "source: 'osm'" }],
@@ -288,6 +317,18 @@ for (const s of SLICES) {
     );
   });
 }
+
+// A fixture for a slice that no longer exists is a stale claim, and it reads as
+// deliberate: someone finding it later has to work out whether the slice was
+// dropped on purpose or lost. The reverse check above catches a slice with no
+// fixture; this is the same guard pointing the other way, and it is how the
+// h15 fixture surfaced when that slice was descoped.
+const sliceIds = new Set(SLICES.map((sl) => sl.id));
+assert.deepEqual(
+  Object.keys(FIXTURES).filter((id) => !sliceIds.has(id)),
+  [],
+  'FIXTURES names slices that are not in SLICES — remove them, or restore the slice',
+);
 
 for (const rel of Object.keys(FIXTURES).flatMap((id) => [
   ...FIXTURES[id].before.flatMap((f) => Object.keys(f)),
