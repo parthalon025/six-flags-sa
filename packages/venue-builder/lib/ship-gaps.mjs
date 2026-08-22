@@ -241,10 +241,12 @@ export function shippedGapsForVenue({
   pois = [],
   map = {},
   attractions = null,
+  imageryGaps = [],
 } = {}) {
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
+    ...imageryGaps,
   ];
   return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });
 }

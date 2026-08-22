@@ -407,6 +407,7 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
       gaps: [
         { type: 'height', target: 'a' },
         { type: 'path', target: null },
+        { type: 'path_disputed', target: null },
         { type: 'wizard', target: 'nope' },
         null,
       ],
@@ -414,6 +415,7 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
     [
       { type: 'height', target: 'a' },
       { type: 'path', target: null },
+      { type: 'path_disputed', target: null },
     ],
   );
   assert.equal(gapsUrlFor({ id: 'kings-island' }), '/venues/kings-island.gaps.json');

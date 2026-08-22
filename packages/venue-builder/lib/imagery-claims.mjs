@@ -19,8 +19,9 @@ export const WRITE_MODES = Object.freeze(['truth', 'claim', 'gap']);
 /** Metres of centreline disagreement that count as a dispute, not noise. */
 export const DISPUTE_TOLERANCE_M = 8;
 
-/** Empty until a pass proves byte-identical across consecutive CI runs. */
-export const CI_PROVEN_PASSES = Object.freeze(new Set());
+/** Empty until a pass proves byte-identical across consecutive CI runs.
+ *  A frozen array, not a Set: Set#add still mutates after Object.freeze. */
+export const CI_PROVEN_PASSES = Object.freeze([]);
 
 const finite = (n) => typeof n === 'number' && Number.isFinite(n);
 
@@ -57,7 +58,7 @@ function writeModeFor(extraction, relation) {
   const lane = extraction.lane;
   const proven = lane === 'deterministic'
     && extraction.deterministic === true
-    && CI_PROVEN_PASSES.has(extraction.passId);
+    && CI_PROVEN_PASSES.includes(extraction.passId);
   if (relation === 'disputes') return 'gap';
   if (relation === 'agrees') return 'claim';
   if (relation === 'adds' && proven) return 'truth';

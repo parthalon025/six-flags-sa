@@ -43,7 +43,8 @@ const routed = routeImageryExtractions([
 ], { map: factoryMap });
 
 assert.equal(routed.truth.length, 0, 'Lane A without a CI-proven pass never writes truth');
-assert.equal(CI_PROVEN_PASSES.size, 0, 'no pass is proven until CI says so');
+assert.equal(CI_PROVEN_PASSES.length, 0, 'no pass is proven until CI says so');
+assert.equal(typeof CI_PROVEN_PASSES.add, 'undefined', 'the proven-pass list cannot grow at runtime');
 assert.ok(routed.claims.some((c) => c.kind === 'path' && !c.dissent));
 assert.equal(routed.gaps.length, 1);
 assert.equal(routed.gaps[0].type, 'path_disputed');
@@ -95,5 +96,17 @@ assert.equal(noSink.wrote, false);
 const accepted = writeOsmProposalFile('kings-island', proposal, { accepted: true, write: () => { invoked += 1; } });
 assert.equal(accepted.wrote, true);
 assert.equal(invoked, 1);
+
+const { gapsDocumentFor } = await import('../../packages/venue-builder/lib/venue-io.mjs');
+const shipped = gapsDocumentFor({
+  meta: { id: 'fixture-park' },
+  pois: [],
+  map: factoryMap,
+  extractions: [{ lane: 'agent', kind: 'path', at: offset, label: 'moved-walk' }],
+});
+assert.ok(
+  shipped.gaps.some((g) => g.type === 'path_disputed'),
+  'a disputed extraction reaches the document the phone fetches',
+);
 
 console.log('imagery-claims: ok');

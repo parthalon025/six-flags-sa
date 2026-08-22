@@ -37,6 +37,7 @@ import {
   VENUE_DIR,
 } from '../src/paths.mjs';
 import { shippedGapsForVenue } from './ship-gaps.mjs';
+import { routeImageryExtractions } from './imagery-claims.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
 import { writeRoutingCoverage } from '../src/routing-coverage.mjs';
 
@@ -110,15 +111,17 @@ export const writeJson = (file, value, pretty) => {
  * Gaps this venue ships. Reads builder sidecars (attractions) and walkable
  * geometry; does not invent live ops. Phone-safe: one `{ type, target }` per fact.
  */
-export function gapsDocumentFor({ meta, pois, map }) {
+export function gapsDocumentFor({ meta, pois, map, extractions = [] }) {
   const id = meta?.id;
   const attractions = id ? readJson(venueSidecar(id, 'attractions.json')) : null;
+  const imagery = routeImageryExtractions(extractions, { map: map || {} });
   return shippedGapsForVenue({
     venueId: id,
     meta,
     pois: pois || [],
     map: map || {},
     attractions,
+    imageryGaps: imagery.gaps,
   });
 }
 
