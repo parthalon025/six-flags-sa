@@ -310,17 +310,17 @@ for (const axis of Object.keys(THRESHOLDS)) {
   const kits = readdirSync(dir)
     .filter((f) => f.endsWith('.json'))
     .map((f) => JSON.parse(readFileSync(new URL(f, dir), 'utf8')));
-  assert.equal(kits.length, 6, 'the shipped catalogue is six kits');
+  assert.equal(kits.length, 7, 'the shipped catalogue is seven kits');
 
   const pairs = [];
   for (let i = 0; i < kits.length; i += 1) {
     for (let j = i + 1; j < kits.length; j += 1) pairs.push(specAxesDiffering(kits[i], kits[j]));
   }
-  assert.equal(pairs.length, 15);
+  assert.equal(pairs.length, 21);
 
   for (const axis of ['B3', 'C2']) {
     const n = pairs.filter((s) => s[axis]?.differs).length;
-    assert.equal(n, 15, `${axis} differs on ${n}/15 shipped pairs, not 0 — it is not a dead axis`);
+    assert.equal(n, 21, `${axis} differs on ${n}/21 shipped pairs, not 0 — it is not a dead axis`);
   }
 
   const a5 = pairs.filter((s) => s.A5?.differs).length;

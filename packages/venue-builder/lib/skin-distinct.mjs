@@ -98,8 +98,8 @@ export const AXIS_KNOBS = {
  *      them. What no kit does is override that default.
  *    - `terrain.*.steep.base` likewise ships defaults for the natural surfaces;
  *      no kit overrides them, so A5 reads SAME rather than differing.
- *  None of that makes their axes dead: B3 and C2 differ on all 15 pairs of the
- *  six shipped kits through their other knobs, and the suite pins that. */
+ *  None of that makes their axes dead: B3 and C2 differ on all 21 pairs of the
+ *  seven shipped kits through their other knobs, and the suite pins that. */
 export const SCHEMA_ONLY_KNOBS = [
   'sprites.tree.sprite.asset',
   'sprites.badge.icons.*.asset',

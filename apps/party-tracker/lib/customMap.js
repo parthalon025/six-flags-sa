@@ -28,10 +28,9 @@ const CUSTOM_MAPS = {
   'pixel-tycoon': {
     id: 'pixel-tycoon',
     placement: PLACEMENT_OVERLAY,
-    camera: 'iso',
-    renderer: 'iso',
-    template: 'rct-classic',
-    hideLayers: ['building', 'coaster'],
+    camera: 'mercator',
+    renderer: 'baked',
+    world: { projection: 'top-down' },
   },
   'layered-atlas': {
     id: 'layered-atlas',
