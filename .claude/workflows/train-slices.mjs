@@ -49,7 +49,7 @@ Repo rules that are not optional here:
   branch refs, so two lanes on a branch of the same name share one pointer:
   each commits on top of whatever the other last did, and each records the
   other's files as deletions. That happened on this train — three lanes were
-  told to use `slice-work` and their commits had to be unpicked by hand.
+  told to use one name and their commits had to be unpicked by hand.
   Then CONFIRM YOUR BASE CARRIES YOUR DEPENDENCIES, before you plan anything:
 
       node scripts/train-plan.mjs status

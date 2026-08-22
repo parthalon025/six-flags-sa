@@ -27,7 +27,7 @@
  *   node test/scripts/train-plan.test.mjs
  */
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -308,6 +308,23 @@ assert.throws(
   'wiredInto() accepted an absolute path as its importer — the second argument is a '
     + 'path too, and reading it from outside the tree is the same leak',
 );
+
+// Every workflow script must PARSE as the async function body it is run as.
+// The guards below read these files as text, and text checks pass happily on a
+// file the engine cannot load: an unescaped backtick inside a template literal
+// silently ended the string and broke train-slices.mjs while every grep-based
+// assertion here stayed green. A parse is the cheap check that catches it.
+{
+  const AsyncFn = Object.getPrototypeOf(async function () {}).constructor;
+  for (const wf of readdirSync(path.join(REPO, '.claude/workflows')).filter((f) => f.endsWith('.mjs'))) {
+    const src = readFileSync(path.join(REPO, '.claude/workflows', wf), 'utf8')
+      .replace(/^export const meta/m, 'const meta');
+    assert.doesNotThrow(
+      () => new AsyncFn('args', 'log', 'agent', 'pipeline', 'parallel', 'budget', 'workflow', src),
+      `.claude/workflows/${wf} does not parse — the Workflow tool will refuse it`,
+    );
+  }
+}
 
 // A fan-out lane must be told to check that its base carries its dependencies.
 // Lanes fetch the branch from origin, which is only as current as the last
