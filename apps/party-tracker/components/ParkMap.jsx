@@ -3,6 +3,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { distance, formatAge, formatDistance, formatWalk, localMetres, project, unproject } from '@/lib/geo';
 import { landTint, paletteFor } from '@/lib/theme';
+import { useZoneTones } from '@/lib/zoneTones';
 import Icon from '@/components/Icon';
 import { heightLabel, isRideable } from '@/lib/park';
 import {
@@ -274,7 +275,7 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
   showService,
   lowZoom,
   theme,
-  venue,
+  zoneTones,
   hideBuilding = false,
   hideCoaster = false,
 }) {
@@ -294,7 +295,7 @@ const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
 
       <g className="lyr-land">
         {world.lands.map((land) => {
-          const tint = landTint(land.n, theme, venue);
+          const tint = landTint(land.n, theme, zoneTones);
           return (
             <path
               key={`ld${land.i}`}
@@ -455,8 +456,12 @@ function ParkMap({
   const customMap = resolveCustomMap(theme);
   const iso = customMapCamera(customMap) === 'iso';
   const drawBase = showsBaseMap(customMap);
-  // The venue's own district tints, where it has hand-picked any.
   const venue = useVenueSelector((s) => s.venue);
+  /* How this Skin paints this World's Zones, compiled and certified by the
+     Visual factory and read out of the World's published display pack. Null
+     until it lands, and for a World whose pack is not published — landTint
+     falls back to its own name-hue, so a Zone is never unpainted. */
+  const zoneTones = useZoneTones(venue?.id, theme);
   // What this venue has any of at all, so the key can offer switches for those
   // and only those. Cheap: it is one pass over a list of a few hundred.
   /* How many of each category this venue has. The key already only draws rows
@@ -1648,7 +1653,7 @@ function ParkMap({
               showService={showService}
               lowZoom={lowZoom}
               theme={theme}
-              venue={venue}
+              zoneTones={zoneTones}
               hideBuilding={hidesBaseLayer(customMap, 'building')}
               hideCoaster={hidesBaseLayer(customMap, 'coaster')}
             />
@@ -1691,7 +1696,7 @@ function ParkMap({
         {plan.lands.map((l) => {
           const id = `landline-${l.name.replace(/\W+/g, '-')}`;
           return (
-            <text key={`lt${l.name}`} className="landLabel" fill={landTint(l.name, theme, venue).label}>
+            <text key={`lt${l.name}`} className="landLabel" fill={landTint(l.name, theme, zoneTones).label}>
               <textPath href={`#${id}`} xlinkHref={`#${id}`} startOffset="50%">
                 {l.name.toUpperCase()}
               </textPath>

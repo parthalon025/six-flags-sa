@@ -73,9 +73,11 @@ export const CAPABILITIES = [
   {
     id: 'lands',
     weakness: 'no-districts',
-    tool: 'overrides.lands or OSM land-use polygons',
-    file: 'data/venues/<id>/overrides.json',
-    note: 'Named districts for low-zoom map readability.',
+    tool: 'OSM land-use polygons; per-Zone character in the grounding harvest',
+    file: 'data/venues/<id>/display/grounding.json',
+    note: 'Named Zones for low-zoom readability. The harvest states what each Zone is '
+      + '(woodland, water, steel, midway…), never a colour — every Skin re-expresses '
+      + 'that in its own palette. Tints in overrides.json are ignored.',
   },
   {
     id: 'entity-resolution',

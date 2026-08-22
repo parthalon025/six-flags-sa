@@ -112,10 +112,12 @@ moves the map. Waving the question away falls back to the automatic behaviour ab
 
 What the tag rules produce, in short: `path` and `service` from highways, `building`,
 `water`, `wood`, `grass`, `parking`, `pool`, `coaster` from `roller_coaster=track`, `slide`
-from `attraction=water_slide`, and `lands` — named districts, tinted and labelled — from
-named park sections, neighbourhoods and campuses. A venue with no coasters just has an
-empty coaster layer. Districts the day/night palettes have never heard of get a colour
-derived from their own name, so an unfamiliar venue is still legible.
+from `attraction=water_slide`, and `lands` — named Zones, labelled — from named park
+sections, neighbourhoods and campuses. A venue with no coasters just has an empty coaster
+layer. Truth carries a Zone's name and shape and nothing about how it is painted: Zone
+tone is the Visual factory's, compiled per Skin into that World's display pack. A Zone the
+factory says nothing about gets a colour derived from its own name, so an unfamiliar venue
+is still legible.
 
 The path layer is not only drawn. `lib/routing.js` welds it into the route graph, so a
 walkable way missing from it is not a faint line on a map — it is a route the app will not
@@ -204,9 +206,15 @@ fact about the place, not a hundred and forty-five facts about pitches, so it si
 venue and a pitch's own details are read *over* it. `rules` narrows it by name where a park
 does publish per-row detail.
 
-And `lands`, the hand-picked tints for a venue's districts. Every district not named there
-takes a colour derived from its own name, which is what a venue nobody has hand-tuned looks
-like and is fine.
+`lands` used to live here too — hand-picked `{fill, stroke, label}` tints per district, day
+and night, copied into `map.json`'s `meta.lands`. They are gone: that was treatment written
+into truth, and it outranked the Visual factory's own derivation, so every Skin painted a
+World's Zones identically. What a Zone *is* now lives in the World's grounding harvest,
+`data/venues/<id>/display/grounding.json` — `{"zones": {"Rivertown": {"character":
+"woodland"}}}` — and every Skin re-expresses that in its own palette. A Zone nobody has
+characterised takes a colour derived from its own name, which is what a venue nobody has
+harvested looks like and is fine. A build whose `overrides.json` still carries `lands`
+prints a warning and ignores it.
 
 Correcting a height does not need a rebuild — the geometry is not what changed:
 

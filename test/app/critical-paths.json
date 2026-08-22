@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "efb2d1dbef1c3a84cf038764ab306ac53d1f4f6b2c63b8bc80741c42ce56379c"
+    "sha256": "03b3c7a24d33955d51013fd90c93c9f225f29002729cfa182a2dc07c15996dad"
   },
   "paths": [
     {
@@ -299,6 +299,13 @@
       "user_action": "Wear the Watercolor quest Skin and see its baked world drawn on truth bounds",
       "suite": "functional",
       "check": "wearing Watercolor quest draws the baked world image under the overlay"
+    },
+    {
+      "id": "skin-zone-tones",
+      "slice": "Adventure",
+      "user_action": "Wear a Skin and see this World's Zones repainted in that Skin's own palette",
+      "suite": "functional",
+      "check": "wearing a Skin repaints the World's Zones from its own display pack"
     }
   ],
   "upcoming": [

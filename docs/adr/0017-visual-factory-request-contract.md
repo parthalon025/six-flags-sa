@@ -1,6 +1,6 @@
 # ADR-0017 — Visual factory: the request contract
 
-**Status:** Accepted (owner-confirmed point by point, 2026-08-20) · Amended by [ADR-0019](./0019-zoomable-worlds.md) (distribution clause 4)
+**Status:** Accepted (owner-confirmed point by point, 2026-08-20) — amended 2026-08-21 (clause 2: per-Zone treatment is declarable; an expansion missing its skins.json row is incomplete) · Amended by [ADR-0019](./0019-zoomable-worlds.md) (distribution clause 4)
 **Depends on:** [ADR-0013](./0013-display-pipeline.md) · [ADR-0014](./0014-display-reference-contract.md) · [ADR-0016](./0016-custom-map-worlds.md) · [display factory design](../research/2026-08-18-custom-map-display-factory.md) · [OSM stylized-map research](../research/2026-08-20-osm-stylized-game-maps.md)
 
 ## Context
@@ -26,6 +26,17 @@ fixed as the contract.
    factory must not produce color-only looks, and certification gains a beyond-palette
    distinctness gate — structural/signature distinctness at the anchor points, not hue distance
    (extending `style_cross_kit_distinct`).
+
+   *Amended 2026-08-21:* a request also states **how this look treats a Zone** — the Skin
+   template's `tokens.landTones` rule, which turns a World's relationships (land cover, grounding
+   harvest) into that Zone's wash inside this Skin's own palette. It is a design-language
+   statement, so silence still scores zero and the declared rule is what certification measures.
+   Two consequences of the shape this clause already requires, made explicit because the code had
+   drifted from both: (a) a look that cannot restyle a Zone *is* the colour-only look this clause
+   declares invalid, and (b) an expansion that produces a kit and a reference profile but no
+   skins.json row is **incomplete**, because the missing row is what leaves the look unreachable —
+   `buildWorldTier` places a kit only through an active Skin bound to it. `midnight-carnival` and
+   `blueprint-survey` were in exactly that state and now carry rows.
 3. **Quality gate.** A look's first ship requires full mechanical certification **plus** an owner
    eye pass (Tier-0 gates then the axis score, anchored to the request's exemplar). Refreshes of
    an approved look re-certify mechanically without re-approval.
