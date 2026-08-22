@@ -81,6 +81,7 @@ export const DECISIONS = Object.freeze({
       'hold it until h5 lands, leaving the three-Skin distinctness gate unrunnable until then',
     ],
     source: 'ADR-0021 Open',
+    resolved: 'author now against the per-band knobs — h5 already landed, so holding it is obsolete',
   },
   b: {
     question: 'Perf gate rows — how are they structured?',
@@ -90,6 +91,7 @@ export const DECISIONS = Object.freeze({
     ],
     also: 'whether zero-blank-tiles survives as a row, now that ADR-0021 removed its correctness rationale',
     source: 'ADR-0021 Open',
+    resolved: 'regression-only CI throttle; zero-blank-tiles is the parent-placeholder functional check, not a correctness gate',
   },
   c: {
     question: 'Train I evidence lane — how does a disputed path position reach a guest?',
@@ -100,6 +102,7 @@ export const DECISIONS = Object.freeze({
     ],
     also: 'the steward review budget, Mapillary share-alike reach, and the OSM write-back path',
     source: 'ADR-0021 Open',
+    resolved: 'extend SHIPPED_GAP_TYPES with path_disputed (ADR-0020 clause 5); OSM write-back stays steward-gated; Google is back-office metadata only',
   },
   crop: {
     question: 'Does a band plan describe the World, or the cropped PNG?',
@@ -111,8 +114,20 @@ export const DECISIONS = Object.freeze({
       + '244x276 and bakes 157x191; kings-island matches only because its boundary fills '
       + 'its bbox. Becomes a correctness bug the moment tiles are georeferenced.',
     source: 'surfaced while building slice h1',
+    resolved: 'the plan describes the World; the pyramid georeferences against cert.bounds (the crop)',
   },
 });
+
+/** A decision still withholds its slices until someone records an answer.
+ *
+ *  Unknown keys stay open so a synthetic board (and a newly named question)
+ *  still gates; a recorded `resolved` is what lets the next session start. */
+export function decisionIsOpen(key) {
+  if (!key) return false;
+  const recorded = DECISIONS[key];
+  if (!recorded) return true;
+  return !recorded.resolved;
+}
 
 /** The slices. `needs` is dependency, `blocked` names a DECISIONS key.
  *  Each `probe` is handed a tree reader and must answer from it alone. */
@@ -348,12 +363,12 @@ export function status(tree = treeAt(REPO), slices = SLICES) {
 /** Slices a session can start today: not done, dependencies done, unblocked. */
 export function next(rows = status()) {
   const doneIds = new Set(rows.filter((r) => r.done).map((r) => r.id));
-  return rows.filter((r) => !r.done && !r.blocked && r.needs.every((n) => doneIds.has(n)));
+  return rows.filter((r) => !r.done && !decisionIsOpen(r.blocked) && r.needs.every((n) => doneIds.has(n)));
 }
 
 /** Slices that are only waiting on a person. */
 export function blocked(rows = status()) {
-  return rows.filter((r) => !r.done && r.blocked);
+  return rows.filter((r) => !r.done && decisionIsOpen(r.blocked));
 }
 
 /** Slices waiting on other slices rather than on a decision.
@@ -382,7 +397,7 @@ export function gatedBy(id, rows = status()) {
   const walk = (at, seen) => {
     const r = byId.get(at);
     if (!r || r.done || seen.has(at)) return null;
-    if (r.blocked) return r.blocked;
+    if (decisionIsOpen(r.blocked)) return r.blocked;
     seen.add(at);
     for (const need of r.needs) {
       const found = walk(need, seen);

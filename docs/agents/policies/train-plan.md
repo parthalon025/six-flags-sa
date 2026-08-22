@@ -30,7 +30,8 @@ session to rebuild what already exists.
 - **Never answer a blocked decision.** `DECISIONS` records them verbatim from
   ADR-0021's Open section. `next()` withholds a blocked slice even when its
   dependencies are met, because building it would decide the question. Work
-  around it and leave it for the owner.
+  around it and leave it for the owner. A recorded `resolved` on the decision
+  is the only thing that lets the next session start those slices.
 - **Fan out with the workflow, integrate yourself.** `.claude/workflows/train-slices.mjs`
   takes the startable rows and gives each slice its own worktree and an
   adversarial verifier. Lanes must not touch `package.json`, `scripts/ci/manifest.mjs`,

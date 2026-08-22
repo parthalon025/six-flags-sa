@@ -241,7 +241,7 @@ for (const id of ids) visit(id, []);
 
 for (const key of Object.keys(DECISIONS)) {
   assert.ok(
-    SLICES.some((s) => s.blocked === key),
+    SLICES.some((s) => s.blocked === key) || DECISIONS[key].resolved,
     `DECISIONS records "${key}" but no slice is blocked on it — a decision nobody `
       + 'is waiting on should not be asked of the owner',
   );
@@ -544,7 +544,7 @@ assert.deepEqual(
 // bucket bug would hide. These rows put one squarely in that state.
 const synthetic = [
   { id: 'sa', train: 'H', size: 'S', title: 'built', needs: [], blocked: null, done: true, probeError: null },
-  { id: 'sb', train: 'H', size: 'S', title: 'deps met but blocked', needs: ['sa'], blocked: 'crop', done: false, probeError: null },
+  { id: 'sb', train: 'H', size: 'S', title: 'deps met but blocked', needs: ['sa'], blocked: 'hold', done: false, probeError: null },
   { id: 'sc', train: 'I', size: 'S', title: 'deps unmet', needs: ['sd'], blocked: null, done: false, probeError: null },
   { id: 'sd', train: 'I', size: 'S', title: 'startable', needs: [], blocked: null, done: false, probeError: null },
 ];
@@ -602,7 +602,7 @@ assert.ok(
 // explanation. Depth two, because depth one is the case a wrong implementation
 // still gets right.
 const chain = [
-  { id: 'sroot', train: 'H', size: 'S', title: 'blocked at the root', needs: [], blocked: 'crop', done: false, probeError: null },
+  { id: 'sroot', train: 'H', size: 'S', title: 'blocked at the root', needs: [], blocked: 'hold', done: false, probeError: null },
   { id: 'smid', train: 'H', size: 'S', title: 'needs the blocked root', needs: ['sroot'], blocked: null, done: false, probeError: null },
   { id: 'sg', train: 'H', size: 'S', title: 'two hops from a decision', needs: ['smid'], blocked: null, done: false, probeError: null },
   { id: 'sfree', train: 'I', size: 'S', title: 'nothing in its past is blocked', needs: [], blocked: null, done: false, probeError: null },
@@ -610,12 +610,12 @@ const chain = [
   { id: 'sbuilt', train: 'I', size: 'S', title: 'built, and was once blocked', needs: [], blocked: 'a', done: true, probeError: null },
 ];
 
-assert.equal(gatedBy('sg', chain), 'crop',
+assert.equal(gatedBy('sg', chain), 'hold',
   'a slice two hops from a blocked one must report the decision that gates it — '
   + 'reporting null makes it look startable and a session will pick it up, get '
   + 'stuck, and have nothing to say about why');
-assert.equal(gatedBy('smid', chain), 'crop');
-assert.equal(gatedBy('sroot', chain), 'crop');
+assert.equal(gatedBy('smid', chain), 'hold');
+assert.equal(gatedBy('sroot', chain), 'hold');
 assert.equal(gatedBy('sfree', chain), null);
 assert.equal(gatedBy('sbuilt', chain), null, 'a built slice is not gated, whatever it was blocked on while it was being built');
 assert.equal(gatedBy('sdonedep', chain), null,

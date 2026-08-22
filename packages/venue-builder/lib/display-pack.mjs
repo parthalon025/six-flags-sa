@@ -19,6 +19,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson, writeJson, venueSidecar } from './venue-io.mjs';
 import { buildTiles } from './display-tiles.mjs';
 import { buildWorldTier } from './display-world.mjs';
+import { buildPyramid, pyramidFile } from './display-pyramid.mjs';
 import { materialTexturesRow, verifyCompiledMaterials } from './display-materials.mjs';
 import { crossRotationCoverageRow } from './display-style-contract.mjs';
 import { writeBundleManifest } from './venue-bundle.mjs';
@@ -370,6 +371,84 @@ export const tilesGatePasses = (tiles) => Boolean(
   tiles.gap || (tiles.ok && tiles.sizeKb <= TILES_BUDGET_KB),
 );
 
+/** A pyramid result clears the gate when sharp is a recorded gap or the archive wrote. */
+export const pyramidGatePasses = (pyramid) => Boolean(
+  pyramid?.gap || pyramid?.ok,
+);
+
+/**
+ * The crop window a pyramid may georeference against.
+ *
+ * ADR-0021 crop: the plan describes the World; the pyramid places the cropped
+ * PNG against `cert.bounds`. A caller that hands map/plan bounds here is the
+ * bug that decision named — refuse anything that is not the bake cert.
+ *
+ * @param {{ bounds?: { west: number, south: number, east: number, north: number } }|null} cert
+ */
+export function pyramidBoundsFromCert(cert) {
+  const bounds = cert?.bounds;
+  if (!bounds || typeof bounds !== 'object') {
+    throw new Error('pyramid georeferences against cert.bounds — the plan does not place the crop');
+  }
+  for (const key of ['west', 'south', 'east', 'north']) {
+    if (!Number.isFinite(bounds[key])) {
+      throw new Error(`cert.bounds.${key} must be a finite number`);
+    }
+  }
+  return {
+    west: bounds.west,
+    south: bounds.south,
+    east: bounds.east,
+    north: bounds.north,
+  };
+}
+
+/**
+ * Cut one band's baked PNG into a raster PMTiles archive.
+ *
+ * @param {{ id: string, bandId?: string, bakePng: string, cert: object, outDir: string }} deps
+ */
+export async function buildBandPyramidTier({
+  id,
+  bandId = 'mid',
+  bakePng,
+  cert,
+  outDir,
+} = {}) {
+  return buildPyramid({
+    id,
+    bandId,
+    bakePng,
+    bounds: pyramidBoundsFromCert(cert),
+    outDir,
+  });
+}
+
+/**
+ * Cut the packed mid band after a display stage, if a bake PNG and its cert
+ * are both on disk. The stage itself stays sync (its tests and the pipeline
+ * call it as a function); the CLI and the pipeline await this.
+ *
+ * @param {{ id: string, bakeCerts?: { kit: string, cert: object }[], bakeDir: string, outDir: string, primaryKit?: string|null }} deps
+ */
+export async function cutPackedMidPyramid({
+  id,
+  bakeCerts = [],
+  bakeDir,
+  outDir,
+  primaryKit = null,
+} = {}) {
+  const row = bakeCerts.find((r) => r.kit === primaryKit) || bakeCerts[0];
+  if (!row?.cert || !bakeDir) {
+    return { gap: true, reason: 'no bake cert — run venues:bake first' };
+  }
+  const bakePng = path.join(bakeDir, `${id}--${row.kit}.png`);
+  if (!existsSync(bakePng)) {
+    return { gap: true, reason: 'mid bake PNG missing' };
+  }
+  return buildBandPyramidTier({ id, cert: row.cert, bakePng, outDir });
+}
+
 /**
  * Certify one compiled spec against truth, the template, and the ledger.
  * Pure — same claim/evidence/confidence/falsifier/so-what contract as
@@ -645,15 +724,18 @@ export function runDisplayStage(id, opts = {}) {
   // absent ones as recorded gaps.
   let bakes = null;
   let worlds = null;
+  let bakeCerts = [];
+  let primaryKit = null;
+  let bakeDir = null;
   if (opts.bake) {
-    const bakeDir = opts.bake.dir || path.join(MONO_ROOT, 'artifacts', 'display-bake');
+    bakeDir = opts.bake.dir || path.join(MONO_ROOT, 'artifacts', 'display-bake');
     // Iso-tier bakes (`<id>--<kit>--iso-r<N>.*`) stay out of the pack: they
     // would fold as a pseudo-kit otherwise. Iso pack-tier integration is
     // Phase C work.
     const allCertFiles = (existsSync(bakeDir)
       ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
       : []).sort();
-    const bakeCerts = allCertFiles
+    bakeCerts = allCertFiles
       .map((f) => ({ f, ...parseCertFilename(id, f) }))
       .filter(({ rotation }) => rotation === null)
       .map(({ f, kit }) => ({
@@ -696,7 +778,7 @@ export function runDisplayStage(id, opts = {}) {
       .map((skinId) => templates[skinId])
       .filter((t) => t.status === 'active' && t.bakeKit && bakes[t.bakeKit])
       .map((t) => t.bakeKit);
-    const primaryKit = boundKits[0] || bakeCerts[0]?.kit || null;
+    primaryKit = boundKits[0] || bakeCerts[0]?.kit || null;
     // World tier (ADR-0016): each bakeKit-bound Skin's bake lands in the
     // pack as an image-on-truth-bounds world. This is what retired the
     // raster-PMTiles seam (lib/display-raster.mjs): that path recorded a
@@ -704,6 +786,7 @@ export function runDisplayStage(id, opts = {}) {
     const worldTier = buildWorldTier({ id, templates, bakeDir, bakeCerts, outDir, write });
     worlds = worldTier.worlds;
     written.push(...worldTier.written);
+    const midPyramid = pyramidFile(outDir, 'mid');
     const manifest = tierManifest([
       fileEntry('vector', path.join(outDir, 'base.pmtiles')),
       ...worldTier.entries,
@@ -711,6 +794,9 @@ export function runDisplayStage(id, opts = {}) {
       primaryKit
         ? fileEntry('credits', path.join(bakeDir, `${id}--${primaryKit}.credits.json`), { kit: primaryKit })
         : { name: 'credits', gap: true, reason: 'no baked kits — run venues:bake first' },
+      midPyramid
+        ? fileEntry('band:mid', midPyramid, { band: 'mid', kit: primaryKit })
+        : { name: 'band:mid', gap: true, reason: 'mid pyramid not cut — run buildBandPyramidTier' },
     ]);
     if (write) {
       const manifestFile = path.join(outDir, 'manifest.json');
@@ -750,5 +836,18 @@ export function runDisplayStage(id, opts = {}) {
     written.push(bundleFile);
   }
 
-  return { venue: id, certified, packs, anchors, tiles, bakes, worlds, written };
+  return {
+    venue: id,
+    certified,
+    packs,
+    anchors,
+    tiles,
+    bakes,
+    worlds,
+    written,
+    outDir,
+    bakeDir,
+    bakeCerts,
+    primaryKit,
+  };
 }

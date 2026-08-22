@@ -893,6 +893,30 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
   // when its kit baked, a recorded gap otherwise. The raster-PMTiles tier is
   // retired (its permanent gap is what the world tier closes).
   assert.ok(!manifest.tiers.raster, 'the raster tier is retired in favor of worlds');
+  assert.equal(manifest.tiers['band:mid'].gap, true, 'uncut mid pyramid is a recorded gap, not a missing row');
+  const { pyramidGatePasses, buildBandPyramidTier } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+  assert.equal(pyramidGatePasses({ gap: true }), true);
+  assert.equal(pyramidGatePasses({ ok: true }), true);
+  assert.equal(pyramidGatePasses({ ok: false }), false);
+  const { pyramidBoundsFromCert } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+  assert.throws(
+    () => pyramidBoundsFromCert(null),
+    /cert\.bounds/,
+    'a pyramid without a bake cert cannot invent a crop',
+  );
+  assert.throws(
+    () => pyramidBoundsFromCert({ bounds: FIXTURE_MAP.meta.bounds }),
+    /cert\.bounds/,
+    'map.meta.bounds is not a bake cert — crop window only',
+  );
+  assert.deepEqual(
+    pyramidBoundsFromCert({ bounds: { west: 0, south: 0, east: 0.01, north: 0.01 } }),
+    { west: 0, south: 0, east: 0.01, north: 0.01 },
+  );
+  await assert.rejects(
+    () => buildBandPyramidTier({ id: 'test-park', bakePng: 'missing.png', outDir }),
+    /cert\.bounds/,
+  );
   assert.equal(manifest.tiers['world:trail'].kit, 'island-brochure');
   assert.equal(manifest.tiers['world:trail'].projection, 'top-down');
   assert.ok(manifest.tiers['world:trail'].bytes > 0);
@@ -1187,7 +1211,7 @@ await check('every POI badge kind resolves to a glyph — style_no_baked_text is
   return true;
 });
 
-await check('the six shipped kits still certify clause 1 — every kind glyphs', async () => {
+await check('the seven shipped kits still certify clause 1 — every kind glyphs', async () => {
   const { readAssetLedger, assetPath } = await import('../../packages/venue-builder/lib/display-assets.mjs');
   const { existsSync } = await import('node:fs');
   const assets = readAssetLedger();
@@ -1195,7 +1219,8 @@ await check('the six shipped kits still certify clause 1 — every kind glyphs',
   const files = readdirSync(KIT_DIR).filter((f) => f.endsWith('.json')).sort();
   assert.deepEqual(files, [
     'blueprint-survey.json', 'island-brochure.json', 'layered-atlas.json',
-    'midnight-carnival.json', 'rpg-overworld.json', 'watercolor-quest.json',
+    'midnight-carnival.json', 'pixel-tycoon.json', 'rpg-overworld.json',
+    'watercolor-quest.json',
   ], 'the shipped kit set changed — re-check clause 1 against the new kit');
   for (const file of files) {
     const kit = resolveKit(
