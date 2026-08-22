@@ -33,5 +33,10 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(kill:*)"
+    ]
   }
 }
