@@ -28,6 +28,7 @@ export const TOKEN_GATED_ADAPTERS = Object.freeze([
   'mapillary-api',
   'accessibility-cloud',
   'openrouteservice',
+  'google-places',
 ]);
 
 /**
@@ -53,6 +54,7 @@ export const KNOWN_EXTERNAL_ADAPTER_IDS = Object.freeze([
   'overture-buildings',
   'naip-planetary',
   'openrouteservice',
+  'google-places',
 ]);
 
 /**
@@ -72,6 +74,7 @@ const OPT_IN_ADAPTERS = Object.freeze([
   'mapillary-tools',
   'overture-buildings',
   'naip-planetary',
+  'google-places',
 ]);
 
 /**

@@ -27,6 +27,7 @@ export const ADAPTER_CACHE_SUFFIX = {
   'overture-buildings': 'overture-buildings',
   openrouteservice: 'openrouteservice',
   playwright: 'official',
+  'google-places': 'google-places',
 };
 
 export const cachePath = (venueId, suffix) => venueSidecar(venueId, `${suffix}-cache.json`);
