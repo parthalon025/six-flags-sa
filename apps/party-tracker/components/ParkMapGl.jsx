@@ -15,10 +15,11 @@
  * a WebGL context lives and dies by. Everything above that — Truth into map
  * data, props into a camera — is ParkMap.jsx's, and pure.
  *
- * The counterpart it replaces is components/ParkMapSvg.jsx, which projected
- * all of this by hand. Two projections of one Truth is how a party dot and the
- * route it is walking end up disagreeing on screen, which is the failure
- * ADR-0021 clause 3 is written against.
+ * The counterpart it replaced was components/ParkMapSvg.jsx, which projected
+ * all of this by hand and retired with slice h18. Two projections of one Truth
+ * is how a party dot and the route it is walking end up disagreeing on screen,
+ * which is the failure ADR-0021 clause 3 is written against; there is one
+ * projection now.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -193,9 +194,13 @@ export default function ParkMapGl({
       skin,
       palette,
       places,
-      // A view opens somewhere, and the somewhere a World opens on is the
-      // whole World: ADR-0016's truth bounds framed into the glass. Whatever
-      // the camera prop wants happens in the effect below, as a move.
+      /* A view opens somewhere, and the somewhere a World opens on is the
+         whole World: ADR-0016's truth bounds framed into the glass. That is
+         the first half of slice h18's opening-view decision, and it is a
+         *box* — no centre is chosen here, which is what retired the
+         disagreement between the two renderers' opening points. The second
+         half, the flight to the guest's own position, arrives through the
+         camera prop like every other move: see lib/openingView.js. */
       camera: frameBounds(world.bounds, {
         width: Math.max(1, node.clientWidth),
         height: Math.max(1, node.clientHeight - insetBottom),

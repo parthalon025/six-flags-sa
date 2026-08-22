@@ -58,10 +58,11 @@ grow any surface a caller has not asked for before those seams land.
 
 ## 2. Map view — `apps/party-tracker/lib/mapView.js` + one component
 
-**The seam is real, and both adapters now sit behind it.** `ParkMapSvg.jsx` draws the world as SVG;
-`ParkMapGl.jsx` draws it through MapLibre over this interface (slice h11), and `ParkMap.jsx` is the
-one caller that picks between them. `DisplayMap.jsx` is still there as the #527 spike behind
-`mapLibreDisplayEnabled()`, outside the seam. ADR-0013 item 4's real-time PBR tier is the third
+**The seam is real, and one adapter sits behind it.** `ParkMapGl.jsx` draws the world through
+MapLibre over this interface (slice h11), and `ParkMap.jsx` is the one caller. The SVG adapter
+`ParkMapSvg.jsx` was the second while the port was proven beside it, and slice h18 deleted it —
+ADR-0019 clause 3's convergence, finished. `DisplayMap.jsx` is still there as the #527 spike behind
+`mapLibreDisplayEnabled()`, outside the seam. ADR-0013 item 4's real-time PBR tier is the next
 adapter this seam is being shaped for.
 
 **Interface.** What a caller must know, and no more:
@@ -103,12 +104,15 @@ what a Member's dot *means*; as data, the view only decides how it looks. It als
 alignment rule enforceable — the overlay is drawn from Truth, never snapped to art
 (ADR-0021 clause 3).
 
-**Retirement, not deletion.** The SVG adapter stays behind this interface until the MapLibre one
-passes the gate. That is the escape hatch, and it costs nothing extra because the seam has to
-exist anyway. Since slice h11 the hatch has a switch — `parkMapRenderer()` in
-`lib/mapLibreConfigured.js`, answering `svg` unless a build or a reviewer asks for `gl` — and the
-gate it is waiting on is named: slice h15's perf rows, plus the browser suites' own assertions on
-`svg.mapSvg`.
+**Retirement, then deletion.** The SVG adapter stayed behind this interface while the MapLibre one
+was proven beside it — the escape hatch, which cost nothing extra because the seam had to exist
+anyway. Slice h11 gave the hatch a switch; slice h18 closed it. `PARK_MAP_RENDERERS` is now
+`['gl']`, and what `parkMapRenderer()` is still for is resolving a *stale* answer: a deployment
+env or a bookmarked `?parkMap=svg` outlives the file it names, and every one of those has to draw
+the shipped map rather than nothing. The gate the hatch was waiting on is gone with it — the perf
+rows of slice h15 were descoped by the owner, and the browser suites' own assertions on
+`svg.mapSvg` are the follow-on the retirement leaves behind (they select on DOM the one renderer
+does not produce).
 
 ---
 
@@ -173,11 +177,18 @@ should be written knowing it: either they measure a Skin switch as its own row, 
 explicitly that they do not. The fix, if the number is bad, is a `setPaintProperty` pass over the
 live style instead of a remount — which is a change behind this seam and not a change to it.
 
-**The SVG adapter is still the shipped one**, through `parkMapRenderer()` — the escape hatch this
-note has always named. Two things hold it open and neither is h11's to close: the gate is slice
-h15's perf rows, which wait on an owner decision (ADR-0021 Open, "The perf gate rows"), and the
-browser suites still assert on `svg.mapSvg`. Set `NEXT_PUBLIC_PARKMAP_RENDERER=gl`, or add
-`?parkMap=gl`, to draw through the ported one. The second adapter is now the code's, not the
-design's.
+**The ported adapter is the shipped one** since slice h18, and the SVG one is deleted. Neither of
+the two things that held the hatch open survived: the owner descoped slice h15's perf gate, and
+the browser suites' `svg.mapSvg` selectors became a porting job rather than a reason to keep a
+renderer. There is nothing to set — `parkMapRenderer()` answers `gl` however it is asked.
+
+**How a World opens changed with it** (owner decision, slice h18). Neither renderer's old
+behaviour survives: the SVG viewer opened on the venue's declared `meta.center`, the ported path on
+the geometric centre of the truth bounds, and those are 77 m to 291 m apart across the shipped
+venues. A World now opens on the *whole park* — `frameBounds(world.bounds)`, a box, so no centre is
+chosen — and then flies to the guest's own GPS position at the mid band's resolution.
+`lib/openingView.js` holds that as a pure state machine, because both halves of it are rules about
+*when*: the flight happens once, or every fix drags the map back; and the park is held briefly
+first, or a phone with a warm fix never shows it at all.
 
 Seam 3 is designed here and not yet implemented.

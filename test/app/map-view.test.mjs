@@ -31,6 +31,23 @@ import {
   worldLayer,
   worldSource,
 } from '../../apps/party-tracker/lib/mapViewStyle.js';
+import {
+  OPENING_EASE_MS,
+  OPENING_GUEST,
+  OPENING_HOLD_MS,
+  OPENING_KEPT,
+  OPENING_PARK,
+  OPENING_RESOLUTION,
+  OPENING_START,
+  OPENING_WAITING,
+  advanceOpening,
+  openingConsumed,
+  openingHoldsCamera,
+  openingRunning,
+} from '../../apps/party-tracker/lib/openingView.js';
+import { frameBounds } from '../../packages/shared/mapCamera.js';
+import { distance } from '../../apps/party-tracker/lib/geo.js';
+import { bandResolution } from '../../packages/shared/zoomBands.js';
 
 /** kings-island's latitude, centred so the World's own mid-latitude is the
  *  39.3422 the band arithmetic above was worked out at. */
@@ -1277,5 +1294,182 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
   assert.equal(view.hitTest({ x: 10, y: 10 }), venuePois[3], 'a pick resolves to that Place');
   view.destroy();
 }
+
+// ---------------------------------------------------------------------------
+// The opening view (slice h18, owner decision `openingView`).
+//
+// A World opens showing the WHOLE PARK, then flies to the guest's GPS
+// position. That is neither renderer's old behaviour: the SVG viewer opened on
+// the venue's declared `meta.center`, the ported path on the geometric centre
+// of the truth bounds, and the two are 77-291 m apart across the shipped
+// venues. The decision retires the argument rather than settling it — the
+// opening frames a box, so no centre is chosen at all — and the flight that
+// follows is the assertion that a guest is not left looking at a whole park.
+//
+// Driven with kings-island's committed `map.json`, because kings-island is
+// where that divergence is widest and so where "it stopped mattering" is worth
+// asserting rather than asserting on a fixture that has no old behaviour.
+// ---------------------------------------------------------------------------
+
+{
+  const ki = read('kings-island.map.json');
+  const bounds = ki.meta.bounds;
+  const declared = ki.meta.center;
+  const bbox = frameBounds(bounds, { width: 390, height: 700 }).center;
+  const apart = (a, b) => distance(a.lat, a.lng, b.lat, b.lng);
+  const LONG_AFTER = 60_000;
+
+  /* Two fixes on the midway, and one twenty miles away in Cincinnati. */
+  const HERE = Object.freeze({ lat: 39.3441, lng: -84.2688, ts: 1 });
+  const LATER = Object.freeze({ lat: 39.3402, lng: -84.2661, ts: 2 });
+  const AWAY = Object.freeze({ lat: 39.1031, lng: -84.5120, ts: 3 });
+
+  // The opening asks for no centre at all. Whatever a World opens on comes
+  // from framing its bounds, which is a box; the moment this carried a centre
+  // it would be choosing between the two points the decision retired.
+  assert.equal(OPENING_START.phase, OPENING_PARK);
+  assert.equal(OPENING_START.camera, null, 'the whole park is a frame, not a centre');
+  assert.equal(openingRunning(OPENING_START), true);
+  assert.equal(openingHoldsCamera(OPENING_START), true, 'and nobody else may move it');
+
+  // The park is actually shown. A phone with a warm fix has the guest's
+  // position before the first frame; without the hold the whole-park view
+  // would exist for no frames at all.
+  assert.equal(
+    advanceOpening(OPENING_START, { bounds, anchor: HERE, elapsedMs: OPENING_HOLD_MS - 1 }),
+    OPENING_START,
+    'the park is held before the flight',
+  );
+  assert.equal(
+    advanceOpening(OPENING_START, { bounds, anchor: null, elapsedMs: OPENING_HOLD_MS - 1 }),
+    OPENING_START,
+    'and held with no fix at all',
+  );
+
+  /* Then the hold expires whatever happens, and this is the assertion that
+     matters most: a guest whose GPS is refused, or who is looking at a park
+     two states away, must not be left unable to pan, tap a Place or preview a
+     route. The park stays on screen; the camera stops being the opening's. */
+  const waiting = advanceOpening(OPENING_START, { bounds, anchor: null, elapsedMs: LONG_AFTER });
+  assert.equal(waiting.phase, OPENING_WAITING);
+  assert.equal(waiting.camera, null, 'the whole park is still what is on screen');
+  assert.equal(openingHoldsCamera(waiting), false, 'but the camera belongs to everyone again');
+  assert.equal(openingRunning(waiting), true, 'and the first fix will still fly');
+  assert.equal(
+    advanceOpening(OPENING_START, { bounds, anchor: AWAY, elapsedMs: LONG_AFTER }).phase,
+    OPENING_WAITING,
+    'a fix outside the World is no guest to fly to, and does not hold the camera either',
+  );
+
+  // Then it flies to the guest — from the hold, or from having waited.
+  const flown = advanceOpening(OPENING_START, { bounds, anchor: HERE, elapsedMs: OPENING_HOLD_MS });
+  assert.equal(flown.phase, OPENING_GUEST);
+  assert.equal(openingRunning(flown), false);
+  assert.deepEqual(
+    flown.camera.center,
+    { lng: HERE.lng, lat: HERE.lat },
+    'the flight lands on the fix itself',
+  );
+  assert.equal(flown.camera.fit, null, 'a point, not a box: the box was the opening');
+  assert.equal(flown.camera.easeMs, OPENING_EASE_MS, 'a flight, not a jump');
+  assert.equal(flown.camera.bearing, 0);
+  assert.equal(flown.camera.lift, 0);
+  assert.deepEqual(
+    advanceOpening(waiting, { bounds, anchor: HERE, elapsedMs: LONG_AFTER }),
+    flown,
+    'a fix that turns up late still flies',
+  );
+
+  /* The mid band's ground resolution, and not a number chosen here: mid is the
+     band that ships inside the venue pack (ADR-0021 clauses 2 and 5), so the
+     view the opening lands on is the one that is painted with no network. */
+  assert.equal(OPENING_RESOLUTION, bandResolution('mid'));
+  assert.equal(flown.camera.resolution, bandResolution('mid'));
+
+  /* The 291 m that ParkMap.jsx's gap list recorded, and why it stopped
+     mattering: it is the distance between two candidates the opening no longer
+     picks from. The flight goes to the guest, which is neither of them. */
+  const divergence = apart(declared, bbox);
+  assert.ok(
+    divergence > 250 && divergence < 350,
+    `kings-island's two old opening centres are the ~291 m apart on record, got ${divergence.toFixed(0)} m`,
+  );
+  assert.ok(apart(flown.camera.center, declared) > 100, 'not the declared centre');
+  assert.ok(apart(flown.camera.center, bbox) > 100, 'not the bbox centre either');
+
+  /* Something else answering where the camera should be outranks the flight,
+     from either running phase: a hand on the glass, a Place the guest tapped,
+     a route being previewed. They are already looking at what they asked for. */
+  for (const [name, from] of [['the hold', OPENING_START], ['waiting', waiting]]) {
+    const kept = advanceOpening(from, {
+      bounds, anchor: HERE, cameraTaken: true, elapsedMs: OPENING_HOLD_MS,
+    });
+    assert.equal(kept.phase, OPENING_KEPT, `taken during ${name}`);
+    assert.equal(kept.camera, null);
+    assert.equal(openingRunning(kept), false);
+    assert.equal(openingHoldsCamera(kept), false);
+  }
+  const kept = advanceOpening(OPENING_START, {
+    bounds, anchor: HERE, cameraTaken: true, elapsedMs: OPENING_HOLD_MS,
+  });
+
+  /* The flight happens once. Fixes land every few seconds and each is a fresh
+     object; an opening that re-derived a camera from "where is the guest" on
+     every one of them would drag the map back each time the guest looked
+     anywhere else. Identity, not equality: what the caller holds is what comes
+     back, so React's own bail-out stops the loop. */
+  for (const [name, over] of [['flown', flown], ['kept', kept]]) {
+    assert.equal(
+      advanceOpening(over, { bounds, anchor: LATER, elapsedMs: 600_000 }),
+      over,
+      `a finished opening (${name}) is never advanced again`,
+    );
+  }
+  assert.equal(
+    advanceOpening(waiting, { bounds, anchor: null, elapsedMs: 600_000 }),
+    waiting,
+    'and waiting with still no guest changes nothing, so nothing re-renders',
+  );
+
+  /* The move is handed to the view once and then let go. Held any longer it
+     would outrank every later Follow and focus request, and a guest would be
+     unable to look anywhere for the rest of the session. */
+  const settled = openingConsumed(flown);
+  assert.equal(settled.phase, OPENING_GUEST, 'consuming the move keeps the phase');
+  assert.equal(settled.camera, null, 'and drops the move');
+  assert.equal(openingConsumed(settled), settled, 'consuming an empty state changes nothing');
+  assert.equal(openingConsumed(kept), kept);
+  assert.equal(
+    advanceOpening(settled, { bounds, anchor: LATER, elapsedMs: 600_000 }),
+    settled,
+    'and a consumed opening still never flies again',
+  );
+
+  // Bad Truth cannot place a guest, so nobody is flown to — and the camera is
+  // still handed back rather than held for a park that cannot be reasoned
+  // about.
+  for (const badBounds of [null, undefined, {}, { west: NaN, south: 0, east: 1, north: 1 }]) {
+    const stuck = advanceOpening(OPENING_START, {
+      bounds: badBounds, anchor: HERE, elapsedMs: LONG_AFTER,
+    });
+    assert.equal(stuck.phase, OPENING_WAITING, `bounds ${JSON.stringify(badBounds)} places nobody`);
+    assert.equal(stuck.camera, null);
+  }
+
+  // A fix that is not two finite numbers is not a fix.
+  for (const bad of [{ lat: NaN, lng: -84.2688 }, { lat: 39.3441 }, {}, 'here']) {
+    const none = advanceOpening(OPENING_START, { bounds, anchor: bad, elapsedMs: LONG_AFTER });
+    assert.equal(none.phase, OPENING_WAITING, `anchor ${JSON.stringify(bad)} is not a position`);
+    assert.equal(none.camera, null);
+  }
+
+  // Time is given, never read here — the same rule `overlayModel` states.
+  assert.throws(
+    () => advanceOpening(OPENING_START, { bounds, anchor: HERE }),
+    /elapsedMs/,
+    'an opening cannot time itself',
+  );
+}
+
 
 console.log('map-view: ok');

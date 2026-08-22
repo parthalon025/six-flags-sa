@@ -1,58 +1,28 @@
 #!/usr/bin/env node
+/* The startup performance contract for the map screen.
+ *
+ * Half of this suite used to assert the SVG world viewer's own structure — the
+ * static-world memo boundary, viewport culling and its quantised cull cell,
+ * the low-zoom path-casing skip. Slice h18 retired that renderer
+ * (`components/ParkMapSvg.jsx` is gone, ADR-0019 clause 3), and those rows
+ * went with the file they described: the ported path draws through MapLibre,
+ * where culling, collision and LOD are the engine's and are asserted through
+ * the map view seam (`test/app/map-view.test.mjs`) instead of by reading a
+ * component's source.
+ *
+ * What is left is the half that was never about the renderer: page.js must not
+ * do non-critical startup work before the map is on screen. That is still a
+ * source-shape assertion because the thing it guards — *when* a piece of
+ * startup work runs — does not show up in any value a unit test can read back.
+ */
 
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const parkMap = readFileSync(
-  new URL('../../apps/party-tracker/components/ParkMapSvg.jsx', import.meta.url),
-  'utf8',
-);
 const page = readFileSync(
   new URL('../../apps/party-tracker/app/page.js', import.meta.url),
   'utf8',
 );
-
-assert.match(
-  parkMap,
-  /const ParkMapStaticWorld = memo\(function ParkMapStaticWorld/,
-  'static venue geometry should live behind a memo boundary',
-);
-assert.match(
-  parkMap,
-  /world\?\.path\.length\s*>\s*80/,
-  'large path sets should enable viewport culling at overview zoom',
-);
-assert.match(
-  parkMap,
-  /const cullPad = lowZoom \? 1\.2 : 0\.55/,
-  'overview culling should retain a larger off-screen pad',
-);
-assert.match(
-  parkMap,
-  /const cullEnabled = world\?\.path\.length > 80 \|\| \(showDetail && z >= 1\.2\)/,
-  'culling should use a threshold boolean instead of raw zoom as a memo dependency',
-);
-assert.match(
-  parkMap,
-  /\}, \[cullEnabled, cullCellX, cullCellY, cullScaleBand\]\)/,
-  'cull membership should stay stable within a quantized pan and zoom cell',
-);
-assert.match(
-  parkMap,
-  /\{!lowZoom && \(\s*<g className="lyr-pathcase">/,
-  'path casing should be omitted at low zoom',
-);
-
-const staticWorldStart = parkMap.indexOf('const ParkMapStaticWorld = memo(');
-const parkMapStart = parkMap.indexOf('function ParkMapSvg(', staticWorldStart);
-const staticWorld = parkMap.slice(staticWorldStart, parkMapStart);
-for (const movingProp of ['me', 'members', 'heading', 'selected', 'route', 'puck']) {
-  assert.doesNotMatch(
-    staticWorld,
-    new RegExp(`\\b${movingProp}\\b`),
-    `static world must not depend on moving prop "${movingProp}"`,
-  );
-}
 
 assert.match(
   page,
@@ -78,6 +48,14 @@ assert.match(
   page,
   /if \(!uiReady\) return;\s*try \{\s*const saved = JSON\.parse\(localStorage\.getItem\(PUSH_PREFS_KEY\)/,
   'push preference and permission wiring should wait for the idle gate',
+);
+
+/* And the renderer that carried the retired rows is really gone, rather than
+   still on disk with nothing importing it. */
+assert.throws(
+  () => readFileSync(new URL('../../apps/party-tracker/components/ParkMapSvg.jsx', import.meta.url)),
+  /ENOENT/,
+  'the SVG world viewer retired with slice h18',
 );
 
 console.log('map performance contract: ok');
