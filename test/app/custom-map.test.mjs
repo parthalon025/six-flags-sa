@@ -115,4 +115,13 @@ assert.equal(showsBaseMap(tint), true);
 assert.equal(hidesBaseLayer(tint, 'building'), false);
 assert.equal(customMapCamera(tint), 'mercator');
 
+const { PIXEL_TYCOON_SHIP_NOTE, PREVIEW_SKINS } = await import('../../apps/party-tracker/lib/bandedWorldPreview.js');
+assert.equal(PIXEL_TYCOON_SHIP_NOTE, 'OSM until a certified bake exists');
+assert.equal(PREVIEW_SKINS.includes('pixel-tycoon'), false, 'do not preview a world PNG that was never baked');
+assert.equal(
+  fs.existsSync(new URL('../../apps/party-tracker/public/venues/kings-island/display/pixel-tycoon.world.png', import.meta.url)),
+  false,
+  'a missing bake stays missing — do not invent kings-island pixel-tycoon art',
+);
+
 console.log('custom-map.test: ok');

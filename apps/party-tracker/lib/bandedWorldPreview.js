@@ -17,9 +17,13 @@ export function bandedWorldPreviewEnabled() {
 export const PREVIEW_VENUE = 'kings-island';
 
 /** Baked Skins available for it — two contrasting looks, which is what makes
- *  the beyond-palette distinctness gate visible at all (ADR-0021 clause 6
- *  asks for three; pixel-tycoon still needs its top-down conversion). */
+ *  the beyond-palette distinctness gate visible at all. pixel-tycoon converted
+ *  to top-down; guests see OSM until a certified kings-island bake ships.
+ *  Do not invent a world PNG to preview the third Skin. */
 export const PREVIEW_SKINS = ['watercolor-quest', 'layered-atlas'];
+
+/** Honest guest note (ADR-0021 clause 6): the kit ships; the bake does not. */
+export const PIXEL_TYCOON_SHIP_NOTE = 'OSM until a certified bake exists';
 
 /** Where a Skin's world sidecar and its painted bytes are served from. */
 export function previewWorldPaths(skin) {
