@@ -468,5 +468,11 @@
     "items": [
       "The introduction never showed up locally: Next 16 dev 403s every chunk at 127.0.0.1 (#591)"
     ]
+  },
+  "1.27.0": {
+    "title": "What's new",
+    "items": [
+      "feat(agents): orchestrator roster wired into every session start"
+    ]
   }
 }
