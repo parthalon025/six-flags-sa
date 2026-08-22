@@ -597,27 +597,39 @@ await check("wearing a Skin repaints the World's Zones from its own display pack
     if (/Locked|Out of season|This World/.test(await row.innerText())) {
       throw new Error('Watercolor quest still locked after demo grant');
     }
-    await row.click();
-    // The spec is fetched, so wait for the paint to actually change rather
-    // than for a timer — a green run here must mean the tones arrived.
-    await p.waitForFunction((before) => {
-      const now = [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill'));
-      return now.length === before.length && now.some((f, i) => f !== before[i]);
-    }, palette, { timeout: 20000 });
-    const worn = await zoneFills();
-
-    // Every fill the Skin painted is one its own published spec declares.
+    // Read the spec before wearing, because it is what the wait below waits
+    // FOR. Waiting on "any fill changed" instead raced the thing under test:
+    // switching Skin re-runs landTint immediately, and with no tones in hand
+    // yet that already repaints every Zone in the generated name-hue. The
+    // wait therefore fired on the fallback repaint and `worn` was read in the
+    // window before the spec landed — reporting 0 Zone fills from the Skin on
+    // a build where the Skin paints all ten, whenever the fetch lost the race
+    // (which is to say, whenever the box was busy).
     const spec = await p.evaluate(async () => {
       const res = await fetch('/venues/kings-island/display/watercolor-quest.visual.json');
       return res.ok ? res.json() : null;
     });
     if (!spec) throw new Error('the World never published watercolor-quest.visual.json');
     const mode = spec.tokens?.mode === 'night' ? 'night' : 'day';
-    const declared = new Set(
-      Object.values(spec.landTones || {}).map((byMode) => byMode?.[mode]?.fill).filter(Boolean),
-    );
-    if (declared.size < 5) throw new Error(`spec declares ${declared.size} Zone fills`);
-    const fromSpec = worn.filter((f) => declared.has(String(f).toUpperCase()));
+    const declared = [
+      ...new Set(Object.values(spec.landTones || {}).map((byMode) => byMode?.[mode]?.fill).filter(Boolean)),
+    ];
+    if (declared.length < 5) throw new Error(`spec declares ${declared.length} Zone fills`);
+
+    await row.click();
+    // Wait for the tones the spec declares to be the ones on the map. A Skin
+    // that never paints its Zones times out here instead of passing, which is
+    // the failure this check exists to catch.
+    await p.waitForFunction((want) => {
+      const set = new Set(want);
+      const now = [...document.querySelectorAll('.mapWorld .lyr-land path')].map((el) => el.getAttribute('fill'));
+      return now.filter((f) => set.has(String(f).toUpperCase())).length >= 5;
+    }, declared, { timeout: 20000 });
+    const worn = await zoneFills();
+
+    // Every fill the Skin painted is one its own published spec declares.
+    const declaredSet = new Set(declared);
+    const fromSpec = worn.filter((f) => declaredSet.has(String(f).toUpperCase()));
     if (fromSpec.length < 5) {
       throw new Error(`only ${fromSpec.length} Zone fills came from the Skin's own spec`);
     }
