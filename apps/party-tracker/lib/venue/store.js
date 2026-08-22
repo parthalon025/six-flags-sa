@@ -13,8 +13,14 @@
  *
  * `state.pois` is the Places *this phone believes in*: what the builder
  * shipped, numbered by `withIds`, and then painted with this phone's Overlay.
- * There is deliberately no export for the unpainted list, and the shipped array
- * is a module-private `shipped` below rather than a field on the snapshot.
+ * The shipped array is a module-private `shipped` below rather than a field on
+ * the snapshot, so nothing that draws a World can reach it by destructuring one.
+ *
+ * There is exactly one exception, and it is not a screen: the guest
+ * ground-truth research lane, whose question is about the builder rather than
+ * about this phone. It is served by `placesAsShippedForResearchOnly()` — one
+ * named export, off the snapshot, said out loud rather than left as a second
+ * silent door. See that function for the failure it prevents.
  *
  * That is not tidiness, it is the fix for a shipped bug. Painting used to
  * happen once in app/page.js and be drilled outward as props, so a screen got
@@ -78,7 +84,9 @@ const state = {
  * `shipped` is the second door the store exists to close: publishing it would
  * let a future screen reach for unpainted Places again, and the bug that
  * produces is silent — the screen renders, it is just answering from a
- * different World than the map is.
+ * different World than the map is. The one export that hands it out is named
+ * after the lane allowed to have it, not after the data, so reaching for it is
+ * a decision rather than a slip.
  *
  * `overlay` is private for the smaller reason that nothing outside needs it:
  * the app already holds the Overlay it pushed down (see setOverlay), so a copy
@@ -89,6 +97,28 @@ const state = {
  */
 let shipped = [];
 let overlay = emptyOverlay();
+
+/**
+ * The Places this World shipped with, unpainted — for the guest ground-truth
+ * research lane, and nothing else on this phone.
+ *
+ * That lane records how far a guest actually stood from the pin the *builder*
+ * shipped and uploads the delta to /api/contributions/traces, where it is read
+ * as independent evidence about whether that pin is in the right place. Paint
+ * these with this phone's Overlay and a guest who has just dropped a queue pin
+ * in a Side Quest gets measured against their own Contribution: the
+ * map-improvement loop takes its own output back as confirmation of the truth
+ * it shipped, agrees with itself, and drifts with nothing left to catch it.
+ *
+ * Deliberately not a field on the snapshot and deliberately not a hook a screen
+ * meets while shopping for Places — `usePois()` is the one door for anything
+ * that draws. It is also not a general "give me unpainted Places" API: it names
+ * its one consumer because a second caller means the question has changed, and
+ * that should have to be argued for rather than imported.
+ */
+export function placesAsShippedForResearchOnly() {
+  return shipped;
+}
 
 let snapshot = { ...state };
 const listeners = new Set();

@@ -57,7 +57,18 @@ const MANIFEST = {
 /* Orion ships a height rule of 48in. Every check below is about which number
    a screen sees after a Member contributes a different one. */
 const SHIPPED_POIS = [
-  { i: 'orion', n: 'Orion', c: 'coaster', lat: 0.1, lng: 0.1, h: { min: 48 } },
+  {
+    i: 'orion',
+    n: 'Orion',
+    c: 'coaster',
+    lat: 0.1,
+    lng: 0.1,
+    h: { min: 48 },
+    /* The queue entrance the builder shipped. The research lane measures a
+       guest against this coordinate, so the checks below need it to be a real
+       number a Contribution can be told apart from. */
+    e: [{ lat: 0.1, lng: 0.1, src: { confidence: 'medium', sources: ['osm'] } }],
+  },
   { i: 'loo', n: 'Midway restroom', c: 'restroom', lat: 0.2, lng: 0.2 },
 ];
 
@@ -145,12 +156,60 @@ await check('there is no second door to unpainted Places', async () => {
     const hit = value.find((row) => row && row.i === 'orion');
     if (hit) assert.equal(hit.h.min, 42, `snapshot.${key} answers with the shipped rule`);
   }
+  /* The store does export unpainted Places, for the research lane only — but
+     under that name and as a call, never as a general one. A door called
+     `pois`, `shippedPois` or `rawPois` is one a screen can walk through by
+     habit; `placesAsShippedForResearchOnly()` has to be argued for. */
   for (const name of Object.keys(store)) {
     assert.ok(
-      !/^(shippedPois|rawPois|unpaintedPois)$/.test(name),
-      `store exports ${name} — an escape hatch back to unpainted Places`,
+      !/^(shippedPois|rawPois|unpaintedPois|pois|places)$/.test(name),
+      `store exports ${name} — a general escape hatch back to unpainted Places`,
     );
   }
+  assert.equal(typeof store.placesAsShippedForResearchOnly, 'function');
+  assert.equal(
+    snapshot.placesAsShippedForResearchOnly,
+    undefined,
+    'and it stays off the snapshot every screen destructures',
+  );
+});
+
+await check('the research lane sees shipped Places while screens see painted ones', async () => {
+  /* The failure this pair exists to stop. A guest completes the queue-pin Side
+     Quest and drops Orion's entrance 220-odd metres from where the builder put
+     it. The map must draw the guest's pin. The guest ground-truth lane must
+     still measure against the builder's, because what it uploads is read as
+     independent evidence about whether the builder's pin is right — measure the
+     guest against their own Contribution and the map-improvement loop confirms
+     its own output. */
+  setOverlay(
+    applyContribution(
+      emptyOverlay(),
+      contributionFromGapSubmit({
+        id: 'c7', type: 'queue', placeId: 'orion', lat: 0.102, lng: 0.102, now: 7000,
+      }),
+    ),
+  );
+
+  const onScreen = orion();
+  const forResearch = store
+    .placesAsShippedForResearchOnly()
+    .find((p) => p.i === 'orion');
+
+  assert.equal(onScreen.e[0].lat, 0.102, 'the map draws the entrance this phone contributed');
+  assert.equal(forResearch.e[0].lat, 0.1, 'research still measures against the pin the builder shipped');
+  assert.notEqual(
+    onScreen.e[0].lat,
+    forResearch.e[0].lat,
+    'the two lanes are observably looking at different coordinates',
+  );
+  assert.equal(onScreen.overlay, true);
+  assert.equal(forResearch.overlay, undefined, 'nothing painted onto the research lane');
+
+  /* And it is the same World, not a stale copy: the research array is what the
+     last load produced, numbered by withIds like the painted one. */
+  assert.ok(forResearch.id, 'shipped Places are numbered too');
+  assert.equal(store.placesAsShippedForResearchOnly().length, places().length);
 });
 
 await check('Overlay drawables that are not Places ship with them', async () => {
