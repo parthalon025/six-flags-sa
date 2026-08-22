@@ -27,7 +27,7 @@
  *   node test/scripts/train-plan.test.mjs
  */
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -290,6 +290,42 @@ for (const bad of ['/etc/passwd', '../outside', 'a/../../b', '']) {
 }
 assert.equal(empty.read('nope/missing.mjs'), '', 'a missing file reads as empty, not a throw');
 
+// has() and wiredInto() route through the same gate today. Assert it of them
+// directly anyway: the seal is a property of the reader, and a later change
+// that gives either its own path handling would slip past a test that only
+// ever exercises read().
+for (const bad of ['/etc/passwd', '../outside', 'a/../../b', '']) {
+  assert.throws(() => empty.has(bad), /repo-relative|non-empty/, `has() accepted ${JSON.stringify(bad)}`);
+  assert.throws(
+    () => empty.wiredInto(bad, 'package.json'),
+    /repo-relative|non-empty/,
+    `wiredInto() accepted ${JSON.stringify(bad)} as its module`,
+  );
+}
+assert.throws(
+  () => empty.wiredInto('scripts/lib/train-plan.mjs', '/etc/passwd'),
+  /repo-relative/,
+  'wiredInto() accepted an absolute path as its importer — the second argument is a '
+    + 'path too, and reading it from outside the tree is the same leak',
+);
+
+// The two workflow prompts carry the same vacuous-test rubric because workflow
+// scripts have no module resolution and cannot share a constant. That is a
+// forced duplication, so it gets a guard rather than a comment asking nicely:
+// a rubric that drifts between the agent writing tests and the agent auditing
+// them is worse than no rubric.
+const rubricOf = (rel) => {
+  const m = readFileSync(path.join(REPO, rel), 'utf8').match(/const VACUOUS =([\s\S]*?);\n/);
+  assert.ok(m, `${rel} no longer defines VACUOUS — if the rubric moved, move this guard with it`);
+  return m[1].replace(/\s+/g, ' ').trim();
+};
+assert.equal(
+  rubricOf('.claude/workflows/train-slices.mjs'),
+  rubricOf('.claude/workflows/train-verify.mjs'),
+  'the builder and verifier workflows state different vacuous-test rubrics, so an '
+    + 'agent could write a test the auditor is not looking for',
+);
+
 // ------------------------------------------------------------ the four buckets
 
 const rows = status(empty);
@@ -341,16 +377,30 @@ assert.equal(
 assert.deepEqual([...synthBuckets].sort(), ['sb', 'sc', 'sd']);
 
 // A probe that throws must not take the other sixteen slices down with it.
-const exploding = { id: 'x', train: 'H', size: 'S', title: 'x', probe: () => { throw new Error('boom'); } };
-const withBomb = [...SLICES, exploding];
-const rowsWithBomb = withBomb.map((s) => {
-  let done = false;
-  let probeError = null;
-  try { done = s.probe(empty) === true; } catch (err) { probeError = err.message; }
-  return { ...s, done, probeError, needs: s.needs ?? [], blocked: s.blocked ?? null };
-});
+// This calls the real status() with an injected slice list rather than
+// re-running its loop here: a copy of the loop asserts something about the
+// copy, and deleting status()'s own try/catch would leave it green.
+const exploding = {
+  id: 'x',
+  train: 'H',
+  size: 'S',
+  title: 'x',
+  probe: () => {
+    throw new Error('boom');
+  },
+};
+const rowsWithBomb = status(empty, [...SLICES, exploding]);
+assert.equal(rowsWithBomb.length, SLICES.length + 1, 'a throwing probe must not shorten the board');
 assert.equal(rowsWithBomb.at(-1).done, false);
-assert.equal(rowsWithBomb.at(-1).probeError, 'boom', 'a throwing probe records why, rather than reading as merely unbuilt');
+assert.equal(
+  rowsWithBomb.at(-1).probeError,
+  'boom',
+  'a throwing probe records why, rather than reading as merely unbuilt',
+);
+assert.ok(
+  rowsWithBomb.slice(0, -1).every((r) => r.probeError === null),
+  'one throwing probe must not mark the other slices as errored',
+);
 
 // ------------------------------------------- how far a chain of sessions gets
 

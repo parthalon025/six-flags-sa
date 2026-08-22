@@ -58,8 +58,16 @@ export function treeAt(root) {
   /** A file exists AND some other file refers to it — the difference between a
    *  module being written and a module being reachable, which is the
    *  difference this plan most often has to make. */
-  const wiredInto = (rel, importer) =>
-    has(rel) && read(importer).includes(path.basename(rel, path.extname(rel)));
+  const wiredInto = (rel, importer) => {
+    // Both paths are checked before either is used. Short-circuiting on
+    // has(rel) would leave a typo'd importer unvalidated whenever the module
+    // is absent — and a probe with a bad importer path does not error, it
+    // quietly returns false forever, which reads as "not built yet" and sends
+    // session after session to rebuild something that is already there.
+    at(rel);
+    at(importer);
+    return has(rel) && read(importer).includes(path.basename(rel, path.extname(rel)));
+  };
   return Object.freeze({ root, read, has, wiredInto });
 }
 
@@ -275,12 +283,18 @@ export const SLICES = Object.freeze([
 
 /** Every slice with its doneness read off a tree.
  *
+ *  `slices` is injectable for one reason: the suite has to prove that a
+ *  throwing probe does not take the run down, and it cannot do that without
+ *  putting a throwing probe in the list. Re-implementing this loop in the test
+ *  to get one would assert nothing about this function — deleting the catch
+ *  below would leave that test green.
+ *
  *  A probe that throws counts as not-done rather than crashing the run: a
  *  session that cannot read one file should still learn about the other
  *  sixteen slices. The thrown message rides along so the failure is visible
  *  rather than silently indistinguishable from "not built yet". */
-export function status(tree = treeAt(REPO)) {
-  return SLICES.map((s) => {
+export function status(tree = treeAt(REPO), slices = SLICES) {
+  return slices.map((s) => {
     let done = false;
     let probeError = null;
     try {

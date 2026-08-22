@@ -28,6 +28,16 @@ log(`${slices.length} startable slice(s): ${slices.map((s) => s.id).join(', ')}`
 
 const BASE = args?.base ?? 'claude/train-h-i-quiz-nxieu1';
 
+/* The three shapes a test takes when it asserts nothing. Stated once here and
+ * interpolated into both prompts below, because a builder and a verifier need
+ * the same list for opposite reasons and a rubric that drifts between them is
+ * worse than no rubric. It cannot be imported from scripts/lib: workflow
+ * scripts have no filesystem and no module resolution, so train-verify.mjs
+ * carries its own copy — keep the two in step by hand. */
+const VACUOUS = 'a mutation applied to a frozen object, a diff over an empty commit range, '
+  + 'a comparison against a value the test itself computed, or a condition that holds '
+  + 'however the source behaves';
+
 const RULES = `
 Repo rules that are not optional here:
 - You are ALREADY in your own isolated git worktree. Do not create another one.
@@ -41,10 +51,9 @@ Repo rules that are not optional here:
   which has happened here before.
 - TDD, red before green. Every assertion you write must be SHOWN to fail on its
   own message before the code makes it pass — revert the fix, watch the failure,
-  restore it. An assertion you never saw fail has proven nothing. Three tests in
-  this repo's recent history passed while asserting nothing: one mutated a frozen
-  object, one diffed an empty commit range, one satisfied its guard textually
-  while keeping the very bug the guard exists to catch.
+  restore it. An assertion you never saw fail has proven nothing. The shapes to
+  avoid: ${VACUOUS}. Several tests in this repo's recent history landed that way
+  and each was caught only by trying to make it fail.
 - Do NOT edit package.json, scripts/ci/manifest.mjs, or any shared registry or
   manifest. If your work needs wiring there, finish the module and report
   "NEEDS WIRING: <what>" in your summary. The integrator lands it. This is not a
@@ -134,9 +143,8 @@ Answer three questions, and default to the sceptical answer when unsure:
    this tree for the RIGHT reason — the capability exists — rather than because
    a string was placed where the probe looks?
 2. Can every new test actually fail? Pick each new assertion, work out what
-   change to the source would break it, and say so. An assertion over a frozen
-   object, an empty range, or a value the test itself computed is vacuous. This
-   is the single most common defect in this repo's recent history; find it.
+   change to the source would break it, and say so. Vacuous means ${VACUOUS}.
+   This is the single most common defect in this repo's recent history; find it.
 3. What is wrong, missing, or out of scope? Include files touched outside the
    slice, and any shared manifest edited when it should have been reported as
    NEEDS WIRING.`,

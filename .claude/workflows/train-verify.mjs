@@ -11,6 +11,14 @@ export const meta = {
  * reports built, but a probe answers "is the evidence there", not "is the
  * evidence honest" — and nothing has read these diffs. This is that read. */
 
+const BASE = args?.base ?? 'claude/train-h-i-quiz-nxieu1';
+
+/* Kept verbatim in step with train-slices.mjs. Workflow scripts have no module
+ * resolution, so this cannot be imported from one place; if you change it,
+ * change it there too. */
+const VACUOUS = 'a mutation applied to a frozen object, a diff over an empty commit range, '
+  + 'a comparison against a value the test itself computed, or a condition that holds '
+  + 'however the source behaves';
 const slices = args?.slices ?? [];
 if (slices.length === 0) return { verdicts: [], note: 'nothing to verify' };
 
@@ -57,17 +65,17 @@ slice's own contribution rather than the whole train's:
 
 Answer these, defaulting to the sceptical answer when unsure:
 
-1. probeHonest — Find slice ${s.id} in scripts/lib/train-plan.mjs (read it from
-   /home/user/six-flags-sa/.claude/worktrees/train-h-bands/scripts/lib/train-plan.mjs
-   if it is missing in the worktree) and read its \`probe\`. The probe now reports
+1. probeHonest — Find slice ${s.id} in scripts/lib/train-plan.mjs and read its
+   \`probe\`. If that file is missing from the worktree, read it from the branch
+   rather than from another worktree — worktrees are per-slice and removed when
+   done, so any absolute path to one is stale by the next run:
+       git show origin/${BASE}:scripts/lib/train-plan.mjs The probe now reports
    this slice built. Is that because the capability genuinely exists, or because
    a string landed where the probe greps? A comment, a variable name, or a
    string literal containing the needle is FRAUD, not completion. Say which.
 
 2. testsCanFail — For every new or changed assertion, name the specific source
-   change that would break it. An assertion over a frozen object, an empty
-   commit range, a value the test itself computed, or a condition that holds
-   vacuously is worthless. This repo has landed several; it is the primary
+   change that would break it. Vacuous means ${VACUOUS}. This repo has landed several; it is the primary
    defect class here, not a footnote. If a test cannot fail, say so and name it.
 
 3. scopeClean — Lanes were forbidden from editing package.json,
