@@ -27,6 +27,7 @@
     --meadow: #66B56A;
     --signal: #E55353;
     --bg: #0B1829;
+    --bgRgb: 11, 24, 41;
     --bg2: #10233F;
     --bg3: #1A3354;
     --grouped: #0B1829;
@@ -120,7 +121,7 @@
     --rFloatHalf: 22px;
     --rCapsule: 999px;
     --glassTint: rgba(16, 35, 63, .48);
-    --glassTintDeep: rgba(11, 24, 41, .82);
+    --glassTintDeep: rgba(var(--bgRgb), .82);
     --glassRim: rgba(247, 244, 236, .28);
     --glassRimLo: rgba(247, 244, 236, .08);
     --glassRing: rgba(39, 184, 176, .18);
@@ -131,7 +132,7 @@
     --lensEdge: inset 0 1px .5px var(--glassRim), inset 0 -1px .5px var(--glassRimLo), inset 0 0 0 .5px var(--glassRing);
     --lensDrop: 0 1px 2px rgba(0, 0, 0, .28), 0 6px 20px rgba(0, 0, 0, .30);
     --matThin: rgba(16, 35, 63, .64);
-    --matRegular: rgba(11, 24, 41, .78);
+    --matRegular: rgba(var(--bgRgb), .78);
     --matThick: rgba(8, 18, 32, .88);
     --matChrome: rgba(8, 18, 32, .94);
     --glass: var(--matRegular);

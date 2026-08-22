@@ -24,5 +24,15 @@ npm run dev          # http://localhost:3000
 
 `localhost` counts as a secure context, so GPS works there without a tunnel.
 
+The dev server only serves its `/_next/*` chunks to hosts it has been told about —
+`localhost`, `127.0.0.1` and the private LAN ranges are listed in
+`apps/party-tracker/next.config.mjs`. Reaching it from anywhere else (a tunnel
+hostname, say) needs that host named too, or the page loads and then sits there with
+no JavaScript:
+
+```bash
+DEV_ORIGINS=my-tunnel.example.com npm run dev
+```
+
 ---
 [← README](../../README.md) · [Guide index](index.md)

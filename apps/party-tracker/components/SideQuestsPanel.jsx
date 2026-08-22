@@ -683,7 +683,7 @@ export default function SideQuestsPanel({
       )}
       {reward ? <RewardToast reward={reward} /> : null}
 
-      <div className="label">
+      <div className="label eyebrow">
         For {venueName || 'this park'}
         {counts.durable ? ` · ${counts.durable} waiting` : ''}
         {pending > 0 ? ` · ${pending} pending` : ''}
@@ -707,12 +707,12 @@ export default function SideQuestsPanel({
         <div className="questList" role="list">{durable.map(renderQuest)}</div>
       )}
 
-      <div className="label">While you walk</div>
+      <div className="label eyebrow">While you walk</div>
       <div className="questList" role="list">{ambient.map(renderQuest)}</div>
 
       {myCompletions.length > 0 && (
         <>
-          <div className="label">Your completions</div>
+          <div className="label eyebrow">Your completions</div>
           <div className="rowList" data-overlay-mine>
             {myCompletions
               .slice()

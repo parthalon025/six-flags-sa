@@ -450,5 +450,23 @@
     "items": [
       "Close six defects the distinctness instrument had in itself, and one CI stamps had"
     ]
+  },
+  "1.26.6": {
+    "title": "What's new",
+    "items": [
+      "Design audit: reconcile every screen against the rendered canvas (#586)"
+    ]
+  },
+  "1.26.7": {
+    "title": "What's new",
+    "items": [
+      "Keep the ride-alone line when a height Contribution lands (#588)"
+    ]
+  },
+  "1.26.8": {
+    "title": "What's new",
+    "items": [
+      "The introduction never showed up locally: Next 16 dev 403s every chunk at 127.0.0.1 (#591)"
+    ]
   }
 }

@@ -100,10 +100,15 @@ export default function ProfileJourney({ session = null, contributions = 0 }) {
   const helped = Number(snap?.impactHelped) || 0;
   const reputation = Number(snap?.reputation) || 0;
   const progress = rankProgress(xp);
+  /* The one rung this screen draws — the next Title, matched back to the ladder
+     by the XP it sits at. `progress.next` is null for a Steward, and so is this. */
+  const nextRung = progress.next ? RANK_LADDER.find((r) => r.xp === progress.next.at) || null : null;
+  const nextReward = nextRung ? rankReward(nextRung.rank) : null;
+  const rungOpen = Boolean(nextRung) && openRank === nextRung.rank;
 
   return (
     <div className="profileJourney">
-      <div className="label">Your journey</div>
+      <div className="label eyebrow">Your journey</div>
       <TitleProgress
         xp={xp}
         lastQuestDay={snap ? snap.lastQuestDay || null : undefined}
@@ -134,47 +139,44 @@ export default function ProfileJourney({ session = null, contributions = 0 }) {
         ) : null}
       </div>
 
-      <div className="label">The Title ladder</div>
-      <ol className="rowList journeyLadder" aria-label="Title ladder">
-        {RANK_LADDER.map((row) => {
-          const reward = rankReward(row.rank);
-          const earned = xp >= row.xp;
-          const current = progress.rank === row.rank;
-          // Only the rung being walked toward opens. The earned ones are a
-          // record and the far ones are a horizon; neither has an answer to
-          // "how much further", which is the only question a disclosure here
-          // would be answering.
-          const isNext = progress.next?.at === row.xp;
-          const open = openRank === row.rank;
-          return (
-            <li
-              key={row.rank}
-              className={`journeyStep ${earned ? 'earned' : ''} ${current ? 'current' : ''} ${
-                isNext ? 'next' : ''
-              }`}
-            >
+      {/* One rung, and only one: the design's NEXT TITLE. The five-rung list
+          this replaced spent most of its height on rungs with no answer to
+          "how much further" — the earned ones are a record, the far ones a
+          horizon — while the rung actually being walked toward was the fourth
+          thing on the screen. Nothing is lost by showing one: RankPrizeCatalog
+          on this same screen carries the whole ladder and what each rung
+          grants, which is where a Steward looking for the far end goes.
+
+          `next` is null at the top of the ladder, and a Steward has no next
+          title to draw, so the block drops out rather than rendering an
+          empty card. */}
+      {nextRung ? (
+        <>
+          <div className="label eyebrow">Next Title</div>
+          <ol className="rowList journeyLadder" aria-label="Next Title">
+            <li className="journeyStep next">
               <button
                 type="button"
-                className={`row ${isNext ? '' : 'flat'} journeyStepRow`}
-                aria-expanded={isNext ? open : undefined}
-                onClick={() => isNext && setOpenRank(open ? null : row.rank)}
+                className="row journeyStepRow"
+                aria-expanded={rungOpen}
+                onClick={() => setOpenRank(rungOpen ? null : nextRung.rank)}
               >
                 <i className="titleLadderDot" aria-hidden="true" />
                 <span className="rowText journeyStepText">
-                  <b>{reward.label}</b>
-                  <span>{JOURNEY_COPY[row.rank]}</span>
+                  <b>{nextReward.label}</b>
+                  <span>{JOURNEY_COPY[nextRung.rank]}</span>
                 </span>
-                <span className="rowValue journeyStepAt">{earned ? '✓' : `${row.xp} XP`}</span>
+                <span className="rowValue journeyStepAt">{nextRung.xp} XP</span>
               </button>
-              {isNext && open ? (
+              {rungOpen ? (
                 <div className="journeyStepDetail">
                   <div className="journeyStepUnlock">
-                    <b>{reward.unlock}</b>
+                    <b>{nextReward.unlock}</b>
                     <span>{progress.next.toGo} XP to go</span>
                   </div>
                   <p className="fine">
-                    At {row.xp} XP the Title {reward.label} sits under your name for the Party.
-                    The full list of what each rung grants is below.
+                    At {nextRung.xp} XP the Title {nextReward.label} sits under your name for the
+                    Party. The full list of what each rung grants is below.
                   </p>
                   <div className="journeyAwards">
                     {AWARD_LINES.map(([label, amount]) => (
@@ -186,9 +188,9 @@ export default function ProfileJourney({ session = null, contributions = 0 }) {
                 </div>
               ) : null}
             </li>
-          );
-        })}
-      </ol>
+          </ol>
+        </>
+      ) : null}
     </div>
   );
 }

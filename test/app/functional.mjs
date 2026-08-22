@@ -862,6 +862,70 @@ try {
 } finally {
   await SP.context.close().catch(() => {});
 }
+
+/* The sheet is pulled by its whole surface, not only by its handle — see
+   components/useSheetDrag.js. That makes the list inside it and the sheet
+   itself two things one finger could mean, so the drag asks, once per
+   gesture, which of them the swipe belongs to: the list keeps it while the
+   list can still scroll that way, and the sheet takes it at the ends of the
+   travel. Both halves are asserted here because only the second one can
+   regress quietly — a sheet that moves when the list should have scrolled
+   still looks like a working sheet. */
+console.log('\n--- pulling the sheet ---');
+
+const sheetHeight = () =>
+  a.evaluate(() => Math.round(document.querySelector('.sheet').getBoundingClientRect().height));
+
+async function swipeSheetBody(dy, steps = 12) {
+  const box = await a.locator('.sheetBody').boundingBox();
+  if (!box) throw new Error('the sheet body is not on screen to swipe');
+  const x = box.x + box.width / 2;
+  const y = box.y + 40;
+  await a.mouse.move(x, y);
+  await a.mouse.down();
+  for (let i = 1; i <= steps; i++) await a.mouse.move(x, y + (dy * i) / steps);
+  await a.mouse.up();
+  await a.waitForTimeout(700);
+}
+
+await check('a swipe on the body pulls the sheet, not just the handle', async () => {
+  await a.evaluate(() => {
+    document.querySelector('.sheetBody').scrollTop = 0;
+  });
+  await a.waitForTimeout(200);
+  const before = await sheetHeight();
+  await swipeSheetBody(160); // downwards: the sheet should shrink
+  const after = await sheetHeight();
+  if (after >= before) throw new Error(`the sheet held at ${after}px instead of shrinking from ${before}px`);
+  return true;
+});
+
+await check('a swipe part-way down the list scrolls the list and leaves the sheet where it is', async () => {
+  // Back to a middle height, so the sheet has somewhere to go if it wrongly
+  // takes the gesture: a test run at the end of the travel would pass on a
+  // sheet that was simply clamped.
+  await a.locator('.grab').focus();
+  await a.keyboard.press('End');
+  await a.waitForTimeout(500);
+  for (let i = 0; i < 4; i++) await a.keyboard.press('ArrowDown');
+  await a.waitForTimeout(700);
+  await a.evaluate(() => {
+    document.querySelector('.sheetBody').scrollTop = 400;
+  });
+  await a.waitForTimeout(200);
+  const scrolled = await a.evaluate(() => document.querySelector('.sheetBody').scrollTop);
+  if (scrolled <= 0) throw new Error('the list did not scroll, so there is nothing to arbitrate');
+  const before = await sheetHeight();
+  await swipeSheetBody(160); // downwards, with the list able to scroll back up
+  const after = await sheetHeight();
+  if (after !== before) throw new Error(`the sheet moved ${before}px -> ${after}px on a swipe the list owned`);
+  return true;
+});
+
+// Leave the sheet where the rest of the run expects to find it.
+await a.locator('.grab').focus();
+await a.keyboard.press('End');
+await a.waitForTimeout(500);
 } // end smoke
 
 if (want('heights')) {
@@ -2528,14 +2592,27 @@ await check('the park answered stays answered across a reload', async () => {
     async () => {
       const confirmed = await e.evaluate(() => localStorage.getItem('tracker-venue-confirmed'));
       if (confirmed !== 'six-flags-fiesta-texas') return false;
-      // Clear a residual location/welcome gate if the map brand is already right.
+      // Clear a residual location/welcome gate. Read the brand with
+      // textContent, not innerText: the intake gate hides the chrome behind it
+      // (.app[data-gate-map] in globals.css, because the design draws the gate
+      // over the park and nothing else), and innerText returns '' for anything
+      // not rendered. The old peek used innerText and so could never satisfy
+      // its own guard once that landed — it waited for text it had just made
+      // invisible, and the gate it was meant to dismiss stayed up.
       if ((await e.locator('.gate').count()) > 0) {
-        const brandPeek = await e.locator('.brandName, .brand b').first().innerText().catch(() => '');
+        const brandPeek = await e
+          .locator('.brandName, .brand b')
+          .first()
+          .evaluate((el) => el.textContent || '')
+          .catch(() => '');
         if (/fiesta texas/i.test(brandPeek)) {
-          await e.locator('.gate .btn:has-text("Just show me the park map")').click().catch(() => {});
+          await e.locator('.gate button:has-text("Just browsing")').click().catch(() => {});
+          await e.locator('.gate button:has-text("Just show me the map")').click().catch(() => {});
           await e.locator('button:has-text("Allow location")').click().catch(() => {});
         }
       }
+      // Both halves, so this still proves what it always did: the venue survived
+      // the reload AND it is on screen rather than merely in the DOM.
       const brand = await e.locator('.brandName, .brand b').first().innerText().catch(() => '');
       return /fiesta texas/i.test(brand);
     },

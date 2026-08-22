@@ -27,6 +27,7 @@
     --meadow: #66B56A;
     --signal: #E55353;
     --bg: #0B1829;
+    --bgRgb: 11, 24, 41;
     --bg2: #10233F;
     --bg3: #1A3354;
     --grouped: #0B1829;
@@ -120,7 +121,7 @@
     --rFloatHalf: 22px;
     --rCapsule: 999px;
     --glassTint: rgba(16, 35, 63, .48);
-    --glassTintDeep: rgba(11, 24, 41, .82);
+    --glassTintDeep: rgba(var(--bgRgb), .82);
     --glassRim: rgba(247, 244, 236, .28);
     --glassRimLo: rgba(247, 244, 236, .08);
     --glassRing: rgba(39, 184, 176, .18);
@@ -131,7 +132,7 @@
     --lensEdge: inset 0 1px .5px var(--glassRim), inset 0 -1px .5px var(--glassRimLo), inset 0 0 0 .5px var(--glassRing);
     --lensDrop: 0 1px 2px rgba(0, 0, 0, .28), 0 6px 20px rgba(0, 0, 0, .30);
     --matThin: rgba(16, 35, 63, .64);
-    --matRegular: rgba(11, 24, 41, .78);
+    --matRegular: rgba(var(--bgRgb), .78);
     --matThick: rgba(8, 18, 32, .88);
     --matChrome: rgba(8, 18, 32, .94);
     --glass: var(--matRegular);
@@ -928,10 +929,10 @@
         <td class="wrapcell"></td>
       </tr>
 <tr>
-        <td><span class="sw" style="background:rgba(11, 24, 41, .82)"></span></td>
+        <td><span class="sw" style="background:rgba(var(--bgRgb), .82)"></span></td>
         <td><span class="sw" style="background:rgba(255, 255, 255, .82)"></span></td>
         <td class="mono">--glassTintDeep</td>
-        <td class="mono">rgba(11, 24, 41, .82)</td>
+        <td class="mono">rgba(var(--bgRgb), .82)</td>
         <td class="mono">rgba(255, 255, 255, .82)</td>
         <td class="wrapcell"></td>
       </tr>
@@ -1015,10 +1016,10 @@
         <td class="wrapcell"></td>
       </tr>
 <tr>
-        <td><span class="sw" style="background:rgba(11, 24, 41, .78)"></span></td>
+        <td><span class="sw" style="background:rgba(var(--bgRgb), .78)"></span></td>
         <td><span class="sw" style="background:rgba(255, 255, 255, .76)"></span></td>
         <td class="mono">--matRegular</td>
-        <td class="mono">rgba(11, 24, 41, .78)</td>
+        <td class="mono">rgba(var(--bgRgb), .78)</td>
         <td class="mono">rgba(255, 255, 255, .76)</td>
         <td class="wrapcell"></td>
       </tr>
@@ -1039,12 +1040,12 @@
         <td class="wrapcell"></td>
       </tr>
 <tr>
-        <td><span class="sw" style="background:rgba(11, 24, 41, .78)"></span></td>
-        <td><span class="sw" style="background:rgba(11, 24, 41, .78)"></span></td>
+        <td><span class="sw" style="background:rgba(var(--bgRgb), .78)"></span></td>
+        <td><span class="sw" style="background:rgba(var(--bgRgb), .78)"></span></td>
         <td class="mono">--glass</td>
         <td class="mono">var(--matRegular)</td>
         <td class="mono">—</td>
-        <td class="wrapcell">alias → <code>rgba(11, 24, 41, .78)</code>. </td>
+        <td class="wrapcell">alias → <code>rgba(var(--bgRgb), .78)</code>. </td>
       </tr>
 <tr>
         <td><span class="sw" style="background:rgba(8, 18, 32, .88)"></span></td>
@@ -1364,7 +1365,7 @@ the chrome that talks about them.</td>
       </tr></tbody>
   </table></div>
 
-  <p style="margin-top:28px">The other 59 tokens in these two blocks
+  <p style="margin-top:28px">The other 60 tokens in these two blocks
   are type, radius, motion and layout, and each is shown at its own value on
   <a href="tokens-type.html">Type</a>, <a href="tokens-radius.html">Radius</a>
   and <a href="tokens-spacing.html">Spacing</a>.</p>
