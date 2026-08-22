@@ -71,8 +71,7 @@ import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
 import { useAuth } from '@clerk/nextjs';
 import AuthBridge from '@/components/AuthBridge';
-import AuthGate from '@/components/AuthGate';
-import { clearGuestChoice, markGuestChoice, readGuestChoice } from '@/lib/auth/guestChoice';
+import { clearGuestChoice } from '@/lib/auth/guestChoice';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
@@ -315,8 +314,6 @@ function ParkApp({ isSignedIn }) {
   const [identity, setIdentity] = useState(null); // {id, name}
   /** Soft-gate profile (EP.3–EP.4) — null while anonymous; map still works. */
   const [authSession, setAuthSession] = useState(null);
-  /** Session-only guest bypass for the startup auth gate. */
-  const [guestMode, setGuestMode] = useState(false);
   const [managedGuests, setManagedGuests] = useState([]);
 
   const handleBindProfile = useCallback((userId) => {
@@ -888,28 +885,18 @@ function ParkApp({ isSignedIn }) {
   }, []);
 
   useEffect(() => {
-    setGuestMode(readGuestChoice());
-  }, []);
-
-  useEffect(() => {
     if (isSignedIn) clearGuestChoice();
   }, [isSignedIn]);
 
-  const pastAuthGate = isSignedIn || guestMode || !clerkBrowserConfigured();
-  // Do not wait for Clerk FAPI — a handshake failure must not skip Profile login.
-  const showAuthGate = clerkBrowserConfigured() && !isSignedIn && !guestMode;
-  const showIntroSplash = pastAuthGate && introSeen === false && !logoSplashDismissed;
+  // Live in-place OAuth is broken — do not park first-run behind it.
+  // Last working boot is splash, then welcome. Sign in lives on /sign-in and Me.
+  const showIntroSplash = introSeen === false && !logoSplashDismissed;
   /** Brand welcome on the gate after the logo splash, before GPS/park intake. */
-  const showWelcomeGate = pastAuthGate && introSeen === false && logoSplashDismissed && !nearestIntent;
-
-  const continueAsGuest = useCallback(() => {
-    markGuestChoice();
-    setGuestMode(true);
-  }, []);
+  const showWelcomeGate = introSeen === false && logoSplashDismissed && !nearestIntent;
 
   const askingPark = Boolean(parkChoice);
   /** Inline park question on the gate (GPS path), including after "nearest park". */
-  const showParkPrompt = pastAuthGate && !showAuthGate && !showIntroSplash && gateOpen && askingPark;
+  const showParkPrompt = !showIntroSplash && gateOpen && askingPark;
   const showExplorePrompt = showParkPrompt && Boolean(parkChoice?.explore) && !nearestIntent;
 
   useEffect(() => {
@@ -1276,7 +1263,6 @@ function ParkApp({ isSignedIn }) {
   const showIntakeGate =
     gateOpen &&
     introSeen !== null &&
-    !showAuthGate &&
     !showExplorePrompt &&
     !showIntroSplash &&
     !locationLocked;
@@ -2832,7 +2818,7 @@ function ParkApp({ isSignedIn }) {
          is the thing behind the question. Separate from data-intro-map because
          the two want different amounts of park — the intro dims it to a wash
          under a .86 scrim, the intake shows it. */
-      data-gate-map={showIntakeGate || showAuthGate ? '1' : undefined}
+      data-gate-map={showIntakeGate ? '1' : undefined}
       style={{ '--sheetH': `${stowed ? STOWED_PX : sheetPx}px` }}
     >
       {introOverlay === 'hold' && (
@@ -3934,14 +3920,9 @@ function ParkApp({ isSignedIn }) {
         </div>
       )}
 
-      {showAuthGate && <AuthGate onGuest={continueAsGuest} />}
-
-      {showIntroSplash && !showAuthGate && (
+      {showIntroSplash && (
         <IntroSplash
           version={appUpdate.version}
-          /* Normally null here — first run is before any party exists — so the
-             intro's code panel stays off rather than inventing one. */
-          partyCode={code}
           onContinue={() => setLogoSplashDismissed(true)}
         />
       )}

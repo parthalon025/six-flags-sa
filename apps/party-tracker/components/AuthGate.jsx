@@ -6,8 +6,9 @@ import { BRAND } from '@/lib/brand';
 import { AUTH_COPY } from '@/lib/auth/authCopy';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 /**
- * First screen when the app opens without a Profile — Google, Apple, or Guest.
- * Map and Party stay name-first after guest continues.
+ * Profile card — Sign in (/sign-in) or Guest.
+ * First-run no longer mounts this (live in-place OAuth blocked the splash).
+ * Me still uses AuthGateActions via SignInCard.
  *
  * Reading order is mark, PROFILE, PARKBOUND, slogan, then the ask. The brand
  * arrives before the request does: someone who just tapped an unfamiliar icon

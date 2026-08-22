@@ -7541,7 +7541,7 @@ await check('clerkOAuthReady waits for Clerk JS, not useSignIn isLoaded', () => 
   return true;
 });
 
-await check('Profile gate offers Google, Apple or Guest — no /sign-in bounce', async () => {
+await check('Profile gate is Sign in (Clerk /sign-in) or Guest — last working auth', async () => {
   const { AUTH_COPY } = await import('../../apps/party-tracker/lib/auth/authCopy.js');
   assert.equal(AUTH_COPY.loginLabel, 'Sign in');
   assert.equal(AUTH_COPY.guestLabel, 'Guest');
@@ -7550,23 +7550,21 @@ await check('Profile gate offers Google, Apple or Guest — no /sign-in bounce',
     new URL('../../apps/party-tracker/components/AuthGateActions.jsx', import.meta.url),
     'utf8',
   );
-  // The gate is the card; the actions own the providers. Splitting them is what
-  // lets AuthGate stay renderable without a Clerk key.
+  // In-place useClerkOAuth is what broke on live. Last working gate is a
+  // /sign-in link (Clerk hosted) plus Guest. The card stays mountable without a key.
   assert.match(gate, /AuthGateActions/);
   assert.doesNotMatch(gate, /OAuthButtons/);
   assert.doesNotMatch(gate, /useClerkOAuth/);
-  // Google and Apple start here rather than on /sign-in. That route still
-  // exists — useClerkOAuth redirects the browser through it — so what must not
-  // come back is a link that makes the reader visit it by hand first.
-  assert.match(gateActions, /OAuthButtons/);
-  assert.match(gateActions, /useClerkOAuth/);
-  assert.doesNotMatch(gateActions, /href="\/sign-in"/);
+  assert.match(gateActions, /href="\/sign-in"/);
+  assert.match(gateActions, /authGateLogin/);
   assert.match(gateActions, /AUTH_COPY\.guestLabel/);
+  assert.doesNotMatch(gateActions, /OAuthButtons/);
+  assert.doesNotMatch(gateActions, /useClerkOAuth/);
   const signInRoute = new URL(
     '../../apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx',
     import.meta.url,
   );
-  assert.equal(fs.existsSync(signInRoute), true, 'OAuth redirects still land on /sign-in');
+  assert.equal(fs.existsSync(signInRoute), true, 'Sign in still lands on /sign-in');
   return true;
 });
 
@@ -7596,36 +7594,41 @@ await check('The World pick is one component, mounted by both intake paths', () 
   return true;
 });
 
-await check('The intro is scroll-read and never invents a party code', async () => {
-  const { BRAND, INTRO_CLAIMS } = await import('../../apps/party-tracker/lib/brand.js');
-  // D6: the gate and the intro ask different questions, and shortDescription is
-  // also the app's metadata description — three keys, not one overwritten.
+await check('The intro is a tap-to-continue splash and never invents a party code', async () => {
+  const { BRAND } = await import('../../apps/party-tracker/lib/brand.js');
   assert.equal(typeof BRAND.introPitch, 'string');
   assert.equal(typeof BRAND.gatePitch, 'string');
   assert.notEqual(BRAND.introPitch, BRAND.shortDescription);
-  assert.equal(INTRO_CLAIMS.length, 3);
   const src = fs.readFileSync(
     new URL('../../apps/party-tracker/components/IntroSplash.jsx', import.meta.url),
     'utf8',
   );
   assert.doesNotMatch(src, /PB-/, 'the mock party code must not ship');
-  assert.match(src, /partyCode/);
-  // Content that fits without scrolling is content that has been read; without
-  // this the primary action is unreachable on a tall phone.
-  assert.match(src, /scrollHeight - el\.clientHeight <= 1/);
+  // Tap the card to advance — do not make the reader scroll a story first.
+  assert.match(src, /introSplashCard/);
+  assert.match(src, /onContinue/);
+  assert.doesNotMatch(src, /introScroll/);
+  assert.doesNotMatch(src, /Skip intro/);
   // Still a .gate: the first-run hold hides the app behind anything that is not
   // one, so dropping the class would leak the map through the intro.
-  assert.match(src, /gate gateFirstRun introGate/);
+  assert.match(src, /gate gateFirstRun/);
   assert.match(src, /gateVersionBtn/);
   return true;
 });
 
-await check('AuthGate and SignInCard share useClerkOAuth for OAuth readiness', () => {
-  const hookUrl = new URL('../../apps/party-tracker/lib/auth/useClerkOAuth.js', import.meta.url);
-  assert.equal(fs.existsSync(hookUrl), true, 'missing useClerkOAuth');
+await check('first-run splash does not wait for the Profile gate', () => {
+  const page = fs.readFileSync(new URL('../../apps/party-tracker/app/page.js', import.meta.url), 'utf8');
+  assert.match(page, /introSeen === false && !logoSplashDismissed/);
+  assert.doesNotMatch(page, /pastAuthGate && introSeen === false && !logoSplashDismissed/);
+  assert.doesNotMatch(page, /showIntroSplash && !showAuthGate/);
+  return true;
+});
+
+await check('SignInCard uses Clerk /sign-in rather than in-place OAuth', () => {
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(card, /useClerkOAuth/);
-  assert.doesNotMatch(card, /useSignIn/);
+  assert.match(card, /AuthGateActions/);
+  assert.doesNotMatch(card, /useClerkOAuth/);
+  assert.doesNotMatch(card, /OAuthButtons/);
   return true;
 });
 
@@ -7684,8 +7687,11 @@ await check('OAuth buttons are provider logos in two columns', () => {
   assert.match(src, /oauthActions/);
   const css = fs.readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(css, /\.oauthActions[\s\S]*?grid-template-columns:\s*1fr\s+1fr/);
-  const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(card, /OAuthButtons/);
+  const signInPage = fs.readFileSync(
+    new URL('../../apps/party-tracker/app/sign-in/[[...sign-in]]/page.jsx', import.meta.url),
+    'utf8',
+  );
+  assert.match(signInPage, /<SignIn/);
   return true;
 });
 

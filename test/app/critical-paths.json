@@ -135,9 +135,9 @@
     {
       "id": "clerk-profile-oauth",
       "slice": "EP",
-      "user_action": "Sign in or Guest from the Profile gate; Google/Apple on /sign-in",
+      "user_action": "First paint is splash; Sign in is /sign-in, not an in-place OAuth wall",
       "suite": "functional",
-      "check": "Profile gate shows Sign in and Guest"
+      "check": "first paint is the splash, not an in-place OAuth wall"
     },
     {
       "id": "ep5-sharing",

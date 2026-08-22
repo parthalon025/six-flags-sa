@@ -1,24 +1,21 @@
 'use client';
 
-import { Show, UserButton, useClerk } from '@clerk/nextjs';
+import { UserButton, useClerk } from '@clerk/nextjs';
 import { rankReward } from '@party-tracker/shared/questScore.js';
-import OAuthButtons from '@/components/OAuthButtons';
+import AuthGateActions from '@/components/AuthGateActions';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
-import { useClerkOAuth } from '@/lib/auth/useClerkOAuth';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 /**
- * Soft-gate sign-in (EP.3) — Google / Apple only via Clerk OAuth.
- * Map and Party stay usable without a Profile; no email or password UI.
+ * Soft-gate sign-in (EP.3) — Sign in opens Clerk (/sign-in).
+ * In-place OAuth on this card is what broke on live.
  */
 export default function SignInCard(props) {
-  // Same seam as layout / AuthBridge / AuthGate: no ClerkProvider without a key.
   if (!clerkBrowserConfigured()) return null;
   return <SignInCardLive {...props} />;
 }
 
 function SignInCardLive({ session = null, onSession = null }) {
   const { signOut } = useClerk();
-  const { ready, busy, err, startOAuth } = useClerkOAuth();
 
   if (session?.userId) {
     const title = rankReward(session.rank || 'visitor').title;
@@ -54,18 +51,10 @@ function SignInCardLive({ session = null, onSession = null }) {
     <div className="signInCard">
       <div className="label">Save progress on your Profile</div>
       <p className="fine block">
-        Browse the map and join a party by name anytime. Continue with Google or Apple to keep XP,
+        Browse the map and join a party by name anytime. Sign in to keep XP,
         Managed Guests, and gap Side Quests on this phone.
       </p>
-      <div className="signInActions">
-        <Show when="signed-out">
-          <OAuthButtons isLoaded={ready} busy={busy} onStart={startOAuth} />
-        </Show>
-        <Show when="signed-in">
-          <UserButton afterSignOutUrl="/" />
-        </Show>
-      </div>
-      {err ? <p className="fine block warnText">{err}</p> : null}
+      <AuthGateActions />
     </div>
   );
 }

@@ -28,6 +28,7 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Session GitNexus graph | `npm run gitnexus:startup` (gitignored; see gitnexus-sync policy) |
 | Isolate agent work in a git worktree | `npm run worktree:create` / `worktree:remove` / `worktree:prune` (`scripts/worktree.mjs`) |
 | Install Matt Pocock skills globally | `node scripts/install-global-skills.mjs` (Cloud `install` in `.cursor/environment.json`) |
+| Route a task to a team member / model tier | `npm run orchestrator:route -- "<task>"` / `orchestrator:plan` (`scripts/lib/orchestrator/route.mjs`, roster in `roster.json`) |
 | Compose agent docs from policy templates | `npm run agent-docs:build` / `agent-docs:check` (`scripts/lib/agent-docs/compose.mjs`) |
 | GitHub issue forms | `docs/agents/templates/github/*.yml` → `.github/ISSUE_TEMPLATE/` via `agent-docs:build` |
 | Package entry points | [packages/README.md](../../packages/README.md) |
