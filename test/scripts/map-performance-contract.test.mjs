@@ -85,11 +85,36 @@ assert.equal(eased, true, 'the sweep moves the live camera, not only averages id
 assert.equal(throttled.throttled, true);
 assert.equal(throttled.ok, true);
 
+const closedCdp = await zoomSweep({
+  minFps: MIN_FPS_FLOOR,
+  throttle: 4,
+  page: {
+    context: () => ({
+      newCDPSession: async () => ({
+        send: async () => {
+          throw new Error('Target page, context or browser has been closed');
+        },
+      }),
+    }),
+    evaluate: async (fn) => {
+      globalThis.__parkMapFps = [40, 42, 38];
+      return fn();
+    },
+  },
+});
+assert.equal(closedCdp.ok, true, 'a closed CDP session must not throw the vertical');
+assert.equal(closedCdp.throttled, false);
+
 const live = readFileSync(
   new URL('../../scripts/lib/map-perf-gate.mjs', import.meta.url),
   'utf8',
 );
 assert.match(live, /openPhone/, 'the live driver uses the phone harness, not a bare goto');
 assert.match(live, /mapMissing/, 'the missing-world stub is not treated as a drawn map');
+assert.match(
+  live,
+  /return await zoomSweep\(/,
+  'the live driver awaits the sweep so finally cannot close Chromium first',
+);
 
 console.log('map-performance-contract: ok');

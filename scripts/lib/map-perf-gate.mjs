@@ -13,7 +13,11 @@ async function applyCpuThrottle(page, rate) {
   const ctx = typeof page.context === 'function' ? page.context() : null;
   const session = ctx?.newCDPSession ? await ctx.newCDPSession(page).catch(() => null) : null;
   if (!session?.send) return false;
-  await session.send('Emulation.setCPUThrottlingRate', { rate });
+  try {
+    await session.send('Emulation.setCPUThrottlingRate', { rate });
+  } catch {
+    return false;
+  }
   return true;
 }
 
@@ -126,7 +130,7 @@ export async function runLiveZoomSweep({
     });
     const ready = page.locator('[data-testid="park-map-gl"]:not(.mapMissing)[data-map-ready="1"] canvas');
     await ready.waitFor({ timeout: 40000 });
-    return zoomSweep({ page, minFps, throttle });
+    return await zoomSweep({ page, minFps, throttle });
   } finally {
     await browser.close();
   }
