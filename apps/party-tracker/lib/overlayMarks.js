@@ -104,7 +104,7 @@ export function overlayChrome(overlay, project, extras = {}) {
     if (!d) continue;
     const direct = feature.properties?.mode === 'direct';
     paths.push({
-      id: 'route',
+      id: feature.properties?.id ?? feature.id ?? 'route',
       className: direct ? 'routeLine direct' : 'routeLine',
       d,
     });
@@ -120,8 +120,8 @@ export function overlayChrome(overlay, project, extras = {}) {
   let cone = null;
   const puck = extras.puck;
   if (puck && Number.isFinite(puck.lat) && Number.isFinite(puck.lng)) {
-    const point = project?.({ lng: puck.lng, lat: puck.lat });
-    if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) {
+    const point = projectPoint(project, [puck.lng, puck.lat]);
+    if (point) {
       const rotation = Number.isFinite(extras.rotation) ? extras.rotation : 0;
       // Same source mapRotationDegrees uses: compass heading wins, then the
       // route course. A heading of 0 with a southbound course used to point

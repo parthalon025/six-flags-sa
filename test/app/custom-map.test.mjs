@@ -57,7 +57,11 @@ assert.deepEqual(
   bakedWorldBands('kings-island', 'watercolor-quest'),
   { mid: { image: '/venues/kings-island/display/watercolor-quest.world.png' } },
 );
-assert.equal(bakedWorldBands('kings-island', 'pixel-tycoon'), null, 'no certified bake yet');
+assert.deepEqual(
+  bakedWorldBands('kings-island', 'layered-atlas'),
+  { mid: { image: '/venues/kings-island/display/layered-atlas.world.png' } },
+);
+assert.equal(bakedWorldBands('kings-island', 'pixel-tycoon'), null, 'declared baked, no pack yet');
 assert.equal(bakedWorldBands('kings-island', 'night'), null);
 assert.ok(sidecar.bounds.west < sidecar.bounds.east && sidecar.bounds.south < sidecar.bounds.north);
 

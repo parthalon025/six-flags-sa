@@ -30,6 +30,8 @@ const CUSTOM_MAPS = {
     placement: PLACEMENT_OVERLAY,
     camera: 'mercator',
     renderer: 'baked',
+    /* Declared baked; no certified world PNG ships yet. */
+    hasPack: false,
     world: { projection: 'top-down' },
   },
   'layered-atlas': {
@@ -37,6 +39,7 @@ const CUSTOM_MAPS = {
     placement: PLACEMENT_OVERLAY,
     camera: 'mercator',
     renderer: 'baked',
+    hasPack: true,
     world: { projection: 'top-down' },
   },
   'watercolor-quest': {
@@ -44,6 +47,7 @@ const CUSTOM_MAPS = {
     placement: PLACEMENT_OVERLAY,
     camera: 'mercator',
     renderer: 'baked',
+    hasPack: true,
     world: { projection: 'top-down' },
   },
 };
@@ -64,7 +68,7 @@ export function resolveCustomMap(wear) {
  */
 export function bakedWorldBands(venueId, wear) {
   const spec = resolveCustomMap(wear);
-  if (!spec || spec.renderer !== 'baked' || !venueId || wear === 'pixel-tycoon') return null;
+  if (!spec || spec.renderer !== 'baked' || !spec.hasPack || !venueId) return null;
   return { mid: { image: `/venues/${venueId}/display/${spec.id}.world.png` } };
 }
 

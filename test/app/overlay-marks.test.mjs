@@ -71,6 +71,15 @@ assert.deepEqual(
     route: { features: [{ geometry: { coordinates: [[-84.27, 39.35], [-84.26, 39.34]] }, properties: { mode: 'direct' } }] },
   }, project);
   assert.equal(direct.paths[0].className, 'routeLine direct');
+  const two = overlayChrome({
+    route: {
+      features: [
+        { id: 'a', geometry: { coordinates: [[-84.27, 39.35], [-84.26, 39.34]] }, properties: { id: 'a' } },
+        { id: 'b', geometry: { coordinates: [[-84.26, 39.34], [-84.25, 39.33]] }, properties: { id: 'b' } },
+      ],
+    },
+  }, project);
+  assert.deepEqual(two.paths.map((p) => p.id), ['a', 'b']);
 }
 
 console.log('overlay-marks: ok');
