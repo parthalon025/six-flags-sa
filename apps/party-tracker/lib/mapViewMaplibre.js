@@ -14,13 +14,12 @@
  */
 import { Map as MapLibreMap } from 'maplibre-gl';
 import { BANDS } from '@party-tracker/shared/zoomBands.js';
+import { OVERLAY_LAYERS } from './overlayGeo.js';
 import {
   bandLayer,
   bandedWorldStyle,
-  lineCollection,
   OVERLAY_SOURCES,
-  PLACES_SOURCE,
-  pointCollection,
+  PLACES_LAYER,
 } from './mapViewStyle.js';
 
 /**
@@ -34,8 +33,13 @@ import {
  *   or a drag. Hand it back through the view's setCamera so the band chooser
  *   hears about it; the seam drops a camera it is already at, so the round
  *   trip settles rather than echoing.
+ * @param {(tap: {point: {x: number, y: number}, lngLat: {lng: number, lat: number}}) => void}
+ *   [options.onTap] a tap on the map, in both currencies: the screen point to
+ *   hand the seam's `hitTest`, and the ground it landed on. Unprojecting is
+ *   the engine's job and only the engine can do it — which is why the tap
+ *   comes out here rather than the seam growing an `unproject`.
  */
-export function createMapLibreRenderer({ onError = null, onCameraMoved = null } = {}) {
+export function createMapLibreRenderer({ onError = null, onCameraMoved = null, onTap = null } = {}) {
   let map = null;
   let loaded = false;
   const queued = [];
@@ -87,8 +91,16 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null } 
           bearing: map.getBearing(),
         });
       });
+      map.on('click', (event) => {
+        onTap?.({
+          point: { x: event.point.x, y: event.point.y },
+          lngLat: { lng: event.lngLat.lng, lat: event.lngLat.lat },
+        });
+      });
       paint(view.plan);
-      setData(PLACES_SOURCE, pointCollection(view.places));
+      // Places are not seeded here. They arrive with the Overlay, through the
+      // one conversion in lib/overlayGeo.js — a second conversion at attach is
+      // how a Place ends up drawn in one position and tapped in another.
     },
 
     /** Applied property by property rather than as one jumpTo, and only where
@@ -113,15 +125,16 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null } 
 
     paint,
 
+    /** One setData per collection, every time. The seam always hands over all
+     *  of them — a collection left out of a frame would leave the last frame's
+     *  features on screen with nothing to clear them. */
     overlay(model) {
-      setData(OVERLAY_SOURCES.members, pointCollection(model.members));
-      setData(OVERLAY_SOURCES.nodes, pointCollection(model.nodes));
-      setData(OVERLAY_SOURCES.route, lineCollection(model.route));
+      for (const name of OVERLAY_LAYERS) setData(OVERLAY_SOURCES[name], model[name]);
     },
 
     pick(point) {
-      if (!map || !loaded || !map.getLayer(PLACES_SOURCE)) return null;
-      const [feature] = map.queryRenderedFeatures([point.x, point.y], { layers: [PLACES_SOURCE] });
+      if (!map || !loaded || !map.getLayer(PLACES_LAYER)) return null;
+      const [feature] = map.queryRenderedFeatures([point.x, point.y], { layers: [PLACES_LAYER] });
       return feature?.properties?.id ?? null;
     },
 

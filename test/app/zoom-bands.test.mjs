@@ -5,7 +5,16 @@
    the venue bounds in apps/party-tracker/public/venues, never from re-running
    the module's own arithmetic. */
 import assert from 'node:assert/strict';
-import { BANDS, bandBoundaryZooms, bandForZoom, bandPixels, bandResolution, parentOf } from '../../packages/shared/zoomBands.js';
+import {
+  BANDS,
+  bandBoundaryZooms,
+  bandForZoom,
+  bandPixels,
+  bandResolution,
+  metresPerPixel,
+  parentOf,
+  zoomForResolution,
+} from '../../packages/shared/zoomBands.js';
 
 // The table is ordered coarsest first, and names the three bands ADR-0019 ships.
 assert.deepEqual(
@@ -126,5 +135,53 @@ assert.deepEqual(
 // paper over with a default.
 assert.throws(() => bandBoundaryZooms({ latitude: Number.NaN }), /latitude/i);
 assert.throws(() => bandForZoom(16, { latitude: 'north' }), /latitude/i);
+
+// ---------------------------------------------------------------------------
+// Zoom <-> ground resolution. The band chooser worked this out privately until
+// slice h11 gave it a caller: a ported ParkMap has to answer "what zoom shows
+// this venue across this many pixels", which is the same conversion read the
+// other way. Exported rather than copied, because the 512-px-tile offset that
+// makes MapLibre's zoom z behave like slippy z+1 is the easy thing to get
+// wrong in a second place.
+// ---------------------------------------------------------------------------
+
+// Independent check: the equator is 40,075,016.686 m and the world is 512 px
+// around at MapLibre zoom 0, so a pixel there is 78,271.5 m of ground.
+assert.ok(
+  Math.abs(metresPerPixel(0, { latitude: 0 }) - 40075016.686 / 512) < 1e-6,
+  `a zoom-0 pixel spans the equator/512, got ${metresPerPixel(0, { latitude: 0 })}`,
+);
+
+// kings-island's latitude, and the figure test/app/band-plan.test.mjs states
+// in prose and works its band expectations from.
+assert.ok(
+  Math.abs(metresPerPixel(15, { latitude: 39.3422 }) - 1.847324) < 1e-6,
+  `z15 at kings-island is 1.847324 m/px, got ${metresPerPixel(15, { latitude: 39.3422 })}`,
+);
+
+// The other way round, against the same independently-derived 14.99 the
+// overview->mid boundary was checked at above.
+assert.ok(
+  Math.abs(zoomForResolution(2.4, { latitude: 0 }) - 14.99) < 0.01,
+  `2.4 m/px is reached near z14.99, got ${zoomForResolution(2.4, { latitude: 0 })}`,
+);
+
+// And the two are one conversion, not two: the boundaries the camera stages
+// against are exactly the zooms at which each band's resolution is reached.
+assert.deepEqual(
+  bandBoundaryZooms({ latitude: 39.3422 }),
+  BANDS.slice(0, -1).map((b) => zoomForResolution(b.metresPerPixel, { latitude: 39.3422 })),
+  'a band boundary is the zoom that band s resolution is reached at',
+);
+
+// Latitude is held to the same rules as everywhere else in this table.
+assert.equal(metresPerPixel(15, { latitude: 95 }), metresPerPixel(15, { latitude: 85.051129 }));
+assert.throws(() => metresPerPixel(15, { latitude: 'north' }), /latitude/i);
+assert.throws(() => zoomForResolution(2.4, { latitude: Number.NaN }), /latitude/i);
+
+// A resolution of zero is an infinitely sharp screen, and a negative one is
+// nothing at all. Both would hand a caller Infinity or NaN to fly a camera to.
+assert.throws(() => zoomForResolution(0, { latitude: 0 }), /metres per pixel/i);
+assert.throws(() => zoomForResolution(-2, { latitude: 0 }), /metres per pixel/i);
 
 console.log('zoom-bands: ok');

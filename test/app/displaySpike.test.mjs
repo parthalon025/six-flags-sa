@@ -21,7 +21,7 @@ process.emitWarning = (warning, ...rest) => {
 const { displaySpikeFile, displaySpikeContentType, parseByteRange } = await import(
   '../../apps/party-tracker/lib/displaySpike.js'
 );
-const { DISPLAY_SPIKE_SKIN, DISPLAY_SPIKE_VENUE } = await import(
+const { DISPLAY_SPIKE_SKIN, DISPLAY_SPIKE_VENUE, PARK_MAP_RENDERERS, parkMapRenderer } = await import(
   '../../apps/party-tracker/lib/mapLibreConfigured.js'
 );
 
@@ -107,6 +107,33 @@ check('malformed and unsatisfiable ranges come back null (the route 416s)', () =
   }
   // Start at or past EOF cannot be satisfied.
   assert.equal(parseByteRange('bytes=1000-1999', 1000), null);
+});
+
+/* ------------------------------------------------- which renderer draws -- */
+/* Slice h11 ports ParkMap behind the map view seam. ADR-0019 clause 3 makes
+   MapLibre the one renderer; docs/train-h-seams.md keeps the SVG adapter as
+   the escape hatch until the ported one passes the gate, so which of the two
+   draws is a decision, and a decision with a default worth pinning. */
+
+check('the shipped renderer is the SVG one until the port passes its gate', () => {
+  assert.deepEqual([...PARK_MAP_RENDERERS], ['svg', 'gl']);
+  assert.equal(parkMapRenderer({ env: undefined, search: '' }), 'svg');
+  assert.equal(parkMapRenderer(), 'svg', 'and with nothing asked at all');
+});
+
+check('a build can ship the ported renderer, and a review can ask for it', () => {
+  assert.equal(parkMapRenderer({ env: 'gl', search: '' }), 'gl');
+  assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=gl' }), 'gl');
+  // The URL wins, in both directions: a reviewer on a gl build has to be able
+  // to put the shipped renderer back beside it without a rebuild.
+  assert.equal(parkMapRenderer({ env: 'gl', search: '?parkMap=svg' }), 'svg');
+});
+
+check('a renderer nobody wrote falls back rather than blanking the map', () => {
+  for (const asked of ['webgpu', '1', 'true', '', null]) {
+    assert.equal(parkMapRenderer({ env: asked, search: '' }), 'svg', `env ${JSON.stringify(asked)}`);
+  }
+  assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=webgpu' }), 'svg');
 });
 
 if (FAIL.length) {

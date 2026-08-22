@@ -80,8 +80,25 @@ function mercatorCosLatitude(latitude) {
   return Math.cos((clamped * Math.PI) / 180);
 }
 
-function screenResolution(zoom, latitude) {
+/** Ground metres one screen pixel covers, at this zoom and latitude.
+ *
+ *  The `zoom + 1` is MapLibre's 512 px tiles: its zoom z has the density of
+ *  slippy zoom z + 1. That offset is the easy thing to get wrong in a second
+ *  place, which is why this is exported rather than copied — the band chooser,
+ *  the boundary list and a caller framing a venue all ask the same question. */
+export function metresPerPixel(zoom, { latitude = 0 } = {}) {
   return (EQUATOR_METRES_PER_PIXEL * mercatorCosLatitude(latitude)) / 2 ** (zoom + 1);
+}
+
+/** The same conversion read the other way: the zoom at which a screen pixel
+ *  covers exactly this much ground. What a caller framing a World asks — the
+ *  venue's span over the viewport's width is a resolution, and this is the
+ *  zoom that shows it. */
+export function zoomForResolution(metres, { latitude = 0 } = {}) {
+  if (!Number.isFinite(metres) || metres <= 0) {
+    throw new Error(`metres per pixel must be a positive finite number: ${metres}`);
+  }
+  return Math.log2((EQUATOR_METRES_PER_PIXEL * mercatorCosLatitude(latitude)) / metres) - 1;
 }
 
 /** The band a camera at this zoom should draw.
@@ -92,7 +109,7 @@ function screenResolution(zoom, latitude) {
  *  which is the placeholder path, not a failure.
  */
 export function bandForZoom(zoom, { latitude = 0 } = {}) {
-  const screen = screenResolution(zoom, latitude);
+  const screen = metresPerPixel(zoom, { latitude });
   const fit = BANDS.find((b) => b.metresPerPixel <= screen);
   return (fit ?? BANDS[BANDS.length - 1]).id;
 }
@@ -105,12 +122,9 @@ export function bandForZoom(zoom, { latitude = 0 } = {}) {
  *  overlap one, so the camera has to ask rather than hardcode a zoom range.
  */
 export function bandBoundaryZooms({ latitude = 0 } = {}) {
-  const cos = mercatorCosLatitude(latitude);
-  // Invert screenResolution: the zoom at which a screen pixel covers exactly
-  // this band's metres. Below it the band is coarser than the screen.
-  return BANDS.slice(0, -1).map((band) =>
-    Math.log2((EQUATOR_METRES_PER_PIXEL * cos) / band.metresPerPixel) - 1,
-  );
+  // The zoom at which a screen pixel covers exactly this band's metres. Below
+  // it the band is coarser than the screen.
+  return BANDS.slice(0, -1).map((band) => zoomForResolution(band.metresPerPixel, { latitude }));
 }
 
 /** The band a placeholder upscales from, or null at the coarsest band. */

@@ -14,11 +14,22 @@
  * module under test.
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { mountMapView } from '../../apps/party-tracker/lib/mapView.js';
+import { OVERLAY_LAYERS, overlayGeoJson } from '../../apps/party-tracker/lib/overlayGeo.js';
+import { WORLD_LAYERS, worldGeoJson } from '../../apps/party-tracker/lib/worldGeo.js';
 import {
+  boundsOfPoints,
+  cameraRequest,
+  overlayModel,
+  worldFor,
+} from '../../apps/party-tracker/lib/parkMapView.js';
+import {
+  OVERLAY_SOURCES,
   bandedWorldStyle,
-  lineCollection,
-  pointCollection,
+  overlaySource,
+  worldLayer,
+  worldSource,
 } from '../../apps/party-tracker/lib/mapViewStyle.js';
 
 /** kings-island's latitude, centred so the World's own mid-latitude is the
@@ -327,15 +338,26 @@ const paints = (renderer) => renderer.calls.filter((c) => c.call === 'paint');
 }
 
 // ---------------------------------------------------------------------------
-// The Overlay. Members, quest nodes and the route cross as Truth — positions in
-// lng/lat — and the renderer decides only how they look.
+// The Overlay (ADR-0019 clause 4, ported in slice h11). Members, Marks, the
+// pins somebody placed and the route cross as Truth — GeoJSON in lng/lat, one
+// FeatureCollection per source — and the renderer decides only how they look.
+//
+// The collections come from lib/overlayGeo.js, which is now the *one* place
+// the app's model becomes map data: ParkMap.jsx used to project the same rows
+// a second time by hand into SVG, and two projections of one Truth is how a
+// party dot and a route end up disagreeing about where a Member is.
 // ---------------------------------------------------------------------------
 
-const OVERLAY = {
-  members: [{ id: 'm1', lng: -84.2688, lat: 39.3441, label: 'Dad', avatar: 'bear' }],
-  nodes: [{ id: 'q7', lng: -84.2661, lat: 39.3402, kind: 'quest' }],
-  route: [{ lng: -84.2688, lat: 39.3441 }, { lng: -84.2661, lat: 39.3402 }],
-};
+const NOW = Date.UTC(2026, 7, 22, 15, 0, 0);
+const OVERLAY = overlayGeoJson(
+  {
+    members: [{ id: 'm1', lat: 39.3441, lng: -84.2688, name: 'Dad', ts: NOW - 30000 }],
+    pois: PLACES,
+    meet: { lat: 39.3402, lng: -84.2661, label: 'Gate' },
+    route: { points: [[39.3441, -84.2688], [39.3402, -84.2661]] },
+  },
+  { now: NOW },
+);
 
 {
   const renderer = recordingRenderer();
@@ -346,64 +368,126 @@ const OVERLAY = {
   const [sent] = renderer.calls.filter((c) => c.call === 'overlay');
   assert.ok(sent, 'the overlay reaches the renderer');
 
-  // A Member's colour or avatar is style the renderer needs; it rides along
+  // All five, every time. A MapLibre geojson source is fed with setData once
+  // it exists, so a collection that vanished when its list emptied would leave
+  // the last frame's Members on screen with nothing left to clear them — which
+  // is why a caller sending only what changed still gets all five out.
+  assert.deepEqual(Object.keys(sent.model).sort(), [...OVERLAY_LAYERS].sort());
+  view.setOverlay({ members: OVERLAY.members });
+  const partialSend = renderer.calls.filter((c) => c.call === 'overlay').at(-1);
+  assert.deepEqual(Object.keys(partialSend.model).sort(), [...OVERLAY_LAYERS].sort());
+  assert.deepEqual(partialSend.model.places.features, [], 'and the ones left out arrive empty');
+  assert.deepEqual(sent.model.members.features[0].geometry.coordinates, [-84.2688, 39.3441]);
+
+  // A Member's name or staleness is style the renderer needs; it rides along
   // untouched. What it must never be handed is a decision already made for it.
-  assert.equal(sent.model.members[0].avatar, 'bear', 'style hints ride along');
-  assert.deepEqual(sent.model, OVERLAY, 'as the same marks the caller handed over');
+  assert.equal(sent.model.members.features[0].properties.name, 'Dad', 'style hints ride along');
+  assert.equal(sent.model.route.features[0].geometry.type, 'LineString');
+  assert.equal(sent.model.places.features.length, PLACES.length, 'Places ride the same path');
 
   // The Visual factory restyles and never writes truth, so the renderer gets a
-  // frozen view of the Overlay rather than the caller's own array.
+  // frozen view of the Overlay rather than the caller's own arrays.
   assert.notEqual(sent.model.members, OVERLAY.members, 'the renderer gets a copy');
-  assert.throws(() => { sent.model.members.push({ id: 'x' }); }, TypeError, 'a frozen list');
-  assert.throws(() => { sent.model.members[0].lat = 0; }, TypeError, 'and frozen marks');
+  assert.throws(() => { sent.model.members.features.push({}); }, TypeError, 'a frozen list');
+  assert.throws(() => { sent.model.members.features[0].id = 'x'; }, TypeError, 'and frozen features');
 }
 
 // A draw call is not data. This is the one the seam exists for: hand it a
 // function and the renderer would be deciding what a Member's dot means.
 {
   const view = mount();
+  const one = (properties) => ({
+    members: {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        id: 'm1',
+        geometry: { type: 'Point', coordinates: [-84.2, 39.3] },
+        properties,
+      }],
+    },
+  });
   assert.throws(
-    () => view.setOverlay({ members: [{ id: 'm1', lng: -84.2, lat: 39.3, draw: () => {} }] }),
+    () => view.setOverlay(one({ draw: () => {} })),
     /draw call|function/i,
-    'a function on a mark is refused',
+    'a function on a feature is refused',
   );
   assert.throws(
     () => view.setOverlay({ members: [], render: () => {} }),
     /draw call|function|unknown/i,
     'and so is one at the top level',
   );
+
+  // Positions come from Truth. A feature carrying screen or art coordinates is
+  // how an Overlay gets snapped to painted art, which ADR-0021 clause 3
+  // forbids outright — at 0.15 m/px a metre of drift is seven pixels of blue
+  // line crossing painted lawn, and guests trust their eyes over the route.
+  assert.throws(
+    () => view.setOverlay(one({ x: 120, y: 240 })),
+    /screen|truth/i,
+    'a feature with screen coordinates is refused',
+  );
 }
 
-// Positions come from Truth. A mark carrying screen or art coordinates is how
-// an Overlay gets snapped to painted art, which ADR-0021 clause 3 forbids
-// outright — at 0.15 m/px a metre of drift is seven pixels of blue line
-// crossing painted lawn, and guests trust their eyes over the route.
 {
   const view = mount();
+  const at = (coordinates, id = 'm1') => ({
+    members: {
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', id, geometry: { type: 'Point', coordinates }, properties: {} }],
+    },
+  });
+  assert.throws(() => view.setOverlay(at([-84.2])), /position|lng|lat/i, 'half a position is not one');
+  // The GeoJSON mistake this app is most exposed to: every position in its own
+  // prose is `{lat, lng}`, and a geometry handed one of those is not geometry.
   assert.throws(
-    () => view.setOverlay({ members: [{ id: 'm1', lng: -84.2, lat: 39.3, x: 120, y: 240 }] }),
-    /screen|lng|lat|truth/i,
-    'a mark with screen coordinates is refused',
+    () => view.setOverlay(at({ lng: -84.2, lat: 39.3 })),
+    /is not a position/,
+    'a {lng, lat} object is not a GeoJSON position',
   );
+  assert.throws(() => view.setOverlay(at(['-84.2', 39.3])), /position|lng|lat/i, 'nor a stringified one');
+  assert.throws(() => view.setOverlay(at([-84.2, 91])), /position|lat/i, 'nor one past the pole');
   assert.throws(
-    () => view.setOverlay({ members: [{ id: 'm1', lat: 39.3 }] }),
-    /lng|lat/i,
-    'and so is one with no position at all',
+    () => view.setOverlay({
+      route: {
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          id: 'route',
+          geometry: { type: 'LineString', coordinates: [[-84.2, 39.3], [-84.2, null]] },
+          properties: {},
+        }],
+      },
+    }),
+    /position|lng|lat/i,
+    'a route vertex is held to the same rule as a dot',
   );
+
+  /* Ids have to be unique inside a collection, and that is the guard rather
+     than "every feature has one". `overlayGeo` answers null for a mark nobody
+     named, and a Party with two unnamed Members is an ordinary Party — but two
+     features sharing an id is how MapLibre's feature-state lights the wrong
+     dot, which reads as a Member teleporting. */
+  const twin = (id) => ({ type: 'Feature', id, geometry: { type: 'Point', coordinates: [-84.2, 39.3] }, properties: {} });
   assert.throws(
-    () => view.setOverlay({ members: [{ lng: -84.2, lat: 39.3 }] }),
+    () => view.setOverlay({ members: { type: 'FeatureCollection', features: [twin('m1'), twin('m1')] } }),
     /id/i,
-    'every mark is identified, so the renderer can be told the same one moved',
+    'two features cannot share an id',
   );
-  assert.throws(
-    () => view.setOverlay({ route: [{ lng: -84.2, lat: 'north' }] }),
-    /lng|lat|route/i,
-    'a route point is held to the same rule',
+  assert.doesNotThrow(
+    () => view.setOverlay({ members: { type: 'FeatureCollection', features: [twin(null), twin(null)] } }),
+    'but two unnamed Members are a Party, not an error',
   );
+
   assert.throws(
     () => view.setOverlay({ members: [], layers: [] }),
     /unknown|layers/i,
-    'an unrecognised group is refused rather than silently dropped',
+    'an unrecognised collection is refused rather than silently dropped',
+  );
+  assert.throws(
+    () => view.setOverlay({ members: { type: 'Feature', features: [] } }),
+    /FeatureCollection/i,
+    'and a collection that is not one says so',
   );
 }
 
@@ -536,6 +620,15 @@ assert.throws(
 // adapter worth holding to assertions: the rest is imperative glue.
 // ---------------------------------------------------------------------------
 
+// One source per collection `overlayGeo` answers with, derived from that list
+// rather than restated, so adding a collection there cannot leave a source
+// uncreated here.
+assert.deepEqual(
+  Object.keys(OVERLAY_SOURCES).sort(),
+  [...OVERLAY_LAYERS].sort(),
+  'a source per overlay collection, named by the adapter that fills it',
+);
+
 const BANDED_WORLD = {
   ...WORLD,
   bands: {
@@ -570,9 +663,24 @@ const BANDED_WORLD = {
 
   // The overlay's sources exist from the start and start empty, so a Member
   // arriving is a setData rather than a restyle.
-  for (const id of ['overlay-members', 'overlay-nodes', 'overlay-route', 'places']) {
+  for (const name of OVERLAY_LAYERS) {
+    const id = OVERLAY_SOURCES[name];
+    assert.equal(id, overlaySource(name));
     assert.equal(style.sources[id].type, 'geojson', `${id} is a geojson source`);
     assert.deepEqual(style.sources[id].data.features, [], `${id} starts empty`);
+    assert.ok(
+      style.layers.some((l) => l.source === id),
+      `${id} has something drawing it — a source with no layer is data nobody sees`,
+    );
+  }
+
+  // The live Overlay is never painted under the art. ADR-0021 clause 3 keeps
+  // the route drawn from Truth rather than snapped to the band beneath it, and
+  // a route the painted world covers is the same failure seen from above.
+  const topBand = style.layers.findLastIndex((l) => l.id.startsWith('band-'));
+  for (const name of OVERLAY_LAYERS) {
+    const first = style.layers.findIndex((l) => l.source === OVERLAY_SOURCES[name]);
+    assert.ok(first > topBand, `${name} draws over every band, not under one`);
   }
 }
 
@@ -588,42 +696,444 @@ const BANDED_WORLD = {
 
 assert.throws(
   () => bandedWorldStyle({ world: { ...WORLD, bands: {} } }),
-  /imagery/i,
-  'a World with no band imagery at all has nothing to draw, and says so',
+  /nothing to draw/i,
+  'a World with neither band imagery nor geometry has nothing to draw, and says so',
 );
 
-// GeoJSON is lng-then-lat and every position in this app is written lat-first
-// in prose, so this is the one line where a Member ends up in the wrong
-// hemisphere. Pinned.
+// ---------------------------------------------------------------------------
+// The World's static geometry, as GeoJSON (slice h11). `lib/worldGeo.js` is
+// the base-map half of the SVG retirement — what ParkMapSvg.jsx's `<path
+// d="M…">` soup becomes once MapLibre is the renderer. Its sibling
+// `overlayGeo.js` does the same for the live Overlay, and the two share one
+// discipline: a coordinate that is not two finite numbers is *dropped*, never
+// defaulted to zero.
+// ---------------------------------------------------------------------------
+
+const layerIds = WORLD_LAYERS.map((l) => l.id);
+const layerAt = (id) => layerIds.indexOf(id);
+
+/* The table *is* the paint order, and it is the order ParkMapStaticWorld
+   painted its <g> groups in. Getting it wrong does not error — it buries the
+   midway under the lake, which is the kind of bug only an eye catches. */
+assert.equal(layerIds[0], 'sea', 'the sea is the bottom of the world');
+assert.ok(layerAt('water') < layerAt('path'), 'a path crosses water, not the other way round');
+assert.ok(layerAt('path') < layerAt('building'), 'buildings sit on the midway');
+assert.ok(layerAt('building') < layerAt('coaster'), 'coaster track flies over the buildings');
+assert.ok(layerAt('park') < layerAt('lands'), 'districts tint the park, so they go over it');
+
+// Every layer says which geometry it makes, because a ring drawn as a line and
+// a ring drawn as a polygon have different validity rules below.
+for (const layer of WORLD_LAYERS) {
+  assert.ok(['polygon', 'line'].includes(layer.geometry), `${layer.id} declares its geometry`);
+}
+assert.equal(WORLD_LAYERS.find((l) => l.id === 'path').geometry, 'line');
+assert.equal(WORLD_LAYERS.find((l) => l.id === 'building').geometry, 'polygon');
+
+/* A square of park with a lake in it, one walkway across, and a boundary ring
+   — the smallest venue that exercises every rule. Coordinates are [lng, lat],
+   which is how map.json already stores them and how GeoJSON wants them. */
+const SQUARE = [[-84.28, 39.333], [-84.255, 39.333], [-84.255, 39.351], [-84.28, 39.351]];
+const LAKE = [[-84.27, 39.34], [-84.265, 39.34], [-84.265, 39.345], [-84.27, 39.345]];
+const WALKWAY = [[-84.279, 39.334], [-84.268, 39.341], [-84.256, 39.35]];
+
+const tiny = worldGeoJson({
+  meta: { id: 'kings-island' },
+  landAnchors: {},
+  park: [{ r: SQUARE, n: 'Kings Island' }],
+  lands: [{ r: LAKE, n: 'Coney Mall' }],
+  water: [{ r: LAKE }],
+  path: [{ r: WALKWAY }],
+  boundary: SQUARE,
+});
+
+// One source per layer, always all of them — the rule overlayGeo.js keeps for
+// the same reason: a key that vanished when its list emptied would leave the
+// previous frame's geometry on screen with nothing left to clear it.
+assert.deepEqual(Object.keys(tiny).sort(), [...layerIds].sort(), 'every layer, present or not');
+for (const id of layerIds) {
+  assert.equal(tiny[id].type, 'FeatureCollection', `${id} is a FeatureCollection`);
+}
+assert.deepEqual(tiny.sea.features, [], 'a layer this venue has none of is empty, not missing');
+
+// map.json carries more than geometry. `meta` and `landAnchors` are not layers
+// and must not become sources.
+assert.equal(tiny.meta, undefined);
+assert.equal(tiny.landAnchors, undefined);
+
 {
-  const [feature] = pointCollection([{ id: 'm1', lng: -84.2688, lat: 39.3441, avatar: 'bear' }]).features;
-  assert.deepEqual(feature.geometry, { type: 'Point', coordinates: [-84.2688, 39.3441] });
-  assert.equal(feature.properties.id, 'm1');
-  assert.equal(feature.properties.avatar, 'bear', 'style hints reach the renderer');
+  const [lake] = tiny.water.features;
+  assert.equal(lake.geometry.type, 'Polygon');
+  // A GeoJSON linear ring is closed: the last position repeats the first.
+  // map.json does not store the repeat, so this has to add it — an open ring
+  // is invalid GeoJSON and MapLibre answers it with a style error.
+  const ring = lake.geometry.coordinates[0];
+  assert.deepEqual(ring[ring.length - 1], ring[0], 'the ring closes');
+  assert.equal(ring.length, LAKE.length + 1, 'closed by repeating the first position, not by more');
+  // Straight through, lng first: map.json is already in GeoJSON's order, so a
+  // swap here would be a bug introduced rather than one inherited.
+  assert.deepEqual(ring.slice(0, LAKE.length), LAKE);
+}
 
-  // A Place is identified by pois.json's `i`, an Overlay mark by `id`, and the
-  // renderer should not have to know which it is holding.
-  const [place] = pointCollection([{ i: 'beast', lng: -84.2688, lat: 39.3441 }]).features;
-  assert.equal(place.properties.id, 'beast');
+// A ring that already closes is not closed twice — a duplicated final position
+// is a zero-length segment, which is what makes a fill's outline flicker.
+{
+  const closed = [...LAKE, LAKE[0]];
+  const [f] = worldGeoJson({ water: [{ r: closed }] }).water.features;
+  assert.equal(f.geometry.coordinates[0].length, closed.length, 'an already-closed ring is left alone');
+}
 
-  // A Place carries nested rows — height rules, facts. MapLibre ships feature
-  // properties to its worker, so they are left behind rather than serialised
-  // onto every frame.
-  const [rich] = pointCollection([
-    { i: 'beast', lng: -84.2688, lat: 39.3441, h: { min: 48 }, tags: ['wood'] },
-  ]).features;
-  assert.deepEqual(Object.keys(rich.properties).sort(), ['i', 'id', 'lat', 'lng']);
+// Three distinct corners is the least a polygon can be. Two is a line with a
+// fill rule, which MapLibre renders as nothing and reports as nothing.
+assert.deepEqual(
+  worldGeoJson({ water: [{ r: [[-84.27, 39.34], [-84.265, 39.34]] }] }).water.features,
+  [],
+  'a two-point polygon is dropped',
+);
+
+{
+  const [walk] = tiny.path.features;
+  assert.equal(walk.geometry.type, 'LineString');
+  assert.deepEqual(walk.geometry.coordinates, WALKWAY, 'no closing position on a line');
+}
+assert.deepEqual(
+  worldGeoJson({ path: [{ r: [[-84.27, 39.34]] }] }).path.features,
+  [],
+  'a one-point line is dropped',
+);
+
+/* The rule overlayGeo.js states and worldGeo.js inherits: a coordinate that is
+   not two finite numbers is dropped rather than defaulted. `p[0] || 0` lands
+   the vertex on the prime meridian, which for a ring is worse than for a point
+   — it reads as a lake with a spike through it reaching the Gulf of Guinea.
+   And the whole ring goes, not the one vertex: deleting a corner silently
+   reshapes the polygon into a different, plausible, wrong one. */
+assert.deepEqual(
+  worldGeoJson({
+    water: [{ r: [[-84.27, 39.34], [-84.265, null], [-84.265, 39.345], [-84.27, 39.345]] }],
+  }).water.features,
+  [],
+  'one bad vertex drops the whole ring',
+);
+assert.deepEqual(
+  worldGeoJson({ path: [{ r: [['-84.27', '39.34'], [-84.265, 39.34]] }] }).path.features,
+  [],
+  'a stringified ordinate is not an ordinate',
+);
+// Zero is a real coordinate off the coast of Ghana, so the finite test must not
+// be a truthiness test.
+assert.equal(
+  worldGeoJson({ path: [{ r: [[0, 0], [0.001, 0.001]] }] }).path.features.length,
+  1,
+  'a venue on the equator still draws',
+);
+
+/* Off the planet. MapLibre wraps a longitude past 180 rather than complaining
+   and clamps a latitude past its Mercator limit, so an ordinate that is not on
+   Earth draws a plausible-looking ghost somewhere else instead of an error.
+   This catches only the pairs that leave the planet — a lat/lng written the
+   wrong way round inside range lands in Antarctica and no structural check can
+   see it, which is why the pass-through above is pinned instead. */
+assert.deepEqual(
+  worldGeoJson({ path: [{ r: [[-84.27, 91], [-84.26, 92]] }] }).path.features,
+  [],
+  'a latitude past the pole is not a latitude',
+);
+assert.deepEqual(
+  worldGeoJson({ path: [{ r: [[181, 39.34], [182, 39.35]] }] }).path.features,
+  [],
+  'a longitude past 180 is not on Earth',
+);
+
+/* `boundary` is the one layer map.json stores as a bare ring rather than as a
+   list of rows, and ParkMapSvg.jsx wrapped it by hand at the call site.
+   Reading it wrong turns one park outline into four two-element "rings". */
+assert.equal(tiny.boundary.features.length, 1, 'one bare ring is one feature, not one per corner');
+assert.equal(tiny.boundary.features[0].geometry.type, 'Polygon');
+assert.deepEqual(tiny.boundary.features[0].geometry.coordinates[0].slice(0, 4), SQUARE);
+
+{
+  const [park] = tiny.park.features;
+  assert.equal(park.properties.name, 'Kings Island', 'a named ring keeps its name');
+  assert.equal(tiny.water.features[0].properties.name, null, 'an unnamed one says so rather than undefined');
+  // Identified, so a style can address one ring and feature-state can light it.
+  assert.ok(park.id != null, 'every feature is identified');
+  assert.equal(park.properties.id, park.id, 'and the id is reachable from a filter expression');
+  assert.equal(park.properties.layer, 'park', 'the layer rides along, so one source could serve many');
+}
+
+// A World with no geometry at all draws nothing — not a crash. `map.json` is
+// fetched over the network and can arrive late.
+{
+  const nothing = worldGeoJson(null);
+  assert.deepEqual(Object.keys(nothing).sort(), [...layerIds].sort());
+  for (const id of layerIds) assert.deepEqual(nothing[id].features, [], `${id} empty`);
+}
+
+// ---------------------------------------------------------------------------
+// The vector tier (slice h11). ADR-0019's consequences keep it "the never-fails
+// fallback under every Skin": Truth geometry, no baked band, no network. That
+// is what a World with no display pack draws, and it is what a band that has
+// not streamed in yet is showing through.
+// ---------------------------------------------------------------------------
+
+const GEOMETRY = worldGeoJson({
+  park: [{ r: [[-84.28, 39.333], [-84.255, 39.333], [-84.255, 39.351], [-84.28, 39.351]] }],
+  water: [{ r: [[-84.27, 39.34], [-84.265, 39.34], [-84.265, 39.345], [-84.27, 39.345]] }],
+  path: [{ r: [[-84.279, 39.334], [-84.268, 39.341], [-84.256, 39.35]] }],
+});
+
+{
+  // No bands at all, and it still draws — the baked art is the improvement,
+  // not the requirement.
+  const style = bandedWorldStyle({ world: { ...WORLD, geometry: GEOMETRY } });
+  assert.deepEqual(style.layers.filter((l) => l.id.startsWith('band-')), []);
+  assert.equal(style.sources[worldSource('park')].type, 'geojson');
+  assert.equal(
+    style.sources[worldSource('park')].data.features.length,
+    1,
+    'the geometry is seeded into the style rather than waiting on a setData',
+  );
+
+  // A layer only for what this World has any of: drawing nothing still costs a
+  // layer per frame, and most venues never fill most of the fourteen. The
+  // source is created anyway, so geometry arriving late has somewhere to land
+  // rather than needing a restyle.
+  assert.ok(style.layers.some((l) => l.id === worldLayer('path')));
+  assert.ok(!style.layers.some((l) => l.id === worldLayer('coaster')), 'no coaster, no coaster layer');
+  assert.deepEqual(
+    style.sources[worldSource('coaster')],
+    { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
+    'and its source is there and empty, waiting for a setData',
+  );
+
+  // Bottom to top in WORLD_LAYERS' own order, which is the order the SVG
+  // renderer painted its groups in. Reordering does not error — it buries the
+  // midway under the lake.
+  const drawn = WORLD_LAYERS.map((l) => l.id).filter((id) => style.layers.some((l) => l.id === worldLayer(id)));
+  const inStyle = style.layers.filter((l) => l.id.startsWith('world-') && !l.id.endsWith('-case'))
+    .map((l) => l.id.replace('world-', ''));
+  assert.deepEqual(inStyle, drawn, 'the world paints in the table order');
+
+  // A walkway needs its casing under it — one line drawn wide in the ground
+  // colour, then the path over it — or a midway crossing a lawn has no edge.
+  const path = style.layers.findIndex((l) => l.id === worldLayer('path'));
+  const casing = style.layers.findIndex((l) => l.id === `${worldLayer('path')}-case`);
+  assert.ok(casing >= 0 && casing < path, 'the path casing is drawn first, under the path');
 }
 
 {
+  // Painted bands sit over the vector tier: the vector tier is the fallback,
+  // and a fallback drawn on top of the thing it stands in for is not one.
+  const style = bandedWorldStyle({ world: { ...BANDED_WORLD, geometry: GEOMETRY } });
+  const topWorld = style.layers.findLastIndex((l) => l.id.startsWith('world-'));
+  const firstBand = style.layers.findIndex((l) => l.id.startsWith('band-'));
+  assert.ok(firstBand > topWorld, 'the baked band paints over the vector tier it improves on');
+}
+
+// A Skin restyles and never repositions (CONTEXT: Visual factory). The paint
+// pack is the Skin's own — the same one the SVG renderer read — so switching
+// Skins is a colour change and never a geometry change.
+{
+  const skinned = bandedWorldStyle({
+    world: { ...WORLD, geometry: GEOMETRY },
+    palette: { ground: '#101010', waterFill: '#004080', path: { stroke: '#ffcc00', width: 3, casing: '#101010', casingWidth: 6 } },
+  });
+  const layerFor = (id) => skinned.layers.find((l) => l.id === worldLayer(id));
+  assert.equal(layerFor('water').paint['fill-color'], '#004080', "the Skin's water is the water drawn");
+  assert.equal(layerFor('path').paint['line-color'], '#ffcc00');
+  assert.equal(layerFor('path').paint['line-width'], 3);
+  assert.equal(skinned.layers.find((l) => l.id === 'bg').paint['background-color'], '#101010');
+
+  const plain = bandedWorldStyle({ world: { ...WORLD, geometry: GEOMETRY } });
   assert.deepEqual(
-    lineCollection([{ lng: -84.2688, lat: 39.3441 }, { lng: -84.2661, lat: 39.3402 }]).features[0].geometry,
-    { type: 'LineString', coordinates: [[-84.2688, 39.3441], [-84.2661, 39.3402]] },
+    plain.layers.map((l) => l.id),
+    skinned.layers.map((l) => l.id),
+    'and a Skin changes what is painted, never which layers exist',
   );
-  // One point is not a line. A LineString of one coordinate is invalid GeoJSON
-  // and MapLibre answers it with a style error rather than nothing drawn.
-  assert.deepEqual(lineCollection([{ lng: -84.2688, lat: 39.3441 }]).features, []);
-  assert.deepEqual(lineCollection([]).features, []);
+}
+
+// ---------------------------------------------------------------------------
+// The caller side (slice h11). ParkMap.jsx turns what the app knows into what
+// this seam takes. That shaping is the part of a React component most worth
+// asserting and the part hardest to reach through one, so it lives in
+// lib/parkMapView.js and the component only calls it.
+// ---------------------------------------------------------------------------
+
+const MAP_JSON = {
+  meta: { id: 'kings-island', bounds: WORLD.bounds },
+  path: [{ r: [[-84.279, 39.334], [-84.268, 39.341]] }],
+};
+
+{
+  const shaped = worldFor(MAP_JSON);
+  assert.equal(shaped.id, 'kings-island');
+  assert.equal(shaped.bounds, WORLD.bounds, 'the venue keeps its own truth bounds');
+  assert.equal(shaped.geometry.path.features.length, 1, 'and arrives with its geometry');
+
+  // Each of these is a World the ported renderer cannot open on, so it says so
+  // rather than framing a camera on a guess — the caller falls back.
+  assert.equal(worldFor(null), null, 'map.json has not arrived yet');
+  assert.equal(worldFor({ path: [] }), null, 'no meta at all');
+  assert.equal(worldFor({ meta: { id: 'x' } }), null, 'no bounds');
+  assert.equal(
+    worldFor({ meta: { id: 'x', bounds: { west: 1, east: 1, south: 2, north: 2 } } }),
+    null,
+    'a box of no ground has no camera that frames it',
+  );
+}
+
+{
+  // Framing a whole route while a guest is deciding. Points are [lat, lng],
+  // which is how routing.js writes them and the reverse of the box.
+  assert.deepEqual(
+    boundsOfPoints([[39.3441, -84.2688], [39.3402, -84.2661], [39.3420, -84.2700]]),
+    { west: -84.27, south: 39.3402, east: -84.2661, north: 39.3441 },
+  );
+  // A point that is not a place is skipped rather than stretching the box to
+  // the Gulf of Guinea — the same rule overlayGeo keeps.
+  assert.deepEqual(
+    boundsOfPoints([[39.3441, -84.2688], [null, -84.2], [39.3402, -84.2661]]),
+    { west: -84.2688, south: 39.3402, east: -84.2661, north: 39.3441 },
+  );
+  assert.equal(boundsOfPoints([]), null, 'nothing to frame');
+  assert.equal(boundsOfPoints(null), null);
+  assert.equal(boundsOfPoints([[39.3441, -84.2688]]), null, 'one point is a place, not a box');
+}
+
+{
+  const base = { members: [{ id: 'm1', lat: 39.34, lng: -84.26, ts: NOW }], pois: PLACES };
+  // This phone's own Member is a Member, not a second kind of dot.
+  const withMe = overlayModel({ ...base, me: { lat: 39.3441, lng: -84.2688 } }, { now: NOW });
+  assert.equal(withMe.members.length, 2);
+  assert.equal(withMe.members[1].id, 'me', 'and is identified, so it can be told it moved');
+  assert.equal(withMe.members[1].ts, NOW, 'a fix with no clock on it is this one, not a stale one');
+
+  // While a route runs, the snapped puck is where this phone is — the same
+  // choice Follow makes, so the dot and the camera cannot disagree.
+  const walking = overlayModel(
+    { ...base, me: { lat: 39.3441, lng: -84.2688 }, puck: { lat: 39.3450, lng: -84.2690 } },
+    { now: NOW },
+  );
+  assert.equal(walking.members.length, 2);
+  assert.equal(walking.members[1].lat, 39.3450, 'the puck, not the raw fix');
+
+  const alone = overlayModel(base, { now: NOW });
+  assert.equal(alone.members.length, 1, 'a phone with no fix adds no dot for itself');
+  assert.equal(alone.pois, PLACES, 'Places cross untouched');
+}
+
+{
+  const anchor = { lat: 39.3441, lng: -84.2688 };
+  const focus = { lat: 39.3402, lng: -84.2661 };
+
+  // Follow outranks a focus request: a guest walking somewhere has already said
+  // what they are looking at.
+  const following = cameraRequest({ follow: true, anchor, focusPoint: focus });
+  assert.deepEqual(following.center, { lng: -84.2688, lat: 39.3441 });
+  assert.equal(following.easeMs, 480, 'a glide, because a fix lands every few seconds');
+  assert.ok(following.deadbandMetres > 0, 'and a deadband, because GPS jitters in place');
+
+  assert.deepEqual(cameraRequest({ follow: true, anchor: null, focusPoint: focus }).center, {
+    lng: -84.2661, lat: 39.3402,
+  }, 'Follow with nowhere to follow to is not Follow');
+
+  // Nobody has asked for anything: the camera stays where the guest left it.
+  assert.equal(cameraRequest({}).center, null);
+  assert.equal(cameraRequest({}).easeMs, null, 'and gets there by not moving');
+
+  // Framing a route is a statement about the whole route, so it outranks both
+  // a centre and a closeness.
+  const fit = { west: -84.27, south: 39.34, east: -84.26, north: 39.345 };
+  const framing = cameraRequest({ fit, center: anchor, scale: 3 });
+  assert.equal(framing.fit, fit);
+  assert.equal(framing.center, null);
+  assert.equal(framing.resolution, null);
+
+  // Go's walking zoom, converted rather than re-chosen: the SVG renderer
+  // counted pixels per metre, MapLibre counts ground per pixel, and three
+  // pixels to the metre is a third of a metre to the pixel.
+  assert.ok(Math.abs(cameraRequest({ scale: 3 }).resolution - 1 / 3) < 1e-12);
+  assert.equal(cameraRequest({}).resolution, null, 'no walking zoom, no zoom change');
+
+  // Course-up and the compass ride straight through.
+  const going = cameraRequest({ follow: true, anchor, bearing: 217, lift: 0.2 });
+  assert.equal(going.bearing, 217);
+  assert.equal(going.lift, 0.2);
+  assert.equal(cameraRequest({}).bearing, 0, 'north-up unless told otherwise');
+  assert.equal(cameraRequest({}).lift, 0);
+}
+
+// ---------------------------------------------------------------------------
+// End to end on a shipped World (slice h11). Everything above drives fixtures;
+// this drives big-kahunas' own `map.json` and `pois.json` through the whole
+// ported path — Truth in, a style and an Overlay a renderer could draw out —
+// and asserts the run's output rather than that it did not throw.
+// ---------------------------------------------------------------------------
+
+const VENUES = new URL('../../apps/party-tracker/public/venues/', import.meta.url);
+const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
+
+{
+  const map = read('big-kahunas.map.json');
+  const venuePois = read('big-kahunas.pois.json');
+  const bounds = map.meta.bounds;
+  const geometry = worldGeoJson(map);
+
+  // What this venue has, and what it has none of. Both matter: a layer built
+  // for an empty source costs a draw per frame, and a layer missing for a full
+  // one is geometry a guest never sees.
+  const style = bandedWorldStyle({ world: { id: map.meta.id, bounds, geometry } });
+  const built = new Set(style.layers.filter((l) => l.id.startsWith('world-')).map((l) => l.id));
+  for (const id of ['path', 'building', 'water', 'grass', 'service', 'slide', 'pool', 'wood', 'park', 'boundary']) {
+    assert.ok(built.has(worldLayer(id)), `big-kahunas has ${id}, so it is drawn`);
+  }
+  for (const id of ['sea', 'lands', 'parking', 'coaster']) {
+    assert.ok(!built.has(worldLayer(id)), `big-kahunas has no ${id}, so nothing draws it`);
+  }
+
+  /* Every vertex inside the World it belongs to. This is the assertion that
+     catches a swapped lat/lng or a dropped rebase: a projection bug does not
+     throw, it draws the park somewhere else. The margin is a tenth of a degree
+     because map.json's rings include roads running out past the boundary. */
+  let vertices = 0;
+  for (const { id } of WORLD_LAYERS) {
+    for (const feature of geometry[id].features) {
+      const rings = feature.geometry.type === 'Polygon'
+        ? feature.geometry.coordinates
+        : [feature.geometry.coordinates];
+      for (const ring of rings) {
+        for (const [lng, lat] of ring) {
+          vertices += 1;
+          assert.ok(
+            lng > bounds.west - 0.1 && lng < bounds.east + 0.1
+              && lat > bounds.south - 0.1 && lat < bounds.north + 0.1,
+            `${id} vertex [${lng}, ${lat}] is nowhere near ${map.meta.id}`,
+          );
+        }
+      }
+    }
+  }
+  assert.ok(vertices > 1000, `a real venue is thousands of vertices, got ${vertices}`);
+
+  // Truth through the seam, as the component does it. `pois.json` is what a
+  // guest taps, so a Place has to come back out of a pick by its own id.
+  const renderer = recordingRenderer({ pick: () => venuePois[3].i });
+  const view = mountMapView(CONTAINER, {
+    renderer,
+    world: { id: map.meta.id, bounds, geometry },
+    places: venuePois,
+    camera: { center: map.meta.center, zoom: 16 },
+  });
+  view.setOverlay(overlayGeoJson({ pois: venuePois, members: [] }, { now: NOW }));
+  const drawn = renderer.calls.filter((c) => c.call === 'overlay').at(-1).model;
+  assert.equal(drawn.places.features.length, venuePois.length, 'every Place crosses');
+  assert.deepEqual(
+    drawn.places.features[0].geometry.coordinates,
+    [venuePois[0].lng, venuePois[0].lat],
+    'lng first, and the Place is where pois.json says it is',
+  );
+  assert.equal(view.hitTest({ x: 10, y: 10 }), venuePois[3], 'a pick resolves to that Place');
+  view.destroy();
 }
 
 console.log('map-view: ok');
