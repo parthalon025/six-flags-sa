@@ -181,8 +181,7 @@ export async function openPhone(
       await until(
         async () => {
           if ((await page.locator('.gate').count()) > 0) return false;
-          const paths = await page.locator('.mapSvg path').count();
-          if (paths < 100) return false;
+          if (!(await mapIsDrawn(page))) return false;
           if ((await page.locator('.mePulse').count()) > 0) return true;
           const brand = await page.locator('.brandStatus').innerText().catch(() => '');
           return /near/i.test(brand);
@@ -192,7 +191,7 @@ export async function openPhone(
     } else {
       await until(async () => {
         if ((await page.locator('.gate').count()) > 0) return false;
-        return (await page.locator('.mapSvg path').count()) >= 100;
+        return mapIsDrawn(page);
       }, {
         timeout: 40000,
         label: 'gates dismissed',
@@ -232,8 +231,20 @@ export async function openPhone(
   return { context, page, errors, requests, label };
 }
 
+export async function mapIsDrawn(page) {
+  const features = await page.locator('[data-testid="park-map-gl"]').getAttribute('data-world-features').catch(() => null);
+  if (features != null && Number(features) >= 50) return true;
+  if (await page.locator('[data-testid="park-map-gl"] canvas').count()) return true;
+  return (await page.locator('svg.mapSvg path, svg.mapSvg circle').count()) >= 1;
+}
+
 export const hydrated = (page) =>
-  page.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+  page.waitForFunction(() => {
+    const gl = document.querySelector('[data-testid="park-map-gl"]');
+    if (gl?.querySelector('canvas')) return true;
+    if (Number(gl?.getAttribute('data-world-features') || 0) >= 50) return true;
+    return document.querySelectorAll('svg.mapSvg path, svg.mapSvg circle').length >= 1;
+  }, null, {
     timeout: 40000,
   });
 
@@ -335,16 +346,16 @@ export async function closeGate(page) {
     await dismissAuthGate(page, { timeout: 250 });
     await dismissIntroSplash(page, { timeout: 250 });
     await dismissUpdateSplash(page, { timeout: 250 });
-    const paths = await page.locator('.mapSvg path').count();
+    const drawn = await mapIsDrawn(page);
     const gates = await page.locator('.gate').count();
-    if (!gates && paths > 100) return;
+    if (!gates && drawn) return;
     if (await yes.count()) await yes.click().catch(() => {});
     else if (await nearest.count()) await nearest.click().catch(() => {});
     else if (await allow.count()) await allow.click().catch(() => {});
     if (await quiet.count() && !(await yes.count()) && !(await allow.count()) && !(await nearest.count())) {
       await quiet.first().click().catch(() => {});
     }
-    if (!(await page.locator('.gate').count()) && paths > 100) return;
+    if (!(await page.locator('.gate').count()) && drawn) return;
     await page.waitForTimeout(750);
   }
   if (await quiet.count()) await quiet.first().click().catch(() => {});
@@ -463,7 +474,7 @@ export async function waitForHeightsReady(page, { timeout = 45000 } = {}) {
   await until(
     async () => {
       if ((await page.locator('.gate').count()) > 0) return false;
-      if ((await page.locator('svg.mapSvg path').count()) < 100) return false;
+      if (!(await mapIsDrawn(page))) return false;
       return (await page.locator('.tabItem[data-tab="rides"]').count()) > 0;
     },
     { timeout, label: 'rides tab after POI load' },
@@ -671,9 +682,7 @@ export async function setName(page, name) {
   await page.locator('.tabItem[data-tab="explore"]').click();
   await page.waitForTimeout(250);
   await root(page);
-  await page.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
-    timeout: 40000,
-  });
+  await hydrated(page);
 }
 
 

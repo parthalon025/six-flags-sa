@@ -27,6 +27,7 @@ import { metresPerPixel, zoomForResolution } from '@party-tracker/shared/zoomBan
 import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
+import { overlayMarks } from '@/lib/overlayMarks';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline rather than globals.css, for the reason BandedWorldMap.jsx states:
@@ -73,6 +74,8 @@ export default function ParkMapGl({
   const containerRef = useRef(null);
   const viewRef = useRef(null);
   const [error, setError] = useState(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [marks, setMarks] = useState([]);
   /* A World opens framed on its own bounds, and framing needs a viewport. On
      the first render the container has not been laid out yet and is zero
      pixels wide, so mounting then would open every park at a zoom worked out
@@ -84,6 +87,17 @@ export default function ParkMapGl({
   // time the parent re-rendered with a fresh inline arrow.
   const handlers = useRef({ onSelectPlace, onMapTap, onUserPan });
   handlers.current = { onSelectPlace, onMapTap, onUserPan };
+  const overlayRef = useRef(overlay);
+  overlayRef.current = overlay;
+  const paintMarks = () => {
+    const view = viewRef.current;
+    const model = overlayRef.current;
+    if (!view || !model) {
+      setMarks([]);
+      return;
+    }
+    setMarks(overlayMarks(model, (lngLat) => view.project(lngLat)));
+  };
 
   /** The camera the seam is asked for, resolved against the viewport.
    *
@@ -181,6 +195,10 @@ export default function ParkMapGl({
         onCameraMoved: (moved) => {
           if (!alive || !viewRef.current) return;
           viewRef.current.setCamera(moved);
+          paintMarks();
+        },
+        onLoad: () => {
+          if (alive) setMapReady(true);
         },
         onTap: ({ point, lngLat }) => {
           if (!alive || !viewRef.current) return;
@@ -196,10 +214,16 @@ export default function ParkMapGl({
       // A view opens somewhere, and the somewhere a World opens on is the
       // whole World: ADR-0016's truth bounds framed into the glass. Whatever
       // the camera prop wants happens in the effect below, as a move.
-      camera: frameBounds(world.bounds, {
-        width: Math.max(1, node.clientWidth),
-        height: Math.max(1, node.clientHeight - insetBottom),
-      }),
+      camera: (() => {
+        const framed = frameBounds(world.bounds, {
+          width: Math.max(1, node.clientWidth),
+          height: Math.max(1, node.clientHeight - insetBottom),
+        });
+        if (world.center && Number.isFinite(world.center.lat) && Number.isFinite(world.center.lng)) {
+          return { ...framed, center: { lng: world.center.lng, lat: world.center.lat } };
+        }
+        return framed;
+      })(),
       ...(maxPitch == null ? {} : { maxPitch }),
     });
     viewRef.current = view;
@@ -222,7 +246,8 @@ export default function ParkMapGl({
      map would be pushed at nothing and never pushed again. */
   useEffect(() => {
     if (overlay) viewRef.current?.setOverlay(overlay);
-  }, [overlay, laidOut]);
+    paintMarks();
+  }, [overlay, laidOut, mapReady]);
 
   useEffect(() => {
     applyCamera(camera);
@@ -243,9 +268,61 @@ export default function ParkMapGl({
     };
   }, []);
 
+  useEffect(() => {
+    const samples = [];
+    let last = performance.now();
+    let raf = 0;
+    const loop = (now) => {
+      const dt = now - last;
+      last = now;
+      if (dt > 0 && dt < 1000) {
+        samples.push(1000 / dt);
+        if (samples.length > 60) samples.shift();
+        globalThis.__parkMapFps = samples.slice();
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(raf);
+      if (globalThis.__parkMapFps === samples) delete globalThis.__parkMapFps;
+    };
+  }, []);
+
+  const worldFeatures = Object.values(world?.geometry || {}).reduce(
+    (n, layer) => n + (layer?.features?.length || 0),
+    0,
+  );
+
   return (
     <div className="mapWrap" style={style ?? undefined} data-renderer="gl">
-      <div ref={containerRef} style={S.canvas} data-testid="park-map-gl" />
+      <div
+        ref={containerRef}
+        style={S.canvas}
+        data-testid="park-map-gl"
+        data-map-ready={mapReady ? '1' : '0'}
+        data-world-features={worldFeatures}
+      />
+      <svg
+        className="mapSvg"
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}
+        aria-hidden="true"
+      >
+        <g className="mapWorld">
+          {marks.map((mark) => (
+            <g
+              key={`${mark.kind}:${mark.id}`}
+              className={mark.className}
+              transform={`translate(${mark.x},${mark.y})`}
+            >
+              <title>{mark.name}</title>
+              <circle r="8" />
+              {mark.self ? <circle className="mePulse" r="14" /> : null}
+              {mark.name ? <text className="memName">{mark.name}</text> : null}
+            </g>
+          ))}
+        </g>
+      </svg>
       {children}
       {error && (
         <div style={S.error} role="alert" data-testid="park-map-gl-error">

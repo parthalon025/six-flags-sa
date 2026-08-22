@@ -39,7 +39,7 @@ import {
  *   the engine's job and only the engine can do it — which is why the tap
  *   comes out here rather than the seam growing an `unproject`.
  */
-export function createMapLibreRenderer({ onError = null, onCameraMoved = null, onTap = null } = {}) {
+export function createMapLibreRenderer({ onError = null, onCameraMoved = null, onTap = null, onLoad = null } = {}) {
   let map = null;
   let loaded = false;
   const queued = [];
@@ -76,6 +76,7 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
       map.on('load', () => {
         loaded = true;
         while (queued.length > 0) queued.shift()(map);
+        onLoad?.();
       });
       // Every move, gesture or ours, and continuously rather than at the end
       // of one: the tilt has to track a pinch as it happens. Our own moves
@@ -136,6 +137,12 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
       if (!map || !loaded || !map.getLayer(PLACES_LAYER)) return null;
       const [feature] = map.queryRenderedFeatures([point.x, point.y], { layers: [PLACES_LAYER] });
       return feature?.properties?.id ?? null;
+    },
+
+    project({ lng, lat } = {}) {
+      if (!map || !loaded || !Number.isFinite(lng) || !Number.isFinite(lat)) return null;
+      const point = map.project([lng, lat]);
+      return { x: point.x, y: point.y };
     },
 
     detach() {

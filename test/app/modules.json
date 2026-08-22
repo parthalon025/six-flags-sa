@@ -74,7 +74,7 @@
       "kind": "functional",
       "paths": [
         "apps/party-tracker/components/ParkMap.jsx",
-        "apps/party-tracker/components/ParkMapSvg.jsx",
+        "apps/party-tracker/lib/parkMapView.js",
         "apps/party-tracker/components/ParkMapGl.jsx",
         "apps/party-tracker/components/CustomMapLayer.jsx",
         "apps/party-tracker/components/Sheet.jsx",
@@ -130,7 +130,7 @@
         "apps/party-tracker/components/SideQuestsPanel.jsx",
         "apps/party-tracker/components/PlaceDetail.jsx",
         "apps/party-tracker/components/ParkMap.jsx",
-        "apps/party-tracker/components/ParkMapSvg.jsx",
+        "apps/party-tracker/lib/parkMapView.js",
         "apps/party-tracker/components/ParkMapGl.jsx",
         "apps/party-tracker/lib/party/**",
         "apps/party-tracker/lib/partyRuntime.js",

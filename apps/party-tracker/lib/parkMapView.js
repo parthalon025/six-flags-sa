@@ -46,7 +46,11 @@ export function worldFor(map) {
   // A box of no ground has no camera that frames it, and a World arriving with
   // one is a builder bug rather than something to open a map on.
   if (!(east > west) || !(north > south)) return null;
-  return { id: map.meta.id, bounds, geometry: worldGeoJson(map) };
+  const declared = map.meta.center;
+  const center = declared && finite(declared.lat) && finite(declared.lng)
+    ? { lat: declared.lat, lng: declared.lng }
+    : null;
+  return { id: map.meta.id, bounds, geometry: worldGeoJson(map), center };
 }
 
 /**

@@ -381,6 +381,11 @@ export function mountMapView(
      *  context. */
     state: () => Object.freeze({ camera: current, plan }),
 
+    project: (lngLat) => {
+      if (!alive || typeof renderer.project !== 'function') return null;
+      return renderer.project(lngLat);
+    },
+
     destroy: () => {
       if (!alive) return;
       alive = false;

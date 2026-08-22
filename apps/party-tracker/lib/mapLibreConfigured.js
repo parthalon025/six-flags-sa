@@ -1,8 +1,8 @@
 /**
  * The display-pipeline MapLibre spike (issue #527, ADR-0013 Phase 1) is off
- * unless explicitly enabled — the shipped map stays ParkMap.jsx's SVG
- * renderer everywhere else. Same ad hoc boolean-capability shape as
- * clerkConfigured.js: a single env-var check, no flags registry.
+ * unless explicitly enabled. The shipped World map is MapLibre (slice h18);
+ * this flag only gates the /display-spike byte source. Same ad hoc
+ * boolean-capability shape as clerkConfigured.js.
  *
  * The venue/Skin constants live here rather than in lib/displaySpike.js
  * because this module is client-safe: page.js and DisplayMap.jsx import the
@@ -19,23 +19,20 @@ export const DISPLAY_SPIKE_VENUE = 'big-kahunas';
 /** The certified Skin the spike renders. */
 export const DISPLAY_SPIKE_SKIN = 'watercolor-quest';
 
-/** The two renderers the World map can draw through, shipped default first.
+/** The renderer the World map can draw through.
  *
- *  `svg` is components/ParkMapSvg.jsx, the hand-projected renderer ADR-0019
- *  clause 3 retires. `gl` is the port: components/ParkMap.jsx driving the map
- *  view seam over MapLibre, with the live Overlay as GeoJSON (clause 4).
+ *  `gl` is components/ParkMap.jsx driving the map view seam over MapLibre,
+ *  with the live Overlay as GeoJSON (ADR-0019 clauses 3-4). The SVG adapter
+ *  retired in slice h18.
  */
-export const PARK_MAP_RENDERERS = Object.freeze(['svg', 'gl']);
+export const PARK_MAP_RENDERERS = Object.freeze(['gl']);
 
 /**
  * Which renderer draws the World map.
  *
- * The port lands ahead of the flip. docs/train-h-seams.md keeps the SVG
- * adapter as the escape hatch "until the MapLibre one passes the gate", and
- * that gate is slice h15's perf rows — which wait on an owner decision — plus
- * the browser suites, which still assert on `svg.mapSvg`. So the shipped
- * answer stays `svg`, and this is how a review, a perf trace or a CI lane asks
- * for the ported one.
+ * MapLibre is the shipped renderer (slice h18). `?parkMap=` remains an
+ * escape for a reviewer who needs to name the engine, but the only remaining
+ * engine is `gl`.
  *
  * Pure, and the query string is passed in rather than read, so which renderer
  * a build ships is a fact a test can pin without a browser.

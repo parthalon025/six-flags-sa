@@ -29,21 +29,11 @@
  * in `lib/mapView.js` and its MapLibre adapter, and `components/ParkMapGl.jsx`
  * is the thin bit of that which needs a browser.
  *
- * ## Why the SVG renderer is still here
+ * ## The shipped renderer
  *
- * docs/train-h-seams.md: "the SVG adapter stays behind this interface until
- * the MapLibre one passes the gate. That is the escape hatch." Two things hold
- * it open, and neither is this slice's to close:
- *
- *   - The gate is slice h15's perf rows, which wait on an owner decision
- *     (ADR-0021's Open section, "The perf gate rows").
- *   - The browser suites still assert on `svg.mapSvg` — path counts, marker
- *     classes, the parity harness. Flipping the default before those move is
- *     how a renderer swap reads as thirty broken tests instead of one decision.
- *
- * So `parkMapRenderer()` answers `svg` unless a build or a reviewer asks
- * otherwise, and `components/ParkMapSvg.jsx` is what draws until it does not.
- * Nothing new should be built in that file; see its header.
+ * MapLibre is the only engine (slice h18). `parkMapRenderer()` answers `gl`.
+ * Overlay marks on the canvas use the engine's own `project`, so party dots
+ * and the route share one camera.
  *
  * ## What the ported path does not carry yet
  *
@@ -80,7 +70,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import MapLegend from './MapLegend';
-import ParkMapSvg from './ParkMapSvg';
 import { identityOf } from '@/lib/venue/ids';
 import { mapThemePack } from '@/lib/mapThemeTokens';
 import { overlayGeoJson } from '@/lib/overlayGeo';
@@ -194,10 +183,9 @@ function ParkMap(props) {
     [follow, anchor, focusPoint, fit, navZoom, rotation, liftCentre],
   );
 
-  // The escape hatch. Also the answer when a World has arrived without the
-  // bounds every band and every camera is placed against — better the renderer
-  // that never needed them than a map opened on a guess.
-  if (renderer !== 'gl' || !world) return <ParkMapSvg {...props} />;
+  if (!world) {
+    return <div data-testid="park-map-gl" className="mapMissing" />;
+  }
 
   // The category key, over the canvas. The SVG renderer keeps its own; drawn
   // here so the ported path is not a map a guest cannot filter.

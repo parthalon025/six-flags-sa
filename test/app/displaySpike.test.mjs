@@ -115,25 +115,24 @@ check('malformed and unsatisfiable ranges come back null (the route 416s)', () =
    the escape hatch until the ported one passes the gate, so which of the two
    draws is a decision, and a decision with a default worth pinning. */
 
-check('the shipped renderer is the SVG one until the port passes its gate', () => {
-  assert.deepEqual([...PARK_MAP_RENDERERS], ['svg', 'gl']);
-  assert.equal(parkMapRenderer({ env: undefined, search: '' }), 'svg');
-  assert.equal(parkMapRenderer(), 'svg', 'and with nothing asked at all');
+check('the shipped renderer is MapLibre', () => {
+  assert.deepEqual([...PARK_MAP_RENDERERS], ['gl']);
+  assert.equal(parkMapRenderer({ env: undefined, search: '' }), 'gl');
+  assert.equal(parkMapRenderer(), 'gl', 'and with nothing asked at all');
 });
 
-check('a build can ship the ported renderer, and a review can ask for it', () => {
+check('a review can still ask for the shipped renderer by name', () => {
   assert.equal(parkMapRenderer({ env: 'gl', search: '' }), 'gl');
   assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=gl' }), 'gl');
-  // The URL wins, in both directions: a reviewer on a gl build has to be able
-  // to put the shipped renderer back beside it without a rebuild.
-  assert.equal(parkMapRenderer({ env: 'gl', search: '?parkMap=svg' }), 'svg');
+  // svg is retired — asking for it falls back to the shipped engine
+  assert.equal(parkMapRenderer({ env: 'gl', search: '?parkMap=svg' }), 'gl');
 });
 
 check('a renderer nobody wrote falls back rather than blanking the map', () => {
   for (const asked of ['webgpu', '1', 'true', '', null]) {
-    assert.equal(parkMapRenderer({ env: asked, search: '' }), 'svg', `env ${JSON.stringify(asked)}`);
+    assert.equal(parkMapRenderer({ env: asked, search: '' }), 'gl', `env ${JSON.stringify(asked)}`);
   }
-  assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=webgpu' }), 'svg');
+  assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=webgpu' }), 'gl');
 });
 
 if (FAIL.length) {
