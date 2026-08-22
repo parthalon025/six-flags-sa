@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { UserButton, useClerk } from '@clerk/nextjs';
 import { rankReward } from '@party-tracker/shared/questScore.js';
-import { AUTH_COPY } from '@/lib/auth/authCopy';
+import AuthGateActions from '@/components/AuthGateActions';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
 import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
 /**
@@ -55,11 +54,7 @@ function SignInCardLive({ session = null, onSession = null }) {
         Browse the map and join a party by name anytime. Sign in to keep XP,
         Managed Guests, and gap Side Quests on this phone.
       </p>
-      <div className="signInActions">
-        <Link href="/sign-in" className="btn primary">
-          {AUTH_COPY.loginLabel}
-        </Link>
-      </div>
+      <AuthGateActions />
     </div>
   );
 }

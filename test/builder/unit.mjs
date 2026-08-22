@@ -7626,7 +7626,7 @@ await check('first-run splash does not wait for the Profile gate', () => {
 
 await check('SignInCard uses Clerk /sign-in rather than in-place OAuth', () => {
   const card = fs.readFileSync(new URL('../../apps/party-tracker/components/SignInCard.jsx', import.meta.url), 'utf8');
-  assert.match(card, /href=["']\/sign-in["']/);
+  assert.match(card, /AuthGateActions/);
   assert.doesNotMatch(card, /useClerkOAuth/);
   assert.doesNotMatch(card, /OAuthButtons/);
   return true;
