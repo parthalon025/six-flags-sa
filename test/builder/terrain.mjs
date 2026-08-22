@@ -23,7 +23,7 @@ import { tileNameFor as tile3dep } from '../../packages/venue-builder/lib/adapte
 import { tileNameFor as tileCop } from '../../packages/venue-builder/lib/adapters/copernicus-dem.mjs';
 import {
   compileVisualSpec, certifyDisplayPack, readMaterials, readSkinTemplates,
-  styleFromSpec, mixHex, tilesGatePasses,
+  styleFromSpec, mixHex, tilesGatePasses, DEFAULT_MATERIAL_MIX,
 } from '../../packages/venue-builder/lib/display-pack.mjs';
 import { crownStipple, seedFromString, resolveKit, TERRAIN_PIECES, bakeModel } from '../../packages/venue-builder/lib/display-bake.mjs';
 import { buildMattReviewContext } from '../../scripts/lib/matt-review.mjs';
@@ -418,7 +418,25 @@ await check('a surface takes its material colour, blended toward the skin', () =
   const template = readSkinTemplates().trail;
   const spec = compileVisualSpec({ map, template, materials });
   const veg = spec.surfaces.vegetation;
+  const avg = materials[veg.material].avgColor;
+  const expected = mixHex(
+    template.tokens.colors.grass,
+    avg,
+    template.materialMix ?? DEFAULT_MATERIAL_MIX,
+  );
+  assert.equal(veg.color, expected);
   assert.notEqual(veg.color, template.tokens.colors.grass, 'the material must actually move it');
+  // ...and not all the way to the swatch either, or the skin's own palette is
+  // gone and every venue wearing this skin looks like its dirt.
+  assert.notEqual(veg.color, avg, 'the skin token must still be in the blend');
+  // Which end of the blend is which, and that a skin's own materialMix is read
+  // at all — pinned without going back through mixHex: 0 is all token, 1 is all
+  // material.
+  const at = (materialMix) =>
+    compileVisualSpec({ map, template: { ...template, materialMix }, materials })
+      .surfaces.vegetation.color;
+  assert.equal(at(0), template.tokens.colors.grass, 'mix 0 keeps the authored token');
+  assert.equal(at(1), avg, 'mix 1 takes the material swatch');
   return true;
 });
 

@@ -6,7 +6,8 @@
  * The offline contract under test: bytes reach the bundle cache only after
  * their sha256 matches the manifest pin; a half-landed sync never commits
  * its manifest; bytes already on the phone are adopted without a network
- * fetch; and the service worker opens the cache by the same name.
+ * fetch; and the service worker serves those bytes, keeps them across a
+ * deploy, and stays out of the way of the fetches that build them.
  *
  *   node test/app/venue-download.test.mjs
  */
@@ -16,6 +17,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const emitWarning = process.emitWarning.bind(process);
 process.emitWarning = (warning, ...rest) => {
@@ -72,18 +74,27 @@ const VENUE = { id: 'p', bundle: MANIFEST_URL };
 /** In-memory CacheStorage: open() per name, match() across every cache. */
 function fakeCaches() {
   const stores = new Map();
+  // The page caches by relative path and the worker caches whole Requests; the
+  // browser resolves both against one origin, so they are one key. Model that,
+  // or the two halves of the offline contract would never meet in here.
+  const keyOf = (key) => {
+    const url = typeof key === 'string' ? key : key.url;
+    if (!url.startsWith('http')) return url;
+    const parsed = new URL(url);
+    return parsed.pathname + parsed.search;
+  };
   const cacheFor = () => {
     const entries = new Map();
     return {
       entries,
       async match(key) {
-        return entries.get(key);
+        return entries.get(keyOf(key));
       },
       async put(key, res) {
-        entries.set(key, res);
+        entries.set(keyOf(key), res);
       },
       async delete(key) {
-        return entries.delete(key);
+        return entries.delete(keyOf(key));
       },
     };
   };
@@ -92,6 +103,12 @@ function fakeCaches() {
     async open(name) {
       if (!stores.has(name)) stores.set(name, cacheFor());
       return stores.get(name);
+    },
+    async keys() {
+      return [...stores.keys()];
+    },
+    async delete(name) {
+      return stores.delete(name);
     },
     async match(key) {
       for (const cache of stores.values()) {
@@ -106,7 +123,11 @@ function fakeCaches() {
 /** fetch fake serving the manifest + hash-addressed bodies; records calls. */
 function fakeFetch({ manifest = MANIFEST, corrupt = [], down = [] } = {}) {
   const calls = [];
-  const impl = async (url) => {
+  const impl = async (input) => {
+    // The page fetches by relative path; the worker passes the Request whose
+    // url the browser already made absolute. Same origin, same served bytes.
+    const raw = typeof input === 'string' ? input : input.url;
+    const url = raw.startsWith('http') ? new URL(raw).pathname + new URL(raw).search : raw;
     calls.push(url);
     if (down.includes(url)) throw new TypeError('network down');
     if (url === MANIFEST_URL) {
@@ -281,12 +302,141 @@ await check('offline, missing manifest, and missing WebCrypto are ordinary state
 // declarations of one name, in two files that never import each other. Read the
 // name out of sw.js rather than matching a formatted line, so this fails when
 // the names diverge and not when the file is reformatted.
+const SW_PATH = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../apps/party-tracker/public/sw.js',
+);
+const SW_ORIGIN = 'https://parkbound.test';
+
 await check('sw.js opens the same bundle cache the download manager writes to', () => {
-  const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
-  const sw = readFileSync(path.join(root, 'apps/party-tracker/public/sw.js'), 'utf8');
+  const sw = readFileSync(SW_PATH, 'utf8');
   const declared = sw.match(/BUNDLE_CACHE\s*=\s*['"`]([^'"`]+)['"`]/);
   assert.ok(declared, 'sw.js declares a BUNDLE_CACHE name');
   assert.equal(declared[1], VENUE_BUNDLE_CACHE, 'sw.js and lib/venue/download.js name one cache');
+});
+
+/**
+ * Evaluate sw.js with a fake `self`, `caches` and `fetch`, and hand back a way
+ * to drive the listeners it registered.
+ *
+ * The worker is the other half of this contract and nothing imports it, so it
+ * used to be checked by grepping its source for formatted lines — which broke
+ * on reformatting and said nothing about what the lines did. Run it instead:
+ * these checks read no source text, so whitespace is free and a deleted branch
+ * is not.
+ */
+function loadServiceWorker({ cacheStorage, fetchImpl }) {
+  const listeners = new Map();
+  const self = {
+    addEventListener: (type, fn) => listeners.set(type, fn),
+    location: { origin: SW_ORIGIN },
+    skipWaiting() {},
+    clients: { claim: async () => {} },
+    registration: { scope: `${SW_ORIGIN}/`, showNotification: async () => {} },
+  };
+  const sandbox = { self, caches: cacheStorage, fetch: fetchImpl, URL, Response, console };
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(readFileSync(SW_PATH, 'utf8'), sandbox, { filename: 'sw.js' });
+
+  return {
+    /** Run the activate handler to completion. */
+    async activate() {
+      const waited = [];
+      listeners.get('activate')({ waitUntil: (p) => waited.push(p) });
+      await Promise.all(waited);
+    },
+    /** GET a path through the fetch handler; null means "left to the browser". */
+    async get(pathname) {
+      let answered = null;
+      listeners.get('fetch')({
+        request: { url: `${SW_ORIGIN}${pathname}`, method: 'GET' },
+        respondWith: (r) => {
+          answered = r;
+        },
+      });
+      return answered && (await answered);
+    },
+  };
+}
+
+/** Let a background cache write the worker started actually land. */
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+await check('activate keeps the venue bundle cache and sweeps what is stale', async () => {
+  const cacheStorage = fakeCaches();
+  // A phone that downloaded a venue, then took a deploy. The shell cache is
+  // version-stamped and stale; the bundles are addressed by their sha256 pins
+  // and a deploy invalidates nothing in them.
+  await syncVenueBundle(VENUE, { fetchImpl: fakeFetch(), cacheStorage });
+  const previousShell = await cacheStorage.open('tracker-0.0.1');
+  await previousShell.put('/', new Response('last release'));
+  const sw = loadServiceWorker({ cacheStorage, fetchImpl: fakeFetch() });
+
+  await sw.activate();
+
+  assert.ok(!(await cacheStorage.keys()).includes('tracker-0.0.1'), 'the stale shell is swept');
+  assert.equal(
+    await textOf(cacheStorage, '/venues/p.map.json'),
+    BODIES['/venues/p.map.json'],
+    'a downloaded venue survives the deploy that swept the shell',
+  );
+});
+
+await check('verified bundle bytes answer from the bundle cache, off the network', async () => {
+  const cacheStorage = fakeCaches();
+  await syncVenueBundle(VENUE, { fetchImpl: fakeFetch(), cacheStorage });
+  const fetchImpl = fakeFetch();
+  const sw = loadServiceWorker({ cacheStorage, fetchImpl });
+
+  const res = await sw.get('/venues/p.map.json');
+
+  assert.equal(await res.text(), BODIES['/venues/p.map.json']);
+  // This is also what proves the two cache names are one name: served from any
+  // other cache the worker would revalidate, and park wifi would pay for it.
+  assert.deepEqual(fetchImpl.calls, [], 'exactly-current bytes are not revalidated');
+});
+
+await check('a bundle manifest is network-first, and offline falls back to the held one', async () => {
+  const held = () => new Response('{"version":"held"}');
+
+  const online = fakeCaches();
+  await (await online.open(VENUE_BUNDLE_CACHE)).put(MANIFEST_URL, held());
+  const live = loadServiceWorker({ cacheStorage: online, fetchImpl: fakeFetch() });
+  assert.equal(
+    await (await live.get(MANIFEST_URL)).text(),
+    JSON.stringify(MANIFEST),
+    'the deployed manifest is the freshness point, so it outranks the held copy',
+  );
+
+  const offline = fakeCaches();
+  await (await offline.open(VENUE_BUNDLE_CACHE)).put(MANIFEST_URL, held());
+  const cut = loadServiceWorker({
+    cacheStorage: offline,
+    fetchImpl: fakeFetch({ down: [MANIFEST_URL] }),
+  });
+  assert.equal(
+    await (await cut.get(MANIFEST_URL)).text(),
+    '{"version":"held"}',
+    'with the network gone the held manifest still answers',
+  );
+});
+
+await check('a hash-addressed fetch goes straight to the network and is not cached', async () => {
+  const cacheStorage = fakeCaches();
+  const fetchImpl = fakeFetch();
+  const sw = loadServiceWorker({ cacheStorage, fetchImpl });
+  const hashed = hashedUrlFor(MANIFEST.files.find((f) => f.path.endsWith('.map.json')));
+
+  const res = await sw.get(hashed);
+
+  assert.equal(await res.text(), BODIES['/venues/p.map.json'], 'answered from the network');
+  assert.deepEqual(fetchImpl.calls, [hashed]);
+  await settle();
+  // The download manager stores these bytes itself, under the clean path. A
+  // worker that also kept them would duplicate every changed file under a hash
+  // key nothing ever asks for again.
+  const keys = [...cacheStorage.stores.values()].flatMap((c) => [...c.entries.keys()]);
+  assert.deepEqual(keys, [], 'nothing is held under the ?v= key');
 });
 
 console.log(`\nvenue-download: ${PASS.length} passed, ${FAIL.length} failed`);
