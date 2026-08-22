@@ -10,7 +10,7 @@ const overlay = {
   },
   members: {
     features: [
-      { id: 'me', geometry: { coordinates: [-84.27, 39.35] }, properties: { id: 'me', name: 'Sam' } },
+      { id: 'phone-a', geometry: { coordinates: [-84.27, 39.35] }, properties: { id: 'phone-a', name: 'Sam', self: true } },
     ],
   },
   pins: {
@@ -25,6 +25,7 @@ assert.equal(marks.length, 3);
 assert.equal(marks.find((m) => m.kind === 'place').className, 'poiMarker');
 assert.equal(marks.find((m) => m.kind === 'place').name, 'The Beast');
 assert.equal(marks.find((m) => m.self).className, 'memMarker');
+assert.equal(marks.find((m) => m.self).id, 'phone-a');
 assert.equal(marks.find((m) => m.kind === 'meet').className, 'meetPin');
 assert.deepEqual(
   overlayMarks(overlay, () => null),

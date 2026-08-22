@@ -93,6 +93,7 @@ function memberFeatures(members, now) {
     const { age, stale, help, facing } = partyMarkerState(member, now);
     features.push(
       pointFeature(member?.id ?? null, coordinates, {
+        self: Boolean(member?.self) || member?.id === 'me',
         name: textOr(member?.name),
         initials: textOr(member?.initials),
         colour: textOr(member?.colour),

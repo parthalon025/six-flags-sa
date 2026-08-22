@@ -43,7 +43,7 @@ export function overlayMarks(overlay, project) {
       className: 'memMarker',
       id,
       name: feature.properties?.name || '',
-      self: id === 'me',
+      self: Boolean(feature.properties?.self) || id === 'me',
       x: point.x,
       y: point.y,
     });

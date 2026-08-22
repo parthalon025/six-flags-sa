@@ -123,7 +123,7 @@ export function overlayModel(
   const here = puck ?? me;
   return {
     members: here
-      ? [...(members || []), { ...here, id: here.id ?? 'me', ts: here.ts ?? now }]
+      ? [...(members || []), { ...here, id: here.id ?? 'me', self: true, ts: here.ts ?? now }]
       : (members || []),
     route,
     progress,

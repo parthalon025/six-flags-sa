@@ -18,7 +18,7 @@ process.emitWarning = (warning, ...rest) => {
   emitWarning(warning, ...rest);
 };
 
-const { displaySpikeFile, displaySpikeContentType, parseByteRange } = await import(
+const { displaySpikeFile, displaySpikeContentType, isMapLibreWorkerFile, parseByteRange } = await import(
   '../../apps/party-tracker/lib/displaySpike.js'
 );
 const { DISPLAY_SPIKE_SKIN, DISPLAY_SPIKE_VENUE, PARK_MAP_RENDERERS, parkMapRenderer } = await import(
@@ -55,7 +55,10 @@ check('worker bundle files resolve into maplibre-gl/dist', () => {
     const file = displaySpikeFile(name);
     assert.ok(file, `${name} should be allow-listed`);
     assert.ok(file.includes(path.join('maplibre-gl', 'dist')), `${name} comes from the bundled library`);
+    assert.equal(isMapLibreWorkerFile(name), true, `${name} is served even when the spike is off`);
   }
+  assert.equal(isMapLibreWorkerFile('base.pmtiles'), false);
+  assert.equal(isMapLibreWorkerFile('../recipe.json'), false);
 });
 
 check('anything not allow-listed is refused, traversal included', () => {

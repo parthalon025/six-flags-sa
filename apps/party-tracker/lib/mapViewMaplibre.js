@@ -12,7 +12,7 @@
  * sources until it has loaded a style, and the seam should not have to know
  * that, so calls that arrive early are queued and replayed on load.
  */
-import { Map as MapLibreMap } from 'maplibre-gl';
+import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
 import { BANDS } from '@party-tracker/shared/zoomBands.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
 import {
@@ -21,6 +21,17 @@ import {
   OVERLAY_SOURCES,
   PLACES_LAYER,
 } from './mapViewStyle.js';
+
+/** Same-origin worker the spike route already serves. Turbopack rewrites
+ *  maplibre-gl's `import.meta.url` to a non-http value, so the default
+ *  worker URL is empty and `new Map` never reaches `load`. */
+const MAPLIBRE_WORKER_URL = '/api/display-spike/maplibre-gl-worker.mjs';
+let workerPointed = false;
+function ensureMapLibreWorker() {
+  if (workerPointed) return;
+  setWorkerUrl(MAPLIBRE_WORKER_URL);
+  workerPointed = true;
+}
 
 /**
  * A renderer for mountMapView().
@@ -65,6 +76,7 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
     engine: () => map,
 
     attach(container, view) {
+      ensureMapLibreWorker();
       map = new MapLibreMap({
         container,
         style: bandedWorldStyle(view),

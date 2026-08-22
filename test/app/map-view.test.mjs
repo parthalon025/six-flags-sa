@@ -1125,7 +1125,15 @@ const MAP_JSON = {
   const withMe = overlayModel({ ...base, me: { lat: 39.3441, lng: -84.2688 } }, { now: NOW });
   assert.equal(withMe.members.length, 2);
   assert.equal(withMe.members[1].id, 'me', 'and is identified, so it can be told it moved');
+  assert.equal(withMe.members[1].self, true, 'the map key treats this phone as the pulsing self mark');
   assert.equal(withMe.members[1].ts, NOW, 'a fix with no clock on it is this one, not a stale one');
+
+  const named = overlayModel(
+    { ...base, me: { id: 'phone-a', lat: 39.3441, lng: -84.2688 } },
+    { now: NOW },
+  );
+  assert.equal(named.members[1].id, 'phone-a');
+  assert.equal(named.members[1].self, true, 'a session id must not drop the self mark');
 
   // While a route runs, the snapped puck is where this phone is — the same
   // choice Follow makes, so the dot and the camera cannot disagree.

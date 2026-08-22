@@ -47,6 +47,13 @@ const WORKER_FILES = {
   'maplibre-gl-shared.mjs': 'text/javascript',
 };
 
+/** The worker bundle is what the shipped World map boots, not just the spike.
+ *  Turbopack empties MapLibre's default worker URL; both ParkMap and
+ *  DisplayMap point `setWorkerUrl` at this same-origin path. */
+export function isMapLibreWorkerFile(name) {
+  return Object.prototype.hasOwnProperty.call(WORKER_FILES, name);
+}
+
 /** Absolute path for an allow-listed file, or null for anything else. */
 export function displaySpikeFile(name) {
   if (Object.prototype.hasOwnProperty.call(PACK_FILES, name)) {
