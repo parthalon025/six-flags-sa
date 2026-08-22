@@ -35,7 +35,7 @@
  * That is what lets this be driven from plain Node, and it is the same seam the
  * SVG map, the MapLibre map and ADR-0013's real-time PBR tier all sit behind.
  */
-import { pitchForZoom } from '@party-tracker/shared/mapCamera.js';
+import { pitchForZoom, skinCameraPreset } from '@party-tracker/shared/mapCamera.js';
 import { bandDrawPlan } from './bandPlan.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
 
@@ -205,6 +205,13 @@ export function mountMapView(
 ) {
   assertRenderer(renderer);
   const latitude = worldLatitude(world);
+  // ADR-0019 clause 2 makes the pitch preset a per-Skin declared trait, so a
+  // caller that has named the Skin has already named the feel. Deriving the
+  // default here rather than making every caller look it up removes the way a
+  // Skin quietly mounts on the wrong camera — the failure would be silent,
+  // since a wrong ceiling still produces a perfectly valid tilt. An explicit
+  // `maxPitch` still wins: the seam supplies a default, it does not overrule.
+  const ceiling = maxPitch == null ? skinCameraPreset(skin).maxPitch : maxPitch;
   let held = [...(available ?? PACKED_BANDS)];
 
   const cameraFor = (next, ease = null) => {
@@ -226,7 +233,7 @@ export function mountMapView(
     return Object.freeze({
       center: Object.freeze({ lng: center.lng, lat: center.lat }),
       zoom,
-      pitch: pitchForZoom(zoom, { latitude, ...(maxPitch == null ? {} : { maxPitch }) }),
+      pitch: pitchForZoom(zoom, { latitude, maxPitch: ceiling }),
       bearing,
       ease,
     });

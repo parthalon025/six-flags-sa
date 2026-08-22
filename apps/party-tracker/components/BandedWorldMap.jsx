@@ -18,7 +18,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { bandBoundaryZooms } from '@party-tracker/shared/zoomBands.js';
-import { pitchEaseRange } from '@party-tracker/shared/mapCamera.js';
+import { pitchEaseRange, skinCameraPreset } from '@party-tracker/shared/mapCamera.js';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
 import { previewWorldPaths, PREVIEW_VENUE } from '@/lib/bandedWorldPreview';
@@ -110,7 +110,18 @@ export default function BandedWorldMap({ skin, onReady = null }) {
         }),
         world,
         skin,
-        camera: { center: { lng: (west + east) / 2, lat: latitude }, zoom: 14 },
+        /* The Skin's declared camera feel (ADR-0019 clause 2). Its pitch
+           ceiling the seam derives from `skin` itself; its bearing is the
+           OPENING camera's and belongs here, because bearing is the caller's
+           to own — a gesture that turns the world comes straight back through
+           setCamera, and a seam that reimposed the preset would spin it back
+           on every pan. For pixel-tycoon that quarter-turn is most of what
+           survives of the isometric read (clause 6). */
+        camera: {
+          center: { lng: (west + east) / 2, lat: latitude },
+          zoom: 14,
+          bearing: skinCameraPreset(skin).bearing,
+        },
       });
 
       report();

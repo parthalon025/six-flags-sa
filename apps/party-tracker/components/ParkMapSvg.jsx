@@ -36,7 +36,6 @@ import {
   showsBaseMap,
 } from '@/lib/customMap';
 import {
-  assembleIsoMeshes,
   isoLocal,
   isoScreenToWorld,
   isoToScreen,
@@ -265,21 +264,6 @@ function collapseWalkways(list, origin) {
     .filter(Boolean);
 }
 
-function mercatorBbox(ring) {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const pt of ring || []) {
-    const [x, y] = project(pt[1], pt[0]);
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x);
-    maxY = Math.max(maxY, y);
-  }
-  return Number.isFinite(minX) ? { minX, minY, maxX, maxY } : null;
-}
-
 /** Venue geometry has no live-location inputs. Keeping it behind its own memo
  * boundary lets GPS and heading paints reconcile only the moving overlays. */
 const ParkMapStaticWorld = memo(function ParkMapStaticWorld({
@@ -468,6 +452,14 @@ function ParkMapSvg({
 }) {
   const palette = paletteFor(theme);
   const customMap = resolveCustomMap(theme);
+  /* ADR-0019 clause 6 retired iso from the map path, and `customMap.js` refuses
+     the word outright, so `customMapCamera` can no longer answer it for any
+     Skin. The live mesh assembly this used to gate is gone with it (the two
+     memos and their CustomMapLayer props). What is left is the projection
+     parameter threaded through this file's geometry helpers, held at its
+     top-down value rather than unpicked from forty call sites: this renderer is
+     itself retiring in slice h18, and the MapLibre port already owns the
+     camera, so the unpicking would be churn in a file about to be deleted. */
   const iso = customMapCamera(customMap) === 'iso';
   const drawBase = showsBaseMap(customMap);
   // The venue's own district tints, where it has hand-picked any.
@@ -1055,38 +1047,6 @@ function ParkMapSvg({
     };
   }, [data, worldOrigin, iso]);
 
-  const isoMeshesAll = useMemo(() => {
-    if (!iso || !data) return { buildings: [], tracks: [] };
-    const origin = worldOrigin;
-    const buildingRings = [];
-    const buildingBboxes = [];
-    (data.building || []).forEach((f) => {
-      const r = Array.isArray(f) ? f : f?.r;
-      buildingRings.push(ringToLocalMercator(r, origin));
-      buildingBboxes.push(mercatorBbox(r));
-    });
-    const coasterLines = [];
-    const coasterBboxes = [];
-    (data.coaster || []).forEach((f, i) => {
-      const r = Array.isArray(f) ? f : f?.r;
-      coasterLines.push({
-        r: ringToLocalMercator(r, origin),
-        n: Array.isArray(f) ? '' : f?.n,
-        i,
-      });
-      coasterBboxes.push(mercatorBbox(r));
-    });
-    const assembled = assembleIsoMeshes(buildingRings, coasterLines, {
-      maxBuildings: 800,
-      maxTracks: 80,
-      template: customMap?.template,
-    });
-    return {
-      buildings: assembled.buildings.map((b) => ({ ...b, bbox: buildingBboxes[b.i] })),
-      tracks: assembled.tracks.map((t) => ({ ...t, bbox: coasterBboxes[t.i] })),
-    };
-  }, [iso, data, worldOrigin, customMap?.template]);
-
   const viewTransform = useMemo(
     () =>
       iso
@@ -1143,19 +1103,6 @@ function ParkMapSvg({
   }, [world, cullView, lowZoom, cx, cy, spin, size.w, size.h, showService, iso]);
 
   const mapLayers = drawWorld || world;
-
-  const isoMeshes = useMemo(() => {
-    if (!iso) return { buildings: [], tracks: [] };
-    const cam = cullView || stableCullView(view);
-    const vis = (list, pad) =>
-      list.filter((f) => featureInView(f, cam, cx, cy, spin, size.w, size.h, pad, true));
-    return {
-      buildings: vis(isoMeshesAll.buildings, 0.55).slice(0, 400),
-      tracks: vis(isoMeshesAll.tracks, 0.7).slice(0, 80),
-    };
-    // Quantized cull cells — not raw view — keep meshes stable across pan frames.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iso, isoMeshesAll, cullView, cullCellX, cullCellY, cullScaleBand, cx, cy, spin, size.w, size.h]);
 
   /* Route paths in world coordinates — drawn once per route change, then
      transformed by viewTransform like venue geometry. Uses non-scaling-stroke
@@ -1668,14 +1615,7 @@ function ParkMapSvg({
               hideCoaster={hidesBaseLayer(customMap, 'coaster')}
             />
           )}
-          <CustomMapLayer
-            spec={customMap}
-            buildings={isoMeshes.buildings}
-            tracks={isoMeshes.tracks}
-            highlightedTrackIds={litTrack}
-            venueId={venue?.id}
-            worldOrigin={worldOrigin}
-          />
+          <CustomMapLayer spec={customMap} venueId={venue?.id} worldOrigin={worldOrigin} />
 
           {/* the selected ride's own track, so the red spaghetti has an owner */}
           {!iso && litTrack.length > 0 && (

@@ -18,10 +18,21 @@ import {
   AXIS_KNOBS,
   UNMAPPED_AXES,
   PIXEL_MEASURED,
+  REQUIRED_AXES,
+  REQUIRED_HEAVY,
+  MIN_SHIP_SKINS,
   specAxesDiffering,
   pixelAxisDeltas,
   verdict,
+  skinSetPairs,
+  setVerdict,
 } from '../../packages/venue-builder/lib/skin-distinct.mjs';
+/* The first ship is declared once, in the app, because the app is what ships
+   it (ADR-0021 clause 6: one venue x three contrasting Skins). This suite
+   reaches across rather than restating the list — a second copy here would be
+   the one that drifted, and the gate would then be judging a trio nobody
+   ships. The module is plain ESM with no imports of its own. */
+import { PREVIEW_SKINS } from '../../apps/party-tracker/lib/bandedWorldPreview.js';
 
 const W = 256;
 
@@ -310,22 +321,115 @@ for (const axis of Object.keys(THRESHOLDS)) {
   const kits = readdirSync(dir)
     .filter((f) => f.endsWith('.json'))
     .map((f) => JSON.parse(readFileSync(new URL(f, dir), 'utf8')));
-  assert.equal(kits.length, 6, 'the shipped catalogue is six kits');
+  // Seven since slice h14 converted pixel-tycoon off the iso projection and
+  // gave it a kit of its own (ADR-0019 clause 6).
+  assert.equal(kits.length, 7, 'the shipped catalogue is seven kits');
 
   const pairs = [];
   for (let i = 0; i < kits.length; i += 1) {
     for (let j = i + 1; j < kits.length; j += 1) pairs.push(specAxesDiffering(kits[i], kits[j]));
   }
-  assert.equal(pairs.length, 15);
+  assert.equal(pairs.length, 21);
 
   for (const axis of ['B3', 'C2']) {
     const n = pairs.filter((s) => s[axis]?.differs).length;
-    assert.equal(n, 15, `${axis} differs on ${n}/15 shipped pairs, not 0 — it is not a dead axis`);
+    assert.equal(n, 21, `${axis} differs on ${n}/21 shipped pairs, not 0 — it is not a dead axis`);
   }
 
   const a5 = pairs.filter((s) => s.A5?.differs).length;
   assert.equal(a5, 0, 'no kit overrides a steep variant yet, so A5 is SAME across the catalogue');
   assert.equal(pairs[0].A5.representable, true, 'A5 is mapped, not inexpressible');
+}
+
+/* --- The set gate (slice h14). The pairwise instrument answers "is B a
+   different world from A". ADR-0021 clause 6 asks a different question of the
+   first ship: are these THREE each their own world? It is explicit about why
+   the count is load-bearing — "One Skin cannot fail the beyond-palette
+   distinctness gate, so it cannot tell you the kit is wrong"; two "can fail
+   the distinctness gate, but a pair that passes may be passing on a single
+   axis; three is the smallest set where that cannot hide". So the set gate is
+   every unordered pair, and a set below the minimum cannot report PASS at all
+   however clean its one pair looks. */
+{
+  assert.deepEqual(
+    skinSetPairs(['a', 'b', 'c']),
+    [['a', 'b'], ['a', 'c'], ['b', 'c']],
+    'unordered pairs, in declaration order',
+  );
+  assert.deepEqual(skinSetPairs(['a']), [], 'one Skin makes no pair');
+  assert.throws(() => skinSetPairs(['a', 'b', 'a']), /twice|duplicate/i, 'a Skin is not distinct from itself');
+
+  const at = (outcome) => ({ outcome, pass: outcome === 'PASS' });
+  const three = [['a', 'b'], ['a', 'c'], ['b', 'c']];
+  const of = (outcomes) => three.map(([a, b], i) => ({ a, b, verdict: at(outcomes[i]) }));
+
+  assert.equal(setVerdict(of(['PASS', 'PASS', 'PASS'])).outcome, 'PASS');
+  assert.equal(setVerdict(of(['PASS', 'PASS', 'PASS'])).pass, true);
+
+  const oneFail = setVerdict(of(['PASS', 'FAIL', 'PASS']));
+  assert.equal(oneFail.outcome, 'FAIL', 'a set is only as distinct as its closest pair');
+  assert.equal(oneFail.pass, false);
+  assert.deepEqual(oneFail.failing, [['a', 'c']], 'and it names which pair');
+
+  assert.equal(setVerdict(of(['PASS', 'INDETERMINATE', 'PASS'])).outcome, 'INDETERMINATE');
+  assert.deepEqual(setVerdict(of(['PASS', 'INDETERMINATE', 'PASS'])).unproven, [['a', 'c']]);
+  assert.equal(
+    setVerdict(of(['FAIL', 'INDETERMINATE', 'PASS'])).outcome,
+    'FAIL',
+    'a proven failure outranks an unproven one — the set is wrong whatever the instrument cannot see',
+  );
+
+  // The clause-6 floor. Two Skins whose one pair passes is exactly the
+  // near-miss the ADR rejected: it is a real pass on a real pair and still not
+  // evidence the kit vocabulary is right.
+  const two = setVerdict([{ a: 'a', b: 'b', verdict: at('PASS') }]);
+  assert.equal(two.outcome, 'INDETERMINATE', `${MIN_SHIP_SKINS} Skins is the smallest set that can decide`);
+  assert.equal(two.pass, false);
+  assert.match(two.reason, /three|3/i, 'and it says why rather than reporting a bare unknown');
+  assert.equal(setVerdict([]).outcome, 'INDETERMINATE', 'no pairs decides nothing');
+  // A failing pair still fails a set too small to pass: the floor withholds a
+  // PASS, it does not launder a proven FAIL into "cannot tell".
+  assert.equal(setVerdict([{ a: 'a', b: 'b', verdict: at('FAIL') }]).outcome, 'FAIL');
+}
+
+/* --- The first ship's own trio, spec side. The pixel half needs three baked
+   worlds and cannot run here, so this asserts the half that can: every pair of
+   the shipped trio declares enough difference for the gate to be reachable at
+   all. That is the check that catches the failure ADR-0021 clause 6 sends
+   pixel-tycoon first to find — a Skin whose distinctness lived in its
+   projection, converted to a kit that is the same drawing recoloured, would
+   fall under REQUIRED_AXES here and the trio would be a provable FAIL before a
+   single pixel was baked. */
+{
+  assert.equal(PREVIEW_SKINS.length, MIN_SHIP_SKINS, 'the first ship is three Skins (ADR-0021 clause 6)');
+  assert.equal(PREVIEW_SKINS[0], 'pixel-tycoon', 'pixel-tycoon goes first (ADR-0021 clause 6)');
+
+  const dir = new URL('../../packages/venue-builder/data/display/kits/', import.meta.url);
+  const kitOf = (id) => JSON.parse(readFileSync(new URL(`${id}.json`, dir), 'utf8'));
+  const pairs = skinSetPairs(PREVIEW_SKINS).map(([a, b]) => {
+    const spec = specAxesDiffering(kitOf(a), kitOf(b));
+    return { a, b, spec, verdict: verdict({ spec, pixel: {}, thresholds: THRESHOLDS }) };
+  });
+  assert.equal(pairs.length, 3);
+
+  for (const { a, b, spec, verdict: v } of pairs) {
+    const differing = Object.entries(spec).filter(([, s]) => s.differs).map(([axis]) => axis);
+    const heavy = differing.filter((axis) => HEAVY_AXES.includes(axis));
+    assert.ok(
+      differing.length >= REQUIRED_AXES,
+      `${a} vs ${b} declares ${differing.length} differing axes (${differing.join(',')}), under the ${REQUIRED_AXES} the gate needs`,
+    );
+    assert.ok(
+      heavy.length >= REQUIRED_HEAVY,
+      `${a} vs ${b} declares ${heavy.length} heavy axes (${heavy.join(',')}), under the ${REQUIRED_HEAVY} the gate needs`,
+    );
+    assert.notEqual(v.outcome, 'FAIL', `${a} vs ${b} cannot reach the gate from its spec alone`);
+  }
+  // Spec-side alone cannot PASS — only A1-A4 are pixel-measured — so the set is
+  // honestly unproven until the three worlds are baked. Asserted so nobody
+  // reads the block above as the gate having been cleared.
+  const set = setVerdict(pairs);
+  assert.equal(set.outcome, 'INDETERMINATE', 'the spec side alone never proves the set; the bakes do');
 }
 
 console.log('skin-distinct: ok');

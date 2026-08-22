@@ -82,6 +82,16 @@ per frame could land a tilt and a restyle in the same instant — the one thing 
 prevent. The Skin's declared camera feel enters at mount instead, as `maxPitch`, which is where a
 per-Skin trait belongs.
 
+Since slice h14 the caller does not have to say it twice: `maxPitch` defaults to
+`skinCameraPreset(skin).maxPitch` from `packages/shared/mapCamera.js`, so naming the Skin is
+naming the feel, and an explicit `maxPitch` still wins. That closes a silent failure — a Skin
+mounted on the wrong ceiling still tilts perfectly plausibly, so nothing would have reported it.
+**Bearing stays the caller's**, and the asymmetry is not an oversight: a gesture that turns the
+world comes straight back through `setCamera`, so a seam that reimposed the preset's bearing
+would spin it back on every pan. The preset's bearing belongs on the OPENING camera, which is
+where `BandedWorldMap` puts it. For pixel-tycoon that quarter-turn is most of what survives of
+the isometric read ADR-0019 clause 6 retired.
+
 **What crosses to the renderer**, and nothing else: the World and Skin, the camera with its pitch
 already derived, the band plan (`primary`, `placeholder`, `primaryReady`, `draw` bottom-to-top),
 Places as frozen positions, the World's own Truth geometry, and a normalised Overlay. A renderer is asked for one thing back —

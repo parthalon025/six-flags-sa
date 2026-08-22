@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "id": "pixel-tycoon",
+  "kit": "pixel-tycoon",
+  "style": "quantized-pixel-overworld",
+  "inspiration": {
+    "summary": "Coaster-park management sim read from directly above — quantized primaries, ordered dither over autotiles, one hard near-black outline on everything, no gradients and no hand tremor",
+    "images": [],
+    "lineage": "ADR-0019 clause 6 (iso retires; the flavour is painted into the sprites plus a camera preset); ADR-0021 clause 6 (first ship, pixel-tycoon first); docs/research/2026-08-20-osm-stylized-game-maps.md — palette quantization + Sobel outlines + dual-grid autotiling"
+  },
+  "colorFamilies": {
+    "ground": {
+      "anchor": "#E3B75C",
+      "members": [
+        "#C08A3E"
+      ],
+      "deltaE": 14
+    },
+    "grass": {
+      "anchor": "#7BAD2C",
+      "members": [
+        "#3FA34D",
+        "#2E7D32"
+      ],
+      "deltaE": 14
+    },
+    "wood": {
+      "anchor": "#497521",
+      "members": [
+        "#2E7D32",
+        "#1F5A24"
+      ],
+      "deltaE": 14
+    },
+    "water": {
+      "anchor": "#378F90",
+      "members": [
+        "#2BB3E0",
+        "#8DE3F7",
+        "#12608C"
+      ],
+      "deltaE": 16
+    },
+    "lot": {
+      "anchor": "#9A9AA6",
+      "members": [
+        "#E8E8F0"
+      ],
+      "deltaE": 14
+    },
+    "road": {
+      "anchor": "#6E6A86",
+      "members": [
+        "#F2E9C8"
+      ],
+      "deltaE": 14
+    },
+    "service": {
+      "anchor": "#4E4A63",
+      "deltaE": 12
+    },
+    "outside": {
+      "anchor": "#1B2340",
+      "members": [
+        "#2A3660"
+      ],
+      "deltaE": 12
+    },
+    "structure": {
+      "anchor": "#E0533F",
+      "members": [
+        "#F2B33D",
+        "#3D9BE0",
+        "#8C6A4F",
+        "#333034"
+      ],
+      "deltaE": 20
+    },
+    "badge": {
+      "anchor": "#E0533F",
+      "members": [
+        "#F27A2E",
+        "#3D9BE0",
+        "#3FA34D",
+        "#B458D6",
+        "#6E6A86",
+        "#F29465"
+      ],
+      "deltaE": 18
+    }
+  },
+  "roads": {
+    "vsGround": {
+      "minDeltaE": 25
+    },
+    "centerlineVsPaper": {
+      "minDeltaE": 30
+    },
+    "serviceLayer": "visible"
+  },
+  "ground": {
+    "outsideVsInside": {
+      "minDeltaE": 35
+    },
+    "waterVsVegetation": {
+      "minDeltaE": 30
+    }
+  },
+  "structures": {
+    "buildingStyle": "drop",
+    "trackStyle": "tube",
+    "edgeInk": {
+      "anchor": "#1B1A2E",
+      "deltaE": 14
+    }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": [
+      "terrain",
+      "roads",
+      "tracks",
+      "buildings",
+      "trees",
+      "badges"
+    ]
+  },
+  "agentReview": [
+    {
+      "key": "style_texture_language",
+      "prompt": "Reads as pixel art: flat quantized fills with an ordered dither, no gradient anywhere, no soft edge anywhere"
+    },
+    {
+      "key": "style_structure_language",
+      "prompt": "Every building and track carries the same hard near-black outline; buildings sit on a chunky side wall under a roof that has not moved off its footprint"
+    },
+    {
+      "key": "style_projection_language",
+      "prompt": "Top-down, not isometric: no drawn ground diamond and no rotated grid. The sim feeling comes from the painted side walls and oversized crowns (ADR-0019 clause 6) — if it reads as a projection rather than as paint, the conversion has failed"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "Overall: a player of a coaster-park sim would place the genre in a second, and would not mistake it for the illustrated tier"
+    }
+  ]
+}

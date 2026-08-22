@@ -1,0 +1,163 @@
+{
+  "id": "pixel-tycoon",
+  "label": "Pixel tycoon",
+  "terrain": {
+    "outside": {
+      "base": "#1B2340",
+      "texture": {
+        "kind": "dot",
+        "color": "#2A3660",
+        "density": 0.5
+      }
+    },
+    "ground": {
+      "base": "#E3B75C",
+      "texture": {
+        "kind": "dot",
+        "color": "#C08A3E",
+        "density": 0.45
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "sand"
+      }
+    },
+    "grass": {
+      "base": "#3FA34D",
+      "texture": {
+        "kind": "dot",
+        "color": "#2E7D32",
+        "density": 0.5
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass"
+      }
+    },
+    "wood": {
+      "base": "#2E7D32",
+      "texture": {
+        "kind": "dot",
+        "color": "#1F5A24",
+        "density": 0.55
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "grass",
+        "tint": "rgba(12,48,18,0.45)"
+      }
+    },
+    "water": {
+      "base": "#2BB3E0",
+      "texture": {
+        "kind": "wave",
+        "color": "#8DE3F7",
+        "density": 0.4
+      },
+      "rim": {
+        "color": "#12608C",
+        "alpha": 0.85,
+        "reach": 1
+      },
+      "tiles": {
+        "asset": "kenney-roguelike-sheet",
+        "tile": "teal"
+      }
+    },
+    "lot": {
+      "base": "#9A9AA6",
+      "texture": {
+        "kind": "stripe",
+        "color": "#E8E8F0"
+      }
+    },
+    "road": {
+      "base": "#6E6A86",
+      "style": "cased",
+      "texture": {
+        "kind": "dash",
+        "color": "#F2E9C8"
+      }
+    },
+    "service": {
+      "base": "#4E4A63",
+      "style": "solid",
+      "texture": {
+        "kind": "none"
+      }
+    }
+  },
+  "sprites": {
+    "tree": {
+      "style": "round",
+      "canopy": "#1F7A3A",
+      "highlight": "#5FD66B",
+      "shadow": "rgba(20,16,40,0.55)",
+      "scale": 1.25
+    },
+    "building": {
+      "style": "drop",
+      "roofs": [
+        "#E0533F",
+        "#F2B33D",
+        "#3D9BE0"
+      ],
+      "edge": "#1B1A2E",
+      "wall": "#8C6A4F",
+      "drop": 0.24
+    },
+    "slide": {
+      "casing": "rgba(27,26,46,0.95)",
+      "colors": [
+        "#F2B33D",
+        "#E0533F",
+        "#3D9BE0",
+        "#3FA34D",
+        "#B458D6",
+        "#F27A2E"
+      ],
+      "width": 2
+    },
+    "coaster": {
+      "style": "tube",
+      "rail": "#1B1A2E",
+      "tie": "#F2E9C8"
+    },
+    "badge": {
+      "gate": "#E0533F",
+      "food": "#F27A2E",
+      "restroom": "#3D9BE0",
+      "shop": "#3FA34D",
+      "show": "#B458D6",
+      "service": "#6E6A86"
+    }
+  },
+  "bands": {
+    "overview": {
+      "terrain": {
+        "outside": { "texture": { "kind": "none" } },
+        "ground": { "texture": { "kind": "none" } },
+        "grass": { "texture": { "kind": "none" } },
+        "wood": { "base": "#1F5A24", "texture": { "kind": "none" } },
+        "water": { "texture": { "kind": "none" }, "rim": { "alpha": 1, "reach": 1 } },
+        "lot": { "texture": { "kind": "none" } }
+      },
+      "sprites": {
+        "building": { "style": "flat", "drop": 0 }
+      }
+    },
+    "close": {
+      "terrain": {
+        "ground": { "texture": { "density": 0.6 } },
+        "grass": { "texture": { "density": 0.65 } },
+        "wood": { "texture": { "density": 0.7 } },
+        "water": { "texture": { "density": 0.55 }, "rim": { "reach": 2 } }
+      },
+      "sprites": {
+        "tree": { "scale": 1.4 },
+        "building": { "drop": 0.42 }
+      }
+    }
+  },
+  "prompt": "Pixel tycoon: a coaster-park management sim read from directly above. Quantized palette, no gradients and no hand tremor — every edge is a hard near-black outline (#1B1A2E) the way a Sobel pass leaves it. Emerald dithered lawns and ochre midway sand on dual-grid autotiles, bright cyan water with a single hard shoreline step, indigo night outside the fence. Saturated primary roofs — tomato, marigold, cyan. The isometric feeling is PAINTED, not projected (ADR-0019 clause 6): buildings carry a chunky brown side wall under a true-position roof, tree crowns are oversized with a rim light, and the camera preset in packages/shared/mapCamera.js turns the world a quarter-turn and tilts to the top of the permitted range. Per band (ADR-0019 clause 1, ADR-0021 clause 2): overview at 2.4 m/px drops every per-cell dither to flat blocks and flattens the buildings, because a 0.24-cell side wall is a quarter of a pixel there; mid is the base bake; close at 0.15 m/px thickens the dither, the side walls and the crowns, which is where the sim look actually lives. Axes (docs/goals/design-language-axes.md): A1 saturated quantized primaries, A2 hard value steps, A3 uniform near-black outline with zero displacement, A4 ordered dither over autotiles, B1 tiled ground, B2 stepped cyan water, B3 oversized round crowns, B4 side-walled blocks, B5 fat tube tracks, C2 primary badge discs"
+}

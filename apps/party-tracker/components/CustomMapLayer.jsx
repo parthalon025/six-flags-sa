@@ -1,66 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { stackIsoItems } from '@party-tracker/shared/isoWorld.js';
 import { worldImageRect } from '@/lib/customMap';
 
 /**
  * Custom-map paint — sits on or instead of the OSM base (see customMap.js).
  * ParkMap decides placement and camera; this file only draws the extra geometry.
  *
- * Two renderers: `iso` assembles live SVG meshes; `baked` draws the Visual
- * factory's world image from the World's display pack (ADR-0016) on its
- * truth bounds, under the live overlay ParkMap draws after this layer.
+ * One renderer: `baked` draws the Visual factory's world image from the World's
+ * display pack (ADR-0016) on its truth bounds, under the live overlay ParkMap
+ * draws after this layer.
+ *
+ * There were two. `iso` assembled live SVG meshes from shared isoWorld —
+ * depth-sorted building extrusions and lifted coaster tracks — for the one Skin
+ * that declared it. ADR-0019 clause 6 retired it from the map path along with
+ * the projection it existed to serve, and ADR-0021 reaffirmed the rejection of
+ * keeping it for pixel-tycoon alone: "not two renderers forever". The iso
+ * feeling is painted into the kit's sprites now, with a per-Skin camera preset
+ * (packages/shared/mapCamera.js) turning the world a quarter-turn.
+ *
+ * This is the MAP path only. `isoWorld.js` and the Visual factory's
+ * `--target iso` bake are a separate artefact path and are untouched by it.
  */
-
-function BuildingMesh({ b }) {
-  return (
-    <g className="isoBuilding">
-      <path className="isoFoot" d={b.foot.d} />
-      {b.walls.map((w, wi) => (
-        <path
-          key={wi}
-          className={w.side === 'L' ? 'isoWallL' : 'isoWallR'}
-          d={w.d}
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
-      <path className="isoRoof" d={b.roof.d} vectorEffect="non-scaling-stroke" />
-    </g>
-  );
-}
-
-function TrackMesh({ t, highlighted = false }) {
-  return (
-    <g className={highlighted ? 'isoCoaster isoCoasterSelected' : 'isoCoaster'}>
-      <path className="isoShadow" d={t.shadow.d} vectorEffect="non-scaling-stroke" />
-      {t.supports.map((s, si) => (
-        <path key={si} className="isoSupport" d={s.d} vectorEffect="non-scaling-stroke" />
-      ))}
-      <path className="isoTrack" d={t.track.d} vectorEffect="non-scaling-stroke" />
-    </g>
-  );
-}
-
-function IsoMapLayer({ spec, buildings = [], tracks = [], highlightedTrackIds = [] }) {
-  const stack = stackIsoItems(buildings, tracks);
-  const highlighted = new Set(highlightedTrackIds);
-  return (
-    <g className={`lyr-custom lyr-iso-map lyr-${spec.id}`}>
-      {stack.map((entry) =>
-        entry.type === 'building' ? (
-          <BuildingMesh key={`iso-b${entry.item.i}`} b={entry.item} />
-        ) : (
-          <TrackMesh
-            key={`iso-c${entry.item.i}`}
-            t={entry.item}
-            highlighted={highlighted.has(entry.item.i)}
-          />
-        ),
-      )}
-    </g>
-  );
-}
 
 /* Sidecar fetches, cached for the session — a Wear toggle must not refetch
    a file the phone already holds, and a venue without a baked world must
@@ -85,11 +46,12 @@ function fetchWorldSidecar(url) {
  * in its own y-flip; lat→metre is linear over a park bbox, which keeps the
  * corner-pinned stretch inside the world's certified displacement budget.
  *
- * The sidecar is authoritative for projection; the CUSTOM_MAPS declaration
- * is the fallback. Iso worlds (per-rotation images) declare `iso` and pick
- * the image matching the current rotation once a pack ships one — their
- * screen placement block rides the iso pack tier, so until then an iso
- * declaration draws nothing rather than a wrongly-placed plate.
+ * The sidecar is authoritative for projection; the CUSTOM_MAPS declaration is
+ * the fallback. A sidecar declaring anything but `top-down` draws nothing
+ * rather than a wrongly-placed plate: the rect below pins truth bounds to a
+ * north-up rectangle, so any other projection would land the picture somewhere
+ * the World is not. Since ADR-0019 clause 6 that is a guard against a stale
+ * pack rather than a live second tier — every band bakes top-down.
  */
 function BakedWorldLayer({ spec, venueId, worldOrigin = [0, 0] }) {
   const url = venueId ? `/venues/${venueId}/display/${spec.id}.world.json` : null;
@@ -127,25 +89,8 @@ function BakedWorldLayer({ spec, venueId, worldOrigin = [0, 0] }) {
   );
 }
 
-export default function CustomMapLayer({
-  spec,
-  buildings = [],
-  tracks = [],
-  highlightedTrackIds = [],
-  venueId = null,
-  worldOrigin = [0, 0],
-}) {
+export default function CustomMapLayer({ spec, venueId = null, worldOrigin = [0, 0] }) {
   if (!spec) return null;
-  if (spec.renderer === 'baked') {
-    return <BakedWorldLayer spec={spec} venueId={venueId} worldOrigin={worldOrigin} />;
-  }
-  if (spec.renderer !== 'iso') return null;
-  return (
-    <IsoMapLayer
-      spec={spec}
-      buildings={buildings}
-      tracks={tracks}
-      highlightedTrackIds={highlightedTrackIds}
-    />
-  );
+  if (spec.renderer !== 'baked') return null;
+  return <BakedWorldLayer spec={spec} venueId={venueId} worldOrigin={worldOrigin} />;
 }

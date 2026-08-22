@@ -16,10 +16,17 @@ export function bandedWorldPreviewEnabled() {
 /** The World whose bake this previews. Its display pack ships in public/. */
 export const PREVIEW_VENUE = 'kings-island';
 
-/** Baked Skins available for it — two contrasting looks, which is what makes
- *  the beyond-palette distinctness gate visible at all (ADR-0021 clause 6
- *  asks for three; pixel-tycoon still needs its top-down conversion). */
-export const PREVIEW_SKINS = ['watercolor-quest', 'layered-atlas'];
+/** The first ship: one World x three contrasting Skins (ADR-0021 clause 6),
+ *  declared here because this is what actually ships them, and read from here
+ *  by the builder's set gate rather than restated there.
+ *
+ *  Three rather than two is the clause's own argument: one Skin cannot fail
+ *  the beyond-palette distinctness gate, and "a pair that passes may be
+ *  passing on a single axis; three is the smallest set where that cannot
+ *  hide". pixel-tycoon leads because ADR-0019 clause 6 retired the projection
+ *  that carried its distinctness, which makes it the hardest case for the gate
+ *  and the cheapest place to discover a kit problem. */
+export const PREVIEW_SKINS = ['pixel-tycoon', 'watercolor-quest', 'layered-atlas'];
 
 /** Where a Skin's world sidecar and its painted bytes are served from. */
 export function previewWorldPaths(skin) {

@@ -478,17 +478,28 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
     if ((await p.evaluate(() => document.documentElement.dataset.skinPixel)) !== '1') {
       throw new Error('data-skin-pixel not set');
     }
-    // The custom-map layer draws iso geometry inside the map SVG…
-    const meshes = await p
-      .locator('.mapWorld .lyr-iso-map .isoBuilding, .mapWorld .lyr-iso-map .isoCoaster')
-      .count();
-    if (meshes < 5) throw new Error(`only ${meshes} iso meshes drawn`);
-    // …and owns the OSM building + coaster layers (hidden, not doubled).
-    if (await p.locator('.mapWorld .lyr-building').count()) {
-      throw new Error('base building layer still drawn under the iso overlay');
+    // Slice h14 — ADR-0019 clause 6 retired iso from the map path. Pixel
+    // tycoon draws the same baked world plate as every other Skin; there is no
+    // live iso painter left to draw meshes, and no second camera.
+    if (await p.locator('.mapWorld .lyr-iso-map').count()) {
+      throw new Error('the live iso painter is still on the map path');
     }
-    if (await p.locator('.mapWorld .lyr-coaster').count()) {
-      throw new Error('base coaster layer still drawn under the iso overlay');
+    await p.waitForSelector('.mapWorld .lyr-baked-world image', { timeout: 20000 });
+    const href = await p
+      .locator('.mapWorld .lyr-baked-world image')
+      .first()
+      .evaluate((el) => el.getAttribute('href'));
+    if (!href?.endsWith('pixel-tycoon.world.png')) {
+      throw new Error(`pixel-tycoon world image href is ${href}`);
+    }
+    // …and a baked Skin hides nothing: it owned the OSM building and coaster
+    // layers only because the iso painter redrew them. The base map now stays
+    // whole, which is what keeps it readable if the plate never loads.
+    if (!(await p.locator('.mapWorld .lyr-building').count())) {
+      throw new Error('base building layer hidden — a baked Skin hides no base layer');
+    }
+    if (!(await p.locator('.mapWorld .lyr-coaster').count())) {
+      throw new Error('base coaster layer hidden — a baked Skin hides no base layer');
     }
   } finally {
     await P.context.close();

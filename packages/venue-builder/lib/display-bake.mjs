@@ -17,6 +17,7 @@
 import { bandResolution } from '@party-tracker/shared/zoomBands.js';
 import { LINE_LAYERS } from './osm-tags.mjs';
 import { bandBakePlan } from './display-bands.mjs';
+import { bandLookSpec, mergeKitSpec } from './display-kit-bands.mjs';
 import { densityFromSpecies, fillRows, scatterPoints } from './display-scatter.mjs';
 
 /**
@@ -130,23 +131,25 @@ export const SPRITE_PIECES = {
   },
 };
 
-const merged = (base, over) => {
-  if (Array.isArray(base)) return Array.isArray(over) ? over : base;
-  if (base && typeof base === 'object') {
-    const out = { ...base };
-    for (const [k, v] of Object.entries(over || {})) {
-      out[k] = k in base ? merged(base[k], v) : v;
-    }
-    return out;
-  }
-  return over === undefined ? base : over;
-};
+// The one merge the kit schema composes with, owned by `display-kit-bands.mjs`
+// because three layers now go through it — piece defaults, a band look, and a
+// venue's design theme — and two implementations that disagreed about arrays
+// would put a band's palette and a World's palette on different rules.
+const merged = mergeKitSpec;
 
 /**
  * Resolve a kit spec (any subset of pieces) onto the piece defaults.
  * Unknown texture kinds, unknown pieces, and unresolvable art refs are
  * rejected here, not at paint time — a prompt-authored kit fails loudly
  * before it ever renders, and can only reference license-gated ledger art.
+ *
+ * `band` picks which of the kit's per-band looks to paint (ADR-0019 clause 1's
+ * "content changes per band", the additive half — `display-kit-bands.mjs` says
+ * why a kit needs one at all). It is applied FIRST, before validation and
+ * before the venue overlay, so two things hold: a band look faces every check
+ * the base spec does rather than sneaking an unknown texture past the gate, and
+ * a World's own design theme still outranks it. Omit it and the kit resolves
+ * exactly as it did before bands existed.
  *
  * `overlay` is a venue design theme: a partial spec merged over the kit
  * before validation (data/venues/<id>/display/theme.json), so one World
@@ -158,7 +161,12 @@ const merged = (base, over) => {
  * pieces binding a `material` (tiled compiled-albedo underlay, ADR-0016
  * PBR pass) can only reference ledger rows, exactly like tile/sprite art.
  */
-export function resolveKit(spec = {}, { assets, overlay, materials } = {}) {
+export function resolveKit(spec = {}, { assets, overlay, materials, band = null } = {}) {
+  // Unconditional: a kit's `bands` block is validated on every resolve, so a
+  // typo'd band name is caught by the bake that never asked for that band, and
+  // the block is consumed so a painter cannot read one band's paint while
+  // drawing another.
+  spec = bandLookSpec(spec, band);
   if (overlay) {
     spec = {
       ...spec,
