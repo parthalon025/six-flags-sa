@@ -206,7 +206,11 @@ await check('planning is deterministic', () => {
 
 const {
   bakeModel, projector, resolveBakeGrid, assertBakeGridFlags, DEFAULT_MAX_COLS, DEFAULT_PX,
+  bandGeneralization,
 } = await import('../../packages/venue-builder/lib/display-bake.mjs');
+const { bandGeneralizationRow, bandNestingRow } = await import(
+  '../../packages/venue-builder/lib/display-style-contract.mjs'
+);
 
 const mapFor = (id) =>
   JSON.parse(readFileSync(path.join(REPO, 'apps/party-tracker/public/venues', `${id}.map.json`), 'utf8'));
@@ -406,6 +410,98 @@ await check('a real 2 px kit clears the overview band and fails the two that are
   assert.match(mid.evidence, /displacement 2 px = 1\.2 m/);
   assert.equal(close.pass, false, `2 px is 0.3 m at the close band: ${close.evidence}`);
   assert.match(close.evidence, /displacement 2 px = 0\.3 m/);
+  return true;
+});
+
+await check('every shipped venue generalizes the same way — a metre means the same at every park', () => {
+  // ADR-0021 clause 2 bought exactly this: ground resolution is fixed and
+  // pixel dimensions float, so what a band can draw is a property of the band
+  // rather than of the park. If that ever stopped holding, per-band content
+  // would become a per-venue guess and "mechanical repeats" (ADR-0021 clause 6)
+  // would be a per-venue authoring job instead.
+  for (const id of Object.keys(EXPECTED)) {
+    const meta = mapMetaFor(id);
+    for (const band of BANDS) {
+      const plan = bandBakePlan(meta, band.id);
+      const policy = bandGeneralization(band.id, { tileMetres: plan.tileMetres });
+      // Not `policy.metresPerPixel === band.metresPerPixel`: the policy reads
+      // that off the same row of the same table this line would compare it
+      // against, so it cannot disagree. What hangs off the resolution is worth
+      // pinning — every mark's drawn size is its ground size measured in the
+      // BAND TABLE's metres per pixel, so a policy that measured against
+      // anything else (the cell size, a second copy of the table that drifted)
+      // fails here. Tolerance is the policy's own rounding: drawnPx to 2 dp.
+      for (const m of policy.marks) {
+        const measured = m.drawnPx * band.metresPerPixel;
+        assert.ok(
+          Math.abs(measured - m.sizeMetres) <= 0.01 * band.metresPerPixel,
+          `${id}/${band.id} ${m.kind}: ${m.drawnPx} px at ${band.metresPerPixel} m/px is ${measured.toFixed(3)} m of ground, not the ${m.sizeMetres} m the mark measures`,
+        );
+      }
+      const px = Object.fromEntries(policy.marks.map((m) => [m.kind, m.drawnPx]));
+      if (band.id === 'overview') {
+        // Literals, not a re-derivation: every mark is a sub-2px smudge here.
+        assert.ok(px.trees < 2 && px.lotRows < 2 && px.badges < 2,
+          `${id}/overview must draw every generalizable mark under 2 px, got ${JSON.stringify(px)}`);
+        assert.deepEqual([...policy.drops], ['trees', 'lotRows'], `${id}/overview drops`);
+        assert.deepEqual([...policy.badgeKinds], ['gate'], `${id}/overview pins landmarks only`);
+      } else {
+        assert.ok(px.trees > 4 && px.lotRows > 4 && px.badges > 4,
+          `${id}/${band.id} must draw every mark over 4 px, got ${JSON.stringify(px)}`);
+        assert.deepEqual([...policy.drops], [], `${id}/${band.id} drops nothing`);
+        assert.equal(policy.badgeKinds, null, `${id}/${band.id} pins every kind`);
+      }
+    }
+  }
+  return true;
+});
+
+await check('a band policy without a real cell size is refused, not guessed at', () => {
+  assert.throws(() => bandGeneralization('overview', { tileMetres: 0 }), /ground metres per cell/);
+  assert.throws(() => bandGeneralization('overview', {}), /ground metres per cell/);
+  assert.throws(() => bandGeneralization('gigantic', { tileMetres: 2.4 }), /unknown band/i);
+  return true;
+});
+
+await check('end to end on a real venue: a band bake generalizes, and certifies that it did', () => {
+  // The bin's whole non-painting path, on committed truth rather than a
+  // fixture: plan the band, bake it and the band above it, then run the two
+  // rows the cert carries. Everything the painter adds after this is pixels;
+  // what a band LEAVES OUT is decided here.
+  //
+  // big-kahunas because it is the small one — kings-island's overview grid is
+  // 646x530 and takes ~90 s to bake twice, which is a slow test rather than a
+  // better one. The generalization decision is venue-independent by ADR-0021
+  // clause 2, and the case above proves that across all four venues.
+  const id = 'big-kahunas';
+  const map = mapFor(id);
+  const pois = JSON.parse(readFileSync(path.join(REPO, 'apps/party-tracker/public/venues', `${id}.pois.json`), 'utf8'));
+  const grid = resolveBakeGrid(map.meta, { band: 'mid' });
+  const mid = bakeModel(map, pois, { tileMetres: grid.tileMetres, band: 'mid' });
+  const overview = bakeModel(map, pois, { tileMetres: grid.tileMetres, band: 'overview' });
+
+  // The bake really had something to remove — otherwise the rows below would
+  // certify an empty claim.
+  assert.ok(mid.trees.length > 1000, `mid must grow a real canopy, got ${mid.trees.length}`);
+  const midKinds = new Set(mid.badges.map((b) => b.kind));
+  assert.ok(midKinds.size > 1 && midKinds.has('gate'), `mid must pin more than gates, got ${[...midKinds]}`);
+
+  assert.deepEqual(overview.trees, [], 'overview drops the canopy');
+  assert.deepEqual([...new Set(overview.badges.map((b) => b.kind))], ['gate'], 'overview pins landmarks only');
+  assert.ok(overview.badges.length > 0, 'and thins rather than empties');
+  assert.equal(overview.buildings.length, mid.buildings.length, 'bold shapes survive the coarsest band');
+
+  const generalization = bandGeneralizationRow(overview);
+  assert.equal(generalization.pass, true, generalization.evidence);
+  assert.match(generalization.evidence, /overview \(floor 3 px\)/, generalization.evidence);
+  const nesting = bandNestingRow({ coarse: overview, fine: mid });
+  assert.equal(nesting.pass, true, nesting.evidence);
+  assert.match(nesting.evidence, /buildings 32\/32/, nesting.evidence);
+  // The same row on the mid band's own bake: mid removes nothing, so it must
+  // nest in the overview's SUPERSET rather than the other way round — running
+  // it backwards is the sanity check that the row is directional at all.
+  assert.equal(bandNestingRow({ coarse: mid, fine: overview }).pass, false,
+    'the finer band cannot nest inside the coarser one — that is the direction of the rule');
   return true;
 });
 
