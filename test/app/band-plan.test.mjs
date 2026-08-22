@@ -182,4 +182,31 @@ assert.throws(() => plan(17, ['mid', 'closeup']), /unknown band/i);
 // A latitude that is not a number must not reach a live map.setPitch().
 assert.throws(() => bandDrawPlan(17, { latitude: 'north', available: ['mid'] }), /latitude/i);
 
+const { bandsForViewport } = await import('../../apps/party-tracker/lib/bandViewport.js');
+assert.deepEqual(
+  bandsForViewport({ zoom: 14, latitude: 0 }),
+  { hold: ['mid'], request: ['overview', 'mid'] },
+  'an overview pinch requests overview but only holds the packed mid until it streams',
+);
+assert.deepEqual(
+  bandsForViewport({ zoom: 18, latitude: 0 }),
+  { hold: ['mid'], request: ['mid', 'close'] },
+  'a close pinch keeps mid as the parent placeholder until close arrives',
+);
+assert.deepEqual(
+  bandsForViewport({ zoom: 18, latitude: 0, streamedBands: ['close'] }),
+  { hold: ['mid', 'close'], request: ['mid', 'close'] },
+  'a streamed close band is held only after it arrives',
+);
+assert.deepEqual(
+  bandsForViewport({ packedBands: ['mid'] }),
+  { hold: ['mid'], request: ['mid'] },
+  'without a zoom the packed floor is all the viewport holds or requests',
+);
+assert.deepEqual(
+  bandsForViewport({ zoom: 15, latitude }),
+  { hold: ['mid'], request: ['overview', 'mid'] },
+  'mid-band zoom still requests the parent overview without pretending to hold it',
+);
+
 console.log('band-plan: ok');

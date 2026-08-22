@@ -17,12 +17,23 @@
    and the close band get built. */
 
 import { useEffect, useRef, useState } from 'react';
+import { addProtocol } from 'maplibre-gl';
+import { Protocol } from 'pmtiles';
 import { bandBoundaryZooms } from '@party-tracker/shared/zoomBands.js';
 import { pitchEaseRange } from '@party-tracker/shared/mapCamera.js';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
 import { previewWorldPaths, PREVIEW_VENUE } from '@/lib/bandedWorldPreview';
+import { createBandViewport } from '@/lib/bandViewport';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+let protocolRegistered = false;
+function ensurePmtilesProtocol() {
+  if (protocolRegistered) return;
+  const protocol = new Protocol();
+  addProtocol('pmtiles', protocol.tile);
+  protocolRegistered = true;
+}
 
 /* Inline, not globals.css: this preview is dev-only behind a flag, and
    globals.css is a watched path for the README map shots — appending to it
@@ -65,7 +76,12 @@ const S = {
  *  else — which is exactly the state a phone starts a park day in. */
 function previewWorld(sidecar, skin) {
   const { image } = previewWorldPaths(skin);
-  return { id: PREVIEW_VENUE, bounds: sidecar.bounds, bands: { mid: { image } } };
+  const pmtiles = sidecar.bands?.mid?.pmtiles || null;
+  return {
+    id: PREVIEW_VENUE,
+    bounds: sidecar.bounds,
+    bands: { mid: pmtiles ? { pmtiles } : { image } },
+  };
 }
 
 export default function BandedWorldMap({ skin, onReady = null }) {
@@ -94,6 +110,8 @@ export default function BandedWorldMap({ skin, onReady = null }) {
         setHud({ ...view.state(), easeRange: pitchEaseRange({ latitude }), boundaries: bandBoundaryZooms({ latitude }) });
       };
 
+      ensurePmtilesProtocol();
+      let viewport = null;
       view = mountMapView(containerRef.current, {
         renderer: createMapLibreRenderer({
           onError: (err) => {
@@ -105,12 +123,19 @@ export default function BandedWorldMap({ skin, onReady = null }) {
           onCameraMoved: (camera) => {
             if (cancelled || !view) return;
             view.setCamera(camera);
+            viewport?.tick();
             report();
           },
         }),
         world,
         skin,
         camera: { center: { lng: (west + east) / 2, lat: latitude }, zoom: 14 },
+      });
+
+      viewport = createBandViewport({
+        world,
+        getCamera: () => view.state().camera,
+        onHeldChange: (ids) => view.setAvailableBands(ids),
       });
 
       report();

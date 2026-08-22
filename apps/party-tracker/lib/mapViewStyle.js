@@ -227,7 +227,9 @@ export function bandedWorldStyle({ world, palette = null }) {
   ];
   // Coarsest first: the table's order is the paint order, so a finer band
   // always sits over the parent standing in for it.
-  const bands = BANDS.map((band) => band.id).filter((id) => world.bands?.[id]?.image);
+  const bands = BANDS.map((band) => band.id).filter(
+    (id) => world.bands?.[id]?.image || world.bands?.[id]?.pmtiles,
+  );
   const geometry = world.geometry ?? null;
   const drawsGeometry = WORLD_LAYERS.some(({ id }) => geometry?.[id]?.features?.length);
   if (bands.length === 0 && !drawsGeometry) {
@@ -247,7 +249,9 @@ export function bandedWorldStyle({ world, palette = null }) {
       ...Object.fromEntries(
         bands.map((id) => [
           bandSource(id),
-          { type: 'image', url: world.bands[id].image, coordinates },
+          world.bands[id].pmtiles
+            ? { type: 'raster', url: `pmtiles://${world.bands[id].pmtiles}` }
+            : { type: 'image', url: world.bands[id].image, coordinates },
         ]),
       ),
       ...Object.fromEntries(
