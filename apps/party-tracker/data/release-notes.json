@@ -474,5 +474,11 @@
     "items": [
       "feat(agents): orchestrator roster wired into every session start"
     ]
+  },
+  "1.27.1": {
+    "title": "What's new",
+    "items": [
+      "fix(app): splash first, tap to continue, restore last working Sign in (#600)"
+    ]
   }
 }
