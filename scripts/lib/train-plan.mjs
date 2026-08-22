@@ -220,6 +220,11 @@ export const SLICES = Object.freeze([
     train: 'H',
     size: 'M',
     title: 'MapLibre becomes the shipped renderer; the SVG map retires',
+    //  Carries a debt the port left: the two renderers open on different
+    //  points — the SVG on the venue's declared centre, the port on the bbox
+    //  centre, 77 m to 291 m apart across the shipped venues. Free while the
+    //  SVG ships; a silent regression on every venue's first paint the day it
+    //  does not. ParkMap.jsx's gap list has the measurements.
     needs: ['h11', 'h15'],
     //  A retirement is two negatives, and two negatives are true of a tree
     //  where nothing was ever built — the suite caught this probe reporting the

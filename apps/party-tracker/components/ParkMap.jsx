@@ -65,6 +65,16 @@
  * for art that has not arrived. Wiring a World's display pack into `worldFor`
  * is the slice that turns the band machinery on; until then every band test in
  * `test/app/map-view.test.mjs` drives a World the shipped map never builds.
+ *
+ * And the opening camera differs. The SVG path opens on the venue's declared
+ * `center`; the ported path opens on `frameBounds(world.bounds)`, the bbox's
+ * geometric centre. Those are not the same point at any shipped venue —
+ * measured against the committed `map.json` files: kings-island 291 m,
+ * cedar-point 152 m, big-kahunas 115 m, six-flags-fiesta-texas 77 m. It costs
+ * nothing while the SVG ships, and it is a silent regression on every venue's
+ * first paint the day the renderer flips, so slice h18 has to resolve it or
+ * accept it out loud rather than discover it. Named here because everything
+ * else on this list was, and this one was found by a mutation sweep instead.
  */
 
 import { memo, useEffect, useMemo, useState } from 'react';

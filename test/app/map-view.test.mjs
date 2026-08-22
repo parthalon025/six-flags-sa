@@ -1157,12 +1157,19 @@ const MAP_JSON = {
 
   /* The camera stays where the guest left it — driven by the arguments page.js
      actually hands ParkMap once somebody has panned, not by an empty object.
-     Follow is off (onUserPan cleared it), a fix has just landed, nothing is
-     focused, and the venue's own centre is a real {lat, lng} that page.js
-     passes on every render. The World's centre is where the map *opens* —
-     ParkMapGl frames the truth bounds at mount — so nothing here may move the
-     camera. It re-centring on the park would undo the pan within seconds, and
-     with nothing chased there is no ease, so it would land as a jump. */
+     Follow is off (onUserPan cleared it), a fix has just landed, and nothing
+     is focused. The World's centre is where the map *opens* — ParkMapGl frames
+     the truth bounds at mount — so nothing here may move the camera. It
+     re-centring on the park would undo the pan within seconds, and with
+     nothing chased there is no ease, so it would land as a jump.
+
+     `center` is passed deliberately, though ParkMap no longer sends it. That
+     key is the bug: page.js hands page-level `venue.center` down on every
+     render, cameraRequest used to fold it in, and every GPS fix threw the
+     guest back to the park. Keeping it here says the parameter is ignored
+     rather than merely absent, so re-adding it upstream cannot quietly bring
+     the jump back. Dropping the key would make this pass for the weaker
+     reason. */
   const panned = cameraRequest({
     follow: false,
     anchor: { lat: 39.3441, lng: -84.2688 },
