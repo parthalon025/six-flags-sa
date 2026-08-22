@@ -40,19 +40,13 @@
  * Named rather than discovered later. Each is a Truth-side or style-side job
  * that the SVG renderer did inline and the ported path has nowhere to put yet:
  * Eligibility colouring on Place markers, the selected Place's highlight and
- * its coaster track, alternative routes and their tap targets, the walked /
- * remaining split of a running route, the heading cone and Kit badges, land
- * labels along their district, the scale bar, and a Skin's Custom map layer
- * (which ADR-0013 compiles into the display pack rather than drawing in
- * React). The perf HUD (`onMapStats`) is not wired on the GL path yet.
+ * its coaster track, alternative-route tap targets, Kit badges, land labels
+ * along their district, the scale bar, and a Skin's Custom map layer (which
+ * ADR-0013 compiles into the display pack rather than drawing in React). The
+ * perf HUD (`onMapStats`) is not wired on the GL path yet.
  *
- * And the baked bands themselves. `worldFor()` answers `{id, bounds,
- * geometry, center}` with no `bands` key, because nothing in the app has a
- * display pack to hand it — `components/BandedWorldMap.jsx` is the only place
- * a `bands` map is built at all. So `bandedWorldStyle` makes zero `band-*`
- * layers here and the shipped map draws the vector tier alone: ADR-0019's
- * never-fails fallback. Wiring a World's display pack into `worldFor` is
- * the slice that turns the band machinery on.
+ * Certified baked Skins get a mid-band raster from `bakedWorldBands`. Pixel
+ * tycoon is declared baked but has no pack yet, so it stays on OSM.
  *
  * The opening camera prefers `world.center` (the venue's declared centre)
  * over the bbox midpoint. That is the h18 resolution of the 77–291 m gap
@@ -63,6 +57,7 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import MapLegend from './MapLegend';
 import { identityOf } from '@/lib/venue/ids';
+import { bakedWorldBands } from '@/lib/customMap';
 import { overlayGeoJson } from '@/lib/overlayGeo';
 import { parkMapRenderer } from '@/lib/mapLibreConfigured';
 import { boundsOfPoints, cameraRequest, overlayModel, parkMapPalettes, worldFor } from '@/lib/parkMapView';
@@ -99,7 +94,10 @@ function ParkMap(props) {
     overlayPins = [],
     route,
     routeProgress = null,
+    routeDone = [],
+    alternatives = null,
     puck,
+    heading = null,
     follow,
     focusPoint,
     theme,
@@ -124,7 +122,13 @@ function ParkMap(props) {
   /* The World, as the map view takes it — or null when this venue cannot be
      drawn yet, which is the ported path standing aside rather than framing a
      camera on a guess. */
-  const world = useMemo(() => (renderer === 'gl' ? worldFor(data) : null), [renderer, data]);
+  const world = useMemo(() => {
+    if (renderer !== 'gl') return null;
+    const base = worldFor(data);
+    if (!base) return null;
+    const bands = bakedWorldBands(base.id, theme);
+    return bands ? { ...base, bands } : base;
+  }, [renderer, data, theme]);
 
   /* Only the Places the guest has left switched on. Which Places to draw is a
      Truth-side question — a category switched off is a Place not on the map,
@@ -208,6 +212,11 @@ function ParkMap(props) {
       // the tap that found it.
       places={pois || []}
       overlay={overlay}
+      alternatives={alternatives}
+      routeDone={routeDone}
+      puck={puck}
+      heading={heading}
+      rotation={rotation}
       camera={camera}
       insetBottom={bottomInset}
       onSelectPlace={onSelectPoi}

@@ -54,6 +54,20 @@ export function resolveCustomMap(wear) {
   return CUSTOM_MAPS[wear] || null;
 }
 
+/**
+ * The MapLibre band map for a worn Skin that ships a certified world PNG.
+ * Pixel tycoon is declared baked but has no pack yet — OSM until one exists.
+ *
+ * @param {string|null|undefined} venueId
+ * @param {string|null|undefined} wear
+ * @returns {{ mid: { image: string } }|null}
+ */
+export function bakedWorldBands(venueId, wear) {
+  const spec = resolveCustomMap(wear);
+  if (!spec || spec.renderer !== 'baked' || !venueId || wear === 'pixel-tycoon') return null;
+  return { mid: { image: `/venues/${venueId}/display/${spec.id}.world.png` } };
+}
+
 export function customMapCamera(spec) {
   return spec?.camera || 'mercator';
 }

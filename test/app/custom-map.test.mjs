@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
+  bakedWorldBands,
   customMapCamera,
   hidesBaseLayer,
   resolveCustomMap,
@@ -52,6 +53,12 @@ const sidecar = JSON.parse(
 );
 assert.equal(sidecar.projection, 'top-down');
 assert.equal(sidecar.file, 'watercolor-quest.world.png');
+assert.deepEqual(
+  bakedWorldBands('kings-island', 'watercolor-quest'),
+  { mid: { image: '/venues/kings-island/display/watercolor-quest.world.png' } },
+);
+assert.equal(bakedWorldBands('kings-island', 'pixel-tycoon'), null, 'no certified bake yet');
+assert.equal(bakedWorldBands('kings-island', 'night'), null);
 assert.ok(sidecar.bounds.west < sidecar.bounds.east && sidecar.bounds.south < sidecar.bounds.north);
 
 /* Placement math for the baked <image>: worldImageRect feeds the renderer's

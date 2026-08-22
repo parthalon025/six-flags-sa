@@ -522,32 +522,24 @@ await check('wearing Watercolor quest draws the baked world image under the over
     if ((await p.evaluate(() => document.documentElement.dataset.skinMap)) !== 'watercolor-quest') {
       throw new Error('data-skin-map not set');
     }
-    // The baked world image mounts inside the world transform once its pack
-    // sidecar answers…
-    await p.waitForSelector('.mapWorld .lyr-baked-world image', { timeout: 20000 });
-    const image = p.locator('.mapWorld .lyr-baked-world image').first();
-    const placed = await image.evaluate((el) => ({
-      href: el.getAttribute('href'),
-      w: Number(el.getAttribute('width')),
-      h: Number(el.getAttribute('height')),
-    }));
-    if (!placed.href?.endsWith('watercolor-quest.world.png')) {
-      throw new Error(`world image href is ${placed.href}`);
+    // MapLibre paints the pack image as a mid-band raster on truth bounds.
+    await p.waitForSelector('[data-testid="park-map-gl"][data-baked-world$="watercolor-quest.world.png"]', { timeout: 20000 });
+    const href = await p.locator('[data-testid="park-map-gl"]').getAttribute('data-baked-world');
+    if (!href?.endsWith('watercolor-quest.world.png')) {
+      throw new Error(`world image href is ${href}`);
     }
-    if (!(placed.w > 0 && placed.h > 0)) throw new Error(`degenerate placement ${placed.w}×${placed.h}`);
-    // …with real decodable pixels behind the href (nonzero natural size).
-    const natural = await p.evaluate(async (href) => {
+    const natural = await p.evaluate(async (src) => {
       const img = new Image();
       await new Promise((ok, fail) => {
         img.onload = ok;
         img.onerror = () => fail(new Error('world PNG failed to decode'));
-        img.src = href;
+        img.src = src;
       });
       return { w: img.naturalWidth, h: img.naturalHeight };
-    }, placed.href);
+    }, href);
     if (!(natural.w > 0 && natural.h > 0)) throw new Error('world PNG has no pixels');
-    // The base map stays whole under a baked world (nothing hidden).
-    if (!(await p.locator('.mapWorld .lyr-building').count())) {
+    const layers = await p.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
+    if (!layers.includes('world-building')) {
       throw new Error('baked world must not hide the base building layer');
     }
   } finally {

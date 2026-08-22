@@ -27,7 +27,7 @@ import { metresPerPixel, zoomForResolution } from '@party-tracker/shared/zoomBan
 import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
-import { overlayMarks } from '@/lib/overlayMarks';
+import { overlayChrome } from '@/lib/overlayMarks';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline rather than globals.css, for the reason BandedWorldMap.jsx states:
@@ -58,6 +58,11 @@ export default function ParkMapGl({
   places = [],
   /** `overlayGeoJson()`'s five collections. */
   overlay = null,
+  alternatives = null,
+  routeDone = [],
+  puck = null,
+  heading = null,
+  rotation = 0,
   /** Where the camera should be. See `applyCamera` below for each field. */
   camera,
   /** Usable height is the viewport less whatever furniture covers the map. */
@@ -76,6 +81,8 @@ export default function ParkMapGl({
   const [error, setError] = useState(null);
   const [mapReady, setMapReady] = useState(false);
   const [marks, setMarks] = useState([]);
+  const [paths, setPaths] = useState([]);
+  const [cone, setCone] = useState(null);
   /* A World opens framed on its own bounds, and framing needs a viewport. On
      the first render the container has not been laid out yet and is zero
      pixels wide, so mounting then would open every park at a zoom worked out
@@ -89,14 +96,21 @@ export default function ParkMapGl({
   handlers.current = { onSelectPlace, onMapTap, onUserPan };
   const overlayRef = useRef(overlay);
   overlayRef.current = overlay;
+  const chromeRef = useRef({ alternatives, routeDone, puck, heading, rotation });
+  chromeRef.current = { alternatives, routeDone, puck, heading, rotation };
   const paintMarks = () => {
     const view = viewRef.current;
     const model = overlayRef.current;
     if (!view || !model) {
       setMarks([]);
+      setPaths([]);
+      setCone(null);
       return;
     }
-    setMarks(overlayMarks(model, (lngLat) => view.project(lngLat)));
+    const next = overlayChrome(model, (lngLat) => view.project(lngLat), chromeRef.current);
+    setMarks(next.marks);
+    setPaths(next.paths);
+    setCone(next.cone);
   };
 
   /** The camera the seam is asked for, resolved against the viewport.
@@ -250,7 +264,7 @@ export default function ParkMapGl({
   useEffect(() => {
     if (overlay) viewRef.current?.setOverlay(overlay);
     paintMarks();
-  }, [overlay, laidOut, mapReady]);
+  }, [overlay, alternatives, routeDone, puck, heading, rotation, laidOut, mapReady]);
 
   useEffect(() => {
     applyCamera(camera);
@@ -305,6 +319,7 @@ export default function ParkMapGl({
         data-testid="park-map-gl"
         data-map-ready={mapReady ? '1' : '0'}
         data-world-features={worldFeatures}
+        data-baked-world={world?.bands?.mid?.image || ''}
       />
       <svg
         className="mapSvg"
@@ -312,6 +327,14 @@ export default function ParkMapGl({
         aria-hidden="true"
       >
         <g className="mapWorld">
+          {paths.map((path) => (
+            <path key={path.id} className={path.className} d={path.d} />
+          ))}
+          {cone ? (
+            <g className="puckCone" transform={`translate(${cone.x},${cone.y}) rotate(${cone.rotate})`}>
+              <path d="M0,10 L-6,-8 L6,-8 Z" />
+            </g>
+          ) : null}
           {marks.map((mark) => (
             <g
               key={`${mark.kind}:${mark.id}`}
