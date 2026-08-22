@@ -710,6 +710,98 @@ await check('buildings grow no trees', () => {
   return true;
 });
 
+/* ---------------------------------------- ADR-0019 clause 1: per-band content
+ * A band is a ground resolution, and the cell grid is the SAME at all three
+ * (display-bands.mjs: finer bands draw the same cells larger). So without a
+ * generalization pass every band would carry identical content at different
+ * sharpness — the "one ultra-res bake, tiled" ADR-0019 rejected. These pin the
+ * pass that makes content differ: overview drops the marks 2.4 m/px cannot
+ * draw, mid stays exactly today's bake, and nothing a band keeps ever moves. */
+
+// A wood for trees, a lot for aisle marks, POIs of three badge kinds.
+const BAND_MAP = {
+  meta: { id: 'band-park', bounds: { n: 0.006, s: 0, e: 0.006, w: 0 } },
+  boundary: [[0.0005, 0.0005], [0.0055, 0.0005], [0.0055, 0.0055], [0.0005, 0.0055]],
+  wood: [{ r: [[0.001, 0.001], [0.003, 0.001], [0.003, 0.003], [0.001, 0.003]] }],
+  parking: [{ r: [[0.0035, 0.0035], [0.0053, 0.0035], [0.0053, 0.0053], [0.0035, 0.0053]] }],
+  path: [{ r: [[0.001, 0.004], [0.005, 0.004]] }],
+  building: [{ r: [[0.0035, 0.001], [0.005, 0.001], [0.005, 0.0025], [0.0035, 0.0025]] }],
+  slide: [{ r: [[0.001, 0.0045], [0.002, 0.005]] }],
+};
+const BAND_POIS = [
+  { i: 'gate-n', n: 'North Gate', c: 'gate', lat: 0.0052, lng: 0.001 },
+  { i: 'gate-s', n: 'South Gate', c: 'gate', lat: 0.001, lng: 0.005 },
+  { i: 'burgers', n: 'Burgers', c: 'food', lat: 0.004, lng: 0.002 },
+  { i: 'loo', n: 'Restrooms', c: 'restroom', lat: 0.002, lng: 0.0045 },
+];
+// One tileMetres for all three bands: the plan derives it from the coarsest
+// band, so the grid a band bakes on is band-independent (display-bands.mjs).
+const BAND_TILE_METRES = 2.4;
+const bandBake = (band) => bakeModel(BAND_MAP, BAND_POIS, { tileMetres: BAND_TILE_METRES, band });
+
+await check('the mid band is today’s bake, unchanged — and no band means no stamp', () => {
+  const plain = bakeModel(BAND_MAP, BAND_POIS, { tileMetres: BAND_TILE_METRES });
+  assert.ok(!('band' in plain), 'a bake nobody asked a band of must not grow a band stamp');
+  assert.ok(!('generalization' in plain), 'nor a generalization stamp');
+  const mid = bandBake('mid');
+  assert.equal(mid.band, 'mid');
+  const { band, generalization, ...content } = mid;
+  assert.equal(JSON.stringify(content), JSON.stringify(plain),
+    'ADR-0019 clause 1: mid is today’s bake, unchanged');
+  assert.equal(generalization.drops.length, 0, 'mid drops nothing');
+  assert.equal(generalization.badgeKinds, null, 'mid pins every badge kind');
+  return true;
+});
+
+await check('the overview band drops the marks 2.4 m/px cannot draw', () => {
+  const mid = bandBake('mid');
+  const overview = bandBake('overview');
+  assert.ok(mid.trees.length > 0 && mid.lotRows.length > 0,
+    `fixture must grow trees (${mid.trees.length}) and aisle marks (${mid.lotRows.length}) to prove anything`);
+  assert.deepEqual(overview.trees, [], 'a crown under the legibility floor is a stipple, not a tree');
+  assert.deepEqual(overview.lotRows, [], 'an aisle dash under the floor is a speck');
+  assert.ok(!('scatterNotes' in overview), 'scatter notes describe trees this band does not draw');
+  assert.deepEqual(overview.generalization.drops, ['trees', 'lotRows']);
+  return true;
+});
+
+await check('the overview band pins landmarks only; every other kind stays in truth', () => {
+  const mid = bandBake('mid');
+  const overview = bandBake('overview');
+  const kinds = (m) => [...new Set(m.badges.map((b) => b.kind))].sort();
+  assert.deepEqual(kinds(mid), ['food', 'gate', 'restroom'], 'mid pins every kind it has');
+  assert.deepEqual(kinds(overview), ['gate'], 'ADR-0019 clause 1: landmarks only');
+  assert.deepEqual(overview.generalization.badgeKinds, ['gate']);
+  assert.ok(overview.badges.length > 0, 'landmarks-only must thin, not empty');
+  return true;
+});
+
+await check('generalization removes, never moves (ADR-0021 clause 3)', () => {
+  const mid = bandBake('mid');
+  const overview = bandBake('overview');
+  const close = bandBake('close');
+  // Cells and every kept mark are bit-identical across bands: a band may drop
+  // a feature, and anything it does draw sits where Truth says it sits.
+  assert.equal(JSON.stringify(overview.cells), JSON.stringify(mid.cells), 'terrain never shifts');
+  assert.equal(JSON.stringify(close.cells), JSON.stringify(mid.cells));
+  for (const kind of ['buildings', 'tracks', 'roads']) {
+    assert.equal(JSON.stringify(overview[kind]), JSON.stringify(mid[kind]), `${kind} must not move`);
+  }
+  const byId = (b) => `${b.kind}@${b.x},${b.y}`;
+  const midGates = mid.badges.filter((b) => b.kind === 'gate').map(byId);
+  assert.deepEqual(overview.badges.map(byId), midGates, 'kept pins keep their truth positions');
+  const { band: cb, generalization: cg, ...closeContent } = close;
+  const { band: mb, generalization: mg, ...midContent } = mid;
+  assert.equal(JSON.stringify(closeContent), JSON.stringify(midContent),
+    'the finest band removes nothing — generalization only ever removes');
+  return true;
+});
+
+await check('an unknown band is refused at the bake, not silently ignored', () => {
+  assert.throws(() => bandBake('gigantic'), /unknown band/i);
+  return true;
+});
+
 await check('crop shifts roads with the window', () => {
   const model = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 2 });
   assert.ok(model.roads.length >= 1, 'path polyline expected');

@@ -34,6 +34,7 @@
 import http from 'node:http';
 import path from 'node:path';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { parentOf } from '@party-tracker/shared/zoomBands.js';
 import { chromium } from 'playwright';
 import { MONO_ROOT, OVERRIDE_DIR, VENUE_DIR, readJson } from '../lib/venue-io.mjs';
 import {
@@ -271,9 +272,25 @@ for (const id of ids) {
     continue;
   }
   const { px } = grid;
-  // Exactly one of the two is set; both spread into bakeModel unchanged.
-  const gridOpts = grid.tileMetres != null ? { tileMetres: grid.tileMetres } : { maxCols: grid.maxCols };
+  // Exactly one of the two is set; both spread into bakeModel unchanged. The
+  // band rides along so `bakeModel` generalizes the content to it — a band is
+  // what a picture leaves out as much as what resolution it draws at.
+  const gridOpts = {
+    ...(grid.tileMetres != null ? { tileMetres: grid.tileMetres } : { maxCols: grid.maxCols }),
+    ...(band ? { band } : {}),
+  };
   if (band) console.error(`  band ${band}: ${grid.tileMetres.toFixed(4)} m a cell, ${px} px a cell`);
+
+  // The band above this one, as a MODEL only — `bakeModel` is pure and never
+  // paints, so this costs no browser and no PNG. It is the witness ADR-0021
+  // clause 3 needs: nothing inside a single bake can tell a mark that sits
+  // where Truth put it from a mark that was nudged, because the model is the
+  // bake's own account of where things are. Kit-independent, like the model
+  // itself, so it is built once per venue rather than once per kit. Null at the
+  // coarsest band, which the cert records rather than dropping the row.
+  const coarserBand = band ? parentOf(band) : null;
+  const coarserModel = coarserBand ? bakeModel(map, pois, { ...gridOpts, band: coarserBand }) : null;
+  if (band) console.error(`  ${coarserBand ? `nests in the ${coarserBand} band above it` : 'the coarsest band — nothing above it to nest in'}`);
 
   if (ldtk) {
     // Kit-independent (the model is), so one file per venue suffices.
@@ -393,6 +410,7 @@ for (const id of ids) {
       map,
       pois,
       px,
+      coarserModel,
     });
     // Geo bounds ride the cert so the display stage can place the baked
     // image as the world tier without re-baking the model.

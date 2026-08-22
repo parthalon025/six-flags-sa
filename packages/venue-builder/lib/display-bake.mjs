@@ -48,6 +48,10 @@ const TREE_DENSITY_SCALE = { wood: 1, grass: 0.22 };
  */
 const AISLE_METRES = 16;
 const AISLE_DASH_METRES = 4;
+/** …and the floor a dash never draws shorter than, in cells. A dash under a
+ *  cell is a dot, whatever the ground says. Named because the band policy has
+ *  to measure the same dash the painter draws. */
+const AISLE_DASH_MIN_CELLS = 0.8;
 
 /* ------------------------------------------------ the pieces vocabulary --
  * The bake decomposes into the smallest pieces the builder owns. A kit is
@@ -464,6 +468,162 @@ export function resolveBakeGrid(mapMeta, flags = {}) {
   return { band, tileMetres: plan.tileMetres, maxCols: null, px: plan.px };
 }
 
+/* ------------------------------------- ADR-0019 clause 1: per-band content --
+ *
+ * A band is a ground resolution, not a sharpness knob, and the three bands
+ * share ONE cell grid: `display-bands.mjs` makes the cell grid the coarsest
+ * band's pixel grid, so finer bands draw the same cells larger rather than
+ * adding cells. Left alone, that means all three bands carry identical content
+ * at three sharpnesses — which is precisely "one ultra-res bake, tiled", the
+ * shape ADR-0019 rejected on the grounds that sharper is not clearer.
+ *
+ * Generalization is what makes the bands differ in CONTENT. ADR-0021 clause 3
+ * fixes its one permitted move: it removes, never moves. A band may drop a
+ * feature entirely; any feature it does draw sits where Truth says it sits. So
+ * this is a subtractive policy and nothing else — it never nudges a mark, never
+ * simplifies a ring, never invents a landmark. That is also what keeps ADR-0021
+ * clause 1 true: a band that only ever removes cannot become the sole home of a
+ * fact, because everything it drops is still in `pois.json` and `map.json`.
+ *
+ * The rule is one legibility floor applied to every generalizable mark: a mark
+ * that cannot draw at least `BAND_LEGIBILITY_FLOOR_PX` pixels across is not a
+ * small version of itself, it is a stipple. Measured at the three bands (every
+ * shipped venue plans a ~2.4 m cell, so these hold catalogue-wide):
+ *
+ *   mark            size        overview 2.4 m/px   mid 0.6 m/px   close 0.15
+ *   tree crown      1.2 cells       1.2 px            4.8 px        19.2 px
+ *   aisle dash      4 m             1.7 px            6.7 px        26.7 px
+ *   badge spacing   1.6 cells       1.6 px            6.4 px        25.6 px
+ *
+ * So overview drops trees and aisle marks and thins its pins to landmarks,
+ * while mid and close draw everything — which is the other half of the ADR:
+ * mid is "today's bake, unchanged" (clause 1), and close is the finest band,
+ * with nothing below it to generalize FOR. Close-band specificity is added
+ * content from kit vocabulary (ADR-0021 clause 7), not removed content, and
+ * therefore is not this policy's job.
+ *
+ * Scope, deliberately: MARKS, never cells. The terrain grid is the geometry all
+ * three bands share and the thing every position is measured against; removing
+ * a class from it would break both the cross-band comparison and
+ * `style_terrain_coverage`, which exists to catch exactly a vanished class.
+ */
+
+/** The smallest a mark may draw and still be a shape rather than a smudge, in
+ *  band pixels.
+ *
+ *  Three, and it is a judgement rather than a derivation: under three pixels a
+ *  round crown cannot show a rim and a dash cannot show which way it points, so
+ *  what lands on the picture is noise that happens to move with the data. The
+ *  number is declared here, in one place, so a band's content is a consequence
+ *  of it rather than of a hand-written list per band. The measured margins
+ *  above are wide — 1.7 px at overview against 4.8 px at mid — so no shipped
+ *  venue sits near the edge of it. */
+export const BAND_LEGIBILITY_FLOOR_PX = 3;
+
+/** How close two badge pins may sit, in cells, before `declutterBadges` thins
+ *  one away. Exported because the band policy reads it as the drawn size of
+ *  annotation: pins closer together than the legibility floor stack into an
+ *  unreadable blend however big the discs themselves are. */
+export const BADGE_DECLUTTER_REACH_CELLS = 1.6;
+
+/** The badge kinds a band still pins once annotation has to thin — ADR-0019
+ *  clause 1's "landmarks only". A gate is the one kind the map's own declutter
+ *  already privileges over its cluster-mates, for the same reason: it is the
+ *  pin a guest navigates the whole park by. Everything thinned away stays in
+ *  `pois.json`, so nothing is lost (ADR-0021 clause 1). */
+export const BAND_LANDMARK_BADGE_KINDS = Object.freeze(['gate']);
+
+/**
+ * The generalizable marks, and how big each draws.
+ *
+ * `sizeMetres` is the size the SMALLEST mark of the kind draws at, because the
+ * question a floor answers is "does this kind of detail survive here" — a kind
+ * whose ordinary members are specks is drawn as noise even when its rare big
+ * ones read. `below` says what removal means for the kind: an array the band
+ * drops outright, or annotation the band thins to landmarks.
+ */
+const BAND_MARKS = Object.freeze([
+  Object.freeze({
+    kind: 'trees',
+    below: 'drop',
+    // The smallest crown any species scatters, read off TREE_SPECIES so the
+    // policy cannot drift from the sprites it is judging.
+    sizeMetres: (tileMetres) =>
+      2 * Math.min(...Object.values(TREE_SPECIES).flat().map((s) => s.radius)) * tileMetres,
+  }),
+  Object.freeze({
+    kind: 'lotRows',
+    below: 'drop',
+    // One aisle dash, with the same cell floor `fillRows` is handed below.
+    sizeMetres: (tileMetres) => Math.max(AISLE_DASH_MIN_CELLS * tileMetres, AISLE_DASH_METRES),
+  }),
+  Object.freeze({
+    kind: 'badges',
+    below: 'landmarks',
+    sizeMetres: (tileMetres) => BADGE_DECLUTTER_REACH_CELLS * tileMetres,
+  }),
+]);
+
+/**
+ * What one band draws, and what it removes.
+ *
+ * Pure and venue-aware: a band is a ground resolution, so how many pixels a
+ * mark draws at depends on the venue's cell size as well as on the band.
+ *
+ * @param {string} bandId a band from the shared table — throws on an unknown one
+ * @param {{tileMetres: number}} grid the venue's ground metres per cell
+ * @returns a frozen policy: `drops` are the model arrays this band empties,
+ *   `badgeKinds` is the kinds it still pins (`null` = every kind), and `marks`
+ *   carries the measurement each decision was made from, so a certification row
+ *   can restate the arithmetic rather than take the verdict on trust.
+ */
+export function bandGeneralization(bandId, { tileMetres } = {}) {
+  const metresPerPixel = bandResolution(bandId); // throws `unknown band: <id>`
+  if (!(Number.isFinite(tileMetres) && tileMetres > 0)) {
+    throw new Error(
+      `bandGeneralization needs the venue's ground metres per cell, got ${tileMetres}`,
+    );
+  }
+  const marks = BAND_MARKS.map((m) => {
+    const sizeMetres = m.sizeMetres(tileMetres);
+    const drawnPx = sizeMetres / metresPerPixel;
+    return Object.freeze({
+      kind: m.kind,
+      below: m.below,
+      sizeMetres: Math.round(sizeMetres * 1000) / 1000,
+      drawnPx: Math.round(drawnPx * 100) / 100,
+      drawn: drawnPx >= BAND_LEGIBILITY_FLOOR_PX,
+    });
+  });
+  const thins = marks.some((m) => m.kind === 'badges' && !m.drawn);
+  return Object.freeze({
+    band: bandId,
+    metresPerPixel,
+    tileMetres,
+    floorPx: BAND_LEGIBILITY_FLOOR_PX,
+    marks: Object.freeze(marks),
+    drops: Object.freeze(marks.filter((m) => m.below === 'drop' && !m.drawn).map((m) => m.kind)),
+    badgeKinds: thins ? BAND_LANDMARK_BADGE_KINDS : null,
+  });
+}
+
+/**
+ * Apply a band's policy to a finished model — the one place content is removed.
+ *
+ * Subtractive by construction: it empties arrays and filters one of them, and
+ * has no way to express moving a mark. Everything it removes is still in the
+ * venue's truth files, which is what makes the removal free (ADR-0021 clause 1).
+ */
+function generalizeModel(model, policy) {
+  const out = { ...model, band: policy.band, generalization: policy };
+  for (const kind of policy.drops) out[kind] = [];
+  // Scatter notes account for tree darts that could not be placed; a band that
+  // draws no trees must not ship a note about them.
+  if (policy.drops.includes('trees')) delete out.scatterNotes;
+  if (policy.badgeKinds) out.badges = out.badges.filter((b) => policy.badgeKinds.includes(b.kind));
+  return out;
+}
+
 function pointInRing(x, y, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
@@ -616,12 +776,19 @@ export const POI_BADGES = { gate: 'gate', food: 'food', restroom: 'restroom', sh
  *
  * @param {object} map map.json body
  * @param {object[]} pois pois.json
- * @param {{ maxCols?: number, tileMetres?: number, margin?: number }} opts
+ * @param {{ maxCols?: number, tileMetres?: number, margin?: number, band?: string }} opts
  *   How big a cell is — `tileMetres` outright (what a band plan carries), or
  *   `maxCols` as a column budget for the longer axis (default 240). Given
  *   both, `tileMetres` wins; see `projector` for why it has to be the primary
  *   spelling. `margin` is the crop padding in cells (default 6); `Infinity`
  *   opens the window to the whole grid.
+ *
+ *   `band` names which zoom band this model is for, and generalizes the content
+ *   accordingly (`bandGeneralization`): the model then carries a `band` and a
+ *   `generalization` stamp, and the marks that band cannot draw are gone. Omit
+ *   it and the model is exactly what it has always been — no stamp, nothing
+ *   removed — because a caller who never asked for a band has not asked to have
+ *   content taken away either.
  */
 export function bakeModel(map, pois = [], opts = {}) {
   const { cols, rows, tileMetres, toCell, toGeo } = projector(map, {
@@ -731,7 +898,7 @@ export function bakeModel(map, pois = [], opts = {}) {
     const { placed, axis } = fillRows({
       ring,
       rowSpacing: Math.max(1.4, AISLE_METRES / tileMetres),
-      itemSpacing: Math.max(0.8, AISLE_DASH_METRES / tileMetres),
+      itemSpacing: Math.max(AISLE_DASH_MIN_CELLS, AISLE_DASH_METRES / tileMetres),
       id: 'aisle',
       // Only over ground the lot actually covers — a lot polygon that overlaps
       // a path or a building must not stripe across it.
@@ -829,7 +996,13 @@ export function bakeModel(map, pois = [], opts = {}) {
   // Declutter after the crop so a cluster whose greedy keeper fell
   // outside the window still pins an in-window member.
   model.badges = declutterBadges(model.badges);
-  return model;
+  if (opts.band == null) return model;
+  // Generalize last, on the finished model, so removal is one readable pass
+  // over exactly what would otherwise ship. It reads the model's own rounded
+  // `tileMetres` rather than the projector's, so the policy stamped here and
+  // the policy a certification row re-derives from the model are the same
+  // arithmetic on the same number.
+  return generalizeModel(model, bandGeneralization(opts.band, { tileMetres: model.tileMetres }));
 }
 
 /**
@@ -840,7 +1013,7 @@ export function bakeModel(map, pois = [], opts = {}) {
  * they just don't badge at this scale (ADR-0012: annotation is a
  * decluttered final layer).
  */
-export function declutterBadges(badges, reach = 1.6) {
+export function declutterBadges(badges, reach = BADGE_DECLUTTER_REACH_CELLS) {
   const kept = [];
   for (const b of [...badges.filter((x) => x.kind === 'gate'), ...badges.filter((x) => x.kind !== 'gate')]) {
     if (kept.some((k) => Math.hypot(k.x - b.x, k.y - b.y) < reach)) continue;
