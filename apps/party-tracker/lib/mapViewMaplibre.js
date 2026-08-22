@@ -62,6 +62,8 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
     });
 
   return {
+    engine: () => map,
+
     attach(container, view) {
       map = new MapLibreMap({
         container,

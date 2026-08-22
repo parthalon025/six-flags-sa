@@ -386,6 +386,8 @@ export function mountMapView(
       return renderer.project(lngLat);
     },
 
+    engine: () => (alive && typeof renderer.engine === 'function' ? renderer.engine() : null),
+
     destroy: () => {
       if (!alive) return;
       alive = false;

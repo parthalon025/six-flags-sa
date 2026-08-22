@@ -56,4 +56,40 @@ const high = await zoomSweep({
 assert.equal(high.ok, true);
 assert.ok(high.fps >= MIN_FPS_FLOOR);
 
+let throttleRate = null;
+let eased = false;
+const throttled = await zoomSweep({
+  minFps: MIN_FPS_FLOOR,
+  throttle: 4,
+  page: {
+    context: () => ({
+      newCDPSession: async () => ({
+        send: async (method, params) => {
+          if (method === 'Emulation.setCPUThrottlingRate') throttleRate = params.rate;
+        },
+      }),
+    }),
+    evaluate: async (fn) => {
+      globalThis.__parkMapLibre = {
+        getZoom: () => 14,
+        easeTo: () => { eased = true; },
+        once: (_ev, cb) => cb(),
+      };
+      globalThis.__parkMapFps = [40, 42, 38];
+      return fn();
+    },
+  },
+});
+assert.equal(throttleRate, 4, 'CDP throttle is applied before samples are read');
+assert.equal(eased, true, 'the sweep moves the live camera, not only averages idle rAF');
+assert.equal(throttled.throttled, true);
+assert.equal(throttled.ok, true);
+
+const live = readFileSync(
+  new URL('../../scripts/lib/map-perf-gate.mjs', import.meta.url),
+  'utf8',
+);
+assert.match(live, /openPhone/, 'the live driver uses the phone harness, not a bare goto');
+assert.match(live, /mapMissing/, 'the missing-world stub is not treated as a drawn map');
+
 console.log('map-performance-contract: ok');

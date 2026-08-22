@@ -198,7 +198,9 @@ export default function ParkMapGl({
           paintMarks();
         },
         onLoad: () => {
-          if (alive) setMapReady(true);
+          if (!alive) return;
+          setMapReady(true);
+          globalThis.__parkMapLibre = view.engine?.() ?? null;
         },
         onTap: ({ point, lngLat }) => {
           if (!alive || !viewRef.current) return;
@@ -231,6 +233,7 @@ export default function ParkMapGl({
     return () => {
       alive = false;
       viewRef.current = null;
+      if (globalThis.__parkMapLibre) delete globalThis.__parkMapLibre;
       view.destroy();
     };
     // Only the World changes what is mounted. The camera, the Overlay and the
@@ -278,7 +281,7 @@ export default function ParkMapGl({
       if (dt > 0 && dt < 1000) {
         samples.push(1000 / dt);
         if (samples.length > 60) samples.shift();
-        globalThis.__parkMapFps = samples.slice();
+        globalThis.__parkMapFps = samples;
       }
       raf = requestAnimationFrame(loop);
     };
