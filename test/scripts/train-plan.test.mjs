@@ -309,6 +309,28 @@ assert.throws(
     + 'path too, and reading it from outside the tree is the same leak',
 );
 
+// A fan-out lane must be told to check that its base carries its dependencies.
+// Lanes fetch the branch from origin, which is only as current as the last
+// push — so a fan-out launched with work integrated locally but not yet pushed
+// hands every lane a stale base. That does not fail loudly: h11 was started on
+// a base without h7's mapView seam and quietly set about rebuilding the seam it
+// existed to consume.
+{
+  const wf = readFileSync(path.join(REPO, '.claude/workflows/train-slices.mjs'), 'utf8');
+  assert.match(
+    wf,
+    /train-plan\.mjs status/,
+    'train-slices.mjs must tell each lane to run the status board against its own '
+      + 'base — it is the only way a lane can tell a stale checkout from a fresh one',
+  );
+  assert.match(
+    wf,
+    /NEEDS/,
+    'train-slices.mjs must name the slice\'s dependencies in the prompt, or a lane '
+      + 'has nothing to check the status board against',
+  );
+}
+
 // A fan-out lane must branch under a name carrying its own slice id. Worktrees
 // in one repository share branch refs, so two lanes told to use the same name
 // share one pointer: each commits onto whatever the other last did, and each

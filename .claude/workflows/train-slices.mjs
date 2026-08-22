@@ -50,7 +50,17 @@ Repo rules that are not optional here:
   each commits on top of whatever the other last did, and each records the
   other's files as deletions. That happened on this train — three lanes were
   told to use `slice-work` and their commits had to be unpicked by hand.
-  Then confirm you are on the right base: scripts/lib/train-plan.mjs must exist.
+  Then CONFIRM YOUR BASE CARRIES YOUR DEPENDENCIES, before you plan anything:
+
+      node scripts/train-plan.mjs status
+
+  Every slice listed under NEEDS for your slice must appear under BUILT. If one
+  does not, your base is stale — the branch is only as current as the last push,
+  and work can be integrated locally but not yet pushed. Fetch again; if it is
+  still missing, STOP and report it rather than building. A lane that builds
+  without its dependency does not fail, it reinvents: h11 was once started on a
+  base without h7's mapView seam and set about rebuilding the very seam it was
+  supposed to consume.
   If it does not, the fetch failed — stop and report that rather than building
   against the wrong tree. Building on main means rebuilding what already exists,
   which has happened here before.
@@ -113,6 +123,7 @@ const results = await pipeline(
 
 SLICE: ${slice.title}
 SIZE:  ${slice.size}
+NEEDS: ${(slice.needs ?? []).join(', ') || '(nothing)'}
 
 Read these first, in this order, and let them tell you what the slice means:
   1. docs/adr/ — ADR-0019 and ADR-0021 for train H, ADR-0020 for train I.
