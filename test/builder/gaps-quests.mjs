@@ -33,14 +33,14 @@ const {
   titleFromXp,
   XP_AWARDS,
 } = await import('../../packages/shared/questScore.js');
-const { shippedGapsDocument, shippedTypeForSeed, resolveGapTarget } = await import(
+const { shippedGapsDocument, shippedTypeForSeed, resolveGapTarget, SHIPPED_GAP_TYPES } = await import(
   '../../packages/venue-builder/lib/ship-gaps.mjs'
 );
 const { questSeedsFromRequests, questSeedsFromEntrances } = await import(
   '../../packages/venue-builder/lib/quest-seeds.mjs'
 );
 const { buildSideQuests, isOnWalkway, sortByProximity } = await import('../../apps/party-tracker/lib/sideQuests.js');
-const { normalizeGapsDocument, gapsUrlFor } = await import('../../apps/party-tracker/lib/venue/store.js');
+const { normalizeGapsDocument, gapsUrlFor, SHIPPED_GAP_TYPES: PHONE_SHIPPED_GAP_TYPES } = await import('../../apps/party-tracker/lib/venue/store.js');
 
 await check('rankFromXp follows the Scout / Ranger / Cartographer / Steward ladder', () => {
   assert.equal(rankFromXp(0), 'visitor');
@@ -420,6 +420,11 @@ await check('normalizeGapsDocument ignores unknown types and a missing file is a
   );
   assert.equal(gapsUrlFor({ id: 'kings-island' }), '/venues/kings-island.gaps.json');
   assert.equal(gapsUrlFor({ id: 'kings-island', gaps: '/venues/custom.gaps.json' }), '/venues/custom.gaps.json');
+  assert.deepEqual(
+    [...PHONE_SHIPPED_GAP_TYPES].sort(),
+    [...SHIPPED_GAP_TYPES].sort(),
+    'the phone keep-list and the builder allowlist must stay the same set',
+  );
   return true;
 });
 

@@ -111,10 +111,14 @@ export const writeJson = (file, value, pretty) => {
  * Gaps this venue ships. Reads builder sidecars (attractions) and walkable
  * geometry; does not invent live ops. Phone-safe: one `{ type, target }` per fact.
  */
-export function gapsDocumentFor({ meta, pois, map, extractions = [] }) {
+export function gapsDocumentFor({ meta, pois, map, extractions } = {}) {
   const id = meta?.id;
   const attractions = id ? readJson(venueSidecar(id, 'attractions.json')) : null;
-  const imagery = routeImageryExtractions(extractions, { map: map || {} });
+  const loaded = extractions ?? (id ? readJson(venueSidecar(id, 'extractions.json'), []) : []);
+  const list = Array.isArray(loaded)
+    ? loaded
+    : Array.isArray(loaded?.extractions) ? loaded.extractions : [];
+  const imagery = routeImageryExtractions(list, { map: map || {} });
   return shippedGapsForVenue({
     venueId: id,
     meta,
