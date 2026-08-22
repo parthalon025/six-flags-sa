@@ -135,12 +135,36 @@ const FIXTURES = {
   },
   h11: {
     before: [
-      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMap.jsx': 'export default function ParkMap() {}' },
-      { 'apps/party-tracker/package.json': '{"dependencies":{"next":"^15"}}', 'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';" },
+      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMap.jsx': 'export default function ParkMap() {}', 'apps/party-tracker/components/ParkMapGl.jsx': 'x', 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}' },
+      { 'apps/party-tracker/package.json': '{"dependencies":{"next":"^15"}}', 'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';", 'apps/party-tracker/components/ParkMapGl.jsx': 'x', 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}' },
+      // no GL component: a dependency in package.json is not a renderer
+      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';", 'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}' },
+      // no renderer switch: nothing can ask for the ported path
+      { 'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}', 'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';", 'apps/party-tracker/components/ParkMapGl.jsx': 'x' },
     ],
     after: {
       'apps/party-tracker/package.json': '{"dependencies":{"maplibre-gl":"^5"}}',
       'apps/party-tracker/components/ParkMap.jsx': "import { overlayGeo } from '../lib/overlayGeo.js';",
+      'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
+      'apps/party-tracker/lib/mapLibreConfigured.js': 'export function parkMapRenderer() {}',
+    },
+  },
+  h18: {
+    before: [
+      // the port is there but the SVG still ships — the real state today
+      { 'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
+        'apps/party-tracker/components/ParkMapSvg.jsx': 'export default function ParkMapSvg() {}',
+        'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['svg', 'gl'];" },
+      // SVG file gone but the switch still defaults to it
+      { 'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
+        'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['svg', 'gl'];" },
+      // switch flipped but the replacement was never built: a retirement with
+      // nothing to retire into, which two bare negations would call done
+      { 'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['gl'];" },
+    ],
+    after: {
+      'apps/party-tracker/components/ParkMapGl.jsx': 'export default function ParkMapGl() {}',
+      'apps/party-tracker/lib/mapLibreConfigured.js': "const PARK_MAP_RENDERERS = ['gl'];",
     },
   },
   h14: {

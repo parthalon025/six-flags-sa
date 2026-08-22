@@ -199,11 +199,36 @@ export const SLICES = Object.freeze([
     id: 'h11',
     train: 'H',
     size: 'L',
-    title: 'MapLibre as the one renderer; overlay ported; SVG map retires',
+    title: 'MapLibre renderer and overlay ported, behind the renderer switch',
     needs: ['h7'],
     probe: (t) =>
       t.read('apps/party-tracker/package.json').includes('maplibre')
-      && t.read('apps/party-tracker/components/ParkMap.jsx').includes('overlayGeo'),
+      && t.read('apps/party-tracker/components/ParkMap.jsx').includes('overlayGeo')
+      && t.has('apps/party-tracker/components/ParkMapGl.jsx')
+      && t.read('apps/party-tracker/lib/mapLibreConfigured.js').includes('parkMapRenderer'),
+  },
+  {
+    // Split out of h11, because h11's title bundled two jobs with different
+    // gates and its probe could only see one of them. The port lands behind a
+    // switch; the flip waits on h15's perf rows — the SVG adapter is the
+    // escape hatch "until the MapLibre one passes the gate". A probe that
+    // reported h11 built while parkMapRenderer() still answered 'svg' and a
+    // 2,159-line ParkMapSvg.jsx still drew the shipped map would be the plan
+    // telling the next session a lie. Nothing is excused by the split: this
+    // slice is unbuilt and gated, exactly as the work is.
+    id: 'h18',
+    train: 'H',
+    size: 'M',
+    title: 'MapLibre becomes the shipped renderer; the SVG map retires',
+    needs: ['h11', 'h15'],
+    //  A retirement is two negatives, and two negatives are true of a tree
+    //  where nothing was ever built — the suite caught this probe reporting the
+    //  SVG retired in an empty checkout. The positive clause anchors it: the
+    //  replacement has to be there before its absence means anything.
+    probe: (t) =>
+      t.has('apps/party-tracker/components/ParkMapGl.jsx')
+      && !t.has('apps/party-tracker/components/ParkMapSvg.jsx')
+      && !/PARK_MAP_RENDERERS\s*=\s*\[\s*'svg'/.test(t.read('apps/party-tracker/lib/mapLibreConfigured.js')),
   },
   {
     id: 'h14',
