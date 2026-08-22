@@ -15,9 +15,23 @@
  * given a known answer.
  */
 
+import { mapThemePack } from './mapThemeTokens.js';
+import { paletteFor } from './theme.js';
 import { worldGeoJson } from './worldGeo.js';
 
 const finite = (value) => typeof value === 'number' && Number.isFinite(value);
+
+/**
+ * The two palettes a ParkMap render needs. They are not interchangeable:
+ * the surface pack has no category pin colours, and the pin palette has no
+ * ground/path paint. Handing `mapPaint` to the map key throws on first
+ * render (`categories` is missing).
+ *
+ * @param {string|null|undefined} theme a Skin id or `day`/`night`
+ */
+export function parkMapPalettes(theme) {
+  return { surface: mapThemePack(theme), pins: paletteFor(theme) };
+}
 
 /** A glide, not a jump, when a person moves. Fixes land every few seconds and
  *  a teleporting map is how a guest loses track of where they were looking. */

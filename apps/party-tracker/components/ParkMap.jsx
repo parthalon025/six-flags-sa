@@ -63,10 +63,9 @@ import { memo, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import MapLegend from './MapLegend';
 import { identityOf } from '@/lib/venue/ids';
-import { mapThemePack } from '@/lib/mapThemeTokens';
 import { overlayGeoJson } from '@/lib/overlayGeo';
 import { parkMapRenderer } from '@/lib/mapLibreConfigured';
-import { boundsOfPoints, cameraRequest, overlayModel, worldFor } from '@/lib/parkMapView';
+import { boundsOfPoints, cameraRequest, overlayModel, parkMapPalettes, worldFor } from '@/lib/parkMapView';
 
 /* MapLibre is a large dependency and the shipped renderer. `ssr: false`
    for the ordinary reason: it needs a canvas. */
@@ -120,7 +119,7 @@ function ParkMap(props) {
     onUserPan,
   } = props;
 
-  const palette = useMemo(() => mapThemePack(theme), [theme]);
+  const { surface, pins } = useMemo(() => parkMapPalettes(theme), [theme]);
 
   /* The World, as the map view takes it — or null when this venue cannot be
      drawn yet, which is the ported path standing aside rather than framing a
@@ -183,7 +182,7 @@ function ParkMap(props) {
   const legend = (
     <div className="mapFurniture">
       <MapLegend
-        palette={palette}
+        palette={pins}
         visibleCategories={visibleCategories}
         onToggleCategory={onToggleCategory}
         heightFilterOn={Boolean(
@@ -201,7 +200,7 @@ function ParkMap(props) {
   return (
     <ParkMapGl
       world={world}
-      palette={palette}
+      palette={surface}
       skin={theme ?? null}
       // Every Place, not just the shown ones: this is the seam's own lookup for
       // a pick, and it is fixed at mount. Handing it the filtered list would

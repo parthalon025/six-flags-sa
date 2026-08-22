@@ -22,6 +22,7 @@ import {
   boundsOfPoints,
   cameraRequest,
   overlayModel,
+  parkMapPalettes,
   worldFor,
 } from '../../apps/party-tracker/lib/parkMapView.js';
 import {
@@ -1276,6 +1277,21 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
   );
   assert.equal(view.hitTest({ x: 10, y: 10 }), venuePois[3], 'a pick resolves to that Place');
   view.destroy();
+}
+
+{
+  // The map key reads pin colours (`palette.categories.coaster`). The World
+  // surface reads a Skin paint pack (`ground`, `path`). Those are not the
+  // same object — handing mapPaint to MapLegend throws on first render
+  // (`Cannot read properties of undefined (reading 'coaster')`).
+  const { surface, pins } = parkMapPalettes('night');
+  assert.ok(surface.ground, 'surface pack paints the World');
+  assert.ok(pins.categories.coaster, 'pin palette names every category the key draws');
+  assert.equal(surface.categories, undefined, 'mapPaint is not a pin palette');
+
+  const tycoon = parkMapPalettes('pixel-tycoon');
+  assert.ok(tycoon.surface.ground);
+  assert.ok(tycoon.pins.categories.coaster);
 }
 
 console.log('map-view: ok');
