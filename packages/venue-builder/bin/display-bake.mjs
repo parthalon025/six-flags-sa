@@ -393,6 +393,9 @@ for (const id of ids) {
       map,
       pois,
       px,
+      // Which band this bake is, so style_world_geo asserts the alignment
+      // budget ADR-0021 clause 3 sets for it rather than a pixel count.
+      band,
     });
     // Geo bounds ride the cert so the display stage can place the baked
     // image as the world tier without re-baking the model.

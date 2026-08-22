@@ -71,8 +71,14 @@ export const SERVICE_STYLES = ['solid', 'dashed'];
  * ADR-0016's "strictly geo-true" as a number: the most any painted stroke
  * may wander from its truth-projected position, in bake pixels. A kit's
  * seeded-noise displacement (`strokes.displacement.amplitude`) validates
- * against this at resolve time, and certification's style_world_geo row
- * re-asserts it against the bake, so the budget is a proof, not a promise.
+ * against this at resolve time, so the budget is a proof, not a promise.
+ *
+ * ADR-0021 clause 3 supersedes it for a band-addressed bake: three pixels is
+ * a different ground distance at every park (1.21 m at kings-island, 0.52 m at
+ * big-kahunas), and clause 3 wants one metre to mean one metre everywhere. The
+ * style_world_geo row therefore asserts `alignmentBudgetMetres(band)` from
+ * `display-style-contract.mjs` wherever a band is named, and falls back to this
+ * number — restated in ground metres — only for a bake that has none.
  */
 export const WORLD_DISPLACEMENT_BUDGET_PX = 3;
 
@@ -220,8 +226,10 @@ export function resolveKit(spec = {}, { assets, overlay, materials } = {}) {
   const amp = spec.strokes?.displacement?.amplitude;
   if (spec.strokes?.displacement) {
     // Seeded-noise hand-tremor on drawn edges (buildings, roads, tracks).
-    // The amplitude is the geo-truth budget: certification's
-    // style_world_geo row holds the bake to the same number.
+    // The amplitude is the geo-truth budget in bake pixels. A band-addressed
+    // bake is held to a tighter one — ADR-0021 clause 3 allows a single pixel
+    // of ground, so an amplitude above 1 fails style_world_geo at the mid and
+    // close bands even though it resolves cleanly here.
     if (!(amp > 0 && amp <= WORLD_DISPLACEMENT_BUDGET_PX)) {
       throw new Error(`strokes.displacement.amplitude must sit in (0, ${WORLD_DISPLACEMENT_BUDGET_PX}] px`);
     }

@@ -26,8 +26,11 @@ console.log('\nstyle contract\n');
 
 const {
   stylePoints, certifyStyleContract, crossRotationCoverageRow, harvestProfileDraft,
-  deltaE, hexToRgb, signature,
+  deltaE, hexToRgb, signature, alignmentBudgetMetres, ALIGNMENT_BUDGET_PIXELS,
 } = await import('../../packages/venue-builder/lib/display-style-contract.mjs');
+// The band table the phone reads too — the budget must be derived from it
+// rather than keeping a second copy of 0.15 that can drift.
+const { BANDS } = await import('../../packages/shared/zoomBands.js');
 
 // A 12x12 synthetic world: outside frame, ground floor, quadrant patches of
 // grass / water / lot / road, one building, one track, two badges.
@@ -57,6 +60,9 @@ const model = {
   tracks: [{ kind: 'slide', idx: 0, pts: [[7, 2], [8, 2], [9, 3], [10, 3]] }],
   roads: [{ kind: 'path', pts: [[6, 2], [7, 2], [8, 3], [9, 3]] }],
   badges: [{ kind: 'gate', x: 3, y: 8 }, { kind: 'food', x: 8, y: 8 }],
+  // Ground metres per cell, as bakeModel states it. Without a ground scale
+  // nothing can be said in ground metres — see the clause-3 rows below.
+  tileMetres: 6.46,
 };
 
 const PALETTE = {
@@ -307,6 +313,118 @@ await check('style_world_geo: truth anchors project through the world bounds; di
   // No pois (or no bounds): no row — the flat certification set is unchanged.
   const absent = certifyStyleContract({ model, points: stylePoints(model, { perClass: 8 }), samples: paint(stylePoints(model, { perClass: 8 })), profile, kit });
   assert.ok(!absent.checks.some((c) => c.key === 'style_world_geo'));
+  return true;
+});
+
+/* ADR-0021 clause 3 - "Generalization removes, never moves." A band may drop
+   a feature entirely; one it does draw sits where Truth says it sits. The
+   budget for that is a fixed GROUND distance per band (close 0.15 m, mid
+   0.6 m, overview unconstrained), not a count of whatever pixels this
+   particular bake happens to have. Under the retired px/cell spelling the
+   same "3 px" meant 1.21 m at kings-island and 0.52 m at big-kahunas: the
+   rule was stricter at small parks by accident of the formula. This is the
+   Visual factory's "restyles, never repositions" as a number. */
+await check('the alignment budget is ground metres, read off the band table', () => {
+  assert.equal(alignmentBudgetMetres('close'), 0.15, 'close band: one 0.15 m pixel');
+  assert.equal(alignmentBudgetMetres('mid'), 0.6, 'mid band: one 0.6 m pixel');
+  // Read off the shared table rather than kept as a second copy of 0.15 and
+  // 0.6 here. Asserting the two numbers again would not show that: a hard-coded
+  // map answers them identically. What a hard-coded map cannot do is answer for
+  // a band it has never heard of, so ask about every band the table declares.
+  for (const band of BANDS) {
+    const budget = alignmentBudgetMetres(band.id);
+    assert.ok(
+      budget === Infinity || budget === band.metresPerPixel * ALIGNMENT_BUDGET_PIXELS,
+      `${band.id}: budget ${budget} is not ${ALIGNMENT_BUDGET_PIXELS} px of the table\u2019s ${band.metresPerPixel} m/px`,
+    );
+  }
+  assert.equal(
+    alignmentBudgetMetres('overview'), Infinity,
+    'clause 3 leaves overview unconstrained - departing from truth is that band’s job',
+  );
+  assert.throws(() => alignmentBudgetMetres('gigantic'), /unknown band/, 'the shared table owns the band vocabulary');
+  return true;
+});
+
+const GEO_BOUNDS = { west: 0, south: 0, east: 0.012, north: 0.012 };
+// POIs at exactly the lat/lng whose bounds-projection is the badge cell.
+const GEO_POIS = [
+  { c: 'gate', n: 'Main Gate', lng: 0.003, lat: 0.004 },
+  { c: 'food', n: 'Fries', lng: 0.008, lat: 0.004 },
+  { c: 'coaster', n: 'Not a badge', lng: 0.001, lat: 0.001 },
+];
+
+/** The style_world_geo row for one bake of the synthetic world.
+ *  `tileMetres: null` builds a model with no ground scale at all. */
+const geoRow = ({ tileMetres = 2.4, px = 16, band = null, amplitude = 0, badgeShift = 0 }) => {
+  const named = {
+    ...model,
+    bounds: GEO_BOUNDS,
+    badges: [
+      { kind: 'gate', name: 'Main Gate', x: 3 + badgeShift, y: 8 },
+      { kind: 'food', name: 'Fries', x: 8, y: 8 },
+    ],
+  };
+  if (tileMetres === null) delete named.tileMetres; else named.tileMetres = tileMetres;
+  const points = stylePoints(named, { perClass: 8 });
+  const cert = certifyStyleContract({
+    model: named, points, samples: paint(points), profile, pois: GEO_POIS, px, band,
+    kit: amplitude ? { id: 'test-kit', strokes: { displacement: { amplitude } } } : kit,
+  });
+  return cert.checks.find((c) => c.key === 'style_world_geo');
+};
+
+await check('style_world_geo budgets departure from truth in ground metres, per band', () => {
+  // Two venues, same band, same kit. Their realised cell sizes differ (the
+  // coarsest band rounds to a whole cell), and the budget does not: both are
+  // held to the band table’s 0.15 m, so a metre means the same thing at
+  // both parks.
+  for (const tileMetres of [2.3977, 2.4011]) {
+    const r = geoRow({ tileMetres, band: 'close', amplitude: 1 });
+    assert.equal(r.pass, true, `${tileMetres} m a cell: ${r.evidence}`);
+    assert.match(r.evidence, /budget 0\.15 m/, 'the budget is quoted as a ground distance');
+  }
+  // A bake whose own pixels cover 0.3 m of ground is still held to the close
+  // band’s 0.15 m: one pixel of wobble is two pixels’ worth of budget.
+  // A pixel-counted budget would pass this, which is the bug clause 3 closes.
+  const coarse = geoRow({ tileMetres: 4.8, band: 'close', amplitude: 1 });
+  assert.equal(coarse.pass, false, coarse.evidence);
+  assert.match(coarse.evidence, /displacement 1 px = 0\.3 m/, 'the departure is quoted in ground metres too');
+
+  // Same bake, same kit, different band: the band is the only thing that
+  // moves, and it decides.
+  const wobble = { tileMetres: 2.4, px: 1, amplitude: 3 };
+  const overview = geoRow({ ...wobble, band: 'overview' });
+  assert.equal(overview.pass, true, overview.evidence);
+  assert.match(overview.evidence, /unconstrained/, 'an unbudgeted band says so rather than printing a number');
+  const mid = geoRow({ ...wobble, band: 'mid' });
+  assert.equal(mid.pass, false, '7.2 m of wobble is past the mid band’s 0.6 m');
+
+  // Anchors are budgeted in the same metres. A badge 0.04 cells off truth is
+  // inside the projection tolerance that absorbs the bounds’ 1e-7 degree
+  // rounding, but at a 6.46 m cell that is 0.258 m of painted ground - past
+  // the close band’s budget, and a guest would see the Place in the
+  // wrong spot.
+  const nudged = geoRow({ tileMetres: 6.46, band: 'close', badgeShift: 0.04 });
+  assert.equal(nudged.pass, false, nudged.evidence);
+  assert.match(nudged.evidence, /0\.258 m/);
+  // Unconstrained is about generalization, not about the model inventing
+  // positions: the projection tolerance still bites at overview.
+  const skewed = geoRow({ tileMetres: 2.4, band: 'overview', badgeShift: 0.6 });
+  assert.equal(skewed.pass, false, 'an anchor that no longer derives from truth fails at every band');
+
+  // A bake that is not band-addressed has no band budget to name. It keeps
+  // the pre-ADR-0021 pixel budget, stated in metres and marked as such, so
+  // nobody reads a venue-dependent number as the clause-3 one.
+  const unbanded = geoRow({ tileMetres: 6.46, amplitude: 2 });
+  assert.equal(unbanded.pass, true, unbanded.evidence);
+  assert.match(unbanded.evidence, /no band/, 'the row says which budget it applied');
+
+  // No ground scale, no ground-metre claim: the row fails rather than
+  // quietly reverting to the unit clause 3 retired.
+  const scaleless = geoRow({ tileMetres: null, band: 'close' });
+  assert.equal(scaleless.pass, false, scaleless.evidence);
+  assert.match(scaleless.evidence, /tileMetres/, 'it names what it is missing');
   return true;
 });
 

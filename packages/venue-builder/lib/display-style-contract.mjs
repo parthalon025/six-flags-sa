@@ -19,6 +19,39 @@ import {
   isoCellMap, isoCellToPixel, buildingHeightsM, trackVertexHeightsM,
   buildingScreenHulls, occludedByBuilding,
 } from './display-iso.mjs';
+import { bandResolution } from '@party-tracker/shared/zoomBands.js';
+
+/* ---------------------------------------------- alignment (ADR-0021 §3) */
+
+/** How far a drawn feature may sit from where Truth says it sits, in baked
+ *  pixels. ADR-0021 clause 3: "Generalization removes, never moves" — a band
+ *  may drop a feature entirely, but one it draws stays put, within a pixel.
+ *  This is CONTEXT.md's "the Visual factory restyles, never repositions" as a
+ *  number a machine can check. */
+export const ALIGNMENT_BUDGET_PIXELS = 1;
+
+/** Bands clause 3 deliberately leaves unbudgeted. Departing from Truth is the
+ *  overview band's job — bold shapes, landmarks only — so a budget there would
+ *  forbid the generalization the band exists for. */
+const UNBUDGETED_BANDS = new Set(['overview']);
+
+/** A band's alignment budget, in ground metres. Infinity where clause 3
+ *  leaves the band unconstrained.
+ *
+ *  Ground metres rather than a count of this bake's pixels, and that swap is
+ *  the whole point of the clause. Under the retired px/cell spelling one
+ *  budget of "3 px" meant 1.21 m at kings-island and 0.52 m at big-kahunas:
+ *  the same rule was more than twice as strict at the small park, by accident
+ *  of a formula with a 2 m floor. Clause 2 fixes ground sample distance per band
+ *  instead, so a metre now means the same thing at every park — and the budget
+ *  is read off that same shared table rather than restating 0.15 here, because
+ *  a second copy of a number is a second number.
+ *
+ *  Throws `unknown band: <id>` on a band the table does not know. */
+export function alignmentBudgetMetres(bandId) {
+  const metresPerPixel = bandResolution(bandId);
+  return UNBUDGETED_BANDS.has(bandId) ? Infinity : ALIGNMENT_BUDGET_PIXELS * metresPerPixel;
+}
 
 /* ------------------------------------------------------------ color math */
 
@@ -397,8 +430,14 @@ export function visualLabelStringsRow(spec) {
  *
  * `pois` (truth places) powers `style_world_geo` on the flat tier — the
  * ADR-0016 geo-fidelity row for worlds placed image-on-truth-bounds.
- * `px` is the bake's pixels-per-cell, needed to convert the kit's stroke
- * displacement budget into cells.
+ * `px` is the bake's pixels-per-cell; with the model's `tileMetres` it gives
+ * the ground size of a baked pixel, which is what turns a measured departure
+ * from truth into ground metres.
+ *
+ * `band` is the zoom band this bake is (`overview` | `mid` | `close`), and it
+ * chooses the ADR-0021 clause 3 alignment budget the geo row asserts. A bake
+ * that is not band-addressed has no band budget to name and stays on the
+ * pre-ADR-0021 pixel budget, which the row says outright.
  *
  * `visual` is the venue × Skin spec (`<skin>.visual.json` body) — optional,
  * and when given it adds ADR-0021 clause 1's `style_no_label_strings` row
@@ -409,6 +448,7 @@ export function visualLabelStringsRow(spec) {
 export function certifyStyleContract({
   model, points, samples, rerunSamples = null, siblings = null, profile, kit,
   target = 'flat', skips = null, map = null, pois = null, px = 16, visual = null,
+  band = null,
 }) {
   const { groups, medians } = groupMedians(points, samples);
   const sig = signature(samples);
@@ -509,14 +549,50 @@ export function certifyStyleContract({
     const anchorTol = 0.05;
     const worstAnchor = errs.length ? Math.max(...errs) : 0;
     const amplitude = kit.strokes?.displacement?.amplitude ?? 0;
+
+    // ADR-0021 clause 3 asks this row a question in ground metres, so it
+    // needs the bake's ground scale. Every model carrying `bounds` came from
+    // bakeModel, which states `tileMetres` outright; without it the row
+    // cannot measure the thing it claims to bound, so it fails and says so
+    // rather than quietly reverting to the unit clause 3 retired.
+    const metresPerCell = model.tileMetres;
+    const scaled = Number.isFinite(metresPerCell) && metresPerCell > 0;
+    const metresPerBakePixel = scaled ? metresPerCell / px : null;
+    const budgetMetres = band != null
+      ? alignmentBudgetMetres(band)
+      : (scaled ? WORLD_DISPLACEMENT_BUDGET_PX * metresPerBakePixel : Infinity);
+    const budgetSource = band != null
+      ? `${band} band, ADR-0021 clause 3`
+      : `no band — ${WORLD_DISPLACEMENT_BUDGET_PX} px of this bake, pre-ADR-0021`;
+    const r3 = (v) => Math.round(v * 1000) / 1000;
+    // Metres to the millimetre: a realised band resolution sits up to half a
+    // coarsest cell off its nominal one (see packages/shared/zoomBands.js), so
+    // comparing raw floats would fail one venue and pass its neighbour over
+    // 70 µm of ground. A millimetre is 1/150th of a close-band pixel.
+    const mm = (v) => Math.round(v * 1000);
+    const say = (v) => (Number.isFinite(v) ? `${r3(v)} m` : 'unconstrained');
+    const anchorMetres = scaled ? worstAnchor * metresPerCell : null;
+    const displacementMetres = scaled ? amplitude * metresPerBakePixel : null;
+    const worstMetres = scaled ? Math.max(anchorMetres, displacementMetres) : null;
+    const budgetPhrase = !scaled
+      ? 'stays inside the ground-metre alignment budget its band sets'
+      : Number.isFinite(budgetMetres)
+        ? `stays inside the ${say(budgetMetres)} alignment budget (${budgetSource})`
+        : `is unbudgeted (${budgetSource}) — clause 3 leaves this band free to depart from truth`;
     checks.push(check({
       key: 'style_world_geo',
-      claim: `world anchors project onto truth through the pack bounds (≤ ${anchorTol} cells) and stroke displacement stays within ${WORLD_DISPLACEMENT_BUDGET_PX} px`,
-      pass: worstAnchor <= anchorTol && amplitude <= WORLD_DISPLACEMENT_BUDGET_PX,
-      evidence: `${errs.length} truth anchor(s) sampled, worst offset ${Math.round(worstAnchor * 1000) / 1000} cells; declared stroke displacement ${amplitude} px (budget ${WORLD_DISPLACEMENT_BUDGET_PX} px, ${Math.round((amplitude / px) * 1000) / 1000} cells)`,
+      claim: `world anchors project onto truth through the pack bounds (≤ ${anchorTol} cells), and every painted feature ${budgetPhrase}`,
+      pass: scaled && worstAnchor <= anchorTol && mm(worstMetres) <= mm(budgetMetres),
+      evidence: scaled
+        ? `${errs.length} truth anchor(s) sampled, worst offset ${r3(worstAnchor)} cells = ${say(anchorMetres)}`
+          + ` (projection tolerance ${anchorTol} cells); declared stroke displacement ${amplitude} px = ${say(displacementMetres)};`
+          + ` alignment budget ${say(budgetMetres)} from ${budgetSource},`
+          + ` at ${r3(metresPerCell)} m a cell and ${r3(metresPerBakePixel)} m a baked pixel`
+        : 'the model states no tileMetres, so departure from truth cannot be measured in ground metres'
+          + ' — ADR-0021 clause 3 budgets ground distance, not pixels of whatever this bake happens to be',
       confidence: 0.9,
-      falsifier: 'a model whose badge positions no longer derive from truth through its own bounds, or a kit displacing strokes past the budget',
-      soWhat: 'a world image that drifts from truth bounds moves every Place a guest stands next to',
+      falsifier: 'a model whose badge positions no longer derive from truth through its own bounds, or a band drawing a feature further from truth than its ground-metre budget allows',
+      soWhat: 'a world image that drifts from truth moves every Place a guest stands next to — at the close band a metre of drift is seven pixels of blue route crossing painted lawn',
     }));
   }
 

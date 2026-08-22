@@ -319,6 +319,96 @@ await check('bakeModel crops to the venue; the plan describes the uncropped Worl
   return true;
 });
 
+/* ------------------------------------------------------------------ *
+ * The clause-3 alignment budget, over a real venue.
+ *
+ * ADR-0021 clause 3 budgets how far a drawn feature may sit from Truth, and
+ * clause 2 is what makes that budget a ground distance: close 0.15 m, mid
+ * 0.6 m, overview unconstrained. The unit cases in
+ * test/builder/display-style.mjs drive the rule from a synthetic 12x12 world;
+ * these drive it from real OSM truth, the real plan, and the real projector,
+ * because the numbers that matter here are the ones a real bake produces.
+ *
+ * big-kahunas only. A band grid is the coarsest band's pixel grid, so every
+ * venue bakes 2.4 m cells whatever its size — and every venue but this one is
+ * a 646-to-797 column model that takes a minute and a half to build. The band
+ * does not change the model at all (same tileMetres, same cells, same badges);
+ * it changes `px`, and therefore what a pixel is worth on the ground. One
+ * model, certified three times, is exactly the comparison the clause is about.
+ * ------------------------------------------------------------------ */
+
+const { certifyStyleContract, alignmentBudgetMetres } = await import(
+  '../../packages/venue-builder/lib/display-style-contract.mjs'
+);
+const poisFor = (id) =>
+  JSON.parse(readFileSync(path.join(REPO, 'apps/party-tracker/public/venues', `${id}.pois.json`), 'utf8'));
+// The geo row reads model, pois, px and band; the colour rows need a profile
+// to exist but not to say anything, and no samples at all.
+const BARE_PROFILE = { version: 1, id: 'band-budget', kit: 'band-budget-kit', style: 'test', colorFamilies: {} };
+
+const REAL = (() => {
+  const map = mapFor('big-kahunas');
+  const pois = poisFor('big-kahunas');
+  const plans = bandPlansFor(map.meta);
+  const model = bakeModel(map, pois, { tileMetres: plans[0].tileMetres });
+  return { map, pois, plans, model };
+})();
+
+const realGeoRow = (plan, kit) => certifyStyleContract({
+  model: REAL.model,
+  points: [],
+  samples: [],
+  profile: BARE_PROFILE,
+  kit,
+  map: REAL.map,
+  pois: REAL.pois,
+  px: plan.px,
+  band: plan.bandId,
+}).checks.find((c) => c.key === 'style_world_geo');
+
+await check('one real model, three bands, three ground-metre budgets', () => {
+  // The model is band-independent: if this ever stops holding, the three rows
+  // below stop being a comparison of budgets and become a comparison of bakes.
+  assert.equal(new Set(REAL.plans.map((p) => p.tileMetres)).size, 1, 'one cell size across the bands');
+  assert.deepEqual(REAL.plans.map((p) => p.px), [1, 4, 16], 'pixels per cell, coarsest first');
+  assert.ok(REAL.model.badges.length > 0, 'the venue must contribute truth anchors to measure');
+  const plain = { id: 'band-budget-kit' }; // a kit that declares no stroke wobble
+  for (const plan of REAL.plans) {
+    const row = realGeoRow(plan, plain);
+    assert.ok(row, `${plan.bandId}: pois + bounds must produce the geo row`);
+    assert.equal(row.pass, true, `${plan.bandId}: ${row.evidence}`);
+    const budget = alignmentBudgetMetres(plan.bandId);
+    assert.match(
+      row.evidence,
+      Number.isFinite(budget)
+        ? new RegExp(`alignment budget ${String(budget).replace('.', '\\.')} m from ${plan.bandId} band`)
+        : new RegExp(`alignment budget unconstrained from ${plan.bandId} band`),
+      `${plan.bandId}: the row must quote its own band’s budget — ${row.evidence}`,
+    );
+  }
+  return true;
+});
+
+await check('a real 2 px kit clears the overview band and fails the two that are budgeted', () => {
+  // watercolor-quest is the one shipped kit that declares stroke displacement,
+  // and it declares 2 bake pixels. That was inside the pre-ADR-0021 budget of
+  // 3 px at any venue. Clause 3 allows one pixel of GROUND: 0.3 m of wobble
+  // against a 0.15 m close-band budget, 1.2 m against mid’s 0.6 m. The kit
+  // needs a band-aware amplitude before a banded bake of it can certify.
+  const kit = JSON.parse(readFileSync(
+    path.join(REPO, 'packages/venue-builder/data/display/kits/watercolor-quest.json'), 'utf8',
+  ));
+  assert.equal(kit.strokes.displacement.amplitude, 2, 'the shipped amplitude this case is about');
+  const [overview, mid, close] = REAL.plans.map((plan) => realGeoRow(plan, kit));
+  assert.equal(overview.pass, true, `overview is unbudgeted: ${overview.evidence}`);
+  assert.match(overview.evidence, /displacement 2 px = 4\.8 m/);
+  assert.equal(mid.pass, false, `2 px is 1.2 m at the mid band: ${mid.evidence}`);
+  assert.match(mid.evidence, /displacement 2 px = 1\.2 m/);
+  assert.equal(close.pass, false, `2 px is 0.3 m at the close band: ${close.evidence}`);
+  assert.match(close.evidence, /displacement 2 px = 0\.3 m/);
+  return true;
+});
+
 await check('--band and --max-cols are refused together, not silently resolved', () => {
   // Two ways to say the same thing, and one of them cannot always say what
   // the other can. Picking a winner would make the losing flag a lie.
