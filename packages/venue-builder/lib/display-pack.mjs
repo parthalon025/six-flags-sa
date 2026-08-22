@@ -566,6 +566,49 @@ export function parseCertFilename(id, f) {
   return m ? { kit: m[1], rotation: Number(m[2]) } : { kit: stem, rotation: null };
 }
 
+export function defaultBakeDir() {
+  return path.join(MONO_ROOT, 'artifacts', 'display-bake');
+}
+
+/** Flat (non-iso) bake certs on disk for one venue. Empty when none exist. */
+export function loadBakeCerts(id, bakeDir = defaultBakeDir()) {
+  const allCertFiles = (existsSync(bakeDir)
+    ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
+    : []).sort();
+  return allCertFiles
+    .map((f) => ({ f, ...parseCertFilename(id, f) }))
+    .filter(({ rotation }) => rotation === null)
+    .map(({ f, kit }) => ({
+      kit,
+      cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
+    }));
+}
+
+/** Pass `{ bake }` into the display stage only when certs are actually there. */
+export function bakeOptsForVenue(id, bakeDir = defaultBakeDir()) {
+  return loadBakeCerts(id, bakeDir).length ? { bake: { dir: bakeDir } } : {};
+}
+
+/**
+ * After an async mid-pyramid cut, rewrite the sealed pack contract so
+ * `band:mid` names the file that now exists instead of the pre-cut gap.
+ */
+export function applyMidPyramidToManifest(outDir, { primaryKit = null } = {}) {
+  const manifestFile = path.join(outDir, 'manifest.json');
+  const mid = pyramidFile(outDir, 'mid');
+  if (!existsSync(manifestFile) || !mid) return { updated: false };
+  const manifest = readJson(manifestFile, null);
+  if (!manifest?.tiers) return { updated: false };
+  manifest.tiers['band:mid'] = {
+    file: path.basename(mid),
+    bytes: statSync(mid).size,
+    band: 'mid',
+    kit: primaryKit,
+  };
+  writeJson(manifestFile, manifest, true);
+  return { updated: true };
+}
+
 export function foldBakeCerts(bakeCerts) {
   const rows = [];
   for (const { kit, cert } of bakeCerts) {
@@ -735,13 +778,7 @@ export function runDisplayStage(id, opts = {}) {
     const allCertFiles = (existsSync(bakeDir)
       ? readdirSync(bakeDir).filter((f) => f.startsWith(`${id}--`) && f.endsWith('.style-cert.json'))
       : []).sort();
-    bakeCerts = allCertFiles
-      .map((f) => ({ f, ...parseCertFilename(id, f) }))
-      .filter(({ rotation }) => rotation === null)
-      .map(({ f, kit }) => ({
-        kit,
-        cert: readJson(path.join(bakeDir, f), { checks: [], certified: false }),
-      }));
+    bakeCerts = loadBakeCerts(id, bakeDir);
     venueChecks.push(...foldBakeCerts(bakeCerts));
 
     // The iso sweep's one venue-level demand (issue #521): per-rotation

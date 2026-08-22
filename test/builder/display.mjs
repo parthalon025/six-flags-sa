@@ -898,7 +898,28 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
   assert.equal(pyramidGatePasses({ gap: true }), true);
   assert.equal(pyramidGatePasses({ ok: true }), true);
   assert.equal(pyramidGatePasses({ ok: false }), false);
-  const { pyramidBoundsFromCert } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+  const {
+    pyramidBoundsFromCert,
+    loadBakeCerts,
+    bakeOptsForVenue,
+    applyMidPyramidToManifest,
+    defaultBakeDir,
+  } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+  assert.deepEqual(bakeOptsForVenue('nobody-baked-this', bakeDir + '-empty'), {}, 'no certs → do not fold bake rows');
+  assert.equal(loadBakeCerts('test-park', bakeDir).length, 2, 'iso rotation certs stay out of the pack fold');
+  assert.deepEqual(bakeOptsForVenue('test-park', bakeDir), { bake: { dir: bakeDir } });
+  assert.match(defaultBakeDir(), /display-bake/);
+  const sealedDir = mkdtempSync(path.join(tmpdir(), 'sealed-'));
+  writeFileSync(path.join(sealedDir, 'manifest.json'), JSON.stringify({
+    version: 1,
+    tiers: { 'band:mid': { gap: true, reason: 'not cut' } },
+  }));
+  writeFileSync(path.join(sealedDir, 'mid.pmtiles'), 'tiles');
+  assert.equal(applyMidPyramidToManifest(sealedDir, { primaryKit: 'rpg-overworld' }).updated, true);
+  const sealed = JSON.parse(readFileSync(path.join(sealedDir, 'manifest.json'), 'utf8'));
+  assert.equal(sealed.tiers['band:mid'].gap, undefined);
+  assert.equal(sealed.tiers['band:mid'].kit, 'rpg-overworld');
+  assert.ok(sealed.tiers['band:mid'].bytes > 0);
   assert.throws(
     () => pyramidBoundsFromCert(null),
     /cert\.bounds/,
