@@ -6,11 +6,17 @@
  * the source tile, the capture date, a sha256 over the ingested bytes and a
  * licence class. Clause 2 restricts the sources to derivation-licensed ones
  * and rejects the Google, Bing and Esri basemaps outright — "viewable is not
- * derivable". This module owns three questions and nothing else:
+ * derivable". This module owns four questions and nothing else:
  *
  *   what a ledger row is          the required keys, and where the bytes are
  *   whether a row is admissible   rowProblems / verifyImageryLedger
  *   whether a claim is covered    claimCoverage
+ *   what a whole venue rests on   venueImageryCoverage
+ *
+ * The fourth is the composition of the third over a built bundle, and it is
+ * what certification asks (lib/venue-certify.mjs, gate `imagery_ledger`): a
+ * venue whose shipped geometry rests on a tile that fails clause 1 or 2 does
+ * not get a birth certificate.
  *
  * The grammar is the one this repo already pins assets with — a keyed JSON
  * ledger, a sha256 per row, a `problems` array where empty means green (see
@@ -223,4 +229,77 @@ export function claimCoverage(claim, ledger = readImageryLedger()) {
 
   const problems = rowProblems(row);
   return { ok: problems.length === 0, tile, row, problems };
+}
+
+/**
+ * `src.by` classes that mean "read off imagery this repo derived from".
+ *
+ * They are `evidence.mjs` WEIGHTS keys, not a new vocabulary: `aerial` is an
+ * orthophoto, `mapillary` is street-level. `traced` is deliberately absent —
+ * a guest map traced onto a georeferenced fit is evidence, but it is a
+ * schematic drawing, not imagery, and ADR-0020 clause 2's derivation wall has
+ * nothing to say about it. Reading `traced` here would drag every official-map
+ * trace in the fleet in front of a gate about orthophoto licensing.
+ */
+export const IMAGERY_EVIDENCE_CLASSES = ['aerial', 'mapillary'];
+
+const signedByImagery = (feature) =>
+  feature
+  && typeof feature === 'object'
+  && feature.src
+  && IMAGERY_EVIDENCE_CLASSES.includes(feature.src.by);
+
+/**
+ * Every feature in a built bundle whose coordinates were read off imagery.
+ *
+ * Read off the shipped bytes rather than off `sources.json` on purpose. A
+ * catalogue row says what a build *intended* to use; `lib/venue-imagery.mjs`
+ * refuses to fold in an unsigned coordinate, so the bundle says what it
+ * actually used. Deleting the catalogue row hides the frame from the credit
+ * line and from this gate's sibling checks — it does not hide it from here.
+ *
+ * @param {object} map `<id>.map.json` — layer arrays keyed by layer name
+ * @param {object[]} pois `<id>.pois.json`
+ */
+export function imagerySignedFeatures(map, pois = []) {
+  const out = [];
+  for (const layer of Object.values(map || {})) {
+    if (Array.isArray(layer)) out.push(...layer.filter(signedByImagery));
+  }
+  const places = Array.isArray(pois) ? pois : pois?.pois;
+  out.push(...(places || []).filter(signedByImagery));
+  return out;
+}
+
+/**
+ * How much of one venue's shipped imagery evidence stands on an admissible
+ * ledger row.
+ *
+ * Findings are per tile, not per feature: three paths traced off one
+ * unadjudicated orthophoto are one question for a human, and repeating it
+ * three times in a certification row buries it. `features` still counts them
+ * all, because how much of a venue rests on that one question is exactly what
+ * a reader needs to know.
+ *
+ * @returns {{features: number, tiles: string[], covered: number, problems: string[]}}
+ */
+export function venueImageryCoverage({ map, pois = [], ledger } = {}) {
+  const features = imagerySignedFeatures(map, pois);
+  if (!features.length) return { features: 0, tiles: [], covered: 0, problems: [] };
+
+  const rows = ledger === undefined ? readImageryLedger() : ledger;
+  const byTile = new Map();
+  for (const feature of features) {
+    const cover = claimCoverage(feature, rows);
+    const tile = cover.tile ?? '(unsigned)';
+    if (!byTile.has(tile)) byTile.set(tile, cover);
+  }
+
+  const problems = [];
+  let covered = 0;
+  for (const cover of byTile.values()) {
+    if (cover.ok) covered += 1;
+    else problems.push(...cover.problems);
+  }
+  return { features: features.length, tiles: [...byTile.keys()].sort(), covered, problems };
 }

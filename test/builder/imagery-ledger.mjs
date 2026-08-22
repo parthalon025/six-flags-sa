@@ -46,7 +46,11 @@ const {
   verifyImageryBytes,
   tileIdFor,
   claimCoverage,
+  IMAGERY_EVIDENCE_CLASSES,
+  imagerySignedFeatures,
+  venueImageryCoverage,
 } = await import('../../packages/venue-builder/lib/imagery-ledger.mjs');
+const { WEIGHTS } = await import('../../packages/venue-builder/lib/evidence.mjs');
 
 /**
  * Known-answer fixtures. `TILE_BYTES` is 28 bytes of ASCII; `TILE_SHA` is
@@ -242,6 +246,154 @@ await check('every shipped big-kahunas imagery feature joins to that same tile',
     assert.equal(cover.ok, false, `${feature.properties.n} is not covered while that row is inadmissible`);
     assert.match(joined(cover.problems), /Esri World Imagery/);
   }
+  return true;
+});
+
+// ------------------------------------------ the bundle, and the gate over it
+
+/**
+ * A bundle in the shape venue-certify holds one: `<id>.map.json` is layer
+ * arrays keyed by layer name, `<id>.pois.json` is a flat array of places.
+ */
+const bundle = () => ({
+  map: {
+    meta: { name: 'test' },
+    path: [
+      { n: 'osm footway', r: [[0, 0], [1, 1]] },
+      { n: 'ortho deck', r: [[0, 0], [1, 1]], src: { by: 'aerial', source: 'naip-fixture-2023' } },
+      { n: 'ortho bridge', r: [[0, 0], [1, 1]], src: { by: 'aerial', source: 'naip-fixture-2023' } },
+      { n: 'guest-map walk', r: [[0, 0], [1, 1]], src: { by: 'traced', source: 'park-map-2026' } },
+    ],
+    boundary: [[0, 0], [1, 1]],
+  },
+  pois: [
+    { n: 'Slide', c: 'ride', lat: 1, lng: 2, src: { by: 'aerial', source: 'naip-fixture-2023' } },
+    { n: 'Cafe', c: 'food', lat: 1, lng: 2 },
+  ],
+});
+
+await check('only imagery-signed geometry is imagery evidence', () => {
+  assert.ok(
+    IMAGERY_EVIDENCE_CLASSES.every((c) => c in WEIGHTS),
+    'imagery classes must be evidence.mjs WEIGHTS keys, not a parallel vocabulary: '
+      + IMAGERY_EVIDENCE_CLASSES.filter((c) => !(c in WEIGHTS)).join(', '),
+  );
+  const { map, pois } = bundle();
+  const found = imagerySignedFeatures(map, pois);
+  assert.ok(!found.some((f) => f.n === 'osm footway'), 'unsigned OSM geometry claims nothing');
+  assert.ok(
+    !found.some((f) => f.src?.by === 'traced'),
+    'a guest map traced onto a fit is evidence, but it is not imagery this repo derived from',
+  );
+  assert.equal(found.length, 3, `two paths and one place, got ${found.map((f) => f.n).join(', ')}`);
+  return true;
+});
+
+await check('a bundle that derives nothing from imagery reports no features', () => {
+  const cover = venueImageryCoverage({
+    map: { path: [{ n: 'osm footway', r: [[0, 0]] }], boundary: [[0, 0]] },
+    pois: [{ n: 'Cafe', c: 'food', lat: 1, lng: 2 }],
+    ledger: {},
+  });
+  assert.deepEqual(cover, { features: 0, tiles: [], covered: 0, problems: [] });
+  return true;
+});
+
+await check('shipped geometry resting on an admissible tile is covered', () => {
+  const { map, pois } = bundle();
+  const cover = venueImageryCoverage({ map, pois, ledger: { 'naip-fixture-2023': goodRow() } });
+  assert.equal(cover.features, 3, 'every signed feature is counted, not just the distinct tiles');
+  assert.deepEqual(cover.tiles, ['naip-fixture-2023'], 'three features, one tile');
+  assert.equal(cover.covered, 1);
+  assert.deepEqual(cover.problems, []);
+  return true;
+});
+
+await check('shipped geometry resting on an inadmissible tile is not covered', () => {
+  const { map, pois } = bundle();
+  const cover = venueImageryCoverage({
+    map,
+    pois,
+    ledger: { 'naip-fixture-2023': goodRow({ served_via: 'Esri World Imagery' }) },
+  });
+  assert.equal(cover.covered, 0);
+  assert.match(joined(cover.problems), /naip-fixture-2023/);
+  assert.match(joined(cover.problems), /Esri World Imagery/);
+  assert.equal(
+    cover.problems.length,
+    1,
+    `one bad tile is one finding however many features rest on it, got: ${joined(cover.problems)}`,
+  );
+  return true;
+});
+
+await check('shipped geometry resting on a tile with no row at all is not covered', () => {
+  const { map, pois } = bundle();
+  const cover = venueImageryCoverage({ map, pois, ledger: {} });
+  assert.equal(cover.covered, 0);
+  assert.deepEqual(cover.tiles, ['naip-fixture-2023']);
+  assert.match(joined(cover.problems), /not in the imagery ledger/);
+  return true;
+});
+
+await check('imagery-signed geometry that names no tile counts against coverage', () => {
+  // A feature can claim `by: aerial` and name nothing to join to. It has no
+  // tile id, so it is bucketed under the literal key "(unsigned)" — which is
+  // deliberately not a well-formed tile id, and must still reach the reader as
+  // an uncovered slot in the denominator rather than being silently dropped.
+  const cover = venueImageryCoverage({
+    map: { path: [{ n: 'ortho deck', r: [[0, 0], [1, 1]], src: { by: 'aerial' } }] },
+    pois: [],
+    ledger: { 'naip-fixture-2023': goodRow() },
+  });
+  assert.equal(cover.features, 1, 'a claim with no tile is still imagery evidence');
+  assert.deepEqual(cover.tiles, ['(unsigned)'], 'the untraceable claim gets its own bucket');
+  assert.equal(cover.covered, 0, 'nothing with no tile can be covered');
+  assert.match(joined(cover.problems), /ortho deck: claim names no imagery tile/);
+  return true;
+});
+
+// ---------------------------------------------- the gate, inside certification
+
+const { certifyVenue } = await import('../../packages/venue-builder/lib/venue-certify.mjs');
+
+await check("big-kahunas' shipped bundle still carries the aerial signature", () => {
+  // The gate reads the built bundle, not sources.json. This asserts the thing
+  // it reads actually exists, so a later failure means the gate broke rather
+  // than the fixture quietly losing its provenance.
+  const map = JSON.parse(
+    readFileSync(new URL('../../apps/party-tracker/public/venues/big-kahunas.map.json', import.meta.url), 'utf8'),
+  );
+  const signed = map.path.filter((p) => p.src?.by === 'aerial');
+  assert.equal(signed.length, 3);
+  assert.ok(signed.every((p) => p.src.source === 'okaloosa-ortho-2025'));
+  return true;
+});
+
+await check('big-kahunas cannot certify while its imagery tile is unadjudicated', () => {
+  const doc = certifyVenue('big-kahunas', { write: false });
+  const gate = doc.checks.find((c) => c.key === 'imagery_ledger');
+  assert.ok(gate, `certification carries no imagery gate: ${doc.checks.map((c) => c.key).join(', ')}`);
+  assert.equal(gate.pass, false, gate.evidence.detail);
+  assert.match(gate.evidence.detail, /okaloosa-ortho-2025/);
+  assert.match(gate.evidence.detail, /Esri World Imagery/);
+  assert.equal(gate.evidence.denominator, 1, 'one tile the shipped bundle rests on');
+  assert.equal(gate.evidence.numerator, 0, 'and none of it is covered');
+  assert.ok(gate.claim && gate.falsifier && gate.soWhat, 'certification rows carry the full contract');
+  assert.equal(doc.certified, false, 'imagery with no defensible provenance must block the birth certificate');
+  return true;
+});
+
+await check('a venue that derives nothing from imagery gets no imagery gate at all', () => {
+  // Deliberately not a snapshot of kings-island's whole check list: this lane
+  // owns one key, and pinning the other gates here would fail this test for
+  // whatever unrelated lane next touches one of them.
+  const doc = certifyVenue('kings-island', { write: false });
+  assert.ok(doc.checks.length > 0, 'the venue is still certified against its other gates');
+  assert.ok(
+    !doc.checks.some((c) => c.key === 'imagery_ledger'),
+    'kings-island traces nothing off imagery — an empty gate would be paperwork',
+  );
   return true;
 });
 
