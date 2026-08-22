@@ -24,7 +24,7 @@ import { pitchEaseRange } from '@party-tracker/shared/mapCamera.js';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
 import { previewWorldPaths, PREVIEW_VENUE } from '@/lib/bandedWorldPreview';
-import { createBandViewport } from '@/lib/bandViewport';
+import { createBandViewport, requestStreamedBands } from '@/lib/bandViewport';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 let protocolRegistered = false;
@@ -132,11 +132,20 @@ export default function BandedWorldMap({ skin, onReady = null }) {
         camera: { center: { lng: (west + east) / 2, lat: latitude }, zoom: 14 },
       });
 
+      const pull = (ids) => requestStreamedBands({
+        request: ids,
+        world,
+        received: (id) => viewport.received(id),
+      });
       viewport = createBandViewport({
         world,
         getCamera: () => view.state().camera,
         onHeldChange: (ids) => view.setAvailableBands(ids),
+        onRequestChange: pull,
       });
+      // createBandViewport ticks before this assignment lands; replay so the
+      // first request can actually call received().
+      pull(viewport.tick().request);
 
       report();
       onReady?.(view);

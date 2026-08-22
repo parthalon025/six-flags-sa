@@ -182,7 +182,7 @@ assert.throws(() => plan(17, ['mid', 'closeup']), /unknown band/i);
 // A latitude that is not a number must not reach a live map.setPitch().
 assert.throws(() => bandDrawPlan(17, { latitude: 'north', available: ['mid'] }), /latitude/i);
 
-const { bandsForViewport } = await import('../../apps/party-tracker/lib/bandViewport.js');
+const { bandsForViewport, createBandViewport, requestStreamedBands } = await import('../../apps/party-tracker/lib/bandViewport.js');
 assert.deepEqual(
   bandsForViewport({ zoom: 14, latitude: 0 }),
   { hold: ['mid'], request: ['overview', 'mid'] },
@@ -208,5 +208,32 @@ assert.deepEqual(
   { hold: ['mid'], request: ['overview', 'mid'] },
   'mid-band zoom still requests the parent overview without pretending to hold it',
 );
+assert.deepEqual(
+  bandsForViewport({ zoom: 14, latitude: 0, streamedBands: ['close'] }),
+  { hold: ['mid'], request: ['overview', 'mid'] },
+  'a streamed close band is not held at an overview zoom — hold is packed ∪ (streamed ∩ request)',
+);
+
+const held = [];
+const requested = [];
+const vp = createBandViewport({
+  world: { bounds: { south: 0, north: 0 } },
+  getCamera: () => ({ zoom: 18 }),
+  onHeldChange: (ids) => held.push(ids.join(',')),
+  onRequestChange: (ids) => requested.push(ids.join(',')),
+});
+assert.deepEqual(vp.tick(), { hold: ['mid'], request: ['mid', 'close'] });
+assert.ok(requested.includes('mid,close'), 'onRequestChange names the fetch, not the hold');
+assert.deepEqual(vp.received('close').hold, ['mid', 'close']);
+assert.ok(held.includes('mid,close'), 'received() is the only path a streamed band enters hold');
+
+const arrived = [];
+await requestStreamedBands({
+  request: ['overview', 'mid', 'close'],
+  world: { bands: { close: { pmtiles: 'https://example.test/close.pmtiles' }, mid: { image: 'mid.png' } } },
+  received: (id) => arrived.push(id),
+  fetchFn: async (url) => ({ ok: url.endsWith('close.pmtiles') }),
+});
+assert.deepEqual(arrived, ['close'], 'HEAD-ok on a requested pmtiles URL is what marks arrival');
 
 console.log('band-plan: ok');

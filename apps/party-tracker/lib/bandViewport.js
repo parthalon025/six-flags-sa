@@ -96,3 +96,28 @@ export function createBandViewport({
   tick();
   return { tick, received, latitude };
 }
+
+/**
+ * Fetch streamed band archives the viewport asked for. `received` is the
+ * only way those bytes enter hold — HEAD-ok is enough to mark arrival.
+ */
+export function requestStreamedBands({
+  request = [],
+  world,
+  received,
+  fetchFn = globalThis.fetch,
+} = {}) {
+  const jobs = [];
+  for (const id of request) {
+    const url = world?.bands?.[id]?.pmtiles;
+    if (!url || typeof received !== 'function') continue;
+    jobs.push(
+      Promise.resolve(fetchFn(url, { method: 'HEAD' }))
+        .then((res) => {
+          if (res?.ok) received(id);
+        })
+        .catch(() => {}),
+    );
+  }
+  return Promise.all(jobs);
+}
