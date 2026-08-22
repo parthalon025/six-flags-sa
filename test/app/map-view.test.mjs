@@ -27,7 +27,6 @@ import {
 import {
   OVERLAY_SOURCES,
   bandedWorldStyle,
-  overlaySource,
   worldLayer,
   worldSource,
 } from '../../apps/party-tracker/lib/mapViewStyle.js';
@@ -665,7 +664,6 @@ const BANDED_WORLD = {
   // arriving is a setData rather than a restyle.
   for (const name of OVERLAY_LAYERS) {
     const id = OVERLAY_SOURCES[name];
-    assert.equal(id, overlaySource(name));
     assert.equal(style.sources[id].type, 'geojson', `${id} is a geojson source`);
     assert.deepEqual(style.sources[id].data.features, [], `${id} starts empty`);
     assert.ok(
