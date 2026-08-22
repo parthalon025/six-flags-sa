@@ -348,6 +348,63 @@ assert.throws(
   );
 }
 
+// Parsing is not enough: `${slice.id}` inside a module-scope const parses fine
+// and throws "slice is not defined" the moment the workflow runs. That is
+// exactly what happened, one command after the parse guard above went green.
+// So run each workflow for real against stubbed primitives and collect the
+// prompts it would send. This is the guard that sees a prompt actually build.
+const promptsFrom = async (wf, workflowArgs) => {
+  const AsyncFn = Object.getPrototypeOf(async function () {}).constructor;
+  const src = readFileSync(path.join(REPO, '.claude/workflows', wf), 'utf8')
+    .replace(/^export const meta/m, 'const meta');
+  const prompts = [];
+  const agent = async (prompt, opts) => {
+    prompts.push(prompt);
+    // Shaped loosely enough for any stage that reads the previous result.
+    return { sliceId: 'h1', status: 'built', committed: true, worktree: '/tmp/x', findings: [] };
+  };
+  const pipeline = async (items, ...stages) => {
+    const out = [];
+    for (const [i, item] of items.entries()) {
+      let acc = item;
+      for (const stage of stages) acc = await stage(acc, item, i);
+      out.push(acc);
+    }
+    return out;
+  };
+  const parallel = async (thunks) => Promise.all(thunks.map((t) => t()));
+  const body = new AsyncFn('args', 'log', 'agent', 'pipeline', 'parallel', 'budget', 'workflow', src);
+  await body(workflowArgs, () => {}, agent, pipeline, parallel, { total: null }, async () => {});
+  return prompts;
+};
+
+{
+  const slice = { id: 'h1', train: 'H', size: 'S', title: 'a slice', needs: ['h0'] };
+  const built = await promptsFrom('train-slices.mjs', { base: 'some-branch', next: [slice] });
+  assert.ok(built.length >= 1, 'train-slices.mjs sent no prompt for a startable slice');
+  const joined = built.join('\n');
+  assert.ok(joined.includes('h1'), 'a lane prompt must name the slice it is building');
+  assert.match(
+    joined,
+    /checkout -[Bb] \S*h1/,
+    'the branch a lane is told to create must carry the slice id once interpolated — '
+      + 'asserting the template text says ${slice.id} does not prove it is in scope',
+  );
+  assert.ok(joined.includes('some-branch'), 'the base branch must reach the prompt');
+  assert.ok(joined.includes('h0'), "the slice's NEEDS must reach the prompt so the lane can check its base");
+
+  const verified = await promptsFrom('train-verify.mjs', {
+    base: 'some-branch',
+    slices: [{ id: 'h1', title: 'a slice', root: '/tmp/wt' }],
+  });
+  assert.ok(verified.join('\n').includes('/tmp/wt'), 'train-verify.mjs must send the worktree root');
+
+  const fixed = await promptsFrom('train-fix.mjs', {
+    slices: [{ id: 'h1', root: '/tmp/wt', fixes: ['a finding to fix'] }],
+  });
+  assert.ok(fixed.join('\n').includes('a finding to fix'), 'train-fix.mjs must send the findings');
+}
+
 // A fan-out lane must branch under a name carrying its own slice id. Worktrees
 // in one repository share branch refs, so two lanes told to use the same name
 // share one pointer: each commits onto whatever the other last did, and each

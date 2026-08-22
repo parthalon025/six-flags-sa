@@ -38,7 +38,7 @@ const VACUOUS = 'a mutation applied to a frozen object, a diff over an empty com
   + 'a comparison against a value the test itself computed, or a condition that holds '
   + 'however the source behaves';
 
-const RULES = `
+const rulesFor = (slice) => `
 Repo rules that are not optional here:
 - You are ALREADY in your own isolated git worktree. Do not create another one.
 - Your worktree may have been cut from main. The work these slices build on is
@@ -135,7 +135,7 @@ Read these first, in this order, and let them tell you what the slice means:
      true HONESTLY: satisfy what it is checking for, never the literal string.
      Writing the probe's needle into a comment to make it pass is fraud, and the
      verifier that reads your diff next is looking for exactly that.
-${RULES}
+${rulesFor(slice)}
 Report against the schema. Set redVerified true only if you actually watched
 each new assertion fail first. A false there is fine and useful; a wrong true
 poisons everything downstream.`,
