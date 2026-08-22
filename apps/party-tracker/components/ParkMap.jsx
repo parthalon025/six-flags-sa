@@ -18,7 +18,8 @@
  *   failure ADR-0021 clause 3 is written against.
  *
  *   Props into a camera — Follow, focus, route framing, Go's walking zoom and
- *   course-up lift become one `{center, zoom, fit, bearing, lift}` request.
+ *   course-up lift become one `{center, resolution, fit, bearing, lift}`
+ *   request.
  *   Pitch is deliberately not in that list: ADR-0019 clause 2 derives it from
  *   zoom and ADR-0021 clause 4 stages the ease clear of every band handoff, so
  *   it is the seam's to work out, never a caller's to set.
@@ -56,7 +57,7 @@
  * React). The perf HUD (`onMapStats`) reports from the SVG path only.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import MapLegend from './MapLegend';
 import ParkMapSvg from './ParkMapSvg';
@@ -85,7 +86,7 @@ function useRenderer() {
   return renderer;
 }
 
-export default function ParkMap(props) {
+function ParkMap(props) {
   const renderer = useRenderer();
   const {
     data,
@@ -223,3 +224,8 @@ export default function ParkMap(props) {
     </ParkMapGl>
   );
 }
+
+/* The same memo boundary this file has always had. Whichever renderer draws,
+   the map re-renders only when a prop actually changed — page.js re-renders on
+   every fix, every roster message and every sheet drag. */
+export default memo(ParkMap);
