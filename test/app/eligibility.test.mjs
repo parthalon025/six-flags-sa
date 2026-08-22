@@ -15,6 +15,8 @@ process.emitWarning = (warning, ...rest) => {
 };
 
 const { fold, fromFacts, peopleFor } = await import('../../apps/party-tracker/lib/eligibility.js');
+const { applyContribution, contributionFromGapSubmit, emptyOverlay, applyOverlayToPlaces } =
+  await import('../../apps/party-tracker/lib/overlay.js');
 
 const PASS = [];
 const FAIL = [];
@@ -152,6 +154,89 @@ check('fromFacts wraps peopleFor + fold for solo facts', () => {
   const view = fromFacts({ solo: { height: 40 } }, [ride({ min: 48 })]);
   assert.equal(view.at('r1').kind, 'not');
   assert.equal(peopleFor({ solo: { height: 40 } }).length, 1);
+});
+
+console.log('\n--- eligibility over painted Overlay ---');
+
+/* The shape Eligibility folds over in the app is not the shipped rule — it is
+ * whatever `applyOverlayToPlaces` painted. Build these places by running the
+ * real Overlay path (Contribution → drawn fact → painted Place), never by
+ * hand: a hand-written post-Overlay rule is a guess about the seam, and the
+ * guess is exactly what let a Contribution erase the ride-alone line. */
+const painted = (h, payload, { c = 'coaster' } = {}) => {
+  const overlay = applyContribution(
+    emptyOverlay(),
+    contributionFromGapSubmit({
+      id: 'c1',
+      type: 'height',
+      placeId: 'r1',
+      authorId: 'dad',
+      authorName: 'Dad',
+      payload,
+      now: 1000,
+    }),
+  );
+  return applyOverlayToPlaces([ride(h, c)], overlay).places;
+};
+
+check('a height Contribution keeps the ride-alone line — Companion survives', () => {
+  const places = painted({ min: 42, alone: 48 }, { heightIn: 42 });
+  const view = fold([person(44)], places);
+  const cell = view.at('r1');
+  assert.equal(cell.kind, 'companion');
+  assert.equal(cell.blocks, false);
+});
+
+check('the Contribution still updates the minimum it actually learned', () => {
+  const places = painted({ min: 42, alone: 48 }, { heightIn: 44 });
+  assert.equal(places[0].h.min, 44);
+  assert.equal(fold([person(43)], places).at('r1').kind, 'not');
+});
+
+check('"no minimum" clears only the minimum — the ride-alone line stands', () => {
+  const places = painted({ min: 42, alone: 48 }, { heightIn: 0 });
+  assert.equal(places[0].h.min, 'none');
+  assert.equal(fold([person(40)], places).at('r1').kind, 'companion');
+});
+
+check('a height Contribution keeps max and advisory', () => {
+  const places = painted({ min: 36, max: 76, advisory: 70 }, { heightIn: 40 });
+  assert.equal(fold([person(80)], places).at('r1').kind, 'not');
+  assert.equal(fold([person(74)], places).at('r1').kind, 'advisory');
+});
+
+check('a height payload with no inches leaves the shipped rule untouched', () => {
+  const places = painted({ min: 42, alone: 48 }, { note: 'sign was covered' });
+  assert.deepEqual(places[0].h, { min: 42, alone: 48 });
+  assert.equal(places[0].overlay, undefined);
+  assert.equal(fold([person(44)], places).at('r1').kind, 'companion');
+});
+
+check('a null height answer is absent, not "no minimum" — the shipped rule stands', () => {
+  const places = painted({ min: 42, alone: 48 }, { heightIn: null });
+  assert.equal(places[0].h.min, 42);
+  assert.equal(fold([person(40)], places).at('r1').kind, 'not');
+});
+
+check('fromFacts over painted Places: a Party child still needs an adult along', () => {
+  const places = painted({ min: 42, alone: 48 }, { heightIn: 42 });
+  const facts = {
+    party: {
+      selfId: 'mom',
+      members: [
+        { id: 'mom', name: 'Mom', height: 66 },
+        { id: 'kid', name: 'Kid', height: 44 },
+      ],
+    },
+  };
+  const view = fromFacts(facts, places);
+  assert.equal(view.at('r1').kind, 'companion');
+  const rows = view.explain('r1');
+  assert.equal(rows[0].name, 'Kid');
+  assert.ok(
+    rows[0].reasons.some((r) => r.includes('adult')),
+    'expected the Companion reason to name an adult riding along',
+  );
 });
 
 if (FAIL.length) {

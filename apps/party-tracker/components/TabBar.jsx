@@ -39,7 +39,7 @@ export default function TabBar({ tabs, active, onSelect }) {
               {t.initials ? (
                 <span className="tabAvatar">{t.initials}</span>
               ) : (
-                <Icon name={t.icon} size={26} />
+                <Icon name={t.icon} size={23} />
               )}
               {t.badge != null && (
                 <span className={`tabBadge ${t.alert ? 'alert' : ''}`} aria-hidden="true">
