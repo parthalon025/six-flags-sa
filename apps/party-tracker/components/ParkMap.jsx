@@ -55,6 +55,16 @@
  * labels along their district, the scale bar, and a Skin's Custom map layer
  * (which ADR-0013 compiles into the display pack rather than drawing in
  * React). The perf HUD (`onMapStats`) reports from the SVG path only.
+ *
+ * And the baked bands themselves. `worldFor()` answers `{id, bounds,
+ * geometry}` with no `bands` key, because nothing in the app has a display
+ * pack to hand it — `components/BandedWorldMap.jsx`, the #527 dev spike, is
+ * the only place a `bands` map is built at all. So `bandedWorldStyle` makes
+ * zero `band-*` layers here and the ported path ships the vector tier alone:
+ * ADR-0019's never-fails fallback, drawing on its own rather than standing in
+ * for art that has not arrived. Wiring a World's display pack into `worldFor`
+ * is the slice that turns the band machinery on; until then every band test in
+ * `test/app/map-view.test.mjs` drives a World the shipped map never builds.
  */
 
 import { memo, useEffect, useMemo, useState } from 'react';
@@ -90,7 +100,6 @@ function ParkMap(props) {
   const renderer = useRenderer();
   const {
     data,
-    center,
     pois,
     me,
     members,
@@ -156,7 +165,10 @@ function ParkMap(props) {
   }, [renderer, members, me, puck, route, routeProgress, marks, shownPois, meet, spot, car, overlayPins]);
 
   /* One camera request, from every prop that has an opinion about where the
-     camera should be. */
+     camera should be. The `center` prop is not one of them: it is where the
+     map opens, which `ParkMapGl` does from the World's own bounds at mount.
+     Feeding it in here would re-centre the park on every fix — `anchor` is a
+     fresh object each time one lands — and undo the guest's pan. */
   const anchor = puck ?? me ?? null;
   const fit = useMemo(() => (fitKey ? boundsOfPoints(fitPoints) : null), [fitKey, fitPoints]);
   const camera = useMemo(
@@ -164,13 +176,12 @@ function ParkMap(props) {
       follow,
       anchor,
       focusPoint,
-      center,
       fit,
       scale: navZoom,
       bearing: rotation,
       lift: liftCentre,
     }),
-    [follow, anchor, focusPoint, center, fit, navZoom, rotation, liftCentre],
+    [follow, anchor, focusPoint, fit, navZoom, rotation, liftCentre],
   );
 
   // The escape hatch. Also the answer when a World has arrived without the

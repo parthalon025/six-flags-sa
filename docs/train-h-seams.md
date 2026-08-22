@@ -162,6 +162,17 @@ to make that possible, and each is worth naming because each removed a duplicate
   of ground, and where the centre goes so the puck sits low during Go. Pure, so the two answers the
   SVG renderer worked out inline are now testable without a browser.
 
+**A day/night toggle rebuilds the GL context, and h15 should price that.**
+`ParkMapGl.jsx`'s mount effect is keyed `[world?.id, skin, laidOut]`, and `skin` is the Skin the
+caller passes (`theme ?? null`). MapLibre takes its style at construction, so keying the mount on
+the Skin is the honest way to restyle without a style-diff — but it means switching Skin destroys
+the WebGL context and builds a new one, where the SVG renderer simply repainted in place. Nobody
+has measured what that costs on a mid-range phone, and it is the one place the port is
+*structurally* slower than what it replaces rather than differently fast. Slice h15's perf rows
+should be written knowing it: either they measure a Skin switch as its own row, or they say
+explicitly that they do not. The fix, if the number is bad, is a `setPaintProperty` pass over the
+live style instead of a remount — which is a change behind this seam and not a change to it.
+
 **The SVG adapter is still the shipped one**, through `parkMapRenderer()` — the escape hatch this
 note has always named. Two things hold it open and neither is h11's to close: the gate is slice
 h15's perf rows, which wait on an owner decision (ADR-0021 Open, "The perf gate rows"), and the

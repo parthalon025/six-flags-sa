@@ -166,12 +166,21 @@ assert.ok(
   `2.4 m/px is reached near z14.99, got ${zoomForResolution(2.4, { latitude: 0 })}`,
 );
 
-// And the two are one conversion, not two: the boundaries the camera stages
-// against are exactly the zooms at which each band's resolution is reached.
-assert.deepEqual(
-  bandBoundaryZooms({ latitude: 39.3422 }),
-  BANDS.slice(0, -1).map((b) => zoomForResolution(b.metresPerPixel, { latitude: 39.3422 })),
-  'a band boundary is the zoom that band s resolution is reached at',
+// The same boundaries at a park's own latitude, derived here rather than by
+// re-running the module: the equator is 40,075,016.686 m, a Mercator pixel at
+// kings-island's 39.3422deg covers cos(39.3422) = 0.7733735 of that, and the
+// world is 512 * 2^z pixels around, so overview's 2.4 m/px is reached at
+// log2(40075016.686 * 0.7733735 / (512 * 2.4)) = 14.62. Mid's 0.6 m/px is a
+// quarter of the ground, which is two doublings, so exactly two zooms closer.
+const kingsIsland = bandBoundaryZooms({ latitude: 39.3422 });
+assert.equal(kingsIsland.length, 2, 'three bands, two handoffs');
+assert.ok(
+  Math.abs(kingsIsland[0] - 14.62) < 0.01,
+  `overview->mid at kings-island near z14.62, got ${kingsIsland[0]}`,
+);
+assert.ok(
+  Math.abs(kingsIsland[1] - 16.62) < 0.01,
+  `mid->close at kings-island near z16.62, got ${kingsIsland[1]}`,
 );
 
 // Latitude is held to the same rules as everywhere else in this table.

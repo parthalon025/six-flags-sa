@@ -124,9 +124,13 @@ assert.throws(() => frameBounds({ west: 0, east: 1, south: 0 }, { width: 512, he
 
   const south = offsetCentre(centre, { metres: 111319.49079327358, bearing: 180 });
   assert.ok(Math.abs(south.lat - 38.3422) < 1e-9, 'bearing 180 goes south, not north');
-
-  assert.deepEqual(offsetCentre(centre, { metres: 0, bearing: 45 }), centre, 'nowhere is where it was');
 }
+
+/* No assertion for `metres: 0`. The early return for it is a fast path and
+   nothing more — the general path multiplies the same zero through and answers
+   the identical pair — so any test of it passes whether the branch is there or
+   not. A mutation sweep found exactly that, and an assertion that cannot fail
+   is worse than none: it reads as cover. */
 
 assert.throws(() => offsetCentre({ lng: 0, lat: 0 }, { metres: Number.NaN, bearing: 0 }), /metres/i);
 assert.throws(() => offsetCentre({ lng: 0, lat: 0 }, { metres: 10, bearing: '90' }), /bearing/i);

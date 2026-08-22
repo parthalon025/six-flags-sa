@@ -131,7 +131,6 @@ export function overlayModel(
  * @param {{lat, lng}|null} [intent.anchor] where this phone is
  * @param {{lat, lng}|null} [intent.focusPoint] a Place, a Member, the Rally
  *   Point — something the guest asked to look at
- * @param {{lat, lng}|null} [intent.center] the World's own centre
  * @param {{west, south, east, north}|null} [intent.fit] a box to frame
  * @param {number|null} [intent.scale] the SVG renderer's pixels-per-metre
  * @param {number} [intent.bearing]
@@ -142,7 +141,6 @@ export function cameraRequest({
   follow = false,
   anchor = null,
   focusPoint = null,
-  center = null,
   fit = null,
   scale = null,
   bearing = 0,
@@ -159,9 +157,17 @@ export function cameraRequest({
   /* Framing a route is a statement about the whole route rather than about one
      point of it, so a fit clears both the centre and the closeness rather than
      racing them. Two effects fighting over the camera is what made the SVG
-     renderer's preview snap back mid-pan. */
+     renderer's preview snap back mid-pan.
+
+     And nothing stands behind a target as a fallback — the World's own centre
+     least of all. That is where a map *opens*, which `ParkMapGl` does by
+     framing the truth bounds at mount; re-asserted here it would be re-asserted
+     on every GPS fix, because the anchor this is rebuilt from is a fresh object
+     each time one lands. With Follow off that undid a guest's pan within
+     seconds, and with nothing chased there is no ease either, so it arrived as
+     a jump. Nobody asking for anything has to mean nobody moves the camera. */
   return {
-    center: fit ? null : (target ?? at(center)),
+    center: fit ? null : target,
     // Ground metres per pixel. The SVG renderer counted pixels per metre;
     // MapLibre's zoom means different ground at different latitudes, and
     // "walking zoom" is a statement about ground. Converted, not re-chosen, so

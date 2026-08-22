@@ -26,6 +26,7 @@ import {
 } from '../../apps/party-tracker/lib/parkMapView.js';
 import {
   OVERLAY_SOURCES,
+  PLACES_LAYER,
   bandedWorldStyle,
   worldLayer,
   worldSource,
@@ -462,6 +463,36 @@ const OVERLAY = overlayGeoJson(
     'a route vertex is held to the same rule as a dot',
   );
 
+  /* Only a Point or a LineString crosses. A Polygon is not a thing the Overlay
+     draws — Members, Marks, pins and Places are dots and a route is a line —
+     and a geometry whose positions are nested one level deeper than the
+     checker expects would walk straight past every position guard above and
+     reach MapLibre unvalidated. So the type is refused rather than skipped. */
+  const shaped = (geometry) => ({
+    members: {
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', id: 'm1', geometry, properties: {} }],
+    },
+  });
+  assert.throws(
+    () => view.setOverlay(shaped({
+      type: 'Polygon',
+      coordinates: [[[-84.2, 39.3], [-84.1, 39.3], [-84.1, 39.4], [-84.2, 39.3]]],
+    })),
+    /Point or a LineString/i,
+    'a Polygon is not an Overlay geometry, and is refused rather than waved through',
+  );
+  assert.throws(
+    () => view.setOverlay(shaped({ type: 'MultiPoint', coordinates: [[-84.2, 39.3]] })),
+    /Point or a LineString/i,
+    'nor is any other GeoJSON type',
+  );
+  assert.throws(
+    () => view.setOverlay(shaped(undefined)),
+    /Point or a LineString/i,
+    'and a feature with no geometry at all is the same refusal',
+  );
+
   /* Ids have to be unique inside a collection, and that is the guard rather
      than "every feature has one". `overlayGeo` answers null for a mark nobody
      named, and a Party with two unnamed Members is an ordinary Party — but two
@@ -671,6 +702,19 @@ const BANDED_WORLD = {
       `${id} has something drawing it — a source with no layer is data nobody sees`,
     );
   }
+
+  /* The layer a tap is resolved against is a layer this style actually builds.
+     `mapViewMaplibre.pick` queries MapLibre by that id and answers null when
+     the map has no layer with it, so a constant naming nothing is a map where
+     no tap ever selects a Place — silent in the app, and invisible to every
+     test that stubs `pick` on a stand-in renderer. */
+  const placesLayer = style.layers.find((l) => l.id === PLACES_LAYER);
+  assert.ok(placesLayer, `PLACES_LAYER is ${PLACES_LAYER}, which no layer in the style is called`);
+  assert.equal(
+    placesLayer.source,
+    OVERLAY_SOURCES.places,
+    'and the layer it names is the one drawing the Places collection',
+  );
 
   // The live Overlay is never painted under the art. ADR-0021 clause 3 keeps
   // the route drawn from Truth rather than snapped to the band beneath it, and
@@ -950,6 +994,82 @@ const GEOMETRY = worldGeoJson({
   );
 }
 
+/* A change of renderer, not of look — the Overlay half. The block above pins
+   the World's paint against the Skin's pack; the live Overlay's colours, the
+   stale fade and the casing under the route are just as much "what the SVG
+   renderer drew", and every one of them can be deleted with a green suite
+   unless something here says otherwise. */
+{
+  const style = bandedWorldStyle({
+    world: { ...WORLD, geometry: GEOMETRY },
+    palette: {
+      member: '#00ff99', route: '#ff00aa', place: '#123456', mark: '#abcdef', pin: '#654321',
+    },
+  });
+  const layerFor = (id) => style.layers.find((l) => l.id === id);
+
+  // Every live thing wears the Skin's own colour for it, not one this file
+  // chose. A party dot painted a hardcoded purple under a daylight Skin is the
+  // renderer deciding what a Member looks like, which is the seam's whole point.
+  assert.equal(
+    layerFor(OVERLAY_SOURCES.members).paint['circle-color'],
+    '#00ff99',
+    'a Member is painted the Skin s member colour',
+  );
+  assert.equal(layerFor(OVERLAY_SOURCES.route).paint['line-color'], '#ff00aa');
+  assert.equal(layerFor(OVERLAY_SOURCES.places).paint['circle-color'], '#123456');
+  assert.equal(layerFor(OVERLAY_SOURCES.marks).paint['circle-color'], '#abcdef');
+  assert.equal(layerFor(OVERLAY_SOURCES.pins).paint['circle-color'], '#654321');
+
+  /* A stale fix is drawn faded rather than dropped: where someone was is worth
+     more than nothing, and Location keeps the last-known fix marked stale
+     rather than hiding it. `coalesce` inside the `case` because a `case`
+     handed a missing property is a style error, and a style error is a layer
+     that draws nothing — the whole Party gone rather than one dot dimmed. */
+  assert.deepEqual(
+    layerFor(OVERLAY_SOURCES.members).paint['circle-opacity'],
+    ['case', ['coalesce', ['get', 'stale'], false], 0.45, 1],
+    'a stale Member dims, and one with no `stale` property still draws',
+  );
+
+  // An unused Mark fades; the Contribution it celebrates does not. The opacity
+  // is the Mark's own property, so the fade is Truth's answer rather than a
+  // timer the renderer keeps.
+  assert.deepEqual(
+    layerFor(OVERLAY_SOURCES.marks).paint['circle-opacity'],
+    ['coalesce', ['get', 'opacity'], 1],
+  );
+
+  /* The route's casing, the same decision the path casing makes one tier down:
+     a bright line over bright painted art has no edge, and a route a guest
+     cannot pick out of the midway is a route they do not follow. */
+  const route = layerFor(OVERLAY_SOURCES.route);
+  const casing = layerFor(`${OVERLAY_SOURCES.route}-case`);
+  assert.ok(casing, 'the route is drawn over a casing');
+  assert.equal(casing.source, OVERLAY_SOURCES.route, 'from the route s own geometry');
+  assert.ok(
+    casing.paint['line-width'] > route.paint['line-width'],
+    `a casing is the wider of the two, and is ${casing.paint['line-width']} under ${route.paint['line-width']}`,
+  );
+  assert.ok(
+    style.layers.indexOf(casing) < style.layers.indexOf(route),
+    'and is drawn first, under the route rather than over it',
+  );
+
+  /* `lineMetrics` on every Overlay source. The walked-vs-remaining split of a
+     running route is a line-gradient over the route's own `fraction`, and
+     MapLibre refuses a line-gradient on a source without it — so dropping the
+     flag does not warn, it silently stops the split from ever drawing. One
+     flag across all five beats five source shapes; it is harmless on points. */
+  for (const name of OVERLAY_LAYERS) {
+    assert.equal(
+      style.sources[OVERLAY_SOURCES[name]].lineMetrics,
+      true,
+      `${name}'s source carries lineMetrics, which the route gradient needs`,
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // The caller side (slice h11). ParkMap.jsx turns what the app knows into what
 // this seam takes. That shaping is the part of a React component most worth
@@ -1035,14 +1155,31 @@ const MAP_JSON = {
     lng: -84.2661, lat: 39.3402,
   }, 'Follow with nowhere to follow to is not Follow');
 
-  // Nobody has asked for anything: the camera stays where the guest left it.
-  assert.equal(cameraRequest({}).center, null);
-  assert.equal(cameraRequest({}).easeMs, null, 'and gets there by not moving');
+  /* The camera stays where the guest left it — driven by the arguments page.js
+     actually hands ParkMap once somebody has panned, not by an empty object.
+     Follow is off (onUserPan cleared it), a fix has just landed, nothing is
+     focused, and the venue's own centre is a real {lat, lng} that page.js
+     passes on every render. The World's centre is where the map *opens* —
+     ParkMapGl frames the truth bounds at mount — so nothing here may move the
+     camera. It re-centring on the park would undo the pan within seconds, and
+     with nothing chased there is no ease, so it would land as a jump. */
+  const panned = cameraRequest({
+    follow: false,
+    anchor: { lat: 39.3441, lng: -84.2688 },
+    focusPoint: null,
+    center: { lat: 39.3422, lng: -84.2678 },
+    fit: null,
+    scale: null,
+    bearing: 0,
+    lift: 0,
+  });
+  assert.equal(panned.center, null, 'a fix with Follow off does not re-centre the park');
+  assert.equal(panned.easeMs, null, 'and gets there by not moving');
 
   // Framing a route is a statement about the whole route, so it outranks both
   // a centre and a closeness.
   const fit = { west: -84.27, south: 39.34, east: -84.26, north: 39.345 };
-  const framing = cameraRequest({ fit, center: anchor, scale: 3 });
+  const framing = cameraRequest({ fit, focusPoint: anchor, scale: 3 });
   assert.equal(framing.fit, fit);
   assert.equal(framing.center, null);
   assert.equal(framing.resolution, null);
