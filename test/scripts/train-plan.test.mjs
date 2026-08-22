@@ -353,15 +353,21 @@ assert.throws(
 // exactly what happened, one command after the parse guard above went green.
 // So run each workflow for real against stubbed primitives and collect the
 // prompts it would send. This is the guard that sees a prompt actually build.
-const promptsFrom = async (wf, workflowArgs) => {
+const runWorkflow = async (wf, workflowArgs, replies) => {
   const AsyncFn = Object.getPrototypeOf(async function () {}).constructor;
   const src = readFileSync(path.join(REPO, '.claude/workflows', wf), 'utf8')
     .replace(/^export const meta/m, 'const meta');
   const prompts = [];
   const agent = async (prompt, opts) => {
     prompts.push(prompt);
-    // Shaped loosely enough for any stage that reads the previous result.
-    return { sliceId: 'h1', status: 'built', committed: true, worktree: '/tmp/x', findings: [] };
+    // Answer per stage rather than handing back one canned shape. A single
+    // shape leaves every verdict field undefined, so the workflow's own
+    // clean/suspect categorisation cannot run and a regression in it would
+    // produce byte-identical prompts — the harness would see nothing.
+    const label = opts?.label ?? '';
+    const id = label.split(':')[1] ?? 'h1';
+    if (label.startsWith('verify:')) return (replies?.verdicts ?? {})[id] ?? { sliceId: id, probeWouldPass: true, testsAreReal: true, findings: [] };
+    return (replies?.builds ?? {})[id] ?? { sliceId: id, status: 'built', committed: true, redVerified: true, worktree: `/tmp/${id}`, summary: 's', needsWiring: [] };
   };
   const pipeline = async (items, ...stages) => {
     const out = [];
@@ -374,9 +380,10 @@ const promptsFrom = async (wf, workflowArgs) => {
   };
   const parallel = async (thunks) => Promise.all(thunks.map((t) => t()));
   const body = new AsyncFn('args', 'log', 'agent', 'pipeline', 'parallel', 'budget', 'workflow', src);
-  await body(workflowArgs, () => {}, agent, pipeline, parallel, { total: null }, async () => {});
-  return prompts;
+  const returned = await body(workflowArgs, () => {}, agent, pipeline, parallel, { total: null }, async () => {});
+  return { prompts, returned };
 };
+const promptsFrom = async (wf, workflowArgs) => (await runWorkflow(wf, workflowArgs)).prompts;
 
 {
   const slice = { id: 'h1', train: 'H', size: 'S', title: 'a slice', needs: ['h0'] };
@@ -403,6 +410,51 @@ const promptsFrom = async (wf, workflowArgs) => {
     slices: [{ id: 'h1', root: '/tmp/wt', fixes: ['a finding to fix'] }],
   });
   assert.ok(fixed.join('\n').includes('a finding to fix'), 'train-fix.mjs must send the findings');
+
+  // Prompts are only half of what a workflow does; the other half is deciding
+  // what came back clean. That decision is invisible to a prompt check — flip
+  // the && to || in the clean filter and every prompt is byte-identical — so
+  // drive it with three slices whose verdicts differ and assert where each
+  // lands. `nodeps` also carries no `needs` key at all, like the real h0 does,
+  // which is the shape that finds a missing `slice.needs ?? []` guard.
+  const { returned } = await runWorkflow(
+    'train-slices.mjs',
+    {
+      base: 'some-branch',
+      next: [
+        { id: 'good', train: 'H', size: 'S', title: 'verifies clean', needs: ['h0'] },
+        { id: 'fake', train: 'H', size: 'S', title: 'probe satisfied dishonestly', needs: ['h0'] },
+        { id: 'nodeps', train: 'I', size: 'S', title: 'no needs key at all' },
+      ],
+    },
+    {
+      verdicts: {
+        fake: { sliceId: 'fake', probeWouldPass: false, testsAreReal: true, findings: ['a string was planted where the probe greps'] },
+        nodeps: { sliceId: 'nodeps', probeWouldPass: true, testsAreReal: false, findings: ['an assertion that cannot fail'] },
+      },
+      builds: {
+        nodeps: { sliceId: 'nodeps', status: 'built', committed: true, redVerified: false, worktree: '/tmp/nodeps', summary: 's', needsWiring: ['test/x.mjs into test:builder'] },
+      },
+    },
+  );
+
+  assert.deepEqual(
+    returned.built.map((b) => b.id),
+    ['good'],
+    'only a slice whose probe is honest AND whose tests can fail may be reported built — '
+      + 'a dishonest probe or a vacuous test is exactly what the verify stage exists to catch',
+  );
+  assert.deepEqual(
+    returned.suspect.map((b) => b.id).sort(),
+    ['fake', 'nodeps'],
+    'a slice failing either verify check must reach the integrator, not be silently dropped',
+  );
+  assert.deepEqual(
+    returned.needsWiring,
+    ['nodeps: test/x.mjs into test:builder'],
+    'wiring a lane could not do itself must survive into the result, tagged with its slice — '
+      + 'losing it is how a suite lands that CI never runs',
+  );
 }
 
 // A fan-out lane must branch under a name carrying its own slice id. Worktrees

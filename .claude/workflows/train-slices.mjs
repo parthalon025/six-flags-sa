@@ -61,9 +61,9 @@ Repo rules that are not optional here:
   without its dependency does not fail, it reinvents: h11 was once started on a
   base without h7's mapView seam and set about rebuilding the very seam it was
   supposed to consume.
-  If it does not, the fetch failed — stop and report that rather than building
-  against the wrong tree. Building on main means rebuilding what already exists,
-  which has happened here before.
+  If the fetch itself failed — no scripts/lib/train-plan.mjs at all — stop and
+  report that too. A checkout still on main looks like a startable slice with
+  nothing built yet, and rebuilding the whole train from there is a day lost.
 - TDD, red before green. Every assertion you write must be SHOWN to fail on its
   own message before the code makes it pass — revert the fix, watch the failure,
   restore it. An assertion you never saw fail has proven nothing. The shapes to
