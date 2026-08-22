@@ -447,23 +447,25 @@ await check('the palette toggle cycles data-theme through Trail and Park Midnigh
   return true;
 });
 
-await check('wearing Pixel tycoon draws the isometric custom map', async () => {
+await check('wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)', async () => {
   // A dedicated phone keeps the Wear off the other checks. The demo/store
   // grant (grantShipSkins, `parkbound-demo-skins`) unlocks the ship-polish
   // Skins without farming fog quests; the Wear itself is the real user action:
   // Me -> Settings -> Map -> Collection -> Pixel tycoon.
+  // ADR-0021 clause 6 converted the kit off iso; guests see OSM until a
+  // certified kings-island bake ships. Do not invent one.
   const P = await openPhone(browser, {
     lat: 39.34395,
     lng: -84.2673,
-    name: 'Iso',
-    label: 'ISO',
+    name: 'Tycoon',
+    label: 'TYCOON',
     venue: 'kings-island',
   });
   const p = P.page;
   try {
     await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
     await p.reload({ waitUntil: 'domcontentloaded' });
-    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas') || document.querySelectorAll('svg.mapSvg circle').length), null, {
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"]:not(.mapMissing) canvas')), null, {
       timeout: 40000,
     });
     await closeGate(p);
@@ -478,18 +480,11 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
     if ((await p.evaluate(() => document.documentElement.dataset.skinPixel)) !== '1') {
       throw new Error('data-skin-pixel not set');
     }
-    // The custom-map layer draws iso geometry inside the map SVG…
-    const meshes = await p
-      .locator('.mapWorld .lyr-iso-map .isoBuilding, .mapWorld .lyr-iso-map .isoCoaster')
-      .count();
-    if (meshes < 5) throw new Error(`only ${meshes} iso meshes drawn`);
-    // …and owns the OSM building + coaster layers (hidden, not doubled).
-    if (await p.locator('.mapWorld .lyr-building').count()) {
-      throw new Error('base building layer still drawn under the iso overlay');
+    if (await p.locator('.lyr-iso-map').count()) {
+      throw new Error('iso layer still drawn after pixel-tycoon conversion');
     }
-    if (await p.locator('.mapWorld .lyr-coaster').count()) {
-      throw new Error('base coaster layer still drawn under the iso overlay');
-    }
+    const canvas = await p.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
+    if (!canvas) throw new Error('MapLibre canvas gone after Wear');
   } finally {
     await P.context.close();
   }
