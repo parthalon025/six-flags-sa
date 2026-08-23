@@ -590,16 +590,17 @@ export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
         if (!wrap) return null;
         const sheetTop = sheet ? sheet.getBoundingClientRect().top : Infinity;
         const markers = [...document.querySelectorAll('g.poiMarker')];
+        const pinBox = (g) => (g.querySelector('circle') || g).getBoundingClientRect();
         const pick = markers.find((g) => {
           const title = g.querySelector('title')?.textContent || '';
           if (want && title !== want) return false;
-          const r = g.getBoundingClientRect();
+          const r = pinBox(g);
           if (r.width < 2 || r.height < 2) return false;
           const y = r.top + r.height / 2;
           return y > 40 && y < sheetTop - 24;
         });
         if (!pick) return null;
-        const r = pick.getBoundingClientRect();
+        const r = pinBox(pick);
         return {
           x: r.left + r.width / 2,
           y: r.top + r.height / 2,
@@ -619,7 +620,7 @@ export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
           const pick = markers.find((g) => (g.querySelector('title')?.textContent || '') === want)
             || markers[0];
           if (!pick) return null;
-          const r = pick.getBoundingClientRect();
+          const r = (pick.querySelector('circle') || pick).getBoundingClientRect();
           return {
             x: r.left + r.width / 2,
             y: r.top + r.height / 2,
