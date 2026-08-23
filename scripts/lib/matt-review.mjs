@@ -11,11 +11,17 @@
  *   stampCoversReview(stamp, context)
  *   mattReviewBlockReason({ files, context, stamp })
  *   buildReviewPrompt({ files, diffStat })
+ *   buildStandardsPrompt({ files, diffStat, standardsSources, diffCommand, commits })
+ *   buildSpecPrompt({ files, spec, diffCommand, commits })
+ *   buildTwoAxisReview({ baseRef, specPath, cwd })
+ *   identifyStandardsSources({ cwd })
+ *   identifySpecSource({ branch, commitMessages, specPath, cwd })
+ *   parseIssueRefs(commitMessages)
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { scrubGitEnv } from './git-env.mjs';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,6 +30,33 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 export const MATT_REVIEW_SCHEMA = 1;
 export const MATT_REVIEW_REL = 'scripts/ci/matt-review-pass.json';
 export const REVIEW_MODEL_DEFAULT = 'claude-sonnet-5';
+
+/** Documented standards files checked in order; only existing paths are returned. */
+export const STANDARDS_SOURCE_CANDIDATES = [
+  'docs/agents/matt-standards.md',
+  'docs/guide/contributing.md',
+  'packages/README.md',
+  'docs/agents/ci.md',
+];
+
+/** Fowler smell baseline (_Refactoring_, ch.3) — judgement calls, repo docs override. */
+export const FOWLER_SMELL_BASELINE = [
+  'Mysterious Name: a function, variable, or type whose name does not reveal what it does or holds.',
+  'Duplicated Code: the same logic shape appears in more than one hunk or file in the change.',
+  'Feature Envy: a method that reaches into another object\'s data more than its own.',
+  'Data Clumps: the same few fields or params keep travelling together.',
+  'Primitive Obsession: a primitive or string standing in for a domain concept that deserves its own type.',
+  'Repeated Switches: the same switch/if-cascade on the same type recurs across the change.',
+  'Shotgun Surgery: one logical change forces scattered edits across many files in the diff.',
+  'Divergent Change: one file or module is edited for several unrelated reasons.',
+  'Speculative Generality: abstraction, parameters, or hooks added for needs the spec does not have.',
+  'Message Chains: long a.b().c().d() navigation the caller should not depend on.',
+  'Middle Man: a class or function that mostly just delegates onward.',
+  'Refused Bequest: a subclass or implementer that ignores or overrides most of what it inherits.',
+];
+
+/** Directories searched for a branch-name-matching spec file. */
+export const SPEC_SEARCH_DIRS = ['docs', 'specs', '.scratch'];
 
 /** Stamp files never count as reviewable code and never invalidate the diff hash. */
 export const STAMP_EXCLUDES = [
@@ -144,23 +177,187 @@ export function mattReviewBlockReason({ files, context, stamp }) {
   ].join('\n');
 }
 
-/** The injected prompt for the review subagent. Policy lives here, not in agent prose. */
-export function buildReviewPrompt({ files = [], diffStat = '' } = {}) {
+/** Extract unique issue numbers from commit messages, highest first. */
+export function parseIssueRefs(commitMessages = []) {
+  const refs = new Set();
+  const re = /(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)|#(\d+)/gi;
+  for (const message of commitMessages) {
+    for (const match of message.matchAll(re)) {
+      refs.add(Number(match[1] ?? match[2]));
+    }
+  }
+  return [...refs].sort((a, b) => b - a);
+}
+
+/** Return repo-relative paths to documented standards sources that exist. */
+export function identifyStandardsSources({ cwd = root } = {}) {
+  return STANDARDS_SOURCE_CANDIDATES.filter((rel) => existsSync(join(cwd, rel)));
+}
+
+function branchSlug(branch = '') {
+  const leaf = branch.split('/').pop() ?? branch;
+  return leaf.replace(/-[0-9a-f]{4,}$/i, '').replace(/^cursor-/, '');
+}
+
+function findSpecFileByBranch(branch, cwd) {
+  const slug = branchSlug(branch);
+  if (!slug || slug.length < 3) return null;
+  const tokens = slug.split('-').filter((t) => t.length >= 3);
+  for (const dir of SPEC_SEARCH_DIRS) {
+    const abs = join(cwd, dir);
+    if (!existsSync(abs)) continue;
+    for (const name of readdirSync(abs, { recursive: true })) {
+      const rel = join(dir, String(name)).replaceAll('\\', '/');
+      const lower = rel.toLowerCase();
+      if (!/\.(md|txt)$/.test(lower)) continue;
+      if (tokens.some((t) => lower.includes(t))) return rel;
+    }
+  }
+  return null;
+}
+
+function readSpecFile(path, cwd) {
+  const content = readFileSync(join(cwd, path), 'utf8');
+  return { kind: 'file', path, content };
+}
+
+/**
+ * Locate the originating spec: explicit path, issue ref in commits, or branch-name match.
+ * Returns null when nothing is found.
+ */
+export function identifySpecSource({ branch, commitMessages = [], specPath, cwd = root } = {}) {
+  if (specPath) {
+    const rel = specPath.replace(/^\.\//, '');
+    if (!existsSync(join(cwd, rel))) return null;
+    return readSpecFile(rel, cwd);
+  }
+  const issueRefs = parseIssueRefs(commitMessages);
+  if (issueRefs.length > 0) return { kind: 'issue', number: issueRefs[0] };
+  if (branch) {
+    const matched = findSpecFileByBranch(branch, cwd);
+    if (matched) return readSpecFile(matched, cwd);
+  }
+  return null;
+}
+
+function listCommitsSinceMergeBase(mergeBase, cwd) {
+  return git(['log', '--oneline', `${mergeBase}..HEAD`], cwd)
+    .split('\n')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function currentBranch(cwd) {
+  try {
+    return git(['rev-parse', '--abbrev-ref', 'HEAD'], cwd).trim();
+  } catch {
+    return '';
+  }
+}
+
+/** Standards-axis prompt for a parallel sub-agent. Policy lives here, not in agent prose. */
+export function buildStandardsPrompt({
+  files = [],
+  diffStat = '',
+  standardsSources = [],
+  diffCommand = '',
+  commits = [],
+} = {}) {
+  const smellLines = FOWLER_SMELL_BASELINE.map((s) => `- ${s}`).join('\n');
   return [
-    'You are a standards reviewer for this repo. Review the current branch diff vs origin/main.',
+    'You are the Standards-axis reviewer for this repo.',
+    '',
+    diffCommand ? `Diff command: ${diffCommand}` : '',
+    commits.length ? `Commits:\n${commits.map((c) => `  - ${c}`).join('\n')}` : '',
+    '',
+    'Documented standards sources (repo overrides the Fowler baseline):',
+    ...standardsSources.map((s) => `  - ${s}`),
+    '',
+    'Fowler smell baseline (judgement calls only — documented repo standards override):',
+    smellLines,
     '',
     'Apply, in order:',
-    "1. The global Matt Pocock `code-review` skill (~/.claude/skills/code-review or ~/.agents/skills/code-review) — Standards axis; this repo's documented rules override the Fowler baseline.",
+    "1. The global Matt Pocock `code-review` skill — Standards axis.",
     '2. The Always / Never lists in docs/agents/matt-standards.md.',
-    '3. The deep-module vocabulary from the `codebase-design` skill for any new or moved seam: is each new module deep (small interface, real behaviour)? Is policy in scripts/lib rather than prose? Behaviour changes near existing tests should have arrived test-first (tdd skill).',
-    '4. The root-cause policy (docs/agents/policies/root-cause.md): does this diff ship the missing layer, or a hide / extra gate / fallback so the symptom goes quiet? A hide is a merge only when that policy names the exception.',
+    '3. The deep-module vocabulary from the `codebase-design` skill for any new or moved seam.',
+    '4. The root-cause policy (docs/agents/policies/root-cause.md): does this diff ship the missing layer, or a hide?',
     '',
-    'If GitNexus tools are available in this session, run detect_changes / impact on the touched symbols first and use the blast radius to focus the review; if unavailable, say so and continue.',
+    'If GitNexus tools are available, run detect_changes / impact on the touched symbols first.',
     '',
     `Changed files (${files.length}):`,
     ...files.map((f) => `  - ${f}`),
     diffStat ? `\nDiff stat:\n${diffStat}` : '',
     '',
-    'Report ADVISORY findings only: a numbered list, each with file:line, the standard it bends, and a concrete fix. End with a one-line verdict. Do not edit files.',
+    'Report, per file/hunk where relevant: (a) every place the diff violates a documented standard — cite the standard (file + rule); and (b) any baseline smell you spot — name it and quote the hunk. Distinguish hard violations from judgement calls. Skip anything tooling enforces. Under 400 words. Do not edit files.',
+  ]
+    .filter((line, i, arr) => line !== '' || (i > 0 && arr[i - 1] !== ''))
+    .join('\n');
+}
+
+/** Spec-axis prompt for a parallel sub-agent. */
+export function buildSpecPrompt({ files = [], spec, diffCommand = '', commits = [] } = {}) {
+  if (!spec) return null;
+  const specBody =
+    spec.kind === 'file'
+      ? `Spec file: ${spec.path}\n\n${spec.content}`
+      : `GitHub issue #${spec.number} — fetch with: gh issue view ${spec.number} --comments`;
+  return [
+    'You are the Spec-axis reviewer for this repo.',
+    '',
+    diffCommand ? `Diff command: ${diffCommand}` : '',
+    commits.length ? `Commits:\n${commits.map((c) => `  - ${c}`).join('\n')}` : '',
+    '',
+    'Spec:',
+    specBody,
+    '',
+    `Changed files (${files.length}):`,
+    ...files.map((f) => `  - ${f}`),
+    '',
+    'Report: (a) requirements the spec asked for that are missing or partial; (b) behaviour in the diff that was not asked for (scope creep); (c) requirements that look implemented but where the implementation looks wrong. Quote the spec line for each finding. Under 400 words. Do not edit files.',
   ].join('\n');
+}
+
+/** Pin the fixed point and build both axis prompts. */
+export function buildTwoAxisReview({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
+  const context = buildMattReviewContext({ baseRef, cwd });
+  const diffCommand = `git diff ${context.mergeBase}...HEAD`;
+  const commits = listCommitsSinceMergeBase(context.mergeBase, cwd);
+  const commitMessages = commits.map((c) => c.replace(/^[0-9a-f]+\s+/, ''));
+  const branch = currentBranch(cwd);
+  const standardsSources = identifyStandardsSources({ cwd });
+  const spec = identifySpecSource({ branch, commitMessages, specPath, cwd });
+  let diffStat = '';
+  try {
+    diffStat = git(['diff', '--stat', `${context.mergeBase}...HEAD`], cwd).trim();
+  } catch {
+    // stat is garnish
+  }
+  const standardsPrompt = buildStandardsPrompt({
+    files: context.files,
+    diffStat,
+    standardsSources,
+    diffCommand,
+    commits,
+  });
+  const specPrompt = buildSpecPrompt({
+    files: context.files,
+    spec,
+    diffCommand,
+    commits,
+  });
+  return {
+    ...context,
+    diffCommand,
+    commits,
+    branch,
+    standardsSources,
+    spec,
+    standardsPrompt,
+    specPrompt,
+  };
+}
+
+/** @deprecated Use buildStandardsPrompt — kept for callers that predate the two-axis split. */
+export function buildReviewPrompt(opts = {}) {
+  return buildStandardsPrompt(opts);
 }

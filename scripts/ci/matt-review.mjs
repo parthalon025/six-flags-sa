@@ -4,7 +4,7 @@
  *
  *   node scripts/ci/matt-review.mjs prompt [--base origin/main]   # print the review subagent prompt
  *   node scripts/ci/matt-review.mjs write  [--base origin/main] [--model claude-sonnet-5] [--gitnexus ok|unavailable]
- *   node scripts/ci/matt-review.mjs check  [--base origin/main]   # exit 1 when a code diff lacks a fresh stamp
+ *   node scripts/ci/matt-review.mjs two-axis [--base origin/main] [--spec path]
  */
 import { execFileSync } from 'node:child_process';
 import { scrubGitEnv } from '../lib/git-env.mjs';
@@ -14,6 +14,7 @@ import {
   REVIEW_MODEL_DEFAULT,
   buildMattReviewContext,
   buildReviewPrompt,
+  buildTwoAxisReview,
   mattReviewBlockReason,
   readMattReview,
   writeMattReview,
@@ -48,6 +49,16 @@ export function runWrite({ baseRef = 'origin/main', model, gitnexus, cwd = root 
   return 0;
 }
 
+export function runTwoAxis({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
+  const review = buildTwoAxisReview({ baseRef, specPath, cwd });
+  if (review.files.length === 0) {
+    console.error('two-axis review: empty diff — pin a fixed point with commits ahead of it');
+    return 1;
+  }
+  console.log(JSON.stringify(review, null, 2));
+  return 0;
+}
+
 export function runPrompt({ baseRef = 'origin/main', cwd = root } = {}) {
   const context = buildMattReviewContext({ baseRef, cwd });
   let diffStat = '';
@@ -72,6 +83,7 @@ if (invoked) {
   const argv = process.argv.slice(2);
   const cmd = argv[0];
   const baseRef = arg(argv, '--base', 'origin/main');
+  const specPath = arg(argv, '--spec', undefined);
   let code = 1;
   if (cmd === 'check') code = runCheck({ baseRef });
   else if (cmd === 'write')
@@ -81,6 +93,7 @@ if (invoked) {
       gitnexus: arg(argv, '--gitnexus', 'unavailable'),
     });
   else if (cmd === 'prompt') code = runPrompt({ baseRef });
-  else console.error('Usage: matt-review.mjs <check|write|prompt> [--base ref] [--model m] [--gitnexus s]');
+  else if (cmd === 'two-axis') code = runTwoAxis({ baseRef, specPath });
+  else console.error('Usage: matt-review.mjs <check|write|prompt|two-axis> [--base ref] [--model m] [--gitnexus s] [--spec path]');
   process.exit(code);
 }
