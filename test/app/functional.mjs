@@ -520,8 +520,9 @@ await check('wearing Watercolor quest draws the baked world image under the over
     if ((await p.evaluate(() => document.documentElement.dataset.skinMap)) !== 'watercolor-quest') {
       throw new Error('data-skin-map not set');
     }
-    // MapLibre paints the pack image as a mid-band raster on truth bounds.
-    await p.waitForSelector('[data-testid="park-map-gl"][data-baked-world$="watercolor-quest.world.png"]', { timeout: 20000 });
+    // data-baked-world is a React prop and can land before MapLibre's load.
+    // The vector building layer is the proof the bake sat on top, not instead.
+    await p.waitForSelector('[data-testid="park-map-gl"][data-baked-world$="watercolor-quest.world.png"][data-map-ready="1"]', { timeout: 20000 });
     const href = await p.locator('[data-testid="park-map-gl"]').getAttribute('data-baked-world');
     if (!href?.endsWith('watercolor-quest.world.png')) {
       throw new Error(`world image href is ${href}`);
@@ -536,10 +537,10 @@ await check('wearing Watercolor quest draws the baked world image under the over
       return { w: img.naturalWidth, h: img.naturalHeight };
     }, href);
     if (!(natural.w > 0 && natural.h > 0)) throw new Error('world PNG has no pixels');
-    const layers = await p.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
-    if (!layers.includes('world-building')) {
-      throw new Error('baked world must not hide the base building layer');
-    }
+    await until(async () => {
+      const layers = await p.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
+      return layers.includes('world-building') ? true : false;
+    }, { timeout: 20000, label: 'vector building layer under the bake' });
   } finally {
     await P.context.close();
   }
