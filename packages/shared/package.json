@@ -11,6 +11,7 @@
     "./schemas.js": "./schemas.js",
     "./consolidateExport.js": "./consolidateExport.js",
     "./questScore.js": "./questScore.js",
+    "./godmode.js": "./godmode.js",
     "./rankPrizes.js": "./rankPrizes.js",
     "./compass.js": "./compass.js",
     "./isoWorld.js": "./isoWorld.js",

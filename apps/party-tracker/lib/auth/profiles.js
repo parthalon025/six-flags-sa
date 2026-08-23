@@ -4,6 +4,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { godmodeProfileGrant } from '@/lib/godmode';
 import { getPool, usingPostgres } from '@/lib/db/postgres';
 
 const memory = new Map();
@@ -84,6 +85,37 @@ export async function upsertProfileForClerkUser(input) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Write Steward / top-rung XP onto the Profile for this Clerk id.
+ * Clerk owns the Operator bit; Postgres (or the memory map) owns the number.
+ */
+export async function applyGodmodeToClerkProfile(clerkUserId) {
+  const id = String(clerkUserId || '').slice(0, 128);
+  const grant = godmodeProfileGrant();
+  if (!id) return null;
+
+  if (!usingPostgres()) {
+    const existing = memory.get(id);
+    if (!existing) return null;
+    const next = { ...existing, ...grant, updatedAt: new Date().toISOString() };
+    memory.set(id, next);
+    return next;
+  }
+
+  const pool = await getPool();
+  const { rows } = await pool.query(
+    `UPDATE profiles p
+     SET xp = $2, rank = $3, updated_at = now()
+     FROM users u
+     WHERE p.user_id = u.id AND u.clerk_id = $1
+     RETURNING u.id AS user_id, u.email, p.display_name, p.rank, p.xp, p.reputation, p.impact_helped`,
+    [id, grant.xp, grant.rank],
+  );
+  if (!rows[0]) return null;
+  const row = rows[0];
+  return { ...mapRow(row, id, row.display_name, row.email), title: grant.title };
 }
 
 function mapRow(row, clerkUserId, displayName, email) {

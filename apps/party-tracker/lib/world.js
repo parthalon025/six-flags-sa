@@ -587,13 +587,32 @@ export function skinAllowedAt({ skinId, venue = null, now = Date.now() }) {
   return true;
 }
 
+/** Wear/Offer gate with Operator bypass (godmode) or an unrestricted Offer. */
+export function skinWearAllowed({
+  skinId,
+  venue = null,
+  now = Date.now(),
+  godmode = false,
+  unrestricted = false,
+}) {
+  if (godmode || unrestricted) return Boolean(SKINS[skinId]) || PALETTES.has(skinId);
+  return skinAllowedAt({ skinId, venue, now });
+}
+
 function defaultOwnSkin(progress, now, venue) {
-  if (progress.wearSkin && skinRung(progress, progress.wearSkin) && skinAllowedAt({ skinId: progress.wearSkin, venue, now })) {
+  const godmode = Boolean(progress?.godmode);
+  if (
+    progress.wearSkin &&
+    skinRung(progress, progress.wearSkin) &&
+    skinWearAllowed({ skinId: progress.wearSkin, venue, now, godmode })
+  ) {
     return progress.wearSkin;
   }
-  if (skinRung(progress, 'postcard') && skinAllowedAt({ skinId: 'postcard', venue, now })) return 'postcard';
+  if (skinRung(progress, 'postcard') && skinWearAllowed({ skinId: 'postcard', venue, now, godmode })) {
+    return 'postcard';
+  }
   for (const id of SKIN_IDS) {
-    if (skinRung(progress, id) && skinAllowedAt({ skinId: id, venue, now })) return id;
+    if (skinRung(progress, id) && skinWearAllowed({ skinId: id, venue, now, godmode })) return id;
   }
   return 'night';
 }
@@ -613,7 +632,19 @@ export function wearMap({
     const live = (world?.offers || []).some(
       (o) => o.fromMemberId === acceptedOffer.fromMemberId && o.skinId === acceptedOffer.skinId,
     );
-    if (owner && live && skinAllowedAt({ skinId: acceptedOffer.skinId, venue, now })) {
+    const liveOffer = (world?.offers || []).find(
+      (o) => o.fromMemberId === acceptedOffer.fromMemberId && o.skinId === acceptedOffer.skinId,
+    );
+    if (
+      owner &&
+      live &&
+      skinWearAllowed({
+        skinId: acceptedOffer.skinId,
+        venue,
+        now,
+        unrestricted: Boolean(liveOffer?.unrestricted),
+      })
+    ) {
       return acceptedOffer.skinId;
     }
   }
@@ -630,6 +661,7 @@ export function offerSkin({
   progress,
   now = Date.now(),
   force = false,
+  unrestricted = false,
 }) {
   if (!force && !canOffer(progress, skinId)) return world || emptyWorld();
   if (!fromProfileId || !isSkin(skinId)) return world || emptyWorld();
@@ -644,6 +676,7 @@ export function offerSkin({
     fromProfileId,
     skinId,
     ts: now,
+    unrestricted: Boolean(unrestricted || progress?.godmode),
   });
   return next;
 }
@@ -797,7 +830,7 @@ export function grantShipSkins(progress, { venueId = null, now = Date.now() } = 
   };
 }
 
-/** Bump meters so a Skin's unlock rule is satisfied (Rank ex-prize grants). */
+/** Bump meters so a Skin's unlock or share rule is satisfied. */
 function meterFloorForSkinUnlock(meters, rule = {}) {
   const m = { ...meters };
   if (rule.contributions) m.contributions = Math.max(m.contributions || 0, rule.contributions);
@@ -814,7 +847,41 @@ function meterFloorForSkinUnlock(meters, rule = {}) {
   }
   if (rule.pathGaps) m.pathGaps = Math.max(m.pathGaps || 0, rule.pathGaps);
   if (rule.heightQuests) m.heightQuests = Math.max(m.heightQuests || 0, rule.heightQuests);
+  if (rule.rideReports) m.rideReports = Math.max(m.rideReports || 0, rule.rideReports);
+  if (rule.rideAgrees) m.rideAgrees = Math.max(m.rideAgrees || 0, rule.rideAgrees);
   if (rule.nightQuests) m.nightQuests = Math.max(m.nightQuests || 0, rule.nightQuests);
+  if (rule.hauntQuests) m.hauntQuests = Math.max(m.hauntQuests || 0, rule.hauntQuests);
+  if (rule.frostQuests) m.frostQuests = Math.max(m.frostQuests || 0, rule.frostQuests);
+  if (rule.rainQuests) m.rainQuests = Math.max(m.rainQuests || 0, rule.rainQuests);
+  if (rule.rainReports) m.rainReports = Math.max(m.rainReports || 0, rule.rainReports);
+  if (rule.openingQuests) m.openingQuests = Math.max(m.openingQuests || 0, rule.openingQuests);
+  if (rule.quests) m.quests = Math.max(m.quests || 0, rule.quests);
+  if (rule.planStops) m.planStops = Math.max(m.planStops || 0, rule.planStops);
+  if (rule.nearPlanQuests) m.nearPlanQuests = Math.max(m.nearPlanQuests || 0, rule.nearPlanQuests);
+  if (rule.planComplete) m.planComplete = true;
+  if (rule.impactHelped) m.impactHelped = Math.max(m.impactHelped || 0, rule.impactHelped);
+  if (rule.walkedPlaces) {
+    const have = walkedCount(m);
+    const need = rule.walkedPlaces;
+    if (have < need) {
+      const walked = [...(m.walkedByVenue?.['rank-grant'] || [])];
+      while (walked.length < need) walked.push(`walk-${walked.length}`);
+      m.walkedByVenue = { ...(m.walkedByVenue || {}), 'rank-grant': walked };
+    }
+  }
+  if (rule.waterGaps) m.waterGaps = Math.max(m.waterGaps || 0, rule.waterGaps);
+  if (rule.waterPassport) m.waterPassport = true;
+  if (rule.campGaps) m.campGaps = Math.max(m.campGaps || 0, rule.campGaps);
+  if (rule.campPassport) m.campPassport = true;
+  if (rule.deviceLessHeight) m.deviceLessHeight = true;
+  if (rule.withKid) m.withKid = true;
+  if (rule.familyQuests) m.familyQuests = Math.max(m.familyQuests || 0, rule.familyQuests);
+  if (rule.reviews) m.reviews = Math.max(m.reviews || 0, rule.reviews);
+  if (rule.ropeDropDays) {
+    const days = [...(m.ropeDropDays || [])];
+    while (days.length < rule.ropeDropDays) days.push(`rope-${days.length}`);
+    m.ropeDropDays = days;
+  }
   if (rule.fogPct) {
     m.fogByVenue = { ...(m.fogByVenue || {}) };
     const key = 'rank-grant';
@@ -826,6 +893,28 @@ function meterFloorForSkinUnlock(meters, rule = {}) {
     m.venuePlaceCount = { ...(m.venuePlaceCount || {}), [key]: Math.max(m.venuePlaceCount?.[key] || 0, 16) };
   }
   return m;
+}
+
+/**
+ * Open every shipped Skin / Kit on this Profile's progress.
+ * Does not write Contributions or skip the second-Party Overlay gate.
+ */
+export function grantGodmodeProgress(progress) {
+  let meters = { ...(progress?.meters || {}) };
+  for (const skin of Object.values(SKINS)) {
+    meters = meterFloorForSkinUnlock(meters, skin.unlock);
+    meters = meterFloorForSkinUnlock(meters, skin.share);
+  }
+  let next = {
+    ...createProgress({ userId: progress?.userId || null }),
+    ...progress,
+    godmode: true,
+    meters,
+  };
+  for (const rank of ['scout', 'ranger', 'cartographer', 'steward']) {
+    next = grantRankPrizes(next, rank);
+  }
+  return next;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { buildConsolidateExport } from '@party-tracker/shared/consolidateExport.js';
 import { listConsolidateCandidates } from '@/lib/contributions/store';
-import { adminPermitted } from '@/lib/adminToken';
+import { requestIsOperator } from '@/lib/adminToken';
 import { badRequest, json, notFound } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,7 @@ export const maxDuration = 15;
  * GET /api/admin/consolidate/export?venueId=kings-island
  */
 export async function GET(request) {
-  if (!adminPermitted(request)) return notFound();
+  if (!(await requestIsOperator(request))) return notFound();
 
   const url = new URL(request.url);
   const venueId = url.searchParams.get('venueId') || '';

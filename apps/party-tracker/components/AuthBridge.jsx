@@ -46,6 +46,7 @@ function AuthBridgeLive({ onSession, onBindUserId = null }) {
       let xp = 0;
       let rank = 'visitor';
       let title = null;
+      let godmode = false;
 
       try {
         const res = await fetch('/api/profile/sync', { method: 'POST' });
@@ -55,6 +56,7 @@ function AuthBridgeLive({ onSession, onBindUserId = null }) {
           xp = Number(body?.profile?.xp) || 0;
           rank = body?.profile?.rank || rankFromXp(xp);
           title = body?.profile?.title ?? titleFromXp(xp);
+          godmode = Boolean(body?.godmode);
         }
       } catch {
         /* offline — fall back to cache */
@@ -86,6 +88,7 @@ function AuthBridgeLive({ onSession, onBindUserId = null }) {
         rank,
         title,
         xp,
+        godmode,
       };
 
       writeLocalSession(session);

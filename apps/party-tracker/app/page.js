@@ -85,6 +85,7 @@ import {
   applyThanksToProgress,
   createProgress,
   emptyWorld,
+  grantGodmodeProgress,
   grantShipSkins,
   mergeWorlds,
   recordSideQuest,
@@ -1003,6 +1004,15 @@ function ParkApp({ isSignedIn }) {
       cancelled = true;
     };
   }, [authSession?.userId]);
+
+  useEffect(() => {
+    if (!authSession) return;
+    if (authSession.godmode) {
+      setWorldProgress((p) => (p.godmode ? p : grantGodmodeProgress(p)));
+      return;
+    }
+    setWorldProgress((p) => (p.godmode ? { ...p, godmode: false } : p));
+  }, [authSession, authSession?.godmode]);
 
   useEffect(() => {
     if (!worldHydrated.current) return;
@@ -3723,7 +3733,11 @@ function ParkApp({ isSignedIn }) {
                 }}
                 onAcceptOffer={(offer) => setAcceptedOffer(offer)}
                 onClearWear={() => setAcceptedOffer(null)}
-                onOffer={(skinId) => runtime.current?.offerSkin?.(skinId)}
+                onOffer={(skinId) =>
+                  runtime.current?.offerSkin?.(skinId, {
+                    unrestricted: Boolean(worldProgress.godmode),
+                  })
+                }
                 onWithdraw={(skinId) => runtime.current?.withdrawOffer?.(skinId)}
                 onEquipKit={(kit) => {
                   setWorldProgress((p) => ({ ...p, kit }));
