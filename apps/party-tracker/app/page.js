@@ -67,6 +67,7 @@ import {
 import { newMemberId } from '@/lib/core/ids';
 import { clearPendingInvite } from '@/lib/party/inviteStash';
 import { mapDisplayPosition } from '@/lib/gps/display';
+import { FOLLOW_RESUME_MS, followShouldResume } from '@/lib/parkMapView';
 import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
 import { useAuth } from '@clerk/nextjs';
@@ -439,6 +440,10 @@ function ParkApp({ isSignedIn }) {
   // whatever the visitor last left it at.
   const [sheetPx, setSheetPx] = useState(SHEET_PEEK_PX);
   const [follow, setFollow] = useState(true);
+  /* When the guest last moved the camera themselves. Null means they have
+     not — an explicit look-at (a Place, a Member, the car) is not a gesture,
+     so the resume clock must not steal it. */
+  const gesturedAtRef = useRef(null);
   const [armMeet, setArmMeet] = useState(false);
   /* A patch of ground the visitor tapped and named — see lib/spot.js. Three
      pieces of state, not one, because they answer three different questions and
@@ -1117,7 +1122,13 @@ function ParkApp({ isSignedIn }) {
       return confirmVenue(id)
         .then((v) => {
           setSelected(null);
-          setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+          /* A missing fix is not "not Follow" — that race is how the camera
+             opened on the park and never recentred on the first GPS reading.
+             Off-site still follows: the puck the map draws is already the
+             entrance, and chasing that is seeing yourself. */
+          setFollow(true);
+          gesturedAtRef.current = null;
+          setFocusPoint(null);
           setParkAsked(true);
           setGateOpen(false);
           showToast(`${v.name} is loaded — you are good to go!`);
@@ -1128,7 +1139,7 @@ function ParkApp({ isSignedIn }) {
           throw err;
         });
     },
-    [position, showToast],
+    [showToast],
   );
 
   const appUpdate = useAppUpdate();
@@ -2267,6 +2278,7 @@ function ParkApp({ isSignedIn }) {
 
   const beginWalking = useCallback(() => {
     setNavPhase('go');
+    gesturedAtRef.current = null;
     setFollow(true);
     shrinkSheet(stops.peek);
     void haptic(30);
@@ -2656,7 +2668,42 @@ function ParkApp({ isSignedIn }) {
     [selected, dismissPlaceView, goForward, push, fitPlaceSheet],
   );
 
-  const onUserPan = useCallback(() => setFollow(false), []);
+  const onUserPan = useCallback(() => {
+    gesturedAtRef.current = Date.now();
+    setFollow(false);
+    /* A leftover focus point (Locate used to write one) would ease the
+       camera back to a stale coordinate and fight the pan. Free look
+       leaves the camera where the finger put it. */
+    setFocusPoint(null);
+  }, []);
+
+  /* Free look is a pause. Once the guest has been still long enough, Follow
+     snaps back to this phone so the next fix recentres them. Previewing a
+     route is not free look — framing the walk must not be undone. */
+  useEffect(() => {
+    if (follow || previewing) return undefined;
+    const gesturedAt = gesturedAtRef.current;
+    if (gesturedAt == null) return undefined;
+    const now = Date.now();
+    if (followShouldResume({ gesturedAt, now, previewing })) {
+      setFollow(true);
+      setFocusPoint(null);
+      gesturedAtRef.current = null;
+      return undefined;
+    }
+    const wait = Math.max(0, FOLLOW_RESUME_MS - (now - gesturedAt));
+    const timer = setTimeout(() => {
+      if (!followShouldResume({
+        gesturedAt: gesturedAtRef.current,
+        now: Date.now(),
+        previewing,
+      })) return;
+      setFollow(true);
+      setFocusPoint(null);
+      gesturedAtRef.current = null;
+    }, wait);
+    return () => clearTimeout(timer);
+  }, [follow, previewing]);
 
   const headerLine = () => {
     if (venueStatus === 'loading') return 'Loading the map…';
@@ -3096,18 +3143,18 @@ function ParkApp({ isSignedIn }) {
             <Icon name={GLYPHS.meetup} />
           </button>
         )}
-        {/* Panning away during a walk parks the camera where you left it, and
-            this is the way back — the same button, saying something else. */}
+        {/* Panning away is free look; this snaps Follow back immediately. */}
         <button
           type="button"
           className={`fab ${follow ? 'active' : ''} ${walking && !follow ? 'resume' : ''}`}
           onClick={() => {
             if (position) {
+              gesturedAtRef.current = null;
               setFollow(true);
-              setFocusPoint({
-                lat: puck?.lat ?? mapMe?.lat ?? position.lat,
-                lng: puck?.lng ?? mapMe?.lng ?? position.lng,
-              });
+              /* Follow chases the live puck. Writing that coordinate into
+                 focusPoint used to leave a stale look-at that yanked the
+                 camera back after the next pan. */
+              setFocusPoint(null);
             } else {
               setGateOpen(true);
             }

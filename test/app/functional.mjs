@@ -44,6 +44,7 @@ import { parseModulesArg, wantModule } from './lib/module-select.mjs';
 import { readFileSync } from 'node:fs';
 import { pointInCoverage } from '../../packages/venue-builder/src/routing-coverage.mjs';
 import { distance, formatDistance } from '../../apps/party-tracker/lib/geo.js';
+import { FOLLOW_RESUME_MS } from '../../apps/party-tracker/lib/parkMapView.js';
 import { RIDE_STALE_AFTER_MS } from '../../apps/party-tracker/lib/core/state.js';
 import { PRECISE_MAX_MS } from '../../apps/party-tracker/lib/location.js';
 
@@ -317,6 +318,58 @@ await check('park geometry is drawn', async () => {
   const canvas = await a.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
   if (!canvas) throw new Error('map not drawn (no MapLibre canvas)');
   if (!(await a.locator('.mePulse').count())) throw new Error('no own-position marker');
+  return true;
+});
+
+await check('the camera follows this phone and snaps back after a free look', async () => {
+  const here = { lat: 39.34395, lng: -84.2673 };
+  await ensurePeek(a);
+  const map = a.locator('[data-testid="park-map-gl"]');
+  await until(async () => (await map.getAttribute('data-follow')) === '1', {
+    timeout: 8000,
+    label: 'Follow on after the fix',
+  });
+  await until(async () => (await map.getAttribute('data-map-ready')) === '1', {
+    timeout: 15000,
+    label: 'MapLibre ready',
+  });
+  const cameraOf = () =>
+    a.evaluate(() => {
+      const c = globalThis.__parkMapLibre?.getCenter?.();
+      return c ? { lng: c.lng, lat: c.lat } : null;
+    });
+  const before = await until(async () => {
+    const c = await cameraOf();
+    if (!c) return null;
+    return distance(here.lat, here.lng, c.lat, c.lng) < 80 ? c : null;
+  }, { timeout: 8000, label: 'camera on this phone' });
+
+  const box = await map.boundingBox();
+  if (!box) throw new Error('map has no box');
+  const startX = box.x + box.width * 0.5;
+  const startY = box.y + box.height * 0.28;
+  await a.mouse.move(startX, startY);
+  await a.mouse.down();
+  await a.mouse.move(startX + 140, startY + 90, { steps: 10 });
+  await a.mouse.up();
+
+  await until(async () => (await map.getAttribute('data-follow')) === '0', {
+    timeout: 4000,
+    label: 'free look paused Follow',
+  });
+  const panned = await cameraOf();
+  if (!panned) throw new Error('no camera after the pan');
+  const moved = distance(before.lat, before.lng, panned.lat, panned.lng);
+  if (moved < 25) throw new Error(`pan did not move the camera (${moved.toFixed(0)} m)`);
+
+  await until(async () => (await map.getAttribute('data-follow')) === '1', {
+    timeout: FOLLOW_RESUME_MS + 2500,
+    label: 'Follow snaps back after free look',
+  });
+  await until(async () => {
+    const c = await cameraOf();
+    return c && distance(here.lat, here.lng, c.lat, c.lng) < 80;
+  }, { timeout: 4000, label: 'camera back on this phone' });
   return true;
 });
 

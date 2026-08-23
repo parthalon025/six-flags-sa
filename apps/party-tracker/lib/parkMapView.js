@@ -42,6 +42,39 @@ export const FOLLOW_EASE_MS = 480;
  *  it reads as the map bouncing in place. */
 export const FOLLOW_DEADBAND_METRES = 2;
 
+/** Free look lasts this long after the last guest gesture, then Follow
+ *  snaps back to this phone. */
+export const FOLLOW_RESUME_MS = 3200;
+
+/**
+ * Whether a paused Follow should come back.
+ *
+ * A gesture is free look. Once the guest has been still for `resumeMs`,
+ * the camera snaps back to this phone. Previewing a route is not free
+ * look: framing the whole walk is a statement about the walk, and
+ * recentring the puck would undo it. An explicit look-at (a Place) has
+ * no gesture time, so this stays false until they pan or tap Locate.
+ *
+ * @param {object} state
+ * @param {number|null} [state.gesturedAt] when the guest last moved the camera
+ * @param {number} state.now
+ * @param {boolean} [state.previewing]
+ * @param {number} [state.resumeMs]
+ */
+export function followShouldResume({
+  gesturedAt = null,
+  now,
+  previewing = false,
+  resumeMs = FOLLOW_RESUME_MS,
+} = {}) {
+  if (previewing) return false;
+  if (gesturedAt == null) return false;
+  if (!finite(now)) {
+    throw new TypeError('followShouldResume needs a finite `now` in ms — it must not read the clock itself');
+  }
+  return now - gesturedAt >= resumeMs;
+}
+
 /**
  * The World the map view draws, or null when this venue cannot be drawn yet.
  *
