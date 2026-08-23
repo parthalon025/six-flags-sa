@@ -3,7 +3,161 @@
  *
  * Positions come from the map's own `project` — one camera, not a second
  * projection. The caller paints; this module only names what to paint.
+ *
+ * Place *names* are a second decision. Drawing every title at park-wide zoom
+ * is the ransom-note map: 150 strings stacked on the same few hundred pixels.
+ * `layoutOverlayLabels` applies the shared zoom ranks and the Declutter grid
+ * so a name appears only when it has earned the zoom and the space.
  */
+import { planZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
+import { metresPerPixel } from '@party-tracker/shared/zoomBands.js';
+import { Declutter, boxAround, onScreen, textWidth } from './mapLabels.js';
+import { markerDeclutterPriority, markerWantsLabel } from './mapVisual.js';
+
+/** Kinds that keep a name without earning zoom. Places are the crowded
+ *  set. Members, Meet, the car, and World Zones are sparse enough to pin. */
+const isPinnedKind = (kind) => kind && kind !== 'place';
+
+export const PLACE_LABEL_SIZE = 16;
+export const PIN_LABEL_SIZE = 15;
+export const ZONE_LABEL_SIZE = 14;
+/* Below the disc, with a gap: a 16px name centred on y+LABEL_DY has its
+   top clear of the drawn r=8 circle, so the box never claims its own pin.
+   The renderer reads the same export — two offsets is two truths. */
+export const LABEL_DY = 24;
+const ICON_R = 8;
+
+const KIND_LABEL = Object.freeze({
+  zone: Object.freeze({ size: ZONE_LABEL_SIZE, dy: 0, className: 'landLabel', drawsPin: false }),
+  place: Object.freeze({ size: PLACE_LABEL_SIZE, dy: LABEL_DY, className: 'poiLabel', drawsPin: true }),
+});
+const DEFAULT_KIND_LABEL = Object.freeze({
+  size: PIN_LABEL_SIZE,
+  dy: LABEL_DY,
+  className: 'memName',
+  drawsPin: true,
+});
+
+/** Paint facts for one mark kind — size, offset, class, and whether it is a pin. */
+export function markLabelStyle(kind) {
+  return KIND_LABEL[kind] || DEFAULT_KIND_LABEL;
+}
+
+/** px/m scale `labelWantedAtZoom` reads, from a MapLibre zoom. */
+export function labelPlanZoom(zoom, latitude) {
+  if (!Number.isFinite(zoom)) return 0;
+  const mpp = metresPerPixel(zoom, { latitude: Number.isFinite(latitude) ? latitude : 0 });
+  if (!Number.isFinite(mpp) || mpp <= 0) return 0;
+  return planZoom(1 / mpp);
+}
+
+function iconBox(mark) {
+  return boxAround(mark.x, mark.y, ICON_R, ICON_R);
+}
+
+function labelBox(mark) {
+  const { size, dy } = markLabelStyle(mark.kind);
+  const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
+  return boxAround(mark.x, mark.y + dy, halfW, size * 0.55);
+}
+
+/**
+ * Decide which marks print a name.
+ *
+ * Markers stay. Names are zoom-gated (rank 1 first) and collision-thinned
+ * (lower `markerDeclutterPriority` wins). Without a layout, Members / Meet /
+ * car / Zones stay named and Places stay quiet. With a layout, ride and
+ * coaster names also print — they are the park-wide destination layer.
+ *
+ * @param {Array} marks `overlayMarks()` output
+ * @param {object|null} [layout]
+ * @param {number} [layout.zoom]
+ * @param {number} [layout.latitude]
+ * @param {number} [layout.width]
+ * @param {number} [layout.height]
+ * @param {Iterable} [layout.shownIds]
+ * @param {*} [layout.navId]
+ * @param {*} [layout.planNextId]
+ * @param {*} [layout.selectedId]
+ */
+export function layoutOverlayLabels(marks, layout = null) {
+  const list = (marks || []).map((mark) => ({
+    ...mark,
+    label: false,
+    pin: mark.kind !== 'zone',
+  }));
+  if (!layout) {
+    for (const mark of list) {
+      if (isPinnedKind(mark.kind) && mark.name) mark.label = true;
+    }
+    return list;
+  }
+
+  const { zoom, latitude, width, height, shownIds, navId, planNextId, selectedId } = layout;
+  const zPlan = labelPlanZoom(zoom, latitude);
+  const shown = shownIds instanceof Set ? shownIds : new Set(shownIds || []);
+  const grid = new Declutter();
+  const hasViewport = Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
+  const visible = (box) => !hasViewport || onScreen(box, width, height);
+
+  for (const mark of list) {
+    // Place discs are dense at park-wide. Claiming every one vetoes ride
+    // names — the destination layer — so only live pins reserve their box.
+    if (mark.kind === 'place' || mark.kind === 'zone') continue;
+    grid.claim(iconBox(mark), true);
+  }
+
+  const tryLabel = (mark, pinned) => {
+    if (!mark.name) return;
+    const box = labelBox(mark);
+    if (!visible(box)) return;
+    if (grid.claim(box, pinned)) mark.label = true;
+  };
+
+  for (const mark of list) {
+    if (isPinnedKind(mark.kind) && mark.kind !== 'zone') tryLabel(mark, true);
+  }
+  // Zones always try at park-wide, but they yield to each other — pinning
+  // them prints all six land titles on one pixel.
+  for (const mark of list) {
+    if (mark.kind === 'zone') tryLabel(mark, false);
+  }
+
+  const priorityOf = ({ mark, index }) => markerDeclutterPriority({
+    isSelected: mark.id === selectedId,
+    isNav: mark.id === navId,
+    isPlanNext: mark.id === planNextId,
+    rank: symbolFor(mark.category).rank,
+    index,
+  });
+  const places = list
+    .map((mark, index) => ({ mark, index }))
+    .filter(({ mark }) => mark.kind === 'place')
+    .sort((a, b) => priorityOf(a) - priorityOf(b));
+
+  for (const { mark } of places) {
+    const isNav = mark.id === navId;
+    const isPlanNext = mark.id === planNextId;
+    const wanted = {
+      isNav,
+      isPlanNext,
+      rank: symbolFor(mark.category).rank,
+      zPlan,
+      wasShown: shown.has(mark.id),
+      category: mark.category,
+    };
+    if (!markerWantsLabel({ ...wanted, isSelected: mark.id === selectedId })) {
+      mark.pin = isNav || isPlanNext || mark.id === selectedId;
+      continue;
+    }
+    tryLabel(mark, isNav || isPlanNext);
+    // A disc without a name is the black mass. Named rides keep a pin;
+    // Go / Plan / selection keep one even when the sheet holds the title.
+    mark.pin = mark.label || isNav || isPlanNext || mark.id === selectedId;
+  }
+
+  return list;
+}
 
 function projectPoint(project, coordinates) {
   if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
@@ -17,10 +171,48 @@ function projectPoint(project, coordinates) {
 /**
  * @param {object} overlay overlayGeoJson's five collections
  * @param {(lngLat: {lng: number, lat: number}) => {x: number, y: number}|null} project
- * @returns {{ kind: string, className: string, id: *, name: string, self: boolean, x: number, y: number }[]}
+ * @returns {{ kind: string, className: string, id: *, name: string, category?: string|null, self: boolean, label: boolean, x: number, y: number }[]}
  */
-export function overlayMarks(overlay, project) {
+function ringCentroid(ring) {
+  if (!Array.isArray(ring) || ring.length < 1) return null;
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  const closed = ring.length > 1
+    && Array.isArray(first) && Array.isArray(last)
+    && first[0] === last[0] && first[1] === last[1];
+  const verts = closed ? ring.slice(0, -1) : ring;
+  let lng = 0;
+  let lat = 0;
+  let n = 0;
+  for (const pair of verts) {
+    if (!Array.isArray(pair) || pair.length < 2) continue;
+    if (!Number.isFinite(pair[0]) || !Number.isFinite(pair[1])) continue;
+    lng += pair[0];
+    lat += pair[1];
+    n += 1;
+  }
+  if (!n) return null;
+  return [lng / n, lat / n];
+}
+
+export function overlayMarks(overlay, project, extras = {}) {
   const marks = [];
+  for (const feature of extras.lands?.features || []) {
+    const name = feature.properties?.name;
+    if (!name) continue;
+    const ring = feature.geometry?.coordinates?.[0];
+    const point = projectPoint(project, ringCentroid(ring));
+    if (!point) continue;
+    marks.push({
+      kind: 'zone',
+      className: 'landMarker',
+      id: `zone:${name}`,
+      name,
+      self: false,
+      x: Math.round(point.x),
+      y: Math.round(point.y),
+    });
+  }
   for (const feature of overlay?.places?.features || []) {
     const point = projectPoint(project, feature.geometry?.coordinates);
     if (!point) continue;
@@ -29,9 +221,10 @@ export function overlayMarks(overlay, project) {
       className: 'poiMarker',
       id: feature.properties?.id ?? feature.id,
       name: feature.properties?.name || '',
+      category: feature.properties?.category || null,
       self: false,
-      x: point.x,
-      y: point.y,
+      x: Math.round(point.x),
+      y: Math.round(point.y),
     });
   }
   for (const feature of overlay?.members?.features || []) {
@@ -44,8 +237,8 @@ export function overlayMarks(overlay, project) {
       id,
       name: feature.properties?.name || '',
       self: Boolean(feature.properties?.self) || id === 'me',
-      x: point.x,
-      y: point.y,
+      x: Math.round(point.x),
+      y: Math.round(point.y),
     });
   }
   for (const feature of overlay?.pins?.features || []) {
@@ -58,8 +251,8 @@ export function overlayMarks(overlay, project) {
       id: feature.properties?.id ?? feature.id,
       name: feature.properties?.label || '',
       self: false,
-      x: point.x,
-      y: point.y,
+      x: Math.round(point.x),
+      y: Math.round(point.y),
     });
   }
   return marks;
@@ -96,6 +289,9 @@ function latLngToLngLat(points) {
  * @param {{lat: number, lng: number, course?: number}|null} [extras.puck]
  * @param {number} [extras.heading] compass heading; wins over course
  * @param {number} [extras.rotation] map bearing in degrees
+ * @param {object} [extras.layout] handed to `layoutOverlayLabels` — zoom,
+ *   latitude, width, height, shownIds, navId, planNextId, selectedId
+ * @param {object} [extras.lands] World `lands` FeatureCollection — named Zones
  */
 export function overlayChrome(overlay, project, extras = {}) {
   const paths = [];
@@ -142,5 +338,9 @@ export function overlayChrome(overlay, project, extras = {}) {
     }
   }
 
-  return { marks: overlayMarks(overlay, project), paths, cone };
+  return {
+    marks: layoutOverlayLabels(overlayMarks(overlay, project, extras), extras.layout),
+    paths,
+    cone,
+  };
 }

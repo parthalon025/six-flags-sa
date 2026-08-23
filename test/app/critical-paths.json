@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "4f5e6bbf1bc4be2e42a109650b40c9df8e7ca540d364e4758409db855e06774a"
+    "sha256": "91597a542d57537359af29822883e054339ccc761328d0b88b01d7a36d5aa462"
   },
   "paths": [
     {
@@ -33,6 +33,13 @@
       "user_action": "Tap the on-map OSM notice into Settings, see every sourced attribution with its license",
       "suite": "functional",
       "check": "the on-map OSM notice opens Settings straight to Credits, listing sourced attributions"
+    },
+    {
+      "id": "map-label-declutter",
+      "slice": "Navigate",
+      "user_action": "Read the park map at rest by World Zone and ride names, not every Place title",
+      "suite": "functional",
+      "check": "park-wide rest shows Zone names and ride names, not every Place"
     },
     {
       "id": "heights-filter",

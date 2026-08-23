@@ -100,6 +100,21 @@ assert.equal(
 assert.equal(markerWantsLabel({ isSelected: true, rank: 1, zPlan: 9, wasShown: true }), false);
 assert.equal(markerWantsLabel({ isNav: true, rank: 5, zPlan: 0, wasShown: false }), true);
 assert.equal(markerWantsLabel({ isPlanNext: true, rank: 5, zPlan: 0, wasShown: false }), true);
+assert.equal(
+  markerWantsLabel({ category: 'coaster', rank: 1, zPlan: 0, wasShown: false }),
+  true,
+  'coasters keep a name at park-wide zoom',
+);
+assert.equal(
+  markerWantsLabel({ category: 'ride', rank: 2, zPlan: 0, wasShown: false }),
+  true,
+  'rides keep a name at park-wide zoom',
+);
+assert.equal(
+  markerWantsLabel({ category: 'restroom', rank: 3, zPlan: 0, wasShown: false }),
+  false,
+  'restrooms still wait for zoom',
+);
 
 
 // The reference Skins' palette lives twice — the display ledger compiles the

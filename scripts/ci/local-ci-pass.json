@@ -1,9 +1,9 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "c4ecceaf830bbddf",
-  "head": "715bf902cddff89bbca9668dba5ddf3930b10536",
-  "mergeBase": "c0b29ae04b801b255168684ccf18dbfd0a60c141",
+  "diffHash": "4c6d39fcd3f3f4d3",
+  "head": "ad847122d82502ed3865de25e0484ad01eb88ce7",
+  "mergeBase": "7950bcb05caa6463764123e72d9feed96bb7e540",
   "baseRef": "origin/main",
   "modules": [
     "auth",
@@ -22,7 +22,9 @@
   ],
   "browserVertical": true,
   "verticals": [
-    "app"
+    "app",
+    "automation",
+    "builder"
   ],
   "staticSteps": [
     "test:ci-gate",
@@ -32,7 +34,7 @@
     "test:module-select",
     "build"
   ],
-  "lockHash": "9f5d3b218e18c02b",
-  "manifestHash": "4669057ed87f969b",
-  "recordedAt": "2026-08-23T04:49:11.168Z"
+  "lockHash": "648e34869a53fcbf",
+  "manifestHash": "5df0306adb2c0de0",
+  "recordedAt": "2026-08-23T09:10:29.102Z"
 }

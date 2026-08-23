@@ -88,6 +88,8 @@
         "apps/party-tracker/lib/mapThemeTokens.js",
         "apps/party-tracker/lib/mapSymbols.js",
         "apps/party-tracker/lib/mapLabels.js",
+        "apps/party-tracker/lib/overlayMarks.js",
+        "apps/party-tracker/lib/overlayGeo.js",
         "apps/party-tracker/lib/mapViewport.js",
         "apps/party-tracker/lib/spot.js",
         "apps/party-tracker/lib/world.js",

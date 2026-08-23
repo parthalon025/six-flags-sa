@@ -579,7 +579,9 @@ export async function rideHeightVerdict(page, rideName) {
 /**
  * Tap a drawn map icon by name. Pointer capture lives on the map wrapper, so
  * the hit has to land as a real mouse click at the marker's screen point —
- * clicking the `<g>` itself never reaches ParkMap's picker.
+ * clicking the `<g>` itself never reaches ParkMap's picker. The tap uses the
+ * pin circle, not the group box: ride names always print and would pull the
+ * centre onto the label, which MapLibre's hit-test does not own.
  */
 export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
   const hit = await until(
@@ -590,16 +592,17 @@ export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
         if (!wrap) return null;
         const sheetTop = sheet ? sheet.getBoundingClientRect().top : Infinity;
         const markers = [...document.querySelectorAll('g.poiMarker')];
+        const pinBox = (g) => (g.querySelector('circle') || g).getBoundingClientRect();
         const pick = markers.find((g) => {
           const title = g.querySelector('title')?.textContent || '';
           if (want && title !== want) return false;
-          const r = g.getBoundingClientRect();
+          const r = pinBox(g);
           if (r.width < 2 || r.height < 2) return false;
           const y = r.top + r.height / 2;
           return y > 40 && y < sheetTop - 24;
         });
         if (!pick) return null;
-        const r = pick.getBoundingClientRect();
+        const r = pinBox(pick);
         return {
           x: r.left + r.width / 2,
           y: r.top + r.height / 2,
@@ -619,7 +622,7 @@ export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
           const pick = markers.find((g) => (g.querySelector('title')?.textContent || '') === want)
             || markers[0];
           if (!pick) return null;
-          const r = pick.getBoundingClientRect();
+          const r = (pick.querySelector('circle') || pick).getBoundingClientRect();
           return {
             x: r.left + r.width / 2,
             y: r.top + r.height / 2,

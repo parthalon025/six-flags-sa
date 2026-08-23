@@ -141,6 +141,10 @@ function overlayLayers(colour) {
         'circle-color': colour('place'),
         'circle-stroke-width': 1.5,
         'circle-stroke-color': '#ffffff',
+        // Invisible hit target. The SVG overlay is the visible pin; drawing
+        // both is the park-wide black mass.
+        'circle-opacity': 0,
+        'circle-stroke-opacity': 0,
       },
     },
     {

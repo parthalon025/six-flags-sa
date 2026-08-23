@@ -18,6 +18,7 @@ Examples already handled by scripts (read the file, do not re-document the inter
 | Playwright UI job unpack/start | `scripts/ci/party-tracker-ui.mjs` |
 | CI gate manifest | `scripts/ci/manifest.mjs` |
 | Pre-merge vertical validation | `npm run test:pre-merge-vertical` → `scripts/ci/pre-merge-vertical.mjs` |
+| Root cause vs hide (standards review) | `buildReviewPrompt` in `scripts/lib/matt-review.mjs` (see [root-cause policy](./root-cause.md)) |
 | Which verticals a code diff owes | `scripts/lib/vertical-e2e.mjs` (see vertical-e2e policy) |
 | Clerk-on e2e before merge (auth UI) | `scripts/lib/clerk-e2e.mjs` |
 | Production Sign in with Apple (Services ID, Clerk flags) | `scripts/lib/clerk-apple-prod-spec.json` + `npm run clerk:check` |
