@@ -265,6 +265,11 @@ export function mountMapView(
       // Frozen: what a Place *is* stays this side of the seam, and hitTest
       // answers out of the same list rather than out of the renderer.
       places: Object.freeze([...places]),
+      // The pitch curve, as a function of zoom. The MapLibre adapter folds
+      // this into transformCameraUpdate so a pinch tilts in the same
+      // transform that changed the zoom — setPitch mid-gesture is jumpTo,
+      // and jumpTo stops the pinch (the lag in the ease window).
+      pitchAt: (zoom) => pitchForZoom(zoom, { latitude, ...(maxPitch == null ? {} : { maxPitch }) }),
     }),
   );
 
