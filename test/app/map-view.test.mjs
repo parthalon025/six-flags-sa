@@ -121,6 +121,8 @@ assert.throws(() => mount({ renderer: null }), /renderer/i, 'no renderer at all 
     { center: { lng: -84.2678, lat: 39.3422 }, zoom: 15, pitch: 0, bearing: 0, ease: null },
     'the renderer gets a complete camera, with pitch and bearing filled in',
   );
+  assert.equal(typeof attached.view.pitchAt, 'function', 'the pitch curve crosses so a pinch can tilt without setPitch');
+  assert.equal(attached.view.pitchAt(15), 0, 'and it is the same curve the camera already used');
 
   // A phone that has only opened the venue pack holds the mid band and nothing
   // else (ADR-0021 clause 5 makes it the offline floor), so that is the default
@@ -174,7 +176,10 @@ const EASE_MIDPOINT = 15.622402608729476;
 
 // A Skin's declared camera feel is a mount-time trait, not a per-frame argument.
 {
-  const gentle = mount({ maxPitch: 30 });
+  const renderer = recordingRenderer();
+  const gentle = mount({ maxPitch: 30, renderer });
+  const [attached] = renderer.calls;
+  near(attached.view.pitchAt(EASE_MIDPOINT), 15, 'pitchAt carries the Skin\'s maxPitch');
   gentle.setCamera({ center: CENTRE, zoom: EASE_MIDPOINT });
   near(gentle.state().camera.pitch, 15, 'a gentler Skin eases to its own maximum');
   gentle.setCamera({ center: CENTRE, zoom: 16.5 });
