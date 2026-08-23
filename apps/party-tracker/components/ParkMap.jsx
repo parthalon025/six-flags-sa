@@ -105,6 +105,9 @@ function ParkMap(props) {
     visibleCategories,
     onToggleCategory,
     mapKeyHidden = false,
+    selected = null,
+    routeTargetName = null,
+    planNextPlaceId = null,
     navZoom = null,
     fitPoints,
     fitKey = null,
@@ -217,6 +220,9 @@ function ParkMap(props) {
       puck={puck}
       heading={heading}
       rotation={rotation}
+      navId={routeTargetName}
+      planNextId={planNextPlaceId}
+      selectedId={selected ? identityOf(selected) : null}
       camera={camera}
       insetBottom={bottomInset}
       onSelectPlace={onSelectPoi}

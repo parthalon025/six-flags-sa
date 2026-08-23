@@ -27,7 +27,7 @@ import { metresPerPixel, zoomForResolution } from '@party-tracker/shared/zoomBan
 import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
-import { overlayChrome } from '@/lib/overlayMarks';
+import { LABEL_DY, overlayChrome } from '@/lib/overlayMarks';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline rather than globals.css, for the reason BandedWorldMap.jsx states:
@@ -63,6 +63,9 @@ export default function ParkMapGl({
   puck = null,
   heading = null,
   rotation = 0,
+  navId = null,
+  planNextId = null,
+  selectedId = null,
   /** Where the camera should be. See `applyCamera` below for each field. */
   camera,
   /** Usable height is the viewport less whatever furniture covers the map. */
@@ -99,6 +102,8 @@ export default function ParkMapGl({
   overlayRef.current = overlay;
   const chromeRef = useRef({ alternatives, routeDone, puck, heading, rotation });
   chromeRef.current = { alternatives, routeDone, puck, heading, rotation };
+  const promoteRef = useRef({ navId, planNextId, selectedId });
+  promoteRef.current = { navId, planNextId, selectedId };
   const paintMarks = () => {
     const view = viewRef.current;
     const model = overlayRef.current;
@@ -118,6 +123,7 @@ export default function ParkMapGl({
         width: node?.clientWidth || 0,
         height: node?.clientHeight || 0,
         shownIds: shownLabelsRef.current,
+        ...promoteRef.current,
       },
     });
     shownLabelsRef.current = new Set(next.marks.filter((mark) => mark.label).map((mark) => mark.id));
@@ -277,7 +283,7 @@ export default function ParkMapGl({
   useEffect(() => {
     if (overlay) viewRef.current?.setOverlay(overlay);
     paintMarks();
-  }, [overlay, alternatives, routeDone, puck, heading, rotation, laidOut, mapReady]);
+  }, [overlay, alternatives, routeDone, puck, heading, rotation, navId, planNextId, selectedId, laidOut, mapReady]);
 
   useEffect(() => {
     applyCamera(camera);
@@ -358,7 +364,7 @@ export default function ParkMapGl({
               <circle r="8" />
               {mark.self ? <circle className="mePulse" r="14" /> : null}
               {mark.label ? (
-                <text className={mark.kind === 'place' ? 'poiLabel' : 'memName'} y="20">
+                <text className={mark.kind === 'place' ? 'poiLabel' : 'memName'} y={LABEL_DY}>
                   {mark.name}
                 </text>
               ) : null}

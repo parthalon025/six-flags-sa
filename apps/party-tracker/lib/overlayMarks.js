@@ -20,9 +20,10 @@ const isPinnedKind = (kind) => kind && kind !== 'place';
 
 const PLACE_LABEL_SIZE = 13.5;
 const PIN_LABEL_SIZE = 13;
-/* Below the disc, with a gap: a 13.5px name centred on y+20 has its top at
-   ~12.6, and the drawn circle is r=8, so the box never claims its own pin. */
-const LABEL_DY = 20;
+/* Below the disc, with a gap: a 13.5px name centred on y+LABEL_DY has its
+   top clear of the drawn r=8 circle, so the box never claims its own pin.
+   The renderer reads the same export — two offsets is two truths. */
+export const LABEL_DY = 20;
 const ICON_R = 8;
 
 /** px/m scale `labelWantedAtZoom` reads, from a MapLibre zoom. */
@@ -91,25 +92,17 @@ export function layoutOverlayLabels(marks, layout = null) {
     if (isPinnedKind(mark.kind)) tryLabel(mark, true);
   }
 
+  const priorityOf = ({ mark, index }) => markerDeclutterPriority({
+    isSelected: mark.id === selectedId,
+    isNav: mark.id === navId,
+    isPlanNext: mark.id === planNextId,
+    rank: symbolFor(mark.category).rank,
+    index,
+  });
   const places = list
     .map((mark, index) => ({ mark, index }))
     .filter(({ mark }) => mark.kind === 'place')
-    .sort((a, b) => (
-      markerDeclutterPriority({
-        isSelected: a.mark.id === selectedId,
-        isNav: a.mark.id === navId,
-        isPlanNext: a.mark.id === planNextId,
-        rank: symbolFor(a.mark.category).rank,
-        index: a.index,
-      })
-      - markerDeclutterPriority({
-        isSelected: b.mark.id === selectedId,
-        isNav: b.mark.id === navId,
-        isPlanNext: b.mark.id === planNextId,
-        rank: symbolFor(b.mark.category).rank,
-        index: b.index,
-      })
-    ));
+    .sort((a, b) => priorityOf(a) - priorityOf(b));
 
   for (const { mark } of places) {
     const isNav = mark.id === navId;

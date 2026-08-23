@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { frameBounds } from '@party-tracker/shared/mapCamera.js';
 import { overlayGeoJson } from '../../apps/party-tracker/lib/overlayGeo.js';
-import { layoutOverlayLabels, overlayChrome, overlayMarks } from '../../apps/party-tracker/lib/overlayMarks.js';
+import { LABEL_DY, layoutOverlayLabels, overlayChrome, overlayMarks } from '../../apps/party-tracker/lib/overlayMarks.js';
 
 const overlay = {
   places: {
@@ -175,6 +175,12 @@ assert.deepEqual(
   const placeNames = laid.filter((m) => m.kind === 'place' && m.label);
   assert.equal(placeNames.length, 0, `park-wide Fiesta Texas printed ${placeNames.length} names`);
   assert.ok(laid.filter((m) => m.kind === 'place').length > 80, 'markers themselves still land');
+}
+
+{
+  const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
+  assert.match(painted, /y=\{LABEL_DY\}/, 'the SVG name sits on the same offset the grid claimed');
+  assert.equal(LABEL_DY, 20);
 }
 
 console.log('overlay-marks: ok');
