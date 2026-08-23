@@ -183,6 +183,23 @@ export function inkOn(colour) {
   return lum > 0.5 ? '#000000' : '#ffffff';
 }
 
+/** Category ink a Place *name* can wear on the map.
+ *
+ *  The pin already carries the bright palette colour. The name sits on painted
+ *  lawn with only a halo, so a sun-yellow food chip would vanish. Mix toward
+ *  black (the same 0.58 the night food chip needs) so the hue survives and the
+ *  letters still read outdoors. */
+export function labelInk(colour) {
+  const hex = String(colour || '').trim();
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex) || /^#?([0-9a-f]{3})$/i.exec(hex);
+  if (!m) return null;
+  const raw = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
+  const n = parseInt(raw, 16);
+  const tone = (c) => Math.round(c * 0.58);
+  const to = (c) => tone(c).toString(16).padStart(2, '0');
+  return `#${to((n >> 16) & 255)}${to((n >> 8) & 255)}${to(n & 255)}`;
+}
+
 /* How a party member's marker should read, given their last fix.
  *
  * Kept out of the renderer because it is the one place two meanings used to

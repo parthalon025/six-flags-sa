@@ -393,6 +393,29 @@ await check('park-wide rest shows Zone names and ride names, not every Place', a
   if (names.length >= places) {
     throw new Error(`park-wide map printed every place name (${names.length}/${places})`);
   }
+  const typeRank = await a.evaluate(() => {
+    const zone = document.querySelector('svg.mapSvg .landLabel');
+    const labels = [...document.querySelectorAll('svg.mapSvg .poiLabel')];
+    if (!zone || !labels.length) return { missing: true };
+    const px = (el) => parseFloat(getComputedStyle(el).fontSize);
+    const fills = [...new Set(labels.map((el) => el.style.fill || getComputedStyle(el).fill).filter(Boolean))];
+    return {
+      zonePx: px(zone),
+      poiPx: Math.max(...labels.map(px)),
+      zoneCase: getComputedStyle(zone).textTransform,
+      zoneTracking: parseFloat(getComputedStyle(zone).letterSpacing) || 0,
+      categoryFills: fills.length,
+    };
+  });
+  if (typeRank.missing) throw new Error('park-wide map printed no Zone or Place names to rank');
+  if (typeRank.zoneCase !== 'uppercase') throw new Error(`Zone names should be tracked caps, got ${typeRank.zoneCase}`);
+  if (!(typeRank.zoneTracking > 0)) throw new Error('Zone names need letter-spacing the way Apple districts do');
+  if (!(typeRank.zonePx > typeRank.poiPx)) {
+    throw new Error(`Zone ${typeRank.zonePx}px should outrank Place ${typeRank.poiPx}px`);
+  }
+  if (typeRank.categoryFills < 2) {
+    throw new Error(`Place names should wear more than one category ink, got ${typeRank.categoryFills}`);
+  }
   const restLod = await a.evaluate(() => {
     const map = globalThis.__parkMapLibre;
     if (!map?.getLayer?.('world-building')) return { missing: true };

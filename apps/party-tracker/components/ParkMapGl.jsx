@@ -28,6 +28,7 @@ import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
 import { PIN_LABEL_SIZE, PLACE_LABEL_SIZE, ZONE_LABEL_SIZE, markLabelStyle, overlayChrome } from '@/lib/overlayMarks';
+import { labelInk } from '@party-tracker/shared/mapSymbols.js';
 import { Glyph, PoiMarker } from './MapSymbols';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -388,8 +389,11 @@ export default function ParkMapGl({
             </g>
           ) : null}
           {marks.map((mark) => {
-            const style = markLabelStyle(mark.kind);
+            const style = markLabelStyle(mark.kind, mark.category);
             const state = eligibility?.at?.(mark.id)?.kind || 'unknown';
+            const nameInk = mark.kind === 'place' && state !== 'not'
+              ? labelInk(pinPalette?.categories?.[mark.category])
+              : null;
             return (
             <g
               key={`${mark.kind}:${mark.id}`}
@@ -418,7 +422,16 @@ export default function ParkMapGl({
               ) : null}
               {mark.self ? <circle className="mePulse" r="14" /> : null}
               {mark.label ? (
-                <text className={`${style.className}${state === 'not' ? ' barred' : ''}`} y={style.dy}>
+                <text
+                  className={`${style.className}${state === 'not' ? ' barred' : ''}`}
+                  data-category={mark.category || undefined}
+                  y={style.dy}
+                  style={{
+                    fontSize: `${style.size}px`,
+                    ...(nameInk ? { fill: nameInk } : {}),
+                    ...(state === 'not' && pinPalette?.barred ? { fill: pinPalette.barred } : {}),
+                  }}
+                >
                   {mark.name}
                 </text>
               ) : null}

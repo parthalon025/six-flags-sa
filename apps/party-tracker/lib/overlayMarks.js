@@ -20,16 +20,20 @@ const isPinnedKind = (kind) => kind && kind !== 'place';
 
 export const PLACE_LABEL_SIZE = 16;
 export const PIN_LABEL_SIZE = 15;
-export const ZONE_LABEL_SIZE = 14;
+export const ZONE_LABEL_SIZE = 18;
+/** Place name size by symbol rank — destinations stay grandma-sized; amenities step down. */
+const PLACE_LABEL_BY_RANK = Object.freeze({ 1: 16, 2: 15, 3: 14, 4: 13, 5: 13 });
 /* Below the disc, with a gap: a 16px name centred on y+LABEL_DY has its
    top clear of the drawn r=8 circle, so the box never claims its own pin.
    The renderer reads the same export — two offsets is two truths. */
 export const LABEL_DY = 24;
 const ICON_R = 8;
 
-const KIND_LABEL = Object.freeze({
-  zone: Object.freeze({ size: ZONE_LABEL_SIZE, dy: 0, className: 'landLabel', drawsPin: false }),
-  place: Object.freeze({ size: PLACE_LABEL_SIZE, dy: LABEL_DY, className: 'poiLabel', drawsPin: true }),
+const ZONE_LABEL = Object.freeze({
+  size: ZONE_LABEL_SIZE,
+  dy: 0,
+  className: 'landLabel',
+  drawsPin: false,
 });
 const DEFAULT_KIND_LABEL = Object.freeze({
   size: PIN_LABEL_SIZE,
@@ -38,9 +42,21 @@ const DEFAULT_KIND_LABEL = Object.freeze({
   drawsPin: true,
 });
 
-/** Paint facts for one mark kind — size, offset, class, and whether it is a pin. */
-export function markLabelStyle(kind) {
-  return KIND_LABEL[kind] || DEFAULT_KIND_LABEL;
+/** Paint facts for one mark — size, offset, class, and whether it is a pin.
+ *  Place size follows the shared symbol rank so a restroom name cannot shout
+ *  over a coaster the way Apple and Google keep amenities quieter than destinations. */
+export function markLabelStyle(kind, category) {
+  if (kind === 'zone') return ZONE_LABEL;
+  if (kind === 'place') {
+    const rank = symbolFor(category).rank;
+    return {
+      size: PLACE_LABEL_BY_RANK[rank] ?? 13,
+      dy: LABEL_DY,
+      className: 'poiLabel',
+      drawsPin: true,
+    };
+  }
+  return DEFAULT_KIND_LABEL;
 }
 
 /** px/m scale `labelWantedAtZoom` reads, from a MapLibre zoom. */
@@ -54,7 +70,7 @@ function iconBox(mark) {
 }
 
 function labelBox(mark) {
-  const { size, dy } = markLabelStyle(mark.kind);
+  const { size, dy } = markLabelStyle(mark.kind, mark.category);
   const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
   return boxAround(mark.x, mark.y + dy, halfW, size * 0.55);
 }

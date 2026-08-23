@@ -522,11 +522,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    threshold, and a 350ms fade every time a pinch crossed it was the flash.
    They appear, or they do not — no animation on .lyr-detail. */
 
-/* Apple Maps sets district names in wide-tracked caps and POI names in plain
-   SF with a halo, which is what these two do. 16px / 15px for the grandma
-   test: readable at arm's length outdoors, not phone-held-to-the-nose. */
+/* Apple Maps sets district names in wide-tracked caps, larger than POI names
+   in plain type with a halo. 18px / 16px for the grandma test: readable at
+   arm's length outdoors, not phone-held-to-the-nose. */
 .landLabel {
-  font-family: var(--ui); font-size: var(--map-zone-label, 14px); font-weight: 700; letter-spacing: .12em;
+  font-family: var(--ui); font-size: var(--map-zone-label, 18px); font-weight: 700; letter-spacing: .12em;
   text-transform: uppercase; text-anchor: middle; fill: var(--labelFill); opacity: .9;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3.5px; stroke-linejoin: round;
   text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;
