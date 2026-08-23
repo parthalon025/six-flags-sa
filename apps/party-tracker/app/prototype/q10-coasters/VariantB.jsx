@@ -2,12 +2,12 @@
 
 /* B — Spotlight. One owner rail. The rest are quiet dots. */
 
-import { isOwner, pathD } from './q10World.js';
+import { ownersOf, pathD } from './q10World.js';
 
 export const name = 'One rail';
 
 export default function VariantB({ world, project, primary, onPick }) {
-  const owners = world.tracks.filter((t) => isOwner(t.name, primary));
+  const owners = ownersOf(world.tracks, primary);
   return (
     <div style={S.stage}>
       <svg viewBox="0 0 720 920" style={S.svg} aria-label="One owner rail on a dark park">

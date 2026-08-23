@@ -22,6 +22,10 @@ export function isOwner(trackName, primaryName) {
   return Boolean(a && b && a === b);
 }
 
+export function ownersOf(tracks, primaryName) {
+  return tracks.filter((t) => isOwner(t.name, primaryName));
+}
+
 export function ringsOf(rows) {
   if (!Array.isArray(rows)) return [];
   return rows.map((row) => (Array.isArray(row) ? row : row?.r)).filter((r) => Array.isArray(r) && r.length > 1);
@@ -116,7 +120,7 @@ export function readWorld(map, pois) {
 export function inkStats(world, variant, primaryName) {
   const named = world.tracks.filter((t) => t.name);
   const unnamed = world.tracks.filter((t) => !t.name);
-  const owners = world.tracks.filter((t) => isOwner(t.name, primaryName));
+  const owners = ownersOf(world.tracks, primaryName);
   const showNamed = variant === 'C';
   const showOwner = variant === 'B' || variant === 'C';
   const showUnnamed = variant === 'D';
@@ -127,7 +131,7 @@ export function inkStats(world, variant, primaryName) {
     primary: primaryName,
     join: joinKey(primaryName),
     ownerFragments: owners.length,
-    namedOn: variant === 'D' ? named.length : showNamed ? named.length : showOwner ? owners.filter((t) => t.name).length : 0,
+    namedOn: variant === 'D' ? named.length : showNamed ? named.length : showOwner ? owners.length : 0,
     unnamedOn: showUnnamed ? unnamed.length : 0,
     serviceOn: showService ? world.service.length : 0,
     pathsOn: showPaths ? world.paths.length : 0,

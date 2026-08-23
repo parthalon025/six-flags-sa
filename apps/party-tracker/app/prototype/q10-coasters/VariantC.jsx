@@ -2,14 +2,14 @@
 
 /* C — Souvenir autograph. Every named rail, one loud owner. */
 
-import { centroid, isOwner, pathD } from './q10World.js';
+import { centroid, isOwner, ownersOf, pathD } from './q10World.js';
 
 export const name = 'Named + owner';
 
 export default function VariantC({ world, project, primary, onPick }) {
   const named = world.tracks.filter((t) => t.name);
+  const loud = ownersOf(named, primary);
   const quiet = named.filter((t) => !isOwner(t.name, primary));
-  const loud = named.filter((t) => isOwner(t.name, primary));
   const labels = new Map();
   for (const t of named) {
     const key = t.name;
