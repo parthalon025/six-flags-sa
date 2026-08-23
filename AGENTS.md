@@ -73,6 +73,10 @@ Venue **builder** output is generated only — fix upstream, prove in the app. S
 
 All code work is proven **end to end** with the run's output asserted — `npm run test:pre-merge-vertical` gates it. See [vertical-e2e policy](./docs/agents/policies/vertical-e2e.md).
 
+## Root cause — ship the cause, not the hide
+
+**Root cause** is the shipped fix — hide a symptom only when this policy names that exception. See [root-cause policy](./docs/agents/policies/root-cause.md).
+
 ## App version — auto-bumped on merge
 
 App **version** is auto-bumped on merge — never edit version files in PRs. See [version-on-merge policy](./docs/agents/policies/version-on-merge.md).

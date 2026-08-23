@@ -59,6 +59,7 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   assert.match(prompt, /codebase-design/, 'prompt applies deep-module vocabulary');
   assert.match(prompt, /ADVISORY/, 'findings are advisory');
   assert.match(prompt, /detect_changes/, 'prompt asks for GitNexus blast radius when available');
+  assert.match(prompt, /root-cause\.md/, 'prompt asks whether the diff ships the cause or a hide');
 }
 
 // Temp-repo integration: stamp survives its own commit, dies on a code change.
