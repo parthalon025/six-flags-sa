@@ -206,6 +206,8 @@ export function mountMapView(
   assertRenderer(renderer);
   const latitude = worldLatitude(world);
   let held = [...(available ?? PACKED_BANDS)];
+  const pitchAt = (zoom) =>
+    pitchForZoom(zoom, { latitude, ...(maxPitch == null ? {} : { maxPitch }) });
 
   const cameraFor = (next, ease = null) => {
     if (next == null || typeof next !== 'object') {
@@ -226,7 +228,7 @@ export function mountMapView(
     return Object.freeze({
       center: Object.freeze({ lng: center.lng, lat: center.lat }),
       zoom,
-      pitch: pitchForZoom(zoom, { latitude, ...(maxPitch == null ? {} : { maxPitch }) }),
+      pitch: pitchAt(zoom),
       bearing,
       ease,
     });
@@ -269,7 +271,7 @@ export function mountMapView(
       // this into transformCameraUpdate so a pinch tilts in the same
       // transform that changed the zoom — setPitch mid-gesture is jumpTo,
       // and jumpTo stops the pinch (the lag in the ease window).
-      pitchAt: (zoom) => pitchForZoom(zoom, { latitude, ...(maxPitch == null ? {} : { maxPitch }) }),
+      pitchAt,
     }),
   );
 

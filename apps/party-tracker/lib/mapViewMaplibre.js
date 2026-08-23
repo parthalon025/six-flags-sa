@@ -142,10 +142,11 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
         },
         wanted,
       );
+      // Pitch is omitted on purpose: transformCameraUpdate is the only writer,
+      // so a jump or ease cannot drift from the curve the pinch already uses.
       const camera = {
         center: [wanted.center.lng, wanted.center.lat],
         zoom: wanted.zoom,
-        pitch: wanted.pitch,
         bearing: wanted.bearing,
       };
       if (write.kind === 'ease') {
