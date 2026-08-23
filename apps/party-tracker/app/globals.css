@@ -526,9 +526,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    SF with a halo, which is what these two do. 16px / 15px for the grandma
    test: readable at arm's length outdoors, not phone-held-to-the-nose. */
 .landLabel {
-  font-family: var(--ui); font-size: 14px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; text-anchor: middle; opacity: .9; pointer-events: none;
+  font-family: var(--ui); font-size: var(--map-zone-label, 14px); font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; text-anchor: middle; fill: var(--labelFill); opacity: .9;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3.5px; stroke-linejoin: round;
+  text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;
+  pointer-events: none;
 }
 .poiLabel {
   font-family: var(--ui); font-size: var(--map-place-label, 16px); font-weight: 700; letter-spacing: -.1px;

@@ -27,7 +27,7 @@ import { metresPerPixel, zoomForResolution } from '@party-tracker/shared/zoomBan
 import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
-import { LABEL_DY, PIN_LABEL_SIZE, PLACE_LABEL_SIZE, overlayChrome } from '@/lib/overlayMarks';
+import { LABEL_DY, PIN_LABEL_SIZE, PLACE_LABEL_SIZE, ZONE_LABEL_SIZE, overlayChrome } from '@/lib/overlayMarks';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline rather than globals.css, for the reason BandedWorldMap.jsx states:
@@ -100,6 +100,8 @@ export default function ParkMapGl({
   handlers.current = { onSelectPlace, onMapTap, onUserPan };
   const overlayRef = useRef(overlay);
   overlayRef.current = overlay;
+  const worldRef = useRef(world);
+  worldRef.current = world;
   const chromeRef = useRef({ alternatives, routeDone, puck, heading, rotation });
   chromeRef.current = { alternatives, routeDone, puck, heading, rotation };
   const promoteRef = useRef({ navId, planNextId, selectedId });
@@ -117,6 +119,7 @@ export default function ParkMapGl({
     const node = containerRef.current;
     const next = overlayChrome(model, (lngLat) => view.project(lngLat), {
       ...chromeRef.current,
+      lands: worldRef.current?.geometry?.lands,
       layout: {
         zoom: camera.zoom,
         latitude: camera.center.lat,
@@ -283,7 +286,7 @@ export default function ParkMapGl({
   useEffect(() => {
     if (overlay) viewRef.current?.setOverlay(overlay);
     paintMarks();
-  }, [overlay, alternatives, routeDone, puck, heading, rotation, navId, planNextId, selectedId, laidOut, mapReady]);
+  }, [overlay, alternatives, routeDone, puck, heading, rotation, navId, planNextId, selectedId, laidOut, mapReady, world]);
 
   useEffect(() => {
     applyCamera(camera);
@@ -349,6 +352,7 @@ export default function ParkMapGl({
           overflow: 'visible',
           '--map-place-label': `${PLACE_LABEL_SIZE}px`,
           '--map-pin-label': `${PIN_LABEL_SIZE}px`,
+          '--map-zone-label': `${ZONE_LABEL_SIZE}px`,
         }}
         aria-hidden="true"
       >
@@ -368,10 +372,13 @@ export default function ParkMapGl({
               transform={`translate(${mark.x},${mark.y})`}
             >
               <title>{mark.name}</title>
-              <circle r="8" />
+              {mark.kind !== 'zone' ? <circle r="8" /> : null}
               {mark.self ? <circle className="mePulse" r="14" /> : null}
               {mark.label ? (
-                <text className={mark.kind === 'place' ? 'poiLabel' : 'memName'} y={LABEL_DY}>
+                <text
+                  className={mark.kind === 'zone' ? 'landLabel' : mark.kind === 'place' ? 'poiLabel' : 'memName'}
+                  y={mark.kind === 'zone' ? 0 : LABEL_DY}
+                >
                   {mark.name}
                 </text>
               ) : null}

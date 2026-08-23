@@ -326,11 +326,16 @@ await check('park-wide view does not print every place name', async () => {
     label: 'map ready',
   });
   const names = await a.locator('svg.mapSvg .poiLabel').allTextContents();
-  if (names.length > 0) {
-    throw new Error(`park-wide map printed ${names.length} place names: ${names.slice(0, 8).join(', ')}`);
-  }
+  const zones = await a.locator('svg.mapSvg .landLabel').allTextContents();
   const pins = await a.locator('svg.mapSvg .poiMarker').count();
   if (pins < 10) throw new Error(`expected place markers after declutter, got ${pins}`);
+  if (zones.length < 1) throw new Error('park-wide map printed no Zone names');
+  if (names.some((n) => /restroom/i.test(n))) {
+    throw new Error(`park-wide map named a restroom: ${names.filter((n) => /restroom/i.test(n)).join(', ')}`);
+  }
+  if (names.length >= pins) {
+    throw new Error(`park-wide map printed every place name (${names.length}/${pins})`);
+  }
   return true;
 });
 

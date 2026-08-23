@@ -20,6 +20,7 @@ const isPinnedKind = (kind) => kind && kind !== 'place';
 
 export const PLACE_LABEL_SIZE = 16;
 export const PIN_LABEL_SIZE = 15;
+export const ZONE_LABEL_SIZE = 14;
 /* Below the disc, with a gap: a 16px name centred on y+LABEL_DY has its
    top clear of the drawn r=8 circle, so the box never claims its own pin.
    The renderer reads the same export — two offsets is two truths. */
@@ -39,9 +40,10 @@ function iconBox(mark) {
 }
 
 function labelBox(mark) {
-  const size = mark.kind === 'place' ? PLACE_LABEL_SIZE : PIN_LABEL_SIZE;
+  const size = mark.kind === 'zone' ? ZONE_LABEL_SIZE : mark.kind === 'place' ? PLACE_LABEL_SIZE : PIN_LABEL_SIZE;
+  const dy = mark.kind === 'zone' ? 0 : LABEL_DY;
   const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
-  return boxAround(mark.x, mark.y + LABEL_DY, halfW, size * 0.55);
+  return boxAround(mark.x, mark.y + dy, halfW, size * 0.55);
 }
 
 /**
@@ -49,8 +51,8 @@ function labelBox(mark) {
  *
  * Markers stay. Names are zoom-gated (rank 1 first) and collision-thinned
  * (lower `markerDeclutterPriority` wins). Without a layout, Members / Meet /
- * car stay named and Places stay quiet — the safe default for a park-wide
- * opening camera.
+ * car / Zones stay named and Places stay quiet. With a layout, ride and
+ * coaster names also print — they are the park-wide destination layer.
  *
  * @param {Array} marks `overlayMarks()` output
  * @param {object|null} [layout]
@@ -79,7 +81,9 @@ export function layoutOverlayLabels(marks, layout = null) {
   const hasViewport = Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
   const visible = (box) => !hasViewport || onScreen(box, width, height);
 
-  for (const mark of list) grid.claim(iconBox(mark), true);
+  for (const mark of list) {
+    if (mark.kind !== 'zone') grid.claim(iconBox(mark), true);
+  }
 
   const tryLabel = (mark, pinned) => {
     if (!mark.name) return;
@@ -114,6 +118,7 @@ export function layoutOverlayLabels(marks, layout = null) {
       rank: symbolFor(mark.category).rank,
       zPlan,
       wasShown: shown.has(mark.id),
+      category: mark.category,
     })) continue;
     tryLabel(mark, isNav || isPlanNext);
   }
@@ -135,8 +140,41 @@ function projectPoint(project, coordinates) {
  * @param {(lngLat: {lng: number, lat: number}) => {x: number, y: number}|null} project
  * @returns {{ kind: string, className: string, id: *, name: string, category?: string|null, self: boolean, label: boolean, x: number, y: number }[]}
  */
-export function overlayMarks(overlay, project) {
+function ringCentroid(ring) {
+  if (!Array.isArray(ring) || ring.length < 1) return null;
+  let lng = 0;
+  let lat = 0;
+  let n = 0;
+  for (const pair of ring) {
+    if (!Array.isArray(pair) || pair.length < 2) continue;
+    if (!Number.isFinite(pair[0]) || !Number.isFinite(pair[1])) continue;
+    lng += pair[0];
+    lat += pair[1];
+    n += 1;
+  }
+  if (!n) return null;
+  return [lng / n, lat / n];
+}
+
+export function overlayMarks(overlay, project, extras = {}) {
   const marks = [];
+  for (const feature of extras.lands?.features || []) {
+    const name = feature.properties?.name;
+    if (!name) continue;
+    const ring = feature.geometry?.coordinates?.[0];
+    const point = projectPoint(project, ringCentroid(ring));
+    if (!point) continue;
+    marks.push({
+      kind: 'zone',
+      className: 'landMarker',
+      id: `zone:${name}`,
+      name,
+      self: false,
+      label: isPinnedKind('zone'),
+      x: Math.round(point.x),
+      y: Math.round(point.y),
+    });
+  }
   for (const feature of overlay?.places?.features || []) {
     const point = projectPoint(project, feature.geometry?.coordinates);
     if (!point) continue;
@@ -218,6 +256,7 @@ function latLngToLngLat(points) {
  * @param {number} [extras.rotation] map bearing in degrees
  * @param {object} [extras.layout] handed to `layoutOverlayLabels` — zoom,
  *   latitude, width, height, shownIds, navId, planNextId, selectedId
+ * @param {object} [extras.lands] World `lands` FeatureCollection — named Zones
  */
 export function overlayChrome(overlay, project, extras = {}) {
   const paths = [];
@@ -264,5 +303,9 @@ export function overlayChrome(overlay, project, extras = {}) {
     }
   }
 
-  return { marks: layoutOverlayLabels(overlayMarks(overlay, project), extras.layout), paths, cone };
+  return {
+    marks: layoutOverlayLabels(overlayMarks(overlay, project, extras), extras.layout),
+    paths,
+    cone,
+  };
 }

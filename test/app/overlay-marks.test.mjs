@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { frameBounds } from '@party-tracker/shared/mapCamera.js';
 import { overlayGeoJson } from '../../apps/party-tracker/lib/overlayGeo.js';
+import { worldGeoJson } from '../../apps/party-tracker/lib/worldGeo.js';
 import {
   LABEL_DY,
   PIN_LABEL_SIZE,
   PLACE_LABEL_SIZE,
+  ZONE_LABEL_SIZE,
   layoutOverlayLabels,
   overlayChrome,
   overlayMarks,
@@ -109,18 +111,19 @@ assert.deepEqual(
   });
   const named = (marks) => marks.filter((m) => m.label).map((m) => m.id);
 
-  // Park-wide: 4 m/px is how a 390×654 phone frames Fiesta Texas. Rank 1
-  // enters at 0.5 px/m, so no place earns a name until the guest pinches in.
+  // Park-wide: Zones and rides print; restrooms stay quiet. Two far-apart
+  // coasters both fit. A Zone sits on its land, not under a pin.
   const overview = layoutOverlayLabels(
     [
       place('goliath', 'Goliath', 'coaster', 40, 40),
       place('poltergeist', 'Poltergeist', 'coaster', 200, 80),
       place('restrooms', 'Restrooms', 'restroom', 80, 90),
       { kind: 'member', className: 'memMarker', id: 'me', name: 'Sam', self: true, x: 120, y: 200 },
+      { kind: 'zone', className: 'landMarker', id: 'zone:Rockville', name: 'Rockville', x: 300, y: 120 },
     ],
     { zoom: 13.2, latitude: 29.6, width: 390, height: 654 },
   );
-  assert.deepEqual(named(overview), ['me']);
+  assert.deepEqual(named(overview).sort(), ['goliath', 'me', 'poltergeist', 'zone:Rockville']);
 
   // Walking zoom: two coasters far apart both print. Two restrooms on the
   // same pixel do not — rank and collision drop the second.
@@ -176,30 +179,47 @@ assert.deepEqual(
     x: ((lng - bounds.west) / (bounds.east - bounds.west)) * viewport.width,
     y: ((bounds.north - lat) / (bounds.north - bounds.south)) * viewport.height,
   });
+  const map = JSON.parse(
+    readFileSync(new URL('../../apps/party-tracker/public/venues/six-flags-fiesta-texas.map.json', import.meta.url)),
+  );
   const laid = overlayChrome(overlay, project, {
     layout: { zoom: framed.zoom, latitude: framed.center.lat, ...viewport },
+    lands: worldGeoJson(map).lands,
   }).marks;
   const placeNames = laid.filter((m) => m.kind === 'place' && m.label);
-  assert.equal(placeNames.length, 0, `park-wide Fiesta Texas printed ${placeNames.length} names`);
+  const zoneNames = laid.filter((m) => m.kind === 'zone' && m.label).map((m) => m.name);
+  const restrooms = placeNames.filter((m) => m.category === 'restroom');
+  const rides = placeNames.filter((m) => m.category === 'coaster' || m.category === 'ride');
+  assert.ok(zoneNames.includes('Rockville'), `zones printed ${zoneNames.join(', ')}`);
+  assert.ok(rides.length > 0, 'at least one ride name at park-wide zoom');
+  assert.equal(restrooms.length, 0, 'restrooms stay quiet at park-wide zoom');
+  assert.ok(placeNames.length < laid.filter((m) => m.kind === 'place').length, 'not every Place is named');
   assert.ok(laid.filter((m) => m.kind === 'place').length > 80, 'markers themselves still land');
 }
 
 {
   const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
-  assert.match(painted, /y=\{LABEL_DY\}/, 'the SVG name sits on the same offset the grid claimed');
+  assert.match(painted, /landLabel/, 'Zones wear the district type, not a pin name');
+  assert.match(painted, /mark\.kind !== 'zone'/, 'a Zone is a name on the land, not another black disc');
+  assert.match(painted, /LABEL_DY/, 'the SVG name sits on the same offset the grid claimed');
   assert.match(painted, /--map-place-label.: `\$\{PLACE_LABEL_SIZE\}px`/, 'the SVG reads the same size the grid claimed');
   assert.match(painted, /--map-pin-label.: `\$\{PIN_LABEL_SIZE\}px`/);
+  assert.match(painted, /--map-zone-label.: `\$\{ZONE_LABEL_SIZE\}px`/);
   assert.equal(PLACE_LABEL_SIZE, 16);
   assert.equal(PIN_LABEL_SIZE, 15);
+  assert.equal(ZONE_LABEL_SIZE, 14);
   const iconR = 8;
   const gap = LABEL_DY - PLACE_LABEL_SIZE * 0.55 - iconR;
   assert.ok(gap >= 4, `label gap ${gap}px undercuts the disc`);
   const fallbackPx = (rule) => Number(rule.match(/font-size:\s*var\(--[^,]+,\s*([\d.]+)px\)/)?.[1]);
   const poi = css.match(/\.poiLabel\s*\{[^}]+\}/);
   const mem = css.match(/\.memName\s*\{[^}]+\}/);
+  const land = css.match(/\.landLabel\s*\{[^}]+\}/);
   assert.equal(fallbackPx(poi?.[0] || ''), PLACE_LABEL_SIZE);
   assert.equal(fallbackPx(mem?.[0] || ''), PIN_LABEL_SIZE);
+  assert.equal(fallbackPx(land?.[0] || ''), ZONE_LABEL_SIZE);
+  assert.match(land?.[0] || '', /fill:\s*var\(--labelFill\)/, 'Zone names stay inked, not transparent');
 }
 
 {
