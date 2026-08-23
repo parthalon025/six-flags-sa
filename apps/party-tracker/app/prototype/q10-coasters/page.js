@@ -2,28 +2,24 @@
 
 /* PROTOTYPE. Throwaway. Not the guest map.
  *
- * Four variants of park-wide coaster ink, switchable via ?variant=, on
- * /prototype/q10-coasters. Real kings-island map.json + pois.
- *
- * Q10: at first paint, what coaster ink is on?
- *   A names only · B one owner rail · C named rails + loud owner · D every line
+ * Q10 ink locked as D (all rails). Switcher is now Google-style path LOD:
+ *   O overview · S streets · F foot
+ * on /prototype/q10-coasters?variant=O
  */
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PrototypeSwitcher from '@/components/prototype/PrototypeSwitcher.jsx';
-import VariantA from './VariantA.jsx';
-import VariantB from './VariantB.jsx';
-import VariantC from './VariantC.jsx';
 import VariantD from './VariantD.jsx';
-import { VARIANTS, VENUE, inkStats, projector, readWorld } from './q10World.js';
+import { VARIANTS, VENUE, bandBounds, bandOf, lodStats, projector, readWorld } from './q10World.js';
 
 function Q10Coasters() {
   const params = useSearchParams();
   const router = useRouter();
-  const variant = (params.get('variant') || 'C').toUpperCase();
-  const key = VARIANTS.some((v) => v.key === variant) ? variant : 'C';
+  const variant = (params.get('variant') || 'O').toUpperCase();
+  const key = VARIANTS.some((v) => v.key === variant) ? variant : 'O';
   const thesis = VARIANTS.find((v) => v.key === key);
+  const band = bandOf(key);
 
   const [pack, setPack] = useState(null);
   const [err, setErr] = useState('');
@@ -49,10 +45,11 @@ function Q10Coasters() {
     || pack?.coasters?.find((p) => p.n === 'The Beast')?.n
     || pack?.coasters?.[0]?.n
     || 'The Beast';
-  const project = useMemo(
-    () => (pack ? projector(pack.bounds, 720, 920) : null),
-    [pack],
-  );
+  const focus = pack?.coasters?.find((p) => p.n === primary);
+  const project = useMemo(() => {
+    if (!pack) return null;
+    return projector(bandBounds(pack.bounds, focus, band), 720, 920);
+  }, [pack, focus, band]);
 
   const pick = (name) => {
     const next = new URLSearchParams(params.toString());
@@ -72,21 +69,21 @@ function Q10Coasters() {
   if (err) return <main style={{ padding: 24 }}>Could not load {VENUE}: {err}</main>;
   if (!pack || !project) return <main style={{ padding: 24 }}>Loading {VENUE}…</main>;
 
-  const stats = inkStats(pack, key, primary);
-  const props = { world: pack, project, primary, onPick: pick };
-  const View = { A: VariantA, B: VariantB, C: VariantC, D: VariantD }[key];
+  const stats = lodStats(pack, band);
 
   return (
     <main style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#111' }}>
       <header style={S.hud} data-prototype-state="">
-        <strong>Q10 · park-wide coaster ink</strong>
+        <strong>Q10 · D ink + Google path LOD</strong>
         <span>{thesis.name} — {thesis.thesis}</span>
         <span>
-          primary {stats.primary} · join “{stats.join}” · {stats.ownerFragments} owner fragments · named rails {stats.namedOn} · unnamed {stats.unnamedOn} · service {stats.serviceOn}
+          {band} · rails {stats.railsOn} · midways on {stats.pathsOn}/{pack.paths.length}
+          {' '}(arterial {stats.arterial} · street {stats.street} · foot {stats.foot})
+          {' '}· service {stats.serviceOn}/{stats.serviceAll} · focus {primary}
         </span>
       </header>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <View {...props} />
+        <VariantD world={pack} project={project} primary={primary} onPick={pick} band={band} />
       </div>
       <PrototypeSwitcher variants={VARIANTS} current={key} />
     </main>

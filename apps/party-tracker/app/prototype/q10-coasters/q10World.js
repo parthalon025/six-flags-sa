@@ -1,16 +1,53 @@
-/* PROTOTYPE helper for Q10 park-wide coaster ink.
- * Question: which rails are on at first paint? */
+/* PROTOTYPE helper for Q10. Locked ink is D (all rails).
+ * New question: Google-style path LOD on that ink. */
 
+import { WAY_FLAGS } from '@party-tracker/shared/wayFlags.js';
 import { normaliseRideName } from '@/lib/mapSymbols.js';
 
 export const VENUE = 'kings-island';
 
+/** Zoom bands — D ink, Google road LOD. O city / S neighborhood / F walking. */
 export const VARIANTS = [
-  { key: 'A', name: 'Names only', thesis: 'Stars are destinations. Rails wait for a pinch.' },
-  { key: 'B', name: 'One rail', thesis: 'One owner rail. Everyone else is a name.' },
-  { key: 'C', name: 'Named + owner', thesis: 'Named rails autograph the park. Primary is loud.' },
-  { key: 'D', name: 'Every line', thesis: 'All rails, unnamed fragments, and service. The hairball.' },
+  { key: 'O', name: 'Overview', thesis: 'Rails + long midways. Queues, stubs, and service wait.', band: 'overview' },
+  { key: 'S', name: 'Streets', thesis: 'Neighborhood zoom. Local paths join the midways.', band: 'streets' },
+  { key: 'F', name: 'Foot', thesis: 'Walking zoom. Minor paths, queues, steps, and service.', band: 'close' },
 ];
+
+const QUEUE_NAME = /queue|line|entrance|exit|station/i;
+const EARTH_M = 6371000;
+
+function havM(a, b) {
+  const to = (x) => (x * Math.PI) / 180;
+  const dlat = to(b[1] - a[1]);
+  const dlng = to(b[0] - a[0]);
+  const s = Math.sin(dlat / 2) ** 2 + Math.cos(to(a[1])) * Math.cos(to(b[1])) * Math.sin(dlng / 2) ** 2;
+  return 2 * EARTH_M * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+export function ringLengthM(ring) {
+  let m = 0;
+  for (let i = 1; i < ring.length; i += 1) m += havM(ring[i - 1], ring[i]);
+  return m;
+}
+
+/** Google analog without highway class on the shipped file.
+ *  arterial ≈ major road · street ≈ residential · foot ≈ alley/footway. */
+export function rankWalk(row, lengthM) {
+  const flags = Number(row?.f) || 0;
+  const name = typeof row?.n === 'string' ? row.n : '';
+  if ((flags & WAY_FLAGS.STEPS) === WAY_FLAGS.STEPS) return 'foot';
+  if (name && QUEUE_NAME.test(name)) return 'foot';
+  if (lengthM < 25) return 'foot';
+  if (lengthM >= 160) return 'arterial';
+  return 'street';
+}
+
+export function walkVisible(rank, band) {
+  if (rank === 'arterial') return true;
+  if (rank === 'street') return band === 'streets' || band === 'close';
+  if (rank === 'foot' || rank === 'service') return band === 'close';
+  return false;
+}
 
 export function joinKey(name) {
   return normaliseRideName(name);
@@ -104,8 +141,30 @@ export function readWorld(map, pois) {
   })).filter((l) => Array.isArray(l.ring));
   const water = ringsOf(map.water);
   const wood = ringsOf(map.wood);
-  const service = ringsOf(map.service);
-  const paths = ringsOf(map.path);
+  const service = (map.service || []).map((row, i) => {
+    const ring = row?.r;
+    if (!Array.isArray(ring) || ring.length < 2) return null;
+    return {
+      id: row?.i ?? `service-${i}`,
+      name: typeof row?.n === 'string' ? row.n : '',
+      ring,
+      lengthM: ringLengthM(ring),
+      rank: 'service',
+    };
+  }).filter(Boolean);
+  const paths = (map.path || []).map((row, i) => {
+    const ring = row?.r;
+    if (!Array.isArray(ring) || ring.length < 2) return null;
+    const lengthM = ringLengthM(ring);
+    return {
+      id: row?.i ?? `path-${i}`,
+      name: typeof row?.n === 'string' ? row.n : '',
+      ring,
+      flags: Number(row?.f) || 0,
+      lengthM,
+      rank: rankWalk(row, lengthM),
+    };
+  }).filter(Boolean);
 
   const bounds = boundsOf([
     park,
@@ -117,24 +176,36 @@ export function readWorld(map, pois) {
   return { tracks, coasters, park, lands, water, wood, service, paths, bounds };
 }
 
-export function inkStats(world, variant, primaryName) {
-  const named = world.tracks.filter((t) => t.name);
-  const unnamed = world.tracks.filter((t) => !t.name);
-  const owners = ownersOf(world.tracks, primaryName);
-  const showNamed = variant === 'C';
-  const showOwner = variant === 'B' || variant === 'C';
-  const showUnnamed = variant === 'D';
-  const showService = variant === 'D';
-  const showPaths = variant === 'D';
+export function bandOf(variantKey) {
+  return VARIANTS.find((v) => v.key === variantKey)?.band || 'overview';
+}
+
+/** Crop the plate toward the primary, like pinching in Google Maps. */
+export function bandBounds(full, focus, band) {
+  if (band === 'overview' || !focus) return full;
+  const t = band === 'streets' ? 0.44 : 0.2;
+  const dx = (full.maxLng - full.minLng) * t;
+  const dy = (full.maxLat - full.minLat) * t;
   return {
-    variant,
-    primary: primaryName,
-    join: joinKey(primaryName),
-    ownerFragments: owners.length,
-    namedOn: variant === 'D' ? named.length : showNamed ? named.length : showOwner ? owners.length : 0,
-    unnamedOn: showUnnamed ? unnamed.length : 0,
-    serviceOn: showService ? world.service.length : 0,
-    pathsOn: showPaths ? world.paths.length : 0,
-    namesOn: world.coasters.length,
+    minLng: focus.lng - dx / 2,
+    maxLng: focus.lng + dx / 2,
+    minLat: focus.lat - dy / 2,
+    maxLat: focus.lat + dy / 2,
+  };
+}
+
+export function lodStats(world, band) {
+  const pathsOn = world.paths.filter((p) => walkVisible(p.rank, band));
+  const serviceOn = world.service.filter((p) => walkVisible(p.rank, band));
+  const count = (rank) => world.paths.filter((p) => p.rank === rank).length;
+  return {
+    band,
+    railsOn: world.tracks.length,
+    arterial: count('arterial'),
+    street: count('street'),
+    foot: count('foot'),
+    pathsOn: pathsOn.length,
+    serviceOn: serviceOn.length,
+    serviceAll: world.service.length,
   };
 }
