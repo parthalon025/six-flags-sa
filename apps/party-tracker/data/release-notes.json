@@ -504,5 +504,11 @@
     "items": [
       "Park-wide map: Zone geography plus ride names, not a hide"
     ]
+  },
+  "1.28.2": {
+    "title": "What's new",
+    "items": [
+      "fix: snap map camera back to GPS after free look (#605)"
+    ]
   }
 }
