@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "mapbox-mcp": {
+      "type": "http",
+      "url": "https://mcp.mapbox.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:MAPBOX_ACCESS_TOKEN}"
+      }
+    }
+  }
+}
