@@ -75,7 +75,7 @@ function Q10Coasters() {
     <main style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#111' }}>
       <header style={S.hud} data-prototype-state="">
         <strong>Q10 · D ink + Google path LOD</strong>
-        <span>{thesis.name} — {thesis.thesis} Roads are stitched shapes with width.</span>
+        <span>{thesis.name} — {thesis.thesis} Google plate: poured pavement, thin rails.</span>
         <span>
           {band} · rails {stats.railsOn} · midways on {stats.pathsOn}/{pack.paths.length}
           {' '}(arterial {stats.arterial} · street {stats.street} · foot {stats.foot})

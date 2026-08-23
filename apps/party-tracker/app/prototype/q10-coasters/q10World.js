@@ -141,6 +141,9 @@ export function readWorld(map, pois) {
   })).filter((l) => Array.isArray(l.ring));
   const water = ringsOf(map.water);
   const wood = ringsOf(map.wood);
+  const grass = ringsOf(map.grass);
+  const parking = ringsOf(map.parking);
+  const buildings = ringsOf(map.building);
   const service = (map.service || []).map((row, i) => {
     const ring = row?.r;
     if (!Array.isArray(ring) || ring.length < 2) return null;
@@ -173,7 +176,7 @@ export function readWorld(map, pois) {
     water,
   ]);
 
-  return { tracks, coasters, park, lands, water, wood, service, paths, bounds };
+  return { tracks, coasters, park, lands, water, wood, grass, parking, buildings, service, paths, bounds };
 }
 
 export function bandOf(variantKey) {

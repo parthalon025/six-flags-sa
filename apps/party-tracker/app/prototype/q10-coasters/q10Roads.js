@@ -91,23 +91,91 @@ export function projectWays(rows, project) {
   return rows.map((row) => row.ring.map((pair) => project(pair[0], pair[1])));
 }
 
-/** Rank → fill half-width in viewBox px. Grows on pinch the way Google roads do. */
+/** Snap + split T-junctions so a way that ends on another way shares a vertex. */
+export function nodeWays(ways, snap = 5) {
+  const grid = (p) => [Math.round(p[0] / snap) * snap, Math.round(p[1] / snap) * snap];
+  const raw = ways.map((w) => dropDup(w.map(grid))).filter((w) => w.length >= 2);
+  const nodes = [];
+  const seen = new Set();
+  for (const w of raw) {
+    for (const p of [w[0], w[w.length - 1]]) {
+      const k = `${p[0]},${p[1]}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      nodes.push(p);
+    }
+  }
+  const split = raw.map((w) => {
+    let pts = w.slice();
+    for (const n of nodes) {
+      for (let i = 0; i < pts.length - 1; i += 1) {
+        const a = pts[i];
+        const b = pts[i + 1];
+        if (near(n, a, snap) || near(n, b, snap)) continue;
+        const hit = projectOnSeg(n, a, b);
+        if (!hit || hit.d > snap) continue;
+        pts.splice(i + 1, 0, n);
+        i += 1;
+      }
+    }
+    return dropDup(pts);
+  });
+  return stitchWays(split);
+}
+
+function projectOnSeg(p, a, b) {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const len2 = dx * dx + dy * dy;
+  if (len2 < 1) return null;
+  const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2;
+  if (t <= 0.08 || t >= 0.92) return null;
+  const x = a[0] + t * dx;
+  const y = a[1] + t * dy;
+  return { d: Math.hypot(p[0] - x, p[1] - y), t };
+}
+
+/** Endpoints after noding — pour a disc so T-junctions become one pavement. */
+export function junctionDiscs(chains) {
+  const at = new Map();
+  for (const c of chains) {
+    for (const p of [c[0], c[c.length - 1]]) {
+      at.set(`${p[0]},${p[1]}`, p);
+    }
+  }
+  return [...at.values()];
+}
+
+export function railTies(pts, step = 16, half = 2.4) {
+  const line = dropDup(pts);
+  const ties = [];
+  let acc = 0;
+  for (let i = 1; i < line.length; i += 1) {
+    const a = line[i - 1];
+    const b = line[i];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    acc += len;
+    if (acc < step) continue;
+    acc = 0;
+    const nx = -(b[1] - a[1]) / len;
+    const ny = (b[0] - a[0]) / len;
+    const mx = (a[0] + b[0]) / 2;
+    const my = (a[1] + b[1]) / 2;
+    ties.push([
+      [mx + nx * half, my + ny * half],
+      [mx - nx * half, my - ny * half],
+    ]);
+  }
+  return ties;
+}
+
+/** Rank → fill half-width in viewBox px. One pavement grey, like the Google plate. */
 export const ROAD_HALF = {
-  overview: { arterial: 7.2, street: 0, foot: 0, service: 0 },
-  streets: { arterial: 8.5, street: 4.4, foot: 0, service: 0 },
-  close: { arterial: 10, street: 6.2, foot: 3.4, service: 3.8 },
+  overview: { arterial: 9, street: 0, foot: 0, service: 0 },
+  streets: { arterial: 11, street: 5.5, foot: 0, service: 0 },
+  close: { arterial: 13, street: 7, foot: 3.2, service: 3.5 },
 };
 
-export const ROAD_FILL = {
-  arterial: '#fbf6ea',
-  street: '#f3ecde',
-  foot: '#ebe4d6',
-  service: '#dce6cf',
-};
-
-export const ROAD_CASE = {
-  arterial: '#4a4338',
-  street: '#5a5348',
-  foot: '#6a6358',
-  service: '#4d5c42',
-};
+export const PAVEMENT = '#eceae3';
+export const PAVEMENT_EDGE = '#c9c5bb';
+export const TRAIL = '#6d8a5c';
