@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "58fe96413de91e60f1cccae0c7f66768be35d9115ef99923f62e9ebc6530bdaa"
+    "sha256": "5cdfbbbc3578270815c923dc8a94cffd7b0a2b54e12c6d2819803be86b88f50b"
   },
   "paths": [
     {
@@ -37,9 +37,9 @@
     {
       "id": "map-label-declutter",
       "slice": "Navigate",
-      "user_action": "Read the park map at rest without every Place name stacked on top of the next",
+      "user_action": "Read the park map at rest by World Zone and ride names, not every Place title",
       "suite": "functional",
-      "check": "park-wide view does not print every place name"
+      "check": "park-wide rest shows Zone names and ride names, not every Place"
     },
     {
       "id": "heights-filter",

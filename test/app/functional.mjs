@@ -320,7 +320,7 @@ await check('park geometry is drawn', async () => {
   return true;
 });
 
-await check('park-wide view does not print every place name', async () => {
+await check('park-wide rest shows Zone names and ride names, not every Place', async () => {
   await until(() => a.locator('[data-testid="park-map-gl"][data-map-ready="1"]').count().then((n) => n >= 1), {
     timeout: 20000,
     label: 'map ready',
