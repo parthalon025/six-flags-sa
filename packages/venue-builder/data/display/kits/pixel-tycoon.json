@@ -1,0 +1,116 @@
+{
+  "id": "pixel-tycoon",
+  "label": "Pixel tycoon",
+  "terrain": {
+    "outside": {
+      "base": "#2A4A28",
+      "texture": {
+        "kind": "dot",
+        "color": "#1C341C",
+        "density": 0.55
+      }
+    },
+    "ground": {
+      "base": "#D2A45C",
+      "texture": {
+        "kind": "speckle",
+        "color": "#B8883C",
+        "density": 0.48
+      }
+    },
+    "grass": {
+      "base": "#3C9C34",
+      "texture": {
+        "kind": "dot",
+        "color": "#246824",
+        "density": 0.6
+      }
+    },
+    "wood": {
+      "base": "#1C5C1C",
+      "texture": {
+        "kind": "tuft",
+        "color": "#0C3C0C",
+        "density": 0.55
+      }
+    },
+    "water": {
+      "base": "#2474C4",
+      "texture": {
+        "kind": "wave",
+        "color": "#6CACDC",
+        "density": 0.28
+      }
+    },
+    "lot": {
+      "base": "#8C8474",
+      "texture": {
+        "kind": "stripe",
+        "color": "#C4BCA8",
+        "density": 0.4
+      }
+    },
+    "road": {
+      "base": "#5C584C",
+      "texture": {
+        "kind": "dash",
+        "color": "#E8D49C"
+      },
+      "style": "double"
+    },
+    "service": {
+      "base": "#4C4840",
+      "texture": {
+        "kind": "none"
+      },
+      "style": "dashed"
+    }
+  },
+  "sprites": {
+    "tree": {
+      "style": "round",
+      "canopy": "#148214",
+      "highlight": "#3CDC3C",
+      "shadow": "rgba(20,40,12,0.4)",
+      "scale": 0.85
+    },
+    "building": {
+      "style": "flat",
+      "roofs": [
+        "#C44C3C",
+        "#E8A03C",
+        "#3C6CAC"
+      ],
+      "edge": "#1C140C",
+      "wall": "#8C5C3C",
+      "drop": 0.12
+    },
+    "slide": {
+      "style": "tube",
+      "casing": "rgba(255,255,255,0.85)",
+      "colors": [
+        "#F4C542",
+        "#E05548",
+        "#3FA0D8",
+        "#7BC47F",
+        "#C468D8",
+        "#F08A3C"
+      ],
+      "width": 1
+    },
+    "coaster": {
+      "style": "tube",
+      "rail": "#1C140C",
+      "tie": "#E8D49C"
+    },
+    "badge": {
+      "gate": "#E83C3C",
+      "food": "#F0A028",
+      "restroom": "#2474C4",
+      "shop": "#2A9C3C",
+      "show": "#8C4CD4",
+      "service": "#6C6458"
+    }
+  },
+  "prompt": "Pixel tycoon top-down park: hard 16-colour game-manager palette, chunky flat roofs, undersized sprite trees, double-cased sand roads, dashed service lanes, no painted type — axes (docs/goals/design-language-axes.md): A1 saturated tycoon palette, A3 hard pixel edges, B3 undersized round canopy, B4 flat roofs, B5 double-cased circulation, A6 top-down plate"
+}

@@ -131,6 +131,35 @@
         "lot": "concrete--lot"
       },
       "bakeKit": "watercolor-quest"
+    },
+    "pixel-tycoon": {
+      "label": "Pixel tycoon",
+      "status": "active",
+      "tokens": {
+        "contrastFloor": 4.5,
+        "labelHalo": true,
+        "mode": "day",
+        "colors": {
+          "path": "#E8D49C",
+          "ground": "#C4A46C",
+          "water": "#3C7CBC",
+          "grass": "#5C9C4C",
+          "building": "#B45C4C",
+          "label": "#1C140C"
+        }
+      },
+      "surfaces": {
+        "walkway": "paving-stones--warm",
+        "service-road": "asphalt--worn",
+        "vegetation": "grass--meadow",
+        "water": "water--calm",
+        "pool": "water--pool",
+        "coaster-track": "steel--track",
+        "slide": "fiberglass--flume",
+        "structure": "roofing--shingle",
+        "lot": "concrete--lot"
+      },
+      "bakeKit": "pixel-tycoon"
     }
   }
 }

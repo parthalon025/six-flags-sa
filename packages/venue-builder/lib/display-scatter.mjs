@@ -22,6 +22,16 @@
  *   - shifting a byte by 16 and expecting anything but zero
  *   - shuffling with a process-global RNG, which is reproducible within a run
  *     and not across them
+ *
+ * That contract also fixes the cost. How many darts get thrown is a function of
+ * the seed and of which ones landed, so it is part of the output: for a given
+ * input, the dart count is not something an implementation may choose. What a
+ * dart costs is. Everything under the dart loop — the neighbour index, the
+ * species wheel, the unpacked candidates — exists to make one dart cheap, and
+ * is written so the accept/reject decision it feeds is the decision the
+ * straightforward version would have made, bit for bit.
+ * `test/builder/display-scatter.mjs` pins the placements against frozen
+ * fixtures and the cost against the irreducible sampling floor.
  */
 
 import { pointInRing } from './geometry.mjs';
@@ -33,6 +43,12 @@ export const PACKING = 0.55;
 
 /** Give up on a polygon after this many passes that placed nothing. */
 const MAX_UNCHANGED = 10;
+
+/** Ceiling on the neighbour grid, in buckets — about 8 MB of pointers. Candidate
+ *  cells normally come from one polygon of a bake grid and land far under it; a
+ *  caller scattering over a sparse, far-flung set gets coarser buckets instead
+ *  of an allocation the size of its bounding box. */
+const MAX_BUCKETS = 1 << 20;
 
 /**
  * Target items per unit area from what the sprites cover.
@@ -48,43 +64,96 @@ export function densityFromSpecies(species, packing = PACKING) {
   return covered > 0 ? (1 / covered) * packing : 0;
 }
 
-/** Cumulative-probability wheel. Falls through to the last entry on rounding. */
-function pickSpecies(species, roll) {
-  const total = species.reduce((s, x) => s + (x.probability ?? 1), 0);
+/**
+ * Cumulative-probability wheel, summed once instead of once per dart. The
+ * partial sums accumulate in species order, so each is the float the per-dart
+ * version arrived at.
+ * @param {{ probability?: number }[]} species
+ */
+function speciesWheel(species) {
+  const cumulative = new Float64Array(species.length);
   let acc = 0;
-  const target = roll * total;
-  for (const s of species) {
-    acc += s.probability ?? 1;
-    if (target <= acc) return s;
+  for (let i = 0; i < species.length; i += 1) {
+    acc += species[i].probability ?? 1;
+    cumulative[i] = acc;
   }
-  return species[species.length - 1];
+  return { cumulative, total: acc };
 }
 
-/** Uniform grid of placed discs — the neighbour query for overlap rejection. */
-function discIndex(cellSize) {
-  const buckets = new Map();
-  const key = (cx, cy) => `${cx}:${cy}`;
+/** Index of the species `roll` selects. Falls through to the last on rounding. */
+function pickIndex({ cumulative, total }, roll) {
+  const target = roll * total;
+  for (let i = 0; i < cumulative.length; i += 1) if (target <= cumulative[i]) return i;
+  return cumulative.length - 1;
+}
+
+/**
+ * Uniform grid of placed discs — the neighbour query for overlap rejection.
+ *
+ * A flat array indexed by bucket, not a Map keyed by `"cx:cy"`. The string form
+ * built a key and hashed it for every bucket of every query — 25 of them a dart
+ * — and got slower as the map filled, because the Map it probed kept growing.
+ * In a 240-column kings-island bake it was 44% of all CPU samples, the largest
+ * single cost in the bake, and its share rose with the column count.
+ *
+ * `reach` is how far the scan has to go, and it is one bucket less than the
+ * obvious answer. A disc `k` buckets away on an axis is more than `(k - 1) *
+ * cellSize` away in that coordinate alone, so at `k = reach + 1` the separation
+ * already exceeds `reach * cellSize >= R` and no disc out there can touch a
+ * query of radius `R`. Discs only ever go in at positions inside `bounds`, so
+ * buckets off the edge of the grid are empty and clamping the scan to it drops
+ * nothing.
+ *
+ * The neighbourhood list this used to build is gone rather than fixed: there is
+ * no merge step left to overrun the engine's argument cap, which is what
+ * display-bake.mjs's meadow note is about.
+ *
+ * @param {number} cellSize bucket edge, in cells
+ * @param {number} maxRadius largest radius any species can ask about
+ * @param {{ minX: number, minY: number, maxX: number, maxY: number }} bounds
+ * @param {{ x: number, y: number, radius: number }[]} items backing store; buckets hold indices
+ */
+function discIndex(cellSize, maxRadius, bounds, items) {
+  const bx0 = Math.floor(bounds.minX / cellSize) - 1;
+  const by0 = Math.floor(bounds.minY / cellSize) - 1;
+  const width = (Math.floor(bounds.maxX / cellSize) + 2) - bx0;
+  const height = (Math.floor(bounds.maxY / cellSize) + 2) - by0;
+  const buckets = new Array(width * height).fill(null);
   return {
-    add(item) {
-      const cx = Math.floor(item.x / cellSize);
-      const cy = Math.floor(item.y / cellSize);
-      const k = key(cx, cy);
-      const list = buckets.get(k);
-      if (list) list.push(item); else buckets.set(k, [item]);
+    /** Record `items[at]`, which must already be in place. */
+    add(at) {
+      const item = items[at];
+      const bx = Math.floor(item.x / cellSize) - bx0;
+      const by = Math.floor(item.y / cellSize) - by0;
+      const k = by * width + bx;
+      const list = buckets[k];
+      if (list) list.push(at); else buckets[k] = [at];
     },
-    /** Every placed disc whose bucket could hold an overlap with `radius` at (x,y). */
-    near(x, y, radius) {
-      const reach = Math.ceil((radius + cellSize) / cellSize);
-      const cx = Math.floor(x / cellSize);
-      const cy = Math.floor(y / cellSize);
-      const out = [];
-      for (let dy = -reach; dy <= reach; dy += 1) {
-        for (let dx = -reach; dx <= reach; dx += 1) {
-          const list = buckets.get(key(cx + dx, cy + dy));
-          if (list) out.push(...list);
+    /** True when a disc of `radius` at (x, y) touches nothing already placed. */
+    hasRoom(x, y, radius) {
+      const reach = Math.ceil((radius + maxRadius) / cellSize);
+      const bx = Math.floor(x / cellSize) - bx0;
+      const by = Math.floor(y / cellSize) - by0;
+      const top = by - reach < 0 ? 0 : by - reach;
+      const bottom = by + reach > height - 1 ? height - 1 : by + reach;
+      const left = bx - reach < 0 ? 0 : bx - reach;
+      const right = bx + reach > width - 1 ? width - 1 : bx + reach;
+      for (let cy = top; cy <= bottom; cy += 1) {
+        const row = cy * width;
+        for (let cx = left; cx <= right; cx += 1) {
+          const list = buckets[row + cx];
+          if (list === null) continue;
+          for (let i = 0; i < list.length; i += 1) {
+            const o = items[list[i]];
+            // The same comparison, in the same operand order, that
+            // `every(o => hypot(o.x - x, o.y - y) > o.radius + radius)` made —
+            // negated, and left as soon as one disc answers, instead of
+            // collecting the whole neighbourhood into a list first.
+            if (!(Math.hypot(o.x - x, o.y - y) > o.radius + radius)) return false;
+          }
         }
       }
-      return out;
+      return true;
     },
   };
 }
@@ -124,9 +193,41 @@ export function scatterPoints({
   const requested = Math.ceil(cells.length * perCell);
   if (requested <= 0) return { placed: [], requested: 0, dropped: 0 };
 
+  // A candidate is read once per sample, and by default there are eight samples
+  // to a dart, so they are unpacked into typed arrays up front rather than
+  // destructured out of an array of pairs a few million times over. The same
+  // pass collects the bounds the neighbour grid gets laid out over.
+  const count = cells.length;
+  const cellX = new Float64Array(count);
+  const cellY = new Float64Array(count);
+  let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity;
+  for (let i = 0; i < count; i += 1) {
+    const x = cells[i][0]; const y = cells[i][1];
+    cellX[i] = x; cellY[i] = y;
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  }
+
   const maxRadius = Math.max(...species.map((s) => s.radius));
-  const index = discIndex(Math.max(1, maxRadius * 2));
+  // A position drawn in cell (x, y) lands in [x, x+1) x [y, y+1), so the grid
+  // covers one cell past the far corner of the candidate set.
+  const bounds = { minX, minY, maxX: maxX + 1, maxY: maxY + 1 };
+  const bucketCount = (size) => (
+    ((Math.floor(bounds.maxX / size) + 2) - (Math.floor(bounds.minX / size) - 1))
+    * ((Math.floor(bounds.maxY / size) + 2) - (Math.floor(bounds.minY / size) - 1))
+  );
+  // Any bucket size answers the overlap query correctly, because `reach` is
+  // derived from it; a coarser one only means more discs to look at per bucket.
+  // Doubling is the cheap way to stop a far-flung candidate set from asking for
+  // a grid the size of its bounding box.
+  let cellSize = Math.max(1, maxRadius * 2);
+  while (bucketCount(cellSize) > MAX_BUCKETS) cellSize *= 2;
+
   const placed = [];
+  const index = discIndex(cellSize, maxRadius, bounds, placed);
+  const wheel = speciesWheel(species);
   const dartsPerPass = Math.max(10, requested);
 
   let unchanged = 0;
@@ -134,29 +235,30 @@ export function scatterPoints({
     const before = placed.length;
     for (let d = 0; d < dartsPerPass && placed.length < requested; d += 1) {
       // Importance sampling: draw a few candidates, keep the one sitting
-      // highest on the noise field. Clumps fall out; no cluster centres.
-      let best = null;
+      // highest on the noise field. Clumps fall out; no cluster centres. Held
+      // in scalars rather than a two-element array: every improvement on the
+      // running best used to allocate a pair, and all but the last of them
+      // became garbage, a few million times a bake.
+      let bestX = 0;
+      let bestY = 0;
       let bestScore = -Infinity;
       for (let s = 0; s < samples; s += 1) {
-        const [cx, cy] = cells[Math.floor(rng() * cells.length)];
-        const px = cx + rng();
-        const py = cy + rng();
+        const i = Math.floor(rng() * count);
+        const px = cellX[i] + rng();
+        const py = cellY[i] + rng();
         const score = noiseAt ? noiseAt(px * freq, py * freq) : 0;
-        if (score > bestScore) { bestScore = score; best = [px, py]; }
+        if (score > bestScore) { bestScore = score; bestX = px; bestY = py; }
         if (!noiseAt) break;
       }
-      const [x, y] = best;
+      const x = bestX;
+      const y = bestY;
       if (reject(x, y)) continue;
 
-      const pick = pickSpecies(species, rng());
-      const room = index
-        .near(x, y, pick.radius + maxRadius)
-        .every((o) => Math.hypot(o.x - x, o.y - y) > o.radius + pick.radius);
-      if (!room) continue;
+      const pick = species[pickIndex(wheel, rng())];
+      if (!index.hasRoom(x, y, pick.radius)) continue;
 
-      const item = { x, y, radius: pick.radius, id: pick.id, big: Boolean(pick.big) };
-      index.add(item);
-      placed.push(item);
+      placed.push({ x, y, radius: pick.radius, id: pick.id, big: Boolean(pick.big) });
+      index.add(placed.length - 1);
     }
     unchanged = placed.length === before ? unchanged + 1 : 0;
   }

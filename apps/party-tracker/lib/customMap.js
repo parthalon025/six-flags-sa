@@ -28,16 +28,18 @@ const CUSTOM_MAPS = {
   'pixel-tycoon': {
     id: 'pixel-tycoon',
     placement: PLACEMENT_OVERLAY,
-    camera: 'iso',
-    renderer: 'iso',
-    template: 'rct-classic',
-    hideLayers: ['building', 'coaster'],
+    camera: 'mercator',
+    renderer: 'baked',
+    /* Declared baked; no certified world PNG ships yet. */
+    hasPack: false,
+    world: { projection: 'top-down' },
   },
   'layered-atlas': {
     id: 'layered-atlas',
     placement: PLACEMENT_OVERLAY,
     camera: 'mercator',
     renderer: 'baked',
+    hasPack: true,
     world: { projection: 'top-down' },
   },
   'watercolor-quest': {
@@ -45,6 +47,7 @@ const CUSTOM_MAPS = {
     placement: PLACEMENT_OVERLAY,
     camera: 'mercator',
     renderer: 'baked',
+    hasPack: true,
     world: { projection: 'top-down' },
   },
 };
@@ -53,6 +56,20 @@ const CUSTOM_MAPS = {
 export function resolveCustomMap(wear) {
   if (!wear) return null;
   return CUSTOM_MAPS[wear] || null;
+}
+
+/**
+ * The MapLibre band map for a worn Skin that ships a certified world PNG.
+ * Pixel tycoon is declared baked but has no pack yet — OSM until one exists.
+ *
+ * @param {string|null|undefined} venueId
+ * @param {string|null|undefined} wear
+ * @returns {{ mid: { image: string } }|null}
+ */
+export function bakedWorldBands(venueId, wear) {
+  const spec = resolveCustomMap(wear);
+  if (!spec || spec.renderer !== 'baked' || !spec.hasPack || !venueId) return null;
+  return { mid: { image: `/venues/${venueId}/display/${spec.id}.world.png` } };
 }
 
 export function customMapCamera(spec) {

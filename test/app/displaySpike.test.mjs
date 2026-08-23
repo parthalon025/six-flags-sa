@@ -18,10 +18,10 @@ process.emitWarning = (warning, ...rest) => {
   emitWarning(warning, ...rest);
 };
 
-const { displaySpikeFile, displaySpikeContentType, parseByteRange } = await import(
+const { displaySpikeFile, displaySpikeContentType, isMapLibreWorkerFile, parseByteRange } = await import(
   '../../apps/party-tracker/lib/displaySpike.js'
 );
-const { DISPLAY_SPIKE_SKIN, DISPLAY_SPIKE_VENUE } = await import(
+const { DISPLAY_SPIKE_SKIN, DISPLAY_SPIKE_VENUE, PARK_MAP_RENDERERS, parkMapRenderer } = await import(
   '../../apps/party-tracker/lib/mapLibreConfigured.js'
 );
 
@@ -55,7 +55,10 @@ check('worker bundle files resolve into maplibre-gl/dist', () => {
     const file = displaySpikeFile(name);
     assert.ok(file, `${name} should be allow-listed`);
     assert.ok(file.includes(path.join('maplibre-gl', 'dist')), `${name} comes from the bundled library`);
+    assert.equal(isMapLibreWorkerFile(name), true, `${name} is served even when the spike is off`);
   }
+  assert.equal(isMapLibreWorkerFile('base.pmtiles'), false);
+  assert.equal(isMapLibreWorkerFile('../recipe.json'), false);
 });
 
 check('anything not allow-listed is refused, traversal included', () => {
@@ -107,6 +110,32 @@ check('malformed and unsatisfiable ranges come back null (the route 416s)', () =
   }
   // Start at or past EOF cannot be satisfied.
   assert.equal(parseByteRange('bytes=1000-1999', 1000), null);
+});
+
+/* ------------------------------------------------- which renderer draws -- */
+/* Slice h11 ports ParkMap behind the map view seam. ADR-0019 clause 3 makes
+   MapLibre the one renderer; docs/train-h-seams.md keeps the SVG adapter as
+   the escape hatch until the ported one passes the gate, so which of the two
+   draws is a decision, and a decision with a default worth pinning. */
+
+check('the shipped renderer is MapLibre', () => {
+  assert.deepEqual([...PARK_MAP_RENDERERS], ['gl']);
+  assert.equal(parkMapRenderer({ env: undefined, search: '' }), 'gl');
+  assert.equal(parkMapRenderer(), 'gl', 'and with nothing asked at all');
+});
+
+check('a review can still ask for the shipped renderer by name', () => {
+  assert.equal(parkMapRenderer({ env: 'gl', search: '' }), 'gl');
+  assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=gl' }), 'gl');
+  // svg is retired — asking for it falls back to the shipped engine
+  assert.equal(parkMapRenderer({ env: 'gl', search: '?parkMap=svg' }), 'gl');
+});
+
+check('a renderer nobody wrote falls back rather than blanking the map', () => {
+  for (const asked of ['webgpu', '1', 'true', '', null]) {
+    assert.equal(parkMapRenderer({ env: asked, search: '' }), 'gl', `env ${JSON.stringify(asked)}`);
+  }
+  assert.equal(parkMapRenderer({ env: undefined, search: '?parkMap=webgpu' }), 'gl');
 });
 
 if (FAIL.length) {

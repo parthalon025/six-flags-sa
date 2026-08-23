@@ -1,0 +1,616 @@
+{
+  "version": 1,
+  "venue": "big-kahunas",
+  "bands": [
+    "overview",
+    "mid"
+  ],
+  "source": {
+    "source": "planetary-computer:naip",
+    "tile": "fl_m_3008637_sw_16_060_20191109_20200114",
+    "captured": "2019-11-09",
+    "gsd": 0.6,
+    "license": "public-domain",
+    "attribution": "USDA FPAC-BC-GEO NAIP via Microsoft Planetary Computer",
+    "sha256": "d97622a1ae0450338c56a8056ab3c74078d220b316edf3f8db39cb7cb385a13b"
+  },
+  "classes": {
+    "grass": {
+      "sampleShare": 0.027577727033198666,
+      "samples": 314,
+      "lightness": 1.1294045704835582,
+      "redness": -5.0160843946549525,
+      "warmth": 0.21242547497201336,
+      "observed": "#B0B8AE"
+    },
+    "wood": {
+      "sampleShare": 0.005445283681714386,
+      "samples": 62,
+      "lightness": -23.592023640097707,
+      "redness": -10.56958977353101,
+      "warmth": 5.050338021112756,
+      "observed": "#697A66"
+    },
+    "water": {
+      "sampleShare": 0.009748814333391885,
+      "samples": 111,
+      "lightness": 10.247196273446605,
+      "redness": -3.1809420411133567,
+      "warmth": 1.8150786068910651,
+      "observed": "#CED0C4"
+    },
+    "service": {
+      "sampleShare": 0.46443000175654314,
+      "samples": 5288,
+      "lightness": -0.18056408695403547,
+      "redness": -0.5675272738872046,
+      "warmth": -1.098935883710359,
+      "observed": "#B4B2AD"
+    },
+    "road": {
+      "sampleShare": 0.19304408923239066,
+      "samples": 2198,
+      "lightness": -2.613107752826153,
+      "redness": 1.4779380371248134,
+      "warmth": 2.537445217091463,
+      "observed": "#B4AAA0"
+    },
+    "structure": {
+      "sampleShare": 0.29975408396276126,
+      "samples": 3413,
+      "lightness": 1.9540191552084565,
+      "redness": 0.6844494729444355,
+      "warmth": -0.10179546320590926,
+      "observed": "#BDB7B1"
+    }
+  },
+  "order": {
+    "lightness": [
+      "wood",
+      "road",
+      "service",
+      "grass",
+      "structure",
+      "water"
+    ],
+    "redness": [
+      "wood",
+      "grass",
+      "water",
+      "service",
+      "structure",
+      "road"
+    ],
+    "warmth": [
+      "service",
+      "structure",
+      "grass",
+      "water",
+      "road",
+      "wood"
+    ]
+  },
+  "contrasts": [
+    {
+      "a": "water",
+      "b": "wood",
+      "deltaE": 34.787236497719746
+    },
+    {
+      "a": "structure",
+      "b": "wood",
+      "deltaE": 28.386584530391485
+    },
+    {
+      "a": "service",
+      "b": "wood",
+      "deltaE": 26.190671282191328
+    },
+    {
+      "a": "grass",
+      "b": "wood",
+      "deltaE": 25.79526763901151
+    },
+    {
+      "a": "road",
+      "b": "wood",
+      "deltaE": 24.322262814101865
+    },
+    {
+      "a": "road",
+      "b": "water",
+      "deltaE": 13.697240479421547
+    },
+    {
+      "a": "service",
+      "b": "water",
+      "deltaE": 11.138204672698993
+    },
+    {
+      "a": "grass",
+      "b": "water",
+      "deltaE": 9.437710000717013
+    },
+    {
+      "a": "structure",
+      "b": "water",
+      "deltaE": 9.348392614349748
+    },
+    {
+      "a": "grass",
+      "b": "road",
+      "deltaE": 7.847575589685585
+    },
+    {
+      "a": "grass",
+      "b": "structure",
+      "deltaE": 5.768432229555798
+    },
+    {
+      "a": "road",
+      "b": "structure",
+      "deltaE": 5.334216312085155
+    },
+    {
+      "a": "road",
+      "b": "service",
+      "deltaE": 4.829540820326165
+    },
+    {
+      "a": "grass",
+      "b": "service",
+      "deltaE": 4.819268300608254
+    },
+    {
+      "a": "service",
+      "b": "structure",
+      "deltaE": 2.667991831046689
+    }
+  ],
+  "groups": {
+    "grass": {
+      "axis": "lightness",
+      "groups": [
+        {
+          "rank": 0,
+          "sampleShare": 0.15286624203821655,
+          "samples": 48,
+          "lightness": -20.195132211492876,
+          "redness": -6.646673850235542,
+          "warmth": 0.08067149551257602,
+          "observed": "#758177",
+          "members": [
+            "0f19ebb4b8be"
+          ]
+        },
+        {
+          "rank": 1,
+          "sampleShare": 0.8471337579617835,
+          "samples": 266,
+          "lightness": 0.6205909030046257,
+          "redness": -5.640215383738781,
+          "warmth": 1.6041231905806246,
+          "observed": "#ADB3A9",
+          "members": [
+            "02f13a2369dd",
+            "b1af8a9f7d87",
+            "8d0a599ce656",
+            "d7c945fa4d6a",
+            "95dbef5e4534",
+            "6f87f48e6e1f",
+            "1a89c80d6e7f"
+          ]
+        }
+      ]
+    },
+    "wood": {
+      "axis": "lightness",
+      "groups": [
+        {
+          "rank": 0,
+          "sampleShare": 1,
+          "samples": 62,
+          "lightness": -24.68087145996288,
+          "redness": -8.688303053568115,
+          "warmth": 3.736662418459214,
+          "observed": "#6C7766",
+          "members": [
+            "9499142a799e",
+            "34943cbe7f98"
+          ]
+        }
+      ]
+    },
+    "water": {
+      "axis": "lightness",
+      "groups": [
+        {
+          "rank": 0,
+          "sampleShare": 0.13513513513513514,
+          "samples": 15,
+          "lightness": -41.12917414911978,
+          "redness": -2.7240511912143845,
+          "warmth": -10.092382707948317,
+          "observed": "#414C54",
+          "members": [
+            "92f4c84af42e"
+          ]
+        },
+        {
+          "rank": 1,
+          "sampleShare": 0.8648648648648649,
+          "samples": 96,
+          "lightness": 11.928032763446367,
+          "redness": -2.6165806385397854,
+          "warmth": 0.21395408723383813,
+          "observed": "#D3D5CC",
+          "members": [
+            "40d824785187",
+            "38892141ec63"
+          ]
+        }
+      ]
+    },
+    "service": {
+      "axis": "lightness",
+      "groups": [
+        {
+          "rank": 0,
+          "sampleShare": 0.06883509833585477,
+          "samples": 364,
+          "lightness": -25.086373606197355,
+          "redness": -4.7585971080544445,
+          "warmth": -4.135689796920657,
+          "observed": "#677766",
+          "members": [
+            "baf52194ea9a",
+            "b3c07fcfe2af",
+            "ace6e04babc3",
+            "63b21d38b4d9",
+            "8a878ef84619",
+            "a0ebf7e63f61",
+            "331e2643aee9",
+            "c0b3aede7fdf",
+            "f82d5fad848a"
+          ]
+        },
+        {
+          "rank": 1,
+          "sampleShare": 0.41357791225416035,
+          "samples": 2187,
+          "lightness": -10.83948025090136,
+          "redness": 0.07920728860919568,
+          "warmth": -4.621656610450285,
+          "observed": "#939396",
+          "members": [
+            "7ce8a9a3705b",
+            "430353919556",
+            "f6d8f6c2e7c4",
+            "976a9953cc33",
+            "caa9a610708d",
+            "0a0d2cd4a138",
+            "137975e1bbc7",
+            "e87c60d2cb28",
+            "0df2b54fd1be",
+            "3d32dcd4b58c",
+            "ff7d4d2ebbbe",
+            "4cf5828c7804",
+            "0b50fe1f96f2",
+            "0c5b1ca4f7c8",
+            "61f01f977f2c",
+            "35f6c01e82f9",
+            "d843acb937e2",
+            "48f99366188f",
+            "40ad08be6e35",
+            "e4a48bdd6407",
+            "22628b5d2135",
+            "b492facf46c7",
+            "b268f0d6eefa",
+            "10ab1b52c99c",
+            "4da3b08cc95d",
+            "d809a9ebb5f0",
+            "ef40a8e7c715",
+            "030764b26964",
+            "06de1efc7e4c",
+            "5aedcf3a97a8",
+            "f1fa595d8ad2",
+            "9f141b6430e7",
+            "f435eddee17a",
+            "6d2d0283bc72",
+            "bc204f7f112d",
+            "36c470fd0397",
+            "705894d71b41",
+            "4b6bb7036c5a",
+            "449320700a1a",
+            "f4cb428b4727",
+            "4582baf59853",
+            "8c6599286363",
+            "97dfc09e4260",
+            "cd3cb52304f4",
+            "2a4696cf36ca",
+            "95d35a8ca3ec",
+            "a4c6550b6800",
+            "d58095ac51df",
+            "74c862ca163d",
+            "fb7c577c2603",
+            "563cfb901235"
+          ]
+        },
+        {
+          "rank": 2,
+          "sampleShare": 0.5175869894099848,
+          "samples": 2737,
+          "lightness": 7.865063212676503,
+          "redness": -0.30890263160245085,
+          "warmth": -1.0934379737937912,
+          "observed": "#CDCAC3",
+          "members": [
+            "050e03a33e6a",
+            "b578a3ef7868",
+            "86865681fd04",
+            "e5ad6f341ebe",
+            "a93c2a4546a6",
+            "bce9089241d8",
+            "10102a092c07",
+            "6043c9030570",
+            "974c1021426f",
+            "763c21c5ec46",
+            "b9f197e690fa",
+            "68911181b8bd",
+            "3dfaacf41ccf",
+            "7af7ef9794a2",
+            "b34915bf223a",
+            "e244bcb6e07b",
+            "d2a59d516f2c",
+            "2e4800cb4908",
+            "6f3c868e0fb6",
+            "5ec273324e6a",
+            "7ee5d589e349",
+            "6cbb544318bd",
+            "9f5139f7efdf",
+            "3d52196e662e",
+            "c72086b79860",
+            "810c2c449b77",
+            "f79936b79732",
+            "7a4924f0e05f",
+            "2ef3f26e28fd",
+            "c63428b59fbe",
+            "5562a9419488",
+            "671d967b8c7b",
+            "fbe0125e9173",
+            "9ace2d5e7974",
+            "204c988ecbf1",
+            "007a1eb0f4af",
+            "b6eb2c3f4b9a",
+            "5f6a03206b17",
+            "581a9b51c806",
+            "f39f6fc71bfe",
+            "7ede44cc6433",
+            "8f47ad386a36",
+            "78314f36f1f5",
+            "b23b8d0e4201",
+            "9037a0311b9e",
+            "0d8b60b6e086",
+            "42d3772d838e",
+            "aed35eaa71e7",
+            "8fbec81ab45b",
+            "96d9bff44b50",
+            "409fa2a5e91b",
+            "14deac64cea3",
+            "03896edc5710",
+            "4196ad513c92",
+            "915f0fbcac44",
+            "bd0ca3ba198c",
+            "d3f985cbeba6",
+            "454ad604ad69",
+            "da92e9ef558b",
+            "40e7e7624449",
+            "9803af0d780a",
+            "100f626ed361",
+            "1f2cb3df9244"
+          ]
+        }
+      ]
+    },
+    "road": {
+      "axis": "lightness",
+      "groups": [
+        {
+          "rank": 0,
+          "sampleShare": 0.13193812556869883,
+          "samples": 290,
+          "lightness": -26.50253981594969,
+          "redness": -1.5127748222069755,
+          "warmth": -8.45143360079043,
+          "observed": "#6A6E75",
+          "members": [
+            "82241f2eea60",
+            "5bc938c388f2",
+            "a5e1a2396b8f",
+            "08e4fffd97ff",
+            "273557d088b8",
+            "485ba5bb0386",
+            "09d8b53c6f12"
+          ]
+        },
+        {
+          "rank": 1,
+          "sampleShare": 0.35896269335759784,
+          "samples": 789,
+          "lightness": -8.01755054380844,
+          "redness": 0.767979592106985,
+          "warmth": 2.3591174446447303,
+          "observed": "#A49792",
+          "members": [
+            "ab483b275f6d",
+            "cf156e4b1cdd",
+            "cc298155a46a",
+            "8af0d0138f8a",
+            "265dd5e08c6d",
+            "ac7fa6a265a0",
+            "65e428fe7cfd",
+            "3f8cf6aabe81",
+            "4b42dc352ea8",
+            "2f47b9e07c7a",
+            "884ebbb12077",
+            "1c25d33b33a3",
+            "cc51bd0563b6",
+            "edacd27d9d51",
+            "907e498e177e",
+            "6de6ee9e686e",
+            "984208441de7"
+          ]
+        },
+        {
+          "rank": 2,
+          "sampleShare": 0.5090991810737033,
+          "samples": 1119,
+          "lightness": 7.033110279920265,
+          "redness": -0.5651540774341175,
+          "warmth": 0.6835055623258999,
+          "observed": "#CAC6BC",
+          "members": [
+            "7fbb3f37b80c",
+            "69614947cb78",
+            "e7ee39493ab0",
+            "87aa06d4a5bf",
+            "7912b29dde31",
+            "2bbc8a484360",
+            "8fd77f9aa7a3",
+            "8cfa46700b67",
+            "18c74497294f",
+            "16a05a7f90f3",
+            "1858de8c6399",
+            "d3c1086916f4",
+            "938fd4a18432",
+            "bf637350a897",
+            "a42fe654534c",
+            "fc55d088c99a",
+            "3497e1b7c2c8",
+            "1d01770967ea",
+            "0bfa44b8f148",
+            "4c6b57a76cf4",
+            "cc6c7a7ba182",
+            "c7790b54e9d5",
+            "9a7b6923a746",
+            "ecc12001d1e5",
+            "72d70dc7c15b",
+            "02f9350b5231"
+          ]
+        }
+      ]
+    },
+    "structure": {
+      "axis": "lightness",
+      "groups": [
+        {
+          "rank": 0,
+          "sampleShare": 0.3111631995312042,
+          "samples": 1062,
+          "lightness": -11.010470203849458,
+          "redness": 4.373397212212677,
+          "warmth": -0.7379723782347773,
+          "observed": "#A19390",
+          "members": [
+            "22e82a145ec2",
+            "f9ff5d243830",
+            "8fd7b1bb1677",
+            "83006ec0ecc4",
+            "f30e1106eb91",
+            "e0e4e28ba299",
+            "153170d2240c",
+            "f6322f172719",
+            "efa3f6a9914e",
+            "53559ddcd385",
+            "a1ead69c0ead",
+            "0fc0bc6581ac",
+            "01166f7e294d",
+            "bd963afe4351",
+            "7cbc938d846a",
+            "13740abaa5f6",
+            "c7dc55372310",
+            "02b570300e7a",
+            "de5be9ff9988",
+            "83c32869cff1",
+            "08642f4baf84",
+            "e4f30ed363b9",
+            "525f8f860bc8"
+          ]
+        },
+        {
+          "rank": 1,
+          "sampleShare": 0.2625256372692646,
+          "samples": 896,
+          "lightness": 1.5972431348673268,
+          "redness": 0.08622116375844219,
+          "warmth": -0.7122325150479489,
+          "observed": "#BEB8B2",
+          "members": [
+            "594512e026ab",
+            "67f545d8dabf",
+            "4cf153a2d893",
+            "42dc84c70d09",
+            "1cd4014fad62",
+            "1cda7ef49104",
+            "56f0f29be44d",
+            "ac4563925d57",
+            "ab5a40a59ef9",
+            "e3313785a967",
+            "a944bbda59ed",
+            "7cc21fecff34",
+            "2b030e8f37c8",
+            "5229e5037119",
+            "23f2f76224cd",
+            "24aa156d96a6",
+            "5dcf39df2d90",
+            "fb1df1fef449",
+            "145e82ec7880"
+          ]
+        },
+        {
+          "rank": 2,
+          "sampleShare": 0.4263111631995312,
+          "samples": 1455,
+          "lightness": 11.22137575596129,
+          "redness": -0.2961300036561837,
+          "warmth": -1.4641759430172767,
+          "observed": "#D2CFCB",
+          "members": [
+            "a5f74ddab9b5",
+            "b345e7343ff8",
+            "e444904f82be",
+            "03da3ba5b2fe",
+            "016763f092d4",
+            "278ee88130dc",
+            "35ceadee0038",
+            "953c34d04e3d",
+            "d200bf9fc858",
+            "2d4c128fad94",
+            "5191eea6d745",
+            "31f2bec49fa2",
+            "650c6b681e2c",
+            "f3d474c14918",
+            "c28ae208a3f4",
+            "99e6573667c3",
+            "c3e5b8093303",
+            "e20a3c5153f1",
+            "c9f382cb1a1c",
+            "be48c54f9d7b",
+            "3293876ce6fa",
+            "e46f72fa7a8a",
+            "eca8327e6dda",
+            "ca5efc13dcc8",
+            "20c0bab7f5fd",
+            "238f595338e8",
+            "2cc554025aee",
+            "96574a97aeb4",
+            "6c550f0c7dfd",
+            "1070bd58133a",
+            "a28c3d544d18",
+            "8e8891fa5c01"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,15 +1,14 @@
 /**
  * Byte server for the MapLibre display-pipeline spike (issue #527) — see
  * lib/displaySpike.js for why this exists instead of publishing to
- * public/venues. 404s outright unless mapLibreDisplayEnabled(); serves only
- * the allow-listed files — Big Kahuna's one certified Skin's pack plus
- * MapLibre's worker bundle (see lib/displaySpike.js for why), nothing else
- * on disk. Honors Range so pmtiles' own byte-range fetches work — it is
- * a PMTiles archive, not a single blob a client downloads whole.
+ * public/venues. Pack files 404 unless mapLibreDisplayEnabled(). The worker
+ * bundle is always served — the shipped World map boots it. Honors Range so
+ * pmtiles' own byte-range fetches work — it is a PMTiles archive, not a
+ * single blob a client downloads whole.
  */
 import { createReadStream, statSync } from 'node:fs';
 import { mapLibreDisplayEnabled } from '@/lib/mapLibreConfigured';
-import { displaySpikeContentType, displaySpikeFile, parseByteRange } from '@/lib/displaySpike';
+import { displaySpikeContentType, displaySpikeFile, isMapLibreWorkerFile, parseByteRange } from '@/lib/displaySpike';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,12 +26,15 @@ function streamToWeb(nodeStream) {
 }
 
 export async function GET(request, { params }) {
-  if (!mapLibreDisplayEnabled()) {
+  const segments = (await params).path || [];
+  const name = segments.join('/');
+  // Worker files are the shipped map's, not a spike extra — 404ing them when
+  // NEXT_PUBLIC_MAPLIBRE_DISPLAY is off leaves MapLibre's canvas up and its
+  // `load` event never firing (ParkMap then draws no Overlay marks).
+  if (!isMapLibreWorkerFile(name) && !mapLibreDisplayEnabled()) {
     return new Response('Not found', { status: 404 });
   }
 
-  const segments = (await params).path || [];
-  const name = segments.join('/');
   const file = displaySpikeFile(name);
   if (!file) return new Response('Not found', { status: 404 });
 

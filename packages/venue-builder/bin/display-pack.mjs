@@ -85,6 +85,16 @@ for (const id of targets) {
       if (!json && !terrain) console.log(`${id}: no DEM coverage — compiling flat`);
     }
     const result = runDisplayStage(id, { tiles, terrain, ...(bake ? { bake: {} } : {}) });
+    if (bake && result.bakeCerts?.length) {
+      const { cutPackedMidPyramid } = await import('../lib/display-pack.mjs');
+      await cutPackedMidPyramid({
+        id,
+        bakeCerts: result.bakeCerts,
+        bakeDir: result.bakeDir,
+        outDir: result.outDir,
+        primaryKit: result.primaryKit,
+      });
+    }
     results.push(result);
     if (!json) {
       const mark = result.certified ? 'ok' : 'FAILED';

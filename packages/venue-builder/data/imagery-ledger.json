@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "contact": "imagery evidence lane — docs/adr/0020-imagery-ground-truth.md clauses 1-2, as amended by docs/adr/0021-zoomable-worlds-revised.md clauses 8-9",
+  "_comment": "Every imagery tile any venue derives a claim from, pinned the way this package already pins assets (data/display/assets.json) and reference images (data/display/references/images.json). Read by lib/imagery-ledger.mjs. Rows are recorded as the venue's sources.json actually stamps them; a row is never edited to make a gate pass, and there is no exemption field. A row that raises problems is an open question for a human, not a bug in the ledger.",
+  "tiles": {
+    "okaloosa-ortho-2025": {
+      "label": "Okaloosa County 2025 orthophotography over Big Kahuna's Destin",
+      "kind": "aerial_imagery",
+      "source": "okaloosa-county-gis",
+      "provider": "Okaloosa County GIS",
+      "served_via": "Esri World Imagery",
+      "captured": "2025-03-01",
+      "sha256": null,
+      "license": null,
+      "path": null,
+      "gsd": 0.076,
+      "horizontal_accuracy_m": 0.19,
+      "used_by": [
+        "big-kahunas"
+      ],
+      "used_for": "Walking paths OpenStreetMap does not draw, and ride positions where OSM names geometry but not the attraction.",
+      "recorded_from": "data/venues/big-kahunas/sources.json",
+      "review": "UNADJUDICATED. Copied verbatim from the venue's sources.json, which is the only record of this imagery that exists. Three things are true at once and only a human can weigh them. (a) ADR-0020 clause 2 rejects Esri for derivation, and this row says its pixels were served via Esri World Imagery. (b) The imagery is attributed to a county GIS programme, and a county ortho reached through an Esri endpoint is a different thing from Esri's own basemap — that reading may well be defensible. (c) Neither reading is evidenced: no licence class was ever recorded for the county programme, and the tile bytes were never ingested, so clause 1's sha256 pin does not exist either. Nothing in this repo adjudicated any of it before this row existed. Resolving it means finding the county's imagery licence and its direct download, not editing this file."
+    }
+  }
+}

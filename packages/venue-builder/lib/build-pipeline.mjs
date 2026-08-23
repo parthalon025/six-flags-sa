@@ -351,7 +351,13 @@ export async function runVenuePipeline(park, opts = {}) {
   if (!skip.includes('display') && display) {
     console.error('  · display: visual specs + display-certify');
     try {
-      const { runDisplayStage, loadTruthFor } = await import('./display-pack.mjs');
+      const {
+        runDisplayStage,
+        loadTruthFor,
+        cutPackedMidPyramid,
+        bakeOptsForVenue,
+        applyMidPyramidToManifest,
+      } = await import('./display-pack.mjs');
       // Terrain needs the network, so it rides the same opt-in shape as the
       // stage itself. Without it a venue compiles flat, which is declared in
       // certification rather than silent.
@@ -364,7 +370,17 @@ export async function runVenuePipeline(park, opts = {}) {
         });
         terrain = prepared?.terrain || null;
       }
-      const disp = runDisplayStage(park.id, { tiles: true, terrain });
+      const disp = runDisplayStage(park.id, { tiles: true, terrain, ...bakeOptsForVenue(park.id) });
+      if (disp.bakeCerts?.length) {
+        const cut = await cutPackedMidPyramid({
+          id: park.id,
+          bakeCerts: disp.bakeCerts,
+          bakeDir: disp.bakeDir,
+          outDir: disp.outDir,
+          primaryKit: disp.primaryKit,
+        });
+        if (!cut?.gap) applyMidPyramidToManifest(disp.outDir, { primaryKit: disp.primaryKit });
+      }
       logStage('display', {
         certified: disp.certified,
         skins: Object.keys(disp.packs).length,

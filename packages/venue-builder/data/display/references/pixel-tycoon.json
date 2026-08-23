@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "id": "pixel-tycoon",
+  "kit": "pixel-tycoon",
+  "style": "pixel-tycoon-top-down",
+  "inspiration": {
+    "summary": "Pixel tycoon top-down plate — hard 16-colour game-manager palette, chunky flat roofs, undersized round canopy, double-cased sand roads, dashed service lanes, no painted type. Iso retired (ADR-0021 clause 6).",
+    "images": [],
+    "lineage": "kit pixel-tycoon.json terrain and sprite tokens; ADR-0021 clause 6 conversion off true-iso"
+  },
+  "colorFamilies": {
+    "ground": {
+      "anchor": "#D2A45C",
+      "members": ["#B8883C"],
+      "deltaE": 12
+    },
+    "grass": {
+      "anchor": "#3C9C34",
+      "members": ["#246824"],
+      "deltaE": 12
+    },
+    "wood": {
+      "anchor": "#1C5C1C",
+      "members": ["#0C3C0C"],
+      "deltaE": 12
+    },
+    "water": {
+      "anchor": "#2474C4",
+      "members": ["#6CACDC"],
+      "deltaE": 12
+    },
+    "lot": {
+      "anchor": "#8C8474",
+      "members": ["#C4BCA8"],
+      "deltaE": 12
+    },
+    "road": {
+      "anchor": "#5C584C",
+      "members": ["#E8D49C"],
+      "deltaE": 10
+    },
+    "service": {
+      "anchor": "#4C4840",
+      "deltaE": 10
+    },
+    "outside": {
+      "anchor": "#2A4A28",
+      "members": ["#1C341C"],
+      "deltaE": 12
+    },
+    "structure": {
+      "anchor": "#C44C3C",
+      "members": ["#E8A03C", "#3C6CAC", "#8C5C3C"],
+      "deltaE": 16
+    },
+    "badge": {
+      "anchor": "#E83C3C",
+      "members": ["#F0A028", "#2474C4", "#2A9C3C", "#8C4CD4", "#6C6458"],
+      "deltaE": 16
+    }
+  },
+  "roads": {
+    "vsGround": {
+      "minDeltaE": 8,
+      "polarity": "darker"
+    },
+    "serviceLayer": "muted"
+  },
+  "ground": {
+    "outsideVsInside": {
+      "minDeltaE": 6
+    },
+    "waterVsVegetation": {
+      "minDeltaE": 15
+    }
+  },
+  "structures": {
+    "buildingStyle": "flat",
+    "trackStyle": "tube",
+    "coasterVsUnderlay": {
+      "minDeltaE": 8
+    }
+  },
+  "hierarchy": {
+    "annotationOnTop": true,
+    "oneBadgePerPoi": true,
+    "layerOrder": [
+      "plate",
+      "roads",
+      "tracks",
+      "buildings",
+      "trees",
+      "badges"
+    ]
+  },
+  "agentReview": [
+    {
+      "key": "style_texture_language",
+      "prompt": "Top-down tycoon plate: roofs stay flat colour blocks, trees are undersized round canopies, no isometric extrusion and no painted type"
+    },
+    {
+      "key": "style_wayfinding_language",
+      "prompt": "Walkways read as double-cased sand roads; service lanes are dashed and quieter than guest circulation"
+    },
+    {
+      "key": "style_reference_resemblance",
+      "prompt": "A stranger looking at the kit tokens and this plate says they are the same 16-colour game-manager language, not a leftover iso park"
+    }
+  ]
+}

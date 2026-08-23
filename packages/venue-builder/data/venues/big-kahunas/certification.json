@@ -5,8 +5,8 @@
     "name": "Big Kahuna's",
     "locality": "Destin, Florida"
   },
-  "certified": true,
-  "certifiedAt": "2026-08-11T19:59:41.383Z",
+  "certified": false,
+  "certifiedAt": null,
   "checks": [
     {
       "key": "checklist",
@@ -73,6 +73,19 @@
       "soWhat": "Guests cannot filter by rider height offline without these rules"
     },
     {
+      "key": "false-rides",
+      "claim": "No height-chart headers or arcades ship as Rideable",
+      "pass": true,
+      "evidence": {
+        "numerator": 23,
+        "denominator": 23,
+        "detail": "no false rides in bundle"
+      },
+      "confidence": "high",
+      "falsifier": "OSM or height-chart ingest files amenity names as rides",
+      "soWhat": "Families see \"Check at the ride\" for places they cannot queue for"
+    },
+    {
       "key": "entrances",
       "claim": "Queue entrances published at ≥moderate or recorded as proposals",
       "pass": true,
@@ -132,6 +145,28 @@
       "soWhat": "Explore-more research sources must either feed the twin or show as an honest gap"
     },
     {
+      "key": "imagery_ledger",
+      "claim": "Every imagery tile this venue derives geometry from is pinned and derivation-licensed",
+      "pass": false,
+      "evidence": {
+        "numerator": 0,
+        "denominator": 1,
+        "detail": "okaloosa-ortho-2025: no sha256 — clause 1 pins the bytes that were ingested; okaloosa-ortho-2025: no licence class; okaloosa-ortho-2025: served via \"Esri World Imagery\" — ADR-0020 clause 2 rejects esri for derivation (\"viewable is not derivable\"); a human must adjudicate this row",
+        "features": 3,
+        "tiles": [
+          "okaloosa-ortho-2025"
+        ],
+        "problems": [
+          "okaloosa-ortho-2025: no sha256 — clause 1 pins the bytes that were ingested",
+          "okaloosa-ortho-2025: no licence class",
+          "okaloosa-ortho-2025: served via \"Esri World Imagery\" — ADR-0020 clause 2 rejects esri for derivation (\"viewable is not derivable\"); a human must adjudicate this row"
+        ]
+      },
+      "confidence": "low",
+      "falsifier": "A shipped coordinate signed by:aerial or by:mapillary names a tile that is absent from data/imagery-ledger.json, or whose row has no sha256, no capture date, or a licence or serving channel ADR-0020 clause 2 does not admit",
+      "soWhat": "Imagery-derived geometry with no defensible provenance cannot be re-derived, corroborated, or withdrawn if the licence turns out to forbid it — and it is already in shipped bundles"
+    },
+    {
       "key": "park_map_research",
       "claim": "Official park map image is local or LLM park-map search recorded candidates",
       "pass": true,
@@ -146,5 +181,82 @@
       "soWhat": "Guest maps for tracing require LLM search (or a package maps/ image) before georef"
     }
   ],
-  "ask": null
+  "ask": {
+    "venue": {
+      "id": "big-kahunas",
+      "name": "Big Kahuna's",
+      "locality": "Destin, Florida",
+      "kind": "theme-park"
+    },
+    "overridesFile": "data/venues/big-kahunas/overrides.json",
+    "blocking": false,
+    "requests": [],
+    "questSeeds": {
+      "version": 1,
+      "venueId": "big-kahunas",
+      "principle": "Open sources build the base map; gamified on-the-ground contributions fill what they cannot reliably settle.",
+      "durable": [],
+      "ambient": [
+        {
+          "venueId": "big-kahunas",
+          "type": "ride_status",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Ride up / down / delayed",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "big-kahunas",
+          "type": "queue_band",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Queue short / medium / long",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "big-kahunas",
+          "type": "amenity_outage",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Restroom or fountain outage",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "big-kahunas",
+          "type": "crowd_hotspot",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Midway crowded",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        },
+        {
+          "venueId": "big-kahunas",
+          "type": "hazard",
+          "tier": 1,
+          "graduation": "overlay_ttl",
+          "need": "Spill or blocked path",
+          "sourceGap": "ambient_ops",
+          "target": null,
+          "blocking": false,
+          "whyOpenSourceFails": "Live ops change by the hour — open data cannot carry ride-down or crowd bands."
+        }
+      ],
+      "counts": {
+        "durable": 0,
+        "ambient": 5
+      }
+    }
+  }
 }

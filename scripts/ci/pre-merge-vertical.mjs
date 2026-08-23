@@ -45,6 +45,7 @@ import {
   mattReviewBlockReason,
   readMattReview,
 } from '../lib/matt-review.mjs';
+import { runLiveZoomSweep } from '../lib/map-perf-gate.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -194,6 +195,13 @@ export async function runPreMergeVertical({
     startProductionServer({ root: cwd });
     await waitForHealth();
     await runValidateUiChanged(baseRef, cwd);
+    const sweep = await runLiveZoomSweep({ minFps: 30, throttle: 4 });
+    if (!sweep.ok) {
+      console.error(
+        `pre-merge-vertical: zoom sweep failed (${sweep.reason || `${sweep.fps} fps < ${sweep.minFps}`})`,
+      );
+      return 1;
+    }
     if (required.includes('app')) ran.push('app');
   }
 

@@ -570,7 +570,9 @@ export const SCREEN_MAP = [
   ['Intro / onboarding', ['components/IntroSplash.jsx', 'lib/brand.js', 'lib/introGate.js']],
   ['Location gate', ['components/GpsGate.jsx', 'components/ParkPrompt.jsx', 'lib/geo.js']],
   ['World pick', ['components/WorldPicker.jsx', 'lib/venueIndex.js']],
-  ['Explore (map + sheet)', ['components/ParkMap.jsx', 'components/PlaceList.jsx', 'lib/sheet.js', 'lib/theme.js', 'lib/mapThemeTokens.js']],
+  // ParkMap.jsx turns Truth into map data; ParkMapGl.jsx is the shipped
+  // MapLibre renderer (slice h18 retired the SVG adapter).
+  ['Explore (map + sheet)', ['components/ParkMap.jsx', 'components/ParkMapGl.jsx', 'components/PlaceList.jsx', 'lib/sheet.js', 'lib/theme.js', 'lib/mapThemeTokens.js']],
   ['Selection capsule', ['components/SelectionCapsule.jsx']],
   ['Spot (bare-ground tap)', ['components/SpotCapsule.jsx', 'components/SpotBanner.jsx', 'lib/spot.js']],
   ['Map furniture (Key, scale)', ['components/MapLegend.jsx', 'components/MapSymbols.jsx', 'components/MapAttribution.jsx']],

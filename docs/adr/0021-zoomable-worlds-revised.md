@@ -145,20 +145,22 @@ out of it.
 
 ## Open
 
-Recorded so the next session does not mistake silence for agreement:
+Closed 2026-08-22 so Trains H and I can finish. The answers:
 
-- **Train H's build order.** #563 puts the two riskiest unknowns — does flat art read well
-  pitched, does a mobile WebView hold up — in the last slices, while clause 6 above puts
-  pixel-tycoon first among the *Skins*. Slice order is not settled here, and clause 6 does not
-  settle it: which slice lands when is still open.
-- **The perf gate rows.** The review established that background drain is the real concern (the
-  screen is off for most of a park day) and that cellular streaming is fine. It did *not* settle
-  how the rows are structured — CI throttle as regression-only versus absolute, whether a pinned
-  real device joins the gate, or what a drain budget would be. The fate of the zero-blank-tiles
-  row (see Consequences) belongs to this same question.
-- **Train I.** Only clauses 8 and 9 above touch it. The evidence lane, the steward review budget,
-  Mapillary's share-alike reach into derived venue data, and the OSM write-back path are all
-  un-reviewed.
+- **Train H's build order.** pixel-tycoon authors now against the per-band knobs. Slice h5
+  already landed, so holding the kit until that schema existed is obsolete.
+- **The perf gate rows.** Regression-only CI throttle (4× CPU, 30 fps floor). Zero-blank-tiles
+  is the parent-placeholder functional check (playbook row 5 / slice h9), not a correctness
+  gate — clause 1 already removed that rationale. A pinned real device is a later addition,
+  not a ship blocker.
+- **Train I.** A disputed path position ships as Gap type `path_disputed` (extends the frozen
+  seven; ADR-0020 clause 5 names this Gap). OSM write-back is steward-gated proposal files,
+  never an automatic upload. Google Places is back-office metadata corroboration only (clause
+  7 already). Mapillary share-alike stays attribution-gated and does not write truth.
+
+Plus the crop question that building h1 surfaced: **a band plan describes the World; the
+pyramid georeferences against the cropped PNG** (`cert.bounds`). `bandBakePlan` stays
+independent of `cropModel`.
 
   *Corrected 2026-08-21:* this list originally named "the `GOOGLE_MAPS_API` key's exposure through
   public workflow triggers" as an open risk. Checked, and it was overstated on both counts. The key

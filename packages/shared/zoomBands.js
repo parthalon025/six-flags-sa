@@ -41,8 +41,19 @@ export function bandResolution(id) {
  *  span that is not a round multiple of the resolution — a 1000 m span rounds
  *  to 417 at overview and 1667 at mid, and 417 * 4 is 1668. The tiler's
  *  parent-band placeholder upscales pixel-for-pixel, so a pixel of drift is a
- *  seam in the picture. The cost is that a derived band's true resolution can
- *  differ from its nominal one by well under a tenth of a percent. */
+ *  seam in the picture. The cost is that a band's realised resolution differs
+ *  from its nominal one by up to half a cell of the coarsest band.
+ *
+ *  That is proportional to venue size, so "well under a tenth of a percent" —
+ *  which this comment used to claim — holds for three of the four shipped
+ *  venues and not for the smallest. Measured: kings-island 0.048% across and
+ *  0.031% down, six-flags-fiesta-texas 0.065%/0.067%, cedar-point
+ *  0.054%/0.007%, big-kahunas 0.137%/0.176%, because half a cell is a larger
+ *  share of a 585 m park. The drift is identical at all three bands, which is
+ *  the same fact from the other side: the 4x chain is exact, and the whole
+ *  error is the coarsest band rounding to a whole cell.
+ *  test/builder/display-bands.mjs asserts the half-cell bound rather than a
+ *  percentage, so it holds at any venue size and tightens as a venue grows. */
 export function bandPixels(id, { spanXMetres, spanYMetres }) {
   const coarsest = BANDS[0].metresPerPixel;
   const scale = Math.round(coarsest / bandResolution(id));
@@ -69,8 +80,25 @@ function mercatorCosLatitude(latitude) {
   return Math.cos((clamped * Math.PI) / 180);
 }
 
-function screenResolution(zoom, latitude) {
+/** Ground metres one screen pixel covers, at this zoom and latitude.
+ *
+ *  The `zoom + 1` is MapLibre's 512 px tiles: its zoom z has the density of
+ *  slippy zoom z + 1. That offset is the easy thing to get wrong in a second
+ *  place, which is why this is exported rather than copied — the band chooser,
+ *  the boundary list and a caller framing a venue all ask the same question. */
+export function metresPerPixel(zoom, { latitude = 0 } = {}) {
   return (EQUATOR_METRES_PER_PIXEL * mercatorCosLatitude(latitude)) / 2 ** (zoom + 1);
+}
+
+/** The same conversion read the other way: the zoom at which a screen pixel
+ *  covers exactly this much ground. What a caller framing a World asks — the
+ *  venue's span over the viewport's width is a resolution, and this is the
+ *  zoom that shows it. */
+export function zoomForResolution(metres, { latitude = 0 } = {}) {
+  if (!Number.isFinite(metres) || metres <= 0) {
+    throw new Error(`metres per pixel must be a positive finite number: ${metres}`);
+  }
+  return Math.log2((EQUATOR_METRES_PER_PIXEL * mercatorCosLatitude(latitude)) / metres) - 1;
 }
 
 /** The band a camera at this zoom should draw.
@@ -81,7 +109,7 @@ function screenResolution(zoom, latitude) {
  *  which is the placeholder path, not a failure.
  */
 export function bandForZoom(zoom, { latitude = 0 } = {}) {
-  const screen = screenResolution(zoom, latitude);
+  const screen = metresPerPixel(zoom, { latitude });
   const fit = BANDS.find((b) => b.metresPerPixel <= screen);
   return (fit ?? BANDS[BANDS.length - 1]).id;
 }
@@ -94,12 +122,9 @@ export function bandForZoom(zoom, { latitude = 0 } = {}) {
  *  overlap one, so the camera has to ask rather than hardcode a zoom range.
  */
 export function bandBoundaryZooms({ latitude = 0 } = {}) {
-  const cos = mercatorCosLatitude(latitude);
-  // Invert screenResolution: the zoom at which a screen pixel covers exactly
-  // this band's metres. Below it the band is coarser than the screen.
-  return BANDS.slice(0, -1).map((band) =>
-    Math.log2((EQUATOR_METRES_PER_PIXEL * cos) / band.metresPerPixel) - 1,
-  );
+  // The zoom at which a screen pixel covers exactly this band's metres. Below
+  // it the band is coarser than the screen.
+  return BANDS.slice(0, -1).map((band) => zoomForResolution(band.metresPerPixel, { latitude }));
 }
 
 /** The band a placeholder upscales from, or null at the coarsest band. */

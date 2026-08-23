@@ -104,10 +104,24 @@ export function localCiPassPath(cwd = repoRootFrom()) {
   return join(cwd, LOCAL_CI_PASS_REL);
 }
 
+/**
+ * `maxBuffer` is explicit because `diffHashFor` captures the whole branch
+ * patch. Node's default is 1 MB; this train's diff overflows that and
+ * `diffHashFor` used to swallow the ENOBUFS and write `diffHash: null`,
+ * so a green vertical could never cover the tree. Same 256 MB cap as
+ * `scripts/lib/matt-review.mjs`.
+ */
+const GIT_MAX_BUFFER = 256 * 1024 * 1024;
+
 function git(cwd, args) {
   // An inherited GIT_DIR outranks `cwd`, so a hook-spawned run would
   // silently operate on the hook's repository. See scripts/lib/git-env.mjs.
-  return execFileSync('git', args, { cwd, env: scrubGitEnv(), encoding: 'utf8' }).trim();
+  return execFileSync('git', args, {
+    cwd,
+    env: scrubGitEnv(),
+    encoding: 'utf8',
+    maxBuffer: GIT_MAX_BUFFER,
+  }).trim();
 }
 
 function hashFile(path) {

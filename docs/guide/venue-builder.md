@@ -572,6 +572,47 @@ a reference profile under `data/display/references/` — the test suite
 fails on a kit with no profile, and the bake certifies every kit against
 its profile's measured color families and hierarchy rules.
 
+### Grounding — what this park actually looks like
+
+A kit profile says what a *design language* must look like. A **grounding
+record** says what one *World* looks like, so that every Skin of Kings
+Island stays recognisably Kings Island's (ADR-0020 clause 4, ADR-0021
+clause 8).
+
+```
+node packages/venue-builder/bin/display-grounding.mjs kings-island [--dry-run]
+node packages/venue-builder/bin/display-grounding.mjs --report kings-island
+```
+
+Network, run by hand, never in CI — like `display-swatches.mjs`, CI
+consumes the committed result. It reads NAIP aerial imagery through
+`lib/adapters/naip-planetary.mjs`, samples the venue's own truth rings, and
+writes `data/venues/<id>/display/grounding.json`: per-class colour
+relationships, the pairwise contrasts, and up to three material groups per
+class keyed by a hash of the footprint they were measured on.
+
+What it writes is **relationships, never colours and never truth**. Class
+coordinates are Lab values centred on that park's own mean, the record
+carries no geometry, no positions and no names, and nothing here moves a
+feature — imagery that disagrees with OSM raises a Gap through the evidence
+lane, which is a different lane entirely. `groundKit({ kit, grounding })`
+in `lib/display-references.mjs` is how a Skin spends it: the venue's darkest
+roof family gets that Skin's *own* darkest declared roof colour. Where a
+Skin's palette inverts a relationship the park really has, that is reported
+in `disagreements` rather than corrected — design owns treatment, the venue
+owns relationships.
+
+Only derivation-licensed sources may be harvested (NAIP today; Google, Bing
+and Esri are rejected outright, and street-level stays out while its
+share-alike reach is an open owner decision). Every record carries the
+sha256 of the raster it read, and two harvests of one park are byte-identical.
+
+A frame that reads as nodata, or that reads the same everywhere, is refused
+rather than written — a record of identical classes validates, ships, and
+grounds every Skin in nothing. The run then walks down the ranked frames
+until one has pixels in it: big-kahunas' newest quarter-quad is empty over
+the whole park, and its 2019 one is fine.
+
 ### The agent is the model
 
 The builder is usually run by an AI agent, so the LLM seams don't need a

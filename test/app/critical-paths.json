@@ -10,7 +10,7 @@
       "CONTEXT.md",
       "docs/adr"
     ],
-    "sha256": "efb2d1dbef1c3a84cf038764ab306ac53d1f4f6b2c63b8bc80741c42ce56379c"
+    "sha256": "58fe96413de91e60f1cccae0c7f66768be35d9115ef99923f62e9ebc6530bdaa"
   },
   "paths": [
     {
@@ -287,11 +287,18 @@
       "check": "leaving removes the member from the other phone’s roster"
     },
     {
+      "id": "maplibre-shipped",
+      "slice": "Navigate",
+      "user_action": "See the park drawn by MapLibre, not the retired SVG world map",
+      "suite": "functional",
+      "check": "park geometry is drawn"
+    },
+    {
       "id": "iso-custom-map",
       "slice": "Adventure",
-      "user_action": "Wear the Pixel tycoon Skin and see its isometric Custom map",
+      "user_action": "Wear the Pixel tycoon Skin and keep the MapLibre map (OSM until a certified bake exists)",
       "suite": "functional",
-      "check": "wearing Pixel tycoon draws the isometric custom map"
+      "check": "wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)"
     },
     {
       "id": "baked-world-map",

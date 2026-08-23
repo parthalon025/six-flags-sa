@@ -19,6 +19,7 @@ export const SHIPPED_GAP_TYPES = Object.freeze([
   'height',
   'queue',
   'path',
+  'path_disputed',
   'restroom',
   'food',
   'gate',
@@ -47,6 +48,9 @@ export function shippedTypeForSeed(seed) {
   if (seed.type === 'height_rule' || seed.sourceGap === 'heights') return 'height';
   if (seed.type === 'geometry_nudge' || seed.sourceGap === 'entrance_missing' || seed.sourceGap === 'entrance_low_confidence') {
     return 'queue';
+  }
+  if (seed.sourceGap === 'path_disputed' || seed.type === 'path_disputed') {
+    return 'path_disputed';
   }
   if (seed.sourceGap === 'camping' || seed.type === 'poi_attribute') return 'camping';
   if (seed.type === 'poi_presence' || seed.sourceGap === 'missing-poi') {
@@ -237,10 +241,12 @@ export function shippedGapsForVenue({
   pois = [],
   map = {},
   attractions = null,
+  imageryGaps = [],
 } = {}) {
   const seeds = [
     ...questSeedsFromEntrances(venueId, attractions),
     ...presenceAndCampingSeeds(meta, pois),
+    ...imageryGaps,
   ];
   return shippedGapsDocument({ venueId, seeds, pois, map: map ?? {} });
 }

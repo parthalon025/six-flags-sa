@@ -291,4 +291,12 @@ try {
   rmSync(dir, { recursive: true, force: true });
 }
 
+{
+  const ctx = buildLocalCiContext({ baseRef: 'origin/main' });
+  assert.ok(
+    ctx.diffHash,
+    'a train-sized patch must still hash — ENOBUFS used to write diffHash: null after a green vertical',
+  );
+}
+
 console.log('local-ci-pass: ok');

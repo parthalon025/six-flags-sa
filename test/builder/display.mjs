@@ -356,6 +356,7 @@ await check('buildTiles produces base.pmtiles, or records the gap honestly', () 
 
 const {
   bakeModel, declutterBadges, resolveKit, TERRAIN_PIECES, TEXTURE_KINDS, impliedTerrainClasses,
+  POI_BADGES,
 } = await import(
   '../../packages/venue-builder/lib/display-bake.mjs'
 );
@@ -390,6 +391,32 @@ const BAKE_MAP = {
   building: [{ r: [[0.005, 0.002], [0.006, 0.002], [0.006, 0.003]] }],
   slide: [{ r: [[0.002, 0.006], [0.003, 0.007]] }, { r: [[0.003, 0.006], [0.004, 0.007]] }],
 };
+
+// A polygon big enough to matter cannot be spread into push(). The engine caps
+// `a.push(...b)` at ~125k arguments; today's whole grid is 47,520 cells at
+// maxCols 240, so no single polygon can reach it and the bug cannot fire. The
+// close band of ADR-0021 clause 2 needs maxCols 646 at kings-island — 344,964
+// cells — where one large meadow overruns the cap and bakeModel dies with
+// "Maximum call stack size exceeded" before a pixel is drawn.
+await check('a meadow larger than the argument cap does not blow the stack', () => {
+  const SPREAD_CAP = 125_274;
+  const big = {
+    // ~2.2 km on a side, so span/646 clears the projector's 2 m cell floor
+    // and the grid really is 646 columns — the close band's own shape.
+    meta: { id: 'big-park', bounds: { n: 0.02, s: 0, e: 0.02, w: 0 } },
+    boundary: [[0, 0], [0.02, 0], [0.02, 0.02], [0, 0.02]],
+    // One meadow covering the whole park: cells painted === cols * rows.
+    grass: [{ r: [[0, 0], [0.02, 0], [0.02, 0.02], [0, 0.02]] }],
+  };
+  const maxCols = 646;
+  const model = bakeModel(big, [], { maxCols });
+  assert.ok(
+    model.cols * model.rows > SPREAD_CAP,
+    `fixture must exceed the ${SPREAD_CAP} argument cap to prove anything, got ${model.cols * model.rows}`,
+  );
+  assert.equal(model.cols, maxCols);
+  return true;
+});
 
 await check('the bake model is truth-locked and deterministic', () => {
   const a = bakeModel(BAKE_MAP, FIXTURE_POIS, { maxCols: 60 });
@@ -683,6 +710,98 @@ await check('buildings grow no trees', () => {
   return true;
 });
 
+/* ---------------------------------------- ADR-0019 clause 1: per-band content
+ * A band is a ground resolution, and the cell grid is the SAME at all three
+ * (display-bands.mjs: finer bands draw the same cells larger). So without a
+ * generalization pass every band would carry identical content at different
+ * sharpness — the "one ultra-res bake, tiled" ADR-0019 rejected. These pin the
+ * pass that makes content differ: overview drops the marks 2.4 m/px cannot
+ * draw, mid stays exactly today's bake, and nothing a band keeps ever moves. */
+
+// A wood for trees, a lot for aisle marks, POIs of three badge kinds.
+const BAND_MAP = {
+  meta: { id: 'band-park', bounds: { n: 0.006, s: 0, e: 0.006, w: 0 } },
+  boundary: [[0.0005, 0.0005], [0.0055, 0.0005], [0.0055, 0.0055], [0.0005, 0.0055]],
+  wood: [{ r: [[0.001, 0.001], [0.003, 0.001], [0.003, 0.003], [0.001, 0.003]] }],
+  parking: [{ r: [[0.0035, 0.0035], [0.0053, 0.0035], [0.0053, 0.0053], [0.0035, 0.0053]] }],
+  path: [{ r: [[0.001, 0.004], [0.005, 0.004]] }],
+  building: [{ r: [[0.0035, 0.001], [0.005, 0.001], [0.005, 0.0025], [0.0035, 0.0025]] }],
+  slide: [{ r: [[0.001, 0.0045], [0.002, 0.005]] }],
+};
+const BAND_POIS = [
+  { i: 'gate-n', n: 'North Gate', c: 'gate', lat: 0.0052, lng: 0.001 },
+  { i: 'gate-s', n: 'South Gate', c: 'gate', lat: 0.001, lng: 0.005 },
+  { i: 'burgers', n: 'Burgers', c: 'food', lat: 0.004, lng: 0.002 },
+  { i: 'loo', n: 'Restrooms', c: 'restroom', lat: 0.002, lng: 0.0045 },
+];
+// One tileMetres for all three bands: the plan derives it from the coarsest
+// band, so the grid a band bakes on is band-independent (display-bands.mjs).
+const BAND_TILE_METRES = 2.4;
+const bandBake = (band) => bakeModel(BAND_MAP, BAND_POIS, { tileMetres: BAND_TILE_METRES, band });
+
+await check('the mid band is today’s bake, unchanged — and no band means no stamp', () => {
+  const plain = bakeModel(BAND_MAP, BAND_POIS, { tileMetres: BAND_TILE_METRES });
+  assert.ok(!('band' in plain), 'a bake nobody asked a band of must not grow a band stamp');
+  assert.ok(!('generalization' in plain), 'nor a generalization stamp');
+  const mid = bandBake('mid');
+  assert.equal(mid.band, 'mid');
+  const { band, generalization, ...content } = mid;
+  assert.equal(JSON.stringify(content), JSON.stringify(plain),
+    'ADR-0019 clause 1: mid is today’s bake, unchanged');
+  assert.equal(generalization.drops.length, 0, 'mid drops nothing');
+  assert.equal(generalization.badgeKinds, null, 'mid pins every badge kind');
+  return true;
+});
+
+await check('the overview band drops the marks 2.4 m/px cannot draw', () => {
+  const mid = bandBake('mid');
+  const overview = bandBake('overview');
+  assert.ok(mid.trees.length > 0 && mid.lotRows.length > 0,
+    `fixture must grow trees (${mid.trees.length}) and aisle marks (${mid.lotRows.length}) to prove anything`);
+  assert.deepEqual(overview.trees, [], 'a crown under the legibility floor is a stipple, not a tree');
+  assert.deepEqual(overview.lotRows, [], 'an aisle dash under the floor is a speck');
+  assert.ok(!('scatterNotes' in overview), 'scatter notes describe trees this band does not draw');
+  assert.deepEqual(overview.generalization.drops, ['trees', 'lotRows']);
+  return true;
+});
+
+await check('the overview band pins landmarks only; every other kind stays in truth', () => {
+  const mid = bandBake('mid');
+  const overview = bandBake('overview');
+  const kinds = (m) => [...new Set(m.badges.map((b) => b.kind))].sort();
+  assert.deepEqual(kinds(mid), ['food', 'gate', 'restroom'], 'mid pins every kind it has');
+  assert.deepEqual(kinds(overview), ['gate'], 'ADR-0019 clause 1: landmarks only');
+  assert.deepEqual(overview.generalization.badgeKinds, ['gate']);
+  assert.ok(overview.badges.length > 0, 'landmarks-only must thin, not empty');
+  return true;
+});
+
+await check('generalization removes, never moves (ADR-0021 clause 3)', () => {
+  const mid = bandBake('mid');
+  const overview = bandBake('overview');
+  const close = bandBake('close');
+  // Cells and every kept mark are bit-identical across bands: a band may drop
+  // a feature, and anything it does draw sits where Truth says it sits.
+  assert.equal(JSON.stringify(overview.cells), JSON.stringify(mid.cells), 'terrain never shifts');
+  assert.equal(JSON.stringify(close.cells), JSON.stringify(mid.cells));
+  for (const kind of ['buildings', 'tracks', 'roads']) {
+    assert.equal(JSON.stringify(overview[kind]), JSON.stringify(mid[kind]), `${kind} must not move`);
+  }
+  const byId = (b) => `${b.kind}@${b.x},${b.y}`;
+  const midGates = mid.badges.filter((b) => b.kind === 'gate').map(byId);
+  assert.deepEqual(overview.badges.map(byId), midGates, 'kept pins keep their truth positions');
+  const { band: cb, generalization: cg, ...closeContent } = close;
+  const { band: mb, generalization: mg, ...midContent } = mid;
+  assert.equal(JSON.stringify(closeContent), JSON.stringify(midContent),
+    'the finest band removes nothing — generalization only ever removes');
+  return true;
+});
+
+await check('an unknown band is refused at the bake, not silently ignored', () => {
+  assert.throws(() => bandBake('gigantic'), /unknown band/i);
+  return true;
+});
+
 await check('crop shifts roads with the window', () => {
   const model = bakeModel(BAKE_MAP, [], { maxCols: 60, margin: 2 });
   assert.ok(model.roads.length >= 1, 'path polyline expected');
@@ -774,6 +893,51 @@ await check('runDisplayStage with bakes: folds certs, binds the primary kit via 
   // when its kit baked, a recorded gap otherwise. The raster-PMTiles tier is
   // retired (its permanent gap is what the world tier closes).
   assert.ok(!manifest.tiers.raster, 'the raster tier is retired in favor of worlds');
+  assert.equal(manifest.tiers['band:mid'].gap, true, 'uncut mid pyramid is a recorded gap, not a missing row');
+  const { pyramidGatePasses, buildBandPyramidTier } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+  assert.equal(pyramidGatePasses({ gap: true }), true);
+  assert.equal(pyramidGatePasses({ ok: true }), true);
+  assert.equal(pyramidGatePasses({ ok: false }), false);
+  const {
+    pyramidBoundsFromCert,
+    loadBakeCerts,
+    bakeOptsForVenue,
+    applyMidPyramidToManifest,
+    defaultBakeDir,
+  } = await import('../../packages/venue-builder/lib/display-pack.mjs');
+  assert.deepEqual(bakeOptsForVenue('nobody-baked-this', bakeDir + '-empty'), {}, 'no certs → do not fold bake rows');
+  assert.equal(loadBakeCerts('test-park', bakeDir).length, 2, 'iso rotation certs stay out of the pack fold');
+  assert.deepEqual(bakeOptsForVenue('test-park', bakeDir), { bake: { dir: bakeDir } });
+  assert.match(defaultBakeDir(), /display-bake/);
+  const sealedDir = mkdtempSync(path.join(tmpdir(), 'sealed-'));
+  writeFileSync(path.join(sealedDir, 'manifest.json'), JSON.stringify({
+    version: 1,
+    tiers: { 'band:mid': { gap: true, reason: 'not cut' } },
+  }));
+  writeFileSync(path.join(sealedDir, 'mid.pmtiles'), 'tiles');
+  assert.equal(applyMidPyramidToManifest(sealedDir, { primaryKit: 'rpg-overworld' }).updated, true);
+  const sealed = JSON.parse(readFileSync(path.join(sealedDir, 'manifest.json'), 'utf8'));
+  assert.equal(sealed.tiers['band:mid'].gap, undefined);
+  assert.equal(sealed.tiers['band:mid'].kit, 'rpg-overworld');
+  assert.ok(sealed.tiers['band:mid'].bytes > 0);
+  assert.throws(
+    () => pyramidBoundsFromCert(null),
+    /cert\.bounds/,
+    'a pyramid without a bake cert cannot invent a crop',
+  );
+  assert.throws(
+    () => pyramidBoundsFromCert({ bounds: FIXTURE_MAP.meta.bounds }),
+    /cert\.bounds/,
+    'map.meta.bounds is not a bake cert — crop window only',
+  );
+  assert.deepEqual(
+    pyramidBoundsFromCert({ bounds: { west: 0, south: 0, east: 0.01, north: 0.01 } }),
+    { west: 0, south: 0, east: 0.01, north: 0.01 },
+  );
+  await assert.rejects(
+    () => buildBandPyramidTier({ id: 'test-park', bakePng: 'missing.png', outDir }),
+    /cert\.bounds/,
+  );
   assert.equal(manifest.tiers['world:trail'].kit, 'island-brochure');
   assert.equal(manifest.tiers['world:trail'].projection, 'top-down');
   assert.ok(manifest.tiers['world:trail'].bytes > 0);
@@ -1004,6 +1168,195 @@ await check('runDisplayStage with an iso sweep: a class starved at every rotatio
   });
   assert.equal(row(covered).pass, true, 'surviving one rotation covers the class');
   assert.equal(covered.certified, true, row(covered).evidence);
+  return true;
+});
+
+/* ------------------------------ ADR-0021 clause 1: nothing readable bakes -- */
+
+// "The painted band carries no information that is not recoverable from
+// Truth." No band bakes legible text: "signage" means sign OBJECTS — frames,
+// marquees, silhouettes — never readable words, and every string on the map
+// comes from pois.json. `visual.json` may style a label (ink, halo, the zoom
+// it appears at) but never supplies the string. Clause 1 names two
+// certification rows; both live in lib/display-style-contract.mjs.
+
+const { certifyStyleContract, visualLabelStringsRow } = await import(
+  '../../packages/venue-builder/lib/display-style-contract.mjs'
+);
+const KIT_DIR = new URL('../../packages/venue-builder/data/display/kits/', import.meta.url);
+const BADGE_KINDS = Object.values(POI_BADGES);
+
+// The clause-1 badge row reads the model's badge kinds and the resolved
+// kit's icon ledger — never the sampled pixels — so an empty sample plan is
+// the honest fixture: nothing about painted colour is claimed here.
+const CLAUSE1_PROFILE = {
+  version: 1, id: 'clause1-profile', kit: 'clause1-kit', style: 'test', colorFamilies: {},
+};
+const clause1Model = (badges) => ({ cols: 4, rows: 4, cells: new Array(16).fill(1), badges });
+const clause1Cert = (badges, extra = {}) => certifyStyleContract({
+  model: clause1Model(badges),
+  points: [],
+  samples: [],
+  profile: CLAUSE1_PROFILE,
+  kit: resolveKit({ id: 'clause1-kit' }),
+  ...extra,
+});
+const rowOf = (cert, key) => cert.checks.find((c) => c.key === key);
+
+await check('a badge kind with no icon fails style_no_baked_text, naming the kind', () => {
+  const bad = clause1Cert([{ kind: 'gate', x: 1, y: 1 }, { kind: 'first-aid', x: 2, y: 2 }]);
+  const row = rowOf(bad, 'style_no_baked_text');
+  assert.ok(row, 'clause 1 needs a style_no_baked_text row on every style cert');
+  assert.equal(row.pass, false, 'a badge kind with no glyph must fail loudly, not be lettered');
+  assert.match(row.evidence, /first-aid/, 'the row must name the unresolvable kind');
+  assert.equal(bad.certified, false, 'an unglyphed badge must fail the whole certification');
+  return true;
+});
+
+await check('every POI badge kind resolves to a glyph — style_no_baked_text is not always red', () => {
+  const good = clause1Cert(BADGE_KINDS.map((kind, i) => ({ kind, x: i, y: i })));
+  const row = rowOf(good, 'style_no_baked_text');
+  assert.equal(row.pass, true, JSON.stringify(row));
+  // Known answer: the six glyph ids SPRITE_PIECES pins, kinds in sort order.
+  assert.equal(
+    row.evidence,
+    '6 painted badge kind(s) resolve to icon glyphs: food→parkbound-badge-food, '
+    + 'gate→parkbound-badge-gate, restroom→parkbound-badge-restroom, '
+    + 'service→parkbound-badge-service, shop→parkbound-badge-shop, '
+    + 'show→parkbound-badge-show',
+  );
+  assert.equal(
+    rowOf(clause1Cert([]), 'style_no_baked_text').pass, true,
+    'a model with no badges has nothing to letter',
+  );
+  return true;
+});
+
+await check('the seven shipped kits still certify clause 1 — every kind glyphs', async () => {
+  const { readAssetLedger, assetPath } = await import('../../packages/venue-builder/lib/display-assets.mjs');
+  const { existsSync } = await import('node:fs');
+  const assets = readAssetLedger();
+  const materials = readMaterials();
+  const files = readdirSync(KIT_DIR).filter((f) => f.endsWith('.json')).sort();
+  assert.deepEqual(files, [
+    'blueprint-survey.json', 'island-brochure.json', 'layered-atlas.json',
+    'midnight-carnival.json', 'pixel-tycoon.json', 'rpg-overworld.json',
+    'watercolor-quest.json',
+  ], 'the shipped kit set changed — re-check clause 1 against the new kit');
+  for (const file of files) {
+    const kit = resolveKit(
+      JSON.parse(readFileSync(new URL(file, KIT_DIR), 'utf8')),
+      { assets, materials },
+    );
+    const cert = certifyStyleContract({
+      model: clause1Model(BADGE_KINDS.map((kind, i) => ({ kind, x: i, y: i }))),
+      points: [],
+      samples: [],
+      profile: { ...CLAUSE1_PROFILE, kit: kit.id },
+      kit,
+    });
+    const row = rowOf(cert, 'style_no_baked_text');
+    assert.equal(row.pass, true, `${file} would now bake a letter: ${row.evidence}`);
+    // The row proves the kit NAMES a glyph; this proves the painter will
+    // find one. `sheetImages[BD.icons[kind].asset]` is only truthy when the
+    // ledger serves real bytes, and a falsy one is exactly what used to be
+    // lettered — so the removed fallback cannot have been load-bearing.
+    for (const kind of BADGE_KINDS) {
+      const id = kit.sprites.badge.icons[kind].asset;
+      assert.equal(assets[id]?.kind, 'icon', `${file}: badge ${kind} → ${id} is not a ledger icon`);
+      assert.ok(existsSync(assetPath(assets[id])), `${file}: badge ${kind} glyph missing on disk`);
+    }
+  }
+  return true;
+});
+
+// EVERY painter, not just the flat one. The iso page carried a byte-identical
+// copy of the letter fallback — same LETTER map, same fillText — and it
+// certifies through the same certifyStyleContract, so the row governed it while
+// the paint contradicted it. Checking one painter would have let the next copy
+// through; ADR-0021 clause 1 says "no band bakes legible text", and a band is
+// whatever a painter emits.
+for (const painter of ['display-bake-page.html', 'display-iso-page.html']) {
+  await check(`the ${painter} painter carries no text call at all`, () => {
+    const page = readFileSync(
+      new URL(`../../packages/venue-builder/bin/${painter}`, import.meta.url),
+      'utf8',
+    );
+    for (const call of ['fillText', 'strokeText', 'measureText', 'textAlign', 'textBaseline', 'LETTER']) {
+      assert.equal(page.includes(call), false, `${painter} still paints text: ${call}`);
+    }
+    assert.doesNotMatch(page, /\bfont\s*=/, 'a canvas font assignment means a word is coming');
+    assert.match(page, /BD\.icons/, 'the badge glyph must still come from the icon ledger');
+    return true;
+  });
+}
+
+const CLEAN_SPEC = {
+  version: 1,
+  venue: 'test-park',
+  skin: 'trail',
+  // Label STYLING is exactly what the clause allows: the ink and the halo.
+  tokens: { labelHalo: true, colors: { label: '#2C2416', path: '#8B7355' } },
+  // District keys are selectors matched against a name the tiles already
+  // carry from truth — not copy this file supplies.
+  landTones: { 'Coney Mall': { day: '#F1EAE4', night: '#2A231D' } },
+  surfaces: { walkway: { material: 'paving-stones--warm', layers: ['path'] } },
+};
+
+await check('a visual.json carrying a label string fails style_no_label_strings', () => {
+  const ok = visualLabelStringsRow(CLEAN_SPEC);
+  assert.equal(ok.key, 'style_no_label_strings');
+  assert.equal(ok.pass, true, ok.evidence);
+
+  const renamed = JSON.parse(JSON.stringify(CLEAN_SPEC));
+  renamed.landTones['Coney Mall'].label = 'Sweet Street';
+  const bad = visualLabelStringsRow(renamed);
+  assert.equal(bad.pass, false, 'a Skin must never supply the words on a Place');
+  assert.match(bad.evidence, /landTones\.Coney Mall\.label/, 'the row must name the leaking path');
+  assert.match(bad.evidence, /Sweet Street/, 'the row must quote the string it found');
+
+  // The exemption is colour-shaped, not key-shaped: `tokens.colors.label` is
+  // the ink a label is drawn in, but a word parked in that slot is still copy.
+  const smuggled = JSON.parse(JSON.stringify(CLEAN_SPEC));
+  smuggled.tokens.colors.label = 'Coney Mall';
+  assert.equal(visualLabelStringsRow(smuggled).pass, false, 'a word under a colour key is still a word');
+
+  for (const key of ['text', 'title', 'name', 'caption', 'text-field']) {
+    const leak = { ...CLEAN_SPEC, tokens: { ...CLEAN_SPEC.tokens, [key]: 'Millennium Force' } };
+    assert.equal(visualLabelStringsRow(leak).pass, false, `${key} smuggles copy past the row`);
+  }
+  return true;
+});
+
+await check('every shipped visual.json passes clause 1 — no Skin supplies a word', () => {
+  const venues = new URL('../../packages/venue-builder/data/venues/', import.meta.url);
+  const specs = [];
+  for (const venue of readdirSync(venues).sort()) {
+    const display = new URL(`${venue}/display/`, venues);
+    let entries = [];
+    try { entries = readdirSync(display); } catch { continue; }
+    for (const f of entries.filter((n) => n.endsWith('.visual.json')).sort()) {
+      specs.push([`${venue}/${f}`, JSON.parse(readFileSync(new URL(f, display), 'utf8'))]);
+    }
+  }
+  assert.ok(specs.length >= 16, `expected the four shipped venues × four Skins, found ${specs.length}`);
+  for (const [name, spec] of specs) {
+    const row = visualLabelStringsRow(spec);
+    assert.equal(row.pass, true, `${name}: ${row.evidence}`);
+  }
+  return true;
+});
+
+await check('the style cert carries the label row when a spec rides along', () => {
+  const renamed = JSON.parse(JSON.stringify(CLEAN_SPEC));
+  renamed.landTones['Coney Mall'].label = 'Sweet Street';
+  const withSpec = clause1Cert([], { visual: renamed });
+  assert.equal(rowOf(withSpec, 'style_no_label_strings').pass, false);
+  assert.equal(withSpec.certified, false, 'a label string in the spec must fail the cert');
+  assert.equal(rowOf(clause1Cert([], { visual: CLEAN_SPEC }), 'style_no_label_strings').pass, true);
+  // No spec, no row: bin/display-bake.mjs does not read visual.json, so on
+  // the bake path this row is the display pack's to carry.
+  assert.equal(rowOf(clause1Cert([]), 'style_no_label_strings'), undefined);
   return true;
 });
 

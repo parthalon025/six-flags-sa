@@ -1,0 +1,8 @@
+---
+description: Trains H/I: doneness comes from probes over the tree; never mark a slice done, never answer a blocked decision.
+alwaysApply: true
+---
+
+# Trains H and I — derive the plan, don't remember it
+
+Train **H/I** slice state is derived from the tree, never stored — run `npm run train:next` to see what is startable. See [train-plan policy](../../docs/agents/policies/train-plan.md).

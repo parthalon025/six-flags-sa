@@ -89,6 +89,10 @@ App **version** is auto-bumped on merge — never edit version files in PRs. See
 
 Put policy in **scripts**, not agent prose — one pointer beats a duplicated paragraph. See [scripts-over-instructions policy](./docs/agents/policies/scripts-over-instructions.md).
 
+## Trains H and I
+
+Train **H/I** slice state is derived from the tree, never stored — run `npm run train:next` to see what is startable. See [train-plan policy](./docs/agents/policies/train-plan.md).
+
 ## Agent skills
 
 ### Issue tracker

@@ -314,8 +314,8 @@ await check('GPS gate closes and position resolves', async () => {
 });
 
 await check('park geometry is drawn', async () => {
-  const paths = await a.locator('svg.mapSvg path').count();
-  if (paths < 800) throw new Error(`${paths} paths`);
+  const canvas = await a.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
+  if (!canvas) throw new Error('map not drawn (no MapLibre canvas)');
   if (!(await a.locator('.mePulse').count())) throw new Error('no own-position marker');
   return true;
 });
@@ -445,23 +445,25 @@ await check('the palette toggle cycles data-theme through Trail and Park Midnigh
   return true;
 });
 
-await check('wearing Pixel tycoon draws the isometric custom map', async () => {
+await check('wearing Pixel tycoon keeps the MapLibre map (OSM until a bake exists)', async () => {
   // A dedicated phone keeps the Wear off the other checks. The demo/store
   // grant (grantShipSkins, `parkbound-demo-skins`) unlocks the ship-polish
   // Skins without farming fog quests; the Wear itself is the real user action:
   // Me -> Settings -> Map -> Collection -> Pixel tycoon.
+  // ADR-0021 clause 6 converted the kit off iso; guests see OSM until a
+  // certified kings-island bake ships. Do not invent one.
   const P = await openPhone(browser, {
     lat: 39.34395,
     lng: -84.2673,
-    name: 'Iso',
-    label: 'ISO',
+    name: 'Tycoon',
+    label: 'TYCOON',
     venue: 'kings-island',
   });
   const p = P.page;
   try {
     await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
     await p.reload({ waitUntil: 'domcontentloaded' });
-    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"]:not(.mapMissing) canvas')), null, {
       timeout: 40000,
     });
     await closeGate(p);
@@ -476,18 +478,11 @@ await check('wearing Pixel tycoon draws the isometric custom map', async () => {
     if ((await p.evaluate(() => document.documentElement.dataset.skinPixel)) !== '1') {
       throw new Error('data-skin-pixel not set');
     }
-    // The custom-map layer draws iso geometry inside the map SVG…
-    const meshes = await p
-      .locator('.mapWorld .lyr-iso-map .isoBuilding, .mapWorld .lyr-iso-map .isoCoaster')
-      .count();
-    if (meshes < 5) throw new Error(`only ${meshes} iso meshes drawn`);
-    // …and owns the OSM building + coaster layers (hidden, not doubled).
-    if (await p.locator('.mapWorld .lyr-building').count()) {
-      throw new Error('base building layer still drawn under the iso overlay');
+    if (await p.locator('.lyr-iso-map').count()) {
+      throw new Error('iso layer still drawn after pixel-tycoon conversion');
     }
-    if (await p.locator('.mapWorld .lyr-coaster').count()) {
-      throw new Error('base coaster layer still drawn under the iso overlay');
-    }
+    const canvas = await p.locator('[data-testid="park-map-gl"]:not(.mapMissing) canvas').count();
+    if (!canvas) throw new Error('MapLibre canvas gone after Wear');
   } finally {
     await P.context.close();
   }
@@ -510,7 +505,7 @@ await check('wearing Watercolor quest draws the baked world image under the over
   try {
     await p.evaluate(() => localStorage.setItem('parkbound-demo-skins', '1'));
     await p.reload({ waitUntil: 'domcontentloaded' });
-    await p.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+    await p.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas') || document.querySelectorAll('svg.mapSvg circle').length), null, {
       timeout: 40000,
     });
     await closeGate(p);
@@ -525,34 +520,27 @@ await check('wearing Watercolor quest draws the baked world image under the over
     if ((await p.evaluate(() => document.documentElement.dataset.skinMap)) !== 'watercolor-quest') {
       throw new Error('data-skin-map not set');
     }
-    // The baked world image mounts inside the world transform once its pack
-    // sidecar answers…
-    await p.waitForSelector('.mapWorld .lyr-baked-world image', { timeout: 20000 });
-    const image = p.locator('.mapWorld .lyr-baked-world image').first();
-    const placed = await image.evaluate((el) => ({
-      href: el.getAttribute('href'),
-      w: Number(el.getAttribute('width')),
-      h: Number(el.getAttribute('height')),
-    }));
-    if (!placed.href?.endsWith('watercolor-quest.world.png')) {
-      throw new Error(`world image href is ${placed.href}`);
+    // data-baked-world is a React prop and can land before MapLibre's load.
+    // The vector building layer is the proof the bake sat on top, not instead.
+    await p.waitForSelector('[data-testid="park-map-gl"][data-baked-world$="watercolor-quest.world.png"][data-map-ready="1"]', { timeout: 20000 });
+    const href = await p.locator('[data-testid="park-map-gl"]').getAttribute('data-baked-world');
+    if (!href?.endsWith('watercolor-quest.world.png')) {
+      throw new Error(`world image href is ${href}`);
     }
-    if (!(placed.w > 0 && placed.h > 0)) throw new Error(`degenerate placement ${placed.w}×${placed.h}`);
-    // …with real decodable pixels behind the href (nonzero natural size).
-    const natural = await p.evaluate(async (href) => {
+    const natural = await p.evaluate(async (src) => {
       const img = new Image();
       await new Promise((ok, fail) => {
         img.onload = ok;
         img.onerror = () => fail(new Error('world PNG failed to decode'));
-        img.src = href;
+        img.src = src;
       });
       return { w: img.naturalWidth, h: img.naturalHeight };
-    }, placed.href);
+    }, href);
     if (!(natural.w > 0 && natural.h > 0)) throw new Error('world PNG has no pixels');
-    // The base map stays whole under a baked world (nothing hidden).
-    if (!(await p.locator('.mapWorld .lyr-building').count())) {
-      throw new Error('baked world must not hide the base building layer');
-    }
+    await until(async () => {
+      const layers = await p.evaluate(() => (globalThis.__parkMapLibre?.getStyle?.()?.layers || []).map((l) => l.id));
+      return layers.includes('world-building') ? true : false;
+    }, { timeout: 20000, label: 'vector building layer under the bake' });
   } finally {
     await P.context.close();
   }
@@ -1157,7 +1145,7 @@ await check('tapping a map icon opens place details and navigation', async () =>
     await a.getByRole('slider', { name: /Resize panel/ }).click();
     await a.waitForTimeout(350);
   }
-  await until(() => a.locator('svg.mapSvg path').count().then((n) => n >= 800), {
+  await until(() => a.locator('[data-testid="park-map-gl"] canvas').count().then((n) => n >= 1), {
     timeout: 20000,
     label: 'park geometry',
   });
@@ -2440,8 +2428,8 @@ await check('the welcome gate is step one of two: what the app is for, and the a
   if (!/stays on your phone/i.test(card)) {
     throw new Error('the gate that asks for GPS must still say where the fix goes');
   }
-  const paths = await e.locator('.mapSvg path').count();
-  if (paths < 100) throw new Error(`map looked empty behind the gate (${paths} paths)`);
+  const drawn = await e.locator('[data-testid="park-map-gl"] canvas, svg.mapSvg circle').count();
+  if (!drawn) throw new Error('map looked empty behind the gate');
   // Off-site GPS may not project a puck until the park is confirmed; map
   // geometry behind the gate is the vertical intake guarantee.
   return true;
@@ -2595,8 +2583,8 @@ await check('skipping location still asks which World to explore', async () => {
   }
   await p.locator('.gate .btn.primary').click();
   await p.waitForSelector('.gate', { state: 'detached', timeout: 25000 });
-  const paths = await p.locator('svg.mapSvg path').count();
-  if (paths < 100) throw new Error(`map did not draw after picking a park (${paths} paths)`);
+  const drawn = await p.locator('[data-testid="park-map-gl"] canvas, svg.mapSvg circle').count();
+  if (!drawn) throw new Error('map did not draw after picking a park');
   await fresh.close();
   return true;
 });
@@ -2723,7 +2711,7 @@ await check('height, theme and party survive a reload', async () => {
   // Never networkidle: a phone in a party polls its mailbox and the network
   // never goes quiet, so waiting for idle only ever waits for the timeout.
   await b.reload({ waitUntil: 'domcontentloaded' });
-  await b.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+  await b.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas') || document.querySelectorAll('svg.mapSvg circle').length), null, {
     timeout: 40000,
   });
   // The park question is not asked twice: this phone answered it before the
@@ -2901,7 +2889,7 @@ const offline = await browser.newContext({
 });
 const off = await offline.newPage();
 await off.goto(BASE, { waitUntil: 'domcontentloaded' });
-await off.waitForFunction(() => document.querySelectorAll('svg.mapSvg path').length > 100, null, {
+await off.waitForFunction(() => Boolean(document.querySelector('[data-testid="park-map-gl"] canvas') || document.querySelectorAll('svg.mapSvg circle').length), null, {
   timeout: 40000,
 });
 await off.waitForTimeout(3000); // let the worker install and cache the shell
@@ -2924,12 +2912,12 @@ await hydrated(off).catch(() => {});
 await check('the map still draws with the network cut', async () => {
   const paths = await until(
     async () => {
-      const n = await off.locator('svg.mapSvg path').count();
-      return n >= 100 ? n : null;
+      const n = await off.locator('[data-testid="park-map-gl"] canvas, svg.mapSvg circle').count();
+      return n >= 1 ? n : null;
     },
     { timeout: 40000, label: 'the offline map to draw' },
   );
-  return paths >= 100;
+  return paths >= 1;
 });
 
 await check('ride heights still work with the network cut', async () => {
@@ -3027,8 +3015,8 @@ for (const v of VENUE_SMOKE) {
   });
   const p = phone.page;
   await check(`${v.id} loads geometry and a known place`, async () => {
-    const paths = await p.locator('svg.mapSvg path').count();
-    if (paths < v.minPaths) throw new Error(`${paths} paths`);
+    const drawn = await p.locator('[data-testid="park-map-gl"] canvas, svg.mapSvg circle').count();
+    if (!drawn) throw new Error(`${v.id} map did not draw`);
     await go(p, 'Places');
     await p.locator('.field[aria-label="Search places"]').fill(v.search);
     await p.waitForTimeout(500);

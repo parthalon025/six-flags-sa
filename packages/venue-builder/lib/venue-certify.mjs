@@ -21,6 +21,7 @@ import { adapterCacheFile } from './adapters/_cache.mjs';
 import { compareParksApiToBundle } from './adapters/parks-api.mjs';
 import { compareQueueTimesToBundle } from './adapters/queue-times.mjs';
 import { collectExternalClaims } from './external-claims.mjs';
+import { venueImageryCoverage } from './imagery-ledger.mjs';
 import { isRideable } from '@party-tracker/shared/ontology.js';
 import { looksLikeFalseRide } from './non-ride-names.mjs';
 
@@ -306,6 +307,48 @@ export function certifyVenue(id, opts = {}) {
       soWhat: 'Explore-more research sources must either feed the twin or show as an honest gap',
     }),
   );
+
+  /* ---- imagery ledger (ADR-0020 clauses 1-2) ----
+     Only for venues whose shipped bundle actually rests on imagery. A venue
+     that never traced an orthophoto has nothing to answer for, and a row
+     reading "0/0 fine" on every other park is the kind of paperwork a reader
+     learns to skip past — including past the one park where it says something.
+
+     The bundle is what is read, not sources.json: geometry folded in by
+     lib/venue-imagery.mjs carries its own `src` signature, so deleting the
+     catalogue row removes the frame from the credit line and leaves this gate
+     looking straight at it. */
+  const imagery = venueImageryCoverage({ map, pois });
+  if (imagery.features > 0) {
+    checks.push(
+      check({
+        key: 'imagery_ledger',
+        claim: 'Every imagery tile this venue derives geometry from is pinned and derivation-licensed',
+        pass: imagery.problems.length === 0,
+        evidence: {
+          numerator: imagery.covered,
+          denominator: imagery.tiles.length,
+          detail: imagery.problems.length
+            ? imagery.problems.join('; ')
+            : `${imagery.features} feature(s) on ${imagery.tiles.length} admissible tile(s)`,
+          features: imagery.features,
+          tiles: imagery.tiles,
+          problems: imagery.problems,
+        },
+        confidence:
+          imagery.problems.length === 0 ? 'high'
+            : imagery.covered > 0 ? 'moderate'
+              : 'low',
+        falsifier:
+          'A shipped coordinate signed by:aerial or by:mapillary names a tile that is absent from '
+          + 'data/imagery-ledger.json, or whose row has no sha256, no capture date, or a licence or '
+          + 'serving channel ADR-0020 clause 2 does not admit',
+        soWhat:
+          'Imagery-derived geometry with no defensible provenance cannot be re-derived, corroborated, '
+          + 'or withdrawn if the licence turns out to forbid it — and it is already in shipped bundles',
+      }),
+    );
+  }
 
   /* Inventory compare — ask when ParksAPI / Queue-Times under-cover published rides. */
   const inventoryAsks = [];
