@@ -1145,64 +1145,54 @@ if (want('walk')) {
 console.log('\n--- walking directions ---');
 
 await check('tapping a map icon opens place details and navigation', async () => {
-  await dismissNavigation(a).catch(() => {});
-  await a.locator('.tabItem[data-tab="explore"]').click();
-  await root(a);
-  // Clear any list/rail selection so the next map tap always opens place detail
-  // instead of toggling an already-selected pin closed.
-  await a.evaluate(() => {
-    const clear = document.querySelector('.sheet.peek, .sheet.half, .sheet.full');
-    void clear;
-  });
-  await a.keyboard.press('Escape').catch(() => {});
-  // Peek leaves the map readable; a sheet covering the markers would make the
-  // tap land on the panel instead of the pin.
-  const stop = () =>
-    a.locator('.sheet').evaluate((e) =>
-      ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
-    );
-  for (let i = 0; i < 4 && (await stop()) !== 'peek'; i += 1) {
-    await a.getByRole('slider', { name: /Resize panel/ }).click();
-    await a.waitForTimeout(350);
-  }
-  await until(() => a.locator('[data-testid="park-map-gl"] canvas').count().then((n) => n >= 1), {
-    timeout: 20000,
-    label: 'park geometry',
-  });
-  // Beast declutters when GPS is far north — walk the fix to the station first.
+  // After smoke/heights, phone A is mid-filter and mid-sheet. A tap on its
+  // overlay pin misses MapLibre's hit-test. A fresh phone at the station
+  // is the walk this check owns.
   const beast = { latitude: 39.340154, longitude: -84.266027 };
-  for (let i = 0; i < 4; i += 1) {
-    await A.context.setGeolocation(beast);
-    await a.waitForTimeout(400);
-  }
-  // Prefer a named ride so the tap is deterministic after earlier list clicks.
-  let name;
-  try {
-    name = await tapMapPoi(a, 'The Beast', { timeout: 8000 });
-  } catch {
-    name = await tapMapPoi(a, null, { timeout: 12000 });
-  }
-  await until(async () => (await a.locator('[data-place-detail]').count()) > 0, {
-    timeout: 12000,
-    label: 'place detail sheet',
+  const phone = await openPhone(browser, {
+    lat: beast.latitude,
+    lng: beast.longitude,
+    label: 'WALK',
+    venue: 'kings-island',
   });
-  const title = await a.locator('.placeDetailName').innerText();
-  if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
-  // Match the accessible name, not the aria-label. Place detail now says
-  // "Walk me there" in visible text, so it carries no aria-label — duplicating
-  // a visible label in ARIA is the shape that goes stale. The capsule and the
-  // list's expanded row still use the icon-only button, which does. getByRole
-  // reads both.
-  const go = a
-    .locator('[data-place-detail]')
-    .getByRole('button', { name: 'Walk me there', exact: true });
-  if (!(await go.count())) throw new Error('no navigate control on place detail');
-  await go.click();
-  await a.waitForTimeout(900);
-  if (!(await a.locator('.routePreview').count())) throw new Error('no route preview from map tap');
-  await a.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
-  await a.waitForTimeout(300);
-  return true;
+  const p = phone.page;
+  try {
+    const stop = () =>
+      p.locator('.sheet').evaluate((e) =>
+        ['peek', 'half', 'full', 'shut'].find((s) => e.classList.contains(s)) || null,
+      );
+    for (let i = 0; i < 4 && (await stop()) !== 'peek'; i += 1) {
+      await p.getByRole('slider', { name: /Resize panel/ }).click();
+      await p.waitForTimeout(350);
+    }
+    await until(() => p.locator('[data-testid="park-map-gl"] canvas').count().then((n) => n >= 1), {
+      timeout: 20000,
+      label: 'park geometry',
+    });
+    let name;
+    try {
+      name = await tapMapPoi(p, 'The Beast', { timeout: 8000 });
+    } catch {
+      name = await tapMapPoi(p, null, { timeout: 12000 });
+    }
+    await until(async () => (await p.locator('[data-place-detail]').count()) > 0, {
+      timeout: 12000,
+      label: 'place detail sheet',
+    });
+    const title = await p.locator('.placeDetailName').innerText();
+    if (title !== name) throw new Error(`title "${title}" vs marker "${name}"`);
+    const goBtn = p
+      .locator('[data-place-detail]')
+      .getByRole('button', { name: 'Walk me there', exact: true });
+    if (!(await goBtn.count())) throw new Error('no navigate control on place detail');
+    await goBtn.click();
+    await p.waitForTimeout(900);
+    if (!(await p.locator('.routePreview').count())) throw new Error('no route preview from map tap');
+    await p.locator('.previewLink:has-text("Cancel")').click().catch(() => {});
+    return true;
+  } finally {
+    await phone.context.close();
+  }
 });
 
 await check('"walk me there" offers the route before setting off', async () => {
