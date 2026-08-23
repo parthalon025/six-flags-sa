@@ -492,5 +492,11 @@
     "items": [
       "fix(map): pinch no longer lags inside the pitch-ease window (#602)"
     ]
+  },
+  "1.28.0": {
+    "title": "What's new",
+    "items": [
+      "feat: Operator Profile via Clerk private metadata"
+    ]
   }
 }
