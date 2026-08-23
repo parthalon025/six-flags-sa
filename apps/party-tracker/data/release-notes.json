@@ -486,5 +486,11 @@
     "items": [
       "Trains H and I — zoomable worlds and imagery ground truth"
     ]
+  },
+  "1.27.3": {
+    "title": "What's new",
+    "items": [
+      "fix(map): pinch no longer lags inside the pitch-ease window (#602)"
+    ]
   }
 }
