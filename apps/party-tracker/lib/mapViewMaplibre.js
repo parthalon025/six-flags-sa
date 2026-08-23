@@ -22,6 +22,7 @@ import {
   bandedWorldStyle,
   OVERLAY_SOURCES,
   PLACES_LAYER,
+  worldCaseLayer,
   worldLayer,
 } from './mapViewStyle.js';
 
@@ -75,7 +76,7 @@ function ensureMapLibreWorker() {
 function applyWorldLod(map, groups) {
   const vis = worldLodVisibility(groups);
   for (const [key, visible] of Object.entries(vis)) {
-    const id = key === 'path-case' ? `${worldLayer('path')}-case` : worldLayer(key);
+    const id = key === 'path-case' ? worldCaseLayer('path') : worldLayer(key);
     if (!map.getLayer(id)) continue;
     map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
   }

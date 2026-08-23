@@ -32,6 +32,7 @@ import {
   OVERLAY_SOURCES,
   PLACES_LAYER,
   bandedWorldStyle,
+  worldCaseLayer,
   worldLayer,
   worldSource,
 } from '../../apps/party-tracker/lib/mapViewStyle.js';
@@ -244,6 +245,31 @@ const EASE_MIDPOINT = 15.622402608729476;
 // ---------------------------------------------------------------------------
 
 const paints = (renderer) => renderer.calls.filter((c) => c.call === 'paint');
+
+{
+  // A view that opens already past the SVG detail enter must remember that.
+  // z15.3 is 0.67 px/m here: below enter (0.7) and above leave (0.62). If
+  // lodShown stayed at the pre-mount zeros, the first zoom-out would hide
+  // buildings one step earlier than a pinch that earned them.
+  const renderer = recordingRenderer();
+  const view = mount({
+    renderer,
+    camera: { center: CENTRE, zoom: 17 },
+    available: ['mid', 'close'],
+  });
+  assert.deepEqual(view.state().plan.worldLod, {
+    detail: true,
+    service: true,
+    close: true,
+  });
+  renderer.calls.length = 0;
+  view.setCamera({ center: CENTRE, zoom: 15.3 });
+  assert.equal(
+    paints(renderer)[0].plan.worldLod.detail,
+    true,
+    'hysteresis keeps detail after a walking-zoom open',
+  );
+}
 
 {
   const renderer = recordingRenderer();
@@ -986,7 +1012,7 @@ const GEOMETRY = worldGeoJson({
   // A walkway needs its casing under it — one line drawn wide in the ground
   // colour, then the path over it — or a midway crossing a lawn has no edge.
   const path = style.layers.findIndex((l) => l.id === worldLayer('path'));
-  const casing = style.layers.findIndex((l) => l.id === `${worldLayer('path')}-case`);
+  const casing = style.layers.findIndex((l) => l.id === worldCaseLayer('path'));
   assert.ok(casing >= 0 && casing < path, 'the path casing is drawn first, under the path');
 }
 

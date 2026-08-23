@@ -33,6 +33,7 @@ export const bandSource = (id) => `band-${id}`;
 export const bandLayer = (id) => `band-${id}`;
 export const worldSource = (id) => `world-${id}`;
 export const worldLayer = (id) => `world-${id}`;
+export const worldCaseLayer = (id) => `${worldLayer(id)}-case`;
 export const overlaySource = (id) => `overlay-${id}`;
 
 /** One geojson source per collection `overlayGeo.overlayGeoJson` answers with,
@@ -202,7 +203,7 @@ function worldLayers(geometry, colour) {
     if (!geometry?.[id]?.features?.length) continue;
     const { casing, ...spec } = WORLD_PAINT[id](colour);
     if (casing) {
-      layers.push({ id: `${worldLayer(id)}-case`, type: 'line', source: worldSource(id), layout: spec.layout, paint: casing });
+      layers.push({ id: worldCaseLayer(id), type: 'line', source: worldSource(id), layout: spec.layout, paint: casing });
     }
     layers.push({ id: worldLayer(id), source: worldSource(id), ...spec });
   }

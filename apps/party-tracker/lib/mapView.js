@@ -256,6 +256,7 @@ export function mountMapView(
 
   let current = cameraFor(camera);
   let plan = planFor(current.zoom);
+  lodShown = { ...plan.worldLod };
 
   // Everything the view needs has now been checked, so a renderer is only ever
   // attached to a view that can actually run. A renderer left attached to a
