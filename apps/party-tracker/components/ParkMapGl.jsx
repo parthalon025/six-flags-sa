@@ -27,7 +27,7 @@ import { metresPerPixel, zoomForResolution } from '@party-tracker/shared/zoomBan
 import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
-import { LABEL_DY, PIN_LABEL_SIZE, PLACE_LABEL_SIZE, ZONE_LABEL_SIZE, overlayChrome } from '@/lib/overlayMarks';
+import { PIN_LABEL_SIZE, PLACE_LABEL_SIZE, ZONE_LABEL_SIZE, markLabelStyle, overlayChrome } from '@/lib/overlayMarks';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline rather than globals.css, for the reason BandedWorldMap.jsx states:
@@ -365,25 +365,25 @@ export default function ParkMapGl({
               <path d="M0,10 L-6,-8 L6,-8 Z" />
             </g>
           ) : null}
-          {marks.map((mark) => (
+          {marks.map((mark) => {
+            const style = markLabelStyle(mark.kind);
+            return (
             <g
               key={`${mark.kind}:${mark.id}`}
               className={mark.className}
               transform={`translate(${mark.x},${mark.y})`}
             >
               <title>{mark.name}</title>
-              {mark.kind !== 'zone' ? <circle r="8" /> : null}
+              {style.drawsPin ? <circle r="8" /> : null}
               {mark.self ? <circle className="mePulse" r="14" /> : null}
               {mark.label ? (
-                <text
-                  className={mark.kind === 'zone' ? 'landLabel' : mark.kind === 'place' ? 'poiLabel' : 'memName'}
-                  y={mark.kind === 'zone' ? 0 : LABEL_DY}
-                >
+                <text className={style.className} y={style.dy}>
                   {mark.name}
                 </text>
               ) : null}
             </g>
-          ))}
+            );
+          })}
         </g>
       </svg>
       {children}

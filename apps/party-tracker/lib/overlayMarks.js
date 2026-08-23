@@ -14,8 +14,8 @@ import { metresPerPixel } from '@party-tracker/shared/zoomBands.js';
 import { Declutter, boxAround, onScreen, textWidth } from './mapLabels.js';
 import { markerDeclutterPriority, markerWantsLabel } from './mapVisual.js';
 
-/** Live overlay kinds ADR-0012 never drops a name for. Places are the
- *  crowded set; everything else (Members, Meet, the car) is sparse. */
+/** Kinds that keep a name without earning zoom. Places are the crowded
+ *  set. Members, Meet, the car, and World Zones are sparse enough to pin. */
 const isPinnedKind = (kind) => kind && kind !== 'place';
 
 export const PLACE_LABEL_SIZE = 16;
@@ -26,6 +26,22 @@ export const ZONE_LABEL_SIZE = 14;
    The renderer reads the same export — two offsets is two truths. */
 export const LABEL_DY = 24;
 const ICON_R = 8;
+
+const KIND_LABEL = Object.freeze({
+  zone: Object.freeze({ size: ZONE_LABEL_SIZE, dy: 0, className: 'landLabel', drawsPin: false }),
+  place: Object.freeze({ size: PLACE_LABEL_SIZE, dy: LABEL_DY, className: 'poiLabel', drawsPin: true }),
+});
+const DEFAULT_KIND_LABEL = Object.freeze({
+  size: PIN_LABEL_SIZE,
+  dy: LABEL_DY,
+  className: 'memName',
+  drawsPin: true,
+});
+
+/** Paint facts for one mark kind — size, offset, class, and whether it is a pin. */
+export function markLabelStyle(kind) {
+  return KIND_LABEL[kind] || DEFAULT_KIND_LABEL;
+}
 
 /** px/m scale `labelWantedAtZoom` reads, from a MapLibre zoom. */
 export function labelPlanZoom(zoom, latitude) {
@@ -40,8 +56,7 @@ function iconBox(mark) {
 }
 
 function labelBox(mark) {
-  const size = mark.kind === 'zone' ? ZONE_LABEL_SIZE : mark.kind === 'place' ? PLACE_LABEL_SIZE : PIN_LABEL_SIZE;
-  const dy = mark.kind === 'zone' ? 0 : LABEL_DY;
+  const { size, dy } = markLabelStyle(mark.kind);
   const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
   return boxAround(mark.x, mark.y + dy, halfW, size * 0.55);
 }
@@ -142,10 +157,16 @@ function projectPoint(project, coordinates) {
  */
 function ringCentroid(ring) {
   if (!Array.isArray(ring) || ring.length < 1) return null;
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  const closed = ring.length > 1
+    && Array.isArray(first) && Array.isArray(last)
+    && first[0] === last[0] && first[1] === last[1];
+  const verts = closed ? ring.slice(0, -1) : ring;
   let lng = 0;
   let lat = 0;
   let n = 0;
-  for (const pair of ring) {
+  for (const pair of verts) {
     if (!Array.isArray(pair) || pair.length < 2) continue;
     if (!Number.isFinite(pair[0]) || !Number.isFinite(pair[1])) continue;
     lng += pair[0];
@@ -170,7 +191,6 @@ export function overlayMarks(overlay, project, extras = {}) {
       id: `zone:${name}`,
       name,
       self: false,
-      label: isPinnedKind('zone'),
       x: Math.round(point.x),
       y: Math.round(point.y),
     });
@@ -185,7 +205,6 @@ export function overlayMarks(overlay, project, extras = {}) {
       name: feature.properties?.name || '',
       category: feature.properties?.category || null,
       self: false,
-      label: isPinnedKind('place'),
       x: Math.round(point.x),
       y: Math.round(point.y),
     });
@@ -200,7 +219,6 @@ export function overlayMarks(overlay, project, extras = {}) {
       id,
       name: feature.properties?.name || '',
       self: Boolean(feature.properties?.self) || id === 'me',
-      label: isPinnedKind('member'),
       x: Math.round(point.x),
       y: Math.round(point.y),
     });
@@ -215,7 +233,6 @@ export function overlayMarks(overlay, project, extras = {}) {
       id: feature.properties?.id ?? feature.id,
       name: feature.properties?.label || '',
       self: false,
-      label: isPinnedKind(kind),
       x: Math.round(point.x),
       y: Math.round(point.y),
     });

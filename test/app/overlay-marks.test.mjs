@@ -9,6 +9,7 @@ import {
   PIN_LABEL_SIZE,
   PLACE_LABEL_SIZE,
   ZONE_LABEL_SIZE,
+  markLabelStyle,
   layoutOverlayLabels,
   overlayChrome,
   overlayMarks,
@@ -36,12 +37,18 @@ const marks = overlayMarks(overlay, ({ lng, lat }) => ({ x: lng * -1, y: lat }))
 assert.equal(marks.length, 3);
 assert.equal(marks.find((m) => m.kind === 'place').className, 'poiMarker');
 assert.equal(marks.find((m) => m.kind === 'place').name, 'The Beast');
-assert.equal(marks.find((m) => m.kind === 'place').label, false, 'places stay unnamed until layout says so');
+assert.equal(marks.find((m) => m.kind === 'place').label, undefined, 'overlayMarks does not decide names');
 assert.equal(marks.find((m) => m.self).className, 'memMarker');
 assert.equal(marks.find((m) => m.self).id, 'phone-a');
-assert.equal(marks.find((m) => m.self).label, true, 'Members keep their name without a layout pass');
+assert.equal(marks.find((m) => m.self).label, undefined);
 assert.equal(marks.find((m) => m.kind === 'meet').className, 'meetPin');
-assert.equal(marks.find((m) => m.kind === 'meet').label, true);
+assert.equal(marks.find((m) => m.kind === 'meet').label, undefined);
+{
+  const laid = layoutOverlayLabels(marks, null);
+  assert.equal(laid.find((m) => m.kind === 'place').label, false, 'places stay unnamed until layout says so');
+  assert.equal(laid.find((m) => m.self).label, true, 'Members keep their name without a zoom pass');
+  assert.equal(laid.find((m) => m.kind === 'meet').label, true);
+}
 assert.deepEqual(
   overlayMarks(overlay, () => null),
   [],
@@ -200,9 +207,12 @@ assert.deepEqual(
 {
   const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
-  assert.match(painted, /landLabel/, 'Zones wear the district type, not a pin name');
-  assert.match(painted, /mark\.kind !== 'zone'/, 'a Zone is a name on the land, not another black disc');
-  assert.match(painted, /LABEL_DY/, 'the SVG name sits on the same offset the grid claimed');
+  assert.match(painted, /markLabelStyle/, 'the SVG reads the same kind style the grid claimed');
+  assert.match(painted, /drawsPin/, 'a Zone is a name on the land, not another black disc');
+  assert.equal(markLabelStyle('zone').className, 'landLabel');
+  assert.equal(markLabelStyle('zone').drawsPin, false);
+  assert.equal(markLabelStyle('zone').dy, 0);
+  assert.equal(markLabelStyle('place').dy, LABEL_DY);
   assert.match(painted, /--map-place-label.: `\$\{PLACE_LABEL_SIZE\}px`/, 'the SVG reads the same size the grid claimed');
   assert.match(painted, /--map-pin-label.: `\$\{PIN_LABEL_SIZE\}px`/);
   assert.match(painted, /--map-zone-label.: `\$\{ZONE_LABEL_SIZE\}px`/);
@@ -234,6 +244,20 @@ assert.deepEqual(
   const [mark] = overlayMarks(overlay, () => ({ x: 10.4, y: 20.6 }));
   assert.equal(mark.x, 10);
   assert.equal(mark.y, 21);
+}
+
+{
+  // A closed square must not weight the repeated first corner twice.
+  const lands = {
+    features: [{
+      properties: { name: 'Midway' },
+      geometry: { type: 'Polygon', coordinates: [[[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]]] },
+    }],
+  };
+  const [zone] = overlayMarks({}, ({ lng, lat }) => ({ x: lng, y: lat }), { lands });
+  assert.equal(zone.name, 'Midway');
+  assert.equal(zone.x, 5);
+  assert.equal(zone.y, 5);
 }
 
 console.log('overlay-marks: ok');
