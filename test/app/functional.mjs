@@ -330,6 +330,7 @@ await check('park-wide view does not print every place name', async () => {
   const pins = await a.locator('svg.mapSvg .poiMarker').count();
   if (pins < 10) throw new Error(`expected place markers after declutter, got ${pins}`);
   if (zones.length < 1) throw new Error('park-wide map printed no Zone names');
+  if (names.length < 1) throw new Error('park-wide map printed no ride names');
   if (names.some((n) => /restroom/i.test(n))) {
     throw new Error(`park-wide map named a restroom: ${names.filter((n) => /restroom/i.test(n)).join(', ')}`);
   }

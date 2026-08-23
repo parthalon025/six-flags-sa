@@ -579,7 +579,9 @@ export async function rideHeightVerdict(page, rideName) {
 /**
  * Tap a drawn map icon by name. Pointer capture lives on the map wrapper, so
  * the hit has to land as a real mouse click at the marker's screen point —
- * clicking the `<g>` itself never reaches ParkMap's picker.
+ * clicking the `<g>` itself never reaches ParkMap's picker. The tap uses the
+ * pin circle, not the group box: ride names always print and would pull the
+ * centre onto the label, which MapLibre's hit-test does not own.
  */
 export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
   const hit = await until(
