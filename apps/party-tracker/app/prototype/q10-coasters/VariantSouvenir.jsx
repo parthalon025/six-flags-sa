@@ -2,12 +2,13 @@
 
 /* A — Souvenir wash. Lands are the picture. Ride names are destinations. */
 
-import { landLabelAt, ownersOf, pathD, souvenirTint, wrapLand } from './q10World.js';
+import { ownersOf, pathD, souvenirTint, spreadLandLabels, wrapLand } from './q10World.js';
 
 export const name = 'Souvenir wash';
 
 export default function VariantSouvenir({ world, project, primary, onPick }) {
   const loud = ownersOf(world.tracks, primary);
+  const labels = spreadLandLabels(world.lands, world.anchors, project);
   return (
     <div style={S.page}>
       <svg viewBox="0 0 720 920" style={S.svg} aria-label="Souvenir land map">
@@ -45,7 +46,7 @@ export default function VariantSouvenir({ world, project, primary, onPick }) {
           />
         ))}
         {world.lands.map((l) => {
-          const at = landLabelAt(l, world.anchors, project);
+          const at = labels[l.name];
           if (!at) return null;
           const t = souvenirTint(l.name);
           const lines = wrapLand(l.name);

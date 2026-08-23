@@ -36,6 +36,30 @@ export function landLabelAt(land, anchors, project) {
   return centroid(land.ring, project);
 }
 
+/** Push colliding land names apart so adjacent districts stay readable. */
+export function spreadLandLabels(lands, anchors, project, min = 36) {
+  const pts = lands.map((land) => {
+    const at = landLabelAt(land, anchors, project);
+    return { name: land.name, x: at?.[0], y: at?.[1] };
+  }).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  for (let i = 0; i < pts.length; i += 1) {
+    for (let j = i + 1; j < pts.length; j += 1) {
+      const dx = pts[j].x - pts[i].x;
+      const dy = pts[j].y - pts[i].y;
+      const d = Math.hypot(dx, dy) || 0.01;
+      if (d >= min) continue;
+      const push = (min - d) / 2;
+      const nx = dx / d;
+      const ny = dy / d;
+      pts[i].x -= nx * push;
+      pts[i].y -= ny * push;
+      pts[j].x += nx * push;
+      pts[j].y += ny * push;
+    }
+  }
+  return Object.fromEntries(pts.map((p) => [p.name, [p.x, p.y]]));
+}
+
 export function wrapLand(name) {
   const parts = String(name || '').split(' ');
   if (parts.length === 2 && name.length >= 12) return parts;

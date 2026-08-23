@@ -2,12 +2,13 @@
 
 /* B — Land poster. Districts shout. Rides are a numbered catalog. */
 
-import { landLabelAt, ownersOf, pathD, souvenirTint, wrapLand } from './q10World.js';
+import { ownersOf, pathD, souvenirTint, spreadLandLabels, wrapLand } from './q10World.js';
 
 export const name = 'Land poster';
 
 export default function VariantPoster({ world, project, primary, onPick }) {
   const loud = ownersOf(world.tracks, primary);
+  const labels = spreadLandLabels(world.lands, world.anchors, project, 48);
   const catalog = world.coasters.map((p, i) => ({ ...p, num: i + 1 }));
   return (
     <div style={S.page}>
@@ -46,7 +47,7 @@ export default function VariantPoster({ world, project, primary, onPick }) {
           />
         ))}
         {world.lands.map((l) => {
-          const at = landLabelAt(l, world.anchors, project);
+          const at = labels[l.name];
           if (!at) return null;
           const t = souvenirTint(l.name);
           const lines = wrapLand(l.name);

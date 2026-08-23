@@ -2,12 +2,13 @@
 
 /* C — Quiet midways. Lands plus cream walkways. No grey Google pour. */
 
-import { landLabelAt, ownersOf, pathD, souvenirTint, wrapLand } from './q10World.js';
+import { ownersOf, pathD, souvenirTint, spreadLandLabels, wrapLand } from './q10World.js';
 
 export const name = 'Quiet midways';
 
 export default function VariantMidway({ world, project, primary, onPick }) {
   const loud = ownersOf(world.tracks, primary);
+  const labels = spreadLandLabels(world.lands, world.anchors, project);
   const midways = world.paths.filter((p) => p.rank === 'arterial');
   return (
     <div style={S.page}>
@@ -71,7 +72,7 @@ export default function VariantMidway({ world, project, primary, onPick }) {
           />
         ))}
         {world.lands.map((l) => {
-          const at = landLabelAt(l, world.anchors, project);
+          const at = labels[l.name];
           if (!at) return null;
           const t = souvenirTint(l.name);
           const lines = wrapLand(l.name);
