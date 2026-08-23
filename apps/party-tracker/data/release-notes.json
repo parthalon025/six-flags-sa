@@ -498,5 +498,11 @@
     "items": [
       "feat: Operator Profile via Clerk private metadata"
     ]
+  },
+  "1.28.1": {
+    "title": "What's new",
+    "items": [
+      "Park-wide map: Zone geography plus ride names, not a hide"
+    ]
   }
 }
