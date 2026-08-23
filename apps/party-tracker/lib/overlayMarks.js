@@ -141,11 +141,14 @@ export function layoutOverlayLabels(marks, layout = null) {
       wasShown: shown.has(mark.id),
       category: mark.category,
     };
-    // Amenity discs at park-wide are the black mass. Rides stay; the rest
-    // wait for the same zoom their names use. Selection still gets a pin.
-    mark.pin = markerWantsLabel({ ...wanted, isSelected: false });
-    if (!markerWantsLabel({ ...wanted, isSelected: mark.id === selectedId })) continue;
+    if (!markerWantsLabel({ ...wanted, isSelected: mark.id === selectedId })) {
+      mark.pin = isNav || isPlanNext || mark.id === selectedId;
+      continue;
+    }
     tryLabel(mark, isNav || isPlanNext);
+    // A disc without a name is the black mass. Named rides keep a pin;
+    // Go / Plan / selection keep one even when the sheet holds the title.
+    mark.pin = mark.label || isNav || isPlanNext || mark.id === selectedId;
   }
 
   return list;

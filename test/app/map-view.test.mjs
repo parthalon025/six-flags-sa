@@ -1019,6 +1019,7 @@ const GEOMETRY = worldGeoJson({
   );
   assert.equal(layerFor(OVERLAY_SOURCES.route).paint['line-color'], '#ff00aa');
   assert.equal(layerFor(OVERLAY_SOURCES.places).paint['circle-color'], '#123456');
+  assert.equal(layerFor(OVERLAY_SOURCES.places).paint['circle-opacity'], 0, 'MapLibre places are hit targets; SVG draws the pin');
   assert.equal(layerFor(OVERLAY_SOURCES.marks).paint['circle-color'], '#abcdef');
   assert.equal(layerFor(OVERLAY_SOURCES.pins).paint['circle-color'], '#654321');
 

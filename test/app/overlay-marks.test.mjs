@@ -205,7 +205,7 @@ assert.deepEqual(
   const amenityPins = laid.filter((m) => m.kind === 'place' && m.pin && m.category !== 'coaster' && m.category !== 'ride');
   const ridePins = laid.filter((m) => m.kind === 'place' && m.pin && (m.category === 'coaster' || m.category === 'ride'));
   assert.equal(amenityPins.length, 0, 'amenity discs stay off at park-wide zoom');
-  assert.ok(ridePins.length > 20, `ride discs stay on, got ${ridePins.length}`);
+  assert.equal(ridePins.length, rides.length, 'a ride disc is a named ride, not every ride');
   assert.ok(placeNames.length < laid.filter((m) => m.kind === 'place').length, 'not every Place is named');
   assert.ok(laid.filter((m) => m.kind === 'place').length > 80, 'markers themselves still land');
 }
