@@ -59,7 +59,7 @@ export default function PrototypeSwitcher({ variants, current }) {
       <button type="button" aria-label="Previous variant" onClick={() => step(-1)} style={btn}>
         ←
       </button>
-        <span style={{ minWidth: 188, textAlign: 'center' }}>
+        <span style={{ minWidth: 210, textAlign: 'center' }}>
         {meta.key} · {meta.name}
       </span>
       <button type="button" aria-label="Next variant" onClick={() => step(1)} style={btn}>

@@ -6,11 +6,11 @@ import { normaliseRideName } from '@/lib/mapSymbols.js';
 
 export const VENUE = 'kings-island';
 
-/** Zoom bands — D ink, Google road LOD. O city / S neighborhood / F walking. */
+/** Three unconventional plates. Not Google, not grey roads. */
 export const VARIANTS = [
-  { key: 'O', name: 'Overview', thesis: 'Rails + long midways. Queues, stubs, and service wait.', band: 'overview' },
-  { key: 'S', name: 'Streets', thesis: 'Neighborhood zoom. Local paths join the midways.', band: 'streets' },
-  { key: 'F', name: 'Foot', thesis: 'Walking zoom. Minor paths, queues, steps, and service.', band: 'close' },
+  { key: 'A', name: 'Night catalog', thesis: 'No roads. Rides are stars. Lines are myth, not midways.' },
+  { key: 'B', name: 'Ink carve', thesis: 'The park is the ink. You walk the unprinted paper.' },
+  { key: 'C', name: 'Type field', thesis: 'The names ARE the map. Geometry almost leaves.' },
 ];
 
 const QUEUE_NAME = /queue|line|entrance|exit|station/i;
