@@ -133,7 +133,7 @@ function projectPoint(project, coordinates) {
 /**
  * @param {object} overlay overlayGeoJson's five collections
  * @param {(lngLat: {lng: number, lat: number}) => {x: number, y: number}|null} project
- * @returns {{ kind: string, className: string, id: *, name: string, self: boolean, x: number, y: number }[]}
+ * @returns {{ kind: string, className: string, id: *, name: string, category?: string|null, self: boolean, label: boolean, x: number, y: number }[]}
  */
 export function overlayMarks(overlay, project) {
   const marks = [];
@@ -147,9 +147,9 @@ export function overlayMarks(overlay, project) {
       name: feature.properties?.name || '',
       category: feature.properties?.category || null,
       self: false,
-      label: false,
-      x: point.x,
-      y: point.y,
+      label: isPinnedKind('place'),
+      x: Math.round(point.x),
+      y: Math.round(point.y),
     });
   }
   for (const feature of overlay?.members?.features || []) {
@@ -162,9 +162,9 @@ export function overlayMarks(overlay, project) {
       id,
       name: feature.properties?.name || '',
       self: Boolean(feature.properties?.self) || id === 'me',
-      label: true,
-      x: point.x,
-      y: point.y,
+      label: isPinnedKind('member'),
+      x: Math.round(point.x),
+      y: Math.round(point.y),
     });
   }
   for (const feature of overlay?.pins?.features || []) {
@@ -177,9 +177,9 @@ export function overlayMarks(overlay, project) {
       id: feature.properties?.id ?? feature.id,
       name: feature.properties?.label || '',
       self: false,
-      label: true,
-      x: point.x,
-      y: point.y,
+      label: isPinnedKind(kind),
+      x: Math.round(point.x),
+      y: Math.round(point.y),
     });
   }
   return marks;
@@ -216,6 +216,8 @@ function latLngToLngLat(points) {
  * @param {{lat: number, lng: number, course?: number}|null} [extras.puck]
  * @param {number} [extras.heading] compass heading; wins over course
  * @param {number} [extras.rotation] map bearing in degrees
+ * @param {object} [extras.layout] handed to `layoutOverlayLabels` — zoom,
+ *   latitude, width, height, shownIds, navId, planNextId, selectedId
  */
 export function overlayChrome(overlay, project, extras = {}) {
   const paths = [];

@@ -531,7 +531,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3.5px; stroke-linejoin: round;
 }
 .poiLabel {
-  font-family: var(--ui); font-size: 16px; font-weight: 700; letter-spacing: -.1px;
+  font-family: var(--ui); font-size: var(--map-place-label, 16px); font-weight: 700; letter-spacing: -.1px;
   fill: var(--labelFill); text-anchor: middle;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4.5px; stroke-linejoin: round;
   text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;
@@ -573,7 +573,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   text-anchor: middle; pointer-events: none;
 }
 .memName {
-  font-family: var(--ui); font-size: 15px; font-weight: 700; fill: var(--labelFill);
+  font-family: var(--ui); font-size: var(--map-pin-label, 15px); font-weight: 700; fill: var(--labelFill);
   text-anchor: middle;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4.5px;
   text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;

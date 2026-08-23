@@ -3009,9 +3009,13 @@ await check('map place names are large enough for the grandma test', () => {
   const land = css.match(/\.landLabel\s*\{[^}]+\}/);
   const mem = css.match(/\.memName\s*\{[^}]+\}/);
   assert.ok(poi && land && mem, 'missing map label rules');
-  const poiSize = Number(poi[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
-  const landSize = Number(land[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
-  const memSize = Number(mem[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
+  const fallbackPx = (rule) => Number(
+    rule.match(/font-size:\s*var\(--[^,]+,\s*([\d.]+)px\)/)?.[1]
+      ?? rule.match(/font-size:\s*([\d.]+)px/)?.[1],
+  );
+  const poiSize = fallbackPx(poi[0]);
+  const landSize = fallbackPx(land[0]);
+  const memSize = fallbackPx(mem[0]);
   // Arm's-length outdoor reading (ADR-0012): 13.5px failed the grandma
   // test once names were no longer stacked. 16 / 15 is body-adjacent UI.
   assert.ok(poiSize >= 16, `poiLabel ${poiSize}px`);

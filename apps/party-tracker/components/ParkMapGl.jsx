@@ -27,7 +27,7 @@ import { metresPerPixel, zoomForResolution } from '@party-tracker/shared/zoomBan
 import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
-import { LABEL_DY, overlayChrome } from '@/lib/overlayMarks';
+import { LABEL_DY, PIN_LABEL_SIZE, PLACE_LABEL_SIZE, overlayChrome } from '@/lib/overlayMarks';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline rather than globals.css, for the reason BandedWorldMap.jsx states:
@@ -342,7 +342,14 @@ export default function ParkMapGl({
       />
       <svg
         className="mapSvg"
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          overflow: 'visible',
+          '--map-place-label': `${PLACE_LABEL_SIZE}px`,
+          '--map-pin-label': `${PIN_LABEL_SIZE}px`,
+        }}
         aria-hidden="true"
       >
         <g className="mapWorld">
@@ -358,7 +365,7 @@ export default function ParkMapGl({
             <g
               key={`${mark.kind}:${mark.id}`}
               className={mark.className}
-              transform={`translate(${Math.round(mark.x)},${Math.round(mark.y)})`}
+              transform={`translate(${mark.x},${mark.y})`}
             >
               <title>{mark.name}</title>
               <circle r="8" />

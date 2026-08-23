@@ -188,16 +188,32 @@ assert.deepEqual(
   const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(painted, /y=\{LABEL_DY\}/, 'the SVG name sits on the same offset the grid claimed');
-  assert.match(painted, /Math\.round\(mark\.x\).*Math\.round\(mark\.y\)/s, 'names land on whole pixels');
+  assert.match(painted, /--map-place-label.: `\$\{PLACE_LABEL_SIZE\}px`/, 'the SVG reads the same size the grid claimed');
+  assert.match(painted, /--map-pin-label.: `\$\{PIN_LABEL_SIZE\}px`/);
   assert.equal(PLACE_LABEL_SIZE, 16);
   assert.equal(PIN_LABEL_SIZE, 15);
   const iconR = 8;
   const gap = LABEL_DY - PLACE_LABEL_SIZE * 0.55 - iconR;
   assert.ok(gap >= 4, `label gap ${gap}px undercuts the disc`);
+  const fallbackPx = (rule) => Number(rule.match(/font-size:\s*var\(--[^,]+,\s*([\d.]+)px\)/)?.[1]);
   const poi = css.match(/\.poiLabel\s*\{[^}]+\}/);
   const mem = css.match(/\.memName\s*\{[^}]+\}/);
-  assert.equal(Number(poi?.[0].match(/font-size:\s*([\d.]+)px/)?.[1]), PLACE_LABEL_SIZE);
-  assert.equal(Number(mem?.[0].match(/font-size:\s*([\d.]+)px/)?.[1]), PIN_LABEL_SIZE);
+  assert.equal(fallbackPx(poi?.[0] || ''), PLACE_LABEL_SIZE);
+  assert.equal(fallbackPx(mem?.[0] || ''), PIN_LABEL_SIZE);
+}
+
+{
+  const overlay = {
+    places: {
+      features: [{
+        geometry: { coordinates: [-84.26, 39.34] },
+        properties: { id: 'beast', name: 'The Beast' },
+      }],
+    },
+  };
+  const [mark] = overlayMarks(overlay, () => ({ x: 10.4, y: 20.6 }));
+  assert.equal(mark.x, 10);
+  assert.equal(mark.y, 21);
 }
 
 console.log('overlay-marks: ok');
