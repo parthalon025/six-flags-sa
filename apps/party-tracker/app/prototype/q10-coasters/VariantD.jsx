@@ -1,50 +1,69 @@
 'use client';
 
-/* D ink + Google path LOD. Rails always on. Walk rank enters by band. */
+/* D ink + Google path LOD. Roads are stitched, buffered shapes — not hairlines. */
 
-import { pathD, walkVisible } from './q10World.js';
+import { pathD } from './q10World.js';
+import {
+  ROAD_CASE,
+  ROAD_FILL,
+  ROAD_HALF,
+  bufferWay,
+  polyD,
+  projectWays,
+  stitchWays,
+} from './q10Roads.js';
 
 export const name = 'D + LOD';
 
-const STROKE = {
-  overview: { rail: 2.3, arterial: 2.05, street: 0, foot: 0, service: 0 },
-  streets: { rail: 2.0, arterial: 1.7, street: 1.05, foot: 0, service: 0 },
-  close: { rail: 1.7, arterial: 1.45, street: 1.0, foot: 0.75, service: 0.7 },
-};
+const RAIL = { overview: 2.3, streets: 2.0, close: 1.7 };
+
+function roadShapes(rows, project, rank, band) {
+  const hw = ROAD_HALF[band]?.[rank] || 0;
+  if (hw <= 0) return [];
+  const stitched = stitchWays(projectWays(rows.filter((r) => r.rank === rank), project));
+  return stitched
+    .map((pts) => ({ caseD: polyD(bufferWay(pts, hw + 1.1)), fillD: polyD(bufferWay(pts, hw)) }))
+    .filter((s) => s.fillD);
+}
 
 export default function VariantD({ world, project, primary, onPick, band }) {
-  const w = STROKE[band] || STROKE.overview;
-  const paths = world.paths.filter((p) => walkVisible(p.rank, band));
-  const service = world.service.filter((p) => walkVisible(p.rank, band));
+  const ranks = ['service', 'foot', 'street', 'arterial'];
+  const layers = ranks.map((rank) => ({
+    rank,
+    shapes: roadShapes(
+      rank === 'service' ? world.service : world.paths,
+      project,
+      rank,
+      band,
+    ),
+  }));
 
   return (
     <div style={S.page}>
-      <svg viewBox="0 0 720 920" style={S.svg} aria-label={`${band} path LOD on D ink`}>
-        <rect width="720" height="920" fill="#f2f2f0" />
+      <svg viewBox="0 0 720 920" style={S.svg} aria-label={`${band} road shapes on D ink`}>
+        <rect width="720" height="920" fill="#e4ddd0" />
         {world.park.map((r, i) => (
-          <path key={`p${i}`} d={pathD(r, project)} fill="#e8e8e4" />
+          <path key={`p${i}`} d={pathD(r, project)} fill="#cfc8b8" />
         ))}
-        {service.map((p) => (
-          <path key={p.id} d={pathD(p.ring, project)} fill="none" stroke="#8aa07a" strokeWidth={w.service} />
-        ))}
-        {paths.map((p) => (
-          <path
-            key={p.id}
-            d={pathD(p.ring, project)}
-            fill="none"
-            stroke={p.rank === 'arterial' ? '#6a6258' : '#b9b3a8'}
-            strokeWidth={w[p.rank] || w.street}
-            strokeLinecap="round"
-          />
-        ))}
+        {layers.map(({ rank, shapes }) =>
+          shapes.map((s, i) => (
+            <path key={`c-${rank}-${i}`} d={s.caseD} fill={ROAD_CASE[rank]} />
+          )),
+        )}
+        {layers.map(({ rank, shapes }) =>
+          shapes.map((s, i) => (
+            <path key={`f-${rank}-${i}`} d={s.fillD} fill={ROAD_FILL[rank]} />
+          )),
+        )}
         {world.tracks.map((t) => (
           <path
             key={t.id}
             d={pathD(t.ring, project)}
             fill="none"
             stroke={t.name ? '#c45a2e' : '#6a6a6a'}
-            strokeWidth={w.rail}
+            strokeWidth={RAIL[band] || 2}
             strokeLinecap="round"
+            strokeLinejoin="round"
           />
         ))}
         {world.coasters.map((p) => {
@@ -58,15 +77,15 @@ export default function VariantD({ world, project, primary, onPick, band }) {
         })}
       </svg>
       <p style={S.note}>
-        Google analog: arterial ≥ 160 m at overview · streets ≥ 25 m next · foot, queues, steps, service last.
-        Rails stay. Camera crops toward {primary}.
+        Roads are shapes: ways that share an end stitch, then buffer to a width.
+        Arterial widest · street next · foot and service last. Rails stay lines.
       </p>
     </div>
   );
 }
 
 const S = {
-  page: { height: '100%', background: '#f2f2f0', display: 'flex', flexDirection: 'column' },
+  page: { height: '100%', background: '#e4ddd0', display: 'flex', flexDirection: 'column' },
   svg: { flex: 1, width: '100%', display: 'block' },
   label: (on) => ({
     font: `${on ? 700 : 400} ${on ? 10 : 7}px var(--display), sans-serif`,
