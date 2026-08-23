@@ -67,6 +67,7 @@ import {
 import { newMemberId } from '@/lib/core/ids';
 import { clearPendingInvite } from '@/lib/party/inviteStash';
 import { mapDisplayPosition } from '@/lib/gps/display';
+import { FOLLOW_RESUME_MS, followShouldResume } from '@/lib/parkMapView';
 import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
 import { useAuth } from '@clerk/nextjs';
@@ -439,6 +440,10 @@ function ParkApp({ isSignedIn }) {
   // whatever the visitor last left it at.
   const [sheetPx, setSheetPx] = useState(SHEET_PEEK_PX);
   const [follow, setFollow] = useState(true);
+  /* When the guest last moved the camera themselves. Null means they have
+     not — an explicit look-at (a Place, a Member, the car) is not a gesture,
+     so the resume clock must not steal it. */
+  const gesturedAtRef = useRef(null);
   const [armMeet, setArmMeet] = useState(false);
   /* A patch of ground the visitor tapped and named — see lib/spot.js. Three
      pieces of state, not one, because they answer three different questions and
@@ -516,6 +521,18 @@ function ParkApp({ isSignedIn }) {
     });
   }, []);
   const [focusPoint, setFocusPoint] = useState(null);
+  const resumeFollow = useCallback(() => {
+    gesturedAtRef.current = null;
+    setFocusPoint(null);
+    setFollow(true);
+  }, []);
+  const holdFollow = useCallback((lookAt = null) => {
+    gesturedAtRef.current = null;
+    setFollow(false);
+    if (lookAt && Number.isFinite(lookAt.lat) && Number.isFinite(lookAt.lng)) {
+      setFocusPoint({ lat: lookAt.lat, lng: lookAt.lng });
+    }
+  }, []);
   const [worldProgress, setWorldProgress] = useState(() => createProgress());
   const [acceptedOffer, setAcceptedOffer] = useState(null);
   const [parkWorld, setParkWorld] = useState(() => emptyWorld());
@@ -1117,7 +1134,11 @@ function ParkApp({ isSignedIn }) {
       return confirmVenue(id)
         .then((v) => {
           setSelected(null);
-          setFollow(Boolean(position) && withinBounds(v.bounds, position.lat, position.lng));
+          /* A missing fix is not "not Follow" — that race is how the camera
+             opened on the park and never recentred on the first GPS reading.
+             Off-site still follows: the puck the map draws is already the
+             entrance, and chasing that is seeing yourself. */
+          resumeFollow();
           setParkAsked(true);
           setGateOpen(false);
           showToast(`${v.name} is loaded — you are good to go!`);
@@ -1128,7 +1149,7 @@ function ParkApp({ isSignedIn }) {
           throw err;
         });
     },
-    [position, showToast],
+    [showToast, resumeFollow],
   );
 
   const appUpdate = useAppUpdate();
@@ -1989,12 +2010,12 @@ function ParkApp({ isSignedIn }) {
         return;
       }
       setMeetPoint(candidate.lat, candidate.lng, candidate.n);
-      setFocusPoint({ lat: candidate.lat, lng: candidate.lng });
+      holdFollow(candidate);
       shrinkSheet(stops.peek);
     } finally {
       setReunifyBusy(false);
     }
-  }, [graph, position, roster, POIS, showToast, shrinkSheet, stops.peek, setMeetPoint]);
+  }, [graph, position, roster, POIS, showToast, shrinkSheet, stops.peek, setMeetPoint, holdFollow]);
 
   const clearMeet = () => {
     setLocalMeet(null);
@@ -2259,18 +2280,18 @@ function ParkApp({ isSignedIn }) {
       setToast(null);
       setNav(target);
       setNavPhase('preview');
-      setFollow(false);
+      holdFollow();
       shrinkSheet(stops.peek);
     },
-    [position, showToast, stopNav, shrinkSheet, stops, dismissPlaceView],
+    [position, showToast, stopNav, shrinkSheet, stops, dismissPlaceView, holdFollow],
   );
 
   const beginWalking = useCallback(() => {
     setNavPhase('go');
-    setFollow(true);
+    resumeFollow();
     shrinkSheet(stops.peek);
     void haptic(30);
-  }, [shrinkSheet, stops]);
+  }, [shrinkSheet, stops, resumeFollow]);
 
   // The person or pin we were walking to is gone. Say so once instead of
   // leaving a banner counting down to nothing.
@@ -2475,11 +2496,10 @@ function ParkApp({ isSignedIn }) {
 
   const focusOn = useCallback(
     (target) => {
-      setFollow(false);
-      setFocusPoint({ lat: target.lat, lng: target.lng });
+      holdFollow(target);
       shrinkSheet(stops.peek);
     },
-    [shrinkSheet, stops.peek],
+    [shrinkSheet, stops.peek, holdFollow],
   );
 
   /* One tap on the map, four things it can mean, in this order. The order is
@@ -2588,15 +2608,14 @@ function ParkApp({ isSignedIn }) {
         return;
       }
       setSelected(poi);
-      setFollow(false);
-      setFocusPoint({ lat: poi.lat, lng: poi.lng });
+      holdFollow(poi);
       if (position) {
         const d = distance(position.lat, position.lng, poi.lat, poi.lng);
         const b = bearing(position.lat, position.lng, poi.lat, poi.lng);
         showToast(`${poi.n} · ${formatDistance(d)} ${cardinal(b)} · ${formatWalk(d)} walk`);
       }
     },
-    [selected, position, showToast],
+    [selected, position, showToast, holdFollow],
   );
 
   useEffect(() => {
@@ -2630,8 +2649,7 @@ function ParkApp({ isSignedIn }) {
         return;
       }
       setSelected(poi);
-      setFollow(false);
-      setFocusPoint({ lat: poi.lat, lng: poi.lng });
+      holdFollow(poi);
       // A Place answers the same question the spot capsule was asking, and
       // better, so the capsule stands down rather than stacking under it.
       setSpot(null);
@@ -2653,10 +2671,36 @@ function ParkApp({ isSignedIn }) {
         fitPlaceSheet();
       }
     },
-    [selected, dismissPlaceView, goForward, push, fitPlaceSheet],
+    [selected, dismissPlaceView, goForward, push, fitPlaceSheet, holdFollow],
   );
 
-  const onUserPan = useCallback(() => setFollow(false), []);
+  const onUserPan = useCallback(() => {
+    gesturedAtRef.current = Date.now();
+    setFollow(false);
+    /* A leftover focus point (Locate used to write one) would ease the
+       camera back to a stale coordinate and fight the pan. Free look
+       leaves the camera where the finger put it. */
+    setFocusPoint(null);
+  }, []);
+
+  /* Free look is a pause. Once the guest has been still long enough, Follow
+     snaps back to this phone so the next fix recentres them. Previewing a
+     route is not free look — framing the walk must not be undone. */
+  useEffect(() => {
+    if (follow || previewing) return undefined;
+    const gesturedAt = gesturedAtRef.current;
+    if (gesturedAt == null) return undefined;
+    const due = (at, clock) => followShouldResume({ gesturedAt: at, now: clock, previewing });
+    if (due(gesturedAt, Date.now())) {
+      resumeFollow();
+      return undefined;
+    }
+    const wait = Math.max(0, FOLLOW_RESUME_MS - (Date.now() - gesturedAt));
+    const timer = setTimeout(() => {
+      if (due(gesturedAtRef.current, Date.now())) resumeFollow();
+    }, wait);
+    return () => clearTimeout(timer);
+  }, [follow, previewing, resumeFollow]);
 
   const headerLine = () => {
     if (venueStatus === 'loading') return 'Loading the map…';
@@ -3063,8 +3107,7 @@ function ParkApp({ isSignedIn }) {
             className={`fab ${car ? 'active' : ''}`}
             onClick={() => {
               if (car) {
-                setFollow(false);
-                setFocusPoint({ lat: car.lat, lng: car.lng });
+                holdFollow(car);
                 shrinkSheet(stops.peek);
                 return;
               }
@@ -3096,18 +3139,13 @@ function ParkApp({ isSignedIn }) {
             <Icon name={GLYPHS.meetup} />
           </button>
         )}
-        {/* Panning away during a walk parks the camera where you left it, and
-            this is the way back — the same button, saying something else. */}
+        {/* Panning away is free look; this snaps Follow back immediately. */}
         <button
           type="button"
           className={`fab ${follow ? 'active' : ''} ${walking && !follow ? 'resume' : ''}`}
           onClick={() => {
             if (position) {
-              setFollow(true);
-              setFocusPoint({
-                lat: puck?.lat ?? mapMe?.lat ?? position.lat,
-                lng: puck?.lng ?? mapMe?.lng ?? position.lng,
-              });
+              resumeFollow();
             } else {
               setGateOpen(true);
             }
@@ -3462,8 +3500,7 @@ function ParkApp({ isSignedIn }) {
                 onClearMeet={clearMeet}
                 onNavigateMeet={() => startNav({ kind: 'meet', label: meet?.label || 'Rally Point' })}
                 onFocus={(m) => {
-                  setFollow(false);
-                  setFocusPoint({ lat: m.lat, lng: m.lng });
+                  holdFollow(m);
                   shrinkSheet(stops.peek);
                 }}
                 busy={busy || party?.phase === 'connecting'}
@@ -3858,7 +3895,7 @@ function ParkApp({ isSignedIn }) {
                           selectVenue(v.id, { pin: true })
                             .then(() => {
                               setSelected(null);
-                              setFollow(false);
+                              holdFollow();
                             })
                             .catch((err) => showToast(err?.message || 'Could not load that map.'));
                         }}

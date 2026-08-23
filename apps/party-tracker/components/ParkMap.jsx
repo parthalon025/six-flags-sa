@@ -181,7 +181,7 @@ function ParkMap(props) {
   );
 
   if (!world) {
-    return <div data-testid="park-map-gl" className="mapMissing" />;
+    return <div data-testid="park-map-gl" className="mapMissing" data-follow={follow ? '1' : '0'} />;
   }
 
   // The category key, over the canvas. The SVG renderer keeps its own; drawn
@@ -224,6 +224,7 @@ function ParkMap(props) {
       planNextId={planNextPlaceId}
       selectedId={selected ? identityOf(selected) : null}
       camera={camera}
+      follow={follow}
       insetBottom={bottomInset}
       onSelectPlace={onSelectPoi}
       onMapTap={onMapTap}

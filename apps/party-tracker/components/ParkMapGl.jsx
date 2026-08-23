@@ -68,6 +68,8 @@ export default function ParkMapGl({
   selectedId = null,
   /** Where the camera should be. See `applyCamera` below for each field. */
   camera,
+  /** Whether Follow is chasing this phone — exposed for tests and the locate FAB. */
+  follow = false,
   /** Usable height is the viewport less whatever furniture covers the map. */
   insetBottom = 0,
   /** Skin-declared camera feel (ADR-0019 clause 2). */
@@ -216,6 +218,10 @@ export default function ParkMapGl({
     const node = containerRef.current;
     if (!node || !laidOut || !world?.bounds) return undefined;
     let alive = true;
+    // A new World is a new Map. `mapReady` staying true across that swap
+    // would skip the gesture effect below, and free look would stop
+    // telling Follow a guest had moved the camera.
+    setMapReady(false);
 
     const view = mountMapView(node, {
       renderer: createMapLibreRenderer({
@@ -268,6 +274,7 @@ export default function ParkMapGl({
 
     return () => {
       alive = false;
+      setMapReady(false);
       viewRef.current = null;
       if (globalThis.__parkMapLibre) delete globalThis.__parkMapLibre;
       view.destroy();
@@ -292,20 +299,29 @@ export default function ParkMapGl({
     applyCamera(camera);
   }, [camera, applyCamera, laidOut]);
 
-  // A guest touching the glass is a guest who no longer wants Follow dragging
-  // the camera out from under them. The renderer owns the gesture itself; this
-  // only needs to know one started.
+  // A guest moving the camera themselves is free look: Follow stands down so
+  // the ease does not fight the finger. A tap is not a move — pointerdown
+  // used to clear Follow on the press that selected a Place, and then the
+  // leftover focus point yanked the camera back. MapLibre's gesture starts
+  // carry `originalEvent` when the guest did it; programmatic easeTo does not.
   useEffect(() => {
-    const node = containerRef.current;
-    if (!node) return undefined;
-    const started = () => handlers.current.onUserPan?.();
-    node.addEventListener('pointerdown', started);
-    node.addEventListener('wheel', started, { passive: true });
-    return () => {
-      node.removeEventListener('pointerdown', started);
-      node.removeEventListener('wheel', started);
+    if (!mapReady) return undefined;
+    const map = viewRef.current?.engine?.();
+    if (!map?.on) return undefined;
+    const started = (event) => {
+      if (event?.originalEvent) handlers.current.onUserPan?.();
     };
-  }, []);
+    map.on('dragstart', started);
+    map.on('zoomstart', started);
+    map.on('rotatestart', started);
+    map.on('pitchstart', started);
+    return () => {
+      map.off?.('dragstart', started);
+      map.off?.('zoomstart', started);
+      map.off?.('rotatestart', started);
+      map.off?.('pitchstart', started);
+    };
+  }, [mapReady]);
 
   useEffect(() => {
     const samples = [];
@@ -339,6 +355,7 @@ export default function ParkMapGl({
         ref={containerRef}
         style={S.canvas}
         data-testid="park-map-gl"
+        data-follow={follow ? '1' : '0'}
         data-map-ready={mapReady ? '1' : '0'}
         data-world-features={worldFeatures}
         data-baked-world={world?.bands?.mid?.image || ''}

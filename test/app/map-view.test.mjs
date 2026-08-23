@@ -22,6 +22,8 @@ import { WORLD_LAYERS, worldGeoJson } from '../../apps/party-tracker/lib/worldGe
 import {
   boundsOfPoints,
   cameraRequest,
+  FOLLOW_RESUME_MS,
+  followShouldResume,
   overlayModel,
   parkMapPalettes,
   worldFor,
@@ -1219,6 +1221,34 @@ const MAP_JSON = {
   assert.equal(going.lift, 0.2);
   assert.equal(cameraRequest({}).bearing, 0, 'north-up unless told otherwise');
   assert.equal(cameraRequest({}).lift, 0);
+
+  /* Free look is a pause, not a new home. A gesture that is still fresh
+     leaves the camera where the guest put it; once they have been still
+     long enough, Follow comes back so the next request recentres them.
+     Previewing a route is not free look — framing the walk is a statement
+     about the walk. An explicit look-at has no gesture time, so the clock
+     does not steal it. */
+  assert.equal(followShouldResume({ gesturedAt: null, now: NOW }), false, 'no gesture is not a resume');
+  assert.equal(
+    followShouldResume({ gesturedAt: NOW - 400, now: NOW }),
+    false,
+    'a fresh pan is still free look',
+  );
+  assert.equal(
+    followShouldResume({ gesturedAt: NOW - FOLLOW_RESUME_MS, now: NOW }),
+    true,
+    'after the pause, snap back to this phone',
+  );
+  assert.equal(
+    followShouldResume({ gesturedAt: NOW - FOLLOW_RESUME_MS, now: NOW, previewing: true }),
+    false,
+    'framing a route is not free look',
+  );
+  assert.throws(
+    () => followShouldResume({ gesturedAt: NOW, now: Number.NaN }),
+    /finite `now`/,
+    'must not read the clock itself',
+  );
 }
 
 // ---------------------------------------------------------------------------
