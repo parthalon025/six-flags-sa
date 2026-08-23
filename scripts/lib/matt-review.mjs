@@ -169,8 +169,8 @@ export function mattReviewBlockReason({ files, context, stamp }) {
   const state = stamp ? 'stale (diff changed since the review)' : 'missing';
   return [
     `matt-review stamp ${state} for this code diff.`,
-    'Run the Sonnet standards review, then stamp:',
-    '  1. node scripts/ci/matt-review.mjs prompt   # spawn a claude-sonnet-5 subagent with this prompt',
+    'Run the Sonnet two-axis review, then stamp:',
+    '  1. node scripts/ci/matt-review.mjs two-axis   # spawn parallel Standards + Spec sub-agents',
     '  2. node scripts/ci/matt-review.mjs write --gitnexus <ok|unavailable>',
     `  3. commit ${MATT_REVIEW_REL} with the branch`,
     'Findings are advisory — address them or answer them in the PR. The run is required.',
@@ -226,13 +226,13 @@ function readSpecFile(path, cwd) {
  * Returns null when nothing is found.
  */
 export function identifySpecSource({ branch, commitMessages = [], specPath, cwd = root } = {}) {
+  const issueRefs = parseIssueRefs(commitMessages);
+  if (issueRefs.length > 0) return { kind: 'issue', number: issueRefs[0] };
   if (specPath) {
     const rel = specPath.replace(/^\.\//, '');
     if (!existsSync(join(cwd, rel))) return null;
     return readSpecFile(rel, cwd);
   }
-  const issueRefs = parseIssueRefs(commitMessages);
-  if (issueRefs.length > 0) return { kind: 'issue', number: issueRefs[0] };
   if (branch) {
     const matched = findSpecFileByBranch(branch, cwd);
     if (matched) return readSpecFile(matched, cwd);

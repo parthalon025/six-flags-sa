@@ -54,7 +54,7 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   );
   const reason = mattReviewBlockReason({ files: ['apps/a.js'], context, stamp: null });
   assert.match(reason, /missing/, 'missing stamp blocks');
-  assert.match(reason, /matt-review\.mjs prompt/, 'block reason carries the fix');
+  assert.match(reason, /matt-review\.mjs two-axis/, 'block reason carries the fix');
 }
 
 // buildReviewPrompt content — the injected policy (via buildStandardsPrompt)
@@ -188,11 +188,26 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   assert.equal(spec.path, 'docs/agents/matt-standards.md');
 }
 
-// identifySpecSource — issue ref from commits
+// identifySpecSource — issue ref beats explicit path (code-review skill order)
 {
-  const spec = identifySpecSource({ commitMessages: ['feat: party roster (#595)'] });
+  const spec = identifySpecSource({
+    commitMessages: ['feat: party roster (#595)'],
+    specPath: 'docs/agents/matt-standards.md',
+  });
   assert.equal(spec.kind, 'issue');
   assert.equal(spec.number, 595);
+}
+
+// buildSpecPrompt — issue kind
+{
+  const prompt = buildSpecPrompt({
+    files: ['apps/a.js'],
+    spec: { kind: 'issue', number: 595 },
+    diffCommand: 'git diff abc...HEAD',
+    commits: ['abc123 feat: thing'],
+  });
+  assert.match(prompt, /issue #595/);
+  assert.match(prompt, /gh issue view 595/);
 }
 
 // buildStandardsPrompt — Fowler smell baseline is injected
@@ -255,7 +270,7 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   git('checkout', '-qb', 'feature');
   writeFileSync(join(dir, 'scripts/a.js'), 'export const a = 2;\n');
   git('add', '.');
-  git('commit', '-qm', 'feat: counter (#99)');
+  git('commit', '-qm', 'feat: counter');
 
   const review = buildTwoAxisReview({ baseRef: 'main', specPath: 'docs/spec.md', cwd: dir });
   assert.match(review.diffCommand, /git diff .+\.\.\.HEAD/);
