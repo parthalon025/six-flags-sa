@@ -4,16 +4,14 @@
  *
  *   node scripts/ci/matt-review.mjs prompt [--base origin/main]   # print the review subagent prompt
  *   node scripts/ci/matt-review.mjs write  [--base origin/main] [--model claude-sonnet-5] [--gitnexus ok|unavailable]
+ *   node scripts/ci/matt-review.mjs check  [--base origin/main]   # exit 1 when a code diff lacks a fresh stamp
  *   node scripts/ci/matt-review.mjs two-axis [--base origin/main] [--spec path]
  */
-import { execFileSync } from 'node:child_process';
-import { scrubGitEnv } from '../lib/git-env.mjs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   REVIEW_MODEL_DEFAULT,
   buildMattReviewContext,
-  buildReviewPrompt,
   buildTwoAxisReview,
   mattReviewBlockReason,
   readMattReview,
@@ -60,19 +58,8 @@ export function runTwoAxis({ baseRef = 'origin/main', specPath, cwd = root } = {
 }
 
 export function runPrompt({ baseRef = 'origin/main', cwd = root } = {}) {
-  const context = buildMattReviewContext({ baseRef, cwd });
-  let diffStat = '';
-  try {
-    diffStat = execFileSync('git', ['diff', '--stat', `${context.mergeBase}...HEAD`], {
-      cwd,
-      // Scrubbed: an inherited GIT_DIR outranks `cwd`. See scripts/lib/git-env.mjs.
-      env: scrubGitEnv(),
-      encoding: 'utf8',
-    }).trim();
-  } catch {
-    // stat is garnish; the file list is the substance
-  }
-  console.log(buildReviewPrompt({ files: context.files, diffStat }));
+  const review = buildTwoAxisReview({ baseRef, cwd });
+  console.log(review.standardsPrompt);
   return 0;
 }
 
