@@ -93,21 +93,21 @@ export function projectWays(rows, project) {
 
 /** Rank → fill half-width in viewBox px. Grows on pinch the way Google roads do. */
 export const ROAD_HALF = {
-  overview: { arterial: 3.6, street: 0, foot: 0, service: 0 },
-  streets: { arterial: 4.4, street: 2.6, foot: 0, service: 0 },
-  close: { arterial: 5.2, street: 3.4, foot: 2.0, service: 2.2 },
+  overview: { arterial: 7.2, street: 0, foot: 0, service: 0 },
+  streets: { arterial: 8.5, street: 4.4, foot: 0, service: 0 },
+  close: { arterial: 10, street: 6.2, foot: 3.4, service: 3.8 },
 };
 
 export const ROAD_FILL = {
-  arterial: '#f6f1e6',
-  street: '#efe8da',
-  foot: '#e6dfd2',
-  service: '#d7e0cc',
+  arterial: '#fbf6ea',
+  street: '#f3ecde',
+  foot: '#ebe4d6',
+  service: '#dce6cf',
 };
 
 export const ROAD_CASE = {
-  arterial: '#8a7f70',
-  street: '#9a9184',
-  foot: '#a39a8e',
-  service: '#7d8b72',
+  arterial: '#4a4338',
+  street: '#5a5348',
+  foot: '#6a6358',
+  service: '#4d5c42',
 };
