@@ -608,8 +608,29 @@ export async function tapMapPoi(page, name = null, { timeout = 15000 } = {}) {
       }, name),
     { timeout, label: name ? `map marker for ${name}` : 'map marker' },
   );
-  await page.mouse.click(hit.x, hit.y);
-  await page.waitForTimeout(400);
+  /* Overlay SVG is pointer-events: none; the click hits the MapLibre canvas.
+     A camera still easing after a GPS step misses the queryRenderedFeatures
+     hit — retry the live marker point instead of treating one miss as no Place. */
+  for (let i = 0; i < 3; i += 1) {
+    const at = i === 0
+      ? hit
+      : await page.evaluate((want) => {
+          const markers = [...document.querySelectorAll('g.poiMarker')];
+          const pick = markers.find((g) => (g.querySelector('title')?.textContent || '') === want)
+            || markers[0];
+          if (!pick) return null;
+          const r = pick.getBoundingClientRect();
+          return {
+            x: r.left + r.width / 2,
+            y: r.top + r.height / 2,
+            name: pick.querySelector('title')?.textContent || '',
+          };
+        }, hit.name);
+    if (!at) break;
+    await page.mouse.click(at.x, at.y);
+    await page.waitForTimeout(500);
+    if ((await page.locator('[data-place-detail]').count()) > 0) return at.name;
+  }
   return hit.name;
 }
 
