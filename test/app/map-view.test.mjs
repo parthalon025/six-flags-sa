@@ -16,6 +16,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { mountMapView } from '../../apps/party-tracker/lib/mapView.js';
+import { closestPlaceId } from '../../apps/party-tracker/lib/mapViewMaplibre.js';
 import { OVERLAY_LAYERS, overlayGeoJson } from '../../apps/party-tracker/lib/overlayGeo.js';
 import { WORLD_LAYERS, worldGeoJson } from '../../apps/party-tracker/lib/worldGeo.js';
 import {
@@ -1301,6 +1302,19 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
   const tycoon = parkMapPalettes('pixel-tycoon');
   assert.ok(tycoon.surface.ground);
   assert.ok(tycoon.pins.categories.coaster);
+}
+
+{
+  const features = [
+    { geometry: { coordinates: [-84.27, 39.35] }, properties: { id: 'aruba-tuba' } },
+    { geometry: { coordinates: [-84.26, 39.34] }, properties: { id: 'castaway-cove' } },
+  ];
+  const project = ({ lng, lat }) => ({ x: lng * -1, y: lat });
+  assert.equal(
+    closestPlaceId(features, { x: 84.27, y: 39.35 }, project),
+    'aruba-tuba',
+    'overlapping hits resolve to the nearer Place, not source order',
+  );
 }
 
 console.log('map-view: ok');
