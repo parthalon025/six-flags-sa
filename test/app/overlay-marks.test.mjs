@@ -131,6 +131,8 @@ assert.deepEqual(
     { zoom: 13.2, latitude: 29.6, width: 390, height: 654 },
   );
   assert.deepEqual(named(overview).sort(), ['goliath', 'me', 'poltergeist', 'zone:Rockville']);
+  assert.equal(overview.find((m) => m.id === 'goliath').pin, true);
+  assert.equal(overview.find((m) => m.id === 'restrooms').pin, false, 'amenity discs wait for zoom');
 
   // Walking zoom: two coasters far apart both print. Two restrooms on the
   // same pixel do not — rank and collision drop the second.
@@ -200,6 +202,10 @@ assert.deepEqual(
   assert.ok(zoneNames.includes('Rockville'), `zones printed ${zoneNames.join(', ')}`);
   assert.ok(rides.length >= 6, `ride names are the destination layer, got ${rides.length}: ${rides.map((m) => m.name).join(', ')}`);
   assert.equal(restrooms.length, 0, 'restrooms stay quiet at park-wide zoom');
+  const amenityPins = laid.filter((m) => m.kind === 'place' && m.pin && m.category !== 'coaster' && m.category !== 'ride');
+  const ridePins = laid.filter((m) => m.kind === 'place' && m.pin && (m.category === 'coaster' || m.category === 'ride'));
+  assert.equal(amenityPins.length, 0, 'amenity discs stay off at park-wide zoom');
+  assert.ok(ridePins.length > 20, `ride discs stay on, got ${ridePins.length}`);
   assert.ok(placeNames.length < laid.filter((m) => m.kind === 'place').length, 'not every Place is named');
   assert.ok(laid.filter((m) => m.kind === 'place').length > 80, 'markers themselves still land');
 }

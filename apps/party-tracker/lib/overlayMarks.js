@@ -81,7 +81,11 @@ function labelBox(mark) {
  * @param {*} [layout.selectedId]
  */
 export function layoutOverlayLabels(marks, layout = null) {
-  const list = (marks || []).map((mark) => ({ ...mark, label: false }));
+  const list = (marks || []).map((mark) => ({
+    ...mark,
+    label: false,
+    pin: mark.kind !== 'zone',
+  }));
   if (!layout) {
     for (const mark of list) {
       if (isPinnedKind(mark.kind) && mark.name) mark.label = true;
@@ -129,15 +133,18 @@ export function layoutOverlayLabels(marks, layout = null) {
   for (const { mark } of places) {
     const isNav = mark.id === navId;
     const isPlanNext = mark.id === planNextId;
-    if (!markerWantsLabel({
-      isSelected: mark.id === selectedId,
+    const wanted = {
       isNav,
       isPlanNext,
       rank: symbolFor(mark.category).rank,
       zPlan,
       wasShown: shown.has(mark.id),
       category: mark.category,
-    })) continue;
+    };
+    // Amenity discs at park-wide are the black mass. Rides stay; the rest
+    // wait for the same zoom their names use. Selection still gets a pin.
+    mark.pin = markerWantsLabel({ ...wanted, isSelected: false });
+    if (!markerWantsLabel({ ...wanted, isSelected: mark.id === selectedId })) continue;
     tryLabel(mark, isNav || isPlanNext);
   }
 

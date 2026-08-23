@@ -374,7 +374,7 @@ export default function ParkMapGl({
               transform={`translate(${mark.x},${mark.y})`}
             >
               <title>{mark.name}</title>
-              {style.drawsPin ? <circle r="8" /> : null}
+              {style.drawsPin && mark.pin !== false ? <circle r="8" /> : null}
               {mark.self ? <circle className="mePulse" r="14" /> : null}
               {mark.label ? (
                 <text className={style.className} y={style.dy}>
