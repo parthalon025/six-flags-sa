@@ -393,6 +393,37 @@ await check('park-wide rest shows Zone names and ride names, not every Place', a
   if (names.length >= places) {
     throw new Error(`park-wide map printed every place name (${names.length}/${places})`);
   }
+  const restLod = await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    if (!map?.getLayer?.('world-building')) return { missing: true };
+    return {
+      zoom: map.getZoom(),
+      building: map.getLayoutProperty('world-building', 'visibility'),
+      service: map.getLayoutProperty('world-service', 'visibility'),
+    };
+  });
+  if (restLod.missing) throw new Error('kings-island has buildings, so the layer must exist');
+  if (restLod.zoom >= 15.3) {
+    throw new Error(`park-wide zoom ${restLod.zoom} already past the SVG detail enter`);
+  }
+  if (restLod.building !== 'none') {
+    throw new Error(`buildings drawn at park-wide z${restLod.zoom}`);
+  }
+  if (restLod.service !== 'none') {
+    throw new Error(`service roads drawn at park-wide z${restLod.zoom}`);
+  }
+  await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom: 16.2, center: map.getCenter() });
+  });
+  await until(async () => {
+    const vis = await a.evaluate(() => globalThis.__parkMapLibre?.getLayoutProperty?.('world-building', 'visibility'));
+    return vis === 'visible' ? true : false;
+  }, { timeout: 10000, label: 'buildings after pinch' });
+  await a.evaluate((zoom) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom, center: map.getCenter() });
+  }, restLod.zoom);
   return true;
 });
 

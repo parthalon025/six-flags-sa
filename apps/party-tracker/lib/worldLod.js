@@ -6,18 +6,27 @@
  * Truth layer at park-wide, so the tile map lost that rank. This is the same
  * table, so a pinch still reads as detail emerging rather than as a restyle.
  */
-import { layerVisible } from '@party-tracker/shared/mapSymbols.js';
+import { layerVisible, planZoom } from '@party-tracker/shared/mapSymbols.js';
+import { metresPerPixel } from '@party-tracker/shared/zoomBands.js';
 
-export const DETAIL_ENTER = 0.7;
-export const DETAIL_LEAVE = 0.62;
-export const SERVICE_ENTER = 1.4;
-export const SERVICE_LEAVE = 1.28;
+const DETAIL_ENTER = 0.7;
+const DETAIL_LEAVE = 0.62;
+const SERVICE_ENTER = 1.4;
+const SERVICE_LEAVE = 1.28;
 /** Path casing and slides: the SVG's `lowZoom` line (`!detail || z < 0.85`). */
-export const CLOSE_ENTER = 0.85;
+const CLOSE_ENTER = 0.85;
 
-export const DETAIL_LAYERS = Object.freeze(['grass', 'building', 'coaster']);
-export const SERVICE_LAYERS = Object.freeze(['service']);
-export const CLOSE_LAYERS = Object.freeze(['slide', 'path-case']);
+const DETAIL_LAYERS = Object.freeze(['grass', 'building', 'coaster']);
+const SERVICE_LAYERS = Object.freeze(['service']);
+const CLOSE_LAYERS = Object.freeze(['slide', 'path-case']);
+
+/** MapLibre zoom → the px/m scale `layerVisible` and `sizeAtZoom` read. */
+export function worldPlanZoom(zoom, latitude) {
+  if (!Number.isFinite(zoom)) return 0;
+  const mpp = metresPerPixel(zoom, { latitude: Number.isFinite(latitude) ? latitude : 0 });
+  if (!Number.isFinite(mpp) || mpp <= 0) return 0;
+  return planZoom(1 / mpp);
+}
 
 /**
  * @param {number} zPlan px/m from `labelPlanZoom` / `planZoom`

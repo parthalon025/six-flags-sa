@@ -402,7 +402,7 @@ export default function ParkMapGl({
                   category={mark.category}
                   colour={pinPalette?.categories?.[mark.category] || '#888'}
                   barredInk={pinPalette?.barred}
-                  r={mark.radius ?? 8}
+                  r={mark.radius}
                   state={state}
                   selected={mark.id === selectedId}
                 />

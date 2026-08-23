@@ -9,8 +9,8 @@
  * `layoutOverlayLabels` applies the shared zoom ranks and the Declutter grid
  * so a name appears only when it has earned the zoom and the space.
  */
-import { planZoom, sizeAtZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
-import { metresPerPixel } from '@party-tracker/shared/zoomBands.js';
+import { sizeAtZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
+import { worldPlanZoom } from './worldLod.js';
 import { Declutter, boxAround, onScreen, textWidth } from './mapLabels.js';
 import { markerDeclutterPriority, markerWantsLabel } from './mapVisual.js';
 
@@ -45,10 +45,7 @@ export function markLabelStyle(kind) {
 
 /** px/m scale `labelWantedAtZoom` reads, from a MapLibre zoom. */
 export function labelPlanZoom(zoom, latitude) {
-  if (!Number.isFinite(zoom)) return 0;
-  const mpp = metresPerPixel(zoom, { latitude: Number.isFinite(latitude) ? latitude : 0 });
-  if (!Number.isFinite(mpp) || mpp <= 0) return 0;
-  return planZoom(1 / mpp);
+  return worldPlanZoom(zoom, latitude);
 }
 
 function iconBox(mark) {

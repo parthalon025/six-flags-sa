@@ -16,8 +16,7 @@ import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
 import { BANDS } from '@party-tracker/shared/zoomBands.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
 import { constrainCameraPitch, mapWritesForCamera } from './mapViewCameraApply.js';
-import { labelPlanZoom } from './overlayMarks.js';
-import { worldLodGroups, worldLodVisibility } from './worldLod.js';
+import { worldLodVisibility } from './worldLod.js';
 import {
   bandLayer,
   bandedWorldStyle,
@@ -73,18 +72,7 @@ function ensureMapLibreWorker() {
  *   the engine's job and only the engine can do it — which is why the tap
  *   comes out here rather than the seam growing an `unproject`.
  */
-function worldLatitudeOf(view) {
-  const bounds = view?.world?.bounds;
-  if (Number.isFinite(bounds?.north) && Number.isFinite(bounds?.south)) {
-    return (bounds.north + bounds.south) / 2;
-  }
-  const lat = view?.camera?.center?.lat;
-  return Number.isFinite(lat) ? lat : 0;
-}
-
-function applyWorldLod(map, zoom, latitude, shown) {
-  const groups = worldLodGroups(labelPlanZoom(zoom, latitude), shown);
-  Object.assign(shown, groups);
+function applyWorldLod(map, groups) {
   const vis = worldLodVisibility(groups);
   for (const [key, visible] of Object.entries(vis)) {
     const id = key === 'path-case' ? `${worldLayer('path')}-case` : worldLayer(key);
@@ -96,8 +84,6 @@ function applyWorldLod(map, zoom, latitude, shown) {
 export function createMapLibreRenderer({ onError = null, onCameraMoved = null, onTap = null, onLoad = null } = {}) {
   let map = null;
   let loaded = false;
-  let worldLat = 0;
-  const lodShown = { detail: false, service: false, close: false };
   const queued = [];
 
   const whenLoaded = (fn) => {
@@ -108,8 +94,6 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
   const setData = (source, data) =>
     whenLoaded((m) => m.getSource(source)?.setData(data));
 
-  const paintLod = (m) => applyWorldLod(m, m.getZoom(), worldLat, lodShown);
-
   const paint = (plan) =>
     whenLoaded((m) => {
       for (const band of BANDS) {
@@ -117,7 +101,7 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
         if (!m.getLayer(layer)) continue;
         m.setLayoutProperty(layer, 'visibility', plan.draw.includes(band.id) ? 'visible' : 'none');
       }
-      paintLod(m);
+      applyWorldLod(m, plan.worldLod);
     });
 
   return {
@@ -125,10 +109,6 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
 
     attach(container, view) {
       ensureMapLibreWorker();
-      worldLat = worldLatitudeOf(view);
-      lodShown.detail = false;
-      lodShown.service = false;
-      lodShown.close = false;
       if (typeof view.pitchAt !== 'function') {
         throw new Error(
           'MapLibre renderer needs view.pitchAt so derived pitch lands in the same '
@@ -158,7 +138,6 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
       // pitch this handler causes cannot cause another.
       map.on('move', () => {
         if (!map) return;
-        if (loaded) paintLod(map);
         if (!onCameraMoved) return;
         const centre = map.getCenter();
         onCameraMoved({

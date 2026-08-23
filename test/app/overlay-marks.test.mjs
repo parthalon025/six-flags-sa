@@ -221,6 +221,7 @@ assert.deepEqual(
   assert.match(painted, /markLabelStyle/, 'the SVG reads the same kind style the grid claimed');
   assert.match(painted, /PoiMarker/, 'Place pins are the same glyphs the legend draws, not empty discs');
   assert.match(painted, /mark\.radius/, 'marker size is the zoom-scaled radius the layout claimed');
+  assert.doesNotMatch(painted, /radius \?\? 8/, 'layout always set a radius; a fallback would hide a missing one');
   assert.match(painted, /drawsPin/, 'a Zone is a name on the land, not another black disc');
   assert.equal(markLabelStyle('zone').className, 'landLabel');
   assert.equal(markLabelStyle('zone').drawsPin, false);
