@@ -480,5 +480,11 @@
     "items": [
       "fix(app): splash first, tap to continue, restore last working Sign in (#600)"
     ]
+  },
+  "1.27.2": {
+    "title": "What's new",
+    "items": [
+      "Trains H and I — zoomable worlds and imagery ground truth"
+    ]
   }
 }
