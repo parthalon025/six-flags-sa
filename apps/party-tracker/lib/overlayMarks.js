@@ -18,12 +18,12 @@ import { markerDeclutterPriority, markerWantsLabel } from './mapVisual.js';
  *  crowded set; everything else (Members, Meet, the car) is sparse. */
 const isPinnedKind = (kind) => kind && kind !== 'place';
 
-const PLACE_LABEL_SIZE = 13.5;
-const PIN_LABEL_SIZE = 13;
-/* Below the disc, with a gap: a 13.5px name centred on y+LABEL_DY has its
+export const PLACE_LABEL_SIZE = 16;
+export const PIN_LABEL_SIZE = 15;
+/* Below the disc, with a gap: a 16px name centred on y+LABEL_DY has its
    top clear of the drawn r=8 circle, so the box never claims its own pin.
    The renderer reads the same export — two offsets is two truths. */
-export const LABEL_DY = 20;
+export const LABEL_DY = 24;
 const ICON_R = 8;
 
 /** px/m scale `labelWantedAtZoom` reads, from a MapLibre zoom. */

@@ -3,7 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { frameBounds } from '@party-tracker/shared/mapCamera.js';
 import { overlayGeoJson } from '../../apps/party-tracker/lib/overlayGeo.js';
-import { LABEL_DY, layoutOverlayLabels, overlayChrome, overlayMarks } from '../../apps/party-tracker/lib/overlayMarks.js';
+import {
+  LABEL_DY,
+  PIN_LABEL_SIZE,
+  PLACE_LABEL_SIZE,
+  layoutOverlayLabels,
+  overlayChrome,
+  overlayMarks,
+} from '../../apps/party-tracker/lib/overlayMarks.js';
 
 const overlay = {
   places: {
@@ -179,8 +186,18 @@ assert.deepEqual(
 
 {
   const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(painted, /y=\{LABEL_DY\}/, 'the SVG name sits on the same offset the grid claimed');
-  assert.equal(LABEL_DY, 20);
+  assert.match(painted, /Math\.round\(mark\.x\).*Math\.round\(mark\.y\)/s, 'names land on whole pixels');
+  assert.equal(PLACE_LABEL_SIZE, 16);
+  assert.equal(PIN_LABEL_SIZE, 15);
+  const iconR = 8;
+  const gap = LABEL_DY - PLACE_LABEL_SIZE * 0.55 - iconR;
+  assert.ok(gap >= 4, `label gap ${gap}px undercuts the disc`);
+  const poi = css.match(/\.poiLabel\s*\{[^}]+\}/);
+  const mem = css.match(/\.memName\s*\{[^}]+\}/);
+  assert.equal(Number(poi?.[0].match(/font-size:\s*([\d.]+)px/)?.[1]), PLACE_LABEL_SIZE);
+  assert.equal(Number(mem?.[0].match(/font-size:\s*([\d.]+)px/)?.[1]), PIN_LABEL_SIZE);
 }
 
 console.log('overlay-marks: ok');

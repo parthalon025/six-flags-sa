@@ -358,7 +358,7 @@ export default function ParkMapGl({
             <g
               key={`${mark.kind}:${mark.id}`}
               className={mark.className}
-              transform={`translate(${mark.x},${mark.y})`}
+              transform={`translate(${Math.round(mark.x)},${Math.round(mark.y)})`}
             >
               <title>{mark.name}</title>
               <circle r="8" />
