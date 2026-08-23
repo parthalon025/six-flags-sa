@@ -97,7 +97,10 @@ export function layoutOverlayLabels(marks, layout = null) {
   const visible = (box) => !hasViewport || onScreen(box, width, height);
 
   for (const mark of list) {
-    if (mark.kind !== 'zone') grid.claim(iconBox(mark), true);
+    // Place discs are dense at park-wide. Claiming every one vetoes ride
+    // names — the destination layer — so only live pins reserve their box.
+    if (mark.kind === 'place' || mark.kind === 'zone') continue;
+    grid.claim(iconBox(mark), true);
   }
 
   const tryLabel = (mark, pinned) => {
