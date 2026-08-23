@@ -1,17 +1,46 @@
-/* PROTOTYPE helper for Q10. Locked ink is D (all rails).
- * New question: Google-style path LOD on that ink. */
+/* PROTOTYPE helper for Q10. Question: beautiful land, easily readable guest map. */
 
 import { WAY_FLAGS } from '@party-tracker/shared/wayFlags.js';
 import { normaliseRideName } from '@/lib/mapSymbols.js';
 
 export const VENUE = 'kings-island';
 
-/** Three unconventional plates. Not Google, not grey roads. */
+/** Three readable-land plates. Beautiful first, guest-readable, not Google and not night experiments. */
 export const VARIANTS = [
-  { key: 'A', name: 'Night catalog', thesis: 'No roads. Rides are stars. Lines are myth, not midways.' },
-  { key: 'B', name: 'Ink carve', thesis: 'The park is the ink. You walk the unprinted paper.' },
-  { key: 'C', name: 'Type field', thesis: 'The names ARE the map. Geometry almost leaves.' },
+  { key: 'A', name: 'Souvenir wash', thesis: 'Lands are the picture. Names sit on the wash. One selected track.' },
+  { key: 'B', name: 'Land poster', thesis: 'Districts shout. Rides are a numbered catalog, not spaghetti.' },
+  { key: 'C', name: 'Quiet midways', thesis: 'Lands plus cream walkways so you can see how districts connect.' },
 ];
+
+/** Souvenir-strength district fills. Venue day tints are too pale to read as land. */
+export const SOUVENIR_TINT = {
+  'International Street': { fill: '#E8DCC0', stroke: '#C9B896', label: '#6B5A32' },
+  'Coney Mall': { fill: '#F0C9B4', stroke: '#D4A088', label: '#7A3E2A' },
+  Rivertown: { fill: '#C3DDB8', stroke: '#8FB37F', label: '#2F5C2F' },
+  'Action Zone': { fill: '#C5D4E6', stroke: '#8FA4C4', label: '#2A4466' },
+  'Area 72': { fill: '#D4C4E6', stroke: '#B09AC8', label: '#4A2A66' },
+  'Planet Snoopy': { fill: '#F0E6A8', stroke: '#D4C46A', label: '#6B5E1E' },
+  'Camp Snoopy': { fill: '#D4E6A8', stroke: '#B0C46A', label: '#4A5C1E' },
+  'Adventure Port': { fill: '#B8E0D6', stroke: '#7FB8AC', label: '#1E5C54' },
+  'Soak City': { fill: '#B4D8E8', stroke: '#7AB4C8', label: '#1E4A5C' },
+  Oktoberfest: { fill: '#E8D4A0', stroke: '#C8B070', label: '#6B5420' },
+};
+
+export function souvenirTint(name) {
+  return SOUVENIR_TINT[name] || { fill: '#E4E0D2', stroke: '#C9C2B0', label: '#5A5044' };
+}
+
+export function landLabelAt(land, anchors, project) {
+  const a = anchors?.[land.name];
+  if (Array.isArray(a) && a.length >= 2) return project(a[1], a[0]);
+  return centroid(land.ring, project);
+}
+
+export function wrapLand(name) {
+  const parts = String(name || '').split(' ');
+  if (parts.length === 2 && name.length >= 12) return parts;
+  return [name];
+}
 
 const QUEUE_NAME = /queue|line|entrance|exit|station/i;
 const EARTH_M = 6371000;
@@ -176,7 +205,21 @@ export function readWorld(map, pois) {
     water,
   ]);
 
-  return { tracks, coasters, park, lands, water, wood, grass, parking, buildings, service, paths, bounds };
+  return {
+    tracks,
+    coasters,
+    park,
+    lands,
+    water,
+    wood,
+    grass,
+    parking,
+    buildings,
+    service,
+    paths,
+    bounds,
+    anchors: map.landAnchors || {},
+  };
 }
 
 export function bandOf(variantKey) {

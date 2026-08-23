@@ -1,18 +1,18 @@
 'use client';
 
-/* PROTOTYPE. Three widely different plates, switchable via ?variant=.
- * A night catalog · B ink carve · C type field
- * Not the Google road plate. */
+/* PROTOTYPE. Three readable-land plates, switchable via ?variant=.
+ * A souvenir wash · B land poster · C quiet midways
+ * Goal: beautiful land, easily readable for a guest. */
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PrototypeSwitcher from '@/components/prototype/PrototypeSwitcher.jsx';
-import VariantNight from './VariantNight.jsx';
-import VariantCarve from './VariantCarve.jsx';
-import VariantType from './VariantType.jsx';
+import VariantSouvenir from './VariantSouvenir.jsx';
+import VariantPoster from './VariantPoster.jsx';
+import VariantMidway from './VariantMidway.jsx';
 import { VARIANTS, VENUE, projector, readWorld } from './q10World.js';
 
-const VIEWS = { A: VariantNight, B: VariantCarve, C: VariantType };
+const VIEWS = { A: VariantSouvenir, B: VariantPoster, C: VariantMidway };
 
 function Q10Coasters() {
   const params = useSearchParams();
@@ -70,11 +70,13 @@ function Q10Coasters() {
   if (!pack || !project) return <main style={{ padding: 24 }}>Loading {VENUE}…</main>;
 
   return (
-    <main style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#111' }}>
+    <main style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#F6F0E2' }}>
       <header style={S.hud} data-prototype-state="">
-        <strong>Q10 · unconventional plates</strong>
+        <strong>Q10 · readable land</strong>
         <span>{thesis.name} — {thesis.thesis}</span>
-        <span>primary {primary} · {pack.coasters.length} rides · no Google pavement</span>
+        <span>
+          {pack.lands.length} lands · {pack.coasters.length} rides · primary {primary}
+        </span>
       </header>
       <div style={{ flex: 1, minHeight: 0 }}>
         <View world={pack} project={project} primary={primary} onPick={pick} />
@@ -98,9 +100,10 @@ const S = {
     flexDirection: 'column',
     gap: 2,
     padding: '10px 14px',
-    background: '#111',
-    color: '#f4f1ea',
+    background: '#F6F0E2',
+    color: '#3d342c',
     font: '500 12px/1.35 var(--display), sans-serif',
     zIndex: 2,
+    borderBottom: '1px solid #E0D6C2',
   },
 };
