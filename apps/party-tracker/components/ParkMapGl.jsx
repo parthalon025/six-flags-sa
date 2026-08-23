@@ -424,7 +424,6 @@ export default function ParkMapGl({
               {mark.label ? (
                 <text
                   className={`${style.className}${state === 'not' ? ' barred' : ''}`}
-                  data-category={mark.category || undefined}
                   y={style.dy}
                   style={{
                     fontSize: `${style.size}px`,

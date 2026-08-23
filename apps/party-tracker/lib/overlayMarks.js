@@ -50,7 +50,7 @@ export function markLabelStyle(kind, category) {
   if (kind === 'place') {
     const rank = symbolFor(category).rank;
     return {
-      size: PLACE_LABEL_BY_RANK[rank] ?? 13,
+      size: PLACE_LABEL_BY_RANK[rank],
       dy: LABEL_DY,
       className: 'poiLabel',
       drawsPin: true,
