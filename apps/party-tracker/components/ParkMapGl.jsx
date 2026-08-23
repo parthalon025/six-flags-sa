@@ -196,6 +196,10 @@ export default function ParkMapGl({
     const node = containerRef.current;
     if (!node || !laidOut || !world?.bounds) return undefined;
     let alive = true;
+    // A new World is a new Map. `mapReady` staying true across that swap
+    // would skip the gesture effect below, and free look would stop
+    // telling Follow a guest had moved the camera.
+    setMapReady(false);
 
     const view = mountMapView(node, {
       renderer: createMapLibreRenderer({
@@ -248,6 +252,7 @@ export default function ParkMapGl({
 
     return () => {
       alive = false;
+      setMapReady(false);
       viewRef.current = null;
       if (globalThis.__parkMapLibre) delete globalThis.__parkMapLibre;
       view.destroy();
