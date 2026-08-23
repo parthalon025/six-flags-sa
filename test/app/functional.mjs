@@ -320,6 +320,20 @@ await check('park geometry is drawn', async () => {
   return true;
 });
 
+await check('park-wide view does not print every place name', async () => {
+  await until(() => a.locator('[data-testid="park-map-gl"][data-map-ready="1"]').count().then((n) => n >= 1), {
+    timeout: 20000,
+    label: 'map ready',
+  });
+  const names = await a.locator('svg.mapSvg .poiLabel').allTextContents();
+  if (names.length > 0) {
+    throw new Error(`park-wide map printed ${names.length} place names: ${names.slice(0, 8).join(', ')}`);
+  }
+  const pins = await a.locator('svg.mapSvg .poiMarker').count();
+  if (pins < 10) throw new Error(`expected place markers after declutter, got ${pins}`);
+  return true;
+});
+
 await check('the on-map OSM notice opens Settings straight to Credits, listing sourced attributions', async () => {
   const notice = a.locator('.mapAttribution');
   if (!(await notice.count())) throw new Error('no on-map OSM attribution notice');

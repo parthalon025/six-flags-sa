@@ -83,6 +83,7 @@ export default function ParkMapGl({
   const [marks, setMarks] = useState([]);
   const [paths, setPaths] = useState([]);
   const [cone, setCone] = useState(null);
+  const shownLabelsRef = useRef(new Set());
   /* A World opens framed on its own bounds, and framing needs a viewport. On
      the first render the container has not been laid out yet and is zero
      pixels wide, so mounting then would open every park at a zoom worked out
@@ -107,7 +108,19 @@ export default function ParkMapGl({
       setCone(null);
       return;
     }
-    const next = overlayChrome(model, (lngLat) => view.project(lngLat), chromeRef.current);
+    const camera = view.state().camera;
+    const node = containerRef.current;
+    const next = overlayChrome(model, (lngLat) => view.project(lngLat), {
+      ...chromeRef.current,
+      layout: {
+        zoom: camera.zoom,
+        latitude: camera.center.lat,
+        width: node?.clientWidth || 0,
+        height: node?.clientHeight || 0,
+        shownIds: shownLabelsRef.current,
+      },
+    });
+    shownLabelsRef.current = new Set(next.marks.filter((mark) => mark.label).map((mark) => mark.id));
     setMarks(next.marks);
     setPaths(next.paths);
     setCone(next.cone);
@@ -344,7 +357,11 @@ export default function ParkMapGl({
               <title>{mark.name}</title>
               <circle r="8" />
               {mark.self ? <circle className="mePulse" r="14" /> : null}
-              {mark.name ? <text className="memName">{mark.name}</text> : null}
+              {mark.label ? (
+                <text className={mark.kind === 'place' ? 'poiLabel' : 'memName'} y="20">
+                  {mark.name}
+                </text>
+              ) : null}
             </g>
           ))}
         </g>

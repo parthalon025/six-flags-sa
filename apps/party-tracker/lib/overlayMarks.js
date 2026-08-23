@@ -3,7 +3,130 @@
  *
  * Positions come from the map's own `project` — one camera, not a second
  * projection. The caller paints; this module only names what to paint.
+ *
+ * Place *names* are a second decision. Drawing every title at park-wide zoom
+ * is the ransom-note map: 150 strings stacked on the same few hundred pixels.
+ * `layoutOverlayLabels` applies the shared zoom ranks and the Declutter grid
+ * so a name appears only when it has earned the zoom and the space.
  */
+import { planZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
+import { metresPerPixel } from '@party-tracker/shared/zoomBands.js';
+import { Declutter, boxAround, onScreen, textWidth } from './mapLabels.js';
+import { markerDeclutterPriority, markerWantsLabel } from './mapVisual.js';
+
+/** Live overlay kinds ADR-0012 never drops a name for. Places are the
+ *  crowded set; everything else (Members, Meet, the car) is sparse. */
+const isPinnedKind = (kind) => kind && kind !== 'place';
+
+const PLACE_LABEL_SIZE = 13.5;
+const PIN_LABEL_SIZE = 13;
+/* Below the disc, with a gap: a 13.5px name centred on y+20 has its top at
+   ~12.6, and the drawn circle is r=8, so the box never claims its own pin. */
+const LABEL_DY = 20;
+const ICON_R = 8;
+
+/** px/m scale `labelWantedAtZoom` reads, from a MapLibre zoom. */
+export function labelPlanZoom(zoom, latitude) {
+  if (!Number.isFinite(zoom)) return 0;
+  const mpp = metresPerPixel(zoom, { latitude: Number.isFinite(latitude) ? latitude : 0 });
+  if (!Number.isFinite(mpp) || mpp <= 0) return 0;
+  return planZoom(1 / mpp);
+}
+
+function iconBox(mark) {
+  return boxAround(mark.x, mark.y, ICON_R, ICON_R);
+}
+
+function labelBox(mark) {
+  const size = mark.kind === 'place' ? PLACE_LABEL_SIZE : PIN_LABEL_SIZE;
+  const halfW = Math.max(8, textWidth(mark.name || '', size) / 2 + 2);
+  return boxAround(mark.x, mark.y + LABEL_DY, halfW, size * 0.55);
+}
+
+/**
+ * Decide which marks print a name.
+ *
+ * Markers stay. Names are zoom-gated (rank 1 first) and collision-thinned
+ * (lower `markerDeclutterPriority` wins). Without a layout, Members / Meet /
+ * car stay named and Places stay quiet — the safe default for a park-wide
+ * opening camera.
+ *
+ * @param {Array} marks `overlayMarks()` output
+ * @param {object|null} [layout]
+ * @param {number} [layout.zoom]
+ * @param {number} [layout.latitude]
+ * @param {number} [layout.width]
+ * @param {number} [layout.height]
+ * @param {Iterable} [layout.shownIds]
+ * @param {*} [layout.navId]
+ * @param {*} [layout.planNextId]
+ * @param {*} [layout.selectedId]
+ */
+export function layoutOverlayLabels(marks, layout = null) {
+  const list = (marks || []).map((mark) => ({ ...mark, label: false }));
+  if (!layout) {
+    for (const mark of list) {
+      if (isPinnedKind(mark.kind) && mark.name) mark.label = true;
+    }
+    return list;
+  }
+
+  const { zoom, latitude, width, height, shownIds, navId, planNextId, selectedId } = layout;
+  const zPlan = labelPlanZoom(zoom, latitude);
+  const shown = shownIds instanceof Set ? shownIds : new Set(shownIds || []);
+  const grid = new Declutter();
+  const hasViewport = Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
+  const visible = (box) => !hasViewport || onScreen(box, width, height);
+
+  for (const mark of list) grid.claim(iconBox(mark), true);
+
+  const tryLabel = (mark, pinned) => {
+    if (!mark.name) return;
+    const box = labelBox(mark);
+    if (!visible(box)) return;
+    if (grid.claim(box, pinned)) mark.label = true;
+  };
+
+  for (const mark of list) {
+    if (isPinnedKind(mark.kind)) tryLabel(mark, true);
+  }
+
+  const places = list
+    .map((mark, index) => ({ mark, index }))
+    .filter(({ mark }) => mark.kind === 'place')
+    .sort((a, b) => (
+      markerDeclutterPriority({
+        isSelected: a.mark.id === selectedId,
+        isNav: a.mark.id === navId,
+        isPlanNext: a.mark.id === planNextId,
+        rank: symbolFor(a.mark.category).rank,
+        index: a.index,
+      })
+      - markerDeclutterPriority({
+        isSelected: b.mark.id === selectedId,
+        isNav: b.mark.id === navId,
+        isPlanNext: b.mark.id === planNextId,
+        rank: symbolFor(b.mark.category).rank,
+        index: b.index,
+      })
+    ));
+
+  for (const { mark } of places) {
+    const isNav = mark.id === navId;
+    const isPlanNext = mark.id === planNextId;
+    if (!markerWantsLabel({
+      isSelected: mark.id === selectedId,
+      isNav,
+      isPlanNext,
+      rank: symbolFor(mark.category).rank,
+      zPlan,
+      wasShown: shown.has(mark.id),
+    })) continue;
+    tryLabel(mark, isNav || isPlanNext);
+  }
+
+  return list;
+}
 
 function projectPoint(project, coordinates) {
   if (!Array.isArray(coordinates) || coordinates.length < 2) return null;
@@ -29,7 +152,9 @@ export function overlayMarks(overlay, project) {
       className: 'poiMarker',
       id: feature.properties?.id ?? feature.id,
       name: feature.properties?.name || '',
+      category: feature.properties?.category || null,
       self: false,
+      label: false,
       x: point.x,
       y: point.y,
     });
@@ -44,6 +169,7 @@ export function overlayMarks(overlay, project) {
       id,
       name: feature.properties?.name || '',
       self: Boolean(feature.properties?.self) || id === 'me',
+      label: true,
       x: point.x,
       y: point.y,
     });
@@ -58,6 +184,7 @@ export function overlayMarks(overlay, project) {
       id: feature.properties?.id ?? feature.id,
       name: feature.properties?.label || '',
       self: false,
+      label: true,
       x: point.x,
       y: point.y,
     });
@@ -142,5 +269,5 @@ export function overlayChrome(overlay, project, extras = {}) {
     }
   }
 
-  return { marks: overlayMarks(overlay, project), paths, cone };
+  return { marks: layoutOverlayLabels(overlayMarks(overlay, project), extras.layout), paths, cone };
 }

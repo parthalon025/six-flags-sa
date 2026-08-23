@@ -35,6 +35,13 @@
       "check": "the on-map OSM notice opens Settings straight to Credits, listing sourced attributions"
     },
     {
+      "id": "map-label-declutter",
+      "slice": "Navigate",
+      "user_action": "Read the park map at rest without every Place name stacked on top of the next",
+      "suite": "functional",
+      "check": "park-wide view does not print every place name"
+    },
+    {
       "id": "heights-filter",
       "slice": "Navigate",
       "user_action": "Set rider height and see who can ride",
