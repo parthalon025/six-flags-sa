@@ -199,7 +199,8 @@ assert.deepEqual(
   const zoneNames = laid.filter((m) => m.kind === 'zone' && m.label).map((m) => m.name);
   const restrooms = placeNames.filter((m) => m.category === 'restroom');
   const rides = placeNames.filter((m) => m.category === 'coaster' || m.category === 'ride');
-  assert.ok(zoneNames.includes('Rockville'), `zones printed ${zoneNames.join(', ')}`);
+  assert.ok(zoneNames.length >= 1, `zones printed ${zoneNames.join(', ')}`);
+  assert.ok(zoneNames.includes('Rockville') || zoneNames.includes('DC Universe'), `a named land printed: ${zoneNames.join(', ')}`);
   assert.ok(rides.length >= 6, `ride names are the destination layer, got ${rides.length}: ${rides.map((m) => m.name).join(', ')}`);
   assert.equal(restrooms.length, 0, 'restrooms stay quiet at park-wide zoom');
   const amenityPins = laid.filter((m) => m.kind === 'place' && m.pin && m.category !== 'coaster' && m.category !== 'ride');

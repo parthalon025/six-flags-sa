@@ -115,7 +115,12 @@ export function layoutOverlayLabels(marks, layout = null) {
   };
 
   for (const mark of list) {
-    if (isPinnedKind(mark.kind)) tryLabel(mark, true);
+    if (isPinnedKind(mark.kind) && mark.kind !== 'zone') tryLabel(mark, true);
+  }
+  // Zones always try at park-wide, but they yield to each other — pinning
+  // them prints all six land titles on one pixel.
+  for (const mark of list) {
+    if (mark.kind === 'zone') tryLabel(mark, false);
   }
 
   const priorityOf = ({ mark, index }) => markerDeclutterPriority({
