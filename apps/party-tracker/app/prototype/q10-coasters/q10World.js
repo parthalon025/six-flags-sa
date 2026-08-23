@@ -71,6 +71,7 @@ export function rankWalk(row, lengthM) {
   return 'street';
 }
 
+/** Parked from the Google-LOD iteration. Unused by the current land plates. */
 export function walkVisible(rank, band) {
   if (rank === 'arterial') return true;
   if (rank === 'street') return band === 'streets' || band === 'close';
@@ -222,6 +223,7 @@ export function readWorld(map, pois) {
   };
 }
 
+/** Parked from the Google-LOD iteration. Unused by the current land plates. */
 export function bandOf(variantKey) {
   return VARIANTS.find((v) => v.key === variantKey)?.band || 'overview';
 }
