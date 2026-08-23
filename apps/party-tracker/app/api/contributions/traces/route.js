@@ -1,5 +1,6 @@
 import { appendGuestTraces, guestTraceStats, listGuestTraces, tracesToFeatureCollection } from '@/lib/guestTraces';
 import { validateTraceUpload } from '@/lib/gps/movementLog';
+import { requestIsOperator } from '@/lib/adminToken';
 import { rateLimit } from '@/lib/rateLimit';
 import { badRequest, json, notFound, tooManyRequests, readJson, isId } from '@/app/api/_lib/http';
 
@@ -13,16 +14,6 @@ export const maxDuration = 15;
  *        entrance/exit/amenity sightings) from phones.
  * GET  — operator export (token gated like /api/metrics). Never mutates venues.
  */
-
-const TOKEN = process.env.GUEST_TRACES_TOKEN || process.env.METRICS_TOKEN;
-
-function permitted(request) {
-  if (!TOKEN) return process.env.NODE_ENV !== 'production';
-  const header = request.headers.get('authorization') || '';
-  const bearer = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const query = new URL(request.url).searchParams.get('token') || '';
-  return bearer === TOKEN || query === TOKEN;
-}
 
 export async function POST(request) {
   const ip =
@@ -49,7 +40,7 @@ export async function POST(request) {
 }
 
 export async function GET(request) {
-  if (!permitted(request)) return notFound();
+  if (!(await requestIsOperator(request))) return notFound();
 
   const url = new URL(request.url);
   const venueId = url.searchParams.get('venueId') || '';

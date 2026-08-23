@@ -1014,7 +1014,8 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
   const removeMember = (id) => submit(REMOVE_MEMBER, { id });
   const setMemberFacts = (patch, memberId = null) =>
     submit(PATCH_MEMBER, memberId ? { id: memberId, patch: patch || {} } : { patch: patch || {} });
-  const offerSkin = (skinId) => submit(WORLD_OFFER, { skinId });
+  const offerSkin = (skinId, { unrestricted = false } = {}) =>
+    submit(WORLD_OFFER, { skinId, unrestricted: Boolean(unrestricted) });
   const withdrawOffer = (skinId) => submit(WORLD_WITHDRAW, { skinId: skinId || null });
   const dropWorldMark = (body) => submit(WORLD_MARK, body || {});
   const thankWorldMark = (targetId) => submit(WORLD_THANKS, { targetId });

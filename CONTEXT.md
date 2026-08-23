@@ -76,6 +76,10 @@ _Avoid_: User (product person); account; Member (roster, not the paid identity)
 A saved person under a **Profile** (typically a child) used to seed a device-less **Member**. Stale height prompts at seed; skip keeps last inches. Removing a device-less Member does not delete the Managed Guest.
 _Avoid_: Member (until on a live roster); Subgroup
 
+**Operator**:
+A Clerk-backed allowlist on one **Profile** (`private_metadata.admin`). Invisible. That Profile has every shipped **Skin** and **Kit**, Steward **Title**, and operator routes. An **Offer** from this Profile may be Worn regardless of season or **World** kind. Not a **Title**, **Rank**, or **Host**.
+_Avoid_: godmode in UI; Admin as a Title; Steward as admin
+
 ### Eligibility
 
 **Eligibility**:

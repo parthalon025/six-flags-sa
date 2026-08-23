@@ -9,7 +9,7 @@ import {
   KIT_ICONS,
   mapPaint,
   skinRung,
-  skinAllowedAt,
+  skinWearAllowed,
 } from '@/lib/world';
 
 /**
@@ -101,8 +101,13 @@ export default function WorldCloset({
       <div className="rowList">
         {SKIN_IDS.map((id) => {
           const skin = SKINS[id];
-          const allowed = skinAllowedAt({ skinId: id, venue, now });
-          const rung = skinRung(progress, id, venue?.id);
+          const allowed = skinWearAllowed({
+            skinId: id,
+            venue,
+            now,
+            godmode: Boolean(progress?.godmode),
+          });
+          const rung = progress?.godmode ? 'share' : skinRung(progress, id, venue?.id);
           const offering = offers.some((o) => o.fromMemberId === selfId && o.skinId === id);
           const wearingOwn = progress?.wearSkin === id && !acceptedOffer;
           let value = 'Locked';

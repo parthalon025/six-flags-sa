@@ -1,4 +1,5 @@
 import { metrics, usingRedis } from '@/lib/serverStore';
+import { requestIsOperator } from '@/lib/adminToken';
 import { notFound } from '@/app/api/_lib/http';
 
 export const dynamic = 'force-dynamic';
@@ -38,18 +39,8 @@ const HELP = {
  * endpoint that answers "you guessed right, now authenticate" is still an
  * endpoint that confirmed it is there.
  */
-const TOKEN = process.env.METRICS_TOKEN;
-
-function permitted(request) {
-  if (!TOKEN) return process.env.NODE_ENV !== 'production';
-  const header = request.headers.get('authorization') || '';
-  const bearer = header.startsWith('Bearer ') ? header.slice(7) : '';
-  const query = new URL(request.url).searchParams.get('token') || '';
-  return bearer === TOKEN || query === TOKEN;
-}
-
-export function GET(request) {
-  if (!permitted(request)) return notFound();
+export async function GET(request) {
+  if (!(await requestIsOperator(request))) return notFound();
 
   const values = metrics();
   const lines = [`# backend ${usingRedis ? 'upstash' : 'memory'}`];
