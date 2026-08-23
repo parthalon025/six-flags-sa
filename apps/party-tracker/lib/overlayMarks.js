@@ -9,7 +9,7 @@
  * `layoutOverlayLabels` applies the shared zoom ranks and the Declutter grid
  * so a name appears only when it has earned the zoom and the space.
  */
-import { planZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
+import { planZoom, sizeAtZoom, symbolFor } from '@party-tracker/shared/mapSymbols.js';
 import { metresPerPixel } from '@party-tracker/shared/zoomBands.js';
 import { Declutter, boxAround, onScreen, textWidth } from './mapLabels.js';
 import { markerDeclutterPriority, markerWantsLabel } from './mapVisual.js';
@@ -52,7 +52,8 @@ export function labelPlanZoom(zoom, latitude) {
 }
 
 function iconBox(mark) {
-  return boxAround(mark.x, mark.y, ICON_R, ICON_R);
+  const r = Number.isFinite(mark.radius) ? mark.radius : ICON_R;
+  return boxAround(mark.x, mark.y, r, r);
 }
 
 function labelBox(mark) {
@@ -81,10 +82,14 @@ function labelBox(mark) {
  * @param {*} [layout.selectedId]
  */
 export function layoutOverlayLabels(marks, layout = null) {
+  const zPlan = layout ? labelPlanZoom(layout.zoom, layout.latitude) : 0;
   const list = (marks || []).map((mark) => ({
     ...mark,
     label: false,
     pin: mark.kind !== 'zone',
+    radius: mark.kind === 'place'
+      ? sizeAtZoom(symbolFor(mark.category).r, zPlan)
+      : ICON_R,
   }));
   if (!layout) {
     for (const mark of list) {
@@ -93,8 +98,7 @@ export function layoutOverlayLabels(marks, layout = null) {
     return list;
   }
 
-  const { zoom, latitude, width, height, shownIds, navId, planNextId, selectedId } = layout;
-  const zPlan = labelPlanZoom(zoom, latitude);
+  const { width, height, shownIds, navId, planNextId, selectedId } = layout;
   const shown = shownIds instanceof Set ? shownIds : new Set(shownIds || []);
   const grid = new Declutter();
   const hasViewport = Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;

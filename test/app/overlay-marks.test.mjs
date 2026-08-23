@@ -133,6 +133,10 @@ assert.deepEqual(
   assert.deepEqual(named(overview).sort(), ['goliath', 'me', 'poltergeist', 'zone:Rockville']);
   assert.equal(overview.find((m) => m.id === 'goliath').pin, true);
   assert.equal(overview.find((m) => m.id === 'restrooms').pin, false, 'amenity discs wait for zoom');
+  // sizeAtZoom(11, planZoom(1/mpp)) at z13.2 / 29.6°. Worked: mpp ≈ 7.239,
+  // 1/mpp ≈ 0.138 → planZoom 2/12, scale max(0.74, 0.745) = 0.745, 11 × 0.745.
+  assert.equal(overview.find((m) => m.id === 'goliath').radius, 8.195);
+  assert.equal(overview.find((m) => m.id === 'restrooms').radius, 6.258);
 
   // Walking zoom: two coasters far apart both print. Two restrooms on the
   // same pixel do not — rank and collision drop the second.
@@ -215,6 +219,8 @@ assert.deepEqual(
   const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(painted, /markLabelStyle/, 'the SVG reads the same kind style the grid claimed');
+  assert.match(painted, /PoiMarker/, 'Place pins are the same glyphs the legend draws, not empty discs');
+  assert.match(painted, /mark\.radius/, 'marker size is the zoom-scaled radius the layout claimed');
   assert.match(painted, /drawsPin/, 'a Zone is a name on the land, not another black disc');
   assert.equal(markLabelStyle('zone').className, 'landLabel');
   assert.equal(markLabelStyle('zone').drawsPin, false);

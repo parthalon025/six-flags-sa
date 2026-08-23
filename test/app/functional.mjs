@@ -381,8 +381,10 @@ await check('park-wide rest shows Zone names and ride names, not every Place', a
   const names = await a.locator('svg.mapSvg .poiLabel').allTextContents();
   const zones = await a.locator('svg.mapSvg .landLabel').allTextContents();
   const discs = await a.locator('svg.mapSvg .poiMarker circle').count();
+  const glyphs = await a.locator('svg.mapSvg .poiMarker path').count();
   const places = await a.locator('svg.mapSvg .poiMarker').count();
   if (discs < 1) throw new Error(`expected ride discs after declutter, got ${discs}`);
+  if (glyphs < discs) throw new Error(`place icons missing glyphs (${glyphs} paths for ${discs} discs)`);
   if (zones.length < 1) throw new Error('park-wide map printed no Zone names');
   if (names.length < 1) throw new Error('park-wide map printed no ride names');
   if (names.some((n) => /restroom/i.test(n))) {

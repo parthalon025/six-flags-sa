@@ -1352,4 +1352,41 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
   );
 }
 
+{
+  const { worldLodGroups, worldLodVisibility } = await import('../../apps/party-tracker/lib/worldLod.js');
+  const parkWide = worldLodGroups(0.25);
+  assert.equal(parkWide.detail, false, 'buildings and track wait for a pinch');
+  assert.equal(parkWide.service, false, 'service roads wait longer');
+  assert.equal(parkWide.close, false, 'path casing and slides wait with detail');
+  const mid = worldLodGroups(0.7);
+  assert.equal(mid.detail, true);
+  assert.equal(mid.close, false, 'close stroke waits until 0.85 even after detail enters');
+  const walking = worldLodGroups(1.4);
+  assert.equal(walking.detail, true);
+  assert.equal(walking.service, true);
+  assert.equal(walking.close, true);
+  assert.equal(worldLodGroups(0.69).detail, false);
+  assert.equal(worldLodGroups(0.62, { detail: true }).detail, true, 'hysteresis keeps detail across the boundary');
+  assert.equal(worldLodGroups(0.61, { detail: true }).detail, false);
+
+  const hidden = worldLodVisibility(parkWide);
+  assert.equal(hidden.grass, false);
+  assert.equal(hidden.building, false);
+  assert.equal(hidden.coaster, false);
+  assert.equal(hidden.service, false);
+  assert.equal(hidden.slide, false);
+  assert.equal(hidden['path-case'], false);
+  const shown = worldLodVisibility(walking);
+  assert.equal(shown.grass, true);
+  assert.equal(shown.building, true);
+  assert.equal(shown.coaster, true);
+  assert.equal(shown.service, true);
+  assert.equal(shown.slide, true);
+  assert.equal(shown['path-case'], true);
+
+  const adapter = readFileSync(new URL('../../apps/party-tracker/lib/mapViewMaplibre.js', import.meta.url), 'utf8');
+  assert.match(adapter, /worldLodGroups/, 'the renderer applies the same LOD the retired SVG used');
+  assert.match(adapter, /worldLodVisibility/, 'layer ids come from the lod table, not a second list');
+}
+
 console.log('map-view: ok');
