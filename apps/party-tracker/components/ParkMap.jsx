@@ -40,9 +40,9 @@
  * Named rather than discovered later. Each is a Truth-side or style-side job
  * that the SVG renderer did inline and the ported path has nowhere to put yet:
  * Eligibility colouring on Place markers, the selected Place's highlight and
- * its coaster track, alternative-route tap targets, Kit badges, land labels
- * along their district, the scale bar, and a Skin's Custom map layer (which
- * ADR-0013 compiles into the display pack rather than drawing in React). The
+ * its coaster track, alternative-route tap targets, Kit badges, land names
+ * along the district (centroids for now), the scale bar, and a Skin's Custom
+ * map layer (ADR-0013 compiles that into the display pack). The
  * perf HUD (`onMapStats`) is not wired on the GL path yet.
  *
  * Certified baked Skins get a mid-band raster from `bakedWorldBands`. Pixel
@@ -105,6 +105,9 @@ function ParkMap(props) {
     visibleCategories,
     onToggleCategory,
     mapKeyHidden = false,
+    selected = null,
+    routeTargetName = null,
+    planNextPlaceId = null,
     navZoom = null,
     fitPoints,
     fitKey = null,
@@ -217,6 +220,9 @@ function ParkMap(props) {
       puck={puck}
       heading={heading}
       rotation={rotation}
+      navId={routeTargetName}
+      planNextId={planNextPlaceId}
+      selectedId={selected ? identityOf(selected) : null}
       camera={camera}
       follow={follow}
       insetBottom={bottomInset}

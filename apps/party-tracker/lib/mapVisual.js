@@ -116,9 +116,21 @@ export function markerDeclutterPriority({
  * its name lives in the sheet); the zoom decision itself delegates to the
  * shared labelWantedAtZoom so the canonical hysteresis is what ships.
  */
-export function markerWantsLabel({ isSelected, isNav, isPlanNext, rank, zPlan, wasShown }) {
+export function markerWantsLabel({
+  isSelected,
+  isNav,
+  isPlanNext,
+  rank,
+  zPlan,
+  wasShown,
+  category = null,
+}) {
   if (isSelected) return false;
   if (isNav || isPlanNext) return true;
+  // Rank 1/2 enter at 0.5 / 0.95 px/m — below a park-wide camera (~0.25).
+  // Rides are the destination layer, so they skip that zoom gate. Collision
+  // still thins them; restrooms and dining still wait for a pinch.
+  if (category === 'coaster' || category === 'ride') return true;
   return labelWantedAtZoom(rank, zPlan, wasShown);
 }
 

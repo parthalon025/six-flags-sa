@@ -3009,12 +3009,20 @@ await check('map place names are large enough for the grandma test', () => {
   const land = css.match(/\.landLabel\s*\{[^}]+\}/);
   const mem = css.match(/\.memName\s*\{[^}]+\}/);
   assert.ok(poi && land && mem, 'missing map label rules');
-  const poiSize = Number(poi[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
-  const landSize = Number(land[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
-  const memSize = Number(mem[0].match(/font-size:\s*([\d.]+)px/)?.[1]);
-  assert.ok(poiSize >= 13.5, `poiLabel ${poiSize}px`);
+  const fallbackPx = (rule) => Number(
+    rule.match(/font-size:\s*var\(--[^,]+,\s*([\d.]+)px\)/)?.[1]
+      ?? rule.match(/font-size:\s*([\d.]+)px/)?.[1],
+  );
+  const poiSize = fallbackPx(poi[0]);
+  const landSize = fallbackPx(land[0]);
+  const memSize = fallbackPx(mem[0]);
+  // Arm's-length outdoor reading (ADR-0012): 13.5px failed the grandma
+  // test once names were no longer stacked. 16 / 15 is body-adjacent UI.
+  assert.ok(poiSize >= 16, `poiLabel ${poiSize}px`);
   assert.ok(landSize >= 14, `landLabel ${landSize}px`);
-  assert.ok(memSize >= 13, `memName ${memSize}px`);
+  assert.ok(memSize >= 15, `memName ${memSize}px`);
+  assert.match(poi[0], /text-rendering:\s*geometricPrecision/, 'poiLabel stays crisp');
+  assert.match(mem[0], /text-rendering:\s*geometricPrecision/, 'memName stays crisp');
   return true;
 });
 

@@ -153,6 +153,7 @@ export function buildReviewPrompt({ files = [], diffStat = '' } = {}) {
     "1. The global Matt Pocock `code-review` skill (~/.claude/skills/code-review or ~/.agents/skills/code-review) — Standards axis; this repo's documented rules override the Fowler baseline.",
     '2. The Always / Never lists in docs/agents/matt-standards.md.',
     '3. The deep-module vocabulary from the `codebase-design` skill for any new or moved seam: is each new module deep (small interface, real behaviour)? Is policy in scripts/lib rather than prose? Behaviour changes near existing tests should have arrived test-first (tdd skill).',
+    '4. The root-cause policy (docs/agents/policies/root-cause.md): does this diff ship the missing layer, or a hide / extra gate / fallback so the symptom goes quiet? A hide is a merge only when that policy names the exception.',
     '',
     'If GitNexus tools are available in this session, run detect_changes / impact on the touched symbols first and use the blast radius to focus the review; if unavailable, say so and continue.',
     '',

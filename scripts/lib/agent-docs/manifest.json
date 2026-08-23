@@ -59,6 +59,14 @@
       "cursorDescription": "Prove code work end to end and assert the run's output; static steps are the floor, not the proof."
     },
     {
+      "id": "root-cause",
+      "heading": "Root cause — ship the cause, not the hide",
+      "title": "Root cause",
+      "pointer": "**Root cause** is the shipped fix — hide a symptom only when this policy names that exception.",
+      "cursorRule": "root-cause.mdc",
+      "cursorDescription": "Ship the missing layer. A hide, extra gate, or fallback is a merge only when the root-cause policy names that exception."
+    },
+    {
       "id": "version-on-merge",
       "heading": "App version — auto-bumped on merge",
       "title": "App version",

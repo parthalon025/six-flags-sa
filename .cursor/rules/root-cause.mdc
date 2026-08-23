@@ -1,0 +1,8 @@
+---
+description: Ship the missing layer. A hide, extra gate, or fallback is a merge only when the root-cause policy names that exception.
+alwaysApply: true
+---
+
+# Root cause
+
+**Root cause** is the shipped fix — hide a symptom only when this policy names that exception. See [root-cause policy](../../docs/agents/policies/root-cause.md).

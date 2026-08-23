@@ -523,17 +523,20 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
    They appear, or they do not — no animation on .lyr-detail. */
 
 /* Apple Maps sets district names in wide-tracked caps and POI names in plain
-   SF with a halo, which is what these two do. Sized for the grandma test:
-   readable at arm's length outdoors, not phone-held-to-the-nose. */
+   SF with a halo, which is what these two do. 16px / 15px for the grandma
+   test: readable at arm's length outdoors, not phone-held-to-the-nose. */
 .landLabel {
-  font-family: var(--ui); font-size: 14px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; text-anchor: middle; opacity: .9; pointer-events: none;
+  font-family: var(--ui); font-size: var(--map-zone-label, 14px); font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; text-anchor: middle; fill: var(--labelFill); opacity: .9;
   paint-order: stroke; stroke: var(--labelStroke); stroke-width: 3.5px; stroke-linejoin: round;
+  text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;
+  pointer-events: none;
 }
 .poiLabel {
-  font-family: var(--ui); font-size: 13.5px; font-weight: 600; letter-spacing: -.1px;
+  font-family: var(--ui); font-size: var(--map-place-label, 16px); font-weight: 700; letter-spacing: -.1px;
   fill: var(--labelFill); text-anchor: middle;
-  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4px; stroke-linejoin: round;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4.5px; stroke-linejoin: round;
+  text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;
   pointer-events: none;
 }
 /* Ruled out by today's height, said in ink rather than in opacity — fading
@@ -572,9 +575,11 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   text-anchor: middle; pointer-events: none;
 }
 .memName {
-  font-family: var(--ui); font-size: 13px; font-weight: 600; fill: var(--labelFill);
+  font-family: var(--ui); font-size: var(--map-pin-label, 15px); font-weight: 700; fill: var(--labelFill);
   text-anchor: middle;
-  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4px; pointer-events: none;
+  paint-order: stroke; stroke: var(--labelStroke); stroke-width: 4.5px;
+  text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased;
+  pointer-events: none;
 }
 .kitLetter, .worldMarkLetter {
   font-family: var(--ui); font-size: 11px; font-weight: 700; fill: var(--label);

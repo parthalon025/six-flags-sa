@@ -26,6 +26,25 @@ import {
 /** Same-origin worker the spike route already serves. Turbopack rewrites
  *  maplibre-gl's `import.meta.url` to a non-http value, so the default
  *  worker URL is empty and `new Map` never reaches `load`. */
+/** Among overlapping place hit-targets, the nearest geometry wins — not
+ *  source order. Park-wide ride discs sit on top of each other; first-in-
+ *  layer was opening Castaway Cove when the tap was on Aruba Tuba. */
+export function closestPlaceId(features, point, project) {
+  let bestId = null;
+  let bestD = Infinity;
+  for (const feature of features || []) {
+    const coords = feature.geometry?.coordinates;
+    if (!Array.isArray(coords) || coords.length < 2) continue;
+    const at = project?.({ lng: coords[0], lat: coords[1] });
+    if (!at || !Number.isFinite(at.x) || !Number.isFinite(at.y)) continue;
+    const d = (at.x - point.x) ** 2 + (at.y - point.y) ** 2;
+    if (d >= bestD) continue;
+    bestD = d;
+    bestId = feature.properties?.id ?? feature.id ?? null;
+  }
+  return bestId;
+}
+
 const MAPLIBRE_WORKER_URL = '/api/display-spike/maplibre-gl-worker.mjs';
 let workerPointed = false;
 function ensureMapLibreWorker() {
@@ -167,8 +186,11 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
 
     pick(point) {
       if (!map || !loaded || !map.getLayer(PLACES_LAYER)) return null;
-      const [feature] = map.queryRenderedFeatures([point.x, point.y], { layers: [PLACES_LAYER] });
-      return feature?.properties?.id ?? null;
+      const features = map.queryRenderedFeatures([point.x, point.y], { layers: [PLACES_LAYER] });
+      return closestPlaceId(features, point, ({ lng, lat }) => {
+        const at = map.project([lng, lat]);
+        return { x: at.x, y: at.y };
+      });
     },
 
     project({ lng, lat } = {}) {
