@@ -463,6 +463,7 @@ export function reduce(state, command, now = Date.now()) {
         skinId: body.skinId,
         now,
         force: true,
+        unrestricted: Boolean(body.unrestricted),
       });
       if (next.offers.length === (cur.offers || []).length) return none(state);
       return withOps(state, [{ type: OP.SETTINGS_MERGE, patch: { world: next } }]);

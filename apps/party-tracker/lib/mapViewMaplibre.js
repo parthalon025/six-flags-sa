@@ -15,6 +15,7 @@
 import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
 import { BANDS } from '@party-tracker/shared/zoomBands.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
+import { constrainCameraPitch, mapWritesForCamera } from './mapViewCameraApply.js';
 import {
   bandLayer,
   bandedWorldStyle,
@@ -96,6 +97,12 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
 
     attach(container, view) {
       ensureMapLibreWorker();
+      if (typeof view.pitchAt !== 'function') {
+        throw new Error(
+          'MapLibre renderer needs view.pitchAt so derived pitch lands in the same '
+            + 'transform as a pinch — setPitch is jumpTo, and jumpTo stops the gesture',
+        );
+      }
       map = new MapLibreMap({
         container,
         style: bandedWorldStyle(view),
@@ -104,6 +111,7 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
         pitch: view.camera.pitch,
         bearing: view.camera.bearing,
         attributionControl: false,
+        transformCameraUpdate: constrainCameraPitch(view.pitchAt),
       });
       map.on('error', (event) => onError?.(event?.error ?? new Error('MapLibre error')));
       map.on('load', () => {
@@ -137,24 +145,34 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
       // how a Place ends up drawn in one position and tapped in another.
     },
 
-    /** Applied property by property rather than as one jumpTo, and only where
-     *  it differs. During a pinch the camera the seam hands back *is* the
-     *  gesture's own, so the only thing left to apply is the derived pitch —
-     *  writing the rest back would fight the gesture handler for the camera
-     *  mid-pinch. */
-    camera({ center, zoom, pitch, bearing, ease }) {
+    /** One jump or one ease, never a chain of setters. Each public setter
+     *  is jumpTo, and jumpTo calls stop() — which is the pinch-killing hitch
+     *  in the pitch-ease window. A pinch already wrote zoom/center/bearing,
+     *  so that frame is a no-op; tilt is transformCameraUpdate's job. */
+    camera(wanted) {
       if (!map) return;
-      if (ease) {
-        map.easeTo({ center: [center.lng, center.lat], zoom, pitch, bearing, duration: ease.durationMs });
+      const centre = map.getCenter();
+      const write = mapWritesForCamera(
+        {
+          center: { lng: centre.lng, lat: centre.lat },
+          zoom: map.getZoom(),
+          bearing: map.getBearing(),
+          pitch: map.getPitch(),
+        },
+        wanted,
+      );
+      // Pitch is omitted on purpose: transformCameraUpdate is the only writer,
+      // so a jump or ease cannot drift from the curve the pinch already uses.
+      const camera = {
+        center: [wanted.center.lng, wanted.center.lat],
+        zoom: wanted.zoom,
+        bearing: wanted.bearing,
+      };
+      if (write.kind === 'ease') {
+        map.easeTo({ ...camera, duration: wanted.ease.durationMs });
         return;
       }
-      if (map.getZoom() !== zoom) map.setZoom(zoom);
-      if (map.getBearing() !== bearing) map.setBearing(bearing);
-      if (Math.abs(map.getPitch() - pitch) > 0.01) map.setPitch(pitch);
-      const centre = map.getCenter();
-      if (centre.lng !== center.lng || centre.lat !== center.lat) {
-        map.setCenter([center.lng, center.lat]);
-      }
+      if (write.kind === 'jump') map.jumpTo(camera);
     },
 
     paint,
