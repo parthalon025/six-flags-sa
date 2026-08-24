@@ -1,33 +1,24 @@
 'use client';
 
-/* PROTOTYPE. Three game-map systems on the souvenir lands, via ?variant=.
- * A quest map · B fog atlas · C overworld hop
- * Systems, not palettes. */
+/* PROTOTYPE. Three unconstrained plates. Break the map.
+ * A ride the quest · B unroll the park · C stage flats */
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import PrototypeSwitcher from '@/components/prototype/PrototypeSwitcher.jsx';
-import VariantQuest from './VariantQuest.jsx';
-import VariantFog from './VariantFog.jsx';
-import VariantOverworld from './VariantOverworld.jsx';
+import VariantRide from './VariantRide.jsx';
+import VariantScroll from './VariantScroll.jsx';
+import VariantDiorama from './VariantDiorama.jsx';
 import {
   VARIANTS,
   VENUE,
-  arrivalLandOf,
-  landGraph,
   landNamesOf,
-  neighborsOf,
-  projector,
   readWorld,
   rideZone,
   ridesInZone,
 } from './q10World.js';
 
-const VIEWS = { A: VariantQuest, B: VariantFog, C: VariantOverworld };
-
-function parseSeen(raw) {
-  return new Set(String(raw || '').split(',').map((s) => s.trim()).filter(Boolean));
-}
+const VIEWS = { A: VariantRide, B: VariantScroll, C: VariantDiorama };
 
 function Q10Coasters() {
   const params = useSearchParams();
@@ -63,18 +54,10 @@ function Q10Coasters() {
     || pack?.coasters?.find((p) => p.n === 'The Beast')?.n
     || pack?.coasters?.[0]?.n
     || 'The Beast';
-  const fromRide = pack ? rideZone(pack.coasters.find((p) => p.n === primary), names) : null;
-  const startLand = pack ? arrivalLandOf(pack) : null;
-  const land = params.get('land') || fromRide || startLand || pack?.lands?.[0]?.name || '';
-  const seen = useMemo(() => {
-    const raw = params.get('seen');
-    if (raw) return parseSeen(raw);
-    return new Set([startLand, land].filter(Boolean));
-  }, [params, startLand, land]);
-  const project = useMemo(
-    () => (pack ? projector(pack.bounds, 720, 920) : null),
-    [pack],
-  );
+  const land = params.get('land')
+    || (pack ? rideZone(pack.coasters.find((p) => p.n === primary), names) : null)
+    || pack?.lands?.[0]?.name
+    || '';
 
   const write = (patch) => {
     const next = new URLSearchParams(params.toString());
@@ -85,26 +68,15 @@ function Q10Coasters() {
     router.replace(`?${next.toString()}`, { scroll: false });
   };
 
-  const remember = (name, extra = {}) => {
-    const next = new Set(seen);
-    if (name) next.add(name);
-    write({ ...extra, seen: [...next].join(',') });
-  };
-
   const pick = (name) => {
     const zone = pack ? rideZone(pack.coasters.find((p) => p.n === name), names) : null;
-    remember(zone, { primary: name, land: zone || land });
+    write({ primary: name, land: zone || land });
   };
 
   const pickLand = (name) => {
-    if (key === 'C' && pack) {
-      const graph = landGraph(pack, 2);
-      const open = new Set([land, ...neighborsOf(graph, land)]);
-      if (!open.has(name)) return;
-    }
     const here = pack ? ridesInZone(pack.coasters, name, names) : [];
     const keep = here.some((p) => p.n === primary);
-    remember(name, { land: name, primary: keep ? primary : (here[0]?.n || primary) });
+    write({ land: name, primary: keep ? primary : (here[0]?.n || primary) });
   };
 
   if (process.env.NODE_ENV === 'production') {
@@ -116,27 +88,17 @@ function Q10Coasters() {
   }
 
   if (err) return <main style={{ padding: 24 }}>Could not load {VENUE}: {err}</main>;
-  if (!pack || !project) return <main style={{ padding: 24 }}>Loading {VENUE}…</main>;
+  if (!pack) return <main style={{ padding: 24 }}>Loading {VENUE}…</main>;
 
   return (
-    <main style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#F6F0E2' }}>
+    <main style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: '#111' }}>
       <header style={S.hud} data-prototype-state="">
-        <strong>Q10 · game map</strong>
+        <strong>Q10 · unconstrained</strong>
         <span>{thesis.name} — {thesis.thesis}</span>
-        <span>
-          {seen.size}/{pack.lands.length} charted · land {land} · quest {primary}
-        </span>
+        <span>quest {primary} · land {land}</span>
       </header>
       <div style={{ flex: 1, minHeight: 0 }}>
-        <View
-          world={pack}
-          project={project}
-          primary={primary}
-          land={land}
-          seen={seen}
-          onPick={pick}
-          onLand={pickLand}
-        />
+        <View world={pack} primary={primary} land={land} onPick={pick} onLand={pickLand} />
       </div>
       <PrototypeSwitcher variants={VARIANTS} current={key} />
     </main>
@@ -157,10 +119,9 @@ const S = {
     flexDirection: 'column',
     gap: 2,
     padding: '10px 14px',
-    background: '#F6F0E2',
-    color: '#3d342c',
+    background: '#111',
+    color: '#f4efe4',
     font: '500 12px/1.35 var(--display), sans-serif',
     zIndex: 2,
-    borderBottom: '1px solid #E0D6C2',
   },
 };

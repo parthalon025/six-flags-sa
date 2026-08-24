@@ -5,11 +5,11 @@ import { normaliseRideName } from '@/lib/mapSymbols.js';
 
 export const VENUE = 'kings-island';
 
-/** Three game-map systems on the souvenir lands. */
+/** Three unconstrained plates. Break the map. */
 export const VARIANTS = [
-  { key: 'A', name: 'Quest map', thesis: 'Pause-menu cartograph. You, the quest, the land names.' },
-  { key: 'B', name: 'Fog atlas', thesis: 'Chart the park. Undiscovered lands stay blank until you walk in.' },
-  { key: 'C', name: 'Overworld', thesis: 'Hop land to land like a board. Only neighbours are open.' },
+  { key: 'A', name: 'Ride the quest', thesis: 'The camera is the coaster. The park is a tunnel you fall through.' },
+  { key: 'B', name: 'Unroll the park', thesis: 'No north. Lands are a film from the gate, one room after another.' },
+  { key: 'C', name: 'Stage flats', thesis: 'Sideways diorama. Lands are theater wings. The gate is the footlights.' },
 ];
 
 /** Souvenir-strength district fills. Venue day tints are too pale to read as land. */
@@ -209,6 +209,65 @@ export function isOwner(trackName, primaryName) {
 
 export function ownersOf(tracks, primaryName) {
   return tracks.filter((t) => isOwner(t.name, primaryName));
+}
+
+export function longestOwner(tracks, primaryName) {
+  return ownersOf(tracks, primaryName)
+    .slice()
+    .sort((a, b) => (b.ring?.length || 0) - (a.ring?.length || 0))[0] || null;
+}
+
+export function resampleRing(ring, n = 220) {
+  if (!Array.isArray(ring) || ring.length < 2) return [];
+  const segs = [];
+  let total = 0;
+  for (let i = 1; i < ring.length; i += 1) {
+    const d = Math.hypot(ring[i][0] - ring[i - 1][0], ring[i][1] - ring[i - 1][1]);
+    segs.push({ a: ring[i - 1], b: ring[i], d });
+    total += d;
+  }
+  if (!total) return ring.slice();
+  const out = [];
+  for (let i = 0; i < n; i += 1) {
+    let t = (i / Math.max(1, n - 1)) * total;
+    let placed = false;
+    for (const s of segs) {
+      if (t <= s.d) {
+        const u = s.d ? t / s.d : 0;
+        out.push([s.a[0] + (s.b[0] - s.a[0]) * u, s.a[1] + (s.b[1] - s.a[1]) * u]);
+        placed = true;
+        break;
+      }
+      t -= s.d;
+    }
+    if (!placed) out.push(ring[ring.length - 1]);
+  }
+  return out;
+}
+
+/** BFS through the land graph from the gate. Walking order, not geography. */
+export function landWalk(world) {
+  const start = arrivalLandOf(world);
+  const graph = landGraph(world, 2);
+  const adj = new Map(graph.nodes.map((n) => [n.name, []]));
+  for (const [a, b] of graph.edges) {
+    adj.get(a)?.push(b);
+    adj.get(b)?.push(a);
+  }
+  const out = [];
+  const seen = new Set();
+  const queue = [start];
+  while (queue.length) {
+    const name = queue.shift();
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    out.push(name);
+    for (const next of adj.get(name) || []) queue.push(next);
+  }
+  for (const land of world.lands || []) {
+    if (!seen.has(land.name)) out.push(land.name);
+  }
+  return out;
 }
 
 export function ringsOf(rows) {
