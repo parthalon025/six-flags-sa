@@ -1,7 +1,8 @@
 # Visual factory — tool registry
 
 Every tool the **Visual factory** uses or may adopt, by pipeline stage. Sourcing rule (ADR-0017
-cost model): free/open software, free-tier services, CC0 assets, subscription-funded AI via the
+cost model; selection and pull contract [ADR-0023](./adr/0023-visual-factory-oss-asset-sourcing.md)):
+free/open software, free-tier services, CC0 assets, subscription-funded AI via the
 agent-brief seam — no per-token API fees. Status legend: **in** (in use) · **adopt: <trigger>**
 (bring in when the named trigger fires) · **watch** (viable, no trigger yet) · **rejected** (with
 the reason — do not relitigate casually).
