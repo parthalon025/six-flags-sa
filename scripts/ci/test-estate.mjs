@@ -178,6 +178,7 @@ export const TEST_ESTATE = {
   'test/scripts/bake-drift-watch.test.mjs': ['ci-gate'],
   'test/scripts/billing-sync-check.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/lakebase-config.test.mjs': ['ci-gate', 'test:unit'],
+  'test/scripts/databricks-auth.test.mjs': ['ci-gate', 'test:unit'],
   'test/scripts/bump-version.test.mjs': ['ci-gate'],
   'test/scripts/ci-module.test.mjs': ['ci-gate'],
   'test/scripts/clerk-apple-prod.test.mjs': ['ci-gate'],

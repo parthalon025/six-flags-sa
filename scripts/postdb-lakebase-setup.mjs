@@ -14,6 +14,7 @@
 
 import { execSync, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { authStatus, databricksJson as jsonCmd, lakebaseOAuthToken } from './lib/databricks-auth.mjs';
 import {
   lakebaseFromEnv,
   loadRootEnv,
@@ -44,12 +45,12 @@ function tryRun(cmd, opts = {}) {
 }
 
 function databricksJson(cmd) {
-  const out = execSync(cmd, { encoding: 'utf8' });
-  return JSON.parse(out);
+  return jsonCmd(cmd);
 }
 
-function profileValid() {
-  return tryRun(`databricks current-user me --profile ${profile} -o json`, { stdio: 'pipe' });
+function workspaceCliAuth() {
+  const auth = authStatus();
+  return auth.ok && auth.method !== 'oauth-jwt-env';
 }
 
 function checkDataApi(dataApiUrl) {
@@ -147,7 +148,21 @@ function main() {
     return;
   }
 
-  if (!profileValid()) {
+  const oauthPassword = lakebaseOAuthToken();
+  if (oauthPassword && lakebase.host && lakebase.user) {
+    log('Using LAKEBASE OAuth token', ['Applying migrations via psql…']);
+    const url = buildConnectionUrl(lakebase, oauthPassword);
+    applyMigrationsViaPsql(url);
+    log('Done', [
+      'Migrations applied.',
+      lakebase.dataApiUrl
+        ? `Data API: ${lakebase.dataApiUrl}/public/<table>`
+        : 'Set LAKEBASE_DATA_API_URL for REST access.',
+    ]);
+    return;
+  }
+
+  if (!workspaceCliAuth()) {
     log('Databricks auth required', [
       'No valid CLI profile. Run `/databricks-setup` (OAuth) or add secrets:',
       '  DATABRICKS_HOST=https://dbc-e989baa1-6212.cloud.databricks.com',
