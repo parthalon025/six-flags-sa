@@ -10,6 +10,9 @@
  *   npm run resume:check    Drift warnings (NOW vs inventory)
  *   npm run resume:start    Session start brief (resume + Matt workflow + ritual)
  *   npm run resume:agent-patch -- --next "..." [--doing "..."]
+ *   npm run resume:end-turn -- --next "..." [--doing "..."]
+ *   npm run resume:timer-fired [--next "..." --doing "..."]
+ *   npm run resume:subscribe-timer
  *
  * See docs/agents/policies/executive-resume.md
  */
@@ -18,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import {
   agentPatch,
   checkDrift,
+  endTurn,
   initDashboardIssue,
   loadLocal,
   pullFromIssue,
@@ -26,6 +30,7 @@ import {
   renderMarkdown,
   saveLocal,
   sessionStartBrief,
+  subscribeTimerInstructions,
   timerPrompt,
   TIMER_HOURS,
 } from './lib/executive-resume.mjs';
@@ -42,7 +47,9 @@ const USAGE = `Usage:
   node scripts/executive-resume.mjs init
   node scripts/executive-resume.mjs pull | push | refresh | print | check | start
   node scripts/executive-resume.mjs agent-patch --next "<step>" [--doing "<text>"]
-  node scripts/executive-resume.mjs timer-prompt
+  node scripts/executive-resume.mjs end-turn --next "<step>" [--doing "<text>"]
+  node scripts/executive-resume.mjs timer-fired [--next "<step>" --doing "<text>"]
+  node scripts/executive-resume.mjs timer-prompt | subscribe-timer
 
 Timer: subscribe with cursor-subscriptions subscribe_timer — delaySeconds ${12 * 60 * 60}, name executive-resume-12h`;
 
@@ -99,8 +106,29 @@ try {
     }
     case 'timer-prompt':
       console.log(timerPrompt());
-      console.error(`\n(${TIMER_HOURS}h timer — use cursor-subscriptions subscribe_timer with delaySeconds ${12 * 60 * 60})`);
+      console.error(`\n(${TIMER_HOURS}h timer — use npm run resume:subscribe-timer for args)`);
       break;
+    case 'subscribe-timer':
+      console.log(JSON.stringify(subscribeTimerInstructions(), null, 2));
+      break;
+    case 'end-turn': {
+      const next = argValue('--next');
+      const doing = argValue('--doing');
+      if (!next && !doing) {
+        console.error('end-turn requires --next and/or --doing');
+        code = 1;
+        break;
+      }
+      console.log(renderMarkdown(endTurn({ nextStep: next, iWasDoing: doing, root })));
+      break;
+    }
+    case 'timer-fired': {
+      const next = argValue('--next');
+      const doing = argValue('--doing');
+      console.log(renderMarkdown(endTurn({ nextStep: next, iWasDoing: doing, markTimer: true, root })));
+      console.error('\nAsk the user: "Still on NOW or switch?"');
+      break;
+    }
     default:
       console.error(USAGE);
       code = 1;

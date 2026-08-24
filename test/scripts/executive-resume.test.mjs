@@ -8,14 +8,20 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   agentPatch,
+  applySessionPlatform,
   checkDrift,
+  createGoalObjective,
   emptyResume,
+  endTurn,
+  gatherDraftPrs,
   loadLocal,
   mergeFromRemote,
   parseJsonComment,
+  platformChange,
   refreshInventory,
   renderMarkdown,
   saveLocal,
+  subscribeTimerInstructions,
   wrapJsonComment,
 } from '../../scripts/lib/executive-resume.mjs';
 
@@ -66,6 +72,48 @@ saveLocal(patched, root);
 const onDisk = readFileSync(join(root, '.scratch/resume.json'), 'utf8');
 assert.match(onDisk, /Run test/);
 assert.equal(loadLocal(root).now.nextStep, 'Run test');
+
+// Platform change detection
+const beforeSwitch = emptyResume({ platform: 'cursor-local' });
+beforeSwitch.platform = 'cursor-local';
+const { changed, previous, current } = platformChange(beforeSwitch, 'cursor-cloud');
+assert.equal(changed, true);
+assert.equal(previous, 'cursor-local');
+assert.equal(current, 'cursor-cloud');
+const afterSwitch = applySessionPlatform(beforeSwitch, 'cursor-cloud');
+assert.equal(afterSwitch.platform, 'cursor-cloud');
+assert.equal(afterSwitch.previousPlatform, 'cursor-local');
+
+// CreateGoal objective
+assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: 'Run tests' } }), /Ship resume — next: Run tests/);
+assert.match(createGoalObjective({ now: { task: 'Ship resume', nextStep: '' } }), /Ship resume/);
+
+// Draft PRs — all open drafts, not @me only
+const drafts = gatherDraftPrs({
+  cwd: root,
+  runner: (cmd, args) => {
+    if (cmd === 'gh' && args[0] === 'pr' && args[1] === 'list') {
+      return JSON.stringify([
+        { number: 1, title: 'Mine', url: 'https://x/1', headRefName: 'cursor/a', isDraft: true },
+        { number: 2, title: 'Other', url: 'https://x/2', headRefName: 'cursor/b', isDraft: true },
+        { number: 3, title: 'Ready', url: 'https://x/3', headRefName: 'main', isDraft: false },
+      ]);
+    }
+    throw new Error('unexpected');
+  },
+});
+assert.equal(drafts.length, 2);
+assert.equal(drafts[0].number, 1);
+
+// endTurn + timer subscription shape
+const turned = endTurn({ resume: patched, nextStep: 'Commit', iWasDoing: 'Tests pass', root, runner });
+assert.equal(turned.now.nextStep, 'Commit');
+assert.equal(turned.lastStop.iWasDoing, 'Tests pass');
+const timerFired = endTurn({ resume: turned, markTimer: true, root, runner });
+assert.ok(timerFired.timer.lastFiredAt);
+const sub = subscribeTimerInstructions();
+assert.equal(sub.name, 'executive-resume-12h');
+assert.equal(sub.delaySeconds, 43200);
 
 rmSync(scratch, { recursive: true, force: true });
 console.log('executive-resume tests ok');

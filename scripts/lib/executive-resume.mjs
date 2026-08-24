@@ -9,6 +9,7 @@
  * Interface:
  *   emptyResume, loadLocal, saveLocal, renderMarkdown, refreshInventory, checkDrift
  *   agentPatch, mergeFromRemote, pullFromIssue, pushToIssue, sessionStartBrief
+ *   endTurn, subscribeTimerInstructions, platformChange, createGoalObjective
  *   timerPrompt, TIMER_HOURS
  */
 import { execFileSync } from 'node:child_process';
@@ -29,6 +30,9 @@ export const JSON_MARKER_END = '<!-- /executive-resume-json -->';
 export const SCHEMA = 1;
 export const TIMER_HOURS = 12;
 export const TIMER_SECONDS = TIMER_HOURS * 60 * 60;
+/** Wired into SessionStart and Cloud environment start. */
+export const RESUME_START_COMMAND = 'node scripts/executive-resume.mjs start';
+export const RESUME_END_TURN_COMMAND = 'node scripts/executive-resume.mjs end-turn';
 
 export function detectPlatform() {
   if (process.env.CURSOR_CLOUD === '1' || process.env.CURSOR_CLOUD === 'true') return 'cursor-cloud';
@@ -37,12 +41,13 @@ export function detectPlatform() {
   return 'cursor-local';
 }
 
-/** @returns {import('./executive-resume.types').ExecutiveResume} */
+/** @returns {import('./executive-resume.mjs').ExecutiveResume} */
 export function emptyResume({ platform = detectPlatform() } = {}) {
   return {
     schema: SCHEMA,
     updatedAt: new Date().toISOString(),
     platform,
+    previousPlatform: null,
     now: {
       task: '',
       ticket: null,
@@ -188,7 +193,7 @@ function runGit(args, { cwd = REPO, runner = execFileSync } = {}) {
 export function gatherDraftPrs({ cwd = REPO, runner = execFileSync } = {}) {
   try {
     const out = runGh(
-      ['pr', 'list', '--author', '@me', '--state', 'open', '--json', 'number,title,url,headRefName,isDraft'],
+      ['pr', 'list', '--state', 'open', '--limit', '50', '--json', 'number,title,url,headRefName,isDraft'],
       { cwd, runner },
     );
     const rows = JSON.parse(out || '[]');
@@ -313,10 +318,43 @@ export function checkDrift(resume) {
     if (!match && inventory.worktrees.length) warnings.push(`NOW worktree "${now.worktree}" not in inventory`);
   }
   if (now.draftPr) {
-    const match = inventory.draftPrs.some((p) => p.url === now.draftPr || String(p.number) === String(now.draftPr));
+    const prNum = String(now.draftPr).match(/\/pull\/(\d+)/)?.[1];
+    const match = inventory.draftPrs.some(
+      (p) => p.url === now.draftPr || String(p.number) === String(now.draftPr) || (prNum && String(p.number) === prNum),
+    );
     if (!match && inventory.draftPrs.length) warnings.push(`NOW draft PR not in open draft list`);
   }
   return { ok: warnings.length === 0, warnings };
+}
+
+/** Detect platform switch since last session (grilled: refresh inventory on platform change). */
+export function platformChange(resume, platform = detectPlatform()) {
+  const previous = resume.platform && resume.platform !== 'unknown' ? resume.platform : resume.previousPlatform;
+  const changed = Boolean(previous && platform && previous !== platform);
+  return { changed, previous, current: platform };
+}
+
+export function applySessionPlatform(resume, platform = detectPlatform()) {
+  const { changed, previous, current } = platformChange(resume, platform);
+  return {
+    ...resume,
+    previousPlatform: changed ? previous : resume.previousPlatform,
+    platform: current,
+  };
+}
+
+/** CreateGoal objective string from NOW (grilled session ritual step 3). */
+export function createGoalObjective(resume) {
+  const { task, nextStep } = resume.now || {};
+  if (!task?.trim()) return 'Set executive resume NOW task before coding.';
+  return nextStep?.trim() ? `${task} — next: ${nextStep}` : task;
+}
+
+export function markTimerFired(resume) {
+  return {
+    ...resume,
+    timer: { ...resume.timer, everyHours: TIMER_HOURS, lastFiredAt: new Date().toISOString() },
+  };
 }
 
 export function renderMarkdown(resume) {
@@ -417,18 +455,41 @@ export function pullFromIssue({ root = REPO, runner = execFileSync, pointer: ptr
     }
   }
   if (!remote) {
-    const comments = runGh(
-      ['issue', 'view', String(pointer.issueNumber), '--comments', '--json', 'comments'],
-      { cwd: root, runner },
-    );
-    const { comments: list } = JSON.parse(comments);
-    for (let i = list.length - 1; i >= 0; i--) {
-      remote = parseJsonComment(list[i].body);
-      if (remote) {
-        pointer.jsonCommentId = list[i].id;
-        savePointer(pointer, root);
-        break;
+    try {
+      const issue = runGh(['issue', 'view', String(pointer.issueNumber), '--json', 'body,comments'], { cwd: root, runner });
+      const parsed = JSON.parse(issue);
+      remote = parseJsonComment(parsed.body);
+      if (!remote && parsed.comments) {
+        for (let i = parsed.comments.length - 1; i >= 0; i--) {
+          remote = parseJsonComment(parsed.comments[i].body);
+          if (remote) {
+            pointer.jsonCommentId = parsed.comments[i].id;
+            savePointer(pointer, root);
+            break;
+          }
+        }
       }
+    } catch {
+      /* fall through */
+    }
+  }
+  if (!remote) {
+    try {
+      const comments = runGh(
+        ['issue', 'view', String(pointer.issueNumber), '--comments', '--json', 'comments'],
+        { cwd: root, runner },
+      );
+      const { comments: list } = JSON.parse(comments);
+      for (let i = list.length - 1; i >= 0; i--) {
+        remote = parseJsonComment(list[i].body);
+        if (remote) {
+          pointer.jsonCommentId = list[i].id;
+          savePointer(pointer, root);
+          break;
+        }
+      }
+    } catch {
+      /* no remote */
     }
   }
   const local = loadLocal(root);
@@ -502,12 +563,17 @@ export function initDashboardIssue({ root = REPO, runner = execFileSync } = {}) 
 
 export function sessionStartBrief({ root = REPO, runner = execFileSync, situation } = {}) {
   let resume = loadLocal(root);
+  const platform = detectPlatform();
   try {
     resume = pullFromIssue({ root, runner });
   } catch {
-    resume = saveLocal(refreshInventory(resume, { cwd: root, runner }), root);
+    /* local-only until issue pinned */
   }
+  const { changed, previous, current } = platformChange(resume, platform);
+  resume = applySessionPlatform(resume, current);
+  resume = saveLocal(refreshInventory(resume, { cwd: root, runner }), root);
   const drift = checkDrift(resume);
+  const goal = createGoalObjective(resume);
   const lines = [
     renderMarkdown(resume),
     '',
@@ -516,11 +582,22 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
     mattWorkflowBrief({ cwd: root, situation }),
     '',
     '## Session start ritual',
-    '1. Confirm NOW or say **switch**.',
-    '2. Run `npm run workflow:check -- --intent implement` before coding.',
-    '3. CreateGoal from NOW task + next step only.',
-    '4. Do not edit human.parkingLot or human.blockedOnMe.',
+    '1. **Platform** — inventory above was regenerated (worktrees + draft PRs + handoffs + train + workflow).',
   ];
+  if (changed) {
+    lines.push(`2. ⚠️ **Platform changed:** \`${previous}\` → \`${current}\` — confirm NOW or say **switch**.`);
+  } else {
+    lines.push('2. Confirm NOW or say **switch**.');
+  }
+  lines.push(
+    '3. Run `npm run workflow:check -- --intent implement` before coding.',
+    '4. **CreateGoal** (required):',
+    '```',
+    goal,
+    '```',
+    '5. Do not edit human.parkingLot or human.blockedOnMe.',
+    '6. **End of every turn** with code changes: `npm run resume:end-turn -- --next "..." --doing "..."`',
+  );
   if (drift.warnings.length) {
     lines.push('', '⚠️ **Drift warnings:**', ...drift.warnings.map((w) => `- ${w}`), '', 'Still on NOW? Say yes or switch.');
   }
@@ -530,9 +607,34 @@ export function sessionStartBrief({ root = REPO, runner = execFileSync, situatio
 export function timerPrompt() {
   return [
     'Executive resume 12h timer fired.',
-    'Run: npm run resume:start',
-    'Then: refresh inventory, check drift vs NOW, ask the user "Still on NOW or switch?"',
+    'Run: npm run resume:timer-fired',
+    'Then ask the user: "Still on NOW or switch?"',
     'Update lastStop + nextStep only; never edit human.parkingLot or human.blockedOnMe without user approval.',
     'Run npm run workflow:next and surface the Matt workflow gate if phase forbids implement.',
   ].join(' ');
+}
+
+/** Instructions printed by resume:subscribe-timer (grilled: Cursor timer, 12h). */
+export function subscribeTimerInstructions() {
+  return {
+    name: 'executive-resume-12h',
+    delaySeconds: TIMER_SECONDS,
+    prompt: timerPrompt(),
+    note: 'Subscribe via cursor-subscriptions subscribe_timer at session open; re-subscribe each new cloud session.',
+  };
+}
+
+/** End-of-turn + timer-fired: refresh inventory, optional agent patch, mark timer. */
+export function endTurn({ resume, nextStep, iWasDoing, markTimer = false, root = REPO, runner = execFileSync } = {}) {
+  let next = resume || loadLocal(root);
+  if (nextStep !== undefined || iWasDoing !== undefined) {
+    next = agentPatch(next, { nextStep, iWasDoing });
+  }
+  if (markTimer) next = markTimerFired(next);
+  next = saveLocal(refreshInventory(next, { cwd: root, runner }), root);
+  try {
+    return pushToIssue({ resume: next, root, runner });
+  } catch {
+    return next;
+  }
 }
