@@ -562,8 +562,8 @@ export function readVocabulary() {
  *
  * The screen names are the twin's own, so the two tables can be read side by
  * side. `mount` records where a component is actually rendered, because a file
- * existing is weaker than a file being used — `GlanceRail.jsx` is on disk and
- * mounted nowhere.
+ * existing is weaker than a file being used — an unmounted component is listed
+ * in UNMOUNTED until it is deleted or wired back in.
  */
 export const SCREEN_MAP = [
   ['Sign in (Profile gate)', ['components/AuthGate.jsx', 'components/AuthGateActions.jsx', 'components/OAuthButtons.jsx', 'components/SignInCard.jsx', 'lib/auth/authCopy.js']],
@@ -595,12 +595,7 @@ export const SCREEN_MAP = [
 ];
 
 /** Files that exist but are mounted nowhere — recorded, not silently dropped. */
-export const UNMOUNTED = [
-  [
-    'components/GlanceRail.jsx',
-    'Explore is search → context → list now; the rail is not mounted. Kept on disk so the removal stays revertible.',
-  ],
-];
+export const UNMOUNTED = [];
 
 export function readScreenMap() {
   const page = must(SOURCES.page);
