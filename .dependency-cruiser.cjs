@@ -137,6 +137,25 @@ module.exports = {
       to: { path: "^packages/venue-builder/lib/(agents|operators|evidence|evidence-graph)" },
     },
     {
+      name: "venue-builder-visual-factory-truth-read-seam",
+      comment:
+        "lib/visual-factory/ reads map truth only through map-factory/map-io.mjs — the artifact read interface — never other map-factory internals.",
+      severity: "error",
+      from: { path: "^packages/venue-builder/lib/visual-factory/" },
+      to: {
+        path: "^packages/venue-builder/lib/map-factory/",
+        pathNot: "^packages/venue-builder/lib/map-factory/map-io\\.mjs$",
+      },
+    },
+    {
+      name: "venue-builder-delivery-no-map-internals",
+      comment:
+        "lib/delivery/ publishes bundles and runs freshness gates — it must not reach map-factory or visual-factory orchestration, only shared I/O kernels.",
+      severity: "error",
+      from: { path: "^packages/venue-builder/lib/delivery/" },
+      to: { path: "^packages/venue-builder/lib/(map-factory|visual-factory)/" },
+    },
+    {
       name: "venue-builder-core-orchestration-is-sanctioned",
       comment:
         "Core lib/*.mjs reaching into agents/, operators/, or adapters/ is an orchestration seam, not the default. Only the files listed here do it today (build-pipeline, venue-official-site, the external-*/venue-certify/venue-packet adapter consumers) — a new core file that needs the same reach adds itself here deliberately rather than importing silently.",

@@ -23,6 +23,32 @@ const BUILDER_BIN = path.join(BUILDER_ROOT, '..', 'bin');
 /** @typedef {'bin' | 'lib' | 'cli'} EntryKind */
 
 /**
+ * A certifiable factory output — birth certificate or published artifact.
+ * @typedef {object} CertifiableArtifact
+ * @property {string} id route output id or artifact name
+ * @property {'artifact' | 'certification' | 'stamp'} kind
+ * @property {boolean} [certified] when kind is certification
+ * @property {string} [path] absolute or repo-relative path on disk
+ */
+
+/**
+ * Truth stamp a downstream pack pins — `basedOn` in visual specs and bundles.
+ * @typedef {object} FreshnessPin
+ * @property {string|null} map truth stamp (`map.meta.generated`) the pack was built on
+ * @property {string|null} [revisionId] postdb truth revision (Slice 1+)
+ */
+
+/**
+ * Map factory published truth — the trio the Visual factory reads.
+ * @typedef {object} VenueTruthBundle
+ * @property {string} venueId
+ * @property {string|null} generated truth stamp
+ * @property {object} map published geometry
+ * @property {object[]} pois published places
+ * @property {object} [gaps] published Gaps document
+ */
+
+/**
  * @typedef {object} RouteInput
  * @property {string} name
  * @property {'string' | 'boolean' | 'string[]'} type
@@ -106,7 +132,7 @@ export const ROUTES = Object.freeze([
   {
     id: 'map.certify',
     factory: 'map',
-    entry: { kind: 'bin', module: 'venue-certify.mjs', export: 'certifyVenue' },
+    entry: { kind: 'lib', module: 'map-factory/build-truth.mjs', export: 'buildTruth' },
     inputs: [{ name: 'venueId', type: 'string', required: true }],
     outputs: [
       {
@@ -148,7 +174,7 @@ export const ROUTES = Object.freeze([
   {
     id: 'visual.display-pack',
     factory: 'visual',
-    entry: { kind: 'bin', module: 'display-pack.mjs', export: 'runDisplayStage' },
+    entry: { kind: 'lib', module: 'visual-factory/compile-display.mjs', export: 'compileDisplay' },
     inputs: [
       { name: 'venueId', type: 'string', required: true },
       { name: 'skinIds', type: 'string[]', required: false },
@@ -214,7 +240,7 @@ export const ROUTES = Object.freeze([
   {
     id: 'visual.display-certify',
     factory: 'visual',
-    entry: { kind: 'lib', module: 'display-pack.mjs', export: 'runDisplayStage' },
+    entry: { kind: 'lib', module: 'visual-factory/compile-display.mjs', export: 'compileDisplay' },
     inputs: [{ name: 'venueId', type: 'string', required: true }],
     outputs: [
       {
@@ -255,7 +281,7 @@ export const ROUTES = Object.freeze([
   {
     id: 'delivery.bundle',
     factory: 'delivery',
-    entry: { kind: 'lib', module: 'venue-bundle.mjs', export: 'writeBundleManifest' },
+    entry: { kind: 'lib', module: 'delivery/publish-bundle.mjs', export: 'publishBundle' },
     inputs: [{ name: 'venueId', type: 'string', required: true }],
     outputs: [
       {
@@ -306,8 +332,9 @@ export function resolveOutputPath(output, ctx) {
  */
 export const knownFactoryScripts = () => [
   'build-venue.mjs',
-  'venue-certify.mjs',
-  'display-pack.mjs',
+  'build-truth.mjs',
+  'compile-display.mjs',
+  'publish-bundle.mjs',
   'display-bake.mjs',
   'display-publish.mjs',
   'display-tiles.mjs', // lib module; bin is display-pack orchestration
