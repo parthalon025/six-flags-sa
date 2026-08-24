@@ -101,8 +101,8 @@ An on-the-ground mission. Gap quests require being at the **Place** and produce 
 _Avoid_: Adventure; generic quest; Contribution (the payload, not the mission)
 
 **Gap**:
-A missing fact the builder ships with a **World** that open sources cannot settle (height, queue, path, restroom, food, gate, camping). The builder invents Gaps once; the phone ranks them by **Location** and does not invent them. Missing gap data is an empty list, not a failed World. Gaps seed **Side Quests**.
-_Avoid_: Bug; missing POI; Contribution (the answer, not the hole)
+A missing fact the Map factory ships honestly with a **World** — height, queue, path, restroom, food, gate, camping — that open sources cannot settle. The builder invents each **Gap** once; the phone ranks them by **Location** and does not invent them. The **Visual factory** reads the same **Gaps** to paint incompleteness beautifully: legible, artistic treatment where truth is thin, never fabricating coordinates or facts underneath. Missing gap data is an empty list, not a failed World. **Gaps** seed **Side Quests**.
+_Avoid_: Bug; missing POI; Contribution (the answer, not the hole); fake-it fill (beauty without truth); toolchain gap (factory log label, not this term)
 
 **Contribution**:
 The durable, Profile-attributed result of a gap **Side Quest**. Feeds **Overlay** and can graduate into the persistent **World** map. Enjoyment and map improvement are one loop.
@@ -151,8 +151,8 @@ The engine that derives a **World**'s truth from real-world data — geometry, *
 _Avoid_: builder (ambiguous in product talk); map generator
 
 **Visual factory**:
-The engine that produces everything a guest sees and earns on the map — **Display packs**, baked **Skin** worlds, materials, prize art — conditioned on the **Map factory**'s truth. Request-driven and output-agnostic: any venue × any design visual can be requested; a design prompt becomes a **Skin template** or kit, compiled and certified. Restyles, never repositions; never writes truth.
-_Avoid_: display factory (legacy header name); art pipeline
+The engine that produces everything a guest sees and earns on the map — **Display packs**, baked **Skin** worlds, materials, prize art — conditioned on the **Map factory**'s truth and its **Gaps**. Request-driven and output-agnostic: any venue × any design visual can be requested; a design prompt becomes a **Skin template** or kit, compiled and certified. Restyles honest unknowns as art; never repositions and never writes truth.
+_Avoid_: display factory (legacy header name); art pipeline; inventing geometry to hide a **Gap**
 
 **Grounding harvest**:
 A **World**'s real material and color relationships — which roofs are the blue ones, asphalt vs gravel, lawn vs plaza — read from openly licensed imagery into that World's reference profile. Every **Skin** re-expresses those relationships inside its own declared palette: design owns treatment, the venue owns relationships. Not truth (see **Map factory** — imagery evidence is a separate lane) and never a color override. Detail: ADR-0020.
