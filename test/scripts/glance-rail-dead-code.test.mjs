@@ -35,7 +35,10 @@ assert.equal(
   'GlanceRail.jsx must be deleted — Explore is search → context → list',
 );
 
-for (const path of partyTrackerSources()) {
+const sources = partyTrackerSources();
+assert.ok(sources.length > 50, 'party-tracker source walk must cover the app tree');
+
+for (const path of sources) {
   const text = readFileSync(path, 'utf8');
   assert.doesNotMatch(
     text,
