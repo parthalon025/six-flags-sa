@@ -673,7 +673,7 @@ export async function tapBareGround(page, { timeout = 15000, clear = 60 } = {}) 
           const el = document.elementFromPoint(x, y);
           if (!el || !wrap.contains(el)) return false;
           return !el.closest(
-            'button, a, g.poiMarker, .mePulse, .fabs, .mapAttribution, .scaleBar, .selCapsule, .spotCapsule, .navBanner, .glanceRail',
+            'button, a, g.poiMarker, .mePulse, .fabs, .mapAttribution, .scaleBar, .selCapsule, .spotCapsule, .navBanner',
           );
         };
         let best = null;
