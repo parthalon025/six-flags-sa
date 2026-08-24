@@ -37,6 +37,7 @@ import {
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
+  noCodeWorkRequired,
   requiredVerticals,
   verticalById,
   verticalE2eBlockReason,
@@ -137,6 +138,16 @@ export async function runPreMergeVertical({
   if (refusal) {
     console.error(`pre-merge-vertical: ${refusal}`);
     return 1;
+  }
+
+  if (noCodeWorkRequired(files)) {
+    console.log(
+      'pre-merge-vertical: no code work in this diff — skipping static floor and verticals',
+    );
+    if (!noStamp) {
+      writeLocalCiPass({ context, browserVertical: false, verticals: [] }, cwd);
+    }
+    return 0;
   }
 
   for (const args of STATIC_NPM_STEPS) {

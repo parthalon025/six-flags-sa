@@ -201,6 +201,7 @@ export const TEST_ESTATE = {
   'test/scripts/vercel-ignore.test.mjs': ['ci-gate'],
   'test/scripts/version-stamp.test.mjs': ['ci-gate'],
   'test/scripts/vertical-e2e.test.mjs': ['ci-gate'],
+  'test/scripts/pre-merge-vertical.test.mjs': ['ci-gate'],
   'test/scripts/wire-watch-target.test.mjs': ['ci-gate'],
   'test/scripts/worktree.test.mjs': ['ci-gate', 'test:unit'],
 };
