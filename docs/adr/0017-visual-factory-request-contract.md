@@ -77,3 +77,4 @@ license check before ledger entry). Quotas, terms, and the per-stage source shor
   invocation).
 - The request doc becomes the provenance record the eye pass and future refreshes read.
 - ADR-0018 records how the factories couple and how certified packs reach phones.
+- [ADR-0023](./0023-visual-factory-oss-asset-sourcing.md) records how design requests select and pull open-source assets into ledgers before bake.
