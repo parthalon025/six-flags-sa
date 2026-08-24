@@ -394,12 +394,8 @@ export default function ParkMapGl({
             const nameInk = mark.kind === 'place' && state !== 'not'
               ? labelInk(pinPalette?.categories?.[mark.category])
               : null;
-            return (
-            <g
-              key={`${mark.kind}:${mark.id}`}
-              className={mark.className}
-              transform={`translate(${mark.x},${mark.y})`}
-            >
+            const markContent = (
+              <>
               <title>{mark.name}</title>
               {mark.kind === 'place' && mark.pin !== false ? (
                 <PoiMarker
@@ -434,6 +430,22 @@ export default function ParkMapGl({
                   {mark.name}
                 </text>
               ) : null}
+              </>
+            );
+            return mark.className === 'meetPin' ? (
+            <g
+              key={`${mark.kind}:${mark.id}`}
+              transform={`translate(${mark.x},${mark.y})`}
+            >
+              <g className="meetPin">{markContent}</g>
+            </g>
+            ) : (
+            <g
+              key={`${mark.kind}:${mark.id}`}
+              className={mark.className}
+              transform={`translate(${mark.x},${mark.y})`}
+            >
+              {markContent}
             </g>
             );
           })}

@@ -256,6 +256,18 @@ assert.deepEqual(
 }
 
 {
+  const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
+  assert.match(
+    painted,
+    /className === 'meetPin'\s*\?\s*\([\s\S]*?transform=\{`translate\(\$\{mark\.x\},\$\{mark\.y\}\)`\}[\s\S]*?className="meetPin"/,
+    'meet pin keeps map position on the parent so pinDrop cannot reset it',
+  );
+  const meetPinRule = css.match(/\.meetPin\s*\{[^}]+\}/)?.[0] || '';
+  assert.doesNotMatch(meetPinRule, /transform-box/, 'inner meet pin group needs no fill-box reference');
+}
+
+{
   const overlay = {
     places: {
       features: [{
