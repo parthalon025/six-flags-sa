@@ -516,5 +516,11 @@
     "items": [
       "One door to a World's Places: fold the Overlay in at the store"
     ]
+  },
+  "1.28.4": {
+    "title": "What's new",
+    "items": [
+      "Restore tile-map icons, zoom size, and world LOD"
+    ]
   }
 }
