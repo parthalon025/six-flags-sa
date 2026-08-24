@@ -522,5 +522,11 @@
     "items": [
       "Restore tile-map icons, zoom size, and world LOD"
     ]
+  },
+  "1.29.0": {
+    "title": "What's new",
+    "items": [
+      "feat(auth): mandatory Clerk, Profile billing entitlements, cloud-agent env (#195)"
+    ]
   }
 }
