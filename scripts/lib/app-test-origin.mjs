@@ -31,7 +31,13 @@ export function reserveAppPort({ host = '127.0.0.1' } = {}) {
     server.listen(0, host, () => {
       const addr = server.address();
       const port = typeof addr === 'object' && addr ? addr.port : null;
-      server.close((err) => (err ? reject(err) : resolve(port)));
+      resolve({
+        port,
+        release: () =>
+          new Promise((done, fail) => {
+            server.close((err) => (err ? fail(err) : done()));
+          }),
+      });
     });
   });
 }

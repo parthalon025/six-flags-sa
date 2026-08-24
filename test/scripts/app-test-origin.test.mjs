@@ -30,12 +30,18 @@ await assert.rejects(
 );
 
 const port = await reserveAppPort();
-assert.ok(Number.isInteger(port) && port > 0, 'reserveAppPort yields a positive integer');
-await new Promise((resolve, reject) => {
+assert.ok(Number.isInteger(port.port) && port.port > 0, 'reserveAppPort yields a positive integer');
+let blocked = false;
+await new Promise((resolve) => {
   const s = createServer();
-  s.once('error', reject);
-  s.listen(port, '127.0.0.1', () => s.close(resolve));
+  s.once('error', (err) => {
+    if (err.code === 'EADDRINUSE') blocked = true;
+    resolve();
+  });
+  s.listen(port.port, '127.0.0.1', () => s.close(resolve));
 });
+assert.equal(blocked, true, 'held port blocks concurrent bind');
+await port.release();
 
 let downReason = '';
 const stop = watchOriginHealth('http://127.0.0.1:9/api/health', {
