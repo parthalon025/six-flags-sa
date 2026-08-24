@@ -253,6 +253,19 @@ assert.deepEqual(
   assert.equal(fallbackPx(mem?.[0] || ''), PIN_LABEL_SIZE);
   assert.equal(fallbackPx(land?.[0] || ''), ZONE_LABEL_SIZE);
   assert.match(land?.[0] || '', /fill:\s*var\(--labelFill\)/, 'Zone names stay inked, not transparent');
+  // pinDrop ends on `transform: none` with fill-mode both — that CSS transform
+  // outranks an SVG position attribute on the same element, so meet pins must
+  // keep translate(mark) on a parent and pinDrop on a child (spotPin pattern).
+  assert.match(
+    painted,
+    /pinDrop[\s\S]{0,400}<g key=\{`\$\{mark\.kind\}:\$\{mark\.id\}`\} transform=\{`translate\(\$\{mark\.x\},\$\{mark\.y\}\)`\}>\s*<g className=\{mark\.className\}>/,
+    'pinDrop marks keep map position on a parent group',
+  );
+  assert.doesNotMatch(
+    css.match(/\.meetPin\s*\{[^}]+\}/)?.[0] || '',
+    /transform-box/,
+    'meetPin animation group carries no transform of its own',
+  );
 }
 
 {
