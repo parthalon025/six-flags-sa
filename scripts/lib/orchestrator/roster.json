@@ -152,8 +152,8 @@
       "reads": [
         "docs/agents/matt-standards.md"
       ],
-      "command": "node scripts/ci/matt-review.mjs prompt",
-      "returns": "Advisory findings by severity; stamp with `node scripts/ci/matt-review.mjs write` once addressed.",
+      "command": "node scripts/ci/matt-review.mjs two-axis",
+      "returns": "Parallel Standards + Spec axis prompts; stamp with `node scripts/ci/matt-review.mjs write` once addressed.",
       "triggers": [
         "review",
         "pr",
