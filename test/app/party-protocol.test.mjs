@@ -537,8 +537,6 @@ await check('host reconciliation yields on outranks, not the steal margin', asyn
 
   assert.equal(outranks(first, second), true);
   assert.equal(outranks(second, first), false);
-  assert.equal(outranks(second, first), false);
-  assert.equal(outranks(first, second), true);
   assert.equal(shouldYield(second, first), false, 'steal margin does not apply to tiebreaks');
   assert.equal(shouldYield(first, second), false);
 });

@@ -402,12 +402,11 @@ export function createElection({
     const mine = myClaim || selfClaim();
 
     if (promoted) {
-      if (outranks(theirs, mine)) {
-        // Two live hosts: the total order picks exactly one winner.
-      } else {
-        if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
+      if (outranks(mine, theirs)) {
+        if (now() - lastVictorySentAt >= reassertGapMs) sendVictory();
         return;
       }
+      if (!outranks(theirs, mine)) return;
     }
 
     cancelElection();
