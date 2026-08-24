@@ -174,6 +174,7 @@ export const TEST_ESTATE = {
   'test/scripts/design-bundle.test.mjs': ['test:unit'],
   'test/scripts/drift-watch.test.mjs': ['ci-gate'],
   'test/scripts/git-env.test.mjs': ['ci-gate'],
+  'test/scripts/glance-rail-removal.test.mjs': ['ci-gate'],
   'test/scripts/gitnexus-detect-changes.test.mjs': ['ci-gate'],
   'test/scripts/gitnexus-docs.test.mjs': ['ci-gate'],
   'test/scripts/gitnexus-only.test.mjs': ['ci-gate'],
