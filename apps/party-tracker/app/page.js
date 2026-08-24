@@ -1102,7 +1102,15 @@ function ParkApp({ isSignedIn }) {
       // keyboard coming up is a resize too, and a sheet left at 88% of a tall
       // phone would otherwise be pinned off the top of the short one.
       const ceiling = sheetStops(h).full;
-      setSheetPx((px) => Math.min(px, ceiling));
+      const { tab: at, stacks: cur } = navRef.current;
+      const navStack = cur?.[at] ?? [];
+      if (navStack[navStack.length - 1] === 'place') {
+        // Place-detail height depends on viewport width — refit on resize so a
+        // narrowed phone does not keep a one-row action budget (#574).
+        setSheetPx(Math.min(ceiling, sheetPlacePx(w)));
+      } else {
+        setSheetPx((px) => Math.min(px, ceiling));
+      }
     };
     measure();
     window.addEventListener('resize', measure);
