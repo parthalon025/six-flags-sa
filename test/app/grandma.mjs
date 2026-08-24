@@ -317,9 +317,9 @@ await score('B', 'B8', 'the things she must tap are big enough to tap (44px targ
       if (r.height + grow < 44) out.push(`${el.className.split(' ')[0]} ${Math.round(r.height + grow)}px`);
     }
     /* Tab items and the map capsule's controls use centered ::after
-       pseudo-elements with max(100%, 44px) — the rail's .glanceGo/.glanceShed
-       took the same treatment and were replaced by the selection capsule's
-       Walk and Close, plus the hint line that is now the sheet's own handle. */
+       pseudo-elements with max(100%, 44px) — the selection capsule's
+       Walk and Close, plus the hint line that is now the sheet's own handle,
+       took the same treatment. */
     for (const el of document.querySelectorAll('.tabItem, .selWalk, .selClose, .moreHint, .fab')) {
       const r = el.getBoundingClientRect();
       if (!r.height) continue;
@@ -357,9 +357,8 @@ await score('B', 'B9', 'reading text and icon sizes are large enough for arm’s
       const size = parseFloat(getComputedStyle(poiName).fontSize || '0');
       if (size < 13.5) issues.push(`poiName ${size}px (<13.5px)`);
     }
-    /* .glanceTitle named the place on a rail card. The selection capsule's
-       .selName is the same job on the same screen — the name of the place she
-       just tapped, read over the map. */
+    /* The selection capsule's .selName is the place name read over the map
+       after a tap — the same job the glance rail cards used to carry. */
     const selName = document.querySelector('.selName');
     if (selName) {
       const size = parseFloat(getComputedStyle(selName).fontSize || '0');
@@ -401,9 +400,8 @@ await score('B', 'B10', 'can get the panel out of the way to see the map, and ge
 });
 
 await score('B', 'B11', 'a place she taps can be un-tapped', async () => {
-  // The rail answered a tap with a `.glanceCard.selected` carrying a ✕. The
-  // selection capsule is that answer now — same job, said over the map where
-  // the pin is, and it carries its own Close.
+  // The selection capsule is the answer to a place tap now — said over the map
+  // where the pin is, and it carries its own Close.
   await typeSearch(b, 'rattler');
   await b.locator('.poiRow .poiMain').first().click();
   await b.waitForTimeout(1000);
