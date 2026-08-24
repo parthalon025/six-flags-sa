@@ -588,8 +588,10 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .worldMark { cursor: pointer; }
 .worldSkinActions { display: flex; gap: 8px; padding: 0 16px 8px; }
 .worldSkinRow .row { border-bottom: none; }
+/* The meet-up pin, dropped the same way a tapped spot is. Position on the parent
+   group, animation on the child — pinDrop's closing `transform: none` cannot
+   reset a translate() that lives on the same element. */
 .meetPin {
-  transform-box: fill-box; transform-origin: 50% 100%;
   animation: pinDrop var(--t3) var(--ease) both;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .35));
 }

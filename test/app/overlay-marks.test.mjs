@@ -253,6 +253,20 @@ assert.deepEqual(
   assert.equal(fallbackPx(mem?.[0] || ''), PIN_LABEL_SIZE);
   assert.equal(fallbackPx(land?.[0] || ''), ZONE_LABEL_SIZE);
   assert.match(land?.[0] || '', /fill:\s*var\(--labelFill\)/, 'Zone names stay inked, not transparent');
+  // pinDrop ends on `transform: none` with fill-mode both — if the same element
+  // also carries the map position as an SVG transform attribute, the filled
+  // frame can reset the pin to the origin. Position on the parent, animation
+  // on the child, same split spotPin already uses.
+  assert.match(
+    painted,
+    /translate\(\$\{mark\.x\},\$\{mark\.y\}\)[\s\S]*className=\{mark\.className\}/,
+    'meetPin position and pinDrop animation must not share one <g>',
+  );
+  assert.doesNotMatch(
+    css.match(/\.meetPin\s*\{[^}]+\}/)?.[0] || '',
+    /transform-box/,
+    'meetPin inner group carries no transform — no fill-box reference box needed',
+  );
 }
 
 {
