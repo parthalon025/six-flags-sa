@@ -150,6 +150,11 @@ export function requiredVerticals(files) {
   return verticalsForFiles(files);
 }
 
+/** Known diff with no code work — docs, ADRs, agent prose; owes no vertical or static floor. */
+export function noCodeWorkRequired(files) {
+  return files !== null && requiredVerticals(files).length === 0;
+}
+
 /** Required verticals with the command and the output each one proves. */
 export function verticalPlan(files) {
   const required = requiredVerticals(files);

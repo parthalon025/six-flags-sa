@@ -97,6 +97,10 @@ Put policy in **scripts**, not agent prose — one pointer beats a duplicated pa
 
 Train **H/I** slice state is derived from the tree, never stored — run `npm run train:next` to see what is startable. See [train-plan policy](./docs/agents/policies/train-plan.md).
 
+## Matt workflow — follow the skill map
+
+Matt skill **phase** is derived from `.scratch/<effort>/` — run `npm run workflow:next` before `/implement`; gate with `npm run workflow:check`. See [matt-workflow policy](./docs/agents/policies/matt-workflow.md).
+
 ## Agent skills
 
 ### Issue tracker

@@ -9,6 +9,7 @@ import {
   VERTICALS,
   VERTICAL_IDS,
   isCodeFile,
+  noCodeWorkRequired,
   requiredVerticals,
   stampCoversVerticals,
   unclassifiedCodeFiles,
@@ -66,6 +67,9 @@ assert.deepEqual(
   'a stamp riding along with real code does not exempt the code',
 );
 assert.deepEqual(requiredVerticals(['CLAUDE.md', '.gitnexus/graph.db']), []);
+assert.equal(noCodeWorkRequired(['docs/guide/testing.md']), true);
+assert.equal(noCodeWorkRequired(null), false, 'unknown diff still owes every vertical');
+assert.equal(noCodeWorkRequired(['scripts/lib/foo.mjs']), false);
 
 // Fails closed: unknown diff, and code no vertical claims.
 assert.deepEqual(requiredVerticals(null), VERTICAL_IDS, 'unknown diff owes every vertical');

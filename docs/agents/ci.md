@@ -34,6 +34,7 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 
 | Phase | What runs |
 |-------|-----------|
+| Docs-only | Stamp only — no static floor or verticals (matches GitHub touch-only skip) |
 | Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:module-select` → `build -w @party-tracker/app` |
 | `automation` vertical | `test:ci-gate` — CI/deploy/stamp decisions through their exported functions |
 | `builder` vertical | `test:builder` — assertions over generated venue output |
