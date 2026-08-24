@@ -8,12 +8,40 @@
  * It is a plain store rather than React state because loading a venue is not a
  * render: the boot sequence, the GPS retarget and the picker all drive it from
  * outside React, and components read the result through useVenue().
+ *
+ * ## One door to a World's Places
+ *
+ * `state.pois` is the Places *this phone believes in*: what the builder
+ * shipped, numbered by `withIds`, and then painted with this phone's Overlay.
+ * The shipped array is a module-private `shipped` below rather than a field on
+ * the snapshot, so nothing that draws a World can reach it by destructuring one.
+ *
+ * There is exactly one exception, and it is not a screen: the guest
+ * ground-truth research lane, whose question is about the builder rather than
+ * about this phone. It is served by `placesAsShippedForResearchOnly()` — one
+ * named export, off the snapshot, said out loud rather than left as a second
+ * silent door. See that function for the failure it prevents.
+ *
+ * That is not tidiness, it is the fix for a shipped bug. Painting used to
+ * happen once in app/page.js and be drilled outward as props, so a screen got
+ * Contributions if it took its Places through those props and did not if it
+ * called the store — and which door a panel used was an accident of how it was
+ * written. HeightPanel called the store, so a Member who had just walked over
+ * and photographed a ride's height sign watched the map redraw with the number
+ * they had contributed while the eligibility tally beside it went on answering
+ * from the shipped rule. Two screens, one phone, two answers about whether a
+ * child could ride.
+ *
+ * Painting belongs here for the same reason `withIds` already does: it is a
+ * once-only concern that every reader must see the same answer to. A caller
+ * asks the store for Places and gets the truth this phone believes.
  */
 
 /* Relative and with the extension: the unit suite imports this module straight
    into bare node, where the bundler's '@/…' alias does not exist. */
 import { distance } from '../geo.js';
 import { withIds } from './ids.js';
+import { applyOverlayToPlaces, emptyOverlay } from '../overlay.js';
 import { AnalyticsEvents } from '../analytics.js';
 
 /** A venue picked by hand, in the picker. Hard: nothing moves the map after it. */
@@ -31,7 +59,13 @@ const state = {
   manifest: null,
   venue: null, // the manifest row for the active venue
   map: null, // drawn geometry
-  pois: [], // places
+  /* Places as this phone believes them: shipped, numbered, Overlay painted on.
+     Never the raw file — see the header. */
+  pois: [],
+  /* Overlay drawables that are not Places: contributed queue pins and path
+     crumbs. They fall out of the same paint, so they are published from the
+     same place rather than recomputed by whoever draws the map. */
+  overlayPins: [],
   gaps: [], // builder-shipped Gaps; empty if the file is missing
   status: 'idle', // idle | loading | ready | error
   error: null,
@@ -45,8 +79,67 @@ const state = {
   remembered: false,
 };
 
+/* The two inputs to painting, both module-private.
+ *
+ * `shipped` is the second door the store exists to close: publishing it would
+ * let a future screen reach for unpainted Places again, and the bug that
+ * produces is silent — the screen renders, it is just answering from a
+ * different World than the map is. The one export that hands it out is named
+ * after the lane allowed to have it, not after the data, so reaching for it is
+ * a decision rather than a slip.
+ *
+ * `overlay` is private for the smaller reason that nothing outside needs it:
+ * the app already holds the Overlay it pushed down (see setOverlay), so a copy
+ * on the snapshot would be a second place to read the same fact and a second
+ * place for it to go stale. The store keeps it only so a venue swap repaints
+ * with the Overlay that is live at that moment rather than whatever was
+ * current when the fetch started.
+ */
+let shipped = [];
+let overlay = emptyOverlay();
+
+/**
+ * The Places this World shipped with, unpainted — for the guest ground-truth
+ * research lane, and nothing else on this phone.
+ *
+ * That lane records how far a guest actually stood from the pin the *builder*
+ * shipped and uploads the delta to /api/contributions/traces, where it is read
+ * as independent evidence about whether that pin is in the right place. Paint
+ * these with this phone's Overlay and a guest who has just dropped a queue pin
+ * in a Side Quest gets measured against their own Contribution: the
+ * map-improvement loop takes its own output back as confirmation of the truth
+ * it shipped, agrees with itself, and drifts with nothing left to catch it.
+ *
+ * Deliberately not a field on the snapshot and deliberately not a hook a screen
+ * meets while shopping for Places — `usePois()` is the one door for anything
+ * that draws. It is also not a general "give me unpainted Places" API: it names
+ * its one consumer because a second caller means the question has changed, and
+ * that should have to be argued for rather than imported.
+ */
+export function placesAsShippedForResearchOnly() {
+  return shipped;
+}
+
 let snapshot = { ...state };
 const listeners = new Set();
+
+/**
+ * Recompute the painted Places from `shipped` + `overlay`.
+ *
+ * Pure with respect to the store's other fields and deliberately does not
+ * `emit()`: every caller is already inside a state change that ends in one, and
+ * a repaint that emitted on its own would publish a venue half-swapped — new
+ * Places against the old geometry, for one render.
+ */
+function repaint() {
+  const painted = applyOverlayToPlaces(shipped, overlay);
+  state.pois = painted.places;
+  state.overlayPins = painted.pins;
+  /* painted.venueCamping is dropped on purpose: no screen reads a
+     campground-wide hookup off the store, because the camping Contribution is
+     already painted onto every campsite Place above. Publishing it would add a
+     field every reader has to learn and nobody has to use. */
+}
 
 function emit() {
   snapshot = { ...state };
@@ -64,6 +157,51 @@ export const subscribe = (fn) => {
   return () => listeners.delete(fn);
 };
 export const getSnapshot = () => snapshot;
+
+
+/* --------------------------------------------------------------- overlay - */
+
+/** An Overlay with no drawn facts. Painting one is the identity function. */
+const paintsNothing = (o) => !o || !Object.keys(o.drawn || {}).length;
+
+/**
+ * Hand the store the Overlay this phone should be drawing, and repaint Places.
+ *
+ * The store paints the Overlay but does not compose it. Composing means
+ * unioning this phone's authored Contributions with the ones a Party's Host
+ * has pushed out, and the Party is a live runtime that the venue store must
+ * not know about — a module that loads map JSON has no business holding a
+ * reference to the mesh, and giving it one would make the boot sequence
+ * un-testable in bare node. So the app composes and pushes the answer down;
+ * the store owns the once-only paint.
+ *
+ * Two guards, both about not republishing Places that would come out the same.
+ *
+ * Identity first: the caller derives the display Overlay with a memo, so an
+ * unchanged Overlay arrives as the same object. Emitting anyway would hand
+ * every subscriber a fresh `pois` array on every party heartbeat and re-render
+ * the map for nothing.
+ *
+ * Then blankness, which is not a micro-optimisation — it is what keeps the app
+ * hydratable. A phone with no Contributions still pushes an Overlay on mount,
+ * and `emptyOverlay()` is a fresh object every time, so identity never catches
+ * it. Repainting on that push swaps `state.pois` for an array with the same
+ * contents and a new identity, and the emit lands while React is still
+ * hydrating the tree that read the old one: React gives up on the server HTML
+ * and regenerates the whole page (hydration error #418, three phones in the
+ * functional suite). Painting nothing over nothing cannot change a Place, so
+ * the store says nothing. Going blank → drawn, or drawn → blank (a Member
+ * leaves a Party and the Host's Contributions go with them), both repaint.
+ */
+export function setOverlay(next) {
+  const composed = next || emptyOverlay();
+  if (composed === overlay) return;
+  const wasBlank = paintsNothing(overlay);
+  overlay = composed;
+  if (wasBlank && paintsNothing(composed)) return;
+  repaint();
+  emit();
+}
 
 
 /* --------------------------------------------------------------- picking - */
@@ -254,9 +392,13 @@ export async function selectVenue(id, { pin = false, refresh = false } = {}) {
     return venue;
   }
 
+  /* The rollback snapshot keeps `shipped`, not the painted `pois`: painting is
+     derived, and a Contribution that lands while this fetch is in flight must
+     survive the rollback. Restoring a painted array captured before it would
+     silently un-draw a fact the visitor had just watched appear. */
   const previous =
     state.status === 'ready'
-      ? { venue: state.venue, map: state.map, pois: state.pois, gaps: state.gaps }
+      ? { venue: state.venue, map: state.map, shipped, gaps: state.gaps }
       : null;
 
   if (!already) {
@@ -276,7 +418,10 @@ export async function selectVenue(id, { pin = false, refresh = false } = {}) {
     // Ids are attached here rather than left to each reader: a ride report is
     // addressed by id and crosses to other phones and to the host, so the
     // browser has to number a venue's repeats exactly the way they do.
-    state.pois = withIds(pois);
+    shipped = withIds(pois);
+    // …and painted here for the same reason, one step later: every screen has
+    // to be looking at the same World. See the module header.
+    repaint();
     state.gaps = normalizeGapsDocument(gapsDoc);
     state.status = 'ready';
     state.error = null;
@@ -296,7 +441,8 @@ export async function selectVenue(id, { pin = false, refresh = false } = {}) {
     if (previous) {
       state.venue = previous.venue;
       state.map = previous.map;
-      state.pois = previous.pois;
+      shipped = previous.shipped;
+      repaint();
       state.gaps = previous.gaps || [];
       state.status = 'ready';
       state.error = null;
