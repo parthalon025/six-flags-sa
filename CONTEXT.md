@@ -158,6 +158,26 @@ _Avoid_: display factory (legacy header name); art pipeline
 A **World**'s real material and color relationships — which roofs are the blue ones, asphalt vs gravel, lawn vs plaza — read from openly licensed imagery into that World's reference profile. Every **Skin** re-expresses those relationships inside its own declared palette: design owns treatment, the venue owns relationships. Not truth (see **Map factory** — imagery evidence is a separate lane) and never a color override. Detail: ADR-0020.
 _Avoid_: satellite skin; real-color mode; texture pack
 
+**PostDB**:
+The canonical store for all factory outputs — **Truth revisions**, **Display packs**, certifications, and published artifact registry. Factories write here; **Delivery** exports from here. Not git paths or working-tree JSON as source of truth.
+_Avoid_: postgres (implementation); file store; repo-as-bus
+
+**Truth revision**:
+An immutable Map factory snapshot for one **World** — geometry, **Places**, and **Gaps** as of one build. Append-only; promotion picks which revision guests receive.
+_Avoid_: map.json (file label); draft; live edit in place
+
+**World head**:
+Which **Truth revision** and certified **Display packs** a **World** currently publishes to guests. Staging may differ until promote.
+_Avoid_: latest; main branch; generated stamp alone
+
+**basedOn**:
+The **Truth revision** a **Display pack** was built against. A certified pack whose basedOn lags the **World head** cannot ship.
+_Avoid_: generated timestamp alone; implicit freshness
+
+**Delivery**:
+Export from **PostDB** to whatever serves the phone — static CDN, API manifest plus object storage, or app seed bundles. The phone contract is fixed: hash-verified manifest, offline cache, truth/display split. The transport is not.
+_Avoid_: Vercel deploy; git commit; tile server; runtime factory queries on the phone
+
 ### Cosmetics and map look
 
 **Skin**:
@@ -165,7 +185,7 @@ A **Profile**-owned cosmetic restyle of the **World** map — how it is painted,
 _Avoid_: Theme (Trail / Park Midnight are the always-on palettes); map pack; party theme; Map skin (use **Skin**)
 
 **Display pack**:
-The **Visual factory**'s output for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), per-**Skin** baked worlds (the mid **Zoom band**; deeper bands stream by viewport and cache, or download when a guest asks — ADR-0021), `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in `map.json` / `pois.json` / `gaps.json`. See **Rendering tier** for how a device chooses baked vs real-time PBR.
+The **Visual factory**'s output for one **World** (implementation: one `venue` bundle) — offline files the phone paints, separate from map truth. Includes vector tiles (`display/base.pmtiles` from Tippecanoe), per-**Skin** baked worlds (the mid **Zoom band**; deeper bands stream by viewport and cache, or download when a guest asks — ADR-0021), `visual.json` (Zone tones, landmark refs, quest-reward overrides), and `manifest.json` (hashes, sizes, versions for download). The phone reads static files; it does not run a tile server. Routing, **Places**, and **Gaps** stay in truth JSON separate from display tiles (exported from **PostDB** via **Delivery**, consumed offline on the phone). See **Rendering tier** for how a device chooses baked vs real-time PBR.
 _Avoid_: tile server (runtime HTTP on the phone); map pack (use **display pack**); baking truth into tiles (truth stays JSON)
 
 **Zoom band**:

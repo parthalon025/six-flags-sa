@@ -12,6 +12,10 @@ Every session opens as the **orchestrator**: the SessionStart hook prints the ag
 
 The roster is data, not prose: `scripts/lib/orchestrator/roster.json` names each member's subagent type, model tier, skills to read first, repo files to read first, and the hand-back contract. Edit that file — the session brief, the routing, and the `.cursor` rule all read from it.
 
+**Session start:** read root [`CONTEXT.md`](../../CONTEXT.md) before routing or dispatching. Use its vocabulary in prompts and hand-backs.
+
+**Canon conflict → auto-grill:** when owner decisions or a task contradict `CONTEXT.md`, an accepted ADR, or another canonical doc, do not proceed on assumptions. Open a grill round (`grilling` skill): name each conflict, ask the frontier questions with recommendations, and wait for owner answers before implementation dispatch. File the ADR amendment as a `scribe` or `architect` follow-up once the grill settles.
+
 | Concern | Use this |
 |---------|----------|
 | Roster printed at session start | `node scripts/orchestrator.mjs brief` (wired into `.claude/settings.json` → SessionStart) |
