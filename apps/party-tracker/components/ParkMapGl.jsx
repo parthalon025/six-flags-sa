@@ -437,7 +437,7 @@ export default function ParkMapGl({
             /* pinDrop ends on `transform: none`, which beats an SVG transform
                attribute on the same group — keep position on the parent, like
                `.spotPin` beside this in globals.css. */
-            if (mark.className === 'meetPin') {
+            if (mark.kind === 'meet') {
               return (
                 <g key={key} transform={position}>
                   <g className="meetPin">{body}</g>
