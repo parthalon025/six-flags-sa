@@ -94,7 +94,7 @@ Full captions: [docs/guide/walkthrough.md](docs/guide/walkthrough.md).
       <sub>Turn-by-turn on the phone from the venue file. No routing API, no key. <a href="docs/guide/walking-directions.md">Walking</a></sub>
     </td>
     <td align="center" width="50%">
-      <img src="docs/images/readme/party.png" alt="Party map with two member markers and a glance rail showing walking times" />
+      <img src="docs/images/readme/party.png" alt="Party map with two member markers and walking times in the party panel" />
       <br /><strong>Live party</strong><br />
       <sub>Range, bearing, and walking time for each person — hosted on a phone in the group. <a href="docs/guide/party.md">Party</a></sub>
     </td>
