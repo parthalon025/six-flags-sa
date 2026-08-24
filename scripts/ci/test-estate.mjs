@@ -42,6 +42,18 @@ export const TEST_RUNNERS = {
     npmScript: 'test:builder',
     job: 'builder',
   },
+  'map-factory-job': {
+    label: 'the `map-factory` GitHub job — map factory leg (noop-result when skipped).',
+    job: 'map-factory',
+  },
+  'visual-factory-job': {
+    label: 'the `visual-factory` GitHub job — visual factory leg (noop-result when skipped).',
+    job: 'visual-factory',
+  },
+  'delivery-factory-job': {
+    label: 'the `delivery-factory` GitHub job — delivery leg (noop-result when skipped).',
+    job: 'delivery-factory',
+  },
   'test:module-select': {
     label:
       'npm run test:module-select — a static-floor step, and the `module-select-unit` GitHub job.',
@@ -138,6 +150,7 @@ export const TEST_ESTATE = {
   'test/builder/display.mjs': ['test:builder'],
   'test/builder/esa-worldcover.mjs': ['test:builder'],
   'test/builder/footprint-fusion.mjs': ['test:builder'],
+  'test/builder/factory-modules.mjs': ['test:builder', 'map-factory-job', 'visual-factory-job', 'delivery-factory-job'],
   'test/builder/factory-validate.mjs': ['test:builder'],
   'test/builder/gaps-quests.mjs': ['test:unit', 'test:builder'],
   'test/builder/imagery-claims.mjs': ['test:builder'],
