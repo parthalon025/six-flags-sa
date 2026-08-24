@@ -546,5 +546,11 @@
     "items": [
       "feat(agents): executive resume + Matt workflow gate (#644)"
     ]
+  },
+  "1.33.0": {
+    "title": "What's new",
+    "items": [
+      "feat(venue-builder): extract Map/Visual/Delivery factory module seams (ticket 14)"
+    ]
   }
 }
