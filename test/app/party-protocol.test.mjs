@@ -120,10 +120,9 @@ function makePeer({ id, name, bus, key, partyId, clock }) {
   /**
    * partyRuntime.js:572-581. The floor between unprompted re-assertions.
    *
-   * Load-bearing, and not obviously so: two hosts that will not stand down for
-   * each other (see BUG #split-brain) answer each other's VICTORY forever. This
-   * throttle is the only thing turning that infinite loop into a 1.5s beacon
-   * war. Reproduced faithfully because a harness without it hangs.
+   * Load-bearing when two hosts briefly disagree: without this throttle,
+   * re-assertions would fire every frame. After #594, reconciliation settles
+   * on one host; this gap still bounds beacon traffic during the hand-over.
    */
   const ASSERT_GAP_MS = 1500;
   let lastAssertAt = 0;
@@ -527,8 +526,10 @@ await check('two phones that promote at once settle on one host via the total or
 
     const stillHosting = party.clients.filter((p) => p.host);
     assert.equal(stillHosting.length, 1, 'exactly one host remains after reconciliation');
+    assert.equal(stillHosting[0].id, 'phone-b', 'the earlier joiner wins the total order');
     const loser = party.clients.find((p) => p.events.includes('step-down'));
     assert.ok(loser, 'the lower-ranked phone stood down');
+    assert.equal(loser.id, 'phone-c');
   } finally {
     await party.teardown();
   }
@@ -549,9 +550,6 @@ await check('host-vs-host reconciliation uses outranks, not the steal margin (#5
   assert.equal(shouldYield(first, second), false);
   assert.ok(first.score - second.score < 1);
   assert.ok(STEAL_STEPS * (1e12 / 100) > 1e10);
-  // Reconciliation: the loser (second) is outranked by the winner (first).
-  assert.equal(outranks(first, second), true);
-  assert.equal(outranks(second, first), false);
 });
 
 await check('the election margin DOES resolve a split brain once the battery gap clears it', async () => {

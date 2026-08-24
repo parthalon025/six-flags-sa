@@ -405,13 +405,13 @@ export function createElection({
     const mine = myClaim || selfClaim();
 
     if (promoted) {
-      if (outranks(theirs, mine)) {
-        // The total order names them — stand down. `shouldYield`'s steal margin
-        // is for client challengers, not reconciling two live hosts (#594).
-      } else {
-        if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
+      if (outranks(mine, theirs)) {
+        if (now() - lastVictorySentAt >= reassertGapMs) sendVictory();
         return;
       }
+      // outranks(theirs, mine) — stand down via the shared demote path below.
+      // `shouldYield`'s steal margin is for client challengers, not two live
+      // hosts reconciling (#594).
     }
 
     cancelElection();
