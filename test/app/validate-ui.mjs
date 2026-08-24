@@ -19,7 +19,7 @@
  *   --no-health         do not probe /api/health first
  *   --changed           select modules from git diff vs --base / origin/main
  *   --base <ref>        git base for --changed (default origin/main)
- *   --modules=a,b       run only these modules (functional ids + grandma + contract)
+ *   --modules=a,b       run only these modules (functional ids + grandma)
  *   --all               force every module (default when neither --changed nor --modules)
  *   --jobs N            suites to run at once (default: CPUs-1, capped at 3).
  *                       --jobs 1 runs them one at a time with live output.
@@ -116,7 +116,6 @@ const parts = partitionModules(
 
 let runFunctional = !grandmaOnly && (parts.functional.length > 0 || !selected);
 let runGrandma = !functionalOnly && (parts.grandma || !selected);
-let runContract = parts.contract || !selected;
 
 // Legacy flags override module selection for grandma/functional.
 if (functionalOnly) runGrandma = false;
@@ -210,7 +209,6 @@ try {
     : [];
 
   const queue = buildQueue({
-    contract: runContract,
     functional: functionalIds,
     grandma: runGrandma,
     parallel: jobs > 1,

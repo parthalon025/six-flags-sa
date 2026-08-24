@@ -2,7 +2,7 @@
 /**
  * Comprehensive visual audit — captures every major UI state for human review.
  *   npm start &
- *   node test/audit-visual.mjs
+ *   node test/app/audit-visual.mjs
  */
 import { BASE, closeGate, dismissIntroSplash, dismissUpdateSplash, go, launch } from './browser.mjs';
 import fs from 'node:fs';

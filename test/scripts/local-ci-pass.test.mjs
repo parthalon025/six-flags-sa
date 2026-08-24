@@ -33,7 +33,7 @@ import { runCheck, runWrite } from '../../scripts/ci/local-ci-pass.mjs';
 // stood in for it — otherwise the tag waves through work nothing ran.
 {
   const covered = new Set(STATIC_STEPS.flatMap((s) => s.covers));
-  for (const job of ['lint', 'boundaries', 'contract', 'module-select-unit', 'app-build']) {
+  for (const job of ['lint', 'boundaries', 'module-select-unit', 'app-build']) {
     assert.ok(covered.has(job), `${job} is skipped by the tag but no static step covers it`);
   }
   assert.deepEqual(

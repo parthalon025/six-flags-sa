@@ -6,6 +6,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/ci-module.test.mjs',
   'test/scripts/suite-wiring.test.mjs',
   'test/scripts/train-plan.test.mjs',
+  'test/scripts/test-estate.test.mjs',
   'test/scripts/gitnexus-only.test.mjs',
   'test/scripts/gitnexus-detect-changes.test.mjs',
   'test/scripts/gitnexus-docs.test.mjs',

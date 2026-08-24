@@ -34,7 +34,7 @@ The run prints the verticals the diff owes (`scripts/lib/vertical-e2e.mjs`), run
 
 | Phase | What runs |
 |-------|-----------|
-| Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:coverage-contract` → `test:module-select` → `build -w @party-tracker/app` |
+| Static (floor) | `test:ci-gate` → `test:unit` → `lint` → `test:module-select` → `build -w @party-tracker/app` |
 | `automation` vertical | `test:ci-gate` — CI/deploy/stamp decisions through their exported functions |
 | `builder` vertical | `test:builder` — assertions over generated venue output |
 | `app` vertical | start app + `test:validate-ui:changed` — behaviour in a real browser |
@@ -101,7 +101,7 @@ The job is skipped entirely for a non-PR event, an already-ready PR, or no tag. 
 
 `fullSuitePaths` in `modules.json` still forces all modules when e.g. `functional.mjs` or `test-app.yml` changes. Version-stamp-only file lists bypass full-suite triggers.
 
-`CONTEXT.md` / `docs/adr/**` diffs select the coverage-contract job; it fails on a stale context stamp until `test/app/critical-paths.json` is reviewed against the new capabilities and restamped (`node test/app/coverage-contract.mjs --stamp`).
+`CONTEXT.md` / `docs/adr/**` diffs select no module: they are read by people, and no suite can check that a capability row still means what it says.
 
 Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run test:validate-ui -- --all` every Sunday 08:00 UTC (or `workflow_dispatch`).
 
@@ -112,7 +112,7 @@ Optional safety net: `.github/workflows/validate-ui-weekly.yml` runs `npm run te
 | Module selection | `node test/app/select-modules.mjs` |
 | `local-ci-verified` tag | `node scripts/ci/local-ci-pass.mjs check` |
 | Boundaries | `npm run lint:boundaries` |
-| Unit-ish layers | `npm run test:builder`, `npm run test:coverage-contract` |
+| Unit-ish layers | `npm run test:builder` |
 | UI unpack / start | `node scripts/ci/party-tracker-ui.mjs unpack\|start` |
 | Full local gate | `npm run test:ci-gate` |
 
