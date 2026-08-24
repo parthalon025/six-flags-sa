@@ -589,15 +589,13 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .worldSkinActions { display: flex; gap: 8px; padding: 0 16px 8px; }
 .worldSkinRow .row { border-bottom: none; }
 .meetPin {
-  transform-box: fill-box; transform-origin: 50% 100%;
   animation: pinDrop var(--t3) var(--ease) both;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .35));
 }
 /* The tapped spot, dropped the same way the meet-up is — this is the same kind
    of object (a point somebody chose) and it should arrive with the same weight.
-   No transform-box here: the group it is on carries no transform of its own,
-   because ParkMap keeps the position on the parent so pinDrop's closing
-   `transform: none` cannot reset it. */
+   No transform-box here: ParkMapGl keeps the position on the parent so pinDrop's
+   closing `transform: none` cannot reset it. */
 .spotPin {
   animation: pinDrop var(--t3) var(--ease) both;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, .35));

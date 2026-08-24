@@ -394,47 +394,60 @@ export default function ParkMapGl({
             const nameInk = mark.kind === 'place' && state !== 'not'
               ? labelInk(pinPalette?.categories?.[mark.category])
               : null;
-            return (
-            <g
-              key={`${mark.kind}:${mark.id}`}
-              className={mark.className}
-              transform={`translate(${mark.x},${mark.y})`}
-            >
-              <title>{mark.name}</title>
-              {mark.kind === 'place' && mark.pin !== false ? (
-                <PoiMarker
-                  category={mark.category}
-                  colour={pinPalette?.categories?.[mark.category] || '#888'}
-                  barredInk={pinPalette?.barred}
-                  r={mark.radius}
-                  state={state}
-                  selected={mark.id === selectedId}
-                />
-              ) : style.drawsPin && mark.pin !== false ? (
-                mark.kind === 'car' ? (
-                  <g>
+            const key = `${mark.kind}:${mark.id}`;
+            const position = `translate(${mark.x},${mark.y})`;
+            const body = (
+              <>
+                <title>{mark.name}</title>
+                {mark.kind === 'place' && mark.pin !== false ? (
+                  <PoiMarker
+                    category={mark.category}
+                    colour={pinPalette?.categories?.[mark.category] || '#888'}
+                    barredInk={pinPalette?.barred}
+                    r={mark.radius}
+                    state={state}
+                    selected={mark.id === selectedId}
+                  />
+                ) : style.drawsPin && mark.pin !== false ? (
+                  mark.kind === 'car' ? (
+                    <g>
+                      <circle r="8" />
+                      <Glyph name="car" size={13} colour="#fff" />
+                    </g>
+                  ) : (
                     <circle r="8" />
-                    <Glyph name="car" size={13} colour="#fff" />
-                  </g>
-                ) : (
-                  <circle r="8" />
-                )
-              ) : null}
-              {mark.self ? <circle className="mePulse" r="14" /> : null}
-              {mark.label ? (
-                <text
-                  className={`${style.className}${state === 'not' ? ' barred' : ''}`}
-                  y={style.dy}
-                  style={{
-                    fontSize: `${style.size}px`,
-                    ...(nameInk ? { fill: nameInk } : {}),
-                    ...(state === 'not' && pinPalette?.barred ? { fill: pinPalette.barred } : {}),
-                  }}
-                >
-                  {mark.name}
-                </text>
-              ) : null}
-            </g>
+                  )
+                ) : null}
+                {mark.self ? <circle className="mePulse" r="14" /> : null}
+                {mark.label ? (
+                  <text
+                    className={`${style.className}${state === 'not' ? ' barred' : ''}`}
+                    y={style.dy}
+                    style={{
+                      fontSize: `${style.size}px`,
+                      ...(nameInk ? { fill: nameInk } : {}),
+                      ...(state === 'not' && pinPalette?.barred ? { fill: pinPalette.barred } : {}),
+                    }}
+                  >
+                    {mark.name}
+                  </text>
+                ) : null}
+              </>
+            );
+            /* pinDrop ends on `transform: none`, which beats an SVG transform
+               attribute on the same group — keep position on the parent, like
+               `.spotPin` beside this in globals.css. */
+            if (mark.className === 'meetPin') {
+              return (
+                <g key={key} transform={position}>
+                  <g className="meetPin">{body}</g>
+                </g>
+              );
+            }
+            return (
+              <g key={key} className={mark.className} transform={position}>
+                {body}
+              </g>
             );
           })}
         </g>

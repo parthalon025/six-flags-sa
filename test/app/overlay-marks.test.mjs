@@ -242,6 +242,16 @@ assert.deepEqual(
   assert.equal(markLabelStyle('place', 'shop').size, 13);
   assert.match(painted, /labelInk/, 'a Place name wears the category ink the pin already uses');
   assert.match(painted, /markLabelStyle\(mark\.kind,\s*mark\.category\)/, 'the painter asks the same style the grid claimed, including category');
+  assert.match(
+    painted,
+    /transform=\{position\}>\s*<g className="meetPin">/,
+    'meet pin position sits on the parent so pinDrop cannot reset it',
+  );
+  assert.doesNotMatch(
+    css.match(/\.meetPin\s*\{[^}]+\}/)?.[0] || '',
+    /transform-box/,
+    'meetPin inner group needs no transform-box once position is on the parent',
+  );
   const iconR = 8;
   const gap = LABEL_DY - PLACE_LABEL_SIZE * 0.55 - iconR;
   assert.ok(gap >= 4, `label gap ${gap}px undercuts the disc`);
