@@ -34,8 +34,8 @@ await fetch(`${B}/api/party/${code}`, {method:'PUT', headers:{'Content-Type':'ap
 await fetch(`${B}/api/party/${code}/meet`, {method:'PUT', headers:{'Content-Type':'application/json'},
   body: JSON.stringify({lat:39.34395,lng:-84.26730,label:'Royal Fountain',by:'Justin'})});
 await p.waitForTimeout(9000);
-await go(p, 'Places');             // the Explore tab, where the rail lives
-// Down to the glance stop, which is the one this shot is of. Cycling a fixed
+await go(p, 'Places');             // the Explore tab at the sheet's peek stop
+// Down to the peek stop, which is the one this shot is of. Cycling a fixed
 // number of times used to land there by luck; the handle now starts from
 // wherever the sheet was left, so ask for the stop by name instead.
 for (let i = 0; i < 4 && !(await p.locator('.sheet.peek').count()); i += 1) {
@@ -43,6 +43,6 @@ for (let i = 0; i < 4 && !(await p.locator('.sheet.peek').count()); i += 1) {
   await p.waitForTimeout(500);
 }
 await p.waitForTimeout(700);
-await p.screenshot({ path:'test/shots/21-glance-rail.png' });
+await p.screenshot({ path:'test/shots/21-sheet-peek.png' });
 await b.close();
 console.log('ux shots done');

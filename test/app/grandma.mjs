@@ -317,9 +317,9 @@ await score('B', 'B8', 'the things she must tap are big enough to tap (44px targ
       if (r.height + grow < 44) out.push(`${el.className.split(' ')[0]} ${Math.round(r.height + grow)}px`);
     }
     /* Tab items and the map capsule's controls use centered ::after
-       pseudo-elements with max(100%, 44px) — the rail's .glanceGo/.glanceShed
-       took the same treatment and were replaced by the selection capsule's
-       Walk and Close, plus the hint line that is now the sheet's own handle. */
+       pseudo-elements with max(100%, 44px) — the old rail's per-card Go and
+       shed controls took the same treatment and were replaced by the selection
+       capsule's Walk and Close, plus the hint line that is now the sheet's own handle. */
     for (const el of document.querySelectorAll('.tabItem, .selWalk, .selClose, .moreHint, .fab')) {
       const r = el.getBoundingClientRect();
       if (!r.height) continue;
@@ -357,7 +357,7 @@ await score('B', 'B9', 'reading text and icon sizes are large enough for arm’s
       const size = parseFloat(getComputedStyle(poiName).fontSize || '0');
       if (size < 13.5) issues.push(`poiName ${size}px (<13.5px)`);
     }
-    /* .glanceTitle named the place on a rail card. The selection capsule's
+    /* The rail card title named the place. The selection capsule's
        .selName is the same job on the same screen — the name of the place she
        just tapped, read over the map. */
     const selName = document.querySelector('.selName');
@@ -401,7 +401,7 @@ await score('B', 'B10', 'can get the panel out of the way to see the map, and ge
 });
 
 await score('B', 'B11', 'a place she taps can be un-tapped', async () => {
-  // The rail answered a tap with a `.glanceCard.selected` carrying a ✕. The
+  // The rail answered a tap with a selected card carrying a ✕. The
   // selection capsule is that answer now — same job, said over the map where
   // the pin is, and it carries its own Close.
   await typeSearch(b, 'rattler');
