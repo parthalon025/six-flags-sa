@@ -1,29 +1,13 @@
 {
   "schema": 3,
   "tag": "local-ci-verified",
-  "diffHash": "e785707b008da452",
-  "head": "1a718b2b814e4757203825651589c76498737da3",
-  "mergeBase": "f722885e9ca4009ed2415a3529d5aceaf2cb9ef6",
+  "diffHash": "e3b0c44298fc1c14",
+  "head": "1b671fe8d49790dfaa5028ea9167fa1904f1b000",
+  "mergeBase": "1b671fe8d49790dfaa5028ea9167fa1904f1b000",
   "baseRef": "origin/main",
-  "modules": [
-    "auth",
-    "builder",
-    "grandma",
-    "heights",
-    "intake",
-    "lint",
-    "offline",
-    "party",
-    "selector",
-    "smoke",
-    "venues",
-    "walk"
-  ],
-  "browserVertical": true,
-  "verticals": [
-    "app",
-    "automation"
-  ],
+  "modules": [],
+  "browserVertical": false,
+  "verticals": [],
   "staticSteps": [
     "test:ci-gate",
     "test:unit",
@@ -31,7 +15,7 @@
     "test:module-select",
     "build"
   ],
-  "lockHash": "10b59646dca57be2",
+  "lockHash": "af23c5d4674d1f76",
   "manifestHash": "67d9b30871b63e39",
-  "recordedAt": "2026-08-24T03:43:17.059Z"
+  "recordedAt": "2026-08-24T05:39:58.870Z"
 }

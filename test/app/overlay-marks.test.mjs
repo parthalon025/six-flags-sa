@@ -247,7 +247,7 @@ assert.deepEqual(
      Position lives on the parent <g>; the animated class lives on a child. */
   assert.match(
     painted,
-    /mark\.kind === 'meet'[\s\S]*?transform=\{`translate\(\$\{mark\.x\},\$\{mark\.y\}\)`\}[\s\S]*?className="meetPin"/,
+    /mark\.kind === 'meet'[\s\S]*?transform=\{`translate\(\$\{mark\.x\},\$\{mark\.y\}\)`\}[\s\S]*?className=\{mark\.className\}/,
     'meet pin keeps map position on the parent and pinDrop on a child',
   );
   const meetPinRule = css.match(/\.meetPin\s*\{[^}]+\}/)?.[0] || '';
