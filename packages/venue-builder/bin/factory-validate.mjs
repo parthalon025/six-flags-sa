@@ -12,7 +12,7 @@ import process from 'node:process';
 import { validateVenue, validateAll, renderValidationReport } from '../lib/factory-validate.mjs';
 
 const USAGE = `
-Factory validation — walk a venue through the Map + Visual factory routes.
+Factory validation — walk a venue through the Map factory and Visual factory routes.
 
   node packages/venue-builder/bin/factory-validate.mjs <venue id>
   node packages/venue-builder/bin/factory-validate.mjs --all [--json]

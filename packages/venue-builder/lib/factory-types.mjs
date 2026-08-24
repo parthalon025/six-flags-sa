@@ -54,6 +54,18 @@ export const FACTORIES = Object.freeze({
   delivery: 'Delivery — bundle manifest and published display worlds',
 });
 
+/** Short id → display name for reports and CLI output. */
+export const FACTORY_LABELS = Object.freeze({
+  map: 'Map factory',
+  visual: 'Visual factory',
+  delivery: 'Delivery',
+});
+
+/** @param {FactoryId} factory */
+export function factoryLabel(factory) {
+  return FACTORY_LABELS[factory] || factory;
+}
+
 /** @type {readonly RouteEntry[]} */
 export const ROUTES = Object.freeze([
   /* ------------------------------- Map factory ------------------------------- */
@@ -79,7 +91,7 @@ export const ROUTES = Object.freeze([
         id: 'gaps',
         kind: 'artifact',
         relPath: ({ venueId }) => path.join('apps', 'party-tracker', 'public', 'venues', `${venueId}.gaps.json`),
-        description: 'Published Gaps the builder invented',
+        description: 'Published Gaps the Map factory invented',
       },
       {
         id: 'truth-stamp',
@@ -105,7 +117,7 @@ export const ROUTES = Object.freeze([
       },
     ],
     requirement: 'warn',
-    description: 'Map certification — may warn when research gates are incomplete',
+    description: 'Map factory certification — may warn when research gates are incomplete',
   },
   {
     id: 'map.route-qa',
@@ -211,11 +223,11 @@ export const ROUTES = Object.freeze([
         relPath: ({ venueId }) => path.join(
           'packages', 'venue-builder', 'data', 'venues', venueId, 'display', 'display-certification.json',
         ),
-        description: 'Display factory birth certificate',
+        description: 'Visual factory birth certificate',
       },
     ],
     requirement: 'required',
-    description: 'Display certification — geo-fidelity + distinctness gates',
+    description: 'Visual factory certification — geo-fidelity + distinctness gates',
   },
   {
     id: 'visual.publish',

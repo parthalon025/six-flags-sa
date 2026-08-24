@@ -35,6 +35,7 @@ const {
   assertCatalogComplete,
   knownFactoryScripts,
   scriptsForRoute,
+  factoryLabel,
 } = await import('../../packages/venue-builder/lib/factory-types.mjs');
 const {
   validateVenue,
@@ -78,6 +79,12 @@ await check('catalog completeness — no orphan factory scripts, every entry exi
   return true;
 });
 
+await check('factory labels read Map factory and Visual factory', () => {
+  assert.equal(factoryLabel('map'), 'Map factory');
+  assert.equal(factoryLabel('visual'), 'Visual factory');
+  return true;
+});
+
 await check('routes are looked up by id without hard-coded script lists', () => {
   const certify = getRoute('map.certify');
   assert.equal(certify.entry.module, 'venue-certify.mjs');
@@ -116,7 +123,7 @@ await check('kings-island passes buildable factory stages (warn on incomplete ce
   assert.equal(certify.status, 'warn', 'map cert is incomplete (park_map_research) — warn not fail');
 
   const displayCert = doc.routes.find((r) => r.id === 'visual.display-certify');
-  assert.equal(displayCert.status, 'pass', 'display factory is certified on KI');
+  assert.equal(displayCert.status, 'pass', 'Visual factory is certified on KI');
 
   const truth = doc.routes.find((r) => r.id === 'map.truth');
   assert.equal(truth.status, 'pass');

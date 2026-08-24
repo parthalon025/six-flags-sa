@@ -14,7 +14,7 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { ROUTES, resolveOutputPath } from './factory-types.mjs';
+import { ROUTES, resolveOutputPath, factoryLabel } from './factory-types.mjs';
 import { qaVenueRouting } from './venue-route-qa-core.mjs';
 import { readSkinTemplates, tilesGatePasses } from './display-pack.mjs';
 import { MONO_ROOT } from '../src/paths.mjs';
@@ -79,6 +79,7 @@ function routeResult(route, partial) {
   return {
     id: route.id,
     factory: route.factory,
+    factoryLabel: factoryLabel(route.factory),
     requirement: route.requirement,
     ...partial,
   };
@@ -238,7 +239,7 @@ function validateVisualDisplayCertify(venueId, route, root) {
   }
   return finalizeStatus(route, {
     pass: doc.certified === true,
-    detail: doc.certified ? 'display certified' : 'display certification failed',
+    detail: doc.certified ? 'Visual factory certified' : 'Visual factory certification failed',
     outputs: [{ id: out.id, path: file, exists: true, certified: doc.certified }],
   });
 }
@@ -246,21 +247,21 @@ function validateVisualDisplayCertify(venueId, route, root) {
 function validateVisualPublish(venueId, route, root) {
   const published = skinsWithPublishedWorlds(venueId, root);
   const displayDir = path.join(root, 'packages', 'venue-builder', 'data', 'venues', venueId, 'display');
-  const builderWorlds = existsSync(displayDir)
+  const packWorlds = existsSync(displayDir)
     ? readdirSync(displayDir).filter((f) => f.endsWith('.world.png')).map((f) => f.slice(0, -'.world.png'.length))
     : [];
-  if (!builderWorlds.length) {
-    return finalizeStatus(route, { pass: true, detail: 'no baked worlds in the pack yet', outputs: [] });
+  if (!packWorlds.length) {
+    return finalizeStatus(route, { pass: true, detail: 'no baked worlds in the Visual factory pack yet', outputs: [] });
   }
-  const missing = builderWorlds.filter((id) => !published.includes(id));
+  const missing = packWorlds.filter((id) => !published.includes(id));
   const pass = missing.length === 0;
   return finalizeStatus(route, {
     pass,
     warn: missing.length > 0,
     detail: published.length
-      ? `${published.length}/${builderWorlds.length} pack world(s) published (${published.join(', ')})`
+      ? `${published.length}/${packWorlds.length} Visual factory world(s) published (${published.join(', ')})`
       : 'no worlds published yet',
-    outputs: builderWorlds.map((id) => ({ id, published: published.includes(id) })),
+    outputs: packWorlds.map((id) => ({ id, published: published.includes(id) })),
   });
 }
 
@@ -343,7 +344,7 @@ export function renderValidationReport(doc) {
   ];
   for (const r of doc.routes) {
     const mark = r.status === 'pass' ? '✅' : r.status === 'warn' ? '⚠️' : r.status === 'fail' ? '❌' : '⏭';
-    lines.push(`| ${r.id} | ${r.factory} | ${mark} | ${r.detail} |`);
+    lines.push(`| ${r.id} | ${r.factoryLabel ?? factoryLabel(r.factory)} | ${mark} | ${r.detail} |`);
   }
   lines.push('', `==== ${doc.summary.pass} pass, ${doc.summary.warn} warn, ${doc.summary.fail} fail ====`);
   return lines.join('\n');
