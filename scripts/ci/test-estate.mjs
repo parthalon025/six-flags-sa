@@ -104,12 +104,17 @@ export const TEST_ESTATE = {
   'test/app/overlay.test.mjs': ['test:unit'],
   'test/app/overlay-geo.test.mjs': ['test:unit'],
   'test/app/overlay-marks.test.mjs': ['test:unit'],
+  'test/app/party-protocol.test.mjs': ['test:unit'],
+  'test/app/party-runtime.test.mjs': ['test:unit'],
   'test/app/quest-sync.test.mjs': ['test:unit'],
   'test/app/rank-prizes.test.mjs': ['test:unit'],
   'test/app/readme-shots-check.mjs': ['test:unit', 'gate-job'],
   'test/app/select-modules.mjs': ['select-job'],
+  'test/app/server-store.test.mjs': ['test:unit'],
   'test/app/spot.test.mjs': ['test:unit'],
   'test/app/store-links.test.mjs': ['test:unit'],
+  'test/app/transport-contract.test.mjs': ['test:unit'],
+  'test/app/transport-registry.test.mjs': ['test:unit'],
   'test/app/validate-ui-queue.test.mjs': ['test:unit'],
   'test/app/validate-ui.mjs': ['app-vertical'],
   'test/app/venue-download.test.mjs': ['test:unit'],
@@ -211,8 +216,16 @@ export const TEST_ESTATE_EXCLUDED = {
     'shared plumbing, not a suite: the Playwright harness (launch, go, until, openPhone, signIn, IGNORABLE_CONSOLE) that functional.mjs, grandma.mjs, visual.mjs and the audit tools import. It runs whenever they do, and it is in modules.json fullSuitePaths so editing it forces the whole UI matrix.',
   'test/app/display-parity.mjs':
     'renderer-parity spot check run by hand (`npm run test:display-parity`). It asserts that three independent measurements of a Place position agree — geo.js, MapLibre and the display pipeline — which needs a running app with a live map. Wiring it into the UI matrix would mean a fourth browser job for a check that has never caught a regression in CI; revisit if it does.',
+  'test/app/lib/appAlias-hook.mjs':
+    'library, not a suite: async resolve hook registered by appAlias.mjs for @/* imports in Node tests. Asserted through party-runtime.test.mjs.',
+  'test/app/lib/appAlias.mjs':
+    'library, not a suite: dynamic import helper for party stack tests that resolves app modules under test. Asserted through the party-protocol and party-runtime suites that import it.',
+  'test/app/lib/fakeTransport.mjs':
+    'library, not a suite: in-memory transport double for party stack interface tests. Asserted through transport-contract, transport-registry, party-protocol, and party-runtime.',
   'test/app/lib/module-select.mjs':
     'library, not a suite: the module manifest loader and path matcher that select-modules.mjs, validate-ui.mjs, functional.mjs and the CI scripts import. Asserted by test/app/module-select.test.mjs.',
+  'test/app/lib/partyBus.mjs':
+    'library, not a suite: fake party bus harness for protocol and runtime tests. Asserted through party-protocol.test.mjs and party-runtime.test.mjs.',
   'test/app/lib/readme-shots.mjs':
     'library, not a suite: the shared README-gallery manifest (CAPTURE_SCRIPT, recordCapture, shotsNeedingRefresh) imported by readme-shots.mjs and readme-shots-check.mjs. Asserted through readme-shots-check.mjs.',
   'test/app/lib/validate-ui-queue.mjs':

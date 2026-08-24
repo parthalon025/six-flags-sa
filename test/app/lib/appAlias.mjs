@@ -11,27 +11,14 @@
  * (`@/lib/party/client`), which bundler resolution allows and Node does not.
  */
 
-import { registerHooks } from 'node:module';
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { register } from 'node:module';
 
-const APP_ROOT = new URL('../../../apps/party-tracker/', import.meta.url);
+const HOOK = new URL('./appAlias-hook.mjs', import.meta.url);
 
-/** Candidate files for one alias specifier, in the order a bundler tries them. */
-function candidates(rest) {
-  return [rest, `${rest}.js`, `${rest}.mjs`, `${rest}/index.js`];
-}
+let installed = false;
 
 export function installAppAlias() {
-  registerHooks({
-    resolve(specifier, context, nextResolve) {
-      if (!specifier.startsWith('@/')) return nextResolve(specifier, context);
-      const rest = specifier.slice(2);
-      for (const candidate of candidates(rest)) {
-        const url = new URL(candidate, APP_ROOT);
-        if (existsSync(fileURLToPath(url))) return { url: url.href, shortCircuit: true };
-      }
-      throw new Error(`appAlias: nothing at ${specifier}`);
-    },
-  });
+  if (installed) return;
+  register(HOOK, import.meta.url);
+  installed = true;
 }
