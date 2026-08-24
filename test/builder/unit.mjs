@@ -195,6 +195,7 @@ const {
   SHEET_PLACE_META_PX,
   SHEET_PLACE_PX,
   SHEET_PLACE_TITLE_PX,
+  sheetPlacePx,
   SHEET_SEARCH_PX,
   nextSheetStop,
   sheetCrowdsMap,
@@ -7254,6 +7255,14 @@ await check('a map-tapped place card stays leaner than peek and half', () => {
       8,
   );
   assert.equal(SHEET_PLACE_PX, 221);
+  return true;
+});
+
+await check('a narrow phone budgets two labelled action rows for place detail', () => {
+  // 390px fits one row; 375px wraps (globals.css). Budget must cover both rows
+  // so the sheet stop does not clip "Rally here" (#574).
+  assert.equal(sheetPlacePx(400), SHEET_PLACE_PX);
+  assert.equal(sheetPlacePx(375), 271);
   return true;
 });
 

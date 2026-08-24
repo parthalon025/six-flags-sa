@@ -122,14 +122,31 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
 export const SHEET_PLACE_HEAD_PX = 24;
 export const SHEET_PLACE_TITLE_PX = 31;
 export const SHEET_PLACE_META_PX = 18;
+/** One labelled action row: 44px button over 12px margin (globals.css). */
 export const SHEET_PLACE_ACTIONS_PX = 56;
-export const SHEET_PLACE_PX =
-  SHEET_CHROME_PX +
-  SHEET_PLACE_HEAD_PX +
-  SHEET_PLACE_TITLE_PX +
-  SHEET_PLACE_META_PX +
-  SHEET_PLACE_ACTIONS_PX +
-  8;
+/** Two wrapped rows at ≤389px: 12 margin + 44 + 6 gap + 44 (globals.css). */
+export const SHEET_PLACE_ACTIONS_WRAP_PX = 106;
+/** Viewport width below which labelled actions wrap (measured 390 fits, 375 wraps). */
+export const SHEET_PLACE_ACTIONS_WRAP_AT_PX = 390;
+
+export function sheetPlaceActionsPx(viewportWidth = SHEET_PLACE_ACTIONS_WRAP_AT_PX) {
+  return viewportWidth < SHEET_PLACE_ACTIONS_WRAP_AT_PX
+    ? SHEET_PLACE_ACTIONS_WRAP_PX
+    : SHEET_PLACE_ACTIONS_PX;
+}
+
+export function sheetPlacePx(viewportWidth = SHEET_PLACE_ACTIONS_WRAP_AT_PX) {
+  return (
+    SHEET_CHROME_PX +
+    SHEET_PLACE_HEAD_PX +
+    SHEET_PLACE_TITLE_PX +
+    SHEET_PLACE_META_PX +
+    sheetPlaceActionsPx(viewportWidth) +
+    8
+  );
+}
+
+export const SHEET_PLACE_PX = sheetPlacePx();
 
 /** How close to a stop a release has to land for the stop to take it. */
 export const SHEET_MAGNET_PX = 26;
