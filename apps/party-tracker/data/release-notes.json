@@ -528,5 +528,17 @@
     "items": [
       "feat(auth): mandatory Clerk, Profile billing entitlements, cloud-agent env (#195)"
     ]
+  },
+  "1.30.0": {
+    "title": "What's new",
+    "items": [
+      "feat(workflow): mechanical Matt skill gate (wayfinder → implement) (#641)"
+    ]
+  },
+  "1.31.0": {
+    "title": "What's new",
+    "items": [
+      "feat(venue-builder): factory route catalog and validate CLI (#634)"
+    ]
   }
 }

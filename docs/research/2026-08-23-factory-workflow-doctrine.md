@@ -16,7 +16,7 @@
 | [Custom map display factory](./2026-08-18-custom-map-display-factory.md) | Same doctrine on the Visual factory |
 | `packages/venue-builder/lib/build-pipeline.mjs` | Current Map + Visual stage list |
 
-The template is for builds **outside Palantir**. Foundry is a translation column, not a destination. That matches ADR-0008 / ADR-0010: Databricks is back-office only; the repo is the bus.
+The template is for builds **outside Palantir**. Foundry is a translation column, not a destination. That matches ADR-0008 / ADR-0010: Databricks is back-office only. For **factory outputs**, PostDB is the bus ([ADR-0024](../adr/0024-postdb-factory-bus.md)); git remains the bus for code and builder inputs.
 
 ---
 

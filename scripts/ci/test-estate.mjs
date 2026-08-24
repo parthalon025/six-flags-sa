@@ -138,6 +138,7 @@ export const TEST_ESTATE = {
   'test/builder/display.mjs': ['test:builder'],
   'test/builder/esa-worldcover.mjs': ['test:builder'],
   'test/builder/footprint-fusion.mjs': ['test:builder'],
+  'test/builder/factory-validate.mjs': ['test:builder'],
   'test/builder/gaps-quests.mjs': ['test:unit', 'test:builder'],
   'test/builder/imagery-claims.mjs': ['test:builder'],
   'test/builder/imagery-ledger.mjs': ['test:builder'],
