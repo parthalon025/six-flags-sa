@@ -401,11 +401,13 @@ export function createElection({
     if (!theirs.id) return;
     const mine = myClaim || selfClaim();
 
-    if (promoted && !shouldYield(mine, theirs)) {
-      // Already hosting and not beaten by a clear margin: re-assert if we
-      // still outrank, otherwise hold. A 1% lead is not a steal.
-      if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
-      return;
+    if (promoted) {
+      if (outranks(theirs, mine)) {
+        // Two live hosts: the total order picks exactly one winner.
+      } else {
+        if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
+        return;
+      }
     }
 
     cancelElection();

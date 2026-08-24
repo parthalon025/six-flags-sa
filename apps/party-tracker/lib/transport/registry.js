@@ -121,9 +121,11 @@ export class TransportManager {
     );
 
     // A host that lands on WebRTC with no peer yet still has to hear HELLO on
-    // the mailbox. Warming that path in parallel with selection means a joiner
-    // does not race a PING that found nobody on the direct channel.
-    if (this.role() === 'host') this.warmUp().catch(noop);
+    // the mailbox. Warming standby paths in parallel with selection means a
+    // joiner does not race a PING that found nobody on the direct channel.
+    // Inbox warmth waits until the send path is chosen — warming it early would
+    // claim the slot the selection loop is about to activate.
+    if (this.role() === 'host') this.warmUp({ inbox: false }).catch(noop);
 
     for (const t of candidates) {
       if (this.failed.has(t.name)) continue;
@@ -336,9 +338,9 @@ export class TransportManager {
    * on. Anything never probed, probed unavailable, or already written off is
    * not a candidate.
    */
-  desiredWarm() {
+  desiredWarm({ inbox = true } = {}) {
     const out = [];
-    let wantInbox = this.role() === 'host';
+    let wantInbox = inbox && this.role() === 'host';
     for (const t of this.registry.list()) {
       if (t === this.active || t.rank === RANK.OFFLINE) continue;
       if (this.probeOf(t.name)?.available !== true) continue;
@@ -346,7 +348,7 @@ export class TransportManager {
         if (!this.failed.has(t.name) || this.warm.has(t)) out.push(t);
         continue;
       }
-      if (wantInbox && !this.failed.has(t.name)) {
+      if (wantInbox && this.active && !this.failed.has(t.name)) {
         out.push(t);
         wantInbox = false;
       }
@@ -355,11 +357,28 @@ export class TransportManager {
   }
 
   /** Open whatever `desiredWarm` names and is not open already. */
-  async warmUp() {
-    if (this.warming) return this.warming;
-    const wanted = this.desiredWarm().filter((t) => !this.warm.has(t) && t !== this.active);
-    if (!wanted.length) return null;
-    this.warming = Promise.all(wanted.map((t) => this.openTransport(t, false).catch(noop))).finally(() => {
+  async warmUp(opts = {}) {
+    if (opts.inbox !== false) this._warmInbox = true;
+    if (this.warming) {
+      this._warmAgain = true;
+      return this.warming;
+    }
+    const run = async () => {
+      do {
+        this._warmAgain = false;
+        const wanted = this.desiredWarm({ inbox: this._warmInbox })
+          .filter((t) => !this.warm.has(t) && t !== this.active);
+        if (!wanted.length) {
+          if (!this._warmAgain) break;
+          await Promise.resolve();
+          continue;
+        }
+        await Promise.all(wanted.map((t) => this.openTransport(t, false).catch(noop)));
+      } while (this._warmAgain);
+      this._warmInbox = false;
+      return null;
+    };
+    this.warming = run().finally(() => {
       this.warming = null;
     });
     return this.warming;
