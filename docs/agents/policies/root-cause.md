@@ -20,7 +20,7 @@ If none of those apply, keep going until the cause is the merge.
 
 ## Review
 
-`buildReviewPrompt` in `scripts/lib/matt-review.mjs` asks the standards review whether the diff ships the cause or a hide. Answer that finding; do not stamp past it.
+`buildStandardsPrompt` / `buildTwoAxisReview` in `scripts/lib/matt-review.mjs` ask the standards review whether the diff ships the cause or a hide. Answer that finding; do not stamp past it.
 
 ---
 
