@@ -1,5 +1,5 @@
 <!-- agent-docs:generated -->
 
-# Issue tracker: GitHub
+# Issue tracker
 
-**GitHub** Issues is the only issue surface — use `gh` CLI for all operations. See [github-issue-tracker policy](./policies/github-issue-tracker.md).
+**Local markdown** (`.scratch/`) for wayfinding and feature work; **GitHub** for agent-handoff (`gh` CLI). See [local-issue-tracker policy](./policies/local-issue-tracker.md).

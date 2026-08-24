@@ -31,7 +31,7 @@ assert.ok(outputs.has('docs/agents/triage-labels.md'), 'composes triage-labels s
 assert.ok(outputs.has('.github/ISSUE_TEMPLATE/agent-handoff.yml'), 'composes agent-handoff template');
 
 const issueTracker = outputs.get('docs/agents/issue-tracker.md');
-assert.match(issueTracker, /github-issue-tracker policy/);
+assert.match(issueTracker, /local-issue-tracker policy/);
 assert.ok(issueTracker.length < 300, 'issue-tracker stub stays slim');
 
 const handoffYml = outputs.get('.github/ISSUE_TEMPLATE/agent-handoff.yml');

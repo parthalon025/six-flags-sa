@@ -133,9 +133,9 @@
     "docStubs": [
       {
         "output": "docs/agents/issue-tracker.md",
-        "title": "Issue tracker: GitHub",
-        "policy": "github-issue-tracker",
-        "pointer": "**GitHub** Issues is the only issue surface — use `gh` CLI for all operations."
+        "title": "Issue tracker",
+        "policy": "local-issue-tracker",
+        "pointer": "**Local markdown** (`.scratch/`) for wayfinding and feature work; **GitHub** for agent-handoff (`gh` CLI)."
       },
       {
         "output": "docs/agents/triage-labels.md",
@@ -150,7 +150,7 @@
     "sections": [
       {
         "subheading": "Issue tracker",
-        "pointer": "**GitHub** Issues for `parthalon025/six-flags-sa` (via `gh`) — see [github-issue-tracker policy](./docs/agents/policies/github-issue-tracker.md)."
+        "pointer": "**Local markdown** (`.scratch/`) for wayfinding and specs; **GitHub** for agent-handoff — see [local-issue-tracker](./docs/agents/policies/local-issue-tracker.md) and [github-issue-tracker](./docs/agents/policies/github-issue-tracker.md) policies."
       },
       {
         "subheading": "Triage labels",
