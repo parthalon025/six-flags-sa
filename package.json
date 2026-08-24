@@ -47,6 +47,7 @@
     "consolidate:export": "node scripts/run-consolidate-from-export.mjs --queue data/databricks/bronze/consolidate-export.json",
     "databricks:setup": "node scripts/databricks-workspace-setup.mjs",
     "databricks:free-setup": "node scripts/databricks-free-setup.mjs",
+    "postdb:lakebase-setup": "node --env-file-if-exists=.env scripts/postdb-lakebase-setup.mjs",
     "clerk:setup": "node scripts/clerk-setup.mjs",
     "billing:sync-check": "node scripts/billing-sync-check.mjs",
     "ios:wire-watch": "node scripts/ios/wire-watch-target.mjs",
