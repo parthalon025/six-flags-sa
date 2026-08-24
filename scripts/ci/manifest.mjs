@@ -53,6 +53,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/bake-drift-watch.test.mjs',
   'test/scripts/billing-sync-check.test.mjs',
+  'test/scripts/lakebase-config.test.mjs',
   'test/scripts/profile-max-rank.test.mjs',
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',
