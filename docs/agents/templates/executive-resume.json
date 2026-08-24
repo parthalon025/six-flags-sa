@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "updatedAt": null,
+  "platform": "unknown",
+  "now": {
+    "task": "",
+    "ticket": null,
+    "doneWhen": [],
+    "nextStep": "",
+    "inScope": [],
+    "worktree": null,
+    "branch": null,
+    "draftPr": null
+  },
+  "human": {
+    "parkingLot": [],
+    "blockedOnMe": [],
+    "notes": ""
+  },
+  "lastStop": {
+    "iWasDoing": "",
+    "at": null
+  },
+  "inventory": {
+    "draftPrs": [],
+    "worktrees": [],
+    "claimedTickets": [],
+    "handoffIssues": [],
+    "trainNext": null,
+    "workflowEfforts": [],
+    "parkingLot": [],
+    "blockedOnMe": []
+  },
+  "timer": {
+    "everyHours": 12,
+    "lastFiredAt": null
+  }
+}

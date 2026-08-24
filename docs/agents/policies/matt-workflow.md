@@ -5,6 +5,7 @@ Matt Pocock skills form **flows** (main, on-ramps, standalones). Phase is **deri
 ## When this applies
 
 - Every session that does multi-step product or factory work
+- Pair with [executive-resume](./executive-resume.md) — resume holds NOW; workflow holds phase/skill
 - Before `/implement`, `/to-spec`, or skipping `/wayfinder`
 - When unsure which global skill to invoke — run the router first
 
@@ -12,6 +13,7 @@ Matt Pocock skills form **flows** (main, on-ramps, standalones). Phase is **deri
 
 | Concern | Use this |
 |---------|----------|
+| Session open (NOW + inventory + workflow) | `npm run resume:start` |
 | Session brief (which skill now) | `npm run workflow:next` |
 | Full brief + skill map | `npm run workflow:session` |
 | Gate a risky jump (e.g. implement too early) | `npm run workflow:check -- --intent implement` |

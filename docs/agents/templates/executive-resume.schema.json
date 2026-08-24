@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExecutiveResume",
+  "type": "object",
+  "required": ["schema", "now", "human", "inventory", "lastStop", "timer"],
+  "properties": {
+    "schema": { "const": 1 },
+    "updatedAt": { "type": "string" },
+    "platform": {
+      "enum": ["cursor-cloud", "cursor-local", "claude-code", "unknown"]
+    },
+    "previousPlatform": {
+      "type": ["string", "null"],
+      "enum": ["cursor-cloud", "cursor-local", "claude-code", "unknown", null]
+    },
+    "now": {
+      "type": "object",
+      "required": ["task", "doneWhen", "nextStep", "inScope"],
+      "properties": {
+        "task": { "type": "string" },
+        "ticket": { "type": ["string", "null"] },
+        "doneWhen": { "type": "array", "items": { "type": "string" } },
+        "nextStep": { "type": "string" },
+        "inScope": { "type": "array", "items": { "type": "string" } },
+        "worktree": { "type": ["string", "null"] },
+        "branch": { "type": ["string", "null"] },
+        "draftPr": { "type": ["string", "null"] }
+      }
+    },
+    "human": {
+      "type": "object",
+      "properties": {
+        "parkingLot": { "type": "array", "items": { "type": "string" } },
+        "blockedOnMe": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "string" }
+      }
+    },
+    "lastStop": {
+      "type": "object",
+      "properties": {
+        "iWasDoing": { "type": "string" },
+        "at": { "type": ["string", "null"] }
+      }
+    },
+    "inventory": { "type": "object" },
+    "timer": {
+      "type": "object",
+      "properties": {
+        "everyHours": { "const": 12 },
+        "lastFiredAt": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

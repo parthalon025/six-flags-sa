@@ -5,4 +5,4 @@ alwaysApply: true
 
 # Matt workflow
 
-Matt skill **phase** is derived from `.scratch/<effort>/` — run `npm run workflow:next` before `/implement`; gate with `npm run workflow:check`. See [matt-workflow policy](../../docs/agents/policies/matt-workflow.md).
+Matt skill **phase** is derived from `.scratch/<effort>/` — run `npm run workflow:next` before `/implement`; gate with `npm run workflow:check`. Pair with `npm run resume:start`. See [matt-workflow policy](../../docs/agents/policies/matt-workflow.md).
