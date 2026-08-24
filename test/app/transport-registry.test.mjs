@@ -216,51 +216,29 @@ await check('a host also warms the best mailbox, so a joiner HELLO is never miss
   await mgr.close();
 });
 
-await check('BUG #warm-inbox: a host on LAN warms no mailbox at all', async () => {
-  // See the PR body. connect() calls warmUp() BEFORE selection (registry.js:126),
-  // when `active` is still null — so desiredWarm() hands the single inbox slot
-  // to the transport that is about to become active. The post-selection
-  // warmUp() at :137 then returns the still-pending `warming` memo (:337)
-  // instead of re-evaluating, so the mailbox is never opened.
-  //
-  // Consequence in the field: a host reachable over the self-hosted /server
-  // LAN mailbox (NEXT_PUBLIC_SYNC_URL, or an `endpoints` entry carried in the
-  // invite) listens on no cloud mailbox. A joiner on mobile data posts its
-  // HELLO to the relay and nobody is there — the exact failure registry.js:22-31
-  // says the warm inbox exists to prevent.
-  //
-  // Pinned as OBSERVED, not endorsed. The assertions below are what the code
-  // does today; the follow-up should make them read ['relay'] and 1.
+await check('a host on LAN warms the cloud mailbox for joiners on mobile data', async () => {
   const cloud = relay();
   const local = lan();
   const mgr = manager([local, cloud], { session: { role: 'host' } });
   await mgr.connect();
   await settle();
   assert.equal(mgr.activeName(), 'lan');
-  assert.deepEqual(mgr.warmNames(), [], 'behaviour changed — check the follow-up fix');
-  assert.equal(cloud.log.opens, 0, 'behaviour changed — the relay is warmed now');
-  // The manager still *wants* it warm; only the memo stopped it happening.
+  assert.deepEqual(mgr.warmNames(), ['relay']);
+  assert.equal(cloud.log.opens, 1);
   assert.deepEqual(
     mgr.desiredWarm().map((t) => t.name),
     ['relay'],
-    'desiredWarm no longer names the mailbox the host is missing',
   );
-  // ...and one explicit re-warm repairs it, which is the shape of the fix.
-  await mgr.warmUp();
-  await settle();
-  assert.deepEqual(mgr.warmNames(), ['relay']);
   await mgr.close();
 });
 
-await check('BUG #warm-inbox: the active transport is opened twice', async () => {
-  // Same root cause: the pre-selection warmUp opens the transport as a warm
-  // path while the open loop is opening the very same one as the send path.
+await check('the active transport is opened once, not warmed and activated', async () => {
   const local = lan();
   const mgr = manager([local, relay()], { session: { role: 'host' } });
   await mgr.connect();
   await settle();
   assert.equal(mgr.activeName(), 'lan');
-  assert.equal(local.log.opens, 2, 'behaviour changed — the double open is gone');
+  assert.equal(local.log.opens, 1);
   await mgr.close();
 });
 

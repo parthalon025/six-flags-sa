@@ -121,9 +121,11 @@ export class TransportManager {
     );
 
     // A host that lands on WebRTC with no peer yet still has to hear HELLO on
-    // the mailbox. Warming that path in parallel with selection means a joiner
-    // does not race a PING that found nobody on the direct channel.
-    if (this.role() === 'host') this.warmUp().catch(noop);
+    // the mailbox. Warming standby paths in parallel with selection means a
+    // joiner does not race a PING that found nobody on the direct channel.
+    // Inbox warmth waits until after selection so it cannot claim the transport
+    // that is about to become active.
+    if (this.role() === 'host') this.warmUp({ standbyOnly: true }).catch(noop);
 
     for (const t of candidates) {
       if (this.failed.has(t.name)) continue;
@@ -354,10 +356,25 @@ export class TransportManager {
     return out;
   }
 
+  /** Standby transports that should be open before the send path is chosen. */
+  desiredWarmStandby() {
+    const out = [];
+    for (const t of this.registry.list()) {
+      if (!t.standby || t === this.active || t.rank === RANK.OFFLINE) continue;
+      if (this.probeOf(t.name)?.available !== true) continue;
+      if (!this.failed.has(t.name) || this.warm.has(t)) out.push(t);
+    }
+    return out;
+  }
+
   /** Open whatever `desiredWarm` names and is not open already. */
-  async warmUp() {
-    if (this.warming) return this.warming;
-    const wanted = this.desiredWarm().filter((t) => !this.warm.has(t) && t !== this.active);
+  async warmUp({ standbyOnly = false } = {}) {
+    if (this.warming) {
+      await this.warming;
+      return this.warmUp({ standbyOnly });
+    }
+    const source = standbyOnly ? () => this.desiredWarmStandby() : () => this.desiredWarm();
+    const wanted = source().filter((t) => !this.warm.has(t) && t !== this.active);
     if (!wanted.length) return null;
     this.warming = Promise.all(wanted.map((t) => this.openTransport(t, false).catch(noop))).finally(() => {
       this.warming = null;

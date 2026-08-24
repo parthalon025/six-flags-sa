@@ -401,11 +401,12 @@ export function createElection({
     if (!theirs.id) return;
     const mine = myClaim || selfClaim();
 
-    if (promoted && !shouldYield(mine, theirs)) {
-      // Already hosting and not beaten by a clear margin: re-assert if we
-      // still outrank, otherwise hold. A 1% lead is not a steal.
-      if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
-      return;
+    if (promoted) {
+      // Two live hosts reconcile on the total order, not the steal margin.
+      if (!outranks(theirs, mine)) {
+        if (outranks(mine, theirs) && now() - lastVictorySentAt >= reassertGapMs) sendVictory();
+        return;
+      }
     }
 
     cancelElection();

@@ -62,7 +62,7 @@ import {
   WORLD_WITHDRAW,
 } from '@/lib/core/protocol';
 import { emptyWorld } from '@/lib/world.js';
-import { readRank, shouldYield } from '@/lib/party/election';
+import { outranks, readRank } from '@/lib/party/election';
 import {
   clearSession,
   createSession,
@@ -617,7 +617,9 @@ export function createPartyRuntime({ onState = noop, onStatus = noop, onToast = 
     // won on gets the benefit of the doubt, because one host too few repairs
     // itself in a timeout and one host too many never does.
     const theirs = readRank(frame, { score: Infinity, joinOrder: -1 });
-    if (shouldYield({ ...mine, id: session.selfId }, theirs)) {
+    const mineRank = { ...mine, id: session.selfId };
+    // Two live hosts settle on the election's total order — no battery margin.
+    if (outranks(theirs, mineRank)) {
       stepDown(theirs.id, frame.body?.snapshot ?? null);
       return;
     }
