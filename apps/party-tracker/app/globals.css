@@ -364,10 +364,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   0% { opacity: 0; transform: translateY(8px) }
   100% { opacity: 1; transform: none }
 }
-@keyframes railIn {
-  0% { opacity: 0; transform: translateY(10px) }
-  100% { opacity: 1; transform: none }
-}
 @keyframes sheetUp {
   0% { transform: translateY(100%) }
   100% { transform: none }
@@ -399,13 +395,6 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 @keyframes breathe {
   0%, 100% { opacity: .55 }
   50% { opacity: 1 }
-}
-/* An expanding ring rather than a fading card: NEED HELP has to keep pulling
-   the eye back without making its own text unreadable half the time. */
-@keyframes alertRing {
-  0% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--red) 46%, transparent) }
-  70% { box-shadow: var(--shadow1), 0 0 0 9px color-mix(in srgb, var(--red) 0%, transparent) }
-  100% { box-shadow: var(--shadow1), 0 0 0 0 color-mix(in srgb, var(--red) 0%, transparent) }
 }
 @keyframes pinDrop {
   0% { opacity: 0; transform: translateY(-20px) }

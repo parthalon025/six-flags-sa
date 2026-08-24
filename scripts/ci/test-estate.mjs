@@ -241,5 +241,5 @@ export const TEST_ESTATE_EXCLUDED = {
   'test/app/theme.mjs':
     'screenshot pair for human palette review (`npm run test:theme`): drives the real daylight/night toggle and writes two shots with a single assert. Needs a running app; documented as hand-run in docs/guide/testing.md. It is in modules.json fullSuitePaths, so editing it still forces the full UI matrix.',
   'test/app/ux.mjs':
-    'human-run exploration (`npm run test:ux`): boots a phone viewport, logs page errors and takes two glance-rail screenshots. It asserts nothing, so running it in CI would only prove a browser started. It is in modules.json fullSuitePaths, so editing it still forces the full UI matrix.',
+    'human-run exploration (`npm run test:ux`): boots a phone viewport, logs page errors and takes explore-peek screenshots. It asserts nothing, so running it in CI would only prove a browser started. It is in modules.json fullSuitePaths, so editing it still forces the full UI matrix.',
 };

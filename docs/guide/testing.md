@@ -10,7 +10,7 @@ npm test                            # unit, then the three-phone behavioural sui
 npm run test:validate-ui            # e2e functional + grandma (required for UI changes)
 npm run test:visual                 # screenshots to test/shots/
 npm run test:theme                  # daylight and night, via the real toggle
-npm run test:ux                     # glance rail with a live party
+npm run test:ux                     # explore peek with a live party
 npm run test:grandma                # can a stranger actually use it
 npm run readme:shots                # README stills + walkthrough.mp4 (app must be running)
 npm run readme:shots:check          # gallery files exist, linked, and not stale vs --base

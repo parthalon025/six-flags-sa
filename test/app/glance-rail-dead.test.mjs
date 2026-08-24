@@ -54,6 +54,11 @@ check('globals.css has no live .glance* selectors', () => {
   assert.deepEqual(rules, [], `dead glance selectors remain: ${[...new Set(rules)].join(', ')}`);
 });
 
+check('orphan glance keyframes are gone', () => {
+  assert.doesNotMatch(css, /@keyframes railIn/);
+  assert.doesNotMatch(css, /@keyframes alertRing/);
+});
+
 check('shared tap-target rules no longer mention glanceGo', () => {
   assert.doesNotMatch(css, /\.glanceGo/);
   assert.doesNotMatch(css, /\.glanceRail/);
