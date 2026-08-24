@@ -292,11 +292,25 @@ try {
 }
 
 {
-  const ctx = buildLocalCiContext({ baseRef: 'origin/main' });
+  const dir = mkdtempSync(join(tmpdir(), 'localci-train-'));
+  const git = (...a) => execFileSync('git', a, { cwd: dir, env: scrubGitEnv(), stdio: 'pipe' });
+  git('init', '-qb', 'main');
+  git('config', 'user.email', 't@e.st');
+  git('config', 'user.name', 'T');
+  writeFileSync(join(dir, 'a.js'), 'export const a = 1;\n');
+  git('add', '.');
+  git('commit', '-qm', 'base');
+  git('checkout', '-qb', 'feature');
+  // >1 MB patch — the size that used to overflow Node's default git buffer.
+  writeFileSync(join(dir, 'a.js'), `${'export const a = 2;\n'.repeat(80_000)}`);
+  git('add', '.');
+  git('commit', '-qm', 'train-sized change');
+  const ctx = buildLocalCiContext({ baseRef: 'main', cwd: dir });
   assert.ok(
     ctx.diffHash,
     'a train-sized patch must still hash — ENOBUFS used to write diffHash: null after a green vertical',
   );
+  rmSync(dir, { recursive: true, force: true });
 }
 
 console.log('local-ci-pass: ok');
