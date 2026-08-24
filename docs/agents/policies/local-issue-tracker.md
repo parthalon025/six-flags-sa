@@ -29,6 +29,8 @@ Used by `/wayfinder`. The **map** is a file with one **child** file per ticket.
 - **Claim**: set `Status: claimed` before work
 - **Resolve**: append `## Answer`, set `Status: resolved`, gist + link under **Decisions so far** in `map.md`
 
+**Matt workflow phase** (which skill to invoke next) is derived from map + spec + tickets — run `npm run workflow:next`. See [matt-workflow policy](./policies/matt-workflow.md).
+
 ### Active wayfinder effort
 
 | Effort | Map |
