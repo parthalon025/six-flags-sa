@@ -513,7 +513,7 @@ function ParkApp({ isSignedIn }) {
   // The sheet's open stops are fractions of the viewport, so their height in
   // pixels is only knowable once there is a window to ask.
   const [viewportH, setViewportH] = useState(844);
-  const [viewportW, setViewportW] = useState(390);
+  const [viewportW, setViewportW] = useState(375);
   const stops = useMemo(() => sheetStops(viewportH), [viewportH]);
 
   /* The two things the app itself ever does to the sheet, and both of them are
@@ -1090,6 +1090,11 @@ function ParkApp({ isSignedIn }) {
   useEffect(() => {
     if (shouldRegisterPush(party)) void registerPush();
   }, [party?.active]);
+
+  useLayoutEffect(() => {
+    setViewportH(window.innerHeight);
+    setViewportW(window.innerWidth);
+  }, []);
 
   useEffect(() => {
     const measure = () => {

@@ -108,7 +108,10 @@ export const SHEET_OPEN = { half: 0.52, full: 0.88 };
  *            22px line, over 2
  *   title    .placeDetailName — 21px type on a 26px line, over 5 to the meta
  *   meta     .placeDetailLine — one 18px line
- *   actions  .placeActions.labelled — a 44px button under 12 of margin
+ *   actions  .placeActions.labelled — one 44px row (12 margin) at ≥390px; below
+ *            that width the three labels wrap to two rows (12 + 44 + 6 + 44).
+ *            {@link sheetPlacePx} picks the budget; re-measure both when padding
+ *            or labels change.
  *
  * The back chevron overlays the title rather than taking a row of its own, so
  * it costs nothing here — see .navHead.placeNav.
