@@ -335,7 +335,8 @@ export class TransportManager {
    * Transports that must be open even though they are not the send path: every
    * `standby` one, plus — for a host — the best mailbox a joiner might arrive
    * on. Anything never probed, probed unavailable, or already written off is
-   * not a candidate.
+   * not a candidate. `standbysOnly` skips the mailbox slot so a pre-selection
+   * warm pass cannot claim the transport about to become active.
    */
   desiredWarm({ standbysOnly = false } = {}) {
     const out = [];
@@ -355,7 +356,11 @@ export class TransportManager {
     return out;
   }
 
-  /** Open whatever `desiredWarm` names and is not open already. */
+  /**
+   * Open whatever `desiredWarm` names and is not open already. Concurrent
+   * callers coalesce on one in-flight pass; a full warm requested while a
+   * standbys-only pass is running chains a follow-up inbox pass.
+   */
   async warmUp({ standbysOnly = false } = {}) {
     if (this.warming) {
       if (!standbysOnly) this.warmPendingFull = true;
@@ -368,9 +373,13 @@ export class TransportManager {
         if (!wanted.length) return;
         await Promise.all(wanted.map((t) => this.openTransport(t, false).catch(noop)));
       };
-      await pass({ standbysOnly });
-      if (this.warmPendingFull || !standbysOnly) {
-        this.warmPendingFull = false;
+      if (standbysOnly) {
+        await pass({ standbysOnly: true });
+        if (this.warmPendingFull) {
+          this.warmPendingFull = false;
+          await pass({ standbysOnly: false });
+        }
+      } else {
         await pass({ standbysOnly: false });
       }
       while (this.warmPendingFull) {
