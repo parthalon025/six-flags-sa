@@ -540,5 +540,11 @@
     "items": [
       "feat(venue-builder): factory route catalog and validate CLI (#634)"
     ]
+  },
+  "1.32.0": {
+    "title": "What's new",
+    "items": [
+      "feat(agents): executive resume + Matt workflow gate (#644)"
+    ]
   }
 }
