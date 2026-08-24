@@ -101,7 +101,7 @@ Train **H/I** slice state is derived from the tree, never stored — run `npm ru
 
 ### Issue tracker
 
-**GitHub** Issues for `parthalon025/six-flags-sa` (via `gh`) — see [github-issue-tracker policy](./docs/agents/policies/github-issue-tracker.md).
+**Local markdown** (`.scratch/`) for wayfinding and specs; **GitHub** for agent-handoff — see [local-issue-tracker](./docs/agents/policies/local-issue-tracker.md) and [github-issue-tracker](./docs/agents/policies/github-issue-tracker.md) policies.
 
 ### Triage labels
 
