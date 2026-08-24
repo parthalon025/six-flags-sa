@@ -273,8 +273,8 @@ function ParkApp({ isSignedIn }) {
       venue,
       map: mapData,
       /* The World's Places, Overlay already painted on by the store. This
-         screen is not a privileged reader of them: HeightPanel and GlanceRail
-         ask the store for the same array and get the same answer. */
+         screen is not a privileged reader of them: HeightPanel asks the store
+         for the same array and get the same answer. */
       pois: POIS,
       overlayPins,
       gaps: venueGaps,

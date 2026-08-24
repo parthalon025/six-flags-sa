@@ -39,7 +39,7 @@ function ensurePmtilesProtocol() {
    globals.css is a watched path for the README map shots — appending to it
    stales map-day.png and map-night.png for a change that cannot affect the
    shipped map. Inline style objects are the established pattern here
-   (DisplayMap.jsx, GlanceRail.jsx). */
+   (DisplayMap.jsx). */
 const S = {
   wrap: { position: 'relative', flex: 1 },
   canvas: { position: 'absolute', inset: 0 },
