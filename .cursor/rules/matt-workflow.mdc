@@ -1,0 +1,8 @@
+---
+description: Follow ask-matt flows: wayfinder → to-spec → to-tickets → implement. Run workflow:next; do not skip steps.
+alwaysApply: true
+---
+
+# Matt workflow
+
+Matt skill **phase** is derived from `.scratch/<effort>/` — run `npm run workflow:next` before `/implement`; gate with `npm run workflow:check`. See [matt-workflow policy](../../docs/agents/policies/matt-workflow.md).
