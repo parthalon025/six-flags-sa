@@ -31,3 +31,24 @@ Going the other way: if an app change reads a new or changed shape from `apps/pa
 ## Ask before guessing
 
 If it's unclear whether a file is builder input (edit it) or builder output (regenerate it, don't hand-edit it) — or whether a fix belongs in the builder vs. the app — ask before proceeding rather than guessing.
+
+## Agents: warn before hand-waving builds or maps
+
+When work touches the venue builder, display pipeline, World/Visual factory seams, or anything under `apps/party-tracker/public/venues/`, **tell the user explicitly** if you have not run the relevant build or map proof. Do not imply a map or bake is correct from code review alone.
+
+**Must run (or say you have not yet):**
+
+| Change touches… | Build / prove with… |
+|-----------------|---------------------|
+| Venue inputs, builder code, tags, POIs, gaps | `npm run venues:build` / `venues:rebuild` (or the scoped script the diff warrants), then `npm run venues:report <id>` |
+| Display skins, visual/world packs, zone tones, bake output | Display bake/publish steps in [venue-builder guide](../../guide/venue-builder.md) for the affected venue(s) |
+| App reads new/changed venue JSON shape | Regenerate all shipped venues; confirm shape in rebuilt output |
+| Map rendering, LOD, icons, MapLibre layers | `npm run build -w @party-tracker/app` plus browser vertical or manual map check on a **fresh** build |
+
+**Say out loud when skipping:**
+
+- "I have **not** rebuilt venues — do not merge on this diff alone."
+- "I have **not** regenerated display/map artifacts — output under `public/venues/` may be stale."
+- "I am reviewing the seam only; the **map in the app** is unproven."
+
+Hand-editing generated files under `apps/party-tracker/public/venues/` or `venueIndex.js` to "fix" a map is never acceptable — fix upstream and regenerate (see above).
