@@ -222,7 +222,7 @@ function readSpecFile(path, cwd) {
 }
 
 /**
- * Locate the originating spec: explicit path, issue ref in commits, or branch-name match.
+ * Locate the originating spec: issue ref in commits, explicit path, or branch-name match.
  * Returns null when nothing is found.
  */
 export function identifySpecSource({ branch, commitMessages = [], specPath, cwd = root } = {}) {
@@ -279,7 +279,7 @@ export function buildStandardsPrompt({
     'Apply, in order:',
     "1. The global Matt Pocock `code-review` skill — Standards axis.",
     '2. The Always / Never lists in docs/agents/matt-standards.md.',
-    '3. The deep-module vocabulary from the `codebase-design` skill for any new or moved seam.',
+    '3. The deep-module vocabulary from the `codebase-design` skill for any new or moved seam: is each new module deep (small interface, real behaviour)? Is policy in scripts/lib rather than prose? Behaviour changes near existing tests should have arrived test-first (tdd skill).',
     '4. The root-cause policy (docs/agents/policies/root-cause.md): does this diff ship the missing layer, or a hide?',
     '',
     'If GitNexus tools are available, run detect_changes / impact on the touched symbols first.',
