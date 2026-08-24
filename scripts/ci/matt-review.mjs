@@ -59,6 +59,10 @@ export function runTwoAxis({ baseRef = 'origin/main', specPath, cwd = root } = {
 
 export function runPrompt({ baseRef = 'origin/main', cwd = root } = {}) {
   const review = buildTwoAxisReview({ baseRef, cwd });
+  if (review.files.length === 0) {
+    console.error('two-axis review: empty diff — pin a fixed point with commits ahead of it');
+    return 1;
+  }
   console.log(review.standardsPrompt);
   return 0;
 }

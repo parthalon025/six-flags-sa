@@ -320,7 +320,7 @@ export function buildSpecPrompt({ files = [], spec, diffCommand = '', commits = 
 /** Pin the fixed point and build both axis prompts. */
 export function buildTwoAxisReview({ baseRef = 'origin/main', specPath, cwd = root } = {}) {
   const context = buildMattReviewContext({ baseRef, cwd });
-  const diffCommand = `git diff ${context.mergeBase}...HEAD`;
+  const diffCommand = `git diff ${baseRef}...HEAD`;
   const commits = listCommitsSinceMergeBase(context.mergeBase, cwd);
   const commitMessages = commits.map((c) => c.replace(/^[0-9a-f]+\s+/, ''));
   const branch = currentBranch(cwd);

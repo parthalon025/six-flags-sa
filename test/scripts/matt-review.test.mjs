@@ -198,6 +198,17 @@ assert.equal(reviewRequiredForFiles(null), true, 'unknown diff fails closed');
   assert.equal(spec.number, 595);
 }
 
+// identifySpecSource — branch-name match when no issue ref or explicit path
+{
+  const dir = mkdtempSync(join(tmpdir(), 'spec-branch-'));
+  mkdirSync(join(dir, 'docs'), { recursive: true });
+  writeFileSync(join(dir, 'docs/two-axis-review.md'), '# Spec\n\nBranch match.\n');
+  const spec = identifySpecSource({ branch: 'worktree-two-axis-review', cwd: dir });
+  assert.equal(spec.kind, 'file');
+  assert.match(spec.path, /two-axis-review/);
+  rmSync(dir, { recursive: true, force: true });
+}
+
 // buildSpecPrompt — issue kind
 {
   const prompt = buildSpecPrompt({
