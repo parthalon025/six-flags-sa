@@ -531,6 +531,7 @@ export function sessionBrief({ cwd = REPO, effort, situation } = {}) {
   lines.push('');
   lines.push('Trains H/I (orthogonal): `npm run train:next`');
   lines.push('Route one task: `npm run orchestrator:route -- "<task>"`');
+  lines.push('Executive resume: `npm run resume:start` → NOW + inventory (see executive-resume policy)');
 
   return lines.join('\n');
 }

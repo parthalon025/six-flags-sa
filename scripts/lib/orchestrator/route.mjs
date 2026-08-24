@@ -196,6 +196,8 @@ export function renderSessionBrief({ roster = loadRoster() } = {}) {
     `Route one task:      node scripts/orchestrator.mjs route "<task>"    → member, model, dispatch prompt`,
     `Plan the chain:      node scripts/orchestrator.mjs plan "<task>"     → phases for the Workflow tool`,
     '',
+    'Executive resume:    npm run resume:start      → NOW + open inventory + Matt workflow (session open)',
+    '                     npm run resume:check      → drift if NOW ≠ worktrees/PRs',
     'Matt workflow:       npm run workflow:next    → which skill to invoke now (/wayfinder, /to-spec, /implement, …)',
     '                     npm run workflow:check -- --intent implement  → gate skipping steps',
     'Trains H/I:          npm run train:next        → orthogonal display/imagery slices',

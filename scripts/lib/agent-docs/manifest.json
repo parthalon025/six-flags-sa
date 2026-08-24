@@ -107,10 +107,18 @@
       "cursorDescription": "Trains H/I: doneness comes from probes over the tree; never mark a slice done, never answer a blocked decision."
     },
     {
+      "id": "executive-resume",
+      "heading": "Executive resume — NOW + open inventory",
+      "title": "Executive resume",
+      "pointer": "**Executive resume** — one NOW task and regenerated open inventory; `npm run resume:start` at session open; syncs to the executive dashboard GitHub issue.",
+      "cursorRule": "executive-resume.mdc",
+      "cursorDescription": "Executive resume: one NOW task, full open inventory, GitHub issue sync, 12h timer, pairs with Matt workflow gate."
+    },
+    {
       "id": "matt-workflow",
       "heading": "Matt workflow — follow the skill map",
       "title": "Matt workflow",
-      "pointer": "Matt skill **phase** is derived from `.scratch/<effort>/` — run `npm run workflow:next` before `/implement`; gate with `npm run workflow:check`.",
+      "pointer": "Matt skill **phase** is derived from `.scratch/<effort>/` — run `npm run workflow:next` before `/implement`; gate with `npm run workflow:check`. Pair with `npm run resume:start`.",
       "cursorRule": "matt-workflow.mdc",
       "cursorDescription": "Follow ask-matt flows: wayfinder → to-spec → to-tickets → implement. Run workflow:next; do not skip steps."
     }

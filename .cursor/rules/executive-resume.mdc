@@ -1,0 +1,8 @@
+---
+description: Executive resume: one NOW task, full open inventory, GitHub issue sync, 12h timer, pairs with Matt workflow gate.
+alwaysApply: true
+---
+
+# Executive resume
+
+**Executive resume** — one NOW task and regenerated open inventory; `npm run resume:start` at session open; syncs to the executive dashboard GitHub issue. See [executive-resume policy](../../docs/agents/policies/executive-resume.md).
