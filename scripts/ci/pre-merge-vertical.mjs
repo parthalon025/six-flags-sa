@@ -46,6 +46,7 @@ import {
   mattReviewBlockReason,
   readMattReview,
 } from '../lib/matt-review.mjs';
+import { workflowBlockReason } from '../lib/matt-workflow.mjs';
 import { runLiveZoomSweep } from '../lib/map-perf-gate.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -175,6 +176,12 @@ export async function runPreMergeVertical({
   });
   if (reviewBlock) {
     console.error(`pre-merge-vertical: ${reviewBlock}`);
+    return 1;
+  }
+
+  const workflowBlock = workflowBlockReason({ files, cwd });
+  if (workflowBlock) {
+    console.error(`pre-merge-vertical: ${workflowBlock}`);
     return 1;
   }
 
