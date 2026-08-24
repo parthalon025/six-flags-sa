@@ -17,6 +17,7 @@
     "./isoWorld.js": "./isoWorld.js",
     "./isoTrack.js": "./isoTrack.js",
     "./zoomBands.js": "./zoomBands.js",
-    "./mapCamera.js": "./mapCamera.js"
+    "./mapCamera.js": "./mapCamera.js",
+    "./billing.js": "./billing.js"
   }
 }

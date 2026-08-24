@@ -32,6 +32,7 @@ export const GATE_SCRIPT_TESTS = [
   // into @party-tracker/shared — unresolvable this early. It runs in test:unit,
   // where the workspace exists.
   'test/scripts/clerk-e2e.test.mjs',
+  'test/scripts/cloud-agent-clerk-env.test.mjs',
   'test/scripts/wire-watch-target.test.mjs',
   'test/scripts/clerk-apple-prod.test.mjs',
   'test/scripts/install-global-skills.test.mjs',
@@ -46,6 +47,7 @@ export const GATE_SCRIPT_TESTS = [
   'test/scripts/venue-freshness.test.mjs',
   'test/scripts/drift-watch.test.mjs',
   'test/scripts/bake-drift-watch.test.mjs',
+  'test/scripts/billing-sync-check.test.mjs',
   'test/scripts/profile-max-rank.test.mjs',
   'test/scripts/app-store-connect.test.mjs',
   'test/scripts/store-screenshot-compose.test.mjs',

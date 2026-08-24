@@ -4898,6 +4898,21 @@ input, textarea { -webkit-user-select: text; user-select: text; font-size: 16px;
 .authGateGuest { width: 100%; flex: none; text-align: center; text-decoration: none; }
 .authGateGuest { margin-top: 0; }
 .authGateCard .signInActions { margin-bottom: 0; }
+.authShellPage {
+  min-height: 100dvh;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 120% 55% at 50% -8%, color-mix(in srgb, var(--aqua) 22%, transparent), transparent 58%),
+    radial-gradient(ellipse 70% 45% at 100% 0%, color-mix(in srgb, var(--adventure) 14%, transparent), transparent 52%),
+    radial-gradient(ellipse 60% 40% at 0% 100%, color-mix(in srgb, var(--aqua) 10%, transparent), transparent 55%);
+}
+.authShellCard-page {
+  max-width: 480px;
+  margin: 0 auto;
+}
 .clerkAuthPage {
   display: flex;
   min-height: 100vh;
