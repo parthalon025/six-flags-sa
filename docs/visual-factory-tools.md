@@ -86,6 +86,10 @@ the reason — do not relitigate casually).
 |---|---|---|
 | Claude sessions via agent-brief seam | kit authoring, design-request expansion, bake judging | **in** (#471; ADR-0017 cost model) |
 | Gemini (AI Studio free tier) | concept/reference art for design briefs | adopt: first design request that wants visual references; outputs are `original`-class, eye-passed |
+| SDXL seamless-tile diffusion (circular-padding) | procedural albedo tiles for MaterialSets | adopt: Phase 8 generative tier — pin SDXL 1.0; outputs `original`-class with provenance (#630) |
+| SDXL ControlNet pipelines | truth-raster-conditioned texture generation | adopt: Phase 8 — pin SDXL + ControlNet weights; RAIL compliance (#630) |
+| Ubisoft CHORD | RGB → PBR decomposition | rejected: Research-Only license; commercial embed prohibited (#630) |
+| Flux ControlNets / SD 3.5 | — | rejected: NC / revenue-cap licenses (#630) |
 | Local diffusion (SD/ComfyUI) | — | rejected: no GPU in the build environment; revisit only if hardware appears |
 
 ## Imagery & ground truth (ADR-0020)
