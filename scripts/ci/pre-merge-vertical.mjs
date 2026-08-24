@@ -37,6 +37,7 @@ import {
 import { clerkE2eBlockReason } from '../lib/clerk-e2e.mjs';
 import { ensureClerkEnvForCi } from '../lib/cloud-agent-clerk-env.mjs';
 import {
+  noCodeWorkRequired,
   requiredVerticals,
   verticalById,
   verticalE2eBlockReason,
@@ -46,6 +47,7 @@ import {
   mattReviewBlockReason,
   readMattReview,
 } from '../lib/matt-review.mjs';
+import { workflowBlockReason } from '../lib/matt-workflow.mjs';
 import { runLiveZoomSweep } from '../lib/map-perf-gate.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -138,6 +140,16 @@ export async function runPreMergeVertical({
     return 1;
   }
 
+  if (noCodeWorkRequired(files)) {
+    console.log(
+      'pre-merge-vertical: no code work in this diff — skipping static floor and verticals',
+    );
+    if (!noStamp) {
+      writeLocalCiPass({ context, browserVertical: false, verticals: [] }, cwd);
+    }
+    return 0;
+  }
+
   for (const args of STATIC_NPM_STEPS) {
     if (args[1] === 'build') {
       const clerkEnv = ensureClerkEnvForCi(cwd);
@@ -175,6 +187,12 @@ export async function runPreMergeVertical({
   });
   if (reviewBlock) {
     console.error(`pre-merge-vertical: ${reviewBlock}`);
+    return 1;
+  }
+
+  const workflowBlock = workflowBlockReason({ files, cwd });
+  if (workflowBlock) {
+    console.error(`pre-merge-vertical: ${workflowBlock}`);
     return 1;
   }
 
