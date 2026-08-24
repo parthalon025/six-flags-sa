@@ -242,6 +242,16 @@ assert.deepEqual(
   assert.equal(markLabelStyle('place', 'shop').size, 13);
   assert.match(painted, /labelInk/, 'a Place name wears the category ink the pin already uses');
   assert.match(painted, /markLabelStyle\(mark\.kind,\s*mark\.category\)/, 'the painter asks the same style the grid claimed, including category');
+  /* Issue #570: pinDrop's filled `transform: none` outranks an SVG transform
+     attribute on the same element, so the meet-up pin can snap to the origin.
+     Position lives on the parent <g>; the animated class lives on a child. */
+  assert.match(
+    painted,
+    /mark\.kind === 'meet'[\s\S]*?transform=\{`translate\(\$\{mark\.x\},\$\{mark\.y\}\)`\}[\s\S]*?className="meetPin"/,
+    'meet pin keeps map position on the parent and pinDrop on a child',
+  );
+  const meetPinRule = css.match(/\.meetPin\s*\{[^}]+\}/)?.[0] || '';
+  assert.doesNotMatch(meetPinRule, /transform-box/, 'meetPin child carries no position transform-box');
   const iconR = 8;
   const gap = LABEL_DY - PLACE_LABEL_SIZE * 0.55 - iconR;
   assert.ok(gap >= 4, `label gap ${gap}px undercuts the disc`);
