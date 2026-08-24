@@ -139,7 +139,7 @@ function analyze(boxes) {
     if (!['.fab', '.zoomBtn', '.iconBtn', '.wxChip', '.mapKeyToggle', 'interactive'].includes(b.kind) && b.kind !== '.grab') continue;
     if (b.path.includes('.poiRow') || b.path.includes('.tier') || b.path.includes('.chip')) continue;
     if (b.width > 0 && b.height > 0 && (b.width < 40 || b.height < 40)) {
-      // Expanded hit targets (::after) are intentional for chips; still note glance Go.
+      // Expanded hit targets (::after) are intentional for chips.
       if (b.kind === '.grab') continue;
       findings.push({ type: 'tap-target', severity: 'medium', a: label(b), size: `${b.width}×${b.height}` });
     }

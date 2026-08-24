@@ -6,7 +6,7 @@
  *
  * A party member is a moving target and a meet-up can be dropped again, so the
  * destination is held as a reference rather than a pair of coordinates, and
- * this is what the UI compares to know which card is the live one.
+ * this is what the UI compares to know which walk target is active.
  */
 export const navKeyOf = (nav) => {
   if (!nav) return null;
