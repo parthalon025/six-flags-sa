@@ -381,8 +381,10 @@ await check('park-wide rest shows Zone names and ride names, not every Place', a
   const names = await a.locator('svg.mapSvg .poiLabel').allTextContents();
   const zones = await a.locator('svg.mapSvg .landLabel').allTextContents();
   const discs = await a.locator('svg.mapSvg .poiMarker circle').count();
+  const glyphs = await a.locator('svg.mapSvg .poiMarker path').count();
   const places = await a.locator('svg.mapSvg .poiMarker').count();
   if (discs < 1) throw new Error(`expected ride discs after declutter, got ${discs}`);
+  if (glyphs < discs) throw new Error(`place icons missing glyphs (${glyphs} paths for ${discs} discs)`);
   if (zones.length < 1) throw new Error('park-wide map printed no Zone names');
   if (names.length < 1) throw new Error('park-wide map printed no ride names');
   if (names.some((n) => /restroom/i.test(n))) {
@@ -391,6 +393,60 @@ await check('park-wide rest shows Zone names and ride names, not every Place', a
   if (names.length >= places) {
     throw new Error(`park-wide map printed every place name (${names.length}/${places})`);
   }
+  const typeRank = await a.evaluate(() => {
+    const zone = document.querySelector('svg.mapSvg .landLabel');
+    const labels = [...document.querySelectorAll('svg.mapSvg .poiLabel')];
+    if (!zone || !labels.length) return { missing: true };
+    const px = (el) => parseFloat(getComputedStyle(el).fontSize);
+    const fills = [...new Set(labels.map((el) => el.style.fill || getComputedStyle(el).fill).filter(Boolean))];
+    return {
+      zonePx: px(zone),
+      poiPx: Math.max(...labels.map(px)),
+      zoneCase: getComputedStyle(zone).textTransform,
+      zoneTracking: parseFloat(getComputedStyle(zone).letterSpacing) || 0,
+      categoryFills: fills.length,
+    };
+  });
+  if (typeRank.missing) throw new Error('park-wide map printed no Zone or Place names to rank');
+  if (typeRank.zoneCase !== 'uppercase') throw new Error(`Zone names should be tracked caps, got ${typeRank.zoneCase}`);
+  if (!(typeRank.zoneTracking > 0)) throw new Error('Zone names need letter-spacing the way Apple districts do');
+  if (!(typeRank.zonePx > typeRank.poiPx)) {
+    throw new Error(`Zone ${typeRank.zonePx}px should outrank Place ${typeRank.poiPx}px`);
+  }
+  if (typeRank.categoryFills < 2) {
+    throw new Error(`Place names should wear more than one category ink, got ${typeRank.categoryFills}`);
+  }
+  const restLod = await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    if (!map?.getLayer?.('world-building')) return { missing: true };
+    return {
+      zoom: map.getZoom(),
+      building: map.getLayoutProperty('world-building', 'visibility'),
+      service: map.getLayoutProperty('world-service', 'visibility'),
+    };
+  });
+  if (restLod.missing) throw new Error('kings-island has buildings, so the layer must exist');
+  if (restLod.zoom >= 15.3) {
+    throw new Error(`park-wide zoom ${restLod.zoom} already past the SVG detail enter`);
+  }
+  if (restLod.building !== 'none') {
+    throw new Error(`buildings drawn at park-wide z${restLod.zoom}`);
+  }
+  if (restLod.service !== 'none') {
+    throw new Error(`service roads drawn at park-wide z${restLod.zoom}`);
+  }
+  await a.evaluate(() => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom: 16.2, center: map.getCenter() });
+  });
+  await until(async () => {
+    const vis = await a.evaluate(() => globalThis.__parkMapLibre?.getLayoutProperty?.('world-building', 'visibility'));
+    return vis === 'visible' ? true : false;
+  }, { timeout: 10000, label: 'buildings after pinch' });
+  await a.evaluate((zoom) => {
+    const map = globalThis.__parkMapLibre;
+    map.jumpTo({ zoom, center: map.getCenter() });
+  }, restLod.zoom);
   return true;
 });
 

@@ -157,6 +157,7 @@ const {
 } = await import('../../apps/party-tracker/lib/mapLabels.js');
 const {
   inkOn,
+  labelInk,
   labelWantedAtZoom,
   labelZoomFor,
   LABEL_ZOOM_HYSTERESIS,
@@ -2969,6 +2970,12 @@ await check('glyph ink is chosen against the fill, not assumed', () => {
   assert.equal(inkOn('#FF453A'), '#ffffff');
   assert.equal(inkOn('#2C2C2E'), '#ffffff');
   assert.equal(inkOn(null), '#ffffff');
+  // Place names sit on lawn, not on the pin, so the bright chip is darkened
+  // rather than used raw. 0.58 of each channel: #FFC857 → #947432.
+  assert.equal(labelInk('#FFC857'), '#947432');
+  assert.equal(labelInk('#E85D2C'), '#87361a');
+  assert.equal(labelInk('#fff'), '#949494');
+  assert.equal(labelInk(null), null);
   return true;
 });
 
@@ -3019,7 +3026,8 @@ await check('map place names are large enough for the grandma test', () => {
   // Arm's-length outdoor reading (ADR-0012): 13.5px failed the grandma
   // test once names were no longer stacked. 16 / 15 is body-adjacent UI.
   assert.ok(poiSize >= 16, `poiLabel ${poiSize}px`);
-  assert.ok(landSize >= 14, `landLabel ${landSize}px`);
+  assert.ok(landSize >= 18, `landLabel ${landSize}px`);
+  assert.ok(landSize > poiSize, `districts outrank POI names: land ${landSize} vs poi ${poiSize}`);
   assert.ok(memSize >= 15, `memName ${memSize}px`);
   assert.match(poi[0], /text-rendering:\s*geometricPrecision/, 'poiLabel stays crisp');
   assert.match(mem[0], /text-rendering:\s*geometricPrecision/, 'memName stays crisp');

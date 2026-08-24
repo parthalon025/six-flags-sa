@@ -126,13 +126,17 @@ assert.deepEqual(
       place('poltergeist', 'Poltergeist', 'coaster', 200, 80),
       place('restrooms', 'Restrooms', 'restroom', 80, 90),
       { kind: 'member', className: 'memMarker', id: 'me', name: 'Sam', self: true, x: 120, y: 200 },
-      { kind: 'zone', className: 'landMarker', id: 'zone:Rockville', name: 'Rockville', x: 300, y: 120 },
+      { kind: 'zone', className: 'landMarker', id: 'zone:Rockville', name: 'Rockville', x: 350, y: 40 },
     ],
     { zoom: 13.2, latitude: 29.6, width: 390, height: 654 },
   );
   assert.deepEqual(named(overview).sort(), ['goliath', 'me', 'poltergeist', 'zone:Rockville']);
   assert.equal(overview.find((m) => m.id === 'goliath').pin, true);
   assert.equal(overview.find((m) => m.id === 'restrooms').pin, false, 'amenity discs wait for zoom');
+  // sizeAtZoom(11, planZoom(1/mpp)) at z13.2 / 29.6°. Worked: mpp ≈ 7.239,
+  // 1/mpp ≈ 0.138 → planZoom 2/12, scale max(0.74, 0.745) = 0.745, 11 × 0.745.
+  assert.equal(overview.find((m) => m.id === 'goliath').radius, 8.195);
+  assert.equal(overview.find((m) => m.id === 'restrooms').radius, 6.258);
 
   // Walking zoom: two coasters far apart both print. Two restrooms on the
   // same pixel do not — rank and collision drop the second.
@@ -215,6 +219,9 @@ assert.deepEqual(
   const painted = readFileSync(new URL('../../apps/party-tracker/components/ParkMapGl.jsx', import.meta.url), 'utf8');
   const css = readFileSync(new URL('../../apps/party-tracker/app/globals.css', import.meta.url), 'utf8');
   assert.match(painted, /markLabelStyle/, 'the SVG reads the same kind style the grid claimed');
+  assert.match(painted, /PoiMarker/, 'Place pins are the same glyphs the legend draws, not empty discs');
+  assert.match(painted, /mark\.radius/, 'marker size is the zoom-scaled radius the layout claimed');
+  assert.doesNotMatch(painted, /radius \?\? 8/, 'layout always set a radius; a fallback would hide a missing one');
   assert.match(painted, /drawsPin/, 'a Zone is a name on the land, not another black disc');
   assert.equal(markLabelStyle('zone').className, 'landLabel');
   assert.equal(markLabelStyle('zone').drawsPin, false);
@@ -225,7 +232,16 @@ assert.deepEqual(
   assert.match(painted, /--map-zone-label.: `\$\{ZONE_LABEL_SIZE\}px`/);
   assert.equal(PLACE_LABEL_SIZE, 16);
   assert.equal(PIN_LABEL_SIZE, 15);
-  assert.equal(ZONE_LABEL_SIZE, 14);
+  assert.equal(ZONE_LABEL_SIZE, 18);
+  // Apple / Google: districts outrank POI names (tracked caps, no pin);
+  // destinations outrank amenities. Colour rides the same palette as the pin.
+  assert.ok(markLabelStyle('zone').size > markLabelStyle('place', 'coaster').size);
+  assert.equal(markLabelStyle('place', 'coaster').size, 16);
+  assert.equal(markLabelStyle('place', 'ride').size, 15);
+  assert.equal(markLabelStyle('place', 'restroom').size, 14);
+  assert.equal(markLabelStyle('place', 'shop').size, 13);
+  assert.match(painted, /labelInk/, 'a Place name wears the category ink the pin already uses');
+  assert.match(painted, /markLabelStyle\(mark\.kind,\s*mark\.category\)/, 'the painter asks the same style the grid claimed, including category');
   const iconR = 8;
   const gap = LABEL_DY - PLACE_LABEL_SIZE * 0.55 - iconR;
   assert.ok(gap >= 4, `label gap ${gap}px undercuts the disc`);

@@ -28,6 +28,8 @@ import { distance } from '@/lib/geo';
 import { mountMapView } from '@/lib/mapView';
 import { createMapLibreRenderer } from '@/lib/mapViewMaplibre';
 import { PIN_LABEL_SIZE, PLACE_LABEL_SIZE, ZONE_LABEL_SIZE, markLabelStyle, overlayChrome } from '@/lib/overlayMarks';
+import { labelInk } from '@party-tracker/shared/mapSymbols.js';
+import { Glyph, PoiMarker } from './MapSymbols';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 /* Inline rather than globals.css, for the reason BandedWorldMap.jsx states:
@@ -53,6 +55,10 @@ export default function ParkMapGl({
   world,
   /** The Skin's paint pack. Restyles, never repositions. */
   palette = null,
+  /** Category pin colours — the same pack the map key draws. */
+  pinPalette = null,
+  /** Height eligibility, so a barred Place is the same mark the legend teaches. */
+  eligibility = null,
   skin = null,
   /** This World's Places, for the seam's own hit-test lookup. */
   places = [],
@@ -383,7 +389,11 @@ export default function ParkMapGl({
             </g>
           ) : null}
           {marks.map((mark) => {
-            const style = markLabelStyle(mark.kind);
+            const style = markLabelStyle(mark.kind, mark.category);
+            const state = eligibility?.at?.(mark.id)?.kind || 'unknown';
+            const nameInk = mark.kind === 'place' && state !== 'not'
+              ? labelInk(pinPalette?.categories?.[mark.category])
+              : null;
             return (
             <g
               key={`${mark.kind}:${mark.id}`}
@@ -391,10 +401,36 @@ export default function ParkMapGl({
               transform={`translate(${mark.x},${mark.y})`}
             >
               <title>{mark.name}</title>
-              {style.drawsPin && mark.pin !== false ? <circle r="8" /> : null}
+              {mark.kind === 'place' && mark.pin !== false ? (
+                <PoiMarker
+                  category={mark.category}
+                  colour={pinPalette?.categories?.[mark.category] || '#888'}
+                  barredInk={pinPalette?.barred}
+                  r={mark.radius}
+                  state={state}
+                  selected={mark.id === selectedId}
+                />
+              ) : style.drawsPin && mark.pin !== false ? (
+                mark.kind === 'car' ? (
+                  <g>
+                    <circle r="8" />
+                    <Glyph name="car" size={13} colour="#fff" />
+                  </g>
+                ) : (
+                  <circle r="8" />
+                )
+              ) : null}
               {mark.self ? <circle className="mePulse" r="14" /> : null}
               {mark.label ? (
-                <text className={style.className} y={style.dy}>
+                <text
+                  className={`${style.className}${state === 'not' ? ' barred' : ''}`}
+                  y={style.dy}
+                  style={{
+                    fontSize: `${style.size}px`,
+                    ...(nameInk ? { fill: nameInk } : {}),
+                    ...(state === 'not' && pinPalette?.barred ? { fill: pinPalette.barred } : {}),
+                  }}
+                >
                   {mark.name}
                 </text>
               ) : null}

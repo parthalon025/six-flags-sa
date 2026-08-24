@@ -38,6 +38,7 @@
 import { pitchForZoom } from '@party-tracker/shared/mapCamera.js';
 import { bandDrawPlan } from './bandPlan.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
+import { worldLodGroups, worldPlanZoom } from './worldLod.js';
 
 /** What a renderer must answer before it can be mounted. */
 export const RENDERER_METHODS = Object.freeze([
@@ -234,8 +235,12 @@ export function mountMapView(
     });
   };
 
+  let lodShown = { detail: false, service: false, close: false };
   const planFor = (zoom, bands = held) =>
-    Object.freeze(bandDrawPlan(zoom, { latitude, available: bands }));
+    Object.freeze({
+      ...bandDrawPlan(zoom, { latitude, available: bands }),
+      worldLod: Object.freeze(worldLodGroups(worldPlanZoom(zoom, latitude), lodShown)),
+    });
 
   /** Truth, indexed the way a hit test asks for it. `i` is pois.json's own id
    *  key, and a row without one cannot be the answer to anything — it would
@@ -251,6 +256,7 @@ export function mountMapView(
 
   let current = cameraFor(camera);
   let plan = planFor(current.zoom);
+  lodShown = { ...plan.worldLod };
 
   // Everything the view needs has now been checked, so a renderer is only ever
   // attached to a view that can actually run. A renderer left attached to a
@@ -284,11 +290,15 @@ export function mountMapView(
     && a.placeholder === b.placeholder
     && a.primaryReady === b.primaryReady
     && a.draw.length === b.draw.length
-    && a.draw.every((id, i) => id === b.draw[i]);
+    && a.draw.every((id, i) => id === b.draw[i])
+    && a.worldLod.detail === b.worldLod.detail
+    && a.worldLod.service === b.worldLod.service
+    && a.worldLod.close === b.worldLod.close;
 
   const repaint = (next = planFor(current.zoom)) => {
     if (sameAs(next, plan)) return;
     plan = next;
+    lodShown = { ...next.worldLod };
     renderer.paint(plan);
   };
 

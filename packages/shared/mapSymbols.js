@@ -170,17 +170,34 @@ const channel = (v) => {
   return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 };
 
-export function inkOn(colour) {
+function parseHexRgb(colour) {
   const hex = String(colour || '').trim();
   const m = /^#?([0-9a-f]{6})$/i.exec(hex) || /^#?([0-9a-f]{3})$/i.exec(hex);
-  if (!m) return '#ffffff';
+  if (!m) return null;
   const raw = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
   const n = parseInt(raw, 16);
-  const lum =
-    0.2126 * channel((n >> 16) & 255) +
-    0.7152 * channel((n >> 8) & 255) +
-    0.0722 * (n & 255 ? channel(n & 255) : 0);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+export function inkOn(colour) {
+  const rgb = parseHexRgb(colour);
+  if (!rgb) return '#ffffff';
+  const [r, g, b] = rgb;
+  const lum = 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * (b ? channel(b) : 0);
   return lum > 0.5 ? '#000000' : '#ffffff';
+}
+
+/** Category ink a Place *name* can wear on the map.
+ *
+ *  The pin already carries the bright palette colour. The name sits on painted
+ *  lawn with only a halo, so a sun-yellow food chip would vanish. Mix toward
+ *  black (the same 0.58 the night food chip needs) so the hue survives and the
+ *  letters still read outdoors. */
+export function labelInk(colour) {
+  const rgb = parseHexRgb(colour);
+  if (!rgb) return null;
+  const tone = (c) => Math.round(c * 0.58).toString(16).padStart(2, '0');
+  return `#${tone(rgb[0])}${tone(rgb[1])}${tone(rgb[2])}`;
 }
 
 /* How a party member's marker should read, given their last fix.

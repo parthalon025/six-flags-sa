@@ -39,10 +39,10 @@
  *
  * Named rather than discovered later. Each is a Truth-side or style-side job
  * that the SVG renderer did inline and the ported path has nowhere to put yet:
- * Eligibility colouring on Place markers, the selected Place's highlight and
- * its coaster track, alternative-route tap targets, Kit badges, land names
- * along the district (centroids for now), the scale bar, and a Skin's Custom
- * map layer (ADR-0013 compiles that into the display pack). The
+ * The selected Place's coaster track, alternative-route tap targets, Kit
+ * badges, land names along the district (centroids for now), the scale bar,
+ * and a Skin's Custom map layer (ADR-0013 compiles that into the display
+ * pack). The
  * perf HUD (`onMapStats`) is not wired on the GL path yet.
  *
  * Certified baked Skins get a mid-band raster from `bakedWorldBands`. Pixel
@@ -208,6 +208,8 @@ function ParkMap(props) {
     <ParkMapGl
       world={world}
       palette={surface}
+      pinPalette={pins}
+      eligibility={eligibility}
       skin={theme ?? null}
       // Every Place, not just the shown ones: this is the seam's own lookup for
       // a pick, and it is fixed at mount. Handing it the filtered list would

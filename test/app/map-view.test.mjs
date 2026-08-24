@@ -32,6 +32,7 @@ import {
   OVERLAY_SOURCES,
   PLACES_LAYER,
   bandedWorldStyle,
+  worldCaseLayer,
   worldLayer,
   worldSource,
 } from '../../apps/party-tracker/lib/mapViewStyle.js';
@@ -129,10 +130,12 @@ assert.throws(() => mount({ renderer: null }), /renderer/i, 'no renderer at all 
 
   // A phone that has only opened the venue pack holds the mid band and nothing
   // else (ADR-0021 clause 5 makes it the offline floor), so that is the default
-  // the seam plans against.
+  // the seam plans against. World LOD is the same plan: z15 is 1.847324 m/px
+  // here, 0.54 px/m, below the SVG detail enter of 0.7 — buildings stay off.
+  const PARK_WIDE_LOD = { detail: false, service: false, close: false };
   assert.deepEqual(
     attached.view.plan,
-    { primary: 'mid', placeholder: null, primaryReady: true, draw: ['mid'] },
+    { primary: 'mid', placeholder: null, primaryReady: true, draw: ['mid'], worldLod: PARK_WIDE_LOD },
     'the mid band is what a freshly-mounted view paints',
   );
 
@@ -244,17 +247,43 @@ const EASE_MIDPOINT = 15.622402608729476;
 const paints = (renderer) => renderer.calls.filter((c) => c.call === 'paint');
 
 {
+  // A view that opens already past the SVG detail enter must remember that.
+  // z15.3 is 0.67 px/m here: below enter (0.7) and above leave (0.62). If
+  // lodShown stayed at the pre-mount zeros, the first zoom-out would hide
+  // buildings one step earlier than a pinch that earned them.
+  const renderer = recordingRenderer();
+  const view = mount({
+    renderer,
+    camera: { center: CENTRE, zoom: 17 },
+    available: ['mid', 'close'],
+  });
+  assert.deepEqual(view.state().plan.worldLod, {
+    detail: true,
+    service: true,
+    close: true,
+  });
+  renderer.calls.length = 0;
+  view.setCamera({ center: CENTRE, zoom: 15.3 });
+  assert.equal(
+    paints(renderer)[0].plan.worldLod.detail,
+    true,
+    'hysteresis keeps detail after a walking-zoom open',
+  );
+}
+
+{
   const renderer = recordingRenderer();
   const view = mount({ renderer });
   renderer.calls.length = 0;
 
-  // Still inside mid's range: the same bands, so nothing to restyle.
-  view.setCamera({ center: CENTRE, zoom: 15.4 });
+  // Still inside mid's range and below the SVG detail enter (~z15.37 at this
+  // latitude): the same bands and the same world LOD, so nothing to restyle.
+  view.setCamera({ center: CENTRE, zoom: 15.2 });
   assert.equal(paints(renderer).length, 0, 'a move inside one band does not repaint');
 
   // Panning half a park at a fixed zoom must not restyle the world either —
   // the handoffs are placed at the World's latitude, not the camera's.
-  view.setCamera({ center: { lng: -84.2801, lat: 39.3334 }, zoom: 15.4 });
+  view.setCamera({ center: { lng: -84.2801, lat: 39.3334 }, zoom: 15.2 });
   assert.equal(paints(renderer).length, 0, 'panning at a fixed zoom does not repaint');
   assert.equal(
     renderer.calls.filter((c) => c.call === 'camera').length,
@@ -262,33 +291,47 @@ const paints = (renderer) => renderer.calls.filter((c) => c.call === 'paint');
     'both moves still reached the renderer as camera moves',
   );
 
-  // Past the mid->close handoff the camera wants a band this phone has not
-  // streamed yet, so the plan changes even though what gets drawn does not:
-  // mid stays on screen as the placeholder underneath (ADR-0021 clause 4).
-  view.setCamera({ center: CENTRE, zoom: 17 });
-  assert.equal(paints(renderer).length, 1, 'crossing a handoff repaints exactly once');
+  // Crossing the SVG detail enter restyles world layers without leaving mid.
+  // z15.5 is 1.306 m/px here → 0.77 px/m, past 0.7 and short of service 1.4.
+  view.setCamera({ center: CENTRE, zoom: 15.5 });
+  assert.equal(paints(renderer).length, 1, 'crossing a world-LOD threshold repaints');
   assert.deepEqual(paints(renderer)[0].plan, {
+    primary: 'mid',
+    placeholder: null,
+    primaryReady: true,
+    draw: ['mid'],
+    worldLod: { detail: true, service: false, close: false },
+  });
+
+  // Past the mid->close handoff the camera wants a band this phone has not
+  // streamed yet, so the plan changes even though the placeholder stays mid
+  // (ADR-0021 clause 4). z17 is 0.462 m/px → 2.17 px/m: every LOD group on.
+  view.setCamera({ center: CENTRE, zoom: 17 });
+  assert.equal(paints(renderer).length, 2, 'crossing a handoff repaints exactly once');
+  assert.deepEqual(paints(renderer)[1].plan, {
     primary: 'close',
     placeholder: 'mid',
     primaryReady: false,
     draw: ['mid'],
+    worldLod: { detail: true, service: true, close: true },
   });
 
   // The close band arrives from the network. Same camera, new plan: close on
   // top, mid still held underneath for the crossfade.
   view.setAvailableBands(['mid', 'close']);
-  assert.equal(paints(renderer).length, 2, 'a band arriving repaints');
-  assert.deepEqual(paints(renderer)[1].plan, {
+  assert.equal(paints(renderer).length, 3, 'a band arriving repaints');
+  assert.deepEqual(paints(renderer)[2].plan, {
     primary: 'close',
     placeholder: 'mid',
     primaryReady: true,
     draw: ['mid', 'close'],
+    worldLod: { detail: true, service: true, close: true },
   });
-  assert.deepEqual(view.state().plan, paints(renderer)[1].plan);
+  assert.deepEqual(view.state().plan, paints(renderer)[2].plan);
 
   // Told the same thing twice, it does not repaint.
   view.setAvailableBands(['close', 'mid']);
-  assert.equal(paints(renderer).length, 2, 'the same held bands in another order are the same set');
+  assert.equal(paints(renderer).length, 3, 'the same held bands in another order are the same set');
 }
 
 // A band set the chooser refuses is refused whole. mount() validates before it
@@ -313,6 +356,7 @@ const paints = (renderer) => renderer.calls.filter((c) => c.call === 'paint');
     placeholder: 'mid',
     primaryReady: false,
     draw: ['mid'],
+    worldLod: { detail: true, service: true, close: true },
   }, 'a later camera move still plans against the bands it actually holds');
 
   view.setAvailableBands(['mid', 'close']);
@@ -968,7 +1012,7 @@ const GEOMETRY = worldGeoJson({
   // A walkway needs its casing under it — one line drawn wide in the ground
   // colour, then the path over it — or a midway crossing a lawn has no edge.
   const path = style.layers.findIndex((l) => l.id === worldLayer('path'));
-  const casing = style.layers.findIndex((l) => l.id === `${worldLayer('path')}-case`);
+  const casing = style.layers.findIndex((l) => l.id === worldCaseLayer('path'));
   assert.ok(casing >= 0 && casing < path, 'the path casing is drawn first, under the path');
 }
 
@@ -1350,6 +1394,46 @@ const read = (name) => JSON.parse(readFileSync(new URL(name, VENUES), 'utf8'));
     'aruba-tuba',
     'overlapping hits resolve to the nearer Place, not source order',
   );
+}
+
+{
+  const { worldLodGroups, worldLodVisibility } = await import('../../apps/party-tracker/lib/worldLod.js');
+  const parkWide = worldLodGroups(0.25);
+  assert.equal(parkWide.detail, false, 'buildings and track wait for a pinch');
+  assert.equal(parkWide.service, false, 'service roads wait longer');
+  assert.equal(parkWide.close, false, 'path casing and slides wait with detail');
+  const mid = worldLodGroups(0.7);
+  assert.equal(mid.detail, true);
+  assert.equal(mid.close, false, 'close stroke waits until 0.85 even after detail enters');
+  const walking = worldLodGroups(1.4);
+  assert.equal(walking.detail, true);
+  assert.equal(walking.service, true);
+  assert.equal(walking.close, true);
+  assert.equal(worldLodGroups(0.69).detail, false);
+  assert.equal(worldLodGroups(0.62, { detail: true }).detail, true, 'hysteresis keeps detail across the boundary');
+  assert.equal(worldLodGroups(0.61, { detail: true }).detail, false);
+
+  const hidden = worldLodVisibility(parkWide);
+  assert.equal(hidden.grass, false);
+  assert.equal(hidden.building, false);
+  assert.equal(hidden.coaster, false);
+  assert.equal(hidden.service, false);
+  assert.equal(hidden.slide, false);
+  assert.equal(hidden['path-case'], false);
+  const shown = worldLodVisibility(walking);
+  assert.equal(shown.grass, true);
+  assert.equal(shown.building, true);
+  assert.equal(shown.coaster, true);
+  assert.equal(shown.service, true);
+  assert.equal(shown.slide, true);
+  assert.equal(shown['path-case'], true);
+
+  const seam = readFileSync(new URL('../../apps/party-tracker/lib/mapView.js', import.meta.url), 'utf8');
+  assert.match(seam, /worldLodGroups/, 'LOD groups live on the zoom seam, next to the band plan');
+  const adapter = readFileSync(new URL('../../apps/party-tracker/lib/mapViewMaplibre.js', import.meta.url), 'utf8');
+  assert.match(adapter, /plan\.worldLod/, 'the adapter paints the seam\'s LOD, it does not choose it');
+  assert.match(adapter, /worldLodVisibility/, 'layer ids come from the lod table, not a second list');
+  assert.doesNotMatch(adapter, /worldLodGroups/, 'the adapter does not recompute groups mid-pinch');
 }
 
 console.log('map-view: ok');

@@ -16,11 +16,14 @@ import { Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
 import { BANDS } from '@party-tracker/shared/zoomBands.js';
 import { OVERLAY_LAYERS } from './overlayGeo.js';
 import { constrainCameraPitch, mapWritesForCamera } from './mapViewCameraApply.js';
+import { worldLodVisibility } from './worldLod.js';
 import {
   bandLayer,
   bandedWorldStyle,
   OVERLAY_SOURCES,
   PLACES_LAYER,
+  worldCaseLayer,
+  worldLayer,
 } from './mapViewStyle.js';
 
 /** Same-origin worker the spike route already serves. Turbopack rewrites
@@ -70,6 +73,15 @@ function ensureMapLibreWorker() {
  *   the engine's job and only the engine can do it — which is why the tap
  *   comes out here rather than the seam growing an `unproject`.
  */
+function applyWorldLod(map, groups) {
+  const vis = worldLodVisibility(groups);
+  for (const [key, visible] of Object.entries(vis)) {
+    const id = key === 'path-case' ? worldCaseLayer('path') : worldLayer(key);
+    if (!map.getLayer(id)) continue;
+    map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+  }
+}
+
 export function createMapLibreRenderer({ onError = null, onCameraMoved = null, onTap = null, onLoad = null } = {}) {
   let map = null;
   let loaded = false;
@@ -90,6 +102,7 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
         if (!m.getLayer(layer)) continue;
         m.setLayoutProperty(layer, 'visibility', plan.draw.includes(band.id) ? 'visible' : 'none');
       }
+      applyWorldLod(m, plan.worldLod);
     });
 
   return {
@@ -125,7 +138,8 @@ export function createMapLibreRenderer({ onError = null, onCameraMoved = null, o
       // it is already at, and pitch is not part of what it compares, so the
       // pitch this handler causes cannot cause another.
       map.on('move', () => {
-        if (!onCameraMoved || !map) return;
+        if (!map) return;
+        if (!onCameraMoved) return;
         const centre = map.getCenter();
         onCameraMoved({
           center: { lng: centre.lng, lat: centre.lat },
