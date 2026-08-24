@@ -91,6 +91,7 @@ export class TransportManager {
     this.controller = null;
     this.replaying = false;
     this.warming = null;
+    this.warmPendingFull = false;
   }
 
   /* ------------------------------------------------------------ public ---- */
@@ -123,7 +124,7 @@ export class TransportManager {
     // A host that lands on WebRTC with no peer yet still has to hear HELLO on
     // the mailbox. Warming that path in parallel with selection means a joiner
     // does not race a PING that found nobody on the direct channel.
-    if (this.role() === 'host') this.warmUp().catch(noop);
+    if (this.role() === 'host') this.warmUp({ standbysOnly: true }).catch(noop);
 
     for (const t of candidates) {
       if (this.failed.has(t.name)) continue;
@@ -336,7 +337,7 @@ export class TransportManager {
    * on. Anything never probed, probed unavailable, or already written off is
    * not a candidate.
    */
-  desiredWarm() {
+  desiredWarm({ standbysOnly = false } = {}) {
     const out = [];
     let wantInbox = this.role() === 'host';
     for (const t of this.registry.list()) {
@@ -346,7 +347,7 @@ export class TransportManager {
         if (!this.failed.has(t.name) || this.warm.has(t)) out.push(t);
         continue;
       }
-      if (wantInbox && !this.failed.has(t.name)) {
+      if (wantInbox && !standbysOnly && !this.failed.has(t.name)) {
         out.push(t);
         wantInbox = false;
       }
@@ -355,11 +356,28 @@ export class TransportManager {
   }
 
   /** Open whatever `desiredWarm` names and is not open already. */
-  async warmUp() {
-    if (this.warming) return this.warming;
-    const wanted = this.desiredWarm().filter((t) => !this.warm.has(t) && t !== this.active);
-    if (!wanted.length) return null;
-    this.warming = Promise.all(wanted.map((t) => this.openTransport(t, false).catch(noop))).finally(() => {
+  async warmUp({ standbysOnly = false } = {}) {
+    if (this.warming) {
+      if (!standbysOnly) this.warmPendingFull = true;
+      return this.warming;
+    }
+
+    this.warming = (async () => {
+      const pass = async (opts) => {
+        const wanted = this.desiredWarm(opts).filter((t) => !this.warm.has(t) && t !== this.active);
+        if (!wanted.length) return;
+        await Promise.all(wanted.map((t) => this.openTransport(t, false).catch(noop)));
+      };
+      await pass({ standbysOnly });
+      if (this.warmPendingFull || !standbysOnly) {
+        this.warmPendingFull = false;
+        await pass({ standbysOnly: false });
+      }
+      while (this.warmPendingFull) {
+        this.warmPendingFull = false;
+        await pass({ standbysOnly: false });
+      }
+    })().finally(() => {
       this.warming = null;
     });
     return this.warming;
