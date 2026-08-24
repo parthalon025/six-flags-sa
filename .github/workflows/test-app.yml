@@ -38,6 +38,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       builder: ${{ steps.mods.outputs.builder }}
+      map_factory: ${{ steps.mods.outputs.map_factory }}
+      visual_factory: ${{ steps.mods.outputs.visual_factory }}
+      delivery_factory: ${{ steps.mods.outputs.delivery_factory }}
       lint: ${{ steps.mods.outputs.lint }}
       selector: ${{ steps.mods.outputs.selector }}
       any_ui: ${{ steps.mods.outputs.any_ui }}
@@ -210,6 +213,99 @@ jobs:
       - name: Builder unit + compare
         run: npm run test:builder
 
+  map-factory:
+    name: Map factory
+    needs: select
+    if: needs.select.outputs.map_factory == 'true' && needs.select.outputs.skip_ci != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node test/builder/factory-modules.mjs --leg map
+
+  map-factory-result:
+    name: Map factory (result)
+    needs: [select, map-factory]
+    if: always() && needs.select.outputs.skip_ci != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.map-factory.result }}" = "skipped" ]; then
+            echo "map-factory leg skipped — noop pass"
+          elif [ "${{ needs.map-factory.result }}" = "success" ]; then
+            echo "map-factory leg passed"
+          else
+            echo "map-factory leg failed"
+            exit 1
+          fi
+
+  visual-factory:
+    name: Visual factory
+    needs: select
+    if: needs.select.outputs.visual_factory == 'true' && needs.select.outputs.skip_ci != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node test/builder/factory-modules.mjs --leg visual
+
+  visual-factory-result:
+    name: Visual factory (result)
+    needs: [select, visual-factory]
+    if: always() && needs.select.outputs.skip_ci != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.visual-factory.result }}" = "skipped" ]; then
+            echo "visual-factory leg skipped — noop pass"
+          elif [ "${{ needs.visual-factory.result }}" = "success" ]; then
+            echo "visual-factory leg passed"
+          else
+            echo "visual-factory leg failed"
+            exit 1
+          fi
+
+  delivery-factory:
+    name: Delivery
+    needs: select
+    if: needs.select.outputs.delivery_factory == 'true' && needs.select.outputs.skip_ci != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node test/builder/factory-modules.mjs --leg delivery
+
+  delivery-factory-result:
+    name: Delivery (result)
+    needs: [select, delivery-factory]
+    if: always() && needs.select.outputs.skip_ci != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          if [ "${{ needs.delivery-factory.result }}" = "skipped" ]; then
+            echo "delivery leg skipped — noop pass"
+          elif [ "${{ needs.delivery-factory.result }}" = "success" ]; then
+            echo "delivery leg passed"
+          else
+            echo "delivery leg failed"
+            exit 1
+          fi
+
   app-build:
     name: Build app
     needs: select
@@ -373,6 +469,9 @@ jobs:
       - boundaries
       - lint
       - builder
+      - map-factory-result
+      - visual-factory-result
+      - delivery-factory-result
       - app-build
       - ui
       - visual

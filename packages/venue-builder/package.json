@@ -1,15 +1,19 @@
 {
   "name": "@party-tracker/venue-builder",
-  "version": "1.32.0",
+  "version": "1.33.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@party-tracker/shared": "1.32.0",
+    "@party-tracker/shared": "1.33.0",
     "sharp": "^0.35.3"
   },
   "exports": {
     "./bake-drift.js": "./src/bake-drift.mjs",
     "./compare.js": "./src/compare.mjs",
+    "./freshness.js": "./lib/delivery/freshness.mjs",
+    "./map-factory.js": "./lib/map-factory/index.mjs",
+    "./visual-factory.js": "./lib/visual-factory/index.mjs",
+    "./delivery.js": "./lib/delivery/index.mjs",
     "./paths.js": "./src/paths.mjs",
     "./routing-coverage.js": "./src/routing-coverage.mjs"
   },

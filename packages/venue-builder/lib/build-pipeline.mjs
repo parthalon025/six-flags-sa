@@ -29,8 +29,9 @@ import { recipeFile } from './venue-recipe.mjs';
 import { ensureSourcesCatalogue, syncHeightsFromOfficial } from './heights-from-official.mjs';
 import { runResearchAgent } from './agents/research.mjs';
 import { runBuildOrchestrator } from './agents/orchestrator.mjs';
-import { certifyVenue } from './venue-certify.mjs';
 import { proposeAliases, applyAliasClaims } from './auto-alias.mjs';
+import { buildTruth } from './map-factory/index.mjs';
+import { compileDisplay } from './visual-factory/index.mjs';
 import { loadParksApiData } from './adapters/parks-api.mjs';
 import { readSources } from './venue-sources.mjs';
 import { loadOfficialData } from './venue-official-site.mjs';
@@ -327,7 +328,8 @@ export async function runVenuePipeline(park, opts = {}) {
   if (!skip.includes('certify') && certify) {
     console.error('  · certify: report + compare + route-qa + ask');
     try {
-      const cert = certifyVenue(park.id);
+      const truth = buildTruth(park.id);
+      const cert = truth.certification;
       logStage('certify', {
         certified: cert.certified,
         failed: cert.checks.filter((c) => !c.pass).map((c) => c.key),
@@ -351,36 +353,13 @@ export async function runVenuePipeline(park, opts = {}) {
   if (!skip.includes('display') && display) {
     console.error('  · display: visual specs + display-certify');
     try {
-      const {
-        runDisplayStage,
-        loadTruthFor,
-        cutPackedMidPyramid,
-        bakeOptsForVenue,
-        applyMidPyramidToManifest,
-      } = await import('./display-pack.mjs');
-      // Terrain needs the network, so it rides the same opt-in shape as the
-      // stage itself. Without it a venue compiles flat, which is declared in
-      // certification rather than silent.
-      let terrain = null;
-      if (wantTerrain) {
-        const { prepareVenueTerrain } = await import('./terrain/venue-terrain.mjs');
-        const { map } = loadTruthFor(park.id);
-        const prepared = await prepareVenueTerrain({
-          id: park.id, map, outDir: venueSidecar(park.id, 'display'), constrain, mesh,
-        });
-        terrain = prepared?.terrain || null;
-      }
-      const disp = runDisplayStage(park.id, { tiles: true, terrain, ...bakeOptsForVenue(park.id) });
-      if (disp.bakeCerts?.length) {
-        const cut = await cutPackedMidPyramid({
-          id: park.id,
-          bakeCerts: disp.bakeCerts,
-          bakeDir: disp.bakeDir,
-          outDir: disp.outDir,
-          primaryKit: disp.primaryKit,
-        });
-        if (!cut?.gap) applyMidPyramidToManifest(disp.outDir, { primaryKit: disp.primaryKit });
-      }
+      const disp = await compileDisplay(park.id, {
+        tiles: true,
+        wantTerrain,
+        constrain,
+        mesh,
+      });
+      const terrain = disp.terrain ?? null;
       logStage('display', {
         certified: disp.certified,
         skins: Object.keys(disp.packs).length,

@@ -87,10 +87,11 @@ await check('factory labels read Map factory and Visual factory', () => {
 
 await check('routes are looked up by id without hard-coded script lists', () => {
   const certify = getRoute('map.certify');
-  assert.equal(certify.entry.module, 'venue-certify.mjs');
-  assert.equal(certify.entry.export, 'certifyVenue');
+  assert.equal(certify.entry.module, 'map-factory/build-truth.mjs');
+  assert.equal(certify.entry.export, 'buildTruth');
   const display = getRoute('visual.display-pack');
-  assert.equal(display.entry.module, 'display-pack.mjs');
+  assert.equal(display.entry.module, 'visual-factory/compile-display.mjs');
+  assert.equal(display.entry.export, 'compileDisplay');
   return true;
 });
 
