@@ -19,8 +19,11 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 | Pull NOW + human from GitHub | `npm run resume:pull` |
 | Push NOW + human to GitHub | `npm run resume:push` |
 | Drift check (NOW vs inventory) | `npm run resume:check` |
+| End-of-turn agent update | `npm run resume:end-turn -- --next "..." [--doing "..."]` |
+| 12h timer fired | `npm run resume:timer-fired` |
 | First-time setup | `npm run resume:init` |
 | 12h timer prompt text | `npm run resume:timer-prompt` |
+| Timer subscription args | `npm run resume:subscribe-timer` |
 | Which Matt skill now | `npm run workflow:next` |
 | Gate implement too early | `npm run workflow:check -- --intent implement` |
 
@@ -40,15 +43,25 @@ Works with the **Matt workflow gate** (`npm run workflow:next`, `workflow:check`
 
 ### Session start ritual
 
-1. Run `npm run resume:start` (pull issue → refresh inventory → Matt workflow brief)
-2. Confirm **NOW** or say **switch**
-3. **CreateGoal** from NOW task + next step only
+1. **`npm run resume:start`** runs automatically at session open (Cloud `environment.json` start + Claude Code SessionStart hook)
+2. Confirm **NOW** or say **switch** (platform change warns and regenerates inventory)
+3. **CreateGoal** from NOW task + next step only (printed in start brief)
 4. Run `npm run workflow:check` before `/implement`
 5. Do not code until NOW is one task
 
+### End of turn (agents)
+
+After code changes each turn:
+
+```bash
+npm run resume:end-turn -- --next "<next step>" --doing "<what you just did>"
+```
+
+Pulls fresh inventory, updates `nextStep` + `lastStop`, pushes to GitHub when token allows.
+
 ### 12-hour Cursor timer
 
-Subscribe once per cloud session:
+Subscribe once per cloud session (`npm run resume:subscribe-timer` prints args):
 
 ```text
 cursor-subscriptions subscribe_timer
@@ -57,7 +70,7 @@ cursor-subscriptions subscribe_timer
   prompt: (output of npm run resume:timer-prompt)
 ```
 
-On fire: refresh inventory, run `resume:check`, ask user “Still on NOW or switch?”
+On fire: `npm run resume:timer-fired`, then ask user “Still on NOW or switch?”
 
 ### GitHub executive dashboard
 

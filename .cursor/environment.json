@@ -1,5 +1,5 @@
 {
   "name": "parkbound",
   "install": "npm ci\nnode scripts/install-global-skills.mjs\nnode scripts/cloud-agent-clerk-env.mjs",
-  "start": "node scripts/install-global-skills.mjs\nnode scripts/cloud-agent-clerk-env.mjs --require\nnode scripts/gitnexus-sync.mjs startup"
+  "start": "node scripts/install-global-skills.mjs\nnode scripts/cloud-agent-clerk-env.mjs --require\nnode scripts/gitnexus-sync.mjs startup\nnode scripts/executive-resume.mjs start"
 }

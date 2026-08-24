@@ -35,6 +35,12 @@
             "command": "node scripts/orchestrator.mjs brief",
             "timeout": 15,
             "statusMessage": "Loading the agent roster"
+          },
+          {
+            "type": "command",
+            "command": "node scripts/executive-resume.mjs start",
+            "timeout": 120,
+            "statusMessage": "Loading executive resume (NOW + inventory)"
           }
         ]
       }

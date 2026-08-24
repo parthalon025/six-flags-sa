@@ -13,9 +13,10 @@ Before you design, refactor, review, or add agent-facing docs:
 5. **Prefer TDD** (`tdd` skill) when adding or changing behaviour that already has tests nearby.
 6. **Vertical e2e with output validation before merge** — all code work is proven end to end, with assertions over what the run produced; units are the floor, never the proof. Run `npm run test:pre-merge-vertical` before merging any PR and let every vertical it names actually run. See [vertical-e2e policy](./policies/vertical-e2e.md) and [docs/agents/ci.md](./ci.md#before-merge-agents).
 7. **Matt workflow before multi-step work** — run `npm run workflow:next` at session start when `.scratch/` has an active effort; do not `/implement` until the derived phase allows it (`npm run workflow:check -- --intent implement`). Full map: [matt-workflow policy](./policies/matt-workflow.md). Unsure → `/ask-matt`.
-8. **Builds and maps — no hand-waving** — venue builder, display bakes, and `public/venues/` output must be **regenerated and proved in the app**, not reviewed at the seam only. If you have not run the relevant `venues:*` / display bake / app build + map check, **warn the user before merge**. See [builder-app-contract policy](./policies/builder-app-contract.md#agents-warn-before-hand-waving-builds-or-maps).
-9. **Sonnet standards review before merge (code diffs)** — spawn parallel `claude-sonnet-5` sub-agents with the prompts from `node scripts/ci/matt-review.mjs two-axis` (Standards + Spec axes; `prompt` prints Standards only). Address or answer its advisory findings, then stamp with `node scripts/ci/matt-review.mjs write --gitnexus <ok|unavailable>` and commit `scripts/ci/matt-review-pass.json`. CI and `test:pre-merge-vertical` fail code diffs without a fresh stamp; docs-only diffs are exempt.
-10. **Root cause** — ship the layer that should have spoken. A hide is a merge only when that policy names the exception. See [root-cause policy](./policies/root-cause.md).
+8. **Executive resume at session open** — `npm run resume:start` runs automatically (Cloud + Claude Code hooks); confirm one NOW task, CreateGoal from it, and `npm run resume:end-turn` after code changes. Full map: [executive-resume policy](./policies/executive-resume.md).
+9. **Builds and maps — no hand-waving** — venue builder, display bakes, and `public/venues/` output must be **regenerated and proved in the app**, not reviewed at the seam only. If you have not run the relevant `venues:*` / display bake / app build + map check, **warn the user before merge**. See [builder-app-contract policy](./policies/builder-app-contract.md#agents-warn-before-hand-waving-builds-or-maps).
+10. **Sonnet standards review before merge (code diffs)** — spawn parallel `claude-sonnet-5` sub-agents with the prompts from `node scripts/ci/matt-review.mjs two-axis` (Standards + Spec axes; `prompt` prints Standards only). Address or answer its advisory findings, then stamp with `node scripts/ci/matt-review.mjs write --gitnexus <ok|unavailable>` and commit `scripts/ci/matt-review-pass.json`. CI and `test:pre-merge-vertical` fail code diffs without a fresh stamp; docs-only diffs are exempt.
+11. **Root cause** — ship the layer that should have spoken. A hide is a merge only when that policy names the exception. See [root-cause policy](./policies/root-cause.md).
 
 ## Skill map
 
@@ -28,6 +29,7 @@ Before you design, refactor, review, or add agent-facing docs:
 | Editing `AGENTS.md`, `CLAUDE.md`, cursor rules, or skills | `writing-for-agents` + `npm run agent-docs:build` |
 | Resolving domain terms or ADR gaps | `domain-modeling` / `grilling` → `CONTEXT.md` + `docs/adr/` |
 | Which Matt skill to invoke next | `npm run workflow:next` · `/ask-matt` · [matt-workflow policy](./policies/matt-workflow.md) |
+| NOW task + open inventory across sessions | `npm run resume:start` · [executive-resume policy](./policies/executive-resume.md) |
 | Git / worktree / commit hygiene | `git-guardrails-claude-code` |
 | Merge conflicts | `resolving-merge-conflicts` |
 | CI/CD workflows or deploy gates | [docs/agents/ci.md](./ci.md) + `codebase-design` |

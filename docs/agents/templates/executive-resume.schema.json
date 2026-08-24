@@ -9,6 +9,10 @@
     "platform": {
       "enum": ["cursor-cloud", "cursor-local", "claude-code", "unknown"]
     },
+    "previousPlatform": {
+      "type": ["string", "null"],
+      "enum": ["cursor-cloud", "cursor-local", "claude-code", "unknown", null]
+    },
     "now": {
       "type": "object",
       "required": ["task", "doneWhen", "nextStep", "inScope"],
