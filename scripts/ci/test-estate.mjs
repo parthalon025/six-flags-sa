@@ -178,6 +178,7 @@ export const TEST_ESTATE = {
   'test/scripts/gitnexus-docs.test.mjs': ['ci-gate'],
   'test/scripts/gitnexus-only.test.mjs': ['ci-gate'],
   'test/scripts/gitnexus-repair.test.mjs': ['ci-gate'],
+  'test/scripts/glance-rail-cleanup.test.mjs': ['ci-gate'],
   'test/scripts/install-global-skills.test.mjs': ['ci-gate'],
   'test/scripts/local-ci-pass.test.mjs': ['ci-gate'],
   'test/scripts/map-performance-contract.test.mjs': ['ci-gate'],

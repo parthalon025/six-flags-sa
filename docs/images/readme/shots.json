@@ -72,11 +72,10 @@
       "file": "party.png",
       "title": "Live party",
       "caption": "Range, bearing, and walking time for each person — hosted on a phone in the group.",
-      "alt": "Party map with two member markers and a glance rail showing walking times",
+      "alt": "Party map with two member markers and walking times in the sheet",
       "guide": "docs/guide/party.md",
       "sources": [
         "apps/party-tracker/components/PartyPanel.jsx",
-        "apps/party-tracker/components/GlanceRail.jsx",
         "apps/party-tracker/components/ParkMap.jsx",
         "apps/party-tracker/lib/party/client.js",
         "apps/party-tracker/lib/party/election.js",
@@ -99,7 +98,6 @@
         "apps/party-tracker/components/PlanPanel.jsx",
         "apps/party-tracker/components/RoutePreview.jsx",
         "apps/party-tracker/components/PartyPanel.jsx",
-        "apps/party-tracker/components/GlanceRail.jsx",
         "apps/party-tracker/lib/routing.js",
         "apps/party-tracker/lib/theme.js",
         "apps/party-tracker/app/globals.css"
