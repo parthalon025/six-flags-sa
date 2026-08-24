@@ -34,6 +34,7 @@ function Q10Coasters() {
   const [err, setErr] = useState('');
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return undefined;
     let live = true;
     Promise.all([
       fetch(`/venues/${VENUE}.map.json`).then((r) => r.json()),

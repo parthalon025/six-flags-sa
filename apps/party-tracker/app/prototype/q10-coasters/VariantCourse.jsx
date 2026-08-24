@@ -3,14 +3,14 @@
 /* C — Walk from the gate. The unit is the course. Same souvenir plate. */
 
 import LandPlate from './LandPlate.jsx';
-import { landNamesOf, rideZone } from './q10World.js';
+import { arrivalLandOf, landNamesOf, rideZone } from './q10World.js';
 
 export const name = 'Walk from the gate';
 
 export default function VariantCourse({ world, project, primary, onPick, onLand }) {
   const names = landNamesOf(world);
   const dest = rideZone(world.coasters.find((p) => p.n === primary), names) || names[0];
-  const arrival = names.includes('International Street') ? 'International Street' : names[0];
+  const arrival = arrivalLandOf(world) || names[0];
   const gate = world.gates?.find((g) => /main/i.test(g.n)) || world.gates?.[0];
 
   return (

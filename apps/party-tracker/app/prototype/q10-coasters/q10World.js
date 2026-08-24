@@ -82,6 +82,29 @@ export function ridesInZone(coasters, zone, landNames) {
   return (coasters || []).filter((p) => rideZone(p, landNames) === zone);
 }
 
+/** Land nearest the main gate, from gate coords + land anchors. */
+export function arrivalLandOf(world) {
+  const gate = world?.gates?.find((g) => /main/i.test(g.n)) || world?.gates?.[0];
+  const lands = world?.lands || [];
+  if (!lands.length) return null;
+  if (gate?.a && lands.some((l) => l.name === gate.a)) return gate.a;
+  if (!gate) return lands[0].name;
+  let best = lands[0].name;
+  let bestD = Infinity;
+  for (const land of lands) {
+    const a = world.anchors?.[land.name];
+    const lat = a ? a[0] : land.ring[0]?.[1];
+    const lng = a ? a[1] : land.ring[0]?.[0];
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    const d = (lat - gate.lat) ** 2 + (lng - gate.lng) ** 2;
+    if (d < bestD) {
+      bestD = d;
+      best = land.name;
+    }
+  }
+  return best;
+}
+
 export function landFocusBounds(land, pad = 0.22) {
   const b = boundsOf([[land.ring]]);
   const dx = (b.maxLng - b.minLng) || 0.002;

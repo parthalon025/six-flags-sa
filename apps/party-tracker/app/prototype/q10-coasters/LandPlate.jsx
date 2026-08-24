@@ -31,8 +31,10 @@ export default function LandPlate({
   const loud = ownersOf(world.tracks, primary);
   const dest = destLand || rideZone(world.coasters.find((p) => p.n === primary), names);
   const gate = world.gates?.find((g) => /main/i.test(g.n)) || world.gates?.[0];
+  const gateAt = gate ? project(gate.lng, gate.lat) : null;
   const numbered = world.coasters.map((p, i) => ({ ...p, num: i + 1 }));
   const walk = midways ? world.paths.filter((p) => p.rank === 'arterial') : [];
+  const isDim = (name) => Boolean(dimLands) && !dimLands.has(name);
 
   const showRide = (p) => {
     if (rides === 'none') return false;
@@ -48,7 +50,6 @@ export default function LandPlate({
       ))}
       {world.lands.map((l) => {
         const t = souvenirTint(l.name);
-        const dim = dimLands && !dimLands.has(l.name);
         return (
           <path
             key={l.name}
@@ -56,7 +57,7 @@ export default function LandPlate({
             fill={t.fill}
             stroke={t.stroke}
             strokeWidth="1.2"
-            opacity={dim ? 0.28 : 1}
+            opacity={isDim(l.name) ? 0.28 : 1}
             onClick={onLand ? () => onLand(l.name) : undefined}
             style={onLand ? { cursor: 'pointer' } : undefined}
           />
@@ -105,7 +106,6 @@ export default function LandPlate({
         const at = labels[l.name];
         if (!at) return null;
         const t = souvenirTint(l.name);
-        const dim = dimLands && !dimLands.has(l.name);
         const lines = wrapLand(l.name);
         return (
           <text
@@ -113,7 +113,7 @@ export default function LandPlate({
             x={at[0]}
             y={at[1]}
             textAnchor="middle"
-            style={S.land(t.label, dim)}
+            style={S.land(t.label, isDim(l.name))}
           >
             {lines.map((line, i) => (
               <tspan key={line} x={at[0]} dy={i ? 16 : 0}>{line}</tspan>
@@ -121,15 +121,12 @@ export default function LandPlate({
           </text>
         );
       })}
-      {showGate && gate ? (() => {
-        const [x, y] = project(gate.lng, gate.lat);
-        return (
-          <g>
-            <circle cx={x} cy={y} r="6" fill="#2C3A2E" />
-            <text x={x + 9} y={y + 4} style={S.ride(false)}>{gate.n}</text>
-          </g>
-        );
-      })() : null}
+      {showGate && gate && gateAt ? (
+        <g>
+          <circle cx={gateAt[0]} cy={gateAt[1]} r="6" fill="#2C3A2E" />
+          <text x={gateAt[0] + 9} y={gateAt[1] + 4} style={S.ride(false)}>{gate.n}</text>
+        </g>
+      ) : null}
       {numbered.filter(showRide).map((p) => {
         const [x, y] = project(p.lng, p.lat);
         const on = p.n === primary;
