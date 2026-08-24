@@ -1,10 +1,15 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   authUiRequiresClerkE2e,
   clerkE2eBlockReason,
   clerkPublishableKeyPresent,
 } from '../../scripts/lib/clerk-e2e.mjs';
+
+const emptyRoot = mkdtempSync(join(tmpdir(), 'clerk-e2e-'));
 
 assert.equal(authUiRequiresClerkE2e(['docs/agents/ci.md']), false);
 assert.equal(authUiRequiresClerkE2e(['apps/party-tracker/components/OAuthButtons.jsx']), true);
@@ -14,7 +19,7 @@ assert.equal(clerkPublishableKeyPresent({}), false);
 assert.equal(clerkPublishableKeyPresent({ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_x' }), true);
 
 assert.equal(
-  clerkE2eBlockReason({ files: ['apps/party-tracker/lib/core/state.js'], env: {}, skipBrowser: true }),
+  clerkE2eBlockReason({ files: ['apps/party-tracker/lib/core/state.js'], env: {}, skipBrowser: true, cwd: emptyRoot }),
   null,
 );
 assert.match(
@@ -22,6 +27,7 @@ assert.match(
     files: ['apps/party-tracker/components/AuthGate.jsx'],
     env: {},
     skipBrowser: true,
+    cwd: emptyRoot,
   }),
   /do not --skip-browser/,
 );
@@ -30,6 +36,7 @@ assert.match(
     files: ['apps/party-tracker/components/AuthGate.jsx'],
     env: {},
     skipBrowser: false,
+    cwd: emptyRoot,
   }),
   /NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY/,
 );
@@ -38,8 +45,11 @@ assert.equal(
     files: ['apps/party-tracker/components/AuthGate.jsx'],
     env: { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_x' },
     skipBrowser: false,
+    cwd: emptyRoot,
   }),
   null,
 );
+
+rmSync(emptyRoot, { recursive: true, force: true });
 
 console.log('clerk-e2e.test: ok');

@@ -73,8 +73,9 @@ import { resolveSession } from '@/lib/auth/session';
 import { listManagedGuests, upsertManagedGuest } from '@/lib/auth/profileCache';
 import { useAuth } from '@clerk/nextjs';
 import AuthBridge from '@/components/AuthBridge';
+import ClerkSetupRequired from '@/components/ClerkSetupRequired';
 import { clearGuestChoice } from '@/lib/auth/guestChoice';
-import { clerkBrowserConfigured } from '@/lib/clerkConfigured';
+import { clerkBrowserConfigured, clerkCiKeylessOk } from '@/lib/clerkConfigured';
 import { seedFromManagedGuest } from '@party-tracker/shared/schemas.js';
 // Namespaced: `push` on its own is already the navigation stack's push.
 import * as notifier from '@/lib/push/client';
@@ -250,9 +251,12 @@ const REROUTE_M = 12;
 const OFF_ROUTE_M = 32;
 
 export default function Page() {
-  // Match AuthBridge / layout: without a publishable key there is no provider.
+  // Clerk is mandatory — missing keys show setup instructions, not a keyless map.
   if (!clerkBrowserConfigured()) {
-    return <ParkApp isSignedIn={false} />;
+    if (clerkCiKeylessOk()) {
+      return <ParkApp isSignedIn={false} />;
+    }
+    return <ClerkSetupRequired />;
   }
   return <PageWithClerk />;
 }

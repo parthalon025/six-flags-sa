@@ -4,13 +4,18 @@
  * Google OAuth redirect is opt-in (`CLERK_E2E_GOOGLE=1`) until that provider is enabled.
  */
 
+import { clerkEnvFileAllowsCiBuild } from './cloud-agent-clerk-env.mjs';
+
 export const AUTH_E2E_PATH_NEEDLES = [
+  'apps/party-tracker/app/page.js',
+  'apps/party-tracker/components/ClerkSetupRequired.jsx',
   'apps/party-tracker/components/AuthGate.jsx',
   'apps/party-tracker/components/AuthGateActions.jsx',
   'apps/party-tracker/components/SignInCard.jsx',
   'apps/party-tracker/components/OAuthButtons.jsx',
   'apps/party-tracker/lib/auth/clerkOAuth.js',
   'apps/party-tracker/lib/auth/useClerkOAuth.js',
+  'apps/party-tracker/lib/clerkConfigured.js',
   'apps/party-tracker/app/sign-in/',
 ];
 
@@ -26,13 +31,19 @@ export function clerkPublishableKeyPresent(env = process.env) {
 }
 
 /** @returns {string | null} blocker, or null when merge e2e may proceed */
-export function clerkE2eBlockReason({ files = [], env = process.env, skipBrowser = false } = {}) {
+export function clerkE2eBlockReason({
+  files = [],
+  env = process.env,
+  skipBrowser = false,
+  cwd = process.cwd(),
+} = {}) {
   if (!authUiRequiresClerkE2e(files)) return null;
   if (skipBrowser) {
     return 'auth UI changed — Clerk-on browser e2e is required (do not --skip-browser)';
   }
-  if (!clerkPublishableKeyPresent(env)) {
-    return 'auth UI changed — set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and run the auth module against a Clerk-on build';
+  if (clerkPublishableKeyPresent(env)) return null;
+  if (clerkEnvFileAllowsCiBuild(cwd)) {
+    return null;
   }
-  return null;
+  return 'auth UI changed — set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY and run the auth module against a Clerk-on build';
 }
