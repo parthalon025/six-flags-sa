@@ -24,6 +24,9 @@ export default function LandPlate({
   rides = 'names',
   destLand = null,
   showGate = false,
+  revealed = null,
+  quest = false,
+  player = false,
   height = 920,
 }) {
   const names = world.lands.map((l) => l.name);
@@ -35,10 +38,13 @@ export default function LandPlate({
   const numbered = world.coasters.map((p, i) => ({ ...p, num: i + 1 }));
   const walk = midways ? world.paths.filter((p) => p.rank === 'arterial') : [];
   const isDim = (name) => Boolean(dimLands) && !dimLands.has(name);
+  const isKnown = (name) => !revealed || revealed.has(name);
 
   const showRide = (p) => {
     if (rides === 'none') return false;
-    if (rides === 'dest') return rideZone(p, names) === dest;
+    const zone = rideZone(p, names);
+    if (revealed && zone && !revealed.has(zone)) return false;
+    if (rides === 'dest') return zone === dest;
     return true;
   };
 
@@ -50,12 +56,13 @@ export default function LandPlate({
       ))}
       {world.lands.map((l) => {
         const t = souvenirTint(l.name);
+        const known = isKnown(l.name);
         return (
           <path
             key={l.name}
             d={pathD(l.ring, project)}
-            fill={t.fill}
-            stroke={t.stroke}
+            fill={known ? t.fill : '#E8E0D0'}
+            stroke={known ? t.stroke : '#D4CBB8'}
             strokeWidth="1.2"
             opacity={isDim(l.name) ? 0.28 : 1}
             onClick={onLand ? () => onLand(l.name) : undefined}
@@ -104,7 +111,7 @@ export default function LandPlate({
       ))}
       {world.lands.map((l) => {
         const at = labels[l.name];
-        if (!at) return null;
+        if (!at || !isKnown(l.name)) return null;
         const t = souvenirTint(l.name);
         const lines = wrapLand(l.name);
         return (
@@ -127,6 +134,14 @@ export default function LandPlate({
           <text x={gateAt[0] + 9} y={gateAt[1] + 4} style={S.ride(false)}>{gate.n}</text>
         </g>
       ) : null}
+      {player && gateAt ? (
+        <g>
+          <polygon
+            points={`${gateAt[0]},${gateAt[1] - 8} ${gateAt[0] - 6},${gateAt[1] + 6} ${gateAt[0] + 6},${gateAt[1] + 6}`}
+            fill="#2C3A2E"
+          />
+        </g>
+      ) : null}
       {numbered.filter(showRide).map((p) => {
         const [x, y] = project(p.lng, p.lat);
         const on = p.n === primary;
@@ -139,8 +154,15 @@ export default function LandPlate({
               </>
             ) : (
               <>
-                <circle cx={x} cy={y} r={on ? 5.5 : 3.6} fill={on ? '#E85D2C' : '#2C3A2E'} />
-                <text x={x + 7} y={y + 4} style={S.ride(on)}>{p.n}</text>
+                {quest && on ? (
+                  <polygon
+                    points={`${x},${y - 11} ${x + 8},${y} ${x},${y + 11} ${x - 8},${y}`}
+                    fill="#E85D2C"
+                  />
+                ) : (
+                  <circle cx={x} cy={y} r={on ? 5.5 : 3.6} fill={on ? '#E85D2C' : '#2C3A2E'} />
+                )}
+                <text x={x + 10} y={y + 4} style={S.ride(on)}>{p.n}</text>
               </>
             )}
           </g>

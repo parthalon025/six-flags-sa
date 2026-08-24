@@ -5,11 +5,11 @@ import { normaliseRideName } from '@/lib/mapSymbols.js';
 
 export const VENUE = 'kings-island';
 
-/** Three jobs on one souvenir plate. Not palettes or themes. */
+/** Three game-map systems on the souvenir lands. */
 export const VARIANTS = [
-  { key: 'A', name: 'Enter a land', thesis: 'The unit is a district. You walk into Rivertown.' },
-  { key: 'B', name: 'Pick a ride', thesis: 'The unit is a destination. Lands stay the picture behind the catalog.' },
-  { key: 'C', name: 'Walk from the gate', thesis: 'The unit is the course. Arrival land + destination land + midways.' },
+  { key: 'A', name: 'Quest map', thesis: 'Pause-menu cartograph. You, the quest, the land names.' },
+  { key: 'B', name: 'Fog atlas', thesis: 'Chart the park. Undiscovered lands stay blank until you walk in.' },
+  { key: 'C', name: 'Overworld', thesis: 'Hop land to land like a board. Only neighbours are open.' },
 ];
 
 /** Souvenir-strength district fills. Venue day tints are too pale to read as land. */
@@ -68,6 +68,43 @@ export function wrapLand(name) {
 
 export function landNamesOf(world) {
   return (world?.lands || []).map((l) => l.name);
+}
+
+export function landPoint(world, name) {
+  const a = world?.anchors?.[name];
+  if (Array.isArray(a) && a.length >= 2) return { lat: a[0], lng: a[1] };
+  const land = world?.lands?.find((l) => l.name === name);
+  const ring = land?.ring;
+  if (!ring?.length) return null;
+  let lat = 0;
+  let lng = 0;
+  ring.forEach((p) => { lng += p[0]; lat += p[1]; });
+  return { lat: lat / ring.length, lng: lng / ring.length };
+}
+
+/** Undirected k-nearest land graph from anchors. Fast-travel edges, not invented paths. */
+export function landGraph(world, k = 2) {
+  const nodes = (world?.lands || []).map((land) => {
+    const at = landPoint(world, land.name);
+    return at ? { name: land.name, ...at } : null;
+  }).filter(Boolean);
+  const edgeKey = (a, b) => [a, b].sort().join('|');
+  const edges = new Map();
+  for (const a of nodes) {
+    const near = nodes
+      .filter((b) => b.name !== a.name)
+      .map((b) => ({ b, d: (a.lat - b.lat) ** 2 + (a.lng - b.lng) ** 2 }))
+      .sort((x, y) => x.d - y.d)
+      .slice(0, k);
+    for (const { b } of near) edges.set(edgeKey(a.name, b.name), [a.name, b.name]);
+  }
+  return { nodes, edges: [...edges.values()] };
+}
+
+export function neighborsOf(graph, name) {
+  return graph.edges
+    .filter(([a, b]) => a === name || b === name)
+    .map(([a, b]) => (a === name ? b : a));
 }
 
 /** Honest Zone from the POI. Racer fragments tagged to the World sit on Coney Mall. */
