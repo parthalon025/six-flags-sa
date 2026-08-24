@@ -253,6 +253,17 @@ assert.deepEqual(
   assert.equal(fallbackPx(mem?.[0] || ''), PIN_LABEL_SIZE);
   assert.equal(fallbackPx(land?.[0] || ''), ZONE_LABEL_SIZE);
   assert.match(land?.[0] || '', /fill:\s*var\(--labelFill\)/, 'Zone names stay inked, not transparent');
+  // pinDrop ends on `transform: none`, which beats an SVG position attribute on
+  // the same element — the meet pin keeps translate on the outer group only.
+  assert.match(painted, /mark\.kind === 'meet'/);
+  assert.match(painted, /className="meetPin"/);
+  assert.doesNotMatch(
+    painted,
+    /className=\{mark\.className\}[^>]*meetPin/,
+    'meetPin animation must not share the positioning group',
+  );
+  const meetPinRule = css.match(/\.meetPin\s*\{[^}]+\}/)?.[0] || '';
+  assert.doesNotMatch(meetPinRule, /transform-box/, 'meetPin no longer needs its own reference box');
 }
 
 {
