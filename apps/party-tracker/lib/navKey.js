@@ -1,7 +1,7 @@
 /**
  * Stable identity for a walk target.
  *
- * Kept out of `routing.js` so UI that only needs a key (GlanceRail) does not
+ * Kept out of `routing.js` so UI that only needs a walk target key does not
  * pull the whole walk-graph module into the first-load client bundle.
  *
  * A party member is a moving target and a meet-up can be dropped again, so the

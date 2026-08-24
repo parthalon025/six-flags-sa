@@ -113,7 +113,7 @@ Paths in this section are under `apps/party-tracker/`. Shared contracts (`ontolo
 flowchart TB
   subgraph ui ["UI — React"]
     PAGE2["app/page.js<br/>tabs, sheet, nav stacks"]
-    COMP["components/*<br/>ParkMap, GlanceRail, PartyPanel, …"]
+    COMP["components/*<br/>ParkMap, PartyPanel, PlaceList, …"]
   end
 
   subgraph seams ["Seams — thin React glue"]

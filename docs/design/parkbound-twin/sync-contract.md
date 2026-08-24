@@ -59,11 +59,7 @@ moves, CI says so instead of a design session finding out. See
 | Language / copy | CONTEXT.md, lib/brand.js |
 
 ### On disk, mounted nowhere
-A file existing is a weaker fact than a file being used.
-
-| File | Why |
-| --- | --- |
-| components/GlanceRail.jsx | Explore is search → context → list now; the rail is not mounted anywhere. Kept on disk so the removal stays revertible. |
+A file existing is a weaker fact than a file being used. *(None at last sync — GlanceRail removed in #571.)*
 
 ### What moved in this import
 - **Me is a root.** It opens on the guest's own standing; Settings and Collection
